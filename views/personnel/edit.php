@@ -23,8 +23,11 @@ $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
 $roleplayEventTypes = is_array($roleplayEventTypes ?? null) ? $roleplayEventTypes : ['administratif'];
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
+$effectifsEditContext = !empty($effectifsEditContext);
 $returnViewRh = trim((string) ($_GET['return_view'] ?? '')) === 'rh';
-$personnelBackUrl = $isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0));
+$personnelBackUrl = $effectifsEditContext
+    ? effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0))
+    : ($isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0)));
 if ($returnViewRh) {
     $personnelBackUrl .= '?view=rh';
 }
@@ -39,24 +42,8 @@ if (!$targetUser) {
 $p = $personnelProfile ?? [];
 $up = is_array($userProfile) ? $userProfile : [];
 $d = $displaySettings ?? [];
-$clearanceOptions = is_array($clearanceLevelOptions ?? null) ? $clearanceLevelOptions : [];
-$currentClearance = trim((string) ($p['clearance_level'] ?? ''));
-$clearanceReviewedAt = '';
-if (!empty($p['clearance_reviewed_at'])) {
-    $cr = date_create((string) $p['clearance_reviewed_at']);
-    $clearanceReviewedAt = $cr ? $cr->format('Y-m-d') : '';
-}
-$readinessScoreVal = isset($p['readiness_score']) ? (int) $p['readiness_score'] : 0;
 $score = (int) ($completeness['score'] ?? 0);
 $missingLabels = $completeness['missing_labels'] ?? [];
-$enlistmentDateVal = '';
-if (!empty($p['enlistment_date'])) {
-    $enlistmentDateVal = substr((string) $p['enlistment_date'], 0, 10);
-}
-$prePlatformDateVal = '';
-if (!empty($seniorityPrePlatformDate)) {
-    $prePlatformDateVal = substr((string) $seniorityPrePlatformDate, 0, 10);
-}
 $gradeLabel = '';
 if ($currentGrade) {
     $gradeLabel = trim((string) ($currentGrade['label_short'] ?? $currentGrade['short_name'] ?? $currentGrade['label_long'] ?? $currentGrade['name'] ?? ''));
@@ -76,7 +63,6 @@ $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 $advancedEditActive = !empty($advancedEditActive);
-$athenaIdDisplay = trim((string) ($targetUser['athena_identifier'] ?? ''));
 $tzOptions = \App\Services\Admin\PlatformUserProfileService::timezoneOptions();
 $langOptions = \App\Services\Admin\PlatformUserProfileService::interfaceLanguageOptions();
 $familyOptions = \App\Services\Admin\PlatformUserProfileService::familySituationOptions();
@@ -95,6 +81,15 @@ $keepSelectOption = static function (array $options, string $current): array {
 
     return $options;
 };
+$knownValue = static function (...$values): string {
+    foreach ($values as $value) {
+        if (trim((string) $value) !== '') {
+            return (string) $value;
+        }
+    }
+
+    return '';
+};
 
 $editNavGroups = [
     [
@@ -108,7 +103,7 @@ $editNavGroups = [
         'title' => 'Affectation',
         'items' => [
             ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
-            ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
+            ['id' => 'edit-habilitation', 'label' => 'Matricules', 'show' => true],
             ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
         ],
     ],
@@ -143,17 +138,17 @@ $editValidTabIds = implode(',', array_map(
     $editNavFlat
 ));
 ?>
-<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>' }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
+<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>', dirty: false }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
   <div class="pd-container">
     <header class="pd-header">
       <div>
-        <p class="pd-header__eyebrow">Dossier personnel</p>
+        <p class="pd-header__eyebrow"><?= $effectifsEditContext ? 'Bureau effectifs' : 'Dossier personnel' ?></p>
         <h1 class="pd-header__title">Éditer le dossier<?= trim((string) ($targetUser['display_name'] ?? '')) !== '' ? ' — ' . htmlspecialchars(trim((string) $targetUser['display_name']), ENT_QUOTES, 'UTF-8') : '' ?></h1>
         <p class="pd-header__sub">Identité, affectation, immersion et affichage — un onglet à la fois, comme un tableau de bord administratif.</p>
       </div>
       <div class="pd-header__actions">
-        <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← Fiche</a>
-        <?php if (\App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
+        <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← <?= $effectifsEditContext ? 'Fiche Effectifs' : 'Fiche' ?></a>
+        <?php if (!$effectifsEditContext && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
         <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Fiche Effectifs</a>
         <a href="<?= htmlspecialchars(url('back-office/users/' . (int) ($targetUser['id'] ?? 0) . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Compte</a>
         <?php endif; ?>
@@ -183,13 +178,23 @@ $editValidTabIds = implode(',', array_map(
 
     <div class="pd-card">
       <nav class="pd-tabs" aria-label="Sections du dossier">
-        <?php foreach ($editNavFlat as $ni): ?>
-        <button
-          type="button"
-          class="pd-tabs__btn"
-          :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
-          @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
-        ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+        <?php foreach ($editNavGroups as $grp): ?>
+        <?php $visibleItems = array_values(array_filter($grp['items'], static fn ($item) => !empty($item['show']))); ?>
+        <?php if ($visibleItems !== []): ?>
+        <div class="pd-tabs__group">
+          <span class="pd-tabs__group-label"><?= htmlspecialchars($grp['title'], ENT_QUOTES, 'UTF-8') ?></span>
+          <div class="pd-tabs__group-items">
+            <?php foreach ($visibleItems as $ni): ?>
+            <button
+              type="button"
+              class="pd-tabs__btn"
+              :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
+              @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
+            ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
         <?php endforeach; ?>
       </nav>
 
@@ -209,11 +214,18 @@ $editValidTabIds = implode(',', array_map(
       </div>
       <?php endif; ?>
 
-      <form method="post" action="<?= htmlspecialchars($formAction) ?>">
+      <form method="post" action="<?= htmlspecialchars($formAction) ?>" @input="dirty = true" @change="dirty = true" @submit="dirty = false">
         <?= \App\Core\Csrf::field() ?>
         <?php if ($returnViewRh): ?>
         <input type="hidden" name="return_view" value="rh">
         <?php endif; ?>
+        <div class="pd-savebar" role="region" aria-label="Enregistrement du dossier">
+          <p class="pd-savebar__status" aria-live="polite">
+            <span x-show="!dirty">Modifiez les champs, puis enregistrez le dossier.</span>
+            <span x-cloak x-show="dirty" class="pd-savebar__status--dirty">Modifications non enregistrées</span>
+          </p>
+          <button type="submit" class="pd-btn pd-btn--primary">Enregistrer les modifications</button>
+        </div>
         <div class="pd-card__body">
 
         <?php if ($isMe): ?>
@@ -277,12 +289,12 @@ $editValidTabIds = implode(',', array_map(
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
                   <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
-                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars($knownValue($up['first_name'] ?? '', $p['first_name'] ?? '', $targetUser['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
                   <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire, forum).</p>
                 </div>
                 <div>
                   <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
-                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
+                  <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars($knownValue($up['last_name'] ?? '', $p['last_name'] ?? '', $targetUser['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
                   <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
                 </div>
                 <div class="md:col-span-2">
@@ -518,6 +530,13 @@ $editValidTabIds = implode(',', array_map(
                     Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
                   </p>
                   <?php endif; ?>
+                  <?php if (!empty($units)): ?>
+                  <label class="relative block">
+                    <span class="sr-only">Rechercher une unité</span>
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
+                    <input type="search" x-model.debounce.150ms="unitQuery" placeholder="Rechercher une unité…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                  </label>
+                  <?php endif; ?>
                   <input type="hidden" name="primary_unit_id" :value="primaryUnitId()">
                   <template x-for="(row, idx) in rows" :key="row.key">
                     <div class="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-4">
@@ -531,7 +550,7 @@ $editValidTabIds = implode(',', array_map(
                           <label class="mb-1 block text-[11px] font-bold text-slate-600">Unité</label>
                           <select :name="'unit_assignments[' + idx + '][unit_id]'" x-model.number="row.unit_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
                             <option value="0">— Aucune —</option>
-                            <template x-for="unit in unitOptions" :key="unit.id">
+                            <template x-for="unit in filteredUnitOptions(row.unit_id)" :key="unit.id">
                               <option :value="unit.id" x-text="unit.name"></option>
                             </template>
                           </select>
@@ -553,7 +572,17 @@ $editValidTabIds = implode(',', array_map(
                 $currentJobRolesJson = htmlspecialchars(json_encode($currentJobRoles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
                 ?>
                 <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
-                  <label class="mb-1 block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
+                  <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
+                      <p class="mt-1 text-[11px] text-slate-500">Recherche dans les catégories, métiers, codes MOS et intitulés anglais.</p>
+                    </div>
+                    <label class="relative block sm:w-80">
+                      <span class="sr-only">Rechercher un rôle métier</span>
+                      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
+                      <input type="search" x-model.debounce.150ms="roleQuery" placeholder="Rechercher un métier…" autocomplete="off" class="w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                    </label>
+                  </div>
                   <div class="space-y-2">
                     <template x-for="(row, idx) in roles" :key="row.key">
                       <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -566,10 +595,11 @@ $editValidTabIds = implode(',', array_map(
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
                           <select :name="'job_roles[' + idx + '][role_id]'" x-model.number="row.role_id" class="w-full rounded-lg border border-cyan-200 bg-white px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
                             <option value="0">— Non renseigné —</option>
-                            <template x-for="opt in jobRoleOptions" :key="opt.id">
+                            <template x-for="opt in filteredJobRoleOptions(row.role_id)" :key="opt.id">
                               <option :value="opt.id" x-text="opt.label"></option>
                             </template>
                           </select>
+                          <p x-show="roleQuery && matchingRoleCount() === 0" class="mt-1 text-[10px] font-semibold text-amber-700">Aucun rôle correspondant.</p>
                         </div>
                         <div class="min-w-[160px] flex-1">
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
@@ -621,56 +651,10 @@ $editValidTabIds = implode(',', array_map(
 
         <section id="edit-habilitation" x-show="tab === 'edit-habilitation'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
-            <h2 class="text-base font-black tracking-tight text-slate-900">Habilitation &amp; disponibilité</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Niveau d’accès, dates et indicateur de disponibilité pour le dossier.</p>
+            <h2 class="text-base font-black tracking-tight text-slate-900">Matricules</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Identifiants internes utilisés par votre organisation.</p>
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
-            <div>
-              <label class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
-              <?php if ($advancedEditActive): ?>
-              <select name="clearance_level" id="clearance_level" class="w-full rounded-xl border border-violet-200 bg-violet-50/40 px-3 py-2.5 text-sm">
-                <option value="">— Non défini —</option>
-                <?php foreach ($clearanceOptions as $ck => $clabel): ?>
-                <option value="<?= htmlspecialchars((string) $ck) ?>" <?= $currentClearance === (string) $ck ? 'selected' : '' ?>><?= htmlspecialchars((string) $clabel) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <p class="mt-1 text-[11px] text-violet-700">Déverrouillé par le mode édition avancée (24 h). L’ID Athena reste inchangé.</p>
-              <?php else: ?>
-              <p class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
-                <?= $currentClearance !== '' ? htmlspecialchars($clearanceOptions[$currentClearance] ?? ($currentClearance . ' (valeur héritée)')) : '— Non défini —' ?>
-              </p>
-              <p class="mt-1 text-[11px] text-slate-500">
-                Se modifie via une demande d’élévation, examinée par une personne habilitée — pas directement ici, ce niveau conditionnant l’accès aux documents classifiés.
-                <?php if (!empty($targetUser['id'])): ?>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-emerald-700 hover:underline">Ouvrir la fiche effectifs →</a>
-                <?php endif; ?>
-              </p>
-              <?php endif; ?>
-            </div>
-            <div>
-              <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>
-              <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars($enlistmentDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Entrée dans la communauté sur la plateforme (ou date d’enrôlement retenue pour le dossier).</p>
-            </div>
-            <div>
-              <label for="pre_platform_start_date" class="mb-1 block text-xs font-bold text-slate-600">Ancienneté antérieure à la plateforme</label>
-              <input type="date" name="pre_platform_start_date" id="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Date à laquelle la personne a rejoint l’entité <em>avant</em> l’ouverture du site. Laisser vide si non applicable.</p>
-            </div>
-            <div>
-              <label for="clearance_reviewed_at" class="mb-1 block text-xs font-bold text-slate-600">Dernière revue d’habilitation</label>
-              <input type="date" name="clearance_reviewed_at" id="clearance_reviewed_at" value="<?= htmlspecialchars($clearanceReviewedAt) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="readiness_score" class="mb-1 block text-xs font-bold text-slate-600">Indicateur de disponibilité (0–100)</label>
-              <input type="number" name="readiness_score" id="readiness_score" min="0" max="100" value="<?= $readinessScoreVal ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-              <p class="mt-1 text-[11px] text-slate-500">Compte pour la complétude si &gt; 0 (sinon une formation certifiante peut suffire).</p>
-            </div>
-            <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Identifiant plateforme</p>
-              <p class="mt-1 font-mono text-sm font-bold text-slate-900"><?= $athenaIdDisplay !== '' ? htmlspecialchars($athenaIdDisplay) : '—' ?></p>
-              <p class="mt-1 text-[11px] text-slate-500">Identifiant permanent attribué par la plateforme — non modifiable<?= !empty($advancedEditActive) ? ' (même en mode édition avancée)' : '' ?>.</p>
-            </div>
             <?php
             $tmnLabel = trim((string) ($tenantMemberNumberLabel ?? "Matricule d'organisation"));
             $tmnValue = trim((string) ($tenantMemberNumber ?? ''));
@@ -1081,7 +1065,7 @@ $editValidTabIds = implode(',', array_map(
 <script>
 function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
   var rows = (initialRows || []).map(function (r, i) {
-    return { key: i, role_id: r.role_id || 0, detail: r.detail || '' };
+    return { key: i, role_id: parseInt(r.role_id, 10) || 0, detail: r.detail || '' };
   });
   if (rows.length === 0) {
     rows = [{ key: 0, role_id: 0, detail: '' }];
@@ -1095,7 +1079,28 @@ function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
     primaryIdx: primaryIdx,
     maxRoles: maxRoles || 5,
     jobRoleOptions: jobRoleOptions || [],
+    roleQuery: '',
     nextKey: rows.length,
+    normalizeSearch: function (value) {
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    },
+    roleMatches: function (opt) {
+      var query = this.normalizeSearch(this.roleQuery);
+      if (!query) return true;
+      var haystack = this.normalizeSearch(opt.search || opt.label || opt.name || '');
+      return query.split(/\s+/).every(function (part) { return haystack.indexOf(part) !== -1; });
+    },
+    matchingRoleCount: function () {
+      var self = this;
+      return this.jobRoleOptions.filter(function (opt) { return self.roleMatches(opt); }).length;
+    },
+    filteredJobRoleOptions: function (selectedId) {
+      var self = this;
+      var current = parseInt(selectedId, 10) || 0;
+      return this.jobRoleOptions.filter(function (opt) {
+        return self.roleMatches(opt) || parseInt(opt.id, 10) === current;
+      });
+    },
     addRow: function () {
       if (this.roles.length >= this.maxRoles) return;
       this.roles.push({ key: this.nextKey++, role_id: 0, detail: '' });
@@ -1127,7 +1132,7 @@ function personnelUnitAssignmentsEditor(initialRows, unitOptions, maxRows) {
   var rows = (initialRows || []).map(function (row, index) {
     return {
       key: index,
-      unit_id: row.unit_id || 0,
+      unit_id: parseInt(row.unit_id, 10) || 0,
       role_name: row.role_name || '',
       is_primary: !!row.is_primary
     };
@@ -1145,8 +1150,18 @@ function personnelUnitAssignmentsEditor(initialRows, unitOptions, maxRows) {
     rows: rows,
     unitOptions: unitOptions || [],
     maxRows: maxRows || 8,
+    unitQuery: '',
     primaryIdx: primaryIdx,
     nextKey: rows.length,
+    filteredUnitOptions: function (selectedId) {
+      var query = String(this.unitQuery || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      var current = parseInt(selectedId, 10) || 0;
+      if (!query) return this.unitOptions;
+      return this.unitOptions.filter(function (unit) {
+        var name = String(unit.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return name.indexOf(query) !== -1 || parseInt(unit.id, 10) === current;
+      });
+    },
     addRow: function () {
       if (this.rows.length >= this.maxRows) return;
       this.rows.push({ key: this.nextKey++, unit_id: 0, role_name: '', is_primary: false });

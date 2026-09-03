@@ -271,7 +271,7 @@ final class TenantBootstrapService
 
             try {
                 $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
-                $duty->applyActiveDuty($tenantId, $newUserId, $newUserId);
+                $duty->applyActiveDuty($tenantId, $newUserId, $newUserId, true);
             } catch (\Throwable $e) {
                 // Rôles absents : non bloquant
             }

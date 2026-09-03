@@ -101,6 +101,8 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('confirm_type_change', $view);
         self::assertStringContainsString('Formule d’accès', $view);
         self::assertStringContainsString('Administrer', $index);
+        self::assertStringContainsString("url('admin/system/tenants/' . \$id . '/intervention')", $index);
+        self::assertStringContainsString('Accès super tenant', $index);
         self::assertStringNotContainsString('Changer la formule', $index);
         self::assertSame('platform.tenant_identity_updated', AuditAction::TENANT_IDENTITY_UPDATED);
         self::assertSame('platform.tenant_type_assigned', AuditAction::TENANT_TYPE_ASSIGNED);

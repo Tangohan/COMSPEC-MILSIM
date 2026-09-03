@@ -36,7 +36,6 @@ use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
 use App\Support\PortalAccessChoice;
-use App\Services\Community\TenantTypeConfig;
 use App\Services\Steam\SteamWebApiService;
 use App\Services\Account\AccountDeletionService;
 use App\Repositories\AccountPurgeRequestRepository;
@@ -103,13 +102,7 @@ class UserAdminController
     /** URL de retour après erreur de création (évite le hub structure bloqué en profil Carte ATAK). */
     private function memberCreateEntryUrl(int $tenantId): string
     {
-        $tenant = $this->tenantRepository->findById($tenantId) ?: [];
-        $type = TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
-        if (TenantTypeConfig::moduleAllowed($type, 'personnel')) {
-            return url('back-office/organisation/structure?ouvrir=membre');
-        }
-
-        return url('back-office/users/create');
+        return effectifs_workspace_url('nouveau');
     }
 
     /**
@@ -779,7 +772,7 @@ class UserAdminController
             Session::flash('error', $msg);
         }
 
-        return Response::redirect(url('back-office/users/' . $userId));
+        return Response::redirect(effectifs_workspace_url('membres/' . $userId));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -1226,11 +1219,14 @@ class UserAdminController
         try {
             $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
             $ok = $duty->applyActiveDuty($tenantId, $id, $actorUserId);
+            $remainingDays = $ok ? 0 : $duty->remainingTrainingDays($tenantId, $id);
             Session::flash(
                 $ok ? 'success' : 'warning',
                 $ok
                     ? 'Le membre est maintenant en service actif. Les fonctions (opérateur, instructeur…) sont inchangées.'
-                    : 'Ce membre était déjà en service actif.'
+                    : ($remainingDays > 0
+                        ? 'Le délai obligatoire de formation n’est pas terminé : encore ' . $remainingDays . ' jour(s).'
+                        : 'Ce membre était déjà en service actif.')
             );
         } catch (\Throwable) {
             Session::flash('error', 'La position n’a pas pu être mise à jour. Réessayez dans un instant.');

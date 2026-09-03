@@ -21,7 +21,7 @@ final class TenantDefaultRoleDefinitions
         return [
             [
                 'slug' => 'community_owner',
-                'name' => 'Gestionnaire d’organisation',
+                'name' => 'Gestionnaire',
                 'description' => 'Autorité stratégique sur l’entité : gouvernance globale, hors périmètre technique de la plateforme.',
                 'role_layer' => 'community',
                 'is_system' => 1,
@@ -29,7 +29,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'tenant_admin',
-                'name' => 'Gestionnaire administratif d’organisation',
+                'name' => 'Gestionnaire adjoint',
                 'description' => 'Administration opérationnelle quotidienne : membres, contenus et paramètres internes.',
                 'role_layer' => 'community',
                 'is_system' => 1,
@@ -37,7 +37,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'deputy_commander',
-                'name' => 'Chef adjoint d’organisation',
+                'name' => 'Gestionnaire adjoint',
                 'description' => 'Adjoint à la direction : coordination et relais de gouvernance.',
                 'role_layer' => 'community',
                 'is_system' => 1,
@@ -164,7 +164,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'hr',
-                'name' => 'Gestionnaire des ressources humaines de l’organisation',
+                'name' => 'Ressources humaines',
                 'description' => 'Effectifs, recrutements, statuts, parcours et conformité interne.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
@@ -172,7 +172,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'recruiter',
-                'name' => 'Recruteur',
+                'name' => 'Recrutement',
                 'description' => 'Pipeline recrutement : candidatures, échanges avec les postulants et liaison avec le commandement.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
@@ -204,7 +204,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'senior_instructor',
-                'name' => 'Instructeur senior',
+                'name' => 'Responsable des formateurs',
                 'description' => 'Expertise pédagogique avancée et mentorat des instructeurs.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
@@ -309,6 +309,8 @@ final class TenantDefaultRoleDefinitions
                 'dashboard.pins.manage',
             ],
             'member' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard', 'training.view',
                 'operational.board.view',
                 'organization.orbat.view',
                 'operations.tactical.view',
@@ -319,6 +321,8 @@ final class TenantDefaultRoleDefinitions
                 'invitations.send', 'admin.members.view', 'personnel.profile.view', 'personnel.profile.update',
                 'dashboard.pins.manage',
                 'organization.orbat.view',
+                'organization.effectifs.hub.view',
+                'organization.recruitment', 'organization.recruitment.manage', 'organization.recruitment.openings.manage',
                 'member_integration.view', 'member_integration.manage', 'member_integration.assign',
                 'member_integration.note', 'member_integration.template_manage',
             ],
@@ -327,12 +331,14 @@ final class TenantDefaultRoleDefinitions
                 'invitations.send', 'admin.members.view', 'personnel.profile.view',
                 'operational.board.view',
                 'organization.orbat.view',
+                'organization.recruitment', 'organization.recruitment.manage', 'organization.recruitment.openings.manage',
                 'member_integration.view', 'member_integration.assign', 'member_integration.note',
             ],
             'instructor' => [
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'training.create', 'training.update', 'training.manage',
                 'personnel.profile.view',
                 'dashboard.pins.manage',
                 'operational.board.view',
@@ -343,6 +349,7 @@ final class TenantDefaultRoleDefinitions
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'training.create', 'training.update', 'training.manage',
                 'personnel.profile.view',
                 'dashboard.pins.manage',
                 'operational.board.view',
@@ -352,6 +359,8 @@ final class TenantDefaultRoleDefinitions
                 'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'training.create', 'training.update', 'training.delete', 'training.publish',
+                'training.manage', 'training.certifications.manage', 'training.publications.manage',
                 'personnel.profile.view',
                 'dashboard.pins.manage',
                 'operational.board.view',

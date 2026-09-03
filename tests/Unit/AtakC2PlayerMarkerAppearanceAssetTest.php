@@ -50,6 +50,8 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         self::assertStringContainsString('ORIGIN_EPS', $bridge);
         self::assertStringContainsString('grid_ref', $bridge);
         self::assertStringContainsString("e.status === 'LOST' && !e.keepLastKnown", $bridge);
+        self::assertStringContainsString('&& !e.isPlayer', $bridge);
+        self::assertStringContainsString('isPlayer: !isAi', $bridge);
         self::assertStringContainsString('keepLastKnown', $bridge);
         self::assertStringContainsString('display_call_sign', $bridge);
         self::assertStringContainsString("else live = 'ONLINE'", $bridge);
@@ -61,8 +63,11 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         self::assertStringContainsString('tac-marker-wrap', $css);
         self::assertStringContainsString('overflow: visible', $css);
         self::assertStringContainsString('width: max-content', $css);
+        self::assertMatchesRegularExpression('/\.tac-marker-wrap\s*\{[^}]*isolation:\s*isolate;/s', $css);
+        self::assertMatchesRegularExpression('/\.tac-marker__callsign\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*3;[^}]*display:\s*block;/s', $css);
         self::assertStringContainsString('iconSize: 20', $map);
         self::assertStringContainsString('clampNum(src.labelSize, 9, 16', $map);
+        self::assertStringContainsString('une position joueur deja recue', $map);
 
         self::assertStringContainsString('Libellés des unités', $view);
         self::assertStringContainsString('id="atak-settings-look-icon-size"', $view);

@@ -6,6 +6,7 @@ namespace App\Services\Personnel;
 
 use App\Repositories\MemberIntegrationRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Support\SqlText;
 use PDO;
@@ -26,6 +27,7 @@ final class PersonnelDutyPositionService
         private UserRepository $users,
         private RoleRepository $roles,
         private MemberIntegrationRepository $integrations,
+        private TenantRepository $tenants,
         private PDO $pdo,
     ) {}
 
@@ -74,10 +76,22 @@ final class PersonnelDutyPositionService
     /**
      * Parcours d’intégration terminé, ou action organisateur.
      */
-    public function applyActiveDuty(int $tenantId, int $userId, int $actorUserId = 0): bool
+    public function applyActiveDuty(int $tenantId, int $userId, int $actorUserId = 0, bool $bypassMinimumDuration = false): bool
     {
         if ($tenantId < 1 || $userId < 1 || $this->users->isServiceAccount($userId)) {
             return false;
+        }
+        if (!$bypassMinimumDuration) {
+            if (!$this->trainingMinimumReached($tenantId, $userId)) {
+                return false;
+            }
+            try {
+                if ($this->integrations->tablesExist() && $this->integrations->findActiveForUser($tenantId, $userId) !== null) {
+                    return false;
+                }
+            } catch (Throwable) {
+                return false;
+            }
         }
 
         return $this->setDutySlug($tenantId, $userId, self::SLUG_ACTIVE, $actorUserId, true);
@@ -121,9 +135,35 @@ final class PersonnelDutyPositionService
         } catch (Throwable) {
             $open = null;
         }
-        $slug = self::decideSlug($current, false, false, $open !== null);
+        $mustRemainTraining = $open !== null || !$this->trainingMinimumReached($tenantId, $userId);
+        $slug = self::decideSlug($current, false, false, $mustRemainTraining);
 
         return $this->setDutySlug($tenantId, $userId, $slug, $actorUserId, true);
+    }
+
+    public function remainingTrainingDays(int $tenantId, int $userId): int
+    {
+        $settings = PersonnelLifecycleSettings::resolve($this->tenants->getSettings($tenantId));
+        $required = $settings['training_days'];
+        if ($required === 0) {
+            return 0;
+        }
+        $user = $this->users->findById($userId, $tenantId);
+        $startedAt = strtotime((string) ($user['created_at'] ?? '')) ?: time();
+
+        return self::remainingDaysFromStart($required, $startedAt, time());
+    }
+
+    public static function remainingDaysFromStart(int $requiredDays, int $startedAt, int $now): int
+    {
+        $elapsed = max(0, (int) floor(($now - $startedAt) / 86400));
+
+        return max(0, min(3650, $requiredDays) - $elapsed);
+    }
+
+    private function trainingMinimumReached(int $tenantId, int $userId): bool
+    {
+        return $this->remainingTrainingDays($tenantId, $userId) === 0;
     }
 
     public function currentDutySlug(int $tenantId, int $userId): ?string

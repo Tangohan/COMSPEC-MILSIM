@@ -711,6 +711,16 @@ class UserRepository
     public function syncOrganizationRoles(int $userId, int $tenantId, array $roleIds, ?int $actorUserId = null, bool $skipCoherenceCheck = false): void
     {
         $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $x) => $x > 0)));
+        // Tout compte humain de la communauté reste opérateur. Les autres rôles ne sont
+        // que des habilitations ou des positions administratives additionnelles.
+        if (!$this->isServiceAccount($userId)) {
+            $operator = $this->pdo()->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'member' LIMIT 1");
+            $operator->execute([$tenantId]);
+            $operatorId = (int) ($operator->fetchColumn() ?: 0);
+            if ($operatorId > 0 && !in_array($operatorId, $roleIds, true)) {
+                $roleIds[] = $operatorId;
+            }
+        }
         if (!$skipCoherenceCheck) {
             $err = RoleCoherenceValidator::validateOrgRoleSet($this->pdo, $tenantId, $roleIds);
             if ($err !== null) {
@@ -1772,7 +1782,7 @@ class UserRepository
             $idParts[] = 'un_uu.id';
         }
         $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
-        $profileExtras = 'pp.character_name, pp.matricule_internal,
+        $profileExtras = 'pp.character_name, pp.matricule_internal, pp.radio_assigned,
                        pp.enlistment_date, pp.readiness_score, pp.clearance_level, pp.clearance_reviewed_at';
         if ($this->personnelProfilesHasColumn('character_portrait_path')) {
             $profileExtras .= ', pp.character_portrait_path';

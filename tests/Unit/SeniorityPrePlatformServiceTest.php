@@ -108,10 +108,6 @@ final class SeniorityPrePlatformServiceTest extends TestCase
         self::assertStringContainsString('org_founded_on', $view);
         self::assertStringContainsString('Création de l’entité', $view);
 
-        $edit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/personnel/edit.php');
-        self::assertStringContainsString('pre_platform_start_date', $edit);
-        self::assertStringContainsString('Ancienneté antérieure à la plateforme', $edit);
-
         $defaults = (string) file_get_contents(
             dirname(__DIR__, 2) . '/app/Services/Personnel/SeniorityTenantDefaultsService.php'
         );

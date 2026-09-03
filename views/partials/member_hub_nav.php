@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Navigation commune : fiche Effectifs, compte, dossier personnel.
+ * Navigation commune recentrée sur la fiche Effectifs, point d'entrée RH unique.
  *
  * @var int $memberHubUserId
  * @var 'effectifs'|'account'|'dossier' $memberHubCurrent
@@ -15,30 +15,16 @@ if ($memberHubUserId < 1) {
     return;
 }
 
-$hubLinks = [
-    [
-        'id' => 'effectifs',
-        'label' => 'Fiche Effectifs',
-        'hint' => 'Situation, ancienneté, unité',
-        'href' => effectifs_workspace_url('membres/' . $memberHubUserId),
-    ],
-    [
-        'id' => 'account',
-        'label' => 'Compte',
-        'hint' => 'Connexion, rôles, grade',
-        'href' => url('back-office/users/' . $memberHubUserId . '/edit'),
-    ],
-    [
-        'id' => 'dossier',
-        'label' => 'Dossier personnel',
-        'hint' => 'Identité opérationnelle',
-        'href' => url('personnel/' . $memberHubUserId . '/edit'),
-    ],
-];
+$hubLinks = [[
+    'id' => 'effectifs',
+    'label' => 'Fiche Effectifs complète',
+    'hint' => 'Compte, identité, affectation et suivi RH au même endroit',
+    'href' => effectifs_workspace_url('membres/' . $memberHubUserId),
+]];
 $mod = $memberHubTheme === 'bo' ? 'member-hub-nav--bo' : 'member-hub-nav--lms';
 ?>
 <nav class="member-hub-nav <?= htmlspecialchars($mod, ENT_QUOTES, 'UTF-8') ?>" aria-label="Espaces du membre">
-    <p class="member-hub-nav__lead">Trois écrans, un même membre : la fiche pour le quotidien RH, le compte pour l’accès, le dossier pour l’identité opérationnelle.</p>
+    <p class="member-hub-nav__lead">Point d’entrée unique : consultez et pilotez toute la situation du membre depuis sa fiche Effectifs.</p>
     <ul class="member-hub-nav__list">
         <?php foreach ($hubLinks as $link): ?>
             <?php $active = $memberHubCurrent === $link['id']; ?>

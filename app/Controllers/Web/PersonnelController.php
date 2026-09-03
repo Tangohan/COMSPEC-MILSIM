@@ -353,6 +353,15 @@ class PersonnelController
             return Response::redirect(url('personnel/me'));
         }
 
+        // L'annuaire historique est désormais une porte d'entrée vers le bureau Effectifs.
+        // On conserve la recherche afin que les favoris et liens partagés restent utiles.
+        if (EffectifsLmsAccess::allows(Gate::getInstance())) {
+            $query = trim((string) $request->query('q', ''));
+            $target = effectifs_workspace_url();
+
+            return Response::redirect($target . ($query !== '' ? '?' . http_build_query(['q' => $query]) : ''));
+        }
+
         $query = trim((string) $request->query('q', ''));
         $gate = Gate::getInstance();
         $canSeeInactive = EffectifsLmsAccess::allows($gate) || EffectifsLmsAccess::canManageStatus($gate);
@@ -660,7 +669,8 @@ class PersonnelController
 
         $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
             && $steamIdResolved !== null
-            && $canEditProfile;
+            && $canEditProfile
+            && $personnelViewMode !== 'public';
 
         $armaPlaytime = null;
         if ($isSelf || $canStaffView) {
@@ -1168,6 +1178,14 @@ class PersonnelController
         ]);
     }
 
+    /** Affiche l'éditeur de dossier directement dans le bureau Effectifs. */
+    public function editFromEffectifs(Request $request, array $params = []): Response
+    {
+        $params['_effectifs_context'] = true;
+
+        return $this->edit($request, $params);
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();
@@ -1184,6 +1202,13 @@ class PersonnelController
         $isSelf = ($currentUserId === (int) $target['id']);
         if (!$isSelf && !$this->canStaffEditPersonnel()) {
             return $this->personnelForbiddenResponse(false);
+        }
+        $fromEffectifs = !empty($params['_effectifs_context']);
+        // L'ancienne page personnel reste utilisable par un membre pour sa propre fiche.
+        // Pour une édition effectuée par l'équipe RH, Effectifs est désormais l'unique
+        // espace de travail ; les anciens favoris rejoignent donc l'URL canonique.
+        if (!$isSelf && !$fromEffectifs && EffectifsLmsAccess::allows(Gate::getInstance())) {
+            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -1318,9 +1343,12 @@ class PersonnelController
             }
         }
 
-        return Response::view('layout.main', [
+        return Response::view($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main', [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
+            'effectifsNav' => 'roster',
+            'effectifsEditContext' => $fromEffectifs,
+            'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
             'displaySettings' => $displaySettings,
@@ -1400,11 +1428,11 @@ class PersonnelController
         $advancedEditActive = $isSelf
             && function_exists('user_has_advanced_fiche_edit')
             && user_has_advanced_fiche_edit((int) $target['id']);
-        $clearanceReview = trim((string) $request->input('clearance_reviewed_at'));
-        $readinessRaw = $request->input('readiness_score');
+        $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
+        $clearanceReview = trim((string) $request->input('clearance_reviewed_at', $existingProfile['clearance_reviewed_at'] ?? ''));
+        $readinessRaw = $request->input('readiness_score', $existingProfile['readiness_score'] ?? null);
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
-        $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
         $assignmentReason = $this->normalizeReasonLabel((string) $request->input('assignment_change_reason'));
         $jobRoleReason = $this->normalizeReasonLabel((string) $request->input('job_role_change_reason'));
 
@@ -1520,7 +1548,7 @@ class PersonnelController
             // clearance_level : hors élévation, sauf mode édition avancée 24 h (grant admin).
             'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
-            'enlistment_date' => trim((string) $request->input('enlistment_date')) ?: null,
+            'enlistment_date' => trim((string) $request->input('enlistment_date', $existingProfile['enlistment_date'] ?? '')) ?: null,
             'equipment_class' => trim((string) $request->input('equipment_class')),
             'kit_assigned' => trim((string) $request->input('kit_assigned')),
             'radio_assigned' => trim((string) $request->input('radio_assigned')),
@@ -1607,12 +1635,15 @@ class PersonnelController
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         if ($advancedEditActive) {
-            $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
-            $clearanceIn = trim((string) $request->input('clearance_level'));
-            if ($clearanceIn === '') {
-                $data['clearance_level'] = null;
-            } elseif (isset($clearanceLabels[$clearanceIn])) {
-                $data['clearance_level'] = $clearanceIn;
+            $clearanceRaw = $request->input('clearance_level');
+            if ($clearanceRaw !== null) {
+                $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
+                $clearanceIn = trim((string) $clearanceRaw);
+                if ($clearanceIn === '') {
+                    $data['clearance_level'] = null;
+                } elseif (isset($clearanceLabels[$clearanceIn])) {
+                    $data['clearance_level'] = $clearanceIn;
+                }
             }
             $matriculeIn = trim((string) $request->input('matricule_internal'));
             if ($matriculeIn !== '') {
@@ -1746,7 +1777,11 @@ class PersonnelController
             try {
                 $pivotResult = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], $jobRolesParsed);
                 $primaryRoleStr = $pivotResult['primary_role_display'];
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                error_log('Échec de sauvegarde des rôles métier du dossier #' . (int) $target['id'] . ' : ' . $e->getMessage());
+                Session::flash('error', 'Le dossier a été enregistré, mais les rôles métier n’ont pas pu être sauvegardés. Exécutez les migrations puis réessayez.');
+
+                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
             }
         }
 
@@ -1942,7 +1977,7 @@ class PersonnelController
             ]);
         }
 
-        if ($isSelf || $canStaffEdit) {
+        if (($isSelf || $canStaffEdit) && $request->input('pre_platform_start_date') !== null) {
             $preRaw = trim((string) $request->input('pre_platform_start_date', ''));
             $preResult = Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
                 ->upsertPersonStartDate($tenantId, (int) $target['id'], $preRaw !== '' ? $preRaw : null);

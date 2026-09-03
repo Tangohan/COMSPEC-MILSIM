@@ -10,11 +10,18 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ElevationRequestRepository;
+use App\Repositories\BadgeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
+use App\Repositories\PersonnelAbsenceRepository;
+use App\Repositories\PersonnelHrDocumentRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelServiceHistoryRepository;
+use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
@@ -59,6 +66,13 @@ class EffectifsWorkspaceController
         private ?\App\Services\Personnel\SenioritySummaryService $senioritySummary = null,
         private ?\App\Services\Personnel\SeniorityPrePlatformService $seniorityPrePlatform = null,
         private ?\App\Services\Personnel\SeniorityEnrollmentBootstrapService $seniorityEnrollment = null,
+        private ?PersonnelAbsenceRepository $personnelAbsenceRepository = null,
+        private ?PersonnelHrDocumentRepository $personnelHrDocumentRepository = null,
+        private ?PersonnelMobilityRequestRepository $personnelMobilityRequestRepository = null,
+        private ?PersonnelOrgHistoryRepository $personnelOrgHistoryRepository = null,
+        private ?PersonnelServiceHistoryRepository $personnelServiceHistoryRepository = null,
+        private ?PersonnelStageBilanRepository $personnelStageBilanRepository = null,
+        private ?BadgeRepository $badgeRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
@@ -70,6 +84,13 @@ class EffectifsWorkspaceController
         );
         $this->seniorityPrePlatform ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
         $this->seniorityEnrollment ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class);
+        $this->personnelAbsenceRepository ??= new PersonnelAbsenceRepository();
+        $this->personnelHrDocumentRepository ??= new PersonnelHrDocumentRepository();
+        $this->personnelMobilityRequestRepository ??= new PersonnelMobilityRequestRepository();
+        $this->personnelOrgHistoryRepository ??= new PersonnelOrgHistoryRepository();
+        $this->personnelServiceHistoryRepository ??= new PersonnelServiceHistoryRepository();
+        $this->personnelStageBilanRepository ??= new PersonnelStageBilanRepository();
+        $this->badgeRepository ??= new BadgeRepository();
     }
 
     /**
@@ -213,6 +234,7 @@ class EffectifsWorkspaceController
         $viewerId = (int) Session::get('user_id');
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $badgesByUserId = $rowIds !== [] ? $this->badgeRepository->listForUsers($tenantId, $rowIds) : [];
         $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
             $rowIds,
             $viewerId
@@ -249,6 +271,7 @@ class EffectifsWorkspaceController
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
             'elevationCooldownByUserId' => $elevationCooldownByUserId,
+            'badgesByUserId' => $badgesByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -449,6 +472,33 @@ class EffectifsWorkspaceController
         $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
         $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
         $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
+        // La fiche Effectifs est le point d'entrée RH unique : elle charge également les
+        // volets auparavant dispersés dans le dossier personnel et les listes RH.
+        $qualifications = $this->personnelQualificationRepository->listForUser($id);
+        $absences = $this->personnelAbsenceRepository->tableExists()
+            ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
+            : [];
+        $hrDocuments = $this->personnelHrDocumentRepository->tableExists()
+            ? $this->personnelHrDocumentRepository->listForUser($tenantId, $id, true)
+            : [];
+        $mobilityRequests = $this->personnelMobilityRequestRepository->tableExists()
+            ? $this->personnelMobilityRequestRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $orgHistory = $this->personnelOrgHistoryRepository->schemaReady()
+            ? $this->personnelOrgHistoryRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40);
+        $stageBilans = $this->personnelStageBilanRepository->tableExists()
+            ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
+            : [];
+        $dutyPosition = '';
+        $remainingTrainingDays = 0;
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
+            $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
+        } catch (\Throwable) {
+        }
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -475,6 +525,18 @@ class EffectifsWorkspaceController
             'csrfToken' => Csrf::token(),
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
+            'memberQualifications' => $qualifications,
+            'memberAbsences' => $absences,
+            'memberHrDocuments' => $hrDocuments,
+            'memberMobilityRequests' => $mobilityRequests,
+            'memberOrgHistory' => $orgHistory,
+            'memberServiceHistory' => $serviceHistory,
+            'memberStageBilans' => $stageBilans,
+            'dutyPosition' => $dutyPosition,
+            'remainingTrainingDays' => $remainingTrainingDays,
+            'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
         ]);
     }
 
@@ -821,6 +883,32 @@ class EffectifsWorkspaceController
             default => $status,
         };
         Session::flash('success', 'Statut mis à jour : ' . $label . '.');
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    public function activateDutyPosition(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) Session::get('tenant_id');
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance()) || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Action refusée ou session expirée.');
+
+            return Response::redirect(effectifs_workspace_url('membres/' . $id));
+        }
+        $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+        $changed = $duty->applyActiveDuty($tenantId, $id, (int) Session::get('user_id'));
+        $remaining = $duty->remainingTrainingDays($tenantId, $id);
+        Session::flash(
+            $changed ? 'success' : 'warning',
+            $changed
+                ? 'Le membre est maintenant en service actif. Ses rôles fonctionnels sont inchangés.'
+                : ($remaining > 0 ? 'Formation obligatoire : encore ' . $remaining . ' jour(s).' : 'Le membre est déjà en service actif.')
+        );
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
     }
@@ -1836,6 +1924,8 @@ class EffectifsWorkspaceController
                 'job_role_display' => $rich['job_role_display'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
+                'service_number' => $rich['service_number'] ?? null,
+                'radio_assigned' => $rich['radio_assigned'] ?? null,
                 'enlistment_date_resolved' => $enlistmentResolved !== '' ? $enlistmentResolved : null,
                 'pre_platform_start' => trim((string) ($pack['pre_platform_start'] ?? '')) ?: null,
                 'seniority_days' => $seniorityDays,
@@ -1960,4 +2050,3 @@ class EffectifsWorkspaceController
         return $years . ' an' . ($years > 1 ? 's' : '');
     }
 }
-

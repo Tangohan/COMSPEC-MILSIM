@@ -22,6 +22,7 @@ $orgFoundingDate = trim((string) ($orgFoundingDate ?? ''));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
+$badgesByUserId = is_array($badgesByUserId ?? null) ? $badgesByUserId : [];
 $cooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
     if ($hours < 24) {
@@ -117,7 +118,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
 $dupScan = is_array($personnelDuplicateScan ?? null) ? $personnelDuplicateScan : [];
 $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
 ?>
-<div class="eff-catalog">
+<div class="eff-catalog eff-catalog--dark">
     <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
     <div class="mb-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -146,14 +147,18 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
     <div class="eff-catalog__head">
         <div class="min-w-0">
             <p class="eff-catalog__kicker">Ressources humaines</p>
-            <h1 class="eff-catalog__title">Tableur des effectifs</h1>
+            <h1 class="eff-catalog__title">Effectifs · annuaire opérationnel</h1>
             <p class="eff-catalog__lead">
-                Vue opérationnelle des membres de <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
-                identité, grade, fonction, affectation, rôles et indicateurs. Affectez une unité ou demandez une élévation sans quitter le tableur.
+                Un seul annuaire pour les membres de <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
+                identité, personnage, matricule, radio, distinctions, grade, fonction, affectation, rôles et indicateurs RH.
+                Affectez une unité ou demandez une élévation sans quitter le tableur.
                 Pour l’organigramme et les référentiels (non nominatif), voir <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="underline">Structure &amp; grades</a>.
             </p>
         </div>
         <div class="eff-catalog__tools">
+            <?php if ($canEditProfiles): ?>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary">Ajouter un membre</a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Demandes d’élévation</a>
             <a href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Exporter en CSV</a>
             <?php if ($hasActiveFilters): ?>
@@ -302,6 +307,7 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     <col data-col="fonction" style="width:9rem">
                     <col data-col="affectation" style="width:14rem">
                     <col data-col="roles" style="width:11rem">
+                    <col data-col="reperes" style="width:12rem">
                     <col data-col="indicateurs" style="width:14rem">
                     <col data-col="statut" style="width:7.5rem">
                     <col data-col="actions" style="width:13rem">
@@ -316,6 +322,7 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         <th data-col="fonction">Fonction<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Fonction" tabindex="0"></span></th>
                         <th data-col="affectation">Affectation<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Affectation" tabindex="0"></span></th>
                         <th data-col="roles">Rôles<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Rôles" tabindex="0"></span></th>
+                        <th data-col="reperes">Repères<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Repères" tabindex="0"></span></th>
                         <th data-col="indicateurs">Indicateurs<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Indicateurs" tabindex="0"></span></th>
                         <th data-col="statut">Statut<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Statut" tabindex="0"></span></th>
                         <th data-col="actions">Actions</th>
@@ -346,9 +353,7 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $roleVisible = array_slice($roleParts, 0, 2);
                     $roleExtra = max(0, count($roleParts) - 2);
                     $ficheUrl = effectifs_workspace_url('membres/' . $id);
-                    $editUrl = url('back-office/users/' . $id . '/edit');
-                    $personnelUrl = url('personnel/' . $id);
-                    $personnelEditUrl = url('personnel/' . $id . '/edit');
+                    $personnelEditUrl = effectifs_workspace_url('membres/' . $id);
                     $avatarUrl = function_exists('personnel_operator_portrait_url')
                         ? (string) (personnel_operator_portrait_url($row) ?? '')
                         : (function_exists('user_media_public_url')
@@ -366,6 +371,10 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         $row['clearance_level'] ?? null,
                         $row['clearance_reviewed_at'] ?? null
                     );
+                    $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($name, (string) ($row['character_name'] ?? ''));
+                    $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
+                    $radioAssigned = trim((string) ($row['radio_assigned'] ?? ''));
+                    $memberBadges = is_array($badgesByUserId[$id] ?? null) ? $badgesByUserId[$id] : [];
                     ?>
                     <tr>
                         <?php if ($canBulkAny): ?>
@@ -383,8 +392,9 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                                 <div class="eff-sheets__id-text">
                                     <strong class="eff-sheets__name"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></strong>
                                     <?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?>
-                                        <span class="eff-sheets__meta"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="eff-sheets__meta">Indicatif · <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php endif; ?>
+                                    <?php if ($character !== ''): ?><span class="eff-sheets__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                                 </div>
                             </div>
                         </td>
@@ -454,6 +464,18 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                             <?php endif; ?>
                         </td>
                         <td>
+                            <div class="eff-sheets__reperes">
+                                <span><b>Matricule</b> <?= $matricule !== '' ? htmlspecialchars($matricule, ENT_QUOTES, 'UTF-8') : '—' ?></span>
+                                <span><b>Radio</b> <?= $radioAssigned !== '' ? htmlspecialchars($radioAssigned, ENT_QUOTES, 'UTF-8') : '—' ?></span>
+                                <?php if ($memberBadges !== []): ?>
+                                    <?php $badgeNames = array_values(array_filter(array_map(static fn (array $badge): string => trim((string) ($badge['name'] ?? '')), $memberBadges))); ?>
+                                    <span class="eff-sheets__distinctions" title="<?= htmlspecialchars(implode(' · ', $badgeNames), ENT_QUOTES, 'UTF-8') ?>"><b>Distinctions</b> <?= count($memberBadges) ?> · <?= htmlspecialchars(implode(', ', array_slice($badgeNames, 0, 2)), ENT_QUOTES, 'UTF-8') ?><?= count($badgeNames) > 2 ? '…' : '' ?></span>
+                                <?php else: ?>
+                                    <span><b>Distinctions</b> —</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td>
                             <div class="eff-sheets__metrics">
                                 <span class="eff-sheets__metric" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">Anc. <?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php if ($prePlatformStart !== ''): ?>
@@ -492,9 +514,8 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         <td>
                             <div class="eff-sheets__actions">
                                 <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Fiche</a>
-                                <a href="<?= htmlspecialchars($personnelUrl, ENT_QUOTES, 'UTF-8') ?>">Dossier</a>
                                 <?php if ($canEditProfiles): ?>
-                                    <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>">Compte</a>
+                                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">Modifier</a>
                                 <?php endif; ?>
                                 <?php if ($canRequestElevation): ?>
                                     <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>

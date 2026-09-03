@@ -23,6 +23,7 @@ return static function (PDO $pdo): void {
 
     $columns = [
         'rp_last_interview_completed_at' => 'DATETIME NULL DEFAULT NULL',
+        'rp_last_medical_completed_at' => 'DATETIME NULL DEFAULT NULL',
         'rp_last_rotation_completed_at' => 'DATETIME NULL DEFAULT NULL',
         'rp_rotation_kind' => 'VARCHAR(32) NULL DEFAULT NULL',
         'rp_blood_type_confirmed' => 'VARCHAR(16) NULL DEFAULT NULL',

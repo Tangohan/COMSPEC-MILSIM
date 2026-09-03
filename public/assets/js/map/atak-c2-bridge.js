@@ -133,8 +133,11 @@
     } catch (eP) { prefs = {}; }
     var entities = state.lastUnits.map(normalizeUnit).filter(function (e) {
       if (!e || e.id == null || (e.x == null && e.lat == null)) return false;
-      if (e.status === 'LOST' && !e.keepLastKnown) return false;
-      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown) return false;
+      // Une position BFT humaine connue reste une information tactique partagee.
+      // Ne jamais faire disparaitre un joueur a cause d'un etat de liaison ou
+      // d'un reglage local : LOST/STALE change son apparence, pas sa visibilite.
+      if (e.status === 'LOST' && !e.keepLastKnown && !e.isPlayer) return false;
+      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown && !e.isPlayer) return false;
       return true;
     });
     state.manager.setEntities(entities);
@@ -170,15 +173,17 @@
     if (health === 'dead' || health === 'kia') live = 'KIA';
     else if (health === 'wounded' || health === 'injured' || health === 'unconscious') live = 'DEGRADED';
 
-    var keepLastKnown = !!(extra.ally_ai || extra.enemy_ai || extra.is_ai);
-    if (!keepLastKnown) {
-      var src = String(extra.source || '').toLowerCase();
-      keepLastKnown = src === 'ally' || src === 'enemy';
+    var isAi = !!(extra.ally_ai || extra.enemy_ai || extra.is_ai);
+    if (!isAi) {
+      var source = String(extra.source || '').toLowerCase();
+      isAi = source === 'ally' || source === 'enemy';
     }
-    if (!keepLastKnown) {
-      var csAi = String(u.call_sign || u.callsign || '').toUpperCase();
-      keepLastKnown = csAi.indexOf('ALLY-') === 0 || csAi.indexOf('ENY-') === 0;
+    if (!isAi) {
+      var aiCallsign = String(u.call_sign || u.callsign || '').toUpperCase();
+      isAi = aiCallsign.indexOf('ALLY-') === 0 || aiCallsign.indexOf('ENY-') === 0;
     }
+
+    var keepLastKnown = isAi;
 
     var ORIGIN_EPS = 0.5;
     var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : (u.x != null && u.x !== '' ? parseFloat(u.x) : NaN);
@@ -215,6 +220,7 @@
       affiliation: normalizeAffiliation(extra.affiliation || extra.affil || u.affiliation || u.side || 'friend'),
       type: mapPlatformType(u, extra),
       status: live,
+      isPlayer: !isAi,
       keepLastKnown: keepLastKnown,
       heading: headingRounded,
       speed: u.speed != null ? Math.round(Number(u.speed) || 0) : extra.speed,

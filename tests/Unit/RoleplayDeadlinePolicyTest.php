@@ -35,6 +35,14 @@ final class RoleplayDeadlinePolicyTest extends TestCase
         self::assertFalse(RoleplayDeadlinePolicy::bloodTypeNeedsConfirmation('O+', 'O+', 'O POS'));
     }
 
+    public function testBloodTypeMismatchOnlyFlagsKnownContradictions(): void
+    {
+        self::assertTrue(RoleplayDeadlinePolicy::bloodTypeMismatch('A+', 'O+'));
+        self::assertFalse(RoleplayDeadlinePolicy::bloodTypeMismatch('O+', 'O POS'));
+        self::assertFalse(RoleplayDeadlinePolicy::bloodTypeMismatch('', 'O+'));
+        self::assertFalse(RoleplayDeadlinePolicy::bloodTypeMismatch('Inconnu', 'O+'));
+    }
+
     public function testSuggestedBloodTypePrefersArmaThenDossier(): void
     {
         self::assertSame('B+', RoleplayDeadlinePolicy::suggestedBloodType('A+', 'A+', 'B+'));

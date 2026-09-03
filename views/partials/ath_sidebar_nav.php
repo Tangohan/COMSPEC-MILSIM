@@ -31,6 +31,7 @@ $athIcoPaths = [
     'path' => 'M6 3v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v4M6 3a2 2 0 1 0 .01 0M18 21a2 2 0 1 0 .01 0',
     'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
     'roleplay' => 'M12 3c3 0 5 2 5 5 0 2-1 3.5-2.5 4.5L12 21l-2.5-8.5C8 11.5 7 10 7 8c0-3 2-5 5-5z',
+    'coop' => 'M8 12h8M10 8l-4 4 4 4M14 8l4 4-4 4M5 5h14v14H5z',
 ];
 
 $athIco = static function (string $key) use ($athIcoPaths, $h): string {
@@ -71,13 +72,18 @@ $navRsvpActive = $boNavEvents && !$boNavEventInsights;
 $navRsvpHistActive = $boNavEventInsights;
 $boNavPlanning = !empty($boNavPlanning);
 $boNavMissionsPortal = !empty($boNavMissionsPortal);
+$boNavCooperation = !empty($boNavCooperation);
+$boNavCooperationMissions = !empty($boNavCooperationMissions);
+$boNavCooperationCreate = !empty($boNavCooperationCreate);
+$boNavCooperationCatalog = !empty($boNavCooperationCatalog);
+$boNavCooperationAnnouncements = !empty($boNavCooperationAnnouncements);
 
 $recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
     ? ($boRecN > 99 ? '99+' : (string) $boRecN)
     : null;
 
 $membersChildren = array_values(array_filter([
-    ['label' => 'Annuaire complet', 'href' => url('back-office/users'), 'active' => $navMembersActive],
+    ['label' => 'Effectifs', 'href' => effectifs_workspace_url(), 'active' => $navMembersActive],
     ['label' => 'Candidatures', 'href' => url('back-office/recruitments'), 'active' => $navRecruesActive, 'warn' => true],
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
@@ -111,6 +117,13 @@ $rsvpChildren = array_values(array_filter([
     ['label' => 'Inscriptions en cours', 'href' => url('back-office/events'), 'active' => $navRsvpActive, 'warn' => true],
     ['label' => 'Historique', 'href' => url('back-office/events/insights'), 'active' => $navRsvpHistActive],
 ], static fn (?array $row): bool => is_array($row)));
+
+$cooperationChildren = [
+    ['label' => 'Toutes les coopérations', 'href' => cooperation_mission_index_url(), 'active' => $boNavCooperationMissions && !$boNavCooperationCreate],
+    ['label' => 'Nouvelle coopération', 'href' => cooperation_mission_create_url(), 'active' => $boNavCooperationCreate],
+    ['label' => 'Types & modèles', 'href' => url('back-office/cooperation/catalog'), 'active' => $boNavCooperationCatalog],
+    ['label' => 'Messages d’annonce', 'href' => url('back-office/cooperation/announcements'), 'active' => $boNavCooperationAnnouncements],
+];
 
 $atakDeviceChildren = array_values(array_filter([
     ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'active' => $navAtakHubActive],
@@ -220,6 +233,13 @@ $athNavGroups = [
             ['label' => 'Opérations', 'href' => url('back-office/events'), 'icon' => 'ops', 'active' => $boNavEvents],
             ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => !empty($boNavMissionsPortal)],
             ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'orbat', 'active' => $boNavPlanning],
+            [
+                'label' => 'Coopérations inter-unités',
+                'href' => cooperation_mission_index_url(),
+                'icon' => 'coop',
+                'active' => $boNavCooperation,
+                'children' => $cooperationChildren,
+            ],
             [
                 'label' => 'RSVP',
                 'href' => url('back-office/events'),
