@@ -61,7 +61,8 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('EquipmentCoverStorage::hintText', $collection);
         self::assertStringContainsString('EquipmentCoverStorage::hintText', $tenue);
         $userIni = (string) file_get_contents($root . '/public/.user.ini');
-        self::assertStringContainsString('upload_max_filesize', $userIni);
+        self::assertMatchesRegularExpression('/^upload_max_filesize\s*=\s*0$/m', $userIni);
+        self::assertMatchesRegularExpression('/^post_max_size\s*=\s*0$/m', $userIni);
         self::assertStringContainsString('setCollectionCover', $controller);
         self::assertStringContainsString('setWardrobeCover', $repo);
         self::assertStringContainsString('cover_url', $repo);
