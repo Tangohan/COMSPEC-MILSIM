@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Athena 1.0.78 — 2026-09-03
+
+### Correction — Carte du téléphone
+
+Le cartouche Indicatif / Rôle / Groupe / Grille est de nouveau visible, en bas à gauche, au-dessus des outils carte. Le menu qui s’ouvrait au clic droit et les boutons Mesure, Grille, Itinéraire, Zone, Couches et Signet sont retirés. Les outils carte du téléphone restent affichés, sans clignoter. Relancer Arma complètement.
+
+---
+
 ## Athena 1.0.77 — 2026-09-03
 
 ### Correction — Liaison Steam, fiche opérateur, photos
