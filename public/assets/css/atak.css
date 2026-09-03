@@ -1,13 +1,13 @@
 /* COMSPEC ATAK - Th?me TAK OS / Overwatch, layout 3 colonnes */
 :root {
-  --atak-bg: #050505;
-  --atak-panel: #0c0e14;
-  --atak-panel-alt: #12151c;
-  --atak-border: rgba(148, 163, 184, 0.16);
-  --atak-text: #f4f4f0;
-  --atak-muted: #c5ced8;
-  --atak-accent: #34d399;
-  --atak-accent-dim: rgba(52, 211, 153, 0.14);
+  --atak-bg: #080b12;
+  --atak-panel: #101827;
+  --atak-panel-alt: #182238;
+  --atak-border: #2b3952;
+  --atak-text: #f5f5fe;
+  --atak-muted: #aab4c8;
+  --atak-accent: #6a6af4;
+  --atak-accent-dim: rgba(106, 106, 244, 0.18);
   --atak-success: #22c55e;
   --atak-success-glow: rgba(34, 197, 94, 0.5);
   --atak-warning: #eab308;
@@ -138,14 +138,60 @@ body.atak-page.atak-theme-light select {
 
 body.atak-page.atak-theme-light {
   color-scheme: light;
-  --atak-bg: #f4f6f8;
+  --atak-bg: #f5f5fe;
   --atak-panel: #ffffff;
-  --atak-panel-alt: #eef2f5;
-  --atak-border: #d0d7de;
-  --atak-text: #1f2933;
-  --atak-muted: #4b6074;
-  --atak-accent: #0f766e;
-  --atak-accent-dim: rgba(15, 118, 110, 0.12);
+  --atak-panel-alt: #ececfe;
+  --atak-border: #cacafb;
+  --atak-text: #161616;
+  --atak-muted: #666666;
+  --atak-accent: #000091;
+  --atak-accent-dim: rgba(0, 0, 145, 0.1);
+}
+
+html[data-atak-theme="day"] body.atak-page {
+  color-scheme: light;
+  --atak-bg: #f5f5fe;
+  --atak-panel: #ffffff;
+  --atak-panel-alt: #ececfe;
+  --atak-border: #cacafb;
+  --atak-text: #161616;
+  --atak-muted: #666666;
+  --atak-accent: #000091;
+  --atak-accent-dim: rgba(0, 0, 145, 0.1);
+}
+
+.atak-theme-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding-left: .55rem;
+  border-left: 1px solid var(--atak-border);
+  color: var(--atak-muted);
+}
+
+.atak-theme-picker__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.atak-theme-picker__select {
+  min-height: 25px;
+  padding: 3px 24px 3px 8px;
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  background: var(--atak-panel-alt);
+  color: var(--atak-text);
+  font: 700 11px/1 var(--atak-font-ui);
+  cursor: pointer;
+}
+
+.atak-theme-picker__select:hover,
+.atak-theme-picker__select:focus-visible {
+  border-color: var(--atak-accent);
+  outline: 2px solid var(--atak-accent-dim);
+  outline-offset: 1px;
 }
 
 body.atak-page.atak-theme-light .atak-header-field-control,
@@ -162,7 +208,7 @@ body.atak-page.atak-theme-light .atak-header-field-control option:checked {
 .atak-header {
   height: var(--atak-header-h);
   min-height: var(--atak-header-h);
-  background: linear-gradient(180deg, rgba(18, 22, 28, 0.98) 0%, rgba(8, 10, 14, 0.98) 100%);
+  background: var(--atak-panel);
   border-bottom: 1px solid var(--atak-border);
   display: flex;
   align-items: center;

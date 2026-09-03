@@ -78,6 +78,17 @@ if ($atakMapConfig) {
   <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script>
+    /* Applique le choix d'affichage avant les feuilles de style pour éviter un flash de thème. */
+    (function () {
+      var theme = <?= json_encode(($atakUiPrefs['theme'] ?? 'system') === 'light' ? 'day' : 'night') ?>;
+      try {
+        var savedTheme = localStorage.getItem('athena:atak-theme');
+        if (savedTheme === 'day' || savedTheme === 'night') theme = savedTheme;
+      } catch (e) {}
+      document.documentElement.dataset.atakTheme = theme;
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -218,6 +229,13 @@ if ($atakMapConfig) {
       <div class="atak-zulu" id="atak-zulu" title="Heure Zulu">--:--:-- Z</div>
     </div>
     <div class="atak-header-links">
+      <label class="atak-theme-picker" for="atak-theme-select">
+        <span class="atak-theme-picker__label">Thème</span>
+        <select id="atak-theme-select" class="atak-theme-picker__select" aria-label="Choisir le thème d’affichage">
+          <option value="day">☀ Jour</option>
+          <option value="night">☾ Nuit</option>
+        </select>
+      </label>
       <div class="atak-version-switch" role="group" aria-label="Version de l’interface">
         <span>Interface</span>
         <button type="button" data-atak-version="v1">V1</button>
@@ -3124,6 +3142,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-theme.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
     (function () {
       var HINTS_KEY = 'atak_hide_panel_hints';
