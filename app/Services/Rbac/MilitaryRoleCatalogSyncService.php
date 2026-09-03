@@ -192,8 +192,12 @@ final class MilitaryRoleCatalogSyncService
             }
 
             if ($roleId > 0 && (int) ($entry['is_visual_only'] ?? 0) === 0) {
-                // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
-                if ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
+                if ($entry['permission_baseline'] === 'all') {
+                    // Ces fonctions livrées avec accès complet doivent aussi recevoir les permissions
+                    // ajoutées après leur création. On limite strictement la copie au tenant courant.
+                    self::grantAllTenantPermissions($pdo, $tenantId, $roleId);
+                    // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
+                } elseif ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
                     self::copyPermissionsFromBaseline($pdo, $tenantId, $roleId, $entry['permission_baseline']);
                 }
             }
@@ -314,6 +318,20 @@ final class MilitaryRoleCatalogSyncService
         $st->execute([$roleId]);
 
         return (int) $st->fetchColumn();
+    }
+
+    /** Accorde toutes les permissions appartenant au tenant, sans inclure les droits plateforme. */
+    private static function grantAllTenantPermissions(PDO $pdo, int $tenantId, int $roleId): void
+    {
+        $permissionIds = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ?');
+        $permissionIds->execute([$tenantId]);
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        while ($permissionId = $permissionIds->fetchColumn()) {
+            $permissionId = (int) $permissionId;
+            if ($permissionId > 0) {
+                $link->execute([$roleId, $permissionId]);
+            }
+        }
     }
 
     private static function upsertPersonnelJobRole(
