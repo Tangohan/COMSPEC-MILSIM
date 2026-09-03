@@ -34,7 +34,6 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
                 <div class="rounded-lg bg-slate-50 px-2 py-2"><p class="text-lg font-black text-slate-900"><?= array_sum(array_map(static fn ($v): int => (int) $v, $permCounts)) ?></p><p class="text-[10px] uppercase text-slate-500">Droits liés</p></div>
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
-                <a href="<?= url('back-office/personnel-job-roles/kits') ?>" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">Kits d’accès</a>
                 <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Attributions effectifs</a>
                 <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Nouveau rôle</a>
             </div>

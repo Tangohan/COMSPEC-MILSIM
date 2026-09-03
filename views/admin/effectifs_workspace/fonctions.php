@@ -20,14 +20,12 @@ $categoryCount = count($categories);
             <h1 class="eff-catalog__title">Fonctions</h1>
             <p class="eff-catalog__lead">
                 Les fonctions figurent sur les dossiers personnel — radio, médic, logistique, etc. —
-                distinctes des rôles d’administration. Pour ne pas parcourir tout le catalogue,
-                commencez par les kits de fonctions.
+                distinctes des rôles d’administration.
             </p>
         </div>
         <?php if ($canManageAssignments): ?>
         <div class="eff-catalog__tools">
-            <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars(url('back-office/personnel-job-roles/kits'), ENT_QUOTES, 'UTF-8') ?>">Kits d’accès</a>
-            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/personnel-job-roles'), ENT_QUOTES, 'UTF-8') ?>">Référentiel des emplois</a>
+            <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars(url('back-office/personnel-job-roles'), ENT_QUOTES, 'UTF-8') ?>">Référentiel des emplois</a>
             <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>">Attributions</a>
         </div>
         <?php endif; ?>

@@ -149,7 +149,6 @@ return [
         ['path' => 'back-office/roles-functions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CELLULE S1', 'title' => 'Doctrine des fonctions', 'subtitle' => 'Référentiel des fonctions, relations de commandement entre les rôles de la communauté et suivi des postes qui doivent être pourvus.', 'css' => ['back-office-doctrine.css'], 'quick' => [
             ['label' => 'Référentiel', 'href' => 'back-office/roles-functions/referentiel'],
             ['label' => 'Catalogue', 'href' => 'back-office/roles-functions/catalogue'],
-            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Obligatoires', 'href' => 'back-office/roles-functions#rf-obligatoires'],
             ['label' => 'Graphe', 'href' => 'back-office/roles-functions#rf-graphe'],
         ]],
@@ -159,12 +158,10 @@ return [
             ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
         ]],
         ['path' => 'back-office/personnel-job-roles/assignments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Attributions métier', 'subtitle' => 'Attribuez les emplois du référentiel à chaque membre de l’effectif.', 'quick' => [
-            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
         ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois & missions', 'subtitle' => 'Référentiel des emplois métier, catégories et droits associés.', 'quick' => [
-            ['label' => 'Kits d’accès', 'href' => 'back-office/personnel-job-roles/kits'],
             ['label' => 'Affectations', 'href' => 'back-office/personnel-job-roles/assignments'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
