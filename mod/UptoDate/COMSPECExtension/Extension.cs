@@ -6392,8 +6392,21 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
-            multipart = null; // ownership transferred to request
+            // Bufferiser le multipart complet, pas seulement l'image. Selon le handler HTTP
+            // disponible sur le poste, MultipartFormDataContent peut encore être envoyé en
+            // chunked même si la partie image connaît sa taille. PHP ignore alors le body et
+            // laisse $_FILES vide. Un ByteArrayContent externe impose le Content-Length réel.
+            var multipartContentType = multipart.Headers.ContentType?.ToString()
+                ?? throw new InvalidOperationException("multipart content type missing");
+            var multipartBytes = await multipart.ReadAsByteArrayAsync().ConfigureAwait(false);
+            multipart.Dispose();
+            multipart = null;
+            var bufferedMultipart = new ByteArrayContent(multipartBytes);
+            bufferedMultipart.Headers.ContentType = MediaTypeHeaderValue.Parse(multipartContentType);
+            bufferedMultipart.Headers.ContentLength = multipartBytes.Length;
+
+            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = bufferedMultipart };
+            req.Headers.TransferEncodingChunked = false;
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;

@@ -10,11 +10,15 @@ Cliché trouvé sur le PC (`NotifyNewPhoto` OK) puis envoi vers le poste.
 
 ## Cause
 
-Le corps multipart partait en flux chunké. PHP ne remplissait pas `$_FILES`.
+Seule la partie image était bufferisée. Selon le handler HTTP .NET disponible sur le poste,
+le conteneur multipart complet pouvait encore partir en flux chunké. PHP ne remplissait alors
+pas `$_FILES`.
 
 ## Correctif
 
-Envoi bufferisé (`ByteArrayContent` + `Content-Length`) sous le champ `image`. Journal serveur si le fichier manque encore.
+Envoi du multipart complet en `ByteArrayContent`, avec son type (boundary inclus), son
+`Content-Length` réel et le transfert chunké explicitement désactivé. L'image reste sous le
+champ `image`. Journal serveur si le fichier manque encore.
 
 ## Fichiers touchés
 
