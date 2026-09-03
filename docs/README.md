@@ -87,6 +87,7 @@ Doctrine d'emploi
 | Public bulletins | `docs/dev/` | SPOTREP / TECHREP |
 | Bug memory | `docs/bugs/` | Keep; not doctrine |
 | Release journal | `CHANGELOG-ATAK.md` | Product changelog |
+| Référentiel métiers SOF américains | [REFERENTIEL-METIERS-OPERATIONS-SPECIALES-US.md](REFERENTIEL-METIERS-OPERATIONS-SPECIALES-US.md) | Fiches CCT, PJ, TACP, 160th SOAR et cadrage historique du B Squadron |
 | Migration of old C2 notes | [_migration/DOCUMENT-MAPPING.md](_migration/DOCUMENT-MAPPING.md) | |
 | Archived C2 drafts | [archive/legacy-atak/](archive/legacy-atak/) | Absorbed, not authoritative |
 

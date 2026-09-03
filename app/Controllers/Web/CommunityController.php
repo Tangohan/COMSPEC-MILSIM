@@ -121,7 +121,8 @@ class CommunityController
 
         if ($publicLayout === 'showcase') {
             $effectif = $this->userRepository->countActiveMembers($tid);
-            $unitsPublic = $this->unitRepository->countPublicForTenant($tid);
+            $publicUnits = $this->unitRepository->listPublicForTenant($tid);
+            $unitsPublic = count($publicUnits);
             $activityPct = $this->userRepository->activityRateLast30DaysPercent($tid);
             $rosterCount = $this->userRepository->countPublicRosterOptIn($tid);
             $tz = (string) ($settings['timezone'] ?? 'Europe/Paris');
@@ -133,7 +134,6 @@ class CommunityController
                 'roster_public_count' => $rosterCount,
             ];
             $showcaseVm = TenantCommunityProfileService::getShowcaseViewModel($communityConfig, $computed, $tenant, $settings);
-            $publicUnits = $this->unitRepository->listPublicForTenant($tid);
             $unitMemberCounts = $this->unitRepository->countActiveMembersByUnitForTenant($tid);
             $cmdIds = [];
             foreach ($publicUnits as $pu) {

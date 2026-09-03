@@ -66,7 +66,6 @@ if ($isAthShell):
     require base_path('views/partials/ath_kpis.php');
     ?>
 <div class="flex flex-wrap gap-2 ath-rise">
-    <a href="<?= url('back-office/personnel-job-roles/kits') ?>" class="ath-btn<?= $activeTab === 'kits' ? ' ath-btn--solid' : '' ?>">Kits d’accès</a>
     <a href="<?= url('back-office/personnel-job-roles') ?>" class="ath-btn<?= $activeTab === 'referentiel' ? ' ath-btn--solid' : '' ?>">Référentiel</a>
     <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="ath-btn<?= $activeTab === 'assignments' ? ' ath-btn--solid' : '' ?>">Attributions effectifs</a>
     <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="ath-btn">Nouvel emploi</a>
@@ -74,12 +73,6 @@ if ($isAthShell):
 <?php endif; ?>
 
 <div class="<?= $isAthShell ? 'pjr-assignments ath-dash-page' : 'mx-auto max-w-7xl px-6 py-12' ?>">
-    <?php if (!empty($functionKitsActive)): ?>
-    <p class="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
-        Des kits d’accès (lecture, recrutement, paramètres…) sont actifs pour cette communauté.
-        <a class="font-semibold underline" href="<?= $h(url('back-office/personnel-job-roles/kits')) ?>">Gérer les kits d’accès</a>
-    </p>
-    <?php endif; ?>
     <?php if (!$isAthShell): ?>
     <?php require __DIR__ . '/_nav.php'; ?>
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">

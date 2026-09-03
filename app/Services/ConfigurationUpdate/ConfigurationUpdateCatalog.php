@@ -325,7 +325,8 @@ final class ConfigurationUpdateCatalog
                 blocking: false,
                 dependsOn: [],
                 sortOrder: 81,
-                isApplicable: static fn (int $tenantId): bool => true,
+                // Fonction conservée mais temporairement retirée des surfaces de navigation.
+                isApplicable: static fn (int $tenantId): bool => false,
                 isSatisfied: fn (int $tenantId): bool => $p->hasFunctionKitsReviewed($tenantId),
             ),
             new ConfigurationUpdateDefinition(

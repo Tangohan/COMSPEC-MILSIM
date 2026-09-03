@@ -33,6 +33,7 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
+use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
@@ -461,9 +462,25 @@ class EffectifsWorkspaceController
             }
         }
         $jobRoles = [];
+        $jobRoleOptions = [];
+        $jobRoleMax = 5;
+        $jobRolesAvailable = false;
         if ($this->personnelJobRoleRepository->tablesExist()) {
             $byUser = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$id]);
             $jobRoles = $byUser[$id] ?? [];
+            $jobRolesAvailable = $this->personnelJobRoleRepository->pivotTableExists();
+            if ($jobRolesAvailable) {
+                $tenantSettings = $this->tenantRepository->getSettings($tenantId);
+                $jobRoleSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
+                $communitySettings = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+                $jobRoleMax = (int) $jobRoleSettings['max_roles_per_member'];
+                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
+                    $tenantId,
+                    (bool) $jobRoleSettings['show_english_labels'],
+                    (bool) $jobRoleSettings['show_category_in_role_picklist'],
+                    OrganizationRoleLabels::mode($communitySettings, $this->tenantRepository->findById($tenantId) ?: [])
+                );
+            }
         }
         $gate = Gate::getInstance();
         $units = $this->unitRepository->allForTenant($tenantId);
@@ -508,6 +525,9 @@ class EffectifsWorkspaceController
             'memberPersonnelProfile' => $personnelProfile,
             'memberRoleNames' => $roleNames,
             'memberJobRoles' => $jobRoles,
+            'jobRoleOptions' => $jobRoleOptions,
+            'jobRoleMax' => $jobRoleMax,
+            'jobRolesAvailable' => $jobRolesAvailable,
             'orgRoles' => $roles,
             'orgUnits' => $units,
             'communityName' => $this->communityNameForTenant($tenantId),
@@ -832,6 +852,91 @@ class EffectifsWorkspaceController
             'departurePage' => $page,
             'departureTotalPages' => max(1, (int) ceil($total / $perPage)),
         ]);
+    }
+
+    /** Met à jour les fonctions métier directement depuis la fiche Effectifs. */
+    public function updateMemberJobRoles(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = effectifs_workspace_url('membres/' . $id);
+        if (!EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à attribuer les fonctions.');
+
+            return Response::redirect($redirect);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
+        if (!$user) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!$this->personnelJobRoleRepository->tablesExist() || !$this->personnelJobRoleRepository->pivotTableExists()) {
+            Session::flash('error', 'La gestion des fonctions est indisponible tant que les migrations ne sont pas appliquées.');
+
+            return Response::redirect($redirect);
+        }
+
+        $rawIds = $request->input('job_role_ids', []);
+        $ids = is_array($rawIds)
+            ? array_values(array_unique(array_filter(array_map('intval', $rawIds), static fn (int $roleId): bool => $roleId > 0)))
+            : [];
+        $settings = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+        $ids = array_slice($ids, 0, (int) $settings['max_roles_per_member']);
+        $primaryId = (int) $request->input('primary_job_role_id', 0);
+        if (!in_array($primaryId, $ids, true)) {
+            $primaryId = $ids[0] ?? 0;
+        }
+        $current = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$id]);
+        $details = [];
+        foreach ($current[$id] ?? [] as $assigned) {
+            $details[(int) ($assigned['personnel_job_role_id'] ?? 0)] = trim((string) ($assigned['role_detail'] ?? ''));
+        }
+        $slots = array_map(static fn (int $roleId): array => [
+            'personnel_job_role_id' => $roleId,
+            'role_detail' => $details[$roleId] ?? '',
+            'is_primary' => $roleId === $primaryId,
+        ], $ids);
+
+        $before = $this->structureChangeNotification->snapshot($tenantId, $id);
+        try {
+            $result = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $id, $slots);
+            $display = (string) $result['primary_role_display'];
+            if ($settings['append_secondaries_to_primary_display'] && $result['secondary_role_display'] !== '') {
+                $display = $display !== '' ? $display . ' · ' . $result['secondary_role_display'] : $result['secondary_role_display'];
+            }
+            $profile = $this->personnelProfileRepository->getByUserId($id) ?? [];
+            $unitId = (int) ($profile['primary_unit_id'] ?? 0);
+            if ($unitId > 0) {
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($id, $unitId, mb_substr($display, 0, 100));
+            }
+            $actorId = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                $id,
+                $actorId > 0 ? $actorId : null,
+                $before,
+                $this->structureChangeNotification->snapshot($tenantId, $id)
+            );
+        } catch (\Throwable) {
+            Session::flash('error', 'Enregistrement impossible (fonctions).');
+
+            return Response::redirect($redirect);
+        }
+
+        Session::flash('success', 'Fonctions du membre mises à jour.');
+
+        return Response::redirect($redirect);
     }
 
     public function quickStatus(Request $request, array $params = []): Response

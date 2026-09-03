@@ -6,6 +6,9 @@ $id = (int) ($m['id'] ?? 0);
 $assignments = is_array($memberAssignments ?? null) ? $memberAssignments : [];
 $roleNames = is_array($memberRoleNames ?? null) ? $memberRoleNames : [];
 $jobRoles = is_array($memberJobRoles ?? null) ? $memberJobRoles : [];
+$jobRoleOptions = is_array($jobRoleOptions ?? null) ? $jobRoleOptions : [];
+$jobRoleMax = max(1, (int) ($jobRoleMax ?? 5));
+$jobRolesAvailable = (bool) ($jobRolesAvailable ?? false);
 $units = is_array($orgUnits ?? null) ? $orgUnits : [];
 $orgRoles = is_array($orgRoles ?? null) ? $orgRoles : [];
 $memberRoleIds = array_values(array_unique(array_map('intval', $memberRoleIds ?? [])));
@@ -325,8 +328,57 @@ $memberHubTheme = 'lms';
         <?php endif; ?>
     </article>
 
+    <article class="eff-card" id="fonctions">
+        <h2 class="eff-card__title">Fonctions</h2>
+        <?php if ($jobRoles !== []): ?>
+            <div class="eff-tags" style="margin-bottom:0.85rem">
+                <?php foreach ($jobRoles as $jr): ?>
+                    <span class="eff-tag">
+                        <?= htmlspecialchars((string) ($jr['role_name'] ?? 'Fonction'), ENT_QUOTES, 'UTF-8') ?>
+                        <?php if (!empty($jr['is_primary'])): ?> · principale<?php endif; ?>
+                    </span>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <p class="eff-card__lead">Aucune fonction attribuée.</p>
+        <?php endif; ?>
+        <?php if ($canManageAssignments && $jobRolesAvailable && $jobRoleOptions !== []): ?>
+            <?php
+            $assignedJobRoleIds = array_map(static fn (array $jr): int => (int) ($jr['personnel_job_role_id'] ?? 0), $jobRoles);
+            $primaryJobRoleId = 0;
+            foreach ($jobRoles as $jr) {
+                if (!empty($jr['is_primary'])) {
+                    $primaryJobRoleId = (int) ($jr['personnel_job_role_id'] ?? 0);
+                    break;
+                }
+            }
+            ?>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/fonctions'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <fieldset class="eff-role-grid">
+                    <legend>Attribuer les fonctions (<?= $jobRoleMax ?> maximum)</legend>
+                    <?php foreach ($jobRoleOptions as $option): ?>
+                        <?php $jobRoleId = (int) ($option['id'] ?? 0); ?>
+                        <label>
+                            <input type="checkbox" name="job_role_ids[]" value="<?= $jobRoleId ?>" <?= in_array($jobRoleId, $assignedJobRoleIds, true) ? 'checked' : '' ?>>
+                            <?= htmlspecialchars((string) ($option['label'] ?? $option['name'] ?? 'Fonction'), ENT_QUOTES, 'UTF-8') ?>
+                            <span class="eff-card__hint"><input type="radio" name="primary_job_role_id" value="<?= $jobRoleId ?>" <?= $primaryJobRoleId === $jobRoleId ? 'checked' : '' ?>> principale</span>
+                        </label>
+                    <?php endforeach; ?>
+                </fieldset>
+                <p class="eff-card__hint">Cochez les fonctions exercées et désignez celle qui doit apparaître en priorité dans le dossier et l’ordre de bataille.</p>
+                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer les fonctions</button>
+            </form>
+        <?php elseif ($canManageAssignments && $jobRolesAvailable): ?>
+            <p class="eff-card__lead">Le référentiel ne contient encore aucune fonction.</p>
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le référentiel des fonctions</a>
+        <?php elseif ($canManageAssignments): ?>
+            <p class="eff-card__lead">La gestion des fonctions sera disponible après application des migrations.</p>
+        <?php endif; ?>
+    </article>
+
     <article class="eff-card">
-        <h2 class="eff-card__title">Rôles</h2>
+        <h2 class="eff-card__title">Rôles et accès</h2>
         <?php if ($roleNames === []): ?>
             <p class="eff-card__lead">Aucun rôle attribué.</p>
         <?php else: ?>
@@ -335,18 +387,6 @@ $memberHubTheme = 'lms';
                     <span class="eff-tag"><?= htmlspecialchars((string) $rn, ENT_QUOTES, 'UTF-8') ?></span>
                 <?php endforeach; ?>
             </div>
-        <?php endif; ?>
-        <?php if ($jobRoles !== []): ?>
-            <p class="eff-card__lead" style="margin-bottom:0.65rem">
-                Emplois :
-                <?php
-                $jrLabels = [];
-                foreach ($jobRoles as $jr) {
-                    $jrLabels[] = (string) ($jr['role_name'] ?? '');
-                }
-                echo htmlspecialchars(implode(', ', array_filter($jrLabels)), ENT_QUOTES, 'UTF-8');
-                ?>
-            </p>
         <?php endif; ?>
         <?php if ($canManageRoles && $orgRoles !== []): ?>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
