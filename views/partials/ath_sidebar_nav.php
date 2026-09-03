@@ -77,7 +77,7 @@ $recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
     : null;
 
 $membersChildren = array_values(array_filter([
-    ['label' => 'Annuaire complet', 'href' => url('back-office/users'), 'active' => $navMembersActive],
+    ['label' => 'Effectifs', 'href' => effectifs_workspace_url(), 'active' => $navMembersActive],
     ['label' => 'Candidatures', 'href' => url('back-office/recruitments'), 'active' => $navRecruesActive, 'warn' => true],
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]

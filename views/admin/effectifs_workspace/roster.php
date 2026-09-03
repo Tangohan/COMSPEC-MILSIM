@@ -154,6 +154,9 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
             </p>
         </div>
         <div class="eff-catalog__tools">
+            <?php if ($canEditProfiles): ?>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary">Ajouter un membre</a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Demandes d’élévation</a>
             <a href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Exporter en CSV</a>
             <?php if ($hasActiveFilters): ?>
@@ -346,8 +349,6 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $roleVisible = array_slice($roleParts, 0, 2);
                     $roleExtra = max(0, count($roleParts) - 2);
                     $ficheUrl = effectifs_workspace_url('membres/' . $id);
-                    $editUrl = url('back-office/users/' . $id . '/edit');
-                    $personnelUrl = url('personnel/' . $id);
                     $personnelEditUrl = effectifs_workspace_url('membres/' . $id . '/modifier');
                     $avatarUrl = function_exists('personnel_operator_portrait_url')
                         ? (string) (personnel_operator_portrait_url($row) ?? '')
@@ -492,9 +493,8 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                         <td>
                             <div class="eff-sheets__actions">
                                 <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Fiche</a>
-                                <a href="<?= htmlspecialchars($personnelUrl, ENT_QUOTES, 'UTF-8') ?>">Dossier</a>
                                 <?php if ($canEditProfiles): ?>
-                                    <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>">Compte</a>
+                                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">Modifier</a>
                                 <?php endif; ?>
                                 <?php if ($canRequestElevation): ?>
                                     <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>

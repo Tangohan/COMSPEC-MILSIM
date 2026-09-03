@@ -111,8 +111,8 @@ $navClass = static function (string $id) use ($active): string {
             <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
                 <b>·</b><span>Hub organisation<em>Grades, structure, ancienneté</em></span>
             </a>
-            <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
-                <b>·</b><span>Comptes membres<em>Création et édition détaillée</em></span>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
+                <b>·</b><span>Nouveau membre<em>Créer directement dans Effectifs</em></span>
             </a>
             <a href="<?= htmlspecialchars(url('orbat'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
                 <b>·</b><span>ORBAT<em>Vue hiérarchique</em></span>

@@ -78,4 +78,12 @@ final class PersonnelDutyPositionServiceTest extends TestCase
         self::assertSame('En formation', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_TRAINING));
         self::assertSame('En service actif', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_ACTIVE));
     }
+
+    public function testMandatoryTrainingDurationIsComputedInWholeDays(): void
+    {
+        $start = 1_700_000_000;
+        self::assertSame(14, PersonnelDutyPositionService::remainingDaysFromStart(14, $start, $start));
+        self::assertSame(8, PersonnelDutyPositionService::remainingDaysFromStart(14, $start, $start + 6 * 86400));
+        self::assertSame(0, PersonnelDutyPositionService::remainingDaysFromStart(14, $start, $start + 20 * 86400));
+    }
 }

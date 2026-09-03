@@ -1627,6 +1627,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\MemberIntegrationRepository::class),
+                self::get(TenantRepository::class),
                 \App\Core\Database::getPdo(),
             ),
             \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class => new \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob(
