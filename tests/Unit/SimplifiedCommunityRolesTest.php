@@ -20,6 +20,16 @@ final class SimplifiedCommunityRolesTest extends TestCase
         self::assertSame('Formateur', $labels['trainer']);
         self::assertSame('Responsable des formateurs', $labels['senior_instructor']);
         self::assertSame('Instructeur', $labels['instructor']);
+        self::assertSame(TenantDefaultRoleDefinitions::allowedRoleSlugs(), array_keys($labels));
+        self::assertSame([], TenantDefaultRoleDefinitions::organicStaffRoles());
+    }
+
+    public function testOnlyRequestedRolesHaveDefaultPermissions(): void
+    {
+        self::assertSame(
+            TenantDefaultRoleDefinitions::allowedRoleSlugs(),
+            array_keys(TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles())
+        );
     }
 
     public function testRolePermissionsMatchPageResponsibilities(): void
