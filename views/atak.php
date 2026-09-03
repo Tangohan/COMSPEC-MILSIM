@@ -627,9 +627,24 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-key">Traces d’unités</span>
           <span class="atak-sound-pref-check">
             <input type="checkbox" id="atak-show-unit-trails" checked />
-            <span>Fil coloré : téléphone, véhicule, à pied. Tirets = doute. Croix = perte de liaison.</span>
+            <span>Interrupteur général : masque toutes les traces, y compris les traces retardées.</span>
           </span>
         </label>
+        <p class="atak-game-link-hint">Types de traces visibles — ces choix sont conservés sur cet appareil.</p>
+        <?php foreach ([
+          'phone' => ['Téléphone', 'Traces des appareils mobiles'],
+          'vehicle' => ['Véhicule', 'Traces des véhicules terrestres'],
+          'infantry' => ['À pied', 'Traces des personnels à pied'],
+          'air' => ['Aérien', 'Traces des appareils aériens'],
+        ] as $trailKind => [$trailLabel, $trailHint]): ?>
+          <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-unit-trail-<?= $trailKind ?>">
+            <span class="atak-sound-pref-key"><?= $trailLabel ?></span>
+            <span class="atak-sound-pref-check">
+              <input type="checkbox" id="atak-show-unit-trail-<?= $trailKind ?>" checked />
+              <span><?= $trailHint ?></span>
+            </span>
+          </label>
+        <?php endforeach; ?>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-unit-ghost-trails">
           <span class="atak-sound-pref-key">Traces retardées</span>
           <span class="atak-sound-pref-check">
