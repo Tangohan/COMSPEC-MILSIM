@@ -16,7 +16,6 @@ $athKpis = [
 require base_path('views/partials/ath_kpis.php');
 ?>
 <div class="flex flex-wrap gap-2 mb-6 ath-rise">
-    <a href="<?= url('back-office/personnel-job-roles/kits') ?>" class="ath-btn<?= $activeTab === 'kits' ? ' ath-btn--solid' : '' ?>">Kits d’accès</a>
     <a href="<?= url('back-office/personnel-job-roles') ?>" class="ath-btn<?= $activeTab === 'referentiel' ? ' ath-btn--solid' : '' ?>">Référentiel</a>
     <a href="<?= url('back-office/personnel-job-roles/assignments') ?>" class="ath-btn<?= $activeTab === 'assignments' ? ' ath-btn--solid' : '' ?>">Attributions effectifs</a>
     <a href="<?= url('back-office/personnel-job-roles/roles/create') ?>" class="ath-btn">Nouvel emploi</a>

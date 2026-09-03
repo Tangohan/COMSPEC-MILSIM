@@ -80,16 +80,20 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         self::assertStringContainsString('sélectionné', $js);
     }
 
-    public function testPortalSurfacesPointToKits(): void
+    public function testPortalSurfacesTemporarilyHideKits(): void
     {
         $root = $this->root();
         $sidebar = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $search = (string) file_get_contents($root . '/app/Services/Portal/BackOfficeSearchService.php');
+        $updates = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
         $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
         $fonctions = (string) file_get_contents($root . '/views/admin/effectifs_workspace/fonctions.php');
-        self::assertStringContainsString('Kits d’accès', $sidebar);
-        self::assertStringContainsString('Kits d’accès', $search);
-        self::assertStringContainsString('back-office/personnel-job-roles/kits', $pages);
-        self::assertStringContainsString('Kits d’accès', $fonctions);
+        self::assertStringNotContainsString('back-office/personnel-job-roles/kits', $sidebar);
+        self::assertStringNotContainsString('back-office/personnel-job-roles/kits', $search);
+        self::assertStringContainsString('FUNCTION_KITS_V1', $updates);
+        self::assertStringContainsString('isApplicable: static fn (int $tenantId): bool => false', $updates);
+        self::assertSame(1, substr_count($pages, "'path' => 'back-office/personnel-job-roles/kits'"));
+        self::assertSame(1, substr_count($pages, 'back-office/personnel-job-roles/kits'));
+        self::assertStringNotContainsString('back-office/personnel-job-roles/kits', $fonctions);
     }
 }
