@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(199, $byKind['update']);
-        self::assertCount(205, $all);
+        self::assertSame(202, $byKind['update']);
+        self::assertCount(208, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -663,6 +663,18 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($mapChrome);
         self::assertSame('00399', $mapChrome['number_pad']);
         self::assertStringContainsString('cartouche', strtolower((string) $mapChrome['title']));
+        $mapBar = DevDispatchCatalog::find('update', '400');
+        self::assertNotNull($mapBar);
+        self::assertSame('00400', $mapBar['number_pad']);
+        self::assertStringContainsString('indicatif', strtolower((string) $mapBar['title']));
+        $steamFallback = DevDispatchCatalog::find('update', '401');
+        self::assertNotNull($steamFallback);
+        self::assertSame('00401', $steamFallback['number_pad']);
+        self::assertStringContainsString('steam', strtolower((string) $steamFallback['title']));
+        $effectifsDark = DevDispatchCatalog::find('update', '402');
+        self::assertNotNull($effectifsDark);
+        self::assertSame('00402', $effectifsDark['number_pad']);
+        self::assertStringContainsString('effectifs', strtolower((string) $effectifsDark['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

@@ -9,6 +9,22 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Overwatch 1.18.9 — 2026-09-03
+
+### Correction — Identifiant Steam sur la liaison de secours
+
+L’identifiant Steam reste associé au lancement, y compris si la liaison passe par le chemin de secours. Une position sans identifiant n’est plus envoyée : le jeu réessaie dès que Steam est prêt. Le journal Liaison n’enregistre plus qu’un refus « identifiant manquant » de temps en temps, plus une ligne toutes les secondes. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.79 — 2026-09-03
+
+### Correction — Bouton zoom et bandeau d’identité
+
+Le bouton moins qui se décalait en haut à droite de la carte est retiré. Sous la météo et l’heure, une bande noire affiche l’indicatif, le rôle, la grille et la fréquence radio. Relancer Arma complètement.
+
+---
+
 ## Athena 1.0.78 — 2026-09-03
 
 ### Correction — Carte du téléphone

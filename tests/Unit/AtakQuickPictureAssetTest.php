@@ -36,7 +36,7 @@ final class AtakQuickPictureAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_OverlayCaptureRtt', $get);
 
         self::assertStringContainsString('AddSeconds(-180)', $dll);
-        self::assertStringContainsString('ExtensionVersion = "1.18.8"', $dll);
+        self::assertStringContainsString('ExtensionVersion = "1.18.9"', $dll);
 
         self::assertStringContainsString('Quick Picture', $note);
         self::assertStringContainsString('file_not_found', $note);

@@ -170,7 +170,7 @@ final class AtakSceneIngestAssetTest extends TestCase
     public function testExtensionDoesNotTreatHttpZeroAsSaturation(): void
     {
         $cs = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('1.18.8', $cs);
+        self::assertStringContainsString('1.18.9', $cs);
         self::assertStringContainsString('IsBestEffortEndpoint', $cs);
         self::assertStringContainsString('NoteBestEffortCooldown', $cs);
         self::assertStringContainsString('IsTacticalQueuedEndpoint', $cs);

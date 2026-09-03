@@ -14,7 +14,9 @@
         function refresh() {
             var checked = document.querySelectorAll('.eff-bulk-check:checked').length;
             if (countEl) {
-                countEl.textContent = checked + ' sélectionné(s)';
+                countEl.textContent = checked <= 1
+                    ? checked + ' sélectionné'
+                    : checked + ' sélectionnés';
             }
             submitBtns.forEach(function (btn) {
                 btn.disabled = checked === 0;
