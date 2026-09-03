@@ -21,6 +21,9 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
 
         self::assertStringContainsString("new MarkerManager({ map: map, clustering: false })", $bridge);
         self::assertStringContainsString("addEventListener('atak:display-prefs-changed'", $bridge);
+        self::assertStringContainsString('Array.isArray(ev.detail.units)', $bridge);
+        self::assertStringContainsString('window.ATAKUnits.getUnits()', $bridge);
+        self::assertStringContainsString('if (!Array.isArray(units)) return;', $bridge);
         self::assertStringContainsString('headingRounded', $bridge);
         self::assertStringNotContainsString('_setUnitsMarkersC2Wrapped', $bridge);
 

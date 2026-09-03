@@ -117,7 +117,16 @@
 
   function wireUnitFeed() {
     window.addEventListener('atak:units-updated', function (ev) {
-      var units = (ev.detail && ev.detail.units) || [];
+      // Plusieurs modules emettent aussi cet evenement comme simple signal de
+      // rafraichissement (par exemple avec uniquement `{ count }`). Ne pas
+      // interpreter l'absence de `units` comme une liste vide : l'evenement
+      // suivant le rendu legacy effacerait aussitot tous les symboles C2.
+      var units = ev.detail && Array.isArray(ev.detail.units)
+        ? ev.detail.units
+        : (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function'
+          ? window.ATAKUnits.getUnits()
+          : null);
+      if (!Array.isArray(units)) return;
       pushUnits(units);
     });
   }
