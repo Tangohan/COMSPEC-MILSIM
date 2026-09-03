@@ -392,7 +392,10 @@ return [
                         ['label' => 'Publications formation', 'path' => 'formation/publications', 'any_permissions' => ['training.publications.manage', 'training.manage', 'training.publish', 'admin.access'], 'description' => 'Back-office publications, versionning et change log'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
                         ['label' => 'Doctrine & SOP', 'path' => 'back-office/doctrine', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
-                        ['label' => 'Coopérations inter-unités', 'path' => 'back-office/cooperation/missions', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'interteam.missions.respond', 'cooperation.missions.view', 'cooperation.missions.manage', 'cooperation.missions.respond']],
+                        ['label' => 'Coopérations inter-unités', 'path' => 'back-office/cooperation/missions', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'interteam.missions.respond', 'cooperation.missions.view', 'cooperation.missions.manage', 'cooperation.missions.create', 'cooperation.missions.respond']],
+                        ['label' => 'Nouvelle coopération', 'path' => 'back-office/cooperation/missions/create', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'cooperation.missions.manage', 'cooperation.missions.create']],
+                        ['label' => 'Types et modèles de coopération', 'path' => 'back-office/cooperation/catalog', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'cooperation.missions.manage', 'cooperation.catalog.manage']],
+                        ['label' => 'Messages d’annonce de coopération', 'path' => 'back-office/cooperation/announcements', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'cooperation.missions.manage', 'cooperation.announcements.manage']],
                     ],
                 ],
                 [

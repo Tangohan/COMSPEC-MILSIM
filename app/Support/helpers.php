@@ -986,6 +986,35 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'back-office/missions' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],
             ],
+            'back-office/cooperation/missions' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'interteam.missions.respond',
+                    'cooperation.missions.view', 'cooperation.missions.manage',
+                    'cooperation.missions.create', 'cooperation.missions.respond',
+                ],
+            ],
+            'back-office/cooperation/missions/create' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.missions.create',
+                ],
+            ],
+            'back-office/cooperation/catalog' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.catalog.manage',
+                ],
+            ],
+            'back-office/cooperation/announcements' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.announcements.manage',
+                ],
+            ],
             'back-office/personnel-job-roles' => [
                 'any_permissions' => ['admin.organization', 'admin.access', 'admin.roles.manage'],
             ],
