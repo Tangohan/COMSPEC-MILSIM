@@ -60,6 +60,16 @@ final class AtakMapUiArchitectureAssetTest extends TestCase
         self::assertStringContainsString('case "DONE"', $orders);
         self::assertStringContainsString('_world', $cas);
         self::assertStringContainsString('mapUIUpdate', $hud);
+        self::assertStringContainsString('mapUIDestroy', $hud);
+        self::assertStringNotContainsString('createToolRail', $hud);
+        $updUi = (string) file_get_contents($ui . '/fn_mapUIUpdate.sqf');
+        self::assertStringContainsString('mapUIDestroy', $updUi);
+        self::assertStringNotContainsString('mapContextMenu', $updUi);
+        self::assertStringNotContainsString('createToolRail', $updUi);
+        self::assertStringNotContainsString('createTopBar', $updUi);
+        self::assertStringContainsString('88550', $updUi);
+        self::assertStringContainsString('ctrlShow false', $updUi);
+        self::assertStringContainsString('_toolsReserve', $hud);
         self::assertStringNotContainsString('displayCtrl 46600', $layout);
         self::assertStringNotContainsString('forEach [46600', $hud);
         $page = (string) file_get_contents(

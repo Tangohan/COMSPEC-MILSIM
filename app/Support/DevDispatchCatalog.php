@@ -584,6 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(399, '2026-09-03', 'La carte du téléphone retrouve le cartouche d’identité', 'Le cartouche Indicatif, Rôle, Groupe et Grille est de nouveau lisible, au-dessus des outils carte. Le menu qui s’ouvrait au clic droit et les boutons Mesure, Grille, Itinéraire, Zone, Couches et Signet sont retirés. Les outils carte restent affichés, sans clignoter. Relancer Arma complètement après le nouveau pack', [], [
+                'Carte plus lisible, sans barre d’outils superposée',
+            ], [
+                'Le cartouche d’identité disparaissait derrière d’autres bandeaux',
+                'Les outils carte clignotaient à l’ouverture',
+                'Un menu au clic droit recouvrait la carte',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte. L’indicatif, le rôle et le groupe se lisent en bas à gauche. Les outils carte en bas à gauche restent visibles. Un clic droit ne propose plus de menu superposé.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.78'),
             $pr(398, '2026-09-03', 'La carte du téléphone se lit selon le zoom et se commande au clic', 'Sur la carte, l’indicatif d’un opérateur se simplifie en s’éloignant. Un clic droit pose un marqueur, mesure ou signale. Un ordre reçu se confirme depuis le bas de l’écran. Relancer Arma complètement après le nouveau pack', [
                 'Filtres Tout, Groupe, Alliés, Intel, Air et JTAC, plus une recherche d’indicatif',
                 'Mesure de distance et de cap, grille copiable d’un clic',

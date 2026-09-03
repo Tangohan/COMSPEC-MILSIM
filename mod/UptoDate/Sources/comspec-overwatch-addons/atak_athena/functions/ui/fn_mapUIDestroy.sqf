@@ -10,7 +10,11 @@ if (isNull _disp) exitWith {};
     _x params ["_a", "_b"];
     for "_i" from _a to _b do {
         private _c = _disp displayCtrl _i;
-        if (!isNull _c) then { ctrlDelete _c; };
+        if (!isNull _c) then {
+            _c ctrlShow false;
+            _c ctrlEnable false;
+            ctrlDelete _c;
+        };
     };
 } forEach [
     [88540, 88540],

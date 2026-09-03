@@ -1,10 +1,10 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en haut à gauche, sous la boussole
+    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en bas à gauche, au-dessus des outils carte
     - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite de la carte visible
     - zoom +/− en haut à droite
     - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif)
-    Ne pas recouvrir la boussole native (haut gauche) ni le bouton Map Tools (46600).
+    Ne jamais restyler ni masquer le bouton natif des outils carte, ni le pied d’application IceMan.
     Les cartouches restent DANS le rectangle carte visible (jamais sous le tiroir droit).
 */
 if (!hasInterface) exitWith {};
@@ -47,6 +47,7 @@ private _fncHide = {
 
 if (isNull _disp) exitWith {
     uiNamespace setVariable ["COMSPEC_MapUI_MouseWired", nil];
+    missionNamespace setVariable ["COMSPEC_MapUI_ChromeCleared", false, false];
     if (missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false]) then {
         missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", false, false];
         diag_log "[COMSPEC][MAP] Map display closed";
@@ -113,26 +114,13 @@ if (!isNull _bgGroup) then {
     };
 };
 {
-    private _c = _disp displayCtrl _x;
-    if (isNull _c) then { continue };
-    _c ctrlSetBackgroundColor _bgTile;
-    _c ctrlSetTextColor _white;
-} forEach [1300, 17000 + 1200, 17000 + 1300];
-
-{
     private _c = _disp displayCtrl (17000 + _x);
     if (isNull _c) then { continue };
     _c ctrlSetBackgroundColor _bgPanel;
     _c ctrlSetTextColor _cyan;
-    // Vanilla self-info sits on the map; our unit cartouche replaces it.
+    // Identité native IceMan : masquée, remplacée par le cartouche COMSPEC.
     _c ctrlShow false;
 } forEach [2620, 2621, 2622];
-
-{
-    private _c = _disp displayCtrl _x;
-    if (isNull _c) then { continue };
-    _c ctrlShow false;
-} forEach [2617, 2618, 2619, 2620];
 
 {
     private _c = _disp displayCtrl (17000 + _x);
@@ -223,24 +211,23 @@ if (isNil {_zoomOut getVariable "COMSPEC_ATAK_ZoomWired"}) then {
 private _boxW = (_visW * 0.40) min 0.26;
 if (_boxW < 0.10) then { _boxW = (_visW * 0.46) max 0.09; };
 private _boxH = (_visH * 0.22) max 0.078;
-private _boxY = _visY + _visH - _boxH - _pad;
-// Identité : haut gauche, sous la boussole IceMan, jamais sur Map Tools (bas).
+// Map Tools IceMan (46600) occupe le bas gauche : le cartouche se pose au-dessus.
+private _toolsReserve = (_visH * 0.16) max 0.055;
+private _padBottom = _pad + _toolsReserve;
+private _boxY = _visY + _visH - _boxH - _padBottom;
 private _unitX = _visX + _pad;
-private _compassH = (_visH * 0.12) max 0.036;
-private _unitY = _visY + _pad + _compassH;
-if ((_unitY + _boxH) > (_visY + _visH - _pad - (_visH * 0.12))) then {
-    _unitY = _visY + _pad + (_visH * 0.08);
-};
-// Curseur : bas droit de la carte visible, jamais sous le tiroir ni sur Map Tools.
+private _unitY = _boxY;
 private _cursorX = _visX + _visW - _pad - _boxW;
-private _cursorY = _boxY;
+private _cursorY = _visY + _visH - _boxH - _pad;
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
 
 _unitBox ctrlSetPosition [_unitX, _unitY, _boxW, _boxH];
 _unitBox ctrlSetBackgroundColor _bgPanel;
+_unitBox ctrlSetFade 0;
 _unitBox ctrlEnable false;
+_cursorBox ctrlSetFade 0;
 
 private _acctLinked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 if (!_acctLinked && {!isNull _acctBanner}) then {

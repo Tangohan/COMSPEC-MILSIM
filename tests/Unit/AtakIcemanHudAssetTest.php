@@ -37,7 +37,7 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
-        self::assertStringContainsString('1.0.77', $cfg);
+        self::assertStringContainsString('1.0.78', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
         self::assertStringContainsString('athena_updateMapHud', $layout);
 
@@ -55,7 +55,9 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('99887813', $upd);
         self::assertStringContainsString('Compte non connecté', $upd);
         self::assertStringContainsString('_unitX = _visX + _pad', $upd);
-        self::assertStringContainsString('_compassH', $upd);
+        self::assertStringContainsString('_toolsReserve', $upd);
+        self::assertStringContainsString('INDICATIF', $upd);
+        self::assertStringNotContainsString('17000 + 1200', $upd);
         self::assertStringContainsString('[COMSPEC][MAP]', $upd);
         self::assertStringContainsString('[COMSPEC][MAP]', $install);
         self::assertStringNotContainsString('forEach [46600', $upd);
