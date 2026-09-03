@@ -17,6 +17,7 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
         self::assertStringContainsString("[LegacyPersonnelRedirectController::class, 'edit']", $routes);
         self::assertStringContainsString("'/back-office/ressources/effectifs/nouveau'", $routes);
         self::assertStringContainsString("'/back-office/ressources/effectifs/membres/{id}/modifier'", $routes);
+        self::assertStringContainsString("[LegacyPersonnelRedirectController::class, 'member']", $routes);
     }
 
     public function testEffectifsOwnsAccountCreationAndDutyPositionActions(): void

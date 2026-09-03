@@ -353,7 +353,7 @@ $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
                     $roleVisible = array_slice($roleParts, 0, 2);
                     $roleExtra = max(0, count($roleParts) - 2);
                     $ficheUrl = effectifs_workspace_url('membres/' . $id);
-                    $personnelEditUrl = effectifs_workspace_url('membres/' . $id . '/modifier');
+                    $personnelEditUrl = effectifs_workspace_url('membres/' . $id);
                     $avatarUrl = function_exists('personnel_operator_portrait_url')
                         ? (string) (personnel_operator_portrait_url($row) ?? '')
                         : (function_exists('user_media_public_url')

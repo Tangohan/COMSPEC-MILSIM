@@ -184,9 +184,6 @@ $memberHubTheme = 'lms';
         <h2 class="eff-card__title">Dossier RH complet</h2>
         <p class="eff-card__lead">Toutes les informations et toutes les actions RH de ce membre sont réunies sur cette fiche Effectifs. Les espaces transverses restent accessibles pour ajouter une pièce ou traiter une demande, sans quitter le bureau Effectifs.</p>
         <div class="eff-tags">
-            <?php if ($canEditProfiles): ?>
-            <a class="eff-btn eff-btn--primary" href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/modifier'), ENT_QUOTES, 'UTF-8') ?>">Éditer le profil complet</a>
-            <?php endif; ?>
             <a class="eff-btn eff-btn--ghost" href="#qualifications">Qualifications</a>
             <a class="eff-btn eff-btn--ghost" href="#absences">Absences</a>
             <a class="eff-btn eff-btn--ghost" href="#documents-rh">Documents RH</a>

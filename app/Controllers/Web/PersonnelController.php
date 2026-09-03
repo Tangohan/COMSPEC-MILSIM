@@ -1208,7 +1208,7 @@ class PersonnelController
         // Pour une édition effectuée par l'équipe RH, Effectifs est désormais l'unique
         // espace de travail ; les anciens favoris rejoignent donc l'URL canonique.
         if (!$isSelf && !$fromEffectifs && EffectifsLmsAccess::allows(Gate::getInstance())) {
-            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id'] . '/modifier'));
+            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
