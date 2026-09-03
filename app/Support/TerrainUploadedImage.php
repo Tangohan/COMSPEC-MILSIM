@@ -112,7 +112,10 @@ final class TerrainUploadedImage
         }
         $name = (string) $name;
         $tmp = (string) $tmp;
-        if ($name === '' && $tmp === '') {
+        if ($tmp === '' && $name === '') {
+            return null;
+        }
+        if ($tmp === '' && (int) $error === UPLOAD_ERR_OK) {
             return null;
         }
 

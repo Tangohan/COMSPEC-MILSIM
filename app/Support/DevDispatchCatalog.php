@@ -584,6 +584,26 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(398, '2026-09-03', 'La carte du téléphone se lit selon le zoom et se commande au clic', 'Sur la carte, l’indicatif d’un opérateur se simplifie en s’éloignant. Un clic droit pose un marqueur, mesure ou signale. Un ordre reçu se confirme depuis le bas de l’écran. Relancer Arma complètement après le nouveau pack', [
+                'Filtres Tout, Groupe, Alliés, Intel, Air et JTAC, plus une recherche d’indicatif',
+                'Mesure de distance et de cap, grille copiable d’un clic',
+                'Clic droit : poser un marqueur, signaler, mesurer, demander un appui',
+                'Signalement rapide au clic tout en maintenant Maj',
+                'Historique de déplacement du groupe, signets et espaces Mission, Serveur, Théâtre',
+            ], [
+                'Les outils carte du téléphone gardent leur aspect d’origine',
+                'Athena ouvre un seul écran à la fois : Journal, Alerter, Rapporter ou Poste',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone, carte. Les outils carte en bas à gauche restent utilisables. L’indicatif, le rôle et le groupe se lisent sous la boussole. Un clic droit sur le terrain propose de poser un marqueur ou de signaler.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.77'),
+            $pr(397, '2026-09-03', 'La liaison Steam s’établit toute seule et la fiche opérateur reprend', 'Au lancement, Overwatch associe le compte Athena à partir de l’identifiant Steam déjà lié. Les transmissions vers le poste reprennent. Les photos prises sur le terrain partent de nouveau. Relancer Arma complètement après le nouveau pack', [
+                'Connexion Athena automatique dès que Steam est déjà associé au compte',
+            ], [], [
+                'L’enregistrement de la fiche opérateur échouait et le poste répondait comme s’il était indisponible',
+                'Une photo trouvée sur l’ordinateur n’arrivait pas au poste',
+            ], ['atak'], [
+                'Relancez Arma complètement. Si Steam est déjà lié au compte, la session s’ouvre sans saisie. La fiche opérateur se transmet. Une photo prise depuis le téléphone apparaît au poste.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.77'),
             $pr(396, '2026-09-02', 'Le choix d’étape du suivi roleplay reste lisible en bas de tableau', 'Sur le bureau de suivi, le menu Étape (et Tuteur) d’une ligne en bas de liste s’ouvre entièrement, au-dessus du tableau. Rechargez la page de suivi', [], [], [
                 'Le menu disparaissait sous le tableau sur les dernières lignes',
             ], ['personnel'], [

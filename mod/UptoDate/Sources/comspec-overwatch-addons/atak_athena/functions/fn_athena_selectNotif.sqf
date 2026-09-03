@@ -28,7 +28,7 @@ if (_idx >= 0) then {
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
 if (isNull _group) exitWith {};
 
-private _detailCtrl = _group controlsGroupCtrl 9711;
+private _detailCtrl = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _detailCtrl) then {
     if (_detail isNotEqualTo "") then {
         _detailCtrl ctrlSetStructuredText parseText _detail;
@@ -64,7 +64,7 @@ if (!isNull _notifCtrl) then {
     _notifCtrl setVariable ["COMSPEC_AthenaNotifSkipSel", false];
 };
 
-private _listCtrl = _group controlsGroupCtrl 9710;
+private _listCtrl = [_group, 9710] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (isNull _listCtrl) exitWith {};
 
 private _entries = _listCtrl getVariable ["COMSPEC_Athena_Entries", []];

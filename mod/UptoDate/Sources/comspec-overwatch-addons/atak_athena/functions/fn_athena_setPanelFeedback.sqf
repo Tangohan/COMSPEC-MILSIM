@@ -39,7 +39,7 @@ missionNamespace setVariable [
 
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
 if (!isNull _group) then {
-    private _fb = _group controlsGroupCtrl 9712;
+    private _fb = [_group, 9712] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
     if (!isNull _fb) then {
         _fb ctrlShow true;
         _fb ctrlSetBackgroundColor _bg;
@@ -64,7 +64,7 @@ if (_duration <= 0) exitWith {};
     missionNamespace setVariable ["COMSPEC_Athena_PanelFeedback", nil, false];
     private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
     if (isNull _group) exitWith {};
-    private _fb = _group controlsGroupCtrl 9712;
+    private _fb = [_group, 9712] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
     if (isNull _fb) exitWith {};
     _fb ctrlSetStructuredText parseText "";
     _fb ctrlShow false;

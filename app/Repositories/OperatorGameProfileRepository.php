@@ -81,7 +81,7 @@ final class OperatorGameProfileRepository
              face_class,face_texture,role,group_name,faction,side,loadout_json,equipment_json,medical_json,versions_json,
              overwatch_version,atak_version,arma_version,server_name,mission_name,mission_id,world_name,raw_payload_json,
              observation_hash,tenant_id,steam_id,first_seen_at,last_seen_at,last_sync_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),NOW())
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),NOW())
             ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),personnel_id=VALUES(personnel_id),arma_player_uid=VALUES(arma_player_uid),
              arma_player_name=VALUES(arma_player_name),callsign=VALUES(callsign),display_name=VALUES(display_name),sex_detected=VALUES(sex_detected),
              blood_type_detected=VALUES(blood_type_detected),face_class=VALUES(face_class),face_texture=VALUES(face_texture),role=VALUES(role),

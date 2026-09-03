@@ -371,13 +371,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl))
             return FailGameAuth("NETWORK_ERROR");
         var verify = VerifyClientInitSync();
-        if (verify.StartsWith("OK|", StringComparison.Ordinal))
-        {
-            SetGameAuth("READY", 100, "");
-            return "OK|READY";
-        }
-        SetGameAuth("C2_UNAVAILABLE", 90, "C2_UNAVAILABLE");
-        return "ERR|C2_UNAVAILABLE";
+        return FinishGameAuthReady(verify);
     }
 
     private static string GameLogout()
@@ -411,6 +405,20 @@ public static partial class Extension
         _gameSteamNotice = "";
         _minModRequired = "";
         return "OK|logged_out";
+    }
+
+    /// <summary>
+    /// Session Game Auth déjà émise : le ping C2 (clé API) ne doit plus bloquer READY.
+    /// </summary>
+    private static string FinishGameAuthReady(string verify)
+    {
+        if (verify.StartsWith("OK|", StringComparison.Ordinal))
+        {
+            SetGameAuth("READY", 100, "");
+            return "OK|READY";
+        }
+        SetGameAuth("READY", 100, "C2_DEGRADED");
+        return "OK|READY";
     }
 
     private static string ApplyGameAuthResponse(string json, string source, bool persistTokens = true)
@@ -495,13 +503,7 @@ public static partial class Extension
             if (_gameAccessToken.Length > 0 && !string.IsNullOrEmpty(_baseUrl))
             {
                 var verify = VerifyClientInitSync();
-                if (verify.StartsWith("OK|", StringComparison.Ordinal))
-                {
-                    SetGameAuth("READY", 100, "");
-                    return "OK|READY";
-                }
-                SetGameAuth("C2_UNAVAILABLE", 90, "C2_UNAVAILABLE");
-                return "ERR|C2_UNAVAILABLE";
+                return FinishGameAuthReady(verify);
             }
             SetGameAuth("READY", 100, "");
             return "OK|READY";

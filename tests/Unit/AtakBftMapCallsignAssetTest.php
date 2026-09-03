@@ -39,7 +39,7 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('athena_relabelBft', $install);
         self::assertStringContainsString('athena_installBftLabels', $post);
         self::assertStringContainsString('athena_bftUnitLabel', $cfg);
-        self::assertStringContainsString('1.0.76', $cfg);
+        self::assertStringContainsString('1.0.77', $cfg);
         self::assertStringContainsString('COMSPEC_BftLabelMode', $label);
         self::assertStringContainsString('cs_role', $label);
         self::assertStringContainsString('01', $note);

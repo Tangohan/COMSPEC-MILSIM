@@ -1,10 +1,10 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en bas à gauche de la carte
+    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en haut à gauche, sous la boussole
     - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite de la carte visible
     - zoom +/− en haut à droite
-    - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif, outils)
-    Ne pas recouvrir la boussole native (haut gauche).
+    - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif)
+    Ne pas recouvrir la boussole native (haut gauche) ni le bouton Map Tools (46600).
     Les cartouches restent DANS le rectangle carte visible (jamais sous le tiroir droit).
 */
 if (!hasInterface) exitWith {};
@@ -28,9 +28,30 @@ private _fncHide = {
         private _c = _d displayCtrl _x;
         if (!isNull _c) then { _c ctrlShow false; };
     } forEach [99887810, 99887811, 99887812, 99887813, 99887820, 99887821];
+    {
+        _x params ["_a", "_b"];
+        for "_i" from _a to _b do {
+            private _c = _d displayCtrl _i;
+            if (!isNull _c) then { _c ctrlShow false };
+        };
+    } forEach [
+        [88540, 88540],
+        [88550, 88559],
+        [88600, 88640],
+        [88650, 88650],
+        [88700, 88700],
+        [88800, 88815],
+        [88900, 88924]
+    ];
 };
 
-if (isNull _disp) exitWith {};
+if (isNull _disp) exitWith {
+    uiNamespace setVariable ["COMSPEC_MapUI_MouseWired", nil];
+    if (missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false]) then {
+        missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", false, false];
+        diag_log "[COMSPEC][MAP] Map display closed";
+    };
+};
 
 private _overlay = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Ctrl", controlNull];
 private _overlayOn = !isNull _overlay && {ctrlShown _overlay} && {ctrlParent _overlay isEqualTo _disp};
@@ -57,6 +78,11 @@ if (isNull _mapCtrl) then {
     } forEach [1201, 1202, 16];
 };
 if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith { [_disp] call _fncHide; };
+
+if (!(missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false])) then {
+    missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", true, false];
+    diag_log "[COMSPEC][MAP] Map display detected";
+};
 
 (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
 if (_mw < 0.08 || {_mh < 0.08}) exitWith { [_disp] call _fncHide; };
@@ -91,7 +117,7 @@ if (!isNull _bgGroup) then {
     if (isNull _c) then { continue };
     _c ctrlSetBackgroundColor _bgTile;
     _c ctrlSetTextColor _white;
-} forEach [46600, 1300, 17000 + 1200, 17000 + 1300];
+} forEach [1300, 17000 + 1200, 17000 + 1300];
 
 {
     private _c = _disp displayCtrl (17000 + _x);
@@ -136,6 +162,15 @@ private _fncEnsure = {
     if (isNull _c || {ctrlParent _c isNotEqualTo _d}) then {
         if (!isNull _c) then { ctrlDelete _c; };
         _c = _d ctrlCreate [_class, _idc];
+        if (isNil {missionNamespace getVariable "COMSPEC_MAP_OverlayCreatedLogged"}) then {
+            missionNamespace setVariable ["COMSPEC_MAP_OverlayCreatedLogged", true, false];
+            diag_log "[COMSPEC][MAP] Creating operator overlay";
+        };
+    } else {
+        if (isNil {missionNamespace getVariable "COMSPEC_MAP_OverlayExistsLogged"}) then {
+            missionNamespace setVariable ["COMSPEC_MAP_OverlayExistsLogged", true, false];
+            diag_log "[COMSPEC][MAP] Overlay already exists - skipped";
+        };
     };
     _c
 };
@@ -189,16 +224,16 @@ private _boxW = (_visW * 0.40) min 0.26;
 if (_boxW < 0.10) then { _boxW = (_visW * 0.46) max 0.09; };
 private _boxH = (_visH * 0.22) max 0.078;
 private _boxY = _visY + _visH - _boxH - _pad;
-// Identité (indicatif / rôle / groupe) : bas gauche de la carte, comme avant le décalage à droite.
+// Identité : haut gauche, sous la boussole IceMan, jamais sur Map Tools (bas).
 private _unitX = _visX + _pad;
-private _unitY = _boxY;
-// Curseur : bas droit de la carte visible, jamais sous le tiroir.
+private _compassH = (_visH * 0.12) max 0.036;
+private _unitY = _visY + _pad + _compassH;
+if ((_unitY + _boxH) > (_visY + _visH - _pad - (_visH * 0.12))) then {
+    _unitY = _visY + _pad + (_visH * 0.08);
+};
+// Curseur : bas droit de la carte visible, jamais sous le tiroir ni sur Map Tools.
 private _cursorX = _visX + _visW - _pad - _boxW;
 private _cursorY = _boxY;
-if ((_cursorX - _unitX) < (_boxW + (_visW * 0.008))) then {
-    _cursorX = _unitX;
-    _cursorY = _boxY - _boxH - (_visH * 0.008);
-};
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
@@ -351,3 +386,7 @@ _unitBox ctrlSetStructuredText parseText _unitHtml;
 } forEach [_cursorBox, _unitBox, _zoomIn, _zoomOut];
 _heading ctrlShow false;
 _heading ctrlCommit 0;
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIUpdate") then {
+    [_disp, _mapCtrl, [_visX, _visY, _visW, _visH]] call comspec_overwatch_atak_athena_fnc_mapUIUpdate;
+};

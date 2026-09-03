@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.7";
+    private const string ExtensionVersion = "1.18.8";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -1472,7 +1472,7 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.16");
+            Output(output, outputSize, "COMSPECExtension 2.0.17");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1819,7 +1819,7 @@ public static partial class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.16";
+            return "OK|COMSPECExtension 2.0.17";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1830,7 +1830,7 @@ public static partial class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.16", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.17", "COMSPEC Extension ATAK");
         }
 
         var gameAuth = HandleGameAuth(function, args);
@@ -6361,9 +6361,25 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
-            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            var fileContent = new StreamContent(fileStream);
+            // ByteArray + Content-Length : PHP ne remplit pas $_FILES avec un body chunked.
+            byte[] imageBytes;
+            await using (var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            await using (var ms = new MemoryStream())
+            {
+                await fileStream.CopyToAsync(ms).ConfigureAwait(false);
+                imageBytes = ms.ToArray();
+            }
+            if (imageBytes.Length < 24)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("PhotoUpload", "ERR|empty_image|" + fileName);
+                return;
+            }
+            var fileContent = new ByteArrayContent(imageBytes);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            fileContent.Headers.ContentLength = imageBytes.Length;
             multipart.Add(fileContent, "image", fileName);
 
             // Attendre le POST ici (worker déjà hors thread jeu) → ACK réel vers SQF.

@@ -18,6 +18,7 @@ if (_new isEqualTo "CANCELLED") exitWith {
 switch (_new) do {
     case "ACK": { _current in ["PENDING", "DELIVERED"] };
     case "EXEC": { _current isEqualTo "ACK" };
+    case "DONE": { _current in ["ACK", "EXEC"] };
     case "FAILED": { _current in ["PENDING", "DELIVERED", "ACK", "EXEC"] };
     case "DELIVERED": { _current isEqualTo "PENDING" };
     default { false };

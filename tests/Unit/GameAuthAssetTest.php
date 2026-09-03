@@ -38,6 +38,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('/api/game/v1/auth/', $auth);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
         self::assertStringContainsString('loginSteam', $sqfInit);
+        $sqfSteam = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf');
+        self::assertStringContainsString('Connexion Steam — %1', $sqfSteam);
         self::assertStringContainsString('plus une saisie joueur', $sqfConnect);
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
@@ -76,6 +78,15 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
         self::assertStringNotContainsString('if (pairing.Length < 32)', $dll);
         self::assertStringContainsString('AuthSteam', $dll);
+    }
+
+    public function testSteamSessionBecomesReadyEvenIfC2PingFails(): void
+    {
+        $dll = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        self::assertStringContainsString('FinishGameAuthReady', $dll);
+        self::assertStringContainsString('C2_DEGRADED', $dll);
+        self::assertStringContainsString('return FinishGameAuthReady(verify);', $dll);
+        self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
     }
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void

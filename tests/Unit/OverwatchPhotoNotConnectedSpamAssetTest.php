@@ -27,6 +27,16 @@ final class OverwatchPhotoNotConnectedSpamAssetTest extends TestCase
         self::assertStringNotContainsString('_apiKey.Length == 0', $head);
     }
 
+    public function testReconUploadSendsBufferedMultipartWithContentLength(): void
+    {
+        $cs = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('new ByteArrayContent(imageBytes)', $cs);
+        self::assertStringContainsString('fileContent.Headers.ContentLength = imageBytes.Length', $cs);
+        self::assertStringContainsString('multipart.Add(fileContent, "image", fileName)', $cs);
+        $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
+        self::assertStringContainsString('[atak/recon-images] missing_image', $ctrl);
+    }
+
     public function testCaptureDoesNotRetryScreenshotsWhenAthenaIsDown(): void
     {
         $root = dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons';

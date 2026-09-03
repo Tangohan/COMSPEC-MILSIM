@@ -36,7 +36,7 @@ final class SseFieldNoteThemeTaxonomyAssetTest extends TestCase
         self::assertStringContainsString("size='0.68'", $contents);
         self::assertStringContainsString("size='0.82'", $contents);
         self::assertStringNotContainsString("size='0.40'", $contents);
-        self::assertStringContainsString('1.5.12', (string) file_get_contents(
+        self::assertStringContainsString('1.5.14', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
         ));
     }

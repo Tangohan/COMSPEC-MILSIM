@@ -31,6 +31,9 @@ if (_alertId isEqualTo "") then {
     private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
     if (!isNull _group) then {
         private _listCtrl = _group controlsGroupCtrl 9710;
+        if (isNull _listCtrl && {!isNil "comspec_overwatch_atak_athena_fnc_athena_pageCtrl"}) then {
+            _listCtrl = [_group, 9710] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+        };
         if (!isNull _listCtrl) then {
             private _idx = lbCurSel _listCtrl;
             private _entries = _listCtrl getVariable ["COMSPEC_Athena_Entries", []];
