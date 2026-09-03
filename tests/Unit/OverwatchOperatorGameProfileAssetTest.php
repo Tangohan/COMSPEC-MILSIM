@@ -21,7 +21,7 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testConnectRegistersOperatorProfileFunctionsAndBumpsVersion(): void
     {
         $cfg = $this->connect('config.cpp');
-        self::assertStringContainsString('versionStr = "1.5.13"', $cfg);
+        self::assertStringContainsString('versionStr = "1.5.14"', $cfg);
         foreach ([
             'class jsonValue',
             'class collectOperatorIdentity',
@@ -97,7 +97,8 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
         self::assertStringContainsString('Ne doit PAS être appelé à chaque tick de position', $src);
         self::assertStringContainsString('COMSPEC_OperatorFingerprint', $src);
         self::assertStringContainsString('fnc_jsonValue', $src);
-        self::assertStringContainsString('fnc_isReady', $src);
+        self::assertStringContainsString('COMSPEC_OperatorProfileFailCount', $src);
+        self::assertStringContainsString('503', $src);
         self::assertStringNotContainsString('hashMapToJson', $src);
     }
 
@@ -136,7 +137,7 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testExtensionOperatorHandlersKeepSteamAndTenantAndTolerateMissingRoute(): void
     {
         $dll = (string) file_get_contents($this->root() . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('private const string ExtensionVersion = "1.18.7"', $dll);
+        self::assertStringContainsString('private const string ExtensionVersion = "1.18.8"', $dll);
         self::assertStringContainsString('OperatorRegister', $dll);
         self::assertStringContainsString('OperatorSync', $dll);
         self::assertStringContainsString('HandleOperatorProfile', $dll);

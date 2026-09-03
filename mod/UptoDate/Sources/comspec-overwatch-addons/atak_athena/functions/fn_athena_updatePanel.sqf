@@ -8,9 +8,9 @@ if (_pageNow isNotEqualTo "" && {_pageNow isNotEqualTo "athena"}) exitWith {};
 
 [] call comspec_overwatch_atak_athena_fnc_athena_applyHomeLayout;
 
-private _statusCtrl = _group controlsGroupCtrl 9701;
-private _listCtrl = _group controlsGroupCtrl 9710;
-private _detailCtrl = _group controlsGroupCtrl 9711;
+private _statusCtrl = [_group, 9701] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+private _listCtrl = [_group, 9710] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+private _detailCtrl = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 private _tab = missionNamespace getVariable ["COMSPEC_Athena_PanelTab", "all"];
 private _home = missionNamespace getVariable ["COMSPEC_Athena_HomeSection", "fil"];
 if (_tab isEqualTo "notif" || {_tab isEqualTo "alert"}) then { _tab = "urgences"; };
@@ -26,7 +26,7 @@ if (_cs isEqualTo "") then { _cs = name player; };
 private _notifs = missionNamespace getVariable ["COMSPEC_Athena_Notifications", []];
 if (!(_notifs isEqualType [])) then { _notifs = []; };
 private _unreadCount = {_x select 5} count _notifs;
-private _tabUrgCtrl = _group controlsGroupCtrl 9762;
+private _tabUrgCtrl = [_group, 9762] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _tabUrgCtrl) then {
     private _tabTxt = if (_unreadCount > 0) then {
         format ["Alerter (%1)", _unreadCount]
@@ -36,7 +36,7 @@ if (!isNull _tabUrgCtrl) then {
     _tabUrgCtrl ctrlSetText _tabTxt;
 };
 
-private _combo = _group controlsGroupCtrl 9760;
+private _combo = [_group, 9760] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _combo && {_home isEqualTo "fil"}) then {
     _combo setVariable ["COMSPEC_AthenaFilterUpdating", true];
     lbClear _combo;
@@ -96,7 +96,7 @@ if (!isNull _statusCtrl) then {
 };
 
 // Zone Feedback (retours photo / actions) — hors bandeau carte
-private _fbCtrl = _group controlsGroupCtrl 9712;
+private _fbCtrl = [_group, 9712] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _fbCtrl) then {
     private _fbData = missionNamespace getVariable ["COMSPEC_Athena_PanelFeedback", []];
     if ((_fbData isEqualType []) && {(count _fbData) >= 3} && {diag_tickTime < (_fbData select 2)}) then {

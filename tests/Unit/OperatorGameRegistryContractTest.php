@@ -39,6 +39,35 @@ final class OperatorGameRegistryContractTest extends TestCase
         self::assertStringContainsString('resolved_at=NULL', $repo);
     }
 
+    public function testUpsertValuesMatchColumnCount(): void
+    {
+        $repo = $this->src('app/Repositories/OperatorGameProfileRepository.php');
+        self::assertStringContainsString(
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),NOW())',
+            $repo
+        );
+        self::assertStringNotContainsString(
+            '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),NOW()',
+            $repo
+        );
+        $insert = [];
+        self::assertSame(1, preg_match(
+            '/INSERT INTO operator_game_profiles\s*\(([^)]+)\)/s',
+            $repo,
+            $insert
+        ));
+        $columns = array_values(array_filter(array_map('trim', explode(',', $insert[1]))));
+        self::assertCount(32, $columns);
+        $values = [];
+        self::assertSame(1, preg_match('/VALUES \(([^)]+)\)/s', $repo, $values));
+        $slots = array_map('trim', explode(',', $values[1]));
+        $placeholders = count(array_filter($slots, static fn (string $s): bool => $s === '?'));
+        $nows = count(array_filter($slots, static fn (string $s): bool => str_contains($s, 'NOW()')));
+        self::assertSame(29, $placeholders);
+        self::assertSame(3, $nows);
+        self::assertCount(32, $slots);
+    }
+
     public function testUserIdStaysNullableOnUnlinkedUpsert(): void
     {
         $repo = $this->src('app/Repositories/OperatorGameProfileRepository.php');

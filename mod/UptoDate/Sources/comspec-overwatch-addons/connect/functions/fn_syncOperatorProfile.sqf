@@ -78,13 +78,24 @@ private _result = [_ok, _status, _detail] call comspec_overwatch_connect_fnc_app
 if (_ok && {!(_result getOrDefault ["pending", false])}) then {
     missionNamespace setVariable ["COMSPEC_OperatorFingerprint", _fp, false];
     missionNamespace setVariable ["COMSPEC_OperatorRegistered", true, false];
+    missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", 0, false];
 };
 if (_result getOrDefault ["pending", false]) then {
     missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + 300, false];
     missionNamespace setVariable ["COMSPEC_OperatorRegistered", true, false];
 } else {
-    if (!_ok && {(toUpper _status) in ["TIMEOUT", "NETWORK_ERROR"]}) then {
-        missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + 30, false];
+    if (!_ok) then {
+        private _blob = toUpper (format ["%1 %2", _status, _detail]);
+        private _http503 = (_blob find "503") >= 0 || {(_blob find "INDISPONIBLE") >= 0};
+        private _transient = _http503 || {(toUpper _status) in ["TIMEOUT", "NETWORK_ERROR"]};
+        if (_transient) then {
+            private _n = (missionNamespace getVariable ["COMSPEC_OperatorProfileFailCount", 0]) + 1;
+            missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", _n, false];
+            private _exp = (2 ^ ((_n - 1) min 5));
+            private _delay = ((8 * _exp) min 300);
+            if (!_http503) then { _delay = 30; };
+            missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + _delay, false];
+        };
     };
 };
 

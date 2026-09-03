@@ -45,7 +45,7 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('class registerZenTrackActions {};', $cfg);
         self::assertStringContainsString('class registerZenTheaterSurvey {};', $cfg);
         self::assertStringContainsString('class moduleAtakShowEnemyAi {};', $cfg);
-        self::assertStringContainsString('1.5.12', $cfg);
+        self::assertStringContainsString('1.5.14', $cfg);
     }
 
     public function testZeusRegistrationWaitsForEnhancedAndKeepsRetrySafe(): void

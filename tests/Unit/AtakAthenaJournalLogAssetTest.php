@@ -66,8 +66,8 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
         self::assertStringContainsString('Compte non connecté', $upd);
         self::assertStringContainsString('Liaison et envois', $upd);
 
-        self::assertStringContainsString('9765', $lay);
-        self::assertStringContainsString('9766', $lay);
+        self::assertStringContainsString('9770', $lay);
+        self::assertStringContainsString('9771', $lay);
 
         self::assertStringContainsString('GetLogTail', $log);
         self::assertStringContainsString('COMSPEC_DiagLog', $log);
@@ -85,13 +85,13 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
 
         self::assertStringContainsString('GetScreenshotDirs', $ext);
         self::assertStringContainsString('GetPhotoSaveDir', $ext);
-        self::assertStringContainsString('ExtensionVersion = "1.18.6"', $ext);
+        self::assertStringContainsString('ExtensionVersion = "1.18.8"', $ext);
 
-        self::assertStringContainsString('1.0.76', $cfg);
+        self::assertStringContainsString('1.0.77', $cfg);
         self::assertStringContainsString('athena_collectSessionLog', $cfg);
         self::assertStringContainsString('athena_forcePhotoSend', $cfg);
         self::assertStringContainsString('athena_showPhotoFolder', $cfg);
-        self::assertStringContainsString('1.5.12', $connect);
+        self::assertStringContainsString('1.5.14', $connect);
 
         self::assertStringContainsString('journal', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);

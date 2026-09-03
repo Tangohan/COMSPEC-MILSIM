@@ -9651,6 +9651,13 @@ class AtakApiController
             }
             $file = TerrainUploadedImage::fromGlobals();
             if ($file === null) {
+                error_log(sprintf(
+                    '[atak/recon-images] missing_image files=%s ct=%s cl=%s',
+                    implode(',', array_keys($_FILES)),
+                    (string) ($_SERVER['CONTENT_TYPE'] ?? ''),
+                    (string) ($_SERVER['CONTENT_LENGTH'] ?? '')
+                ));
+
                 return Response::json([
                     'error' => 'missing_image',
                     'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',

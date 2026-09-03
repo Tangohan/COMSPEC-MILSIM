@@ -32,6 +32,10 @@ if (!isNil "cTabBFTmembers" && {cTabBFTmembers isEqualType []}) then {
         if (_label isEqualTo "") then { continue };
         _x set [3, _label];
         _x set [4, _label];
+        private _pliAt = _u getVariable ["COMSPEC_PliAt", time];
+        if ((time - _pliAt) >= 30) then {
+            _u setVariable ["COMSPEC_BftStale", true, false];
+        };
     } forEach cTabBFTmembers;
 };
 
@@ -110,6 +114,42 @@ if (!isNil "cTabBFTvehicles" && {cTabBFTvehicles isEqualType []}) then {
 
     if (isNull _best) then { continue };
     private _label = [_best] call _fncLabel;
+    private _scale = 0.05;
+    private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    if (!isNull _disp) then {
+        private _mc = _disp displayCtrl 1201;
+        if (isNull _mc) then { _mc = _disp displayCtrl 16 };
+        if (!isNull _mc) then { _scale = ctrlMapScale _mc };
+    };
+    if (_scale > 0.09) then {
+        private _g = toUpper (groupId (group _best));
+        private _echelon = _g;
+        if ((_g find "GOLD") >= 0) then { _echelon = "GOLD"; };
+        if ((_g find "SILVER") >= 0) then { _echelon = "SILVER"; };
+        if ((_g find "JTAC") >= 0 || {((toUpper _label) find "JTAC") >= 0}) then { _echelon = "JTAC"; };
+        if (_echelon isEqualTo "") then { _echelon = _g; };
+        _label = _echelon;
+    } else {
+        if (_scale > 0.035) then {
+            private _g = groupId (group _best);
+            if (_label isNotEqualTo "" && {_g isNotEqualTo ""}) then {
+                _label = format ["%1  %2", _label, _g];
+            };
+        } else {
+            private _role = "";
+            if (!isNil "comspec_overwatch_connect_fnc_getUnitRole") then {
+                _role = [_best] call comspec_overwatch_connect_fnc_getUnitRole;
+            };
+            private _grid = [getPosASLVisual _best] call comspec_overwatch_atak_athena_fnc_formatGrid;
+            _label = format ["%1  %2  %3", _label, _role, _grid];
+        };
+    };
     if (_label isEqualTo "" || {_label isEqualTo _txt}) then { continue };
     _x setMarkerTextLocal _label;
+    private _pliAt = _best getVariable ["COMSPEC_PliAt", time];
+    if ((time - _pliAt) >= 30) then {
+        _x setMarkerAlphaLocal 0.4;
+    } else {
+        _x setMarkerAlphaLocal 1;
+    };
 } forEach allMapMarkers;

@@ -9,6 +9,26 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Athena 1.0.77 — 2026-09-03
+
+### Correction — Liaison Steam, fiche opérateur, photos
+
+La session Athena s’ouvre automatiquement lorsque Steam est déjà associé au compte. La fiche opérateur se transmet de nouveau. Les photos prises sur le terrain partent au poste.
+
+### Correction — Carte du téléphone
+
+Le bouton des outils carte retrouve son aspect d’origine. Le cartouche Indicatif / Rôle / Groupe s’affiche en haut à gauche, sous la boussole, sans recouvrir les outils.
+
+### Amélioration — Page Athena
+
+Journal, Alerter, Rapporter et Poste occupent chacun leur écran. Les boutons ne se superposent plus.
+
+### Nouveau — Carte : filtres, mesure, signalements
+
+L’indicatif d’un opérateur se lit plus simplement quand on s’éloigne, et redevient détaillé en se rapprochant. Un opérateur sans position récente reste visible, plus pâle. Un clic droit pose un marqueur, mesure ou signale. Un ordre reçu se confirme depuis le bas de l’écran. Les outils carte du téléphone restent tels quels.
+
+---
+
 ## Athena 1.0.76 — 2026-09-02
 
 ### Correction — Cartouche indicatif / rôle / groupe

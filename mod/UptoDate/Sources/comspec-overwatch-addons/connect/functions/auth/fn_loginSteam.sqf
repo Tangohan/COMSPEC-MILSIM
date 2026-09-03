@@ -34,6 +34,7 @@ if ((count _steam) < 8) exitWith {
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 ["INFO", "Athena", "Connexion Steam"] call comspec_overwatch_connect_fnc_log;
 private _raw = ["COMSPECExtension" callExtension ["AuthSteam", [_url, _steam, [] call comspec_overwatch_connect_fnc_packVersion]]] call comspec_overwatch_connect_fnc_extResult;
+["INFO", "Athena", format ["Connexion Steam — %1", _raw]] call comspec_overwatch_connect_fnc_log;
 [] call comspec_overwatch_connect_fnc_pollAuth;
 
 if (_raw find "OK|READY" == 0) exitWith {

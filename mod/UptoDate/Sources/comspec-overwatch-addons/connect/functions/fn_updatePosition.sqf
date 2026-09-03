@@ -533,6 +533,7 @@ if ((count _steamUid) < 15) then {
     _steamUid = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
 
+_unit setVariable ["COMSPEC_PliAt", time, true];
 "COMSPECExtension" callExtension ["UpdatePosition", [
     [_reportedPos select 0, 2] call _fnc_num,
     [_reportedPos select 1, 2] call _fnc_num,

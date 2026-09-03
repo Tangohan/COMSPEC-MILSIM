@@ -22,6 +22,11 @@ switch (_actionKey) do {
         _status = "ACK";
         _feedback = "Ordre accepté.";
     };
+    case "COMPLETE";
+    case "DONE": {
+        _status = "DONE";
+        _feedback = "Ordre signalé comme terminé.";
+    };
     case "REFUSE";
     case "FAILED": {
         _status = "FAILED";

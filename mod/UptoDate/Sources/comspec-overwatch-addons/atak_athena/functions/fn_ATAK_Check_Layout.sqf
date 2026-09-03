@@ -159,19 +159,6 @@ if (!isNull _tool) then {
     ]
 ];
 
-private _toolBnt = _disp displayCtrl 46600;
-if (!isNull _toolBnt) then {
-    [
-        _toolBnt,
-        [[], [
-            _MapX + _result,
-            _POSY + _bgH - ((ctrlPosition _toolBnt) select 3),
-            [0, _bgW] select _showMenu
-        ]],
-        ["ATAK_Toggle_Spring", _ifaceInit, 1200, [3]]
-    ] call BCE_fnc_Anim_CustomOffset;
-};
-
 [_disp] spawn {
     uiSleep 0.05;
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateMapHud") then {

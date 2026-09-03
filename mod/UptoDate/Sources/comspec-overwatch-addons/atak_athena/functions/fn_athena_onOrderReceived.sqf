@@ -34,6 +34,9 @@ private _detail = format [
     _timeStr
 ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
 
+if (!isNil "comspec_overwatch_atak_athena_fnc_showNotification") then {
+    ["PRIORITY", format ["Nouvel ordre — %1", _typeLabel]] call comspec_overwatch_atak_athena_fnc_showNotification;
+};
 ["ATHENA", format ["Nouvel ordre — %1 (de %2)", _typeLabel, _issuer], 8] call comspec_overwatch_connect_fnc_addScreenToast;
 if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
     private _soundEv = if ((toUpper _prio) isEqualTo "URGENT" || {(toUpper _prio) isEqualTo "CONTACT"}) then {

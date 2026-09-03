@@ -13,7 +13,7 @@ if (_lbCurSel >= count _entries) exitWith {};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
 if (isNull _group) exitWith {};
-private _detailCtrl = _group controlsGroupCtrl 9711;
+private _detailCtrl = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _detailCtrl) then {
     _detailCtrl ctrlSetStructuredText parseText _detail;
 };
