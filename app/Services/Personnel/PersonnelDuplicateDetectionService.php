@@ -102,7 +102,15 @@ final class PersonnelDuplicateDetectionService
                 if ($value === null) {
                     continue;
                 }
-                $buckets[$value][] = $row;
+                $id = (int) ($row['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+
+                // A member must only appear once in a value bucket. This also
+                // protects the result if historical 1:1 profile constraints are
+                // temporarily missing while a migration is being applied.
+                $buckets[$value][$id] = $row;
             }
             foreach ($buckets as $value => $members) {
                 if (count($members) < 2) {
@@ -148,15 +156,28 @@ final class PersonnelDuplicateDetectionService
      */
     private function loadMemberIdentityRows(int $tenantId): array
     {
-        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email,
+        // Since identities can belong to several communities, use the active
+        // membership as the tenant boundary and scope both RH joins explicitly.
+        // Without these predicates, N profiles x N extras produced a Cartesian
+        // product and rendered the same member dozens of times in every group.
+        $sql = 'SELECT u.id,
+                       COALESCE(NULLIF(TRIM(ucp.display_name), \'\'), u.display_name) AS display_name,
+                       COALESCE(NULLIF(TRIM(ucp.callsign), \'\'), u.callsign) AS callsign,
+                       u.email,
                        up.first_name, up.last_name,
                        pp.matricule_internal, pp.callsign AS profile_callsign,
                        pe.service_number
-                FROM users u
+                FROM user_community_memberships ucm
+                INNER JOIN users u ON u.id = ucm.user_id
+                LEFT JOIN user_community_profiles ucp
+                       ON ucp.user_id = u.id AND ucp.tenant_id = ucm.tenant_id
                 LEFT JOIN user_profiles up ON up.user_id = u.id
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
-                LEFT JOIN personnel_extras pe ON pe.user_id = u.id
-                WHERE u.tenant_id = ?
+                LEFT JOIN personnel_profiles pp
+                       ON pp.user_id = u.id AND pp.tenant_id = ucm.tenant_id
+                LEFT JOIN personnel_extras pe
+                       ON pe.user_id = u.id AND pe.tenant_id = ucm.tenant_id
+                WHERE ucm.tenant_id = ?
+                  AND LOWER(COALESCE(ucm.status, \'\')) = \'active\'
                   AND (u.deleted_at IS NULL OR u.deleted_at = \'0000-00-00 00:00:00\')
                   AND COALESCE(u.is_service_account, 0) = 0
                   AND LOWER(COALESCE(u.status, \'\')) NOT IN (\'deleted\', \'banned\')
@@ -168,7 +189,30 @@ final class PersonnelDuplicateDetectionService
 
             return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable) {
-            return [];
+            // Compatibility during rolling deployments where the identity split
+            // migration has not created the community tables/tenant columns yet.
+            $legacySql = 'SELECT u.id, u.display_name, u.callsign, u.email,
+                                 up.first_name, up.last_name,
+                                 pp.matricule_internal, pp.callsign AS profile_callsign,
+                                 pe.service_number
+                          FROM users u
+                          LEFT JOIN user_profiles up ON up.user_id = u.id
+                          LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                          LEFT JOIN personnel_extras pe ON pe.user_id = u.id
+                          WHERE u.tenant_id = ?
+                            AND (u.deleted_at IS NULL OR u.deleted_at = \'0000-00-00 00:00:00\')
+                            AND COALESCE(u.is_service_account, 0) = 0
+                            AND LOWER(COALESCE(u.status, \'\')) NOT IN (\'deleted\', \'banned\')
+                          ORDER BY u.id ASC
+                          LIMIT 5000';
+            try {
+                $st = $this->pdo->prepare($legacySql);
+                $st->execute([$tenantId]);
+
+                return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable) {
+                return [];
+            }
         }
     }
 
