@@ -20,6 +20,7 @@ use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\TenantTypeSwitchService;
 use App\Services\ConfigurationUpdate\ConfigurationUpdateService;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Services\Personnel\PersonnelLifecycleSettings;
 use App\Support\LoginAccueilImageStorage;
 use App\Support\OrganizationRoleLabels;
 
@@ -117,6 +118,7 @@ final class OrganizationSettingsController
             'loginAccueilMaxImages' => TenantLoginAccueilImageRepository::MAX_IMAGES,
             'loginAccueilDefaultUrl' => LoginAccueilImageStorage::defaultPublicUrl(),
             'loginAccueilHint' => LoginAccueilImageStorage::hintText(),
+            'personnelLifecycle' => PersonnelLifecycleSettings::resolve($settings),
         ]);
     }
 
@@ -613,6 +615,11 @@ final class OrganizationSettingsController
 
         $community['portal_nav'] = $this->parsePortalNav($request, is_array($community['portal_nav'] ?? null) ? $community['portal_nav'] : []);
 
+        $personnelLifecycle = PersonnelLifecycleSettings::fromInput(
+            $request->input('personnel_training_days', 14),
+            $request->input('personnel_active_service_days', 0)
+        );
+
         $locale = strtolower(trim((string) $request->input('default_locale', 'fr')));
         $community['default_locale'] = in_array($locale, ['fr', 'en', 'fr-fr', 'en-us'], true)
             ? ($locale === 'fr-fr' ? 'fr' : ($locale === 'en-us' ? 'en' : $locale))
@@ -651,6 +658,7 @@ final class OrganizationSettingsController
             'timezone' => $timezone,
             'community' => $community,
             'integrations' => $integrations,
+            PersonnelLifecycleSettings::SETTINGS_KEY => $personnelLifecycle,
         ]);
 
         if (isset($unitAffiliation) && is_array($unitAffiliation)) {

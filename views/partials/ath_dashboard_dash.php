@@ -96,7 +96,7 @@ if ($incomplete > 0) {
         'msg' => $incomplete . ' profil(s) incomplet(s) à finaliser',
         'time' => 'en cours',
         'cta' => 'Corriger',
-        'href' => url('back-office/users') . '?filter_incomplete=1',
+        'href' => effectifs_workspace_url(),
     ];
 }
 

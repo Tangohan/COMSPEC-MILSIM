@@ -41,7 +41,7 @@ $flashErr = \App\Core\Session::getFlash('error');
             <div class="bo-user-edit__flash bo-user-edit__flash--ok" role="status"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
 
-        <form method="post" action="<?= htmlspecialchars(url('back-office/users/store'), ENT_QUOTES, 'UTF-8') ?>" id="user-admin-create-form" class="bo-user-edit__create">
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" id="user-admin-create-form" class="bo-user-edit__create">
             <?= \App\Core\Csrf::field() ?>
             <section class="bo-user-edit__panel" aria-labelledby="create-account-heading">
                 <h2 id="create-account-heading" class="bo-user-edit__panel-title">Identité &amp; accès</h2>

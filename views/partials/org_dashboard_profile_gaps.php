@@ -42,7 +42,7 @@ $profileGapInitials = static function (string $name): string {
             <h2 id="org-profile-gaps-heading" class="org-dash__section-title">Profils à compléter</h2>
             <p class="org-dash__section-lead">Membres actifs auxquels il manque une fonction, un grade, un rôle, une image opérateur, ou dont l’absence n’est pas indiquée.</p>
         </div>
-        <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Effectifs →</a>
+        <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Effectifs →</a>
     </div>
     <div class="bo-sheet-panel" x-data="{ filter: 'all' }">
         <div class="bo-sheet-toolbar">

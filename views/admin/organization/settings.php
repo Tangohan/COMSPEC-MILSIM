@@ -11,11 +11,13 @@ declare(strict_types=1);
 /** @var string|null $navResImageUrl */
 /** @var string $orgSettingsFormAction */
 /** @var array<string, mixed> $integrations */
+/** @var array{training_days: int, active_service_days: int} $personnelLifecycle */
 
 $c = $community ?? [];
 $i = $integrations ?? [];
 $b = $branding ?? [];
 $settingsRoot = is_array($orgSettings ?? null) ? $orgSettings : [];
+$lifecycle = is_array($personnelLifecycle ?? null) ? $personnelLifecycle : ['training_days' => 14, 'active_service_days' => 0];
 $formAction = (string) ($orgSettingsFormAction ?? url('back-office/community'));
 $zones = is_array($orgTimezoneOptions ?? null) ? $orgTimezoneOptions : \DateTimeZone::listIdentifiers();
 $currentTz = (string) ($settingsRoot['timezone'] ?? 'Europe/Paris');
@@ -679,6 +681,22 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <a href="<?= $h(url('back-office/community/inscription')) ?>">Gérer tous les paramètres d’inscription</a>
                     · <a href="<?= $h(url('back-office/community/presentation') . '#pack-milsim-editor') ?>">Éditeur complet du dossier candidature</a>
                 </p>
+            </section>
+
+            <section class="ath-card ath-rise bo-setting-group" id="cycle-effectif">
+                <p class="bo-setting-group__kicker">Effectif</p>
+                <h2 class="bo-setting-group__title">Cycle administratif</h2>
+                <p class="bo-settings-note">Ces positions indiquent où en est l’enrôlement. Elles ne remplacent ni le rôle obligatoire Opérateur, ni les fonctions attribuées au membre.</p>
+                <div class="bo-setting-group__rows">
+                    <label class="bo-setting-row">
+                        <span class="bo-setting-row__copy"><span class="bo-setting-row__label">Durée obligatoire « En formation »</span><span class="bo-setting-row__help">Nombre de jours minimum avant le passage en service actif.</span></span>
+                        <span class="bo-setting-row__control"><input type="number" name="personnel_training_days" min="0" max="3650" value="<?= (int) ($lifecycle['training_days'] ?? 14) ?>"> jours</span>
+                    </label>
+                    <label class="bo-setting-row">
+                        <span class="bo-setting-row__copy"><span class="bo-setting-row__label">Ancienneté de service requise</span><span class="bo-setting-row__help">Délai administratif complémentaire après la formation (0 pour aucun).</span></span>
+                        <span class="bo-setting-row__control"><input type="number" name="personnel_active_service_days" min="0" max="3650" value="<?= (int) ($lifecycle['active_service_days'] ?? 0) ?>"> jours</span>
+                    </label>
+                </div>
             </section>
 
         </div>

@@ -486,6 +486,14 @@ class EffectifsWorkspaceController
         $stageBilans = $this->personnelStageBilanRepository->tableExists()
             ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
             : [];
+        $dutyPosition = '';
+        $remainingTrainingDays = 0;
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
+            $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
+        } catch (\Throwable) {
+        }
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -519,6 +527,8 @@ class EffectifsWorkspaceController
             'memberOrgHistory' => $orgHistory,
             'memberServiceHistory' => $serviceHistory,
             'memberStageBilans' => $stageBilans,
+            'dutyPosition' => $dutyPosition,
+            'remainingTrainingDays' => $remainingTrainingDays,
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
@@ -868,6 +878,32 @@ class EffectifsWorkspaceController
             default => $status,
         };
         Session::flash('success', 'Statut mis à jour : ' . $label . '.');
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    public function activateDutyPosition(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) Session::get('tenant_id');
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance()) || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Action refusée ou session expirée.');
+
+            return Response::redirect(effectifs_workspace_url('membres/' . $id));
+        }
+        $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+        $changed = $duty->applyActiveDuty($tenantId, $id, (int) Session::get('user_id'));
+        $remaining = $duty->remainingTrainingDays($tenantId, $id);
+        Session::flash(
+            $changed ? 'success' : 'warning',
+            $changed
+                ? 'Le membre est maintenant en service actif. Ses rôles fonctionnels sont inchangés.'
+                : ($remaining > 0 ? 'Formation obligatoire : encore ' . $remaining . ' jour(s).' : 'Le membre est déjà en service actif.')
+        );
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
     }

@@ -34,6 +34,8 @@ $stageBilans = is_array($memberStageBilans ?? null) ? $memberStageBilans : [];
 $hrDocumentTypeLabels = is_array($hrDocumentTypeLabels ?? null) ? $hrDocumentTypeLabels : [];
 $mobilityTypeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabels : [];
 $absenceReasonLabels = is_array($absenceReasonLabels ?? null) ? $absenceReasonLabels : [];
+$dutyPosition = trim((string) ($dutyPosition ?? ''));
+$remainingTrainingDays = max(0, (int) ($remainingTrainingDays ?? 0));
 
 $elevationCooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
@@ -399,6 +401,17 @@ $memberHubTheme = 'lms';
 
     <article class="eff-card">
         <h2 class="eff-card__title">Statut du compte</h2>
+        <p class="eff-card__lead">Position administrative : <strong><?= htmlspecialchars($dutyPosition !== '' ? $dutyPosition : 'Non attribuée', ENT_QUOTES, 'UTF-8') ?></strong>.</p>
+        <?php if ($dutyPosition === \App\Services\Personnel\PersonnelDutyPositionService::LABEL_TRAINING): ?>
+            <?php if ($remainingTrainingDays > 0): ?>
+                <p class="eff-card__hint">Passage en service actif dans <?= $remainingTrainingDays ?> jour(s), après clôture du parcours d’intégration.</p>
+            <?php elseif ($canManageStatus): ?>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/position-service'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="submit" class="eff-btn eff-btn--primary">Passer en service actif</button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
         <?php if ($canManageStatus): ?>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
