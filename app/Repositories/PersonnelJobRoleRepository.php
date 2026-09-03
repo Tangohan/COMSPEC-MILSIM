@@ -89,7 +89,10 @@ class PersonnelJobRoleRepository
             return 0;
         }
         [$whereSql, $params] = $this->buildAssignmentWhere($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-        $sql = 'SELECT COUNT(*) FROM users u LEFT JOIN personnel_profiles pp ON pp.user_id = u.id WHERE ' . $whereSql;
+        // The assignments table is a member list: its cardinality must come only from users.
+        // Joining personnel_profiles here used to multiply a member when legacy databases
+        // contained more than one profile row for the same user.
+        $sql = 'SELECT COUNT(*) FROM users u WHERE ' . $whereSql;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
@@ -138,10 +141,11 @@ class PersonnelJobRoleRepository
         bool $onlyUnassigned
     ): array {
         [$whereSql, $params] = $this->buildAssignmentWhere($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.profile_slug,
-                       pp.primary_unit_id
+        // No profile field is needed by this screen. Keeping the query rooted exclusively in
+        // users guarantees one rendered row per account, including on legacy databases whose
+        // personnel_profiles uniqueness constraint was not applied correctly.
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.profile_slug
                 FROM users u
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 WHERE ' . $whereSql;
 
         return [$sql, $params];
