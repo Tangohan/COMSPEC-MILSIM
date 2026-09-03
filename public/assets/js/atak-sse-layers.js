@@ -235,6 +235,7 @@
       var b = pts[i];
       var dt = ((b.t || 0) - (a.t || 0)) / 1000;
       var kind = b.kind || a.kind || 'infantry';
+      if (prefs()['showUnitTrail_' + kind] === false) continue;
       var gapLimit = M && M.gapSecFor ? M.gapSecFor(kind) : 15;
       var lost = a.live === 'offline' || b.live === 'offline';
       var doubt = lost || a.live === 'delayed' || b.live === 'delayed' || dt >= gapLimit * 0.55;
@@ -269,6 +270,7 @@
         var now = Date.now();
         var elapsed = last.t ? (now - last.t) / 1000 : 0;
         var kind = last.kind || 'infantry';
+        if (p['showUnitTrail_' + kind] === false) return;
         pts.forEach(function (pt) {
           if (!pt.loss) return;
           L.marker(L.latLng(pt.lat, pt.lng), {
@@ -290,10 +292,12 @@
         }
       });
     }
-    if (p.showSseGhostTracks || p.showUnitGhostTrails) {
+    if (p.showUnitTrails !== false && (p.showSseGhostTracks || p.showUnitGhostTrails)) {
       Object.keys(ghostBuffers).forEach(function (key) {
         var pts = ghostBuffers[key];
         if (!pts || pts.length < 2) return;
+        var kind = pts[pts.length - 1].kind || 'infantry';
+        if (p['showUnitTrail_' + kind] === false) return;
         var latlngs = pts.map(function (s) { return [s.lat, s.lng]; });
         L.polyline(latlngs, {
           color: '#94a3b8', weight: 2, opacity: 0.5, dashArray: '5 7', interactive: false
@@ -307,7 +311,7 @@
   function onUnits(list) {
     if (!Array.isArray(list)) return;
     var p = prefs();
-    if (p.showUnitTrails === false && !p.showUnitGhostTrails && !p.showSseGhostTracks) return;
+    if (p.showUnitTrails === false) return;
     var M = window.ATAKMotion;
     list.forEach(function (u) {
       var live = 'live';

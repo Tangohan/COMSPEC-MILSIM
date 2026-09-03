@@ -158,7 +158,14 @@
 
     if (state.tracks && window.ATAKUnits && typeof window.ATAKUnits.getTrailBuffers === 'function') {
       try {
-        state.tracks.updateTracks(window.ATAKUnits.getTrailBuffers() || []);
+        var trailPrefs = window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function'
+          ? window.ATAKMap.getDisplayPrefs()
+          : {};
+        var trails = trailPrefs.showUnitTrails === false ? [] : (window.ATAKUnits.getTrailBuffers() || []).filter(function (track) {
+          var kind = track.kind || 'infantry';
+          return trailPrefs['showUnitTrail_' + kind] !== false;
+        });
+        state.tracks.updateTracks(trails);
       } catch (e) { /* optional */ }
     }
   }
