@@ -584,6 +584,19 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(401, '2026-09-03', 'La position n’est plus refusée comme anonyme après une liaison Steam', 'Au lancement, l’identifiant Steam reste associé même si la liaison passe par le chemin de secours. Les positions sans identifiant attendent Steam au lieu d’être refusées en rafale. Relancer Arma complètement après le nouveau pack', [], [], [
+                'Une liaison de secours oubliait l’identifiant Steam, puis chaque position était refusée',
+                'Le journal Liaison se remplissait d’accès refusés sans identifiant',
+            ], ['atak'], [
+                'Relancez Arma complètement. Si Steam est déjà lié, la session s’ouvre et les positions partent au poste. Le journal Liaison ne se remplit plus de refus répétés.',
+            ], 'Overwatch 1.5.14 · liaison 1.18.9'),
+            $pr(400, '2026-09-03', 'La carte du téléphone affiche indicatif, rôle, grille et radio sous l’heure', 'Sous la météo et l’heure, une bande reprend l’indicatif, le rôle, la grille et la fréquence radio. Le bouton zoom qui se décalait sur le bord droit est retiré. Relancer Arma complètement après le nouveau pack', [
+                'Bandeau d’identité sous météo et heure, avec indicatif, rôle, grille et radio',
+            ], [], [
+                'Un bouton moins se décalait sur le bord droit de la carte',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte. Sous l’heure, lisez indicatif, rôle, grille et radio. Le bouton moins en haut à droite n’apparaît plus.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.79'),
             $pr(399, '2026-09-03', 'La carte du téléphone retrouve le cartouche d’identité', 'Le cartouche Indicatif, Rôle, Groupe et Grille est de nouveau lisible, au-dessus des outils carte. Le menu qui s’ouvrait au clic droit et les boutons Mesure, Grille, Itinéraire, Zone, Couches et Signet sont retirés. Les outils carte restent affichés, sans clignoter. Relancer Arma complètement après le nouveau pack', [], [
                 'Carte plus lisible, sans barre d’outils superposée',
             ], [

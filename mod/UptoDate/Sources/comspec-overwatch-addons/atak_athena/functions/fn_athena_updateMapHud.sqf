@@ -1,9 +1,8 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - cartouche unité (Indicatif, Rôle, Groupe, Grille) en bas à gauche, au-dessus des outils carte
-    - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite de la carte visible
-    - zoom +/− en haut à droite
-    - restyle charbon / cyan du tiroir IceMan (fond, cases indicatif)
+    - barre identité sous météo / heure (Indicatif, Rôle, Grille, Radio)
+    - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite
+    - pas de boutons zoom +/− (ils se calaient sur le tiroir)
     Ne jamais restyler ni masquer le bouton natif des outils carte, ni le pied d’application IceMan.
     Les cartouches restent DANS le rectangle carte visible (jamais sous le tiroir droit).
 */
@@ -173,69 +172,51 @@ private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {};
 
 private _pad = _visW * 0.012;
-// Cap : la boussole IceMan (2615 / 2616) occupe déjà le haut gauche — ne pas empiler un second cartouche.
 _heading ctrlShow false;
 _heading ctrlEnable false;
 
-private _zW = (_visW * 0.046) max 0.028;
-private _zH = (_visH * 0.055) max 0.028;
-private _zX = _visX + _visW - _pad - _zW;
-private _zY = _visY + _pad;
-_zoomIn ctrlSetPosition [_zX, _zY, _zW, _zH];
-_zoomOut ctrlSetPosition [_zX, _zY + _zH + (_visH * 0.006), _zW, _zH];
 {
-    _x params ["_btn", "_label"];
-    _btn ctrlSetText _label;
-    _btn ctrlSetFont "RobotoCondensedBold";
-    _btn ctrlSetFontHeight (_zH * 0.72);
-    _btn ctrlSetBackgroundColor _bgTile;
-    _btn ctrlSetTextColor _white;
-    _btn ctrlEnable true;
-    _btn ctrlShow true;
-    _btn ctrlCommit 0;
-} forEach [[_zoomIn, "+"], [_zoomOut, "-"]];
-
-if (isNil {_zoomIn getVariable "COMSPEC_ATAK_ZoomWired"}) then {
-    _zoomIn setVariable ["COMSPEC_ATAK_ZoomWired", true];
-    _zoomIn ctrlAddEventHandler ["ButtonClick", {
-        [0.72] call comspec_overwatch_atak_athena_fnc_athena_mapHudZoom;
-    }];
-};
-if (isNil {_zoomOut getVariable "COMSPEC_ATAK_ZoomWired"}) then {
-    _zoomOut setVariable ["COMSPEC_ATAK_ZoomWired", true];
-    _zoomOut ctrlAddEventHandler ["ButtonClick", {
-        [1.38] call comspec_overwatch_atak_athena_fnc_athena_mapHudZoom;
-    }];
-};
+    _x ctrlShow false;
+    _x ctrlEnable false;
+    _x ctrlCommit 0;
+} forEach [_zoomIn, _zoomOut];
 
 private _boxW = (_visW * 0.40) min 0.26;
 if (_boxW < 0.10) then { _boxW = (_visW * 0.46) max 0.09; };
 private _boxH = (_visH * 0.22) max 0.078;
-// Map Tools IceMan (46600) occupe le bas gauche : le cartouche se pose au-dessus.
-private _toolsReserve = (_visH * 0.16) max 0.055;
-private _padBottom = _pad + _toolsReserve;
-private _boxY = _visY + _visH - _boxH - _padBottom;
-private _unitX = _visX + _pad;
-private _unitY = _boxY;
 private _cursorX = _visX + _visW - _pad - _boxW;
 private _cursorY = _visY + _visH - _boxH - _pad;
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
+_cursorBox ctrlSetFade 0;
 
-_unitBox ctrlSetPosition [_unitX, _unitY, _boxW, _boxH];
-_unitBox ctrlSetBackgroundColor _bgPanel;
+// Barre identité : sous météo / heure, à droite de la boussole, style bandeau.
+private _barH = (_visH * 0.046) max 0.022;
+private _barY = _visY;
+private _barX = _visX;
+private _barW = _visW;
+private _comp = _disp displayCtrl (17000 + 2615);
+if (!isNull _comp) then {
+    (ctrlPosition _comp) params ["_cx", "_cy", "_cw", "_ch"];
+    if (_cw > 0.012) then {
+        _barX = (_cx + _cw + 0.006) max _visX;
+        _barW = ((_visX + _visW) - _barX) max 0.10;
+        _barY = _cy max _visY;
+        if (_ch > 0.014) then { _barH = (_ch * 0.72) max 0.020; };
+    };
+};
+_unitBox ctrlSetPosition [_barX, _barY, _barW, _barH];
+_unitBox ctrlSetBackgroundColor [0.04, 0.04, 0.04, 0.94];
 _unitBox ctrlSetFade 0;
 _unitBox ctrlEnable false;
-_cursorBox ctrlSetFade 0;
 
 private _acctLinked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 if (!_acctLinked && {!isNull _acctBanner}) then {
-    private _banH = (_visH * 0.038) max 0.018;
-    private _banY = (_unitY - _banH - (_visH * 0.004)) max (_visY + _pad);
-    _acctBanner ctrlSetPosition [_unitX, _banY, _boxW, _banH];
+    private _banH = _barH;
+    _acctBanner ctrlSetPosition [_barX, _barY + _barH + 0.002, _barW min 0.22, _banH];
     _acctBanner ctrlSetBackgroundColor [0.28, 0.14, 0.04, 0.94];
-    _acctBanner ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.58' color='#FFD27A' align='center'>Compte non connecté</t>";
+    _acctBanner ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.52' color='#FFD27A' align='center'>Compte non connecté</t>";
     _acctBanner ctrlEnable false;
     _acctBanner ctrlShow true;
     _acctBanner ctrlCommit 0;
@@ -272,7 +253,6 @@ private _fncKm = {
 private _player = if (!isNil "cTab_player" && {!isNull cTab_player}) then { cTab_player } else { player };
 private _veh = vehicle _player;
 private _playerPos = getPosASLVisual _veh;
-private _playerHdg = round (direction _veh);
 
 private _cursorPos = [];
 if (!isNil "cTabMapCursorPos" && {cTabMapCursorPos isEqualType []} && {(count cTabMapCursorPos) >= 2}) then {
@@ -310,58 +290,43 @@ private _cursorHtml = format [
     _dEl
 ];
 
-private _unit = _player;
-if (!isNil "cTab_fnc_findUserMarker" && {_cursorPos isNotEqualTo []}) then {
-    private _hit = [_mapCtrl, _cursorPos] call cTab_fnc_findUserMarker;
-    if (_hit isEqualType objNull && {!isNull _hit}) then { _unit = vehicle _hit; };
-};
-if (_unit isEqualTo _player) then {
-    private _scan = ((_mw / 0.4) * 12) max 8;
-    {
-        if (_x isEqualTo _player) then { continue };
-        if ((_x distance2D _cursorPos) < _scan) exitWith { _unit = vehicle _x; };
-    } forEach (units group _player);
-};
-
-private _uPos = getPosASLVisual _unit;
-private _grpName = [_unit] call comspec_overwatch_connect_fnc_inGameGroupLabel;
-if (!(_grpName isEqualType "") || {_grpName isEqualTo ""}) then { _grpName = "—"; };
-
-private _man = _unit;
-if (!(_unit isKindOf "CAManBase")) then {
-    private _crew = crew _unit;
-    if (_crew isNotEqualTo []) then { _man = _crew select 0; };
-};
-
-private _cs = [_man] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
+private _cs = [_player] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
 if (!(_cs isEqualType "")) then { _cs = str _cs; };
 _cs = trim _cs;
 if (_cs isEqualTo "") then { _cs = "—"; };
 
 private _role = "";
 if (!isNil "comspec_overwatch_connect_fnc_getUnitRole") then {
-    _role = [_man] call comspec_overwatch_connect_fnc_getUnitRole;
+    _role = [_player] call comspec_overwatch_connect_fnc_getUnitRole;
 };
 if (!(_role isEqualType "")) then { _role = str _role; };
 _role = trim _role;
 if (_role isEqualTo "" || {(toLower _role) in ["operator", "operateur"]}) then { _role = "—"; };
 
-private _alt = round (_uPos select 2);
-private _spd = round (abs (speed _unit));
+private _radioTxt = "—";
+if (!isNil "comspec_overwatch_connect_fnc_getRadioState") then {
+    private _radioRaw = [_player] call comspec_overwatch_connect_fnc_getRadioState;
+    if (_radioRaw isEqualType "") then {
+        private _rp = _radioRaw splitString "|";
+        private _freq = if ((count _rp) > 1) then { _rp select 1 } else { "N/A" };
+        private _ch = if ((count _rp) > 2) then { _rp select 2 } else { "N/A" };
+        if (!(_freq in ["", "N/A"])) then {
+            _radioTxt = if ((_freq find "MHz") >= 0) then { _freq } else { format ["%1 MHz", _freq] };
+        } else {
+            if (!(_ch in ["", "N/A", "0"])) then {
+                _radioTxt = format ["canal %1", _ch];
+            };
+        };
+    };
+};
 
 private _unitHtml = format [
-    "<t font='EtelkaMonospacePro' size='0.62' color='#5EC7F2' align='left'>" +
-    "INDICATIF  %1<br/>" +
-    "RÔLE       %2<br/>" +
-    "GROUPE     %3<br/>" +
-    "GRILLE     %4<br/>" +
-    "ALT %5 m    VIT %6 km/h</t>",
+    "<t font='RobotoCondensedBold' size='0.52' color='#E8EEF2' align='left'>" +
+    "INDICATIF  %1    RÔLE  %2    GRILLE  %3    RADIO  %4</t>",
     _cs,
     _role,
-    _grpName,
-    [_uPos] call _fncGrid,
-    _alt,
-    _spd
+    [_playerPos] call _fncGrid,
+    _radioTxt
 ];
 
 _cursorBox ctrlSetStructuredText parseText _cursorHtml;
@@ -370,9 +335,13 @@ _unitBox ctrlSetStructuredText parseText _unitHtml;
 {
     _x ctrlShow true;
     _x ctrlCommit 0;
-} forEach [_cursorBox, _unitBox, _zoomIn, _zoomOut];
+} forEach [_cursorBox, _unitBox];
 _heading ctrlShow false;
 _heading ctrlCommit 0;
+_zoomIn ctrlShow false;
+_zoomOut ctrlShow false;
+_zoomIn ctrlCommit 0;
+_zoomOut ctrlCommit 0;
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIUpdate") then {
     [_disp, _mapCtrl, [_visX, _visY, _visW, _visH]] call comspec_overwatch_atak_athena_fnc_mapUIUpdate;

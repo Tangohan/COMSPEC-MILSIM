@@ -29,7 +29,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.8";
+    private const string ExtensionVersion = "1.18.9";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -5531,6 +5531,15 @@ public static partial class Extension
                     ApplyApiKeyHeaders(key);
                     if (args.Length > 2 && _gameAccessToken.Length == 0)
                         ApplyTenantId(args[2]);
+                    // Conserver exactement la même identité que le chemin synchrone. Sans ces
+                    // arguments, un Connect passé par le fallback perdait le SteamID puis chaque
+                    // UpdatePosition était refusé par Athena comme anonyme.
+                    if (args.Length > 3)
+                        ApplySteamUid(args[3]);
+                    if (args.Length > 4)
+                        ApplyModVersion(args[4]);
+                    if (args.Length > 5)
+                        ApplyBloodType(args[5]);
                     if (_apiKey.Length > 0)
                         StartClientInitAsync();
                 }
@@ -5595,6 +5604,11 @@ public static partial class Extension
                         || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
+                // Ne jamais marteler l'API avec un acteur joueur anonyme. getPlayerUID peut rester
+                // vide quelques instants au JIP : la boucle SQF réessaiera naturellement dès que
+                // Steam sera disponible. Les contacts relais restent autorisés via la session liée.
+                if (!isProxyContact && steamNorm.Length == 0)
+                    return;
                 // Mémo pose pour uploads photo : jamais depuis une IA / un téléphone relais
                 // (sinon l’indicatif opérateur devient ALLY-… ou l’inverse).
                 if (!isProxyContact && callSign.Length > 0)

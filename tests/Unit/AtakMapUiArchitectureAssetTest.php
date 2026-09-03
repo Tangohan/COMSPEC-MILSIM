@@ -69,7 +69,7 @@ final class AtakMapUiArchitectureAssetTest extends TestCase
         self::assertStringNotContainsString('createTopBar', $updUi);
         self::assertStringContainsString('88550', $updUi);
         self::assertStringContainsString('ctrlShow false', $updUi);
-        self::assertStringContainsString('_toolsReserve', $hud);
+        self::assertStringContainsString('_barH', $hud);
         self::assertStringNotContainsString('displayCtrl 46600', $layout);
         self::assertStringNotContainsString('forEach [46600', $hud);
         $page = (string) file_get_contents(

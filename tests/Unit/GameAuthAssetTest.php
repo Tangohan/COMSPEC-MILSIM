@@ -89,6 +89,14 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
     }
 
+    public function testMissingSteamOnPositionIsLoggedOncePerWindow(): void
+    {
+        $guard = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/AtakArmaWriteGuard.php');
+        self::assertStringContainsString('logThrottled', $guard);
+        self::assertStringContainsString("'steam_required'", $guard);
+        self::assertStringContainsString('300,', $guard);
+    }
+
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
     {
         $root = dirname(__DIR__, 2);

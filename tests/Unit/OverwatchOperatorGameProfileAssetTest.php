@@ -137,7 +137,9 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testExtensionOperatorHandlersKeepSteamAndTenantAndTolerateMissingRoute(): void
     {
         $dll = (string) file_get_contents($this->root() . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('private const string ExtensionVersion = "1.18.8"', $dll);
+        self::assertStringContainsString('private const string ExtensionVersion = "1.18.9"', $dll);
+        self::assertGreaterThanOrEqual(2, substr_count($dll, 'ApplySteamUid(args[3])'));
+        self::assertStringContainsString('if (!isProxyContact && steamNorm.Length == 0)', $dll);
         self::assertStringContainsString('OperatorRegister', $dll);
         self::assertStringContainsString('OperatorSync', $dll);
         self::assertStringContainsString('HandleOperatorProfile', $dll);
