@@ -120,9 +120,17 @@ final class AtakArmaWriteGuard
                 ], 403);
             }
         } elseif ($requireSteam || $this->requireSteamFromEnv()) {
-            $this->log($tenantId, false, 'Accès jeu refusé — identifiant Steam manquant', [
-                'reason' => 'steam_required',
-            ]);
+            // Une ancienne DLL peut pousser une position toutes les quelques secondes sans UID.
+            // Le refus reste strict, mais une seule entrée Liaison par fenêtre suffit pour le
+            // diagnostic (sinon le journal devient inutilisable pendant toute la mission).
+            $this->logThrottled(
+                $tenantId,
+                'steam_required',
+                300,
+                false,
+                'Accès jeu refusé — identifiant Steam manquant',
+                ['reason' => 'steam_required']
+            );
 
             return Response::json([
                 'error' => 'steam_required',
