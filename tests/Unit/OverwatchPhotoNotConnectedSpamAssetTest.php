@@ -33,6 +33,10 @@ final class OverwatchPhotoNotConnectedSpamAssetTest extends TestCase
         self::assertStringContainsString('new ByteArrayContent(imageBytes)', $cs);
         self::assertStringContainsString('fileContent.Headers.ContentLength = imageBytes.Length', $cs);
         self::assertStringContainsString('multipart.Add(fileContent, "image", fileName)', $cs);
+        self::assertStringContainsString('multipart.ReadAsByteArrayAsync()', $cs);
+        self::assertStringContainsString('new ByteArrayContent(multipartBytes)', $cs);
+        self::assertStringContainsString('bufferedMultipart.Headers.ContentLength = multipartBytes.Length', $cs);
+        self::assertStringContainsString('req.Headers.TransferEncodingChunked = false', $cs);
         $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
         self::assertStringContainsString('[atak/recon-images] missing_image', $ctrl);
     }
