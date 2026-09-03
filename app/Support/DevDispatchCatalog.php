@@ -584,6 +584,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(408, '2026-09-03', 'Les grandes photos terrain arrivent au poste', 'Les captures PNG Arma de plus de 16 Mo ne sont plus refusées comme trop lourdes. Déployer le portail puis laisser PHP recharger sa configuration pendant quelques minutes', [
+                'Photos terrain acceptées jusqu’à 96 Mo',
+            ], [], [
+                'Le journal terminait par PhotoUpload — http_400 — file_too_large',
+            ], ['atak'], [
+                'Après déploiement, prenez une photo depuis le téléphone : le journal affiche PhotoUpload OK et le cliché apparaît au poste.',
+            ], 'Portail 1.5.97'),
             $pr(407, '2026-09-03', 'Un seul cliché dans le dossier Captures', 'Une photo prise depuis le téléphone n’écrit plus une rafale de copies identiques dans le dossier Captures. Relancer Arma complètement après le nouveau pack', [
                 'Un déclenchement n’écrit plus qu’un fichier',
             ], [], [
