@@ -712,12 +712,13 @@ final class GameAuthService
         if (!$this->hasSteamId($steamId)) {
             return null;
         }
-        $account = $this->accounts->findBySteamId($steamId);
-        if ($account !== null) {
-            return $account;
-        }
+        // La fiche Effectifs est la source actuelle de la liaison. Consulter
+        // athena_accounts en premier pouvait ressusciter un ancien profil après
+        // que l'administrateur avait changé ou supprimé son Steam côté membre.
         $user = $this->users->findBySteamId($steamId);
         if ($user === null) {
+            // Une valeur résiduelle dans athena_accounts ne constitue pas une
+            // liaison : la dissociation explicite de la fiche doit être définitive.
             return null;
         }
         $email = strtolower(trim((string) ($user['email'] ?? '')));
@@ -731,7 +732,12 @@ final class GameAuthService
         if ($account === null) {
             return null;
         }
-        $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $steamId);
+        $accountSteam = SteamId::normalize((string) ($account['steam_id'] ?? ''));
+        if ($accountSteam !== $steamId) {
+            if (!$this->accounts->replaceSteamId((int) $account['id'], $steamId)) {
+                return null;
+            }
+        }
         $account['steam_id'] = $steamId;
         $tenantId = (int) ($user['tenant_id'] ?? 0);
         $userId = (int) ($user['id'] ?? 0);
@@ -1337,7 +1343,10 @@ final class GameAuthService
             $user = $this->users->findById($userId, $tenantId) ?? [];
             $userSteam = SteamId::normalize((string) ($user['steam_id'] ?? ''));
         }
-        if ($accountSteam !== $clientSteam && $userSteam !== $clientSteam) {
+        // Une fiche Effectifs renseignée est prioritaire sur le cache global :
+        // un refresh local de l'ancien Steam doit être refusé après dissociation.
+        if (($this->hasSteamId($userSteam) && $userSteam !== $clientSteam)
+            || (!$this->hasSteamId($userSteam) && $accountSteam !== $clientSteam)) {
             return '';
         }
         if (!$this->hasSteamId($accountSteam)) {

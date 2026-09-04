@@ -78,6 +78,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
         self::assertStringNotContainsString('if (pairing.Length < 32)', $dll);
         self::assertStringContainsString('AuthSteam', $dll);
+        self::assertStringContainsString('replaceSteamId', $svc);
+        self::assertStringContainsString('$user = $this->users->findBySteamId($steamId);', $svc);
     }
 
     public function testSteamSessionBecomesReadyEvenIfC2PingFails(): void
