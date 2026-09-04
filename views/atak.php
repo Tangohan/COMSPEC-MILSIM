@@ -154,6 +154,7 @@ if ($atakMapConfig) {
     ]) ?>;
     window.ATAK_PHONE_SESSION = <?= json_encode($phoneOperatorSession ?: null) ?>;
     window.ATAK_ACCESS_GAP = <?= json_encode($atakAccessGap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
+    window.ATAK_DEVICE_SECURITY = <?= json_encode($atakDeviceSecurity ?? ['needsRecoveryCodes' => false, 'setupUrl' => ''], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
     window.ATAK_REPORT_CATALOG = <?= json_encode(\App\Support\AtakIcemanReportCatalog::forFrontend(), JSON_UNESCAPED_UNICODE) ?>;
     window.APP_VERSION = <?= json_encode($assetVer, JSON_UNESCAPED_UNICODE) ?>;
     window.APP_BASE_URL = <?= json_encode(rtrim((string) $base, '/'), JSON_UNESCAPED_UNICODE) ?>;
@@ -430,16 +431,16 @@ if ($atakMapConfig) {
       <section class="atak-account-section atak-account-section--game-link" id="atak-game-link-section">
         <div class="atak-game-link-head">
           <h3 class="atak-account-section-title">Appairer un terminal</h3>
-          <span class="atak-pill atak-pill--ok" id="atak-device-pair-pill">Sécurisé · 10 min</span>
+          <span class="atak-pill atak-pill--muted" id="atak-device-pair-pill">Valable 10 min</span>
         </div>
-        <p class="atak-game-link-hint">Dans COMSPEC ATAK, demandez un appairage puis saisissez ici le code affiché par le terminal. Le terminal ne sera jamais autorisé sans votre confirmation.</p>
+        <p class="atak-game-link-hint">Demandez un appairage dans COMSPEC ATAK, puis saisissez ici le code affiché. Rien n’est autorisé sans votre confirmation.</p>
         <form class="atak-device-pair-form" id="atak-device-pair-form" novalidate>
           <label class="atak-game-link-code-label" for="atak-device-pair-code">Code affiché sur le terminal</label>
           <div class="atak-device-pair-code-wrap">
             <input id="atak-device-pair-code" class="atak-device-pair-code" name="user_code" inputmode="text" autocomplete="one-time-code" maxlength="9" placeholder="H7KM-29QP" aria-describedby="atak-device-pair-help" required>
             <button type="submit" class="atak-game-link-btn" id="atak-game-link-btn">Vérifier le code</button>
           </div>
-          <small id="atak-device-pair-help" class="atak-device-pair-help">Le code contient 8 caractères et n’est pas un mot de passe.</small>
+          <small id="atak-device-pair-help" class="atak-device-pair-help">Huit caractères, ce n’est pas un mot de passe.</small>
         </form>
         <div class="atak-game-link-result atak-device-pair-preview" id="atak-game-link-result" hidden aria-live="polite">
           <p class="atak-game-link-code-label">Nouveau terminal COMSPEC ATAK</p>
@@ -456,7 +457,7 @@ if ($atakMapConfig) {
         </div>
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
         <p class="atak-device-pair-success" id="atak-device-pair-success" hidden role="status"></p>
-        <a class="atak-device-pair-manage" href="<?= htmlspecialchars(url('account/security/devices'), ENT_QUOTES, 'UTF-8') ?>">Gérer les terminaux, certificats et codes de récupération</a>
+        <a class="atak-device-pair-manage" href="<?= htmlspecialchars(url('account/security/devices'), ENT_QUOTES, 'UTF-8') ?>">Gérer les terminaux et les codes de secours</a>
       </section>
       <section class="atak-account-section atak-account-section--phone-link" id="atak-phone-link-section">
         <div class="atak-game-link-head">
@@ -1061,6 +1062,28 @@ if ($atakMapConfig) {
       <div class="atak-session-profile-actions atak-access-gap-actions">
         <button type="button" class="atak-session-profile-btn atak-session-profile-btn--ghost" id="atak-access-gap-dismiss">Continuer sans demander</button>
         <button type="button" class="atak-session-profile-btn atak-session-profile-btn--primary" id="atak-access-gap-request">Demander les autorisations d’accès</button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="atak-session-profile-overlay atak-recovery-setup-modal"
+    id="atak-recovery-setup-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="atak-recovery-setup-title"
+    hidden
+  >
+    <div class="atak-session-profile-backdrop" data-recovery-setup-dismiss="1"></div>
+    <div class="atak-session-profile-card atak-recovery-setup-card">
+      <p class="atak-recovery-setup-kicker">Sécurité du terminal</p>
+      <h2 id="atak-recovery-setup-title" class="atak-session-profile-title">Aucun code de secours n’est enregistré</h2>
+      <p class="atak-session-profile-lead">
+        Sans ces codes, vous ne pourrez pas autoriser un terminal COMSPEC ATAK si Steam n’est pas disponible.
+        Générez-les maintenant dans votre espace compte ; ils ne s’affichent qu’une fois.
+      </p>
+      <div class="atak-session-profile-actions atak-recovery-setup-actions">
+        <button type="button" class="atak-session-profile-btn atak-session-profile-btn--ghost" id="atak-recovery-setup-later">Continuer vers la carte</button>
+        <a class="atak-session-profile-btn atak-session-profile-btn--primary" id="atak-recovery-setup-go" href="<?= htmlspecialchars(url('account/security/devices') . '#recovery', ENT_QUOTES, 'UTF-8') ?>">Générer mes codes de secours</a>
       </div>
     </div>
   </div>
@@ -3151,6 +3174,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
   <script src="<?= $base ?>/assets/js/atak-access-gap.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-recovery-setup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-phone-proximity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

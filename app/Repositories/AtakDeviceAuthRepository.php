@@ -45,4 +45,19 @@ final class AtakDeviceAuthRepository
     public function recentEvents(int $userId,int $tenantId):array{$q=$this->db()->prepare('SELECT event_type,metadata_json,created_at FROM atak_security_events WHERE user_id=? AND tenant_id=? ORDER BY id DESC LIMIT 20');$q->execute([$userId,$tenantId]);return $q->fetchAll(PDO::FETCH_ASSOC)?:[];}
     public function transaction(callable $fn): mixed {$db=$this->db();$db->beginTransaction();try{$v=$fn();$db->commit();return $v;}catch(\Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}}
     public function cleanup():array{$a=$this->db()->exec("DELETE FROM atak_device_pairings WHERE expires_at<UTC_TIMESTAMP()-INTERVAL 7 DAY");$b=$this->db()->exec("DELETE FROM game_sessions WHERE (refresh_expires_at<UTC_TIMESTAMP() OR revoked_at<UTC_TIMESTAMP()-INTERVAL 30 DAY)");return ['pairings'=>(int)$a,'sessions'=>(int)$b];}
+
+    public function hasActiveRecoveryCodes(int $userId, int $tenantId): bool
+    {
+        $q = $this->db()->prepare(
+            'SELECT 1
+             FROM atak_recovery_code_sets s
+             JOIN atak_recovery_codes c ON c.set_id = s.id
+             WHERE s.user_id = ? AND s.tenant_id = ?
+               AND s.revoked_at IS NULL AND c.used_at IS NULL
+             LIMIT 1'
+        );
+        $q->execute([$userId, $tenantId]);
+
+        return (bool) $q->fetchColumn();
+    }
 }
