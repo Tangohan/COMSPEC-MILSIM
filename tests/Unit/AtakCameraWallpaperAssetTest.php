@@ -39,6 +39,11 @@ final class AtakCameraWallpaperAssetTest extends TestCase
         self::assertStringContainsString('ui/camera.hpp', $cfg);
         self::assertStringContainsString('1.8.22', $cfg);
 
+        $cameraUi = (string) file_get_contents($addon . '/ui/camera.hpp');
+        self::assertStringNotContainsString('class RscTitles', $cameraUi);
+        self::assertStringContainsString('class controlsBackground', $cameraUi);
+        self::assertStringContainsString('class Overlay: RscPicture', $cameraUi);
+
         $dialog = (string) file_get_contents($addon . '/functions/fn_webJSDialog.sqf');
         self::assertStringContainsString('camera:open', $dialog);
         self::assertStringContainsString('camera:shot', $dialog);
@@ -50,6 +55,8 @@ final class AtakCameraWallpaperAssetTest extends TestCase
         self::assertStringContainsString('Connectez-vous au poste pour envoyer le cliché.', $shot);
         self::assertStringContainsString('Cliché envoyé au poste.', $shot);
         self::assertStringNotContainsString('comspec_overwatch_connect_fnc_', $shot);
+        self::assertStringNotContainsString('cutRsc', $shot);
+        self::assertStringContainsString('1201, 1202, 1203, 1210, 1214', $shot);
 
         $store = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         self::assertStringContainsString('IntelPhotoRecompress', $store);

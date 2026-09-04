@@ -16,19 +16,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_CameraShotBusy", true, false];
         private _disp = findDisplay 88510;
         if (!isNull _disp) then
         {
-            { (_disp displayCtrl _x) ctrlShow false; } forEach [1201, 1202, 1203];
+            { (_disp displayCtrl _x) ctrlShow false; } forEach [1201, 1202, 1203, 1210, 1214];
         };
-        private _layer = "COMSPEC_ATAK_CAMERA" call BIS_fnc_rscLayer;
-        _layer cutText ["", "PLAIN"];
     };
 
     private _showChrome = {
-        private _layer = "COMSPEC_ATAK_CAMERA" call BIS_fnc_rscLayer;
-        _layer cutRsc ["COMSPEC_ATAK_CameraOverlay", "PLAIN", 0, false];
         private _disp = findDisplay 88510;
         if (!isNull _disp) then
         {
-            { (_disp displayCtrl _x) ctrlShow true; } forEach [1201, 1202, 1203];
+            { (_disp displayCtrl _x) ctrlShow true; } forEach [1201, 1202, 1203, 1210, 1214];
         };
     };
 
