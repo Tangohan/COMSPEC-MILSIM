@@ -275,6 +275,18 @@ final class RegisterController
         $emailNorm = strtolower(trim($email));
         Session::set('register_pending_email', $emailNorm);
 
+        $registrationInbox = registration_alert_inbox_email();
+        if ($registrationInbox !== null) {
+            $this->emailService->sendPlatformAccountRegistrationAlert(
+                $registrationInbox,
+                $emailNorm,
+                $displayName,
+                $tenantName,
+                'created',
+                $tenantId
+            );
+        }
+
         try {
             $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
             $tokenId = $this->emailTokens->create(

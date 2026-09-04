@@ -245,6 +245,40 @@ final class EmailService
         );
     }
 
+    /**
+     * Informe l'exploitation de l'avancement d'une inscription publique.
+     * L'échec de cette notification ne doit jamais bloquer le parcours du membre.
+     *
+     * @param 'created'|'email_verified' $phase
+     */
+    public function sendPlatformAccountRegistrationAlert(
+        string $to,
+        string $memberEmail,
+        string $displayName,
+        string $tenantName,
+        string $phase,
+        int $tenantId
+    ): bool {
+        $verified = $phase === 'email_verified';
+
+        return $this->sendTemplated(
+            $verified ? EmailEvents::PLATFORM_ACCOUNT_EMAIL_VERIFIED : EmailEvents::PLATFORM_ACCOUNT_CREATED,
+            'platform_account_registration_alert',
+            $to,
+            ($verified ? 'E-mail vérifié' : 'Nouveau compte créé') . ' — ' . $displayName,
+            [
+                'memberEmail' => $memberEmail,
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'phase' => $verified ? 'email_verified' : 'created',
+                'occurredAt' => date('d/m/Y H:i'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'platform_account_registration_alert', 'phase' => $phase]
+        );
+    }
+
     public function sendRegisterSecurityCompanion(
         string $to,
         string $displayName,

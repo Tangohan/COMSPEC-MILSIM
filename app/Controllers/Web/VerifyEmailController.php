@@ -68,6 +68,19 @@ final class VerifyEmailController
 
         $tenant = $this->tenantRepository->findById($tenantId);
         $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
+        $registrationInbox = registration_alert_inbox_email();
+        if ($registrationInbox !== null) {
+            $memberEmail = strtolower(trim((string) ($user['email'] ?? '')));
+            $displayName = trim((string) ($user['display_name'] ?? ''));
+            $this->emailService->sendPlatformAccountRegistrationAlert(
+                $registrationInbox,
+                $memberEmail,
+                $displayName !== '' ? $displayName : $memberEmail,
+                $tenantName,
+                'email_verified',
+                $tenantId
+            );
+        }
         // Pas de notif « nouveau membre » sur le tenant système : ce n’est pas une vraie communauté.
         if (is_array($tenant) && ($tenant['slug'] ?? '') !== 'default') {
             $staff = $this->userRepository->listGovernanceEmailsForTenant($tenantId);

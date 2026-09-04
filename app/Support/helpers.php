@@ -607,6 +607,33 @@ if (!function_exists('legal_public_contact_email')) {
     }
 }
 
+if (!function_exists('registration_alert_inbox_email')) {
+    /**
+     * Boîte d'exploitation qui suit la création et la vérification des comptes.
+     * Une configuration dédiée peut être utilisée sans dupliquer obligatoirement
+     * l'adresse déjà prévue pour les alertes d'exploitation.
+     */
+    function registration_alert_inbox_email(): ?string
+    {
+        $dedicated = trim((string) env('REGISTRATION_ALERT_EMAIL', ''));
+        if ($dedicated !== '' && filter_var($dedicated, FILTER_VALIDATE_EMAIL)) {
+            return $dedicated;
+        }
+
+        foreach (['ERROR_ALERT_EMAIL', 'SECURITY_ALERT_EMAILS'] as $key) {
+            $configured = (string) env($key, '');
+            foreach (preg_split('/[\s,;]+/', $configured) ?: [] as $candidate) {
+                $candidate = trim($candidate);
+                if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
