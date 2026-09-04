@@ -22,6 +22,14 @@ final class BackOfficeSidebarPermissionFilterTest extends TestCase
         self::assertStringContainsString('$parentOk = $boHrefAllowed', $nav);
     }
 
+    public function testSidebarDoesNotOverwriteGroupPageViewData(): void
+    {
+        $sidebar = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/back_office_sidebar.php');
+
+        self::assertStringContainsString('foreach ($athNavGroups as $navGroup)', $sidebar);
+        self::assertStringNotContainsString('foreach ($athNavGroups as $group)', $sidebar);
+    }
+
     public function testRuleLookupPrefersLongestPathAndDefaultsBo(): void
     {
         require_once dirname(__DIR__, 2) . '/app/Support/helpers.php';
