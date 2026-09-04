@@ -31,4 +31,15 @@ final class AtakDeviceAuthContractTest extends TestCase
         self::assertStringContainsString('used_at DATETIME DEFAULT NULL', $sql);
         self::assertStringContainsString('certificate_id BIGINT UNSIGNED', $sql);
     }
+
+    public function testAtakWebUsesDeviceInitiatedPairingInsteadOfLegacyCodeGeneration(): void
+    {
+        $view = file_get_contents(base_path('views/atak.php'));
+        self::assertIsString($view);
+        self::assertStringContainsString('id="atak-device-pair-code"', $view);
+        self::assertStringContainsString("url('atak/device-pairing/lookup')", $view);
+        self::assertStringContainsString("url('atak/device-pairing/decision')", $view);
+        self::assertStringNotContainsString('function initGameLink()', $view);
+        self::assertStringNotContainsString('data-game-link-url=', $view);
+    }
 }

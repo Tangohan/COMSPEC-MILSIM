@@ -903,6 +903,32 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
 }
 .atak-game-link-btn:hover { filter: brightness(1.08); }
 .atak-game-link-btn:disabled { opacity: 0.6; cursor: wait; }
+.atak-device-pair-form { display: grid; gap: 0.45rem; }
+.atak-device-pair-code-wrap { display: grid; gap: 0.5rem; }
+.atak-device-pair-code {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.72rem 0.75rem;
+  border: 1px solid rgba(129, 140, 248, 0.55);
+  border-radius: 7px;
+  background: rgba(3, 10, 18, 0.72);
+  color: #f8fafc;
+  font: 800 1.05rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.13em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.atak-device-pair-code:focus { outline: 2px solid rgba(129, 140, 248, 0.75); outline-offset: 1px; }
+.atak-device-pair-help { color: var(--atak-muted); font-size: 0.7rem; line-height: 1.35; }
+.atak-device-pair-details { display: grid; gap: 0.42rem; margin: 0.55rem 0 0.8rem; }
+.atak-device-pair-details div { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.atak-device-pair-details dt { color: var(--atak-muted); font-size: 0.72rem; }
+.atak-device-pair-details dd { margin: 0; color: #f8fafc; font-size: 0.76rem; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.atak-device-pair-actions { display: grid; grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); gap: 0.5rem; }
+.atak-device-pair-actions .atak-game-link-btn { font-size: 0.72rem; }
+.atak-device-pair-success { margin: 0.65rem 0 0; color: #86efac; font-size: 0.76rem; font-weight: 700; }
+.atak-device-pair-manage { display: inline-block; margin-top: 0.75rem; color: #a5b4fc; font-size: 0.72rem; text-decoration: none; }
+.atak-device-pair-manage:hover { text-decoration: underline; }
 .atak-account-section--phone-link .atak-game-link-btn {
   background: #2dd4bf;
   color: #06201c;

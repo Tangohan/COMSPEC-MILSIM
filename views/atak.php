@@ -298,7 +298,7 @@ if ($atakMapConfig) {
           <span class="atak-session-profile-chip-key">Profil</span>
           <span class="atak-session-profile-chip-value" id="atak-session-profile-badge"></span>
         </button>
-        <button type="button" class="atak-header-action atak-header-action--primary" id="atak-btn-game-link" title="Générer un code pour lier Arma à votre compte">Lier le jeu</button>
+        <button type="button" class="atak-header-action atak-header-action--primary" id="atak-btn-game-link" title="Saisir le code affiché par un terminal COMSPEC ATAK">Appairer</button>
         <button type="button" class="atak-header-action atak-header-secondary" id="atak-btn-phone-link" title="Générer un code pour lier un téléphone à Athena">Téléphone</button>
       </div>
       <?php endif; ?>
@@ -429,18 +429,34 @@ if ($atakMapConfig) {
       <?php if ($currentUser): ?>
       <section class="atak-account-section atak-account-section--game-link" id="atak-game-link-section">
         <div class="atak-game-link-head">
-          <h3 class="atak-account-section-title">Connexion en jeu</h3>
-          <span class="atak-pill atak-pill--ok">30 min · usage unique</span>
+          <h3 class="atak-account-section-title">Appairer un terminal</h3>
+          <span class="atak-pill atak-pill--ok" id="atak-device-pair-pill">Sécurisé · 10 min</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : téléphone ATAK Enhanced → écran <strong>Desktop</strong> → <strong>Connexion Athena</strong> (ou touche <strong>K</strong> → <strong>Connexion Athena</strong>). Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
-        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
-        <div class="atak-game-link-result" id="atak-game-link-result" hidden>
-          <p class="atak-game-link-code-label">Votre code</p>
-          <p class="atak-game-link-code" id="atak-game-link-code">————</p>
-          <p class="atak-game-link-meta" id="atak-game-link-meta"></p>
-          <button type="button" class="atak-game-config-copy" id="atak-game-link-copy" title="Copier le code">Copier</button>
+        <p class="atak-game-link-hint">Dans COMSPEC ATAK, demandez un appairage puis saisissez ici le code affiché par le terminal. Le terminal ne sera jamais autorisé sans votre confirmation.</p>
+        <form class="atak-device-pair-form" id="atak-device-pair-form" novalidate>
+          <label class="atak-game-link-code-label" for="atak-device-pair-code">Code affiché sur le terminal</label>
+          <div class="atak-device-pair-code-wrap">
+            <input id="atak-device-pair-code" class="atak-device-pair-code" name="user_code" inputmode="text" autocomplete="one-time-code" maxlength="9" placeholder="H7KM-29QP" aria-describedby="atak-device-pair-help" required>
+            <button type="submit" class="atak-game-link-btn" id="atak-game-link-btn">Vérifier le code</button>
+          </div>
+          <small id="atak-device-pair-help" class="atak-device-pair-help">Le code contient 8 caractères et n’est pas un mot de passe.</small>
+        </form>
+        <div class="atak-game-link-result atak-device-pair-preview" id="atak-game-link-result" hidden aria-live="polite">
+          <p class="atak-game-link-code-label">Nouveau terminal COMSPEC ATAK</p>
+          <dl class="atak-device-pair-details">
+            <div><dt>Terminal</dt><dd id="atak-device-pair-terminal">—</dd></div>
+            <div><dt>Steam</dt><dd id="atak-device-pair-steam">—</dd></div>
+            <div><dt>Version</dt><dd id="atak-device-pair-version">—</dd></div>
+            <div><dt>Expiration</dt><dd id="atak-device-pair-expires">—</dd></div>
+          </dl>
+          <div class="atak-device-pair-actions">
+            <button type="button" class="atak-game-config-copy" id="atak-device-pair-deny">Refuser</button>
+            <button type="button" class="atak-game-link-btn" id="atak-device-pair-approve">Autoriser ce terminal</button>
+          </div>
         </div>
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
+        <p class="atak-device-pair-success" id="atak-device-pair-success" hidden role="status"></p>
+        <a class="atak-device-pair-manage" href="<?= htmlspecialchars(url('account/security/devices'), ENT_QUOTES, 'UTF-8') ?>">Gérer les terminaux, certificats et codes de récupération</a>
       </section>
       <section class="atak-account-section atak-account-section--phone-link" id="atak-phone-link-section">
         <div class="atak-game-link-head">
@@ -1058,7 +1074,6 @@ if ($atakMapConfig) {
     $hubCallsign = trim((string) ($currentUser['callsign'] ?? $currentUser['arma_callsign'] ?? ''));
     $hubEmail = trim((string) ($currentUser['email'] ?? ''));
     $hubInitial = mb_strtoupper(mb_substr($hubDisplayName !== '' ? $hubDisplayName : ($hubCallsign !== '' ? $hubCallsign : 'A'), 0, 1));
-    $hubGameLinkUrl = $gameLinkCreateUrl ?? url('atak/game-link');
   ?>
   <div
     class="atak-session-hub"
@@ -1066,7 +1081,6 @@ if ($atakMapConfig) {
     role="dialog"
     aria-modal="true"
     aria-labelledby="atak-session-profile-title"
-    data-game-link-url="<?= htmlspecialchars($hubGameLinkUrl, ENT_QUOTES, 'UTF-8') ?>"
     hidden
   >
     <div class="atak-session-hub__stage">
@@ -1238,20 +1252,12 @@ if ($atakMapConfig) {
 
         <section class="atak-session-hub__step" data-hub-step="link" hidden>
           <p class="atak-session-hub__kicker">Liaison</p>
-          <h2 class="atak-session-hub__title">Lier le jeu (facultatif)</h2>
+          <h2 class="atak-session-hub__title">Appairer COMSPEC ATAK</h2>
           <p class="atak-session-hub__lead">
-            Générez un code, puis saisissez-le dans Arma : téléphone ATAK → <strong>Desktop</strong> → <strong>Connexion Athena</strong> (ou touche <strong>K</strong>).
-            Vous pourrez aussi le faire plus tard depuis le compte.
+            Le terminal COMSPEC ATAK génère désormais lui-même un code sécurisé. Ouvrez ensuite <strong>Appairer</strong> dans l’en-tête de la carte, saisissez ce code et contrôlez l’identité du terminal avant de l’autoriser.
           </p>
           <div class="atak-session-hub__link-box">
-            <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-game-link-btn">Générer un code</button>
-            <div class="atak-session-hub__link-result" id="atak-hub-game-link-result" hidden>
-              <p class="atak-session-hub__link-label">Votre code</p>
-              <p class="atak-session-hub__link-code" id="atak-hub-game-link-code">————</p>
-              <p class="atak-session-hub__link-meta" id="atak-hub-game-link-meta"></p>
-              <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-game-link-copy">Copier</button>
-            </div>
-            <p class="atak-session-hub__link-error" id="atak-hub-game-link-error" hidden></p>
+            <p class="atak-session-hub__link-meta">Aucun secret n’est généré par le navigateur. L’autorisation est valable uniquement pour le terminal présenté et son certificat est enregistré dans le back-office.</p>
           </div>
           <div class="atak-session-hub__actions">
             <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-link-back">Retour</button>
@@ -4037,77 +4043,88 @@ if ($atakMapConfig) {
       }
       }
 
-      (function initGameLink() {
+      (function initDevicePairing() {
+        var form = document.getElementById('atak-device-pair-form');
         var btn = document.getElementById('atak-game-link-btn');
-        if (!btn) return;
-        var resultEl = document.getElementById('atak-game-link-result');
-        var codeEl = document.getElementById('atak-game-link-code');
-        var metaEl = document.getElementById('atak-game-link-meta');
+        if (!form || !btn) return;
+        var codeInput = document.getElementById('atak-device-pair-code');
+        var preview = document.getElementById('atak-game-link-result');
         var errEl = document.getElementById('atak-game-link-error');
-        var copyBtn = document.getElementById('atak-game-link-copy');
-        var createUrl = <?= json_encode($gameLinkCreateUrl ?? url('atak/game-link'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-        var linkBusy = false;
-        function unlockLinkBtn(label, cooldownMs) {
-          var wait = Math.max(0, cooldownMs || 0);
-          setTimeout(function () {
-            linkBusy = false;
-            btn.disabled = false;
-            btn.textContent = label || 'Générer un code';
-          }, wait);
+        var successEl = document.getElementById('atak-device-pair-success');
+        var pill = document.getElementById('atak-device-pair-pill');
+        var approveBtn = document.getElementById('atak-device-pair-approve');
+        var denyBtn = document.getElementById('atak-device-pair-deny');
+        var lookupUrl = <?= json_encode(url('atak/device-pairing/lookup'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var decisionUrl = <?= json_encode(url('atak/device-pairing/decision'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var busy = false;
+
+        function showMessage(el, message) {
+          if (errEl) errEl.hidden = true;
+          if (successEl) successEl.hidden = true;
+          if (!el) return;
+          el.textContent = message;
+          el.hidden = false;
         }
-        btn.addEventListener('click', function () {
-          if (linkBusy) return;
-          if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
-          linkBusy = true;
-          btn.disabled = true;
-          btn.textContent = 'Génération…';
-          fetch(createUrl, { method: 'POST', credentials: 'include', headers: { 'Accept': 'application/json' } })
-            .then(function (r) {
-              return r.text().then(function (raw) {
-                var j = null;
-                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
-                return { ok: r.ok, status: r.status, body: j };
-              });
-            })
-            .then(function (res) {
-              if (!res.ok || !res.body || !res.body.code) {
-                var msg = (res.body && res.body.message)
-                  ? res.body.message
-                  : (res.status === 404
-                    ? 'Service de liaison introuvable. Rechargez la page après mise à jour du portail.'
-                    : 'Impossible de générer le code.');
-                if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
-                // Pas de retry auto ; cooldown après 503 pour éviter de spammer le serveur.
-                unlockLinkBtn('Générer un code', res.status === 503 ? 4000 : 800);
-                return;
-              }
-              unlockLinkBtn('Générer un nouveau code', 0);
-              if (codeEl) codeEl.textContent = res.body.code;
-              if (metaEl) {
-                metaEl.textContent = res.body.hint || 'Dans Arma : téléphone ATAK → Desktop → Connexion Athena (ou touche K), puis entrez ce code.';
-              }
-              if (resultEl) resultEl.hidden = false;
-            })
-            .catch(function () {
-              unlockLinkBtn('Générer un code', 1500);
-              if (errEl) {
-                errEl.textContent = 'Réseau indisponible. Réessayez dans un instant.';
-                errEl.hidden = false;
-              }
+        function post(url, values) {
+          var body = new URLSearchParams(values || {});
+          body.set('_csrf_token', window.ATAK_CSRF_TOKEN || '');
+          return fetch(url, {
+            method: 'POST', credentials: 'include', cache: 'no-store',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: body.toString()
+          }).then(function (response) {
+            return response.json().catch(function () { return {}; }).then(function (json) {
+              return { ok: response.ok, status: response.status, body: json };
             });
-        });
-        if (copyBtn && codeEl) {
-          copyBtn.addEventListener('click', function () {
-            var t = codeEl.textContent || '';
-            if (!t || t.indexOf('—') === 0) return;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(t).then(function () {
-                copyBtn.textContent = 'Copié';
-                setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
-              });
-            }
           });
         }
+        function normalizeCode(value) {
+          var raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+          return raw.length > 4 ? raw.slice(0, 4) + '-' + raw.slice(4) : raw;
+        }
+        function resetButtons() {
+          busy = false;
+          btn.disabled = false;
+          btn.textContent = 'Vérifier le code';
+          if (approveBtn) approveBtn.disabled = false;
+          if (denyBtn) denyBtn.disabled = false;
+        }
+        if (codeInput) codeInput.addEventListener('input', function () { codeInput.value = normalizeCode(codeInput.value); });
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          if (busy) return;
+          var code = normalizeCode(codeInput ? codeInput.value : '');
+          if (code.length !== 9) { showMessage(errEl, 'Saisissez le code complet au format H7KM-29QP.'); return; }
+          busy = true; btn.disabled = true; btn.textContent = 'Vérification…';
+          if (preview) preview.hidden = true;
+          post(lookupUrl, { user_code: code }).then(function (res) {
+            if (!res.ok || !res.body.pairing) { showMessage(errEl, res.body.message || 'Code introuvable ou expiré.'); resetButtons(); return; }
+            var pairing = res.body.pairing;
+            document.getElementById('atak-device-pair-terminal').textContent = pairing.terminal_uid || '—';
+            document.getElementById('atak-device-pair-steam').textContent = pairing.steam_uid_masked || 'Non fourni';
+            document.getElementById('atak-device-pair-version').textContent = pairing.mod_version ? 'COMSPEC ATAK ' + pairing.mod_version : '—';
+            document.getElementById('atak-device-pair-expires').textContent = pairing.expires_at || '—';
+            if (preview) preview.hidden = false;
+            if (pill) { pill.textContent = 'Confirmation requise'; pill.className = 'atak-pill atak-pill--warn'; }
+            resetButtons();
+          }).catch(function () { showMessage(errEl, 'ATHENA est momentanément indisponible. Le réseau local ATAK reste actif.'); resetButtons(); });
+        });
+        function decide(decision) {
+          if (busy) return;
+          busy = true;
+          if (approveBtn) approveBtn.disabled = true;
+          if (denyBtn) denyBtn.disabled = true;
+          post(decisionUrl, { decision: decision }).then(function (res) {
+            if (!res.ok) { showMessage(errEl, res.body.message || 'La demande ne peut plus être traitée.'); resetButtons(); return; }
+            if (preview) preview.hidden = true;
+            if (codeInput) codeInput.value = '';
+            showMessage(successEl, res.body.message || (decision === 'approve' ? 'Terminal autorisé.' : 'Demande refusée.'));
+            if (pill) { pill.textContent = decision === 'approve' ? 'Terminal enrôlé' : 'Demande refusée'; pill.className = 'atak-pill ' + (decision === 'approve' ? 'atak-pill--ok' : 'atak-pill--muted'); }
+            resetButtons();
+          }).catch(function () { showMessage(errEl, 'Impossible de joindre ATHENA. Réessayez sans fermer COMSPEC ATAK.'); resetButtons(); });
+        }
+        if (approveBtn) approveBtn.addEventListener('click', function () { decide('approve'); });
+        if (denyBtn) denyBtn.addEventListener('click', function () { decide('deny'); });
       })();
 
       (function initPhoneLink() {
