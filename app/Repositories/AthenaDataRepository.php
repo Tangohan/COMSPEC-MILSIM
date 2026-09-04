@@ -91,7 +91,53 @@ final class AthenaDataRepository
         $terrain=$this->pdo()->prepare('SELECT world,layer_name,coverage_status,COUNT(*) chunks FROM athena_terrain_chunks WHERE tenant_id=? GROUP BY world,layer_name,coverage_status');$terrain->execute([$tenantId]);
         $metrics=$this->pdo()->prepare('SELECT COALESCE(SUM(events_accepted),0) events_total,COALESCE(SUM(state_updates),0) state_total,COALESCE(SUM(invalid_payloads),0) invalid_payloads,COALESCE(SUM(db_writes),0) db_writes,ROUND(COALESCE(SUM(latency_sum_ms)/NULLIF(SUM(latency_samples),0),0)) avg_latency_ms FROM athena_ingest_metrics WHERE tenant_id=?');$metrics->execute([$tenantId]);
         $sync=$this->pdo()->prepare('SELECT y.*,s.terminal_id FROM athena_sync_sessions y JOIN athena_sources s ON s.id=y.source_id WHERE y.tenant_id=? ORDER BY y.started_at DESC LIMIT 50');$sync->execute([$tenantId]);$syncRows=$sync->fetchAll(PDO::FETCH_ASSOC);foreach($syncRows as &$y)$y['summary']=json_decode((string)$y['summary'],true)?:[];unset($y);
-        return ['events'=>$events,'sources'=>$sources->fetchAll(PDO::FETCH_ASSOC),'live_state'=>$states,'map_objects'=>$objects,'terrain'=>$terrain->fetchAll(PDO::FETCH_ASSOC),'sync_sessions'=>$syncRows,'metrics'=>$metrics->fetch(PDO::FETCH_ASSOC)?:[],'server_time'=>gmdate(DATE_ATOM)];
+        $terrainRows=$terrain->fetchAll(PDO::FETCH_ASSOC);
+        $existingTerrain=$this->existingTerrain($tenantId,1);
+        if (($existingTerrain['terrain_filled']??0)>0 || ($existingTerrain['buildings']??0)>0 || ($existingTerrain['forests']??0)>0) {
+            $terrainRows[]=[
+                'world'=>$existingTerrain['world_name']?:'Carte #1',
+                'layer_name'=>'relevé ATAK existant',
+                'coverage_status'=>($existingTerrain['terrain_filled']??0)>0?'available':'scene_only',
+                'chunks'=>$existingTerrain['terrain_chunks']??0,
+                'coverage_pct'=>$existingTerrain['terrain_coverage_pct']??0,
+                'filled_cells'=>$existingTerrain['terrain_filled']??0,
+                'total_cells'=>$existingTerrain['terrain_total']??0,
+                'buildings'=>$existingTerrain['buildings']??0,
+                'forests'=>$existingTerrain['forests']??0,
+                'sampled_at'=>$existingTerrain['last_survey_at']??null,
+                'source'=>'atak_existing',
+            ];
+        }
+        return ['events'=>$events,'sources'=>$sources->fetchAll(PDO::FETCH_ASSOC),'live_state'=>$states,'map_objects'=>$objects,'terrain'=>$terrainRows,'terrain_inventory'=>$existingTerrain,'scene_objects'=>$existingTerrain['objects']??[],'sync_sessions'=>$syncRows,'metrics'=>$metrics->fetch(PDO::FETCH_ASSOC)?:[],'server_time'=>gmdate(DATE_ATOM)];
+    }
+
+    /** @return array<string,mixed> */
+    private function existingTerrain(int $tenantId,int $mapId): array
+    {
+        $empty=['map_id'=>$mapId,'world_name'=>'','world_size'=>30720,'terrain_filled'=>0,'terrain_total'=>0,'terrain_chunks'=>0,'terrain_coverage_pct'=>0,'hillshade_available'=>false,'buildings'=>0,'forests'=>0,'last_survey_at'=>null,'objects'=>[]];
+        try {
+            $terrainRepo=new AtakTerrainRepository($this->pdo());
+            $summary=$terrainRepo->coverageSummary($tenantId,$mapId);
+            $grid=$terrainRepo->getGrid($tenantId,$mapId,false);
+            $empty=array_replace($empty,$summary,[
+                'world_name'=>(string)($grid['world_name']??''),
+                'world_size'=>max(1,(int)($grid['world_size']??30720)),
+                'hillshade_available'=>(int)($summary['terrain_filled']??0)>=9,
+            ]);
+        } catch (\Throwable) {
+        }
+        try {
+            $sceneRepo=new AtakSceneObjectRepository($this->pdo());
+            $counts=$sceneRepo->countByKind($tenantId,$mapId);
+            $size=(float)$empty['world_size'];
+            $empty['buildings']=(int)($counts['building']??0);
+            $empty['forests']=(int)($counts['forest']??0);
+            $empty['objects']=$sceneRepo->visible($tenantId,$mapId,0,0,$size,$size,5000);
+            $sceneAt=$sceneRepo->lastUpdatedAt($tenantId,$mapId);
+            if ($sceneAt!==null && ($empty['last_survey_at']===null || strtotime($sceneAt)>strtotime((string)$empty['last_survey_at']))) $empty['last_survey_at']=$sceneAt;
+        } catch (\Throwable) {
+        }
+        return $empty;
     }
     public function markDebugSourceOffline(int $tenantId,string $terminalId):void{$this->pdo()->prepare('UPDATE athena_sources SET last_seen_at=UTC_TIMESTAMP(3)-INTERVAL 20 MINUTE,status="offline" WHERE tenant_id=? AND terminal_id=? AND source_type="dev_debug"')->execute([$tenantId,$terminalId]);}
     private static function json(mixed $v): string { return json_encode($v,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?:'{}'; }
