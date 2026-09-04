@@ -523,16 +523,7 @@ return function (Router $router) {
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
-<<<<<<< feat/atak-1.8.20-compte-carte-liaison
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
-=======
-    $router->post('/account/security/devices/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'lookup'], [AuthMiddleware::class]);
-    $router->post('/account/security/devices/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'decide'], [AuthMiddleware::class]);
-    $router->post('/account/security/devices/recovery', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'recovery'], [AuthMiddleware::class]);
-    $router->post('/account/security/devices/{id}/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
-    $router->post('/atak/device-pairing/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakLookup'], [AuthMiddleware::class]);
-    $router->post('/atak/device-pairing/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakDecide'], [AuthMiddleware::class]);
->>>>>>> main
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);

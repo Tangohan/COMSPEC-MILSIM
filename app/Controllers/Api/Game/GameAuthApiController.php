@@ -46,12 +46,11 @@ final class GameAuthApiController
 
     public function refresh(Request $request, array $params = []): Response
     {
-        $session = $this->requireSession();
-        if ($session instanceof Response) {
-            return $session;
-        }
-
-        return $this->respond($this->auth->refresh($this->body(), $session));
+        // Le client jeu appelle ce point lorsque son jeton d'accès est expiré :
+        // seul le refresh_token conservé par la DLL peut donc authentifier la
+        // rotation. restore() valide ce secret, retrouve la session et remplace
+        // atomiquement les deux jetons sans dépendre d'un Bearer encore valide.
+        return $this->respond($this->auth->restore($this->body()));
     }
 
     public function logout(Request $request, array $params = []): Response

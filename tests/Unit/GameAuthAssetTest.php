@@ -30,12 +30,15 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('/api/game/v1/auth/otp/request', $routes);
         self::assertStringContainsString('/api/game/v1/auth/steam/exchange', $routes);
         self::assertStringContainsString('/api/game/v1/session/restore', $routes);
+        self::assertStringContainsString('/api/game/v1/session/refresh', $routes);
         self::assertStringContainsString('/api/game/v1/bootstrap', $routes);
         self::assertStringContainsString('pickMembership', $svc);
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
         self::assertStringContainsString('pairing_token', $svc);
         self::assertStringContainsString('acceptGameSessionToken', $auth);
         self::assertStringContainsString('/api/game/v1/auth/', $auth);
+        self::assertStringContainsString("\$path === '/api/game/v1/session/refresh'", $auth);
+        self::assertStringContainsString('$this->auth->restore($this->body())', $ctrl);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
         self::assertStringContainsString('loginSteam', $sqfInit);
         $sqfSteam = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf');
