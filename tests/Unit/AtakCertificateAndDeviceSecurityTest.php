@@ -33,6 +33,10 @@ final class AtakCertificateAndDeviceSecurityTest extends TestCase
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         self::assertStringContainsString("/account/security/devices", $routes);
+        self::assertStringContainsString("/account/security/devices/revoke", $routes);
         self::assertStringContainsString('AtakDeviceSecurityController', $routes);
+        self::assertStringNotContainsString('<<<<<<<', $routes);
+        self::assertStringNotContainsString('=======', $routes);
+        self::assertStringNotContainsString('>>>>>>>', $routes);
     }
 }
