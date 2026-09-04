@@ -584,6 +584,57 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(413, '2026-09-04', 'Le téléphone s’ouvre sur l’heure, puis deux liaisons seulement', 'À l’ouverture, le terminal affiche l’heure réelle. Un clic ou Entrée révèle Connexion à Athena et Peer to Peer. Athena cherche Steam : si le terminal n’est pas encore associé, le code d’enrôlement et le code de secours apparaissent. Relancer Arma complètement après le nouveau pack', [
+                'Écran d’accueil à l’heure réelle, puis deux choix de liaison',
+                'Athena : Steam reconnu ou terminal non enrôlé, avec code et secours',
+                'Peer to Peer pour la session locale',
+            ], [], [], ['atak'], [
+                'Ouvrez le téléphone, cliquez ou appuyez sur Entrée. Choisissez Connexion à Athena ou Peer to Peer. Si le terminal n’est pas associé, validez le code affiché sur le poste, ou saisissez le code de secours. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 1.8.7'),
+            $pr(412, '2026-09-04', 'La carte Arma réapparaît et la liaison Athena accepte enfin les codes', 'Sur le téléphone, la carte du terrain n’est plus un écran noir : le relief Arma s’affiche dans la fenêtre centrale. Pour lier le compte, générez un code sur le poste (Carte ATAK → Compte → Lier le jeu) puis saisissez-le dans Code de secours. Vous pouvez aussi générer un code dans Arma et le valider sur le poste. Relancer Arma complètement après le nouveau pack', [
+                'Code « Lier le jeu » du poste accepté dans le téléphone',
+                'Code généré dans Arma validable depuis le poste',
+            ], [], [
+                'La carte du téléphone restait noire alors que les menus répondaient',
+                'Aucun code n’était créé, et le code de secours du poste était refusé',
+            ], ['atak'], [
+                'Sur le poste, ouvrez la carte ATAK, Compte, Lier le jeu, générez un code. Dans Arma, Connexion Athena → Code de secours, saisissez-le. Ou inverse : générez le code dans Arma puis validez-le sur le poste. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 1.8.6'),
+            $pr(411, '2026-09-03', 'Le téléphone affiche son écran réel, plus une barre étirée', 'Le terminal se pose au centre de la vue, dans son boîtier. Connexion, bureau, messagerie et menus sont ceux du téléphone. Terrain ouvre la carte en jeu avec ping, mesure et effectifs. Relancer Arma complètement après le nouveau pack', [
+                'Le boîtier du téléphone n’occupe plus toute la largeur de l’écran',
+                'Connexion Athena ou réseau local depuis l’écran du terminal',
+                'Bouton Terrain : la carte en jeu, avec les outils déjà connus',
+                'Les messages tapés dans le téléphone partent vers le poste ou le réseau local',
+            ], [
+                'Les menus, le bureau et la messagerie sont ceux du téléphone, plus un second écran à côté',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone. Choisissez Connexion Athena ou le réseau local. Une fois lié, Terrain affiche la carte. Menu ramène aux écrans du terminal. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 0.3'),
+            $pr(410, '2026-09-03', 'La carte du téléphone se commande comme un ATAK', 'Sur la carte : vue satellite ou carte d’état-major, effectifs du groupe, ping, mesure de distance et de cap, recentrage sur soi. Un double-clic pose un marqueur. Relancer Arma complètement après le nouveau pack', [
+                'Boutons SAT / BFT / MESURE / PING / MOI sur la carte',
+                'Les opérateurs de la session apparaissent avec leur indicatif',
+                'La mesure affiche grille, distance, cap et altitude du sol',
+            ], [
+                'La carte n’est plus un fond Arma nu : les outils tactiques répondent au clic',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone, Carte. Basculez SAT et la carte d’état-major. Cliquez MESURE, posez deux points. Double-cliquez pour un marqueur. MOI recentre sur vous.',
+            ], 'COMSPEC ATAK 0.2'),
+            $pr(409, '2026-09-03', 'Le téléphone COMSPEC se lie au poste et reprend son châssis', 'Le terminal s’affiche dans son boîtier. Connexion Athena associe le compte, envoie la position au poste et fait circuler les messages dans les deux sens. Dans Paramètres, on choisit le poste officiel ou le poste de la communauté. Relancer Arma complètement après le nouveau pack', [
+                'Boîtier du téléphone autour de l’écran',
+                'Connexion Athena : la position apparaît sur la carte du poste',
+                'Les messages du poste arrivent dans la messagerie du téléphone, et l’inverse',
+                'Choix du poste officiel ou du poste local dans Paramètres',
+            ], [], [], ['atak'], [
+                'Placez COMSPEC ATAK et CBA dans le lanceur. Pour le poste, le module de liaison doit être présent à la racine du pack. Ouvrez le téléphone, Connexion Athena. Votre indicatif doit apparaître au poste. Envoyez un message depuis le bureau : il s’affiche dans Messagerie.',
+            ], 'COMSPEC ATAK 0.2'),
+            $pr(408, '2026-09-03', 'Une photo seulement quand on déclenche Quick Picture', 'Le téléphone n’écrit plus de copies PNG tout seul. Une photo Quick Picture envoie le cliché IceMan au poste. Relancer Arma complètement après le nouveau pack', [
+                'Ouvrir l’appareil photo n’écrit plus de PNG en continu',
+                'Le cliché IceMan est bien celui qui apparaît au poste',
+            ], [], [
+                'Des copies PNG s’accumulaient dans Captures sans avoir déclenché de photo',
+            ], ['atak'], [
+                'Relancez Arma complètement. Ouvrez Quick Picture sans déclencher : aucun PNG nouveau. Prenez une photo : elle arrive au poste.',
+            ], 'Overwatch 1.5.17'),
             $pr(407, '2026-09-03', 'Un seul cliché dans le dossier Captures', 'Une photo prise depuis le téléphone n’écrit plus une rafale de copies identiques dans le dossier Captures. Relancer Arma complètement après le nouveau pack', [
                 'Un déclenchement n’écrit plus qu’un fichier',
             ], [], [

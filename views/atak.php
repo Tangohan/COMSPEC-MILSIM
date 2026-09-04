@@ -432,13 +432,20 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Connexion en jeu</h3>
           <span class="atak-pill atak-pill--ok">30 min · usage unique</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : téléphone ATAK Enhanced → écran <strong>Desktop</strong> → <strong>Connexion Athena</strong> (ou touche <strong>K</strong> → <strong>Connexion Athena</strong>). Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
-        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
+        <p class="atak-game-link-hint">Deux chemins, au choix. <strong>Code du poste :</strong> générez un code ici, puis saisissez-le dans Arma (téléphone → Connexion Athena → Code de secours). <strong>Code du téléphone :</strong> générez-le dans Arma (Associer ce terminal), puis saisissez-le ci-dessous. Chaque code ne sert qu’une fois.</p>
+        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code pour Arma</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
           <p class="atak-game-link-code" id="atak-game-link-code">————</p>
           <p class="atak-game-link-meta" id="atak-game-link-meta"></p>
           <button type="button" class="atak-game-config-copy" id="atak-game-link-copy" title="Copier le code">Copier</button>
+        </div>
+        <div class="atak-game-link-confirm" id="atak-game-link-confirm-wrap" style="margin-top:1rem">
+          <label class="atak-game-link-code-label" for="atak-game-link-confirm">Code affiché sur le téléphone</label>
+          <div class="atak-phone-link-actions" style="margin-top:.4rem;gap:.5rem;display:flex;flex-wrap:wrap;align-items:center">
+            <input type="text" id="atak-game-link-confirm" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH" style="text-transform:uppercase;letter-spacing:.12em;font-weight:700;max-width:12rem;padding:.45em .6em">
+            <button type="button" class="atak-game-link-btn" id="atak-game-link-confirm-btn">Valider ce terminal</button>
+          </div>
         </div>
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
       </section>
@@ -4045,6 +4052,7 @@ if ($atakMapConfig) {
         var errEl = document.getElementById('atak-game-link-error');
         var copyBtn = document.getElementById('atak-game-link-copy');
         var createUrl = <?= json_encode($gameLinkCreateUrl ?? url('atak/game-link'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var confirmUrl = <?= json_encode(url('atak/game-link/confirm-pair'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
         var linkBusy = false;
         function unlockLinkBtn(label, cooldownMs) {
           var wait = Math.max(0, cooldownMs || 0);
@@ -4105,6 +4113,48 @@ if ($atakMapConfig) {
                 setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
               });
             }
+          });
+        }
+        var confirmBtn = document.getElementById('atak-game-link-confirm-btn');
+        var confirmInput = document.getElementById('atak-game-link-confirm');
+        if (confirmBtn && confirmInput) {
+          confirmBtn.addEventListener('click', function () {
+            var code = String(confirmInput.value || '').trim().toUpperCase();
+            if (!code) {
+              if (errEl) { errEl.textContent = 'Saisissez le code affiché sur le téléphone.'; errEl.hidden = false; }
+              return;
+            }
+            if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+            confirmBtn.disabled = true;
+            fetch(confirmUrl, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_code: code })
+            }).then(function (r) {
+              return r.text().then(function (raw) {
+                var j = null;
+                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+                return { ok: r.ok, body: j };
+              });
+            }).then(function (res) {
+              confirmBtn.disabled = false;
+              if (!res.ok) {
+                var msg = (res.body && (res.body.message || res.body.error))
+                  ? (res.body.message || 'Code refusé.')
+                  : 'Impossible de valider ce code.';
+                if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+                return;
+              }
+              confirmInput.value = '';
+              if (errEl) { errEl.hidden = true; }
+              if (metaEl) metaEl.textContent = (res.body && res.body.message) ? res.body.message : 'Terminal validé. Le téléphone termine la liaison.';
+              if (resultEl) resultEl.hidden = false;
+              if (codeEl) codeEl.textContent = 'VALIDÉ';
+            }).catch(function () {
+              confirmBtn.disabled = false;
+              if (errEl) { errEl.textContent = 'Réseau indisponible. Réessayez dans un instant.'; errEl.hidden = false; }
+            });
           });
         }
       })();
