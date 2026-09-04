@@ -29,7 +29,17 @@ final class AtakDeviceAuthContractTest extends TestCase
         $sql=file_get_contents(base_path('migrations/20260904120000_atak_secure_device_auth.sql'));
         self::assertStringContainsString('UNIQUE KEY uk_atak_pair_device_code', $sql);
         self::assertStringContainsString('used_at DATETIME DEFAULT NULL', $sql);
-        self::assertStringContainsString('certificate_id BIGINT UNSIGNED', $sql);
+        self::assertStringContainsString('atak_terminal_id INT UNSIGNED', $sql);
+        self::assertStringContainsString('certificate_id INT UNSIGNED', $sql);
+    }
+
+    public function testDeviceSecurityControllersAreWiredInTheContainer(): void
+    {
+        $di = (string) file_get_contents(base_path('app/Core/ContainerIntegrations.php'));
+        self::assertStringContainsString('AtakDeviceSecurityController::class', $di);
+        self::assertStringContainsString('AtakDeviceAuthApiController::class', $di);
+        self::assertStringContainsString('AtakDeviceAuthService::class', $di);
+        self::assertStringContainsString('AtakDeviceAuthRepository::class', $di);
     }
 
     public function testAtakWebUsesDeviceInitiatedPairingInsteadOfLegacyCodeGeneration(): void
