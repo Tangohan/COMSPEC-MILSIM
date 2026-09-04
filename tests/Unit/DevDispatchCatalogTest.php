@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(209, $byKind['update']);
-        self::assertCount(215, $all);
+        self::assertSame(208, $byKind['update']);
+        self::assertCount(214, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -695,15 +695,30 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($photoBurst);
         self::assertSame('00407', $photoBurst['number_pad']);
         self::assertStringContainsString('captures', strtolower((string) $photoBurst['title']));
-        $largePhoto = DevDispatchCatalog::find('update', '408');
-        self::assertNotNull($largePhoto);
-        self::assertSame('00408', $largePhoto['number_pad']);
-        self::assertStringContainsString('grandes photos', strtolower((string) $largePhoto['title']));
-        $atakDevicesPage = DevDispatchCatalog::find('update', '416');
-        self::assertNotNull($atakDevicesPage);
-        self::assertSame('00416', $atakDevicesPage['number_pad']);
-        self::assertStringContainsString('terminaux atak', strtolower((string) $atakDevicesPage['title']));
-        self::assertStringContainsString('appairage indisponible', strtolower(json_encode($atakDevicesPage, JSON_UNESCAPED_UNICODE)));
+        $photoShutter = DevDispatchCatalog::find('update', '408');
+        self::assertNotNull($photoShutter);
+        self::assertSame('00408', $photoShutter['number_pad']);
+        self::assertStringContainsString('quick picture', strtolower((string) $photoShutter['title']));
+        $atakPhone = DevDispatchCatalog::find('update', '409');
+        self::assertNotNull($atakPhone);
+        self::assertSame('00409', $atakPhone['number_pad']);
+        self::assertStringContainsString('téléphone', strtolower((string) $atakPhone['title']));
+        $atakMap = DevDispatchCatalog::find('update', '410');
+        self::assertNotNull($atakMap);
+        self::assertSame('00410', $atakMap['number_pad']);
+        self::assertStringContainsString('carte', strtolower((string) $atakMap['title']));
+        $atakHtml = DevDispatchCatalog::find('update', '411');
+        self::assertNotNull($atakHtml);
+        self::assertSame('00411', $atakHtml['number_pad']);
+        self::assertStringContainsString('téléphone', strtolower((string) $atakHtml['title']));
+        $atakPair = DevDispatchCatalog::find('update', '412');
+        self::assertNotNull($atakPair);
+        self::assertSame('00412', $atakPair['number_pad']);
+        self::assertStringContainsString('liaison', strtolower((string) $atakPair['title']));
+        $atakLock = DevDispatchCatalog::find('update', '413');
+        self::assertNotNull($atakLock);
+        self::assertSame('00413', $atakLock['number_pad']);
+        self::assertStringContainsString('heure', strtolower((string) $atakLock['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

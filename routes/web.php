@@ -882,6 +882,7 @@ return function (Router $router) {
     $router->get('/atak/mod/download', [AtakController::class, 'downloadMod'], $mwAtakMemberOnly);
     $router->get('/atak/tuto', [AtakController::class, 'tuto'], $mwAtakWeb);
     $router->post('/atak/game-link', [AtakController::class, 'createGameLink'], $mwAtakMemberOnly);
+    $router->post('/atak/game-link/confirm-pair', [AtakController::class, 'confirmPairCode'], $mwAtakMemberOnly);
     $router->post('/atak/demande-acces', [AtakController::class, 'requestMapAccess'], $mwAtakMemberOnly);
     $router->get('/tacmap', [HomeController::class, 'tacmap'], [AuthMiddleware::class]);
     $router->get('/overwatch', [HomeController::class, 'overwatch'], [AuthMiddleware::class]);
@@ -2002,6 +2003,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
     $router->post('/api/atak/game-link/redeem', [AtakApiController::class, 'gameLinkRedeem']);
     $router->post('/api/atak/game-link/by-steam', [AtakApiController::class, 'gameLinkBySteam']);
+    $gamePair = \App\Controllers\Api\Game\GameAtakPairingApiController::class;
+    $router->post('/api/atak/pair/start', [$gamePair, 'start']);
+    $router->get('/api/atak/pair/status', [$gamePair, 'status']);
+    $router->post('/api/atak/pair/redeem', [$gamePair, 'redeem']);
+    $router->post('/api/atak/recovery/redeem', [$gamePair, 'recoveryRedeem']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);

@@ -3376,6 +3376,14 @@ try {
     echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
 }
 
+$atakPairMigrate = require $root . '/bootstrap/athena_atak_pair_migration.php';
+try {
+    echo "Migration game_atak_pair_challenges (code affiché dans Arma)...\n";
+    $atakPairMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] game_atak_pair_challenges : ' . $e->getMessage() . "\n";
+}
+
 require_once $root . '/bootstrap/atak_map_gateway_migration.php';
 try {
     echo "Migration atak_map_gateway (passerelle ATAK inter-équipes)...\n";

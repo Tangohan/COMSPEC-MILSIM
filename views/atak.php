@@ -433,26 +433,19 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Appairer un terminal</h3>
           <span class="atak-pill atak-pill--muted" id="atak-device-pair-pill">Valable 10 min</span>
         </div>
-        <p class="atak-game-link-hint">Demandez un appairage dans COMSPEC ATAK, puis saisissez ici le code affiché. Rien n’est autorisé sans votre confirmation.</p>
-        <form class="atak-device-pair-form" id="atak-device-pair-form" novalidate>
-          <label class="atak-game-link-code-label" for="atak-device-pair-code">Code affiché sur le terminal</label>
-          <div class="atak-device-pair-code-wrap">
-            <input id="atak-device-pair-code" class="atak-device-pair-code" name="user_code" inputmode="text" autocomplete="one-time-code" maxlength="9" placeholder="H7KM-29QP" aria-describedby="atak-device-pair-help" required>
-            <button type="submit" class="atak-game-link-btn" id="atak-game-link-btn">Vérifier le code</button>
-          </div>
-          <small id="atak-device-pair-help" class="atak-device-pair-help">Huit caractères, ce n’est pas un mot de passe.</small>
-        </form>
-        <div class="atak-game-link-result atak-device-pair-preview" id="atak-game-link-result" hidden aria-live="polite">
-          <p class="atak-game-link-code-label">Nouveau terminal COMSPEC ATAK</p>
-          <dl class="atak-device-pair-details">
-            <div><dt>Terminal</dt><dd id="atak-device-pair-terminal">—</dd></div>
-            <div><dt>Steam</dt><dd id="atak-device-pair-steam">—</dd></div>
-            <div><dt>Version</dt><dd id="atak-device-pair-version">—</dd></div>
-            <div><dt>Expiration</dt><dd id="atak-device-pair-expires">—</dd></div>
-          </dl>
-          <div class="atak-device-pair-actions">
-            <button type="button" class="atak-game-config-copy" id="atak-device-pair-deny">Refuser</button>
-            <button type="button" class="atak-game-link-btn" id="atak-device-pair-approve">Autoriser ce terminal</button>
+        <p class="atak-game-link-hint">Deux chemins, au choix. <strong>Code du poste :</strong> générez un code ici, puis saisissez-le dans Arma (téléphone → Connexion Athena → Code de secours). <strong>Code du téléphone :</strong> générez-le dans Arma (Associer ce terminal), puis saisissez-le ci-dessous. Chaque code ne sert qu’une fois.</p>
+        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code pour Arma</button>
+        <div class="atak-game-link-result" id="atak-game-link-result" hidden>
+          <p class="atak-game-link-code-label">Votre code</p>
+          <p class="atak-game-link-code" id="atak-game-link-code">————</p>
+          <p class="atak-game-link-meta" id="atak-game-link-meta"></p>
+          <button type="button" class="atak-game-config-copy" id="atak-game-link-copy" title="Copier le code">Copier</button>
+        </div>
+        <div class="atak-game-link-confirm" id="atak-game-link-confirm-wrap" style="margin-top:1rem">
+          <label class="atak-game-link-code-label" for="atak-game-link-confirm">Code affiché sur le téléphone</label>
+          <div class="atak-phone-link-actions" style="margin-top:.4rem;gap:.5rem;display:flex;flex-wrap:wrap;align-items:center">
+            <input type="text" id="atak-game-link-confirm" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH" style="text-transform:uppercase;letter-spacing:.12em;font-weight:700;max-width:12rem;padding:.45em .6em">
+            <button type="button" class="atak-game-link-btn" id="atak-game-link-confirm-btn">Valider ce terminal</button>
           </div>
         </div>
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
@@ -4074,20 +4067,17 @@ if ($atakMapConfig) {
         var codeInput = document.getElementById('atak-device-pair-code');
         var preview = document.getElementById('atak-game-link-result');
         var errEl = document.getElementById('atak-game-link-error');
-        var successEl = document.getElementById('atak-device-pair-success');
-        var pill = document.getElementById('atak-device-pair-pill');
-        var approveBtn = document.getElementById('atak-device-pair-approve');
-        var denyBtn = document.getElementById('atak-device-pair-deny');
-        var lookupUrl = <?= json_encode(url('atak/device-pairing/lookup'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-        var decisionUrl = <?= json_encode(url('atak/device-pairing/decision'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-        var busy = false;
-
-        function showMessage(el, message) {
-          if (errEl) errEl.hidden = true;
-          if (successEl) successEl.hidden = true;
-          if (!el) return;
-          el.textContent = message;
-          el.hidden = false;
+        var copyBtn = document.getElementById('atak-game-link-copy');
+        var createUrl = <?= json_encode($gameLinkCreateUrl ?? url('atak/game-link'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var confirmUrl = <?= json_encode(url('atak/game-link/confirm-pair'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var linkBusy = false;
+        function unlockLinkBtn(label, cooldownMs) {
+          var wait = Math.max(0, cooldownMs || 0);
+          setTimeout(function () {
+            linkBusy = false;
+            btn.disabled = false;
+            btn.textContent = label || 'Générer un code';
+          }, wait);
         }
         function post(url, values) {
           var body = new URLSearchParams(values || {});
@@ -4102,53 +4092,48 @@ if ($atakMapConfig) {
             });
           });
         }
-        function normalizeCode(value) {
-          var raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-          return raw.length > 4 ? raw.slice(0, 4) + '-' + raw.slice(4) : raw;
+        var confirmBtn = document.getElementById('atak-game-link-confirm-btn');
+        var confirmInput = document.getElementById('atak-game-link-confirm');
+        if (confirmBtn && confirmInput) {
+          confirmBtn.addEventListener('click', function () {
+            var code = String(confirmInput.value || '').trim().toUpperCase();
+            if (!code) {
+              if (errEl) { errEl.textContent = 'Saisissez le code affiché sur le téléphone.'; errEl.hidden = false; }
+              return;
+            }
+            if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+            confirmBtn.disabled = true;
+            fetch(confirmUrl, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_code: code })
+            }).then(function (r) {
+              return r.text().then(function (raw) {
+                var j = null;
+                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+                return { ok: r.ok, body: j };
+              });
+            }).then(function (res) {
+              confirmBtn.disabled = false;
+              if (!res.ok) {
+                var msg = (res.body && (res.body.message || res.body.error))
+                  ? (res.body.message || 'Code refusé.')
+                  : 'Impossible de valider ce code.';
+                if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+                return;
+              }
+              confirmInput.value = '';
+              if (errEl) { errEl.hidden = true; }
+              if (metaEl) metaEl.textContent = (res.body && res.body.message) ? res.body.message : 'Terminal validé. Le téléphone termine la liaison.';
+              if (resultEl) resultEl.hidden = false;
+              if (codeEl) codeEl.textContent = 'VALIDÉ';
+            }).catch(function () {
+              confirmBtn.disabled = false;
+              if (errEl) { errEl.textContent = 'Réseau indisponible. Réessayez dans un instant.'; errEl.hidden = false; }
+            });
+          });
         }
-        function resetButtons() {
-          busy = false;
-          btn.disabled = false;
-          btn.textContent = 'Vérifier le code';
-          if (approveBtn) approveBtn.disabled = false;
-          if (denyBtn) denyBtn.disabled = false;
-        }
-        if (codeInput) codeInput.addEventListener('input', function () { codeInput.value = normalizeCode(codeInput.value); });
-        form.addEventListener('submit', function (event) {
-          event.preventDefault();
-          if (busy) return;
-          var code = normalizeCode(codeInput ? codeInput.value : '');
-          if (code.length !== 9) { showMessage(errEl, 'Saisissez le code complet au format H7KM-29QP.'); return; }
-          busy = true; btn.disabled = true; btn.textContent = 'Vérification…';
-          if (preview) preview.hidden = true;
-          post(lookupUrl, { user_code: code }).then(function (res) {
-            if (!res.ok || !res.body.pairing) { showMessage(errEl, res.body.message || 'Code introuvable ou expiré.'); resetButtons(); return; }
-            var pairing = res.body.pairing;
-            document.getElementById('atak-device-pair-terminal').textContent = pairing.terminal_uid || '—';
-            document.getElementById('atak-device-pair-steam').textContent = pairing.steam_uid_masked || 'Non fourni';
-            document.getElementById('atak-device-pair-version').textContent = pairing.mod_version ? 'COMSPEC ATAK ' + pairing.mod_version : '—';
-            document.getElementById('atak-device-pair-expires').textContent = pairing.expires_at || '—';
-            if (preview) preview.hidden = false;
-            if (pill) { pill.textContent = 'Confirmation requise'; pill.className = 'atak-pill atak-pill--warn'; }
-            resetButtons();
-          }).catch(function () { showMessage(errEl, 'ATHENA est momentanément indisponible. Le réseau local ATAK reste actif.'); resetButtons(); });
-        });
-        function decide(decision) {
-          if (busy) return;
-          busy = true;
-          if (approveBtn) approveBtn.disabled = true;
-          if (denyBtn) denyBtn.disabled = true;
-          post(decisionUrl, { decision: decision }).then(function (res) {
-            if (!res.ok) { showMessage(errEl, res.body.message || 'La demande ne peut plus être traitée.'); resetButtons(); return; }
-            if (preview) preview.hidden = true;
-            if (codeInput) codeInput.value = '';
-            showMessage(successEl, res.body.message || (decision === 'approve' ? 'Terminal autorisé.' : 'Demande refusée.'));
-            if (pill) { pill.textContent = decision === 'approve' ? 'Terminal enrôlé' : 'Demande refusée'; pill.className = 'atak-pill ' + (decision === 'approve' ? 'atak-pill--ok' : 'atak-pill--muted'); }
-            resetButtons();
-          }).catch(function () { showMessage(errEl, 'Impossible de joindre ATHENA. Réessayez sans fermer COMSPEC ATAK.'); resetButtons(); });
-        }
-        if (approveBtn) approveBtn.addEventListener('click', function () { decide('approve'); });
-        if (denyBtn) denyBtn.addEventListener('click', function () { decide('deny'); });
       })();
 
       (function initPhoneLink() {

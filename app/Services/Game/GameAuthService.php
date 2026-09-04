@@ -216,6 +216,61 @@ final class GameAuthService
     }
 
     /**
+     * Compte Athena du membre portail (création si le rattachement n’existe pas encore).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ensureAccountForUser(int $userId, int $tenantId): ?array
+    {
+        if ($userId < 1 || $tenantId < 1) {
+            return null;
+        }
+        $user = $this->users->findById($userId, $tenantId);
+        if ($user === null) {
+            return null;
+        }
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+        $account = $this->accounts->findByEmail($email);
+        if ($account === null) {
+            $account = $this->promoteAccountFromUsers($email, (string) ($user['password_hash'] ?? ''));
+        }
+        if ($account === null) {
+            return null;
+        }
+        $this->accounts->ensureMembership((int) $account['id'], $tenantId, $userId);
+
+        return $account;
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}
+     */
+    public function issueForUser(int $userId, int $tenantId, array $body): array
+    {
+        $account = $this->ensureAccountForUser($userId, $tenantId);
+        if ($account === null) {
+            return $this->fail('INVALID_CREDENTIALS', 401);
+        }
+        $user = $this->users->findById($userId, $tenantId) ?? [];
+        if ((string) ($user['status'] ?? 'active') !== 'active'
+            || (string) ($account['status'] ?? '') !== 'active') {
+            return $this->fail('ACCOUNT_DISABLED', 403);
+        }
+        $body['preferred_tenant_id'] = $tenantId;
+        $steam = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? $user['steam_id'] ?? ''));
+        if ($this->hasSteamId($steam)) {
+            $body['steam_id'] = $steam;
+            $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $steam);
+        }
+
+        return $this->issueForAccount($account, $body);
+    }
+
+    /**
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */
