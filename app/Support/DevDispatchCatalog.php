@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(416, '2026-09-04', 'La page des terminaux ATAK s’ouvre de nouveau', 'Dans Compte, Terminaux ATAK affiche de nouveau la liste, les demandes d’appariement et les codes de secours. Rechargez le portail', [], [], [
+                'La page des terminaux de confiance s’ouvrait sur une erreur après connexion',
+            ], ['atak'], [
+                'Rechargez le portail, puis ouvrez Compte, Terminaux ATAK.',
+            ], 'Portail 1.5.97'),
             $pr(408, '2026-09-03', 'Les grandes photos terrain arrivent au poste', 'Les captures PNG Arma de plus de 16 Mo ne sont plus refusées comme trop lourdes. Déployer le portail puis laisser PHP recharger sa configuration pendant quelques minutes', [
                 'Photos terrain acceptées jusqu’à 96 Mo',
             ], [], [

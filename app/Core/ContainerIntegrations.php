@@ -132,6 +132,22 @@ final class ContainerIntegrations
             \App\Controllers\Api\Game\GameAuthApiController::class => new \App\Controllers\Api\Game\GameAuthApiController(
                 Container::get(\App\Services\Game\GameAuthService::class),
             ),
+            \App\Repositories\AtakDeviceAuthRepository::class => new \App\Repositories\AtakDeviceAuthRepository(),
+            \App\Services\Atak\AtakDeviceAuthService::class => new \App\Services\Atak\AtakDeviceAuthService(
+                Container::get(\App\Repositories\AtakDeviceAuthRepository::class),
+                Container::get(\App\Services\Game\GameAuthService::class),
+                Container::get(\App\Repositories\AtakRealismRepository::class),
+            ),
+            \App\Controllers\Web\AtakDeviceSecurityController::class => new \App\Controllers\Web\AtakDeviceSecurityController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Services\Atak\AtakDeviceAuthService::class),
+                Container::get(\App\Repositories\AtakDeviceAuthRepository::class),
+                new \App\Services\Security\FileRateLimiter(),
+            ),
+            \App\Controllers\Api\AtakDeviceAuthApiController::class => new \App\Controllers\Api\AtakDeviceAuthApiController(
+                Container::get(\App\Services\Atak\AtakDeviceAuthService::class),
+                new \App\Services\Security\FileRateLimiter(),
+            ),
             \App\Repositories\OperationWorkspaceRepository::class => new \App\Repositories\OperationWorkspaceRepository(),
             \App\Services\Operations\OperationWorkspaceService::class => new \App\Services\Operations\OperationWorkspaceService(
                 Container::get(\App\Repositories\OperationWorkspaceRepository::class),
