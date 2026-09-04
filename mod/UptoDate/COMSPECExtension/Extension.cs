@@ -30,7 +30,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.10";
+    private const string ExtensionVersion = "1.18.12";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -39,6 +39,9 @@ public static partial class Extension
     private static string _callSign = "";
     /// <summary>Identifiant terminal ATAK mémorisé (RegisterTerminal / LogWrite).</summary>
     private static string _terminalUid = "";
+    private static string _pendingPairDeviceCode = "";
+    private static DateTimeOffset _pendingPairExpiresAt = DateTimeOffset.MinValue;
+    private static int _pendingPairPollSeconds = 2;
     private static readonly HttpClient HttpClient = CreateHttpClient(SyncTimeoutSeconds);
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
@@ -569,6 +572,7 @@ public static partial class Extension
 
     private static void EnsureDrainTimer()
     {
+        LoadQueueFromDisk();
         var period = Math.Clamp(_drainPeriodMs, 250, 2000);
         lock (DrainTimerLock)
         {
@@ -682,6 +686,7 @@ public static partial class Extension
             lock (CoalescedPositionLock)
                 _coalescedPosition = (url, jsonBody);
             EnsureDrainTimer();
+            PersistQueueToDisk();
             return;
         }
         if (PendingPosts.Count < MaxQueueSize)
@@ -689,6 +694,7 @@ public static partial class Extension
             PendingPosts.Enqueue((url, jsonBody));
             EnsureDrainTimer();
         }
+        PersistQueueToDisk();
     }
 
     private static bool TryTakeCoalescedPosition(out (string Url, string Body) item)
@@ -1130,6 +1136,11 @@ public static partial class Extension
             }
             while (sent < maxPerTick && PendingPosts.TryDequeue(out var item))
             {
+                if (!TryResolveQueuedUrl(ref item))
+                {
+                    EnqueueForRetry(item.Url, item.Body);
+                    break;
+                }
                 // Positions résiduelles dans l’ancienne FIFO : si le slot coalescé
                 // n’existait pas, on coalesce (dernière gagne) ; sinon ce sont des périmées.
                 if (IsPositionEndpoint(item.Url))
@@ -1147,60 +1158,374 @@ public static partial class Extension
             // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
             if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
                 TrySendQueuedPost(fromFifo);
+            PersistQueueToDisk();
         }
+    }
+
+    private static int _diskQueueLoaded;
+    private static readonly object DiskQueueLock = new();
+
+    private static string QueueRowJson(string url, string body)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("u", url ?? "");
+            writer.WriteString("b", body ?? "");
+            writer.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static string? SyncStoreDir()
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs)) return null;
+            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Sync");
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void PersistQueueToDisk()
+    {
+        try
+        {
+            var dir = SyncStoreDir();
+            if (dir is null) return;
+            lock (DiskQueueLock)
+            {
+                var fifo = Path.Combine(dir, "queue.jsonl");
+                var pos = Path.Combine(dir, "position.json");
+                var lines = new List<string>();
+                foreach (var item in PendingPosts.ToArray())
+                {
+                    if (lines.Count >= MaxQueueSize) break;
+                    lines.Add(QueueRowJson(item.Url, item.Body));
+                }
+                File.WriteAllLines(fifo, lines);
+                lock (CoalescedPositionLock)
+                {
+                    if (_coalescedPosition is { } p)
+                    {
+                        File.WriteAllText(pos, QueueRowJson(p.Url, p.Body));
+                    }
+                    else if (File.Exists(pos))
+                    {
+                        File.Delete(pos);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* hors ligne : ne jamais casser callExtension */
+        }
+    }
+
+    private static void LoadQueueFromDisk()
+    {
+        if (System.Threading.Interlocked.Exchange(ref _diskQueueLoaded, 1) != 0) return;
+        try
+        {
+            var dir = SyncStoreDir();
+            if (dir is null) return;
+            var fifo = Path.Combine(dir, "queue.jsonl");
+            var pos = Path.Combine(dir, "position.json");
+            if (File.Exists(fifo))
+            {
+                foreach (var line in File.ReadLines(fifo))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(line);
+                        var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
+                        var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
+                        if (u.Length > 0 && b.Length > 0 && PendingPosts.Count < MaxQueueSize)
+                            PendingPosts.Enqueue((u, b));
+                    }
+                    catch { /* ligne illisible */ }
+                }
+            }
+            if (File.Exists(pos))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(pos));
+                    var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
+                    var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
+                    if (u.Length > 0)
+                    {
+                        lock (CoalescedPositionLock)
+                            _coalescedPosition ??= (u, b);
+                    }
+                }
+                catch { /* position illisible */ }
+            }
+        }
+        catch
+        {
+            /* hors ligne */
+        }
+    }
+
+    /// <summary>
+    /// Les envois posés hors liaison utilisent queued:/chemin jusqu’à ce que le poste soit connu.
+    /// </summary>
+    private static bool TryResolveQueuedUrl(ref (string Url, string Body) item)
+    {
+        if (!item.Url.StartsWith("queued:", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (string.IsNullOrEmpty(_baseUrl))
+            return false;
+        var path = item.Url.Substring("queued:".Length);
+        if (!path.StartsWith('/'))
+            path = "/" + path;
+        if (!TryBuildRequestUri(_baseUrl, path, out var uri, out _) || uri is null)
+            return false;
+        item = (uri.AbsoluteUri, item.Body);
+        return true;
+    }
+
+    private static string QueueHeavyIngest(string path, string?[] args)
+    {
+        LoadQueueFromDisk();
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        var body = EnrichAtakPayload(json);
+        string url;
+        if (string.IsNullOrEmpty(_baseUrl)
+            || !TryBuildRequestUri(_baseUrl, path, out var uri, out _)
+            || uri is null)
+            url = "queued:" + path;
+        else
+            url = uri.AbsoluteUri;
+        EnqueueOrSend(url, body);
+        return FormatAtakExtArray("OK", "queued");
     }
 
     private static string HandleTerrainChunk(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
         if (DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _terrainChunkBlockedUntilTicks))
             return FormatAtakExtArray("ERROR", "unauthorized");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/terrain/chunk", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
-        return FormatAtakExtArray("OK", "queued");
+        return QueueHeavyIngest("/api/atak/terrain/chunk", args);
     }
 
     private static string HandleSceneIngest(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/scene/ingest", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
-        return FormatAtakExtArray("OK", "queued");
+        return QueueHeavyIngest("/api/atak/scene/ingest", args);
     }
 
     private static string HandleGeoIngest(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/geo/ingest", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
+        return QueueHeavyIngest("/api/atak/geo/ingest", args);
+    }
+
+    private static string MapPackDir()
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs)) return "";
+            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Maps");
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string SanitizeMapWorld(string? world)
+    {
+        world = (world ?? "altis").Trim().ToLowerInvariant();
+        var sb = new StringBuilder();
+        foreach (var c in world)
+        {
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
+                sb.Append(c);
+        }
+        return sb.Length > 0 ? sb.ToString() : "altis";
+    }
+
+    private static string HandleMapPackRoot()
+    {
+        var dir = MapPackDir();
+        if (dir.Length == 0)
+            return FormatAtakExtArray("ERROR", "no_docs");
+        try
+        {
+            return FormatAtakExtArray("OK", new Uri(dir).AbsoluteUri);
+        }
+        catch
+        {
+            return FormatAtakExtArray("ERROR", "uri");
+        }
+    }
+
+    private static string HandleMapPackKeep(string?[] args)
+    {
+        if (args.Length < 4)
+            return FormatAtakExtArray("ERROR", "args");
+        var world = SanitizeMapWorld(args[0]);
+        if (!int.TryParse(args[1], out var z) || !int.TryParse(args[2], out var x) || !int.TryParse(args[3], out var y))
+            return FormatAtakExtArray("ERROR", "args");
+        z = Math.Clamp(z, 0, 7);
+        x = Math.Clamp(x, 0, 4096);
+        y = Math.Clamp(y, 0, 4096);
+        ThreadPool.QueueUserWorkItem(_ => DownloadMapTile(world, z, x, y));
         return FormatAtakExtArray("OK", "queued");
+    }
+
+    private static string HandleMapPackInstall(string?[] args)
+    {
+        var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            for (var zoom = 0; zoom <= 3; zoom++)
+            {
+                var n = 1 << zoom;
+                for (var x = 0; x < n; x++)
+                {
+                    for (var y = 0; y < n; y++)
+                        DownloadMapTile(world, zoom, x, y);
+                }
+            }
+        });
+        return FormatAtakExtArray("OK", "install");
+    }
+
+    private static string HandleMapPackCount(string?[] args)
+    {
+        var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        try
+        {
+            var dir = Path.Combine(MapPackDir(), world);
+            if (!Directory.Exists(dir))
+                return FormatAtakExtArray("OK", "0");
+            var n = Directory.GetFiles(dir, "*.png", SearchOption.AllDirectories).Length;
+            return FormatAtakExtArray("OK", n.ToString(CultureInfo.InvariantCulture));
+        }
+        catch
+        {
+            return FormatAtakExtArray("OK", "0");
+        }
+    }
+
+    private static void DownloadMapTile(string world, int z, int x, int y)
+    {
+        try
+        {
+            var root = MapPackDir();
+            if (root.Length == 0) return;
+            var folder = Path.Combine(root, world, z.ToString(CultureInfo.InvariantCulture));
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, x.ToString(CultureInfo.InvariantCulture) + "_" + y.ToString(CultureInfo.InvariantCulture) + ".png");
+            if (File.Exists(file) && new FileInfo(file).Length > 32)
+                return;
+            var url = "https://jetelain.github.io/Arma3Map/maps/" + world + "/" + z + "/" + x + "/" + y + ".png";
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            if (!resp.IsSuccessStatusCode) return;
+            var bytes = resp.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+            if (bytes is null || bytes.Length < 32) return;
+            File.WriteAllBytes(file, bytes);
+        }
+        catch
+        {
+            /* hors ligne : ne jamais casser callExtension */
+        }
+    }
+
+    private static string HandleSyncRoster()
+    {
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return "OK|";
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/sync/roster", out var uri, out _) || uri is null)
+            return "OK|";
+        return ServePollGet("Sync.Roster", uri.AbsoluteUri, (body, code) =>
+        {
+            if (code < 200 || code >= 300)
+                return PollHttpErr(code);
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("terminals", out var arr) || arr.ValueKind != JsonValueKind.Array)
+                    return "OK|";
+                var sb = new StringBuilder();
+                foreach (var t in arr.EnumerateArray())
+                {
+                    string Pick(string name)
+                    {
+                        if (!t.TryGetProperty(name, out var p) || p.ValueKind != JsonValueKind.String)
+                            return "";
+                        return (p.GetString() ?? "").Replace('\t', ' ').Replace('\n', ' ');
+                    }
+                    string NumOrDash(string name)
+                    {
+                        if (!t.TryGetProperty(name, out var p) || p.ValueKind == JsonValueKind.Null)
+                            return "-";
+                        if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n))
+                            return n.ToString(CultureInfo.InvariantCulture);
+                        return "-";
+                    }
+                    var live = t.TryGetProperty("live", out var lv) && lv.ValueKind == JsonValueKind.True;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Pick("uid")).Append('\t')
+                        .Append(Pick("label")).Append('\t')
+                        .Append(Pick("callsign")).Append('\t')
+                        .Append(live ? "1" : "0").Append('\t')
+                        .Append(NumOrDash("pending")).Append('\t')
+                        .Append(Pick("last_at"));
+                }
+                return PollOkClipped(sb.ToString());
+            }
+            catch
+            {
+                return "OK|";
+            }
+        });
+    }
+
+    private static string HandleSyncSnapshot(string?[] args)
+    {
+        int N(int i)
+        {
+            if (args.Length <= i) return 0;
+            return int.TryParse(args[i], out var v) ? Math.Max(0, v) : 0;
+        }
+        var uid = _terminalUid.Length > 0 ? _terminalUid : _gameDeviceId;
+        if (uid.Length == 0)
+            return FormatAtakExtArray("ERROR", "no_terminal");
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("terminal_uid", uid);
+            writer.WriteString("callsign", _callSign);
+            writer.WriteNumber("pending", N(0));
+            writer.WriteNumber("markers", N(1));
+            writer.WriteNumber("drawings", N(2));
+            writer.WriteNumber("routes", N(3));
+            writer.WriteNumber("intel", N(4));
+            writer.WriteNumber("tiles", N(5));
+            writer.WriteEndObject();
+        }
+        var json = Encoding.UTF8.GetString(stream.ToArray());
+        return QueueHeavyIngest("/api/atak/sync/snapshot", new[] { json });
     }
 
     /// <summary>Comptage synchrone de ce que le poste a déjà reçu (bâtiments, forêts, relief).</summary>
@@ -1914,6 +2239,119 @@ public static partial class Extension
         if (gameAuth.Length > 0)
             return gameAuth;
 
+        if (function == "GetCapabilities")
+        {
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll";
+        }
+
+        if (function == "PairStart" && args.Length >= 1)
+        {
+            try
+            {
+                var baseUrl = NormalizeBaseUrl(args[0] ?? "");
+                if (baseUrl.Length == 0) return "ERR|invalid_url";
+                _baseUrl = baseUrl;
+                var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
+                var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                if (steam.Length >= 10) _steamUid = steam;
+                var terminal = _terminalUid.Length > 0
+                    ? _terminalUid
+                    : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
+                _terminalUid = terminal;
+                if (!TryBuildRequestUri(baseUrl, "/api/atak/pair/start", out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                var payload = "{\"steam_uid\":\"" + EscapeJson(steam) + "\",\"mod_version\":\"" + EscapeJson(modVersion) + "\",\"terminal_uid\":\"" + EscapeJson(terminal) + "\"}";
+                using var pairCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(uri.ToString(), payload, pairCts.Token);
+                var body = ReadContentUtf8(resp, pairCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var pairDoc = JsonDocument.Parse(body);
+                var pairRoot = pairDoc.RootElement;
+                var deviceCode = pairRoot.TryGetProperty("device_code", out var dc) && dc.ValueKind == JsonValueKind.String ? dc.GetString() ?? "" : "";
+                var userCode = pairRoot.TryGetProperty("user_code", out var uc) && uc.ValueKind == JsonValueKind.String ? uc.GetString() ?? "" : "";
+                var verify = pairRoot.TryGetProperty("verification_uri", out var vu) && vu.ValueKind == JsonValueKind.String ? vu.GetString() ?? "" : "";
+                var ttl = pairRoot.TryGetProperty("expires_in", out var ei) && ei.ValueKind == JsonValueKind.Number ? ei.GetInt32() : 600;
+                var interval = pairRoot.TryGetProperty("interval", out var intEl) && intEl.ValueKind == JsonValueKind.Number ? intEl.GetInt32() : 2;
+                if (deviceCode.Length < 8 || userCode.Length < 4) return "ERR|invalid_response";
+                _pendingPairDeviceCode = deviceCode;
+                _pendingPairExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 30, 900));
+                _pendingPairPollSeconds = Math.Clamp(interval, 1, 15);
+                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds;
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        if (function == "PairStatus")
+        {
+            try
+            {
+                if (_pendingPairDeviceCode.Length < 8) return "ERR|no_pairing";
+                if (DateTimeOffset.UtcNow >= _pendingPairExpiresAt) { _pendingPairDeviceCode = ""; return "ERR|expired"; }
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/pair/status?device_code=" + Uri.EscapeDataString(_pendingPairDeviceCode), out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                using var pairStatusCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendGet(uri.ToString(), pairStatusCts.Token);
+                var body = ReadContentUtf8(resp, pairStatusCts.Token);
+                if ((int)resp.StatusCode == 404) return "OK|pending";
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                var status = root.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String ? (st.GetString() ?? "pending").ToLowerInvariant() : "pending";
+                if (status is "pending" or "waiting") return "OK|pending";
+                if (status is "expired") { _pendingPairDeviceCode = ""; return "ERR|expired"; }
+                if (status is not "approved") return "ERR|" + SanitizeIdentityField(status);
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
+                if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
+                if (root.TryGetProperty("military_id", out var mi) && mi.ValueKind == JsonValueKind.String) _militaryId = mi.GetString() ?? _militaryId;
+                if (root.TryGetProperty("tokens", out _))
+                    _ = ApplyGameAuthResponse(body, "PairStatus");
+                _pendingPairDeviceCode = "";
+                return (_sessionToken.Length > 0 || _gameAccessToken.Length > 0)
+                    ? "OK|approved"
+                    : "ERR|invalid_response";
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        if (function == "RedeemRecoveryCode" && args.Length >= 2)
+        {
+            try
+            {
+                var baseUrl = NormalizeBaseUrl(args[0] ?? "");
+                var code = (args[1] ?? "").Trim().ToUpperInvariant();
+                var steam = args.Length > 2 ? (args[2] ?? "").Trim() : _steamUid;
+                var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
+                _baseUrl = baseUrl;
+                if (steam.Length >= 10) _steamUid = steam;
+                var terminal = _terminalUid.Length > 0
+                    ? _terminalUid
+                    : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
+                _terminalUid = terminal;
+                if (!TryBuildRequestUri(baseUrl, "/api/atak/recovery/redeem", out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                var payload = "{\"code\":\"" + EscapeJson(code) + "\",\"steam_uid\":\"" + EscapeJson(steam) + "\",\"mod_version\":\"" + EscapeJson(modVersion) + "\",\"terminal_uid\":\"" + EscapeJson(terminal) + "\"}";
+                using var recoveryCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(uri.ToString(), payload, recoveryCts.Token);
+                var body = ReadContentUtf8(resp, recoveryCts.Token);
+                if ((int)resp.StatusCode == 409) return "ERR|used";
+                if ((int)resp.StatusCode == 400 || (int)resp.StatusCode == 404) return "ERR|invalid";
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
+                if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
+                if (root.TryGetProperty("tokens", out _))
+                    _ = ApplyGameAuthResponse(body, "RecoveryCode");
+                return (_sessionToken.Length > 0 || _gameAccessToken.Length > 0)
+                    ? "OK|authenticated"
+                    : "ERR|invalid_response";
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
         if (function == "Terrain.Chunk")
         {
             return HandleTerrainChunk(args);
@@ -1932,6 +2370,36 @@ public static partial class Extension
         if (function == "Theater.Coverage")
         {
             return HandleTheaterCoverage(args);
+        }
+
+        if (function == "MapPack.Root")
+        {
+            return HandleMapPackRoot();
+        }
+
+        if (function == "MapPack.Keep")
+        {
+            return HandleMapPackKeep(args);
+        }
+
+        if (function == "MapPack.Install")
+        {
+            return HandleMapPackInstall(args);
+        }
+
+        if (function == "MapPack.Count")
+        {
+            return HandleMapPackCount(args);
+        }
+
+        if (function == "Sync.Roster")
+        {
+            return HandleSyncRoster();
+        }
+
+        if (function == "Sync.Snapshot")
+        {
+            return HandleSyncSnapshot(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -2110,6 +2578,7 @@ public static partial class Extension
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
             _baseUrl = normalized;
+            EnsureDrainTimer();
 
             var prevKey = _apiKey;
             var prevTenant = _tenantId;
@@ -5604,6 +6073,7 @@ public static partial class Extension
                     var normalized = NormalizeBaseUrl(args[0]);
                     if (normalized.Length == 0) return;
                     _baseUrl = normalized;
+                    EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     ApplyApiKeyHeaders(key);
                     if (args.Length > 2 && _gameAccessToken.Length == 0)

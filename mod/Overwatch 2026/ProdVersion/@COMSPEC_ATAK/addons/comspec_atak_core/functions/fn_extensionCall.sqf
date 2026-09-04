@@ -65,7 +65,10 @@ if (
         "RedeemPairingCode",
         "RedeemRecoveryCode",
         "RedeemGameLink",
-        "PairStatus"
+        "PairStatus",
+        "Connect",
+        "LinkBySteam",
+        "Logout"
     ]
     && {(_safeResult find "OK|") isEqualTo 0}
 ) then

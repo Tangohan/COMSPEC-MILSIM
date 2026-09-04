@@ -30,16 +30,10 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         ];[] call COMSPEC_fnc_webPushState;
     };
 
-    private _baseUrl = profileNamespace getVariable [
-        "COMSPEC_ATAK_AthenaUrl",
-        "https://athena.ttrd.fr/public"
-    ];
+    (call COMSPEC_fnc_networkCredentials) params ["_baseUrl", "_savedKey", "_tenantId"];
+    if (!(_tenantId isEqualType "")) then { _tenantId = ""; };
 
     // Product version, not the internal UI/runtime build number.
-    // Priority:
-    // 1. explicit admin/dev override;
-    // 2. historical official COMSPEC Overwatch patch;
-    // 3. standalone ATAK core patch.
     private _version = profileNamespace getVariable [
         "COMSPEC_ATAK_ModVersionOverride",
         ""
@@ -55,17 +49,6 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         );
     };
 
-    // Legacy addon is fallback only. It must never override the new standalone ATAK.
-    if (_version isEqualTo "") then
-    {
-        _version = getText (
-            configFile
-            >> "CfgPatches"
-            >> "comspec_overwatch_atak_athena"
-            >> "versionStr"
-        );
-    };
-
     if (_version isEqualTo "") then
     {
         _version = "0.0.0";
@@ -75,7 +58,7 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         "[COMSPEC ATAK][ATHENA] URL=%1 MOD=%2 STEAM=%3",
         _baseUrl,
         _version,
-        getPlayerUID player
+        [] call COMSPEC_fnc_networkSteamUid
     ];
 
     // -------------------------------------------------------------
@@ -134,7 +117,7 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
     // still has no _steamUid, which causes /api/atak/client-init to fail
     // with steam_required.
     // -------------------------------------------------------------
-    private _armaSteam = if (isNull player) then {""} else {getPlayerUID player};
+    private _armaSteam = [] call COMSPEC_fnc_networkSteamUid;
 
     if !(_armaSteam isEqualTo "") then
     {
@@ -159,43 +142,85 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         "INFO"
     ] call COMSPEC_fnc_networkUpdateConnectionUI;
 
-    private _result = [
-        "RestoreSession",
-        [_baseUrl, _version]
-    ] call COMSPEC_fnc_extensionCall;
+    private _result = "";
 
-    // -------------------------------------------------------------
-    // 4. Steam fallback
-    // -------------------------------------------------------------
+    if ((count _savedKey) >= 16) then
+    {
+        [
+            "ATHENA",
+            "Liaison avec le jeton de la communauté...",
+            "INFO"
+        ] call COMSPEC_fnc_networkUpdateConnectionUI;
+
+        _result = [
+            "Connect",
+            [_baseUrl, _savedKey, _tenantId, _armaSteam, _version]
+        ] call COMSPEC_fnc_extensionCall;
+    };
+
+    private _restored = "";
     if ((_result find "OK|") != 0) then
     {
-        private _sessionMissing =
-            (_result find "SESSION_EXPIRED") >= 0
-            || {(_result find "session_expired") >= 0};
+        _restored = [
+            "RestoreSession",
+            [_baseUrl, _version]
+        ] call COMSPEC_fnc_extensionCall;
+        _result = _restored;
+    };
 
-        if (_sessionMissing) then
+    // Steam actuel d’abord : une session enregistrée sur ce PC peut encore
+    // appartenir à l’ancien compte après un changement d’identifiant Steam.
+    if (!(_armaSteam isEqualTo "")) then
+    {
+        [
+            "ATHENA",
+            "Authentification Steam...",
+            "INFO"
+        ] call COMSPEC_fnc_networkUpdateConnectionUI;
+
+        private _steamAuth = [
+            "AuthSteam",
+            [_baseUrl, _armaSteam, _version]
+        ] call COMSPEC_fnc_extensionCall;
+
+        if ((_steamAuth find "OK|") == 0) then
         {
-            [
-                "ATHENA",
-                "Session absente. Authentification Steam...",
-                "WARN"
-            ] call COMSPEC_fnc_networkUpdateConnectionUI;
-
-            private _steam = getPlayerUID player;
-
-            if (_steam isEqualTo "") then
+            _result = _steamAuth;
+        }
+        else
+        {
+            if ((_restored find "OK|") == 0) then
             {
-                _result = "ERR|STEAM_NOT_LINKED";
-            }
-            else
-            {
-                _result = [
-                    "AuthSteam",
-                    [_baseUrl, _steam, _version]
-                ] call COMSPEC_fnc_extensionCall;
-
-                };
+                ["Logout", []] call COMSPEC_fnc_extensionCall;
+                [
+                    "INFO",
+                    "ATHENA",
+                    "Ancienne session ignorée : ce Steam n’est pas celui du compte enregistré."
+                ] call COMSPEC_fnc_log;
+                _result = _steamAuth;
+            };
         };
+    };
+
+    if ((_result find "OK|") != 0 && {(count _savedKey) >= 16}) then
+    {
+        _result = [
+            "Connect",
+            [_baseUrl, _savedKey, _tenantId, _armaSteam, _version]
+        ] call COMSPEC_fnc_extensionCall;
+    };
+
+    if ((_result find "OK|") != 0 && {!(_armaSteam isEqualTo "")}) then
+    {
+        _result = [
+            "LinkBySteam",
+            [_baseUrl, _armaSteam]
+        ] call COMSPEC_fnc_extensionCall;
+    };
+
+    if ((_result find "OK|") != 0 && {_armaSteam isEqualTo ""}) then
+    {
+        _result = "ERR|STEAM_NOT_LINKED";
     };
 
     // -------------------------------------------------------------
@@ -205,14 +230,15 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
     {
         private _msg = "Connexion Athena impossible.";
         private _pairEligible = false;
+        private _openLogin = false;
 
         if (
             (_result find "STEAM_NOT_LINKED") >= 0
             || {(_result find "steam_not_linked") >= 0}
         ) then
         {
-            _msg = "Terminal non enrôlé.";
-            _pairEligible = true;
+            _msg = "Ce Steam n’est pas associé à un compte Athena. Connectez-vous avec votre e-mail, ou renseignez l’identifiant Steam dans les options du pack.";
+            _openLogin = true;
         };
 
         if (
@@ -268,99 +294,28 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
 
         [false] call _finish;
 
-        // Steam non lié : ATHENA Web génère le code, ATAK ne fait que le saisir.
+        if (_openLogin) then
+        {
+            ["if(window.COMSPEC_ATAK_openAccountLogin){window.COMSPEC_ATAK_openAccountLogin('Ce Steam n’est pas associé à un compte. Connectez-vous avec votre e-mail.');}"] call COMSPEC_fnc_webExecJS;
+        };
         if (_pairEligible) then
         {
             ["if(window.COMSPEC_ATAK_showUnenrolled){window.COMSPEC_ATAK_showUnenrolled(true);}"] call COMSPEC_fnc_webExecJS;
         };
     };
 
-    // -------------------------------------------------------------
-    // 6. State/profile
-    // -------------------------------------------------------------
-    private _authRaw = [
-        "GetAuthState",
-        []
-    ] call COMSPEC_fnc_extensionCall;
-
-    private _auth = [
-        _authRaw
-    ] call COMSPEC_fnc_parseAuthState;
-
-    private _callsign = _auth getOrDefault [
-        "callsign",
-        "-"
-    ];
-
-    if (_callsign in ["", "-"]) then
+    if ((count _savedKey) >= 16) then
     {
-        _callsign = profileName;
+        profileNamespace setVariable ["COMSPEC_ATAK_ApiKey", _savedKey];
+        profileNamespace setVariable ["COMSPEC_ATAK_AthenaUrl", _baseUrl];
+        if (!(_tenantId isEqualTo "")) then
+        {
+            profileNamespace setVariable ["COMSPEC_ATAK_TenantId", _tenantId];
+        };
+        saveProfileNamespace;
     };
 
-    private _tenant = _auth getOrDefault [
-        "tenant",
-        "-"
-    ];
-
-    ["callsign", _callsign] call COMSPEC_fnc_setState;
-    ["athenaTenant", _tenant] call COMSPEC_fnc_setState;
-
-    ["athenaName", _auth getOrDefault ["name",""]] call COMSPEC_fnc_setState;
-    ["athenaFirstName", _auth getOrDefault ["firstName",""]] call COMSPEC_fnc_setState;
-    ["athenaLastName", _auth getOrDefault ["lastName",""]] call COMSPEC_fnc_setState;
-    ["athenaCallsign", _auth getOrDefault ["callsign",""]] call COMSPEC_fnc_setState;
-    ["athenaGrade", _auth getOrDefault ["grade",""]] call COMSPEC_fnc_setState;
-    ["athenaUnit", _auth getOrDefault ["unit",""]] call COMSPEC_fnc_setState;
-    ["athenaRole", _auth getOrDefault ["role",""]] call COMSPEC_fnc_setState;
-    ["athenaFunction", _auth getOrDefault ["function",""]] call COMSPEC_fnc_setState;
-    ["athenaAvatar", _auth getOrDefault ["avatar",""]] call COMSPEC_fnc_setState;
-    ["athenaAccountId", _auth getOrDefault ["accountId",""]] call COMSPEC_fnc_setState;
-    ["athenaEmail", _auth getOrDefault ["email",""]] call COMSPEC_fnc_setState;
-    ["athenaDeviceId", _auth getOrDefault ["deviceId",""]] call COMSPEC_fnc_setState;
-    ["athenaSessionExpiresAt", _auth getOrDefault ["sessionExpiresAt",""]] call COMSPEC_fnc_setState;
-    ["athenaTenantSlug", _auth getOrDefault ["tenantSlug",""]] call COMSPEC_fnc_setState;
-    ["athenaExtensionVersion", _auth getOrDefault ["extensionVersion",""]] call COMSPEC_fnc_setState;
-    ["athenaDetectedModVersion", _auth getOrDefault ["detectedModVersion",""]] call COMSPEC_fnc_setState;
-    ["athenaMinModVersion", _auth getOrDefault ["minModVersion",""]] call COMSPEC_fnc_setState;
-    private _reportedSteamLinked = _auth getOrDefault ["steamLinked",false];
-    private _armaSteamNow = if (isNull player) then {""} else {getPlayerUID player};
-
-    // The game auth notice may be stale after a restored session.
-    // A successful full connection after SetSteamId means client-init accepted
-    // this Steam identity; reflect that rather than showing a false negative.
-    private _effectiveSteamLinked =
-        _reportedSteamLinked
-        || {!(_armaSteamNow isEqualTo "")};
-
-    ["athenaSteamLinked", _effectiveSteamLinked] call COMSPEC_fnc_setState;
-    ["athenaSteamDetected", !(_armaSteamNow isEqualTo "")] call COMSPEC_fnc_setState;
-    ["athenaSteamNotice", _auth getOrDefault ["steamNotice",""]] call COMSPEC_fnc_setState;
-    ["athenaAuthState", _auth getOrDefault ["state",""]] call COMSPEC_fnc_setState;
-
-    [
-        "ATHENA",
-        format ["Connecte : %1", _callsign],
-        "OK"
-    ] call COMSPEC_fnc_networkUpdateConnectionUI;
-
-    [
-        "ATHENA",
-        _tenant
-    ] call COMSPEC_fnc_networkApplyMode;
-
-    [false] call COMSPEC_fnc_networkShowConnection;
-
-    [
-        "if(window.COMSPEC_ATAK_forceDesktop){window.COMSPEC_ATAK_forceDesktop();}"
-        + "else{"
-        + "var g=document.getElementById('bootGate');if(g){g.hidden=true;}"
-        + "var a=document.querySelectorAll('.phone-app');"
-        + "for(var i=0;i<a.length;i++){a[i].classList.remove('active');}"
-        + "var d=document.getElementById('phoneDesktop');if(d){d.classList.add('active');}"
-        + "}"
-    ] call COMSPEC_fnc_webExecJS;
-
-    [] call COMSPEC_fnc_webPushState;
+    ["desktop"] call COMSPEC_fnc_networkApplyGameAuth;
 
     [true] call _finish;
 };

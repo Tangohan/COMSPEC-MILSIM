@@ -155,6 +155,12 @@ final class ContainerIntegrations
                 Container::get(\App\Services\Game\GameAuthService::class),
                 Container::get(\App\Services\Operations\OperationWorkspaceService::class),
             ),
+            \App\Controllers\Web\AtakDeviceSecurityController::class => new \App\Controllers\Web\AtakDeviceSecurityController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Repositories\AtakRealismRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Services\Audit\AuditService::class),
+            ),
             default => null,
         };
     }

@@ -3400,6 +3400,14 @@ try {
     echo '  [ATTENTION] atak_beta_registrations : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/atak_terminal_sync_migration.php';
+try {
+    echo "Migration atak_terminal_sync (centre de liaison)...\n";
+    run_atak_terminal_sync_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_terminal_sync : ' . $e->getMessage() . "\n";
+}
+
 require_once $root . '/bootstrap/atak_mod_reports_migration.php';
 try {
     echo "Migration atak_mod_reports (rapports erreurs / bugs Overwatch)...\n";

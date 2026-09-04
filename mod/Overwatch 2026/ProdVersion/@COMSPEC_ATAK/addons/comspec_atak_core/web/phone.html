@@ -31,6 +31,30 @@
     html.ingame .screen{
       overflow:hidden!important;
     }
+
+    /* Cropped HTML clones used as Terrain chrome around the live Arma map. */
+    html.ingame.chrome-crop,
+    html.ingame.chrome-crop body{
+      overflow:hidden!important;
+      background:transparent!important;
+    }
+    html.ingame.chrome-crop .stage,
+    html.ingame.chrome-crop .terminal,
+    html.ingame.chrome-crop .screen{
+      inset:auto!important;
+      left:var(--atak-crop-x,0px)!important;
+      top:var(--atak-crop-y,0px)!important;
+      width:var(--atak-full-w,100%)!important;
+      height:var(--atak-full-h,100%)!important;
+      max-width:none!important;
+      max-height:none!important;
+      transform:none!important;
+    }
+    html.ingame.chrome-crop .hardware-nav,
+    html.ingame.chrome-crop .boot-gate,
+    html.ingame.chrome-crop .boot-lock{
+      display:none!important;
+    }
     html.ingame .device-frame{
       display:none!important;
     }
@@ -532,7 +556,61 @@
       var recInput=document.getElementById('recoveryCodeInput');
       if(mode==='recovery' && recInput) setTimeout(function(){ try{ recInput.focus({preventScroll:true}); }catch(e){} },40);
     };
-    window.COMSPEC_ATAK_openPairing = function(){ window.COMSPEC_ATAK_showUnenrolled(true); };
+    window.COMSPEC_ATAK_humanAuthState = function (raw) {
+      var u = String(raw || "").toUpperCase();
+      var map = {
+        STEAM_NOT_LINKED: "Compte Steam non associé",
+        READY: "Session prête",
+        AUTHENTICATING: "Connexion en cours",
+        RESOLVING_ACCOUNT: "Recherche du compte",
+        RESOLVING_TENANT: "Recherche de la communauté",
+        SYNCING_PROFILE: "Lecture du profil",
+        LOADING_CONFIGURATION: "Préparation du poste",
+        CONNECTING_C2: "Ouverture de la liaison",
+        CONTACTING_ATHENA: "Prise de contact avec le poste",
+        EXTENSION_READY: "Liaison prête",
+        INITIALIZING: "En attente",
+        SESSION_EXPIRED: "Session expirée",
+        INVALID_CREDENTIALS: "Identifiants incorrects",
+        ACCOUNT_DISABLED: "Compte désactivé",
+        NETWORK_ERROR: "Poste injoignable",
+        NO_TENANT: "Aucune communauté associée",
+        TENANT_DISABLED: "Communauté inactive",
+        MOD_OUTDATED: "Pack à mettre à jour",
+        PAIR_APPROVED: "Terminal accepté"
+      };
+      return map[u] || (u ? "Liaison en cours" : "—");
+    };
+    window.COMSPEC_ATAK_openAccountLogin = function (msg) {
+      window.COMSPEC_ATAK_unlockBoot();
+      if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(false);
+      if (typeof window.COMSPEC_ATAK_forcePhoneApp === "function") window.COMSPEC_ATAK_forcePhoneApp("account");
+      var card = document.getElementById("accountLoginCard");
+      if (card && card.scrollIntoView) card.scrollIntoView({ block: "start" });
+      var hint = document.getElementById("accountLoginMsg");
+      if (hint) {
+        hint.textContent = msg || "Connectez-vous avec l’e-mail de votre compte Athena.";
+        hint.classList.remove("ok");
+      }
+      var email = document.getElementById("accountLoginEmail");
+      if (email) setTimeout(function () { try { email.focus({ preventScroll: true }); } catch (e) {} }, 40);
+    };
+    window.COMSPEC_ATAK_loginError = function (msg) {
+      var hint = document.getElementById("accountLoginMsg");
+      if (hint) { hint.textContent = msg || "Connexion refusée."; hint.classList.remove("ok"); }
+      window.COMSPEC_ATAK_openAccountLogin(msg);
+    };
+    window.COMSPEC_ATAK_loginOk = function () {
+      var hint = document.getElementById("accountLoginMsg");
+      if (hint) { hint.textContent = "Compte connecté. Le profil et la communauté sont à jour."; hint.classList.add("ok"); }
+      var pass = document.getElementById("accountLoginPassword");
+      if (pass) pass.value = "";
+    };
+    window.COMSPEC_ATAK_openPairing = function(){
+      window.COMSPEC_ATAK_unlockBoot();
+      if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(true);
+      window.COMSPEC_ATAK_showUnenrolled(true);
+    };
     window.COMSPEC_ATAK_openRecovery = function(){ window.COMSPEC_ATAK_showUnenrolled(false); var i=document.getElementById('recoveryCodeInput'); if(i) i.focus(); };
     window.COMSPEC_ATAK_closePairing = function(){ var p=document.getElementById('pairingPanel');if(p)p.hidden=true;var t=document.getElementById('jnetTrustState');if(t)t.textContent='EN ATTENTE'; };
 
@@ -779,7 +857,10 @@
         setText("accountSessionRemaining", "—");
       }
 
-      setText("accountAuthState", state.athenaAuthState);
+      setText("accountAuthState", window.COMSPEC_ATAK_humanAuthState(state.athenaAuthState));
+      setText("accountCryptoCert",
+        stillValid || authenticated ? "Session émise par le poste" : "Aucun certificat pour l’instant"
+      );
       setText("accountSessionStatus",
         stillValid ? "VALIDE" :
         authenticated && Number.isFinite(expiryMs) ? "EXPIRÉE" :
@@ -805,6 +886,24 @@
         document.activeElement !== localUrl
       ) {
         localUrl.value = state.localUrl;
+      }
+
+      var tenantToken = document.getElementById("settingsTenantToken");
+      if (
+        tenantToken &&
+        typeof state.tenantToken === "string" &&
+        document.activeElement !== tenantToken
+      ) {
+        tenantToken.value = state.tenantToken;
+      }
+
+      var tenantId = document.getElementById("settingsTenantId");
+      if (
+        tenantId &&
+        typeof state.tenantId === "string" &&
+        document.activeElement !== tenantId
+      ) {
+        tenantId.value = state.tenantId;
       }
 
       var version = document.getElementById("aboutVersion");
@@ -1252,18 +1351,22 @@ button{cursor:pointer}
 .battery i{display:block;height:100%;background:var(--green);border-radius:1px}
 .battery em{position:absolute;inset:0;display:grid;place-items:center;font-size:.62em;font-style:normal;font-weight:700;color:#07110c}
 
+:root{--atak-rail:48%;--atak-bar:8.8cqh}
 .atak-toolbar{
   position:absolute;z-index:16;
   right:0;top:0;
-  height:8.8cqh;
+  width:var(--atak-rail);
+  height:var(--atak-bar);
   display:flex;align-items:stretch;
   background:rgba(8,10,10,.94);
   border-bottom:1px solid rgba(255,255,255,.08);
   border-left:1px solid rgba(255,255,255,.06);
   box-shadow:0 4px 16px rgba(0,0,0,.35);
+  box-sizing:border-box;
 }
 .toolbar-item{
-  width:5.7cqw;min-width:3.2em;
+  flex:1 1 0;
+  width:auto;min-width:0;
   border:0;border-right:1px solid rgba(255,255,255,.05);
   background:transparent;color:#d5dcd7;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.22em;
@@ -1455,8 +1558,8 @@ button{cursor:pointer}
 
 .atak-panel{
   position:absolute;z-index:13;
-  right:0;top:8.8cqh;bottom:0;
-  width:48%;
+  right:0;top:var(--atak-bar);bottom:0;
+  width:var(--atak-rail);
   background:rgba(12,16,14,.94);
   border-left:1px solid rgba(180,210,190,.16);
   box-shadow:-10px 0 24px rgba(0,0,0,.32);
@@ -1639,17 +1742,24 @@ body.panel-open .edge-panel-open{display:none}
 @keyframes toast-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
 
 /* ======================== PHONE HOME ======================== */
-.phone-desktop{background:linear-gradient(145deg,#07110f,#0c1c18 48%,#050908)}
-.desktop-bg{position:absolute;inset:0;overflow:hidden}
+.phone-desktop{background:#050908}
+.desktop-bg{
+  position:absolute;inset:0;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 50% 118%,rgba(8,18,14,.2) 0 28%,rgba(5,9,8,.55) 62%),
+    linear-gradient(180deg,rgba(5,10,9,.35) 0 18%,transparent 42%,rgba(3,6,5,.72) 100%),
+    url("media/athena-bg.jpg") center 38%/cover no-repeat,
+    linear-gradient(165deg,#0a1612 0%,#163028 28%,#0c1c18 52%,#07110d 100%);
+}
 .desktop-grid{
   position:absolute;inset:-30%;
   transform:perspective(450px) rotateX(62deg) translateY(31%);
-  transform-origin:center bottom;opacity:.16;
-  background-image:linear-gradient(rgba(61,188,151,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(61,188,151,.5) 1px,transparent 1px);
+  transform-origin:center bottom;opacity:.1;
+  background-image:linear-gradient(rgba(61,188,151,.42) 1px,transparent 1px),linear-gradient(90deg,rgba(61,188,151,.42) 1px,transparent 1px);
   background-size:2.6em 2.6em;
 }
-.desktop-orbit{position:absolute;width:22em;height:22em;border:1px solid rgba(52,189,148,.14);border-radius:50%}
-.desktop-orbit::before,.desktop-orbit::after{content:"";position:absolute;inset:3.4em;border:1px solid rgba(52,189,148,.1);border-radius:50%}
+.desktop-orbit{position:absolute;width:22em;height:22em;border:1px solid rgba(52,189,148,.1);border-radius:50%}
+.desktop-orbit::before,.desktop-orbit::after{content:"";position:absolute;inset:3.4em;border:1px solid rgba(52,189,148,.08);border-radius:50%}
 .desktop-orbit::after{inset:6.8em}
 .desktop-orbit.one{left:-7em;bottom:-9em}.desktop-orbit.two{right:-10em;top:-12em}
 .desktop-status{
@@ -1661,15 +1771,21 @@ body.panel-open .edge-panel-open{display:none}
 .desktop-status>div{display:flex;gap:.7em;align-items:center}
 .desktop-status span{color:#8b9c96}
 .desktop-hero{
-  position:absolute;z-index:2;left:50%;top:18%;transform:translateX(-50%);
+  position:relative;z-index:2;
+  width:min(42em,86%);
+  margin:1.15em auto .35em;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  gap:.28em;
   text-align:center;
 }
-.hero-kicker{display:block;color:var(--tan);font-size:.85em;letter-spacing:.16em;font-weight:700}
-.desktop-hero b{display:block;margin-top:.15em;font-size:2.15em;letter-spacing:.06em}
-.desktop-hero small{display:block;margin-top:.2em;color:#8b9c96;font-size:1em}
+.hero-kicker{display:block;color:var(--tan);font-size:.72em;letter-spacing:.16em;font-weight:700;line-height:1.25}
+.desktop-hero b{display:block;margin:0;font-size:1.85em;letter-spacing:.06em;line-height:1.15}
+.desktop-hero small{display:block;margin:0;color:#8b9c96;font-size:.88em;line-height:1.35}
 .desktop-widget{
-  position:absolute;z-index:2;left:50%;top:38%;transform:translate(-50%,-50%);
-  width:—;height:6.4em;
+  position:relative;z-index:2;
+  width:min(42em,86%);
+  min-height:6.4em;
+  margin:.55em auto 0;
   display:grid;grid-template-columns:repeat(3,1fr);
   background:rgba(8,18,15,.72);
   border:1px solid rgba(98,166,146,.2);
@@ -1682,8 +1798,11 @@ body.panel-open .edge-panel-open{display:none}
 .desktop-widget b{display:block;margin-top:.4em;font-size:1.35em}
 .warn-text{color:var(--amber)!important}.green-text{color:var(--green)!important}
 .desktop-icons{
-  position:absolute;z-index:2;left:50%;top:66%;transform:translate(-50%,-50%);
-  display:grid;grid-template-columns:repeat(3,7.6em);gap:2.6em;
+  position:relative;z-index:2;
+  width:min(42em,86%);
+  margin:1.4em auto 0;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1.4em 1em;
+  justify-items:center;
 }
 .desktop-app-icon{border:0;background:transparent;color:#fff;display:flex;flex-direction:column;align-items:center}
 .desktop-app-icon:hover{transform:translateY(-2px)}
@@ -1699,15 +1818,32 @@ body.panel-open .edge-panel-open{display:none}
 .overwatch-app-icon{background:radial-gradient(circle at 50% 42%,#15372f,#08100e 72%);border:1px solid rgba(32,199,178,.38)}
 .overwatch-app-icon i{width:2.15em;height:2.15em;border:.28em solid #e3ece8;border-top-color:var(--accent);border-radius:50%;position:relative}
 .overwatch-app-icon i::after{content:"";position:absolute;left:50%;bottom:.08em;width:.22em;height:.85em;transform:translateX(-50%);background:#dce7e2}
-.settings-app-icon{background:linear-gradient(145deg,#747f82,#34393b);font-size:2.1em}
+.settings-app-icon{background:linear-gradient(145deg,#5d676a,#2c3133);font-size:1em;color:#e8eeea}
+.settings-app-icon i{
+  width:1.55em;height:1.55em;border-radius:50%;
+  border:.22em solid currentColor;position:relative;
+  box-shadow:
+    0 -1.05em 0 -.62em currentColor,
+    0 1.05em 0 -.62em currentColor,
+    -1.05em 0 0 -.62em currentColor,
+    1.05em 0 0 -.62em currentColor,
+    -.74em -.74em 0 -.66em currentColor,
+    .74em -.74em 0 -.66em currentColor,
+    -.74em .74em 0 -.66em currentColor,
+    .74em .74em 0 -.66em currentColor;
+}
+.settings-app-icon i::after{
+  content:"";position:absolute;inset:.28em;border-radius:50%;
+  border:.16em solid #2c3133;background:transparent;
+}
 .desktop-page-dots{position:absolute;z-index:2;left:50%;bottom:1.6em;transform:translateX(-50%);display:flex;gap:.4em}
 .desktop-page-dots i{width:.35em;height:.35em;border-radius:50%;background:#56655f}
 .desktop-page-dots i.active{background:var(--accent)}
 .desktop-drawer{
-  position:absolute;z-index:8;left:1.1em;right:1.1em;bottom:1.1em;padding:.9em;
-  background:rgba(7,14,12,.97);border:1px solid rgba(78,147,126,.27);border-radius:8px;
-  box-shadow:0 16px 45px rgba(0,0,0,.5);
-  transform:translateY(calc(100% + 1.6em));opacity:0;pointer-events:none;
+  position:absolute;z-index:8;left:0;right:0;bottom:0;top:5.4cqh;padding:.9em 1.1em;
+  background:rgba(7,14,12,.97);border:0;border-top:1px solid rgba(78,147,126,.27);border-radius:0;
+  box-shadow:0 -12px 36px rgba(0,0,0,.42);
+  transform:translateY(100%);opacity:0;pointer-events:none;
   transition:.22s cubic-bezier(.16,1,.3,1);
 }
 .desktop-drawer.open{transform:none;opacity:1;pointer-events:auto}
@@ -1719,6 +1855,19 @@ body.panel-open .edge-panel-open{display:none}
 .mini-chrome{border-radius:50%;background:radial-gradient(circle,#4285f4 0 27%,#fff 28% 36%,transparent 37%),conic-gradient(#db4437 0 33%,#f4b400 33% 66%,#0f9d58 66%)}
 .mini-ow{background:#0d1916;border:1px solid #286151;color:var(--accent)}
 .mini-settings{background:#4b5456}
+.mini-account{
+  width:1.7em;height:1.7em;border-radius:6px;
+  background:#16362d;border:1px solid rgba(103,229,191,.36);
+  position:relative;
+}
+.mini-account::before{
+  content:"";position:absolute;left:50%;top:.28em;transform:translateX(-50%);
+  width:.42em;height:.42em;border-radius:50%;background:#8aefd0;
+}
+.mini-account::after{
+  content:"";position:absolute;left:50%;bottom:.22em;transform:translateX(-50%);
+  width:.86em;height:.38em;border-radius:.4em .4em .1em .1em;background:#8aefd0;
+}
 .mini-atak-small{
   width:1.7em;height:1.7em;border-radius:6px;display:grid;place-items:center;
   background:#071611;border:1px solid rgba(79,230,181,.42);
@@ -1778,8 +1927,9 @@ body.panel-open .edge-panel-open{display:none}
 .browser-status-card span{display:block;color:var(--muted2);font-size:.78em;letter-spacing:.08em}
 .browser-status-card b{display:block;margin-top:.3em;font-size:1.1em}
 
-.settings-page{padding:1em 1.3em;height:calc(100% - 8.6cqh);overflow:auto;background:#131716}
+.settings-page{padding:1em 1.3em 5.2em;height:calc(100% - 5.4cqh);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#131716}
 .settings-page h2{margin:.7em .3em .4em;color:var(--muted);font-size:.85em;text-transform:uppercase;letter-spacing:.12em}
+.settings-help{margin:.25em .3em .85em;color:#82958e;font-size:.72em;line-height:1.4}
 .setting-row{
   width:100%;min-height:4em;border:0;border-bottom:1px solid var(--line);
   background:#1a201e;color:#fff;
@@ -1844,7 +1994,15 @@ body.panel-open .edge-panel-open{display:none}
 #phoneDesktop.active .desktop-page-dots{
   opacity:1!important;
   visibility:visible!important;
+}
+#phoneDesktop.active .desktop-status{
   display:flex;
+  flex-direction:row;
+}
+#phoneDesktop.active .desktop-hero{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
 
 #phoneDesktop.active .desktop-widget{
@@ -1893,16 +2051,20 @@ html.ingame .desktop-page-dots{
 
 
 
-/* ============================================================
-   COMSPEC LIVE MAP VIEWPORT
-   HTML/JS owns the interface; Arma owns only the map viewport.
-   No Chromium transparency is required.
-   ============================================================ */
+/* Fond terrain toujours visible. Leaflet se pose dessus dès qu’il est prêt. */
 html.ingame #mapCanvas,
 html.ingame .map-satellite,
 html.ingame .map-relief,
 html.ingame .map-grid,
-html.ingame .map-shade,
+html.ingame .map-shade{
+  display:block!important;
+}
+html.ingame .atak-map.live-tiles .map-satellite,
+html.ingame .atak-map.live-tiles .map-relief,
+html.ingame .atak-map.live-tiles .map-grid{
+  display:none!important;
+  opacity:0!important;
+}
 html.ingame .map-overlay-lines,
 html.ingame .map-label,
 html.ingame .unit-marker,
@@ -1914,27 +2076,139 @@ html.ingame .track-line-svg{
   display:none!important;
 }
 
-/* Central hole intentionally reserved for the native Arma map. */
-#nativeMapViewport{
+#nativeMapViewport,
+#nativeMapViewport.leaflet-ready{
   position:absolute;
-  left:7.2%;
-  top:10.5%;
-  right:28.5%;
-  bottom:12.5%;
+  inset:0;
   z-index:2;
+  pointer-events:auto;
+  background:transparent;
+}
+html.ingame #nativeMapViewport:not(.leaflet-ready){
   pointer-events:none;
-  background:#050807;
+  background:transparent!important;
+}
+#nativeMapViewport .leaflet-container{
+  width:100%;
+  height:100%;
+  background:#15241e;
+}
+html.ingame #nativeMapViewport.leaflet-ready,
+html.ingame #nativeMapViewport.leaflet-ready .leaflet-container{
+  background:#15241e!important;
+}
+.atak-self-marker,.atak-contact-marker,.atak-poi-marker{background:transparent!important;border:0!important}
+.atak-self-dot,.atak-self-chevron{
+  display:block;width:12px;height:12px;margin:5px;border-radius:50%;
+  background:#6ae9c4;border:2px solid #0b1210;box-shadow:0 0 10px rgba(106,233,196,.65);
+}
+.atak-self-chevron{
+  clip-path:polygon(50% 0,88% 100%,50% 72%,12% 100%);
+  border-radius:0;width:14px;height:16px;margin:3px 4px;
+}
+.atak-contact-dot{
+  display:block;width:10px;height:10px;margin:4px;border-radius:50%;
+  background:#4aa3e8;border:2px solid #0b1210;
+}
+.atak-contact-group .atak-contact-dot{background:#4aa3e8}
+.atak-contact-bft .atak-contact-dot{background:#3fd18a}
+.atak-poi-dot{
+  display:block;width:8px;height:8px;margin:3px;border-radius:2px;
+  background:#e2c35a;border:1px solid #0b1210;
+}
+.atak-poi-friendly .atak-poi-dot{background:#4aa3e8}
+.atak-poi-hostile .atak-poi-dot{background:#e24a46}
+.atak-poi-neutral .atak-poi-dot{background:#3fd18a}
+.atak-contact-marker em,.atak-poi-marker em{
+  position:absolute;left:16px;top:1px;white-space:nowrap;
+  color:#e8f4ef;font:700 10px/1 "Roboto Condensed",Arial,sans-serif;
+  text-shadow:0 1px 2px #000;
+}
+#nativeMapViewport.topo-tiles .leaflet-tile-pane{
+  filter:grayscale(1) contrast(1.22) brightness(1.06);
+}
+#overwatchApp.night #nativeMapViewport .leaflet-tile-pane{
+  filter:saturate(.45) contrast(1.28) brightness(.55) hue-rotate(12deg);
+}
+#overwatchApp.night #nativeMapViewport.topo-tiles .leaflet-tile-pane{
+  filter:grayscale(1) contrast(1.35) brightness(.5);
 }
 
-/* HTML controls remain around the native viewport. */
-.atak-toolbar{z-index:20!important}
-.map-left-controls{z-index:20!important}
-.map-bottom-left{z-index:20!important}
-.map-telemetry{z-index:20!important}
-.map-center-status{z-index:20!important}
+/* Menus HTML au-dessus de la carte. */
+.atak-toolbar{z-index:40!important}
+.map-left-controls{z-index:30!important}
+.map-bottom-left{z-index:30!important}
+.map-telemetry{z-index:30!important}
+.map-center-status{z-index:30!important}
 .entity-sheet{z-index:22!important}
 .atak-panel{z-index:24!important}
 .edge-panel-open{z-index:25!important}
+.scene-hint-bar,.scene-replay,.scene-object-sheet{z-index:26!important}
+
+.scene-hint-bar{
+  position:absolute;left:12%;right:32%;bottom:4.6em;
+  display:flex;gap:.45em;align-items:center;
+  background:rgba(8,16,14,.88);border:1px solid rgba(106,233,196,.28);
+  padding:.4em .55em;font-size:.72em;color:#dceee7;
+}
+.scene-hint-bar button{border:0;background:#163a32;color:#e8f7f1;padding:.35em .6em}
+.scene-replay{
+  position:absolute;left:12%;right:32%;bottom:.55em;
+  display:flex;gap:.45em;align-items:center;
+  background:rgba(8,16,14,.82);padding:.28em .5em;font-size:.62em;letter-spacing:.08em;color:#8fb4a8;
+}
+.scene-replay input{flex:1}
+.scene-object-sheet{
+  position:absolute;right:30%;bottom:5.2em;width:14em;
+  background:#101815;border:1px solid rgba(106,233,196,.28);padding:.7em;color:#e8f4ef;
+}
+.scene-object-sheet header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35em}
+.scene-object-sheet p{margin:0 0 .5em;color:#8fb4a8;font-size:.68em}
+.scene-object-sheet [data-scene-fields] div{display:flex;justify-content:space-between;gap:.5em;font-size:.72em;margin:.2em 0}
+.scene-object-sheet [data-scene-fields] span{color:#8fb4a8}
+.symbol-templates{display:flex;flex-wrap:wrap;gap:.35em;padding:.6em .75em}
+.symbol-templates b{width:100%;font-size:.68em;letter-spacing:.1em;color:#7ee0c4}
+.symbol-templates button,.scene-template-form button{border:1px solid rgba(106,233,196,.28);background:#12201c;color:#e8f4ef;padding:.4em .55em;font-size:.72em}
+.scene-template-form{margin:.4em .75em .8em;padding:.65em;border:1px solid rgba(106,233,196,.22);background:#0c1613}
+.scene-template-form label{display:block;margin:.4em 0}
+.scene-template-form span{display:block;font-size:.62em;color:#8fb4a8;margin-bottom:.2em}
+.scene-template-form input{width:100%;box-sizing:border-box;background:#09120f;border:1px solid rgba(104,149,135,.28);color:#edf8f4;padding:.4em}
+.scene-template-actions{display:flex;gap:.4em;margin-top:.5em}
+.scene-template-form select{width:100%;box-sizing:border-box;background:#09120f;border:1px solid rgba(104,149,135,.28);color:#edf8f4;padding:.4em}
+.sync-lead{margin:.7em .85em .4em;color:#8fb4a8;font-size:.72em;line-height:1.4}
+.sync-terminal{margin:.5em .75em .9em;border:1px solid rgba(106,233,196,.22);background:#0c1613;padding:.7em}
+.sync-terminal header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35em}
+.sync-pill{font-size:.62em;letter-spacing:.08em;padding:.2em .45em;border:1px solid rgba(106,233,196,.3);color:#7ee0c4}
+.sync-pill.off{color:#e2c35a;border-color:rgba(226,195,90,.35)}
+.sync-terminal small{display:block;color:#8fb4a8;font-size:.65em;margin-bottom:.55em}
+.sync-roster{margin:.15em .75em 1em}
+.sync-roster h3{margin:.4em 0 .45em;font-size:.72em;color:#8fb4a8;letter-spacing:.08em;text-transform:uppercase}
+.sync-peer{margin-bottom:.45em;border:1px solid rgba(106,233,196,.16);background:#0c1613;padding:.55em .7em}
+.sync-peer header{display:flex;justify-content:space-between;align-items:center}
+.sync-empty{color:#8fb4a8;font-size:.68em;line-height:1.4;margin:.3em .75em 1em}
+.sync-queue div{display:flex;justify-content:space-between;gap:.6em;font-size:.74em;padding:.28em 0;border-top:1px solid rgba(255,255,255,.05)}
+.sync-queue span{color:#9eb2aa}
+.sync-queue b{color:#e8f4ef}
+.scene-symbol{background:transparent!important;border:0!important}
+.scene-symbol span{display:block;width:10px;height:10px;margin:3px;border-radius:50%;background:#f0b43d;border:2px solid #0b1210}
+.scene-danger span,.scene-exclusion span{background:#e24a46;border-radius:2px}
+.scene-rally span{background:#4aa8ea}
+.scene-ao span{background:#6ae9c4}
+.scene-symbol em{position:absolute;left:16px;top:1px;white-space:nowrap;color:#e8f4ef;font:700 10px/1 "Roboto Condensed",Arial,sans-serif;text-shadow:0 1px 2px #000}
+
+#overwatchApp.scene-relief #nativeMapViewport .leaflet-tile-pane{
+  filter:contrast(1.18) brightness(1.04) saturate(1.08);
+}
+#overwatchApp.scene-relief #nativeMapViewport:after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 42%,rgba(0,0,0,.22));
+  mix-blend-mode:soft-light;
+}
+#overwatchApp.scene-tactical .atak-map{perspective:1100px}
+#overwatchApp.scene-tactical #nativeMapViewport{
+  transform:rotateX(38deg) scale(1.14);
+  transform-origin:center 72%;
+}
 
 /* Uniform app icons on the phone desktop. */
 .desktop-app-icon .icon-square{
@@ -1951,17 +2225,21 @@ html.ingame .track-line-svg{
   place-items:center!important;
 }
 .account-app-icon{
-  background:linear-gradient(145deg,#18382f,#091611);
+  background:linear-gradient(160deg,#1c463a,#0a1814 70%);
   border:1px solid rgba(103,229,191,.36);
-  color:#77e6c5;
-  font-weight:900;
-  font-size:1.05em;
+  color:#8aefd0;
 }
-.account-app-icon:before{
+.account-app-icon i{
+  width:1.1em;height:1.1em;border-radius:50%;
+  background:currentColor;
+  position:relative;
+  margin-bottom:.7em;
+}
+.account-app-icon i::after{
   content:"";
-  width:1.05em;height:1.05em;border-radius:50%;
-  border:2px solid currentColor;
-  box-shadow:0 1.15em 0 -.15em #091611, 0 1.15em 0 .02em currentColor;
+  position:absolute;left:50%;top:1.22em;transform:translateX(-50%);
+  width:1.95em;height:.88em;border-radius:.95em .95em .18em .18em;
+  background:currentColor;
 }
 .account-grid{
   display:grid;
@@ -1988,7 +2266,14 @@ html.ingame .track-line-svg{
 }
 
 
-.account-shell{height:calc(100% - 3.5em);overflow:auto;padding:.8em 1em 1.2em}
+.account-shell{height:calc(100% - 3.5em);overflow:auto;padding:.8em 1em 4.2em}
+.account-login{margin:0 0 1em;padding:.85em;border:1px solid rgba(109,218,185,.24);border-radius:.7em;background:#101715}
+.account-login h3{margin:0 0 .35em;font-size:.92em;color:#e8f4ef}
+.account-login p{margin:0 0 .7em;color:#8fb4a8;font-size:.68em;line-height:1.4}
+.account-login label{display:block;margin:.45em 0 .25em;color:#9eb2aa;font-size:.66em;letter-spacing:.04em}
+.account-login input{width:100%;min-height:2.4em;border:1px solid #31443d;background:#0b1210;color:#e8f4ef;border-radius:.4em;padding:.45em .6em}
+.account-login .account-login-msg{min-height:1.2em;margin:.55em 0 0;color:#e2c35a;font-size:.68em;line-height:1.35}
+.account-login .account-login-msg.ok{color:#7ee0c4}
 .operator-hero{
   display:grid;grid-template-columns:6.2em 1fr;gap:1em;align-items:center;
   padding:1em;border:1px solid rgba(105,230,190,.24);border-radius:.9em;
@@ -2020,21 +2305,32 @@ html.ingame .track-line-svg{
 .certificate-grid span{display:block;color:var(--muted);font-size:.65em;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2em}
 .certificate-grid b{font-size:.76em;color:#e7f2ee}
 .certificate-note{margin:.7em 0 0;color:#82958e;font-size:.65em;line-height:1.35}
+.account-actions{
+  display:grid;grid-template-columns:1fr;gap:.45em;
+  margin:.85em .05em 0;
+}
+.account-actions button{
+  min-height:2.7em;border:1px solid rgba(109,218,185,.28);
+  background:#12201c;color:#e8f4ef;border-radius:.45em;
+  font-weight:700;letter-spacing:.02em;
+}
+.account-actions button:hover{border-color:#6ddab9;background:#173028}
+.account-actions .ghost{
+  background:transparent;border-color:#31443d;color:#c9d6d0;
+}
+.account-actions .danger{
+  border-color:rgba(226,74,70,.4);color:#f0c8c6;background:#261414;
+}
 
 
 html.ingame #overwatchApp,
 html.ingame .atak-map{
-  background:#070a09!important;
+  background:#15241e!important;
 }
-html.ingame #nativeMapViewport{
+html.ingame #nativeMapViewport:not(.leaflet-ready){
   background:transparent!important;
   border:0!important;
   box-shadow:none!important;
-}
-html.ingame body.native-map-active #overwatchApp,
-html.ingame body.native-map-active .atak-map,
-html.ingame body.native-map-active .phone-app.active{
-  background:transparent!important;
 }
 
 
@@ -2240,6 +2536,7 @@ html.ingame .boot-lock-hint{
   letter-spacing:.18em;color:rgba(232,238,234,.72);
 }
 </style>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body class="boot-lock-active">
 <main class="stage">
@@ -2324,13 +2621,10 @@ html.ingame .boot-lock-hint{
           <div class="map-canvas" id="mapCanvas">
             <div class="map-satellite"></div>
             <div class="map-relief"></div>
-            <div class="map-grid" data-layer-group="grid" hidden></div>
+            <div class="map-grid" data-layer-group="grid"></div>
             <div class="map-shade"></div>
-
-
-
-</div>
-<div id="nativeMapViewport" aria-label="Carte Arma en direct"></div>
+          </div>
+          <div id="nativeMapViewport" class="leaflet-map-host" aria-label="Carte du terrain"></div>
 <div class="map-left-controls">
             <button class="round-map-btn compass-btn" id="compassBtn" title="Orienter au nord">
               <span class="compass-disc">
@@ -2358,6 +2652,28 @@ html.ingame .boot-lock-hint{
               <span id="scaleValue">—</span>
             </div>
           </div>
+
+          <div class="scene-hint-bar" id="sceneHintBar" hidden>
+            <span id="sceneHint"></span>
+            <button type="button" id="sceneFinish" hidden>Valider</button>
+            <button type="button" id="sceneCancel">Annuler</button>
+          </div>
+
+          <div class="scene-replay" id="sceneReplay">
+            <span>Relecture</span>
+            <input type="range" id="sceneReplaySlider" min="0" max="0" value="0" aria-label="Revenir à un instant de la carte">
+            <button type="button" id="sceneReplayLive">Direct</button>
+          </div>
+
+          <aside class="scene-object-sheet" id="sceneObjectSheet" hidden>
+            <header>
+              <b data-scene-title>Objet</b>
+              <button type="button" id="sceneSheetClose" aria-label="Fermer">×</button>
+            </header>
+            <p data-scene-meta></p>
+            <div data-scene-fields></div>
+            <button type="button" id="sceneSheetDelete">Retirer de la carte</button>
+          </aside>
 
           <div class="map-telemetry" id="mapTelemetry">
             <header>
@@ -2423,39 +2739,39 @@ html.ingame .boot-lock-hint{
         </header>
 
         <nav class="atak-toolbar" aria-label="Outils Overwatch">
-          <button class="toolbar-item" id="openTerrain" data-arma="map:show" title="Carte du terrain">
+          <button class="toolbar-item" id="openTerrain" type="button" data-arma="map:show" title="Carte du terrain" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico mapfold"><i></i><i></i><i></i></span>
             <small>Terrain</small>
           </button>
-          <button class="toolbar-item" data-panel="trackers" title="Suivis">
+          <button class="toolbar-item" type="button" data-panel="trackers" title="Suivis" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico people"><i></i><i></i><i></i></span>
             <small>Suivis</small>
           </button>
-          <button class="toolbar-item" data-panel="connections" title="Liaison">
+          <button class="toolbar-item" type="button" data-panel="connections" title="Liaison" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico target"></span>
             <small>Liaison</small>
           </button>
-          <button class="toolbar-item" data-panel="layers" title="Couches">
+          <button class="toolbar-item" type="button" data-panel="layers" title="Couches" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico layers"><i></i><i></i><i></i></span>
             <small>Couches</small>
           </button>
-          <button class="toolbar-item" data-panel="saved" title="Vues">
+          <button class="toolbar-item" type="button" data-panel="saved" title="Vues" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico mapfold"><i></i><i></i><i></i></span>
             <small>Vues</small>
           </button>
-          <button class="toolbar-item" data-panel="points" title="Points">
+          <button class="toolbar-item" type="button" data-panel="points" title="Points" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico pin">+</span>
             <small>Points</small>
           </button>
-          <button class="toolbar-item" data-panel="tools" title="Outils">
+          <button class="toolbar-item" type="button" data-panel="tools" title="Outils" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico wrench"></span>
             <small>Outils</small>
           </button>
-          <button class="toolbar-item" data-panel="imagery" title="Imagerie">
+          <button class="toolbar-item" type="button" data-panel="imagery" title="Imagerie" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="ico aperture"></span>
             <small>Images</small>
           </button>
-          <button class="toolbar-item menu-tool" data-panel="menu" title="Menu">
+          <button class="toolbar-item menu-tool" type="button" data-panel="menu" title="Menu" onclick="return window.COMSPEC_ATAK_toolbar&&window.COMSPEC_ATAK_toolbar(this)">
             <span class="toolbar-burger"><i></i><i></i><i></i></span>
             <small>Menu</small>
           </button>
@@ -2501,31 +2817,32 @@ html.ingame .boot-lock-hint{
             <section class="panel-view" data-panel-view="connections">
               <div class="subnav-title">
                 <button class="sub-back" data-panel-back title="Retour">‹</button>
-                <b>Gérer la liaison</b>
+                <b>Centre de liaison</b>
               </div>
-              <div class="segmented">
-                <button class="active">Sans fil</button>
-                <button>Câble</button>
+              <p class="sync-lead">Les positions ne sont pas historisées : seule la plus récente compte. Les dessins, marqueurs et comptes-rendus restent en file jusqu’à la prochaine liaison.</p>
+              <div class="sync-terminal" id="syncTerminal">
+                <header>
+                  <b id="syncCallsign">Ce terminal</b>
+                  <span class="sync-pill" id="syncState">—</span>
+                </header>
+                <small id="syncMeta">Dernière mise à jour : —</small>
+                <div class="sync-queue" id="syncQueue">
+                  <div><span>Modifications en attente</span><b id="syncPending">0</b></div>
+                  <div><span>Positions</span><b>seule la dernière</b></div>
+                  <div><span>Marqueurs</span><b id="syncMarkers">0</b></div>
+                  <div><span>Dessins et zones</span><b id="syncDrawings">0</b></div>
+                  <div><span>Itinéraires</span><b id="syncRoutes">0</b></div>
+                  <div><span>Comptes-rendus</span><b id="syncIntel">0</b></div>
+                  <div><span>Carte déjà conservée</span><b id="syncTiles">0</b></div>
+                </div>
+                <div class="account-actions" style="margin:.7em 0 0">
+                  <button type="button" id="mapPackInstall">Conserver ce théâtre sur l’appareil</button>
+                </div>
+                <p class="sync-empty" id="mapPackHint">Les extraits déjà ouverts restent en cache. Ce bouton enregistre aussi le théâtre sur le disque pour les prochaines sessions.</p>
               </div>
-              <div class="connection-list">
-                <button class="connection selected">
-                  <i></i>
-                  <div>
-                    <b>Terminal Pro X2</b>
-                    <small>Dernière liaison : 03/09/26 · 19:55</small>
-                  </div>
-                </button>
-                <button class="connection">
-                  <i></i>
-                  <div>
-                    <b>Appareil inconnu</b>
-                    <small>Non identifié — hors réseau</small>
-                  </div>
-                </button>
-              </div>
-              <div class="dual-actions">
-                <button id="scanAgain">Rechercher</button>
-                <button class="primary" id="connectNext">Relier</button>
+              <div class="sync-roster" id="syncRoster">
+                <h3>Autres terminaux</h3>
+                <p class="sync-empty" id="syncRosterEmpty">Aucun autre terminal signalé par le poste pour l’instant.</p>
               </div>
             </section>
 
@@ -2537,6 +2854,12 @@ html.ingame .boot-lock-hint{
                 <button data-layer="route"><span><b>Itinéraires</b><small>Route de mission en cours</small></span><i class="switch on"></i></button>
                 <button data-layer="intel"><span><b>Renseignement</b><small>Objectifs, LZ et points d’intérêt</small></span><i class="switch on"></i></button>
                 <button data-layer="grid"><span><b>Grille MGRS</b><small>Repères de coordonnées</small></span><i class="switch"></i></button>
+                <button data-arma="map:texture|SAT"><span><b>Vue satellite</b><small>Photo aérienne du terrain</small></span></button>
+                <button data-arma="map:texture|TOPO"><span><b>Vue plan</b><small>Carte lisible, moins de couleurs</small></span></button>
+                <button data-arma="map:bft"><span><b>Positions d’équipe</b><small>Afficher ou masquer les autres opérateurs</small></span></button>
+                <button type="button" data-scene-mode="flat"><span><b>Lecture plane</b><small>Carte ATAK classique, vue du dessus</small></span></button>
+                <button type="button" data-scene-mode="relief"><span><b>Relief</b><small>Ombre du terrain, pente plus lisible</small></span></button>
+                <button type="button" data-scene-mode="tactical"><span><b>Vue tactique</b><small>Inclinaison, altitude, trajectoires</small></span></button>
               </div>
             </section>
 
@@ -2629,13 +2952,55 @@ html.ingame .boot-lock-hint{
             <section class="panel-view" data-panel-view="tools">
               <div class="subnav-title"><button class="sub-back" data-panel-back title="Retour">‹</button><b>Outils tactiques</b></div>
               <div class="tool-grid">
-                <button data-tool="measure"><b>Mesure</b><small>Distance et cap</small></button>
-                <button data-tool="route"><b>Itinéraire</b><small>Points de passage</small></button>
-                <button data-tool="task"><b>Mission</b><small>Ordre à l’équipe</small></button>
-                <button data-tool="medevac"><b>MEDEVAC</b><small>Demande 9 lignes</small></button>
-                <button data-tool="cas"><b>CAS</b><small>Appui aérien</small></button>
-                <button data-tool="sse"><b>SSE</b><small>Compte-rendu terrain</small></button>
+                <button type="button" data-scene-tool="measure"><b>Mesure</b><small>Distance et cap</small></button>
+                <button type="button" data-scene-tool="polygon"><b>Polygone</b><small>Zone structurée</small></button>
+                <button type="button" data-scene-tool="polyline"><b>Ligne brisée</b><small>Tracé à plusieurs points</small></button>
+                <button type="button" data-scene-tool="arrow"><b>Flèche</b><small>Direction, axe d’effort</small></button>
+                <button type="button" data-scene-tool="rectangle"><b>Rectangle</b><small>Deux coins</small></button>
+                <button type="button" data-scene-tool="circle"><b>Cercle</b><small>Centre et rayon</small></button>
+                <button type="button" data-scene-tool="ellipse"><b>Ellipse</b><small>Emprise allongée</small></button>
+                <button type="button" data-scene-tool="freehand"><b>Croquis</b><small>Tracé libre</small></button>
+                <button type="button" data-scene-tool="danger"><b>Danger</b><small>Zone remplie, à éviter</small></button>
+                <button type="button" data-scene-tool="exclusion"><b>Exclusion</b><small>Interdiction de franchir</small></button>
+                <button type="button" data-scene-tool="sector"><b>Secteur</b><small>Observation, champ de vue</small></button>
+                <button type="button" data-scene-tool="corridor"><b>Couloir</b><small>Axe aérien ou terrestre</small></button>
+                <button type="button" data-scene-tool="axis"><b>Axe d’effort</b><small>Direction d’attaque</small></button>
+                <button type="button" data-scene-tool="rally"><b>Regroupement</b><small>Point de rendez-vous</small></button>
+                <button type="button" data-scene-tool="ao"><b>Zone d’intérêt</b><small>Masque le reste de la carte</small></button>
+                <button type="button" data-scene-tool="area"><b>Emprise</b><small>Découpe pour n’afficher que ça</small></button>
+                <button type="button" data-tool="route"><b>Itinéraire</b><small>Points de passage</small></button>
+                <button type="button" data-tool="task"><b>Mission</b><small>Ordre à l’équipe</small></button>
+                <button type="button" data-tool="medevac"><b>MEDEVAC</b><small>Demande 9 lignes</small></button>
+                <button type="button" data-tool="cas"><b>CAS</b><small>Appui aérien</small></button>
+                <button type="button" data-tool="sse"><b>SSE</b><small>Compte-rendu terrain</small></button>
               </div>
+              <div class="symbol-templates">
+                <b>Modèles à poser</b>
+                <button type="button" data-symbol-template="enemy_obs">Observation ennemie</button>
+                <button type="button" data-symbol-template="rally">Regroupement</button>
+                <button type="button" data-symbol-template="lz">Zone d’atterrissage</button>
+                <button type="button" data-symbol-template="ied">Engin explosif</button>
+                <button type="button" data-symbol-template="casualty">Blessé</button>
+                <button type="button" data-symbol-template="relay">Relais</button>
+              </div>
+              <form id="sceneTemplateForm" class="scene-template-form" hidden>
+                <b id="sceneTemplateTitle">Modèle</b>
+                <div id="sceneTemplateFields"></div>
+                <label class="scene-scope">
+                  <span>Qui voit cet objet</span>
+                  <select id="sceneScope">
+                    <option value="session">Cette session</option>
+                    <option value="local">Moi seulement</option>
+                    <option value="group">Mon groupe</option>
+                    <option value="mission">Cette mission</option>
+                    <option value="tenant">La communauté</option>
+                  </select>
+                </label>
+                <div class="scene-template-actions">
+                  <button type="button" id="sceneTemplateArm" class="primary">Poser sur la carte</button>
+                  <button type="button" id="sceneTemplateCancel">Annuler</button>
+                </div>
+              </form>
             </section>
 
             <section class="panel-view" data-panel-view="imagery">
@@ -2878,11 +3243,11 @@ html.ingame .boot-lock-hint{
             <b>Mini ATAK</b><small>Vue passive</small>
           </button>
           <button class="desktop-app-icon" data-launch-app="settings">
-            <span class="icon-square settings-app-icon">⚙</span>
+            <span class="icon-square settings-app-icon"><i></i></span>
             <b>Paramètres</b><small>Terminal</small>
           </button>
           <button class="desktop-app-icon" data-launch-app="account">
-            <span class="icon-square account-app-icon"></span>
+            <span class="icon-square account-app-icon"><i></i></span>
             <b>Compte</b><small>Opérateur</small>
           </button>
         </div>
@@ -2890,13 +3255,13 @@ html.ingame .boot-lock-hint{
         <div class="desktop-page-dots"><i class="active"></i><i></i><i></i></div>
 
         <section class="desktop-drawer" id="desktopDrawer">
-          <header><b>—</b><button id="closeDrawer" title="Fermer">×</button></header>
+          <header><b>Applications</b><button id="closeDrawer" title="Fermer">×</button></header>
           <div>
             <button data-launch-app="chrome"><span class="mini-chrome"></span><b>Chrome</b></button>
             <button data-launch-app="overwatch"><span class="mini-ow">O</span><b>Overwatch</b></button>
             <button type="button" data-arma="mini:enter"><span class="mini-atak-small">M</span><b>Mini ATAK</b></button>
             <button data-launch-app="settings"><span class="mini-settings">⚙</span><b>Paramètres</b></button>
-            <button data-launch-app="account"><span class="mini-settings">ID</span><b>Compte</b></button>
+            <button data-launch-app="account"><span class="mini-account"></span><b>Compte</b></button>
           </div>
         </section>
       </section>
@@ -2961,6 +3326,16 @@ html.ingame .boot-lock-hint{
             <span>Adresse du poste local</span>
             <input id="settingsLocalUrl" value="http://127.0.0.1/public" spellcheck="false">
           </label>
+          <h2>Communauté</h2>
+          <p class="settings-help">Saisissez le jeton et l’identifiant fournis par votre communauté. Les mêmes champs se trouvent dans les options du jeu, rubrique COMSPEC ATAK.</p>
+          <label class="boot-channel settings-url">
+            <span>Jeton de la communauté</span>
+            <input id="settingsTenantToken" spellcheck="false" autocomplete="off">
+          </label>
+          <label class="boot-channel settings-url">
+            <span>Identifiant de la communauté</span>
+            <input id="settingsTenantId" spellcheck="false" autocomplete="off">
+          </label>
           <button type="button" class="primary wide" id="settingsSaveServer">Enregistrer le poste</button>
           <h2>Connectivité</h2>
           <button class="setting-row" data-setting-toggle="data">
@@ -2997,7 +3372,7 @@ html.ingame .boot-lock-hint{
             <span class="setting-symbol">☼</span><div><b>Affichage</b><small>Luminosité et contraste</small></div><em>AUTO</em>
           </button>
           <button class="setting-row">
-            <span class="setting-symbol">i</span><div><b>À propos</b><small>COMSPEC ATAK</small></div><em id="aboutVersion">1.7.0</em>
+            <span class="setting-symbol">i</span><div><b>À propos</b><small>COMSPEC ATAK</small></div><em id="aboutVersion">1.8.20</em>
           </button>
         </div>
       </section>
@@ -3009,7 +3384,7 @@ html.ingame .boot-lock-hint{
 <section class="phone-app system-app" data-phone-app="account" id="accountApp">
   <header class="system-header">
     <div class="system-brand">
-      <span class="mini-settings">ID</span>
+      <span class="mini-account"></span>
       <div><b>Compte & terminal</b><small>ATHENA · identité opérationnelle</small></div>
     </div>
     <button data-system-more title="Plus">⋮</button>
@@ -3066,6 +3441,20 @@ html.ingame .boot-lock-hint{
       <div class="account-card"><span>Minimum ATHENA</span><b id="accountMinModVersion">—</b></div>
     </div>
 
+    <div class="account-section-title"><span>COMPTE</span><b>Connexion Athena</b></div>
+    <div class="account-login" id="accountLoginCard">
+      <h3>Se connecter à son compte</h3>
+      <p>Saisissez l’adresse e-mail et le mot de passe de votre compte Athena. L’identifiant Steam détecté en jeu, ou celui saisi dans les options du pack, est associé au compte s’il n’était pas encore enregistré.</p>
+      <label for="accountLoginEmail">Adresse e-mail</label>
+      <input id="accountLoginEmail" type="email" autocomplete="username" spellcheck="false" placeholder="prenom.nom@exemple.fr">
+      <label for="accountLoginPassword">Mot de passe</label>
+      <input id="accountLoginPassword" type="password" autocomplete="current-password">
+      <div class="account-actions" style="margin-top:.7em">
+        <button type="button" id="accountLoginSubmit">Se connecter</button>
+      </div>
+      <p class="account-login-msg" id="accountLoginMsg"></p>
+    </div>
+
     <div class="account-section-title"><span>SESSION</span><b>Accréditation ATAK</b></div>
     <div class="certificate-panel" id="accountCertificatePanel">
       <div class="certificate-status-row">
@@ -3079,12 +3468,17 @@ html.ingame .boot-lock-hint{
         <div><span>Expire le</span><b id="accountSessionExpires">—</b></div>
         <div><span>Durée restante</span><b id="accountSessionRemaining">—</b></div>
         <div><span>État ATHENA</span><b id="accountAuthState">—</b></div>
-        <div><span>Certificat cryptographique</span><b id="accountCryptoCert">NON ÉMIS</b></div>
+        <div><span>Certificat de session</span><b id="accountCryptoCert">Aucun certificat pour l’instant</b></div>
       </div>
       <p class="certificate-note">
         Le statut ci-dessus correspond à la session réellement émise par ATHENA.
-        Aucun certificat cryptographique n'est simulé par le client.
+        Aucun certificat n’est inventé par le téléphone.
       </p>
+      <div class="account-actions">
+        <button type="button" id="accountReconnect">Se reconnecter</button>
+        <button type="button" id="accountLink" class="ghost">Lier ce terminal au poste</button>
+        <button type="button" id="accountDisconnect" class="danger">Se déconnecter</button>
+      </div>
     </div>
 
     <div class="account-section-title"><span>ARMA</span><b>État terrain</b></div>
@@ -3198,7 +3592,7 @@ html.ingame .boot-lock-hint{
 
   const panelNames = {
     trackers: ["OVERWATCH", "Suivis"],
-    connections: ["LIAISON", "Gérer la liaison"],
+    connections: ["LIAISON", "Centre de liaison"],
     layers: ["CARTE", "Couches"],
     saved: ["CARTE", "Vues enregistrées"],
     points: ["CARTE", "Points / marqueurs"],
@@ -3212,7 +3606,20 @@ html.ingame .boot-lock-hint{
   };
 
   function bind(el, event, fn) {
-    if (el) el.addEventListener(event, fn);
+    if (!el) return;
+    if (event !== "click") {
+      el.addEventListener(event, fn);
+      return;
+    }
+    var last = 0;
+    var wrap = function (e) {
+      var n = Date.now();
+      if (n - last < 180) return;
+      last = n;
+      fn(e);
+    };
+    el.addEventListener("click", wrap);
+    el.addEventListener("mouseup", wrap);
   }
 
   function pulse(el) {
@@ -3306,6 +3713,73 @@ html.ingame .boot-lock-hint{
     if (nodes.desktopDrawer) nodes.desktopDrawer.classList.toggle("open");
   }
 
+  window.COMSPEC_ATAK_syncRoster = function (tsv) {
+    var box = document.getElementById("syncRoster");
+    var empty = document.getElementById("syncRosterEmpty");
+    if (!box) return;
+    box.querySelectorAll(".sync-peer").forEach(function (n) { n.remove(); });
+    var lines = String(tsv || "").split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+    var selfUid = String((window.COMSPEC_ATAK_STATE && (window.COMSPEC_ATAK_STATE.athenaDeviceId || window.COMSPEC_ATAK_STATE.uid)) || "").toUpperCase();
+    var shown = 0;
+    lines.forEach(function (line) {
+      var p = line.split("\t");
+      var uid = String(p[0] || "").toUpperCase();
+      if (!uid || (selfUid && uid === selfUid)) return;
+      shown += 1;
+      var art = document.createElement("article");
+      art.className = "sync-peer";
+      var live = p[3] === "1";
+      var pending = p[4] === "-" || p[4] === "" ? "Aucune file signalée" : String(p[4]);
+      art.innerHTML = "<header><b></b><span class=\"sync-pill\"></span></header><small></small>";
+      art.querySelector("b").textContent = p[2] || p[1] || uid;
+      var pill = art.querySelector(".sync-pill");
+      pill.textContent = live ? "EN LIGNE" : "HORS LIGNE";
+      pill.classList.toggle("off", !live);
+      art.querySelector("small").textContent = "File : " + pending;
+      box.appendChild(art);
+    });
+    if (empty) empty.hidden = shown > 0;
+  };
+  window.COMSPEC_ATAK_mapPackStarted = function () {
+    var hint = document.getElementById("mapPackHint");
+    if (hint) hint.textContent = "Enregistrement du théâtre sur l’appareil. Les extraits déjà ouverts restent disponibles.";
+    flashStatus("Théâtre en cours d’enregistrement…");
+  };
+  function refreshSyncCenter() {
+    if (!window.COMSPEC_MapBus || typeof window.COMSPEC_MapBus.summary !== "function") return;
+    window.COMSPEC_MapBus.summary().then(function (s) {
+      s = s || {};
+      var call = document.getElementById("syncCallsign");
+      var pill = document.getElementById("syncState");
+      var meta = document.getElementById("syncMeta");
+      var buckets = s.buckets || {};
+      if (call) call.textContent = s.callsign || "Ce terminal";
+      if (pill) {
+        pill.textContent = s.live ? "EN LIGNE" : "HORS LIGNE";
+        pill.classList.toggle("off", !s.live);
+      }
+      if (meta) {
+        meta.textContent = s.lastAt
+          ? ("Dernière mise à jour : " + new Date(s.lastAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }))
+          : "Aucune mise à jour reçue pour l’instant";
+      }
+      var set = function (id, n) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = String(n);
+      };
+      set("syncPending", s.pending || 0);
+      set("syncMarkers", buckets.marker || 0);
+      set("syncDrawings", buckets.drawing || 0);
+      set("syncRoutes", buckets.route || 0);
+      set("syncIntel", buckets.intel || 0);
+      set("syncTiles", s.tiles || 0);
+      if (typeof window.COMSPEC_ATAK_send === "function") {
+        window.COMSPEC_ATAK_send("sync:snapshot|" + (s.pending || 0) + "|" + (buckets.marker || 0) + "|" + (buckets.drawing || 0) + "|" + (buckets.route || 0) + "|" + (buckets.intel || 0) + "|" + (s.tiles || 0));
+        window.COMSPEC_ATAK_send("sync:roster");
+      }
+    });
+  }
+
   function openPanel(id = state.panel) {
     if (!panelNames[id]) id = "trackers";
     state.panel = id;
@@ -3324,6 +3798,13 @@ html.ingame .boot-lock-hint{
 
     if (nodes.panelKicker) nodes.panelKicker.textContent = panelNames[id][0];
     if (nodes.panelTitle) nodes.panelTitle.textContent = panelNames[id][1];
+    if (id === "connections") refreshSyncCenter();
+    setTimeout(function () {
+      if (typeof window.COMSPEC_ATAK_liveMapShow === "function") {
+        var world = (window.COMSPEC_ATAK_STATE && window.COMSPEC_ATAK_STATE.world) || "altis";
+        window.COMSPEC_ATAK_liveMapShow(world);
+      }
+    }, 80);
   }
 
   function closePanel(notify = true) {
@@ -3356,6 +3837,10 @@ html.ingame .boot-lock-hint{
   function setZoom(value) {
     const direction = Number(value) > Number(state.zoom) ? "in" : "out";
     state.zoom = Number(value);
+    if (typeof window.COMSPEC_ATAK_liveMapZoom === "function") {
+      window.COMSPEC_ATAK_liveMapZoom(direction);
+      return;
+    }
     if (typeof window.COMSPEC_ATAK_send === "function") {
       window.COMSPEC_ATAK_send(direction === "in" ? "map:zoom:in" : "map:zoom:out");
     }
@@ -3394,6 +3879,9 @@ html.ingame .boot-lock-hint{
         el.hidden = !on;
         el.style.display = on ? "" : "none";
       });
+      if (typeof window.COMSPEC_ATAK_liveMapLayer === "function") {
+        window.COMSPEC_ATAK_liveMapLayer(layer, on);
+      }
     });
   }
 
@@ -3513,6 +4001,51 @@ html.ingame .boot-lock-hint{
     const i=$("#recoveryCodeInput"); const code=String(i&&i.value||"").trim().toUpperCase();
     if(code){ window.COMSPEC_ATAK_setLoginVisualState("connecting","RÉCUPÉRATION",46,"RECOVERY"); window.COMSPEC_ATAK_send("auth:recovery|"+code); }
   });
+  bind($("#accountDisconnect"), "click", () => {
+    flashStatus("Déconnexion…");
+    if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("disconnect");
+  });
+  bind($("#accountReconnect"), "click", () => {
+    flashStatus("Reconnexion au poste…");
+    if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("connect:athena");
+  });
+  function submitAccountLogin() {
+    var emailEl = document.getElementById("accountLoginEmail");
+    var passEl = document.getElementById("accountLoginPassword");
+    var email = String(emailEl && emailEl.value || "").trim();
+    var pass = String(passEl && passEl.value || "");
+    var hint = document.getElementById("accountLoginMsg");
+    if (!email || !pass) {
+      if (hint) { hint.textContent = "Saisissez votre adresse e-mail et votre mot de passe."; hint.classList.remove("ok"); }
+      return;
+    }
+    if (hint) { hint.textContent = "Connexion au poste…"; hint.classList.remove("ok"); }
+    flashStatus("Connexion au compte…");
+    if (typeof window.COMSPEC_ATAK_send === "function") {
+      window.COMSPEC_ATAK_send("auth:login:email|" + email);
+      window.COMSPEC_ATAK_send("auth:login:secret|" + pass);
+      window.COMSPEC_ATAK_send("auth:login:go");
+    }
+  }
+  function openAccountLinkAction() {
+    var st = window.COMSPEC_ATAK_STATE || {};
+    var ready = st.mode === "ATHENA" && String(st.athenaAuthState || "").toUpperCase() === "READY";
+    if (!ready) {
+      if (typeof window.COMSPEC_ATAK_openAccountLogin === "function") {
+        window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.");
+      }
+      return;
+    }
+    flashStatus("Préparation du lien avec le poste…");
+    if (typeof window.COMSPEC_ATAK_openPairing === "function") window.COMSPEC_ATAK_openPairing();
+    if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("auth:pair:start");
+  }
+  bind($("#accountLoginSubmit"), "click", submitAccountLogin);
+  bind($("#accountLink"), "click", openAccountLinkAction);
+  bind($("#mapPackInstall"), "click", () => {
+    flashStatus("Enregistrement du théâtre…");
+    if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("map:pack:install");
+  });
 
   bindBrowserSites();
   }
@@ -3553,13 +4086,24 @@ html.ingame .boot-lock-hint{
 
   bind($("#closeDrawer"), "click", closeDesktopDrawer);
 
-  $$(".toolbar-item[data-panel]").forEach(btn => {
-    bind(btn, "click", () => {
-      const id = btn.dataset.panel;
-      if (state.panelOpen && state.panel === id) closePanel();
-      else openPanel(id);
-    });
-  });
+  window.COMSPEC_ATAK_toolbar = function (btn) {
+    if (!btn) return false;
+    var arma = btn.getAttribute("data-arma") || "";
+    if (arma.indexOf("map:show") === 0) {
+      var world = (window.COMSPEC_ATAK_STATE && window.COMSPEC_ATAK_STATE.world) || "altis";
+      if (typeof window.COMSPEC_ATAK_liveMapShow === "function") {
+        window.COMSPEC_ATAK_liveMapShow(world);
+      }
+      if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("map:show");
+      closePanel(false);
+      return false;
+    }
+    var id = btn.getAttribute("data-panel");
+    if (!id) return false;
+    if (state.panelOpen && state.panel === id) closePanel();
+    else openPanel(id);
+    return false;
+  };
 
   bind(nodes.edgePanelOpen, "click", () => openPanel("trackers"));
   bind(nodes.panelGrip, "click", () => state.panelOpen ? closePanel() : openPanel());
@@ -3591,6 +4135,11 @@ html.ingame .boot-lock-hint{
       if (action === "center") {
         state.pan = { x: 0, y: 0 };
         applyMapTransform();
+        if (typeof window.COMSPEC_ATAK_liveMapCenter === "function") {
+          window.COMSPEC_ATAK_liveMapCenter();
+        } else if (typeof window.COMSPEC_ATAK_send === "function") {
+          window.COMSPEC_ATAK_send("map:center");
+        }
         flashStatus("Recentrée sur soi");
         selectEntity("—", { openSheet: false });
       }
@@ -3599,6 +4148,9 @@ html.ingame .boot-lock-hint{
   });
 
   bind(nodes.compassBtn, "click", () => {
+    if (typeof window.COMSPEC_ATAK_liveMapCenter === "function") {
+      window.COMSPEC_ATAK_liveMapCenter();
+    }
     if (typeof window.COMSPEC_ATAK_send === "function") {
       window.COMSPEC_ATAK_send("map:center");
     }
@@ -3779,6 +4331,7 @@ html.ingame .boot-lock-hint{
   let last = { x: 0, y: 0 };
   const map = $("#atakMap");
   bind(map, "pointerdown", e => {
+    if (window.COMSPEC_ATAK_getMap && window.COMSPEC_ATAK_getMap()) return;
     if (e.target.closest("button, a, input, aside, nav, header, .entity-sheet, .search-overlay")) return;
     dragging = true;
     last = { x: e.clientX, y: e.clientY };
@@ -3852,7 +4405,8 @@ html.ingame .boot-lock-hint{
     goBack,
     openPanel,
     closePanel,
-    flashStatus
+    flashStatus,
+    toolbar: window.COMSPEC_ATAK_toolbar
   };
 
   // Second guard after API registration: a late app.js load may NEVER
@@ -3933,7 +4487,18 @@ html.ingame .boot-lock-hint{
   document.addEventListener("click", function (event) {
     var arma = event.target.closest("[data-arma]");
     if (arma) {
-      window.COMSPEC_ATAK_send(arma.getAttribute("data-arma"));
+      var cmd = arma.getAttribute("data-arma") || "";
+      window.COMSPEC_ATAK_send(cmd);
+      if (cmd.indexOf("map:texture|") === 0 && typeof window.COMSPEC_ATAK_liveMapTexture === "function") {
+        window.COMSPEC_ATAK_liveMapTexture(cmd.slice(13));
+      }
+      if (cmd === "map:center" && typeof window.COMSPEC_ATAK_liveMapCenter === "function") {
+        window.COMSPEC_ATAK_liveMapCenter();
+      }
+      if (cmd === "map:show" && typeof window.COMSPEC_ATAK_liveMapShow === "function") {
+        var world = (window.COMSPEC_ATAK_STATE && window.COMSPEC_ATAK_STATE.world) || "altis";
+        window.COMSPEC_ATAK_liveMapShow(world);
+      }
       return;
     }
 
@@ -3950,9 +4515,16 @@ html.ingame .boot-lock-hint{
       var input = document.getElementById("settingsLocalUrl");
       var local = input ? String(input.value || "").trim() : "";
       var mode = window.COMSPEC_ATAK_STATE.urlMode || "OFFICIAL";
+      var tokenEl = document.getElementById("settingsTenantToken");
+      var tenantEl = document.getElementById("settingsTenantId");
+      var token = tokenEl ? String(tokenEl.value || "").replace(/\|/g, "").trim() : "";
+      var tenant = tenantEl ? String(tenantEl.value || "").replace(/\|/g, "").trim() : "";
 
       window.COMSPEC_ATAK_send(
         "settings:save|" + mode + "|" + local
+      );
+      window.COMSPEC_ATAK_send(
+        "settings:community|" + token + "|" + tenant
       );
       return;
     }
@@ -4014,11 +4586,46 @@ html.ingame .boot-lock-hint{
 
   window.COMSPEC_ATAK_reportMapViewport = reportViewport;
 
-  window.COMSPEC_ATAK_setNativeMap = function(active){
-    if(document.body) document.body.classList.toggle("native-map-active",!!active);
-    var vp=document.getElementById("nativeMapViewport");
-    if(vp) vp.setAttribute("data-native-map",active?"1":"0");
-    if(active) setTimeout(reportViewport,20);
+  window.COMSPEC_ATAK_setNativeMap = function(){
+    if (typeof window.COMSPEC_ATAK_liveMapShow === "function") {
+      var world = (window.COMSPEC_ATAK_STATE && window.COMSPEC_ATAK_STATE.world) || "altis";
+      window.COMSPEC_ATAK_liveMapShow(world);
+    }
+  };
+
+  window.COMSPEC_ATAK_applyChromeCrop = function(kind){
+    var iw = Math.max(1, window.innerWidth || 1);
+    var ih = Math.max(1, window.innerHeight || 1);
+    var fullW = iw;
+    var fullH = ih;
+    var x = 0;
+    var y = 0;
+    if (kind === "top") {
+      fullW = iw / 0.715;
+      fullH = ih / 0.105;
+    } else if (kind === "right") {
+      fullW = iw / 0.285;
+      fullH = ih;
+      x = -0.715 * fullW;
+    } else {
+      return;
+    }
+    var root = document.documentElement;
+    root.classList.add("chrome-crop");
+    root.style.setProperty("--atak-full-w", fullW + "px");
+    root.style.setProperty("--atak-full-h", fullH + "px");
+    root.style.setProperty("--atak-crop-x", x + "px");
+    root.style.setProperty("--atak-crop-y", y + "px");
+    if (document.body) {
+      document.body.classList.add("native-map-active");
+      document.body.classList.remove("boot-lock-active");
+    }
+    if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(false);
+    if (typeof window.COMSPEC_ATAK_unlockBoot === "function") window.COMSPEC_ATAK_unlockBoot();
+    window.COMSPEC_ATAK_reportMapViewport = function(){};
+    if (window.COMSPEC_ATAK_UI && typeof window.COMSPEC_ATAK_UI.setPhoneApp === "function") {
+      window.COMSPEC_ATAK_UI.setPhoneApp("overwatch", false);
+    }
   };
 
   window.addEventListener("resize", function () {
@@ -4660,24 +5267,7 @@ html.ingame .boot-foot{
 }
 
 
-/* HYBRID LIVEMAP — 1.8.5
-   HTML remains visible around a real native Arma map control. */
-html.ingame body.native-map-active #nativeMapViewport{
-  background:transparent!important;
-  box-shadow:
-    0 0 0 1px rgba(95,226,190,.20),
-    0 8px 24px rgba(0,0,0,.18);
-}
-html.ingame body.native-map-active .atak-toolbar,
-html.ingame body.native-map-active .map-left-controls,
-html.ingame body.native-map-active .map-bottom-left,
-html.ingame body.native-map-active .map-telemetry,
-html.ingame body.native-map-active .map-center-status,
-html.ingame body.native-map-active .atak-panel,
-html.ingame body.native-map-active .edge-panel-open{
-  visibility:visible!important;
-  opacity:1!important;
-}
+/* Leaflet owns the terrain; HTML chrome stays above the map. */
 
 
 /* TACTICAL MARKER COMPOSER — 1.8.5 */
@@ -4771,10 +5361,63 @@ html.ingame body.native-map-active .edge-panel-open{
         if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("auth:recovery|"+rc);
         return;
       }
+      if(el.id==="accountDisconnect"){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("disconnect");
+        return;
+      }
+      if(el.id==="mapPackInstall"){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("map:pack:install");
+        return;
+      }
+      if(el.id==="accountReconnect"){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("connect:athena");
+        return;
+      }
+      if(el.id==="accountLoginSubmit"){
+        event.preventDefault();event.stopImmediatePropagation();
+        var emailEl=document.getElementById("accountLoginEmail");
+        var passEl=document.getElementById("accountLoginPassword");
+        var email=String(emailEl&&emailEl.value||"").trim();
+        var pass=String(passEl&&passEl.value||"");
+        var hint=document.getElementById("accountLoginMsg");
+        if(!email||!pass){
+          if(hint){hint.textContent="Saisissez votre adresse e-mail et votre mot de passe.";hint.classList.remove("ok");}
+          return;
+        }
+        if(hint){hint.textContent="Connexion au poste…";hint.classList.remove("ok");}
+        if(window.COMSPEC_ATAK_send){
+          window.COMSPEC_ATAK_send("auth:login:email|"+email);
+          window.COMSPEC_ATAK_send("auth:login:secret|"+pass);
+          window.COMSPEC_ATAK_send("auth:login:go");
+        }
+        return;
+      }
+      if(el.id==="accountLink"){
+        event.preventDefault();event.stopImmediatePropagation();
+        var st=window.COMSPEC_ATAK_STATE||{};
+        var ready=st.mode==="ATHENA"&&String(st.athenaAuthState||"").toUpperCase()==="READY";
+        if(!ready){
+          if(window.COMSPEC_ATAK_openAccountLogin) window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.");
+          return;
+        }
+        if(window.COMSPEC_ATAK_openPairing) window.COMSPEC_ATAK_openPairing();
+        if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("auth:pair:start");
+        return;
+      }
       el=el.parentNode;
     }
   },true);
 })();
 </script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="map-store.js"></script>
+<script src="map-bus.js"></script>
+<script src="map-tiles.js"></script>
+<script src="map-engine.js"></script>
+<script src="map-symbols.js"></script>
+<script src="live-map.js"></script>
 </body>
 </html>
