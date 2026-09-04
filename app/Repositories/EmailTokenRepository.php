@@ -23,6 +23,18 @@ class EmailTokenRepository
         )->execute([$userId, $purpose]);
     }
 
+    public function deleteById(int $id): void
+    {
+        $this->pdo->prepare('DELETE FROM email_tokens WHERE id = ?')->execute([$id]);
+    }
+
+    public function deleteOtherPendingForUserPurpose(int $userId, string $purpose, int $keepId): void
+    {
+        $this->pdo->prepare(
+            'DELETE FROM email_tokens WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND id <> ?'
+        )->execute([$userId, $purpose, $keepId]);
+    }
+
     public function create(
         int $tenantId,
         int $userId,

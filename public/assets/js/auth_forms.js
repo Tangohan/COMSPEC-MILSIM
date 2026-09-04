@@ -79,3 +79,24 @@ function syncPasswordConfirm(el) {
   confirm.setCustomValidity('');
   return true;
 }
+
+const previewModal = document.querySelector('[data-preview-modal]');
+if (previewModal instanceof HTMLDialogElement) {
+  const openPreview = () => {
+    if (!previewModal.open) {
+      previewModal.showModal();
+    }
+  };
+  document.querySelectorAll('[data-preview-open]').forEach((button) => {
+    button.addEventListener('click', openPreview);
+  });
+  previewModal.querySelectorAll('[data-preview-close]').forEach((button) => {
+    button.addEventListener('click', () => previewModal.close());
+  });
+  previewModal.addEventListener('click', (event) => {
+    if (event.target === previewModal) {
+      previewModal.close();
+    }
+  });
+  openPreview();
+}

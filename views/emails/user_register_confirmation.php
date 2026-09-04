@@ -24,6 +24,11 @@ $body = '<p>Bonjour ' . $name . ',</p>'
     . $accountLine
     . email_html_button($verifyUrl, 'Confirmer mon e-mail', 'blue')
     . email_html_url_fallback($verifyUrl)
+    . '<div style="margin-top:24px;padding:16px;border-left:4px solid #ca8a04;background:#fefce8;color:#3f3f46;">'
+    . '<p style="margin:0 0 8px;"><strong>Information importante — preview ouverte</strong></p>'
+    . '<p style="margin:0 0 8px;">Athena et son mod sont encore en preview. L’intuitivité est en cours d’amélioration et certaines fonctions peuvent évoluer.</p>'
+    . '<p style="margin:0;">Selon les versions du portail web et du mod, une fonction peut marcher puis devenir temporairement indisponible. Vos conseils et retours sont les bienvenus à <a href="mailto:no-reply@athena.ttrd.fr">no-reply@athena.ttrd.fr</a>.</p>'
+    . '</div>'
     . '<p style="margin-top:24px;font-size:14px;color:#64748b;">Si vous n’êtes pas à l’origine de cette inscription, vous pouvez ignorer ce message en toute sécurité.</p>';
 
 $html = email_html_layout(
@@ -36,6 +41,7 @@ $html = email_html_layout(
 $text = "Bonjour {$displayName},\n\n"
     . $textAccount
     . $verifyUrl . "\n\n"
+    . "Information preview ouverte : Athena et son mod sont encore en cours d’amélioration. Une fonction peut devenir temporairement indisponible en cas de décalage entre les versions web et mod. Envoyez vos conseils et retours à no-reply@athena.ttrd.fr.\n\n"
     . "Si vous n’êtes pas à l’origine de cette inscription, ignorez ce message.\n";
 
 return ['html' => $html, 'text' => $text];
