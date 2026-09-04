@@ -24,7 +24,9 @@ use App\Repositories\CommunityEventRepository;
 use App\Repositories\ElevationRequestRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
+use App\Repositories\MissionPlanRepository;
 use App\Repositories\OpsBoardRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
@@ -80,6 +82,14 @@ class OrganizationDashboardController
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
+        $gate = Gate::getInstance();
+        $canAdminister = $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('site.support');
+        if (!$canAdminister) {
+            return $this->operatorOverview($tenantId, (int) Session::get('user_id'));
+        }
+
         $tenantName = '';
         try {
             $tenantRow = (new TenantRepository())->findById($tenantId);
@@ -439,6 +449,77 @@ class OrganizationDashboardController
             'orgElevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
             'orgMessagesRecent' => $orgMessagesRecent,
             'orgProfileGaps' => $orgProfileGaps,
+        ]);
+    }
+
+    /**
+     * Synthèse personnelle, volontairement limitée aux données de l'opérateur connecté.
+     */
+    private function operatorOverview(int $tenantId, int $userId): Response
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+
+        $tenant = [];
+        $user = [];
+        $profile = [];
+        $units = [];
+        $terminals = [];
+        $mission = null;
+        try {
+            $tenant = (new TenantRepository())->findById($tenantId) ?: [];
+        } catch (\Throwable) {
+        }
+        try {
+            $user = $this->users->findById($userId, $tenantId) ?: [];
+        } catch (\Throwable) {
+        }
+        try {
+            $profile = (new PersonnelProfileRepository())->getByUserId($userId, $tenantId) ?: [];
+        } catch (\Throwable) {
+        }
+        try {
+            $unitRepository = new UnitRepository();
+            foreach ($unitRepository->unitIdsForUser($tenantId, $userId) as $unitId) {
+                $unit = $unitRepository->findById($unitId, $tenantId);
+                if (is_array($unit)) {
+                    $units[] = $unit;
+                }
+            }
+        } catch (\Throwable) {
+            $units = [];
+        }
+        try {
+            foreach ($this->atakRealism->listTerminals($tenantId) as $terminal) {
+                if ((int) ($terminal['user_id'] ?? 0) === $userId
+                    && !AtakRealismRepository::isWebSessionTerminal($terminal)) {
+                    $terminals[] = $terminal;
+                }
+            }
+        } catch (\Throwable) {
+            $terminals = [];
+        }
+        try {
+            $mission = (new MissionPlanRepository())->findLiveForTenant($tenantId);
+        } catch (\Throwable) {
+            $mission = null;
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.operator_overview',
+            'title' => 'Mon back-office',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérateur',
+            'boPageTitle' => 'Mon espace opérationnel',
+            'boPageKicker' => 'BACK-OFFICE · CONSULTATION',
+            'boPageSubtitle' => 'Vos informations opérationnelles et les données essentielles de votre communauté.',
+            'operatorTenant' => $tenant,
+            'operatorUser' => $user,
+            'operatorProfile' => $profile,
+            'operatorUnits' => $units,
+            'operatorTerminals' => $terminals,
+            'operatorMission' => $mission,
         ]);
     }
 
