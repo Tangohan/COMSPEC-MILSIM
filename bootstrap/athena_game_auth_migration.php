@@ -156,6 +156,40 @@ return static function (PDO $pdo, ?callable $log = null): void {
         $say('tenant_atak_config.overwatch_game_experience added');
     }
 
+    // ATHENA a pu conserver en base un minimum plus récent que le pack publié.
+    // Ne toucher à aucun autre réglage de l'expérience Overwatch du tenant.
+    if ($tableExists('tenants') && $tableExists('tenant_atak_config') && $columnExists('tenant_atak_config', 'overwatch_game_experience')) {
+        $athenaConfigs = $pdo->query(
+            "SELECT tac.tenant_id, tac.overwatch_game_experience
+             FROM tenant_atak_config tac
+             INNER JOIN tenants t ON t.id = tac.tenant_id
+             WHERE LOWER(TRIM(t.slug)) = 'athena' OR UPPER(TRIM(t.name)) = 'ATHENA'"
+        );
+        if ($athenaConfigs !== false) {
+            $rows = $athenaConfigs->fetchAll(PDO::FETCH_ASSOC);
+            $athenaConfigs->closeCursor();
+            $updateAthenaConfig = $pdo->prepare(
+                'UPDATE tenant_atak_config SET overwatch_game_experience = ?, updated_at = NOW() WHERE tenant_id = ?'
+            );
+            foreach ($rows as $row) {
+                $raw = (string) ($row['overwatch_game_experience'] ?? '');
+                $config = json_decode($raw, true);
+                if (!is_array($config)) {
+                    continue;
+                }
+                $normalized = \App\Support\OverwatchMinimumVersionOverride::lowerIfAbove($config, '1.5.0');
+                if ($normalized === $config) {
+                    continue;
+                }
+                $json = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if ($json !== false) {
+                    $updateAthenaConfig->execute([$json, (int) $row['tenant_id']]);
+                    $say('ATHENA overwatch.min_mod_version lowered to 1.5.0');
+                }
+            }
+        }
+    }
+
     if (!$tableExists('athena_accounts') || !$tableExists('users')) {
         return;
     }
