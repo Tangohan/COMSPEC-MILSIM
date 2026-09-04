@@ -6,7 +6,36 @@ class COMSPEC_ATAK_CameraHud
     onLoad = "uiNamespace setVariable ['COMSPEC_ATAK_CameraHudDisplay', _this select 0];";
     onUnload = "if (missionNamespace getVariable ['COMSPEC_ATAK_CameraOpen', false] && {!(missionNamespace getVariable ['COMSPEC_ATAK_CameraClosing', false])}) then { [] spawn { [] call COMSPEC_fnc_cameraClose; }; };";
 
-    class controlsBackground {};
+    // Keep the viewfinder in this dialog. runtime.hpp already owns the addon's
+    // single RscTitles declaration, and reopening RscTitles makes Arma reject
+    // the whole PBO with "Member already defined".
+    class controlsBackground
+    {
+        class Overlay: RscPicture
+        {
+            idc = 1210;
+            text = "\z\comspec_atak\addons\comspec_atak_core\web\media\camera-overlay.png";
+            x = "safeZoneXAbs";
+            y = "safeZoneY";
+            w = "safeZoneWAbs";
+            h = "safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+
+        class JpegBadge: RscText
+        {
+            idc = 1214;
+            text = "JPEG";
+            x = "safeZoneX + safeZoneW - 0.22";
+            y = "safeZoneY + safeZoneH - 0.085";
+            w = 0.08;
+            h = 0.036;
+            sizeEx = 0.032;
+            style = 2;
+            colorText[] = {0.92, 0.93, 0.90, 1};
+            colorBackground[] = {0.02, 0.03, 0.03, 0.55};
+        };
+    };
     class controls
     {
         class Hint: RscStructuredText
@@ -44,48 +73,6 @@ class COMSPEC_ATAK_CameraHud
             h = 0.042;
             colorBackground[] = {0.08, 0.08, 0.08, 0.7};
             onButtonClick = "[] call COMSPEC_fnc_cameraClose;";
-        };
-    };
-};
-
-class RscTitles
-{
-    class COMSPEC_ATAK_CameraOverlay
-    {
-        idd = -1;
-        duration = 1e10;
-        fadeIn = 0;
-        fadeOut = 0;
-        movingEnable = 0;
-        onLoad = "uiNamespace setVariable ['COMSPEC_ATAK_CameraOverlayDisplay', _this select 0];";
-        onUnload = "uiNamespace setVariable ['COMSPEC_ATAK_CameraOverlayDisplay', displayNull];";
-
-        class controls
-        {
-            class Overlay: RscPicture
-            {
-                idc = 1210;
-                text = "\z\comspec_atak\addons\comspec_atak_core\web\media\camera-overlay.png";
-                x = "safeZoneXAbs";
-                y = "safeZoneY";
-                w = "safeZoneWAbs";
-                h = "safeZoneH";
-                colorText[] = {1, 1, 1, 1};
-            };
-
-            class JpegBadge: RscText
-            {
-                idc = 1214;
-                text = "JPEG";
-                x = "safeZoneX + safeZoneW - 0.22";
-                y = "safeZoneY + safeZoneH - 0.085";
-                w = 0.08;
-                h = 0.036;
-                sizeEx = 0.032;
-                style = 2;
-                colorText[] = {0.92, 0.93, 0.90, 1};
-                colorBackground[] = {0.02, 0.03, 0.03, 0.55};
-            };
         };
     };
 };

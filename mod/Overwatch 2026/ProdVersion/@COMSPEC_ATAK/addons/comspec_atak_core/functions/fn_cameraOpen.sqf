@@ -3,8 +3,6 @@ if (!hasInterface) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_ATAK_CameraOpen", false]) exitWith
 {
     if (isNull (findDisplay 88510)) then { createDialog "COMSPEC_ATAK_CameraHud"; };
-    private _layer = "COMSPEC_ATAK_CAMERA" call BIS_fnc_rscLayer;
-    _layer cutRsc ["COMSPEC_ATAK_CameraOverlay", "PLAIN", 0, false];
     true
 };
 
@@ -36,9 +34,6 @@ private _eh = addMissionEventHandler ["EachFrame", {
     _cam setVectorDirAndUp [getCameraViewDirection player, [0, 0, 1]];
 }];
 missionNamespace setVariable ["COMSPEC_ATAK_CameraFrameEh", _eh, false];
-
-private _layer = "COMSPEC_ATAK_CAMERA" call BIS_fnc_rscLayer;
-_layer cutRsc ["COMSPEC_ATAK_CameraOverlay", "PLAIN", 0, false];
 
 createDialog "COMSPEC_ATAK_CameraHud";
 hint "Appareil photo — Déclencher, ou Échap pour fermer.";

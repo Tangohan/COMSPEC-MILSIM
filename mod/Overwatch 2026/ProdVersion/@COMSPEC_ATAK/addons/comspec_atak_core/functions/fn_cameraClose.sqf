@@ -17,9 +17,6 @@ if (!isNull _cam) then
 missionNamespace setVariable ["COMSPEC_ATAK_CameraObject", objNull, false];
 missionNamespace setVariable ["COMSPEC_ATAK_CameraOpen", false, false];
 
-private _layer = "COMSPEC_ATAK_CAMERA" call BIS_fnc_rscLayer;
-_layer cutText ["", "PLAIN"];
-
 if (!isNull (findDisplay 88510)) then
 {
     closeDialog 0;
