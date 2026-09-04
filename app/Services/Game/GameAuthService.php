@@ -27,6 +27,18 @@ final class GameAuthService
 
     public const OTP_TTL_SEC = 600;
 
+    /** Émet une session jeu depuis une validation forte réalisée par ATHENA (appairage/recovery). */
+    public function issueForTrustedUser(int $userId, int $tenantId, array $device): array
+    {
+        $account = $this->accounts->findForUserAndTenant($userId, $tenantId);
+        if ($account === null || (string)($account['status'] ?? '') !== 'active') {
+            return $this->fail('ACCOUNT_DISABLED', 403);
+        }
+        $device['tenant_id'] = $tenantId;
+        $device['preferred_tenant_id'] = $tenantId;
+        return $this->issueForAccount($account, $device, null, false);
+    }
+
     public function __construct(
         private AthenaAccountRepository $accounts,
         private UserRepository $users,
