@@ -95,6 +95,12 @@ $navGroups = [
         'title' => 'Sécurité',
         'items' => [
             [
+                'key' => 'atak-devices',
+                'href' => url('account/security/devices'),
+                'label' => 'Terminaux ATAK',
+                'hint' => 'Appairage et récupération',
+            ],
+            [
                 'key' => 'mail',
                 'href' => url('account/mail'),
                 'label' => 'Adresse e-mail',

@@ -11,6 +11,12 @@ use PDO;
 
 final class AthenaAccountRepository
 {
+    public function findForUserAndTenant(int $userId, int $tenantId): ?array
+    {
+        $st = $this->pdo()->prepare('SELECT a.* FROM athena_accounts a INNER JOIN account_tenant_memberships m ON m.account_id=a.id WHERE m.user_id=? AND m.tenant_id=? AND m.status=\'active\' LIMIT 1');
+        $st->execute([$userId, $tenantId]);
+        return $st->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
     use LazyDatabaseConnection;
 
     protected function onDatabaseConnected(PDO $pdo): void
