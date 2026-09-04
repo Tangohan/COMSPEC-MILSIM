@@ -343,6 +343,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php require base_path('views/partials/header_portal.php'); ?>
     <?php endif; ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/paris-datetime.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

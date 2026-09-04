@@ -225,13 +225,7 @@ window.ATAKActivity = (function () {
   }
 
   function formatTime(iso) {
-    if (!iso) return '—';
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
-    var h = d.getUTCHours();
-    var m = d.getUTCMinutes();
-    var s = d.getUTCSeconds();
-    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' Z';
+    return window.AthenaDateTime.format(iso, { year: undefined, month: undefined, day: undefined });
   }
 
   function formatSyncNow() {
@@ -247,7 +241,7 @@ window.ATAKActivity = (function () {
   }
 
   function dayKeyFromIso(iso) {
-    var d = new Date(iso);
+    var d = window.AthenaDateTime.parseUtc(iso);
     if (isNaN(d.getTime())) return 'unknown';
     return ymdLocal(d);
   }

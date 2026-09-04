@@ -520,6 +520,13 @@ return function (Router $router) {
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
+    $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'lookup'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'decide'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/recovery', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'recovery'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/{id}/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
+    $router->post('/atak/device-pairing/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakLookup'], [AuthMiddleware::class]);
+    $router->post('/atak/device-pairing/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakDecide'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
@@ -1914,6 +1921,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+    $router->post('/api/atak/pair/start', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'start']);
+    $router->get('/api/atak/pair/status', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'status']);
+    $router->post('/api/atak/recovery/redeem', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'redeem']);
 
     // Authentification Athena du pack jeu (session DLL — pas de clé communauté comme preuve).
     $gameAuth = \App\Controllers\Api\Game\GameAuthApiController::class;

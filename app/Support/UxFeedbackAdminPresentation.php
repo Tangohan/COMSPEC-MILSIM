@@ -144,9 +144,7 @@ final class UxFeedbackAdminPresentation
         if ($sql === null || trim($sql) === '') {
             return '—';
         }
-        $t = strtotime($sql);
-
-        return $t ? date('d/m/Y H:i', $t) : '—';
+        return ParisDateTime::format($sql, 'd/m/Y H:i');
     }
 
     public static function scoreLabel(float $score, int $decimals = 1): string

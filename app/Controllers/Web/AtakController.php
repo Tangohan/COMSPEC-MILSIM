@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakDeviceAuthRepository;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
@@ -320,6 +321,7 @@ class AtakController
             'atakTenantLabel' => $atakTenantLabel,
             'atakCommunityMemberships' => $atakCommunityMemberships,
             'atakAccessGap' => $this->accessGapPayload($tenantId, $currentUser, $phoneOperatorSession),
+            'atakDeviceSecurity' => $this->deviceSecurityPayload($currentUser),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->header('Pragma', 'no-cache');
     }
@@ -465,6 +467,30 @@ class AtakController
         }
 
         return $this->accessGapService->webPayload($tenantId, $currentUser);
+    }
+
+    /**
+     * @param array<string, mixed>|null $currentUser
+     * @return array{needsRecoveryCodes: bool, setupUrl: string}
+     */
+    private function deviceSecurityPayload(?array $currentUser): array
+    {
+        $setupUrl = url('account/security/devices') . '#recovery';
+        $uid = (int) ($currentUser['id'] ?? 0);
+        $tid = (int) ($currentUser['tenant_id'] ?? 0);
+        if ($uid < 1 || $tid < 1) {
+            return ['needsRecoveryCodes' => false, 'setupUrl' => $setupUrl];
+        }
+        try {
+            $repo = new AtakDeviceAuthRepository();
+
+            return [
+                'needsRecoveryCodes' => !$repo->hasActiveRecoveryCodes($uid, $tid),
+                'setupUrl' => $setupUrl,
+            ];
+        } catch (\Throwable) {
+            return ['needsRecoveryCodes' => false, 'setupUrl' => $setupUrl];
+        }
     }
 
     private function staffAlert(): EffectifsStaffAlertService

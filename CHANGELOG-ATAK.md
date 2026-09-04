@@ -9,6 +9,12 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Portail 1.5.97 — 2026-09-03
+
+### Correction — Grandes photos terrain
+
+Les captures PNG Arma de plus de 16 Mo sont désormais acceptées par le poste de commandement. Le plafond passe à 96 Mo par image, avec la marge nécessaire au formulaire d’envoi. Déployer le portail et laisser PHP recharger sa configuration.
+
 ## Overwatch 1.5.16 — 2026-09-03
 
 ### Correction — Photos en rafale

@@ -1031,59 +1031,145 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
   padding-top: 0.65rem;
 }
 
+.atak-account-section--game-link,
+.atak-account-section--phone-link {
+  padding: 0.85rem 0.9rem 0.95rem;
+  margin: 0 0 1.15rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 8px;
+  background: var(--atak-panel-alt);
+}
 .atak-account-section--game-link {
-  padding: 0.85rem;
-  margin: 0 -0.15rem 1.35rem;
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  border-radius: 10px;
-  background: linear-gradient(160deg, rgba(52, 211, 153, 0.12), rgba(0, 0, 0, 0.2));
-  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08);
+  border-left: 3px solid var(--atak-accent);
 }
 .atak-account-section--phone-link {
-  padding: 0.85rem;
-  margin: 0 -0.15rem 1.35rem;
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  border-radius: 10px;
-  background: linear-gradient(160deg, rgba(45, 212, 191, 0.1), rgba(0, 0, 0, 0.2));
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.08);
+  border-left: 3px solid #2dd4bf;
 }
 .atak-account-section--pulse {
   animation: atak-game-link-pulse 1.4s ease-in-out 2;
 }
 @keyframes atak-game-link-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08); }
-  50% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.55); }
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 2px var(--atak-accent-dim); }
 }
 .atak-game-link-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
 }
-.atak-game-link-head .atak-account-section-title { margin: 0; color: var(--atak-accent); }
-.atak-account-section--phone-link .atak-account-section-title { color: #5eead4; }
+.atak-game-link-head .atak-account-section-title {
+  margin: 0;
+  color: var(--atak-text);
+  flex: 1;
+  min-width: 0;
+}
+.atak-game-link-head .atak-pill {
+  flex-shrink: 0;
+  margin-top: 0.08rem;
+}
 
 .atak-game-link-hint {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--atak-muted);
-  line-height: 1.4;
-  margin-bottom: 0.65rem !important;
+  line-height: 1.45;
+  margin-bottom: 0.7rem !important;
 }
 .atak-game-link-btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  min-height: 2.5rem;
   padding: 0.55rem 0.85rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #0a1210;
-  background: var(--atak-accent, #3dba8c);
+  color: #fff;
+  background: var(--atak-accent);
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 .atak-game-link-btn:hover { filter: brightness(1.08); }
 .atak-game-link-btn:disabled { opacity: 0.6; cursor: wait; }
+.atak-device-pair-form { display: grid; gap: 0.4rem; }
+.atak-device-pair-code-wrap { display: grid; gap: 0.55rem; }
+.atak-device-pair-code {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  background: var(--atak-bg);
+  color: var(--atak-text);
+  font-family: var(--atak-font-tactical);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.atak-device-pair-code::placeholder {
+  color: var(--atak-muted);
+  letter-spacing: 0.16em;
+  opacity: 0.7;
+  font-weight: 600;
+}
+.atak-device-pair-code:focus {
+  border-color: var(--atak-accent);
+  outline: 2px solid var(--atak-accent-dim);
+  outline-offset: 0;
+}
+.atak-device-pair-help {
+  color: var(--atak-muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.atak-device-pair-details {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0.55rem 0 0.8rem;
+}
+.atak-device-pair-details div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.atak-device-pair-details dt {
+  color: var(--atak-muted);
+  font-size: 0.72rem;
+}
+.atak-device-pair-details dd {
+  margin: 0;
+  color: var(--atak-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.atak-device-pair-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.5rem;
+}
+.atak-device-pair-actions .atak-game-link-btn { font-size: 0.75rem; }
+.atak-device-pair-success {
+  margin: 0.65rem 0 0;
+  color: var(--atak-success, #22c55e);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.atak-device-pair-manage {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: var(--atak-accent);
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+.atak-device-pair-manage:hover { text-decoration: underline; }
 .atak-account-section--phone-link .atak-game-link-btn {
   background: #2dd4bf;
   color: #06201c;
@@ -9650,6 +9736,90 @@ a.atak-session-hub__btn {
 .atak-access-gap-modal .atak-session-profile-btn:disabled {
   opacity: 0.55;
   cursor: wait;
+}
+
+.atak-session-profile-overlay.atak-recovery-setup-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100056;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: transparent;
+}
+.atak-session-profile-overlay.atak-recovery-setup-modal[hidden] { display: none !important; }
+.atak-recovery-setup-modal .atak-session-profile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.78);
+}
+.atak-recovery-setup-modal .atak-session-profile-card {
+  position: relative;
+  width: min(32rem, calc(100vw - 1.5rem));
+  padding: 1.25rem 1.35rem 1.1rem;
+  border: 1px solid var(--atak-border);
+  border-left: 3px solid var(--atak-accent);
+  border-radius: 10px;
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+.atak-recovery-setup-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--atak-accent);
+}
+.atak-recovery-setup-modal .atak-session-profile-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+.atak-recovery-setup-modal .atak-session-profile-lead {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--atak-muted);
+}
+.atak-recovery-setup-modal .atak-session-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: stretch;
+}
+.atak-recovery-setup-modal .atak-session-profile-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--atak-panel-alt);
+  color: var(--atak-text);
+}
+.atak-recovery-setup-modal .atak-session-profile-btn--ghost:hover {
+  filter: brightness(1.08);
+}
+.atak-recovery-setup-modal a.atak-session-profile-btn--primary,
+.atak-recovery-setup-modal .atak-session-profile-btn--primary {
+  border-color: var(--atak-accent);
+  background: var(--atak-accent);
+  color: #fff;
+}
+.atak-recovery-setup-modal a.atak-session-profile-btn--primary:hover,
+.atak-recovery-setup-modal .atak-session-profile-btn--primary:hover {
+  filter: brightness(1.08);
+  text-decoration: none;
 }
 
 /* ?? Chrome panneau : largeur + d?tachement ?? */
