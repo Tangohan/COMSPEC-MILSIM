@@ -42,4 +42,18 @@ final class RegisterFlowAssetTest extends TestCase
         self::assertLessThan(strpos($resend, 'sendUserRegisterConfirmation'), strpos($resend, '$tokenId = $this->emailTokens->create'));
         self::assertLessThan(strpos($resend, 'markConsumed'), strpos($resend, 'markEmailVerified'));
     }
+
+    public function testOperationsIsNotifiedWhenAccountIsCreatedAndVerified(): void
+    {
+        $register = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/RegisterController.php');
+        $verify = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/VerifyEmailController.php');
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/views/emails/platform_account_registration_alert.php');
+
+        self::assertStringContainsString("'created'", $register);
+        self::assertStringContainsString('sendPlatformAccountRegistrationAlert', $register);
+        self::assertStringContainsString("'email_verified'", $verify);
+        self::assertStringContainsString('sendPlatformAccountRegistrationAlert', $verify);
+        self::assertStringContainsString('Adresse e-mail', $template);
+        self::assertLessThan(strpos($verify, 'sendPlatformAccountRegistrationAlert'), strpos($verify, 'markEmailVerified'));
+    }
 }
