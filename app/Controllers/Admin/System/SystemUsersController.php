@@ -19,8 +19,11 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\AccountDeletionService;
 use App\Services\Account\AccountPurgeService;
+use App\Services\Admin\PlatformUserProfileService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Identity\UserIdentityMergeService;
+use App\Support\PortalAccessChoice;
 use App\Repositories\AccountPurgeRequestRepository;
 
 /**
@@ -128,17 +131,13 @@ final class SystemUsersController
         /** @var GradeRepository $grades */
         $grades = Container::get(GradeRepository::class);
 
+        $visibleMemberships = PortalAccessChoice::personFileDossiers($memberships);
         $dossierMemberships = [];
         $globalSteam = '';
         $globalAthena = '';
         $displayName = '';
         $callsign = '';
         foreach ($memberships as $m) {
-            $uid = (int) ($m['id'] ?? 0);
-            $tid = (int) ($m['tenant_id'] ?? 0);
-            if ($uid < 1) {
-                continue;
-            }
             $steam = trim((string) ($m['steam_id'] ?? ''));
             if ($steam !== '' && $globalSteam === '') {
                 $globalSteam = $steam;
@@ -155,13 +154,20 @@ final class SystemUsersController
             if ($cs !== '' && $callsign === '') {
                 $callsign = $cs;
             }
+        }
+        foreach ($visibleMemberships as $m) {
+            $uid = (int) ($m['id'] ?? 0);
+            $tid = (int) ($m['tenant_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
 
             $gradeId = (int) ($m['grade_id'] ?? 0);
             $grade = $gradeId > 0 ? $grades->findById($gradeId, $tid) : null;
-            $pp = $personnelProfiles->getByUserId($uid) ?? [];
-            $extras = $personnelExtras->getByUserId($uid) ?? [];
-            $primaryAssignment = $assignments->getPrimaryAssignment($uid);
-            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid);
+            $pp = $personnelProfiles->getByUserId($uid, $tid) ?? [];
+            $extras = $personnelExtras->getByUserId($uid, $tid) ?? [];
+            $primaryAssignment = $assignments->getPrimaryAssignment($uid, $tid);
+            $roleIds = $this->users->listOrganizationRoleIdsForUser($uid, $tid);
             $roleNames = [];
             $roleName = trim((string) ($m['role_name'] ?? ''));
             if ($roleName !== '') {
@@ -202,6 +208,14 @@ final class SystemUsersController
 
         $hasLiveOrg = $this->users->emailHasActiveNonDefaultMembership($email);
 
+        /** @var UserIdentityMergeService $mergeService */
+        $mergeService = Container::get(UserIdentityMergeService::class);
+        $survivorPreviewId = (int) $request->query('survivor_id', 0);
+        $mergePreview = $mergeService->previewEmailMerge(
+            $email,
+            $survivorPreviewId > 0 ? $survivorPreviewId : null
+        );
+
         return Response::view('layout.main', [
             'title' => 'Dossier personne',
             'content' => 'admin.system.user_person',
@@ -213,7 +227,184 @@ final class SystemUsersController
             'personCivil' => $civil,
             'personHasLiveOrg' => $hasLiveOrg,
             'personMemberships' => $dossierMemberships,
+            'personMergePreview' => $mergePreview,
         ]);
+    }
+
+    /**
+     * Fusionne plusieurs fiches users partageant le même e-mail en un compte survivant.
+     */
+    public function mergeAccounts(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $survivorUserId = (int) $request->input('survivor_user_id', 0);
+        $confirmation = strtolower(trim((string) $request->input('confirm_email', '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $confirmation !== $email) {
+            Session::flash('error', 'Adresse de confirmation incorrecte : aucune fusion effectuée.');
+
+            return Response::redirect(
+                $email !== '' ? url('admin/users/person') . '?email=' . rawurlencode($email) : url('admin/users')
+            );
+        }
+
+        /** @var UserIdentityMergeService $mergeService */
+        $mergeService = Container::get(UserIdentityMergeService::class);
+        try {
+            $result = $mergeService->mergeAccountsForEmail(
+                $email,
+                $survivorUserId > 0 ? $survivorUserId : null
+            );
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Fusion impossible : ' . $e->getMessage());
+
+            return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $actorTenantId = (int) Session::get('tenant_id');
+        $this->audit->logChange(
+            AuditAction::USER_IDENTITY_MERGED,
+            $actorTenantId > 0 ? $actorTenantId : 0,
+            $actorId,
+            'user',
+            (int) $result['survivor_id'],
+            ['email' => $email],
+            [
+                'platform_directory' => true,
+                'merged_count' => (int) ($result['merged'] ?? 0),
+                'survivor_user_id' => (int) ($result['survivor_id'] ?? 0),
+                'steam_collisions' => $result['steam_collisions'] ?? [],
+            ],
+        );
+
+        $message = 'Fusion terminée — compte survivant #' . (int) $result['survivor_id']
+            . ', ' . (int) ($result['merged'] ?? 0) . ' fiche(s) absorbée(s).';
+        if (($result['steam_collisions'] ?? []) !== []) {
+            $message .= ' ' . count($result['steam_collisions']) . ' conflit(s) Steam ignoré(s) — voir le journal.';
+        }
+        Session::flash('success', $message);
+
+        return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
+    }
+
+    public function edit(Request $request, array $params = []): Response
+    {
+        $userId = (int) ($params['id'] ?? 0);
+        if ($userId < 1) {
+            Session::flash('error', 'Fiche introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        /** @var PlatformUserProfileService $editor */
+        $editor = Container::get(PlatformUserProfileService::class);
+        $pack = $editor->load($userId);
+        if ($pack === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+        $user = is_array($pack['user'] ?? null) ? $pack['user'] : [];
+        if (!empty($user['deleted_at'])) {
+            Session::flash('error', 'Ce compte a déjà été anonymisé : il ne peut plus être modifié.');
+            $email = strtolower(trim((string) ($user['email'] ?? '')));
+
+            return Response::redirect(
+                $email !== '' && !str_ends_with($email, '@deleted.invalid')
+                    ? url('admin/users/person') . '?email=' . rawurlencode($email)
+                    : url('admin/users')
+            );
+        }
+
+        $label = trim((string) ($user['display_name'] ?? ''));
+        if ($label === '') {
+            $label = trim((string) ($user['callsign'] ?? ''));
+        }
+        if ($label === '') {
+            $label = trim((string) ($user['email'] ?? ''));
+        }
+
+        return Response::view('layout.main', [
+            'title' => 'Modifier le compte — ' . ($label !== '' ? $label : 'fiche'),
+            'content' => 'admin.system.user_edit',
+            'platformEdit' => $pack,
+            'platformEditUserId' => $userId,
+        ]);
+    }
+
+    public function update(Request $request, array $params = []): Response
+    {
+        $userId = (int) ($params['id'] ?? 0);
+        $editUrl = url('admin/users/' . $userId . '/edit');
+        if ($userId < 1) {
+            Session::flash('error', 'Fiche introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($editUrl);
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $actorTenantId = (int) Session::get('tenant_id');
+        $before = $this->users->findById($userId, null);
+        if ($before === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect(url('admin/users'));
+        }
+
+        /** @var PlatformUserProfileService $editor */
+        $editor = Container::get(PlatformUserProfileService::class);
+        $result = $editor->save($userId, $actorId, $request->all());
+        if ($result['ok'] === false) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect($editUrl);
+        }
+
+        $after = $this->users->findById($userId, null) ?? [];
+        $this->audit->logChange(
+            AuditAction::USER_PROFILE_UPDATED,
+            $actorTenantId > 0 ? $actorTenantId : (int) ($before['tenant_id'] ?? 0),
+            $actorId,
+            'user',
+            $userId,
+            [
+                'email' => (string) ($before['email'] ?? ''),
+                'display_name' => (string) ($before['display_name'] ?? ''),
+                'status' => (string) ($before['status'] ?? ''),
+                'callsign' => (string) ($before['callsign'] ?? ''),
+            ],
+            [
+                'email' => (string) ($after['email'] ?? ''),
+                'display_name' => (string) ($after['display_name'] ?? ''),
+                'status' => (string) ($after['status'] ?? ''),
+                'callsign' => (string) ($after['callsign'] ?? ''),
+                'platform_directory' => true,
+            ],
+        );
+
+        $notes = is_array($result['notes'] ?? null) ? $result['notes'] : [];
+        Session::flash(
+            'success',
+            'Fiche enregistrée.' . ($notes !== [] ? ' ' . implode(' ', $notes) : '')
+        );
+
+        $email = strtolower(trim((string) ($after['email'] ?? $before['email'] ?? '')));
+        if ($email !== '' && !str_ends_with($email, '@deleted.invalid')) {
+            return Response::redirect(url('admin/users/person') . '?email=' . rawurlencode($email));
+        }
+
+        return Response::redirect($editUrl);
     }
 
     public function setStatus(Request $request, array $params = []): Response

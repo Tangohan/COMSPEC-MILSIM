@@ -30,14 +30,19 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('/api/game/v1/auth/otp/request', $routes);
         self::assertStringContainsString('/api/game/v1/auth/steam/exchange', $routes);
         self::assertStringContainsString('/api/game/v1/session/restore', $routes);
+        self::assertStringContainsString('/api/game/v1/session/refresh', $routes);
         self::assertStringContainsString('/api/game/v1/bootstrap', $routes);
         self::assertStringContainsString('pickMembership', $svc);
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
         self::assertStringContainsString('pairing_token', $svc);
         self::assertStringContainsString('acceptGameSessionToken', $auth);
         self::assertStringContainsString('/api/game/v1/auth/', $auth);
+        self::assertStringContainsString("\$path === '/api/game/v1/session/refresh'", $auth);
+        self::assertStringContainsString('$this->auth->restore($this->body())', $ctrl);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
         self::assertStringContainsString('loginSteam', $sqfInit);
+        $sqfSteam = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf');
+        self::assertStringContainsString('Connexion Steam — %1', $sqfSteam);
         self::assertStringContainsString('plus une saisie joueur', $sqfConnect);
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
@@ -76,6 +81,25 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);
         self::assertStringNotContainsString('if (pairing.Length < 32)', $dll);
         self::assertStringContainsString('AuthSteam', $dll);
+        self::assertStringContainsString('replaceSteamId', $svc);
+        self::assertStringContainsString('$user = $this->users->findBySteamId($steamId);', $svc);
+    }
+
+    public function testSteamSessionBecomesReadyEvenIfC2PingFails(): void
+    {
+        $dll = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        self::assertStringContainsString('FinishGameAuthReady', $dll);
+        self::assertStringContainsString('C2_DEGRADED', $dll);
+        self::assertStringContainsString('return FinishGameAuthReady(verify);', $dll);
+        self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
+    }
+
+    public function testMissingSteamOnPositionIsLoggedOncePerWindow(): void
+    {
+        $guard = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/AtakArmaWriteGuard.php');
+        self::assertStringContainsString('logThrottled', $guard);
+        self::assertStringContainsString("'steam_required'", $guard);
+        self::assertStringContainsString('300,', $guard);
     }
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
@@ -149,5 +173,25 @@ final class GameAuthAssetTest extends TestCase
         $body = ['steam_id' => ''];
         $method->invokeArgs($svc, [&$body, ['steam_id' => null]]);
         self::assertSame('', $body['steam_id']);
+    }
+
+    public function testRestoreSteamMustMatchTheAccountOrSelectedEffectifsRecord(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $method = $ref->getMethod('verifyRestoredSteam');
+        $method->setAccessible(true);
+
+        $account = ['id' => 10, 'steam_id' => '76561198000000000'];
+        $membership = ['user_id' => 20, 'tenant_id' => 30, 'user_steam_id' => '76561198000000000'];
+        self::assertSame('76561198000000000', $method->invokeArgs($svc, [&$account, $membership, '76561198000000000']));
+
+        $account = ['id' => 10, 'steam_id' => '76561198000000001'];
+        $membership['user_steam_id'] = '76561198000000001';
+        self::assertSame('', $method->invokeArgs($svc, [&$account, $membership, '76561198000000000']));
+
+        $source = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        self::assertStringContainsString("return \$this->fail('STEAM_NOT_LINKED', 403);", $source);
+        self::assertStringContainsString("\$body['_verify_restored_steam'] = true;", $source);
     }
 }

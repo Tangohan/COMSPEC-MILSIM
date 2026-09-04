@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class OrbatChartTypeRepository
@@ -52,8 +53,9 @@ final class OrbatChartTypeRepository
         if (!$this->tableExists()) {
             return null;
         }
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $stmt = $this->pdo->prepare(
-            'SELECT id, slug, label FROM tenant_orbat_chart_types WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT id, slug, label FROM tenant_orbat_chart_types WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -82,8 +84,9 @@ final class OrbatChartTypeRepository
         if (!$this->tableExists() || $slug === '') {
             return false;
         }
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $stmt = $this->pdo->prepare(
-            'DELETE FROM tenant_orbat_chart_types WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'DELETE FROM tenant_orbat_chart_types WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
 

@@ -13,6 +13,10 @@ if (isNull _target) exitWith { false };
 if (!alive player) exitWith { false };
 if (_target getVariable ["comspec_sse_generating", false]) exitWith { false };
 
+// Cockpit Hatchet : le clic et la molette appartiennent au tableau de bord.
+if (!isNil "comspec_sse_fnc_playerInHatchetVehicle" && {[] call comspec_sse_fnc_playerInHatchetVehicle}) exitWith { false };
+if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_target] call comspec_sse_fnc_isHatchetVehicle}) exitWith { false };
+
 if (_target isKindOf "CAManBase") exitWith {
     if (!isNull player && {_target isEqualTo player}) exitWith { false };
     true

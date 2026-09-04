@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class ModpackRepository
@@ -53,7 +54,8 @@ class ModpackRepository
 
     public function findBySlug(int $tenantId, string $slug): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM modpacks WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT * FROM modpacks WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -80,7 +82,8 @@ class ModpackRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM modpacks WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $sql = 'SELECT 1 FROM modpacks WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

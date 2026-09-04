@@ -11,6 +11,21 @@ use App\Core\Session;
 
 final class RequestTelemetryMiddleware
 {
+    private const DEFAULT_SUCCESS_SAMPLE_RATE = 0.05;
+
+    private const SLOW_REQUEST_THRESHOLD_MS = 1000;
+
+    private readonly float $successSampleRate;
+
+    public function __construct(?float $successSampleRate = null)
+    {
+        $configuredRate = $successSampleRate ?? (float) env(
+            'REQUEST_TELEMETRY_SAMPLE_RATE',
+            self::DEFAULT_SUCCESS_SAMPLE_RATE
+        );
+        $this->successSampleRate = max(0.0, min(1.0, $configuredRate));
+    }
+
     public function __invoke(Request $request, callable $next): Response
     {
         $start = microtime(true);
@@ -24,6 +39,10 @@ final class RequestTelemetryMiddleware
             }
 
             $statusCode = $response->statusCode();
+            if (!$this->shouldRecord($statusCode, $elapsedMs)) {
+                return $response;
+            }
+
             $tenantId = (int) Session::get('tenant_id', 0);
             $userId = (int) Session::get('user_id', 0);
             $requestId = trim((string) ($response->headerValue('X-Request-Id') ?? ''));
@@ -47,6 +66,23 @@ final class RequestTelemetryMiddleware
         }
 
         return $response;
+    }
+
+    private function shouldRecord(int $statusCode, int $elapsedMs): bool
+    {
+        // Les erreurs et requêtes lentes restent exhaustives pour ne masquer aucun incident.
+        if ($statusCode >= 400 || $elapsedMs >= self::SLOW_REQUEST_THRESHOLD_MS) {
+            return true;
+        }
+
+        if ($this->successSampleRate <= 0.0) {
+            return false;
+        }
+        if ($this->successSampleRate >= 1.0) {
+            return true;
+        }
+
+        return random_int(1, 10_000) <= (int) round($this->successSampleRate * 10_000);
     }
 
     private function shouldSkip(string $path): bool

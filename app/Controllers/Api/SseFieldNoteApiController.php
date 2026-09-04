@@ -15,6 +15,7 @@ use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SseFieldNoteCatalog;
 use App\Support\SteamId;
+use App\Support\TerrainUploadedImage;
 
 /**
  * API des fiches de renseignement simplifiées.
@@ -278,6 +279,7 @@ final class SseFieldNoteApiController
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
 
+        TerrainUploadedImage::fromGlobals();
         $entry = $_FILES['piece'] ?? $_FILES['image'] ?? $_FILES['photo'] ?? $_FILES['file'] ?? null;
         if (!is_array($entry)) {
             return Response::json([

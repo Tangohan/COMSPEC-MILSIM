@@ -43,7 +43,9 @@ final class SseWorkshopPackAssetTest extends TestCase
 
     public function testPublicationGuideStaysHumanReadable(): void
     {
-        $pub = (string) file_get_contents($this->sseRoot() . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'PUBLICATION.md');
+        $pub = (string) file_get_contents(
+            dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'mod' . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'PUBLICATION.md'
+        );
         $lower = strtolower($pub);
 
         self::assertStringContainsString('Publisher', $pub);

@@ -14,11 +14,13 @@
 
   ready(function () {
     var sidebar = document.getElementById('ath-sidebar');
-    var aside = document.getElementById('back-office-sidebar');
+    var aside = document.getElementById('back-office-sidebar')
+      || document.getElementById('platform-admin-sidebar');
     if (!sidebar) return;
 
-    var storageKey = 'ath-bo-sidebar-collapsed';
-    var groupsKey = 'ath-bo-nav-groups-v3';
+    var isPlatform = aside && aside.id === 'platform-admin-sidebar';
+    var storageKey = isPlatform ? 'ath-platform-sidebar-collapsed' : 'ath-bo-sidebar-collapsed';
+    var groupsKey = isPlatform ? 'ath-platform-nav-groups-v1' : 'ath-bo-nav-groups-v3';
 
     function loadCollapsed() {
       try {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -71,7 +72,8 @@ final class ContentTagRepository
             if ($slug === '') {
                 continue;
             }
-            $st = $this->pdo->prepare('SELECT id FROM content_tags WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $slugEq = SqlText::equals($this->pdo, 'slug');
+            $st = $this->pdo->prepare('SELECT id FROM content_tags WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $st->execute([$tenantId, $slug]);
             $id = (int) $st->fetchColumn();
             if ($id < 1) {
@@ -109,11 +111,13 @@ final class ContentTagRepository
     /** @return list<int> content_id des contenus portant ce tag (par slug) */
     public function listContentIdsForTagSlug(int $tenantId, string $contentType, string $tagSlug): array
     {
+        $slugEq = SqlText::equals($this->pdo, 't.slug');
+        $typeEq = SqlText::equals($this->pdo, 'l.content_type');
         $st = $this->pdo->prepare(
             'SELECT l.content_id
              FROM content_tag_links l
              INNER JOIN content_tags t ON t.id = l.tag_id
-             WHERE t.tenant_id = ? AND t.slug = ? AND l.content_type = ?'
+             WHERE t.tenant_id = ? AND ' . $slugEq . ' AND ' . $typeEq
         );
         $st->execute([$tenantId, $tagSlug, $contentType]);
 

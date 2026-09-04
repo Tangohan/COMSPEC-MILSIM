@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.512;
-        versionStr = "1.5.12";
-        versionAr[] = {1, 5, 12};
+        version = 1.516;
+        versionStr = "1.5.16";
+        versionAr[] = {1, 5, 16};
     };
 };
 
@@ -188,6 +188,9 @@ class CfgFunctions {
             class hasOwnActiveMedicalAlert {};
             class selfCancelMedicalAlert {};
             class getAircraftType {};
+            class isHatchetVehicle {};
+            class playerInHatchetVehicle {};
+            class hideAceMenu {};
             class fillFlightManifest {};
             class submitFlightManifest {};
             class requestFireSolution {};
@@ -287,7 +290,22 @@ class CfgFunctions {
             class inGameGroupLabel {};
             class splitKeepEmpty {};
             class getBloodType {};
+            class jsonValue {};
+            class collectOperatorIdentity {};
+            class collectOperatorFace {};
+            class collectOperatorMedical {};
+            class collectOperatorLoadout {};
+            class collectOperatorVersions {};
+            class collectOperatorEnvironment {};
+            class operatorProfileFingerprint {};
+            class buildOperatorProfile {};
+            class applyOperatorProfileResponse {};
+            class syncOperatorProfile {};
+            class operatorProfileTick {};
+            class initOperatorProfileSync {};
             class setCallsign {};
+            class applyGroupIdFromCallsign {};
+            class fillZeusGroupId {};
             
             // ATAK Phase 1 & 2 - Nouvelles fonctions
             class submitTacticalReport {};

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class PersonnelJobRoleRepository
@@ -88,7 +89,10 @@ class PersonnelJobRoleRepository
             return 0;
         }
         [$whereSql, $params] = $this->buildAssignmentWhere($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-        $sql = 'SELECT COUNT(*) FROM users u LEFT JOIN personnel_profiles pp ON pp.user_id = u.id WHERE ' . $whereSql;
+        // The assignments table is a member list: its cardinality must come only from users.
+        // Joining personnel_profiles here used to multiply a member when legacy databases
+        // contained more than one profile row for the same user.
+        $sql = 'SELECT COUNT(*) FROM users u WHERE ' . $whereSql;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
@@ -137,10 +141,11 @@ class PersonnelJobRoleRepository
         bool $onlyUnassigned
     ): array {
         [$whereSql, $params] = $this->buildAssignmentWhere($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.profile_slug,
-                       pp.primary_unit_id
+        // No profile field is needed by this screen. Keeping the query rooted exclusively in
+        // users guarantees one rendered row per account, including on legacy databases whose
+        // personnel_profiles uniqueness constraint was not applied correctly.
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.profile_slug
                 FROM users u
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 WHERE ' . $whereSql;
 
         return [$sql, $params];
@@ -514,7 +519,8 @@ class PersonnelJobRoleRepository
         if (!$this->tablesExist() || $slug === '') {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $stmt = $this->pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $id = $stmt->fetchColumn();
 
@@ -526,8 +532,9 @@ class PersonnelJobRoleRepository
         if (!$this->tablesExist() || $slug === '') {
             return null;
         }
+        $slugEq = SqlText::equals($this->pdo, 'slug');
         $stmt = $this->pdo->prepare(
-            'SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
         $id = $stmt->fetchColumn();
@@ -863,14 +870,14 @@ class PersonnelJobRoleRepository
         if ($label === '' || !$this->tablesExist()) {
             return null;
         }
-        $stmt = $this->pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND LOWER(name) = LOWER(?) LIMIT 1');
-        $stmt->execute([$tenantId, $label]);
+        $stmt = $this->pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND ' . SqlText::normalizedEquals($this->pdo, 'name') . ' LIMIT 1');
+        $stmt->execute([$tenantId, mb_strtolower($label, 'UTF-8')]);
         $existing = $stmt->fetchColumn();
         if ($existing) {
             return (int) $existing;
         }
 
-        $catStmt = $this->pdo->prepare("SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = 'importe' LIMIT 1");
+        $catStmt = $this->pdo->prepare('SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . SqlText::equalsLiteral($this->pdo, 'slug', 'importe') . ' LIMIT 1');
         $catStmt->execute([$tenantId]);
         $categoryId = (int) ($catStmt->fetchColumn() ?: 0);
         if ($categoryId < 1) {
@@ -884,7 +891,7 @@ class PersonnelJobRoleRepository
         $slug = $baseSlug;
         $suffix = 2;
         while (true) {
-            $chk = $this->pdo->prepare('SELECT 1 FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $chk = $this->pdo->prepare('SELECT 1 FROM personnel_job_roles WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug') . ' LIMIT 1');
             $chk->execute([$tenantId, $slug]);
             if (!$chk->fetchColumn()) {
                 break;

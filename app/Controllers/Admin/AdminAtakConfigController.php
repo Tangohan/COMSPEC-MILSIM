@@ -487,7 +487,8 @@ class AdminAtakConfigController
         }
 
         $tenantId = (int) $tenantId;
-        $result = $this->tenantData->purgeAll($tenantId);
+        $unlinkSteam = (string) $request->input('unlink_steam', '0') === '1';
+        $result = $this->tenantData->purgeAll($tenantId, $unlinkSteam);
         $tableRows = array_sum($result['tables']);
         $this->activityLog?->recordAuthAttempt(
             $tenantId,
@@ -499,6 +500,7 @@ class AdminAtakConfigController
                 'activity_files' => $result['activity_files'],
                 'table_rows' => $tableRows,
                 'photos_removed' => $result['photos_removed'],
+                'steam_unlinked' => $result['steam_unlinked'],
             ],
             null
         );
@@ -506,10 +508,11 @@ class AdminAtakConfigController
         Session::flash(
             'success',
             sprintf(
-                'Effacement terminé : %d fichier(s) de journal, %d enregistrement(s) de mission, %d photo(s) retirée(s). La configuration et les indicatifs liés sont conservés.',
+                'Effacement terminé : %d fichier(s) de journal, %d enregistrement(s) de mission, %d photo(s) retirée(s), %d compte(s) Steam désynchronisé(s). La configuration et les indicatifs liés sont conservés.',
                 $result['activity_files'],
                 $tableRows,
-                $result['photos_removed']
+                $result['photos_removed'],
+                $result['steam_unlinked']
             )
         );
 

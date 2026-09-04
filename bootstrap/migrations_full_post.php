@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Suite optionnelle après le pipeline principal (constant COMSPEC_MIGRATIONS_WEB_FULL) :
+ * Suite systématique après le pipeline principal :
  * rejouer tous les fichiers migrations/*.sql sauf schema.sql, puis rapport BDD / .env.
  */
 
@@ -222,6 +222,19 @@ function comspec_print_post_migration_report(PDO $pdo, string $root, callable $f
         echo '  ' . $k . ' = ' . ($v === '' ? 'absent' : 'présent (valeur masquée)') . "\n";
     }
     $flush();
+
+    // --- Données de démonstration interdites en production ---
+    try {
+        $demoUsers = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE LOWER(email) LIKE '%@demo.local'")->fetchColumn();
+        $demoTenants = (int) $pdo->query("SELECT COUNT(*) FROM tenants WHERE slug = 'demo-comspec'")->fetchColumn();
+        if ($demoUsers === 0 && $demoTenants === 0) {
+            echo "[OK] Aucun compte ni communauté de démonstration.\n";
+        } else {
+            echo "[ERREUR] Données de démonstration restantes : {$demoUsers} compte(s), {$demoTenants} communauté(s).\n";
+        }
+    } catch (PDOException $e) {
+        echo '[ERREUR] Vérification des données de démonstration impossible : ' . $e->getMessage() . "\n";
+    }
 
     echo "\n=== Fin du rapport ===\n";
     $flush();

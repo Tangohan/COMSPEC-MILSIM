@@ -10,6 +10,7 @@ params [
 ];
 
 if (isNull _entity) exitWith { false };
+if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_entity] call comspec_sse_fnc_isHatchetVehicle}) exitWith { false };
 
 private _existing = [_entity] call comspec_sse_fnc_getData;
 if (!isNil "_existing") exitWith {

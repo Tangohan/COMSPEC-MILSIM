@@ -43,19 +43,16 @@ class HomeController
             /** @var \App\Repositories\TenantRepository $tenantRepo */
             $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
             foreach ($tenantRepo->listForRegistry() as $row) {
-                $logo = trim((string) ($row['logo_url'] ?? ''));
-                if ($logo === '') {
+                $slug = trim((string) ($row['slug'] ?? ''));
+                if ($slug === '') {
                     continue;
                 }
                 $featuredUnits[] = [
                     'name' => community_display_name($row),
-                    'slug' => (string) ($row['slug'] ?? ''),
-                    'logo_url' => $logo,
-                    'href' => url('c/' . rawurlencode((string) ($row['slug'] ?? ''))),
+                    'slug' => $slug,
+                    'logo_url' => trim((string) ($row['logo_url'] ?? '')),
+                    'href' => url('c/' . rawurlencode($slug)),
                 ];
-                if (count($featuredUnits) >= 10) {
-                    break;
-                }
             }
         } catch (\Throwable) {
             $featuredUnits = [];
@@ -174,6 +171,7 @@ class HomeController
         $dashboardPins = [];
         $dashboardAnnounceItems = [];
         $dashboardPopupItems = [];
+        $dashboardMiniArticles = [];
         $followedChannels = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
@@ -206,6 +204,7 @@ class HomeController
         $rhMyMobility = [];
         $rhMobilitySchemaReady = false;
         $canPublishDashboardArticles = false;
+        $doctrinePending = [];
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -711,6 +710,50 @@ class HomeController
                 $canPublishDashboardArticles = $gate->allows('admin.organization')
                     || $gate->allows('admin.access')
                     || $gate->allows('site.support');
+
+                if ($gate->allows('documents.view') || $gate->allows('doctrine.view')) {
+                    try {
+                        $doctrinePending = \App\Core\Container::get(\App\Services\Doctrine\DocumentComplianceService::class)
+                            ->listPendingActionsForUser($tid, $uid, 6);
+                    } catch (\Throwable) {
+                        $doctrinePending = [];
+                    }
+                }
+
+                try {
+                    $miniRows = \App\Core\Container::get(\App\Repositories\TenantMiniArticleRepository::class)
+                        ->listPublishedForTenant($tid, 6);
+                    foreach ($miniRows as $miniRow) {
+                        $tags = [];
+                        $rawTags = $miniRow['tags_json'] ?? null;
+                        if (is_string($rawTags) && $rawTags !== '') {
+                            $decoded = json_decode($rawTags, true);
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $t) {
+                                    $t = trim((string) $t);
+                                    if ($t !== '') {
+                                        $tags[] = $t;
+                                    }
+                                }
+                            }
+                        }
+                        $dashboardMiniArticles[] = [
+                            'id' => (int) ($miniRow['id'] ?? 0),
+                            'title' => (string) ($miniRow['title'] ?? ''),
+                            'slug' => (string) ($miniRow['slug'] ?? ''),
+                            'excerpt' => trim((string) ($miniRow['excerpt'] ?? '')),
+                            'tags' => $tags,
+                            'cover_url' => \App\Support\MiniArticleHtml::publicUrl(
+                                isset($miniRow['cover_path']) ? (string) $miniRow['cover_path'] : null
+                            ),
+                            'pinned' => !empty($miniRow['pinned']),
+                            'published_at' => isset($miniRow['published_at']) ? (string) $miniRow['published_at'] : null,
+                            'href' => url('articles/' . rawurlencode((string) ($miniRow['slug'] ?? ''))),
+                        ];
+                    }
+                } catch (\Throwable) {
+                    $dashboardMiniArticles = [];
+                }
             }
         }
 
@@ -785,6 +828,8 @@ class HomeController
             'rh_my_mobility' => $rhMyMobility,
             'rh_mobility_schema_ready' => $rhMobilitySchemaReady,
             'can_publish_dashboard_articles' => $canPublishDashboardArticles,
+            'doctrine_pending' => $doctrinePending,
+            'dashboard_mini_articles' => $dashboardMiniArticles,
         ]);
     }
 

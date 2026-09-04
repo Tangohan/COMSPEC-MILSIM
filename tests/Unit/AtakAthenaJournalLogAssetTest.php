@@ -51,31 +51,26 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
             $root . '/docs/bugs/2026-09-01-athena-tuile-journal-vide.md'
         );
 
-        self::assertStringContainsString('text = "Envoyer photos"', $hpp);
-        self::assertStringContainsString('text = "Dossier photos"', $hpp);
         self::assertStringContainsString('idc = 9765', $hpp);
         self::assertStringContainsString('idc = 9766', $hpp);
         self::assertStringContainsString('athena_forcePhotoSend', $hpp);
         self::assertStringContainsString('athena_showPhotoFolder', $hpp);
 
-        self::assertStringContainsString('athena_collectSessionLog', $upd);
         self::assertStringContainsString('comspec_profile_name', $upd);
-        self::assertStringContainsString('getUnitsList', $upd);
-        self::assertStringContainsString('opérateurs en liaison', $upd);
-        self::assertStringContainsString('Compte :', $upd);
         self::assertStringContainsString('Compte non connecté', $upd);
-        self::assertStringContainsString('Liaison et envois', $upd);
+        self::assertStringContainsString('Steam NON LINK', $upd);
+        self::assertStringContainsString('AFFECTATION', $upd);
 
-        self::assertStringContainsString('9765', $lay);
-        self::assertStringContainsString('9766', $lay);
+        self::assertStringContainsString('9770', $lay);
+        self::assertStringContainsString('Liaison OK', $lay);
 
         self::assertStringContainsString('GetLogTail', $log);
         self::assertStringContainsString('COMSPEC_DiagLog', $log);
         self::assertStringContainsString('manifeste de vol', $log);
         self::assertStringContainsString('COMSPEC_Athena_LogFilter', $filter);
 
-        self::assertStringContainsString('forcePhotoSend', $force);
         self::assertStringContainsString('bridgeIcemanPhoto', $force);
+        self::assertStringContainsString('COMSPEC_Athena_PhotoForceBusy', $force);
         self::assertStringContainsString('GetPhotoSaveDir', $folder);
         self::assertStringContainsString('copyToClipboard', $folder);
         self::assertStringContainsString('Arma 3 - COMSPEC', $folder);
@@ -85,13 +80,13 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
 
         self::assertStringContainsString('GetScreenshotDirs', $ext);
         self::assertStringContainsString('GetPhotoSaveDir', $ext);
-        self::assertStringContainsString('ExtensionVersion = "1.18.6"', $ext);
+        self::assertStringContainsString('ExtensionVersion = "1.18.12"', $ext);
 
-        self::assertStringContainsString('1.0.75', $cfg);
+        self::assertStringContainsString('1.0.81', $cfg);
         self::assertStringContainsString('athena_collectSessionLog', $cfg);
         self::assertStringContainsString('athena_forcePhotoSend', $cfg);
         self::assertStringContainsString('athena_showPhotoFolder', $cfg);
-        self::assertStringContainsString('1.5.12', $connect);
+        self::assertStringContainsString('1.5.17', $connect);
 
         self::assertStringContainsString('journal', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);

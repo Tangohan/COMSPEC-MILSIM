@@ -22,15 +22,15 @@ final class HubPortalHeroAssetTest extends TestCase
         self::assertStringContainsString('hub_announce_items', $ctrl);
         self::assertStringContainsString('AlertPresentationService', $ctrl);
         self::assertMatchesRegularExpression(
-            "/url\\('dashboard'\\)[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            "/url\\('dashboard'\\)\\s*\\?>[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
             $home
         );
         self::assertDoesNotMatchRegularExpression(
-            "/url\\('hub'\\)[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            "/url\\('hub'\\)\\s*\\?>[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
             $home
         );
         self::assertMatchesRegularExpression(
-            "/url\\('dashboard'\\)[^>]*site-marketing__ops[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
+            "/url\\('dashboard'\\)[^\\n]*site-marketing__ops[^\\n]*__\\('common\\.ops'\\)/",
             $marketing
         );
         self::assertStringContainsString('Athena Comspec — Portail MILSIM', $frHome);

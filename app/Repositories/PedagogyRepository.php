@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 use PDOException;
 
@@ -113,16 +114,18 @@ final class PedagogyRepository
         if (!$hasTur && !$hasUr) {
             return 0;
         }
-        $placeholders = implode(',', array_fill(0, count($definitionSlugs), '?'));
+        $count = count($definitionSlugs);
+        $dSlugIn = SqlText::inPlaceholders($this->pdo, 'd.slug', $count);
+        $rSlugIn = SqlText::inPlaceholders($this->pdo, 'r.slug', $count);
         $dup = array_merge($definitionSlugs, $definitionSlugs);
         $n = 0;
         if ($hasTur) {
             $sql = "SELECT COUNT(DISTINCT tur.user_id) FROM tenant_user_roles tur
                 INNER JOIN roles r ON r.id = tur.role_id
                 LEFT JOIN role_definitions d ON d.id = r.definition_id
-                INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = ? AND u.status = 'active'
+                INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = ? AND " . SqlText::equalsLiteral($this->pdo, 'u.status', 'active') . "
                 WHERE tur.tenant_id = ?
-                  AND (d.slug IN ($placeholders) OR r.slug IN ($placeholders))
+                  AND ({$dSlugIn} OR {$rSlugIn})
                   AND (tur.valid_until IS NULL OR tur.valid_until > NOW())";
             $st = $this->pdo->prepare($sql);
             $st->execute(array_merge([$tenantId, $tenantId], $dup));
@@ -134,8 +137,8 @@ final class PedagogyRepository
         $sqlUr = "SELECT COUNT(DISTINCT ur.user_id) FROM user_roles ur
             INNER JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ?
             LEFT JOIN role_definitions d ON d.id = r.definition_id
-            INNER JOIN users u ON u.id = ur.user_id AND u.tenant_id = ? AND u.status = 'active'
-            WHERE (d.slug IN ($placeholders) OR r.slug IN ($placeholders))";
+            INNER JOIN users u ON u.id = ur.user_id AND u.tenant_id = ? AND " . SqlText::equalsLiteral($this->pdo, 'u.status', 'active') . "
+            WHERE ({$dSlugIn} OR {$rSlugIn})";
         $stUr = $this->pdo->prepare($sqlUr);
         $stUr->execute(array_merge([$tenantId, $tenantId], $dup));
 
@@ -236,12 +239,14 @@ final class PedagogyRepository
         if ($definitionSlugs === [] || !$this->hasTable('tenant_user_roles')) {
             return false;
         }
-        $placeholders = implode(',', array_fill(0, count($definitionSlugs), '?'));
+        $count = count($definitionSlugs);
+        $dSlugIn = SqlText::inPlaceholders($this->pdo, 'd.slug', $count);
+        $rSlugIn = SqlText::inPlaceholders($this->pdo, 'r.slug', $count);
         $sql = "SELECT 1 FROM tenant_user_roles tur
             INNER JOIN roles r ON r.id = tur.role_id
             LEFT JOIN role_definitions d ON d.id = r.definition_id
             WHERE tur.tenant_id = ? AND tur.user_id = ?
-              AND (d.slug IN ($placeholders) OR r.slug IN ($placeholders))
+              AND ({$dSlugIn} OR {$rSlugIn})
               AND (tur.valid_until IS NULL OR tur.valid_until > NOW()) LIMIT 1";
         $params = array_merge([$tenantId, $userId], $definitionSlugs, $definitionSlugs);
         $st = $this->pdo->prepare($sql);

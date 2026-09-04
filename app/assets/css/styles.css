@@ -693,6 +693,21 @@ body { font-family: 'Inter', sans-serif; }
     opacity: 1;
 }
 
+.who-item__initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 74px;
+    height: 74px;
+    margin: 0 auto 1.25rem;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: #065f46;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
 .who-item h4 {
     font-size: 0.72rem;
     font-weight: 900;

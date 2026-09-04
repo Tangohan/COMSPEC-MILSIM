@@ -42,8 +42,10 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringNotContainsString('Identifiant plateforme', $file);
 
         self::assertStringContainsString('$viewerIsPersonnelSubject', $file);
-        self::assertStringContainsString('!$personnelFileRhContext && !empty($viewerIsPersonnelSubject)', $file);
         self::assertStringContainsString('$canEditProfile && !empty($viewerIsPersonnelSubject)', $file);
+        self::assertStringContainsString('$steamProfileSyncOffered && $personnelViewMode !== \'public\'', $file);
+        self::assertStringContainsString('&& $personnelViewMode !== \'public\';', $controller);
+        self::assertStringContainsString('file_page_notices.php', $file);
 
         self::assertStringContainsString('.personnel-file-hero__avatar-inset', $css);
         self::assertStringContainsString('.personnel-file-hero__report', $css);
@@ -63,5 +65,43 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
 
         self::assertStringContainsString('Le dossier public se lit d’un coup d’œil', $dispatch);
         self::assertStringContainsString('sans grand vide blanc', $dispatch);
+    }
+
+    public function testPageNoticesSitBelowIdentityBanner(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $file = (string) file_get_contents($root . '/views/personnel/file.php');
+        $gate = (string) file_get_contents($root . '/views/partials/personnel/file_view_gate.php');
+        $rh = (string) file_get_contents($root . '/views/partials/personnel/file_rh_view.php');
+        $notices = (string) file_get_contents($root . '/views/partials/personnel/file_page_notices.php');
+
+        self::assertFileExists($root . '/views/partials/personnel/file_page_notices.php');
+        self::assertStringContainsString('Absence en cours', $notices);
+        self::assertStringContainsString('$personnelFileNoticesIncludeOperatorTabs', $notices);
+        self::assertStringContainsString('$viewerIsPersonnelSubject', $notices);
+
+        $heroPos = strpos($file, 'class="personnel-file-hero"');
+        $fileNoticesPos = strpos($file, 'file_page_notices.php');
+        self::assertNotFalse($heroPos);
+        self::assertNotFalse($fileNoticesPos);
+        self::assertGreaterThan($heroPos, $fileNoticesPos);
+
+        $gateHeroPos = strpos($gate, 'personnel-file-gate__hero');
+        $gateNoticesPos = strpos($gate, 'file_page_notices.php');
+        $gateChoicesPos = strpos($gate, 'personnel-file-gate__choices');
+        self::assertNotFalse($gateHeroPos);
+        self::assertNotFalse($gateNoticesPos);
+        self::assertNotFalse($gateChoicesPos);
+        self::assertGreaterThan($gateHeroPos, $gateNoticesPos);
+        self::assertGreaterThan($gateNoticesPos, $gateChoicesPos);
+
+        $rhHeroPos = strpos($rh, '<!-- Hero RH -->');
+        $rhActionsPos = strpos($rh, 'Changer de vue');
+        $rhNoticesPos = strpos($rh, 'file_page_notices.php');
+        self::assertNotFalse($rhHeroPos);
+        self::assertNotFalse($rhActionsPos);
+        self::assertNotFalse($rhNoticesPos);
+        self::assertGreaterThan($rhHeroPos, $rhActionsPos);
+        self::assertGreaterThan($rhActionsPos, $rhNoticesPos);
     }
 }

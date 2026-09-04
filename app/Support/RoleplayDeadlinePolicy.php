@@ -65,6 +65,22 @@ final class RoleplayDeadlinePolicy
     }
 
     /**
+     * Signale uniquement une contradiction exploitable entre le groupe lu en jeu
+     * et celui de la fiche. Une valeur absente ou inconnue demande une confirmation,
+     * mais ne constitue pas une discordance.
+     */
+    public static function bloodTypeMismatch(?string $dossier, ?string $arma): bool
+    {
+        $d = self::normalizeBloodType((string) $dossier);
+        $a = self::normalizeBloodType((string) $arma);
+        if ($d === '' || $a === '' || $d === 'Inconnu' || $a === 'Inconnu') {
+            return false;
+        }
+
+        return $d !== $a;
+    }
+
+    /**
      * Le bilan médical doit (re)confirmer le groupe si le dossier, Arma ou le dernier
      * constat ne sont pas alignés.
      */

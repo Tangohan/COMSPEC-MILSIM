@@ -23,7 +23,7 @@ final class AtakModGeoNetworkAlignAssetTest extends TestCase
             dirname(__DIR__, 2) . '/public/assets/js/map/atak-c2-bridge.js'
         );
         $prompt = (string) file_get_contents(
-            dirname(__DIR__, 2) . '/docs/technique/atak-mod-align-prompt.md'
+            dirname(__DIR__, 2) . '/docs/archive/legacy-atak/technique-atak-mod-align-prompt.md'
         );
 
         self::assertStringContainsString('sampleGeoNetwork', $ace);

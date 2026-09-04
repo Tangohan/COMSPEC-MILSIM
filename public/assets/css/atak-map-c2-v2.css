@@ -3,16 +3,16 @@
  * Dense, sobre, professionnel — carte dominante (~85 % surface)
  */
 :root {
-  --c2-bg: #070b10;
-  --c2-bg2: #0b1118;
-  --c2-panel: rgba(10, 16, 22, 0.82);
-  --c2-panel-solid: #0b1016;
-  --c2-line: rgba(150, 180, 200, 0.12);
-  --c2-line2: rgba(150, 180, 200, 0.2);
-  --c2-text: #dce5eb;
-  --c2-muted: #84929d;
-  --c2-accent: #3ecfb4;
-  --c2-accent-soft: rgba(62, 207, 180, 0.1);
+  --c2-bg: #080b12;
+  --c2-bg2: #101827;
+  --c2-panel: rgba(16, 24, 39, 0.9);
+  --c2-panel-solid: #101827;
+  --c2-line: rgba(170, 180, 200, 0.18);
+  --c2-line2: rgba(170, 180, 200, 0.28);
+  --c2-text: #f5f5fe;
+  --c2-muted: #aab4c8;
+  --c2-accent: #6a6af4;
+  --c2-accent-soft: rgba(106, 106, 244, 0.18);
   --c2-warn: #d3a33c;
   --c2-danger: #dc5d5d;
   --c2-radius: 4px;
@@ -22,6 +22,19 @@
   --c2-ctx-h: 72px;
   --c2-font: 'Inter', system-ui, sans-serif;
   --c2-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html[data-atak-theme="day"] {
+  --c2-bg: #f5f5fe;
+  --c2-bg2: #ececfe;
+  --c2-panel: rgba(255, 255, 255, 0.94);
+  --c2-panel-solid: #ffffff;
+  --c2-line: rgba(0, 0, 145, 0.16);
+  --c2-line2: rgba(0, 0, 145, 0.28);
+  --c2-text: #161616;
+  --c2-muted: #666666;
+  --c2-accent: #000091;
+  --c2-accent-soft: rgba(0, 0, 145, 0.1);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -176,7 +189,7 @@ html, body.tac-c2-body {
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: #05080c;
+  background: var(--c2-bg);
 }
 
 .tac-c2-map--split {
@@ -215,7 +228,7 @@ html, body.tac-c2-body {
 .tac-map-root .leaflet-container {
   width: 100% !important;
   height: 100% !important;
-  background: #0a1018 !important;
+  background: var(--c2-bg2) !important;
 }
 
 /* —— Map controls (droite) —— */
@@ -485,14 +498,20 @@ html, body.tac-c2-body {
 }
 
 .tac-marker-wrap {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  height: 100%;
   overflow: visible;
 }
 
 .tac-marker {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -502,11 +521,17 @@ html, body.tac-c2-body {
 }
 
 .tac-marker__symbol {
+  position: relative;
+  z-index: 1;
   line-height: 0;
   pointer-events: auto;
 }
 
 .tac-marker__callsign {
+  position: relative;
+  z-index: 3;
+  display: block;
+  flex: 0 0 auto;
   margin-top: 3px;
   font-size: var(--atak-unit-label-size, 11px);
   font-weight: 700;
@@ -547,6 +572,8 @@ html, body.tac-c2-body {
 }
 
 .tac-marker__ft {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SqlText;
 
 use PDO;
 
@@ -53,22 +54,18 @@ class UnitRepository
         return (int) $stmt->fetchColumn();
     }
 
-    /** @return array<int, int> unit_id => effectif actif rattaché (affectations ouvertes) */
+    /**
+     * Effectif actif par unité, toutes les sources ORBAT confondues.
+     *
+     * Conservé comme alias pour les anciens appelants : depuis l'identité
+     * multi-communautés, `users.tenant_id` n'est plus le tenant de toutes les
+     * affectations d'un compte et `user_units` n'est plus l'unique source.
+     *
+     * @return array<int, int> unit_id => effectif actif distinct
+     */
     public function countActiveMembersByUnitForTenant(int $tenantId): array
     {
-        $sql = 'SELECT uu.unit_id, COUNT(*) AS c
-            FROM user_units uu
-            INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
-            WHERE u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-            GROUP BY uu.unit_id';
-        $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute([$tenantId]);
-        $out = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $out[(int) $row['unit_id']] = (int) $row['c'];
-        }
-
-        return $out;
+        return $this->countDistinctMembersByUnitForTenant($tenantId);
     }
 
     /**
@@ -385,18 +382,50 @@ class UnitRepository
     {
         $subqueries = [];
         $params = [];
-        $subqueries[] = 'SELECT uu.unit_id, uu.user_id FROM user_units uu INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ? WHERE u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
-        $params[] = $tenantId;
+        $tenantId = max(0, $tenantId);
+        $memberPredicate = $this->activeTenantMemberPredicate('u', $tenantId);
+        $activeUser = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $subqueries[] = 'SELECT uu.unit_id, uu.user_id
+            FROM user_units uu
+            INNER JOIN units member_unit ON member_unit.id = uu.unit_id AND member_unit.tenant_id = ' . $tenantId . '
+            INNER JOIN users u ON u.id = uu.user_id
+            WHERE ' . $memberPredicate . ' AND ' . $activeUser . '
+              AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
         if ($this->tableExists('personnel_assignments')) {
-            $subqueries[] = 'SELECT pa.unit_id, pa.user_id FROM personnel_assignments pa INNER JOIN users u ON u.id = pa.user_id AND u.tenant_id = ? WHERE pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
-            $params[] = $tenantId;
+            $activeAssignment = SqlText::inLiterals($this->pdo(), 'pa.status', ['active']);
+            $subqueries[] = 'SELECT pa.unit_id, pa.user_id
+                FROM personnel_assignments pa
+                INNER JOIN units member_unit ON member_unit.id = pa.unit_id AND member_unit.tenant_id = ' . $tenantId . '
+                INNER JOIN users u ON u.id = pa.user_id
+                WHERE ' . $memberPredicate . ' AND ' . $activeUser . ' AND ' . $activeAssignment . '
+                  AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
         }
         if ($this->columnExists('personnel_profiles', 'primary_unit_id')) {
-            $subqueries[] = 'SELECT pp.primary_unit_id AS unit_id, pp.user_id FROM personnel_profiles pp INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ? WHERE pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
-            $params[] = $tenantId;
+            $subqueries[] = 'SELECT pp.primary_unit_id AS unit_id, pp.user_id
+                FROM personnel_profiles pp
+                INNER JOIN units member_unit ON member_unit.id = pp.primary_unit_id AND member_unit.tenant_id = ' . $tenantId . '
+                INNER JOIN users u ON u.id = pp.user_id
+                WHERE ' . $memberPredicate . ' AND ' . $activeUser . '
+                  AND pp.primary_unit_id IS NOT NULL';
         }
 
         return [implode(' UNION ALL ', $subqueries), $params];
+    }
+
+    /** Appartenance active au tenant, avec repli sur le tenant historique du compte. */
+    private function activeTenantMemberPredicate(string $userAlias, int $tenantId): string
+    {
+        if (!$this->tableExists('user_community_memberships')) {
+            return $userAlias . '.tenant_id = ' . $tenantId;
+        }
+        $activeMembership = SqlText::equalsLiteral($this->pdo(), 'unit_membership.status', 'active');
+
+        return '(EXISTS (
+            SELECT 1 FROM user_community_memberships unit_membership
+            WHERE unit_membership.user_id = ' . $userAlias . '.id
+              AND unit_membership.tenant_id = ' . $tenantId . '
+              AND ' . $activeMembership . '
+        ) OR ' . $userAlias . '.tenant_id = ' . $tenantId . ')';
     }
 
     /**
@@ -522,7 +551,8 @@ class UnitRepository
         if ($slug === '') {
             return null;
         }
-        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT * FROM units WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -941,7 +971,8 @@ class UnitRepository
 
     public function findIdByTenantAndSlug(int $tenantId, string $slug): ?int
     {
-        $stmt = $this->pdo()->prepare('SELECT id FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $stmt = $this->pdo()->prepare('SELECT id FROM units WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$tenantId, $slug]);
         $v = $stmt->fetchColumn();
 
@@ -950,7 +981,8 @@ class UnitRepository
 
     public function slugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT 1 FROM units WHERE tenant_id = ? AND slug = ?';
+        $slugEq = SqlText::equals($this->pdo(), 'slug');
+        $sql = 'SELECT 1 FROM units WHERE tenant_id = ? AND ' . $slugEq;
         $params = [$tenantId, $slug];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';

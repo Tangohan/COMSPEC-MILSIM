@@ -9,11 +9,17 @@ namespace COMSPECExtension;
 public static partial class Extension
 {
     private static string _gameAccessToken = "";
+    private static DateTimeOffset _gameAccessExpiresAt = DateTimeOffset.MinValue;
     private static string _gameAuthState = "INITIALIZING";
     private static string _gameAuthError = "";
     private static string _gameAuthStep = "INITIALIZING";
     private static int _gameAuthProgress;
     private static string _gameProfileName = "";
+    private static string _gameProfileFirstName = "";
+    private static string _gameProfileLastName = "";
+    private static string _gameAccountId = "";
+    private static string _gameAccountEmail = "";
+    private static string _gameSessionExpiresAt = "";
     private static string _gameProfileCallsign = "";
     private static string _gameProfileGrade = "";
     private static string _gameProfileUnit = "";
@@ -49,8 +55,23 @@ public static partial class Extension
         if (function == "GetAuthState")
             return FormatGameAuthState();
 
+        if (function == "SetSteamId")
+        {
+            var steam = args.Length > 0 ? ArmaString(args[0]) : "";
+            ApplySteamUid(steam);
+            return _steamUid.Length > 0 ? "OK|" + _steamUid : "ERR|invalid_steam";
+        }
+
         if (function == "GetAuthProgress")
             return $"OK|{_gameAuthProgress}|{_gameAuthStep}|{_gameAuthError}";
+
+        if (function == "EnsureSession")
+        {
+            if (EnsureFreshGameAccessToken())
+                return "OK|fresh";
+            var err = string.IsNullOrWhiteSpace(_gameAuthError) ? "SESSION_EXPIRED" : _gameAuthError;
+            return "ERR|" + err;
+        }
 
         if (function == "RestoreSession")
         {
@@ -158,7 +179,13 @@ public static partial class Extension
                 IdentityCell(_gameProfileRole),
                 IdentityCell(_gameProfileFunction),
                 TabCell(_gameSteamLinked),
-                TabCell(_gameSteamNotice));
+                TabCell(_gameSteamNotice),
+                IdentityCell(_gameProfileFirstName),
+                IdentityCell(_gameProfileLastName),
+                TabCell(_gameAccountId),
+                TabCell(_gameAccountEmail),
+                TabCell(_gameDeviceId),
+                TabCell(_gameSessionExpiresAt));
         }
     }
 
@@ -279,10 +306,72 @@ public static partial class Extension
             return FailGameAuth("SESSION_EXPIRED");
         if (!string.IsNullOrEmpty(store.BaseUrl))
             _baseUrl = NormalizeBaseUrl(store.BaseUrl);
-        var json = GamePostJson("/api/game/v1/session/restore",
-            $"{{\"refresh_token\":\"{EscapeJson(store.RefreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
-            withBearer: false);
+
+        // Modern flow first: refresh rotates the refresh token atomically.
+        var json = RefreshGameSession(store.RefreshToken, modVersion);
+        if (json.StartsWith("ERR|http_404", StringComparison.Ordinal)
+            || json.StartsWith("ERR|http_405", StringComparison.Ordinal))
+        {
+            // Backward compatibility with older ATHENA deployments.
+            json = GamePostJson("/api/game/v1/session/restore",
+                $"{{\"refresh_token\":\"{EscapeJson(store.RefreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+                withBearer: false);
+        }
+
+        if (IsRefreshRevoked(json))
+        {
+            DpapiGameStore.ClearTokens(keepDeviceId: true);
+            _gameAccessToken = "";
+            _gameAccessExpiresAt = DateTimeOffset.MinValue;
+            return FailGameAuth("SESSION_EXPIRED");
+        }
+
         return ApplyGameAuthResponse(json, "RestoreSession");
+    }
+
+    private static string RefreshGameSession(string refreshToken, string modVersion)
+    {
+        return GamePostJson("/api/game/v1/session/refresh",
+            $"{{\"refresh_token\":\"{EscapeJson(refreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+            withBearer: false);
+    }
+
+    private static bool IsRefreshRevoked(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        return raw.Contains("TOKEN_REVOKED", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("REFRESH_REVOKED", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("SESSION_REVOKED", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("INVALID_REFRESH", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("refresh_revoked", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("http_403", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EnsureFreshGameAccessToken()
+    {
+        if (_gameAccessToken.Length > 0
+            && (_gameAccessExpiresAt == DateTimeOffset.MinValue
+                || DateTimeOffset.UtcNow < _gameAccessExpiresAt.AddSeconds(-45)))
+            return true;
+
+        var store = DpapiGameStore.Load();
+        if (store == null || string.IsNullOrEmpty(store.RefreshToken))
+            return _gameAccessToken.Length > 0;
+
+        var json = RefreshGameSession(store.RefreshToken, _modVersion);
+        if (IsRefreshRevoked(json))
+        {
+            DpapiGameStore.ClearTokens(keepDeviceId: true);
+            _gameAccessToken = "";
+            _gameAccessExpiresAt = DateTimeOffset.MinValue;
+            SetGameAuth("SESSION_EXPIRED", _gameAuthProgress, "SESSION_EXPIRED");
+            return false;
+        }
+
+        var result = ApplyGameAuthResponse(json, "RefreshSession");
+        return result.StartsWith("OK|", StringComparison.Ordinal)
+            && _gameAccessToken.Length > 0;
     }
 
     private static string GameAuthPassword(string email, string password, string modVersion)
@@ -371,13 +460,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl))
             return FailGameAuth("NETWORK_ERROR");
         var verify = VerifyClientInitSync();
-        if (verify.StartsWith("OK|", StringComparison.Ordinal))
-        {
-            SetGameAuth("READY", 100, "");
-            return "OK|READY";
-        }
-        SetGameAuth("C2_UNAVAILABLE", 90, "C2_UNAVAILABLE");
-        return "ERR|C2_UNAVAILABLE";
+        return FinishGameAuthReady(verify);
     }
 
     private static string GameLogout()
@@ -392,6 +475,7 @@ public static partial class Extension
             // best-effort
         }
         _gameAccessToken = "";
+        _gameAccessExpiresAt = DateTimeOffset.MinValue;
         var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
         store.RefreshToken = "";
         store.PairingToken = "";
@@ -411,6 +495,20 @@ public static partial class Extension
         _gameSteamNotice = "";
         _minModRequired = "";
         return "OK|logged_out";
+    }
+
+    /// <summary>
+    /// Session Game Auth déjà émise : le ping C2 (clé API) ne doit plus bloquer READY.
+    /// </summary>
+    private static string FinishGameAuthReady(string verify)
+    {
+        if (verify.StartsWith("OK|", StringComparison.Ordinal))
+        {
+            SetGameAuth("READY", 100, "");
+            return "OK|READY";
+        }
+        SetGameAuth("READY", 100, "C2_DEGRADED");
+        return "OK|READY";
     }
 
     private static string ApplyGameAuthResponse(string json, string source, bool persistTokens = true)
@@ -439,6 +537,11 @@ public static partial class Extension
                 var device = tokens.TryGetProperty("device_id", out var di) ? (di.GetString() ?? "") : "";
                 if (access.Length > 0)
                     _gameAccessToken = access;
+                if (tokens.TryGetProperty("expires_in", out var exp)
+                    && exp.ValueKind == JsonValueKind.Number
+                    && exp.TryGetInt32(out var expSeconds)
+                    && expSeconds > 0)
+                    _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(expSeconds, 30, 86400));
                 if (device.Length >= 16)
                     _gameDeviceId = device;
                 var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
@@ -451,6 +554,15 @@ public static partial class Extension
                 DpapiGameStore.Save(store);
             }
             SetGameAuth("RESOLVING_TENANT", 58, "");
+            if (root.TryGetProperty("account", out var account))
+            {
+                _gameAccountId = account.TryGetProperty("id", out var aid) ? (aid.GetString() ?? "") : "";
+                _gameAccountEmail = account.TryGetProperty("email", out var aem) ? (aem.GetString() ?? "") : "";
+            }
+            if (root.TryGetProperty("session", out var session))
+            {
+                _gameSessionExpiresAt = session.TryGetProperty("expires_at", out var sexp) ? (sexp.GetString() ?? "") : "";
+            }
             if (root.TryGetProperty("tenant", out var tenant))
             {
                 _gameTenantName = tenant.TryGetProperty("short_name", out var sn) ? (sn.GetString() ?? "") : "";
@@ -495,13 +607,7 @@ public static partial class Extension
             if (_gameAccessToken.Length > 0 && !string.IsNullOrEmpty(_baseUrl))
             {
                 var verify = VerifyClientInitSync();
-                if (verify.StartsWith("OK|", StringComparison.Ordinal))
-                {
-                    SetGameAuth("READY", 100, "");
-                    return "OK|READY";
-                }
-                SetGameAuth("C2_UNAVAILABLE", 90, "C2_UNAVAILABLE");
-                return "ERR|C2_UNAVAILABLE";
+                return FinishGameAuthReady(verify);
             }
             SetGameAuth("READY", 100, "");
             return "OK|READY";
@@ -516,13 +622,17 @@ public static partial class Extension
     {
         var first = prof.TryGetProperty("first_name", out var fn) ? (fn.GetString() ?? "") : "";
         var last = prof.TryGetProperty("last_name", out var ln) ? (ln.GetString() ?? "") : "";
+        _gameProfileFirstName = first;
+        _gameProfileLastName = last;
         _gameProfileName = (first + " " + last).Trim();
         _gameProfileCallsign = ReadProfileText(prof, "callsign");
         _gameProfileGrade = ReadProfileText(prof, "grade");
         _gameProfileUnit = ReadProfileText(prof, "unit");
         _gameProfileRole = ReadProfileText(prof, "role");
         _gameProfileFunction = ReadProfileText(prof, "function");
-        _gameProfileAvatar = prof.TryGetProperty("avatar", out var av) ? (av.GetString() ?? "") : "";
+        _gameProfileAvatar = prof.TryGetProperty("avatar", out var av)
+            ? ResolveGameMediaUrl(av.GetString() ?? "")
+            : "";
         if (LooksLikeInternalUrl(_gameProfileUnit))
             _gameProfileUnit = "";
         if (_gameProfileCallsign.Length > 40
@@ -534,6 +644,36 @@ public static partial class Extension
             _gameProfileRevision = n;
         if (_gameProfileCallsign.Length > 0)
             _callSign = _gameProfileCallsign;
+    }
+
+    private static string ResolveGameMediaUrl(string raw)
+    {
+        var value = (raw ?? "").Trim();
+        if (value.Length == 0)
+            return "";
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute)
+            && (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
+            return absolute.ToString();
+
+        var baseValue = (_baseUrl ?? "").Trim();
+        if (!Uri.TryCreate(baseValue, UriKind.Absolute, out var baseUri))
+            return value;
+
+        try
+        {
+            if (value.StartsWith("/", StringComparison.Ordinal))
+                return new Uri(baseUri.GetLeftPart(UriPartial.Authority) + value).ToString();
+
+            var normalizedBase = baseValue.EndsWith("/", StringComparison.Ordinal)
+                ? baseValue
+                : baseValue + "/";
+            return new Uri(new Uri(normalizedBase), value).ToString();
+        }
+        catch
+        {
+            return value;
+        }
     }
 
     private static string ReadProfileText(JsonElement prof, string key)
@@ -560,6 +700,8 @@ public static partial class Extension
 
     private static string GamePostJson(string path, string payload, bool withBearer)
     {
+        if (withBearer && !EnsureFreshGameAccessToken())
+            return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
         try
@@ -590,6 +732,8 @@ public static partial class Extension
 
     private static string GameGetJson(string path)
     {
+        if (!EnsureFreshGameAccessToken())
+            return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
         try
@@ -644,9 +788,18 @@ internal static class DpapiGameStore
 
     private static string FilePath()
     {
-        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "COMSPEC", "Overwatch");
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Arma 3", "COMSPEC", "version-beta", "secure");
         Directory.CreateDirectory(dir);
         return Path.Combine(dir, "session.bin");
+    }
+
+    private static string LegacyFilePath()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "COMSPEC", "Overwatch", "session.bin");
     }
 
     internal static Payload? Load()
@@ -655,7 +808,12 @@ internal static class DpapiGameStore
         {
             var path = FilePath();
             if (!File.Exists(path))
-                return null;
+            {
+                var legacy = LegacyFilePath();
+                if (!File.Exists(legacy))
+                    return null;
+                path = legacy;
+            }
             var protectedBytes = File.ReadAllBytes(path);
             var plain = Unprotect(protectedBytes);
             if (plain.Length == 0)
@@ -689,7 +847,41 @@ internal static class DpapiGameStore
             var protectedBytes = Protect(bytes);
             if (protectedBytes.Length == 0)
                 return;
-            File.WriteAllBytes(FilePath(), protectedBytes);
+            var path = FilePath();
+            var tmp = path + ".tmp";
+            File.WriteAllBytes(tmp, protectedBytes);
+            if (File.Exists(path))
+            {
+                try
+                {
+                    File.Replace(tmp, path, null, ignoreMetadataErrors: true);
+                }
+                catch
+                {
+                    File.Move(tmp, path, overwrite: true);
+                }
+            }
+            else
+            {
+                File.Move(tmp, path);
+            }
+        }
+        catch
+        {
+            // best-effort local store
+        }
+    }
+
+    internal static void ClearTokens(bool keepDeviceId)
+    {
+        try
+        {
+            var current = Load() ?? new Payload();
+            if (!keepDeviceId)
+                current.DeviceId = "";
+            current.RefreshToken = "";
+            current.PairingToken = "";
+            Save(current);
         }
         catch
         {

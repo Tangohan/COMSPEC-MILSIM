@@ -6,6 +6,7 @@ namespace App\Services\Personnel;
 
 use App\Core\Database;
 use App\Repositories\UserRepository;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -420,13 +421,13 @@ final class PersonnelProfileGapScanService
         if ($this->columnExists('users', 'is_service_account')) {
             $fragments[] = '(u.is_service_account IS NULL OR u.is_service_account = 0)';
         }
-        $fragments[] = 'LOWER(TRIM(u.email)) <> ?';
+        $fragments[] = SqlText::normalizedNotEquals($this->pdo, 'u.email');
         $params[] = strtolower(UserRepository::SYSTEM_MODERATOR_EMAIL);
-        $fragments[] = 'LOWER(TRIM(u.email)) NOT LIKE ?';
+        $fragments[] = SqlText::normalizedNotLike($this->pdo, 'u.email');
         $params[] = 'system.%@internal.local';
-        $fragments[] = 'LOWER(TRIM(u.email)) NOT LIKE ?';
+        $fragments[] = SqlText::normalizedNotLike($this->pdo, 'u.email');
         $params[] = 'history.%@internal.local';
-        $fragments[] = 'LOWER(u.email) NOT LIKE ?';
+        $fragments[] = SqlText::normalizedNotLike($this->pdo, 'u.email');
         $params[] = '%@demo.local';
 
         return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];

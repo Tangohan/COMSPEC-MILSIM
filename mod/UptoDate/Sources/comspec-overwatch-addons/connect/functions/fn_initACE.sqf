@@ -368,6 +368,11 @@ private _captureAtakAction = [
         && { !(_target isEqualTo player) }
         && { (player distance _target) < 4 }
         && {
+            isNull (objectParent player)
+            || { (vehicle player) isEqualTo player }
+            || { !([vehicle player] call comspec_overwatch_connect_fnc_isHatchetVehicle) }
+        }
+        && {
             (!alive _target)
             || { lifeState _target == "INCAPACITATED" }
             || { captive _target }
@@ -399,6 +404,11 @@ private _disablePhoneAction = [
         && { !(_target isEqualTo player) }
         && { _target isKindOf "CAManBase" }
         && { (player distance _target) < 4 }
+        && {
+            isNull (objectParent player)
+            || { (vehicle player) isEqualTo player }
+            || { !([vehicle player] call comspec_overwatch_connect_fnc_isHatchetVehicle) }
+        }
         && { [_target, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
     },
     _noChildren
@@ -425,5 +435,10 @@ if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
     if (_bt isNotEqualTo "") then {
         ["COMSPECExtension" callExtension ["SetBloodType", [_bt]]] call comspec_overwatch_connect_fnc_extResult;
+        if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
+            [{
+                ["blood_type_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+            }, [], 2] call CBA_fnc_waitAndExecute;
+        };
     };
 };

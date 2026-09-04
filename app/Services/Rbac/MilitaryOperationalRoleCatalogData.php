@@ -34,7 +34,7 @@ namespace App\Services\Rbac;
  *   display_group: int,
  *   display_weight: int,
  *   display_priority: int,
- *   permission_baseline: 'member'|'officer'|'instructor'|'medic'|'logistics'|'hr'|'rto'|'probation',
+ *   permission_baseline: 'member'|'officer'|'instructor'|'medic'|'logistics'|'hr'|'rto'|'probation'|'all',
  *   mos_code?: string|null,
  *   mos_specialty_title?: string|null
  * }
@@ -182,6 +182,7 @@ final class MilitaryOperationalRoleCatalogData
         $a('aero_air_delivery_chief', 'Chef groupe livraison par air', 'Aerial Delivery / Drop Zone Team Lead', $c, 'Aérologistique', 'Largages et zone de largage.', 'function', 0, self::DG_AERO, 40, 40, 'officer');
         $a('aero_refuel_operator', 'Opérateur ravitaillement en vol', 'Aerial Refueling Specialist', $c, 'Soutien aérien', 'Assistance au ravitaillement et liaisons piste.', 'support', 0, self::DG_AERO, 50, 50, 'member');
         $a('aero_ground_support_chief', 'Chef détachement soutien sol', 'Aircraft Ground Support Lead', $c, 'Soutien aérien', 'Mise à poste, trafic au sol et sécurité mouvements.', 'function', 0, self::DG_AERO, 60, 60, 'officer');
+        $a('aero_160th_soar_pilot', 'Pilote opérations spéciales — 160th SOAR', '160th SOAR Special Operations Aviator', $c, 'SOAR', 'Pilote Army Aviation sélectionné par le 160th SOAR pour l’infiltration, l’exfiltration et le soutien aérien des forces spéciales.', 'specialty', 0, self::DG_AERO, 70, 70, 'all');
     }
 
     /** @param callable(string, string, string, string, string, string, string, int, int, int, int, string): void $a */
@@ -235,6 +236,10 @@ final class MilitaryOperationalRoleCatalogData
         $a('sf_comms', 'Transmetteur forces spéciales', 'Special Operations Communications Sergeant', $c, 'Soutien technique', 'Transmissions sécurisées et liaisons.', 'liaison', 0, self::DG_SF, 30, 30, 'rto');
         $a('sf_intelligence', 'Analyste opérations spéciales', 'Special Operations Intelligence Analyst', $c, 'Renseignement opérationnel', 'Préparation et fusion d’information ciblée.', 'function', 0, self::DG_SF, 40, 40, 'officer');
         $a('sf_medic', 'Médical opérations spéciales', 'Special Operations Combat Medic', $c, 'Soutien sanitaire avancé', 'Soins avancés en milieu dégradé.', 'specialty', 0, self::DG_SF, 50, 50, 'medic');
+        $a('sf_air_force_cct', 'Combat Controller (CCT)', 'Combat Control', $c, 'Air Force Special Warfare', 'AFSC 1Z2X1 — contrôle aérien expéditionnaire, reconnaissance de zones et intégration de la puissance aérienne.', 'liaison', 0, self::DG_SF, 60, 60, 'all');
+        $a('sf_air_force_pj', 'Pararescue (PJ)', 'Pararescue', $c, 'Air Force Special Warfare', 'AFSC 1Z1X1 — recherche, soins préhospitaliers avancés et récupération de personnel en milieu hostile ou isolé.', 'specialty', 0, self::DG_SF, 70, 70, 'all');
+        $a('sf_air_force_tacp', 'Tactical Air Control Party (TACP)', 'Tactical Air Control Party', $c, 'Air Force Special Warfare', 'AFSC 1Z3X1 — conseil air-sol, communications et intégration des appuis ; la qualification JTAC demeure distincte.', 'liaison', 0, self::DG_SF, 80, 80, 'all');
+        $a('sf_cag_b_squadron_operator', 'Opérateur — B Squadron (CAG)', 'B Squadron Operator (CAG)', $c, 'B SQUADRON', 'Poste de simulation inspiré du B Squadron historiquement documenté ; désignation professionnelle actuelle non publique.', 'specialty', 0, self::DG_SF, 90, 90, 'all');
     }
 
     /** @param callable(string, string, string, string, string, string, string, int, int, int, int, string): void $a */

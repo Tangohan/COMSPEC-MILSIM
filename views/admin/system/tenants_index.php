@@ -28,13 +28,14 @@ $err = \App\Core\Session::getFlash('error');
             <h1 class="pa-hero__title">Annuaire des communautés</h1>
             <p class="pa-hero__lead">
                 Toutes les organisations du site, avec le profil d’outils, la formule et l’effectif.
-                Ouvrez Administrer pour l’identité, le profil et la formule. Le quotidien reste dans le back-office de chacune.
+                Ouvrez Administrer pour l’identité, le profil et la formule, ou Accès super tenant pour intervenir dans son back-office.
             </p>
             <div class="pa-hero__actions">
                 <a class="pa-btn pa-btn--solid" href="<?= $h(url('communities/create')) ?>">Créer une communauté</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('communities')) ?>">Annuaire public</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/subscription-plans')) ?>">Formules d’accès</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/deployment')) ?>">Publications</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/tenant-recovery')) ?>">Récupération orpheline</a>
             </div>
         </header>
 
@@ -77,6 +78,7 @@ $err = \App\Core\Session::getFlash('error');
                                 $statusLabel = (string) ($statusLabels[$status] ?? 'Statut inconnu');
                                 $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
                                 $editUrl = $id > 0 ? url('admin/tenants/' . $id . '/edit') : '';
+                                $interventionUrl = $id > 1 ? url('admin/system/tenants/' . $id . '/intervention') : '';
                                 $tenantType = (string) ($t['tenant_type'] ?? 'full');
                                 $typeMeta = [
                                     'full' => ['label' => 'Complet', 'pill' => 'slate'],
@@ -99,7 +101,12 @@ $err = \App\Core\Session::getFlash('error');
                                     <td style="text-align:right;font-weight:800;"><?= $uc ?></td>
                                     <td>
                                         <?php if ($editUrl !== ''): ?>
-                                            <a class="pa-btn pa-btn--line" href="<?= $h($editUrl) ?>">Administrer</a>
+                                            <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem;">
+                                                <a class="pa-btn pa-btn--line" href="<?= $h($editUrl) ?>">Administrer</a>
+                                                <?php if ($interventionUrl !== ''): ?>
+                                                    <a class="pa-btn pa-btn--solid" href="<?= $h($interventionUrl) ?>">Accès super tenant</a>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>

@@ -1170,12 +1170,6 @@ body.layout-light .athena-header,
   display: none;
 }
 
-@media (min-width: 1280px) {
-  .athena-header__menu-label {
-    display: inline;
-  }
-}
-
 @media (max-width: 767px) {
   .athena-header__espaces-grid {
     grid-template-columns: 1fr;

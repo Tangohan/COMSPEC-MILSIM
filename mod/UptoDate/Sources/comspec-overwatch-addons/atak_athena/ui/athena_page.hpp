@@ -1,4 +1,4 @@
-// Panneau Athena dans ATAK — quatre écrans (Journal, Alerter, Rapporter, Poste).
+// Panneau Athena dans ATAK — liaison + fiche. Les anciens écrans restent masqués.
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -84,9 +84,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9701;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(0.74));
+            y = QUOTE(COMSPEC_ATHENA_H(2.20));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(0.72));
+            h = QUOTE(COMSPEC_ATHENA_H(8.80));
             size = QUOTE(0.028);
             text = "";
             colorBackground[] = ATHENA_BG_STRIP;
@@ -94,11 +94,26 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             {
                 font = "RobotoCondensed";
                 color = "#C8CDD2";
-                align = "center";
-                valign = "middle";
+                align = "left";
+                valign = "top";
                 shadow = 1;
                 size = "1";
             };
+        };
+
+        class BtnConnect: COMSPEC_ATAK_Btn
+        {
+            idc = 9734;
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(1.54));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.58));
+            size = QUOTE(COMSPEC_ATHENA_H(0.36));
+            text = "Connexion";
+            colorBackground[] = ATHENA_BTN_ACCENT;
+            colorBackground2[] = ATHENA_BTN_ACCENT;
+            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+            onButtonClick = "[] call comspec_overwatch_connect_fnc_openLogin";
         };
 
         class HomeFil: COMSPEC_ATAK_Btn
@@ -110,6 +125,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             h = QUOTE(COMSPEC_ATHENA_H(0.52));
             size = QUOTE(COMSPEC_ATHENA_H(0.36));
             text = "Journal";
+            show = 0;
             colorBackground[] = ATHENA_TAB_ACTIVE;
             colorBackground2[] = ATHENA_TAB_ACTIVE;
             colorBackgroundFocused[] = ATHENA_TAB_ACTIVE;
@@ -146,321 +162,343 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             onButtonClick = "['poste'] call comspec_overwatch_atak_athena_fnc_athena_selectHome";
         };
 
-        class FilterCombo: RscCombo
+        class PageFil: RscControlsGroup
         {
-            idc = 9760;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(2.42));
-            w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(0.42));
-            sizeEx = QUOTE(0.032);
-            colorBackground[] = ATAK_BG_EDIT;
-            colorSelectBackground[] = ATHENA_TAB_ACTIVE;
-            colorText[] = ATAK_LIST_TEXT;
-            colorSelect[] = {0.94, 0.95, 0.96, 1};
-            onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectFilter";
-        };
-
-        class Inbox: RscListBox
-        {
-            idc = 9710;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(2.32));
-            w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(3.55));
-            colorBackground[] = ATHENA_BG_LIST;
-            colorText[] = ATAK_LIST_TEXT;
-            colorSelect[] = ATAK_LIST_TEXT;
-            colorSelect2[] = ATAK_LIST_TEXT;
-            colorSelectBackground[] = ATAK_LIST_SEL_BG;
-            colorSelectBackground2[] = ATAK_LIST_SEL_BG;
-            sizeEx = QUOTE(0.030);
-            rowHeight = QUOTE(0.033);
-            onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectInbox";
-        };
-
-        class Detail: RscStructuredText
-        {
-            idc = 9711;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(5.95));
-            w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(2.35));
-            size = QUOTE(0.030);
-            text = "";
-            colorBackground[] = ATHENA_BG_DETAIL;
-            class Attributes
+            idc = 9770;
+            x = 0;
+            y = QUOTE(COMSPEC_ATHENA_H(2.16));
+            w = QUOTE(COMSPEC_ATHENA_W(3));
+            h = QUOTE(COMSPEC_ATHENA_H(9.70));
+            show = 0;
+            class controls
             {
-                font = "RobotoCondensed";
-                color = "#E8F0F4";
-                align = "left";
-                valign = "top";
-                shadow = 1;
-                size = "1";
+                class BtnForcePhoto: COMSPEC_ATAK_Btn
+                {
+                    idc = 9765;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.04));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    text = "Envoyer photos";
+                    colorBackground[] = ATHENA_BTN_OK;
+                    colorBackground2[] = ATHENA_BTN_OK;
+                    colorBackgroundFocused[] = ATHENA_BTN_OK_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_forcePhotoSend";
+                    class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnPhotoFolder: BtnForcePhoto
+                {
+                    idc = 9766;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "Dossier photos";
+                    colorBackground[] = ATHENA_BTN_ACCENT;
+                    colorBackground2[] = ATHENA_BTN_ACCENT;
+                    colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhotoFolder";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnRefreshFil: BtnForcePhoto
+                {
+                    idc = 9781;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "Actualiser";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class FilterCombo: RscCombo
+                {
+                    idc = 9760;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.62));
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.42));
+                    sizeEx = QUOTE(0.032);
+                    colorBackground[] = ATAK_BG_EDIT;
+                    colorSelectBackground[] = ATHENA_TAB_ACTIVE;
+                    colorText[] = ATAK_LIST_TEXT;
+                    colorSelect[] = {0.94, 0.95, 0.96, 1};
+                    onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectFilter";
+                };
+                class Inbox: RscListBox
+                {
+                    idc = 9710;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(1.12));
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    h = QUOTE(COMSPEC_ATHENA_H(5.20));
+                    colorBackground[] = ATHENA_BG_LIST;
+                    colorText[] = ATAK_LIST_TEXT;
+                    colorSelect[] = ATAK_LIST_TEXT;
+                    colorSelect2[] = ATAK_LIST_TEXT;
+                    colorSelectBackground[] = ATAK_LIST_SEL_BG;
+                    colorSelectBackground2[] = ATAK_LIST_SEL_BG;
+                    sizeEx = QUOTE(0.030);
+                    rowHeight = QUOTE(0.033);
+                    onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectInbox";
+                };
+                class Detail: RscStructuredText
+                {
+                    idc = 9711;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(6.42));
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    h = QUOTE(COMSPEC_ATHENA_H(2.20));
+                    size = QUOTE(0.030);
+                    text = "";
+                    colorBackground[] = ATHENA_BG_DETAIL;
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#E8F0F4";
+                        align = "left";
+                        valign = "top";
+                        shadow = 1;
+                        size = "1";
+                    };
+                };
+                class Feedback: RscStructuredText
+                {
+                    idc = 9712;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(8.70));
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.36));
+                    size = QUOTE(0.028);
+                    text = "";
+                    show = 0;
+                    colorBackground[] = {0.04, 0.12, 0.14, 0.96};
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#E8F4F0";
+                        align = "center";
+                        valign = "middle";
+                        shadow = 1;
+                        size = "1";
+                    };
+                };
             };
         };
 
-        class Feedback: RscStructuredText
+        class PageAlerter: RscControlsGroup
         {
-            idc = 9712;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(8.38));
-            w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(0.36));
-            size = QUOTE(0.028);
-            text = "";
+            idc = 9771;
+            x = 0;
+            y = QUOTE(COMSPEC_ATHENA_H(2.16));
+            w = QUOTE(COMSPEC_ATHENA_W(3));
+            h = QUOTE(COMSPEC_ATHENA_H(9.70));
             show = 0;
-            colorBackground[] = {0.04, 0.12, 0.14, 0.96};
-            class Attributes
+            class controls
             {
-                font = "RobotoCondensed";
-                color = "#E8F4F0";
-                align = "center";
-                valign = "middle";
-                shadow = 1;
-                size = "1";
+                class BtnTic: COMSPEC_ATAK_BtnDanger
+                {
+                    idc = 9720;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.08));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.58));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.34));
+                    text = "Contact";
+                    onButtonClick = "['TIC'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnClear: BtnTic
+                {
+                    idc = 9724;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "Fin contact";
+                    colorBackground[] = ATHENA_BTN_OK;
+                    colorBackground2[] = ATHENA_BTN_OK;
+                    colorBackgroundFocused[] = ATHENA_BTN_OK_F;
+                    onButtonClick = "['TIC_CLEAR'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                    class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnEagle: BtnTic
+                {
+                    idc = 9723;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "Op. à terre";
+                    colorBackground[] = ATHENA_BTN_WARN;
+                    colorBackground2[] = ATHENA_BTN_WARN;
+                    colorBackgroundFocused[] = ATHENA_BTN_WARN_F;
+                    onButtonClick = "['EAGLE_DOWN'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFD080"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnTriageEnCours: COMSPEC_ATAK_BtnWarn
+                {
+                    idc = 9736;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.76));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    text = "Prise en charge";
+                    onButtonClick = "['en_cours'] call comspec_overwatch_connect_fnc_medicalTriage";
+                };
+                class BtnTriageTraite: BtnTriageEnCours
+                {
+                    idc = 9737;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "Traité";
+                    colorBackground[] = ATHENA_BTN_OK;
+                    colorBackground2[] = ATHENA_BTN_OK;
+                    colorBackgroundFocused[] = ATHENA_BTN_OK_F;
+                    onButtonClick = "['traite'] call comspec_overwatch_connect_fnc_medicalTriage";
+                    class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnTriageAnnule: BtnTriageEnCours
+                {
+                    idc = 9738;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "Annuler";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "['annule'] call comspec_overwatch_connect_fnc_medicalTriage";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
             };
         };
 
-        class BtnTic: COMSPEC_ATAK_BtnDanger
+        class PageRapporter: RscControlsGroup
         {
-            idc = 9720;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(1.82));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.58));
-            size = QUOTE(COMSPEC_ATHENA_H(0.34));
-            text = "Contact";
+            idc = 9772;
+            x = 0;
+            y = QUOTE(COMSPEC_ATHENA_H(2.16));
+            w = QUOTE(COMSPEC_ATHENA_W(3));
+            h = QUOTE(COMSPEC_ATHENA_H(9.70));
             show = 0;
-            onButtonClick = "['TIC'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-        class BtnClear: BtnTic
-        {
-            idc = 9724;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Fin contact";
-            colorBackground[] = ATHENA_BTN_OK;
-            colorBackground2[] = ATHENA_BTN_OK;
-            colorBackgroundFocused[] = ATHENA_BTN_OK_F;
-            onButtonClick = "['TIC_CLEAR'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-            class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-        class BtnEagle: BtnTic
-        {
-            idc = 9723;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "Op. à terre";
-            colorBackground[] = ATHENA_BTN_WARN;
-            colorBackground2[] = ATHENA_BTN_WARN;
-            colorBackgroundFocused[] = ATHENA_BTN_WARN_F;
-            onButtonClick = "['EAGLE_DOWN'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-            class Attributes { font = "RobotoCondensed"; color = "#FFD080"; align = "center"; valign = "middle"; shadow = "false"; };
+            class controls
+            {
+                class BtnFrago: COMSPEC_ATAK_Btn
+                {
+                    idc = 9721;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.08));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.34));
+                    text = "FRAGO";
+                    onButtonClick = "['FRAGO'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnBda: BtnFrago
+                {
+                    idc = 9725;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "BDA";
+                    onButtonClick = "['BDA'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnSalute: BtnFrago
+                {
+                    idc = 9722;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "SALUTE";
+                    onButtonClick = "['SALUTE'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnPhoto: COMSPEC_ATAK_Btn
+                {
+                    idc = 9732;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    text = "Renvoyer photo";
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendPhoto";
+                };
+                class BtnWebMarker: BtnPhoto
+                {
+                    idc = 9739;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "Repère poste";
+                    colorBackground[] = ATHENA_BTN_ACCENT;
+                    colorBackground2[] = ATHENA_BTN_ACCENT;
+                    colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_createWebMarker";
+                };
+                class BtnSeekTx: BtnPhoto
+                {
+                    idc = 9753;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "Relevé SEEK";
+                    colorBackground[] = ATHENA_BTN_OK;
+                    colorBackground2[] = ATHENA_BTN_OK;
+                    colorBackgroundFocused[] = ATHENA_BTN_OK_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendSeekData";
+                    class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+            };
         };
 
-        class BtnTriageEnCours: COMSPEC_ATAK_BtnWarn
+        class PagePoste: RscControlsGroup
         {
-            idc = 9736;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(2.48));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Prise en charge";
+            idc = 9773;
+            x = 0;
+            y = QUOTE(COMSPEC_ATHENA_H(2.16));
+            w = QUOTE(COMSPEC_ATHENA_W(3));
+            h = QUOTE(COMSPEC_ATHENA_H(9.70));
             show = 0;
-            colorBackground[] = ATHENA_BTN_WARN;
-            colorBackground2[] = ATHENA_BTN_WARN;
-            colorBackgroundFocused[] = ATHENA_BTN_WARN_F;
-            onButtonClick = "['en_cours'] call comspec_overwatch_connect_fnc_medicalTriage";
-        };
-        class BtnTriageTraite: BtnTriageEnCours
-        {
-            idc = 9737;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Traité";
-            colorBackground[] = ATHENA_BTN_OK;
-            colorBackground2[] = ATHENA_BTN_OK;
-            colorBackgroundFocused[] = ATHENA_BTN_OK_F;
-            onButtonClick = "['traite'] call comspec_overwatch_connect_fnc_medicalTriage";
-            class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-        class BtnTriageAnnule: BtnTriageEnCours
-        {
-            idc = 9738;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "Annuler";
-            colorBackground[] = ATHENA_BTN;
-            colorBackground2[] = ATHENA_BTN;
-            colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
-            onButtonClick = "['annule'] call comspec_overwatch_connect_fnc_medicalTriage";
-            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+            class controls
+            {
+                class BtnCas: COMSPEC_ATAK_BtnWarn
+                {
+                    idc = 9750;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.08));
+                    w = QUOTE(COMSPEC_ATHENA_W(0.92));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    text = "Appui aérien";
+                    onButtonClick = "['CAS'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnManifest: BtnCas
+                {
+                    idc = 9751;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    text = "Manifeste";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "['MANIFEST'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnBriefing: BtnCas
+                {
+                    idc = 9752;
+                    x = QUOTE(COMSPEC_ATHENA_W(2.02));
+                    text = "Briefing";
+                    colorBackground[] = ATHENA_BTN_ACCENT;
+                    colorBackground2[] = ATHENA_BTN_ACCENT;
+                    colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+                    onButtonClick = "['BRIEFING'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+                };
+                class BtnPhoneQr: BtnCas
+                {
+                    idc = 9735;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
+                    text = "Adresse mobile";
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+                class BtnRefresh: BtnCas
+                {
+                    idc = 9731;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.04));
+                    y = QUOTE(COMSPEC_ATHENA_H(0.68));
+                    text = "Actualiser";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+            };
         };
 
-        class BtnFrago: COMSPEC_ATAK_Btn
-        {
-            idc = 9721;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(1.82));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.34));
-            text = "FRAGO";
-            show = 0;
-            colorBackground[] = ATHENA_BTN;
-            colorBackground2[] = ATHENA_BTN;
-            colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
-            onButtonClick = "['FRAGO'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-        class BtnBda: BtnFrago
-        {
-            idc = 9725;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "BDA";
-            onButtonClick = "['BDA'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-        class BtnSalute: BtnFrago
-        {
-            idc = 9722;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "SALUTE";
-            onButtonClick = "['SALUTE'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-
-        class BtnPhoto: COMSPEC_ATAK_Btn
-        {
-            idc = 9732;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(2.40));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Renvoyer photo";
-            show = 0;
-            colorBackground[] = ATHENA_BTN;
-            colorBackground2[] = ATHENA_BTN;
-            colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendPhoto";
-        };
-        class BtnWebMarker: BtnPhoto
-        {
-            idc = 9739;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Repère poste";
-            colorBackground[] = ATHENA_BTN_ACCENT;
-            colorBackground2[] = ATHENA_BTN_ACCENT;
-            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_createWebMarker";
-        };
-        class BtnSeekTx: BtnPhoto
-        {
-            idc = 9753;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "Relevé SEEK";
-            colorBackground[] = ATHENA_BTN_OK;
-            colorBackground2[] = ATHENA_BTN_OK;
-            colorBackgroundFocused[] = ATHENA_BTN_OK_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendSeekData";
-            class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-
-        class BtnCas: COMSPEC_ATAK_BtnWarn
-        {
-            idc = 9750;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(1.82));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Appui aérien";
-            show = 0;
-            colorBackground[] = ATHENA_BTN_WARN;
-            colorBackground2[] = ATHENA_BTN_WARN;
-            colorBackgroundFocused[] = ATHENA_BTN_WARN_F;
-            onButtonClick = "['CAS'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-        class BtnManifest: BtnCas
-        {
-            idc = 9751;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Manifeste";
-            colorBackground[] = ATHENA_BTN;
-            colorBackground2[] = ATHENA_BTN;
-            colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
-            onButtonClick = "['MANIFEST'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-        class BtnBriefing: BtnCas
-        {
-            idc = 9752;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "Briefing";
-            colorBackground[] = ATHENA_BTN_ACCENT;
-            colorBackground2[] = ATHENA_BTN_ACCENT;
-            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-            onButtonClick = "['BRIEFING'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
-        };
-
-        class BtnLink: COMSPEC_ATAK_Btn
-        {
-            idc = 9734;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(2.40));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Connexion Athena";
-            show = 0;
-            colorBackground[] = ATHENA_BTN_ACCENT;
-            colorBackground2[] = ATHENA_BTN_ACCENT;
-            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-            onButtonClick = "[] call comspec_overwatch_connect_fnc_openLogin";
-        };
-        class BtnPhoneQr: BtnLink
-        {
-            idc = 9735;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Adresse mobile";
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect";
-        };
-        class BtnRefresh: BtnLink
-        {
-            idc = 9731;
-            x = QUOTE(COMSPEC_ATHENA_W(2.02));
-            text = "Actualiser";
-            colorBackground[] = ATHENA_BTN;
-            colorBackground2[] = ATHENA_BTN;
-            colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
-        };
-
-        class BtnForcePhoto: COMSPEC_ATAK_Btn
-        {
-            idc = 9765;
-            x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(1.82));
-            w = QUOTE(COMSPEC_ATHENA_W(0.92));
-            h = QUOTE(COMSPEC_ATHENA_H(0.50));
-            size = QUOTE(COMSPEC_ATHENA_H(0.32));
-            text = "Envoyer photos";
-            show = 0;
-            colorBackground[] = ATHENA_BTN_OK;
-            colorBackground2[] = ATHENA_BTN_OK;
-            colorBackgroundFocused[] = ATHENA_BTN_OK_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_forcePhotoSend";
-            class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-        class BtnPhotoFolder: BtnForcePhoto
-        {
-            idc = 9766;
-            x = QUOTE(COMSPEC_ATHENA_W(1.04));
-            text = "Dossier photos";
-            colorBackground[] = ATHENA_BTN_ACCENT;
-            colorBackground2[] = ATHENA_BTN_ACCENT;
-            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhotoFolder";
-            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
-        };
-
-        // Anciens onglets : conservés pour compat idc, masqués.
         class TabAll: COMSPEC_ATAK_Btn
         {
             idc = 9740;

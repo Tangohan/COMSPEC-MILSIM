@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return static function (PDO $pdo): void {
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS training_document_publications (
@@ -129,9 +131,9 @@ return static function (PDO $pdo): void {
 
     // Permission RBAC + attribution admin pour le back-office publications.
     $tenants = $pdo->query('SELECT id FROM tenants')->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    $permSel = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $permSel = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $permIns = $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at) VALUES (?, ?, ?, 'training', 'community', NOW())");
-    $roleSel = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+    $roleSel = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
 
     foreach ($tenants as $tenant) {

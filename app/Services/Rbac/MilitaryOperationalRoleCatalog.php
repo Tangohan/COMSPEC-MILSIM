@@ -22,7 +22,7 @@ namespace App\Services\Rbac;
  *   display_group: int,
  *   display_weight: int,
  *   display_priority: int,
- *   permission_baseline: 'member'|'officer'|'instructor'|'medic'|'logistics'|'hr'|'rto'|'probation',
+ *   permission_baseline: 'member'|'officer'|'instructor'|'medic'|'logistics'|'hr'|'rto'|'probation'|'all',
  *   mos_code?: string|null,
  *   mos_specialty_title?: string|null
  * }

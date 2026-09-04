@@ -584,6 +584,389 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(426, '2026-09-04', 'Connexion au compte depuis le téléphone, carte lisible, identifiant Steam', 'Sur le téléphone, Compte permet de se connecter avec l’e-mail et le mot de passe Athena. Le profil, la communauté et la session apparaissent ensuite. L’identifiant Steam détecté en jeu, ou saisi dans les options du pack, est associé au compte s’il n’était pas encore enregistré. Terrain affiche de nouveau la photo aérienne dès l’ouverture. Relancer Arma complètement après le nouveau pack', [
+                'Compte : se connecter avec l’adresse e-mail et le mot de passe du compte Athena',
+                'Après connexion, le nom, la communauté, l’expiration de session et l’état de liaison sont ceux du poste',
+                'L’identifiant Steam peut être saisi dans les options du pack, rubrique COMSPEC ATAK',
+                'Lier ce terminal ouvre la connexion au compte si aucune session n’est encore ouverte',
+                'Liaison montre les autres terminaux réellement signalés par le poste, sans en inventer',
+                'Conserver ce théâtre sur l’appareil enregistre les extraits déjà vus pour les prochaines sessions',
+            ], [
+                'L’accueil empile le titre, le nom et le groupe, sans les faire se chevaucher',
+                'Les réglages du terminal se font défiler jusqu’en bas',
+                'Les états de session sont rédigés en français, plus de libellé technique brut',
+            ], [
+                'La carte montrait des cases d’image cassée à la place du terrain',
+                'Le bouton Lier ce terminal au poste ne produisait aucun écran utile',
+                'Se déconnecter ne fermait pas vraiment la session auprès du poste',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.20. Compte : connectez-vous avec votre e-mail. Terrain : la photo aérienne du théâtre doit apparaître tout de suite. Options du pack : Identifiant Steam si le jeu ne le détecte pas.',
+            ], 'COMSPEC ATAK 1.8.20'),
+            $pr(425, '2026-09-04', 'Les zones posées hors liaison arrivent entières au poste', 'Sur le téléphone, une zone ou un marqueur posé est envoyé en entier au poste, pas seulement son nom. Si la liaison est coupée, la modification reste en attente sur la machine et part à la reconnexion. La position continue de ne garder que la dernière valeur. Relancer Arma complètement après le nouveau pack', [
+                'Une zone, un marqueur ou un itinéraire est transmis au poste avec ses points et son auteur',
+                'Hors liaison, les modifications restent en file sur la machine et partent dès que le poste répond',
+                'La position n’est toujours pas historisée : seule la plus récente compte',
+            ], [], [
+                'Le téléphone enregistrait le dessin, mais le poste ne recevait pas l’objet complet',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.19. Posez une zone, ouvrez Liaison : elle apparaît en attente, puis disparaît une fois le poste joignable.',
+            ], 'COMSPEC ATAK 1.8.19'),
+            $pr(424, '2026-09-04', 'La carte satellite s’affiche, le compte se relie, l’accueil se range', 'Sur le téléphone, Terrain montre la photo aérienne du terrain, et non plus un fond vert uni. Compte permet de se déconnecter, se reconnecter ou lier le terminal au poste. L’accueil a un fond, des icônes de même taille, et le menu d’applications s’aligne sur la barre du haut. Relancer Arma complètement après le nouveau pack', [
+                'La carte satellite du terrain apparaît derrière votre position, à la place d’un écran entièrement vert',
+                'Compte : se déconnecter, se reconnecter, ou lier ce terminal au poste',
+                'Accueil : fond de l’écran, icônes de même taille, icône Compte d’opérateur',
+                'Le menu d’applications et le bandeau Overwatch s’alignent sur la même largeur',
+            ], [], [
+                'La carte restait verte, le compte n’offrait aucune action de liaison, et l’accueil était inégal',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.18. Terrain : la photo aérienne du terrain doit apparaître. Accueil : fond et icônes alignées. Compte : trois actions de liaison.',
+            ], 'COMSPEC ATAK 1.8.18'),
+            $pr(423, '2026-09-04', 'Les dessins restent en file hors ligne, la position n’encombre plus l’historique', 'Sur le téléphone, chaque zone ou marqueur posé est un objet complet, pas une simple note. Votre position continue de bouger en temps réel mais n’est plus écrite à chaque pas dans l’historique. Liaison ouvre le centre de liaison : vous voyez ce qui attend d’être envoyé. Les extraits de carte déjà affichés sont conservés pour un usage sans réseau. Relancer Arma complètement après le nouveau pack', [
+                'Un dessin ou un marqueur est enregistré en entier, avec ses points et son auteur',
+                'La position n’est plus historisée à chaque déplacement : seule la plus récente compte',
+                'Liaison montre les modifications en attente (dessins, marqueurs, itinéraires)',
+                'Les extraits de carte déjà ouverts restent disponibles si le réseau disparaît',
+            ], [], [
+                'Chaque déplacement remplissait l’historique, et la carte dépendait d’un accès distant à chaque ouverture',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.17. Posez une zone, puis ouvrez Liaison : le dessin apparaît en attente. Coupez le réseau, la carte déjà affichée reste lisible.',
+            ], 'COMSPEC ATAK 1.8.17'),
+            $pr(422, '2026-09-04', 'La carte remplit l’écran du téléphone, et les menus du bandeau s’ouvrent', 'Sur le téléphone, Terrain affiche enfin la carte dans la zone centrale, plus un fond noir. Les boutons du bandeau (Suivis, Couches, Outils, Points…) ouvrent réellement leur panneau. Relancer Arma complètement après le nouveau pack', [
+                'La carte du terrain occupe la zone centrale de l’écran, avec votre position',
+                'Le bandeau ouvre les panneaux : suivis, liaison, couches, vues, points, outils, images, menu',
+                'Zoom, recentrage et couches agissent sur cette même carte',
+            ], [], [
+                'La zone centrale restait noire, et les boutons du bandeau n’ouvraient pas leur panneau',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.16. Ouvrez le téléphone, Terrain : la carte doit remplir le centre. Touchez Couches ou Outils : le panneau s’ouvre à droite.',
+            ], 'COMSPEC ATAK 1.8.16'),
+            $pr(421, '2026-09-04', 'La carte du téléphone devient une scène : dessin, zones, relief et relecture', 'Sur le téléphone, Terrain n’est plus seulement un fond. Vous dessinez des zones, des flèches, des mesures et des modèles (observation, regroupement, atterrissage) qui restent des objets, pas une image. Vous pouvez n’afficher qu’une zone d’intérêt, passer en lecture plane, relief ou vue tactique, et revenir à un instant précédent. Relancer Arma complètement après le nouveau pack', [
+                'Outils : polygone, flèche, cercle, ellipse, danger, exclusion, secteur, couloir, axe, regroupement, zone d’intérêt',
+                'Chaque dessin porte un auteur et reste un objet, pas un dessin figé',
+                'Lecture plane, relief ombré ou vue tactique inclinée ; la relecture ramène la carte à un horaire passé',
+                'Les traces restent sur l’appareil si la liaison se coupe',
+            ], [], [
+                'La carte ne conservait que des points figés, sans dessin ni historique',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.15. Téléphone, Terrain, Outils : posez une zone, basculez Relief, puis faites glisser Relecture.',
+            ], 'COMSPEC ATAK 1.8.15'),
+            $pr(420, '2026-09-04', 'La carte du téléphone est désormais celle du terrain, dans l’écran', 'Sur le téléphone, Terrain n’ouvre plus la carte Arma : le fond satellite du terrain, la grille, votre position et l’équipe s’affichent dans l’écran, avec le bandeau et le panneau. Vue satellite ou plan, zoom, recentrage et pose de marqueur restent dans cette carte. Relancer Arma complètement après le nouveau pack', [
+                'Terrain remplit l’écran du téléphone avec la carte du terrain, menus autour',
+                'Votre position, votre groupe et les autres opérateurs se mettent à jour en se déplaçant',
+                'Vue satellite ou plan, zoom, recentrage et clic pour un marqueur ou une mesure',
+            ], [], [
+                'La carte du téléphone recouvrait encore l’écran ou restait un fond noir, parce qu’elle n’était pas tracée dans l’interface',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.14. Ouvrez le téléphone, Terrain : la carte du terrain remplit l’écran, votre position bouge, le bandeau et le panneau restent visibles.',
+            ], 'COMSPEC ATAK 1.8.14'),
+            $pr(419, '2026-09-04', 'Terrain affiche la carte du poste dans tout l’écran du téléphone', 'Sur le téléphone, Terrain montre la même carte que le poste Athena : vous vous y déplacez, zoomez, recentrez, voyez l’équipe et posez des marqueurs, tout en gardant le bandeau et le panneau. Relancer Arma complètement après le nouveau pack', [
+                'Terrain ouvre la carte du terrain dans tout l’écran, avec le bandeau et le panneau autour',
+                'Votre position, votre groupe et les autres opérateurs apparaissent au fil du déplacement',
+                'Le zoom, le recentrage, la vue satellite ou plan, et le clic pour poser un marqueur fonctionnent sur cette carte',
+            ], [], [
+                'La carte du téléphone n’était pas encore celle du poste : menus autour, mais fond incomplet',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.13. Ouvrez le téléphone, Terrain : la carte du terrain remplit l’écran, votre position bouge, le bandeau et le panneau restent visibles.',
+            ], 'COMSPEC ATAK 1.8.13'),
+            $pr(418, '2026-09-04', 'Terrain affiche la carte du terrain dans l’écran, et deux pannes du poste sont levées', 'Sur le téléphone, Terrain montre la carte satellite du terrain dans l’interface, avec votre position. Sur le poste, l’association d’un certificat ne plante plus si l’appareil n’est pas encore enregistré, et la page des appareils liés s’ouvre. Relancer Arma complètement après le nouveau pack', [
+                'Terrain affiche la carte du terrain (même fond que le poste) dans l’écran du téléphone, avec les menus autour',
+                'Votre position apparaît sur cette carte au fil du déplacement',
+                'La page Compte, Appareils liés, liste les téléphones et tablettes associés',
+            ], [], [
+                'L’association d’un certificat échouait lorsque l’appareil n’était plus connu du poste',
+                'La page des appareils liés renvoyait une erreur',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.12. Ouvrez le téléphone, Terrain : la carte Altis (ou la carte de mission) doit apparaître dans l’écran, avec le bandeau et le panneau. Sur le poste, Compte puis Appareils liés.',
+            ], 'COMSPEC ATAK 1.8.12'),
+            $pr(417, '2026-09-04', 'Le téléphone reprend le compte Steam actuel, Terrain garde les menus', 'Si l’identifiant Steam a changé, Connexion à Athena affiche le bon opérateur, plus l’ancien compte resté sur ce PC. Terrain montre la carte du terrain avec le bandeau et le panneau du téléphone. Relancer Arma complètement après le nouveau pack', [
+                'Connexion à Athena suit le Steam du joueur, même si une ancienne session était enregistrée sur ce PC',
+                'Terrain affiche la carte Arma avec le bandeau et le panneau OVERWATCH autour, plus seulement Accueil / Moi / BFT',
+            ], [], [
+                'Après un changement de compte Steam, le téléphone réouvrait l’ancien opérateur',
+                'Pour voir la carte, il fallait masquer tout l’écran du téléphone',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.11. Connexion à Athena : le nom affiché doit être celui du Steam actuel. Terrain : carte visible, bandeau et panneau OVERWATCH à droite.',
+            ], 'COMSPEC ATAK 1.8.11'),
+            $pr(416, '2026-09-04', 'Le téléphone se lie avec le jeton de la communauté, tout seul', 'Dans les options du jeu, rubrique COMSPEC ATAK, saisissez le jeton et l’identifiant fournis par votre communauté. Connexion à Athena n’a plus besoin d’un autre pack. Relancer Arma complètement après le nouveau pack', [
+                'Jeton et identifiant de communauté dans les options du module, et dans Paramètres du téléphone',
+                'Le téléphone joint le poste avec ces valeurs, sans pack supplémentaire',
+            ], [], [], ['atak'], [
+                'Échap, Options, Modules complémentaires, COMSPEC ATAK : coller le jeton et l’identifiant. Ou ouvrez le téléphone, Paramètres, Communauté, Enregistrer le poste. Puis Connexion à Athena.',
+            ], 'COMSPEC ATAK 1.8.10'),
+            $pr(415, '2026-09-04', 'Terrain affiche enfin la carte Arma, plus un écran noir', 'Sur le téléphone, Terrain masque l’écran des menus et pose la carte Arma dans la dalle. Accueil, Moi, BFT et Retour restent en bandeau. Relancer Arma complètement après le nouveau pack', [
+                'Terrain ouvre la carte du terrain, lisible dans la dalle',
+                'Bandeau Accueil / Moi / BFT / Retour sur la carte',
+            ], [], [
+                'Terrain laissait un trou noir alors que les menus et le zoom répondaient',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.9, pas 1.8.6. Ouvrez le téléphone, Terrain : la carte Altis (ou la carte de mission) doit remplir l’écran. Accueil ramène au bureau.',
+            ], 'COMSPEC ATAK 1.8.9'),
+            $pr(414, '2026-09-04', 'Athena se reconnecte sans charger l’ancien pack à côté', 'Le téléphone reprend tout seul la liaison Athena déjà enregistrée sur le profil. Plus besoin d’ajouter l’ancien pack Overwatch pour que le réseau réponde. Relancer Arma complètement après le nouveau pack', [
+                'La liaison déjà enregistrée est reprise au bouton Connexion à Athena',
+                'Steam, puis la liaison enregistrée, puis le code si le terminal n’est pas encore associé',
+            ], [], [
+                'Seul, le téléphone refusait Athena alors que l’ancien pack, chargé à côté, réussissait',
+            ], ['atak'], [
+                'Relancez Arma complètement. Ouvrez le téléphone, Connexion à Athena. Si vous vous êtes déjà lié une fois, la session se reprend sans code. Sinon, utilisez le code affiché ou le code de secours du poste.',
+            ], 'COMSPEC ATAK 1.8.8'),
+            $pr(413, '2026-09-04', 'Le téléphone s’ouvre sur l’heure, puis deux liaisons seulement', 'À l’ouverture, le terminal affiche l’heure réelle. Un clic ou Entrée révèle Connexion à Athena et Peer to Peer. Athena cherche Steam : si le terminal n’est pas encore associé, le code d’enrôlement et le code de secours apparaissent. Relancer Arma complètement après le nouveau pack', [
+                'Écran d’accueil à l’heure réelle, puis deux choix de liaison',
+                'Athena : Steam reconnu ou terminal non enrôlé, avec code et secours',
+                'Peer to Peer pour la session locale',
+            ], [], [], ['atak'], [
+                'Ouvrez le téléphone, cliquez ou appuyez sur Entrée. Choisissez Connexion à Athena ou Peer to Peer. Si le terminal n’est pas associé, validez le code affiché sur le poste, ou saisissez le code de secours. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 1.8.7'),
+            $pr(412, '2026-09-04', 'La carte Arma réapparaît et la liaison Athena accepte enfin les codes', 'Sur le téléphone, la carte du terrain n’est plus un écran noir : le relief Arma s’affiche dans la fenêtre centrale. Pour lier le compte, générez un code sur le poste (Carte ATAK → Compte → Lier le jeu) puis saisissez-le dans Code de secours. Vous pouvez aussi générer un code dans Arma et le valider sur le poste. Relancer Arma complètement après le nouveau pack', [
+                'Code « Lier le jeu » du poste accepté dans le téléphone',
+                'Code généré dans Arma validable depuis le poste',
+            ], [], [
+                'La carte du téléphone restait noire alors que les menus répondaient',
+                'Aucun code n’était créé, et le code de secours du poste était refusé',
+            ], ['atak'], [
+                'Sur le poste, ouvrez la carte ATAK, Compte, Lier le jeu, générez un code. Dans Arma, Connexion Athena → Code de secours, saisissez-le. Ou inverse : générez le code dans Arma puis validez-le sur le poste. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 1.8.6'),
+            $pr(411, '2026-09-03', 'Le téléphone affiche son écran réel, plus une barre étirée', 'Le terminal se pose au centre de la vue, dans son boîtier. Connexion, bureau, messagerie et menus sont ceux du téléphone. Terrain ouvre la carte en jeu avec ping, mesure et effectifs. Relancer Arma complètement après le nouveau pack', [
+                'Le boîtier du téléphone n’occupe plus toute la largeur de l’écran',
+                'Connexion Athena ou réseau local depuis l’écran du terminal',
+                'Bouton Terrain : la carte en jeu, avec les outils déjà connus',
+                'Les messages tapés dans le téléphone partent vers le poste ou le réseau local',
+            ], [
+                'Les menus, le bureau et la messagerie sont ceux du téléphone, plus un second écran à côté',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone. Choisissez Connexion Athena ou le réseau local. Une fois lié, Terrain affiche la carte. Menu ramène aux écrans du terminal. Relancez Arma complètement.',
+            ], 'COMSPEC ATAK 0.3'),
+            $pr(410, '2026-09-03', 'La carte du téléphone se commande comme un ATAK', 'Sur la carte : vue satellite ou carte d’état-major, effectifs du groupe, ping, mesure de distance et de cap, recentrage sur soi. Un double-clic pose un marqueur. Relancer Arma complètement après le nouveau pack', [
+                'Boutons SAT / BFT / MESURE / PING / MOI sur la carte',
+                'Les opérateurs de la session apparaissent avec leur indicatif',
+                'La mesure affiche grille, distance, cap et altitude du sol',
+            ], [
+                'La carte n’est plus un fond Arma nu : les outils tactiques répondent au clic',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone, Carte. Basculez SAT et la carte d’état-major. Cliquez MESURE, posez deux points. Double-cliquez pour un marqueur. MOI recentre sur vous.',
+            ], 'COMSPEC ATAK 0.2'),
+            $pr(409, '2026-09-03', 'Le téléphone COMSPEC se lie au poste et reprend son châssis', 'Le terminal s’affiche dans son boîtier. Connexion Athena associe le compte, envoie la position au poste et fait circuler les messages dans les deux sens. Dans Paramètres, on choisit le poste officiel ou le poste de la communauté. Relancer Arma complètement après le nouveau pack', [
+                'Boîtier du téléphone autour de l’écran',
+                'Connexion Athena : la position apparaît sur la carte du poste',
+                'Les messages du poste arrivent dans la messagerie du téléphone, et l’inverse',
+                'Choix du poste officiel ou du poste local dans Paramètres',
+            ], [], [], ['atak'], [
+                'Placez COMSPEC ATAK et CBA dans le lanceur. Pour le poste, le module de liaison doit être présent à la racine du pack. Ouvrez le téléphone, Connexion Athena. Votre indicatif doit apparaître au poste. Envoyez un message depuis le bureau : il s’affiche dans Messagerie.',
+            ], 'COMSPEC ATAK 0.2'),
+            $pr(408, '2026-09-03', 'Une photo seulement quand on déclenche Quick Picture', 'Le téléphone n’écrit plus de copies PNG tout seul. Une photo Quick Picture envoie le cliché IceMan au poste. Relancer Arma complètement après le nouveau pack', [
+                'Ouvrir l’appareil photo n’écrit plus de PNG en continu',
+                'Le cliché IceMan est bien celui qui apparaît au poste',
+            ], [], [
+                'Des copies PNG s’accumulaient dans Captures sans avoir déclenché de photo',
+            ], ['atak'], [
+                'Relancez Arma complètement. Ouvrez Quick Picture sans déclencher : aucun PNG nouveau. Prenez une photo : elle arrive au poste.',
+            ], 'Overwatch 1.5.17'),
+            $pr(407, '2026-09-03', 'Un seul cliché dans le dossier Captures', 'Une photo prise depuis le téléphone n’écrit plus une rafale de copies identiques dans le dossier Captures. Relancer Arma complètement après le nouveau pack', [
+                'Un déclenchement n’écrit plus qu’un fichier',
+            ], [], [
+                'Le dossier Captures se remplissait de copies de la même vue',
+            ], ['atak'], [
+                'Prenez une photo depuis le téléphone : un seul fichier apparaît. Relancez Arma complètement. Les copies déjà présentes restent sur le disque ; vous pouvez les supprimer à la main.',
+            ], 'Overwatch 1.5.16'),
+            $pr(406, '2026-09-03', 'L’identifiant de groupe reprend l’indicatif', 'Sur le panneau Données techniques, l’identifiant du groupe affiche l’indicatif de l’opérateur, et non le nom de profil. Un nom de groupe déjà choisi reste en place. Relancer Arma complètement après le nouveau pack', [
+                'Identifiant de groupe = indicatif quand le nom de profil était encore affiché',
+            ], [], [
+                'Le champ Identifiant du groupe montrait le nom de profil',
+            ], ['atak'], [
+                'Ouvrez Données techniques : l’identifiant du groupe doit être l’indicatif, pas le nom de profil.',
+            ], 'Overwatch 1.5.16'),
+            $pr(405, '2026-09-03', 'La tuile Athena se limite à la liaison et à la fiche', 'Sous l’heure, une bande noire reprend l’indicatif, le rôle, la grille et la radio. Dans Athena, un bouton Connexion devient Liaison OK quand le compte est associé. Un journal court signale Steam non lié ou un compte non connecté. Quand tout est en ordre, le nom, le prénom, le rôle, la fonction et l’affectation s’affichent. Relancer Arma complètement après le nouveau pack', [
+                'Bandeau d’identité juste sous l’heure',
+                'Tuile Athena : Connexion, journal de liaison, fiche quand tout est prêt',
+            ], [], [
+                'Le bandeau d’identité n’était pas sous l’heure',
+                'La tuile Athena mélangeait journal, alertes, photos et poste',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte : sous l’heure, lisez indicatif, rôle, grille et radio. Ouvrez Athena : Connexion, puis Liaison OK et la fiche une fois associé.',
+            ], 'Athena 1.0.80'),
+            $pr(404, '2026-09-03', 'Les photos prises en mission arrivent de nouveau au poste', 'Les clichés du téléphone sont transmis jusqu’au poste de commandement. Relancer Arma complètement après le nouveau pack', [
+                'La photo part complète, déjà prête à être reçue au poste',
+            ], [], [
+                'Le cliché existait sur le PC mais le poste le refusait comme s’il n’avait rien reçu',
+            ], ['atak'], [
+                'Relancez Arma complètement. Prenez une photo depuis le téléphone : elle apparaît dans Photos au poste.',
+            ], 'liaison 1.18.10'),
+            $pr(403, '2026-09-03', 'Le tableau de bord Hatchet reprend le clic et la molette', 'En s’asseyant aux commandes d’un appareil Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent aux interrupteurs. La mise en route (batterie, groupe auxiliaire, démarreurs) n’est plus bloquée. Relancer Arma complètement après le nouveau pack', [
+                'Le menu d’actions personnelles se ferme à l’embarquement',
+            ], [], [
+                'Le clic et la molette restaient pris par le menu d’actions, le tableau de bord ne répondait plus',
+            ], ['atak'], [
+                'Asseyez-vous aux commandes d’un H-60. Le menu d’actions se ferme. Actionnez un interrupteur à la molette, puis la mise en route.',
+            ], 'Overwatch 1.5.15 · SSE 0.7.20'),
+            $pr(402, '2026-09-03', 'Le bureau effectifs se lit sur fond sombre', 'Sur l’annuaire des effectifs, l’alerte des fiches jumelles, les totaux, les filtres et les mentions manquantes restent lisibles. L’unité affichée est le dernier maillon, le chemin complet reste au survol. Rechargez le bureau effectifs', [
+                'Alerte des fiches jumelles dans le même registre sombre que le reste du bureau',
+                'Totaux cliquables : membres, actifs, sans unité, sans rôle, habilitation à revoir',
+            ], [
+                'Textes d’introduction et d’affectation plus courts',
+            ], [
+                'Les totaux et le bandeau d’alerte disparaissaient en blanc ou en jaune clair sur le fond sombre',
+            ], ['personnel'], [
+                'Ouvrez Bureau effectifs. Les totaux se lisent en blanc. S’il y a des fiches jumelles, le bandeau ambre propose d’ouvrir les fiches. Une ligne sans fonction ou sans unité apparaît en pastille ambre.',
+            ], 'Portail'),
+            $pr(401, '2026-09-03', 'La position n’est plus refusée comme anonyme après une liaison Steam', 'Au lancement, l’identifiant Steam reste associé même si la liaison passe par le chemin de secours. Les positions sans identifiant attendent Steam au lieu d’être refusées en rafale. Relancer Arma complètement après le nouveau pack', [], [], [
+                'Une liaison de secours oubliait l’identifiant Steam, puis chaque position était refusée',
+                'Le journal Liaison se remplissait d’accès refusés sans identifiant',
+            ], ['atak'], [
+                'Relancez Arma complètement. Si Steam est déjà lié, la session s’ouvre et les positions partent au poste. Le journal Liaison ne se remplit plus de refus répétés.',
+            ], 'Overwatch 1.5.14 · liaison 1.18.9'),
+            $pr(400, '2026-09-03', 'La carte du téléphone affiche indicatif, rôle, grille et radio sous l’heure', 'Sous la météo et l’heure, une bande reprend l’indicatif, le rôle, la grille et la fréquence radio. Le bouton zoom qui se décalait sur le bord droit est retiré. Relancer Arma complètement après le nouveau pack', [
+                'Bandeau d’identité sous météo et heure, avec indicatif, rôle, grille et radio',
+            ], [], [
+                'Un bouton moins se décalait sur le bord droit de la carte',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte. Sous l’heure, lisez indicatif, rôle, grille et radio. Le bouton moins en haut à droite n’apparaît plus.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.79'),
+            $pr(399, '2026-09-03', 'La carte du téléphone retrouve le cartouche d’identité', 'Le cartouche Indicatif, Rôle, Groupe et Grille est de nouveau lisible, au-dessus des outils carte. Le menu qui s’ouvrait au clic droit et les boutons Mesure, Grille, Itinéraire, Zone, Couches et Signet sont retirés. Les outils carte restent affichés, sans clignoter. Relancer Arma complètement après le nouveau pack', [], [
+                'Carte plus lisible, sans barre d’outils superposée',
+            ], [
+                'Le cartouche d’identité disparaissait derrière d’autres bandeaux',
+                'Les outils carte clignotaient à l’ouverture',
+                'Un menu au clic droit recouvrait la carte',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte. L’indicatif, le rôle et le groupe se lisent en bas à gauche. Les outils carte en bas à gauche restent visibles. Un clic droit ne propose plus de menu superposé.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.78'),
+            $pr(398, '2026-09-03', 'La carte du téléphone se lit selon le zoom et se commande au clic', 'Sur la carte, l’indicatif d’un opérateur se simplifie en s’éloignant. Un clic droit pose un marqueur, mesure ou signale. Un ordre reçu se confirme depuis le bas de l’écran. Relancer Arma complètement après le nouveau pack', [
+                'Filtres Tout, Groupe, Alliés, Intel, Air et JTAC, plus une recherche d’indicatif',
+                'Mesure de distance et de cap, grille copiable d’un clic',
+                'Clic droit : poser un marqueur, signaler, mesurer, demander un appui',
+                'Signalement rapide au clic tout en maintenant Maj',
+                'Historique de déplacement du groupe, signets et espaces Mission, Serveur, Théâtre',
+            ], [
+                'Les outils carte du téléphone gardent leur aspect d’origine',
+                'Athena ouvre un seul écran à la fois : Journal, Alerter, Rapporter ou Poste',
+            ], [], ['atak'], [
+                'Ouvrez le téléphone, carte. Les outils carte en bas à gauche restent utilisables. L’indicatif, le rôle et le groupe se lisent sous la boussole. Un clic droit sur le terrain propose de poser un marqueur ou de signaler.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.77'),
+            $pr(397, '2026-09-03', 'La liaison Steam s’établit toute seule et la fiche opérateur reprend', 'Au lancement, Overwatch associe le compte Athena à partir de l’identifiant Steam déjà lié. Les transmissions vers le poste reprennent. Les photos prises sur le terrain partent de nouveau. Relancer Arma complètement après le nouveau pack', [
+                'Connexion Athena automatique dès que Steam est déjà associé au compte',
+            ], [], [
+                'L’enregistrement de la fiche opérateur échouait et le poste répondait comme s’il était indisponible',
+                'Une photo trouvée sur l’ordinateur n’arrivait pas au poste',
+            ], ['atak'], [
+                'Relancez Arma complètement. Si Steam est déjà lié au compte, la session s’ouvre sans saisie. La fiche opérateur se transmet. Une photo prise depuis le téléphone apparaît au poste.',
+            ], 'Overwatch 1.5.14 · Athena 1.0.77'),
+            $pr(396, '2026-09-02', 'Le choix d’étape du suivi roleplay reste lisible en bas de tableau', 'Sur le bureau de suivi, le menu Étape (et Tuteur) d’une ligne en bas de liste s’ouvre entièrement, au-dessus du tableau. Rechargez la page de suivi', [], [], [
+                'Le menu disparaissait sous le tableau sur les dernières lignes',
+            ], ['personnel'], [
+                'Ouvrez le bureau de suivi roleplay. Sur la dernière ligne, cliquez Étape : la liste et Enregistrer restent visibles.',
+            ], 'Portail'),
+            $pr(395, '2026-09-02', 'Le journal d’intervention s’ouvre de nouveau', 'Pendant une intervention sur une organisation, Journal, Changements et Erreurs s’ouvrent à nouveau depuis le bandeau ambre. Rechargez la page', [], [], [
+                'La page du journal ne s’affichait plus',
+            ], ['personnel'], [
+                'Depuis l’administration du site, entrez dans une organisation, puis ouvrez Journal depuis le bandeau : la page doit s’afficher.',
+            ], 'Portail'),
+            $pr(394, '2026-09-02', 'Le bandeau d’intervention s’affiche aussi sur le tableau de bord', 'Pendant une intervention sur une organisation, le bandeau ambre apparaît en haut du tableau de bord, comme sur les autres pages du portail. Il rappelle l’organisation concernée et donne accès au journal, aux changements et à la sortie. Rechargez le tableau de bord', [
+                'Bandeau d’administration de l’organisation en haut du tableau de bord, du bureau des effectifs et de la carte',
+            ], [], [
+                'Le tableau de bord n’affichait pas ce bandeau, contrairement aux autres pages du portail',
+            ], ['personnel'], [
+                'Depuis l’administration du site, entrez dans une organisation. Ouvrez le tableau de bord : le bandeau ambre indique l’organisation et propose Journal et Quitter l’organisation.',
+            ], 'Portail'),
+            $pr(393, '2026-09-02', 'L’enregistrement du dossier opérateur reprend tous les onglets', 'Sur la page d’édition du dossier, Enregistrer enregistre l’identité, l’affectation, le forum, l’équipement et les notes, même lorsqu’un matricule d’organisation est proposé sur la même page. Les titres des sections restent visibles. Décocher Déployable est pris en compte. Rechargez la page d’édition du dossier', [
+                'Situation familiale, statut opérateur, fuseau horaire et langue se choisissent dans une liste',
+            ], [], [
+                'L’enregistrement ne s’arrêtait plus après le bloc du matricule d’organisation',
+                'Décocher Déployable était bien pris en compte',
+                'L’affectation ou la fonction principale restait celle cochée, même si une ligne vide figurait au-dessus',
+                'Les titres des sections d’édition restaient visibles',
+            ], ['personnel'], [
+                'Ouvrez Éditer le dossier. Les titres des onglets doivent apparaître. Enregistrez depuis n’importe quel onglet : forum, équipement et notes sont conservés. Décocher Déployable, puis enregistrer, retire bien la disponibilité.',
+            ], 'Portail'),
+            $pr(392, '2026-09-02', 'Le cartouche d’identité revient sur la carte du téléphone', 'Sur la carte du téléphone, l’indicatif, le rôle, le groupe et la grille s’affichent de nouveau en bas à gauche. Le cartouche n’est plus masqué par le tiroir d’applications. Relancer Arma complètement', [], [], [
+                'Le cartouche d’identité n’était plus visible : il avait été poussé sous le tiroir de droite',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Ouvrez la carte du téléphone : le cartouche Indicatif / Rôle / Groupe doit apparaître en bas à gauche.',
+            ], 'Athena 1.0.76'),
+            $pr(390, '2026-09-02', 'La position de service se pose toute seule, de la formation au service actif', 'Un membre qui rejoint la communauté est d’abord En formation. Quand l’accueil est terminé, il passe En service actif. L’annuaire sépare cette position des fonctions (opérateur, instructeur…). Les responsables peuvent attribuer les positions manquantes d’un clic, ou passer un membre en service actif depuis sa fiche. Rechargez l’annuaire', [
+                'Position En formation dès l’arrivée dans la communauté',
+                'Passage automatique en service actif à la fin de l’accueil',
+                'Bouton d’un clic pour les membres déjà présents',
+            ], [], [
+                'La colonne des fonctions mélangeait le statut de service et les métiers',
+                'Certains membres n’avaient ni En formation ni En service actif',
+            ], ['personnel'], [
+                'Ouvrez l’annuaire. La colonne Position affiche En formation ou En service actif. Sur une fiche encore en formation, Passer en service actif suffit. Les fonctions déjà attribuées restent en place.',
+            ], 'Portail'),
+            $pr(391, '2026-09-02', 'Le dossier sans communauté ne se dédouble plus', 'Lorsqu’une personne appartient déjà à une communauté, l’administration ne montre plus l’espace sans organisation comme un second dossier. Grade, matricule et affectation restent uniquement dans le dossier de la communauté. Les comptes sans unité conservent cet espace. Rechargez le dossier personne', [], [], [
+                'L’espace sans organisation n’apparaissait plus comme une copie du dossier de la communauté',
+                'Rejoindre une communauté ne recopiait plus le grade et le matricule dans l’espace sans organisation',
+            ], ['personnel'], [
+                'Ouvrez le dossier d’une personne déjà membre d’une communauté : seul le dossier de cette communauté doit apparaître. Un compte sans unité conserve l’espace d’accueil.',
+            ], 'Portail'),
+            $pr(389, '2026-09-02', 'L’ancienneté et les mouvements du dossier se relisent clairement', 'Sur la fiche, l’ancienneté dans la communauté, le service cumulé et l’historique d’affectation parlent le même langage. Les allers-retours du même jour dans la même unité sont regroupés. Rechargez la fiche', [], [
+                'L’ancienneté globale reprend le temps dans la communauté ; le temps avant l’arrivée sur le site reste un indicateur à part, s’il a été saisi',
+            ], [
+                'L’ancienneté de service ne restait plus à quelques jours alors que la date d’enrôlement datait de plusieurs mois',
+                'L’historique n’ajoutait plus une ligne à chaque enregistrement du dossier',
+                'Les rubriques administratives vides n’apparaissaient plus comme des informations manquantes',
+            ], ['personnel'], [
+                'Ouvrez la fiche d’un membre. L’ancienneté globale doit correspondre à la date d’enrôlement. L’historique d’affectation ne doit plus empiler le même jour plusieurs fois pour la même unité.',
+            ], 'Portail'),
+            $pr(387, '2026-09-02', 'Les photos jointes à une fiche passent par le même dossier que le téléphone', 'Une photo jointe à une fiche de renseignement, ou la photo du visage d’une identité, est recopiée dans Documents\Arma 3 - COMSPEC\Captures, comme les clichés du téléphone. Elle part ensuite au bureau. Le jeu ne se fige plus en attendant le fichier', [
+                'Photos de fiche et de visage recopiées dans le dossier de captures COMSPEC',
+                'Envoi en arrière-plan, comme les photos du téléphone',
+            ], [], [
+                'La pièce jointe d’une fiche partait trop tôt : le bureau la refusait',
+                'Les captures de fiche pouvaient se mélanger aux photos du téléphone au poste',
+            ], ['atak'], [
+                'Rechargez le pack jeu, quittez Arma complètement puis relancez. Envoyez une fiche avec photo : le cliché apparaît dans Documents\Arma 3 - COMSPEC\Captures, puis sur la fiche au bureau.',
+            ], 'Overwatch'),
+            $pr(388, '2026-09-02', 'L’écran de bienvenue peut montrer les photos de la communauté', 'Après connexion, l’écran de bienvenue affiche une nouvelle photo de nuit par défaut. Les responsables choisissent leurs propres photos dans les paramètres de la communauté : une ou plusieurs, qui défilent à tour de rôle. Rechargez l’écran de bienvenue', [
+                'Photo de bienvenue du portail, en vision nocturne',
+                'Photos d’accueil de la communauté, avec défilement si plusieurs sont déposées',
+            ], [], [], ['platform'], [
+                'Ouvrez Paramètres de la communauté, puis Images d’accueil. Sans photo déposée, la photo du portail reste affichée.',
+            ], 'Portail'),
+            $pr(385, '2026-09-02', 'Les formations, les rôles et l’administration s’ouvrent à nouveau', 'Les pages qui cherchent une formation, un rôle ou une permission par leur identifiant court s’affichent à nouveau. Rechargez la page concernée', [], [], [
+                'Certaines pages d’administration, de formations ou de rôles se fermaient sur une erreur au moment d’ouvrir une fiche',
+            ], ['platform'], [
+                'Mettez à jour le portail, puis rouvrez la page. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail'),
+            $pr(386, '2026-09-02', 'Le tableau de bord se lit de haut en bas sans coupure claire', 'Le haut du tableau de bord reste sombre : briefing, alertes, signalement d’anomalie et contact administration. La connexion Steam vient ensuite, tant que Steam n’est pas encore associé. Les articles et le reste de la page claire se lisent en dernier. Rechargez le tableau de bord', [], [], [
+                'Une zone claire coupait le tableau de bord, et les signalements réapparaissaient en dessous',
+            ], ['platform'], [
+                'Ouvrez le tableau de bord. Si Steam n’est pas encore associé, Connexion Steam se trouve sous les cartes sombres, avant les articles.',
+            ], 'Portail'),
+            $pr(384, '2026-09-02', 'L’accueil et les fiches publiques des communautés sont à jour', 'La page d’accueil affiche toutes les communautés du registre. Chaque fiche publique s’ouvre à nouveau. Rechargez l’accueil, puis ouvrez une communauté', [], [], [
+                'Toutes les communautés n’apparaissaient pas sur l’accueil',
+                'Certaines fiches publiques se fermaient sur une erreur',
+            ], ['platform'], [
+                'Ouvrez l’accueil du site, puis une fiche communauté. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail'),
+            $pr(383, '2026-09-02', 'Le mot de passe oublié a une page complète', 'Depuis la connexion, Mot de passe oublié ouvre un écran du même style. Vous indiquez l’adresse du compte, recevez un lien valable deux heures, puis choisissez un nouveau mot de passe. Le mot de passe s’applique à toutes vos communautés. Rechargez la page de connexion', [], [], [
+                'La page de récupération ne ressemblait pas au reste du portail, et l’enregistrement du nouveau mot de passe pouvait échouer après la réunion des comptes',
+            ], ['platform'], [
+                'Ouvrez Connexion, puis Mot de passe oublié. Après l’e-mail, suivez le lien et saisissez deux fois le nouveau mot de passe.',
+            ], 'Portail'),
+            $pr(382, '2026-09-02', 'Les dossiers réapparaissent après la réunion des comptes', 'Après la mise à jour qui réunit les comptes d’une même adresse e-mail, les fiches (nom, indicatif, photo, dossier RH) se relisent dans la communauté en cours. Les informations restées sur l’ancien compte sont reprises, sans écraser ce qui a déjà été resaisi. Rechargez le dossier et le tableau de bord', [], [], [
+                'Les fiches s’affichaient vides alors que les informations étaient encore enregistrées sur l’ancien compte réuni',
+            ], ['personnel', 'platform'], [
+                'Mettez à jour le portail, puis ouvrez le dossier d’un membre. Si une ancienne page vide reste affichée, actualisez-la.',
+            ], 'Portail'),
+            $pr(381, '2026-09-02', 'Le fichier joint se consulte et se retire depuis la fiche', 'Sur la page de modification d’un document, le fichier actuellement joint s’ouvre ou se télécharge. On peut le retirer sans supprimer la fiche. Rechargez la page du document', [], [], [
+                'Le fichier joint n’était ni consultable ni retirable depuis la modification de la fiche',
+            ], ['platform'], [
+                'Ouvrez Gestion documentaire, puis Modifier sur une fiche. Si un fichier est joint, utilisez Ouvrir le fichier, Télécharger ou Retirer le fichier.',
+            ], 'Portail'),
+            $pr(377, '2026-09-02', 'La mise à jour du portail se termine à nouveau', 'L’écran de mise à niveau du portail s’arrêtait en cours de route. La mise à jour peut désormais aller jusqu’au bout, y compris lorsqu’un compte est rattaché à plusieurs communautés. Rechargez le portail', [], [], [
+                'L’écran de mise à jour du portail s’interrompait au milieu du parcours',
+            ], ['platform'], [
+                'Mise à jour du portail uniquement : rien à recharger en session. Relancez la mise à niveau depuis l’écran habituel si elle n’avait pas abouti.',
+            ], 'Portail 1.6.03'),
+            $pr(376, '2026-09-02', 'Le tableau de bord s’ouvre à nouveau après connexion', 'Après connexion, le tableau de bord se charge même lorsque le compte appartient à plusieurs communautés. Rechargez la page d’accueil', [], [], [
+                'Certains comptes ne pouvaient plus ouvrir le tableau de bord : la page restait bloquée sur une erreur',
+            ], ['platform'], [
+                'Connectez-vous, puis ouvrez le tableau de bord. Si une ancienne page d’erreur reste affichée, actualisez-la.',
+            ], 'Portail 1.6.03'),
+            $pr(375, '2026-09-02', 'Les kits d’accès se cochent clairement avant l’enregistrement', 'Sur la page Kits d’accès, chaque carte affiche une case. Une carte retenue passe en Sélectionné et le pied de page indique combien de kits sont cochés. Enregistrez ensuite pour les attribuer aux membres', [], [], [
+                'Cliquer une carte ne changeait pas l’affichage : pas de case visible, le pied de page restait sur Aucun kit coché',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, puis Kits d’accès. Cochez les packs voulus : le compteur se met à jour, puis Enregistrer les kits.',
+            ], 'Portail 1.6.03'),
             $pr(374, '2026-09-02', 'Le tableau des effectifs affiche la disponibilité sur 90 jours', 'Sur le tableau rapide du tableau de bord, chaque membre montre son taux de disponibilité : participations annoncées et présences validées sur les trois derniers mois, sous forme de barre colorée. Rechargez le tableau de bord', [
                 'Colonne Disponibilité, avec le pourcentage et une barre du rouge au vert',
                 'Un membre sans activité récente affiche un tiret, pas un taux à zéro',

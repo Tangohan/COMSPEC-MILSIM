@@ -1,6 +1,6 @@
 /*
     Enregistre l’indicatif tactique (mission + profil).
-    Ne renomme pas le groupe Arma : l’indicatif n’est pas le groupe en jeu.
+    Si le groupe Arma porte encore le nom de profil, il prend l’indicatif.
     Params: [_callsign, _persistProfile (défaut true), _source (optionnel)]
 */
 params [
@@ -33,5 +33,15 @@ if (_veh != player && {driver _veh == player}) then {
 };
 
 [format ["[Athena] Callsign registered : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
+[_callsign] call comspec_overwatch_connect_fnc_applyGroupIdFromCallsign;
+
+if (
+    missionNamespace getVariable ["COMSPEC_AthenaReady", false]
+    && {!isNil "comspec_overwatch_connect_fnc_operatorProfileTick"}
+) then {
+    [{
+        ["callsign_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+    }, [], 0.8] call CBA_fnc_waitAndExecute;
+};
 
 true

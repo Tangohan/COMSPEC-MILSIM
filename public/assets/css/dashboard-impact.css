@@ -2297,6 +2297,17 @@ body.dashboard-shell main {
   color: #34d399;
 }
 
+.dash-site-support-tile .dash-org-anomaly-tile__kicker,
+.dash-site-support-tile .dash-org-anomaly-tile__cta {
+  color: #38bdf8;
+}
+
+.dash-site-support-tile .dash-org-anomaly-tile__open:hover,
+.dash-site-support-tile .dash-org-anomaly-tile__open:focus-visible {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+}
+
 .dash-org-anomaly-tile__title {
   margin: 0;
   display: block;
@@ -2350,9 +2361,9 @@ body.dashboard-shell main {
 }
 
 .dash-steam-tile {
-  background: #071018;
+  background: linear-gradient(180deg, #0a1c30 0%, #0d2744 48%, #123a5c 100%);
   color: #fff;
-  border-bottom: 1px solid #111;
+  border-bottom: 1px solid rgba(102, 192, 244, 0.28);
   padding: 0.85rem 1rem 1rem;
 }
 
@@ -2539,14 +2550,25 @@ body.dashboard-shell main {
 .dash-hub-stack {
   display: grid;
   gap: 1rem;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.25rem 1rem 1.5rem;
+  box-sizing: border-box;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dash-hub-stack > * {
+  width: 100%;
   max-width: 100rem;
-  margin: 0 auto;
-  padding: 1.25rem 1rem 0.5rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (min-width: 768px) {
   .dash-hub-stack {
-    padding: 1.5rem 1.15rem 0.75rem;
+    padding: 1.5rem 1.15rem 1.75rem;
     gap: 1.15rem;
   }
 }

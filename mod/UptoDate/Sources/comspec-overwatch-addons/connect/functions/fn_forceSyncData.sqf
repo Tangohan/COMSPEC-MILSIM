@@ -49,6 +49,13 @@ if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
 private _lines = ["<t size='0.82'>Resynch envoyé vers le poste de commandement</t>", ""];
 private _parts = [];
 
+// --- FICHE OPÉRATEUR (identité / visage / équipement / versions) ---
+if (!isNil "comspec_overwatch_connect_fnc_syncOperatorProfile") then {
+    ["sync", "manual", true] call comspec_overwatch_connect_fnc_syncOperatorProfile;
+    _parts pushBack "fiche opérateur";
+    _lines pushBack "<t color='#9dffc4'>Fiche opérateur observée renvoyée (identité, visage, équipement, versions).</t>";
+};
+
 // --- LOCALISATION ---
 private _result = [player, true] call comspec_overwatch_connect_fnc_updatePosition;
 private _posOk = (_result isEqualTo "ok");

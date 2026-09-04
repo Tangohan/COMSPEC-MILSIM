@@ -111,6 +111,7 @@ $boNavCommInscription = str_starts_with($p, 'back-office/community/inscription')
 $boNavMedia = $p === 'back-office/media' || str_starts_with($p, 'back-office/media/');
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
+$boNavArticles = str_starts_with($p, 'back-office/articles');
 $boNavConfig = $p === 'back-office/configuration' || str_starts_with($p, 'back-office/configuration/');
 $boNavAnalytics = $p === 'back-office/analytics';
 $boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members') || str_starts_with($p, 'back-office/integration-membres');
@@ -120,6 +121,11 @@ $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
 $boNavPlanning = str_starts_with($p, 'back-office/planification');
 $boNavMissionsPortal = $p === 'back-office/missions' || str_starts_with($p, 'back-office/missions/');
+$boNavCooperation = $p === 'back-office/cooperation' || str_starts_with($p, 'back-office/cooperation/');
+$boNavCooperationMissions = $p === 'back-office/cooperation/missions' || str_starts_with($p, 'back-office/cooperation/missions/');
+$boNavCooperationCreate = $p === 'back-office/cooperation/missions/create';
+$boNavCooperationCatalog = $p === 'back-office/cooperation/catalog' || str_starts_with($p, 'back-office/cooperation/catalog/');
+$boNavCooperationAnnouncements = $p === 'back-office/cooperation/announcements' || str_starts_with($p, 'back-office/cooperation/announcements/');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
 $boNavJnet = $p === 'jnet' || str_starts_with($p, 'jnet/');
 $boNavJnetHome = $p === 'jnet';
@@ -243,14 +249,14 @@ require __DIR__ . '/ath_sidebar_nav.php';
     </div>
 
     <div class="ath-sidebar__nav" id="ath-sidebar-nav">
-        <?php foreach ($athNavGroups as $group): ?>
-            <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $group['key']) ?>">
+        <?php foreach ($athNavGroups as $navGroup): ?>
+            <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>">
                 <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true">
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#4b524e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
-                    <span class="ath-sidebar__group-label"><?= $h((string) $group['label']) ?></span>
+                    <span class="ath-sidebar__group-label"><?= $h((string) $navGroup['label']) ?></span>
                 </button>
                 <div class="ath-sidebar__group-body">
-                    <?php foreach ($group['items'] as $navItem): ?>
+                    <?php foreach ($navGroup['items'] as $navItem): ?>
                         <?php
                         $searchBits = [(string) ($navItem['label'] ?? '')];
                         foreach (($navItem['children'] ?? []) as $child) {

@@ -6,6 +6,7 @@ namespace App\Services\Community;
 
 use App\Core\Database;
 use App\Repositories\TenantRepository;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -53,7 +54,7 @@ final class TenantOnboardingHealthService
             'SELECT 1 FROM roles r
              INNER JOIN role_permissions rp ON rp.role_id = r.id
              INNER JOIN permissions p ON p.id = rp.permission_id
-             WHERE r.tenant_id = ? AND p.slug IN (\'admin.access\', \'admin.organization\')
+             WHERE r.tenant_id = ? AND ' . SqlText::inLiterals($pdo, 'p.slug', ['admin.access', 'admin.organization']) . '
              LIMIT 1'
         );
         $chk->execute([$tenantId]);

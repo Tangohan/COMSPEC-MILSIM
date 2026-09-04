@@ -419,6 +419,12 @@ final class SseApiController
         }
 
         $file = TerrainUploadedImage::fromGlobals();
+        if ($file === null && TerrainUploadedImage::declaredBodyExceedsPostMax()) {
+            return Response::json([
+                'error' => 'file_too_large',
+                'message' => 'La photo est trop lourde. Essayez une capture plus légère.',
+            ], 400);
+        }
         if ($file === null) {
             error_log('[sse/photos] missing_image keys=' . implode(',', array_keys($_FILES)));
 

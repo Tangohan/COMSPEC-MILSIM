@@ -27,6 +27,18 @@ final class GameAuthService
 
     public const OTP_TTL_SEC = 600;
 
+    /** Émet une session jeu depuis une validation forte réalisée par ATHENA (appairage/recovery). */
+    public function issueForTrustedUser(int $userId, int $tenantId, array $device): array
+    {
+        $account = $this->accounts->findForUserAndTenant($userId, $tenantId);
+        if ($account === null || (string)($account['status'] ?? '') !== 'active') {
+            return $this->fail('ACCOUNT_DISABLED', 403);
+        }
+        $device['tenant_id'] = $tenantId;
+        $device['preferred_tenant_id'] = $tenantId;
+        return $this->issueForAccount($account, $device, null, false);
+    }
+
     public function __construct(
         private AthenaAccountRepository $accounts,
         private UserRepository $users,
@@ -204,6 +216,61 @@ final class GameAuthService
     }
 
     /**
+     * Compte Athena du membre portail (création si le rattachement n’existe pas encore).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ensureAccountForUser(int $userId, int $tenantId): ?array
+    {
+        if ($userId < 1 || $tenantId < 1) {
+            return null;
+        }
+        $user = $this->users->findById($userId, $tenantId);
+        if ($user === null) {
+            return null;
+        }
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+        $account = $this->accounts->findByEmail($email);
+        if ($account === null) {
+            $account = $this->promoteAccountFromUsers($email, (string) ($user['password_hash'] ?? ''));
+        }
+        if ($account === null) {
+            return null;
+        }
+        $this->accounts->ensureMembership((int) $account['id'], $tenantId, $userId);
+
+        return $account;
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}
+     */
+    public function issueForUser(int $userId, int $tenantId, array $body): array
+    {
+        $account = $this->ensureAccountForUser($userId, $tenantId);
+        if ($account === null) {
+            return $this->fail('INVALID_CREDENTIALS', 401);
+        }
+        $user = $this->users->findById($userId, $tenantId) ?? [];
+        if ((string) ($user['status'] ?? 'active') !== 'active'
+            || (string) ($account['status'] ?? '') !== 'active') {
+            return $this->fail('ACCOUNT_DISABLED', 403);
+        }
+        $body['preferred_tenant_id'] = $tenantId;
+        $steam = SteamId::normalize((string) ($body['steam_id'] ?? $body['steam_uid'] ?? $user['steam_id'] ?? ''));
+        if ($this->hasSteamId($steam)) {
+            $body['steam_id'] = $steam;
+            $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $steam);
+        }
+
+        return $this->issueForAccount($account, $body);
+    }
+
+    /**
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */
@@ -227,6 +294,7 @@ final class GameAuthService
         $body['device_id'] = (string) ($session['device_id'] ?? $body['device_id'] ?? '');
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
         $this->carrySteamIdFromSession($body, $session);
+        $body['_verify_restored_steam'] = true;
 
         return $this->issueForAccount($account, $body, (int) $session['id']);
     }
@@ -364,6 +432,14 @@ final class GameAuthService
             return $this->fail('NO_TENANT', 403);
         }
         $tenantId = (int) $chosen['tenant_id'];
+        if (!empty($body['_verify_restored_steam'])) {
+            $restoredSteam = $this->verifyRestoredSteam($account, $chosen, $this->clientSteamFromBody($body));
+            if (!$this->hasSteamId($restoredSteam)) {
+                return $this->fail('STEAM_NOT_LINKED', 403);
+            }
+            $body['steam_id'] = $restoredSteam;
+            $account['steam_id'] = $restoredSteam;
+        }
         $exp = $this->experience->get($tenantId);
         $modVersion = trim((string) ($body['mod_version'] ?? ''));
         $min = trim((string) ($exp['min_mod_version'] ?? ''));
@@ -404,7 +480,9 @@ final class GameAuthService
                 hash('sha256', $access),
                 hash('sha256', $refresh),
                 $expiresAt,
-                $refreshExpires
+                $refreshExpires,
+                $this->hasSteamId($steamId) ? $steamId : null,
+                $pairingHash
             );
         } else {
             $this->accounts->insertSession([
@@ -634,12 +712,13 @@ final class GameAuthService
         if (!$this->hasSteamId($steamId)) {
             return null;
         }
-        $account = $this->accounts->findBySteamId($steamId);
-        if ($account !== null) {
-            return $account;
-        }
+        // La fiche Effectifs est la source actuelle de la liaison. Consulter
+        // athena_accounts en premier pouvait ressusciter un ancien profil après
+        // que l'administrateur avait changé ou supprimé son Steam côté membre.
         $user = $this->users->findBySteamId($steamId);
         if ($user === null) {
+            // Une valeur résiduelle dans athena_accounts ne constitue pas une
+            // liaison : la dissociation explicite de la fiche doit être définitive.
             return null;
         }
         $email = strtolower(trim((string) ($user['email'] ?? '')));
@@ -653,7 +732,12 @@ final class GameAuthService
         if ($account === null) {
             return null;
         }
-        $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $steamId);
+        $accountSteam = SteamId::normalize((string) ($account['steam_id'] ?? ''));
+        if ($accountSteam !== $steamId) {
+            if (!$this->accounts->replaceSteamId((int) $account['id'], $steamId)) {
+                return null;
+            }
+        }
         $account['steam_id'] = $steamId;
         $tenantId = (int) ($user['tenant_id'] ?? 0);
         $userId = (int) ($user['id'] ?? 0);
@@ -1236,6 +1320,44 @@ final class GameAuthService
         if ($this->hasSteamId($fromSession)) {
             $body['steam_id'] = $fromSession;
         }
+    }
+
+    /**
+     * A restore may transport the current Arma Steam ID, but may only attach it
+     * when the existing Athena account or selected Effectifs record proves it.
+     * An unlinked client value is never accepted as identity evidence.
+     *
+     * @param array<string, mixed> $account
+     * @param array<string, mixed> $membership
+     */
+    private function verifyRestoredSteam(array &$account, array $membership, string $clientSteam): string
+    {
+        if (!$this->hasSteamId($clientSteam)) {
+            return '';
+        }
+        $accountSteam = SteamId::normalize((string) ($account['steam_id'] ?? ''));
+        $userId = (int) ($membership['user_id'] ?? 0);
+        $tenantId = (int) ($membership['tenant_id'] ?? 0);
+        $userSteam = SteamId::normalize((string) ($membership['user_steam_id'] ?? ''));
+        if (!$this->hasSteamId($userSteam) && $userId > 0 && $tenantId > 0) {
+            $user = $this->users->findById($userId, $tenantId) ?? [];
+            $userSteam = SteamId::normalize((string) ($user['steam_id'] ?? ''));
+        }
+        // Une fiche Effectifs renseignée est prioritaire sur le cache global :
+        // un refresh local de l'ancien Steam doit être refusé après dissociation.
+        if (($this->hasSteamId($userSteam) && $userSteam !== $clientSteam)
+            || (!$this->hasSteamId($userSteam) && $accountSteam !== $clientSteam)) {
+            return '';
+        }
+        if (!$this->hasSteamId($accountSteam)) {
+            $this->accounts->assignSteamIdIfEmpty((int) $account['id'], $clientSteam);
+            $account['steam_id'] = $clientSteam;
+        }
+        if (!$this->hasSteamId($userSteam)) {
+            $this->trySetUserSteam($userId, $tenantId, $clientSteam);
+        }
+
+        return $clientSteam;
     }
 
     /** True seulement pour un SteamID64 réel. `null !== ''` est vrai en PHP. */

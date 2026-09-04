@@ -44,7 +44,7 @@ final class SseSeekContexteLayoutAssetTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseTerminalPage.sqf'
         );
 
-        self::assertStringContainsString('1.5.12', $cfg);
+        self::assertStringContainsString('1.5.16', $cfg);
         self::assertStringContainsString("size='0.64' align='center' color='#f2fff8'", $page);
     }
 }

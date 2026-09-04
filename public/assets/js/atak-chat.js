@@ -162,8 +162,7 @@ window.ATAKChat = (function () {
   }
 
   function formatAbsoluteTime(createdAt) {
-    if (!createdAt) return '';
-    return String(createdAt).replace('T', ' ').substring(0, 19);
+    return window.AthenaDateTime.format(createdAt, null, '');
   }
 
   /**

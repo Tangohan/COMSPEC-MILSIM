@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Rbac;
 
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -82,7 +83,7 @@ final class MilitaryRoleCatalogSyncService
                 }
             }
 
-            $sel = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $sel = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $sel->execute([$tenantId, $slug]);
             $existingId = $sel->fetchColumn();
             $isInsert = !$existingId;
@@ -186,13 +187,17 @@ final class MilitaryRoleCatalogSyncService
                 }
                 $upParams[] = $tenantId;
                 $upParams[] = $slug;
-                $sql = 'UPDATE roles SET ' . implode(', ', $sets) . ' WHERE tenant_id = ? AND slug = ?';
+                $sql = 'UPDATE roles SET ' . implode(', ', $sets) . ' WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug');
                 $pdo->prepare($sql)->execute($upParams);
             }
 
             if ($roleId > 0 && (int) ($entry['is_visual_only'] ?? 0) === 0) {
-                // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
-                if ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
+                if ($entry['permission_baseline'] === 'all') {
+                    // Ces fonctions livrées avec accès complet doivent aussi recevoir les permissions
+                    // ajoutées après leur création. On limite strictement la copie au tenant courant.
+                    self::grantAllTenantPermissions($pdo, $tenantId, $roleId);
+                    // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
+                } elseif ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
                     self::copyPermissionsFromBaseline($pdo, $tenantId, $roleId, $entry['permission_baseline']);
                 }
             }
@@ -224,11 +229,9 @@ final class MilitaryRoleCatalogSyncService
             }
         }
 
-        // Harmonise role_layer intra pour les slugs catalogue (si un rôle existait en autre couche — rare)
-        $ph = implode(',', array_fill(0, count($catalogSlugs), '?'));
         $params = array_merge([$tenantId], array_keys($catalogSlugs));
         try {
-            $pdo->prepare("UPDATE roles SET role_layer = 'intra' WHERE tenant_id = ? AND slug IN ({$ph})")->execute($params);
+            $pdo->prepare('UPDATE roles SET role_layer = \'intra\' WHERE tenant_id = ? AND ' . SqlText::inPlaceholders($pdo, 'slug', count($catalogSlugs)))->execute($params);
         } catch (\Throwable $_) {
         }
     }
@@ -250,7 +253,7 @@ final class MilitaryRoleCatalogSyncService
         $rootSlug = self::categoryKeyFromLabel($categoryName);
         $childSlug = $rootSlug . '-' . self::categoryKeyFromLabel($subName);
 
-        $q = $pdo->prepare('SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $q = $pdo->prepare('SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $q->execute([$tenantId, $rootSlug]);
         $rootId = (int) ($q->fetchColumn() ?: 0);
         if ($rootId <= 0) {
@@ -292,7 +295,7 @@ final class MilitaryRoleCatalogSyncService
      */
     private static function copyPermissionsFromBaseline(PDO $pdo, int $tenantId, int $newRoleId, string $baselineSlug): void
     {
-        $src = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $src = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $src->execute([$tenantId, $baselineSlug]);
         $srcId = (int) ($src->fetchColumn() ?: 0);
         if ($srcId <= 0 || $srcId === $newRoleId) {
@@ -317,6 +320,20 @@ final class MilitaryRoleCatalogSyncService
         return (int) $st->fetchColumn();
     }
 
+    /** Accorde toutes les permissions appartenant au tenant, sans inclure les droits plateforme. */
+    private static function grantAllTenantPermissions(PDO $pdo, int $tenantId, int $roleId): void
+    {
+        $permissionIds = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ?');
+        $permissionIds->execute([$tenantId]);
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        while ($permissionId = $permissionIds->fetchColumn()) {
+            $permissionId = (int) $permissionId;
+            if ($permissionId > 0) {
+                $link->execute([$roleId, $permissionId]);
+            }
+        }
+    }
+
     private static function upsertPersonnelJobRole(
         PDO $pdo,
         int $tenantId,
@@ -332,7 +349,7 @@ final class MilitaryRoleCatalogSyncService
         bool $hasMosCodeColumn,
         bool $hasMosTitleColumn
     ): void {
-        $chk = $pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $chk = $pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $chk->execute([$tenantId, $slug]);
         $existing = $chk->fetchColumn();
         if ($existing) {
@@ -352,7 +369,7 @@ final class MilitaryRoleCatalogSyncService
             }
             $params[] = $tenantId;
             $params[] = $slug;
-            $sql = 'UPDATE personnel_job_roles SET ' . implode(', ', $sets) . ' WHERE tenant_id = ? AND slug = ?';
+            $sql = 'UPDATE personnel_job_roles SET ' . implode(', ', $sets) . ' WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug');
             $pdo->prepare($sql)->execute($params);
 
             return;

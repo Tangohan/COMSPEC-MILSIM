@@ -41,6 +41,8 @@ class CfgFunctions {
             class linkEntities {};
             class getLinks {};
             class makeSearchable {};
+            class isHatchetVehicle {};
+            class playerInHatchetVehicle {};
             class hasEquipment {};
             class getEquipmentAliases {};
             class resolveEquipment {};

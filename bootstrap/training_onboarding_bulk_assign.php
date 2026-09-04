@@ -9,6 +9,9 @@ declare(strict_types=1);
  * Activé uniquement si la variable d’environnement TRAINING_ONBOARDING_ASSIGN_ALL vaut 1, true ou on.
  * Peut être long sur une très grosse base — préférer l’exécution en CLI (php setup-database.php).
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 function run_training_onboarding_bulk_assign(PDO $pdo): void
 {
     $raw = getenv('TRAINING_ONBOARDING_ASSIGN_ALL');
@@ -34,8 +37,8 @@ function run_training_onboarding_bulk_assign(PDO $pdo): void
         return;
     }
 
-    $selCourse = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND slug = ? LIMIT 1');
-    $selUsers = $pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND status = ?');
+    $selCourse = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+    $selUsers = $pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'status'));
     $existsEnr = $pdo->prepare('SELECT id FROM training_enrollments WHERE course_id = ? AND user_id = ? LIMIT 1');
     $insEnr = $pdo->prepare(
         'INSERT INTO training_enrollments (tenant_id, course_id, user_id, assigned_by, assignment_type, status, expires_at, motivation_text)

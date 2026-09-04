@@ -112,10 +112,7 @@ final class ComspecApiKeyAuth
         $raw = self::$rawJsonCache;
         if ($raw === null) {
             if (HttpJsonBody::isMultipart()) {
-                self::$rawJsonCache = '';
-                self::$jsonObjectCache = HttpJsonBody::postFields();
-
-                return self::$jsonObjectCache;
+                return HttpJsonBody::postFields();
             }
             $raw = HttpJsonBody::rawJson();
             self::$rawJsonCache = $raw;
@@ -406,6 +403,7 @@ final class ComspecApiKeyAuth
         if (str_starts_with($path, '/api/game/v1/')) {
             if (str_starts_with($path, '/api/game/v1/auth/')
                 || $path === '/api/game/v1/session/restore'
+                || $path === '/api/game/v1/session/refresh'
                 || str_starts_with($path, '/api/game/v1/branding/render')) {
                 return false;
             }

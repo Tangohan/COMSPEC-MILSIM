@@ -45,7 +45,7 @@ private _html = if (_primary isEqualTo "") then {
 
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
 if (!isNull _group) then {
-    private _detail = _group controlsGroupCtrl 9711;
+    private _detail = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
     if (!isNull _detail) then {
         _detail ctrlSetStructuredText parseText _html;
     };

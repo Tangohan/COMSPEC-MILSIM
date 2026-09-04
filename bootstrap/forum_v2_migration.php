@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Forum v2 : exécute migrations/forum_v2.sql (source de vérité pour le DDL),
  * puis permissions et backfill catégories organisation (logique PHP uniquement).
  */
+
+require_once dirname(__DIR__) . '/app/Support/SqlText.php';
+
 return function (PDO $pdo): void {
     $sqlPath = dirname(__DIR__) . '/migrations/forum_v2.sql';
     if (!is_file($sqlPath)) {
@@ -57,7 +60,7 @@ return function (PDO $pdo): void {
     $tenantIds = $stmtTenants ? $stmtTenants->fetchAll(PDO::FETCH_COLUMN) : [];
     foreach ($tenantIds as $tidRaw) {
         $tid = (int) $tidRaw;
-        $chkPerm = $pdo->prepare("SELECT id FROM permissions WHERE tenant_id = ? AND slug = 'forum.moderate_organization' LIMIT 1");
+        $chkPerm = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'forum.moderate_organization') . ' LIMIT 1');
         $chkPerm->execute([$tid]);
         if ($chkPerm->fetch()) {
             continue;
@@ -65,7 +68,7 @@ return function (PDO $pdo): void {
         $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, 'Modérer la section forum de l\'organisation', 'forum.moderate_organization', 'forum', NOW())")->execute([$tid]);
         $newPid = (int) $pdo->lastInsertId();
         foreach (['tenant_admin', 'forum_moderator'] as $roleSlug) {
-            $r = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $r = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $r->execute([$tid, $roleSlug]);
             $rid = $r->fetchColumn();
             if ($rid) {
@@ -89,7 +92,7 @@ return function (PDO $pdo): void {
                 $slug = rtrim($slug, '-');
             }
             // Déjà présente (scope organization ou section org migrée en scope « tenant » / stratifié)
-            $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND slug = ? LIMIT 1");
+            $chk = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $chk->execute([$tid, $slug]);
             if ($chk->fetch()) {
                 continue;

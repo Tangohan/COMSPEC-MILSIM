@@ -59,6 +59,10 @@ window.ATAKMap = (function () {
     showSseHistory: false,
     showUnitTrails: true,
     showUnitGhostTrails: true,
+    showUnitTrail_phone: true,
+    showUnitTrail_vehicle: true,
+    showUnitTrail_infantry: true,
+    showUnitTrail_air: true,
     showMotionArrows: true,
     showMotionProjection: true,
     showAssignmentLines: true,
@@ -144,6 +148,10 @@ window.ATAKMap = (function () {
       showSseHistory: !!src.showSseHistory,
       showUnitTrails: src.showUnitTrails !== false,
       showUnitGhostTrails: src.showUnitGhostTrails !== false,
+      showUnitTrail_phone: src.showUnitTrail_phone !== false,
+      showUnitTrail_vehicle: src.showUnitTrail_vehicle !== false,
+      showUnitTrail_infantry: src.showUnitTrail_infantry !== false,
+      showUnitTrail_air: src.showUnitTrail_air !== false,
       showMotionArrows: src.showMotionArrows !== false,
       showMotionProjection: src.showMotionProjection !== false,
       showAssignmentLines: src.showAssignmentLines !== false,
@@ -436,6 +444,10 @@ window.ATAKMap = (function () {
     if (unitTrails) unitTrails.checked = !!p.showUnitTrails;
     var unitGhost = document.getElementById('atak-show-unit-ghost-trails');
     if (unitGhost) unitGhost.checked = !!p.showUnitGhostTrails;
+    ['phone', 'vehicle', 'infantry', 'air'].forEach(function (kind) {
+      var trailKind = document.getElementById('atak-show-unit-trail-' + kind);
+      if (trailKind) trailKind.checked = !!p['showUnitTrail_' + kind];
+    });
     var lookArrows = document.getElementById('atak-map-look-motion-arrows');
     if (lookArrows) lookArrows.checked = !!p.showMotionArrows;
     var lookLines = document.getElementById('atak-map-look-assignment-lines');
@@ -572,6 +584,9 @@ window.ATAKMap = (function () {
     bindSseToggle('atak-sse-layer-history', 'showSseHistory');
     bindSseToggle('atak-show-unit-trails', 'showUnitTrails');
     bindSseToggle('atak-show-unit-ghost-trails', 'showUnitGhostTrails');
+    ['phone', 'vehicle', 'infantry', 'air'].forEach(function (kind) {
+      bindSseToggle('atak-show-unit-trail-' + kind, 'showUnitTrail_' + kind);
+    });
     bindSseToggle('atak-show-motion-arrows', 'showMotionArrows');
     bindSseToggle('atak-show-motion-projection', 'showMotionProjection');
     bindSseToggle('atak-show-assignment-lines', 'showAssignmentLines');
@@ -2061,8 +2076,13 @@ window.ATAKMap = (function () {
       var extra = extraOf(u);
       var trackedAi = isTrackedAi(u, extra);
       var live = unitLive(u);
-      if (live === 'offline' && !trackedAi) return;
-      if (!prefs.showDelayedUnits && live === 'delayed' && !trackedAi) return;
+      // La couche carte est un COP partage : une position joueur deja recue ne
+      // doit pas etre retiree par le TTL ou par le filtre local des retards.
+      // L'etat hors liaison reste porte par le style du symbole et l'infobulle.
+      if (live === 'offline' && !trackedAi && !isValidPos(
+        u.pos_x != null ? parseFloat(u.pos_x) : NaN,
+        u.pos_y != null ? parseFloat(u.pos_y) : NaN
+      ) && !String(u.grid_ref || '').trim()) return;
       var id = (u.id != null && String(u.id) !== '')
         ? ('unit_' + String(u.id))
         : (String(u.call_sign || u.callsign || '').trim()

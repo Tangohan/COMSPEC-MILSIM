@@ -44,8 +44,25 @@ $styleBadgeLabels = is_array($cp['styleBadgeLabels'] ?? null) ? $cp['styleBadgeL
 $stats = is_array($sv['stats'] ?? null) ? $sv['stats'] : [];
 $regionBadges = is_array($sv['regionBadges'] ?? null) ? $sv['regionBadges'] : [];
 $specialties = is_array($sv['specialties'] ?? null) ? $sv['specialties'] : [];
+$commandChain = is_array($sv['commandChain'] ?? null) ? $sv['commandChain'] : [];
 $militarySections = is_array($cp['militarySections'] ?? null) ? $cp['militarySections'] : [];
 $mods = is_array($sv['publicModules'] ?? null) ? $sv['publicModules'] : [];
+$publicMission = trim((string) ($sv['publicMission'] ?? ''));
+$publicDoctrine = trim((string) ($sv['publicDoctrine'] ?? ''));
+$contactIntro = trim((string) ($cp['contactIntro'] ?? ''));
+$publicModuleLabels = [
+    'forum' => 'Forum communautaire',
+    'documents' => 'Documents',
+    'events' => 'Événements',
+    'roster' => 'Effectifs publics',
+    'training' => 'Formations',
+    'analytics' => 'Analytique',
+];
+$enabledPublicModules = array_filter(
+    $publicModuleLabels,
+    static fn (string $label, string $key): bool => !empty($mods[$key]),
+    ARRAY_FILTER_USE_BOTH
+);
 
 $heroHeadline = trim((string) ($sv['heroHeadline'] ?? ''));
 if ($heroHeadline === '') {
@@ -57,16 +74,10 @@ if ($heroHeadline === '') {
 }
 
 $aboutTitle = trim((string) ($sv['aboutTitle'] ?? ''));
-if ($aboutTitle === '') {
-    $aboutTitle = trim((string) ($sv['publicDoctrine'] ?? ''));
-}
 if ($aboutTitle === '' || mb_strtolower($aboutTitle) === 'qui nous sommes') {
     $aboutTitle = $name !== '' ? ('Découvrir ' . $name) : 'Notre communauté';
 }
 $aboutBody = trim((string) ($sv['aboutBody'] ?? ''));
-if ($aboutBody === '') {
-    $aboutBody = trim((string) ($sv['publicMission'] ?? ''));
-}
 if ($aboutBody === '') {
     $aboutBody = trim((string) ($cp['simpleBody'] ?? ''));
 }
@@ -111,14 +122,6 @@ if ($pitchPoints === []) {
         $pitchPoints[] = ['t' => $pt !== '' ? $pt : (string) ($sec['label'] ?? ''), 'b' => $pb];
     }
 }
-if ($pitchPoints === []) {
-    foreach ($specialties as $sp) {
-        if (is_string($sp) && trim($sp) !== '') {
-            $pitchPoints[] = ['t' => trim($sp), 'b' => ''];
-        }
-    }
-}
-
 $prereqItems = [];
 foreach (is_array($sv['prerequisites'] ?? null) ? $sv['prerequisites'] : [] as $pr) {
     if (!is_array($pr)) {
@@ -744,6 +747,83 @@ if ($showcaseBackUrl === '') {
       </div>
     </section>
 
+    <?php if ($publicMission !== '' || $publicDoctrine !== '' || $specialties !== []): ?>
+    <section id="mission" class="cl-rise" aria-labelledby="cl-mission-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Identité opérationnelle</p>
+          <h2 id="cl-mission-title" class="cl-h2">Mission &amp; doctrine</h2>
+        </div>
+        <?php if ($publicDoctrine !== ''): ?>
+        <p class="cl-section-aside"><strong>Doctrine :</strong> <?= htmlspecialchars($publicDoctrine) ?></p>
+        <?php endif; ?>
+      </div>
+      <?php if ($publicMission !== ''): ?>
+      <p class="cl-prose"><?= nl2br(htmlspecialchars($publicMission)) ?></p>
+      <?php endif; ?>
+      <?php if ($specialties !== []): ?>
+      <div class="cl-chips" aria-label="Spécialités">
+        <?php foreach ($specialties as $specialty): ?>
+          <?php if (!is_string($specialty) || trim($specialty) === '') { continue; } ?>
+        <span class="cl-chip"><?= htmlspecialchars(trim($specialty)) ?></span>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($enabledPublicModules !== []): ?>
+    <section id="modules" class="cl-rise" aria-labelledby="cl-modules-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Portail Athena</p>
+          <h2 id="cl-modules-title" class="cl-h2">Modules disponibles</h2>
+        </div>
+        <p class="cl-section-aside">Les services activés par la communauté.</p>
+      </div>
+      <div class="cl-chips" aria-label="Modules publics activés">
+        <?php foreach ($enabledPublicModules as $moduleKey => $moduleLabel): ?>
+          <?php if ($moduleKey === 'forum' && $showForumCta): ?>
+          <a class="cl-chip" href="<?= htmlspecialchars($forumUrl) ?>"><?= htmlspecialchars($moduleLabel) ?></a>
+          <?php elseif ($moduleKey === 'events' && $showAgenda): ?>
+          <a class="cl-chip" href="#agenda"><?= htmlspecialchars($moduleLabel) ?></a>
+          <?php elseif ($moduleKey === 'roster' && $showRoster): ?>
+          <a class="cl-chip" href="#roster"><?= htmlspecialchars($moduleLabel) ?></a>
+          <?php else: ?>
+          <span class="cl-chip"><?= htmlspecialchars($moduleLabel) ?></span>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($commandChain !== []): ?>
+    <section id="commandement" class="cl-rise" aria-labelledby="cl-command-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Encadrement</p>
+          <h2 id="cl-command-title" class="cl-h2">Chaîne de commandement</h2>
+        </div>
+      </div>
+      <div class="cl-units">
+        <?php foreach ($commandChain as $command): ?>
+          <?php
+          if (!is_array($command)) { continue; }
+          $commandRole = trim((string) ($command['role_label'] ?? ''));
+          $commandName = trim((string) ($command['display_name'] ?? ''));
+          $commandHint = trim((string) ($command['hint'] ?? ''));
+          if ($commandRole === '' && $commandName === '' && $commandHint === '') { continue; }
+          ?>
+        <article class="cl-unit">
+          <?php if ($commandRole !== ''): ?><div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($commandRole)) ?></div><?php endif; ?>
+          <?php if ($commandName !== ''): ?><h3 class="cl-unit__name"><?= htmlspecialchars($commandName) ?></h3><?php endif; ?>
+          <?php if ($commandHint !== ''): ?><p class="cl-unit__desc"><?= nl2br(htmlspecialchars($commandHint)) ?></p><?php endif; ?>
+        </article>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
+
     <?php if ($showUnits): ?>
     <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title">
       <div class="cl-section-head">
@@ -1267,6 +1347,9 @@ if ($showcaseBackUrl === '') {
             Écrivez-nous ou rejoignez le canal Discord pour en savoir plus.
           <?php endif; ?>
         </p>
+        <?php if ($contactIntro !== ''): ?>
+        <p class="cl-cta__lead"><?= nl2br(htmlspecialchars($contactIntro)) ?></p>
+        <?php endif; ?>
         <?php if ($communityCode !== '' && !$isLocked): ?>
         <div class="cl-cta__code">
           <span>Code communauté</span>

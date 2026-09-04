@@ -10,11 +10,18 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ElevationRequestRepository;
+use App\Repositories\BadgeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelQualificationRepository;
+use App\Repositories\PersonnelAbsenceRepository;
+use App\Repositories\PersonnelHrDocumentRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelServiceHistoryRepository;
+use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
@@ -26,6 +33,7 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
+use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
@@ -59,6 +67,13 @@ class EffectifsWorkspaceController
         private ?\App\Services\Personnel\SenioritySummaryService $senioritySummary = null,
         private ?\App\Services\Personnel\SeniorityPrePlatformService $seniorityPrePlatform = null,
         private ?\App\Services\Personnel\SeniorityEnrollmentBootstrapService $seniorityEnrollment = null,
+        private ?PersonnelAbsenceRepository $personnelAbsenceRepository = null,
+        private ?PersonnelHrDocumentRepository $personnelHrDocumentRepository = null,
+        private ?PersonnelMobilityRequestRepository $personnelMobilityRequestRepository = null,
+        private ?PersonnelOrgHistoryRepository $personnelOrgHistoryRepository = null,
+        private ?PersonnelServiceHistoryRepository $personnelServiceHistoryRepository = null,
+        private ?PersonnelStageBilanRepository $personnelStageBilanRepository = null,
+        private ?BadgeRepository $badgeRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
         $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
@@ -70,6 +85,13 @@ class EffectifsWorkspaceController
         );
         $this->seniorityPrePlatform ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
         $this->seniorityEnrollment ??= \App\Core\Container::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class);
+        $this->personnelAbsenceRepository ??= new PersonnelAbsenceRepository();
+        $this->personnelHrDocumentRepository ??= new PersonnelHrDocumentRepository();
+        $this->personnelMobilityRequestRepository ??= new PersonnelMobilityRequestRepository();
+        $this->personnelOrgHistoryRepository ??= new PersonnelOrgHistoryRepository();
+        $this->personnelServiceHistoryRepository ??= new PersonnelServiceHistoryRepository();
+        $this->personnelStageBilanRepository ??= new PersonnelStageBilanRepository();
+        $this->badgeRepository ??= new BadgeRepository();
     }
 
     /**
@@ -213,6 +235,7 @@ class EffectifsWorkspaceController
         $viewerId = (int) Session::get('user_id');
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $badgesByUserId = $rowIds !== [] ? $this->badgeRepository->listForUsers($tenantId, $rowIds) : [];
         $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
             $rowIds,
             $viewerId
@@ -249,6 +272,7 @@ class EffectifsWorkspaceController
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
             'elevationCooldownByUserId' => $elevationCooldownByUserId,
+            'badgesByUserId' => $badgesByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -438,9 +462,25 @@ class EffectifsWorkspaceController
             }
         }
         $jobRoles = [];
+        $jobRoleOptions = [];
+        $jobRoleMax = 5;
+        $jobRolesAvailable = false;
         if ($this->personnelJobRoleRepository->tablesExist()) {
             $byUser = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$id]);
             $jobRoles = $byUser[$id] ?? [];
+            $jobRolesAvailable = $this->personnelJobRoleRepository->pivotTableExists();
+            if ($jobRolesAvailable) {
+                $tenantSettings = $this->tenantRepository->getSettings($tenantId);
+                $jobRoleSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
+                $communitySettings = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+                $jobRoleMax = (int) $jobRoleSettings['max_roles_per_member'];
+                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
+                    $tenantId,
+                    (bool) $jobRoleSettings['show_english_labels'],
+                    (bool) $jobRoleSettings['show_category_in_role_picklist'],
+                    OrganizationRoleLabels::mode($communitySettings, $this->tenantRepository->findById($tenantId) ?: [])
+                );
+            }
         }
         $gate = Gate::getInstance();
         $units = $this->unitRepository->allForTenant($tenantId);
@@ -449,6 +489,33 @@ class EffectifsWorkspaceController
         $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
         $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
         $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
+        // La fiche Effectifs est le point d'entrée RH unique : elle charge également les
+        // volets auparavant dispersés dans le dossier personnel et les listes RH.
+        $qualifications = $this->personnelQualificationRepository->listForUser($id);
+        $absences = $this->personnelAbsenceRepository->tableExists()
+            ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
+            : [];
+        $hrDocuments = $this->personnelHrDocumentRepository->tableExists()
+            ? $this->personnelHrDocumentRepository->listForUser($tenantId, $id, true)
+            : [];
+        $mobilityRequests = $this->personnelMobilityRequestRepository->tableExists()
+            ? $this->personnelMobilityRequestRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $orgHistory = $this->personnelOrgHistoryRepository->schemaReady()
+            ? $this->personnelOrgHistoryRepository->listForUser($tenantId, $id, 30)
+            : [];
+        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40);
+        $stageBilans = $this->personnelStageBilanRepository->tableExists()
+            ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
+            : [];
+        $dutyPosition = '';
+        $remainingTrainingDays = 0;
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
+            $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
+        } catch (\Throwable) {
+        }
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -458,6 +525,9 @@ class EffectifsWorkspaceController
             'memberPersonnelProfile' => $personnelProfile,
             'memberRoleNames' => $roleNames,
             'memberJobRoles' => $jobRoles,
+            'jobRoleOptions' => $jobRoleOptions,
+            'jobRoleMax' => $jobRoleMax,
+            'jobRolesAvailable' => $jobRolesAvailable,
             'orgRoles' => $roles,
             'orgUnits' => $units,
             'communityName' => $this->communityNameForTenant($tenantId),
@@ -475,6 +545,18 @@ class EffectifsWorkspaceController
             'csrfToken' => Csrf::token(),
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
+            'memberQualifications' => $qualifications,
+            'memberAbsences' => $absences,
+            'memberHrDocuments' => $hrDocuments,
+            'memberMobilityRequests' => $mobilityRequests,
+            'memberOrgHistory' => $orgHistory,
+            'memberServiceHistory' => $serviceHistory,
+            'memberStageBilans' => $stageBilans,
+            'dutyPosition' => $dutyPosition,
+            'remainingTrainingDays' => $remainingTrainingDays,
+            'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
         ]);
     }
 
@@ -772,6 +854,91 @@ class EffectifsWorkspaceController
         ]);
     }
 
+    /** Met à jour les fonctions métier directement depuis la fiche Effectifs. */
+    public function updateMemberJobRoles(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = effectifs_workspace_url('membres/' . $id);
+        if (!EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à attribuer les fonctions.');
+
+            return Response::redirect($redirect);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
+        if (!$user) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!$this->personnelJobRoleRepository->tablesExist() || !$this->personnelJobRoleRepository->pivotTableExists()) {
+            Session::flash('error', 'La gestion des fonctions est indisponible tant que les migrations ne sont pas appliquées.');
+
+            return Response::redirect($redirect);
+        }
+
+        $rawIds = $request->input('job_role_ids', []);
+        $ids = is_array($rawIds)
+            ? array_values(array_unique(array_filter(array_map('intval', $rawIds), static fn (int $roleId): bool => $roleId > 0)))
+            : [];
+        $settings = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+        $ids = array_slice($ids, 0, (int) $settings['max_roles_per_member']);
+        $primaryId = (int) $request->input('primary_job_role_id', 0);
+        if (!in_array($primaryId, $ids, true)) {
+            $primaryId = $ids[0] ?? 0;
+        }
+        $current = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$id]);
+        $details = [];
+        foreach ($current[$id] ?? [] as $assigned) {
+            $details[(int) ($assigned['personnel_job_role_id'] ?? 0)] = trim((string) ($assigned['role_detail'] ?? ''));
+        }
+        $slots = array_map(static fn (int $roleId): array => [
+            'personnel_job_role_id' => $roleId,
+            'role_detail' => $details[$roleId] ?? '',
+            'is_primary' => $roleId === $primaryId,
+        ], $ids);
+
+        $before = $this->structureChangeNotification->snapshot($tenantId, $id);
+        try {
+            $result = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $id, $slots);
+            $display = (string) $result['primary_role_display'];
+            if ($settings['append_secondaries_to_primary_display'] && $result['secondary_role_display'] !== '') {
+                $display = $display !== '' ? $display . ' · ' . $result['secondary_role_display'] : $result['secondary_role_display'];
+            }
+            $profile = $this->personnelProfileRepository->getByUserId($id) ?? [];
+            $unitId = (int) ($profile['primary_unit_id'] ?? 0);
+            if ($unitId > 0) {
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($id, $unitId, mb_substr($display, 0, 100));
+            }
+            $actorId = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                $id,
+                $actorId > 0 ? $actorId : null,
+                $before,
+                $this->structureChangeNotification->snapshot($tenantId, $id)
+            );
+        } catch (\Throwable) {
+            Session::flash('error', 'Enregistrement impossible (fonctions).');
+
+            return Response::redirect($redirect);
+        }
+
+        Session::flash('success', 'Fonctions du membre mises à jour.');
+
+        return Response::redirect($redirect);
+    }
+
     public function quickStatus(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -821,6 +988,32 @@ class EffectifsWorkspaceController
             default => $status,
         };
         Session::flash('success', 'Statut mis à jour : ' . $label . '.');
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    public function activateDutyPosition(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = (int) Session::get('tenant_id');
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance()) || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Action refusée ou session expirée.');
+
+            return Response::redirect(effectifs_workspace_url('membres/' . $id));
+        }
+        $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+        $changed = $duty->applyActiveDuty($tenantId, $id, (int) Session::get('user_id'));
+        $remaining = $duty->remainingTrainingDays($tenantId, $id);
+        Session::flash(
+            $changed ? 'success' : 'warning',
+            $changed
+                ? 'Le membre est maintenant en service actif. Ses rôles fonctionnels sont inchangés.'
+                : ($remaining > 0 ? 'Formation obligatoire : encore ' . $remaining . ' jour(s).' : 'Le membre est déjà en service actif.')
+        );
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
     }
@@ -1836,6 +2029,8 @@ class EffectifsWorkspaceController
                 'job_role_display' => $rich['job_role_display'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
+                'service_number' => $rich['service_number'] ?? null,
+                'radio_assigned' => $rich['radio_assigned'] ?? null,
                 'enlistment_date_resolved' => $enlistmentResolved !== '' ? $enlistmentResolved : null,
                 'pre_platform_start' => trim((string) ($pack['pre_platform_start'] ?? '')) ?: null,
                 'seniority_days' => $seniorityDays,
@@ -1960,4 +2155,3 @@ class EffectifsWorkspaceController
         return $years . ' an' . ($years > 1 ? 's' : '');
     }
 }
-

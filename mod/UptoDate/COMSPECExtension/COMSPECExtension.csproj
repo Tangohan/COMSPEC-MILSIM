@@ -11,8 +11,8 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PublishDir>bin\publish\</PublishDir>
     <!-- Réduit les chemins machine dans les artefacts Release (PathMap + CI). -->
-    <Version>1.18.1</Version>
-    <InformationalVersion>1.18.1</InformationalVersion>
+    <Version>2.0.18</Version>
+    <InformationalVersion>1.19.1</InformationalVersion>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">true</ContinuousIntegrationBuild>
     <PathMap>$(MSBuildProjectDirectory)=/COMSPECExtension/</PathMap>
@@ -21,4 +21,7 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Extension_VERSION_FIXED.cs" />
+  </ItemGroup>
 </Project>

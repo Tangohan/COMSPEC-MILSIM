@@ -181,6 +181,8 @@ class Container
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Services\Integrations\DiscordWebhookService::class),
                 self::get(\App\Services\Community\TenantTypeSwitchService::class),
+                self::get(\App\Services\Admin\RolePermissionService::class),
+                self::get(\App\Repositories\TenantLoginAccueilImageRepository::class),
             ),
             \App\Services\Community\TenantInitialSetupService::class => new \App\Services\Community\TenantInitialSetupService(
                 self::get(TenantRepository::class),
@@ -294,6 +296,16 @@ class Container
             \App\Services\Email\SecurityAlertService::class => new \App\Services\Email\SecurityAlertService(
                 self::get(\App\Services\EmailService::class)
             ),
+            \App\Services\Auth\PasswordResetService::class => new \App\Services\Auth\PasswordResetService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PasswordResetRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Repositories\TenantLoginAccueilImageRepository::class => new \App\Repositories\TenantLoginAccueilImageRepository(),
+            \App\Services\Auth\LoginAccueilBackgroundService::class => new \App\Services\Auth\LoginAccueilBackgroundService(
+                self::get(\App\Repositories\TenantLoginAccueilImageRepository::class)
+            ),
             \App\Controllers\Auth\AuthController::class => new \App\Controllers\Auth\AuthController(
                 self::get(AuthService::class),
                 self::get(RbacService::class),
@@ -307,6 +319,8 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Auth\LoginWelcomeProfileService::class),
+                self::get(\App\Services\Auth\PasswordResetService::class),
+                self::get(\App\Services\Auth\LoginAccueilBackgroundService::class),
             ),
             \App\Services\Auth\LoginWelcomeProfileService::class => new \App\Services\Auth\LoginWelcomeProfileService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
@@ -725,6 +739,10 @@ class Container
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
                 self::get(\App\Repositories\RecruitmentPresetRepository::class),
             ),
+            \App\Services\Identity\UserIdentityMergeService::class => new \App\Services\Identity\UserIdentityMergeService(
+                \App\Core\Database::getPdo(),
+                new \App\Repositories\UserCommunityMembershipRepository(\App\Core\Database::getPdo()),
+            ),
             \App\Controllers\Web\AccountPrivacyController::class => new \App\Controllers\Web\AccountPrivacyController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Account\AccountDataExportService::class),
@@ -791,6 +809,20 @@ class Container
                 self::get(\App\Services\Account\AccountDeletionService::class),
                 null,
                 self::get(\App\Repositories\AccountPurgeRequestRepository::class),
+            ),
+            \App\Services\Admin\PlatformUserProfileService::class => new \App\Services\Admin\PlatformUserProfileService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelExtrasRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\GradeCategoryRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Steam\SteamWebApiService::class),
             ),
             \App\Repositories\AccountPurgeRequestRepository::class => new \App\Repositories\AccountPurgeRequestRepository(),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
@@ -1254,7 +1286,67 @@ class Container
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Services\Documents\DocumentTrainingReferencesService::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
-                self::get(\App\Repositories\DocumentSecurityRepository::class)
+                self::get(\App\Repositories\DocumentSecurityRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+                self::get(\App\Services\Doctrine\DocumentComplianceService::class),
+                self::get(\App\Services\Doctrine\DoctrineDocumentAccessService::class),
+            ),
+            \App\Controllers\Web\DoctrineDocumentsController::class => new \App\Controllers\Web\DoctrineDocumentsController(
+                self::get(\App\Repositories\DocumentRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+                self::get(\App\Repositories\DocumentVersionRepository::class),
+                self::get(\App\Services\Doctrine\DoctrineDocumentAccessService::class),
+                self::get(\App\Services\Doctrine\DocumentComplianceService::class),
+                self::get(\App\Repositories\Doctrine\DocumentViewRepository::class),
+                self::get(\App\Services\Doctrine\DoctrineAcknowledgmentService::class),
+            ),
+            \App\Repositories\Doctrine\DocumentDoctrineRepository::class => new \App\Repositories\Doctrine\DocumentDoctrineRepository(),
+            \App\Repositories\Doctrine\DocumentReferenceDomainRepository::class => new \App\Repositories\Doctrine\DocumentReferenceDomainRepository(),
+            \App\Repositories\Doctrine\DocumentDiffusionLevelRepository::class => new \App\Repositories\Doctrine\DocumentDiffusionLevelRepository(),
+            \App\Repositories\Doctrine\DocumentAudienceRepository::class => new \App\Repositories\Doctrine\DocumentAudienceRepository(),
+            \App\Repositories\Doctrine\DocumentAcknowledgmentRepository::class => new \App\Repositories\Doctrine\DocumentAcknowledgmentRepository(),
+            \App\Repositories\Doctrine\DocumentViewRepository::class => new \App\Repositories\Doctrine\DocumentViewRepository(),
+            \App\Services\Doctrine\DocumentAudienceResolver::class => new \App\Services\Doctrine\DocumentAudienceResolver(
+                self::get(\App\Repositories\Doctrine\DocumentAudienceRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(UserRepository::class),
+            ),
+            \App\Services\Doctrine\DocumentComplianceService::class => new \App\Services\Doctrine\DocumentComplianceService(
+                self::get(\App\Services\Doctrine\DocumentAudienceResolver::class),
+                self::get(\App\Repositories\Doctrine\DocumentAcknowledgmentRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentViewRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+            ),
+            \App\Services\Doctrine\DoctrineDocumentAccessService::class => new \App\Services\Doctrine\DoctrineDocumentAccessService(
+                self::get(\App\Services\Documents\DocumentAccessService::class),
+                self::get(\App\Services\Doctrine\DocumentAudienceResolver::class),
+            ),
+            \App\Services\Doctrine\DoctrineReferenceService::class => new \App\Services\Doctrine\DoctrineReferenceService(
+                self::get(\App\Repositories\Doctrine\DocumentReferenceDomainRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+            ),
+            \App\Services\Doctrine\DoctrineAcknowledgmentService::class => new \App\Services\Doctrine\DoctrineAcknowledgmentService(
+                self::get(\App\Repositories\Doctrine\DocumentAcknowledgmentRepository::class),
+                self::get(\App\Services\Doctrine\DocumentComplianceService::class),
+                self::get(\App\Services\Doctrine\DocumentAudienceResolver::class),
+                self::get(\App\Services\Doctrine\DoctrineReferenceService::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Repositories\DocumentAuditRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\AdminDoctrineController::class => new \App\Controllers\Admin\Organization\AdminDoctrineController(
+                self::get(\App\Repositories\Doctrine\DocumentReferenceDomainRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
+                self::get(\App\Services\Doctrine\DocumentAudienceResolver::class),
+                self::get(\App\Services\Doctrine\DocumentComplianceService::class),
+                self::get(\App\Repositories\Doctrine\DocumentAcknowledgmentRepository::class),
+                self::get(\App\Repositories\Doctrine\DocumentViewRepository::class),
+                self::get(UserRepository::class),
             ),
             \App\Services\Portal\PortalSearchService::class => new \App\Services\Portal\PortalSearchService(
                 self::get(\App\Repositories\DocumentRepository::class),
@@ -1530,6 +1622,13 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
+            \App\Services\Personnel\PersonnelDutyPositionService::class => new \App\Services\Personnel\PersonnelDutyPositionService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\MemberIntegrationRepository::class),
+                self::get(TenantRepository::class),
+                \App\Core\Database::getPdo(),
             ),
             \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class => new \App\Services\Cron\Jobs\MemberIntegrationDailyCronJob(
                 self::get(TenantRepository::class),
@@ -2090,6 +2189,7 @@ class Container
             ),
             \App\Repositories\PlatformAlertRepository::class => new \App\Repositories\PlatformAlertRepository(),
             \App\Repositories\TenantAlertRepository::class => new \App\Repositories\TenantAlertRepository(),
+            \App\Repositories\TenantMiniArticleRepository::class => new \App\Repositories\TenantMiniArticleRepository(),
             \App\Repositories\TenantCustomMapRepository::class => new \App\Repositories\TenantCustomMapRepository(),
             \App\Services\Maps\TenantCustomMapStorage::class => new \App\Services\Maps\TenantCustomMapStorage(),
             \App\Controllers\Api\CustomMapsApiController::class => new \App\Controllers\Api\CustomMapsApiController(

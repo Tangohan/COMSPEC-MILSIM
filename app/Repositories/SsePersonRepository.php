@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -782,20 +783,24 @@ final class SsePersonRepository
         }
 
         $this->ensureSchema();
+        $pdo = Database::getPdo();
+        $lastEq = SqlText::normalizedEquals($pdo, 'last_name');
+        $firstEq = SqlText::normalizedEquals($pdo, 'first_name');
+        $aliasEq = SqlText::normalizedCoalesceEmptyEquals($pdo, 'alias');
         $row = $this->db->fetchOne(
             'SELECT * FROM sse_persons
-             WHERE tenant_id = :t AND context_id = :c
-               AND LOWER(TRIM(last_name)) = :last
-               AND LOWER(TRIM(first_name)) = :first
-               AND LOWER(TRIM(COALESCE(alias, \'\'))) = :alias
+             WHERE tenant_id = ? AND context_id = ?
+               AND ' . $lastEq . '
+               AND ' . $firstEq . '
+               AND ' . $aliasEq . '
              ORDER BY id ASC
              LIMIT 1',
             [
-                't' => $tenantId,
-                'c' => $contextId,
-                'last' => mb_strtolower(trim((string) ($data['last_name'] ?? ''))),
-                'first' => mb_strtolower(trim((string) ($data['first_name'] ?? ''))),
-                'alias' => mb_strtolower(trim((string) ($data['alias'] ?? ''))),
+                $tenantId,
+                $contextId,
+                mb_strtolower(trim((string) ($data['last_name'] ?? ''))),
+                mb_strtolower(trim((string) ($data['first_name'] ?? ''))),
+                mb_strtolower(trim((string) ($data['alias'] ?? ''))),
             ]
         );
 

@@ -83,6 +83,9 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
         $pa->method('inferCurrentAttachmentStartYmd')->willReturnCallback(
             static fn (int $tenantId, int $userId, bool $group): ?string => $group ? '2024-02-10' : '2024-01-05'
         );
+        $pa->method('inferEarliestAttachmentStartYmd')->willReturnCallback(
+            static fn (int $tenantId, int $userId, bool $group): ?string => $group ? '2024-02-10' : '2024-01-05'
+        );
 
         $ral = $this->createMock(RoleAssignmentLogRepository::class);
         $ral->method('isTableReady')->willReturn(true);
@@ -265,6 +268,7 @@ final class SeniorityDossierInferenceSyncServiceTest extends TestCase
 
         $pa = $this->createMock(PersonnelAssignmentRepository::class);
         $pa->method('inferCurrentAttachmentStartYmd')->willReturn(null);
+        $pa->method('inferEarliestAttachmentStartYmd')->willReturn(null);
 
         $ral = $this->createMock(RoleAssignmentLogRepository::class);
         $ral->method('isTableReady')->willReturn(false);

@@ -702,3 +702,72 @@
   margin-top: 0;
 }
 
+.ds-preview-notice {
+  width: 100%;
+  margin: 1rem 0 0.5rem;
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #d6b84b;
+  border-left: 4px solid #ca8a04;
+  background: #fefce8;
+  color: #3f3f46;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ds-preview-notice__badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #713f12;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ds-preview-modal {
+  width: min(34rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 0;
+  border-top: 6px solid #ca8a04;
+  background: #fff;
+  color: var(--ds-text);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.28);
+  font-family: var(--ds-font);
+}
+.ds-preview-modal::backdrop {
+  background: rgba(6, 20, 18, 0.72);
+  backdrop-filter: blur(3px);
+}
+.ds-preview-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ds-preview-modal h2 {
+  margin: 1rem 0 0;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+.ds-preview-modal__body {
+  margin: 1rem 0 1.5rem;
+  color: var(--ds-text-alt);
+}
+.ds-preview-modal__body p + p { margin-top: 0.8rem; }
+.ds-preview-modal__body a { color: var(--ds-primary); font-weight: 700; }
+.ds-preview-modal__close {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--ds-text-alt);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}

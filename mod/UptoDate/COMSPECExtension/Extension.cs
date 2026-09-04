@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Net.Http.Headers;
@@ -29,7 +30,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.6";
+    private const string ExtensionVersion = "1.18.12";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -38,6 +39,9 @@ public static partial class Extension
     private static string _callSign = "";
     /// <summary>Identifiant terminal ATAK mémorisé (RegisterTerminal / LogWrite).</summary>
     private static string _terminalUid = "";
+    private static string _pendingPairDeviceCode = "";
+    private static DateTimeOffset _pendingPairExpiresAt = DateTimeOffset.MinValue;
+    private static int _pendingPairPollSeconds = 2;
     private static readonly HttpClient HttpClient = CreateHttpClient(SyncTimeoutSeconds);
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
@@ -101,9 +105,16 @@ public static partial class Extension
 
     private static HttpClient CreateHttpClient(int timeoutSeconds)
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
+        var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds),
+            DefaultRequestVersion = HttpVersion.Version11,
+            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
+        };
         try
         {
+            // 100-continue : PHP / nginx voient un corps vide → 400 missing_image.
+            client.DefaultRequestHeaders.ExpectContinue = false;
             client.DefaultRequestHeaders.TryAddWithoutValidation(
                 "User-Agent",
                 "COMSPECExtension/" + ExtensionVersion);
@@ -115,6 +126,75 @@ public static partial class Extension
         return client;
     }
 
+    private static HttpRequestMessage CreateUploadPost(Uri uri, HttpContent content)
+    {
+        return new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Version = HttpVersion.Version11,
+            VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
+            Content = content
+        };
+    }
+
+    /// <summary>
+    /// Sérialise le multipart en un seul bloc avec Content-Length.
+    /// Sans ça, HttpClient part en chunked / HTTP/2 et PHP ne remplit pas $_FILES.
+    /// </summary>
+    private static async Task<ByteArrayContent> ToKnownLengthMultipartAsync(MultipartFormDataContent multipart)
+    {
+        try
+        {
+            await using var buffer = new MemoryStream();
+            await multipart.CopyToAsync(buffer).ConfigureAwait(false);
+            var bytes = buffer.ToArray();
+            var content = new ByteArrayContent(bytes);
+            var ct = multipart.Headers.ContentType?.ToString();
+            if (!string.IsNullOrEmpty(ct))
+                content.Headers.TryAddWithoutValidation("Content-Type", ct);
+            content.Headers.ContentLength = bytes.Length;
+            return content;
+        }
+        finally
+        {
+            try { multipart.Dispose(); } catch { /* ignore */ }
+        }
+    }
+
+    private static async Task<string> ReadUtf8SnippetAsync(HttpResponseMessage resp, int maxChars = 240)
+    {
+        try
+        {
+            var bytes = await resp.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            if (bytes.Length == 0) return "";
+            var n = Math.Min(bytes.Length, Math.Max(32, maxChars * 2));
+            var text = Encoding.UTF8.GetString(bytes, 0, n);
+            if (text.Length > maxChars) text = text.Substring(0, maxChars);
+            return text.Replace('\r', ' ').Replace('\n', ' ').Replace('|', '/');
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string JsonErrorToken(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return "";
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("error", out var err))
+            {
+                var s = (err.GetString() ?? "").Trim();
+                if (s.Length > 0 && s.Length <= 48)
+                    return s.Replace("|", "/");
+            }
+        }
+        catch { /* corps non JSON */ }
+        return "";
+    }
+
     // --- Photo sidecar (queue + watcher) : callExtension ne fait que signaler ---
     private sealed class ReconPhotoJob
     {
@@ -124,10 +204,12 @@ public static partial class Extension
         public string DedupKey = "";
         public bool NewestFallback;
         public DateTime EnqueuedUtc = DateTime.UtcNow;
-        /// <summary>recon = ATAK Photos ; sse_face = photo visage SEEK.</summary>
+        /// <summary>recon = ATAK Photos ; sse_face = photo visage SEEK ; sse_note = pièce de fiche.</summary>
         public string UploadKind = "recon";
         public string SsePersonId = "";
         public string SseAngle = "face";
+        public string SseNoteId = "";
+        public string SseNoteKind = "capture";
         public int Attempts;
     }
 
@@ -490,6 +572,7 @@ public static partial class Extension
 
     private static void EnsureDrainTimer()
     {
+        LoadQueueFromDisk();
         var period = Math.Clamp(_drainPeriodMs, 250, 2000);
         lock (DrainTimerLock)
         {
@@ -573,6 +656,8 @@ public static partial class Extension
             || url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/flight-manifest", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/operator/register", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/operator/sync", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -601,6 +686,7 @@ public static partial class Extension
             lock (CoalescedPositionLock)
                 _coalescedPosition = (url, jsonBody);
             EnsureDrainTimer();
+            PersistQueueToDisk();
             return;
         }
         if (PendingPosts.Count < MaxQueueSize)
@@ -608,6 +694,7 @@ public static partial class Extension
             PendingPosts.Enqueue((url, jsonBody));
             EnsureDrainTimer();
         }
+        PersistQueueToDisk();
     }
 
     private static bool TryTakeCoalescedPosition(out (string Url, string Body) item)
@@ -1049,6 +1136,11 @@ public static partial class Extension
             }
             while (sent < maxPerTick && PendingPosts.TryDequeue(out var item))
             {
+                if (!TryResolveQueuedUrl(ref item))
+                {
+                    EnqueueForRetry(item.Url, item.Body);
+                    break;
+                }
                 // Positions résiduelles dans l’ancienne FIFO : si le slot coalescé
                 // n’existait pas, on coalesce (dernière gagne) ; sinon ce sont des périmées.
                 if (IsPositionEndpoint(item.Url))
@@ -1066,60 +1158,374 @@ public static partial class Extension
             // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
             if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
                 TrySendQueuedPost(fromFifo);
+            PersistQueueToDisk();
         }
+    }
+
+    private static int _diskQueueLoaded;
+    private static readonly object DiskQueueLock = new();
+
+    private static string QueueRowJson(string url, string body)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("u", url ?? "");
+            writer.WriteString("b", body ?? "");
+            writer.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static string? SyncStoreDir()
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs)) return null;
+            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Sync");
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void PersistQueueToDisk()
+    {
+        try
+        {
+            var dir = SyncStoreDir();
+            if (dir is null) return;
+            lock (DiskQueueLock)
+            {
+                var fifo = Path.Combine(dir, "queue.jsonl");
+                var pos = Path.Combine(dir, "position.json");
+                var lines = new List<string>();
+                foreach (var item in PendingPosts.ToArray())
+                {
+                    if (lines.Count >= MaxQueueSize) break;
+                    lines.Add(QueueRowJson(item.Url, item.Body));
+                }
+                File.WriteAllLines(fifo, lines);
+                lock (CoalescedPositionLock)
+                {
+                    if (_coalescedPosition is { } p)
+                    {
+                        File.WriteAllText(pos, QueueRowJson(p.Url, p.Body));
+                    }
+                    else if (File.Exists(pos))
+                    {
+                        File.Delete(pos);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* hors ligne : ne jamais casser callExtension */
+        }
+    }
+
+    private static void LoadQueueFromDisk()
+    {
+        if (System.Threading.Interlocked.Exchange(ref _diskQueueLoaded, 1) != 0) return;
+        try
+        {
+            var dir = SyncStoreDir();
+            if (dir is null) return;
+            var fifo = Path.Combine(dir, "queue.jsonl");
+            var pos = Path.Combine(dir, "position.json");
+            if (File.Exists(fifo))
+            {
+                foreach (var line in File.ReadLines(fifo))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(line);
+                        var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
+                        var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
+                        if (u.Length > 0 && b.Length > 0 && PendingPosts.Count < MaxQueueSize)
+                            PendingPosts.Enqueue((u, b));
+                    }
+                    catch { /* ligne illisible */ }
+                }
+            }
+            if (File.Exists(pos))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(pos));
+                    var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
+                    var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
+                    if (u.Length > 0)
+                    {
+                        lock (CoalescedPositionLock)
+                            _coalescedPosition ??= (u, b);
+                    }
+                }
+                catch { /* position illisible */ }
+            }
+        }
+        catch
+        {
+            /* hors ligne */
+        }
+    }
+
+    /// <summary>
+    /// Les envois posés hors liaison utilisent queued:/chemin jusqu’à ce que le poste soit connu.
+    /// </summary>
+    private static bool TryResolveQueuedUrl(ref (string Url, string Body) item)
+    {
+        if (!item.Url.StartsWith("queued:", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (string.IsNullOrEmpty(_baseUrl))
+            return false;
+        var path = item.Url.Substring("queued:".Length);
+        if (!path.StartsWith('/'))
+            path = "/" + path;
+        if (!TryBuildRequestUri(_baseUrl, path, out var uri, out _) || uri is null)
+            return false;
+        item = (uri.AbsoluteUri, item.Body);
+        return true;
+    }
+
+    private static string QueueHeavyIngest(string path, string?[] args)
+    {
+        LoadQueueFromDisk();
+        if (args.Length < 1)
+            return FormatAtakExtArray("ERROR", "empty");
+        var json = args[0] ?? "";
+        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
+            return FormatAtakExtArray("ERROR", "empty");
+        var body = EnrichAtakPayload(json);
+        string url;
+        if (string.IsNullOrEmpty(_baseUrl)
+            || !TryBuildRequestUri(_baseUrl, path, out var uri, out _)
+            || uri is null)
+            url = "queued:" + path;
+        else
+            url = uri.AbsoluteUri;
+        EnqueueOrSend(url, body);
+        return FormatAtakExtArray("OK", "queued");
     }
 
     private static string HandleTerrainChunk(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
         if (DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _terrainChunkBlockedUntilTicks))
             return FormatAtakExtArray("ERROR", "unauthorized");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/terrain/chunk", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
-        return FormatAtakExtArray("OK", "queued");
+        return QueueHeavyIngest("/api/atak/terrain/chunk", args);
     }
 
     private static string HandleSceneIngest(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/scene/ingest", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
-        return FormatAtakExtArray("OK", "queued");
+        return QueueHeavyIngest("/api/atak/scene/ingest", args);
     }
 
     private static string HandleGeoIngest(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl))
-            return FormatAtakExtArray("ERROR", "not_connected");
-        if (_apiKey.Length == 0)
-            return FormatAtakExtArray("ERROR", "unauthorized");
-        if (args.Length < 1)
-            return FormatAtakExtArray("ERROR", "empty");
-        var json = args[0] ?? "";
-        if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
-            return FormatAtakExtArray("ERROR", "empty");
-        if (!TryBuildRequestUri(_baseUrl, "/api/atak/geo/ingest", out var uri, out var err) || uri is null)
-            return FormatAtakExtArray("ERROR", err);
-        EnqueueOrSend(uri.AbsoluteUri, EnrichAtakPayload(json));
+        return QueueHeavyIngest("/api/atak/geo/ingest", args);
+    }
+
+    private static string MapPackDir()
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs)) return "";
+            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Maps");
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private static string SanitizeMapWorld(string? world)
+    {
+        world = (world ?? "altis").Trim().ToLowerInvariant();
+        var sb = new StringBuilder();
+        foreach (var c in world)
+        {
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
+                sb.Append(c);
+        }
+        return sb.Length > 0 ? sb.ToString() : "altis";
+    }
+
+    private static string HandleMapPackRoot()
+    {
+        var dir = MapPackDir();
+        if (dir.Length == 0)
+            return FormatAtakExtArray("ERROR", "no_docs");
+        try
+        {
+            return FormatAtakExtArray("OK", new Uri(dir).AbsoluteUri);
+        }
+        catch
+        {
+            return FormatAtakExtArray("ERROR", "uri");
+        }
+    }
+
+    private static string HandleMapPackKeep(string?[] args)
+    {
+        if (args.Length < 4)
+            return FormatAtakExtArray("ERROR", "args");
+        var world = SanitizeMapWorld(args[0]);
+        if (!int.TryParse(args[1], out var z) || !int.TryParse(args[2], out var x) || !int.TryParse(args[3], out var y))
+            return FormatAtakExtArray("ERROR", "args");
+        z = Math.Clamp(z, 0, 7);
+        x = Math.Clamp(x, 0, 4096);
+        y = Math.Clamp(y, 0, 4096);
+        ThreadPool.QueueUserWorkItem(_ => DownloadMapTile(world, z, x, y));
         return FormatAtakExtArray("OK", "queued");
+    }
+
+    private static string HandleMapPackInstall(string?[] args)
+    {
+        var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            for (var zoom = 0; zoom <= 3; zoom++)
+            {
+                var n = 1 << zoom;
+                for (var x = 0; x < n; x++)
+                {
+                    for (var y = 0; y < n; y++)
+                        DownloadMapTile(world, zoom, x, y);
+                }
+            }
+        });
+        return FormatAtakExtArray("OK", "install");
+    }
+
+    private static string HandleMapPackCount(string?[] args)
+    {
+        var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        try
+        {
+            var dir = Path.Combine(MapPackDir(), world);
+            if (!Directory.Exists(dir))
+                return FormatAtakExtArray("OK", "0");
+            var n = Directory.GetFiles(dir, "*.png", SearchOption.AllDirectories).Length;
+            return FormatAtakExtArray("OK", n.ToString(CultureInfo.InvariantCulture));
+        }
+        catch
+        {
+            return FormatAtakExtArray("OK", "0");
+        }
+    }
+
+    private static void DownloadMapTile(string world, int z, int x, int y)
+    {
+        try
+        {
+            var root = MapPackDir();
+            if (root.Length == 0) return;
+            var folder = Path.Combine(root, world, z.ToString(CultureInfo.InvariantCulture));
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, x.ToString(CultureInfo.InvariantCulture) + "_" + y.ToString(CultureInfo.InvariantCulture) + ".png");
+            if (File.Exists(file) && new FileInfo(file).Length > 32)
+                return;
+            var url = "https://jetelain.github.io/Arma3Map/maps/" + world + "/" + z + "/" + x + "/" + y + ".png";
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            if (!resp.IsSuccessStatusCode) return;
+            var bytes = resp.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+            if (bytes is null || bytes.Length < 32) return;
+            File.WriteAllBytes(file, bytes);
+        }
+        catch
+        {
+            /* hors ligne : ne jamais casser callExtension */
+        }
+    }
+
+    private static string HandleSyncRoster()
+    {
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return "OK|";
+        if (!TryBuildRequestUri(_baseUrl, "/api/atak/sync/roster", out var uri, out _) || uri is null)
+            return "OK|";
+        return ServePollGet("Sync.Roster", uri.AbsoluteUri, (body, code) =>
+        {
+            if (code < 200 || code >= 300)
+                return PollHttpErr(code);
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("terminals", out var arr) || arr.ValueKind != JsonValueKind.Array)
+                    return "OK|";
+                var sb = new StringBuilder();
+                foreach (var t in arr.EnumerateArray())
+                {
+                    string Pick(string name)
+                    {
+                        if (!t.TryGetProperty(name, out var p) || p.ValueKind != JsonValueKind.String)
+                            return "";
+                        return (p.GetString() ?? "").Replace('\t', ' ').Replace('\n', ' ');
+                    }
+                    string NumOrDash(string name)
+                    {
+                        if (!t.TryGetProperty(name, out var p) || p.ValueKind == JsonValueKind.Null)
+                            return "-";
+                        if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n))
+                            return n.ToString(CultureInfo.InvariantCulture);
+                        return "-";
+                    }
+                    var live = t.TryGetProperty("live", out var lv) && lv.ValueKind == JsonValueKind.True;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Pick("uid")).Append('\t')
+                        .Append(Pick("label")).Append('\t')
+                        .Append(Pick("callsign")).Append('\t')
+                        .Append(live ? "1" : "0").Append('\t')
+                        .Append(NumOrDash("pending")).Append('\t')
+                        .Append(Pick("last_at"));
+                }
+                return PollOkClipped(sb.ToString());
+            }
+            catch
+            {
+                return "OK|";
+            }
+        });
+    }
+
+    private static string HandleSyncSnapshot(string?[] args)
+    {
+        int N(int i)
+        {
+            if (args.Length <= i) return 0;
+            return int.TryParse(args[i], out var v) ? Math.Max(0, v) : 0;
+        }
+        var uid = _terminalUid.Length > 0 ? _terminalUid : _gameDeviceId;
+        if (uid.Length == 0)
+            return FormatAtakExtArray("ERROR", "no_terminal");
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("terminal_uid", uid);
+            writer.WriteString("callsign", _callSign);
+            writer.WriteNumber("pending", N(0));
+            writer.WriteNumber("markers", N(1));
+            writer.WriteNumber("drawings", N(2));
+            writer.WriteNumber("routes", N(3));
+            writer.WriteNumber("intel", N(4));
+            writer.WriteNumber("tiles", N(5));
+            writer.WriteEndObject();
+        }
+        var json = Encoding.UTF8.GetString(stream.ToArray());
+        return QueueHeavyIngest("/api/atak/sync/snapshot", new[] { json });
     }
 
     /// <summary>Comptage synchrone de ce que le poste a déjà reçu (bâtiments, forêts, relief).</summary>
@@ -1468,7 +1874,7 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.16");
+            Output(output, outputSize, "COMSPECExtension 2.0.17");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -1815,7 +2221,7 @@ public static partial class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.16";
+            return "OK|COMSPECExtension 2.0.17";
         }
 
         if (function == "SetTelemetryBatch")
@@ -1826,12 +2232,125 @@ public static partial class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.16", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray("2.0.17", "COMSPEC Extension ATAK");
         }
 
         var gameAuth = HandleGameAuth(function, args);
         if (gameAuth.Length > 0)
             return gameAuth;
+
+        if (function == "GetCapabilities")
+        {
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll";
+        }
+
+        if (function == "PairStart" && args.Length >= 1)
+        {
+            try
+            {
+                var baseUrl = NormalizeBaseUrl(args[0] ?? "");
+                if (baseUrl.Length == 0) return "ERR|invalid_url";
+                _baseUrl = baseUrl;
+                var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
+                var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                if (steam.Length >= 10) _steamUid = steam;
+                var terminal = _terminalUid.Length > 0
+                    ? _terminalUid
+                    : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
+                _terminalUid = terminal;
+                if (!TryBuildRequestUri(baseUrl, "/api/atak/pair/start", out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                var payload = "{\"steam_uid\":\"" + EscapeJson(steam) + "\",\"mod_version\":\"" + EscapeJson(modVersion) + "\",\"terminal_uid\":\"" + EscapeJson(terminal) + "\"}";
+                using var pairCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(uri.ToString(), payload, pairCts.Token);
+                var body = ReadContentUtf8(resp, pairCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var pairDoc = JsonDocument.Parse(body);
+                var pairRoot = pairDoc.RootElement;
+                var deviceCode = pairRoot.TryGetProperty("device_code", out var dc) && dc.ValueKind == JsonValueKind.String ? dc.GetString() ?? "" : "";
+                var userCode = pairRoot.TryGetProperty("user_code", out var uc) && uc.ValueKind == JsonValueKind.String ? uc.GetString() ?? "" : "";
+                var verify = pairRoot.TryGetProperty("verification_uri", out var vu) && vu.ValueKind == JsonValueKind.String ? vu.GetString() ?? "" : "";
+                var ttl = pairRoot.TryGetProperty("expires_in", out var ei) && ei.ValueKind == JsonValueKind.Number ? ei.GetInt32() : 600;
+                var interval = pairRoot.TryGetProperty("interval", out var intEl) && intEl.ValueKind == JsonValueKind.Number ? intEl.GetInt32() : 2;
+                if (deviceCode.Length < 8 || userCode.Length < 4) return "ERR|invalid_response";
+                _pendingPairDeviceCode = deviceCode;
+                _pendingPairExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 30, 900));
+                _pendingPairPollSeconds = Math.Clamp(interval, 1, 15);
+                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds;
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        if (function == "PairStatus")
+        {
+            try
+            {
+                if (_pendingPairDeviceCode.Length < 8) return "ERR|no_pairing";
+                if (DateTimeOffset.UtcNow >= _pendingPairExpiresAt) { _pendingPairDeviceCode = ""; return "ERR|expired"; }
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/pair/status?device_code=" + Uri.EscapeDataString(_pendingPairDeviceCode), out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                using var pairStatusCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendGet(uri.ToString(), pairStatusCts.Token);
+                var body = ReadContentUtf8(resp, pairStatusCts.Token);
+                if ((int)resp.StatusCode == 404) return "OK|pending";
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                var status = root.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String ? (st.GetString() ?? "pending").ToLowerInvariant() : "pending";
+                if (status is "pending" or "waiting") return "OK|pending";
+                if (status is "expired") { _pendingPairDeviceCode = ""; return "ERR|expired"; }
+                if (status is not "approved") return "ERR|" + SanitizeIdentityField(status);
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
+                if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
+                if (root.TryGetProperty("military_id", out var mi) && mi.ValueKind == JsonValueKind.String) _militaryId = mi.GetString() ?? _militaryId;
+                if (root.TryGetProperty("tokens", out _))
+                    _ = ApplyGameAuthResponse(body, "PairStatus");
+                _pendingPairDeviceCode = "";
+                return (_sessionToken.Length > 0 || _gameAccessToken.Length > 0)
+                    ? "OK|approved"
+                    : "ERR|invalid_response";
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        if (function == "RedeemRecoveryCode" && args.Length >= 2)
+        {
+            try
+            {
+                var baseUrl = NormalizeBaseUrl(args[0] ?? "");
+                var code = (args[1] ?? "").Trim().ToUpperInvariant();
+                var steam = args.Length > 2 ? (args[2] ?? "").Trim() : _steamUid;
+                var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
+                _baseUrl = baseUrl;
+                if (steam.Length >= 10) _steamUid = steam;
+                var terminal = _terminalUid.Length > 0
+                    ? _terminalUid
+                    : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
+                _terminalUid = terminal;
+                if (!TryBuildRequestUri(baseUrl, "/api/atak/recovery/redeem", out var uri, out var err) || uri is null)
+                    return "ERR|" + err;
+                var payload = "{\"code\":\"" + EscapeJson(code) + "\",\"steam_uid\":\"" + EscapeJson(steam) + "\",\"mod_version\":\"" + EscapeJson(modVersion) + "\",\"terminal_uid\":\"" + EscapeJson(terminal) + "\"}";
+                using var recoveryCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(uri.ToString(), payload, recoveryCts.Token);
+                var body = ReadContentUtf8(resp, recoveryCts.Token);
+                if ((int)resp.StatusCode == 409) return "ERR|used";
+                if ((int)resp.StatusCode == 400 || (int)resp.StatusCode == 404) return "ERR|invalid";
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
+                if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
+                if (root.TryGetProperty("tokens", out _))
+                    _ = ApplyGameAuthResponse(body, "RecoveryCode");
+                return (_sessionToken.Length > 0 || _gameAccessToken.Length > 0)
+                    ? "OK|authenticated"
+                    : "ERR|invalid_response";
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
 
         if (function == "Terrain.Chunk")
         {
@@ -1851,6 +2370,36 @@ public static partial class Extension
         if (function == "Theater.Coverage")
         {
             return HandleTheaterCoverage(args);
+        }
+
+        if (function == "MapPack.Root")
+        {
+            return HandleMapPackRoot();
+        }
+
+        if (function == "MapPack.Keep")
+        {
+            return HandleMapPackKeep(args);
+        }
+
+        if (function == "MapPack.Install")
+        {
+            return HandleMapPackInstall(args);
+        }
+
+        if (function == "MapPack.Count")
+        {
+            return HandleMapPackCount(args);
+        }
+
+        if (function == "Sync.Roster")
+        {
+            return HandleSyncRoster();
+        }
+
+        if (function == "Sync.Snapshot")
+        {
+            return HandleSyncSnapshot(args);
         }
 
         // Captures locales (dossier Screenshots du profil) — hors ligne, sans liaison Athena.
@@ -2029,6 +2578,7 @@ public static partial class Extension
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
             _baseUrl = normalized;
+            EnsureDrainTimer();
 
             var prevKey = _apiKey;
             var prevTenant = _tenantId;
@@ -2104,6 +2654,13 @@ public static partial class Extension
                 });
             }
             return "OK";
+        }
+
+        // Fiche opérateur observée (identité / visage / loadout / versions) — distincte de UpdatePosition.
+        // OperatorProfile = alias Codex [reason, json, uid] ; Register/Sync = [json, steam].
+        if (function is "OperatorRegister" or "OperatorSync" or "OperatorProfile")
+        {
+            return HandleOperatorProfile(function, args);
         }
 
         // Déconnexion explicite (sortie mission / quit) — sync court avant mort du process.
@@ -5516,10 +6073,20 @@ public static partial class Extension
                     var normalized = NormalizeBaseUrl(args[0]);
                     if (normalized.Length == 0) return;
                     _baseUrl = normalized;
+                    EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     ApplyApiKeyHeaders(key);
                     if (args.Length > 2 && _gameAccessToken.Length == 0)
                         ApplyTenantId(args[2]);
+                    // Conserver exactement la même identité que le chemin synchrone. Sans ces
+                    // arguments, un Connect passé par le fallback perdait le SteamID puis chaque
+                    // UpdatePosition était refusé par Athena comme anonyme.
+                    if (args.Length > 3)
+                        ApplySteamUid(args[3]);
+                    if (args.Length > 4)
+                        ApplyModVersion(args[4]);
+                    if (args.Length > 5)
+                        ApplyBloodType(args[5]);
                     if (_apiKey.Length > 0)
                         StartClientInitAsync();
                 }
@@ -5584,6 +6151,11 @@ public static partial class Extension
                         || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
+                // Ne jamais marteler l'API avec un acteur joueur anonyme. getPlayerUID peut rester
+                // vide quelques instants au JIP : la boucle SQF réessaiera naturellement dès que
+                // Steam sera disponible. Les contacts relais restent autorisés via la session liée.
+                if (!isProxyContact && steamNorm.Length == 0)
+                    return;
                 // Mémo pose pour uploads photo : jamais depuis une IA / un téléphone relais
                 // (sinon l’indicatif opérateur devient ALLY-… ou l’inverse).
                 if (!isProxyContact && callSign.Length > 0)
@@ -5683,6 +6255,12 @@ public static partial class Extension
                 }
                 var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
+                return;
+            }
+
+            if (function == "OperatorProfile")
+            {
+                // Accusé synchrone dans TryGetSyncResponse (HandleOperatorProfile).
                 return;
             }
 
@@ -5929,7 +6507,7 @@ public static partial class Extension
 
             if (function == "UploadSseNoteAttachment" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                // Géré en synchrone par TryGetSyncResponse (BeginUploadSseNoteAttachment).
+                // Géré en sync court par TryGetSyncResponse (file + worker, comme NotifyNewPhoto).
                 return;
             }
 
@@ -5989,9 +6567,9 @@ public static partial class Extension
         EnsureScreenshotQuota();
 
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
-        // Capture visage SEEK : canal fiche, pas reconnaissance. Avant le dédup
-        // pour ne pas bloquer UploadSsePhoto sur le même fichier.
-        if (IsSseIdentityCaptureName(rawPath))
+        // Capture visage SEEK / pièce de fiche : canal SSE, pas reconnaissance.
+        // Avant le dédup pour ne pas bloquer UploadSsePhoto / UploadSseNoteAttachment.
+        if (IsSseIdentityCaptureName(rawPath) || IsSseNoteCaptureName(rawPath))
             return "OK|ignored";
 
         var author = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
@@ -6179,9 +6757,11 @@ public static partial class Extension
     /// </summary>
     private static async Task ProcessReconPhotoJobAsync(ReconPhotoJob job)
     {
-        var cbName = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase)
+        var isSseFace = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase);
+        var isSseNote = string.Equals(job.UploadKind, "sse_note", StringComparison.OrdinalIgnoreCase);
+        var cbName = isSseFace
             ? "SsePhotoUpload"
-            : "PhotoUpload";
+            : (isSseNote ? "SseNoteAttachment" : "PhotoUpload");
 
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
@@ -6199,13 +6779,14 @@ public static partial class Extension
         // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~12 s.
         // Chemins Photo Library morts (srcdir_missing) : chercher par nom + captures
         // écrites depuis l’enqueue (screenshot Arma / watcher), sans abandon immédiat.
-        var isSseFace = string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase);
         for (var attempt = 0; attempt < 25; attempt++)
         {
             var fb = newestFallback;
             if (job.NewestFallback && attempt >= 0)
                 fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
-            resolved = ResolveLocalImagePath(job.RawPath, attempt >= 2 ? fb : newestFallback);
+            resolved = ResolveLocalImagePath(
+                job.RawPath,
+                (isSseFace || isSseNote) ? null : (attempt >= 2 ? fb : newestFallback));
             if (resolved == null && attempt >= 1)
             {
                 var leaf = Path.GetFileName((job.RawPath ?? "").Replace('/', '\\'));
@@ -6215,7 +6796,10 @@ public static partial class Extension
             if (resolved == null && isSseFace && attempt >= 2)
                 resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
                     Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
-            if (resolved == null && attempt >= 1)
+            if (resolved == null && isSseNote && attempt >= 2)
+                resolved = FindNewestMatchingPrefix("COMSPEC_Fiche_", TimeSpan.FromSeconds(
+                    Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
+            if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
                 resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
             if (resolved != null) break;
             try
@@ -6227,7 +6811,7 @@ public static partial class Extension
                 if (parentMissing && !string.IsNullOrWhiteSpace(orphan))
                 {
                     resolved = FindScreenshotByFileName(orphan);
-                    if (resolved == null && attempt >= 1)
+                    if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
                         resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
                     if (resolved != null)
                         break;
@@ -6298,7 +6882,14 @@ public static partial class Extension
             return;
         }
 
-        if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath))
+        if (isSseNote)
+        {
+            await ProcessSseNoteAttachmentUploadAsync(job, resolved, identityKey).ConfigureAwait(false);
+            return;
+        }
+
+        if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
+            || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
@@ -6331,8 +6922,22 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
-            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            var fileContent = new StreamContent(fileStream);
+            byte[] imageBytes;
+            await using (var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            await using (var ms = new MemoryStream())
+            {
+                await fileStream.CopyToAsync(ms).ConfigureAwait(false);
+                imageBytes = ms.ToArray();
+            }
+            if (imageBytes.Length < 24)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("PhotoUpload", "ERR|empty_image|" + fileName);
+                return;
+            }
+            var fileContent = new ByteArrayContent(imageBytes);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
 
@@ -6346,8 +6951,9 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
-            multipart = null; // ownership transferred to request
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
+            multipart = null;
+            req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
@@ -6358,6 +6964,7 @@ public static partial class Extension
                 return;
             }
 
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
             if (code == 503 || code == 429)
             {
@@ -6369,7 +6976,8 @@ public static partial class Extension
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
-            InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}");
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
@@ -6448,6 +7056,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(fullPath)) return;
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
         if (IsSseIdentityCaptureName(fullPath)) return;
+        if (IsSseNoteCaptureName(fullPath)) return;
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.
@@ -6652,9 +7261,14 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
-            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            var fileContent = new StreamContent(fileStream);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
+            var imageBytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
+            if (imageBytes == null || imageBytes.Length < 24)
+            {
+                RequeuePhotoWaitingForFlush(job, "SsePhotoUpload", fileName);
+                return;
+            }
+            var fileContent = new ByteArrayContent(imageBytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, imageBytes));
             multipart.Add(fileContent, "image", fileName);
 
             var apiPath = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
@@ -6667,8 +7281,9 @@ public static partial class Extension
                 return;
             }
 
-            req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = multipart };
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
             multipart = null;
+            req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
@@ -6679,6 +7294,7 @@ public static partial class Extension
                 return;
             }
 
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
             if (code == 503 || code == 429)
             {
@@ -6690,7 +7306,8 @@ public static partial class Extension
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
                 _sessionToken = "";
-            InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}");
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
@@ -6705,30 +7322,85 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Joint une capture ou un fichier local à une fiche de renseignement.
+    /// Joint une capture à une fiche de renseignement : même file que NotifyNewPhoto
+    /// (résolution, miroir Captures, attente disque hors thread jeu).
     /// Args : [noteId, cheminOuMotif, auteur, nature, posX, posY, posZ, légende, repère]
     /// </summary>
     private static string BeginUploadSseNoteAttachment(string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return "ERR|not_connected";
         var noteId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
         if (string.IsNullOrEmpty(noteId)) return "ERR|note_id_empty";
+
+        EnsureScreenshotQuota();
+
         var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
-        var author = args.Length > 2 && !string.IsNullOrEmpty(args[2]) ? args[2]! : "Terrain";
+        var author = args.Length > 2 && !string.IsNullOrWhiteSpace(args[2])
+            ? args[2]!.Trim()
+            : (_callSign.Length > 0 ? _callSign : "Terrain");
         var kind = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "capture";
+        var trimmedPath = rawPath.Trim().Trim('"').Trim('\'');
 
-        string? resolved = null;
-        if (!string.IsNullOrWhiteSpace(rawPath))
-            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
-        if (resolved == null)
-            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
-        if (resolved == null) return "ERR|file_not_found";
+        var dedupKey = NormalizePhotoDedupKey("note|" + noteId + "|" + (trimmedPath.Length > 0 ? trimmedPath : "newest"));
+        if (!TryClaimPhotoDedup(dedupKey))
+            return "OK|duplicate";
+        if (PhotoJobs.Count >= PhotoQueueMax)
+            return "ERR|queue_full";
 
+        var meta = new string?[Math.Max(args.Length, 9)];
+        for (var i = 0; i < args.Length; i++)
+            meta[i] = args[i];
+        meta[0] = noteId;
+        meta[1] = trimmedPath;
+        meta[2] = author;
+        meta[3] = kind;
+
+        PhotoJobs.Enqueue(new ReconPhotoJob
+        {
+            RawPath = trimmedPath,
+            Author = author,
+            Meta = meta,
+            DedupKey = dedupKey,
+            NewestFallback = false,
+            EnqueuedUtc = DateTime.UtcNow,
+            UploadKind = "sse_note",
+            SseNoteId = noteId,
+            SseNoteKind = kind
+        });
+        EnsureScreenshotWatchers();
+        EnsurePhotoWorker();
+        return "OK|queued";
+    }
+
+    private static async Task ProcessSseNoteAttachmentUploadAsync(ReconPhotoJob job, string resolved, string? identityKey)
+    {
+        var noteId = !string.IsNullOrWhiteSpace(job.SseNoteId)
+            ? job.SseNoteId.Trim()
+            : (job.Meta.Length > 0 ? (job.Meta[0] ?? "").Trim() : "");
+        if (string.IsNullOrEmpty(noteId))
+        {
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            InvokeCallback("SseNoteAttachment", "ERR|note_id_empty|" + Path.GetFileName(resolved));
+            return;
+        }
+
+        MultipartFormDataContent? multipart = null;
+        HttpRequestMessage? req = null;
         try
         {
             var bytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
-            if (bytes == null || bytes.Length < 32) return "ERR|file_empty";
-            var multipart = new MultipartFormDataContent();
+            if (bytes == null || bytes.Length < 32)
+            {
+                RequeuePhotoWaitingForFlush(job, "SseNoteAttachment", Path.GetFileName(resolved) ?? "");
+                return;
+            }
+
+            var args = job.Meta ?? Array.Empty<string?>();
+            var author = !string.IsNullOrWhiteSpace(job.Author) ? job.Author : "Terrain";
+            var kind = !string.IsNullOrWhiteSpace(job.SseNoteKind) ? job.SseNoteKind : "capture";
+            multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(kind), "kind");
             AddOptionalForm(multipart, "pos_x", args, 4);
@@ -6742,12 +7414,54 @@ public static partial class Extension
             var fileContent = new ByteArrayContent(bytes);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
             multipart.Add(fileContent, "piece", fileName);
-            var path = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
-            return QueueMultipartUpload(path, multipart);
+
+            var apiPath = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
+            if (!TryBuildRequestUri(_baseUrl, apiPath, out var uri, out var err) || uri is null)
+            {
+                ReleasePhotoDedup(job.DedupKey);
+                ReleasePhotoDedup(identityKey);
+                try { multipart.Dispose(); } catch { /* ignore */ }
+                InvokeCallback("SseNoteAttachment", "ERR|" + err + "|" + fileName);
+                return;
+            }
+
+            var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
+            multipart = null;
+            req = CreateUploadPost(uri, body);
+            AttachApiKeyHeader(req);
+            using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+            var code = (int)resp.StatusCode;
+            if (resp.IsSuccessStatusCode)
+            {
+                NoteRateLimitCleared();
+                InvokeCallback("SseNoteAttachment", "OK|uploaded|" + fileName);
+                return;
+            }
+
+            var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
+            NotePostError(code, uri.AbsoluteUri);
+            if (code == 503 || code == 429)
+            {
+                NoteRateLimited(resp);
+                RequeuePhotoAfterTransient(job, identityKey, "SseNoteAttachment", $"http_{code}", fileName);
+                return;
+            }
+            ReleasePhotoDedup(job.DedupKey);
+            ReleasePhotoDedup(identityKey);
+            if (code == 401 && _sessionToken.Length > 0)
+                _sessionToken = "";
+            var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch
         {
-            return "ERR|read_failed";
+            NoteNetworkHiccup();
+            RequeuePhotoAfterTransient(job, identityKey, "SseNoteAttachment", "network", Path.GetFileName(resolved) ?? "");
+        }
+        finally
+        {
+            try { req?.Dispose(); } catch { /* ignore */ }
+            try { multipart?.Dispose(); } catch { /* ignore */ }
         }
     }
 
@@ -6899,58 +7613,35 @@ public static partial class Extension
             return "ERR|" + err;
         }
         var url = uri.AbsoluteUri;
-        try
+        _ = Task.Run(async () =>
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = multipart };
-            AttachApiKeyHeader(req);
-            _ = UploadHttpClient.SendAsync(req).ContinueWith(t =>
+            HttpRequestMessage? req = null;
+            try
             {
-                try
+                var body = await ToKnownLengthMultipartAsync(multipart).ConfigureAwait(false);
+                req = CreateUploadPost(uri, body);
+                AttachApiKeyHeader(req);
+                using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
+                var code = (int)resp.StatusCode;
+                if (resp.IsSuccessStatusCode)
                 {
-                    HttpResponseMessage? resp = null;
-                    if (t.Status == TaskStatus.RanToCompletion)
-                        resp = t.Result;
-                    if (resp == null)
-                    {
-                        NotePostError(0, url);
-                        return;
-                    }
-                    var code = (int)resp.StatusCode;
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        NoteRateLimitCleared();
-                        return;
-                    }
-                    // Session périmée attachée en en-tête : oublier et retenter une fois sans jeton.
-                    if (code == 401 && _sessionToken.Length > 0)
-                    {
-                        _sessionToken = "";
-                        try
-                        {
-                            // Le contenu a déjà été consommé — pas de retry multipart ici.
-                            // Le soft-fail serveur (invalid_session_ignored) couvre le cas courant.
-                        }
-                        catch { /* ignore */ }
-                    }
-                    NotePostError(code, url);
+                    NoteRateLimitCleared();
+                    return;
                 }
-                catch
-                {
-                    NotePostError(-1, url);
-                }
-                finally
-                {
-                    try { req.Dispose(); } catch { /* ignore */ }
-                }
-            });
-            return "OK|queued";
-        }
-        catch
-        {
-            try { multipart.Dispose(); } catch { /* ignore */ }
-            NotePostError(-1, url);
-            return "ERR|network";
-        }
+                if (code == 401 && _sessionToken.Length > 0)
+                    _sessionToken = "";
+                NotePostError(code, url);
+            }
+            catch
+            {
+                NotePostError(-1, url);
+            }
+            finally
+            {
+                try { req?.Dispose(); } catch { /* ignore */ }
+            }
+        });
+        return "OK|queued";
     }
 
     private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg"];
@@ -6968,6 +7659,22 @@ public static partial class Extension
         {
             var n = Path.GetFileName(pathOrName ?? "") ?? "";
             return n.StartsWith("COMSPEC_SSE_Face", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Capture jointe à une fiche « COMSPEC_Fiche_… » : bureau SSE, pas galerie reconnaissance.
+    /// </summary>
+    private static bool IsSseNoteCaptureName(string? pathOrName)
+    {
+        try
+        {
+            var n = Path.GetFileName(pathOrName ?? "") ?? "";
+            return n.StartsWith("COMSPEC_Fiche_", StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
@@ -7472,6 +8179,8 @@ public static partial class Extension
             var isJpeg = ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
                 || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
 
+            var isSseNamed = IsSseIdentityCaptureName(raw) || IsSseNoteCaptureName(raw);
+
             if (!string.IsNullOrWhiteSpace(raw))
             {
                 if (isJpeg)
@@ -7482,13 +8191,18 @@ public static partial class Extension
                     if (!string.IsNullOrWhiteSpace(leaf))
                         resolved = FindScreenshotByFileName(leaf);
                 }
+                else if (isSseNamed)
+                {
+                    // Fiche / visage : uniquement ce nom, pas une autre capture récente.
+                    resolved = ResolveLocalImagePath(raw, newestFallback: null);
+                }
                 else
                 {
                     resolved = ResolveLocalImagePath(raw, TimeSpan.FromSeconds(45));
                 }
             }
 
-            if (resolved == null && !isJpeg)
+            if (resolved == null && !isJpeg && !isSseNamed)
                 resolved = FindNewestScreenshot(TimeSpan.FromSeconds(45));
             if (resolved == null)
                 return "ERR|file_not_found";
@@ -8085,6 +8799,183 @@ public static partial class Extension
         catch
         {
             return trimmed;
+        }
+    }
+
+    /// <summary>
+    /// POST /api/atak/operator/register|sync — fiche observée, distincte de la position.
+    /// 404 = portail pas encore déployé : OK|pending (le jeu continue).
+    /// Steam mémorisé côté DLL est l’autorité ; le nom / indicatif ne lient jamais un compte.
+    /// </summary>
+    private static string HandleOperatorProfile(string function, string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl))
+            return FormatAtakExtArray("ERROR", "not_connected");
+        if (_apiKey.Length == 0 && _gameAccessToken.Length == 0)
+            return FormatAtakExtArray("ERROR", "unauthorized");
+
+        string json;
+        if (string.Equals(function, "OperatorProfile", StringComparison.Ordinal))
+        {
+            // Codex stub : [reason, json, uid]
+            var reason = args.Length > 0 ? (args[0] ?? "SYNC") : "SYNC";
+            json = args.Length > 1 ? (args[1] ?? "") : "";
+            if (args.Length > 2)
+                ApplySteamUid(args[2]);
+            function = reason.Equals("REGISTER", StringComparison.OrdinalIgnoreCase)
+                ? "OperatorRegister"
+                : "OperatorSync";
+        }
+        else
+        {
+            json = args.Length > 0 ? (args[0] ?? "") : "";
+            if (args.Length > 1)
+                ApplySteamUid(args[1]);
+        }
+
+        if (string.IsNullOrWhiteSpace(json))
+            return FormatAtakExtArray("ERROR", "payload empty");
+        if (_steamUid.Length == 0)
+            return FormatAtakExtArray("ERROR", "steam_required");
+
+        var path = string.Equals(function, "OperatorRegister", StringComparison.Ordinal)
+            ? "/api/atak/operator/register"
+            : "/api/atak/operator/sync";
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+        try
+        {
+            if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var err) || uri is null)
+                return FormatAtakExtArray("ERROR", err);
+            var payload = EnrichOperatorProfilePayload(json);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token);
+            var body = ReadContentUtf8(resp, cts.Token);
+            if (resp.IsSuccessStatusCode)
+                return FormatOperatorProfileResponse(body);
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 404)
+                return FormatAtakExtArray("OK", "pending");
+            if (code == 401 || code == 403)
+                return FormatAtakExtArray("ERROR", "unauthorized");
+            if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "migration_required");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    private static string EnrichOperatorProfilePayload(string jsonBody)
+    {
+        var enriched = EnrichAtakPayload(jsonBody);
+        try
+        {
+            using var doc = JsonDocument.Parse(enriched);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                var hasTenant = false;
+                var hasSteamUid = false;
+                var hasSteamId = false;
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.NameEquals("tenant_id")) hasTenant = true;
+                    if (prop.NameEquals("steam_uid")) hasSteamUid = true;
+                    if (prop.NameEquals("steam_id")) hasSteamId = true;
+                    prop.WriteTo(writer);
+                }
+                if (!hasTenant && _tenantId.Length > 0)
+                {
+                    if (long.TryParse(_tenantId, out var tid) && tid > 0)
+                        writer.WriteNumber("tenant_id", tid);
+                    else
+                        writer.WriteString("tenant_id", _tenantId);
+                }
+                if (_steamUid.Length > 0)
+                {
+                    if (!hasSteamUid)
+                        writer.WriteString("steam_uid", _steamUid);
+                    if (!hasSteamId)
+                        writer.WriteString("steam_id", _steamUid);
+                    writer.WriteString("steam_uid_session", _steamUid);
+                }
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return enriched;
+        }
+    }
+
+    private static string FormatOperatorProfileResponse(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            var linked = true;
+            if (root.TryGetProperty("operator_linked", out var ol))
+            {
+                linked = ol.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Number => ol.GetInt32() != 0,
+                    JsonValueKind.String => ol.GetString() is "1" or "true" or "True",
+                    _ => true
+                };
+            }
+            var profileId = 0;
+            if (root.TryGetProperty("profile_id", out var pid))
+            {
+                if (pid.ValueKind == JsonValueKind.Number)
+                    profileId = pid.GetInt32();
+                else
+                    int.TryParse(pid.GetString(), out profileId);
+            }
+            var disc = 0;
+            if (root.TryGetProperty("discrepancies", out var d))
+            {
+                if (d.ValueKind == JsonValueKind.Number)
+                    disc = d.GetInt32();
+                else
+                    int.TryParse(d.GetString(), out disc);
+            }
+            var update = false;
+            if (root.TryGetProperty("update_required", out var ur))
+            {
+                update = ur.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.Number => ur.GetInt32() != 0,
+                    JsonValueKind.String => ur.GetString() is "1" or "true" or "True",
+                    _ => false
+                };
+            }
+            var detail =
+                $"linked={(linked ? 1 : 0)};profile_id={profileId};discrepancies={disc};update_required={(update ? 1 : 0)}";
+            return FormatAtakExtArray("OK", detail);
+        }
+        catch
+        {
+            return FormatAtakExtArray("OK", "linked=1;profile_id=0;discrepancies=0;update_required=0");
         }
     }
 

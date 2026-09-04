@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class SiteRoleAssignmentRepository
@@ -147,13 +148,13 @@ final class SiteRoleAssignmentRepository
         }
 
         try {
-            $in = implode(',', array_fill(0, count($slugs), '?'));
+            $in = SqlText::inPlaceholders($this->pdo, 'r.slug', count($slugs));
             $stmt = $this->pdo->prepare(
                 "SELECT DISTINCT sra.email_normalized
                  FROM site_role_assignments sra
                  INNER JOIN roles r ON r.id = sra.role_id AND r.tenant_id IS NULL AND r.role_layer = 'site'
                  WHERE sra.revoked_at IS NULL
-                   AND r.slug IN ({$in})"
+                   AND {$in}"
             );
             $stmt->execute($slugs);
             $rows = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];

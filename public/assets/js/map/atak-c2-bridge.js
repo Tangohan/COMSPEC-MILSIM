@@ -117,7 +117,16 @@
 
   function wireUnitFeed() {
     window.addEventListener('atak:units-updated', function (ev) {
-      var units = (ev.detail && ev.detail.units) || [];
+      // Plusieurs modules emettent aussi cet evenement comme simple signal de
+      // rafraichissement (par exemple avec uniquement `{ count }`). Ne pas
+      // interpreter l'absence de `units` comme une liste vide : l'evenement
+      // suivant le rendu legacy effacerait aussitot tous les symboles C2.
+      var units = ev.detail && Array.isArray(ev.detail.units)
+        ? ev.detail.units
+        : (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function'
+          ? window.ATAKUnits.getUnits()
+          : null);
+      if (!Array.isArray(units)) return;
       pushUnits(units);
     });
   }
@@ -133,8 +142,11 @@
     } catch (eP) { prefs = {}; }
     var entities = state.lastUnits.map(normalizeUnit).filter(function (e) {
       if (!e || e.id == null || (e.x == null && e.lat == null)) return false;
-      if (e.status === 'LOST' && !e.keepLastKnown) return false;
-      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown) return false;
+      // Une position BFT humaine connue reste une information tactique partagee.
+      // Ne jamais faire disparaitre un joueur a cause d'un etat de liaison ou
+      // d'un reglage local : LOST/STALE change son apparence, pas sa visibilite.
+      if (e.status === 'LOST' && !e.keepLastKnown && !e.isPlayer) return false;
+      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown && !e.isPlayer) return false;
       return true;
     });
     state.manager.setEntities(entities);
@@ -146,7 +158,14 @@
 
     if (state.tracks && window.ATAKUnits && typeof window.ATAKUnits.getTrailBuffers === 'function') {
       try {
-        state.tracks.updateTracks(window.ATAKUnits.getTrailBuffers() || []);
+        var trailPrefs = window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function'
+          ? window.ATAKMap.getDisplayPrefs()
+          : {};
+        var trails = trailPrefs.showUnitTrails === false ? [] : (window.ATAKUnits.getTrailBuffers() || []).filter(function (track) {
+          var kind = track.kind || 'infantry';
+          return trailPrefs['showUnitTrail_' + kind] !== false;
+        });
+        state.tracks.updateTracks(trails);
       } catch (e) { /* optional */ }
     }
   }
@@ -170,15 +189,17 @@
     if (health === 'dead' || health === 'kia') live = 'KIA';
     else if (health === 'wounded' || health === 'injured' || health === 'unconscious') live = 'DEGRADED';
 
-    var keepLastKnown = !!(extra.ally_ai || extra.enemy_ai || extra.is_ai);
-    if (!keepLastKnown) {
-      var src = String(extra.source || '').toLowerCase();
-      keepLastKnown = src === 'ally' || src === 'enemy';
+    var isAi = !!(extra.ally_ai || extra.enemy_ai || extra.is_ai);
+    if (!isAi) {
+      var source = String(extra.source || '').toLowerCase();
+      isAi = source === 'ally' || source === 'enemy';
     }
-    if (!keepLastKnown) {
-      var csAi = String(u.call_sign || u.callsign || '').toUpperCase();
-      keepLastKnown = csAi.indexOf('ALLY-') === 0 || csAi.indexOf('ENY-') === 0;
+    if (!isAi) {
+      var aiCallsign = String(u.call_sign || u.callsign || '').toUpperCase();
+      isAi = aiCallsign.indexOf('ALLY-') === 0 || aiCallsign.indexOf('ENY-') === 0;
     }
+
+    var keepLastKnown = isAi;
 
     var ORIGIN_EPS = 0.5;
     var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : (u.x != null && u.x !== '' ? parseFloat(u.x) : NaN);
@@ -215,6 +236,7 @@
       affiliation: normalizeAffiliation(extra.affiliation || extra.affil || u.affiliation || u.side || 'friend'),
       type: mapPlatformType(u, extra),
       status: live,
+      isPlayer: !isAi,
       keepLastKnown: keepLastKnown,
       heading: headingRounded,
       speed: u.speed != null ? Math.round(Number(u.speed) || 0) : extra.speed,

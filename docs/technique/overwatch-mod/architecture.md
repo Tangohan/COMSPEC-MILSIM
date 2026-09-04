@@ -35,7 +35,7 @@ Préfixe PBO : `z\comspec_overwatch\addons\{main|connect|atak_athena|mavik_compa
 
 | Domaine | Exemples |
 |---|---|
-| Liaison | Connexion session, position, déconnexion |
+| Liaison | Connexion session, **fiche opérateur jeu** (Steam, visage, loadout, versions), position, déconnexion |
 | Hub & UI | Dialogs hub, tablette, téléphone, rapports |
 | Roleplay | Transmission, zones, dommages, overlays |
 | Rapports & intel | SALUTE, SPOTREP, POI, photos recon |

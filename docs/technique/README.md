@@ -2,6 +2,13 @@
 
 Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : architecture, dépôt, configuration, sécurité et intégrations.
 
+La documentation **ATHENA C2** (doctrine, SOP, ICD, sécurité, registre de capacités) est le corpus contrôlé :
+
+- Index : [docs/README.md](../README.md)
+- Références : FM-A3-01, SOP-A3-01, ATP-A3-01, TM-A3-11, ICD-A3-01, SEC-A3-01, ATP-A3-11, TM-A3-21, TM-A3-31, REG-A3-01
+
+Les fiches ci-dessous restent des compagnons d’atelier (portail PHP, LMS, plans). Elles ne remplacent pas ICD-A3-01 ni REG-A3-01.
+
 ## Mod Overwatch (documentation portail)
 
 Fiches destinées aux moddeurs / intégrateurs, exposées sur `/documentation/references` (sans surface réseau du portail) :
@@ -22,13 +29,12 @@ Sources Markdown du dépôt mod : `mod/UptoDate/docs/`.
 | [Architecture applicative](architecture.md) | Point d’entrée HTTP, routage, middlewares, multi-tenant |
 | [Structure du dépôt](structure-du-depot.md) | Arborescence et rôles des répertoires |
 | [Configuration et déploiement](configuration-et-deploiement.md) | Variables d’environnement, migrations, production |
+| [Sauvegarde complète des données](sauvegarde-donnees-completes.md) | Copie base + fichiers et rollback (`scripts/data-snapshot.php`) |
 | [Pilotage mensuel & fiabilisation déploiements](pilotage-mensuel-fiabilisation-deploiements.md) | KPI mensuels, workflow idempotent pré-prod → prod, smoke tests et rollback minimal |
 | [Modules fonctionnels](modules-fonctionnels.md) | Cartographie fonctionnalités ↔ zones du code |
 | [Sécurité et permissions](securite-et-permissions.md) | Auth, RBAC, API tactiques, en-têtes |
 | [Intégrations externes](integrations.md) | Courriel, Stripe, clients tactiques |
 | [Blueprint LMS compétences](lms-competency-system-blueprint.md) | Schéma multi-tenant compétences/modules et prompt enrichi |
-| [Prompt align geo/GPS mod](atak-mod-align-prompt.md) | Prompt court : geo network + waypoints (P0/P1) |
-| [Prompt updates mod nécessaires](atak-mod-updates-necessaires-prompt.md) | Prompt exhaustif : GPS visible, zones ATAK, rebuild, backlog |
 | [Plan amélioration administration site](plan-amelioration-administration-site-mod-admin-support.md) | Diagnostic et axes d'amélioration modération/support/admin |
 | [Plan exécution administration site](plan-execution-administration-site-mod-admin-support.md) | Roadmap exécutable par lots, RACI, DoD, KPI et run |
 | [Plan amélioration interactif/UI-UX/features](plan-amelioration-interactif-ui-ux-feature.md) | Analyse et plan exécutable pour interactions, UX/UI et fonctionnalités transverses |

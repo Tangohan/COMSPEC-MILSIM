@@ -93,18 +93,36 @@ require base_path('views/partials/ath_kpis.php');
     <a href="<?= $h(url('back-office/users/create')) ?>" class="ath-btn">Nouveau membre</a>
 </form>
 
+<?php if ((int) ($missingDutyCount ?? 0) > 0): ?>
+<div class="ath-banner-warn ath-rise" role="status">
+    <p class="ath-banner-warn__kicker">Positions à attribuer</p>
+    <p class="ath-banner-warn__text">
+        <?= (int) $missingDutyCount === 1
+            ? '1 membre actif n’a pas encore de position.'
+            : (int) $missingDutyCount . ' membres actifs n’ont pas encore de position.' ?>
+        À l’arrivée, la position est « En formation ». Une fois l’accueil terminé, elle passe à « En service actif ». Vous pouvez les attribuer d’un clic pour les membres déjà présents.
+    </p>
+    <form method="post" action="<?= $h(url('back-office/users/duty-positions/backfill')) ?>" class="ath-member-show__inline-form">
+        <?= \App\Core\Csrf::field() ?>
+        <button type="submit" class="ath-btn ath-btn--solid">Attribuer les positions manquantes</button>
+    </form>
+</div>
+<?php endif; ?>
+
 <?php
 $athTableRows = [];
 $athTableRowHrefs = [];
 foreach ($users as $user) {
     $uid = (int) ($user['id'] ?? 0);
     $roleLabel = trim((string) ($user['roles_display'] ?? $user['role_name'] ?? '—'));
+    $dutyLabel = trim((string) ($user['duty_position'] ?? ''));
+    $gradeLabel = trim((string) ($user['grade_label'] ?? ''));
     $athTableRows[] = [
         $matricule($user),
         trim((string) ($user['callsign'] ?? '—')) !== '' ? (string) $user['callsign'] : '—',
         trim((string) ($user['display_name'] ?? '—')) !== '' ? (string) $user['display_name'] : '—',
-        '—',
-        '—',
+        $gradeLabel !== '' ? $gradeLabel : '—',
+        $dutyLabel !== '' ? $dutyLabel : '—',
         $roleLabel !== '' ? $roleLabel : '—',
         $statusLabel((string) ($user['status'] ?? '')),
         'Hors ligne',
@@ -139,11 +157,11 @@ if ($usersPage < $usersTotalPages) {
 $athTableTitle = 'Annuaire';
 $athTableCount = $usersTotal;
 $athTableCols = [
-    'MATRICULE|m', 'INDICATIF', 'NOM', 'GRADE', 'SECTION', 'FONCTION',
+    'MATRICULE|m', 'INDICATIF', 'NOM', 'GRADE', 'POSITION', 'FONCTION',
     'STATUT|b', 'CONNEXION|b', 'DERNIÈRE ACTIVITÉ|m', 'OPS|r', 'PRÉSENCE|r',
     'FORM.|r', 'ABS.|r', 'ATAK|b', 'ENGAGÉ LE|m',
 ];
-$athTableFilters = ['Section', 'Grade', 'Statut', 'ATAK'];
+$athTableFilters = ['Position', 'Grade', 'Statut', 'ATAK'];
 $athTableMinWidth = '1720px';
 $athTableFilterName = 'search';
 $athTableFilterValue = (string) ($filters['search'] ?? '');

@@ -11,6 +11,7 @@ private _grade = _auth getOrDefault ["grade", ""];
 private _role = _auth getOrDefault ["role", ""];
 private _function = _auth getOrDefault ["function", ""];
 private _avatar = _auth getOrDefault ["avatar", ""];
+missionNamespace setVariable ["COMSPEC_SteamLinked", (_auth getOrDefault ["steam_linked", ""]) isEqualTo "1", false];
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
 missionNamespace setVariable ["comspec_profile_name", _name, false];

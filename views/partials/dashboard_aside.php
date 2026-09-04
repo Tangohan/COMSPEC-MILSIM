@@ -106,9 +106,16 @@ $icon = static function (string $key): string {
 $links = static function (array $items): array {
     $out = [];
     foreach ($items as $item) {
-        if (is_array($item) && isset($item['label'], $item['href']) && $item['href'] !== '') {
-            $out[] = $item;
+        if (!is_array($item) || !isset($item['label'], $item['href']) || $item['href'] === '') {
+            continue;
         }
+        // Ne pas exposer dans le rail une destination que la navbar a déjà
+        // retirée faute de permission ou à cause du profil de communauté.
+        if (function_exists('portal_nav_href_permission_allowed')
+            && !portal_nav_href_permission_allowed((string) $item['href'])) {
+            continue;
+        }
+        $out[] = $item;
     }
 
     return $out;
@@ -147,9 +154,13 @@ $navTiles = [
         ['label' => 'Offres de l’organisation', 'href' => url('dashboard') . '#dashboard-org-offers', 'hint' => 'Postes actuellement ouverts'],
         ['label' => 'Mon dossier RH', 'href' => url('dashboard') . '#mon-dossier-rh', 'hint' => 'Absence, élévation ou avancement'],
         (function_exists('can') && (can('admin.organization') || can('admin.access') || can('site.support')))
-            ? ['label' => 'Rédiger un article', 'href' => url('dashboard') . '#dashboard-quick-articles', 'hint' => 'Annonce pour les membres']
+            ? ['label' => 'Rédiger un article', 'href' => url('back-office/articles/create'), 'hint' => 'Mini-article permanent']
             : null,
+        ['label' => 'Articles', 'href' => url('articles'), 'hint' => 'Contenus publiés'],
         ['label' => 'Signaler une anomalie', 'href' => url('dashboard') . '#signaler-anomalie', 'hint' => 'À la gestion de l’organisation'],
+        $canAdmin
+            ? ['label' => 'Contacter l’administration du site', 'href' => url('dashboard') . '#contacter-admin-site', 'hint' => 'Problème transversal ou demande aux admins du site']
+            : null,
         ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages et éléments à traiter'],
     ]), 'overview'),
     $tile('hub', 'Hub', 'Centre de commandement', 'default', null, $links([
@@ -173,6 +184,22 @@ $navTiles[] = $tile(
     'anomaly',
     $orgAnomalyExtra
 );
+
+if ($canAdmin) {
+    ob_start();
+    require base_path('views/partials/dashboard_site_support_form.php');
+    $siteSupportExtra = (string) ob_get_clean();
+    $navTiles[] = $tile(
+        'site-support',
+        'Administration du site',
+        'Demande aux admins du site',
+        'default',
+        null,
+        [],
+        'anomaly',
+        $siteSupportExtra
+    );
+}
 
 if ($canForum) {
     $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([
@@ -247,6 +274,9 @@ if ($canDocs) {
 
 $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Carte', 'href' => url('atak'), 'hint' => 'Situation tactique'],
+    (function_exists('can') && (can('admin.access') || can('admin.organization') || can('admin.system')))
+        ? ['label' => 'Data Inspector', 'href' => url('athena/data-inspector'), 'hint' => 'Ingestion et synchronisation']
+        : null,
     $canAtakOperators
         ? ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur des opérateurs connectés']
         : null,

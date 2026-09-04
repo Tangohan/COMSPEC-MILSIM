@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -123,7 +124,8 @@ class BadgeRepository
         ?string $description,
         ?string $iconUrl
     ): int {
-        $find = $this->pdo->prepare('SELECT id FROM badges WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $find = $this->pdo->prepare('SELECT id FROM badges WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
         $find->execute([$tenantId, $slug]);
         $existing = $find->fetchColumn();
         if ($existing !== false) {

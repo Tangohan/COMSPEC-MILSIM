@@ -29,6 +29,11 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
         <p class="personnel-file-gate__lead">Vous disposez d’un accès RH sur ce dossier. Choisissez la vue à afficher.</p>
     </div>
 </section>
+<?php
+$personnelFileNoticesIncludeRhSwitcher = false;
+$personnelFileNoticesIncludeOperatorTabs = false;
+require base_path('views/partials/personnel/file_page_notices.php');
+?>
 <section class="personnel-file-gate__choices">
     <div class="personnel-file-gate__choices-inner">
         <div class="grid gap-5 sm:grid-cols-2">
@@ -47,8 +52,8 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
                 <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
                 </div>
-                <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Vue RH</h2>
-                <p class="mt-3 text-sm text-slate-600 leading-relaxed">Tableau administratif complet en pleine page : identité, affectations, dates, blocs administratifs — réservé au personnel habilité.</p>
+                <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Dossier RH complet</h2>
+                <p class="mt-3 text-sm text-slate-600 leading-relaxed">Une vue unique pour le suivi RH : situation actuelle calculée automatiquement, accès documentaire expliqué, affectations et données administratives.</p>
                 <span class="mt-5 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-violet-700 group-hover:text-violet-900">
                     Ouvrir
                     <svg class="h-3.5 w-3.5 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>

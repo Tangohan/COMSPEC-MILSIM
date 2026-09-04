@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Account;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 use Throwable;
 
@@ -114,6 +115,8 @@ final class AccountPurgeService
     private const SKIP_TABLES = [
         'users',
         'migrations',
+        // La colonne owner_user_id ne doit jamais supprimer une communauté entière.
+        'tenants',
     ];
 
     /**
@@ -626,7 +629,8 @@ final class AccountPurgeService
 
         $email = 'history.' . $tenantId . '@internal.local';
         try {
-            $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+            $emailEq = SqlText::normalizedEquals($pdo, '`email`');
+            $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND ' . $emailEq . ' LIMIT 1');
             $stmt->execute([$tenantId, strtolower($email)]);
             $existing = $stmt->fetchColumn();
             if ($existing !== false) {
@@ -636,17 +640,20 @@ final class AccountPurgeService
             return 0;
         }
 
-        $columns = ['tenant_id', 'email', 'password_hash', 'display_name', 'callsign', 'status', 'created_at', 'updated_at'];
+        $columns = ['tenant_id', 'email', 'display_name', 'callsign', 'status', 'created_at', 'updated_at'];
         $values = [
             $tenantId,
             $email,
-            password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
             AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME,
             'HIST',
             'inactive',
             date('Y-m-d H:i:s'),
             date('Y-m-d H:i:s'),
         ];
+        if ($this->columnExists($pdo, 'users', 'password_hash')) {
+            $columns[] = 'password_hash';
+            $values[] = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+        }
         if ($this->columnExists($pdo, 'users', 'is_service_account')) {
             $columns[] = 'is_service_account';
             $values[] = 1;
@@ -661,7 +668,8 @@ final class AccountPurgeService
             return (int) $pdo->lastInsertId();
         } catch (Throwable) {
             try {
-                $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND LOWER(TRIM(`email`)) = ? LIMIT 1');
+                $emailEq = SqlText::normalizedEquals($pdo, '`email`');
+                $stmt = $pdo->prepare('SELECT `id` FROM `users` WHERE `tenant_id` = ? AND ' . $emailEq . ' LIMIT 1');
                 $stmt->execute([$tenantId, strtolower($email)]);
                 $again = $stmt->fetchColumn();
 

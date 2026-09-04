@@ -28,7 +28,7 @@ final class AtakSoundButtonsAssetTest extends TestCase
         self::assertStringNotContainsString('color(1,1,1,0)"', $theme);
         self::assertStringContainsString('SOUND_BTN_DIM {0.20, 0.20, 0.20, 1}', $sound);
         self::assertStringContainsString('text = "Tester"', $sound);
-        self::assertStringContainsString('1.0.75', $cfg);
+        self::assertStringContainsString('1.0.80', $cfg);
         self::assertStringContainsString('Sons', $bug);
         self::assertStringNotContainsString('endpoint', $bug);
     }

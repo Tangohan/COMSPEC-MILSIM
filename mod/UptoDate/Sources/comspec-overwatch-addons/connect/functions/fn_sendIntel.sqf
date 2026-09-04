@@ -111,6 +111,9 @@ switch (_type) do {
         if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "OK") != 0}) then {
             ["UploadImage", "fail", _text, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         };
+        if (!isNil "comspec_overwatch_atak_athena_fnc_mapPhotoIntel") then {
+            [getPos player, "Photo"] call comspec_overwatch_atak_athena_fnc_mapPhotoIntel;
+        };
     };
     default {
         private _author = if (_unit isEqualTo player) then {

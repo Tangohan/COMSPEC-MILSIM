@@ -165,7 +165,14 @@ private _fnc_basename = {
 _path = [_path] call _fnc_cleanPath;
 if ((toLower _path) find "comspec_sse_face" >= 0) exitWith { true };
 
-if (_path isEqualTo "") then {
+private _givenBase = toLower ([_path] call _fnc_basename);
+if ((_givenBase select [0, 8]) isEqualTo "comspec_" && {(_givenBase find ".png") >= 0}) then {
+    _skipArmaShot = true;
+};
+
+// Ne pas coller l’ancien PNG si on est en train de prendre un vrai cliché
+// (caméra téléphone / casque) : sinon le second déclenchement réenvoie la vue précédente.
+if (_path isEqualTo "" && {_skipArmaShot}) then {
     _path = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
     _path = [_path] call _fnc_cleanPath;
 };
@@ -222,10 +229,17 @@ private _fnc_shotStem = {
 
 private _fnc_armaPngCapture = {
     // screenshot Arma EXIGE .png — sinon échec silencieux (wiki BI).
-    // Retour booléen false = HDR trop bas ou dossier Screenshots saturé (250 Mo).
+    // Un seul PNG toutes les ~3 s, sinon JPEG IceMan + dossier Captures
+    // reclichent la même vue en rafale.
+    private _now = diag_tickTime;
+    private _lastAt = missionNamespace getVariable ["COMSPEC_LastArmaShotAt", -1e9];
+    private _last = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
+    if (!(_lastAt isEqualType 0)) then { _lastAt = -1e9; };
+    if ((_now - _lastAt) < 2.8 && {_last isEqualType ""} && {_last isNotEqualTo ""}) exitWith { _last };
     private _png = ([] call _fnc_shotStem) + ".png";
     private _ret = screenshot _png;
     missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+    missionNamespace setVariable ["COMSPEC_LastArmaShotAt", _now, false];
     if (_ret isEqualType true && {!_ret}) exitWith { "" };
     _png
 };
@@ -307,16 +321,15 @@ private _fnc_notifyPath = {
     _ok
 };
 
-// Overlay ATAK / casque / tourelle : le JPEG BCE peut être la vue soldat si la
-// caméra regardée est en rendu vers texture. Forcer un cliché scène — sauf si
-// le JPEG vient déjà du cliché overlay (TakePicture a promu avant SOAR).
+// Overlay : un JPEG fantôme peut encore nécessiter un PNG scène.
+// Un PNG déjà pris (COMSPEC_*.png) ne doit jamais reclicher.
 if (
     !isNull _overlayCam
     && {_skipArmaShot}
     && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
 ) then {
     private _lowGiven = toLower _path;
-    if ((_lowGiven find ".jpg") < 0 && {(_lowGiven find ".jpeg") < 0}) then {
+    if ((_lowGiven find ".jpg") >= 0 || {(_lowGiven find ".jpeg") >= 0}) then {
         _skipArmaShot = false;
     };
 };
@@ -345,29 +358,14 @@ if (
 
         uiSleep 0.16;
 
-        private _png = format [
-            "COMSPEC_%1_%2.png",
-            (floor diag_tickTime) toFixed 0,
-            (floor random 99999) toFixed 0
-        ];
-        private _shotOk = screenshot _png;
-        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+        ["", _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
 
         showHUD true;
         if ((count _restore) >= 3 && {!isNil "comspec_overwatch_connect_fnc_restoreCaptureCam"}) then {
             _restore call comspec_overwatch_connect_fnc_restoreCaptureCam;
         };
 
-        if (_shotOk isEqualType true && {!_shotOk}) then {
-            missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
-            missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
-            ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen, puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
-            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
-        } else {
-            uiSleep 1.25;
-            [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
-        };
+        missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
     };
     true
 };
@@ -414,30 +412,14 @@ if (
 
         uiSleep 0.16;
 
-        private _png = format [
-            "COMSPEC_%1_%2.png",
-            (floor diag_tickTime) toFixed 0,
-            (floor random 99999) toFixed 0
-        ];
-        private _shotOk = screenshot _png;
-        missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
+        ["", _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
 
         showHUD true;
         if (_prevView isEqualType "" && {_prevView isNotEqualTo ""}) then {
             player switchCamera _prevView;
         };
 
-        if (_shotOk isEqualType true && {!_shotOk}) then {
-            missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
-            missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
-            ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen, puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
-            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
-        } else {
-            // Laisser le PNG se flusher (évite file_empty juste après le hitch).
-            uiSleep 1.25;
-            [_png, _caption, _device, _feedId, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
-        };
+        missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", false, false];
     };
     true
 };
@@ -469,13 +451,7 @@ if (_path isNotEqualTo "") exitWith {
         [_path, _caption, _device, _feedId] spawn {
             params ["_path", "_caption", "_device", "_feedId"];
             uiSleep 0.45;
-            private _retry = [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            if (!(_retry isEqualType true) || {!_retry}) then {
-                private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
-                if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) exitWith {};
-                uiSleep 0.2;
-                [_path, _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
-            };
+            [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
         };
         true
     } else {
@@ -511,7 +487,7 @@ if (_path isNotEqualTo "") exitWith {
     }
 };
 
-// Pas de fichier : capture dédiée (BCE d’abord, sinon screenshot Arma).
+// Pas de fichier : un PNG Arma, sans second cliché IceMan.
 if (_path isEqualTo "") exitWith {
     private _failUntil = missionNamespace getVariable ["COMSPEC_FeedSnapFailUntil", 0];
     if (_failUntil isEqualType 0 && {diag_tickTime < _failUntil}) exitWith {
@@ -520,30 +496,9 @@ if (_path isEqualTo "") exitWith {
         false
     };
 
-    private _resolved = "";
     private _stem = [] call _fnc_shotStem;
 
-    if (!isNil "BCE_fnc_screenShot") then {
-        private _shot = [_stem] call BCE_fnc_screenShot;
-        if ((_shot isEqualType []) && {(count _shot) >= 1}) then {
-            private _ret = _shot select 0;
-            private _file = if ((count _shot) > 1) then { _shot select 1 } else { _stem + ".jpg" };
-            if (_ret isEqualType "" && {_ret isNotEqualTo ""}) then {
-                private _low = toLower _ret;
-                if ((_low find ".jpg") >= 0 || {(_low find ".jpeg") >= 0} || {(_low find ".png") >= 0}) then {
-                    _resolved = [_ret] call _fnc_cleanPath;
-                } else {
-                    private _base = [_ret] call _fnc_cleanPath;
-                    while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
-                        _base = _base select [0, (count _base) - 1];
-                    };
-                    _resolved = format ["%1\\%2", _base, _file];
-                };
-            };
-        };
-    };
-
-    // BCE ou pas : toujours un .png Arma (chemin BCE souvent mort / srcdir_missing).
+    // Pas de second cliché BCE : le PNG Arma est la source envoyée au poste.
     private _png = if (_skipArmaShot) then {
         private _last = missionNamespace getVariable ["COMSPEC_LastScreenshotPath", ""];
         if (_last isEqualType "" && {_last isNotEqualTo ""}) then { _last } else { _stem + ".png" }

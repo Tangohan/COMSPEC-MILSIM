@@ -485,12 +485,31 @@ $completenessCheckLabels = [
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
 $bannerUrl = $bannerPath !== '' ? $baseUrl . '/' . ltrim($bannerPath, '/') : null;
 $isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
+$personnelOperationalStatus = \App\Support\PersonnelOperationalStatus::assess([
+    'unit' => trim((string) ($unitName ?? '')) !== '',
+    'role' => trim((string) ($personnelPrimaryPositionLabel ?? $communityRoleLabel ?? '')) !== '' || $personnelJobRoleAssignments !== [],
+    'clearance' => trim((string) ($clearanceLevel ?? '')) !== '',
+    'qualification' => $qualifications !== [] || $trainingCertificates !== [] || $lmsEnrollmentsForPersonnel !== [],
+    'available' => empty($personnelActiveAbsences),
+], $isDeployableFile, (string) ($targetUser['status'] ?? '') === 'active');
 $steamId = trim((string) ($targetUser['steam_id'] ?? ''));
 $steamId = $steamId !== '' ? $steamId : null;
 $accountCreatedDisplay = null;
+$membershipCandidates = [];
 if (!empty($targetUser['created_at'])) {
     $tsAcc = strtotime((string) $targetUser['created_at']);
-    $accountCreatedDisplay = $tsAcc ? date('d/m/Y', $tsAcc) : null;
+    if ($tsAcc) {
+        $membershipCandidates[] = $tsAcc;
+    }
+}
+if (!empty($enlistmentDate)) {
+    $tsEnlist = strtotime((string) $enlistmentDate);
+    if ($tsEnlist) {
+        $membershipCandidates[] = $tsEnlist;
+    }
+}
+if ($membershipCandidates !== []) {
+    $accountCreatedDisplay = date('d/m/Y', min($membershipCandidates));
 }
 $profilePublicSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $profilePublicSegment = $profilePublicSegment !== '' ? $profilePublicSegment : null;
@@ -573,72 +592,6 @@ if ($personnelFileIsRhGate) {
 }
 ?>
 <div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
-    <?php if (!$personnelFileIsRhFull && $personnelModerationStaffLines !== []): ?>
-    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Restrictions actuelles (vue encadrement)</p>
-            <ul class="mt-2 list-disc pl-5 text-sm text-slate-800 space-y-1">
-                <?php foreach ($personnelModerationStaffLines as $line): ?>
-                    <li><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    </div>
-    <?php elseif (!$personnelFileIsRhFull && $personnelModerationMemberBrief !== null): ?>
-    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
-        <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
-            <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
-        </div>
-    </div>
-    <?php endif; ?>
-    <?php if (!$personnelFileIsRhFull && $canViewAbsences && $personnelActiveAbsences !== []): ?>
-    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
-        <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
-            <p class="font-semibold">Absence en cours</p>
-            <ul class="mt-2 space-y-1.5">
-                <?php foreach ($personnelActiveAbsences as $absRow): ?>
-                    <?php
-                    $absStart = (string) ($absRow['starts_on'] ?? '');
-                    $absEnd = $absRow['ends_on'] ?? null;
-                    $absStartTs = $absStart !== '' ? strtotime($absStart) : false;
-                    $absStartFr = $absStartTs !== false ? date('d/m/Y', $absStartTs) : $absStart;
-                    if ($absEnd === null || $absEnd === '') {
-                        $absPeriod = $absStartFr !== '' ? ('À partir du ' . $absStartFr . ' — durée non précisée') : 'Durée non précisée';
-                    } else {
-                        $absEndTs = strtotime((string) $absEnd);
-                        $absEndFr = $absEndTs !== false ? date('d/m/Y', $absEndTs) : (string) $absEnd;
-                        $absPeriod = $absStartFr . ' → ' . $absEndFr;
-                    }
-                    $absReasonKey = (string) ($absRow['reason'] ?? 'autre');
-                    $absReasonLab = (string) ($personnelAbsenceReasonLabels[$absReasonKey] ?? 'Autre');
-                    $absNote = trim((string) ($absRow['note'] ?? ''));
-                    ?>
-                    <li>
-                        <?= htmlspecialchars($absPeriod, ENT_QUOTES, 'UTF-8') ?>
-                        <span class="text-amber-900/80"> — <?= htmlspecialchars($absReasonLab, ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php if ($absNote !== ''): ?>
-                            <span class="block text-xs text-amber-900/75 mt-0.5"><?= htmlspecialchars($absNote, ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php endif; ?>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-            <?php if (!empty($personnelIsSelf)): ?>
-                <p class="mt-3 text-xs">
-                    <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>#absences" class="font-semibold text-amber-950 underline decoration-amber-300 underline-offset-2 hover:decoration-amber-600">Gérer mes absences dans l’espace RH</a>
-                </p>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-    <?php if (!$personnelFileRhContext && !empty($viewerIsPersonnelSubject)): ?>
-    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
-        <?php
-        $active_tab = 'identity';
-        $base_path = 'personnel/me';
-        require base_path('views/partials/personnel/operator_tabs.php');
-        ?>
-    </div>
-    <?php endif; ?>
     <?php
     if ($canAccessRhView && $personnelViewMode === '') {
         require base_path('views/partials/personnel/file_view_gate.php');
@@ -651,17 +604,6 @@ if ($personnelFileIsRhGate) {
         return;
     }
     ?>
-    <?php if ($canAccessRhView): ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-8">
-        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-2.5">
-            <p class="text-xs font-semibold text-violet-900">Vous consultez la vue publique de ce dossier.</p>
-            <a href="<?= htmlspecialchars($personnelFileBaseUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-violet-700 hover:text-violet-900">
-                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
-                Choisir la vue RH
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
     <!-- Hero -->
     <section class="personnel-file-hero" aria-label="Présentation du dossier">
         <div class="personnel-file-hero__inner">
@@ -782,6 +724,12 @@ if ($personnelFileIsRhGate) {
             </div>
         </div>
     </section>
+
+    <?php
+    $personnelFileNoticesIncludeRhSwitcher = true;
+    $personnelFileNoticesIncludeOperatorTabs = true;
+    require base_path('views/partials/personnel/file_page_notices.php');
+    ?>
 
     <?php if (!empty($viewerIsPersonnelSubject) || !empty($canEditProfile)): ?>
     <!-- Complétude -->
@@ -1086,10 +1034,10 @@ if ($personnelFileIsRhGate) {
                             <div class="sm:col-span-2 xl:col-span-3 rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white px-4 py-4 shadow-sm sm:px-5 sm:py-4">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="min-w-0">
-                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Espace RH et formations</p>
-                                        <p class="mt-1 text-sm leading-snug text-slate-800">Charte, parcours, ancienneté affichée sur cette fiche et programmes de préqualification éventuels — au même endroit.</p>
+                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Dossier RH complet</p>
+                                        <p class="mt-1 text-sm leading-snug text-slate-800">Le suivi RH et les informations de cette fiche sont regroupés dans une seule vue, avec des intitulés expliqués.</p>
                                     </div>
-                                    <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir l’espace RH</a>
+                                    <a href="<?= htmlspecialchars($personnelFileBaseUrl . '?view=rh', ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir le dossier RH complet</a>
                                 </div>
                             </div>
                             <?php endif; ?>
@@ -1101,12 +1049,12 @@ if ($personnelFileIsRhGate) {
                                 <?php endif; ?>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Habilitation documentaire</p>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Documents accessibles</p>
                                 <p class="mt-1 text-sm font-bold text-emerald-700"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Préparation opérationnelle</p>
-                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Situation actuelle</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($personnelOperationalStatus['label'], ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Déployabilité</p>
@@ -1129,7 +1077,7 @@ if ($personnelFileIsRhGate) {
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Identifiant Steam</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($steamId) ?></p>
-                                <?php if ($steamProfileSyncOffered): ?>
+                                <?php if ($steamProfileSyncOffered && $personnelViewMode !== 'public'): ?>
                                 <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/sync-steam'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-3 border-t border-slate-200/80 pt-4">
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto">Importer photo depuis Steam</button>
@@ -1453,7 +1401,7 @@ if ($personnelFileIsRhGate) {
                     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
                         <div>
                             <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Historique des affectations</h2>
-                            <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">Toutes les périodes enregistrées dans le dossier (y compris les affectations terminées). Les durées sont en jours calendaires (début et fin inclus). Pour chaque ligne, le temps dans l’unité et le temps sur le poste affiché sont les mêmes ; si la personne a eu plusieurs passages dans la même unité, le cumul regroupe l’ensemble des périodes.</p>
+                            <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">Périodes retenues pour le dossier (y compris les affectations terminées). Les allers-retours du même jour dans la même unité sont regroupés : seule une vraie mutation, ou un changement de fonction sur plusieurs jours, reste une ligne à part. Les durées sont en jours calendaires (début et fin inclus).</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2 w-full md:w-auto md:min-w-[21rem]">
                             <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -2042,11 +1990,9 @@ if ($personnelFileIsRhGate) {
 
                 <?php foreach ($adminPanels as $panel): ?>
                 <?php $panelId = (int)$panel['id']; $data = $adminDataByPanel[$panelId] ?? []; ?>
+                <?php if (!is_array($data) || $data === []): continue; endif; ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6"><?= htmlspecialchars($panel['name']) ?></h2>
-                    <?php if (empty($data)): ?>
-                    <p class="text-sm text-slate-500">Aucune information saisie pour ce bloc.</p>
-                    <?php else: ?>
                     <div class="space-y-5">
                         <?php foreach ($data as $key => $value): ?>
                         <?php if ($value === null || $value === '') {
@@ -2058,7 +2004,6 @@ if ($personnelFileIsRhGate) {
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <?php endif; ?>
                 </section>
                 <?php endforeach; ?>
                 <div class="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">

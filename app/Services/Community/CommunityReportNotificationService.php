@@ -68,7 +68,10 @@ final class CommunityReportNotificationService
             }
         }
 
-        $modIds = $this->userRepository->listForumAlertRecipientUserIds($tenantId);
+        $kind = strtolower(trim((string) $contentKind));
+        $siteAdminOnly = $kind === 'site_support_request';
+
+        $modIds = $siteAdminOnly ? [] : $this->userRepository->listForumAlertRecipientUserIds($tenantId);
         foreach ($modIds as $modUserId) {
             if ($modUserId < 1 || $modUserId === $reporterId) {
                 continue;
@@ -136,8 +139,7 @@ final class CommunityReportNotificationService
             }
         }
 
-        $kind = strtolower(trim((string) $contentKind));
-        $notifyOrgManagement = $kind === 'training_course' || $kind === 'org_anomaly';
+        $notifyOrgManagement = !$siteAdminOnly && ($kind === 'training_course' || $kind === 'org_anomaly');
         if ($notifyOrgManagement && $tenantId > 0) {
             $orgEmails = $this->userRepository->listAdministratorEmailsForTenant($tenantId);
             if ($kind === 'org_anomaly') {
@@ -192,7 +194,11 @@ final class CommunityReportNotificationService
             $this->tenantCommunityFeedRepository->insert(
                 $tenantId,
                 'moderation_report',
-                $kind === 'org_anomaly' ? 'Anomalie transmise à la gestion' : 'Nouveau signalement',
+                match ($kind) {
+                    'org_anomaly' => 'Anomalie transmise à la gestion',
+                    'site_support_request' => 'Demande organisateur → administration site',
+                    default => 'Nouveau signalement',
+                },
                 $summary,
                 \url('back-office/forum-moderation'),
                 $reporterId > 0 ? $reporterId : null

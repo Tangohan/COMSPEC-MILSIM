@@ -443,6 +443,13 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
     [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid] spawn {
         params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef"];
         uiSleep 0.35;
+        if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
+            private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_stem]]] call comspec_overwatch_connect_fnc_extResult;
+            if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
+                private _body = trim (_staged select [3, (count _staged) - 3]);
+                if (_body isNotEqualTo "") then { _stem = _body; };
+            };
+        };
         private _shot = [
             "COMSPECExtension" callExtension ["UploadSsePhoto", [
                 _pid,

@@ -245,6 +245,11 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
           min-width: var(--ath-side-w, 248px);
           max-width: var(--ath-side-w, 248px);
         }
+        #platform-admin-sidebar.ath-sidebar-aside.is-collapsed {
+          width: var(--ath-side-w-collapsed, 62px);
+          min-width: var(--ath-side-w-collapsed, 62px);
+          max-width: var(--ath-side-w-collapsed, 62px);
+        }
       }
       @media (min-width: 1280px) {
         #back-office-sidebar:not(.ath-sidebar-aside),
@@ -273,7 +278,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-rail.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php elseif (!empty($isPlatformAdminShell)): ?>
@@ -325,18 +330,20 @@ if (!empty($backOfficeHoverRail)) {
 if (!empty($usesAdminSidebarShell)) {
     $bodyClasses .= ' bo-shell';
 }
-if (!empty($isBackOfficeShell)) {
+if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     $bodyClasses .= ' ath-bo-shell';
 }
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
+    <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
     <?php if (empty($communityReelsPage)): ?>
     <div class="grain" aria-hidden="true"></div>
     <?php endif; ?>
-    <?php if (empty($isBackOfficeShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
+    <?php if (empty($isBackOfficeShell) && empty($isPlatformAdminShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
     <?php require base_path('views/partials/header_portal.php'); ?>
     <?php endif; ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/paris-datetime.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -344,7 +351,7 @@ if (!empty($isBackOfficeShell)) {
     <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
-    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-sidebar.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-search.js'))): ?>
@@ -360,17 +367,17 @@ if (!empty($isBackOfficeShell)) {
     <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
     <?php endif; ?>
-    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
-        <?php if (empty($communityReelsPage) && empty($isBackOfficeShell)): ?>
+    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
+        <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
             x-data="{ navOpen: false }"
             @keydown.escape.window="navOpen = false"
-            class="bo-shell-row ath-shell-row relative z-[1] isolate flex min-h-[inherit] flex-col lg:flex-row<?= !empty($backOfficeHoverRail) ? ' bo-shell-row--hover-rail' : '' ?>"
+            class="bo-shell-row ath-shell-row relative z-[1] isolate flex min-h-[inherit] flex-col lg:flex-row<?= !empty($isPlatformAdminShell) ? ' lg:flex-row-reverse' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-shell-row--hover-rail' : '' ?>"
         >
-            <?php if (!empty($isBackOfficeShell)): ?>
+            <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)): ?>
             <div class="ath-mobile-bar lg:hidden">
                 <button
                     type="button"
@@ -415,8 +422,8 @@ if (!empty($isBackOfficeShell)) {
             ></div>
 
             <aside
-                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-black text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= !empty($isBackOfficeShell) ? ' ath-sidebar-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
-                :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
+                class="fixed inset-y-0 <?= !empty($isPlatformAdminShell) ? 'right-0 border-l lg:border-l lg:border-r-0' : 'left-0 border-r lg:border-r' ?> z-[210] w-80 max-w-full overflow-x-hidden border-white/10 bg-black text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? ' ath-sidebar-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
+                :class="navOpen ? 'translate-x-0' : '<?= !empty($isPlatformAdminShell) ? 'translate-x-full' : '-translate-x-full' ?>'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
                 @click.capture="if ($event.target.closest('a')) navOpen = false"
@@ -439,17 +446,17 @@ if (!empty($isBackOfficeShell)) {
                 </div>
             </aside>
 
-            <div class="ath-main relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden<?= (!empty($isBackOfficeShell)) ? '' : (( !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? ' bg-[#050505]' : ' bg-slate-50') ?>">
+            <div class="ath-main relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden<?= (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? '' : (!empty($isFormationWorkspace) ? ' bg-[#050505]' : ' bg-slate-50') ?>">
                 <?php
                 // Bandeaux TRANSMISSION / annonces navbar : portail membre uniquement (pas le shell back-office).
-                if (empty($isBackOfficeShell)) {
+                if (empty($isBackOfficeShell) && empty($isPlatformAdminShell)) {
                     require base_path('views/partials/navbar_info_banners.php');
                     require base_path('views/partials/alert_banners.php');
                 }
                 require base_path('views/partials/forum_moderation_alerts.php');
                 require base_path('views/partials/advanced_fiche_edit_banner.php');
                 ?>
-                <?php if (!empty($isBackOfficeShell)): ?>
+                <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)): ?>
                     <?php require base_path('views/partials/back_office_topbar.php'); ?>
                 <?php endif; ?>
                 <div class="ath-main__body flex min-h-0 min-w-0 flex-1 flex-col">

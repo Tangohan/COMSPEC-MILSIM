@@ -35,7 +35,7 @@ use App\Services\Personnel\PersonnelOrgHistoryRecorder;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
-use App\Services\Community\TenantTypeConfig;
+use App\Support\PortalAccessChoice;
 use App\Services\Steam\SteamWebApiService;
 use App\Services\Account\AccountDeletionService;
 use App\Repositories\AccountPurgeRequestRepository;
@@ -102,13 +102,7 @@ class UserAdminController
     /** URL de retour après erreur de création (évite le hub structure bloqué en profil Carte ATAK). */
     private function memberCreateEntryUrl(int $tenantId): string
     {
-        $tenant = $this->tenantRepository->findById($tenantId) ?: [];
-        $type = TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
-        if (TenantTypeConfig::moduleAllowed($type, 'personnel')) {
-            return url('back-office/organisation/structure?ouvrir=membre');
-        }
-
-        return url('back-office/users/create');
+        return effectifs_workspace_url('nouveau');
     }
 
     /**
@@ -266,6 +260,15 @@ class UserAdminController
             }
         }
 
+        $users = $this->enrichDirectoryRows($tenantId, $users);
+        $missingDutyCount = 0;
+        try {
+            $missingDutyCount = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class)
+                ->countActiveMembersWithoutDuty($tenantId);
+        } catch (\Throwable) {
+            $missingDutyCount = 0;
+        }
+
         $totalPages = max(1, (int) ceil($total / $perPage));
 
         return Response::view('layout.main', [
@@ -299,6 +302,7 @@ class UserAdminController
             'usersPage' => $page,
             'usersPerPage' => $perPage,
             'usersTotalPages' => $totalPages,
+            'missingDutyCount' => $missingDutyCount,
             'athUserKpis' => $this->buildUserListKpis($tenantId),
             'backOfficePageCss' => ['back-office-users.css'],
             'showPortalFooter' => false,
@@ -387,13 +391,15 @@ class UserAdminController
         try {
             /** @var \App\Repositories\PersonnelAssignmentRepository $assignRepo */
             $assignRepo = \App\Core\Container::get(\App\Repositories\PersonnelAssignmentRepository::class);
-            $primaryAssignment = $assignRepo->getPrimaryAssignment($id);
+            $primaryAssignment = $assignRepo->getPrimaryAssignment($id, $tenantId);
         } catch (\Throwable) {
             $primaryAssignment = null;
         }
         $siblingMemberships = [];
         if ($forPlatformOperator && $headEmailRaw !== '') {
-            $siblingMemberships = $this->userRepository->listAllMembershipsByEmail($headEmailRaw);
+            $siblingMemberships = PortalAccessChoice::personFileDossiers(
+                $this->userRepository->listAllMembershipsByEmail($headEmailRaw)
+            );
         }
         $isAnonymized = AccountDeletionService::isAnonymizedUser($user);
         $actorUserId = (int) Session::get('user_id');
@@ -401,6 +407,18 @@ class UserAdminController
         $pendingPurgeRequest = $canRequestAccountDeletion
             ? $this->accountPurgeRequests->findPendingForTarget($tenantId, $id)
             : null;
+        $dutySlug = null;
+        $dutyLabel = '';
+        if (!$isService) {
+            try {
+                $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+                $dutySlug = $duty->currentDutySlug($tenantId, $id);
+                $dutyLabel = $duty->currentDutyLabel($tenantId, $id);
+            } catch (\Throwable) {
+                $dutySlug = null;
+                $dutyLabel = '';
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.show',
@@ -430,6 +448,8 @@ class UserAdminController
             'canRequestAccountDeletion' => $canRequestAccountDeletion,
             'pendingPurgeRequest' => $pendingPurgeRequest,
             'roles' => $roles,
+            'dutyPositionSlug' => $dutySlug,
+            'dutyPositionLabel' => $dutyLabel,
             'showPlatformDiagnostics' => $forPlatformOperator,
             'backOfficePageCss' => ['back-office-users.css'],
             'showPortalFooter' => false,
@@ -468,6 +488,33 @@ class UserAdminController
         $civil = $this->personnelExtrasRepository->getProfileByUserId($userId);
 
         return $this->personnelCompletenessService->getScoreWithMissingLabelsForAudience($userId, $userRow, $civil, $extras, $tenantId, $forPlatformOperator);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $users
+     * @return list<array<string, mixed>>
+     */
+    private function enrichDirectoryRows(int $tenantId, array $users): array
+    {
+        foreach ($users as &$u) {
+            $gradeLabel = '';
+            $gid = (int) ($u['grade_id'] ?? 0);
+            if ($gid > 0) {
+                try {
+                    $g = $this->gradeRepository->findById($gid, $tenantId);
+                    $gradeLabel = trim((string) ($g['label_short'] ?? ''));
+                    if ($gradeLabel === '') {
+                        $gradeLabel = trim((string) ($g['label_long'] ?? ''));
+                    }
+                } catch (\Throwable) {
+                    $gradeLabel = '';
+                }
+            }
+            $u['grade_label'] = $gradeLabel;
+        }
+        unset($u);
+
+        return $users;
     }
 
     public function notifyProfileIncomplete(Request $request, array $params = []): Response
@@ -622,25 +669,41 @@ class UserAdminController
             Session::flash('error', 'Limite de membres du plan atteinte.');
             return Response::redirect($createUrl);
         }
-        $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
-        $userId = $this->userRepository->create($tenantId, [
-            'email' => $email,
-            'password_hash' => $passwordPlaceholder,
-            'display_name' => $displayName !== '' ? $displayName : null,
-            'callsign' => $callsign ?: null,
-            'role_id' => $primaryRoleId,
-            'grade_id' => $gradeId,
-            'status' => 'pending_verification',
-            'nationality_code' => $nationalityCode,
-            'preferred_grade_format' => $preferredGradeFormat,
-            'professional_category_code' => $professionalCategoryCode,
-        ]);
-        $this->userProfileRepository->upsert($userId, [
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-        ]);
+        $existingGlobal = $this->userRepository->findFirstByEmailGlobal($email);
+        if ($existingGlobal) {
+            $userId = $this->userRepository->addMembershipToTenant(
+                (int) $existingGlobal['id'],
+                $tenantId,
+                (int) ($primaryRoleId ?? 0),
+                $gradeId,
+                [
+                    'display_name' => $displayName !== '' ? $displayName : null,
+                    'callsign' => $callsign ?: null,
+                ]
+            );
+        } else {
+            $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
+            $userId = $this->userRepository->create($tenantId, [
+                'email' => $email,
+                'password_hash' => $passwordPlaceholder,
+                'display_name' => $displayName !== '' ? $displayName : null,
+                'callsign' => $callsign ?: null,
+                'role_id' => $primaryRoleId,
+                'grade_id' => $gradeId,
+                'status' => 'pending_verification',
+                'nationality_code' => $nationalityCode,
+                'preferred_grade_format' => $preferredGradeFormat,
+                'professional_category_code' => $professionalCategoryCode,
+            ]);
+        }
+        if ($existingGlobal === null) {
+            $this->userProfileRepository->upsert($userId, [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+        }
         try {
-            $this->personnelProfileRepository->ensureRecord($userId);
+            $this->personnelProfileRepository->ensureRecord($userId, $tenantId);
             $this->personnelProfileRepository->update($userId, [
                 'character_name' => $displayName,
             ]);
@@ -709,7 +772,7 @@ class UserAdminController
             Session::flash('error', $msg);
         }
 
-        return Response::redirect(url('back-office/users/' . $userId));
+        return Response::redirect(effectifs_workspace_url('membres/' . $userId));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -1126,6 +1189,81 @@ class UserAdminController
         }
 
         return Response::redirect(url('back-office/users/' . $id));
+    }
+
+    public function applyDutyPosition(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $actorUserId = (int) Session::get('user_id');
+        $id = (int) ($params['id'] ?? 0);
+        $showUrl = url('back-office/users/' . $id);
+        if (!$tenantId || !$actorUserId || !$id) {
+            return Response::redirect(url('back-office/users'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($showUrl);
+        }
+        $user = $this->userRepository->findById($id, $tenantId);
+        if (!$user) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(url('back-office/users'));
+        }
+        if ($this->userRepository->isServiceAccount($id)) {
+            Session::flash('error', 'Les comptes techniques n’ont pas de position de service.');
+
+            return Response::redirect($showUrl);
+        }
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $ok = $duty->applyActiveDuty($tenantId, $id, $actorUserId);
+            $remainingDays = $ok ? 0 : $duty->remainingTrainingDays($tenantId, $id);
+            Session::flash(
+                $ok ? 'success' : 'warning',
+                $ok
+                    ? 'Le membre est maintenant en service actif. Les fonctions (opérateur, instructeur…) sont inchangées.'
+                    : ($remainingDays > 0
+                        ? 'Le délai obligatoire de formation n’est pas terminé : encore ' . $remainingDays . ' jour(s).'
+                        : 'Ce membre était déjà en service actif.')
+            );
+        } catch (\Throwable) {
+            Session::flash('error', 'La position n’a pas pu être mise à jour. Réessayez dans un instant.');
+        }
+
+        return Response::redirect($showUrl);
+    }
+
+    public function backfillDutyPositions(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $actorUserId = (int) Session::get('user_id');
+        $listUrl = url('back-office/users');
+        if (!$tenantId || !$actorUserId) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($listUrl);
+        }
+        try {
+            $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $changed = $duty->backfillTenant($tenantId, $actorUserId);
+            if ($changed > 0) {
+                $label = $changed === 1
+                    ? '1 membre a reçu sa position.'
+                    : $changed . ' membres ont reçu leur position.';
+                Session::flash('success', $label . ' Les nouveaux arrivants restent en formation tant que leur accueil n’est pas terminé.');
+            } else {
+                Session::flash('success', 'Tous les membres actifs ont déjà une position.');
+            }
+        } catch (\Throwable) {
+            Session::flash('error', 'Les positions n’ont pas pu être attribuées. Réessayez dans un instant.');
+        }
+
+        return Response::redirect($listUrl);
     }
 
     public function assignPosition(Request $request, array $params = []): Response

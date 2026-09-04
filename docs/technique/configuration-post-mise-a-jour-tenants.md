@@ -71,3 +71,5 @@ php setup-database.php
 - `SSE_DIGITAL_LAB_V1` — laboratoire numérique
 - `SSE_DOMEX_QUEUE_V1` — file « à exploiter » ; configure via le laboratoire, nouveaux tenants marqués satisfaits
 - `ATAK_INTEL_SCRAMBLE_V1` — données chiffrées roleplay (certificat / capture) ; configure via `admin/atak/roleplay#intel-scramble` ; nouveaux tenants : domaine « Réseau ami » seedé + marqué satisfait
+- `DASHBOARD_WARDROBE_SHOWCASE_V1` — tenues en vitrine du tableau de bord ; configure via `back-office/dashboard-tenues`
+- `LOGIN_ACCUEIL_IMAGES_V1` — photos de l’écran de bienvenue après connexion ; configure via `back-office/organisation/parametres#accueil-connexion` ; nouveaux tenants marqués satisfaits (photo du portail par défaut, aucune image personnalisée requise)

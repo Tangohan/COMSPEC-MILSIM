@@ -9,6 +9,116 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Portail 1.5.98 — 2026-09-04
+
+### Administration — remise à zéro ATAK et Steam
+
+L’effacement des remontées ATAK propose maintenant une option explicite pour désynchroniser tous les comptes Steam de la communauté. Lorsqu’elle est cochée, les identifiants sont retirés et les sessions de jeu ainsi que les associations de poste sont révoquées ; les opérateurs doivent ensuite refaire leur liaison.
+
+---
+
+## Portail 1.5.97 — 2026-09-03
+
+### Correction — Grandes photos terrain
+
+Les captures PNG Arma de plus de 16 Mo sont désormais acceptées par le poste de commandement. Le plafond passe à 96 Mo par image, avec la marge nécessaire au formulaire d’envoi. Déployer le portail et laisser PHP recharger sa configuration.
+
+## Overwatch 1.5.16 — 2026-09-03
+
+### Correction — Photos en rafale
+
+Une photo prise depuis le téléphone n’écrit plus une série de copies identiques dans le dossier Captures. Un déclenchement = un fichier. Relancer Arma complètement.
+
+### Correction — Identifiant de groupe
+
+L’identifiant du groupe en jeu reprend l’indicatif de l’opérateur lorsque le champ contenait encore le nom de profil. Un nom de groupe déjà choisi n’est pas modifié. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.80 — 2026-09-03
+
+### Correction — Photos en rafale
+
+Une photo prise depuis le téléphone n’écrit plus une série de copies identiques dans le dossier Captures. Relancer Arma complètement.
+
+### Correction — Bandeau sous l’heure
+
+Sous l’heure du téléphone, une bande noire affiche l’indicatif, le rôle, la grille et la radio.
+
+### Changement — Tuile Athena
+
+La tuile Athena ne garde qu’un bouton Connexion, qui devient Liaison OK une fois le compte associé. Un journal court indique si Steam n’est pas lié ou si le compte n’est pas connecté. Quand tout est en ordre, le nom, le prénom, le rôle, la fonction et l’affectation s’affichent. Relancer Arma complètement.
+
+---
+
+## Overwatch 1.18.10 — 2026-09-03
+
+### Correction — Photos terrain refusées
+
+Les photos prises depuis le téléphone arrivent de nouveau au poste. Le cliché n’est plus refusé alors qu’il existe déjà sur le PC. Relancer Arma complètement.
+
+---
+
+## Overwatch 1.5.15 / SSE 0.7.20 — 2026-09-03
+
+### Correction — Cockpit Hatchet
+
+En s’asseyant aux commandes d’un appareil Hatchet, le menu d’actions personnelles se referme. Clic et molette reviennent au tableau de bord : batterie, groupe auxiliaire et démarreurs répondent de nouveau. Relancer Arma complètement.
+
+---
+
+## Overwatch 1.18.9 — 2026-09-03
+
+### Correction — Identifiant Steam sur la liaison de secours
+
+L’identifiant Steam reste associé au lancement, y compris si la liaison passe par le chemin de secours. Une position sans identifiant n’est plus envoyée : le jeu réessaie dès que Steam est prêt. Le journal Liaison n’enregistre plus qu’un refus « identifiant manquant » de temps en temps, plus une ligne toutes les secondes. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.79 — 2026-09-03
+
+### Correction — Bouton zoom et bandeau d’identité
+
+Le bouton moins qui se décalait en haut à droite de la carte est retiré. Sous la météo et l’heure, une bande noire affiche l’indicatif, le rôle, la grille et la fréquence radio. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.78 — 2026-09-03
+
+### Correction — Carte du téléphone
+
+Le cartouche Indicatif / Rôle / Groupe / Grille est de nouveau visible, en bas à gauche, au-dessus des outils carte. Le menu qui s’ouvrait au clic droit et les boutons Mesure, Grille, Itinéraire, Zone, Couches et Signet sont retirés. Les outils carte du téléphone restent affichés, sans clignoter. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.77 — 2026-09-03
+
+### Correction — Liaison Steam, fiche opérateur, photos
+
+La session Athena s’ouvre automatiquement lorsque Steam est déjà associé au compte. La fiche opérateur se transmet de nouveau. Les photos prises sur le terrain partent au poste.
+
+### Correction — Carte du téléphone
+
+Le bouton des outils carte retrouve son aspect d’origine. Le cartouche Indicatif / Rôle / Groupe s’affiche en haut à gauche, sous la boussole, sans recouvrir les outils.
+
+### Amélioration — Page Athena
+
+Journal, Alerter, Rapporter et Poste occupent chacun leur écran. Les boutons ne se superposent plus.
+
+### Nouveau — Carte : filtres, mesure, signalements
+
+L’indicatif d’un opérateur se lit plus simplement quand on s’éloigne, et redevient détaillé en se rapprochant. Un opérateur sans position récente reste visible, plus pâle. Un clic droit pose un marqueur, mesure ou signale. Un ordre reçu se confirme depuis le bas de l’écran. Les outils carte du téléphone restent tels quels.
+
+---
+
+## Athena 1.0.76 — 2026-09-02
+
+### Correction — Cartouche indicatif / rôle / groupe
+
+Sur la carte du téléphone, le cartouche d’identité (indicatif, rôle, groupe, grille) est de nouveau en bas à gauche. Il n’est plus coincé sous le tiroir d’applications. Relancer Arma complètement.
+
+---
+
 ## Portail 1.5.96 — 2026-09-02
 
 ### Correction — Barre de vue et bande Réseau / Journal

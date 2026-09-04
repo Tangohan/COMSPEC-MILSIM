@@ -54,6 +54,9 @@ use App\Support\AtakDeviceLog;
 use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
+use App\Repositories\OperatorGameProfileRepository;
+use App\Services\OperatorGame\OperatorGameObservationNormalizer;
+use App\Services\OperatorGame\OperatorGameReconciliationService;
 
 class AtakApiController
 {
@@ -127,6 +130,87 @@ class AtakApiController
 
     private ?AtakDeviceLogRepository $deviceLogRepository = null;
     private ?AtakRealismRepository $realismRegistry = null;
+    private ?OperatorGameProfileRepository $operatorGameProfiles = null;
+
+    /** Register/sync is deliberately separate from the high-frequency position channel. */
+    public function operatorRegister(Request $request, array $params = []): Response
+    {
+        return $this->syncObservedOperator($request, 'REGISTER');
+    }
+
+    public function operatorSync(Request $request, array $params = []): Response
+    {
+        return $this->syncObservedOperator($request, 'SYNC');
+    }
+
+    private function syncObservedOperator(Request $request, string $reason): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $normalizer = new OperatorGameObservationNormalizer();
+        $payload = $normalizer->normalize($this->jsonBody($request));
+        $steamId = SteamId::normalize((string) ($payload['steam_id'] ?? $payload['steam_uid'] ?? $payload['player_uid'] ?? ''));
+        if ($steamId === null) {
+            return Response::json(['status' => 'error', 'error' => 'valid_steam_id_required'], 422);
+        }
+        $repo = $this->operatorGameProfiles ??= new OperatorGameProfileRepository();
+        $reference = $repo->referenceForSteam($tenantId, $steamId);
+        $linked = $reference !== null;
+        if (!$linked) {
+            $reference = [];
+        }
+        $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        if (!$linked) {
+            if ($profile['first_seen']) {
+                $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [
+                    'server' => $payload['server_name'] ?? null,
+                ]);
+            }
+            if ($profile['changed'] || $profile['first_seen']) {
+                $repo->snapshot($tenantId, $profile['id'], $profile['first_seen'] ? 'FIRST_SEEN' : $reason, $payload);
+            }
+            $repo->event($tenantId, $profile['id'], $steamId, $profile['first_seen'] ? 'FIRST_SEEN' : 'PROFILE_SYNC', [
+                'linked' => false,
+            ]);
+            return Response::json([
+                'status' => 'ok',
+                'operator_linked' => false,
+                'profile_id' => $profile['id'],
+                'discrepancies' => 0,
+                'update_required' => false,
+                'sync_status' => 'NOT_LINKED',
+                'event' => 'UNLINKED_ARMA_OPERATOR',
+            ]);
+        }
+        $observed = $normalizer->observedForReconcile($payload, $steamId);
+        $discrepancies = (new OperatorGameReconciliationService())->reconcile($reference, $observed, $repo->versionPolicies($tenantId));
+        $snapshotId = null;
+        if ($profile['changed'] || $discrepancies !== []) {
+            $snapshotId = $repo->snapshot($tenantId, $profile['id'], $profile['first_seen'] ? 'FIRST_SEEN' : $reason, $payload);
+        }
+        foreach ($discrepancies as $discrepancy) {
+            $repo->recordDiscrepancy($tenantId, (int) $reference['user_id'], $profile['id'], $snapshotId, $discrepancy);
+        }
+        $repo->event($tenantId, $profile['id'], $steamId, $profile['first_seen'] ? 'FIRST_SEEN' : 'PROFILE_SYNC', ['discrepancies' => count($discrepancies)]);
+        $updateRequired = false;
+        foreach ($discrepancies as $discrepancy) {
+            if (($discrepancy['category'] ?? '') === 'SOFTWARE' && in_array($discrepancy['severity'] ?? '', ['ERROR', 'CRITICAL'], true)) {
+                $updateRequired = true;
+                break;
+            }
+        }
+        return Response::json([
+            'status' => 'ok', 'operator_linked' => true, 'profile_id' => $profile['id'],
+            'discrepancies' => count($discrepancies), 'update_required' => $updateRequired,
+            'sync_status' => $discrepancies === [] ? 'SYNC_OK' : ($updateRequired ? 'CLIENT_OUTDATED' : 'SYNC_WARNING'),
+        ]);
+    }
 
     private function deviceLogs(): AtakDeviceLogRepository
     {
@@ -986,9 +1070,7 @@ class AtakApiController
             return $this->jsonBodyCache;
         }
         if (HttpJsonBody::isMultipart()) {
-            $this->jsonBodyCache = HttpJsonBody::postFields();
-
-            return $this->jsonBodyCache;
+            return HttpJsonBody::postFields();
         }
         $raw = HttpJsonBody::rawJson();
         if ($raw === '') {
@@ -9561,12 +9643,26 @@ class AtakApiController
                 return $r;
             }
             $tenantId = $r;
+            $file = TerrainUploadedImage::fromGlobals();
             $actor = $this->guardArmaWrite($request, $tenantId, false);
             if ($actor instanceof Response) {
                 return $actor;
             }
-            $file = TerrainUploadedImage::fromGlobals();
+            if ($file === null && TerrainUploadedImage::declaredBodyExceedsPostMax()) {
+                return Response::json([
+                    'error' => 'file_too_large',
+                    'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+                ], 400);
+            }
             if ($file === null) {
+                error_log(sprintf(
+                    '[atak/recon-images] missing_image files=%s ct=%s cl=%s post_max=%s',
+                    implode(',', array_keys($_FILES)),
+                    (string) ($_SERVER['CONTENT_TYPE'] ?? ''),
+                    (string) ($_SERVER['CONTENT_LENGTH'] ?? ''),
+                    (string) ini_get('post_max_size')
+                ));
+
                 return Response::json([
                     'error' => 'missing_image',
                     'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',

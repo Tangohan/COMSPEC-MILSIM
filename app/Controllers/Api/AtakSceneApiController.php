@@ -10,6 +10,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakSceneObjectRepository;
 use App\Repositories\AtakTerrainRepository;
+use App\Repositories\MapShapeRepository;
+use App\Repositories\AtakDataRepository;
+use App\Services\Tactical\AtakEventEnvelopeIngest;
 use App\Support\ComspecApiKeyAuth;
 
 final class AtakSceneApiController
@@ -17,9 +20,15 @@ final class AtakSceneApiController
     public function __construct(
         private ?AtakSceneObjectRepository $objects = null,
         private ?AtakTerrainRepository $terrain = null,
+        private ?AtakEventEnvelopeIngest $events = null,
     ) {
         $this->objects ??= new AtakSceneObjectRepository();
         $this->terrain ??= new AtakTerrainRepository();
+        $this->events ??= new AtakEventEnvelopeIngest(
+            $this->objects,
+            new MapShapeRepository(),
+            new AtakDataRepository(),
+        );
     }
 
     public function index(Request $request, array $params = []): Response
@@ -48,9 +57,18 @@ final class AtakSceneApiController
             return Response::json(['ok' => false, 'error' => 'access_denied'], 419);
         }
         $items = $body['objects'] ?? [];
-        if (!is_array($items) || $items === []) return Response::json(['ok' => false, 'error' => 'objects_required'], 422);
-        $count = $this->objects->upsertBatch($tenantId, max(1, (int) ($body['mapId'] ?? $body['map_id'] ?? 1)), array_values($items));
-        return Response::json(['ok' => true, 'upserted' => $count]);
+        $schema = (string) ($body['schema'] ?? '');
+        if ($schema !== 'athena.event.v1' && (!is_array($items) || $items === [])) {
+            return Response::json(['ok' => false, 'error' => 'objects_required'], 422);
+        }
+        $result = $this->events->ingest($tenantId, $body);
+        if (empty($result['ok'])) {
+            return Response::json(['ok' => false, 'error' => (string) ($result['error'] ?? 'objects_required')], 422);
+        }
+        return Response::json(['ok' => true, 'upserted' => (int) ($result['upserted'] ?? 0)] + array_filter([
+            'ignored' => $result['ignored'] ?? null,
+            'deleted' => $result['deleted'] ?? null,
+        ]));
     }
 
     public function coverage(Request $request, array $params = []): Response

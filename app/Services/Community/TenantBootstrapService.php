@@ -9,6 +9,7 @@ use App\Repositories\TenantGradeOverrideRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Moderation\SystemModeratorAccountService;
+use App\Support\SqlText;
 use PDO;
 
 final class TenantBootstrapService
@@ -263,8 +264,16 @@ final class TenantBootstrapService
                 $configSvc->markCompleted($tenantId, 'SSE_DOMEX_ZEUS_LIVE_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'MISSION_PLANNING_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'AAR_CUSTOM_TEMPLATES_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'LOGIN_ACCUEIL_IMAGES_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
+            }
+
+            try {
+                $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+                $duty->applyActiveDuty($tenantId, $newUserId, $newUserId, true);
+            } catch (\Throwable $e) {
+                // Rôles absents : non bloquant
             }
 
             $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;
@@ -454,8 +463,9 @@ final class TenantBootstrapService
             $permIds[$p['slug']] = (int) $pdo->lastInsertId();
         }
 
+        $slugEq = SqlText::equals($pdo, 'slug');
         foreach ($roles as $r) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $r['slug']]);
             if (!$stmt->fetch()) {
                 $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')

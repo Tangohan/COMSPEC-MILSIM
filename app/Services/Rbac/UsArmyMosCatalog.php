@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Rbac;
 
 /**
- * Correspondance emploi métier (slug interne) → MOS / AOC de l’U.S. Army.
- * Titres alignés sur la nomenclature publiée (DA PAM 611-21, référentiel des spécialités militaires).
+ * Correspondance emploi métier (slug interne) → code de spécialité militaire américain.
+ * Titres Army alignés sur le DA PAM 611-21 ; les exceptions Air Force emploient leur AFSC AFECD.
  * Les codes « officier » utilisent la convention AOC (ex. 11A, 35D) ; les grades du rang le format CMF + spécialité (ex. 11B, 68W).
  *
  * @phpstan-type MosPair array{0: string, 1: string}
@@ -43,6 +43,7 @@ final class UsArmyMosCatalog
             'aero_air_delivery_chief' => ['88H', 'Cargo Specialist'],
             'aero_refuel_operator' => ['92F', 'Petroleum Supply Specialist'],
             'aero_ground_support_chief' => ['15P', 'Aviation Operations Specialist'],
+            'aero_160th_soar_pilot' => ['CMF 15', 'Army Aviation (aircraft qualification dependent)'],
             'fires_jtac' => ['13F', 'Fire Support Specialist'],
             'fires_forward_observer' => ['13F', 'Fire Support Specialist'],
             'fires_support_officer' => ['13A', 'Field Artillery Officer'],
@@ -72,6 +73,10 @@ final class UsArmyMosCatalog
             'sf_comms' => ['18E', 'Special Forces Communications Sergeant'],
             'sf_intelligence' => ['18F', 'Special Forces Intelligence Sergeant'],
             'sf_medic' => ['18D', 'Special Forces Medical Sergeant'],
+            'sf_air_force_cct' => ['1Z2X1', 'Combat Control'],
+            'sf_air_force_pj' => ['1Z1X1', 'Pararescue'],
+            'sf_air_force_tacp' => ['1Z3X1', 'Tactical Air Control Party'],
+            'sf_cag_b_squadron_operator' => ['NON PUBLIC', 'CAG duty position not publicly classified'],
             'engineer_sapper' => ['12B', 'Combat Engineer'],
             'engineer_eod' => ['89D', 'Explosive Ordnance Disposal Specialist'],
             'engineer_group_chief' => ['12A', 'Engineer Officer'],

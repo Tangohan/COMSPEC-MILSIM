@@ -607,6 +607,33 @@ if (!function_exists('legal_public_contact_email')) {
     }
 }
 
+if (!function_exists('registration_alert_inbox_email')) {
+    /**
+     * Boîte d'exploitation qui suit la création et la vérification des comptes.
+     * Une configuration dédiée peut être utilisée sans dupliquer obligatoirement
+     * l'adresse déjà prévue pour les alertes d'exploitation.
+     */
+    function registration_alert_inbox_email(): ?string
+    {
+        $dedicated = trim((string) env('REGISTRATION_ALERT_EMAIL', ''));
+        if ($dedicated !== '' && filter_var($dedicated, FILTER_VALIDATE_EMAIL)) {
+            return $dedicated;
+        }
+
+        foreach (['ERROR_ALERT_EMAIL', 'SECURITY_ALERT_EMAILS'] as $key) {
+            $configured = (string) env($key, '');
+            foreach (preg_split('/[\s,;]+/', $configured) ?: [] as $candidate) {
+                $candidate = trim($candidate);
+                if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
@@ -986,6 +1013,35 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'back-office/missions' => [
                 'any_permissions' => ['admin.organization', 'admin.access'],
             ],
+            'back-office/cooperation/missions' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'interteam.missions.respond',
+                    'cooperation.missions.view', 'cooperation.missions.manage',
+                    'cooperation.missions.create', 'cooperation.missions.respond',
+                ],
+            ],
+            'back-office/cooperation/missions/create' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.missions.create',
+                ],
+            ],
+            'back-office/cooperation/catalog' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.catalog.manage',
+                ],
+            ],
+            'back-office/cooperation/announcements' => [
+                'any_permissions' => [
+                    'admin.system', 'admin.organization', 'admin.access',
+                    'interteam.missions.manage', 'cooperation.missions.manage',
+                    'cooperation.announcements.manage',
+                ],
+            ],
             'back-office/personnel-job-roles' => [
                 'any_permissions' => ['admin.organization', 'admin.access', 'admin.roles.manage'],
             ],
@@ -1084,6 +1140,34 @@ if (!function_exists('back_office_nav_href_permission_allowed')) {
         }
 
         return true;
+    }
+}
+
+if (!function_exists('portal_nav_href_permission_allowed')) {
+    /**
+     * Filtre commun des liens du chrome membre.
+     *
+     * La navbar principale, ses menus secondaires et le rail du dashboard doivent
+     * tous retirer une destination interdite, plutôt que d'en révéler le libellé
+     * avant de laisser le contrôleur répondre 403. Les règles proviennent de la
+     * même configuration de navigation que la navbar et incluent le profil de
+     * communauté courant (Complet / Effectifs / ATAK).
+     */
+    function portal_nav_href_permission_allowed(string $href): bool
+    {
+        $path = back_office_nav_href_to_path($href);
+        if ($path === '') {
+            return true;
+        }
+
+        if (function_exists('navigation_current_tenant_type')) {
+            $tenantType = navigation_current_tenant_type();
+            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+                return false;
+            }
+        }
+
+        return back_office_nav_href_permission_allowed($href);
     }
 }
 
@@ -1223,7 +1307,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;

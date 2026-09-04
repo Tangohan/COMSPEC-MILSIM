@@ -71,7 +71,9 @@ final class AtakTerrainSharedMapTest extends TestCase
         self::assertNotNull($grid);
         self::assertSame(7, (int) $grid['tenant_id']);
         self::assertSame(9900, (int) $grid['filled_cells']);
-        self::assertSame(12, (int) ($repo->getOwnGrid(8, 1, false)['filled_cells'] ?? 0));
+        $own = (new \ReflectionMethod(AtakTerrainRepository::class, 'getOwnGrid'))
+            ->invoke($repo, 8, 1, false);
+        self::assertSame(12, (int) ($own['filled_cells'] ?? 0));
 
         $stratis = $repo->getGrid(7, 2, false);
         self::assertNotNull($stratis);

@@ -132,6 +132,17 @@ final class ContainerIntegrations
             \App\Controllers\Api\Game\GameAuthApiController::class => new \App\Controllers\Api\Game\GameAuthApiController(
                 Container::get(\App\Services\Game\GameAuthService::class),
             ),
+            \App\Repositories\GameAtakPairingRepository::class => new \App\Repositories\GameAtakPairingRepository(),
+            \App\Services\Game\GameAtakPairingService::class => new \App\Services\Game\GameAtakPairingService(
+                Container::get(\App\Repositories\GameAtakPairingRepository::class),
+                Container::get(\App\Repositories\TacticalGameLinkRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Services\Game\GameAuthService::class),
+                Container::get(\App\Repositories\TenantAtakConfigRepository::class),
+            ),
+            \App\Controllers\Api\Game\GameAtakPairingApiController::class => new \App\Controllers\Api\Game\GameAtakPairingApiController(
+                Container::get(\App\Services\Game\GameAtakPairingService::class),
+            ),
             \App\Repositories\OperationWorkspaceRepository::class => new \App\Repositories\OperationWorkspaceRepository(),
             \App\Services\Operations\OperationWorkspaceService::class => new \App\Services\Operations\OperationWorkspaceService(
                 Container::get(\App\Repositories\OperationWorkspaceRepository::class),
@@ -143,6 +154,12 @@ final class ContainerIntegrations
             \App\Controllers\Api\Game\GameOperationsApiController::class => new \App\Controllers\Api\Game\GameOperationsApiController(
                 Container::get(\App\Services\Game\GameAuthService::class),
                 Container::get(\App\Services\Operations\OperationWorkspaceService::class),
+            ),
+            \App\Controllers\Web\AtakDeviceSecurityController::class => new \App\Controllers\Web\AtakDeviceSecurityController(
+                Container::get(\App\Services\Auth\AuthService::class),
+                Container::get(\App\Repositories\AtakRealismRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Services\Audit\AuditService::class),
             ),
             default => null,
         };

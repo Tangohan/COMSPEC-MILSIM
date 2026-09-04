@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.75;
-        versionStr = "1.0.75";
-        versionAr[] = {1, 0, 75};
+        version = 1.0.80;
+        versionStr = "1.0.80";
+        versionAr[] = {1, 0, 80};
     };
 };
 
@@ -41,6 +41,7 @@ class CfgFunctions
             class athena_selectHome {};
             class athena_selectFilter {};
             class athena_applyHomeLayout {};
+            class athena_pageCtrl {};
             class athena_resolveAthenaGroup {};
             class athena_hideForeignPages {};
             class athena_fixReportsLayout {};
@@ -125,6 +126,42 @@ class CfgFunctions
             class athena_bftUnitLabel {};
             class athena_relabelBft {};
             class athena_installBftLabels {};
+        };
+        class map_ui
+        {
+            file = "z\comspec_overwatch\addons\atak_athena\functions\ui";
+            class mapUIInit {};
+            class mapUIDestroy {};
+            class mapUIUpdate {};
+            class createTopBar {};
+            class createToolRail {};
+            class createOperatorCard {};
+            class createInspector {};
+            class createTimeline {};
+            class createLayerPanel {};
+            class selectMapEntity {};
+            class setInspector {};
+            class setActiveTool {};
+            class showNotification {};
+            class pushTimelineEvent {};
+            class formatGrid {};
+            class formatUnitStatus {};
+            class mapContextMenu {};
+            class mapQuickPing {};
+            class mapSitrep {};
+            class mapMeasure {};
+            class mapSearch {};
+            class mapCoordTool {};
+            class mapRoutePlanner {};
+            class mapZones {};
+            class mapReplay {};
+            class mapBookmarks {};
+            class mapDebugOverlay {};
+            class collectMapState {};
+            class applyMapLayers {};
+            class mapDrawOverlay {};
+            class mapPhotoIntel {};
+            class mapOrderAck {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)

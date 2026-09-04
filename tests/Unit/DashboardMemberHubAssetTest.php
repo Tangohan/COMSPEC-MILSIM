@@ -44,22 +44,23 @@ final class DashboardMemberHubAssetTest extends TestCase
         self::assertStringContainsString('personnel/mon-espace-rh/mobilite', $rh);
         self::assertStringContainsString('elevation_request_fields.php', $rh);
         self::assertStringContainsString('requestSelfElevation', $rhCtrl);
-        self::assertStringContainsString("return_to === 'dashboard'", $rhCtrl);
+        self::assertStringContainsString("\$returnTo === 'dashboard'", $rhCtrl);
         self::assertStringContainsString("'/personnel/mon-espace-rh/elevation'", $routes);
         self::assertSame('En attente', PersonnelMobilityRequestRepository::STATUS_LABELS['pending']);
         self::assertContains('career_wish', PersonnelMobilityRequestRepository::TYPES);
 
         self::assertStringContainsString('id="dashboard-quick-articles"', $articles);
-        self::assertStringContainsString('back-office/alerts/create', $articles);
+        self::assertStringContainsString('back-office/articles/create', $articles);
         self::assertStringContainsString("can('admin.organization')", $launcher);
         self::assertStringContainsString('can_publish_dashboard_articles', $home);
-        self::assertStringContainsString('Rédiger une annonce', $articles);
-        self::assertStringNotContainsString('CMS', $articles);
+        self::assertStringContainsString('Nouveau mini-article', $articles);
+        self::assertStringContainsString('dashboard_mini_articles.php', $cc);
+        self::assertStringContainsString('TenantMiniArticleRepository', $home);
 
         self::assertStringContainsString('#dashboard-org-offers', $aside);
         self::assertStringContainsString('#mon-dossier-rh', $aside);
         self::assertStringNotContainsString('#dashboard-member-rh', $aside);
-        self::assertStringContainsString('#dashboard-quick-articles', $aside);
+        self::assertStringContainsString('back-office/articles/create', $aside);
         self::assertStringContainsString('.dash-hub-stack', $css);
         self::assertStringContainsString('.dash-rh-form', $css);
         $eff = (string) file_get_contents($root . '/views/dashboard_effectifs.php');
@@ -78,7 +79,7 @@ final class DashboardMemberHubAssetTest extends TestCase
         self::assertStringContainsString("allows('admin.organization')", $home);
         self::assertStringContainsString("allows('admin.access')", $home);
         self::assertStringContainsString("allows('site.support')", $home);
-        self::assertStringContainsString('back-office/alerts/create', $articles);
+        self::assertStringContainsString('publier', $articles);
         self::assertStringNotContainsString('forum/new-topic', $articles);
     }
 }

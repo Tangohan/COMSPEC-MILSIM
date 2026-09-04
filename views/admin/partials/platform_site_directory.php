@@ -28,6 +28,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
             <ul class="pa-map__list">
                 <?php
                 $item(url('admin/tenants'), 'Annuaire des communautés', 'Nom, profil, formule et effectif');
+                $item(url('admin/system/tenant-recovery'), 'Récupération communauté', 'Recréer une communauté orpheline depuis une sauvegarde');
                 $item(url('communities/create'), 'Créer une communauté', 'Parcours de création sur le site');
                 $item(url('admin/system/subscription-plans'), 'Formules d’accès', 'Paliers, quotas et modules');
                 $item(url('admin/system/demo-nda'), 'Accès démo du site', 'Code, durées et adresses autorisées');
@@ -87,6 +88,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
                 $item(url('admin/audit'), 'Journal d’audit', 'Traçabilité de toutes les communautés');
                 $item(url('admin/maintenance'), 'Maintenance des données', 'Fenêtre de travaux');
                 $item(url('admin/analytics'), 'Indicateurs transverses', 'Usage agrégé');
+                $item(url('admin/system/retours-interface'), 'Retours sur l’interface', 'Notes et questionnaires des écrans');
                 ?>
             </ul>
         </article>

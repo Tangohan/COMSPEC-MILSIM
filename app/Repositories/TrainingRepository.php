@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class TrainingRepository
@@ -18,8 +19,9 @@ class TrainingRepository
 
     public function listPublishedForTenant(int $tenantId): array
     {
+        $statusEq = SqlText::equals($this->pdo, 'status');
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM legacy_training_modules WHERE tenant_id = ? AND status = ? ORDER BY title ASC'
+            'SELECT * FROM legacy_training_modules WHERE tenant_id = ? AND ' . $statusEq . ' ORDER BY title ASC'
         );
         $stmt->execute([$tenantId, 'published']);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -27,7 +29,9 @@ class TrainingRepository
 
     public function findBySlug(string $slug, ?int $tenantId = null): ?array
     {
-        $sql = 'SELECT * FROM legacy_training_modules WHERE slug = ? AND status = ?';
+        $slugEq = SqlText::equals($this->pdo, 'slug');
+        $statusEq = SqlText::equals($this->pdo, 'status');
+        $sql = 'SELECT * FROM legacy_training_modules WHERE ' . $slugEq . ' AND ' . $statusEq;
         $params = [$slug, 'published'];
         if ($tenantId !== null) {
             $sql .= ' AND tenant_id = ?';

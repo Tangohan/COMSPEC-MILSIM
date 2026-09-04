@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -57,8 +58,8 @@ final class ProbationOversightRepository
              LEFT JOIN user_profiles up ON up.user_id = u.id
              WHERE tur.tenant_id = ?
                AND tur.org_unit_id IS NULL
-               AND r.slug = 'probation'
-               AND u.status = 'active'
+               AND ' . SqlText::equalsLiteral($this->pdo, 'r.slug', 'probation') . '
+               AND ' . SqlText::equalsLiteral($this->pdo, 'u.status', 'active') . '
                AND COALESCE(tur.valid_from, tur.created_at) IS NOT NULL
                AND COALESCE(tur.valid_from, tur.created_at) <= DATE_SUB(NOW(), INTERVAL ? DAY)
              ORDER BY started_at ASC
@@ -91,8 +92,8 @@ final class ProbationOversightRepository
              INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = tur.tenant_id
              WHERE tur.tenant_id = ?
                AND tur.org_unit_id IS NULL
-               AND r.slug = 'probation'
-               AND u.status = 'active'
+               AND ' . SqlText::equalsLiteral($this->pdo, 'r.slug', 'probation') . '
+               AND ' . SqlText::equalsLiteral($this->pdo, 'u.status', 'active') . '
                AND COALESCE(tur.valid_from, tur.created_at) IS NOT NULL
                AND COALESCE(tur.valid_from, tur.created_at) <= DATE_SUB(NOW(), INTERVAL ? DAY)"
         );

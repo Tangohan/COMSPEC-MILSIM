@@ -35,7 +35,7 @@ final class AtakPanicMedicalAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_IcemanMedicalPanic', $post);
         self::assertStringContainsString('attente d’une connexion', $post);
         self::assertStringContainsString('class pushIcemanMedicalAlert {};', $cfg);
-        self::assertStringContainsString('1.5.12', $cfg);
+        self::assertStringContainsString('1.5.16', $cfg);
         self::assertStringContainsString('local _sender', $bridge);
         self::assertStringContainsString('_isDistress', $bridge);
         self::assertStringContainsString('cTab_player', $bridge);

@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakDeviceAuthRepository;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
@@ -21,6 +22,7 @@ use App\Services\Platform\FeatureGateService;
 use App\Services\Tactical\AtakMapAccessGapService;
 use App\Services\Tactical\AtakSessionProfileHintService;
 use App\Services\Tactical\AtakTokenService;
+use App\Services\Game\GameAtakPairingService;
 use App\Support\OperatorTacticalIdentity;
 
 class AtakController
@@ -37,6 +39,7 @@ class AtakController
         private ?UserUiPreferencesRepository $userUiPreferencesRepository = null,
         private ?AtakMapAccessGapService $accessGapService = null,
         private ?EffectifsStaffAlertService $staffAlertService = null,
+        private ?GameAtakPairingService $pairingService = null,
     ) {
         $this->gameLinkRepository ??= new TacticalGameLinkRepository();
         $this->userUiPreferencesRepository ??= new UserUiPreferencesRepository();
@@ -318,6 +321,7 @@ class AtakController
             'atakTenantLabel' => $atakTenantLabel,
             'atakCommunityMemberships' => $atakCommunityMemberships,
             'atakAccessGap' => $this->accessGapPayload($tenantId, $currentUser, $phoneOperatorSession),
+            'atakDeviceSecurity' => $this->deviceSecurityPayload($currentUser),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->header('Pragma', 'no-cache');
     }
@@ -356,8 +360,33 @@ class AtakController
             'code' => $created['code'],
             'expires_at' => $created['expires_at'],
             'api_url' => atak_client_base_url($this->atakConfigRepository->getByTenantId($tenantId)),
-            'hint' => 'Dans Arma : touche K → Compte Athena (saisir un code), puis entrez ce code.',
+            'hint' => 'Dans Arma : téléphone ATAK → Connexion Athena → Code de secours, puis entrez ce code.',
         ]);
+    }
+
+    /**
+     * Valide le code affiché sur le téléphone ATAK (appairage généré en jeu).
+     */
+    public function confirmPairCode(Request $request, array $params = []): Response
+    {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::json(['error' => 'unauthorized', 'message' => 'Connectez-vous pour valider ce terminal.'], 401);
+        }
+        $raw = (string) ($request->input('user_code', $request->input('code', '')));
+        if ($raw === '') {
+            $json = json_decode(\App\Support\HttpJsonBody::rawJson(), true);
+            $raw = is_array($json) ? (string) ($json['user_code'] ?? $json['code'] ?? '') : '';
+        }
+        $this->pairingService ??= \App\Core\Container::get(GameAtakPairingService::class);
+        $result = $this->pairingService->approveFromWeb($raw, $userId, $tenantId);
+
+        return Response::json($result['payload'], $result['status']);
     }
 
     /**
@@ -438,6 +467,30 @@ class AtakController
         }
 
         return $this->accessGapService->webPayload($tenantId, $currentUser);
+    }
+
+    /**
+     * @param array<string, mixed>|null $currentUser
+     * @return array{needsRecoveryCodes: bool, setupUrl: string}
+     */
+    private function deviceSecurityPayload(?array $currentUser): array
+    {
+        $setupUrl = url('account/security/devices') . '#recovery';
+        $uid = (int) ($currentUser['id'] ?? 0);
+        $tid = (int) ($currentUser['tenant_id'] ?? 0);
+        if ($uid < 1 || $tid < 1) {
+            return ['needsRecoveryCodes' => false, 'setupUrl' => $setupUrl];
+        }
+        try {
+            $repo = new AtakDeviceAuthRepository();
+
+            return [
+                'needsRecoveryCodes' => !$repo->hasActiveRecoveryCodes($uid, $tid),
+                'setupUrl' => $setupUrl,
+            ];
+        } catch (\Throwable) {
+            return ['needsRecoveryCodes' => false, 'setupUrl' => $setupUrl];
+        }
     }
 
     private function staffAlert(): EffectifsStaffAlertService

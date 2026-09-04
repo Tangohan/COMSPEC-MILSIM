@@ -308,7 +308,7 @@ final class SeniorityDossierInferenceSyncService
     private function resolveStartYmd(int $tenantId, int $userId, string $code): ?string
     {
         $specific = match ($code) {
-            'tenure_service' => $this->resolveServiceStartYmd($tenantId, $userId),
+            'tenure_service' => $this->resolveEnlistmentOrServiceStartYmd($tenantId, $userId),
             'tenure_unit_primary' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false),
             'tenure_group_attachment' => $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, true),
             'tenure_role_community' => $this->resolveRoleCommunityStartYmd($tenantId, $userId),
@@ -399,6 +399,7 @@ final class SeniorityDossierInferenceSyncService
     private function resolveServiceStartYmd(int $tenantId, int $userId): ?string
     {
         $candidates = [
+            $this->personnelAssignmentRepository->inferEarliestAttachmentStartYmd($tenantId, $userId, false),
             $this->personnelAssignmentRepository->inferCurrentAttachmentStartYmd($tenantId, $userId, false),
             $this->resolveRoleCommunityStartYmd($tenantId, $userId),
             $this->resolveRankStartYmd($tenantId, $userId),

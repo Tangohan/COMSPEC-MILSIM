@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class LoginAttemptRepository
@@ -25,9 +26,11 @@ class LoginAttemptRepository
 
     public function countRecentFailuresForEmailAndIp(string $email, string $ip, int $windowSeconds): int
     {
+        $emailEq = SqlText::equals($this->pdo, 'email');
+        $ipEq = SqlText::equals($this->pdo, 'ip');
         $stmt = $this->pdo->prepare(
             'SELECT COUNT(*) FROM login_attempts
-             WHERE email = ? AND ip = ? AND success = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)'
+             WHERE ' . $emailEq . ' AND ' . $ipEq . ' AND success = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)'
         );
         $stmt->execute([strtolower(trim($email)), $ip, $windowSeconds]);
 
