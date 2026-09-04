@@ -274,6 +274,9 @@ if ($canDocs) {
 
 $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Carte', 'href' => url('atak'), 'hint' => 'Situation tactique'],
+    (function_exists('can') && (can('admin.access') || can('admin.organization') || can('admin.system')))
+        ? ['label' => 'Data Inspector', 'href' => url('athena/data-inspector'), 'hint' => 'Ingestion et synchronisation']
+        : null,
     $canAtakOperators
         ? ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur des opérateurs connectés']
         : null,
