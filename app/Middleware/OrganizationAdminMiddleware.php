@@ -21,6 +21,12 @@ class OrganizationAdminMiddleware
         $path = $request->path();
         $scopedOrgAccess = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('site.support');
+        // La racine du back-office contient aussi la synthèse personnelle en lecture seule.
+        // Tous les membres authentifiés peuvent la consulter ; les sous-routes restent
+        // strictement protégées par les permissions ci-dessous.
+        if ($path === '/back-office') {
+            $scopedOrgAccess = true;
+        }
         if (!$scopedOrgAccess) {
             if (str_starts_with($path, '/api/back-office/search') && (
                 $gate->allows('organization.effectifs.hub.view')
