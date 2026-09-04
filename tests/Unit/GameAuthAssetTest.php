@@ -30,6 +30,7 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('/api/game/v1/auth/otp/request', $routes);
         self::assertStringContainsString('/api/game/v1/auth/steam/exchange', $routes);
         self::assertStringContainsString('/api/game/v1/session/restore', $routes);
+        self::assertStringContainsString('/api/game/v1/session/refresh', $routes);
         self::assertStringContainsString('/api/game/v1/bootstrap', $routes);
         self::assertStringContainsString('pickMembership', $svc);
         self::assertStringContainsString('STEAM_NOT_LINKED', $svc);

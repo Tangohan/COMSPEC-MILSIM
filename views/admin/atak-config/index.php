@@ -495,6 +495,13 @@ foreach ($dataSummary as $k => $v) {
                         Nous recommandons d’exporter avant.
                     </p>
                     <input type="text" name="confirm_phrase" autocomplete="off" class="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm font-mono" placeholder="<?= htmlspecialchars($purgeConfirmPhrase) ?>" />
+                    <label class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 cursor-pointer">
+                        <input type="checkbox" name="unlink_steam" value="1" class="mt-0.5 rounded border-red-300 text-red-700" />
+                        <span>
+                            <span class="block text-sm font-semibold text-red-950">Désynchroniser aussi tous les comptes Steam</span>
+                            <span class="block text-xs text-red-800/80 mt-1 leading-relaxed">Retire les identifiants Steam de tous les membres, ferme leurs sessions de jeu ATAK et révoque les associations de poste. Chaque opérateur devra refaire sa liaison.</span>
+                        </span>
+                    </label>
                     <button type="submit" class="px-4 py-2 bg-red-800 text-white text-sm font-semibold rounded-lg hover:bg-red-700">
                         Tout effacer
                     </button>
