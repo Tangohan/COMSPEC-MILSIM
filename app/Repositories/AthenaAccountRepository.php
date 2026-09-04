@@ -266,6 +266,39 @@ final class AthenaAccountRepository
         }
     }
 
+    /**
+     * Aligne l'identifiant global Athena sur la fiche Effectifs qui vient d'être
+     * reconnue par Steam. Les anciennes sessions et associations de poste sont
+     * révoquées afin qu'un changement de Steam ne restaure jamais l'ancien profil.
+     */
+    public function replaceSteamId(int $accountId, string $steamId): bool
+    {
+        $steamId = trim($steamId);
+        if ($accountId < 1 || $steamId === '') {
+            return false;
+        }
+
+        $pdo = $this->pdo();
+        try {
+            $pdo->beginTransaction();
+            $st = $pdo->prepare('UPDATE athena_accounts SET steam_id = ? WHERE id = ?');
+            $st->execute([$steamId, $accountId]);
+            $pdo->prepare('UPDATE game_sessions SET revoked_at = NOW() WHERE account_id = ? AND revoked_at IS NULL')
+                ->execute([$accountId]);
+            $pdo->prepare('UPDATE game_device_pairings SET revoked_at = NOW() WHERE account_id = ? AND revoked_at IS NULL')
+                ->execute([$accountId]);
+            $pdo->commit();
+
+            return true;
+        } catch (\Throwable) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return false;
+        }
+    }
+
     public function upsertPairing(int $accountId, string $deviceId, ?string $steamId, string $tokenHash): void
     {
         $steamId = trim((string) $steamId);
