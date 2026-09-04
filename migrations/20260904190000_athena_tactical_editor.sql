@@ -1,0 +1,63 @@
+-- ATHENA authoritative tactical graphics. Legacy atak_markers/map_shapes remain intact.
+CREATE TABLE IF NOT EXISTS athena_map_kits (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid CHAR(36) NOT NULL,
+  tenant_id INT UNSIGNED NOT NULL,
+  operation_id BIGINT UNSIGNED NULL,
+  name VARCHAR(191) NOT NULL,
+  description TEXT NULL,
+  world_name VARCHAR(128) NOT NULL,
+  status ENUM('DRAFT','PUBLISHED','ARCHIVED') NOT NULL DEFAULT 'DRAFT',
+  created_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_athena_map_kit_uuid (uuid),
+  KEY idx_athena_map_kit_tenant (tenant_id,world_name,status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS athena_tactical_markers (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid CHAR(36) NOT NULL,
+  tenant_id INT UNSIGNED NOT NULL,
+  operation_id BIGINT UNSIGNED NULL,
+  kit_id BIGINT UNSIGNED NULL,
+  deployed_from_uuid CHAR(36) NULL,
+  world_name VARCHAR(128) NOT NULL,
+  type VARCHAR(64) NOT NULL DEFAULT 'MARKER',
+  symbol VARCHAR(128) NOT NULL DEFAULT 'mil_dot',
+  affiliation ENUM('FRIENDLY','HOSTILE','NEUTRAL','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN',
+  label VARCHAR(191) NOT NULL DEFAULT '', description TEXT NULL,
+  geometry_type ENUM('POINT','LINESTRING','POLYGON','RECTANGLE','ELLIPSE','ROUTE','TEXT') NOT NULL DEFAULT 'POINT',
+  coordinates JSON NOT NULL,
+  rotation DECIMAL(7,3) NOT NULL DEFAULT 0, scale DECIMAL(7,3) NOT NULL DEFAULT 1,
+  color CHAR(7) NOT NULL DEFAULT '#f5c542', opacity DECIMAL(4,3) NOT NULL DEFAULT 1,
+  priority SMALLINT NOT NULL DEFAULT 0,
+  status ENUM('DRAFT','PUBLISHED','ARCHIVED') NOT NULL DEFAULT 'DRAFT',
+  visibility_scope ENUM('COMMUNITY','OPERATION','COMMAND','GROUP','USER','ATAK_LOCAL') NOT NULL DEFAULT 'COMMUNITY',
+  visibility_ref VARCHAR(191) NULL,
+  created_by INT UNSIGNED NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  published_at DATETIME NULL, deleted_at DATETIME NULL, active TINYINT(1) NOT NULL DEFAULT 1,
+  revision BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id), UNIQUE KEY uk_athena_marker_uuid (uuid),
+  KEY idx_athena_marker_delta (tenant_id,world_name,revision), KEY idx_athena_marker_kit (kit_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS athena_tactical_events (
+  revision BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id INT UNSIGNED NOT NULL, world_name VARCHAR(128) NOT NULL,
+  marker_uuid CHAR(36) NOT NULL,
+  event_type ENUM('MARKER_CREATE','MARKER_UPDATE','MARKER_DELETE') NOT NULL,
+  payload JSON NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (revision), KEY idx_athena_event_delta (tenant_id,world_name,revision)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS athena_map_packs (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, tenant_id INT UNSIGNED NULL,
+  world_name VARCHAR(128) NOT NULL, version VARCHAR(32) NOT NULL, tile_format VARCHAR(16) NOT NULL DEFAULT 'png',
+  min_zoom TINYINT UNSIGNED NOT NULL, max_zoom TINYINT UNSIGNED NOT NULL, bounds JSON NOT NULL,
+  hash CHAR(64) NOT NULL, size_bytes BIGINT UNSIGNED NOT NULL DEFAULT 0, base_path VARCHAR(255) NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), UNIQUE KEY uk_athena_pack (tenant_id,world_name,version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

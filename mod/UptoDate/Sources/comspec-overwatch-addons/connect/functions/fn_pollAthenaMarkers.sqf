@@ -7,7 +7,7 @@ private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetMarkers", [""]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = ["COMSPECExtension" callExtension ["GetMarkers", ["world:" + worldName]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 private _body = _raw select [3, (count _raw) - 3];
 if (_body isEqualTo "" || {_body isEqualTo "[]"}) exitWith {};
