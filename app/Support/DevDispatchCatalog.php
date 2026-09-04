@@ -584,6 +584,27 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(428, '2026-09-04', 'L’appareil photo envoie le cliché au poste, fonds d’écran sur l’accueil', 'L’appareil photo du téléphone prend un cliché et l’envoie au poste, onglet Photos. Vous pouvez choisir un fond d’écran sur l’accueil. Relancer Arma complètement après le nouveau pack', [
+                'L’appareil photo du téléphone prend un cliché et l’envoie au poste, onglet Photos',
+                'Le viseur se masque le temps de la prise, pour ne pas apparaître sur le cliché',
+                'Sans session au poste, le téléphone indique clairement de se connecter pour envoyer le cliché',
+                'Vous pouvez choisir un fond d’écran sur l’accueil, parmi les visuels livrés avec le téléphone',
+            ], [], [], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.22. Accueil : ouvrez Appareil photo, puis le viseur. Paramètres : choisissez un fond d’écran.',
+            ], 'COMSPEC ATAK 1.8.22'),
+            $pr(427, '2026-09-04', 'Le poste indisponible n’enferme plus, Terrain reste lisible', 'Si le poste ne répond pas, le téléphone propose clairement de réessayer ou de se connecter avec l’e-mail. Depuis le réseau local, Accueil et Compte permettent de rejoindre le poste. Terrain montre de nouveau la photo aérienne, sans cases d’image cassée, même lorsque le poste est coupé. Relancer Arma complètement après le nouveau pack', [
+                'Quand le poste est momentanément indisponible, un message clair propose de réessayer ou de se connecter avec l’e-mail',
+                'Depuis le réseau local, Rejoindre le poste rouvre l’écran de connexion',
+                'Compte garde Se reconnecter, visible après un réseau local',
+                'Terrain affiche la photo aérienne du théâtre, sans icône de fichier manquant',
+            ], [
+                'Les états de liaison restent rédigés en français',
+            ], [
+                'Après un réseau local, l’écran de connexion au poste restait caché',
+                'Terrain montrait des cases d’image cassée à la place du terrain',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.21. Terrain : la photo aérienne doit apparaître tout de suite, même sans poste. Accueil en réseau local : Rejoindre le poste. Si le poste ne répond pas : formulaire e-mail visible.',
+            ], 'COMSPEC ATAK 1.8.21'),
             $pr(426, '2026-09-04', 'Connexion au compte depuis le téléphone, carte lisible, identifiant Steam', 'Sur le téléphone, Compte permet de se connecter avec l’e-mail et le mot de passe Athena. Le profil, la communauté et la session apparaissent ensuite. L’identifiant Steam détecté en jeu, ou saisi dans les options du pack, est associé au compte s’il n’était pas encore enregistré. Terrain affiche de nouveau la photo aérienne dès l’ouverture. Relancer Arma complètement après le nouveau pack', [
                 'Compte : se connecter avec l’adresse e-mail et le mot de passe du compte Athena',
                 'Après connexion, le nom, la communauté, l’expiration de session et l’état de liaison sont ceux du poste',

@@ -693,6 +693,12 @@ public static partial class Extension
         if (raw.Contains("NO_TENANT", StringComparison.Ordinal)) return "NO_TENANT";
         if (raw.Contains("MOD_OUTDATED", StringComparison.Ordinal)) return "MOD_OUTDATED";
         if (raw.Contains("SESSION_EXPIRED", StringComparison.Ordinal)) return "SESSION_EXPIRED";
+        if (raw.Contains("maintenance", StringComparison.OrdinalIgnoreCase)
+            || code.Equals("maintenance", StringComparison.OrdinalIgnoreCase))
+            return "maintenance";
+        if (code.Equals("http_503", StringComparison.OrdinalIgnoreCase)
+            || raw.Contains("http_503", StringComparison.Ordinal))
+            return "http_503";
         if (code.StartsWith("http_", StringComparison.Ordinal) || code == "timeout" || code == "invalid_url")
             return "NETWORK_ERROR";
         return code.Length > 0 ? code : "NETWORK_ERROR";

@@ -36,6 +36,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('pairing_token', $svc);
         self::assertStringContainsString('acceptGameSessionToken', $auth);
         self::assertStringContainsString('/api/game/v1/auth/', $auth);
+        $nda = (string) file_get_contents($root . '/app/Services/DemoNda/DemoNdaGateService.php');
+        self::assertStringContainsString("str_starts_with(\$path, '/api/game/')", $nda);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_restoreSession', $sqfInit);
         self::assertStringContainsString('loginSteam', $sqfInit);
         $sqfSteam = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf');

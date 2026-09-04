@@ -8,6 +8,7 @@
     "https://jetelain.github.io/Arma3Map/maps/{world}/{z}/{x}/{y}.png",
     "https://cdn.jsdelivr.net/gh/jetelain/Arma3Map@gh-pages/maps/{world}/{z}/{x}/{y}.png"
   ];
+  var TRANSPARENT = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   var inflight = {};
   var kept = {};
 
@@ -39,13 +40,25 @@
     try { return URL.createObjectURL(blob); } catch (e) { return ""; }
   }
 
+  /* Seuls blob: et data: peuvent remplacer un src déjà posé. Jamais /map-data ni file://. */
+  function isCachePaintUrl(url) {
+    var u = String(url || "");
+    return u.indexOf("blob:") === 0 || u.indexOf("data:image/") === 0;
+  }
+
+  function isRemotePaintUrl(url) {
+    var u = String(url || "");
+    return u.indexOf("https://jetelain.github.io/") === 0
+      || u.indexOf("https://cdn.jsdelivr.net/") === 0;
+  }
+
   function fromCache(id) {
     var store = window.COMSPEC_MapStore;
     if (!store) return Promise.resolve(null);
     return store.get("tiles", id).then(function (row) {
       if (!row) return null;
       if (row.blob) return blobUrl(row.blob);
-      if (row.url) return row.url;
+      if (row.url && isCachePaintUrl(row.url)) return row.url;
       return null;
     }).then(function (v) { return v; }, function () { return null; });
   }
@@ -88,13 +101,9 @@
 
   function load(world, z, x, y) {
     world = String(world || "altis").toLowerCase();
-    var id = key(world, z, x, y);
-    return fromCache(id).then(function (cached) {
-      if (cached) return cached;
-      var urls = remotes(world, z, x, y);
-      cacheLater(id, urls);
-      return urls[0] || logicalUrl(world, z, x, y);
-    });
+    var urls = remotes(world, z, x, y);
+    cacheLater(key(world, z, x, y), urls);
+    return Promise.resolve(urls[0] || TRANSPARENT);
   }
 
   function paintTile(img, world, z, x, y, done) {
@@ -102,33 +111,47 @@
     var urls = remotes(world, z, x, y);
     var idx = 0;
     var finished = false;
+    var paintedOk = false;
 
     function finish() {
       if (finished) return;
       finished = true;
+      if (!paintedOk) {
+        img.src = TRANSPARENT;
+      }
       if (typeof done === "function") done(null, img);
     }
 
     img.onload = function () {
+      var src = String(img.src || "");
+      if (src === TRANSPARENT || src.indexOf("data:image/gif") === 0) {
+        finish();
+        return;
+      }
+      paintedOk = true;
       finish();
-      if (img.src && img.src.indexOf("blob:") !== 0) {
-        cacheLater(id, [img.src].concat(urls));
+      if (isRemotePaintUrl(src)) {
+        cacheLater(id, [src].concat(urls));
         keepOnDisk(world, z, x, y);
       }
     };
     img.onerror = function () {
+      if (paintedOk) return;
       idx += 1;
-      if (idx < urls.length && urls[idx]) {
+      if (idx < urls.length && isRemotePaintUrl(urls[idx])) {
         img.src = urls[idx];
         return;
       }
+      img.src = TRANSPARENT;
       finish();
     };
 
-    /* Leçon 1.8.18 : ne jamais attendre le cache, un pack disque ou /map-data. */
-    img.src = urls[0] || "";
+    /* Leçon 1.8.18 / 1.8.21 : jetelain d’abord, jamais /map-data ni file://. */
+    img.src = urls[0];
     fromCache(id).then(function (cached) {
-      if (cached && !finished) img.src = cached;
+      if (cached && isCachePaintUrl(cached) && !paintedOk) {
+        img.src = cached;
+      }
     });
   }
 
