@@ -97,13 +97,15 @@ final class AtakTenantDataService
 
     /**
      * Purge journal + données de mission. Conserve config et indicatifs liés.
+     * La déliaison Steam est volontairement optionnelle car elle force tous les
+     * membres de la communauté à refaire leur liaison en jeu.
      *
-     * @return array{activity_files:int,tables:array<string,int>,photos_removed:int}
+     * @return array{activity_files:int,tables:array<string,int>,photos_removed:int,steam_unlinked:int}
      */
-    public function purgeAll(int $tenantId): array
+    public function purgeAll(int $tenantId, bool $unlinkSteam = false): array
     {
         if ($tenantId < 1) {
-            return ['activity_files' => 0, 'tables' => [], 'photos_removed' => 0];
+            return ['activity_files' => 0, 'tables' => [], 'photos_removed' => 0, 'steam_unlinked' => 0];
         }
 
         $photosRemoved = $this->purgeIntelPhotoFiles($tenantId);
@@ -120,12 +122,60 @@ final class AtakTenantDataService
         }
 
         $this->purgeSessionCache($tenantId);
+        $steamUnlinked = $unlinkSteam ? $this->unlinkSteamAccounts($tenantId) : 0;
 
         return [
             'activity_files' => $activityFiles,
             'tables' => $tables,
             'photos_removed' => $photosRemoved,
+            'steam_unlinked' => $steamUnlinked,
         ];
+    }
+
+    /**
+     * Retire les identifiants Steam et révoque les sessions de jeu du tenant.
+     * Les tables de la nouvelle identité Athena sont facultatives sur les
+     * installations plus anciennes : chaque opération est donc gardée par un
+     * contrôle de schéma.
+     */
+    private function unlinkSteamAccounts(int $tenantId): int
+    {
+        $affected = 0;
+
+        if ($this->isTenantScopedTable('users') && $this->columnExists('users', 'steam_id')) {
+            $stmt = $this->pdo->prepare(
+                "UPDATE users SET steam_id = NULL WHERE tenant_id = ? AND steam_id IS NOT NULL AND TRIM(steam_id) <> ''"
+            );
+            $stmt->execute([$tenantId]);
+            $affected = $stmt->rowCount();
+        }
+
+        if ($this->isTenantScopedTable('game_sessions') && $this->columnExists('game_sessions', 'revoked_at')) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE game_sessions SET revoked_at = NOW() WHERE tenant_id = ? AND revoked_at IS NULL'
+            );
+            $stmt->execute([$tenantId]);
+        }
+
+        if ($this->tableExists('athena_accounts') && $this->tableExists('account_tenant_memberships')) {
+            $accountIds = $this->pdo->prepare(
+                'SELECT DISTINCT account_id FROM account_tenant_memberships WHERE tenant_id = ?'
+            );
+            $accountIds->execute([$tenantId]);
+            $ids = array_map('intval', $accountIds->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            if ($ids !== []) {
+                $marks = implode(',', array_fill(0, count($ids), '?'));
+                $this->pdo->prepare("UPDATE athena_accounts SET steam_id = NULL WHERE id IN ({$marks})")
+                    ->execute($ids);
+                if ($this->tableExists('game_device_pairings') && $this->columnExists('game_device_pairings', 'revoked_at')) {
+                    $this->pdo->prepare(
+                        "UPDATE game_device_pairings SET revoked_at = NOW() WHERE account_id IN ({$marks}) AND revoked_at IS NULL"
+                    )->execute($ids);
+                }
+            }
+        }
+
+        return $affected;
     }
 
     /**

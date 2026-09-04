@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Portail 1.5.98 — 2026-09-04
+
+### Administration — remise à zéro ATAK et Steam
+
+L’effacement des remontées ATAK propose maintenant une option explicite pour désynchroniser tous les comptes Steam de la communauté. Lorsqu’elle est cochée, les identifiants sont retirés et les sessions de jeu ainsi que les associations de poste sont révoquées ; les opérateurs doivent ensuite refaire leur liaison.
+
+---
+
 ## Portail 1.5.97 — 2026-09-03
 
 ### Correction — Grandes photos terrain
