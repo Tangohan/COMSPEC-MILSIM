@@ -919,15 +919,7 @@ window.ATAKOrders = (function () {
   }
 
   function formatTime(iso) {
-    if (!iso) return '—';
-    var d = new Date(String(iso).replace(' ', 'T') + (String(iso).indexOf('Z') >= 0 ? '' : 'Z'));
-    if (isNaN(d.getTime())) {
-      d = new Date(iso);
-    }
-    if (isNaN(d.getTime())) return '—';
-    var h = d.getUTCHours();
-    var m = d.getUTCMinutes();
-    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ' Z';
+    return window.AthenaDateTime.format(iso, { year: undefined, month: undefined, day: undefined, second: undefined });
   }
 
   function statusClass(status, isOverdue) {
@@ -1217,7 +1209,7 @@ window.ATAKOrders = (function () {
             '<div><span>Priorité</span><strong class="' + (String(o.priority || '').toUpperCase() === 'URGENT' || String(o.priority || '').toUpperCase() === 'CONTACT' ? 'is-hot' : '') + '">' +
               escapeHtml(o.priority_label || priorityLabelFr(o.priority)) + '</strong></div>' +
             '<div><span>Destinataire</span><strong>' + escapeHtml(dest) + '</strong></div>' +
-            '<div><span>Heure d’émission</span><strong>' + escapeHtml(formatTime(o.created_at || o.updated_at)) + ' Z</strong></div>' +
+            '<div><span>Heure d’émission</span><strong>' + escapeHtml(formatTime(o.created_at || o.updated_at)) + '</strong></div>' +
           '</div>' +
           '<div class="atak-order-issuer">De <strong>' + escapeHtml(o.issuer || '—') + '</strong></div>' +
           radioLine +
@@ -1227,7 +1219,7 @@ window.ATAKOrders = (function () {
           '<div class="atak-order-suivi">' +
             '<div><span>Statut actuel</span><strong class="' + (isOverdue ? 'is-late' : '') + '">' +
               escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) + '</strong><em>' + escapeHtml(ackDetail) + '</em></div>' +
-            '<div><span>Émis le</span><strong>' + escapeHtml(formatTime(o.created_at)) + ' Z</strong></div>' +
+            '<div><span>Émis le</span><strong>' + escapeHtml(formatTime(o.created_at)) + '</strong></div>' +
           '</div>' +
         '</article>'
       );

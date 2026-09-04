@@ -3934,11 +3934,10 @@ echo "Migrations terminées.\n";
 if (PHP_SAPI !== 'cli') {
     echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php run-migrations.php (ou php setup-database.php) en SSH pour une sortie complète.\n";
 }
-if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
-    require_once $root . '/bootstrap/migrations_full_post.php';
-    comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
-    comspec_print_post_migration_report($pdo, $root, $migrationFlush);
-}
+// Le pipeline unique applique systématiquement tous les SQL versionnés puis vérifie l'état final.
+require_once $root . '/bootstrap/migrations_full_post.php';
+comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
+comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 
 if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === false) {
     // Journal CLI optionnel si l’UI web n’a pas chargé le helper

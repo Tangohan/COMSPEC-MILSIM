@@ -145,6 +145,7 @@ final class AccountDeletionService
             'display_name' => self::DELETED_DISPLAY_NAME,
             'callsign' => null,
         ]);
+        $this->revokeAthenaAccess($userId, $tenantId);
 
         return ['ok' => true, 'anonymized_user_ids' => []];
     }
@@ -235,6 +236,8 @@ final class AccountDeletionService
             return;
         }
 
+        $this->revokeAthenaAccess($userId, null);
+
         try {
             $this->userProfiles->deleteByUserId($userId);
         } catch (\Throwable) {
@@ -265,6 +268,42 @@ final class AccountDeletionService
             'personnel_admin_data',
             'user_forum_stats',
         ]);
+    }
+
+    /**
+     * Coupe également la session persistée dans la DLL Overwatch. Effacer la
+     * seule colonne users.steam_id ne suffit pas : son refresh token pouvait
+     * continuer à réafficher l'identité supprimée pendant trente jours.
+     */
+    private function revokeAthenaAccess(int $userId, ?int $tenantId): void
+    {
+        $pdo = Database::getPdo();
+        foreach (['account_tenant_memberships', 'game_sessions'] as $table) {
+            if (!$this->tableExists($pdo, $table)) {
+                return;
+            }
+        }
+
+        $tenantSql = $tenantId !== null ? ' AND tenant_id = ?' : '';
+        $params = $tenantId !== null ? [$userId, $tenantId] : [$userId];
+        try {
+            $accounts = $pdo->prepare('SELECT account_id FROM account_tenant_memberships WHERE user_id = ?' . $tenantSql);
+            $accounts->execute($params);
+            $accountIds = array_values(array_unique(array_map('intval', $accounts->fetchAll(PDO::FETCH_COLUMN) ?: [])));
+
+            $pdo->prepare("UPDATE account_tenant_memberships SET status = 'inactive' WHERE user_id = ?" . $tenantSql)
+                ->execute($params);
+            $pdo->prepare('UPDATE game_sessions SET revoked_at = NOW() WHERE user_id = ?' . $tenantSql . ' AND revoked_at IS NULL')
+                ->execute($params);
+
+            if ($accountIds !== [] && $this->tableExists($pdo, 'game_device_pairings')) {
+                $marks = implode(',', array_fill(0, count($accountIds), '?'));
+                $pdo->prepare("UPDATE game_device_pairings SET revoked_at = NOW() WHERE account_id IN ({$marks}) AND revoked_at IS NULL")
+                    ->execute($accountIds);
+            }
+        } catch (\Throwable) {
+            // Les anciennes installations sans schéma Game Auth restent supprimables.
+        }
     }
 
     /**

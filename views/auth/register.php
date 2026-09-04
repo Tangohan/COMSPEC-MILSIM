@@ -53,6 +53,11 @@ $athena_header_current = 'register';
     <h1 class="ds-title"><?= htmlspecialchars(__('auth.register_heading'), ENT_QUOTES, 'UTF-8') ?></h1>
     <p class="ds-lead"><?= htmlspecialchars(__('auth.register_sub'), ENT_QUOTES, 'UTF-8') ?></p>
 
+    <button type="button" class="ds-preview-notice" data-preview-open aria-haspopup="dialog">
+        <span class="ds-preview-notice__badge">Preview ouverte</span>
+        <span>À lire avant de créer votre compte</span>
+    </button>
+
     <?php if ($prefillSlug !== ''): ?>
     <p class="ds-pill" role="status">
         <?= htmlspecialchars(__('auth.register_space_targeted'), ENT_QUOTES, 'UTF-8') ?>
@@ -227,6 +232,20 @@ $athena_header_current = 'register';
     </div>
 </main>
 </div>
+
+<dialog class="ds-preview-modal" data-preview-modal aria-labelledby="preview-title" aria-describedby="preview-description">
+    <div class="ds-preview-modal__header">
+        <span class="ds-preview-notice__badge">Preview ouverte</span>
+        <button type="button" class="ds-preview-modal__close" data-preview-close aria-label="Fermer">×</button>
+    </div>
+    <h2 id="preview-title">Athena évolue avec vos retours</h2>
+    <div id="preview-description" class="ds-preview-modal__body">
+        <p>Vous accédez à une <strong>preview ouverte</strong> : l’interface et son intuitivité font encore l’objet d’améliorations.</p>
+        <p>Le portail web et le mod évoluent séparément. Selon leurs versions, une fonctionnalité peut fonctionner, puis devenir temporairement indisponible jusqu’à leur réalignement.</p>
+        <p>Tout est en preview. Chaque conseil ou retour d’expérience nous aide : écrivez-nous à <a href="mailto:no-reply@athena.ttrd.fr">no-reply@athena.ttrd.fr</a>.</p>
+    </div>
+    <button type="button" class="ds-btn ds-btn--primary ds-btn--block" data-preview-close>J’ai compris, continuer</button>
+</dialog>
 
 <?php require base_path('views/partials/cookie_banner.php'); ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

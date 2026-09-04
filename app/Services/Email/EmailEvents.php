@@ -7,6 +7,10 @@ namespace App\Services\Email;
 final class EmailEvents
 {
     public const USER_REGISTER_CONFIRMATION = 'USER_REGISTER_CONFIRMATION';
+    /** Compte public créé — notification à l'exploitation de la plateforme. */
+    public const PLATFORM_ACCOUNT_CREATED = 'PLATFORM_ACCOUNT_CREATED';
+    /** Adresse du nouveau compte vérifiée — notification à l'exploitation de la plateforme. */
+    public const PLATFORM_ACCOUNT_EMAIL_VERIFIED = 'PLATFORM_ACCOUNT_EMAIL_VERIFIED';
     public const REGISTER_SECURITY_COMPANION = 'REGISTER_SECURITY_COMPANION';
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
@@ -165,6 +169,8 @@ final class EmailEvents
     /** @var list<string> */
     public const EMAIL_EVENTS = [
         self::USER_REGISTER_CONFIRMATION,
+        self::PLATFORM_ACCOUNT_CREATED,
+        self::PLATFORM_ACCOUNT_EMAIL_VERIFIED,
         self::REGISTER_SECURITY_COMPANION,
         self::COMMUNITY_CREATION_CHECKLIST,
         self::NEW_COMMUNITY_MEMBER,

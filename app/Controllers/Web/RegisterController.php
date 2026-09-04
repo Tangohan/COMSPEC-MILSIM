@@ -273,29 +273,23 @@ final class RegisterController
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
         $tenantName = email_community_label($tenant, (string) ($tenant['name'] ?? ''));
         $emailNorm = strtolower(trim($email));
-        $sentOk = $this->emailService->sendUserRegisterConfirmation(
-            $emailNorm,
-            $displayName,
-            $tenantName,
-            $verifyUrl,
-            15,
-            $tenantId
-        );
-
         Session::set('register_pending_email', $emailNorm);
 
-        if (!$sentOk) {
-            Session::flash(
-                'error',
-                'Votre compte a été créé, mais l’e-mail de confirmation n’a pas pu être envoyé. Utilisez « Renvoyer le lien » ci-dessous ou contactez le support si le problème persiste.'
+        $registrationInbox = registration_alert_inbox_email();
+        if ($registrationInbox !== null) {
+            $this->emailService->sendPlatformAccountRegistrationAlert(
+                $registrationInbox,
+                $emailNorm,
+                $displayName,
+                $tenantName,
+                'created',
+                $tenantId
             );
-
-            return Response::redirect(url('register/check-email'));
         }
 
         try {
             $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
-            $this->emailTokens->create(
+            $tokenId = $this->emailTokens->create(
                 $tenantId,
                 $userId,
                 EmailTokenPurpose::REGISTER_CONFIRM,
@@ -308,6 +302,26 @@ final class RegisterController
             Session::flash(
                 'warning',
                 'Compte créé, mais le lien de confirmation n’a pas pu être enregistré. Utilisez « Renvoyer le lien » depuis la page suivante.'
+            );
+
+            return Response::redirect(url('register/check-email'));
+        }
+
+        // Le jeton doit exister en base avant que le message puisse être livré : un clic
+        // très rapide ne doit jamais arriver avant l'enregistrement du lien.
+        $sentOk = $this->emailService->sendUserRegisterConfirmation(
+            $emailNorm,
+            $displayName,
+            $tenantName,
+            $verifyUrl,
+            15,
+            $tenantId
+        );
+        if (!$sentOk) {
+            $this->emailTokens->deleteById($tokenId);
+            Session::flash(
+                'error',
+                'Votre compte a été créé, mais l’e-mail de confirmation n’a pas pu être envoyé. Utilisez « Renvoyer le lien » ci-dessous ou contactez le support si le problème persiste.'
             );
 
             return Response::redirect(url('register/check-email'));

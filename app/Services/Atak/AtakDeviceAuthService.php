@@ -1,0 +1,47 @@
+<?php
+declare(strict_types=1);
+namespace App\Services\Atak;
+
+use App\Core\Database;
+use App\Repositories\AtakDeviceAuthRepository;
+use App\Repositories\AtakRealismRepository;
+use App\Services\Game\GameAuthService;
+
+final class AtakDeviceAuthService
+{
+    private const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    public function __construct(private AtakDeviceAuthRepository $repo,private GameAuthService $gameAuth,private AtakRealismRepository $registry){}
+    public static function normalizeUserCode(string $v):string{$v=strtoupper(preg_replace('/[^A-Z0-9]/i','',$v)??'');return strlen($v)===8?substr($v,0,4).'-'.substr($v,4):'';}
+    public static function validTerminal(string $v):bool{return preg_match('/^ATAK-[A-Z0-9][A-Z0-9_-]{3,58}$/i',$v)===1;}
+    public static function sanitizeSteam(string $v):string{$steam=preg_replace('/\D/','',$v)??'';return preg_match('/^7656119\d{10}$/',$steam)===1?$steam:'';}
+    public static function sanitizeModVersion(string $v):string{$v=trim($v);return preg_match('/^[0-9]+(?:\.[0-9]+){1,3}$/',$v)===1?$v:'0.0.0';}
+    private function code(int $n):string{$s='';$max=strlen(self::ALPHABET)-1;for($i=0;$i<$n;$i++)$s.=self::ALPHABET[random_int(0,$max)];return $s;}
+    public function start(array $in,string $ip,string $ua):array
+    {
+        $terminal=strtoupper(trim((string)($in['terminal_uid']??'')));
+        $version=self::sanitizeModVersion((string)($in['mod_version']??''));
+        $steam=self::sanitizeSteam((string)($in['steam_uid']??''));
+        if(!self::validTerminal($terminal))return ['status_code'=>400,'payload'=>['error'=>'invalid_request']];
+        $device=rtrim(strtr(base64_encode(random_bytes(48)),'+/','-_'),'=');
+        try {
+            $id=0;$display='---- ----';
+            for($i=0;$i<8;$i++){ $plain=$this->code(8);$display=substr($plain,0,4).'-'.substr($plain,4);try{$id=$this->repo->createPairing(['device_hash'=>hash('sha256',$device),'user_hash'=>hash('sha256',$plain),'user_hint'=>$display,'terminal_uid'=>$terminal,'steam_uid'=>$steam?:null,'mod_version'=>$version,'ip'=>$ip,'ua'=>mb_substr($ua,0,255),'expires_at'=>gmdate('Y-m-d H:i:s',time()+600)]);break;}catch(\PDOException $e){if($i===7)throw $e;}}
+            $this->repo->event('ATAK_PAIR_STARTED',null,null,$id,$ip,['terminal_uid'=>$terminal,'mod_version'=>$version]);
+            return ['status_code'=>201,'payload'=>['status'=>'pending','device_code'=>$device,'user_code'=>$display,'expires_in'=>600,'interval'=>2,'verification_uri'=>url('account/security/devices')]];
+        } catch (\PDOException $e) {
+            return ['status_code'=>503,'payload'=>['error'=>'pairing_unavailable']];
+        }
+    }
+    public function inspect(string $code):?array{$n=self::normalizeUserCode($code);if($n==='')return null;$row=$this->repo->pairingByUserHash(hash('sha256',str_replace('-','',$n)));if($row&&$row['status']==='pending'&&strtotime($row['expires_at'])<=time()){$this->repo->expire((int)$row['id']);$row['status']='expired';}return $row;}
+    public function decide(array $pair,int $user,int $tenant,bool $approve,string $ip):bool
+    { if(!$approve){$ok=$this->repo->deny((int)$pair['id']);if($ok)$this->repo->event('ATAK_PAIR_DENIED',$user,$tenant,(int)$pair['id'],$ip);return $ok;}
+      $account=$this->repo->accountForUser($user,$tenant);if(!$account||$account['user_status']!=='active'||$account['membership_status']!=='active'||$account['tenant_status']!=='active')return false;
+      return $this->repo->transaction(function()use($pair,$user,$tenant,$account,$ip){$trusted=$this->repo->enrollDevice(['user_id'=>$user,'tenant_id'=>$tenant,'account_id'=>(int)$account['id'],'terminal_uid'=>$pair['terminal_uid'],'steam_uid'=>$pair['steam_uid'],'label'=>$pair['terminal_uid'],'approved_by'=>$user,'ip'=>$ip,'mod_version'=>$pair['mod_version']]);$terminal=$this->registry->upsertTerminal($tenant,['terminal_uid'=>$pair['terminal_uid'],'terminal_label'=>$pair['terminal_uid'],'terminal_type'=>'desktop','platform_label'=>'Arma 3 / COMSPEC','user_id'=>$user,'status'=>'active','client_ip'=>$ip,'mod_version'=>$pair['mod_version']]);$certificate=$this->registry->issueCertificate($tenant,['terminal_id'=>(int)($terminal['id']??0),'user_id'=>$user,'certificate_type'=>'device','status'=>'active','common_name'=>$pair['terminal_uid'],'fingerprint_sha256'=>hash('sha256',$tenant.':'.$pair['terminal_uid'])]);$this->repo->linkRegistry($trusted,(int)($terminal['id']??0),(int)($certificate['id']??0));$ok=$this->repo->approvePairing((int)$pair['id'],$user,$tenant,$trusted);if($ok)$this->repo->event('ATAK_PAIR_APPROVED',$user,$tenant,$trusted,$ip,['terminal_uid'=>$pair['terminal_uid'],'certificate_id'=>(int)($certificate['id']??0)]);return $ok;}); }
+    public function status(string $secret,string $ip):array
+    {if(strlen($secret)<40)return ['status_code'=>400,'payload'=>['error'=>'invalid_device_code']];$row=$this->repo->pairingByDeviceHash(hash('sha256',$secret));if(!$row)return ['status_code'=>404,'payload'=>['status'=>'unknown']];if($row['status']==='pending'&&strtotime($row['expires_at'])<=time()){$this->repo->expire((int)$row['id']);return ['status_code'=>200,'payload'=>['status'=>'expired']];}if($row['status']!=='approved')return ['status_code'=>200,'payload'=>['status'=>$row['status']==='consumed'?'expired':$row['status']]];
+      return $this->repo->transaction(function()use($row,$ip){$locked=$this->repo->pairingByDeviceHash((string)$row['device_code_hash'],true);if(!$locked||$locked['status']!=='approved'||!$this->repo->consumeApproved((int)$locked['id']))return ['status_code'=>409,'payload'=>['status'=>'expired']];$issued=$this->gameAuth->issueForTrustedUser((int)$locked['user_id'],(int)$locked['tenant_id'],['device_id'=>$locked['terminal_uid'],'steam_uid'=>$locked['steam_uid'],'mod_version'=>$locked['mod_version']]);return $this->compat($issued,(string)$locked['terminal_uid']);}); }
+    public function generateCodes(int $user,int $tenant,string $ip):array{$plain=[];$stored=[];for($i=0;$i<10;$i++){$raw=$this->code(12);$display=implode('-',str_split($raw,4));$plain[]=$display;$stored[]=['lookup'=>hash('sha256',$raw),'hash'=>password_hash($raw,PASSWORD_ARGON2ID)];}$set=$this->repo->generateRecoverySet($user,$tenant,$stored);$this->repo->event('RECOVERY_CODES_GENERATED',$user,$tenant,$set,$ip,['count'=>10]);return $plain;}
+    public function redeem(array $in,string $ip):array{$code=self::normalizeUserCode12((string)($in['code']??''));$terminal=strtoupper(trim((string)($in['terminal_uid']??'')));if($code===''||!self::validTerminal($terminal))return ['status_code'=>400,'payload'=>['error'=>'invalid_request']];$raw=str_replace('-','',$code);$steam=self::sanitizeSteam((string)($in['steam_uid']??''))?:null;$version=self::sanitizeModVersion((string)($in['mod_version']??''));try{return $this->repo->transaction(function()use($raw,$terminal,$ip,$steam,$version){$row=$this->repo->recoveryByLookup(hash('sha256',$raw),true);if(!$row||!password_verify($raw,(string)$row['code_hash']))return ['status_code'=>404,'payload'=>['error'=>'recovery_code_invalid']];if($row['set_revoked_at'])return ['status_code'=>410,'payload'=>['error'=>'recovery_set_revoked']];if($row['used_at']||!$this->repo->consumeRecovery((int)$row['id'],$terminal))return ['status_code'=>409,'payload'=>['error'=>'recovery_code_used']];$account=$this->repo->accountForUser((int)$row['user_id'],(int)$row['tenant_id']);if(!$account||$account['user_status']!=='active'||$account['tenant_status']!=='active')return ['status_code'=>404,'payload'=>['error'=>'recovery_code_invalid']];$trusted=$this->repo->enrollDevice(['user_id'=>(int)$row['user_id'],'tenant_id'=>(int)$row['tenant_id'],'account_id'=>(int)$account['id'],'terminal_uid'=>$terminal,'steam_uid'=>$steam,'label'=>$terminal,'approved_by'=>(int)$row['user_id'],'ip'=>$ip,'mod_version'=>$version]);$this->repo->event('RECOVERY_CODE_USED',(int)$row['user_id'],(int)$row['tenant_id'],$trusted,$ip,['terminal_uid'=>$terminal]);$issued=$this->gameAuth->issueForTrustedUser((int)$row['user_id'],(int)$row['tenant_id'],['device_id'=>$terminal,'steam_uid'=>$steam,'mod_version'=>$version]);return $this->compat($issued,$terminal);});}catch(\PDOException $e){return ['status_code'=>503,'payload'=>['error'=>'recovery_unavailable']];}}
+    private static function normalizeUserCode12(string $v):string{$v=strtoupper(preg_replace('/[^A-Z0-9]/i','',$v)??'');return strlen($v)===12?implode('-',str_split($v,4)):'';}
+    private function compat(array $issued,string $terminal):array{if(empty($issued['ok']))return ['status_code'=>$issued['status']??403,'payload'=>$issued['payload']??['error'=>'authentication_failed']];$p=$issued['payload'];$tokens=$p['tokens']??[];$identity=$p['operator']??$p['profile']??[];return ['status_code'=>200,'payload'=>['status'=>'approved','session_token'=>$tokens['access_token']??'','terminal_uid'=>$terminal,'call_sign'=>$identity['callsign']??$identity['call_sign']??'','military_id'=>(string)($identity['military_id']??''),'tokens'=>['access_token'=>$tokens['access_token']??'','refresh_token'=>$tokens['refresh_token']??'','expires_in'=>GameAuthService::ACCESS_TTL_SEC]]];}
+}

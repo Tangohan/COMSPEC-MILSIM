@@ -11,6 +11,12 @@ use PDO;
 
 final class AthenaAccountRepository
 {
+    public function findForUserAndTenant(int $userId, int $tenantId): ?array
+    {
+        $st = $this->pdo()->prepare('SELECT a.* FROM athena_accounts a INNER JOIN account_tenant_memberships m ON m.account_id=a.id WHERE m.user_id=? AND m.tenant_id=? AND m.status=\'active\' LIMIT 1');
+        $st->execute([$userId, $tenantId]);
+        return $st->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
     use LazyDatabaseConnection;
 
     protected function onDatabaseConnected(PDO $pdo): void
@@ -173,14 +179,15 @@ final class AthenaAccountRepository
         return (int) $this->pdo()->lastInsertId();
     }
 
-    public function rotateSessionTokens(int $sessionId, string $accessHash, string $refreshHash, string $expiresAt, string $refreshExpiresAt): void
+    public function rotateSessionTokens(int $sessionId, string $accessHash, string $refreshHash, string $expiresAt, string $refreshExpiresAt, ?string $steamId = null, ?string $pairingTokenHash = null): void
     {
         $st = $this->pdo()->prepare(
             'UPDATE game_sessions
-             SET access_token_hash = ?, refresh_token_hash = ?, expires_at = ?, refresh_expires_at = ?, last_seen_at = NOW()
+             SET access_token_hash = ?, refresh_token_hash = ?, expires_at = ?, refresh_expires_at = ?,
+                 steam_id = ?, pairing_token_hash = ?, last_seen_at = NOW()
              WHERE id = ?'
         );
-        $st->execute([$accessHash, $refreshHash, $expiresAt, $refreshExpiresAt, $sessionId]);
+        $st->execute([$accessHash, $refreshHash, $expiresAt, $refreshExpiresAt, $steamId, $pairingTokenHash, $sessionId]);
     }
 
     public function revokeSession(int $sessionId): void
@@ -255,6 +262,39 @@ final class AthenaAccountRepository
 
             return $st->rowCount() > 0;
         } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Aligne l'identifiant global Athena sur la fiche Effectifs qui vient d'être
+     * reconnue par Steam. Les anciennes sessions et associations de poste sont
+     * révoquées afin qu'un changement de Steam ne restaure jamais l'ancien profil.
+     */
+    public function replaceSteamId(int $accountId, string $steamId): bool
+    {
+        $steamId = trim($steamId);
+        if ($accountId < 1 || $steamId === '') {
+            return false;
+        }
+
+        $pdo = $this->pdo();
+        try {
+            $pdo->beginTransaction();
+            $st = $pdo->prepare('UPDATE athena_accounts SET steam_id = ? WHERE id = ?');
+            $st->execute([$steamId, $accountId]);
+            $pdo->prepare('UPDATE game_sessions SET revoked_at = NOW() WHERE account_id = ? AND revoked_at IS NULL')
+                ->execute([$accountId]);
+            $pdo->prepare('UPDATE game_device_pairings SET revoked_at = NOW() WHERE account_id = ? AND revoked_at IS NULL')
+                ->execute([$accountId]);
+            $pdo->commit();
+
+            return true;
+        } catch (\Throwable) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
             return false;
         }
     }

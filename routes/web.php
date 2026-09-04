@@ -55,6 +55,8 @@ use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
 use App\Controllers\Api\AtakMissionApiController;
 use App\Controllers\Api\AtakPingController;
+use App\Controllers\Api\AthenaDataApiController;
+use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
@@ -521,7 +523,16 @@ return function (Router $router) {
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
+<<<<<<< feat/atak-1.8.20-compte-carte-liaison
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
+=======
+    $router->post('/account/security/devices/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'lookup'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'decide'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/recovery', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'recovery'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/{id}/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
+    $router->post('/atak/device-pairing/lookup', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakLookup'], [AuthMiddleware::class]);
+    $router->post('/atak/device-pairing/decision', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'atakDecide'], [AuthMiddleware::class]);
+>>>>>>> main
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
@@ -1913,6 +1924,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/training/publications/{id}/attest', [\App\Controllers\Api\TrainingPublicationApiController::class, 'attestRead'], $mwTraining);
     $router->post('/api/training/publications/{id}/annexes', [\App\Controllers\Api\TrainingPublicationApiController::class, 'addAnnex'], $mwTraining);
     $router->post('/api/training/publications/{id}/obsolete', [\App\Controllers\Api\TrainingPublicationApiController::class, 'obsolete'], $mwTraining);
+
+    // Athena Data Inspector — accès opérationnel réservé aux administrateurs du tenant.
+    $athenaInspectorMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
+    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
+    $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
