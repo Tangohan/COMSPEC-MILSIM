@@ -137,17 +137,6 @@ missionNamespace setVariable [
     false
 ];
 
-private _liveMapRect = missionNamespace getVariable ["COMSPEC_ATAK_LiveMapViewport", []];
-if ((count _liveMapRect) < 4) then
-{
-    _liveMapRect = [
-        _sx + (_sw * 0.072),
-        _sy + (_sh * 0.105),
-        _sw * 0.643,
-        _sh * 0.770
-    ];
-};
-
 // =====================================================================
 // PAA + BACKGROUND
 // =====================================================================
@@ -228,36 +217,6 @@ forEach
         0.90 * _sw,
         0.62 * _sh
     ],
-
-    // Native tactical maps: keep the last reported hole, not the full glass.
-    // Full-glass maps would cover the HTML chrome if they sit above Chromium.
-    [2201,
-        (_liveMapRect param [0, _sx]),
-        (_liveMapRect param [1, _sy]),
-        (_liveMapRect param [2, _sw]),
-        (_liveMapRect param [3, _sh])
-    ],
-    [2202,
-        (_liveMapRect param [0, _sx]),
-        (_liveMapRect param [1, _sy]),
-        (_liveMapRect param [2, _sw]),
-        (_liveMapRect param [3, _sh])
-    ],
-
-    // Native LiveMap toolbar: compact ATAK strip, not a desktop menu.
-    [2209, _sx + 0.010 * _sw, _sy + 0.010 * _sh, 0.510 * _sw, 0.055 * _sh],
-
-    [2210, _sx + 0.016 * _sw, _sy + 0.016 * _sh, 0.064 * _sw, 0.040 * _sh],
-    [2211, _sx + 0.084 * _sw, _sy + 0.016 * _sh, 0.064 * _sw, 0.040 * _sh],
-    [2212, _sx + 0.152 * _sw, _sy + 0.016 * _sh, 0.060 * _sw, 0.040 * _sh],
-    [2213, _sx + 0.216 * _sw, _sy + 0.016 * _sh, 0.060 * _sw, 0.040 * _sh],
-    [2214, _sx + 0.280 * _sw, _sy + 0.016 * _sh, 0.060 * _sw, 0.040 * _sh],
-    [2215, _sx + 0.344 * _sw, _sy + 0.016 * _sh, 0.060 * _sw, 0.040 * _sh],
-    [2216, _sx + 0.408 * _sw, _sy + 0.016 * _sh, 0.096 * _sw, 0.040 * _sh],
-
-    // Compact bottom telemetry; leave the map itself unobstructed.
-    [2220, _sx + 0.012 * _sw, _sy + _sh - 0.072 * _sh, 0.300 * _sw, 0.055 * _sh],
-    [2221, _sx + 0.318 * _sw, _sy + _sh - 0.072 * _sh, 0.270 * _sw, 0.055 * _sh],
 
     // Toast / fallback.
     [1090, _sx + 0.22 * _sw, _sy + 0.08 * _sh, 0.56 * _sw, 0.12 * _sh],

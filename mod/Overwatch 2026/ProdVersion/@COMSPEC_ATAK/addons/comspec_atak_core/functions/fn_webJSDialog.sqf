@@ -47,6 +47,33 @@ if ([_cmd,"chat:send|"] call {
     _logCmd = "chat:send|<message masque>";
 };
 
+if ([_cmd,"auth:login:secret|"] call {
+    params ["_text","_prefix"];
+    (count _text) >= (count _prefix)
+    && {(_text select [0,count _prefix]) isEqualTo _prefix}
+}) then
+{
+    _logCmd = "auth:login:secret|<secret masque>";
+};
+
+if ([_cmd,"auth:login:email|"] call {
+    params ["_text","_prefix"];
+    (count _text) >= (count _prefix)
+    && {(_text select [0,count _prefix]) isEqualTo _prefix}
+}) then
+{
+    _logCmd = "auth:login:email|<identifiant masque>";
+};
+
+if ([_cmd,"settings:community|"] call {
+    params ["_text","_prefix"];
+    (count _text) >= (count _prefix)
+    && {(_text select [0,count _prefix]) isEqualTo _prefix}
+}) then
+{
+    _logCmd = "settings:community|<jeton masque>";
+};
+
 [
     "DEBUG",
     "WEB",
@@ -71,6 +98,24 @@ switch (true) do
     case (_cmd isEqualTo "close"):
     {
         [] call COMSPEC_fnc_closeTablet;
+    };
+
+    case (_cmd isEqualTo "camera:open"):
+    {
+        [] call COMSPEC_fnc_cameraOpen;
+    };
+
+    case (_cmd isEqualTo "camera:shot"):
+    {
+        [] call COMSPEC_fnc_cameraShot;
+    };
+
+    case (_cmd isEqualTo "camera:close"):
+    {
+        if (missionNamespace getVariable ["COMSPEC_ATAK_CameraOpen", false]) then
+        {
+            [] call COMSPEC_fnc_cameraClose;
+        };
     };
 
     case (_cmd isEqualTo "connect:athena"):

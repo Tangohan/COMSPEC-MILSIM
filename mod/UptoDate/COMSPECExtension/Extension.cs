@@ -423,7 +423,13 @@ public static partial class Extension
             if (code == 400 && respBody.Contains("invalid_steam", StringComparison.OrdinalIgnoreCase))
                 return "ERR|invalid_steam";
             if (code == 404) return "ERR|not_found";
-            if (code == 503) return "ERR|http_503";
+            if (code == 503)
+            {
+                if (!string.IsNullOrEmpty(respBody)
+                    && respBody.Contains("maintenance", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|maintenance";
+                return "ERR|http_503";
+            }
             return "ERR|http_" + code;
         }
         catch (Exception ex)

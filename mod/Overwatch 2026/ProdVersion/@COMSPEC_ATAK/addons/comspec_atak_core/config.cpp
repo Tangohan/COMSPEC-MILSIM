@@ -8,9 +8,9 @@ class CfgPatches
         requiredAddons[] = {"cba_main","cba_xeh","cba_settings","A3_UI_F"};
         units[] = {};
         weapons[] = {};
-        version = 1.8.20;
-        versionStr = "1.8.20";
-        versionAr[] = {1,8,20};
+        version = 1.8.22;
+        versionStr = "1.8.22";
+        versionAr[] = {1,8,22};
     };
 };
 
@@ -27,6 +27,9 @@ class CfgFunctions
             class chatPollAthena {};
             class chatSharePosition {};
             class chatStart {};
+            class cameraClose {};
+            class cameraOpen {};
+            class cameraShot {};
             class closeTablet {};
             class compatAction {};
             class compatSnapshot {};
@@ -184,3 +187,4 @@ class RscPicture;
 class RscControlsGroup;
 
 #include "ui\runtime.hpp"
+#include "ui\camera.hpp"

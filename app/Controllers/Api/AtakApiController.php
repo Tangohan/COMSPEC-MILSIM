@@ -1036,6 +1036,11 @@ class AtakApiController
         return $id;
     }
 
+    private function recompressIntelPhotoToJpeg(string $path): string
+    {
+        return \App\Support\IntelPhotoRecompress::recompressFile($path)['path'];
+    }
+
     private function canBypassAtakMaintenance(): bool
     {
         $userId = (int) (Session::get('user_id') ?? 0);
@@ -9338,6 +9343,8 @@ class AtakApiController
                 'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
             ], 500);
         }
+        $path = $this->recompressIntelPhotoToJpeg($path);
+        $filename = basename($path);
         $relativePath = 'intel/' . $filename;
         $row = $this->atak->addIntelPhoto($tenantId, $mapId, $filename, $relativePath, $author, $posX, $posY);
         $row['url'] = '/uploads/intel/' . $filename;

@@ -177,6 +177,9 @@ final class DemoNdaGateService
         if ($path === '/api/atak' || str_starts_with($path, '/api/atak/')) {
             return true;
         }
+        if ($path === '/api/game' || str_starts_with($path, '/api/game/')) {
+            return true;
+        }
 
         // Préfixes tactiques hors /api/atak (même DLL / mêmes clients).
         $prefixes = [

@@ -12,4 +12,16 @@ if ((count _digits) >= 16) exitWith { _digits };
 
 private _detected = if (isNull player) then {""} else {getPlayerUID player};
 if (!(_detected isEqualType "")) then { _detected = ""; };
-_detected
+_detected = trim _detected;
+if (
+    _detected isEqualTo ""
+    || {_detected isEqualTo "_SP_PLAYER_"}
+    || {(_detected find "_SP_") >= 0}
+) exitWith { "" };
+
+private _detectedDigits = "";
+{
+    if (_x >= 48 && {_x <= 57}) then { _detectedDigits = _detectedDigits + toString [_x]; };
+} forEach (toArray _detected);
+
+if ((count _detectedDigits) >= 16) then { _detectedDigits } else { "" }

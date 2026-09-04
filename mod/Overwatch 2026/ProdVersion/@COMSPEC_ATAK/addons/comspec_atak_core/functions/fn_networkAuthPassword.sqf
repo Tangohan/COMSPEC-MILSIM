@@ -50,6 +50,16 @@ if (_email isEqualTo "" || {_password isEqualTo ""}) exitWith
     private _email = missionNamespace getVariable ["COMSPEC_ATAK_LoginEmail", ""];
     private _password = missionNamespace getVariable ["COMSPEC_ATAK_LoginSecret", ""];
     private _raw = ["AuthPassword", [_baseUrl, _email, _password, _version]] call COMSPEC_fnc_extensionCall;
+    private _rawLog = _raw;
+    if (!(_rawLog isEqualType "")) then { _rawLog = str _rawLog; };
+    if ((_rawLog find "|") > 0) then
+    {
+        private _codeEnd = _rawLog find "|";
+        private _tail = _rawLog select [_codeEnd + 1, (count _rawLog) - _codeEnd - 1];
+        private _next = _tail find "|";
+        _rawLog = if (_next >= 0) then { (_rawLog select [0, _codeEnd + 1 + _next]) } else { _rawLog };
+    };
+    diag_log format ["[COMSPEC ATAK][ATHENA] AuthPassword=%1", _rawLog];
 
     if ((_raw find "OK|") != 0) exitWith
     {
@@ -61,8 +71,10 @@ if (_email isEqualTo "" || {_password isEqualTo ""}) exitWith
             case ((_raw find "TENANT_DISABLED") >= 0);
             case ((_raw find "NO_TENANT") >= 0): { _msg = "Aucune communauté n’est associée à ce compte."; };
             case ((_raw find "SESSION_EXPIRED") >= 0): { _msg = "La session a expiré. Réessayez."; };
+            case ((_raw find "http_503") >= 0);
+            case ((_raw find "maintenance") >= 0): { _msg = "Le poste est momentanément indisponible. Réessayez, ou connectez-vous avec votre e-mail."; };
             case ((_raw find "NETWORK") >= 0);
-            case ((_raw find "timeout") >= 0): { _msg = "Le poste n’a pas répondu. Réessayez dans un instant."; };
+            case ((_raw find "timeout") >= 0): { _msg = "Le poste ne répond pas. Vérifiez la liaison, ou réessayez dans un instant."; };
             case ((_raw find "MOD_OUTDATED") >= 0): { _msg = "Ce pack n’est plus accepté par le poste. Mettez-le à jour."; };
             default { _msg = "Connexion refusée. Vérifiez vos identifiants, puis réessayez."; };
         };

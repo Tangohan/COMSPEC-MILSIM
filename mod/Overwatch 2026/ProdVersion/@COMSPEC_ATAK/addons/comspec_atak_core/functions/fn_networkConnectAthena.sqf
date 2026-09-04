@@ -30,6 +30,13 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         ];[] call COMSPEC_fnc_webPushState;
     };
 
+    private _posteUnavailable = {
+        params [["_raw", "", [""]]];
+        (_raw find "http_503") >= 0
+        || {(_raw find "maintenance") >= 0}
+        || {(_raw find "NETWORK_ERROR") >= 0}
+    };
+
     (call COMSPEC_fnc_networkCredentials) params ["_baseUrl", "_savedKey", "_tenantId"];
     if (!(_tenantId isEqualType "")) then { _tenantId = ""; };
 
@@ -143,6 +150,7 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
     ] call COMSPEC_fnc_networkUpdateConnectionUI;
 
     private _result = "";
+    private _skipCascade = false;
 
     if ((count _savedKey) >= 16) then
     {
@@ -156,21 +164,30 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
             "Connect",
             [_baseUrl, _savedKey, _tenantId, _armaSteam, _version]
         ] call COMSPEC_fnc_extensionCall;
+
+        if ((_result find "OK|") != 0 && {[_result] call _posteUnavailable}) then
+        {
+            _skipCascade = true;
+        };
     };
 
     private _restored = "";
-    if ((_result find "OK|") != 0) then
+    if (!_skipCascade && {(_result find "OK|") != 0}) then
     {
         _restored = [
             "RestoreSession",
             [_baseUrl, _version]
         ] call COMSPEC_fnc_extensionCall;
         _result = _restored;
+        if ((_result find "OK|") != 0 && {[_result] call _posteUnavailable}) then
+        {
+            _skipCascade = true;
+        };
     };
 
     // Steam actuel d’abord : une session enregistrée sur ce PC peut encore
     // appartenir à l’ancien compte après un changement d’identifiant Steam.
-    if (!(_armaSteam isEqualTo "")) then
+    if (!_skipCascade && {!(_armaSteam isEqualTo "")}) then
     {
         [
             "ATHENA",
@@ -199,18 +216,27 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
                 ] call COMSPEC_fnc_log;
                 _result = _steamAuth;
             };
+            if ([_steamAuth] call _posteUnavailable) then
+            {
+                _skipCascade = true;
+                _result = _steamAuth;
+            };
         };
     };
 
-    if ((_result find "OK|") != 0 && {(count _savedKey) >= 16}) then
+    if (!_skipCascade && {(_result find "OK|") != 0} && {(count _savedKey) >= 16}) then
     {
         _result = [
             "Connect",
             [_baseUrl, _savedKey, _tenantId, _armaSteam, _version]
         ] call COMSPEC_fnc_extensionCall;
+        if ((_result find "OK|") != 0 && {[_result] call _posteUnavailable}) then
+        {
+            _skipCascade = true;
+        };
     };
 
-    if ((_result find "OK|") != 0 && {!(_armaSteam isEqualTo "")}) then
+    if (!_skipCascade && {(_result find "OK|") != 0} && {!(_armaSteam isEqualTo "")}) then
     {
         _result = [
             "LinkBySteam",
@@ -220,7 +246,17 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
 
     if ((_result find "OK|") != 0 && {_armaSteam isEqualTo ""}) then
     {
-        _result = "ERR|STEAM_NOT_LINKED";
+        if (_result isEqualTo "" || {[_result] call _posteUnavailable}) then
+        {
+            if (_result isEqualTo "") then { _result = "ERR|STEAM_NOT_LINKED"; };
+        }
+        else
+        {
+            if ((_result find "http_") < 0 && {(_result find "SESSION_EXPIRED") < 0}) then
+            {
+                _result = "ERR|STEAM_NOT_LINKED";
+            };
+        };
     };
 
     // -------------------------------------------------------------
@@ -232,71 +268,85 @@ diag_log "[COMSPEC ATAK][ATHENA] début de connexion";
         private _pairEligible = false;
         private _openLogin = false;
 
-        if (
-            (_result find "STEAM_NOT_LINKED") >= 0
-            || {(_result find "steam_not_linked") >= 0}
-        ) then
+        switch (true) do
         {
-            _msg = "Ce Steam n’est pas associé à un compte Athena. Connectez-vous avec votre e-mail, ou renseignez l’identifiant Steam dans les options du pack.";
-            _openLogin = true;
-        };
-
-        if (
-            (_result find "SESSION_EXPIRED") >= 0
-            || {(_result find "session_expired") >= 0}
-        ) then
-        {
-            _msg = "Session Athena expiree.";
-        };
-
-        if (
-            (_result find "NETWORK_ERROR") >= 0
-            || {(_result find "network") >= 0}
-        ) then
-        {
-            _msg = "Serveur Athena inaccessible.";
-        };
-
-        if ((_result find "MOD_OUTDATED") >= 0) then
-        {
-            private _stateRaw = ["GetAuthState",[]] call COMSPEC_fnc_extensionCall;
-            private _stateHint = [_stateRaw] call COMSPEC_fnc_parseAuthState;
-            private _minHint = _stateHint getOrDefault ["minModVersion",""];
-            private _detHint = _stateHint getOrDefault ["detectedModVersion",_version];
-
-            _msg = if (_minHint isEqualTo "") then
+            case (
+                (_result find "STEAM_NOT_LINKED") >= 0
+                || {(_result find "steam_not_linked") >= 0}
+            ):
             {
-                format ["Version du mod non autorisee. Envoyee : %1.", _version]
-            }
-            else
-            {
-                format [
-                    "Version du mod non autorisee. Envoyee : %1 / minimum Athena : %2.",
-                    _detHint,
-                    _minHint
-                ]
+                _msg = "Ce Steam n’est pas associé à un compte Athena. Connectez-vous avec votre e-mail, ou renseignez l’identifiant Steam dans les options du pack.";
+                _openLogin = true;
             };
+            case (
+                (_result find "SESSION_EXPIRED") >= 0
+                || {(_result find "session_expired") >= 0}
+            ):
+            {
+                _msg = "La session du poste a expiré. Connectez-vous avec votre e-mail.";
+                _openLogin = true;
+            };
+            case (
+                (_result find "http_503") >= 0
+                || {(_result find "maintenance") >= 0}
+            ):
+            {
+                _msg = "Le poste est momentanément indisponible. Réessayez, ou connectez-vous avec votre e-mail.";
+                _openLogin = true;
+            };
+            case ((_result find "NETWORK_ERROR") >= 0):
+            {
+                _msg = "Le poste ne répond pas. Vérifiez la liaison, ou connectez-vous avec votre e-mail.";
+                _openLogin = true;
+            };
+            case ((_result find "MOD_OUTDATED") >= 0):
+            {
+                private _stateRaw = ["GetAuthState",[]] call COMSPEC_fnc_extensionCall;
+                private _stateHint = [_stateRaw] call COMSPEC_fnc_parseAuthState;
+                private _minHint = _stateHint getOrDefault ["minModVersion",""];
+                private _detHint = _stateHint getOrDefault ["detectedModVersion",_version];
 
-            diag_log format [
-                "[COMSPEC ATAK][ATHENA][VERSION] configured=%1 detected=%2 minimum=%3 raw=%4",
-                _version,
-                _detHint,
-                _minHint,
-                _result
-            ];
+                _msg = if (_minHint isEqualTo "") then
+                {
+                    format ["Version du pack non autorisée. Envoyée : %1.", _version]
+                }
+                else
+                {
+                    format [
+                        "Version du pack non autorisée. Envoyée : %1 / minimum du poste : %2.",
+                        _detHint,
+                        _minHint
+                    ]
+                };
+
+                diag_log format [
+                    "[COMSPEC ATAK][ATHENA][VERSION] configured=%1 detected=%2 minimum=%3 raw=%4",
+                    _version,
+                    _detHint,
+                    _minHint,
+                    _result
+                ];
+            };
+            default {};
         };
 
         [
             "ATHENA",
-            _msg + (if (_pairEligible) then {" Saisissez le code affiché, ou un code de secours."} else {" Voir le statut."}),
+            _msg + (if (_pairEligible) then {" Saisissez le code affiché, ou un code de secours."} else {""}),
             if (_pairEligible) then {"WARN"} else {"ERR"}
         ] call COMSPEC_fnc_networkUpdateConnectionUI;
+
+        ["if(window.COMSPEC_ATAK_holdGate){window.COMSPEC_ATAK_holdGate(true);}if(window.COMSPEC_ATAK_setGate){window.COMSPEC_ATAK_setGate(true);}"] call COMSPEC_fnc_webExecJS;
 
         [false] call _finish;
 
         if (_openLogin) then
         {
-            ["if(window.COMSPEC_ATAK_openAccountLogin){window.COMSPEC_ATAK_openAccountLogin('Ce Steam n’est pas associé à un compte. Connectez-vous avec votre e-mail.');}"] call COMSPEC_fnc_webExecJS;
+            private _js = format [
+                "if(window.COMSPEC_ATAK_openAccountLogin){window.COMSPEC_ATAK_openAccountLogin('%1');}",
+                [_msg] call COMSPEC_fnc_webJsEscape
+            ];
+            [_js] call COMSPEC_fnc_webExecJS;
         };
         if (_pairEligible) then
         {

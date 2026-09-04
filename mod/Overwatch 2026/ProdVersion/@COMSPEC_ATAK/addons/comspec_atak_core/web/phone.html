@@ -190,9 +190,15 @@
       return false;
     };
 
+    window.COMSPEC_ATAK_HOLD_GATE = false;
+    window.COMSPEC_ATAK_holdGate = function (hold) {
+      window.COMSPEC_ATAK_HOLD_GATE = !!hold;
+    };
+
     window.COMSPEC_ATAK_setGate = function (show) {
       var gate = document.getElementById("bootGate");
       if (gate) gate.hidden = !show;
+      if (!show) window.COMSPEC_ATAK_HOLD_GATE = false;
       if (document.body) {
         document.body.classList.toggle("boot-gate-open", !!show);
         if (!show) {
@@ -269,6 +275,7 @@
     };
 
     window.COMSPEC_ATAK_forceDesktop = function () {
+      window.COMSPEC_ATAK_HOLD_GATE = false;
       window.COMSPEC_ATAK_DESIRED_APP = "desktop";
       window.COMSPEC_ATAK_setGate(false);
       return window.COMSPEC_ATAK_forcePhoneApp("desktop");
@@ -370,6 +377,9 @@
         if (String(appId).toLowerCase() === "overwatch") {
           window.COMSPEC_ATAK_send("map:show");
         }
+        if (String(appId).toLowerCase() === "camera") {
+          window.COMSPEC_ATAK_send("camera:open");
+        }
 
         window.COMSPEC_ATAK_minNavigate(appId, true);
         return;
@@ -467,6 +477,13 @@
       if (kind === "ERR") {
         var debug = document.getElementById("bootDebug");
         if (debug) debug.open = true;
+        var accountHint = document.getElementById("accountLoginMsg");
+        if (accountHint && text) {
+          accountHint.textContent = text;
+          accountHint.classList.remove("ok");
+        }
+        var gateHint = document.getElementById("gateLoginMsg");
+        if (gateHint && text) gateHint.textContent = text;
       }
     };
 
@@ -508,6 +525,8 @@
 
     window.COMSPEC_ATAK_connectAthena = function () {
       window.COMSPEC_ATAK_unlockBoot();
+      window.COMSPEC_ATAK_HOLD_GATE = true;
+      if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(true);
       window.COMSPEC_ATAK_setGateStatus(
         "ATHENA",
         "Recherche Steam…",
@@ -516,6 +535,11 @@
 
       window.COMSPEC_ATAK_setLoginVisualState("connecting","CONNEXION",36,"ATHENA LINK");
       window.COMSPEC_ATAK_send("connect:athena");
+    };
+
+    window.COMSPEC_ATAK_stayLocal = function () {
+      window.COMSPEC_ATAK_HOLD_GATE = false;
+      window.COMSPEC_ATAK_forceDesktop();
     };
 
     window.COMSPEC_ATAK_connectLocal = function () {
@@ -581,18 +605,37 @@
       };
       return map[u] || (u ? "Liaison en cours" : "—");
     };
-    window.COMSPEC_ATAK_openAccountLogin = function (msg) {
+    window.COMSPEC_ATAK_openAccountLogin = function (msg, reopenGate) {
       window.COMSPEC_ATAK_unlockBoot();
-      if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(false);
-      if (typeof window.COMSPEC_ATAK_forcePhoneApp === "function") window.COMSPEC_ATAK_forcePhoneApp("account");
-      var card = document.getElementById("accountLoginCard");
-      if (card && card.scrollIntoView) card.scrollIntoView({ block: "start" });
+      var text = msg || "Connectez-vous avec l’e-mail de votre compte Athena.";
+      if (reopenGate !== false) {
+        window.COMSPEC_ATAK_HOLD_GATE = true;
+        if (typeof window.COMSPEC_ATAK_setGate === "function") window.COMSPEC_ATAK_setGate(true);
+        var gateCard = document.getElementById("gateLoginCard");
+        if (gateCard) gateCard.hidden = false;
+        var gateHint = document.getElementById("gateLoginMsg");
+        if (gateHint) gateHint.textContent = text;
+        var stay = document.getElementById("gateStayLocal");
+        var st = window.COMSPEC_ATAK_STATE || {};
+        if (stay) stay.hidden = st.mode !== "P2P";
+        var gateEl = document.getElementById("gateAthenaStatus");
+        if (gateEl) {
+          gateEl.textContent = text;
+          gateEl.hidden = false;
+          gateEl.style.color = "#EF5F58";
+        }
+      } else if (typeof window.COMSPEC_ATAK_forcePhoneApp === "function") {
+        window.COMSPEC_ATAK_forcePhoneApp("account");
+        var card = document.getElementById("accountLoginCard");
+        if (card && card.scrollIntoView) card.scrollIntoView({ block: "start" });
+      }
       var hint = document.getElementById("accountLoginMsg");
       if (hint) {
-        hint.textContent = msg || "Connectez-vous avec l’e-mail de votre compte Athena.";
+        hint.textContent = text;
         hint.classList.remove("ok");
       }
-      var email = document.getElementById("accountLoginEmail");
+      var email = document.getElementById(reopenGate === false ? "accountLoginEmail" : "gateLoginEmail")
+        || document.getElementById("accountLoginEmail");
       if (email) setTimeout(function () { try { email.focus({ preventScroll: true }); } catch (e) {} }, 40);
     };
     window.COMSPEC_ATAK_loginError = function (msg) {
@@ -705,7 +748,15 @@
         window.COMSPEC_ATAK_DESIRED_APP = state.desiredApp;
       }
 
-      window.COMSPEC_ATAK_setGate(!connected);
+      if (!window.COMSPEC_ATAK_HOLD_GATE) {
+        window.COMSPEC_ATAK_setGate(!connected);
+      }
+      var p2pBanner = document.getElementById("desktopP2PBanner");
+      if (p2pBanner) p2pBanner.hidden = state.mode !== "P2P";
+      var recBtn = document.getElementById("accountReconnect");
+      if (recBtn) recBtn.textContent = state.mode === "P2P" ? "Rejoindre le poste" : "Se reconnecter";
+      var stayBtn = document.getElementById("gateStayLocal");
+      if (stayBtn && state.mode === "P2P") stayBtn.hidden = false;
 
       if (document.body) {
         document.body.classList.toggle("runtime-connected", connected);
@@ -1075,7 +1126,7 @@
       /* Only once when NONE -> connected:
          leave the boot gate and show the normal phone desktop/apps.
          Subsequent state pushes must NOT throw the user back to Home. */
-      if (connected) {
+      if (connected && !window.COMSPEC_ATAK_HOLD_GATE) {
         var desktop = document.getElementById("phoneDesktop");
         var wantsDesktop =
           !window.COMSPEC_ATAK_DESIRED_APP ||
@@ -1748,7 +1799,7 @@ body.panel-open .edge-panel-open{display:none}
   background:
     radial-gradient(ellipse at 50% 118%,rgba(8,18,14,.2) 0 28%,rgba(5,9,8,.55) 62%),
     linear-gradient(180deg,rgba(5,10,9,.35) 0 18%,transparent 42%,rgba(3,6,5,.72) 100%),
-    url("media/athena-bg.jpg") center 38%/cover no-repeat,
+    var(--desktop-wallpaper, url("media/wallpapers/ops.jpg")) center 38%/cover no-repeat,
     linear-gradient(165deg,#0a1612 0%,#163028 28%,#0c1c18 52%,#07110d 100%);
 }
 .desktop-grid{
@@ -1818,6 +1869,28 @@ body.panel-open .edge-panel-open{display:none}
 .overwatch-app-icon{background:radial-gradient(circle at 50% 42%,#15372f,#08100e 72%);border:1px solid rgba(32,199,178,.38)}
 .overwatch-app-icon i{width:2.15em;height:2.15em;border:.28em solid #e3ece8;border-top-color:var(--accent);border-radius:50%;position:relative}
 .overwatch-app-icon i::after{content:"";position:absolute;left:50%;bottom:.08em;width:.22em;height:.85em;transform:translateX(-50%);background:#dce7e2}
+.camera-app-icon{background:radial-gradient(circle at 50% 40%,#2a3a36,#0b1210 74%);border:1px solid rgba(125,255,208,.28);color:#b7ffe4;font-weight:800;font-size:1.15em}
+.camera-stage{position:relative;flex:1;min-height:0;background:#050908;overflow:hidden}
+.camera-overlay{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  pointer-events:none;mix-blend-mode:screen;
+}
+.camera-actions{position:absolute;left:0;right:0;bottom:1.2em;display:flex;justify-content:center;flex-wrap:wrap;gap:.55em;z-index:2}
+.camera-actions button{border:0;background:#7dffd0;color:#06110d;font-weight:800;padding:.7em 1.15em}
+.camera-actions button.ghost{background:transparent;border:1px solid rgba(125,255,208,.35);color:#e8fff7}
+.camera-jpeg-badge{
+  position:absolute;right:8%;bottom:18%;z-index:2;pointer-events:none;
+  border:1px solid rgba(230,232,226,.55);background:rgba(8,10,9,.45);
+  color:#eceee8;font-size:.72em;letter-spacing:.12em;font-weight:800;padding:.18em .45em;
+}
+.camera-note{position:absolute;left:1em;right:1em;top:1em;z-index:2;color:#d5e4de;font-size:.82em;text-align:center;text-shadow:0 1px 4px #000}
+.wallpaper-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:.55em;margin:.4em 0 1em}
+.wallpaper-choice{
+  border:1px solid rgba(125,255,208,.22);background:#07110e;color:#e8fff7;padding:.4em;display:flex;flex-direction:column;gap:.35em;align-items:stretch
+}
+.wallpaper-choice img{width:100%;height:4.2em;object-fit:cover;display:block}
+.wallpaper-choice b{font-size:.72em;text-align:center}
+.wallpaper-choice.is-on{outline:2px solid #7dffd0}
 .settings-app-icon{background:linear-gradient(145deg,#5d676a,#2c3133);font-size:1em;color:#e8eeea}
 .settings-app-icon i{
   width:1.55em;height:1.55em;border-radius:50%;
@@ -1836,6 +1909,7 @@ body.panel-open .edge-panel-open{display:none}
   content:"";position:absolute;inset:.28em;border-radius:50%;
   border:.16em solid #2c3133;background:transparent;
 }
+.mini-camera{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:.4em;background:#1a2824;border:1px solid #3d524c;color:#dce6e1;font-size:.78em}
 .desktop-page-dots{position:absolute;z-index:2;left:50%;bottom:1.6em;transform:translateX(-50%);display:flex;gap:.4em}
 .desktop-page-dots i{width:.35em;height:.35em;border-radius:50%;background:#56655f}
 .desktop-page-dots i.active{background:var(--accent)}
@@ -1990,10 +2064,14 @@ body.panel-open .edge-panel-open{display:none}
 #phoneDesktop.active .desktop-status,
 #phoneDesktop.active .desktop-hero,
 #phoneDesktop.active .desktop-widget,
+#phoneDesktop.active .desktop-local-banner,
 #phoneDesktop.active .desktop-icons,
 #phoneDesktop.active .desktop-page-dots{
   opacity:1!important;
   visibility:visible!important;
+}
+#phoneDesktop.active .desktop-local-banner:not([hidden]){
+  display:flex!important;
 }
 #phoneDesktop.active .desktop-status{
   display:flex;
@@ -2458,7 +2536,7 @@ html.ingame .boot-connect{
   overflow:auto;
   background:
     linear-gradient(180deg,rgba(0,0,0,.18) 0%,rgba(0,0,0,.08) 42%,rgba(0,0,0,.72) 100%),
-    url("media/athena-bg.jpg") center/cover no-repeat #050807;
+    var(--login-wallpaper, url("media/athena-bg.jpg")) center/cover no-repeat #050807;
 }
 html.ingame .boot-connect-choices{
   display:flex;flex-direction:column;gap:.7em;width:100%;max-width:22em;margin:0 auto;
@@ -2478,6 +2556,30 @@ html.ingame .boot-choice--ghost{
 html.ingame .boot-connect-status{
   min-height:1.2em;margin:.7em 0 0;text-align:center;
   color:#c5ddd4;font-size:.78em;letter-spacing:.04em;
+}
+html.ingame .boot-gate-login{
+  width:min(22em,100%);margin:.75em auto 0;padding:.7em .75em;
+  background:rgba(5,12,10,.88);border:1px solid rgba(125,255,208,.28);
+}
+html.ingame .boot-gate-login p{margin:0 0 .45em;color:#efc35a;font-size:.72em;line-height:1.35}
+html.ingame .boot-gate-login label{display:block;margin:.35em 0 .2em;color:#9eb2aa;font-size:.62em}
+html.ingame .boot-gate-login input{
+  width:100%;min-height:2.2em;border:1px solid #31443d;background:#07110e;color:#e8fff7;padding:.4em .55em
+}
+html.ingame .boot-gate-login button{
+  width:100%;margin-top:.5em;min-height:2.3em;border:0;background:#7dffd0;color:#06110d;font-weight:700
+}
+html.ingame #gateStayLocal{
+  background:rgba(6,14,12,.62);color:#e8fff7;border:1px solid rgba(125,255,208,.42)
+}
+.desktop-local-banner{
+  display:none;margin:0 1.1em .55em;padding:.55em .7em;
+  border:1px solid rgba(125,255,208,.32);background:rgba(7,18,14,.78);
+  color:#d8f4ea;font-size:.72em;align-items:center;justify-content:space-between;gap:.6em
+}
+.desktop-local-banner:not([hidden]){display:flex}
+.desktop-local-banner button{
+  border:0;background:#7dffd0;color:#06110d;font-weight:700;min-height:2.1em;padding:.35em .7em
 }
 html.ingame .boot-enroll{
   width:min(26em,100%);margin:.85em auto 0;
@@ -2552,6 +2654,15 @@ html.ingame .boot-lock-hint{
           </div>
           <p class="boot-connect-status" id="gateAthenaStatus"></p>
           <p class="boot-connect-status" id="gateP2PStatus" hidden></p>
+          <div class="boot-gate-login" id="gateLoginCard" hidden>
+            <p id="gateLoginMsg"></p>
+            <label for="gateLoginEmail">Adresse e-mail</label>
+            <input id="gateLoginEmail" type="email" autocomplete="username" spellcheck="false">
+            <label for="gateLoginPassword">Mot de passe</label>
+            <input id="gateLoginPassword" type="password" autocomplete="current-password">
+            <button type="button" id="gateLoginSubmit">Se connecter</button>
+            <button type="button" id="gateStayLocal" hidden>Rester en réseau local</button>
+          </div>
           <input type="hidden" id="gateChannel" value="COMSPEC-LOCAL">
 
           <section class="pairing-panel boot-enroll" id="pairingPanel" hidden>
@@ -3229,6 +3340,11 @@ html.ingame .boot-lock-hint{
           <div><span>TÂCHES</span><b id="desktopTasks">0</b></div>
         </div>
 
+        <div class="desktop-local-banner" id="desktopP2PBanner" hidden>
+          <span>Réseau local actif</span>
+          <button type="button" id="desktopJoinPoste">Rejoindre le poste</button>
+        </div>
+
         <div class="desktop-icons">
           <button class="desktop-app-icon" data-launch-app="chrome">
             <span class="icon-square chrome-app-icon"><i></i></span>
@@ -3237,6 +3353,10 @@ html.ingame .boot-lock-hint{
           <button class="desktop-app-icon" data-launch-app="overwatch">
             <span class="icon-square overwatch-app-icon"><i></i></span>
             <b>Overwatch</b><small>Carte tactique</small>
+          </button>
+          <button class="desktop-app-icon" data-launch-app="camera">
+            <span class="icon-square camera-app-icon">◉</span>
+            <b>Appareil photo</b><small>Cliché JPEG</small>
           </button>
           <button class="desktop-app-icon mini-atak-app" type="button" data-arma="mini:enter">
             <span class="icon-square mini-atak-icon">M</span>
@@ -3259,11 +3379,28 @@ html.ingame .boot-lock-hint{
           <div>
             <button data-launch-app="chrome"><span class="mini-chrome"></span><b>Chrome</b></button>
             <button data-launch-app="overwatch"><span class="mini-ow">O</span><b>Overwatch</b></button>
+            <button data-launch-app="camera"><span class="mini-camera">◉</span><b>Appareil photo</b></button>
             <button type="button" data-arma="mini:enter"><span class="mini-atak-small">M</span><b>Mini ATAK</b></button>
             <button data-launch-app="settings"><span class="mini-settings">⚙</span><b>Paramètres</b></button>
             <button data-launch-app="account"><span class="mini-account"></span><b>Compte</b></button>
           </div>
         </section>
+      </section>
+
+      <section class="phone-app system-app" data-phone-app="camera" id="cameraApp">
+        <header class="system-header">
+          <div class="system-brand"><span class="icon-square camera-app-icon">◉</span><div><b>Appareil photo</b><small>Cliché JPEG vers le poste</small></div></div>
+        </header>
+        <div class="camera-stage">
+          <img class="camera-overlay" src="media/camera-overlay.png" alt="">
+          <span class="camera-jpeg-badge">JPEG</span>
+          <p class="camera-note" id="cameraGallery">Ouvrez le viseur pour voir le terrain. Le cliché part vers l’onglet Photos du poste.</p>
+          <div class="camera-actions">
+            <button type="button" data-arma="camera:open">Ouvrir le viseur</button>
+            <button type="button" data-arma="camera:shot">Déclencher</button>
+            <button type="button" class="ghost" data-arma="camera:close">Fermer</button>
+          </div>
+        </div>
       </section>
 
       <!-- =======================================================
@@ -3367,12 +3504,33 @@ html.ingame .boot-lock-hint{
             <div class="mini-map-preview" id="miniMapPreview"><i class="mini-self-preview" id="miniSelfPreview"></i><b class="mini-self-preview-label" id="miniSelfPreviewLabel">N-10</b><i class="mini-other-preview" id="miniOtherPreview"></i><span class="mini-other-preview-label" id="miniOtherPreviewLabel">ALPHA 2-1</span></div>
             <p class="mini-display-note">Ces réglages sont enregistrés dans le profil Arma et s’appliquent au Mini ATAK ainsi qu’aux marqueurs de la LiveMap principale.</p>
           </div>
+          <h2>Fond d’écran</h2>
+          <p class="settings-help">Choisissez le décor de l’accueil. Le choix reste sur cet appareil.</p>
+          <div class="wallpaper-picker" id="wallpaperPicker">
+            <button type="button" class="wallpaper-choice" data-wallpaper="media/wallpapers/ops.jpg">
+              <img src="media/wallpapers/ops.jpg" alt="">
+              <b>Opération</b>
+            </button>
+            <button type="button" class="wallpaper-choice" data-wallpaper="media/athena-bg.jpg">
+              <img src="media/athena-bg.jpg" alt="">
+              <b>Athena</b>
+            </button>
+            <button type="button" class="wallpaper-choice" data-wallpaper="assets/desktop-wallpaper.svg">
+              <img src="assets/desktop-wallpaper.svg" alt="">
+              <b>Grille</b>
+            </button>
+          </div>
+          <label class="boot-channel settings-url">
+            <span>Image en ligne (facultatif)</span>
+            <input id="settingsLoginWallpaper" spellcheck="false" placeholder="Adresse d’une image publique">
+          </label>
+          <button type="button" class="primary wide" id="settingsSaveWallpaper">Utiliser cette adresse</button>
           <h2>Terminal</h2>
           <button class="setting-row">
             <span class="setting-symbol">☼</span><div><b>Affichage</b><small>Luminosité et contraste</small></div><em>AUTO</em>
           </button>
           <button class="setting-row">
-            <span class="setting-symbol">i</span><div><b>À propos</b><small>COMSPEC ATAK</small></div><em id="aboutVersion">1.8.20</em>
+            <span class="setting-symbol">i</span><div><b>À propos</b><small>COMSPEC ATAK</small></div><em id="aboutVersion">1.8.22</em>
           </button>
         </div>
       </section>
@@ -4007,7 +4165,14 @@ html.ingame .boot-lock-hint{
   });
   bind($("#accountReconnect"), "click", () => {
     flashStatus("Reconnexion au poste…");
-    if (typeof window.COMSPEC_ATAK_send === "function") window.COMSPEC_ATAK_send("connect:athena");
+    if (typeof window.COMSPEC_ATAK_connectAthena === "function") window.COMSPEC_ATAK_connectAthena();
+  });
+  bind($("#desktopJoinPoste"), "click", () => {
+    flashStatus("Connexion au poste…");
+    if (typeof window.COMSPEC_ATAK_connectAthena === "function") window.COMSPEC_ATAK_connectAthena();
+  });
+  bind($("#gateStayLocal"), "click", () => {
+    if (typeof window.COMSPEC_ATAK_stayLocal === "function") window.COMSPEC_ATAK_stayLocal();
   });
   function submitAccountLogin() {
     var emailEl = document.getElementById("accountLoginEmail");
@@ -4032,7 +4197,7 @@ html.ingame .boot-lock-hint{
     var ready = st.mode === "ATHENA" && String(st.athenaAuthState || "").toUpperCase() === "READY";
     if (!ready) {
       if (typeof window.COMSPEC_ATAK_openAccountLogin === "function") {
-        window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.");
+        window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.", false);
       }
       return;
     }
@@ -4642,21 +4807,33 @@ html.ingame .boot-lock-hint{
 
 <script>
 (function(){
-  var wallpaperKey = "comspec_atak_login_wallpaper";
+  var wallpaperKey = "comspec_atak_desktop_wallpaper";
+
+  function isAllowedWallpaper(url){
+    url = String(url || "").trim();
+    if (!url || url === "none") return false;
+    if (/^https:\/\//i.test(url)) return true;
+    if (/^(media|assets)\//i.test(url)) return true;
+    return false;
+  }
 
   function applyWallpaper(url){
     url = String(url || "").trim();
-    if (!/^https:\/\//i.test(url)) url = "";
-    if (url) {
-      document.documentElement.style.setProperty("--login-wallpaper","url('" + url.replace(/'/g,"%27") + "')");
-    } else {
-      document.documentElement.style.removeProperty("--login-wallpaper");
-    }
+    if (!isAllowedWallpaper(url)) url = "media/athena-bg.jpg";
+    var css = "url('" + url.replace(/'/g,"%27") + "')";
+    var root = document.documentElement;
+    root.style.setProperty("--desktop-wallpaper", css);
+    root.style.setProperty("--login-wallpaper", css);
+    document.querySelectorAll("[data-wallpaper]").forEach(function(btn){
+      btn.classList.toggle("is-on", btn.getAttribute("data-wallpaper") === url);
+    });
     var field = document.getElementById("settingsLoginWallpaper");
-    if (field && document.activeElement !== field) field.value = url;
+    if (field && document.activeElement !== field) {
+      field.value = /^https:\/\//i.test(url) ? url : "";
+    }
   }
 
-  try { applyWallpaper(localStorage.getItem(wallpaperKey) || ""); } catch(e) {}
+  try { applyWallpaper(localStorage.getItem(wallpaperKey) || "media/wallpapers/ops.jpg"); } catch(e) {}
 
   window.COMSPEC_ATAK_toast = function(message, level){
     var old = document.getElementById("comspecHtmlToast");
@@ -4676,17 +4853,19 @@ html.ingame .boot-lock-hint{
       var field = document.getElementById("settingsLoginWallpaper");
       var val = field ? String(field.value || "").trim() : "";
       if (val && !/^https:\/\//i.test(val)) {
-        window.COMSPEC_ATAK_toast("Le fond doit utiliser une URL HTTPS.","WARN");
+        window.COMSPEC_ATAK_toast("L’adresse facultative doit commencer par https.","WARN");
         return;
       }
-      try { localStorage.setItem(wallpaperKey,val); } catch(e) {}
+      try { localStorage.setItem(wallpaperKey, val || "media/athena-bg.jpg"); } catch(e) {}
       applyWallpaper(val);
-      window.COMSPEC_ATAK_toast("Fond de connexion mis à jour.","OK");
+      window.COMSPEC_ATAK_toast("Fond d’écran appliqué.","OK");
     }
-    if (ev.target.closest("#settingsClearWallpaper")) {
-      try { localStorage.removeItem(wallpaperKey); } catch(e) {}
-      applyWallpaper("");
-      window.COMSPEC_ATAK_toast("Fond de connexion réinitialisé.","INFO");
+    var pick = ev.target.closest("[data-wallpaper]");
+    if (pick) {
+      var wp = pick.getAttribute("data-wallpaper") || "media/athena-bg.jpg";
+      try { localStorage.setItem(wallpaperKey, wp); } catch(e) {}
+      applyWallpaper(wp);
+      window.COMSPEC_ATAK_toast("Fond d’écran appliqué.","OK");
     }
   },true);
 
@@ -5371,9 +5550,33 @@ html.ingame .boot-foot{
         if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("map:pack:install");
         return;
       }
-      if(el.id==="accountReconnect"){
+      if(el.id==="accountReconnect"||el.id==="desktopJoinPoste"){
         event.preventDefault();event.stopImmediatePropagation();
-        if(window.COMSPEC_ATAK_send) window.COMSPEC_ATAK_send("connect:athena");
+        if(window.COMSPEC_ATAK_connectAthena) window.COMSPEC_ATAK_connectAthena();
+        return;
+      }
+      if(el.id==="gateStayLocal"){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(window.COMSPEC_ATAK_stayLocal) window.COMSPEC_ATAK_stayLocal();
+        return;
+      }
+      if(el.id==="gateLoginSubmit"){
+        event.preventDefault();event.stopImmediatePropagation();
+        var ge=document.getElementById("gateLoginEmail");
+        var gp=document.getElementById("gateLoginPassword");
+        var gemail=String(ge&&ge.value||"").trim();
+        var gpass=String(gp&&gp.value||"");
+        var ghint=document.getElementById("gateLoginMsg");
+        if(!gemail||!gpass){
+          if(ghint) ghint.textContent="Saisissez votre adresse e-mail et votre mot de passe.";
+          return;
+        }
+        if(ghint) ghint.textContent="Connexion au poste…";
+        if(window.COMSPEC_ATAK_send){
+          window.COMSPEC_ATAK_send("auth:login:email|"+gemail);
+          window.COMSPEC_ATAK_send("auth:login:secret|"+gpass);
+          window.COMSPEC_ATAK_send("auth:login:go");
+        }
         return;
       }
       if(el.id==="accountLoginSubmit"){
@@ -5400,7 +5603,7 @@ html.ingame .boot-foot{
         var st=window.COMSPEC_ATAK_STATE||{};
         var ready=st.mode==="ATHENA"&&String(st.athenaAuthState||"").toUpperCase()==="READY";
         if(!ready){
-          if(window.COMSPEC_ATAK_openAccountLogin) window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.");
+          if(window.COMSPEC_ATAK_openAccountLogin) window.COMSPEC_ATAK_openAccountLogin("Connectez d’abord votre compte Athena avec l’e-mail et le mot de passe.", false);
           return;
         }
         if(window.COMSPEC_ATAK_openPairing) window.COMSPEC_ATAK_openPairing();
