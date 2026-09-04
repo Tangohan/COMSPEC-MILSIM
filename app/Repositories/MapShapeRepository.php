@@ -81,14 +81,14 @@ class MapShapeRepository
         }
         $updates = [];
         $params = [];
-        $allowed = ['label', 'color', 'stroke', 'fill_opacity', 'visible_to', 'geometry', 'meta'];
+        $allowed = ['type', 'label', 'color', 'stroke', 'fill_opacity', 'visible_to', 'geometry', 'meta', 'created_by'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $payload)) {
                 $v = $payload[$k];
                 if (in_array($k, ['visible_to', 'geometry', 'meta'], true) && is_array($v)) {
                     $v = json_encode($v);
                 }
-                $updates[] = "`$k` = ?";
+                $updates[] = "$k = ?";
                 $params[] = $v;
             }
         }
@@ -101,7 +101,7 @@ class MapShapeRepository
         }
         $params[] = $tenantId;
         $params[] = $id;
-        $this->pdo()->prepare('UPDATE atak_map_shapes SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE tenant_id = ? AND id = ?')->execute($params);
+        $this->pdo()->prepare('UPDATE atak_map_shapes SET ' . implode(', ', $updates) . ', updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND id = ?')->execute($params);
         return $this->get($tenantId, $id);
     }
 
@@ -110,6 +110,36 @@ class MapShapeRepository
         $stmt = $this->pdo()->prepare('DELETE FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         return $stmt->rowCount() > 0;
+    }
+
+    public function deleteByUid(int $tenantId, int $mapId, string $shapeUid): bool
+    {
+        $shapeUid = trim($shapeUid);
+        if ($shapeUid === '') {
+            return false;
+        }
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_map_shapes WHERE tenant_id = ? AND map_id = ? AND shape_uid = ?');
+        $stmt->execute([$tenantId, $mapId, $shapeUid]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function upsertByUid(int $tenantId, int $mapId, array $payload): array
+    {
+        $shapeUid = substr(trim((string) ($payload['shape_uid'] ?? $payload['id'] ?? '')), 0, 64);
+        if ($shapeUid === '') {
+            return $this->create($tenantId, $mapId, $payload);
+        }
+        $payload['shape_uid'] = $shapeUid;
+        $stmt = $this->pdo()->prepare('SELECT id FROM atak_map_shapes WHERE tenant_id = ? AND map_id = ? AND shape_uid = ?');
+        $stmt->execute([$tenantId, $mapId, $shapeUid]);
+        $id = (int) ($stmt->fetchColumn() ?: 0);
+        if ($id < 1) {
+            return $this->create($tenantId, $mapId, $payload);
+        }
+        $row = $this->update($tenantId, $id, $payload);
+
+        return $row ?? [];
     }
 
     private function normalizeShape(array $row): array

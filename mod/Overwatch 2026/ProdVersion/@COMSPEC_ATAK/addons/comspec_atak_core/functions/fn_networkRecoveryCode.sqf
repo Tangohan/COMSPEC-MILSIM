@@ -13,7 +13,7 @@ if (_len < 6 || {_len > 12}) exitWith
 {
     params ["_code"];
     private _baseUrl = profileNamespace getVariable ["COMSPEC_ATAK_AthenaUrl","https://athena.ttrd.fr/public"];
-    private _steam = if (isNull player) then {""} else {getPlayerUID player};
+    private _steam = [] call COMSPEC_fnc_networkSteamUid;
     private _version = getText (configFile >> "CfgPatches" >> "comspec_atak_core" >> "versionStr");
     ["ATHENA","Préparation de la récupération...","INFO"] call COMSPEC_fnc_networkUpdateConnectionUI;
     private _init = ["Init",[_baseUrl]] call COMSPEC_fnc_extensionCall;

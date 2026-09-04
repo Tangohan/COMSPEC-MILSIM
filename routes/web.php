@@ -520,6 +520,8 @@ return function (Router $router) {
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
+    $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
@@ -1914,6 +1916,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+    $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
 
     // Authentification Athena du pack jeu (session DLL — pas de clé communauté comme preuve).
     $gameAuth = \App\Controllers\Api\Game\GameAuthApiController::class;
@@ -2239,6 +2242,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/terrain/contours', [\App\Controllers\Api\AtakTerrainApiController::class, 'contours']);
     $router->get('/api/atak/scene', [\App\Controllers\Api\AtakSceneApiController::class, 'index']);
     $router->post('/api/atak/scene/ingest', [\App\Controllers\Api\AtakSceneApiController::class, 'ingest']);
+    $router->post('/api/atak/sync/snapshot', [\App\Controllers\Api\AtakSyncApiController::class, 'snapshot']);
+    $router->get('/api/atak/sync/roster', [\App\Controllers\Api\AtakSyncApiController::class, 'roster']);
     $router->get('/api/atak/geo/places', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'placesIndex']);
     $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
     $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);

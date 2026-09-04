@@ -15,7 +15,7 @@ if (["networkBusy", false] call COMSPEC_fnc_getState) exitWith {false};
 {
     params ["_code"];
     private _baseUrl = profileNamespace getVariable ["COMSPEC_ATAK_AthenaUrl","https://athena.ttrd.fr/public"];
-    private _steam = if (isNull player) then {""} else {getPlayerUID player};
+    private _steam = [] call COMSPEC_fnc_networkSteamUid;
     private _version = getText (configFile >> "CfgPatches" >> "comspec_atak_core" >> "versionStr");
 
     ["ATHENA","Validation du code ATHENA...","INFO"] call COMSPEC_fnc_networkUpdateConnectionUI;

@@ -239,6 +239,48 @@ final class AtakRealismRepository
     }
 
     /**
+     * Terminaux terrain du compte (hors sessions navigateur du poste).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPhysicalTerminalsForUser(int $tenantId, int $userId): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->listPhysicalTerminals($tenantId) as $row) {
+            if ((int) ($row['user_id'] ?? 0) === $userId) {
+                $out[] = $row;
+            }
+        }
+
+        return $out;
+    }
+
+    public function revokePhysicalTerminalForUser(int $tenantId, int $userId, int $terminalId): bool
+    {
+        if ($tenantId < 1 || $userId < 1 || $terminalId < 1 || !$this->tablesReady()) {
+            return false;
+        }
+        $row = $this->findTerminalById($tenantId, $terminalId);
+        if ($row === null || (int) ($row['user_id'] ?? 0) !== $userId) {
+            return false;
+        }
+        if (self::isWebSessionTerminal($row)) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE atak_terminals
+             SET status = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ? AND user_id = ?'
+        );
+        $st->execute(['revoked', $tenantId, $terminalId, $userId]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
      * Une fiche par opérateur et par famille (jeu / téléphone) : l’UID change
      * parfois après une mise à jour du mod, ce qui doublonnait N-10, etc.
      *
@@ -371,6 +413,70 @@ final class AtakRealismRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Ne jamais écrire un terminal_id absent de cette communauté (FK atak_terminals).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function resolveExistingTerminalId(int $tenantId, array $payload): ?int
+    {
+        $id = (int) ($payload['terminal_id'] ?? 0);
+        if ($id > 0 && $this->findTerminalById($tenantId, $id) !== null) {
+            return $id;
+        }
+        $uid = $this->sanitizeTerminalUid((string) ($payload['terminal_uid'] ?? ''));
+        if ($uid !== '') {
+            $byUid = $this->findTerminalByUid($tenantId, $uid);
+            if ($byUid !== null) {
+                return (int) ($byUid['id'] ?? 0) ?: null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function resolveExistingUserId(int $tenantId, array $payload): ?int
+    {
+        $userId = (int) ($payload['user_id'] ?? 0);
+        if ($userId < 1 || $tenantId < 1) {
+            return null;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $st->execute([$userId, $tenantId]);
+            if ($st->fetchColumn()) {
+                return $userId;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function resolveExistingCryptoDomainId(int $tenantId, array $payload): ?int
+    {
+        $domainId = (int) ($payload['crypto_domain_id'] ?? 0);
+        if ($domainId < 1 || $tenantId < 1 || !$this->cryptoDomainsReady()) {
+            return null;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM atak_crypto_domains WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $st->execute([$domainId, $tenantId]);
+            if ($st->fetchColumn()) {
+                return $domainId;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 
     public function deleteTerminal(int $tenantId, int $terminalId): bool
@@ -747,12 +853,12 @@ final class AtakRealismRepository
      */
     public function issueCertificate(int $tenantId, array $payload): array
     {
-        $terminalId = (int) ($payload['terminal_id'] ?? 0);
-        $userId = (int) ($payload['user_id'] ?? 0);
+        $terminalId = $this->resolveExistingTerminalId($tenantId, $payload);
+        $userId = $this->resolveExistingUserId($tenantId, $payload);
         $authority = $this->clip((string) ($payload['authority_label'] ?? 'Autorité ATAK locale'), 160);
         $type = $this->allowed((string) ($payload['certificate_type'] ?? 'device'), ['device', 'operator', 'gateway', 'test'], 'device');
         $status = $this->allowed((string) ($payload['status'] ?? 'issued'), ['issued', 'active', 'expired', 'revoked'], 'issued');
-        $ref = $this->sanitizeCertificateRef((string) ($payload['certificate_ref'] ?? ''), $terminalId);
+        $ref = $this->sanitizeCertificateRef((string) ($payload['certificate_ref'] ?? ''), (int) ($terminalId ?? 0));
         if ($ref === '') {
             $ref = 'OW-CERT-' . strtoupper(substr(bin2hex(random_bytes(8)), 0, 12));
         }
@@ -775,9 +881,9 @@ final class AtakRealismRepository
                  revoked_at, revoked_reason, metadata_json, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
                 ON DUPLICATE KEY UPDATE
-                    terminal_id = VALUES(terminal_id),
-                    user_id = VALUES(user_id),
-                    crypto_domain_id = VALUES(crypto_domain_id),
+                    terminal_id = COALESCE(VALUES(terminal_id), terminal_id),
+                    user_id = COALESCE(VALUES(user_id), user_id),
+                    crypto_domain_id = COALESCE(VALUES(crypto_domain_id), crypto_domain_id),
                     authority_label = VALUES(authority_label),
                     certificate_type = VALUES(certificate_type),
                     common_name = VALUES(common_name),
@@ -791,12 +897,12 @@ final class AtakRealismRepository
                     revoked_reason = VALUES(revoked_reason),
                     metadata_json = VALUES(metadata_json),
                     updated_at = UTC_TIMESTAMP()';
-        $domainId = (int) ($payload['crypto_domain_id'] ?? 0);
+        $domainId = $this->resolveExistingCryptoDomainId($tenantId, $payload);
         $this->pdo->prepare($sql)->execute([
             $tenantId,
-            $terminalId > 0 ? $terminalId : null,
-            $userId > 0 ? $userId : null,
-            $domainId > 0 ? $domainId : null,
+            $terminalId,
+            $userId,
+            $domainId,
             $ref,
             $authority,
             $type,

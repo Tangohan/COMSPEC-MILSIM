@@ -20,10 +20,16 @@ true
 
 [
     {
-        ["if(window.COMSPEC_ATAK_reportMapViewport){window.COMSPEC_ATAK_reportMapViewport();}"] call COMSPEC_fnc_webExecJS;
+        [
+            format [
+                "if(window.COMSPEC_ATAK_liveMapShow){window.COMSPEC_ATAK_liveMapShow('%1',%2);}",
+                [worldName] call COMSPEC_fnc_webJsEscape,
+                worldSize
+            ]
+        ] call COMSPEC_fnc_webExecJS;
         if (missionNamespace getVariable ["COMSPEC_ATAK_MapVisible", false]) then
         {
-            [] call COMSPEC_fnc_webMapRaise;
+            [] call COMSPEC_fnc_webMapShow;
         };
     },
     [],

@@ -29,6 +29,17 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('HandleTheaterCoverage', $cs);
         self::assertStringContainsString('Theater.Coverage', $cs);
         self::assertStringContainsString('/api/atak/theater/coverage', $cs);
+        self::assertStringContainsString('QueueHeavyIngest', $cs);
+        $dialog = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_webJSDialog.sqf');
+        self::assertStringContainsString('scene:json|', $dialog);
+        self::assertStringContainsString('Scene.Ingest', $dialog);
+        $tiles = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/web/map-tiles.js');
+        $live = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/web/live-map.js');
+        self::assertStringContainsString('/map-data/', $tiles);
+        self::assertStringContainsString('GridLayer', $tiles);
+        self::assertStringNotContainsString('L.tileLayer', $tiles);
+        self::assertStringNotContainsString('TILE_BASES', $live);
+        self::assertStringNotContainsString('github.io', $live);
     }
 
     public function testTheaterSurveyVerifyComparesPostedCountsAndResends(): void
@@ -66,7 +77,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
-        self::assertStringContainsString('1.5.16', $cfg);
+        self::assertStringContainsString('1.5.17', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -170,7 +181,7 @@ final class AtakSceneIngestAssetTest extends TestCase
     public function testExtensionDoesNotTreatHttpZeroAsSaturation(): void
     {
         $cs = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('1.18.10', $cs);
+        self::assertStringContainsString('1.18.12', $cs);
         self::assertStringContainsString('IsBestEffortEndpoint', $cs);
         self::assertStringContainsString('NoteBestEffortCooldown', $cs);
         self::assertStringContainsString('IsTacticalQueuedEndpoint', $cs);
@@ -185,6 +196,9 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('NoteAccessDenied', $cs);
         self::assertStringContainsString('COMSPECExtension/', $cs);
         self::assertStringContainsString('AccessDenied', $cs);
+        self::assertStringContainsString('queued:', $cs);
+        self::assertStringContainsString('QueueHeavyIngest', $cs);
+        self::assertStringContainsString('PersistQueueToDisk', $cs);
 
         $cb = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
         self::assertStringContainsString('Poste momentanément injoignable', $cb);

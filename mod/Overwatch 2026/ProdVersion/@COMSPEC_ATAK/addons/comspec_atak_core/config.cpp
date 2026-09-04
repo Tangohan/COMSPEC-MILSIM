@@ -5,12 +5,12 @@ class CfgPatches
         name = "COMSPEC ATAK Core";
         author = "COMSPEC";
         requiredVersion = 2.20;
-        requiredAddons[] = {"cba_main","cba_xeh","A3_UI_F"};
+        requiredAddons[] = {"cba_main","cba_xeh","cba_settings","A3_UI_F"};
         units[] = {};
         weapons[] = {};
-        version = 1.8.7;
-        versionStr = "1.8.7";
-        versionAr[] = {1,8,7};
+        version = 1.8.20;
+        versionStr = "1.8.20";
+        versionAr[] = {1,8,20};
     };
 };
 
@@ -54,6 +54,10 @@ class CfgFunctions
             class mapSetLayer {};
             class mapSetTool {};
             class mapToggleBft {};
+            class mapToggleTexture {};
+            class mapUpdateInfo {};
+            class mapUseToolAt {};
+            class scenePersist {};
             class markerCreate {};
             class markerList {};
             class markerOnRemote {};
@@ -65,15 +69,19 @@ class CfgFunctions
             class miniOnLoad {};
             class miniOnUnload {};
             class networkApplyMode {};
+            class networkApplyGameAuth {};
+            class networkAuthPassword {};
             class networkAuthWatchdog {};
             class networkConnectAthena {};
             class networkConnectP2P {};
+            class networkCredentials {};
             class networkStartPairing {};
             class networkRedeemPairingCode {};
             class networkRecoveryCode {};
             class networkDebugState {};
             class networkDisconnect {};
             class networkShowConnection {};
+            class networkSteamUid {};
             class networkUpdateConnectionUI {};
             class notify {};
             class openApp {};
@@ -123,6 +131,7 @@ class CfgFunctions
             class webJsEscape {};
             class webLayout {};
             class webMapHide {};
+            class webMapHtmlChrome {};
             class webMapRaise {};
             class webMapShow {};
             class webMapSetViewport {};
@@ -135,6 +144,14 @@ class CfgFunctions
     };
 };
 
+class Extended_PreInit_EventHandlers
+{
+    class comspec_atak_core
+    {
+        init = "call compile preprocessFileLineNumbers '\z\comspec_atak\addons\comspec_atak_core\XEH_preInit.sqf'";
+    };
+};
+
 class Extended_PostInit_EventHandlers
 {
     class comspec_atak_core
@@ -143,10 +160,27 @@ class Extended_PostInit_EventHandlers
     };
 };
 
+class CfgCommands
+{
+    allowedHTMLLoadURIs[] += {
+        "https://jetelain.github.io/*",
+        "https://cdn.jsdelivr.net/*",
+        "https://maps.ibonn.de/*",
+        "https://atlas.plan-ops.fr/*",
+        "https://athena.ttrd.fr/*",
+        "https://compsec.ttrd.fr/*",
+        "http://127.0.0.1/*",
+        "http://localhost/*",
+        "file://z/comspec_atak/addons/comspec_atak_core/web/*",
+        "file://*/Arma 3 - COMSPEC/Maps/*"
+    };
+};
+
 class RscText;
 class RscStructuredText;
 class RscButton;
 class RscMapControl;
 class RscPicture;
+class RscControlsGroup;
 
 #include "ui\runtime.hpp"

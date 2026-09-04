@@ -6,7 +6,7 @@ if ((["networkBusy", false] call COMSPEC_fnc_getState) && {!_force}) exitWith {f
 [] spawn
 {
     private _baseUrl = profileNamespace getVariable ["COMSPEC_ATAK_AthenaUrl","https://athena.ttrd.fr/public"];
-    private _steam = if (isNull player) then {""} else {getPlayerUID player};
+    private _steam = [] call COMSPEC_fnc_networkSteamUid;
     private _version = getText (configFile >> "CfgPatches" >> "comspec_atak_core" >> "versionStr");
 
     ["ATHENA","Préparation de l'appairage...","INFO"] call COMSPEC_fnc_networkUpdateConnectionUI;
@@ -33,6 +33,11 @@ if ((["networkBusy", false] call COMSPEC_fnc_getState) && {!_force}) exitWith {f
         };
     };
 
+
+    if (_steam isNotEqualTo "") then
+    {
+        ["SetSteamId", [_steam]] call COMSPEC_fnc_extensionCall;
+    };
 
     // Toujours initialiser la DLL avant PairStart.
     // Certaines versions historiques de COMSPECExtension renvoient ERR|not_connected

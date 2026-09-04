@@ -80,13 +80,13 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
 
         self::assertStringContainsString('GetScreenshotDirs', $ext);
         self::assertStringContainsString('GetPhotoSaveDir', $ext);
-        self::assertStringContainsString('ExtensionVersion = "1.18.10"', $ext);
+        self::assertStringContainsString('ExtensionVersion = "1.18.12"', $ext);
 
-        self::assertStringContainsString('1.0.80', $cfg);
+        self::assertStringContainsString('1.0.81', $cfg);
         self::assertStringContainsString('athena_collectSessionLog', $cfg);
         self::assertStringContainsString('athena_forcePhotoSend', $cfg);
         self::assertStringContainsString('athena_showPhotoFolder', $cfg);
-        self::assertStringContainsString('1.5.16', $connect);
+        self::assertStringContainsString('1.5.17', $connect);
 
         self::assertStringContainsString('journal', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);

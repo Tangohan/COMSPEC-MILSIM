@@ -584,6 +584,131 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(426, '2026-09-04', 'Connexion au compte depuis le téléphone, carte lisible, identifiant Steam', 'Sur le téléphone, Compte permet de se connecter avec l’e-mail et le mot de passe Athena. Le profil, la communauté et la session apparaissent ensuite. L’identifiant Steam détecté en jeu, ou saisi dans les options du pack, est associé au compte s’il n’était pas encore enregistré. Terrain affiche de nouveau la photo aérienne dès l’ouverture. Relancer Arma complètement après le nouveau pack', [
+                'Compte : se connecter avec l’adresse e-mail et le mot de passe du compte Athena',
+                'Après connexion, le nom, la communauté, l’expiration de session et l’état de liaison sont ceux du poste',
+                'L’identifiant Steam peut être saisi dans les options du pack, rubrique COMSPEC ATAK',
+                'Lier ce terminal ouvre la connexion au compte si aucune session n’est encore ouverte',
+                'Liaison montre les autres terminaux réellement signalés par le poste, sans en inventer',
+                'Conserver ce théâtre sur l’appareil enregistre les extraits déjà vus pour les prochaines sessions',
+            ], [
+                'L’accueil empile le titre, le nom et le groupe, sans les faire se chevaucher',
+                'Les réglages du terminal se font défiler jusqu’en bas',
+                'Les états de session sont rédigés en français, plus de libellé technique brut',
+            ], [
+                'La carte montrait des cases d’image cassée à la place du terrain',
+                'Le bouton Lier ce terminal au poste ne produisait aucun écran utile',
+                'Se déconnecter ne fermait pas vraiment la session auprès du poste',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.20. Compte : connectez-vous avec votre e-mail. Terrain : la photo aérienne du théâtre doit apparaître tout de suite. Options du pack : Identifiant Steam si le jeu ne le détecte pas.',
+            ], 'COMSPEC ATAK 1.8.20'),
+            $pr(425, '2026-09-04', 'Les zones posées hors liaison arrivent entières au poste', 'Sur le téléphone, une zone ou un marqueur posé est envoyé en entier au poste, pas seulement son nom. Si la liaison est coupée, la modification reste en attente sur la machine et part à la reconnexion. La position continue de ne garder que la dernière valeur. Relancer Arma complètement après le nouveau pack', [
+                'Une zone, un marqueur ou un itinéraire est transmis au poste avec ses points et son auteur',
+                'Hors liaison, les modifications restent en file sur la machine et partent dès que le poste répond',
+                'La position n’est toujours pas historisée : seule la plus récente compte',
+            ], [], [
+                'Le téléphone enregistrait le dessin, mais le poste ne recevait pas l’objet complet',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.19. Posez une zone, ouvrez Liaison : elle apparaît en attente, puis disparaît une fois le poste joignable.',
+            ], 'COMSPEC ATAK 1.8.19'),
+            $pr(424, '2026-09-04', 'La carte satellite s’affiche, le compte se relie, l’accueil se range', 'Sur le téléphone, Terrain montre la photo aérienne du terrain, et non plus un fond vert uni. Compte permet de se déconnecter, se reconnecter ou lier le terminal au poste. L’accueil a un fond, des icônes de même taille, et le menu d’applications s’aligne sur la barre du haut. Relancer Arma complètement après le nouveau pack', [
+                'La carte satellite du terrain apparaît derrière votre position, à la place d’un écran entièrement vert',
+                'Compte : se déconnecter, se reconnecter, ou lier ce terminal au poste',
+                'Accueil : fond de l’écran, icônes de même taille, icône Compte d’opérateur',
+                'Le menu d’applications et le bandeau Overwatch s’alignent sur la même largeur',
+            ], [], [
+                'La carte restait verte, le compte n’offrait aucune action de liaison, et l’accueil était inégal',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.18. Terrain : la photo aérienne du terrain doit apparaître. Accueil : fond et icônes alignées. Compte : trois actions de liaison.',
+            ], 'COMSPEC ATAK 1.8.18'),
+            $pr(423, '2026-09-04', 'Les dessins restent en file hors ligne, la position n’encombre plus l’historique', 'Sur le téléphone, chaque zone ou marqueur posé est un objet complet, pas une simple note. Votre position continue de bouger en temps réel mais n’est plus écrite à chaque pas dans l’historique. Liaison ouvre le centre de liaison : vous voyez ce qui attend d’être envoyé. Les extraits de carte déjà affichés sont conservés pour un usage sans réseau. Relancer Arma complètement après le nouveau pack', [
+                'Un dessin ou un marqueur est enregistré en entier, avec ses points et son auteur',
+                'La position n’est plus historisée à chaque déplacement : seule la plus récente compte',
+                'Liaison montre les modifications en attente (dessins, marqueurs, itinéraires)',
+                'Les extraits de carte déjà ouverts restent disponibles si le réseau disparaît',
+            ], [], [
+                'Chaque déplacement remplissait l’historique, et la carte dépendait d’un accès distant à chaque ouverture',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.17. Posez une zone, puis ouvrez Liaison : le dessin apparaît en attente. Coupez le réseau, la carte déjà affichée reste lisible.',
+            ], 'COMSPEC ATAK 1.8.17'),
+            $pr(422, '2026-09-04', 'La carte remplit l’écran du téléphone, et les menus du bandeau s’ouvrent', 'Sur le téléphone, Terrain affiche enfin la carte dans la zone centrale, plus un fond noir. Les boutons du bandeau (Suivis, Couches, Outils, Points…) ouvrent réellement leur panneau. Relancer Arma complètement après le nouveau pack', [
+                'La carte du terrain occupe la zone centrale de l’écran, avec votre position',
+                'Le bandeau ouvre les panneaux : suivis, liaison, couches, vues, points, outils, images, menu',
+                'Zoom, recentrage et couches agissent sur cette même carte',
+            ], [], [
+                'La zone centrale restait noire, et les boutons du bandeau n’ouvraient pas leur panneau',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.16. Ouvrez le téléphone, Terrain : la carte doit remplir le centre. Touchez Couches ou Outils : le panneau s’ouvre à droite.',
+            ], 'COMSPEC ATAK 1.8.16'),
+            $pr(421, '2026-09-04', 'La carte du téléphone devient une scène : dessin, zones, relief et relecture', 'Sur le téléphone, Terrain n’est plus seulement un fond. Vous dessinez des zones, des flèches, des mesures et des modèles (observation, regroupement, atterrissage) qui restent des objets, pas une image. Vous pouvez n’afficher qu’une zone d’intérêt, passer en lecture plane, relief ou vue tactique, et revenir à un instant précédent. Relancer Arma complètement après le nouveau pack', [
+                'Outils : polygone, flèche, cercle, ellipse, danger, exclusion, secteur, couloir, axe, regroupement, zone d’intérêt',
+                'Chaque dessin porte un auteur et reste un objet, pas un dessin figé',
+                'Lecture plane, relief ombré ou vue tactique inclinée ; la relecture ramène la carte à un horaire passé',
+                'Les traces restent sur l’appareil si la liaison se coupe',
+            ], [], [
+                'La carte ne conservait que des points figés, sans dessin ni historique',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.15. Téléphone, Terrain, Outils : posez une zone, basculez Relief, puis faites glisser Relecture.',
+            ], 'COMSPEC ATAK 1.8.15'),
+            $pr(420, '2026-09-04', 'La carte du téléphone est désormais celle du terrain, dans l’écran', 'Sur le téléphone, Terrain n’ouvre plus la carte Arma : le fond satellite du terrain, la grille, votre position et l’équipe s’affichent dans l’écran, avec le bandeau et le panneau. Vue satellite ou plan, zoom, recentrage et pose de marqueur restent dans cette carte. Relancer Arma complètement après le nouveau pack', [
+                'Terrain remplit l’écran du téléphone avec la carte du terrain, menus autour',
+                'Votre position, votre groupe et les autres opérateurs se mettent à jour en se déplaçant',
+                'Vue satellite ou plan, zoom, recentrage et clic pour un marqueur ou une mesure',
+            ], [], [
+                'La carte du téléphone recouvrait encore l’écran ou restait un fond noir, parce qu’elle n’était pas tracée dans l’interface',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.14. Ouvrez le téléphone, Terrain : la carte du terrain remplit l’écran, votre position bouge, le bandeau et le panneau restent visibles.',
+            ], 'COMSPEC ATAK 1.8.14'),
+            $pr(419, '2026-09-04', 'Terrain affiche la carte du poste dans tout l’écran du téléphone', 'Sur le téléphone, Terrain montre la même carte que le poste Athena : vous vous y déplacez, zoomez, recentrez, voyez l’équipe et posez des marqueurs, tout en gardant le bandeau et le panneau. Relancer Arma complètement après le nouveau pack', [
+                'Terrain ouvre la carte du terrain dans tout l’écran, avec le bandeau et le panneau autour',
+                'Votre position, votre groupe et les autres opérateurs apparaissent au fil du déplacement',
+                'Le zoom, le recentrage, la vue satellite ou plan, et le clic pour poser un marqueur fonctionnent sur cette carte',
+            ], [], [
+                'La carte du téléphone n’était pas encore celle du poste : menus autour, mais fond incomplet',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.13. Ouvrez le téléphone, Terrain : la carte du terrain remplit l’écran, votre position bouge, le bandeau et le panneau restent visibles.',
+            ], 'COMSPEC ATAK 1.8.13'),
+            $pr(418, '2026-09-04', 'Terrain affiche la carte du terrain dans l’écran, et deux pannes du poste sont levées', 'Sur le téléphone, Terrain montre la carte satellite du terrain dans l’interface, avec votre position. Sur le poste, l’association d’un certificat ne plante plus si l’appareil n’est pas encore enregistré, et la page des appareils liés s’ouvre. Relancer Arma complètement après le nouveau pack', [
+                'Terrain affiche la carte du terrain (même fond que le poste) dans l’écran du téléphone, avec les menus autour',
+                'Votre position apparaît sur cette carte au fil du déplacement',
+                'La page Compte, Appareils liés, liste les téléphones et tablettes associés',
+            ], [], [
+                'L’association d’un certificat échouait lorsque l’appareil n’était plus connu du poste',
+                'La page des appareils liés renvoyait une erreur',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.12. Ouvrez le téléphone, Terrain : la carte Altis (ou la carte de mission) doit apparaître dans l’écran, avec le bandeau et le panneau. Sur le poste, Compte puis Appareils liés.',
+            ], 'COMSPEC ATAK 1.8.12'),
+            $pr(417, '2026-09-04', 'Le téléphone reprend le compte Steam actuel, Terrain garde les menus', 'Si l’identifiant Steam a changé, Connexion à Athena affiche le bon opérateur, plus l’ancien compte resté sur ce PC. Terrain montre la carte du terrain avec le bandeau et le panneau du téléphone. Relancer Arma complètement après le nouveau pack', [
+                'Connexion à Athena suit le Steam du joueur, même si une ancienne session était enregistrée sur ce PC',
+                'Terrain affiche la carte Arma avec le bandeau et le panneau OVERWATCH autour, plus seulement Accueil / Moi / BFT',
+            ], [], [
+                'Après un changement de compte Steam, le téléphone réouvrait l’ancien opérateur',
+                'Pour voir la carte, il fallait masquer tout l’écran du téléphone',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.11. Connexion à Athena : le nom affiché doit être celui du Steam actuel. Terrain : carte visible, bandeau et panneau OVERWATCH à droite.',
+            ], 'COMSPEC ATAK 1.8.11'),
+            $pr(416, '2026-09-04', 'Le téléphone se lie avec le jeton de la communauté, tout seul', 'Dans les options du jeu, rubrique COMSPEC ATAK, saisissez le jeton et l’identifiant fournis par votre communauté. Connexion à Athena n’a plus besoin d’un autre pack. Relancer Arma complètement après le nouveau pack', [
+                'Jeton et identifiant de communauté dans les options du module, et dans Paramètres du téléphone',
+                'Le téléphone joint le poste avec ces valeurs, sans pack supplémentaire',
+            ], [], [], ['atak'], [
+                'Échap, Options, Modules complémentaires, COMSPEC ATAK : coller le jeton et l’identifiant. Ou ouvrez le téléphone, Paramètres, Communauté, Enregistrer le poste. Puis Connexion à Athena.',
+            ], 'COMSPEC ATAK 1.8.10'),
+            $pr(415, '2026-09-04', 'Terrain affiche enfin la carte Arma, plus un écran noir', 'Sur le téléphone, Terrain masque l’écran des menus et pose la carte Arma dans la dalle. Accueil, Moi, BFT et Retour restent en bandeau. Relancer Arma complètement après le nouveau pack', [
+                'Terrain ouvre la carte du terrain, lisible dans la dalle',
+                'Bandeau Accueil / Moi / BFT / Retour sur la carte',
+            ], [], [
+                'Terrain laissait un trou noir alors que les menus et le zoom répondaient',
+            ], ['atak'], [
+                'Relancez Arma complètement. Le journal doit indiquer le pack 1.8.9, pas 1.8.6. Ouvrez le téléphone, Terrain : la carte Altis (ou la carte de mission) doit remplir l’écran. Accueil ramène au bureau.',
+            ], 'COMSPEC ATAK 1.8.9'),
+            $pr(414, '2026-09-04', 'Athena se reconnecte sans charger l’ancien pack à côté', 'Le téléphone reprend tout seul la liaison Athena déjà enregistrée sur le profil. Plus besoin d’ajouter l’ancien pack Overwatch pour que le réseau réponde. Relancer Arma complètement après le nouveau pack', [
+                'La liaison déjà enregistrée est reprise au bouton Connexion à Athena',
+                'Steam, puis la liaison enregistrée, puis le code si le terminal n’est pas encore associé',
+            ], [], [
+                'Seul, le téléphone refusait Athena alors que l’ancien pack, chargé à côté, réussissait',
+            ], ['atak'], [
+                'Relancez Arma complètement. Ouvrez le téléphone, Connexion à Athena. Si vous vous êtes déjà lié une fois, la session se reprend sans code. Sinon, utilisez le code affiché ou le code de secours du poste.',
+            ], 'COMSPEC ATAK 1.8.8'),
             $pr(413, '2026-09-04', 'Le téléphone s’ouvre sur l’heure, puis deux liaisons seulement', 'À l’ouverture, le terminal affiche l’heure réelle. Un clic ou Entrée révèle Connexion à Athena et Peer to Peer. Athena cherche Steam : si le terminal n’est pas encore associé, le code d’enrôlement et le code de secours apparaissent. Relancer Arma complètement après le nouveau pack', [
                 'Écran d’accueil à l’heure réelle, puis deux choix de liaison',
                 'Athena : Steam reconnu ou terminal non enrôlé, avec code et secours',
