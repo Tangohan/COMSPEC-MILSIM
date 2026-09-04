@@ -61,6 +61,7 @@ $navPublicPageActive = $boNavCommPres;
 $navInscriptionActive = $boNavCommInscription;
 $navMediasActive = $boNavMedia;
 $navAtakHubActive = $p === 'back-office/atak';
+$navTacticalMapActive = str_starts_with($p, 'back-office/operations/carte-tactique');
 $navAtakDevicesActive = str_starts_with($p, 'back-office/atak/realisme');
 $navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
 $navAtakSessionsActive = $boNavAtakOperators;
@@ -230,6 +231,7 @@ $athNavGroups = [
         'label' => 'OPÉRATIONS',
         'items' => array_values(array_filter([
             ['label' => 'Opérations', 'href' => url('back-office/events'), 'icon' => 'ops', 'active' => $boNavEvents],
+            ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
             ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => !empty($boNavMissionsPortal)],
             ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'orbat', 'active' => $boNavPlanning],
             [

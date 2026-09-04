@@ -3650,6 +3650,33 @@ class AtakApiController
             ], 503);
         }
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
+        // Compatibility bridge: published authoritative graphics also flow through the
+        // historical GetMarkers channel used by deployed NativeAOT/SQF clients.
+        $world = preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('world_name', ''));
+        if ($world !== '') {
+            try {
+                $authoritative = (new \App\Repositories\AthenaTacticalRepository())->markers($tenantId, $world, false);
+                foreach ($authoritative as $marker) {
+                    if (($marker['geometry_type'] ?? '') !== 'POINT') {
+                        continue;
+                    }
+                    $coordinates = $marker['coordinates'] ?? [];
+                    $out[] = [
+                        'id' => 'athena:' . $marker['uuid'],
+                        'layerId' => 1,
+                        'markerData' => json_encode([
+                            'x' => $coordinates[0] ?? 0, 'y' => $coordinates[1] ?? 0,
+                            'type' => $marker['symbol'], 'text' => $marker['label'],
+                            'color' => $marker['color'], 'source' => 'web',
+                            'revision' => $marker['revision'],
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        'updated_at' => $marker['updated_at'],
+                    ];
+                }
+            } catch (\Throwable) {
+                // Migration may not yet be applied: legacy API remains available.
+            }
+        }
         $out = $this->applyIntelScramble($request, $tenantId, $mapId, 'marker', $out);
 
         return Response::json($out);

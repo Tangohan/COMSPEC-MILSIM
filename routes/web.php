@@ -1503,6 +1503,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/fire-teams/{id}/dissolve', [AdminFireTeamsController::class, 'dissolve'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/{id}/delete', [AdminFireTeamsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak', [AdminAtakHubController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/operations/carte-tactique', [\App\Controllers\Admin\AdminAthenaTacticalMapController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/localisation-telephone', [AdminAtakHubController::class, 'placePhoneGeoloc'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/operateurs', [AdminAtakOperatorsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/operateurs/export', [AdminAtakOperatorsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1925,6 +1926,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
+    $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;
+    $router->get('/api/athena/tactical/markers', [$tacticalApi, 'index']);
+    $router->post('/api/athena/tactical/markers', [$tacticalApi, 'store']);
+    $router->patch('/api/athena/tactical/markers/{uuid}', [$tacticalApi, 'update']);
+    $router->delete('/api/athena/tactical/markers/{uuid}', [$tacticalApi, 'delete']);
+    $router->get('/api/athena/tactical/sync', [$tacticalApi, 'sync']);
 
     // Authentification Athena du pack jeu (session DLL — pas de clé communauté comme preuve).
     $gameAuth = \App\Controllers\Api\Game\GameAuthApiController::class;

@@ -3027,7 +3027,10 @@ public static partial class Extension
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/markers?mapId=1", out var markersUri, out var markersErr) || markersUri is null)
                     return "ERR|" + markersErr;
                 var url = markersUri.AbsoluteUri;
-                if (!string.IsNullOrEmpty(since)) url += "&since=" + Uri.EscapeDataString(since);
+                if (since.StartsWith("world:", StringComparison.OrdinalIgnoreCase))
+                    url += "&world_name=" + Uri.EscapeDataString(since.Substring(6));
+                else if (!string.IsNullOrEmpty(since))
+                    url += "&since=" + Uri.EscapeDataString(since);
                 return ServePollGet("GetMarkers", url, (body, code) =>
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
