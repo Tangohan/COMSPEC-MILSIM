@@ -584,14 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(416, '2026-09-04', 'La page des terminaux ATAK s’ouvre de nouveau', 'Dans Compte, Terminaux ATAK affiche de nouveau la liste, les demandes d’appariement et les codes de secours. Sur la carte, le panneau d’appairage reprend les couleurs du poste. Si aucun code de secours n’est encore enregistré, un écran propose de les générer. Rechargez le portail', [
+            $pr(416, '2026-09-04', 'La page des terminaux ATAK s’ouvre de nouveau', 'Dans Compte, Terminaux ATAK affiche de nouveau la liste, les demandes d’appariement et les codes de secours. En jeu, le téléphone peut de nouveau afficher un code d’appairage et accepter un code de secours. Sur la carte, le panneau d’appairage reprend les couleurs du poste. Si aucun code de secours n’est encore enregistré, un écran propose de les générer. Rechargez le portail', [
                 'À l’ouverture de la carte, un écran oriente vers la génération des codes de secours lorsqu’aucun n’est encore enregistré',
             ], [
                 'Le panneau Appairer un terminal se lit comme le reste du poste, sans encadré vert ni bouton illisible',
             ], [
                 'La page des terminaux de confiance s’ouvrait sur une erreur après connexion',
+                'Le téléphone en jeu affichait Appairage indisponible et refusait les codes de secours',
             ], ['atak'], [
-                'Rechargez le portail, puis ouvrez Compte, Terminaux ATAK. Sur la carte, ouvrez Compte : le code d’appairage se saisit sur toute la largeur du panneau. Sans codes de secours, un écran propose de les générer dès l’entrée sur la carte.',
+                'Rechargez le portail. Dans Arma, ouvrez l’écran de connexion du téléphone puis Associer ce terminal : Générer un code doit afficher un code à recopier dans Compte, Terminaux ATAK. Un code de secours déjà enregistré doit de nouveau ouvrir la session.',
             ], 'Portail 1.5.97'),
             $pr(408, '2026-09-03', 'Les grandes photos terrain arrivent au poste', 'Les captures PNG Arma de plus de 16 Mo ne sont plus refusées comme trop lourdes. Déployer le portail puis laisser PHP recharger sa configuration pendant quelques minutes', [
                 'Photos terrain acceptées jusqu’à 96 Mo',

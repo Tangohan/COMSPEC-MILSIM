@@ -703,6 +703,7 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($atakDevicesPage);
         self::assertSame('00416', $atakDevicesPage['number_pad']);
         self::assertStringContainsString('terminaux atak', strtolower((string) $atakDevicesPage['title']));
+        self::assertStringContainsString('appairage indisponible', strtolower(json_encode($atakDevicesPage, JSON_UNESCAPED_UNICODE)));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

@@ -4,7 +4,8 @@
 
 Production `https://athena.ttrd.fr/public/account/security/devices`.
 Après déploiement de l’appariement de secours, un membre connecté ouvre
-Compte → Terminaux ATAK.
+Compte → Terminaux ATAK. Le même oubli cassait aussi la génération du
+code d’appairage et la validation d’un code de secours **en jeu**.
 
 ## Symptôme
 
@@ -26,14 +27,19 @@ terminaux de confiance échouait.
 
 - Enregistrement du dépôt, du service, du contrôleur web et du
   contrôleur d’API dans le registre des liaisons.
+- Le contrôleur d’API se construit aussi sans le registre, pour que le
+  téléphone en jeu puisse obtenir un code même si la page web est oubliée.
 - Types des colonnes alignés sur le parc de terminaux et les certificats.
 
 ## Fichiers touchés
 
 - `app/Core/ContainerIntegrations.php`
+- `app/Controllers/Api/AtakDeviceAuthApiController.php`
+- `app/Services/Atak/AtakDeviceAuthService.php`
 - `migrations/20260904120000_atak_secure_device_auth.sql`
 - `tests/Unit/AtakDeviceAuthContractTest.php`
 - `docs/bugs/2026-09-04-atak-device-security-container.md`
+- `docs/bugs/2026-09-04-atak-ingame-pair-code.md`
 
 ## Vérification
 

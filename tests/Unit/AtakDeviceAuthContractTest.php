@@ -42,6 +42,25 @@ final class AtakDeviceAuthContractTest extends TestCase
         self::assertStringContainsString('AtakDeviceAuthRepository::class', $di);
     }
 
+    public function testApiControllerCanBeBuiltWithoutContainerWiring(): void
+    {
+        $src = (string) file_get_contents(base_path('app/Controllers/Api/AtakDeviceAuthApiController.php'));
+        self::assertStringContainsString('?AtakDeviceAuthService $service = null', $src);
+        self::assertStringContainsString('new AtakDeviceAuthService(', $src);
+        self::assertStringContainsString('GameAuthService::class', $src);
+        self::assertStringContainsString('AtakRealismRepository::class', $src);
+    }
+
+    public function testPairStartSanitizesSteamAndVersionInsteadOfRejectingTheTerminal(): void
+    {
+        self::assertSame('', AtakDeviceAuthService::sanitizeSteam('_SP_PLAYER_'));
+        self::assertSame('', AtakDeviceAuthService::sanitizeSteam('12345'));
+        self::assertSame('76561198000000000', AtakDeviceAuthService::sanitizeSteam('76561198000000000'));
+        self::assertSame('1.7.8', AtakDeviceAuthService::sanitizeModVersion('1.7.8'));
+        self::assertSame('0.0.0', AtakDeviceAuthService::sanitizeModVersion(''));
+        self::assertSame('0.0.0', AtakDeviceAuthService::sanitizeModVersion('dev-build'));
+    }
+
     public function testAtakWebUsesDeviceInitiatedPairingInsteadOfLegacyCodeGeneration(): void
     {
         $view = file_get_contents(base_path('views/atak.php'));
