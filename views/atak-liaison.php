@@ -94,6 +94,7 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
     </div>
   </main>
 
+  <script src="<?= $base ?>/assets/js/paris-datetime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-liaison-page.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
 </body>
