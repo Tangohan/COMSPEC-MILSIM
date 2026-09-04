@@ -209,6 +209,7 @@ function migrations_web_collect_status(string $root): array
             'tables' => null,
             'tenants' => null,
             'users' => null,
+            'demo_accounts' => null,
             'has_default_tenant' => null,
             'has_tenant_type' => null,
             'module_tables' => [],
@@ -283,6 +284,7 @@ function migrations_web_collect_status(string $root): array
             }
             try {
                 $status['database']['users'] = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+                $status['database']['demo_accounts'] = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE LOWER(email) LIKE '%@demo.local'")->fetchColumn();
             } catch (Throwable $e) {
                 $status['database']['users'] = null;
             }
@@ -448,30 +450,28 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>{$title} · Athena</title>
+  <link rel="stylesheet" href="assets/css/dsfr-service.css">
   <style>
     :root {
-      --bg: #0b1220;
-      --bg2: #111827;
-      --panel: #151f32;
-      --panel2: #1a253a;
-      --line: rgba(148,163,184,.18);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --ok: #34d399;
-      --warn: #fbbf24;
-      --err: #fb7185;
-      --accent: #10b981;
-      --accent2: #059669;
+      --bg: #f6f6fe;
+      --bg2: #ececfe;
+      --panel: #ffffff;
+      --panel2: #ffffff;
+      --line: #dddddd;
+      --text: #161616;
+      --muted: #666666;
+      --ok: #18753c;
+      --warn: #b34000;
+      --err: #ce0500;
+      --accent: #000091;
+      --accent2: #000091;
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --sans: Marianne, Arial, sans-serif;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans);
-      background:
-        radial-gradient(900px 420px at 12% -10%, rgba(16,185,129,.18), transparent 55%),
-        radial-gradient(700px 380px at 90% 0%, rgba(56,189,248,.10), transparent 50%),
-        linear-gradient(180deg, var(--bg), #070b14 70%);
+      background: var(--bg);
     }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -484,9 +484,9 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
     h1 { margin: .35rem 0 0; font-size: clamp(1.45rem, 2.4vw, 1.9rem); letter-spacing: -.02em; }
     .sub { color: var(--muted); margin: .45rem 0 0; max-width: 42rem; line-height: 1.5; font-size: .95rem; }
     .panel {
-      background: linear-gradient(180deg, var(--panel), var(--panel2));
-      border: 1px solid var(--line); border-radius: 1rem; padding: 1.25rem 1.35rem;
-      box-shadow: 0 18px 50px -30px rgba(0,0,0,.65);
+      background: var(--panel);
+      border: 1px solid var(--line); border-radius: 0; border-top: 4px solid var(--accent); padding: 1.25rem 1.35rem;
+      box-shadow: 0 2px 6px rgba(0,0,18,.12);
     }
     .grid { display: grid; gap: 1rem; grid-template-columns: repeat(12, 1fr); }
     .col-4 { grid-column: span 4; } .col-6 { grid-column: span 6; } .col-8 { grid-column: span 8; }
@@ -506,19 +506,19 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
     .badge-neutral { background: rgba(148,163,184,.1); color: var(--muted); border-color: var(--line); }
     .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
     .btn {
-      appearance: none; border: 0; cursor: pointer; border-radius: .8rem; padding: .75rem 1.1rem;
+      appearance: none; border: 0; cursor: pointer; border-radius: 0; padding: .75rem 1.1rem;
       font-weight: 800; font-size: .85rem; letter-spacing: .04em; text-transform: uppercase;
       transition: transform .12s ease, filter .12s ease, background .12s ease;
     }
     .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
     .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-    .btn-primary { background: linear-gradient(180deg, var(--accent), var(--accent2)); color: #04140e; }
+    .btn-primary { background: linear-gradient(180deg, var(--accent), var(--accent2)); color: #fff; }
     .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
     .btn-danger { background: rgba(251,113,133,.15); color: var(--err); border: 1px solid rgba(251,113,133,.35); }
     .field { display: grid; gap: .4rem; margin-bottom: 1rem; }
     .field label { font-size: .8rem; font-weight: 700; color: var(--muted); }
     .field input {
-      width: 100%; border-radius: .75rem; border: 1px solid var(--line); background: rgba(2,6,23,.55);
+      width: 100%; border-radius: .75rem; border: 1px solid var(--line); background: #ffffff;
       color: var(--text); padding: .8rem .9rem; font-size: 1rem;
     }
     .field input:focus { outline: 2px solid rgba(16,185,129,.35); border-color: rgba(16,185,129,.55); }
@@ -526,25 +526,25 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
       border-radius: .85rem; padding: .85rem 1rem; margin-bottom: 1rem; border: 1px solid;
       font-size: .92rem; line-height: 1.45;
     }
-    .flash-err { background: rgba(251,113,133,.1); border-color: rgba(251,113,133,.35); color: #fecdd3; }
-    .flash-ok { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.35); color: #a7f3d0; }
-    .flash-warn { background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.35); color: #fde68a; }
+    .flash-err { background: rgba(251,113,133,.1); border-color: rgba(251,113,133,.35); color: var(--err); }
+    .flash-ok { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.35); color: var(--ok); }
+    .flash-warn { background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.35); color: var(--warn); }
     .list { margin: .75rem 0 0; padding: 0; list-style: none; display: grid; gap: .45rem; }
     .list li {
-      font-family: var(--mono); font-size: .78rem; line-height: 1.4; color: #cbd5e1;
-      background: rgba(2,6,23,.35); border: 1px solid var(--line); border-radius: .55rem; padding: .55rem .7rem;
+      font-family: var(--mono); font-size: .78rem; line-height: 1.4; color: #3a3a3a;
+      background: #f6f6f6; border: 1px solid var(--line); border-radius: .55rem; padding: .55rem .7rem;
       white-space: pre-wrap; word-break: break-word;
     }
-    .list li.err { border-color: rgba(251,113,133,.35); color: #fecdd3; }
-    .list li.warn { border-color: rgba(251,191,36,.3); color: #fde68a; }
+    .list li.err { border-color: rgba(251,113,133,.35); color: var(--err); }
+    .list li.warn { border-color: rgba(251,191,36,.3); color: var(--warn); }
     .kv { display: grid; gap: .4rem; margin-top: .7rem; }
     .kv div { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; border-bottom: 1px dashed var(--line); padding: .35rem 0; }
-    .kv span:last-child { color: #cbd5e1; font-family: var(--mono); font-size: .8rem; text-align: right; }
+    .kv span:last-child { color: #3a3a3a; font-family: var(--mono); font-size: .8rem; text-align: right; }
     .mod-groups { display: grid; gap: 1rem; margin-top: .9rem; }
     @media (min-width: 860px) { .mod-groups { grid-template-columns: 1fr 1fr; } }
     .mod-group {
       border: 1px solid var(--line); border-radius: .85rem; padding: .85rem .95rem;
-      background: rgba(2,6,23,.28);
+      background: #f6f6f6;
     }
     .mod-group__title {
       margin: 0 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .16em;
@@ -554,10 +554,10 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
     .mod-chip {
       display: inline-flex; align-items: center; gap: .4rem;
       border-radius: .65rem; padding: .4rem .65rem; font-size: .8rem; font-weight: 650;
-      border: 1px solid var(--line); background: rgba(15,23,42,.55); color: #e2e8f0;
+      border: 1px solid var(--line); background: #eeeeee; color: var(--text);
     }
     .mod-chip--ok { border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08); }
-    .mod-chip--ko { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); color: #fde68a; }
+    .mod-chip--ko { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); color: var(--warn); }
     .mod-chip__dot {
       width: .55rem; height: .55rem; border-radius: 999px; background: var(--muted);
     }
@@ -596,7 +596,7 @@ function migrations_web_render_login(?string $error = null): void
     $csrf = migrations_web_h(migrations_web_csrf_token());
     $lock = migrations_web_lock_remaining();
     echo '<div class="login-wrap"><div class="login-card panel">';
-    echo '<p class="brand">Athena · Ops</p>';
+    echo '<p class="brand">RÉPUBLIQUE FRANÇAISE · ATHENA</p>';
     echo '<h1>Mise à jour de la base</h1>';
     echo '<p class="sub">Zone réservée. Saisissez le mot de passe d’exploitation pour consulter l’état et lancer les migrations.</p>';
     if ($error) {
@@ -647,7 +647,7 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
 
     echo '<div class="wrap">';
     echo '<div class="top"><div>';
-    echo '<p class="brand">Athena · Ops</p>';
+    echo '<p class="brand">BACK-OFFICE · SERVICE DE MIGRATIONS</p>';
     echo '<h1>Pipeline base de données</h1>';
     echo '<p class="sub">Contrôlez la connexion, le schéma, le dernier passage et les erreurs avant de relancer les migrations.</p>';
     echo '</div><div class="row">';
@@ -683,6 +683,7 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     echo '<p class="metric">' . migrations_web_h($db['tenants'] === null ? '—' : (string) $db['tenants']) . ' <span class="muted" style="font-size:.9rem">communautés</span></p>';
     echo '<div class="kv">';
     echo '<div><span>Comptes</span><span>' . migrations_web_h($db['users'] === null ? '—' : (string) $db['users']) . '</span></div>';
+    echo '<div><span>Comptes de démonstration</span><span>' . migrations_web_badge_for_bool(($db['demo_accounts'] ?? null) === null ? null : (int) $db['demo_accounts'] === 0, 'Aucun', (string) (int) ($db['demo_accounts'] ?? 0) . ' à supprimer') . '</span></div>';
     echo '<div><span>Tenant défaut</span><span>' . (!empty($db['has_default_tenant']) ? 'présent' : ($db['has_default_tenant'] === false ? 'absent' : '—')) . '</span></div>';
     $ttLabel = $db['has_tenant_type'] === true ? 'présent' : ($db['has_tenant_type'] === false ? 'manquant — lancez les migrations' : '—');
     echo '<div><span>Profil de communauté</span><span>' . migrations_web_h($ttLabel) . '</span></div>';
