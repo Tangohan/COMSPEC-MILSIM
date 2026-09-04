@@ -169,4 +169,24 @@ final class GameAuthAssetTest extends TestCase
         $method->invokeArgs($svc, [&$body, ['steam_id' => null]]);
         self::assertSame('', $body['steam_id']);
     }
+
+    public function testRestoreSteamMustMatchTheAccountOrSelectedEffectifsRecord(): void
+    {
+        $ref = new \ReflectionClass(\App\Services\Game\GameAuthService::class);
+        $svc = $ref->newInstanceWithoutConstructor();
+        $method = $ref->getMethod('verifyRestoredSteam');
+        $method->setAccessible(true);
+
+        $account = ['id' => 10, 'steam_id' => '76561198000000000'];
+        $membership = ['user_id' => 20, 'tenant_id' => 30, 'user_steam_id' => '76561198000000000'];
+        self::assertSame('76561198000000000', $method->invokeArgs($svc, [&$account, $membership, '76561198000000000']));
+
+        $account = ['id' => 10, 'steam_id' => '76561198000000001'];
+        $membership['user_steam_id'] = '76561198000000001';
+        self::assertSame('', $method->invokeArgs($svc, [&$account, $membership, '76561198000000000']));
+
+        $source = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
+        self::assertStringContainsString("return \$this->fail('STEAM_NOT_LINKED', 403);", $source);
+        self::assertStringContainsString("\$body['_verify_restored_steam'] = true;", $source);
+    }
 }

@@ -173,14 +173,15 @@ final class AthenaAccountRepository
         return (int) $this->pdo()->lastInsertId();
     }
 
-    public function rotateSessionTokens(int $sessionId, string $accessHash, string $refreshHash, string $expiresAt, string $refreshExpiresAt): void
+    public function rotateSessionTokens(int $sessionId, string $accessHash, string $refreshHash, string $expiresAt, string $refreshExpiresAt, ?string $steamId = null, ?string $pairingTokenHash = null): void
     {
         $st = $this->pdo()->prepare(
             'UPDATE game_sessions
-             SET access_token_hash = ?, refresh_token_hash = ?, expires_at = ?, refresh_expires_at = ?, last_seen_at = NOW()
+             SET access_token_hash = ?, refresh_token_hash = ?, expires_at = ?, refresh_expires_at = ?,
+                 steam_id = ?, pairing_token_hash = ?, last_seen_at = NOW()
              WHERE id = ?'
         );
-        $st->execute([$accessHash, $refreshHash, $expiresAt, $refreshExpiresAt, $sessionId]);
+        $st->execute([$accessHash, $refreshHash, $expiresAt, $refreshExpiresAt, $steamId, $pairingTokenHash, $sessionId]);
     }
 
     public function revokeSession(int $sessionId): void

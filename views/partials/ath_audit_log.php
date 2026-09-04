@@ -9,6 +9,7 @@ declare(strict_types=1);
  */
 
 use App\Support\Audit\AuditSnapshotPresenter;
+use App\Support\ParisDateTime;
 
 $auditScope = $auditScope ?? 'organization';
 $auditRows = is_array($auditRows ?? null) ? $auditRows : [];
@@ -157,7 +158,7 @@ foreach ($auditRows as $row) {
     $rid = (int) ($row['id'] ?? 0);
     $action = (string) ($row['action'] ?? '');
     $createdAt = (string) ($row['created_at'] ?? '');
-    $when = $createdAt !== '' && ($ts = strtotime($createdAt)) ? date('d/m H:i:s', $ts) : '—';
+    $when = ParisDateTime::format($createdAt, 'd/m H:i:s');
     $actor = AuditSnapshotPresenter::actorPrimaryLabel($row);
     $target = AuditSnapshotPresenter::entityTargetLabels($row);
     $changes = AuditSnapshotPresenter::listSummary(

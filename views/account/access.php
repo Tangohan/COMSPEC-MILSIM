@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use App\Support\ParisDateTime;
+
 /**
  * Self-service « Mes accès » : clarifie compte / personnage / rôle, et affiche le statut
  * des demandes d’élévation (comme demandeur et comme personne concernée), pour ne pas
@@ -108,7 +110,7 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                                 $kind = (string) ($r['kind'] ?? 'general');
                                 $requesterName = trim((string) ($r['requester_display_name'] ?? '')) ?: trim((string) ($r['requester_email'] ?? '')) ?: 'Membre';
                                 $createdAt = (string) ($r['created_at'] ?? '');
-                                $createdFmt = $createdAt !== '' ? date('d/m/Y', strtotime($createdAt)) : '—';
+                                $createdFmt = ParisDateTime::format($createdAt, 'd/m/Y');
                                 $resNote = trim((string) ($r['resolution_note'] ?? ''));
                                 ?>
                             <tr>
@@ -159,7 +161,7 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                                 $kind = (string) ($r['kind'] ?? 'general');
                                 $targetName = trim((string) ($r['target_display_name'] ?? '')) ?: trim((string) ($r['target_email'] ?? '')) ?: 'Membre';
                                 $createdAt = (string) ($r['created_at'] ?? '');
-                                $createdFmt = $createdAt !== '' ? date('d/m/Y', strtotime($createdAt)) : '—';
+                                $createdFmt = ParisDateTime::format($createdAt, 'd/m/Y');
                                 $resNote = trim((string) ($r['resolution_note'] ?? ''));
                                 ?>
                             <tr>
