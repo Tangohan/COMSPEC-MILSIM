@@ -50,7 +50,6 @@ final class VerifyEmailController
             return Response::redirect(url('login'));
         }
 
-        $this->emailTokens->markConsumed((int) $row['id']);
         try {
             $this->userRepository->markEmailVerified($userId, $tenantId);
         } catch (\Throwable $e) {
@@ -58,6 +57,13 @@ final class VerifyEmailController
             Session::flash('error', 'La confirmation n’a pas pu être enregistrée. Réessayez ou demandez un nouveau lien depuis la page de connexion.');
 
             return Response::redirect(url('login'));
+        }
+        // Ne consommer le lien qu'après activation effective du compte. Un échec de
+        // nettoyage ne doit pas faire croire à l'utilisateur que l'activation a échoué.
+        try {
+            $this->emailTokens->markConsumed((int) $row['id']);
+        } catch (\Throwable $e) {
+            error_log('[verify-email.consume] ' . $e->getMessage());
         }
 
         $tenant = $this->tenantRepository->findById($tenantId);
@@ -165,6 +171,23 @@ final class VerifyEmailController
             $tokenHash = hash('sha256', $rawToken);
             $expires = new \DateTimeImmutable('+15 minutes');
             $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
+            try {
+                // Créer avant l'envoi empêche qu'un message délivré immédiatement pointe
+                // vers un jeton qui n'existe pas encore.
+                $tokenId = $this->emailTokens->create(
+                    $tenantId,
+                    $uid,
+                    EmailTokenPurpose::REGISTER_CONFIRM,
+                    $tokenHash,
+                    bin2hex(random_bytes(16)),
+                    $expires
+                );
+            } catch (\Throwable $e) {
+                error_log('[verify-email.resend.token] ' . $e->getMessage());
+                $attemptedSend = true;
+                $lastMailError = 'token';
+                continue;
+            }
             $attemptedSend = true;
             $ok = $this->emailService->sendUserRegisterConfirmation(
                 $email,
@@ -175,19 +198,18 @@ final class VerifyEmailController
                 $tenantId
             );
             if (!$ok) {
+                // Ne pas invalider l'ancien lien et ne pas appliquer le cooldown à un
+                // message qui n'est jamais parti.
+                $this->emailTokens->deleteById($tokenId);
                 $lastMailError = trim((string) ($this->emailService->getLastSendError() ?? ''));
 
                 continue;
             }
 
-            $this->emailTokens->deletePendingForUserPurpose($uid, EmailTokenPurpose::REGISTER_CONFIRM);
-            $this->emailTokens->create(
-                $tenantId,
+            $this->emailTokens->deleteOtherPendingForUserPurpose(
                 $uid,
                 EmailTokenPurpose::REGISTER_CONFIRM,
-                $tokenHash,
-                bin2hex(random_bytes(16)),
-                $expires
+                $tokenId
             );
             $sent++;
         }
