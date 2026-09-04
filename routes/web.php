@@ -55,6 +55,8 @@ use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
 use App\Controllers\Api\AtakMissionApiController;
 use App\Controllers\Api\AtakPingController;
+use App\Controllers\Api\AthenaDataApiController;
+use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
@@ -1919,8 +1921,15 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/training/publications/{id}/annexes', [\App\Controllers\Api\TrainingPublicationApiController::class, 'addAnnex'], $mwTraining);
     $router->post('/api/training/publications/{id}/obsolete', [\App\Controllers\Api\TrainingPublicationApiController::class, 'obsolete'], $mwTraining);
 
+    // Athena Data Inspector — accès opérationnel réservé aux administrateurs du tenant.
+    $athenaInspectorMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
+    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
+    $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
+
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+    $router->post('/api/atak/v2/events', [AthenaDataApiController::class, 'ingest']);
     $router->post('/api/atak/pair/start', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'start']);
     $router->get('/api/atak/pair/status', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'status']);
     $router->post('/api/atak/recovery/redeem', [\App\Controllers\Api\AtakDeviceAuthApiController::class, 'redeem']);
