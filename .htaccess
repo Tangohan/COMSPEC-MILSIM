@@ -1,15 +1,15 @@
-# Athena — racine du domaine (public_html)
-# L’application vit sous /public/ ; la racine ne sert que de pont pour quelques adresses courtes.
-# Toujours réécrire vers public/index.php (front controller) — jamais vers un chemin
-# « public/atak » ou « public/connect » sans fichier : Apache/Ubuntu renvoie alors 403
-# (Options -Indexes, pas de DirectoryIndex).
+# Athena — racine du domaine (public_html / DocumentRoot = dépôt)
+# Sur le VPS nginx, DocumentRoot pointe déjà vers public/ : ce fichier n’est pas lu.
+# Sur Hostinger (DocumentRoot = racine du dépôt), pont vers l’URL canonique /public/…
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Connexion téléphone ATAK : athena.ttrd.fr/connect → front controller
-    RewriteRule ^connect(/.*)?$ public/index.php [L,QSA]
+    # Connexion téléphone ATAK → /public/connect
+    RewriteRule ^connect/?$ /public/connect [R=302,L,QSA]
+    RewriteRule ^connect/(.*)$ /public/connect/$1 [R=302,L,QSA]
 
-    # Carte ATAK : athena.ttrd.fr/atak → front controller
-    RewriteRule ^atak(/.*)?$ public/index.php [L,QSA]
+    # Carte ATAK → /public/atak (URL canonique ; ne pas réécrire vers un dossier filesystem)
+    RewriteRule ^atak/?$ /public/atak [R=302,L,QSA]
+    RewriteRule ^atak/(.*)$ /public/atak/$1 [R=302,L,QSA]
 </IfModule>
