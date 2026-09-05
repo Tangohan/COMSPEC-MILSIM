@@ -379,30 +379,10 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
         >
             <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)): ?>
             <div class="ath-mobile-bar lg:hidden">
-                <button
-                    type="button"
-                    class="ath-mobile-bar__menu"
-                    @click="navOpen = true"
-                    aria-expanded="false"
-                    :aria-expanded="navOpen ? 'true' : 'false'"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
-                    Menu
-                </button>
                 <span class="ath-mobile-bar__title"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <?php else: ?>
             <div class="sticky top-0 z-[90] flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5 shadow-sm lg:hidden">
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
-                    @click="navOpen = true"
-                    aria-expanded="false"
-                    :aria-expanded="navOpen ? 'true' : 'false'"
-                >
-                    <svg class="h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                    Menu
-                </button>
                 <span class="truncate text-sm font-bold text-slate-900"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <?php endif; ?>
