@@ -158,7 +158,7 @@ class PersonnelProfileRepository
         $allowed = [
             'character_name', 'callsign', 'extra_callsigns_json', 'nickname_primary', 'nicknames_json', 'medal_rack_json',
             'rank_display', 'rank_display_override',
-            'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
+            'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_portrait_locked', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
             'sex', 'family_situation', 'weight_kg', 'operator_status', 'operator_tags',
             'service_branch', 'birth_place', 'service_status', 'gendarmerie_status', 'administrative_position',

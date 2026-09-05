@@ -5,6 +5,7 @@ use App\Support\OrganizationRoleLabels;
 
 $user = $user ?? null;
 $userProfile = is_array($userProfile ?? null) ? $userProfile : [];
+$personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
 $roles = $roles ?? [];
 $roleMatrix = $roleMatrix ?? ['roles' => [], 'permissions' => [], 'byRole' => []];
 $selectedRoleIds = $selectedRoleIds ?? [];
@@ -136,6 +137,34 @@ $formatDateFr = static function (?string $raw): string {
             ?>
             <div class="bo-user-edit__flash <?= $issueMod ?>"><?= htmlspecialchars((string) ($i['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
             <?php endforeach; ?>
+
+            <section class="bo-user-edit__panel" aria-labelledby="sec-operator-photo">
+                <h2 id="sec-operator-photo" class="bo-user-edit__panel-title">Portrait opérateur</h2>
+                <p class="bo-user-edit__panel-lead">Image personnalisée unique utilisée sur tout le portail. Steam n’est jamais utilisé comme source.</p>
+                <div class="bo-user-edit__rh">
+                    <div class="bo-user-edit__avatar" style="width:7rem;height:9rem;border-radius:.75rem">
+                        <img src="<?= htmlspecialchars(user_media_public_url($personnelProfile['character_portrait_path'] ?? null) ?? url('assets/images/inconnu.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur">
+                    </div>
+                    <div class="bo-user-edit__stack" style="flex:1">
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/users/' . $uid . '/operator-photo'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="bo-user-edit__subform">
+                            <?= \App\Core\Csrf::field() ?><input type="hidden" name="photo_action" value="upload">
+                            <label for="admin-operator-photo" class="bo-user-edit__label">Remplacer manuellement</label>
+                            <input id="admin-operator-photo" type="file" name="portrait" accept="image/jpeg,image/png,image/webp" required>
+                            <button type="submit" class="bo-user-edit__btn bo-user-edit__btn--dark">Enregistrer l’image</button>
+                        </form>
+                        <div style="display:flex;flex-wrap:wrap;gap:.75rem">
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/users/' . $uid . '/operator-photo'), ENT_QUOTES, 'UTF-8') ?>">
+                                <?= \App\Core\Csrf::field() ?><input type="hidden" name="photo_action" value="lock"><input type="hidden" name="locked" value="<?= !empty($personnelProfile['character_portrait_locked']) ? '0' : '1' ?>">
+                                <button type="submit" class="bo-user-edit__btn bo-user-edit__btn--ghost"><?= !empty($personnelProfile['character_portrait_locked']) ? 'Autoriser les modifications' : 'Empêcher les modifications' ?></button>
+                            </form>
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/users/' . $uid . '/operator-photo'), ENT_QUOTES, 'UTF-8') ?>">
+                                <?= \App\Core\Csrf::field() ?><input type="hidden" name="photo_action" value="notify">
+                                <button type="submit" class="bo-user-edit__btn bo-user-edit__btn--ghost">Demander de changer la photo</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <?php /* Formulaire principal — aucun autre <form> à l’intérieur (sinon le navigateur ferme trop tôt). */ ?>
             <?php

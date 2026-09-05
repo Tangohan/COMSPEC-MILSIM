@@ -249,12 +249,8 @@ final class RegisterController
             } catch (Throwable) {
             }
             if ($resolvedSteamId !== null) {
-                $steamPatch = ['steam_id' => $resolvedSteamId];
-                $steamPlayer = $this->steamWebApiService->fetchPublicPlayer($resolvedSteamId);
-                if ($steamPlayer && trim((string) ($steamPlayer['avatar_url'] ?? '')) !== '') {
-                    $steamPatch['avatar_url'] = trim((string) $steamPlayer['avatar_url']);
-                }
-                $this->userRepository->update($userId, $tenantId, $steamPatch);
+                // Steam sert uniquement à l'identité de jeu : son avatar public n'est jamais importé.
+                $this->userRepository->update($userId, $tenantId, ['steam_id' => $resolvedSteamId]);
             }
             $pdo->commit();
         } catch (Throwable $e) {

@@ -13,69 +13,36 @@ final class UserSiteAvatarUrlTest extends TestCase
         require_once dirname(__DIR__, 2) . '/app/Support/helpers.php';
     }
 
-    public function testDefaultsToOperatorPortraitWithAccountFallback(): void
+    public function testUsesOperatorPortraitExclusively(): void
     {
         $url = user_site_avatar_url(
-            ['avatar_url' => 'uploads/avatars/account.jpg'],
-            ['character_portrait_path' => 'uploads/portraits/op.jpg'],
-            null
-        );
-        self::assertNotNull($url);
-        self::assertStringContainsString('uploads/portraits/op.jpg', (string) $url);
-    }
-
-    public function testAccountPriorityUsesAccountAvatar(): void
-    {
-        $url = user_site_avatar_url(
-            ['avatar_url' => 'uploads/avatars/account.jpg'],
+            ['avatar_url' => 'https://steamcdn.example/account.jpg'],
             ['character_portrait_path' => 'uploads/portraits/op.jpg'],
             ['site_photo_priority' => 'account']
         );
-        self::assertNotNull($url);
-        self::assertStringContainsString('uploads/avatars/account.jpg', (string) $url);
-    }
-
-    public function testFallsBackWhenPreferredMissing(): void
-    {
-        $url = user_site_avatar_url(
-            ['avatar_url' => 'uploads/avatars/account.jpg'],
-            ['character_portrait_path' => ''],
-            ['site_photo_priority' => 'operator']
-        );
-        self::assertNotNull($url);
-        self::assertStringContainsString('uploads/avatars/account.jpg', (string) $url);
-    }
-
-    public function testReturnsNullWhenNoPhotos(): void
-    {
-        self::assertNull(user_site_avatar_url(['avatar_url' => ''], null, ['site_photo_priority' => 'operator']));
-        self::assertNull(user_site_avatar_url(null, null, null));
-    }
-
-    public function testInvalidPriorityTreatedAsOperator(): void
-    {
-        $url = user_site_avatar_url(
-            ['avatar_url' => 'uploads/avatars/account.jpg'],
-            ['character_portrait_path' => 'uploads/portraits/op.jpg'],
-            ['site_photo_priority' => 'weird']
-        );
-        self::assertNotNull($url);
         self::assertStringContainsString('uploads/portraits/op.jpg', (string) $url);
+        self::assertStringNotContainsString('steamcdn', (string) $url);
     }
 
-    public function testPreferencesViewOffersPhotoPriorityControl(): void
+    public function testMissingOperatorPortraitUsesUnknownPhoto(): void
+    {
+        $url = user_site_avatar_url(['avatar_url' => 'uploads/avatars/account.jpg'], null, null);
+        self::assertStringContainsString('assets/images/inconnu.svg', (string) $url);
+    }
+
+    public function testPreferencesRequireOperatorPortrait(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/account/preferences.php');
-        self::assertStringContainsString('name="site_photo_priority"', $view);
-        self::assertStringContainsString('value="operator"', $view);
-        self::assertStringContainsString('value="account"', $view);
-        self::assertStringContainsString('Photo affichée sur le site', $view);
+        self::assertStringNotContainsString('name="site_photo_priority"', $view);
+        self::assertStringNotContainsString('Synchroniser photo Steam', $view);
+        self::assertStringContainsString('Portrait opérateur obligatoire', $view);
     }
 
-    public function testHeaderUsesSiteAvatarHelper(): void
+    public function testAdministrationCanUploadLockAndNotify(): void
     {
-        $header = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/athena_caverne_header.php');
-        self::assertStringContainsString('user_site_avatar_url', $header);
-        self::assertStringContainsString('site_photo_priority', $header);
+        $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/Organization/UserAdminController.php');
+        self::assertStringContainsString("\$action === 'upload'", $controller);
+        self::assertStringContainsString("\$action === 'lock'", $controller);
+        self::assertStringContainsString("\$action === 'notify'", $controller);
     }
 }

@@ -1098,6 +1098,7 @@ return function (Router $router) {
     $router->post('/back-office/users/{id}/notify-profile', [UserAdminController::class, 'notifyProfileIncomplete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/resend-verification', [UserAdminController::class, 'resendVerificationEmail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/users/{id}/edit', [LegacyPersonnelRedirectController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/users/{id}/operator-photo', [UserAdminController::class, 'operatorPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/update', [UserAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/deactivate', [UserAdminController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/request-purge', [UserAdminController::class, 'requestPurge'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

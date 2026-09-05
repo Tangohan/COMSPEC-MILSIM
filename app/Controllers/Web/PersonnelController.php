@@ -1997,68 +1997,8 @@ class PersonnelController
 
     public function syncSteamProfile(Request $request, array $params = []): Response
     {
-        $currentUser = $this->authService->user();
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId || !$currentUser) {
-            return Response::redirect(url('login'));
-        }
-        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
-
-            return Response::redirect(url('personnel/me'));
-        }
-        $raw = (string) ($params['id'] ?? '');
-        $target = $this->resolvePersonnelTarget($raw, $tenantId);
-        if (!$target) {
-            return $this->personnelMissingResponse(true);
-        }
-        $currentUserId = (int) $currentUser['id'];
-        $isSelf = $currentUserId === (int) $target['id'];
-        if (!$isSelf && !$this->canStaffEditPersonnel()) {
-            Session::flash('error', 'Vous n’avez pas l’autorisation d’importer le profil Steam sur cette fiche.');
-
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
-        }
-        if (!$this->steamWebApiService->isConfigured()) {
-            Session::flash('error', 'L’import depuis Steam n’est pas configuré sur ce serveur.');
-
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
-        }
-        $steamId = trim((string) ($target['steam_id'] ?? ''));
-        if ($steamId === '') {
-            Session::flash('error', 'Aucun identifiant Steam n’est renseigné sur ce dossier. Indiquez-le dans les préférences du compte du membre, puis réessayez.');
-
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
-        }
-        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
-        if ($summary === null) {
-            Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
-
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
-        }
-        $patch = [];
-        if ($summary['avatar_url'] !== '') {
-            $patch['avatar_url'] = function_exists('mb_substr')
-                ? mb_substr($summary['avatar_url'], 0, 500)
-                : substr($summary['avatar_url'], 0, 500);
-        }
-        if ($patch === []) {
-            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
-
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
-        }
-        $targetUid = (int) $target['id'];
-        $this->userRepository->update($targetUid, $tenantId, $patch);
-        if ($isSelf) {
-            $fresh = $this->userRepository->findById($targetUid, $tenantId);
-            if ($fresh) {
-                Session::set('display_name', (string) ($fresh['display_name'] ?? ''));
-                Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
-            }
-        }
-        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
-
-        return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        Session::flash('error', 'La synchronisation des photos Steam a été désactivée. Utilisez un portrait opérateur personnalisé.');
+        return Response::redirect(url('account/portrait'));
     }
 
     private function canStaffViewPersonnel(): bool

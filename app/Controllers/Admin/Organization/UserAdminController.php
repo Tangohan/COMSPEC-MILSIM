@@ -140,33 +140,7 @@ class UserAdminController
      */
     private function applySteamProfileSync(int $userId, int $tenantId, string $steamId): array
     {
-        $notes = [];
-        if (!$this->steamWebApiService->isConfigured()) {
-            $notes[] = 'Identifiant Steam enregistré. La synchronisation du profil public n’est pas configurée sur ce serveur.';
-
-            return $notes;
-        }
-        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
-        if ($summary === null) {
-            $notes[] = 'Identifiant Steam enregistré, mais le profil public Steam n’a pas pu être lu.';
-
-            return $notes;
-        }
-        $patch = [];
-        if (($summary['avatar_url'] ?? '') !== '') {
-            $patch['avatar_url'] = function_exists('mb_substr')
-                ? mb_substr((string) $summary['avatar_url'], 0, 500)
-                : substr((string) $summary['avatar_url'], 0, 500);
-        }
-        if ($patch === []) {
-            $notes[] = 'Identifiant Steam enregistré. Aucune donnée exploitable renvoyée par Steam.';
-
-            return $notes;
-        }
-        $this->userRepository->update($userId, $tenantId, $patch);
-        $notes[] = 'Photo du compte mise à jour depuis Steam.';
-
-        return $notes;
+        return ['Identifiant Steam enregistré pour le jeu et la cartographie. La photo Steam n’est pas importée.'];
     }
 
     public function __construct(
@@ -810,12 +784,14 @@ class UserAdminController
         $userActivePositions = $this->positionRepository->listActiveForUser($tenantId, $id);
         $roleSets = $this->roleSetRepository->listForTenant($tenantId);
         $rhSituation = $this->buildRhSituationForUser($tenantId, $id);
+        $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.edit',
             'title' => 'Modifier le compte',
             'user' => $user,
             'userProfile' => $userProfile,
+            'personnelProfile' => $personnelProfile,
             'isServiceAccount' => $this->userRepository->isServiceAccount($id),
             'roles' => $roles,
             'roleMatrix' => $roleMatrix,
@@ -832,6 +808,68 @@ class UserAdminController
             'backOfficePageCss' => ['back-office-users.css'],
             'showPortalFooter' => false,
         ]);
+    }
+
+    public function operatorPhoto(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $returnUrl = url('back-office/users/' . $id . '/edit');
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect($returnUrl);
+        }
+        $user = $this->userRepository->findById($id, $tenantId);
+        if (!$user) {
+            Session::flash('error', 'Membre introuvable.');
+            return Response::redirect(url('back-office/users'));
+        }
+        $action = trim((string) $request->input('photo_action', ''));
+        if ($action === 'lock') {
+            $this->personnelProfileRepository->ensureRecord($id, $tenantId);
+            $this->personnelProfileRepository->update($id, ['character_portrait_locked' => $request->input('locked') === '1' ? 1 : 0]);
+            Session::flash('success', $request->input('locked') === '1' ? 'Modification du portrait verrouillée.' : 'Modification du portrait autorisée.');
+            return Response::redirect($returnUrl);
+        }
+        if ($action === 'notify') {
+            $tenant = $this->tenantRepository->findById($tenantId) ?: [];
+            $name = trim((string) ($user['display_name'] ?? $user['email'] ?? 'membre'));
+            $ok = $this->emailService->sendProfileIncompleteReminder(
+                (string) $user['email'], $name, (string) ($tenant['name'] ?? 'Athena'),
+                url('account/portrait'), $tenantId,
+                ['purpose' => 'operator_photo_change_request', 'target_user_id' => $id]
+            );
+            Session::flash($ok ? 'success' : 'error', $ok ? 'Demande de changement de portrait envoyée.' : 'La notification n’a pas pu être envoyée.');
+            return Response::redirect($returnUrl);
+        }
+        if ($action === 'upload') {
+            $file = $_FILES['portrait'] ?? null;
+            $mime = null;
+            if ($file && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && ($file['size'] ?? 0) <= 2 * 1024 * 1024) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, (string) $file['tmp_name']);
+                finfo_close($finfo);
+            }
+            $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            if (!isset($extensions[$mime])) {
+                Session::flash('error', 'Sélectionnez une image JPG, PNG ou WebP de 2 Mo maximum.');
+                return Response::redirect($returnUrl);
+            }
+            $dir = base_path('public/uploads/portraits');
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $name = $id . '_admin_' . time() . '.' . $extensions[$mime];
+            if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
+                Session::flash('error', 'Impossible d’enregistrer le portrait.');
+                return Response::redirect($returnUrl);
+            }
+            $this->personnelProfileRepository->updatePortraitPath($id, 'uploads/portraits/' . $name);
+            Session::flash('success', 'Portrait opérateur remplacé manuellement.');
+            return Response::redirect($returnUrl);
+        }
+        Session::flash('error', 'Action inconnue.');
+        return Response::redirect($returnUrl);
     }
 
     public function update(Request $request, array $params = []): Response

@@ -178,9 +178,8 @@ if (!function_exists('personnel_normalize_extra_callsigns')) {
 
 if (!function_exists('user_site_avatar_url')) {
     /**
-     * Photo prioritaire affichée sur le portail (header, dashboard, etc.).
-     * Préférence `site_photo_priority` : operator (portrait) | account (avatar compte).
-     * Défaut : operator, avec repli sur l’autre source si absente.
+     * Portrait opérateur unique affiché sur le portail.
+     * La photo de compte/Steam n'est volontairement jamais utilisée.
      *
      * @param array<string, mixed>|null $user
      * @param array<string, mixed>|null $personnelProfile
@@ -188,29 +187,14 @@ if (!function_exists('user_site_avatar_url')) {
      */
     function user_site_avatar_url(?array $user, ?array $personnelProfile = null, ?array $displaySettings = null): ?string
     {
-        if (!is_array($user)) {
-            return null;
-        }
-        $accountPath = trim((string) ($user['avatar_url'] ?? ''));
-        $operatorPath = '';
-        if (is_array($personnelProfile)) {
-            $operatorPath = trim((string) ($personnelProfile['character_portrait_path'] ?? ''));
-        }
-        $priority = 'operator';
-        if (is_array($displaySettings)) {
-            $raw = strtolower(trim((string) ($displaySettings['site_photo_priority'] ?? 'operator')));
-            if (in_array($raw, ['operator', 'account'], true)) {
-                $priority = $raw;
-            }
-        }
-        $primary = $priority === 'account' ? $accountPath : $operatorPath;
-        $fallback = $priority === 'account' ? $operatorPath : $accountPath;
-        $chosen = $primary !== '' ? $primary : $fallback;
-        if ($chosen === '') {
-            return null;
+        $operatorPath = is_array($personnelProfile)
+            ? trim((string) ($personnelProfile['character_portrait_path'] ?? ''))
+            : '';
+        if ($operatorPath !== '') {
+            return function_exists('user_media_public_url') ? user_media_public_url($operatorPath) : $operatorPath;
         }
 
-        return function_exists('user_media_public_url') ? user_media_public_url($chosen) : $chosen;
+        return function_exists('url') ? url('assets/images/inconnu.svg') : 'assets/images/inconnu.svg';
     }
 }
 

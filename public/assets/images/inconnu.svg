@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-labelledby="title description">
+  <title id="title">Portrait opérateur inconnu</title>
+  <desc id="description">Silhouette anonyme utilisée lorsqu’un opérateur n’a pas encore ajouté son portrait.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#59616a"/>
+      <stop offset="1" stop-color="#171c21"/>
+    </linearGradient>
+    <radialGradient id="head" cx="50%" cy="32%" r="55%">
+      <stop offset="0" stop-color="#424b54"/>
+      <stop offset="1" stop-color="#20262c"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#background)"/>
+  <circle cx="300" cy="270" r="145" fill="url(#head)"/>
+  <path d="M70 800c12-205 100-337 230-337s218 132 230 337z" fill="#171c21"/>
+  <circle cx="300" cy="310" r="230" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="3"/>
+  <text x="300" y="705" fill="#fff" fill-opacity=".72" font-family="system-ui,sans-serif" font-size="42" font-weight="700" letter-spacing="8" text-anchor="middle">INCONNU</text>
+</svg>
