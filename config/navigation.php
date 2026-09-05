@@ -402,7 +402,9 @@ return [
                     'title' => 'Organisation (back-office)',
                     'slot' => 'center',
                     'links' => [
-                        ['label' => 'Back-office communauté', 'path' => 'back-office', 'any_permissions' => ['admin.organization', 'admin.access']],
+                        // La racine est aussi l'espace personnel en lecture seule des opérateurs.
+                        // Les pages de gestion placées dessous conservent leurs propres permissions.
+                        ['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true],
                         ['label' => 'Centre d’opérations admin', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Publication et mise à jour des entrées'],
