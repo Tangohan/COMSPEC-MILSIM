@@ -77,6 +77,7 @@ $sectionLabelByKey = [
 $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$currentKey] ?? 'Espace membre'));
 
 $canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
+$canOpenBackOffice = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
 $showStaff = !empty($show_staff_enlistments) || $canAdmin;
 $canRecruit = $showStaff || (function_exists('can') && can('organization.recruitment.manage'));
 $canDocsMenu = !function_exists('can') || can('documents.view');
@@ -124,8 +125,8 @@ if ($canRecruit) {
         'path' => 'back-office/ressources/recrutement',
     ];
 }
-if ($canAdmin) {
-    $navItems[] = ['key' => 'admin', 'label' => 'Administration', 'href' => url('back-office'), 'path' => 'back-office'];
+if ($canOpenBackOffice) {
+    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Administration' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
 }
 $navItems = array_values(array_filter(
     $navItems,
@@ -164,11 +165,11 @@ if ($canRecruit) {
         'path' => 'back-office/ressources/recrutement',
     ];
 }
-if ($canAdmin) {
+if ($canOpenBackOffice) {
     $espaceLinks[] = [
         'abbr' => 'BO',
-        'label' => 'Back-office',
-        'desc' => 'Administration de la communauté',
+        'label' => $canAdmin ? 'Back-office' : 'Mon back-office',
+        'desc' => $canAdmin ? 'Administration de la communauté' : 'Synthèse opérationnelle personnelle',
         'href' => url('back-office'),
         'path' => 'back-office',
     ];
@@ -198,8 +199,8 @@ if ($canRecruit) {
         'path' => 'back-office/ressources/recrutement',
     ];
 }
-if ($canAdmin) {
-    $quickLinks[] = ['label' => 'Administration', 'href' => url('back-office'), 'path' => 'back-office'];
+if ($canOpenBackOffice) {
+    $quickLinks[] = ['label' => $canAdmin ? 'Administration' : 'Mon back-office', 'href' => url('back-office'), 'path' => 'back-office'];
 }
 $quickLinks = array_values(array_filter(
     $quickLinks,
@@ -417,8 +418,13 @@ if ($canInvitationsMenu) {
         'path' => 'back-office/invitations/envoyees',
     ];
 }
-if ($canAdmin) {
-    $profileMenuItems[] = ['label' => 'Commandement', 'desc' => 'Espace état-major', 'href' => url('back-office'), 'path' => 'back-office'];
+if ($canOpenBackOffice) {
+    $profileMenuItems[] = [
+        'label' => $canAdmin ? 'Commandement' : 'Mon back-office',
+        'desc' => $canAdmin ? 'Espace état-major' : 'Synthèse opérationnelle personnelle',
+        'href' => url('back-office'),
+        'path' => 'back-office',
+    ];
 }
 $profileMenuItems[] = ['label' => 'Paramètres', 'desc' => 'Compte et préférences', 'href' => url('account'), 'path' => 'account'];
 $profileMenuItems[] = ['label' => 'Couverture', 'desc' => 'Bandeau du menu session', 'href' => url('account/banner'), 'path' => 'account/banner'];

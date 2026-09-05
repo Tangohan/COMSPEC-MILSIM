@@ -1075,6 +1075,11 @@ if (!function_exists('back_office_nav_rule_for_path')) {
     function back_office_nav_rule_for_path(string $path): ?array
     {
         $path = trim($path, '/');
+        // La racine est une synthèse personnelle pour tout membre authentifié.
+        // Ne jamais lui faire hériter de la règle prudente des pages de gestion.
+        if ($path === 'back-office') {
+            return null;
+        }
         if ($path === '') {
             return ['any_permissions' => ['admin.organization', 'admin.access']];
         }

@@ -33,5 +33,11 @@ final class SimplifiedCommunityRolesTest extends TestCase
         self::assertContains('training.create', $permissions['trainer']);
         self::assertContains('training.manage', $permissions['instructor']);
         self::assertContains('training.publish', $permissions['senior_instructor']);
+        self::assertContains('admin.organization', $permissions['community_owner']);
+        self::assertContains('admin.organization', $permissions['tenant_admin']);
+        self::assertTrue(\App\Authorization\PermissionImplication::isGranted(
+            $permissions['community_owner'],
+            'personnel.profile.update'
+        ));
     }
 }
