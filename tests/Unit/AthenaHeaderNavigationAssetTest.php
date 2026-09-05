@@ -17,16 +17,13 @@ final class AthenaHeaderNavigationAssetTest extends TestCase
         self::assertStringContainsString("'href' => url('back-office')", $header);
     }
 
-    public function testQuickMenuIsAnIconPlacedAfterTheProfile(): void
+    public function testQuickNavigationMenuIsNotRendered(): void
     {
         $header = $this->headerSource();
-        $profilePosition = strpos($header, 'data-athena-toggle="profile"');
-        $quickMenuPosition = strpos($header, 'data-athena-toggle="quick"');
 
-        self::assertIsInt($profilePosition);
-        self::assertIsInt($quickMenuPosition);
-        self::assertGreaterThan($profilePosition, $quickMenuPosition);
-        self::assertStringNotContainsString('athena-header__menu-label', $header);
+        self::assertStringNotContainsString('data-athena-toggle="quick"', $header);
+        self::assertStringNotContainsString('athena-header__panel--quick', $header);
+        self::assertStringNotContainsString('$quickLinks', $header);
     }
 
     private function headerSource(): string
