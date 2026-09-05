@@ -223,6 +223,7 @@ body.bo-shell {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .ath-sidebar__brand {
@@ -232,11 +233,13 @@ body.bo-shell {
 }
 
 .ath-sidebar__brand-name {
+  display: block;
   font-size: 14px;
   font-weight: 900;
   color: #fff;
   line-height: 1;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .ath-sidebar__brand-name span {

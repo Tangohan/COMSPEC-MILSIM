@@ -238,9 +238,9 @@ require __DIR__ . '/ath_sidebar_nav.php';
 ?>
 <nav class="ath-sidebar" id="ath-sidebar" aria-label="Navigation back-office">
     <div class="ath-sidebar__head">
-        <div class="ath-sidebar__logo" aria-hidden="true">A</div>
+        <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="Retour au tableau de bord" title="Retour au tableau de bord">A</a>
         <div class="ath-sidebar__brand">
-            <div class="ath-sidebar__brand-name">ATHENA<span>.</span></div>
+            <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="Retour au tableau de bord">ATHENA<span>.</span></a>
             <div class="ath-sidebar__brand-sub">ADMINISTRATION · <?= $h($tenantShort) ?></div>
         </div>
         <button type="button" class="ath-sidebar__toggle" data-ath-sidebar-toggle title="Plier le menu" aria-label="Plier le menu">
