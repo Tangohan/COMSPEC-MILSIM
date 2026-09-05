@@ -19,6 +19,14 @@ use PHPUnit\Framework\TestCase;
  */
 final class SystemReservedPermissionsTest extends TestCase
 {
+    public function testPermissionRepositoryUsesTheCanonicalReservedPermissionsClass(): void
+    {
+        $source = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/PermissionRepository.php');
+
+        self::assertStringContainsString('use App\\Authorization\\SystemReservedPermissions;', $source);
+        self::assertStringNotContainsString('use App\\Support\\SystemReservedPermissions;', $source);
+    }
+
     public function testReservedSlugsAreRecognised(): void
     {
         self::assertTrue(SystemReservedPermissions::isReserved('admin.system'));

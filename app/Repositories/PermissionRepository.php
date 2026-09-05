@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Authorization\SystemReservedPermissions;
 use App\Core\Database;
-use App\Support\SystemReservedPermissions;
 use PDO;
 
 class PermissionRepository
