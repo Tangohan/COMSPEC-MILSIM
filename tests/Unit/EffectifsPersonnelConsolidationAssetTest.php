@@ -30,18 +30,18 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
         self::assertStringNotContainsString("url('back-office/users/", $roster);
     }
 
-    public function testPublicDirectoryConvergesToReadableDarkEffectifsRoster(): void
+    public function testPublicDirectoryConvergesToReadableBackOfficeEffectifsRoster(): void
     {
         $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/PersonnelController.php');
         $roster = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/roster.php');
         $styles = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/effectifs_lms.css');
 
         self::assertStringContainsString("Response::redirect(\$target . (\$query !== '' ? '?' . http_build_query(['q' => \$query]) : ''))", $controller);
-        self::assertStringContainsString('eff-catalog eff-catalog--dark', $roster);
+        self::assertStringContainsString('eff-catalog eff-catalog--roster', $roster);
         self::assertStringContainsString('Personnage ·', $roster);
         self::assertStringContainsString('<b>Matricule</b>', $roster);
         self::assertStringContainsString('<b>Radio</b>', $roster);
         self::assertStringContainsString('<b>Distinctions</b>', $roster);
-        self::assertStringContainsString('.eff-catalog--dark', $styles);
+        self::assertStringContainsString('.eff-catalog--roster', $styles);
     }
 }

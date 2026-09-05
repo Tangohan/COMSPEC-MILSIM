@@ -141,7 +141,7 @@ $noUnitCount = (int) ($counts['no_unit'] ?? 0);
 $noRoleCount = (int) ($counts['no_role'] ?? 0);
 $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
 ?>
-<div class="eff-catalog eff-catalog--dark">
+<div class="eff-catalog eff-catalog--roster">
     <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
     <aside class="eff-banner eff-banner--warn" role="status">
         <div class="eff-banner__body">
