@@ -17,6 +17,7 @@ final class SimplifiedCommunityRolesTest extends TestCase
         self::assertSame('Ressources humaines', $labels['hr']);
         self::assertSame('Gestionnaire', $labels['community_owner']);
         self::assertSame('Gestionnaire adjoint', $labels['tenant_admin']);
+        self::assertSame('Adjoint au commandement', $labels['deputy_commander']);
         self::assertSame('Formateur', $labels['trainer']);
         self::assertSame('Responsable des formateurs', $labels['senior_instructor']);
         self::assertSame('Instructeur', $labels['instructor']);

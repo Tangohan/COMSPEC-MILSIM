@@ -341,7 +341,8 @@ $memberHubTheme = 'lms';
     </article>
 
     <article class="eff-card" id="fonctions">
-        <h2 class="eff-card__title">Fonctions</h2>
+        <h2 class="eff-card__title">Fonctions opérationnelles</h2>
+        <p class="eff-card__lead">Une fonction décrit l’emploi exercé dans l’unité. Elle n’accorde aucun droit d’accès au site, même si son nom ressemble à celui d’un rôle.</p>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags" style="margin-bottom:0.85rem">
                 <?php foreach ($jobRoles as $jr): ?>
@@ -390,7 +391,8 @@ $memberHubTheme = 'lms';
     </article>
 
     <article class="eff-card">
-        <h2 class="eff-card__title">Rôles et accès</h2>
+        <h2 class="eff-card__title">Rôles d’accès</h2>
+        <p class="eff-card__lead">Un rôle accorde des habilitations dans Athena. Il ne remplace pas la fonction opérationnelle affichée dans le dossier.</p>
         <?php if ($roleNames === []): ?>
             <p class="eff-card__lead">Aucun rôle attribué.</p>
         <?php else: ?>

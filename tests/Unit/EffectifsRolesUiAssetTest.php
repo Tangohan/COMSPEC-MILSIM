@@ -17,6 +17,8 @@ final class EffectifsRolesUiAssetTest extends TestCase
 
         self::assertStringContainsString('eff-roles-page', $view);
         self::assertStringContainsString('Gouvernance', $view);
+        self::assertStringContainsString('Rôles d’accès', $view);
+        self::assertStringContainsString('distincts des fonctions opérationnelles et des grades', $view);
         self::assertStringContainsString('Pilotage', $view);
         self::assertStringContainsString('Deux couches, un même principe', $view);
         self::assertStringContainsString('Membres', $view);

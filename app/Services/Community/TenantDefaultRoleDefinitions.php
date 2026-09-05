@@ -37,7 +37,7 @@ final class TenantDefaultRoleDefinitions
             ],
             [
                 'slug' => 'deputy_commander',
-                'name' => 'Gestionnaire adjoint',
+                'name' => 'Adjoint au commandement',
                 'description' => 'Adjoint à la direction : coordination et relais de gouvernance.',
                 'role_layer' => 'community',
                 'is_system' => 1,
