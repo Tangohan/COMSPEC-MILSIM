@@ -1775,6 +1775,13 @@ class Container
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class)
             ),
+            \App\Repositories\AthenaTacticalRepository::class => new \App\Repositories\AthenaTacticalRepository(),
+            \App\Controllers\Admin\AdminAthenaTacticalMapController::class => new \App\Controllers\Admin\AdminAthenaTacticalMapController(
+                self::get(\App\Repositories\AtakMapRepository::class)
+            ),
+            \App\Controllers\Api\AthenaTacticalApiController::class => new \App\Controllers\Api\AthenaTacticalApiController(
+                self::get(\App\Repositories\AthenaTacticalRepository::class)
+            ),
             \App\Controllers\Admin\AdminAtakRoleplayController::class => new \App\Controllers\Admin\AdminAtakRoleplayController(
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(TenantRepository::class),
