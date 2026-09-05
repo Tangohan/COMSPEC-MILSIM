@@ -111,7 +111,7 @@ return [
             ['label' => 'Bureau effectifs', 'href' => 'back-office/ressources/effectifs'],
             ['label' => 'Annuaire', 'href' => 'personnel'],
         ]],
-        ['path' => 'back-office/ressources/effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Bureau effectifs', 'css' => ['back-office-effectifs-hub.css']],
+        ['path' => 'back-office/ressources/effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Bureau effectifs', 'subtitle' => 'Pilotez les dossiers, affectations, habilitations et parcours RH depuis un espace unique.', 'css' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css']],
         ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
             ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],

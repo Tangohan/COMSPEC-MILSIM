@@ -1776,8 +1776,12 @@ class EffectifsWorkspaceController
             }
         }
 
-        return Response::view('layout.effectifs_lms', array_merge([
-            'content' => $content,
+        return Response::view('layout.main', array_merge([
+            'content' => 'admin.effectifs_workspace.shell',
+            'effectifsContent' => $content,
+            'isBackOfficeShell' => true,
+            'boSkipPageHead' => true,
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
