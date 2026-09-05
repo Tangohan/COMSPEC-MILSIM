@@ -33,10 +33,10 @@ class RbacService
         return self::$permissionsHasRbacScope;
     }
 
-    private function userHasTenantUserRoleRows(int $userId): bool
+    private function userHasTenantUserRoleRows(int $userId, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_user_roles WHERE user_id = ? LIMIT 1');
-        $stmt->execute([$userId]);
+        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? LIMIT 1');
+        $stmt->execute([$userId, $tenantId]);
 
         return (bool) $stmt->fetchColumn();
     }
@@ -136,7 +136,7 @@ class RbacService
             ? (int) $user['role_id']
             : null;
 
-        if ($users->hasTenantUserRolesTable() && $this->userHasTenantUserRoleRows($uid)) {
+        if ($users->hasTenantUserRolesTable() && $this->userHasTenantUserRoleRows($uid, $tenantId)) {
             [$flat, $unitMap] = $this->computeFlatAndUnitMapsFromTenantUserRoles($uid, $tenantId);
             [$flat, $unitMap] = $this->applyUserPermissionOverrides($uid, $tenantId, $flat, $unitMap);
             if ($flat === [] && $unitMap === []) {
@@ -200,17 +200,14 @@ class RbacService
                     continue;
                 }
                 $rs = $this->normalizeRbacScope((string) ($p['rs'] ?? 'tenant'));
-                if ($orgUnitId === null || $orgUnitId < 1) {
-                    if ($rs === 'global' || $rs === 'tenant') {
-                        $flat[] = $slug;
+                $target = PermissionScopeResolver::resolve($rs, $orgUnitId);
+                if ($target['flat']) {
+                    $flat[] = $slug;
+                } elseif ($target['unit_id'] !== null) {
+                    if (!isset($unitMap[$slug])) {
+                        $unitMap[$slug] = [];
                     }
-                } else {
-                    if ($rs === 'unit') {
-                        if (!isset($unitMap[$slug])) {
-                            $unitMap[$slug] = [];
-                        }
-                        $unitMap[$slug][] = $orgUnitId;
-                    }
+                    $unitMap[$slug][] = $target['unit_id'];
                 }
             }
         }

@@ -922,30 +922,51 @@ class EffectifsWorkspaceController
             'is_primary' => $roleId === $primaryId,
         ], $ids);
 
-        $before = $this->structureChangeNotification->snapshot($tenantId, $id);
+        // La persistance des fonctions est l'opération principale. Les synchronisations
+        // de confort qui suivent ne doivent pas transformer une sauvegarde réussie en
+        // faux message d'échec (la table pivot a déjà validé sa transaction).
+        $before = null;
+        try {
+            $before = $this->structureChangeNotification->snapshot($tenantId, $id);
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: pre-save snapshot failed: ' . $e->getMessage());
+        }
         try {
             $result = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $id, $slots);
-            $display = (string) $result['primary_role_display'];
-            if ($settings['append_secondaries_to_primary_display'] && $result['secondary_role_display'] !== '') {
-                $display = $display !== '' ? $display . ' · ' . $result['secondary_role_display'] : $result['secondary_role_display'];
-            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: pivot save failed: ' . $e->getMessage());
+            Session::flash('error', 'Impossible d’enregistrer les fonctions. Vérifiez que le référentiel et ses migrations sont à jour.');
+
+            return Response::redirect($redirect);
+        }
+
+        $display = (string) $result['primary_role_display'];
+        if ($settings['append_secondaries_to_primary_display'] && $result['secondary_role_display'] !== '') {
+            $display = $display !== '' ? $display . ' · ' . $result['secondary_role_display'] : $result['secondary_role_display'];
+        }
+        try {
             $profile = $this->personnelProfileRepository->getByUserId($id) ?? [];
             $unitId = (int) ($profile['primary_unit_id'] ?? 0);
             if ($unitId > 0) {
                 $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($id, $unitId, mb_substr($display, 0, 100));
             }
-            $actorId = (int) Session::get('user_id');
-            $this->structureChangeNotification->notifyFromSnapshots(
-                $tenantId,
-                $id,
-                $actorId > 0 ? $actorId : null,
-                $before,
-                $this->structureChangeNotification->snapshot($tenantId, $id)
-            );
-        } catch (\Throwable) {
-            Session::flash('error', 'Enregistrement impossible (fonctions).');
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: assignment synchronization failed: ' . $e->getMessage());
+        }
 
-            return Response::redirect($redirect);
+        if ($before !== null) {
+            try {
+                $actorId = (int) Session::get('user_id');
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $id,
+                    $actorId > 0 ? $actorId : null,
+                    $before,
+                    $this->structureChangeNotification->snapshot($tenantId, $id)
+                );
+            } catch (\Throwable $e) {
+                error_log('Effectifs functions: post-save notification failed: ' . $e->getMessage());
+            }
         }
 
         Session::flash('success', 'Fonctions du membre mises à jour.');

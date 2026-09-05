@@ -51,9 +51,9 @@ $iconMap = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="
 <div class="eff-roles-page">
 <section class="eff-page-head">
     <p class="eff-page-kicker">Gouvernance</p>
-    <h1 class="eff-page-title">Rôles</h1>
+    <h1 class="eff-page-title">Rôles d’accès</h1>
     <p class="eff-page-lead">
-        Les rôles définissent ce que chaque membre peut faire dans la communauté.
+        Les rôles d’accès définissent ce que chaque membre peut consulter ou modifier. Ils sont distincts des fonctions opérationnelles et des grades.
         Consultez la liste ci-dessous, puis ouvrez l’édition détaillée si vous êtes habilité.
     </p>
 </section>
@@ -81,11 +81,11 @@ $iconMap = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="
 <div class="eff-toolbar" role="toolbar" aria-label="Actions sur les rôles">
     <div class="eff-toolbar__lead">
         <p class="eff-toolbar__title">Pilotage</p>
-        <p class="eff-toolbar__sub">Éditez les rôles, leurs droits, ou la toile des fonctions.</p>
+        <p class="eff-toolbar__sub">Éditez les rôles et leurs droits. Gérez séparément les fonctions opérationnelles dans le référentiel dédié.</p>
     </div>
     <div class="eff-toolbar__actions">
         <a class="eff-btn eff-btn--primary" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Gérer les rôles</a>
-        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles-functions'), ENT_QUOTES, 'UTF-8') ?>">Toile rôles &amp; fonctions</a>
+        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles-functions'), ENT_QUOTES, 'UTF-8') ?>">Référentiel des fonctions</a>
         <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/ressources/effectifs/droits'), ENT_QUOTES, 'UTF-8') ?>">Profils de droits</a>
     </div>
 </div>
