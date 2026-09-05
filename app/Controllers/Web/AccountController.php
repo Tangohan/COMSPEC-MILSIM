@@ -496,144 +496,8 @@ class AccountController
 
     public function syncSteamProfile(Request $request, array $params = []): Response
     {
-        $user = $this->authService->user();
-        if (!$user || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée ou accès refusé.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $tenantId = (int) ($user['tenant_id'] ?? 0);
-        $uid = (int) $user['id'];
-        if ($tenantId < 1) {
-            Session::flash('error', 'Communauté introuvable.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        if (!$this->steamWebApiService->isConfigured()) {
-            Session::flash('error', 'L’import depuis Steam n’est pas configuré sur ce serveur. Contactez l’administration.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $row = $this->userRepository->findById($uid, $tenantId);
-        if (!$row) {
-            Session::flash('error', 'Compte introuvable.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $dbSteam = trim((string) ($row['steam_id'] ?? ''));
-        $steamId = $dbSteam;
-        $postedSteam = trim((string) $request->input('steam_id'));
-        $steamIdJustSavedFromForm = false;
-        if ($postedSteam !== '') {
-            $resolvedPosted = $this->steamWebApiService->resolveSteamIdFromUserInput($postedSteam);
-            if ($resolvedPosted === null) {
-                Session::flash('error', 'Impossible de reconnaître l’identifiant Steam indiqué. Vérifiez le numéro, le format classique Steam, ou l’adresse du profil public.');
-
-                return Response::redirect(url('account/preferences'));
-            }
-            if ($resolvedPosted !== $steamId) {
-                $this->userRepository->update($uid, $tenantId, ['steam_id' => $resolvedPosted]);
-                $steamId = $resolvedPosted;
-                $steamIdJustSavedFromForm = true;
-            }
-        }
-        if ($steamId === '') {
-            Session::flash('error', 'Indiquez un identifiant Steam dans le formulaire (numéro ou adresse de profil), puis relancez la synchronisation.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $steps = [];
-        if ($steamIdJustSavedFromForm) {
-            $steps[] = [
-                'key' => 'persist_steam',
-                'label' => 'Enregistrement de l’identifiant',
-                'ok' => true,
-                'detail' => 'La valeur saisie dans le formulaire a été enregistrée sur votre compte avant la lecture du profil public.',
-            ];
-        }
-        $steps[] = [
-            'key' => 'account',
-            'label' => 'Lecture du compte',
-            'ok' => true,
-            'detail' => $steamIdJustSavedFromForm
-                ? 'Identifiant Steam prêt pour la liaison avec le service.'
-                : 'Identifiant Steam déjà enregistré sur votre dossier.',
-        ];
-        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
-        if ($summary === null) {
-            $steps[] = [
-                'key' => 'steam_api',
-                'label' => 'Lecture du profil public',
-                'ok' => false,
-                'detail' => 'Le service n’a pas renvoyé de profil pour cet identifiant. Vérifiez-le ou réessayez plus tard.',
-            ];
-            Session::flash('steam_sync_report', [
-                'ok' => false,
-                'finished_at' => date('d/m/Y \à H:i'),
-                'steps' => $steps,
-                'data' => [],
-            ]);
-            Session::flash('error', 'Impossible de récupérer le profil public pour cet identifiant. Vérifiez l’identifiant ou réessayez plus tard.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $steps[] = [
-            'key' => 'steam_api',
-            'label' => 'Lecture du profil public',
-            'ok' => true,
-            'detail' => 'Pseudo et visuel du profil public récupérés.',
-        ];
-        $patch = [];
-        if ($summary['avatar_url'] !== '') {
-            $patch['avatar_url'] = function_exists('mb_substr')
-                ? mb_substr($summary['avatar_url'], 0, 500)
-                : substr($summary['avatar_url'], 0, 500);
-        }
-        if ($patch === []) {
-            $steps[] = [
-                'key' => 'apply',
-                'label' => 'Mise à jour du dossier',
-                'ok' => false,
-                'detail' => 'Aucune photo exploitable n’a été renvoyée pour ce profil.',
-            ];
-            Session::flash('steam_sync_report', [
-                'ok' => false,
-                'finished_at' => date('d/m/Y \à H:i'),
-                'steps' => $steps,
-                'data' => [
-                    'public_pseudo' => $summary['personaname'],
-                ],
-            ]);
-            Session::flash('error', 'Aucune photo exploitable n’a été renvoyée pour ce profil.');
-
-            return Response::redirect(url('account/preferences'));
-        }
-        $this->userRepository->update($uid, $tenantId, $patch);
-        $fresh = $this->userRepository->findById($uid, $tenantId);
-        if ($fresh) {
-            Session::set('display_name', (string) ($fresh['display_name'] ?? ''));
-            Session::set('callsign', (string) ($fresh['callsign'] ?? ''));
-        }
-        $steps[] = [
-            'key' => 'apply',
-            'label' => 'Mise à jour du dossier',
-            'ok' => true,
-            'detail' => 'Photo du compte actualisée.',
-        ];
-        Session::flash('steam_sync_report', [
-            'ok' => true,
-            'finished_at' => date('d/m/Y \à H:i'),
-            'steps' => $steps,
-            'data' => [
-                'public_pseudo' => $summary['personaname'],
-                'avatar_updated' => isset($patch['avatar_url']),
-                'display_name_updated' => false,
-                'steam_id' => $summary['steam_id'],
-            ],
-        ]);
-        Session::flash('success', 'Photo du compte mise à jour depuis le profil public Steam.');
-
-        return Response::redirect(url('account/preferences'));
+        Session::flash('error', 'La synchronisation des photos Steam a été désactivée. Utilisez un portrait opérateur personnalisé.');
+        return Response::redirect(url('account/portrait'));
     }
 
     /**
@@ -1159,59 +1023,7 @@ class AccountController
 
     public function image(Request $request, array $params = []): Response
     {
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
-        }
-        $errors = [];
-        $success = Session::getFlash('success');
-        $error = Session::getFlash('error');
-
-        if ($request->isPost()) {
-            if (!Csrf::validate($request->input('_csrf_token'))) {
-                Session::flash('error', 'Session expirée.');
-                return Response::redirect(url('account/image'));
-            }
-            $file = $_FILES['avatar'] ?? null;
-            if (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
-                $errors['avatar'] = ['Veuillez sélectionner une image (JPG, PNG ou WebP, max 2 Mo).'];
-            } else {
-                $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-                if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
-                    $errors['avatar'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
-                } else {
-                    $dir = base_path('public/uploads/avatars');
-                    if (!is_dir($dir)) {
-                        mkdir($dir, 0755, true);
-                    }
-                    $ext = match ($mime) {
-                        'image/jpeg' => 'jpg',
-                        'image/png' => 'png',
-                        'image/webp' => 'webp',
-                        default => 'jpg',
-                    };
-                    $name = $user['id'] . '_' . time() . '.' . $ext;
-                    $path = $dir . DIRECTORY_SEPARATOR . $name;
-                    if (move_uploaded_file($file['tmp_name'], $path)) {
-                        $urlPath = 'uploads/avatars/' . $name;
-                        $this->userRepository->update((int) $user['id'], (int) $user['tenant_id'], ['avatar_url' => $urlPath]);
-                        Session::flash('success', 'Photo de profil mise à jour.');
-                        return Response::redirect(url('account/image'));
-                    }
-                    $errors['avatar'] = ['Impossible d\'enregistrer le fichier.'];
-                }
-            }
-        }
-
-        return $this->accountView('account.image', 'Photo de compte', [
-            'user' => $user,
-            'errors' => $errors,
-            'success' => $success,
-            'error' => $error,
-        ]);
+        return Response::redirect(url('account/portrait'));
     }
 
     /** Portrait personnage (fiche, ORBAT, briefing) — distinct de l'avatar compte. */
@@ -1225,8 +1037,13 @@ class AccountController
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
         $personnelProfile = $this->personnelProfileRepository->getByUserId((int) $user['id']);
+        $portraitLocked = !empty($personnelProfile['character_portrait_locked']);
 
         if ($request->isPost()) {
+            if ($portraitLocked) {
+                Session::flash('error', 'Votre portrait opérateur est verrouillé par un administrateur de la communauté.');
+                return Response::redirect(url('account/portrait'));
+            }
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée.');
                 return Response::redirect(url('account/portrait'));

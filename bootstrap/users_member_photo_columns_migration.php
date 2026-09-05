@@ -38,4 +38,10 @@ return function (PDO $pdo): void {
             'ALTER TABLE `personnel_profiles` ADD COLUMN `character_portrait_path` varchar(255) DEFAULT NULL'
         );
     }
+
+    if ($hasTable('personnel_profiles') && !$hasColumn('personnel_profiles', 'character_portrait_locked')) {
+        $pdo->exec(
+            'ALTER TABLE `personnel_profiles` ADD COLUMN `character_portrait_locked` tinyint(1) NOT NULL DEFAULT 0'
+        );
+    }
 };

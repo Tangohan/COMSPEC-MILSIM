@@ -248,17 +248,7 @@ require base_path('views/partials/account/shell_open.php');
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
 
-                    <?php if ($steamWebConfigured): ?>
-                    <div style="margin-top:1rem;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#fff">
-                        <p class="account-hub__stat-label">Synchronisation du profil public</p>
-                        <p class="account-hub__hint">Met à jour la photo. Les autres champs de cette page ne sont enregistrés qu’avec « Enregistrer tout ».</p>
-                        <button type="submit" formaction="<?= htmlspecialchars(url('account/steam-sync'), ENT_QUOTES, 'UTF-8') ?>" formmethod="post" formnovalidate class="account-hub__btn account-hub__btn--ink" style="margin-top:.85rem">
-                            Synchroniser photo Steam
-                        </button>
-                    </div>
-                    <?php else: ?>
-                    <p class="account-hub__hint">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro ou une adresse de profil.</p>
-                    <?php endif; ?>
+                    <p class="account-hub__hint">Steam reste lié uniquement au jeu et à la cartographie. La photo publique Steam n’est jamais importée.</p>
                 </div>
             </div>
         </div>
@@ -267,35 +257,11 @@ require base_path('views/partials/account/shell_open.php');
     <section id="section-photo" class="account-hub__panel account-hub__section-anchor">
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Identité visuelle</p>
-            <h2 class="account-hub__panel-title">Photo affichée sur le site</h2>
-            <p class="account-hub__panel-desc">Choisissez quelle image apparaît en priorité dans la barre du haut, le tableau de bord et l’espace compte. Si la photo choisie est absente, l’autre est utilisée.</p>
+            <h2 class="account-hub__panel-title">Portrait opérateur obligatoire</h2>
+            <p class="account-hub__panel-desc">Le portail utilise exclusivement votre portrait opérateur personnalisé. À défaut, la photo « inconnu » est affichée.</p>
         </div>
         <div class="account-hub__panel-body">
-            <fieldset style="border:0;margin:0;padding:0">
-                <legend class="account-hub__label" style="margin-bottom:.75rem">Priorité</legend>
-                <div class="account-hub__form-grid account-hub__form-grid--2">
-                    <label class="account-hub__check" style="cursor:pointer;align-items:flex-start;padding:1rem;border-radius:.85rem;border:1px solid <?= $sitePhotoPriority === 'operator' ? '#94a3b8' : '#e2e8f0' ?>;background:<?= $sitePhotoPriority === 'operator' ? '#f8fafc' : '#fff' ?>">
-                        <input type="radio" name="site_photo_priority" value="operator" <?= $sitePhotoPriority === 'operator' ? 'checked' : '' ?> style="margin-top:.2rem">
-                        <span>
-                            <strong style="font-size:.875rem">Opérateur</strong>
-                            <span class="account-hub__hint" style="display:block">Portrait personnage (fiche opérateur) — recommandé.</span>
-                        </span>
-                    </label>
-                    <label class="account-hub__check" style="cursor:pointer;align-items:flex-start;padding:1rem;border-radius:.85rem;border:1px solid <?= $sitePhotoPriority === 'account' ? '#94a3b8' : '#e2e8f0' ?>;background:<?= $sitePhotoPriority === 'account' ? '#f8fafc' : '#fff' ?>">
-                        <input type="radio" name="site_photo_priority" value="account" <?= $sitePhotoPriority === 'account' ? 'checked' : '' ?> style="margin-top:.2rem">
-                        <span>
-                            <strong style="font-size:.875rem">Compte</strong>
-                            <span class="account-hub__hint" style="display:block">Photo du compte (Steam ou upload personnel).</span>
-                        </span>
-                    </label>
-                </div>
-            </fieldset>
-            <p class="account-hub__hint" style="margin-top:1rem">
-                Gérer les images :
-                <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>">portrait opérateur</a>
-                ·
-                <a href="<?= htmlspecialchars(url('account/image'), ENT_QUOTES, 'UTF-8') ?>">photo du compte</a>
-            </p>
+            <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink">Gérer mon portrait opérateur</a>
         </div>
     </section>
 
