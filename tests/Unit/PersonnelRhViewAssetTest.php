@@ -25,6 +25,7 @@ final class PersonnelRhViewAssetTest extends TestCase
 
         self::assertStringContainsString('<details', $rh);
         self::assertStringContainsString('return_view=rh', $rh);
+        self::assertStringContainsString("effectifs_workspace_url('membres/' . \$rhTargetUserId) . '#modifier-dossier'", $rh);
         self::assertStringNotContainsString('grid gap-2.5 lg:grid-cols-2', $rh);
 
         self::assertStringContainsString('$tableauAdminStandalone', $tableau);
@@ -35,6 +36,8 @@ final class PersonnelRhViewAssetTest extends TestCase
 
         self::assertStringContainsString('personnelShowRedirectUrl', $controller);
         self::assertStringContainsString("\$returnView === 'rh'", $controller);
+        self::assertStringContainsString('$returnToEffectifs', $controller);
+        self::assertStringContainsString("\$returnView === 'rh' && EffectifsLmsAccess::allows", $controller);
         self::assertStringContainsString('$canSensitive || $isForumMod', $controller);
         self::assertStringContainsString('layoutMainCompact', $controller);
 
