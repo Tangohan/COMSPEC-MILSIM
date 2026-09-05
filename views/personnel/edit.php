@@ -24,6 +24,7 @@ $roleplayEventTypes = is_array($roleplayEventTypes ?? null) ? $roleplayEventType
 
 $isMe = (int) ($targetUser['id'] ?? 0) === (int) (\App\Core\Session::get('user_id'));
 $effectifsEditContext = !empty($effectifsEditContext);
+$effectifsEmbedded = !empty($effectifsEmbedded);
 $returnViewRh = trim((string) ($_GET['return_view'] ?? '')) === 'rh';
 $personnelBackUrl = $effectifsEditContext
     ? effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0))
@@ -140,6 +141,7 @@ $editValidTabIds = implode(',', array_map(
 ?>
 <div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>', dirty: false }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
   <div class="pd-container">
+    <?php if (!$effectifsEmbedded): ?>
     <header class="pd-header">
       <div>
         <p class="pd-header__eyebrow"><?= $effectifsEditContext ? 'Bureau effectifs' : 'Dossier personnel' ?></p>
@@ -157,6 +159,7 @@ $editValidTabIds = implode(',', array_map(
         <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="pd-btn">Tutoriels</a>
       </div>
     </header>
+    <?php endif; ?>
 
     <?php $success = \App\Core\Session::getFlash('success'); if ($success): ?>
     <div class="pd-alert pd-alert--ok" role="status"><?= htmlspecialchars($success) ?></div>
@@ -216,6 +219,9 @@ $editValidTabIds = implode(',', array_map(
 
       <form method="post" action="<?= htmlspecialchars($formAction) ?>" @input="dirty = true" @change="dirty = true" @submit="dirty = false">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($effectifsEditContext): ?>
+        <input type="hidden" name="effectifs_context" value="1">
+        <?php endif; ?>
         <?php if ($returnViewRh): ?>
         <input type="hidden" name="return_view" value="rh">
         <?php endif; ?>

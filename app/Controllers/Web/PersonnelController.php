@@ -1186,6 +1186,15 @@ class PersonnelController
         return $this->edit($request, $params);
     }
 
+    /** Rend uniquement le formulaire afin de l'intégrer à la fiche de gestion Effectifs. */
+    public function embeddedEditor(Request $request, array $params = []): Response
+    {
+        $params['_effectifs_context'] = true;
+        $params['_effectifs_embedded'] = true;
+
+        return $this->edit($request, $params);
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();
@@ -1204,6 +1213,7 @@ class PersonnelController
             return $this->personnelForbiddenResponse(false);
         }
         $fromEffectifs = !empty($params['_effectifs_context']);
+        $embeddedInEffectifs = !empty($params['_effectifs_embedded']);
         // L'ancienne page personnel reste utilisable par un membre pour sa propre fiche.
         // Pour une édition effectuée par l'équipe RH, Effectifs est désormais l'unique
         // espace de travail ; les anciens favoris rejoignent donc l'URL canonique.
@@ -1343,11 +1353,12 @@ class PersonnelController
             }
         }
 
-        return Response::view($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main', [
+        return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
             'effectifsNav' => 'roster',
             'effectifsEditContext' => $fromEffectifs,
+            'effectifsEmbedded' => $embeddedInEffectifs,
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
@@ -1989,6 +2000,9 @@ class PersonnelController
         }
 
         Session::flash('success', 'Dossier mis à jour.');
+        if ((string) $request->input('effectifs_context', '') === '1') {
+            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
+        }
         $returnView = trim((string) $request->input('return_view', ''));
         $redirect = $this->personnelShowRedirectUrl($target, $isSelf, $returnView === 'rh' ? 'rh' : null);
 

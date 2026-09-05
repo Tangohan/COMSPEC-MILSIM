@@ -517,6 +517,16 @@ class EffectifsWorkspaceController
         } catch (\Throwable) {
         }
 
+        $canEditProfiles = EffectifsLmsAccess::canEditProfiles($gate);
+        $memberEditorHtml = '';
+        if ($canEditProfiles) {
+            $editor = \App\Core\Container::get(\App\Controllers\Web\PersonnelController::class)
+                ->embeddedEditor($request, ['id' => $id]);
+            if ($editor->statusCode() === 200) {
+                $memberEditorHtml = $editor->body();
+            }
+        }
+
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
             'effectifsNav' => 'roster',
@@ -534,7 +544,8 @@ class EffectifsWorkspaceController
             'elevationCooldownSeconds' => $elevationCooldownSeconds,
             'elevationHistory' => $elevationHistory,
             'latestDeparture' => $latestDeparture,
-            'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
+            'canEditProfiles' => $canEditProfiles,
+            'memberEditorHtml' => $memberEditorHtml,
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
@@ -557,6 +568,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
+            'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
 
