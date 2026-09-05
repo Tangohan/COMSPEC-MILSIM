@@ -26,12 +26,10 @@ $timelineStatusFr = static function (?string $raw): string {
 ?>
 <style>
     .rp-followup-sheets {
-        border: 1px solid #e2e8f0;
-        border-radius: 1rem;
+        border: 1px solid #cbd5e1;
         background: #ffffff;
         overflow: auto;
         max-height: min(72vh, 56rem);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     }
     .rp-followup-sheets__table {
         width: 100%;
@@ -45,7 +43,7 @@ $timelineStatusFr = static function (?string $raw): string {
     .rp-followup-sheets__table td {
         border-right: 1px solid #e2e8f0;
         border-bottom: 1px solid #e2e8f0;
-        padding: 0.8rem 0.75rem;
+        padding: 0.35rem 0.5rem;
         vertical-align: middle;
     }
     .rp-followup-sheets__table th:last-child,
@@ -56,20 +54,21 @@ $timelineStatusFr = static function (?string $raw): string {
         position: sticky;
         top: 0;
         z-index: 2;
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 0.6875rem;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.625rem;
         font-weight: 800;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         white-space: nowrap;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid #94a3b8;
+        box-shadow: 0 1px 0 #94a3b8;
     }
     .rp-followup-sheets__table tbody tr:nth-child(even) td {
-        background: #fbfdff;
+        background: #f8fafc;
     }
     .rp-followup-sheets__table tbody tr:hover td {
-        background: #f8fafc;
+        background: #eff6ff;
     }
     .rp-followup-sheets__meta {
         display: block;
@@ -112,7 +111,7 @@ $timelineStatusFr = static function (?string $raw): string {
     .rp-followup-kpi {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
+        gap: 0.5rem;
     }
     @media (min-width: 640px) {
         .rp-followup-kpi {
@@ -121,23 +120,22 @@ $timelineStatusFr = static function (?string $raw): string {
     }
     .rp-followup-kpi__card {
         min-width: 0;
-        border-radius: 0.75rem;
+        border-radius: 0.5rem;
         border: 1px solid #e2e8f0;
         background: #fff;
-        padding: 1rem 1.1rem;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        padding: 0.45rem 0.65rem;
     }
     .rp-followup-kpi__label {
         margin: 0;
-        font-size: 0.625rem;
+        font-size: 0.5625rem;
         font-weight: 800;
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: #64748b;
     }
     .rp-followup-kpi__value {
-        margin: 0.4rem 0 0;
-        font-size: 1.5rem;
+        margin: 0.15rem 0 0;
+        font-size: 1.125rem;
         font-weight: 900;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
@@ -157,9 +155,9 @@ $timelineStatusFr = static function (?string $raw): string {
         align-items: center;
         justify-content: center;
         gap: 0.25rem;
-        min-height: 1.8rem;
-        padding: 0.3rem 0.65rem;
-        border-radius: 0.375rem;
+        height: 1.55rem;
+        padding: 0 0.5rem;
+        border-radius: 0.25rem;
         border: 1px solid #cbd5e1;
         background: #fff;
         color: #0f172a;
@@ -264,31 +262,29 @@ $timelineStatusFr = static function (?string $raw): string {
     }
 </style>
 
-<div class="rp-followup-bureau mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
-    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Personnel · Immersion</p>
-        <div class="mt-2 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+<div class="rp-followup-bureau flex min-h-0 w-full max-w-none flex-1 flex-col bg-slate-50">
+    <div class="shrink-0 border-b border-slate-200 bg-white px-3 py-2.5 sm:px-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="min-w-0">
-                <h1 class="text-2xl font-black tracking-tight text-slate-900">Suivi roleplay</h1>
-                <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Pilotez le tutorat, l’avancement et les échéances de chaque membre depuis un espace unique.</p>
+                <h1 class="truncate text-base font-black tracking-tight text-slate-900 sm:text-lg">Suivi roleplay</h1>
+                <p class="text-xs text-slate-500">Tutorat, avancement et échéances — trié par échéance la plus proche.</p>
             </div>
-            <nav class="flex flex-wrap gap-2" aria-label="Actions du suivi roleplay">
-                <a href="<?= htmlspecialchars(url('back-office/roleplay/immersion'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Configurer le module</a>
-                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup/echeances'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Gérer les échéances</a>
-                <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Gérer les membres</a>
-            </nav>
+            <div class="flex flex-wrap items-center gap-1.5">
+                <a href="<?= htmlspecialchars(url('back-office/roleplay/immersion'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Configurer le module</a>
+                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup/echeances'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Échéances</a>
+                <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Gérer les membres</a>
+            </div>
         </div>
-    </header>
+    </div>
 
     <?php if ($err): ?>
-    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
+    <div class="shrink-0 border-b border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-900 sm:px-4"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
     <?php if ($ok): ?>
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></div>
+    <div class="shrink-0 border-b border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-900 sm:px-4"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
 
-    <section aria-labelledby="rp-overview-title">
-        <h2 id="rp-overview-title" class="sr-only">Vue d’ensemble</h2>
+    <div class="shrink-0 border-b border-slate-200 bg-slate-50/90 px-3 py-2.5 sm:px-4">
         <div class="rp-followup-kpi" role="group" aria-label="Indicateurs de suivi">
             <div class="rp-followup-kpi__card" style="<?= $rpFeatureEnabled ? 'border-color:#a7f3d0;background:#ecfdf5;' : 'border-color:#fecdd3;background:#fff1f2;' ?>">
                 <p class="rp-followup-kpi__label" style="<?= $rpFeatureEnabled ? 'color:#065f46;' : 'color:#9f1239;' ?>">Statut module</p>
@@ -307,24 +303,17 @@ $timelineStatusFr = static function (?string $raw): string {
                 <p class="rp-followup-kpi__value"><?= $rpEligibleCount ?></p>
             </div>
         </div>
-    </section>
+    </div>
 
     <?php if (!$rpTimelineTableReady): ?>
-    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+    <div class="shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 sm:px-4" role="status">
         L’historique des événements roleplay n’est pas encore disponible. Demandez à l’équipe technique d’appliquer les mises à jour de la base pour activer cette fonctionnalité.
     </div>
     <?php endif; ?>
 
-    <section aria-labelledby="rp-members-title">
-        <div class="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Dossiers membres</p>
-                <h2 id="rp-members-title" class="mt-1 text-lg font-black text-slate-900">Suivi individuel</h2>
-            </div>
-            <p class="text-xs text-slate-500">Classés par échéance la plus proche</p>
-        </div>
+    <div class="min-h-0 flex-1 px-0">
         <?php if ($rpRows === []): ?>
-        <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+        <div class="m-4 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center sm:m-6">
             <p class="text-sm font-semibold text-slate-800">Aucun membre actif pour cette communauté.</p>
         </div>
         <?php else: ?>
@@ -486,7 +475,7 @@ $timelineStatusFr = static function (?string $raw): string {
             </table>
         </div>
         <?php endif; ?>
-    </section>
+    </div>
 </div>
 <script>
 (function () {

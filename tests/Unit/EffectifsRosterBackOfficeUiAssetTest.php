@@ -6,9 +6,9 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-final class EffectifsRosterDarkUiAssetTest extends TestCase
+final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
 {
-    public function testRosterUsesDarkAlertsMetricsAndHumanCopy(): void
+    public function testRosterUsesLightBackOfficeAlertsMetricsAndHumanCopy(): void
     {
         $root = dirname(__DIR__, 2);
         $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
@@ -36,10 +36,12 @@ final class EffectifsRosterDarkUiAssetTest extends TestCase
         self::assertStringContainsString('.eff-banner--warn', $css);
         self::assertStringContainsString('.eff-metrics--roster', $css);
         self::assertStringContainsString('.eff-bulkbar', $css);
-        self::assertStringContainsString('.eff-catalog--dark .eff-sheets__badge--watch', $css);
-        self::assertStringContainsString('.eff-catalog--dark .eff-catalog-filters input', $css);
+        self::assertStringContainsString('eff-catalog eff-catalog--roster', $roster);
+        self::assertStringContainsString('.eff-catalog--roster .eff-metric__v', $css);
+        self::assertStringContainsString('.eff-catalog--roster .eff-catalog-filters', $css);
+        self::assertStringContainsString('.eff-catalog--roster .eff-bulkbar', $css);
 
         self::assertStringContainsString('$pr(402,', $dispatch);
-        self::assertStringContainsString('Le bureau effectifs se lit sur fond sombre', $dispatch);
+        self::assertStringContainsString('Le bureau effectifs rejoint le back-office clair', $dispatch);
     }
 }

@@ -3926,3 +3926,115 @@ fieldset.eff-role-grid input { width: auto; }
 .eff-catalog--dark .eff-sheets__pop-form p {
     color: #94a3b8 !important;
 }
+
+/* Annuaire des effectifs — déclinaison claire du back-office ATAK. */
+.eff-catalog--roster {
+    border-color: #e2e8f0;
+    border-radius: 1rem;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.eff-catalog--roster .eff-catalog__head {
+    padding: 1.5rem;
+    border-color: #e2e8f0;
+    background: #fff;
+}
+.eff-catalog--roster .eff-catalog__title {
+    margin-top: 0.4rem;
+    font-size: 1.5rem;
+}
+.eff-catalog--roster .eff-catalog__lead {
+    margin-top: 0.5rem;
+    max-width: 52rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+.eff-catalog--roster .eff-catalog__lead a { color: #334155; font-weight: 700; }
+.eff-catalog--roster .eff-catalog__notice {
+    margin: 0 1rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+}
+.eff-catalog--roster .eff-metrics--roster {
+    padding: 0 1rem 1rem;
+    gap: 0.65rem;
+}
+.eff-catalog--roster .eff-metric {
+    border-color: #e2e8f0;
+    border-radius: 0.5rem;
+    background: #fff;
+}
+.eff-catalog--roster .eff-metric--link:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+.eff-catalog--roster .eff-metric--link.is-active {
+    border-color: #94a3b8;
+    background: #f8fafc;
+    box-shadow: inset 0 -2px 0 #64748b;
+}
+.eff-catalog--roster .eff-metric--link.is-active.is-amber {
+    border-color: #fcd34d;
+    background: #fffbeb;
+    box-shadow: inset 0 -2px 0 #f59e0b;
+}
+.eff-catalog--roster .eff-metric__k { color: #64748b; }
+.eff-catalog--roster .eff-metric__v { color: #0f172a; }
+.eff-catalog--roster .eff-metric--link.is-amber .eff-metric__v { color: #92400e; }
+.eff-catalog--roster .eff-catalog-filters {
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.eff-catalog--roster .eff-catalog-checks { background: #f8fafc; }
+.eff-catalog--roster .eff-sheets {
+    border-top: 1px solid #e2e8f0;
+    background: #fff;
+}
+.eff-catalog--roster .eff-sheets__table tbody td,
+.eff-catalog--roster .eff-sheets__table tbody tr:nth-child(even) td { background: #fff; }
+.eff-catalog--roster .eff-sheets__table tbody tr:nth-child(even) td { background: #fbfdff; }
+.eff-catalog--roster .eff-sheets__table tbody tr:hover td { background: #f8fafc; }
+.eff-catalog--roster .eff-sheets__id-text {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.14rem;
+}
+.eff-catalog--roster .eff-sheets__assign {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.eff-catalog--roster td:has(.eff-sheets__assign) { white-space: normal; }
+.eff-catalog--roster .eff-sheets__path {
+    white-space: normal;
+    line-height: 1.35;
+    font-weight: 700;
+}
+.eff-catalog--roster .eff-sheets__reperes { color: #475569; }
+.eff-catalog--roster .eff-sheets__reperes b { color: #0f172a; }
+.eff-catalog--roster .eff-banner--warn {
+    border-bottom-color: #fde68a;
+    background: #fffbeb;
+}
+.eff-catalog--roster .eff-banner__title { color: #92400e; }
+.eff-catalog--roster .eff-banner__text { color: #78350f; }
+.eff-catalog--roster .eff-banner__action {
+    border-color: #fcd34d;
+    background: #fff;
+    color: #92400e;
+}
+.eff-catalog--roster .eff-bulkbar {
+    margin: 0 1rem 0.75rem;
+    border-color: #cbd5e1;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+}
+.eff-catalog--roster .eff-bulkbar__count { color: #475569; }
+.eff-catalog--roster .eff-bulkbar select,
+.eff-catalog--roster .eff-bulkbar input[type="text"] {
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+}
