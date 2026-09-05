@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 /** @var string $staffDisplayName */
 /** @var string $requesterDisplayName */
-/** @var string $requesterEmail */
 /** @var string $tenantName */
 /** @var string $targetDisplayName */
 /** @var list<string> $diffLines */
@@ -14,7 +13,6 @@ declare(strict_types=1);
 
 $staff = htmlspecialchars((string) $staffDisplayName, ENT_QUOTES, 'UTF-8');
 $req = htmlspecialchars((string) $requesterDisplayName, ENT_QUOTES, 'UTF-8');
-$reqMail = htmlspecialchars((string) $requesterEmail, ENT_QUOTES, 'UTF-8');
 $tn = htmlspecialchars((string) $tenantName, ENT_QUOTES, 'UTF-8');
 $target = htmlspecialchars((string) $targetDisplayName, ENT_QUOTES, 'UTF-8');
 $noteHtml = trim((string) $note) !== ''
@@ -27,7 +25,6 @@ foreach ($diffLines as $line) {
 
 $body = '<p>Bonjour ' . $staff . ',</p>'
     . '<p><strong>' . $req . '</strong>'
-    . ($requesterEmail !== '' ? ' (<a href="mailto:' . $reqMail . '">' . $reqMail . '</a>)' : '')
     . ' propose une <strong>correction RH</strong> sur la fiche de <strong>' . $target . '</strong>'
     . ' (« ' . $tn . ' »).</p>'
     . '<p>Modifications demandées :</p><ul>' . $diffHtml . '</ul>'
@@ -47,7 +44,6 @@ $html = email_html_layout(
 
 $text = "Bonjour {$staffDisplayName},\n\n"
     . "« {$requesterDisplayName} »"
-    . ($requesterEmail !== '' ? " ({$requesterEmail})" : '')
     . " propose une correction RH pour « {$targetDisplayName} » ({$tenantName}).\n\n"
     . implode("\n", $diffLines) . "\n\n"
     . (trim((string) $note) !== '' ? "Message : {$note}\n\n" : '')

@@ -1260,14 +1260,13 @@ final class EmailService
             [
                 'staffDisplayName' => $staffDisplayName,
                 'requesterDisplayName' => $requesterDisplayName,
-                'requesterEmail' => $requesterEmail,
                 'tenantName' => $tenantName,
                 'courseTitle' => $courseTitle,
                 'studioFicheUrl' => $studioFicheUrl,
                 'requesterMemberUrl' => $requesterMemberUrl,
             ],
             $tenantId,
-            $requesterEmail !== '' ? $requesterEmail : null,
+            null,
             ['purpose' => 'training_publish_elevation', 'course_title' => $courseTitle]
         );
     }
@@ -1293,7 +1292,6 @@ final class EmailService
             [
                 'staffDisplayName' => $staffDisplayName,
                 'requesterDisplayName' => $requesterDisplayName,
-                'requesterEmail' => $requesterEmail,
                 'tenantName' => $tenantName,
                 'targetDisplayName' => $targetDisplayName,
                 'elevationKindLabel' => $elevationKindLabel,
@@ -1302,7 +1300,7 @@ final class EmailService
                 'editUrl' => $editUrl,
             ],
             $tenantId,
-            $requesterEmail !== '' ? $requesterEmail : null,
+            null,
             ['purpose' => 'effectifs_elevation', 'target_name' => $targetDisplayName]
         );
     }
@@ -1331,7 +1329,6 @@ final class EmailService
             [
                 'staffDisplayName' => $staffDisplayName,
                 'requesterDisplayName' => $requesterDisplayName,
-                'requesterEmail' => $requesterEmail,
                 'tenantName' => $tenantName,
                 'targetDisplayName' => $targetDisplayName,
                 'diffLines' => $diffLines,
@@ -1340,7 +1337,7 @@ final class EmailService
                 'ficheUrl' => $ficheUrl,
             ],
             $tenantId,
-            $requesterEmail !== '' ? $requesterEmail : null,
+            null,
             ['purpose' => 'personnel_correction_staff', 'target_name' => $targetDisplayName]
         );
     }
