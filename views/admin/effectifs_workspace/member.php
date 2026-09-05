@@ -39,6 +39,7 @@ $mobilityTypeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabel
 $absenceReasonLabels = is_array($absenceReasonLabels ?? null) ? $absenceReasonLabels : [];
 $dutyPosition = trim((string) ($dutyPosition ?? ''));
 $remainingTrainingDays = max(0, (int) ($remainingTrainingDays ?? 0));
+$memberEditorHtml = (string) ($memberEditorHtml ?? '');
 
 $elevationCooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
@@ -140,6 +141,9 @@ $memberHubTheme = 'lms';
 ?>
 <section class="eff-fiche-hero">
     <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
+    <?php if ($canEditProfiles): ?>
+        <a class="eff-btn eff-btn--primary" href="#modifier-dossier">Modifier le dossier complet</a>
+    <?php endif; ?>
     <div class="eff-fiche-hero__row">
         <span class="eff-fiche-hero__avatar" aria-hidden="true">
             <?php if ($avatarUrl !== ''): ?>
@@ -181,6 +185,14 @@ $memberHubTheme = 'lms';
     </div>
     <?php require base_path('views/partials/member_hub_nav.php'); ?>
 </section>
+
+<?php if ($canEditProfiles && $memberEditorHtml !== ''): ?>
+<section id="modifier-dossier" class="eff-card" style="margin-bottom:1rem;scroll-margin-top:1rem">
+    <h2 class="eff-card__title">Modifier le dossier complet</h2>
+    <p class="eff-card__lead">Tous les champs du dossier sont regroupés ici, sans ouvrir une autre page.</p>
+    <?= $memberEditorHtml ?>
+</section>
+<?php endif; ?>
 
 <div class="eff-fiche-grid">
     <article class="eff-card" style="grid-column:1/-1">
