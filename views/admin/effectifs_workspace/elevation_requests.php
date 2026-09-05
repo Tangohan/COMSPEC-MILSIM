@@ -445,6 +445,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
         </div>
 
         <div class="eff-elev-panel__actions">
+            <p class="eff-elev-panel__action-help">Vérifiez les valeurs ci-dessus, puis choisissez une décision. « Accepter » ouvre un récapitulatif avant toute application.</p>
             <?php if ($status !== 'in_review'): ?>
             <button type="submit" name="status" value="in_review" class="eff-catalog__btn">Marquer en cours</button>
             <?php endif; ?>
@@ -649,6 +650,11 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             var job = selectedLabel(form.querySelector('[name="proposed_job_role_id"]'));
             var unit = selectedLabel(form.querySelector('[name="proposed_unit_id"]'));
             var clearance = selectedLabel(form.querySelector('[name="proposed_clearance_level"]'));
+            var selectedPermissions = Array.prototype.slice.call(form.querySelectorAll('[name="proposed_permission_ids[]"]:checked')).map(function (input) {
+                var label = input.closest('label');
+                var strong = label ? label.querySelector('strong') : null;
+                return strong ? strong.textContent.trim() : ('Droit #' + input.value);
+            });
             var panel = form.closest('[data-elev-panel]');
             var name = panel ? (panel.querySelector('.eff-elev-panel__title') || {}).textContent || 'ce membre' : 'ce membre';
             var lines = ['<p><strong>Membre :</strong> ' + name.replace(/</g, '&lt;') + '</p>', '<ul>'];
@@ -657,8 +663,13 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             if (job) lines.push('<li>Fonction → ' + job.replace(/</g, '&lt;') + '</li>');
             if (unit) lines.push('<li>Affectation → ' + unit.replace(/</g, '&lt;') + '</li>');
             if (clearance) lines.push('<li>Habilitation → ' + clearance.replace(/</g, '&lt;') + ' <em>(conditionne l’accès aux documents classifiés)</em></li>');
-            if (!grade && !role && !job && !unit && !clearance) {
-                lines.push('<li>Aucun changement de grade, rôle, fonction, affectation ou habilitation — seule l’acceptation sera enregistrée.</li>');
+            if (selectedPermissions.length) {
+                lines.push('<li>Droits individuels accordés → ' + selectedPermissions.map(function (permission) {
+                    return permission.replace(/</g, '&lt;');
+                }).join(', ') + '</li>');
+            }
+            if (!grade && !role && !job && !unit && !clearance && !selectedPermissions.length) {
+                lines.push('<li><strong>Aucun changement sélectionné</strong> — seule l’acceptation sera enregistrée.</li>');
             }
             lines.push('</ul>');
             var gainedCount = form.querySelector('[data-elev-gained-count]');

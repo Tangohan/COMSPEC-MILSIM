@@ -2631,6 +2631,14 @@ body.eff-sheets--resizing iframe {
     gap: 0.45rem;
 }
 
+.eff-elev-panel__action-help {
+    flex: 0 0 100%;
+    margin: 0 0 0.2rem;
+    color: #475569;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
 .eff-elev-btn--danger {
     border-color: #e2e8f0 !important;
     color: #9f1239 !important;
@@ -3918,4 +3926,3 @@ fieldset.eff-role-grid input { width: auto; }
 .eff-catalog--dark .eff-sheets__pop-form p {
     color: #94a3b8 !important;
 }
-
