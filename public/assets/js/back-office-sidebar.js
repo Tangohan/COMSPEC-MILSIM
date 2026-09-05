@@ -89,7 +89,7 @@
     }
 
     var logo = sidebar.querySelector('.ath-sidebar__logo');
-    if (logo) {
+    if (logo && logo.tagName !== 'A') {
       logo.setAttribute('role', 'button');
       logo.setAttribute('tabindex', '0');
       logo.setAttribute('title', 'Déplier le menu');
