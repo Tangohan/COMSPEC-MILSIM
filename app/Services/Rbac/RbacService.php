@@ -141,7 +141,12 @@ class RbacService
             [$flat, $unitMap] = $this->applyUserPermissionOverrides($uid, $tenantId, $flat, $unitMap);
             if ($flat === [] && $unitMap === []) {
                 $ids = $users->tenantRoleIdsForRbac($uid, $legacy);
-                $this->setPermissionsForGate($ids, (string) ($user['email'] ?? ''));
+                $this->setPermissionsForGateWithUserOverrides(
+                    $uid,
+                    $tenantId,
+                    $ids,
+                    (string) ($user['email'] ?? '')
+                );
 
                 return;
             }
@@ -153,7 +158,34 @@ class RbacService
         }
 
         $ids = $users->tenantRoleIdsForRbac($uid, $legacy);
-        $this->setPermissionsForGate($ids, (string) ($user['email'] ?? ''));
+        $this->setPermissionsForGateWithUserOverrides(
+            $uid,
+            $tenantId,
+            $ids,
+            (string) ($user['email'] ?? '')
+        );
+    }
+
+    /**
+     * Charge le rôle historique sans perdre les droits accordés directement au membre.
+     *
+     * Certains comptes n'ont encore aucune ligne dans tenant_user_roles. Leur RBAC est
+     * alors construit depuis users.role_id ; les surcharges doivent néanmoins être
+     * appliquées, notamment après l'acceptation d'une demande d'élévation.
+     *
+     * @param list<int> $tenantRoleIds
+     */
+    private function setPermissionsForGateWithUserOverrides(
+        int $userId,
+        int $tenantId,
+        array $tenantRoleIds,
+        string $userEmail
+    ): void {
+        $flat = $this->loadPermissionsForRoles($tenantRoleIds);
+        [$flat, $unitMap] = $this->applyUserPermissionOverrides($userId, $tenantId, $flat, []);
+        $sitePerms = $this->loadSitePermissionsForEmail($userEmail);
+        $flat = array_values(array_unique([...$flat, ...$sitePerms]));
+        Gate::getInstance()->setFullRbacState($flat, $unitMap);
     }
 
     /**

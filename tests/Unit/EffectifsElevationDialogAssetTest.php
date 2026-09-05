@@ -40,5 +40,20 @@ final class EffectifsElevationDialogAssetTest extends TestCase
         self::assertStringContainsString('Droits d’accès spécifiques (optionnel)', $fields);
         self::assertStringContainsString('name="elevation_permission_ids[]"', $fields);
         self::assertStringContainsString('name="proposed_permission_ids[]"', $review);
+        self::assertStringContainsString('Droits individuels accordés', $review);
+        self::assertStringContainsString('!selectedPermissions.length', $review);
+    }
+
+    public function testLegacyRoleFallbackStillLoadsIndividualPermissionOverrides(): void
+    {
+        $rbac = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/app/Services/Rbac/RbacService.php'
+        );
+
+        self::assertStringContainsString('setPermissionsForGateWithUserOverrides', $rbac);
+        self::assertStringContainsString(
+            'applyUserPermissionOverrides($userId, $tenantId, $flat, [])',
+            $rbac
+        );
     }
 }
