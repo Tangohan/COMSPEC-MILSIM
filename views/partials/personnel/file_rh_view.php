@@ -8,7 +8,10 @@
  */
 $rhGateUrl = $personnelFileBaseUrl;
 $rhPublicUrl = $personnelFileBaseUrl . '?view=public';
-$rhEditUrl = url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/edit?return_view=rh');
+$rhTargetUserId = (int) ($targetUser['id'] ?? 0);
+$rhEditUrl = \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())
+    ? effectifs_workspace_url('membres/' . $rhTargetUserId) . '#modifier-dossier'
+    : url('personnel/' . $rhTargetUserId . '/edit?return_view=rh');
 $rhRawAccountStatus = (string) ($targetUser['status'] ?? '');
 
 /** @var list<array{level: string, title: string, body: string}> $rhProfileAlerts */

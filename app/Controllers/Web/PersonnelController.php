@@ -1214,11 +1214,15 @@ class PersonnelController
         }
         $fromEffectifs = !empty($params['_effectifs_context']);
         $embeddedInEffectifs = !empty($params['_effectifs_embedded']);
+        $returnToEffectifs = trim((string) $request->query('return_view', '')) === 'rh'
+            && EffectifsLmsAccess::allows(Gate::getInstance());
         // L'ancienne page personnel reste utilisable par un membre pour sa propre fiche.
         // Pour une édition effectuée par l'équipe RH, Effectifs est désormais l'unique
         // espace de travail ; les anciens favoris rejoignent donc l'URL canonique.
-        if (!$isSelf && !$fromEffectifs && EffectifsLmsAccess::allows(Gate::getInstance())) {
-            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
+        if (!$fromEffectifs && ($returnToEffectifs || (!$isSelf && EffectifsLmsAccess::allows(Gate::getInstance())))) {
+            $memberUrl = effectifs_workspace_url('membres/' . (int) $target['id']);
+
+            return Response::redirect($returnToEffectifs ? $memberUrl . '#modifier-dossier' : $memberUrl);
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -2004,6 +2008,9 @@ class PersonnelController
             return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
         }
         $returnView = trim((string) $request->input('return_view', ''));
+        if ($returnView === 'rh' && EffectifsLmsAccess::allows(Gate::getInstance())) {
+            return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
+        }
         $redirect = $this->personnelShowRedirectUrl($target, $isSelf, $returnView === 'rh' ? 'rh' : null);
 
         return Response::redirect($redirect);
