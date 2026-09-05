@@ -45,8 +45,22 @@ class ElevationRequestRepository
         $jobRoleId = $this->nullablePositiveId($proposal['job_role_id'] ?? null);
         $unitId = $this->nullablePositiveId($proposal['unit_id'] ?? null);
         $clearanceLevel = $this->nullableClearanceLevel($proposal['clearance_level'] ?? null);
+        $permissionIds = $this->normalizePermissionIds($proposal['permission_ids'] ?? []);
 
-        if ($this->hasClearanceColumn()) {
+        if ($this->hasPermissionIdsColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO elevation_requests (
+                    tenant_id, target_user_id, requested_by, kind, note,
+                    proposed_grade_id, proposed_role_id, proposed_job_role_id, proposed_unit_id, proposed_clearance_level,
+                    proposed_permission_ids, status, created_at
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
+            );
+            $stmt->execute([
+                $tenantId, $targetUserId, $requestedBy, $kind, $note !== '' ? $note : null,
+                $gradeId, $roleId, $jobRoleId, $unitId, $clearanceLevel,
+                $permissionIds !== [] ? json_encode($permissionIds, JSON_THROW_ON_ERROR) : null,
+            ]);
+        } elseif ($this->hasClearanceColumn()) {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO elevation_requests (
                     tenant_id, target_user_id, requested_by, kind, note,
@@ -254,6 +268,26 @@ class ElevationRequestRepository
         if (!$this->hasProposalColumns()) {
             return true;
         }
+        if ($this->hasPermissionIdsColumn()) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE elevation_requests
+                 SET proposed_grade_id = ?, proposed_role_id = ?, proposed_job_role_id = ?, proposed_unit_id = ?,
+                     proposed_clearance_level = ?, proposed_permission_ids = ?, updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ?'
+            );
+            $permissionIds = $this->normalizePermissionIds($proposal['permission_ids'] ?? []);
+            $stmt->execute([
+                $this->nullablePositiveId($proposal['grade_id'] ?? null),
+                $this->nullablePositiveId($proposal['role_id'] ?? null),
+                $this->nullablePositiveId($proposal['job_role_id'] ?? null),
+                $this->nullablePositiveId($proposal['unit_id'] ?? null),
+                $this->nullableClearanceLevel($proposal['clearance_level'] ?? null),
+                $permissionIds !== [] ? json_encode($permissionIds, JSON_THROW_ON_ERROR) : null,
+                $id, $tenantId,
+            ]);
+
+            return $stmt->rowCount() > 0;
+        }
         if ($this->hasClearanceColumn()) {
             $stmt = $this->pdo->prepare(
                 'UPDATE elevation_requests
@@ -315,6 +349,19 @@ class ElevationRequestRepository
         return $cached;
     }
 
+    public function hasPermissionIdsColumn(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) return $cached;
+        $st = $this->pdo->prepare(
+            "SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elevation_requests' AND COLUMN_NAME = 'proposed_permission_ids' LIMIT 1"
+        );
+        $st->execute();
+
+        return $cached = (bool) $st->fetchColumn();
+    }
+
     public function hasProposalColumns(): bool
     {
         static $cached = null;
@@ -344,5 +391,17 @@ class ElevationRequestRepository
         $level = trim((string) ($value ?? ''));
 
         return $level !== '' ? $level : null;
+    }
+
+    /** @return list<int> */
+    private function normalizePermissionIds(mixed $value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($value)) return [];
+
+        return array_values(array_unique(array_filter(array_map('intval', $value), static fn (int $id): bool => $id > 0)));
     }
 }

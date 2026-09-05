@@ -27,4 +27,18 @@ final class EffectifsElevationDialogAssetTest extends TestCase
         self::assertStringContainsString('white-space: normal', $css);
         self::assertStringContainsString('max-height: min(90vh, 48rem)', $css);
     }
+
+    public function testElevationSupportsMultipleSpecificAccessRights(): void
+    {
+        $fields = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/partials/elevation_request_fields.php'
+        );
+        $review = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/elevation_requests.php'
+        );
+
+        self::assertStringContainsString('Droits d’accès spécifiques (optionnel)', $fields);
+        self::assertStringContainsString('name="elevation_permission_ids[]"', $fields);
+        self::assertStringContainsString('name="proposed_permission_ids[]"', $review);
+    }
 }

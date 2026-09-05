@@ -20,6 +20,7 @@ use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PersonnelHrDocumentRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PermissionRepository;
 use App\Repositories\PersonnelServiceHistoryRepository;
 use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\RoleRepository;
@@ -56,6 +57,7 @@ class EffectifsWorkspaceController
         private EffectifsStaffAlertService $effectifsStaffAlertService,
         private TenantRepository $tenantRepository,
         private GradeRepository $gradeRepository,
+        private PermissionRepository $permissionRepository,
         private ElevationApprovalService $elevationApprovalService,
         private MemberOffboardingService $memberOffboardingService,
         private MemberDepartureRepository $memberDepartureRepository,
@@ -1567,7 +1569,12 @@ class EffectifsWorkspaceController
                 'unit_id' => (int) ($r['proposed_unit_id'] ?? 0) ?: null,
                 'clearance_level' => trim((string) ($r['proposed_clearance_level'] ?? '')) ?: null,
             ]);
+            $permissionIds = json_decode((string) ($r['proposed_permission_ids'] ?? ''), true);
+            $permissionIds = is_array($permissionIds)
+                ? array_values(array_unique(array_filter(array_map('intval', $permissionIds), static fn (int $id): bool => $id > 0)))
+                : [];
             $r['_current_role_ids'] = $currentRoles;
+            $r['_permission_ids'] = $permissionIds;
             $r['_permission_diff'] = $diff;
             $r['_proposal_labels'] = $proposalLabels;
             $enrichedRequests[] = $r;
@@ -1847,6 +1854,7 @@ class EffectifsWorkspaceController
             'job_roles' => $jobRoles,
             'units' => $units,
             'clearance_levels' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
+            'permissions' => $this->permissionRepository->allRequestableForTenant($tenantId),
         ];
     }
 
@@ -1864,6 +1872,8 @@ class EffectifsWorkspaceController
             return $id > 0 ? $id : null;
         };
         $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
+        $permissionIds = $request->input('proposed_permission_ids', $request->input('elevation_permission_ids', []));
+        $permissionIds = is_array($permissionIds) ? $permissionIds : [$permissionIds];
 
         return [
             'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
@@ -1871,6 +1881,7 @@ class EffectifsWorkspaceController
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
             'clearance_level' => $clearance !== '' ? $clearance : null,
+            'permission_ids' => array_values(array_unique(array_filter(array_map('intval', $permissionIds), static fn (int $id): bool => $id > 0))),
             'role_apply_mode' => ElevationApprovalService::normalizeRoleApplyMode(
                 (string) $request->input('role_apply_mode', ElevationApprovalService::ROLE_APPLY_REPLACE)
             ),
@@ -1884,6 +1895,7 @@ class EffectifsWorkspaceController
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
         $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
+        $proposal['permission_ids'] = is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : [];
         $proposal['role_apply_mode'] = ElevationApprovalService::normalizeRoleApplyMode(
             isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : ElevationApprovalService::ROLE_APPLY_REPLACE
         );
@@ -1921,6 +1933,15 @@ class EffectifsWorkspaceController
             && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
             return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
         }
+
+        $requestedPermissionIds = array_values(array_unique(array_filter(array_map('intval', $proposal['permission_ids']), static fn (int $id): bool => $id > 0)));
+        $allowedPermissionIds = array_map(static fn (array $permission): int => (int) ($permission['id'] ?? 0), $this->permissionRepository->allRequestableForTenant($tenantId));
+        foreach ($requestedPermissionIds as $permissionId) {
+            if (!in_array($permissionId, $allowedPermissionIds, true)) {
+                return ['proposal' => $proposal, 'error' => 'Un des droits d’accès sélectionnés n’est pas disponible pour cette communauté.'];
+            }
+        }
+        $proposal['permission_ids'] = $requestedPermissionIds;
 
         return ['proposal' => $proposal, 'error' => null];
     }

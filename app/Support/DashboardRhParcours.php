@@ -10,6 +10,7 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
+use App\Repositories\PermissionRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
@@ -94,6 +95,7 @@ final class DashboardRhParcours
             'job_roles' => [],
             'units' => [],
             'clearance_levels' => [],
+            'permissions' => [],
         ];
         $elevationCooldown = null;
         $elevationHasRecipients = false;
@@ -165,6 +167,7 @@ final class DashboardRhParcours
             'job_roles' => $jobRoles,
             'units' => $units,
             'clearance_levels' => DocumentAccessService::getClassificationLevelLabels(),
+            'permissions' => Container::get(PermissionRepository::class)->allRequestableForTenant($tenantId),
         ];
     }
 }

@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @var int $elevationTotal
  * @var int $elevationTotalPages
  * @var array<string,string> $elevationKindLabels
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>} $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>,permissions?:list} $elevationCatalog
  * @var array{roles?:list,permissions?:list,byRole?:array} $elevationRoleMatrix
  */
 
@@ -38,6 +38,11 @@ $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
 $clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
+$permissions = is_array($catalog['permissions'] ?? null) ? $catalog['permissions'] : [];
+$permissionLabels = [];
+foreach ($permissions as $permission) {
+    $permissionLabels[(int) ($permission['id'] ?? 0)] = (string) ($permission['name'] ?? $permission['slug'] ?? '');
+}
 $roleMatrix = is_array($elevationRoleMatrix ?? null) ? $elevationRoleMatrix : ['roles' => [], 'permissions' => [], 'byRole' => []];
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $openCount = 0;
@@ -82,7 +87,7 @@ $gradeOptionLabel = static function (array $g): string {
 
     return $short !== '' ? $short : ($long !== '' ? $long : 'Grade');
 };
-$proposalSummary = static function (array $labels): string {
+$proposalSummary = static function (array $labels, array $requestedPermissionIds = []) use ($permissionLabels): string {
     $bits = [];
     if (!empty($labels['grade'])) {
         $bits[] = 'Grade « ' . $labels['grade'] . ' »';
@@ -99,6 +104,11 @@ $proposalSummary = static function (array $labels): string {
     if (!empty($labels['clearance'])) {
         $bits[] = 'Habilitation « ' . $labels['clearance'] . ' »';
     }
+    $requestedRights = [];
+    foreach ($requestedPermissionIds as $permissionId) {
+        if (!empty($permissionLabels[(int) $permissionId])) $requestedRights[] = $permissionLabels[(int) $permissionId];
+    }
+    if ($requestedRights !== []) $bits[] = 'Accès « ' . implode(' », « ', $requestedRights) . ' »';
 
     return $bits !== [] ? implode(' · ', $bits) : '—';
 };
@@ -172,7 +182,8 @@ $proposalSummary = static function (array $labels): string {
                     $createdFmt = $createdAt !== '' ? date('d/m/Y H:i', strtotime($createdAt)) : '—';
                     $isOpen = in_array($status, ['pending', 'in_review'], true);
                     $proposalLabels = is_array($r['_proposal_labels'] ?? null) ? $r['_proposal_labels'] : [];
-                    $summary = $proposalSummary($proposalLabels);
+                    $requestedPermissionIds = is_array($r['_permission_ids'] ?? null) ? $r['_permission_ids'] : [];
+                    $summary = $proposalSummary($proposalLabels, $requestedPermissionIds);
                     ?>
                     <tr data-elev-row="<?= $id ?>" class="<?= $isOpen ? '' : 'is-closed' ?>">
                         <td>
@@ -252,6 +263,7 @@ $proposalSummary = static function (array $labels): string {
     $proposedJobId = (int) ($r['proposed_job_role_id'] ?? 0);
     $proposedUnitId = (int) ($r['proposed_unit_id'] ?? 0);
     $proposedClearance = trim((string) ($r['proposed_clearance_level'] ?? ''));
+    $proposedPermissionIds = is_array($r['_permission_ids'] ?? null) ? $r['_permission_ids'] : [];
     $currentRoleIds = is_array($r['_current_role_ids'] ?? null) ? $r['_current_role_ids'] : [];
     $diff = is_array($r['_permission_diff'] ?? null) ? $r['_permission_diff'] : ['gained' => [], 'lost' => [], 'unchanged_count' => 0, 'rows' => []];
     $proposalLabels = is_array($r['_proposal_labels'] ?? null) ? $r['_proposal_labels'] : [];
@@ -273,11 +285,11 @@ $proposalSummary = static function (array $labels): string {
         <button type="button" class="eff-catalog__btn" data-elev-close>Fermer</button>
     </div>
 
-    <?php if ($note !== '' || array_filter($proposalLabels)): ?>
+    <?php if ($note !== '' || array_filter($proposalLabels) || $proposedPermissionIds !== []): ?>
     <div class="eff-elev-panel__context">
-        <?php if (array_filter($proposalLabels)): ?>
+        <?php if (array_filter($proposalLabels) || $proposedPermissionIds !== []): ?>
         <p class="eff-elev-panel__proposal">
-            Proposition initiale : <?= htmlspecialchars($proposalSummary($proposalLabels), ENT_QUOTES, 'UTF-8') ?>
+            Proposition initiale : <?= htmlspecialchars($proposalSummary($proposalLabels, $proposedPermissionIds), ENT_QUOTES, 'UTF-8') ?>
         </p>
         <?php endif; ?>
         <?php if ($note !== ''): ?>
@@ -350,6 +362,19 @@ $proposalSummary = static function (array $labels): string {
                 </select>
             </div>
         </div>
+
+        <?php if ($permissions !== []): ?>
+        <fieldset class="eff-elev-mode">
+            <legend>Droits d’accès spécifiques à accorder</legend>
+            <?php foreach ($permissions as $permission): ?>
+                <?php $permissionId = (int) ($permission['id'] ?? 0); if ($permissionId < 1) continue; ?>
+                <label class="eff-elev-mode__option">
+                    <input type="checkbox" name="proposed_permission_ids[]" value="<?= $permissionId ?>" <?= in_array($permissionId, $proposedPermissionIds, true) ? 'checked' : '' ?>>
+                    <span><strong><?= htmlspecialchars((string) ($permission['name'] ?? $permission['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><em><?= htmlspecialchars((string) ($permission['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em></span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+        <?php endif; ?>
 
         <fieldset class="eff-elev-mode" data-elev-mode-box>
             <legend>Application du rôle</legend>
