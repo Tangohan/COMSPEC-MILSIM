@@ -69,6 +69,7 @@ final class RolePermissionMatrixRepository
         $roleIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles)));
         $memberCounts = $this->roles->countMembersByRoleIds($tenantId, $roleIds);
         $moduleRows = $this->loadModuleAccessMap($tenantId, $roleIds);
+        $permissionRows = $this->loadPermissionMap($tenantId, $roleIds);
 
         $rows = [];
         foreach ($roles as $role) {
@@ -110,6 +111,8 @@ final class RolePermissionMatrixRepository
                 'is_active' => $isActive,
                 'status_label' => $isActive ? 'Actif' : 'Inactif',
                 'role_layer' => (string) ($role['role_layer'] ?? 'community'),
+                'permissions' => $permissionRows[$roleId] ?? [],
+                'permissions_count' => count($permissionRows[$roleId] ?? []),
             ];
         }
 
@@ -316,6 +319,39 @@ final class RolePermissionMatrixRepository
                 'can_delete' => !empty($row['can_delete']) || !empty($map[$rid]['__transversal']['can_delete'] ?? false),
                 'can_export' => !empty($row['can_export']) || !empty($map[$rid]['__transversal']['can_export'] ?? false),
             ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * Charge les droits RBAC réels, et non uniquement leur résumé par module.
+     *
+     * @param list<int> $roleIds
+     * @return array<int, list<array<string,string>>>
+     */
+    private function loadPermissionMap(int $tenantId, array $roleIds): array
+    {
+        if ($tenantId < 1 || $roleIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT rp.role_id, p.name, p.slug, p.module, p.scope
+             FROM role_permissions rp
+             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
+             WHERE rp.role_id IN ({$ph})
+             ORDER BY rp.role_id, p.module, p.name, p.slug"
+        );
+        $st->execute(array_merge([$tenantId], $roleIds));
+        $map = [];
+        while ($permission = $st->fetch(PDO::FETCH_ASSOC)) {
+            $roleId = (int) ($permission['role_id'] ?? 0);
+            if ($roleId < 1) {
+                continue;
+            }
+            unset($permission['role_id']);
+            $map[$roleId][] = array_map(static fn (mixed $value): string => (string) $value, $permission);
         }
 
         return $map;

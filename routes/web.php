@@ -1202,6 +1202,7 @@ return function (Router $router) {
     $router->post('/back-office/roles-functions/quick-assign-role', [RolesFunctionsAdminController::class, 'quickAssignRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-permissions', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-permissions/save', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-permissions/assign', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'assign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-permissions/revue', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'markReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-permissions/export', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/api/admin/roles-permissions', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
