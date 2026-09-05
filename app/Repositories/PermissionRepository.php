@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SystemReservedPermissions;
 use PDO;
 
 class PermissionRepository
@@ -29,6 +30,38 @@ class PermissionRepository
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array<string, mixed>> Droits communautaires pouvant faire l’objet d’une demande. */
+    public function allRequestableForTenant(int $tenantId): array
+    {
+        return array_values(array_filter(
+            $this->allForTenant($tenantId),
+            static fn (array $permission): bool => !SystemReservedPermissions::isReserved((string) ($permission['slug'] ?? ''))
+        ));
+    }
+
+    /** @param list<int> $permissionIds */
+    public function grantToUser(int $tenantId, int $userId, array $permissionIds, ?int $actorUserId = null): void
+    {
+        if ($permissionIds === []) {
+            return;
+        }
+        $allowed = [];
+        foreach ($this->allRequestableForTenant($tenantId) as $permission) {
+            $allowed[(int) ($permission['id'] ?? 0)] = true;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO user_permission_overrides
+                (tenant_id, user_id, permission_id, grant_flag, org_unit_id, reason, created_by_user_id, created_at)
+             VALUES (?, ?, ?, 1, NULL, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE grant_flag = 1, reason = VALUES(reason), created_by_user_id = VALUES(created_by_user_id)'
+        );
+        foreach (array_values(array_unique(array_map('intval', $permissionIds))) as $permissionId) {
+            if ($permissionId > 0 && isset($allowed[$permissionId])) {
+                $stmt->execute([$tenantId, $userId, $permissionId, 'Demande d’élévation approuvée', $actorUserId]);
+            }
+        }
     }
 
     /** Permissions globales (rôles site). */

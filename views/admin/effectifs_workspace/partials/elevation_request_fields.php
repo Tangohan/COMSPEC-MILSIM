@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Champs communs demande d’élévation (type, grade, rôle, fonction, affectation, note).
  *
  * @var string $fieldIdPrefix
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>}|null $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>,permissions?:list}|null $elevationCatalog
  * @var string|null $selectedKind
  * @var bool $includeUnit
  */
@@ -19,6 +19,7 @@ $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
 $clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
+$permissions = is_array($catalog['permissions'] ?? null) ? $catalog['permissions'] : [];
 $selectedKind = isset($selectedKind) ? (string) $selectedKind : 'grade';
 $includeUnit = (bool) ($includeUnit ?? true);
 $fid = static function (string $suffix) use ($fieldIdPrefix): string {
@@ -116,6 +117,27 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
     <?php endforeach; ?>
 </select>
 <p style="margin:0 0 .5rem;font-size:11px;color:rgba(15,23,42,.5)">Conditionne l’accès aux documents classifiés — la revue d’habilitation est marquée à jour dès l’application.</p>
+
+<?php if ($permissions !== []): ?>
+<fieldset class="elevation-access-rights">
+    <legend>Droits d’accès spécifiques (optionnel)</legend>
+    <p class="elevation-access-rights__hint">Sélectionnez un ou plusieurs accès. Ils peuvent être demandés ensemble, indépendamment d’un changement de rôle.</p>
+    <div class="elevation-access-rights__grid">
+        <?php foreach ($permissions as $permission): ?>
+            <?php
+            $permissionId = (int) ($permission['id'] ?? 0);
+            if ($permissionId < 1) continue;
+            $permissionLabel = trim((string) ($permission['name'] ?? '')) ?: (string) ($permission['slug'] ?? 'Droit #' . $permissionId);
+            $permissionModule = trim((string) ($permission['module'] ?? ''));
+            ?>
+            <label class="elevation-access-rights__option" for="<?= htmlspecialchars($fid('permission-' . $permissionId), ENT_QUOTES, 'UTF-8') ?>">
+                <input type="checkbox" id="<?= htmlspecialchars($fid('permission-' . $permissionId), ENT_QUOTES, 'UTF-8') ?>" name="elevation_permission_ids[]" value="<?= $permissionId ?>">
+                <span><strong><?= htmlspecialchars($permissionLabel, ENT_QUOTES, 'UTF-8') ?></strong><?php if ($permissionModule !== ''): ?><small><?= htmlspecialchars($permissionModule, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
+            </label>
+        <?php endforeach; ?>
+    </div>
+</fieldset>
+<?php endif; ?>
 
 <label for="<?= htmlspecialchars($fid('note'), ENT_QUOTES, 'UTF-8') ?>">Message (optionnel)</label>
 <textarea id="<?= htmlspecialchars($fid('note'), ENT_QUOTES, 'UTF-8') ?>" name="elevation_note" rows="2" maxlength="500" placeholder="Précisez le besoin ou le contexte…"></textarea>

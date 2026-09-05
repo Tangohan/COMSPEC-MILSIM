@@ -8,6 +8,7 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\PermissionRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -32,6 +33,7 @@ class ElevationApprovalService
         private UnitRepository $unitRepository,
         private RbacService $rbacService,
         private PersonnelProfileRepository $personnelProfileRepository,
+        private PermissionRepository $permissionRepository,
         private ?PersonnelStructureChangeNotificationService $structureChangeNotification = null,
     ) {
     }
@@ -387,6 +389,7 @@ class ElevationApprovalService
         $jobRoleId = (int) ($proposal['job_role_id'] ?? 0);
         $unitId = (int) ($proposal['unit_id'] ?? 0);
         $clearanceLevel = trim((string) ($proposal['clearance_level'] ?? ''));
+        $permissionIds = is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : [];
         $roleApplyMode = self::normalizeRoleApplyMode(
             isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : self::ROLE_APPLY_REPLACE
         );
@@ -488,6 +491,11 @@ class ElevationApprovalService
                 ]);
                 $applied[] = 'clearance';
             }
+
+            if ($permissionIds !== []) {
+                $this->permissionRepository->grantToUser($tenantId, $targetUserId, $permissionIds, $actorUserId);
+                $applied[] = 'permissions';
+            }
         } catch (InvalidArgumentException $e) {
             return ['ok' => false, 'message' => $e->getMessage(), 'applied' => $applied];
         } catch (Throwable) {
@@ -501,7 +509,7 @@ class ElevationApprovalService
         if ($applied === []) {
             return [
                 'ok' => true,
-                'message' => 'Demande acceptée. Aucun changement de grade, rôle, fonction, affectation ou habilitation n’était sélectionné — seuls le statut et la note ont été enregistrés.',
+                'message' => 'Demande acceptée. Aucun changement de grade, rôle, fonction, affectation, habilitation ou droit d’accès n’était sélectionné — seuls le statut et la note ont été enregistrés.',
                 'applied' => [],
             ];
         }
@@ -539,6 +547,9 @@ class ElevationApprovalService
         }
         if (in_array('clearance', $applied, true) && $labels['clearance']) {
             $parts[] = 'habilitation « ' . $labels['clearance'] . ' »';
+        }
+        if (in_array('permissions', $applied, true)) {
+            $parts[] = count($permissionIds) . ' droit' . (count($permissionIds) > 1 ? 's' : '') . ' d’accès spécifique' . (count($permissionIds) > 1 ? 's' : '');
         }
 
         return [

@@ -2805,6 +2805,51 @@ body.dashboard-shell main {
   color: #64748b;
 }
 
+.elevation-access-rights {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  border: 0;
+}
+.elevation-access-rights legend {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #334155;
+}
+.elevation-access-rights__hint {
+  margin: 0.2rem 0 0.55rem !important;
+}
+.elevation-access-rights__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.4rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: 0.15rem;
+}
+.dash-rh-form .elevation-access-rights__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.6rem;
+  border: 1px solid #dbe4ee;
+  border-radius: 0.55rem;
+  background: #f8fafc;
+  cursor: pointer;
+}
+.elevation-access-rights__option input {
+  margin-top: 0.15rem;
+}
+.elevation-access-rights__option span,
+.elevation-access-rights__option small {
+  display: block;
+}
+.elevation-access-rights__option small {
+  margin-top: 0.1rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .dash-rh-history {
   list-style: none;
   margin: 0.9rem 0 0;
@@ -3043,5 +3088,4 @@ body.dashboard-shell main {
   color: #78350f;
   cursor: pointer;
 }
-
 

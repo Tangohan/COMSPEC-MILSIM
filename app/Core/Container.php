@@ -1537,6 +1537,7 @@ class Container
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PermissionRepository::class),
             ),
             \App\Services\Effectifs\EffectifsStaffAlertService::class => new \App\Services\Effectifs\EffectifsStaffAlertService(
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
@@ -1557,6 +1558,7 @@ class Container
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Services\Rbac\RbacService::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PermissionRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
             ),
             \App\Repositories\ElevationRequestRepository::class => new \App\Repositories\ElevationRequestRepository(),
@@ -1968,6 +1970,7 @@ class Container
                 self::get(\App\Services\Effectifs\EffectifsStaffAlertService::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\PermissionRepository::class),
                 self::get(\App\Services\Effectifs\ElevationApprovalService::class),
                 self::get(\App\Services\Effectifs\MemberOffboardingService::class),
                 self::get(\App\Repositories\MemberDepartureRepository::class),
