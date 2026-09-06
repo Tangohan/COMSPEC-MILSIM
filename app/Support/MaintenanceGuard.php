@@ -13,52 +13,31 @@ final class MaintenanceGuard
     ) {}
 
     /**
-     * Arma 3 et l’ATAK web restent ouverts pendant une intervention du portail.
-     * Le reste du site (accueil, dossiers, administration, renseignement) reste fermé.
+     * Seuls les points d'entrée indispensables à l'exploitation contournent la maintenance.
+     * Les pages publiques, l'authentification et les outils opérationnels font partie du site
+     * et doivent donc respecter une règle app_maintenance globale.
      */
-    public static function isOperationalPath(string $requestPath): bool
+    public static function isInfrastructurePath(string $requestPath): bool
     {
         $path = '/' . ltrim($requestPath, '/');
         if ($path !== '/') {
             $path = rtrim($path, '/') ?: '/';
         }
 
-        if ($path === '/atak/sse' || str_starts_with($path, '/atak/sse/')) {
-            return false;
+        $exactPaths = [
+            '/api/stripe/webhook',
+            '/api/health',
+            '/api/system/version',
+            '/cron/run',
+            '/maintenance-toggle.php',
+            '/sw.js',
+            '/manifest.webmanifest',
+        ];
+        if (in_array($path, $exactPaths, true)) {
+            return true;
         }
 
-        $prefixes = [
-            '/login',
-            '/logout',
-            '/connect',
-            '/atak',
-            '/tacmap',
-            '/overwatch',
-            '/c2',
-            '/operateur/terrain',
-            '/map-data',
-            '/api/atak',
-            '/api/markers',
-            '/api/units',
-            '/api/chat',
-            '/api/pings',
-            '/api/nine-line',
-            '/api/cas',
-            '/api/recon',
-            '/api/map-shapes',
-            '/api/flight-manifest',
-            '/api/intel',
-            '/api/fire-support',
-            '/api/danger-zones',
-            '/api/logistics',
-            '/api/replay',
-            '/api/iff',
-            '/api/tacmap',
-            '/api/overwatch',
-            '/api/medical-alerts',
-            '/api/vehicles',
-        ];
-
+        $prefixes = ['/assets', '/uploads', '/admin/system/updates', '/cron'];
         foreach ($prefixes as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
                 return true;
@@ -73,7 +52,7 @@ final class MaintenanceGuard
      */
     public function enforce(string $requestPath, ?string $module = null, ?array $userContext = null): void
     {
-        if (self::isOperationalPath($requestPath)) {
+        if (self::isInfrastructurePath($requestPath)) {
             return;
         }
 

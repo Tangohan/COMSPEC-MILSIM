@@ -46,7 +46,7 @@ if ($useBrandTitle) {
 
 $defaultParagraphs = [
     'Le portail Athena est fermé le temps d’une intervention de fond. Nous remettons à plat la gestion des communautés : un seul niveau d’accès par membre, des emplois qui suivent l’organigramme, des dossiers plus simples à tenir.',
-    'Arma 3 et le téléphone ATAK restent utilisables. La carte tactique et la liaison en jeu ne sont pas coupées. Le reste du portail (dossiers, administration, accueil) reste fermé jusqu’à la réouverture.',
+    'Tous les accès au site, y compris Arma 3, le téléphone ATAK, la carte tactique et les API, restent fermés jusqu’à la réouverture.',
     'Nous rouvrons dès que les contrôles sont terminés. Merci de votre patience, et de la confiance que vous accordez à COMSPEC.',
 ];
 

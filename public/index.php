@@ -176,32 +176,7 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
     exit;
 }
 
-$maintenanceSafelist = [
-    '/api/stripe/webhook',
-    '/api/health',
-    '/api/system/version',
-    '/cron/run',
-    '/maintenance-toggle.php',
-];
-$maintenancePrefixSafelist = [
-    '/assets/',
-    '/uploads/',
-    '/calendrier/abonnement/',
-    '/admin/system/updates',
-    '/cron/',
-];
-$maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true)
-    || $requestPath === '/sw.js'
-    || $requestPath === '/manifest.webmanifest'
-    || \App\Support\MaintenanceGuard::isOperationalPath($requestPath);
-if (!$maintenanceSkipped) {
-    foreach ($maintenancePrefixSafelist as $pfx) {
-        if (str_starts_with($requestPath, $pfx)) {
-            $maintenanceSkipped = true;
-            break;
-        }
-    }
-}
+$maintenanceSkipped = \App\Support\MaintenanceGuard::isInfrastructurePath($requestPath);
 if (!$maintenanceSkipped) {
     $legacyMaintenanceFile = $root . '/storage/maintenance.json';
     if (is_file($legacyMaintenanceFile)) {

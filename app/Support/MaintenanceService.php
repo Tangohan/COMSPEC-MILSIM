@@ -53,16 +53,21 @@ final class MaintenanceService
             FROM app_maintenance
             WHERE is_enabled = 1
               AND (
-                    starts_at IS NULL OR starts_at <= :now
+                    starts_at IS NULL OR starts_at <= :starts_now
               )
               AND (
-                    ends_at IS NULL OR ends_at >= :now
+                    ends_at IS NULL OR ends_at >= :ends_now
               )
             ORDER BY priority DESC, id DESC
         ';
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['now' => $now]);
+        // Les connexions MySQL utilisent les requêtes préparées natives : un paramètre
+        // nommé ne peut donc pas être réutilisé deux fois dans la même requête.
+        $stmt->execute([
+            'starts_now' => $now,
+            'ends_now' => $now,
+        ]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as $row) {
