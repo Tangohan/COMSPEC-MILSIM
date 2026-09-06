@@ -23,7 +23,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
         <div class="flex items-center gap-3">
             <a href="<?= url('back-office/referentiels/grades/catalogue') ?>" class="text-sm font-medium text-emerald-800 underline hover:text-emerald-950">Catalogue OTAN / audit →</a>
             <a href="<?= url('back-office/referentiels/competences') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Matrice de compétences →</a>
-            <a href="<?= url('back-office/referentiels/grades/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
+            <a href="<?= url('back-office/referentiels/grades/create') ?>?tab=<?= rawurlencode($tab === 'us' ? 'us' : 'fr') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
         </div>
     </div>
     <?php if ($flashSuccess): ?>
@@ -100,7 +100,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
                     <?php if (!empty($g['is_active'])): ?>
                     · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
-                        <button type="submit" class="text-amber-600 hover:underline text-sm">Désactiver</button>
+                        <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
                     </form>
                     <?php endif; ?>
                 </td>
@@ -148,7 +148,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
                     <?php if (!empty($g['is_active'])): ?>
                     · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
-                        <button type="submit" class="text-amber-600 hover:underline text-sm">Désactiver</button>
+                        <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
                     </form>
                     <?php endif; ?>
                 </td>
