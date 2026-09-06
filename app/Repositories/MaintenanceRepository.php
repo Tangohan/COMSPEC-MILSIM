@@ -19,11 +19,13 @@ final class MaintenanceRepository
 
     public function tableExists(): bool
     {
-        $stmt = $this->pdo->query(
-            "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'app_maintenance' LIMIT 1"
-        );
+        try {
+            $stmt = $this->pdo->query('SELECT 1 FROM app_maintenance LIMIT 1');
 
-        return (bool) $stmt?->fetchColumn();
+            return $stmt !== false;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /** @return list<array<string, mixed>> */

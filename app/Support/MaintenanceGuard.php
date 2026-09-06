@@ -104,7 +104,7 @@ final class MaintenanceGuard
         header('Retry-After: ' . self::DEFAULT_RETRY_AFTER);
 
         $title = $maintenance['title'] ?: 'Maintenance en cours';
-        $message = $maintenance['message'] ?: 'Le service est momentanément indisponible.';
+        $message = self::humanMessage($maintenance['message'] ?? null);
         $endsAt = $maintenance['ends_at'] ?? null;
         $code = $maintenance['maintenance_code'] ?? null;
         $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
@@ -120,6 +120,31 @@ final class MaintenanceGuard
             echo '</body></html>';
         }
         exit;
+    }
+
+    private static function humanMessage(mixed $raw): string
+    {
+        $text = trim((string) $raw);
+        if ($text === '') {
+            return 'Le service est momentanément indisponible.';
+        }
+        if (str_starts_with($text, '{')) {
+            $decoded = json_decode($text, true);
+            if (is_array($decoded)) {
+                foreach (['FR', 'fr', 'EN', 'en'] as $key) {
+                    $picked = trim((string) ($decoded[$key] ?? ''));
+                    if ($picked !== '') {
+                        return $picked;
+                    }
+                }
+                $first = reset($decoded);
+                if (is_string($first) && trim($first) !== '') {
+                    return trim($first);
+                }
+            }
+        }
+
+        return $text;
     }
 
     public static function resolveClientIp(): string

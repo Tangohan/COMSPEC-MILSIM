@@ -81,6 +81,8 @@ register_shutdown_function(function () use ($showErrors, $root) {
 
 require $root . '/bootstrap/app.php';
 
+\App\Core\Gate::reset();
+
 $requestPath = \App\Core\Request::normalizePathFromServer();
 
 // Filet : si un asset tombe malgré tout sur le front controller, le servir en statique
@@ -229,30 +231,35 @@ if (!$maintenanceSkipped) {
 
     try {
         $pdo = \App\Core\Database::getPdo();
-        $maintenanceRepo = new \App\Repositories\MaintenanceRepository($pdo);
-        if ($maintenanceRepo->tableExists()) {
-            \App\Core\Session::start();
+        $maintenanceService = new \App\Support\MaintenanceService($pdo);
+        $module = detect_current_module($requestPath);
+        $active = $maintenanceService->getActiveMaintenance($requestPath, $module);
+        if ($active !== null) {
             $userContext = null;
-            if (\App\Core\Session::get('user_id')) {
-                $rbac = \App\Core\Container::get(\App\Services\Rbac\RbacService::class);
-                $userRepo = \App\Core\Container::get(\App\Repositories\UserRepository::class);
-                $uid = (int) \App\Core\Session::get('user_id');
-                $u = $userRepo->findById($uid, null);
-                if ($u) {
-                    $rbac->setPermissionsForGateFromUserRow($u, $userRepo);
-                    $slug = $userRepo->getRoleSlugForUser($uid);
-                    $userContext = [
-                        'user_id' => $uid,
-                        'role_slug' => $slug,
-                    ];
+            try {
+                \App\Core\Session::start();
+                if (\App\Core\Session::get('user_id')) {
+                    $rbac = \App\Core\Container::get(\App\Services\Rbac\RbacService::class);
+                    $userRepo = \App\Core\Container::get(\App\Repositories\UserRepository::class);
+                    $uid = (int) \App\Core\Session::get('user_id');
+                    $u = $userRepo->findById($uid, null);
+                    if ($u) {
+                        $rbac->setPermissionsForGateFromUserRow($u, $userRepo);
+                        $slug = $userRepo->getRoleSlugForUser($uid);
+                        $userContext = [
+                            'user_id' => $uid,
+                            'role_slug' => $slug,
+                        ];
+                    }
                 }
+            } catch (\Throwable) {
+                $userContext = null;
             }
-            $module = detect_current_module($requestPath);
-            $guard = new \App\Support\MaintenanceGuard(new \App\Support\MaintenanceService($pdo));
+            $guard = new \App\Support\MaintenanceGuard($maintenanceService);
             $guard->enforce($requestPath, $module, $userContext);
         }
     } catch (\Throwable) {
-        // BDD indisponible ou erreur transitoire : ne pas verrouiller tout le site
+        // BDD indisponible : ne pas verrouiller si on n’a pas pu lire la règle
     }
 }
 

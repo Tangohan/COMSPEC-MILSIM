@@ -84,7 +84,12 @@ final class MaintenanceService
             return true;
         }
 
-        if ((int) ($maintenance['allow_admin_bypass'] ?? 0) === 1 && $this->isAdminBypass()) {
+        $userId = (int) ($userContext['user_id'] ?? 0);
+        if (
+            (int) ($maintenance['allow_admin_bypass'] ?? 0) === 1
+            && $userId > 0
+            && $this->isAdminBypass()
+        ) {
             return true;
         }
 
