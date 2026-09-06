@@ -13,10 +13,70 @@ final class MaintenanceGuard
     ) {}
 
     /**
+     * Arma 3 et l’ATAK web restent ouverts pendant une intervention du portail.
+     * Le reste du site (accueil, dossiers, administration, renseignement) reste fermé.
+     */
+    public static function isOperationalPath(string $requestPath): bool
+    {
+        $path = '/' . ltrim($requestPath, '/');
+        if ($path !== '/') {
+            $path = rtrim($path, '/') ?: '/';
+        }
+
+        if ($path === '/atak/sse' || str_starts_with($path, '/atak/sse/')) {
+            return false;
+        }
+
+        $prefixes = [
+            '/login',
+            '/logout',
+            '/connect',
+            '/atak',
+            '/tacmap',
+            '/overwatch',
+            '/c2',
+            '/operateur/terrain',
+            '/map-data',
+            '/api/atak',
+            '/api/markers',
+            '/api/units',
+            '/api/chat',
+            '/api/pings',
+            '/api/nine-line',
+            '/api/cas',
+            '/api/recon',
+            '/api/map-shapes',
+            '/api/flight-manifest',
+            '/api/intel',
+            '/api/fire-support',
+            '/api/danger-zones',
+            '/api/logistics',
+            '/api/replay',
+            '/api/iff',
+            '/api/tacmap',
+            '/api/overwatch',
+            '/api/medical-alerts',
+            '/api/vehicles',
+        ];
+
+        foreach ($prefixes as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param array<string, mixed>|null $userContext role_slug, etc.
      */
     public function enforce(string $requestPath, ?string $module = null, ?array $userContext = null): void
     {
+        if (self::isOperationalPath($requestPath)) {
+            return;
+        }
+
         $clientIp = self::resolveClientIp();
         $maintenance = $this->maintenanceService->getActiveMaintenance($requestPath, $module);
 

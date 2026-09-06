@@ -16,6 +16,7 @@ final class MaintenanceUiAssetTest extends TestCase
         self::assertStringContainsString('Maintenance', $view);
         self::assertStringContainsString('opérationnelle', $view);
         self::assertStringContainsString('intervention de fond', $view);
+        self::assertStringContainsString('Arma 3 et le téléphone ATAK restent utilisables', $view);
         self::assertStringContainsString('Réessayer', $view);
         self::assertStringContainsString('Athena', $view);
         self::assertStringContainsString('COMSPEC-MILSIM', $view);
