@@ -25,7 +25,6 @@ final class RecruitmentOpeningForumAnnouncementHtml
 
         $cat = RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($opening['personnel_category'] ?? 'other'));
         $arm = RecruitmentOpeningPresentation::armDomainLabel(isset($opening['arm_domain']) ? (string) $opening['arm_domain'] : null);
-        $clear = RecruitmentOpeningPresentation::clearanceLabel((string) ($opening['clearance_level'] ?? 'none'));
         $contract = trim((string) ($opening['employment_contract_label'] ?? ''));
         $context = trim((string) ($opening['employment_context_label'] ?? ''));
 
@@ -63,7 +62,6 @@ final class RecruitmentOpeningForumAnnouncementHtml
         $parts[] = self::metaCell('Catégorie', $e($cat));
         $parts[] = self::metaCell('Arme / domaine', $e($arm));
         $parts[] = self::metaCell('Engagement', $e($contract !== '' ? $contract : '—'));
-        $parts[] = self::metaCell('Habilitation', $e($clear));
         $parts[] = '</div>';
         if ($context !== '') {
             $parts[] = '<p style="margin:0 0 12px;font-size:14px"><strong>Contexte d’emploi</strong> — ' . $e($context) . '</p>';

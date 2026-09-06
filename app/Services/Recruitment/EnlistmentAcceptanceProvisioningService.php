@@ -16,7 +16,6 @@ use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Admin\AdminAuditService;
-use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Personnel\MatriculeService;
@@ -32,7 +31,7 @@ use Throwable;
 
 /**
  * Après acceptation d’une candidature (statut reviewed) : rattachement ou création de compte tenant + e-mails.
- * Le parcours guidé post-acceptation (rôles, unité, Steam, habilitation) passe par completeAcceptanceOnboarding().
+ * Le parcours guidé post-acceptation (rôles, unité, Steam) passe par completeAcceptanceOnboarding().
  */
 final class EnlistmentAcceptanceProvisioningService
 {
@@ -205,7 +204,7 @@ final class EnlistmentAcceptanceProvisioningService
     }
 
     /**
-     * Parcours guidé post-acceptation : identité, Steam, rôles, unité / fonction, habilitation.
+     * Parcours guidé post-acceptation : identité, Steam, rôles, unité / fonction.
      *
      * @param array{
      *   first_name?: string,
@@ -215,7 +214,6 @@ final class EnlistmentAcceptanceProvisioningService
      *   unit_id?: int,
      *   personnel_job_role_id?: int,
      *   role_ids?: list<int>,
-     *   clearance_level?: string,
      *   assignment_label?: string,
      *   send_notifications?: bool
      * } $options
@@ -278,18 +276,6 @@ final class EnlistmentAcceptanceProvisioningService
                 'ok' => false,
                 'message' => $sync['message'] ?? 'Le compte membre n’a pas pu être créé ou lié. Réessayez ou utilisez le rattachement manuel.',
             ];
-        }
-
-        $clearanceOpt = strtolower(trim((string) ($options['clearance_level'] ?? '')));
-        if ($clearanceOpt === '' && $this->recruitmentOpeningRepository !== null) {
-            $openingId = (int) ($fresh['recruitment_opening_id'] ?? 0);
-            if ($openingId > 0) {
-                $opening = $this->recruitmentOpeningRepository->findByIdForTenant($openingId, $tenantId);
-                $fromOpening = strtolower(trim((string) ($opening['clearance_level'] ?? '')));
-                if ($fromOpening !== '' && $fromOpening !== 'none') {
-                    $options['clearance_level'] = $fromOpening;
-                }
-            }
         }
 
         $extras = $this->applyOnboardingExtras($tenantId, $userId, $options, $actorUserId);
@@ -463,16 +449,6 @@ final class EnlistmentAcceptanceProvisioningService
                     'message' => 'Impossible d’affecter l’unité : ' . $this->shortExceptionMessage($e),
                 ];
             }
-        }
-
-        $clearance = strtolower(trim((string) ($options['clearance_level'] ?? '')));
-        if ($clearance !== '') {
-            $labels = DocumentAccessService::getClassificationLevelLabels();
-            if (!array_key_exists($clearance, $labels)) {
-                return ['ok' => false, 'message' => 'Niveau d’habilitation non reconnu.'];
-            }
-            $ppPatch['clearance_level'] = $clearance;
-            $ppPatch['clearance_reviewed_at'] = date('Y-m-d H:i:s');
         }
 
         $existingPp = $this->personnelProfileRepository->getByUserId($userId) ?? [];

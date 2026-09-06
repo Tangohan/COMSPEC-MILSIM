@@ -37,7 +37,7 @@ foreach ($notifEmailCatalog as $item) {
 
 $accountNavKey = 'preferences';
 $accountTitle = 'Profil & préférences';
-$accountLead = 'Affichage sur le portail, fuseau horaire et notifications — séparés du dossier opérationnel (personnage).';
+$accountLead = 'Affichage sur le portail, fuseau horaire et notifications.';
 $accountUser = $user;
 require base_path('views/partials/account/shell_open.php');
 ?>
@@ -188,14 +188,14 @@ require base_path('views/partials/account/shell_open.php');
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Profil</p>
             <h2 class="account-hub__panel-title">Profil portail &amp; liaisons</h2>
-            <p class="account-hub__panel-desc">Prénom et nom du personnage (une seule identité), indicatif et liens utiles.</p>
+            <p class="account-hub__panel-desc">Prénom et nom (identité), indicatif et liens utiles.</p>
         </div>
         <div class="account-hub__panel-body">
             <div class="account-hub__form-grid">
                 <div>
                     <label class="account-hub__label" for="first_name">Prénom</label>
                     <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Prénom du personnage — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Prénom — utilisé partout (dossier, annuaire, forum).</p>
                     <?php if (!empty($errors['first_name'])): foreach ($errors['first_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
@@ -203,7 +203,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="last_name">Nom</label>
                     <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Nom — utilisé partout (dossier, annuaire, forum).</p>
                     <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>

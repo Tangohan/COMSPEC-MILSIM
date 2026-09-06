@@ -7,7 +7,6 @@ namespace App\Services\Documents;
 use App\Core\Gate;
 use App\Repositories\DocumentCollaboratorRepository;
 use App\Repositories\DocumentPermissionRepository;
-use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UserRepository;
 
 /**
@@ -48,7 +47,6 @@ class DocumentAccessService
         private DocumentCollaboratorRepository $collaboratorRepository,
         private DocumentPermissionRepository $permissionRepository,
         private UserRepository $userRepository,
-        private PersonnelProfileRepository $personnelProfileRepository
     ) {
     }
 
@@ -176,41 +174,12 @@ class DocumentAccessService
 
     private function classificationAllows(int $userId, string $documentLevel): bool
     {
-        $profile = $this->personnelProfileRepository->getByUserId($userId);
-        $profileClearance = is_array($profile) ? (string) ($profile['clearance_level'] ?? '') : '';
-        $userMax = $this->normalizeClearanceLevel($profileClearance);
-        if ($userMax === null) {
-            $userRoleSlug = $this->userRepository->getRoleSlugForUser($userId);
-            $userMax = self::ROLE_CLASSIFICATION_MAX[$userRoleSlug ?? ''] ?? 'interne';
-        }
+        $userRoleSlug = $this->userRepository->getRoleSlugForUser($userId);
+        $userMax = self::ROLE_CLASSIFICATION_MAX[$userRoleSlug ?? ''] ?? 'interne';
         $docRank = $this->classificationRank($documentLevel);
         $userRank = $this->classificationRank($userMax);
+
         return $userRank >= $docRank;
-    }
-
-    private function normalizeClearanceLevel(string $clearance): ?string
-    {
-        $level = strtolower(trim($clearance));
-        if ($level === '' || in_array($level, ['none', 'aucun', 'n/a'], true)) {
-            return null;
-        }
-        $map = [
-            'public' => 'public',
-            'interne' => 'interne',
-            'internal' => 'interne',
-            'restreint' => 'restreint',
-            'restricted' => 'restreint',
-            'sensible' => 'sensible',
-            'sensitive' => 'sensible',
-            'confidentiel' => 'confidentiel',
-            'confidential' => 'confidentiel',
-            'operationnel' => 'operationnel',
-            'operational' => 'operationnel',
-            'secret' => 'operationnel',
-            'top_secret' => 'operationnel',
-        ];
-
-        return $map[$level] ?? null;
     }
 
     private function classificationRank(string $level): int
@@ -303,9 +272,8 @@ class DocumentAccessService
     }
 
     /**
-     * Libellés FR des niveaux de classification, dans l’ordre croissant — source unique pour tout
-     * formulaire qui doit proposer/afficher le niveau d’habilitation d’un membre (personnel_profiles.clearance_level).
-     * Les valeurs (clés) doivent rester alignées avec normalizeClearanceLevel() ci-dessus.
+     * Libellés FR des niveaux de classification documentaire (ordre croissant).
+     * Le plafond lecteur vient du rôle communauté, pas d’une clearance profil.
      *
      * @return array<string,string>
      */

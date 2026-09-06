@@ -144,7 +144,7 @@ $navGroups = [
             [
                 'key' => 'portrait',
                 'href' => url('account/portrait'),
-                'label' => 'Portrait opérateur',
+                'label' => 'Photo de profil',
                 'hint' => 'Fiche et organigramme',
             ],
         ],
@@ -156,7 +156,7 @@ $navGroups = [
                 'key' => 'personnel',
                 'href' => url('personnel/me/edit'),
                 'label' => 'Fiche personnelle',
-                'hint' => 'Personnage, unité, qualifications',
+                'hint' => 'Unité, matricule, formations',
             ],
             [
                 'key' => 'access',

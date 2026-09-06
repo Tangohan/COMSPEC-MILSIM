@@ -38,7 +38,7 @@ $hours = \App\Repositories\UserAdvancedEditGrantRepository::durationHours();
       <p>Un administrateur vous a temporairement autorisé à <strong>modifier l’ensemble des champs de votre fiche personnel</strong>, à l’exception de l’identifiant Athena (non modifiable).</p>
       <ul>
         <li><strong>Durée :</strong> <?= (int) $hours ?> heures à compter de l’activation<?= $endsAt !== '' ? ' (jusqu’au ' . $h($endsLabel) . ')' : '' ?>.</li>
-        <li><strong>Accès :</strong> ouvrez votre fiche en édition pour utiliser les champs déverrouillés (matricule, niveau d’habilitation, etc.).</li>
+        <li><strong>Accès :</strong> ouvrez votre fiche en édition pour utiliser les champs déverrouillés (matricule, affectation, etc.).</li>
         <?php if ($granter !== ''): ?>
         <li><strong>Activé par :</strong> <?= $h($granter) ?>.</li>
         <?php endif; ?>

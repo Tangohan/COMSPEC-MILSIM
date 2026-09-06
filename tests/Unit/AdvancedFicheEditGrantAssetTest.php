@@ -69,18 +69,17 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
         self::assertStringContainsString('pp.character_name', $usersRepo);
     }
 
-    public function testPersonnelEditUnlocksClearanceAndMatriculeButNotAthena(): void
+    public function testPersonnelEditUnlocksMatriculeButNotAthena(): void
     {
         $edit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/personnel/edit.php');
         $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/PersonnelController.php');
 
         self::assertStringContainsString('advancedEditActive', $edit);
-        self::assertStringContainsString('name="clearance_level"', $edit);
+        self::assertStringNotContainsString('name="clearance_level"', $edit);
         self::assertStringContainsString('name="matricule_internal"', $edit);
-        self::assertStringContainsString('Identifiant plateforme', $edit);
-        self::assertStringContainsString('non modifiable', $edit);
+        self::assertStringContainsString('Matricule dossier (système)', $edit);
         self::assertStringContainsString('advancedEditActive', $controller);
-        self::assertStringContainsString("data['clearance_level']", $controller);
+        self::assertStringNotContainsString("data['clearance_level']", $controller);
         self::assertStringContainsString("data['matricule_internal']", $controller);
         self::assertStringContainsString('athena_identifier volontairement ignoré', $controller);
     }

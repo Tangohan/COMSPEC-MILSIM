@@ -25,7 +25,7 @@ Document de **priorisation produit** pour compléter le périmètre actuel (hub 
 
 ## Hors périmètre implicite du hub « Mon compte »
 
-- **Dossier opérationnel (personnage, unité, clearance)** : porté par **`/personnel/me`** et l’édition associée, pas par `/account` (choix volontaire dans l’UI actuelle).
+- **Dossier opérationnel (unité, fiche personnelle)** : porté par **`/personnel/me`** et l’édition associée, pas par `/account` (choix volontaire dans l’UI actuelle).
 - **SSO / fédération d’identité** : chantier transverse, non spécifique à la page compte.
 
 ## Prochaine étape recommandée

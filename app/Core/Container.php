@@ -1072,7 +1072,6 @@ class Container
                 self::get(\App\Repositories\DocumentCollaboratorRepository::class),
                 self::get(\App\Repositories\DocumentPermissionRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\PersonnelProfileRepository::class)
             ),
             \App\Services\Audit\AuditService::class => new \App\Services\Audit\AuditService(),
             \App\Repositories\AuditLogRepository::class => new \App\Repositories\AuditLogRepository(),
@@ -1285,7 +1284,6 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(\App\Services\Documents\DocumentTrainingReferencesService::class),
-                self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\DocumentSecurityRepository::class),
                 self::get(\App\Repositories\Doctrine\DocumentDoctrineRepository::class),
                 self::get(\App\Services\Doctrine\DocumentComplianceService::class),
@@ -1410,22 +1408,6 @@ class Container
                 self::get(\App\Services\Alerts\AlertPresentationService::class),
             ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
-            \App\Controllers\Web\DossierOperateurController::class => new \App\Controllers\Web\DossierOperateurController(
-                self::get(AuthService::class),
-                self::get(\App\Repositories\PersonnelProfileRepository::class),
-                self::get(\App\Repositories\PersonnelExtrasRepository::class),
-                self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(\App\Repositories\PersonnelQualificationRepository::class),
-                self::get(\App\Repositories\TrainingCertificateRepository::class),
-                self::get(\App\Services\Personnel\PersonnelCompletenessService::class),
-                self::get(\App\Repositories\Courrier\UserSignatureRepository::class),
-                self::get(\App\Repositories\PersonnelAdminDataRepository::class)
-            ),
-            \App\Controllers\Api\DossierOperateurAccreditationApiController::class => new \App\Controllers\Api\DossierOperateurAccreditationApiController(
-                self::get(AuthService::class),
-                self::get(\App\Repositories\PersonnelAdminDataRepository::class),
-                self::get(\App\Repositories\Courrier\UserSignatureRepository::class)
-            ),
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
                 self::get(\App\Repositories\ModpackRepository::class)

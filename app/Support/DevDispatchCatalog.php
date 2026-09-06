@@ -866,7 +866,7 @@ final class DevDispatchCatalog
             ], 'Overwatch 1.5.15 · SSE 0.7.20'),
             $pr(402, '2026-09-03', 'Le bureau effectifs rejoint le back-office clair', 'Sur l’annuaire des effectifs, l’alerte des fiches jumelles, les totaux, les filtres et les mentions manquantes adoptent la présentation claire du back-office ATAK. L’unité affichée est le dernier maillon, le chemin complet reste au survol. Rechargez le bureau effectifs', [
                 'Alerte des fiches jumelles dans le même registre clair que le reste du back-office',
-                'Totaux cliquables : membres, actifs, sans unité, sans rôle, habilitation à revoir',
+                'Totaux cliquables : membres, actifs, sans unité, sans rôle',
             ], [
                 'Textes d’introduction et d’affectation plus courts',
             ], [

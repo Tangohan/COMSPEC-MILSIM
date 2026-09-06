@@ -1602,7 +1602,6 @@ class EffectifsWorkspaceController
                 'role_id' => $proposedRoleId,
                 'job_role_id' => (int) ($r['proposed_job_role_id'] ?? 0) ?: null,
                 'unit_id' => (int) ($r['proposed_unit_id'] ?? 0) ?: null,
-                'clearance_level' => trim((string) ($r['proposed_clearance_level'] ?? '')) ?: null,
             ]);
             $permissionIds = json_decode((string) ($r['proposed_permission_ids'] ?? ''), true);
             $permissionIds = is_array($permissionIds)
@@ -1837,10 +1836,6 @@ class EffectifsWorkspaceController
             'pending' => $this->userRepository->countListForTenant($tenantId, null, 'pending_verification', null, true),
             'no_unit' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, true, null),
             'no_role' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, null, true),
-            'clearance_review_due' => $this->personnelProfileRepository->countOverdueClearanceReviewForTenant(
-                $tenantId,
-                \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS
-            ),
         ];
     }
 
@@ -1864,8 +1859,7 @@ class EffectifsWorkspaceController
      *   grades: list<array<string,mixed>>,
      *   roles: list<array<string,mixed>>,
      *   job_roles: list<array{id:int,label:string}>,
-     *   units: list<array<string,mixed>>,
-     *   clearance_levels: array<string,string>
+     *   units: list<array<string,mixed>>
      * }
      */
     private function elevationCatalogForTenant(int $tenantId): array
@@ -1894,13 +1888,12 @@ class EffectifsWorkspaceController
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,
-            'clearance_levels' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
             'permissions' => $this->permissionRepository->allRequestableForTenant($tenantId),
         ];
     }
 
     /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}
      */
     private function readElevationProposalFromRequest(Request $request): array
     {
@@ -1912,7 +1905,6 @@ class EffectifsWorkspaceController
 
             return $id > 0 ? $id : null;
         };
-        $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
         $permissionIds = $request->input('proposed_permission_ids', $request->input('elevation_permission_ids', []));
         $permissionIds = is_array($permissionIds) ? $permissionIds : [$permissionIds];
 
@@ -1921,7 +1913,6 @@ class EffectifsWorkspaceController
             'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
-            'clearance_level' => $clearance !== '' ? $clearance : null,
             'permission_ids' => array_values(array_unique(array_filter(array_map('intval', $permissionIds), static fn (int $id): bool => $id > 0))),
             'role_apply_mode' => ElevationApprovalService::normalizeRoleApplyMode(
                 (string) $request->input('role_apply_mode', ElevationApprovalService::ROLE_APPLY_REPLACE)
@@ -1930,12 +1921,11 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string,role_apply_mode?:string} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}, error:?string}
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode?:string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}, error:?string}
      */
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
-        $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
         $proposal['permission_ids'] = is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : [];
         $proposal['role_apply_mode'] = ElevationApprovalService::normalizeRoleApplyMode(
             isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : ElevationApprovalService::ROLE_APPLY_REPLACE
@@ -1967,12 +1957,6 @@ class EffectifsWorkspaceController
         $unitId = $proposal['unit_id'] ?? null;
         if ($unitId !== null && !$this->unitRepository->findById($unitId, $tenantId)) {
             return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
-        }
-
-        $clearanceLevel = $proposal['clearance_level'] ?? null;
-        if ($clearanceLevel !== null
-            && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
-            return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
         }
 
         $requestedPermissionIds = array_values(array_unique(array_filter(array_map('intval', $proposal['permission_ids']), static fn (int $id): bool => $id > 0)));
@@ -2103,8 +2087,6 @@ class EffectifsWorkspaceController
                 'presence_score' => $presenceScore,
                 'completion_score' => $completionScore,
                 'roles_display' => $u['roles_display'] ?? ($u['role_name'] ?? null),
-                'clearance_level' => $rich['clearance_level'] ?? null,
-                'clearance_reviewed_at' => $rich['clearance_reviewed_at'] ?? null,
             ]);
         }
 

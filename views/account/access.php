@@ -4,9 +4,8 @@ declare(strict_types=1);
 use App\Support\ParisDateTime;
 
 /**
- * Self-service « Mes accès » : clarifie compte / personnage / rôle, et affiche le statut
- * des demandes d’élévation (comme demandeur et comme personne concernée), pour ne pas
- * laisser l’utilisateur dans le flou après une demande.
+ * Self-service « Mes accès » : rôle & grade, suivi des demandes d’élévation,
+ * et départ de la communauté.
  *
  * @var string $accountRoleLabel
  * @var array<string,mixed>|null $accountGrade
@@ -18,7 +17,7 @@ use App\Support\ParisDateTime;
 
 $accountNavKey = 'access';
 $accountTitle = 'Mes accès & rôle';
-$accountLead = 'Ce que recouvrent votre compte, votre personnage et votre rôle — et le suivi de vos demandes d’élévation.';
+$accountLead = 'Votre rôle dans la communauté et le suivi de vos demandes d’élévation.';
 require base_path('views/partials/account/shell_open.php');
 
 $roleLabel = trim((string) ($accountRoleLabel ?? ''));
@@ -42,36 +41,27 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
 ?>
 
 <div class="account-hub__stack">
-    <section class="account-hub__panel" aria-labelledby="access-explain-heading">
+    <section class="account-hub__panel" aria-labelledby="access-role-heading">
         <div class="account-hub__panel-head">
-            <p class="account-hub__panel-kicker">Comprendre vos accès</p>
-            <h2 id="access-explain-heading" class="account-hub__panel-title">Trois choses distinctes</h2>
-            <p class="account-hub__panel-desc">Elles sont souvent confondues — voici ce que gère chacune.</p>
+            <p class="account-hub__panel-kicker">Communauté</p>
+            <h2 id="access-role-heading" class="account-hub__panel-title">Rôle &amp; grade</h2>
+            <p class="account-hub__panel-desc">Ce que vous pouvez faire dans cette communauté dépend de votre rôle.</p>
         </div>
         <div class="account-hub__panel-body">
             <div class="account-hub__stat-grid">
                 <div class="account-hub__stat">
-                    <p class="account-hub__stat-label">Votre compte</p>
-                    <p class="account-hub__stat-value">Compte de connexion</p>
-                    <p class="account-hub__stat-meta">
-                        Adresse e-mail, mot de passe, apparence du portail. Vous pouvez appartenir à plusieurs communautés ; chacune a ses propres accès.
-                        <br><a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>">Vue d’ensemble →</a>
-                    </p>
-                </div>
-                <div class="account-hub__stat">
-                    <p class="account-hub__stat-label">Votre personnage</p>
-                    <p class="account-hub__stat-value">Fiche opérationnelle</p>
-                    <p class="account-hub__stat-meta">
-                        Identité « in-universe », unité, matricule. Le suivi RH (progression, tuteur, échéances) est une autre couche, distincte des droits d’accès.
-                        <br><a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>">Voir ma fiche →</a>
-                    </p>
-                </div>
-                <div class="account-hub__stat">
-                    <p class="account-hub__stat-label">Votre rôle &amp; grade</p>
+                    <p class="account-hub__stat-label">Rôle</p>
                     <p class="account-hub__stat-value"><?= htmlspecialchars($roleLabel !== '' ? $roleLabel : 'Non défini', ENT_QUOTES, 'UTF-8') ?></p>
                     <p class="account-hub__stat-meta">
                         <?= $gradeLabel !== '' ? 'Grade : ' . htmlspecialchars($gradeLabel, ENT_QUOTES, 'UTF-8') : 'Grade non attribué' ?>.
-                        Ce que vous pouvez faire dans la communauté (accès, modération, RH…) est déterminé par ce rôle.
+                    </p>
+                </div>
+                <div class="account-hub__stat">
+                    <p class="account-hub__stat-label">Fiche personnelle</p>
+                    <p class="account-hub__stat-value">Unité &amp; dossier</p>
+                    <p class="account-hub__stat-meta">
+                        Identité, unité, matricule et formations.
+                        <br><a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>">Voir ma fiche →</a>
                     </p>
                 </div>
             </div>
@@ -207,8 +197,8 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
     $leaveName = trim((string) ($leaveCommunityName ?? ''));
     $leaveBlocked = trim((string) ($leaveCommunityBlockedReason ?? ''));
     $confirmBody = $leaveName !== ''
-        ? 'Vous allez quitter « ' . $leaveName . ' ». Votre accès à cette communauté prendra fin immédiatement. Votre compte Athena et vos éventuelles autres communautés ne sont pas concernés. Cette action est définitive pour cette communauté.'
-        : 'Vous allez quitter cette communauté. Votre accès y prendra fin immédiatement. Votre compte Athena et vos éventuelles autres communautés ne sont pas concernés. Cette action est définitive pour cette communauté.';
+        ? 'Vous allez quitter « ' . $leaveName . ' ». Votre accès à cette communauté prendra fin immédiatement. Votre compte Athena n’est pas concerné. Cette action est définitive pour cette communauté.'
+        : 'Vous allez quitter cette communauté. Votre accès y prendra fin immédiatement. Votre compte Athena n’est pas concerné. Cette action est définitive pour cette communauté.';
     ?>
     <section class="account-hub__panel" id="quitter" aria-labelledby="access-leave-heading">
         <div class="account-hub__panel-head">

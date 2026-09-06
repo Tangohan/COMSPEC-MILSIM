@@ -21,7 +21,6 @@ final class PersonnelOperationalStatus
         $labels = [
             'unit' => 'Une unité est affectée',
             'role' => 'Un poste ou une fonction est renseigné',
-            'clearance' => 'Une habilitation documentaire est définie',
             'qualification' => 'Une qualification ou formation est enregistrée',
             'available' => 'Aucune absence en cours n’est signalée',
         ];

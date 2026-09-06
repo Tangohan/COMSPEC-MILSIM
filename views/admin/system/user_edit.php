@@ -16,7 +16,6 @@ $units = is_array($pack['units'] ?? null) ? $pack['units'] : [];
 $roles = is_array($pack['roles'] ?? null) ? $pack['roles'] : [];
 $selectedRoleIds = is_array($pack['selected_role_ids'] ?? null) ? $pack['selected_role_ids'] : [];
 $extraCallsigns = is_array($pack['extra_callsigns'] ?? null) ? $pack['extra_callsigns'] : [];
-$clearanceOptions = is_array($pack['clearance_options'] ?? null) ? $pack['clearance_options'] : [];
 $flagOptions = is_array($pack['flag_options'] ?? null) ? $pack['flag_options'] : [];
 $statusOptions = is_array($pack['status_options'] ?? null) ? $pack['status_options'] : PlatformUserProfileService::accountStatusOptions();
 $bloodOptions = is_array($pack['blood_options'] ?? null) ? $pack['blood_options'] : PlatformUserProfileService::bloodTypeOptions();
@@ -36,10 +35,6 @@ $matricule = trim((string) ($personnel['matricule_internal'] ?? '')) ?: trim((st
 $enlistment = '';
 if (!empty($personnel['enlistment_date']) && !str_starts_with((string) $personnel['enlistment_date'], '0000-00-00')) {
     $enlistment = substr((string) $personnel['enlistment_date'], 0, 10);
-}
-$clearanceReviewed = '';
-if (!empty($personnel['clearance_reviewed_at'])) {
-    $clearanceReviewed = substr((string) $personnel['clearance_reviewed_at'], 0, 10);
 }
 $birthDate = '';
 $legalBirth = trim((string) ($legal['birth_date'] ?? ''));
@@ -155,7 +150,7 @@ if ($uid < 1) {
 
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Identité du personnage</h2>
+                    <h2 class="text-base font-bold text-slate-900">Identité</h2>
                     <p class="text-sm text-slate-600">Prénom, nom, indicatif et présentation utilisés dans les listes, le dossier et le forum.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -210,7 +205,7 @@ if ($uid < 1) {
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Identité civile et contact</h2>
-                    <p class="text-sm text-slate-600">Coordonnées réelles et préférences d’interface. Distinctes du personnage.</p>
+                    <p class="text-sm text-slate-600">Coordonnées réelles et préférences d’interface.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -286,7 +281,7 @@ if ($uid < 1) {
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Dossier personnel</h2>
-                    <p class="text-sm text-slate-600">Détails du personnage, ancienneté et matricule.</p>
+                    <p class="text-sm text-slate-600">Détails du dossier, ancienneté et matricule.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -328,17 +323,17 @@ if ($uid < 1) {
                                value="<?= $h((string) ($personnel['weight_kg'] ?? '')) ?>" class="<?= $fieldClass ?>">
                     </div>
                     <div>
-                        <label for="birth_place" class="<?= $labelClass ?>">Lieu de naissance (personnage)</label>
+                        <label for="birth_place" class="<?= $labelClass ?>">Lieu de naissance</label>
                         <input type="text" id="birth_place" name="birth_place" maxlength="150" autocomplete="off"
                                value="<?= $h((string) ($personnel['birth_place'] ?? '')) ?>" class="<?= $fieldClass ?>">
                     </div>
                     <div>
-                        <label for="nationality_rp" class="<?= $labelClass ?>">Nationalité du personnage</label>
+                        <label for="nationality_rp" class="<?= $labelClass ?>">Nationalité</label>
                         <input type="text" id="nationality_rp" name="nationality_rp" maxlength="100" autocomplete="off"
                                value="<?= $h((string) ($personnel['nationality'] ?? '')) ?>" class="<?= $fieldClass ?>">
                     </div>
                     <div>
-                        <label for="languages" class="<?= $labelClass ?>">Langues parlées par le personnage</label>
+                        <label for="languages" class="<?= $labelClass ?>">Langues parlées</label>
                         <input type="text" id="languages" name="languages" maxlength="255" autocomplete="off"
                                value="<?= $h((string) ($personnel['languages'] ?? '')) ?>" class="<?= $fieldClass ?>">
                     </div>
@@ -367,7 +362,7 @@ if ($uid < 1) {
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Grade, doctrine et affectation</h2>
-                    <p class="text-sm text-slate-600">Grade de la communauté, unité d’affectation et habilitation.</p>
+                    <p class="text-sm text-slate-600">Grade de la communauté et unité d’affectation.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -442,22 +437,6 @@ if ($uid < 1) {
                         <label for="assignment_role" class="<?= $labelClass ?>">Rôle dans l’unité</label>
                         <input type="text" id="assignment_role" name="assignment_role" maxlength="120" autocomplete="off"
                                value="<?= $h((string) ($personnel['primary_role'] ?? '')) ?>" class="<?= $fieldClass ?>">
-                    </div>
-                    <div>
-                        <label for="clearance_level" class="<?= $labelClass ?>">Habilitation</label>
-                        <select id="clearance_level" name="clearance_level" class="<?= $fieldClass ?>">
-                            <option value="">Non renseignée</option>
-                            <?php
-                            $clCur = trim((string) ($personnel['clearance_level'] ?? ''));
-                            foreach ($clearanceOptions as $val => $lab):
-                            ?>
-                                <option value="<?= $h((string) $val) ?>" <?= $clCur === (string) $val ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="clearance_reviewed_at" class="<?= $labelClass ?>">Dernière revue d’habilitation</label>
-                        <input type="date" id="clearance_reviewed_at" name="clearance_reviewed_at" value="<?= $h($clearanceReviewed) ?>" class="<?= $fieldClass ?>">
                     </div>
                     <div>
                         <label for="readiness_score" class="<?= $labelClass ?>">Indice de préparation (0 à 100)</label>

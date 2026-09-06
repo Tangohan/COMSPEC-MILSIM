@@ -116,7 +116,7 @@
           Quand le bandeau «&nbsp;À compléter&nbsp;» apparaît, ou avant une validation d’encadrement / une campagne où un dossier complet est demandé.
         </p>
         <p class="mt-6 mb-0 leading-relaxed text-amber-950/90">
-          Pour faire progresser le score, priorisez l’identité de personnage, une <strong>unité</strong>, un <strong>rôle</strong>, puis les champs de sécurité demandés (niveau d’habilitation, disponibilité, statut). Une <strong>formation certifiante</strong> peut parfois compenser une disponibilité numérique encore vide&nbsp;: le bandeau précise ce qui reste à faire.
+          Pour faire progresser le score, priorisez l’identité, une <strong>unité</strong>, un <strong>rôle</strong>, puis la disponibilité et le statut. Une <strong>formation certifiante</strong> peut parfois compenser une disponibilité numérique encore vide&nbsp;: le bandeau précise ce qui reste à faire.
         </p>
       </section>
 

@@ -14,7 +14,6 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $jobRoles
  * @var array<string,string> $personnelCategories
  * @var array<string,string> $armDomains
- * @var array<string,string> $clearanceLevels
  */
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -25,7 +24,6 @@ $units = is_array($units ?? null) ? $units : [];
 $jobRoles = is_array($jobRoles ?? null) ? $jobRoles : [];
 $personnelCategories = is_array($personnelCategories ?? null) ? $personnelCategories : [];
 $armDomains = is_array($armDomains ?? null) ? $armDomains : [];
-$clearanceLevels = is_array($clearanceLevels ?? null) ? $clearanceLevels : [];
 
 $isEdit = $opening !== null;
 /** @var array<string,mixed> $openingRow Toujours un tableau : la page de création n’a pas de ligne. */
@@ -148,15 +146,6 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                     <option value="">— Non précisé —</option>
                     <?php foreach ($armDomains as $key => $label): ?>
                     <option value="<?= $h((string) $key) ?>"<?= $selected('arm_domain', (string) $key) ?>><?= $h((string) $label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label class="ath-field">
-                <span class="ath-field__label">Niveau d’habilitation demandé</span>
-                <select name="clearance_level" class="ath-field__select"<?= $disabled ?>>
-                    <option value="">— Aucun —</option>
-                    <?php foreach ($clearanceLevels as $key => $label): ?>
-                    <option value="<?= $h((string) $key) ?>"<?= $selected('clearance_level', (string) $key) ?>><?= $h((string) $label) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>

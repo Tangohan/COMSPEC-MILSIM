@@ -208,7 +208,7 @@ class RecruitmentOpeningRepository
                 candidate_profile_items, technical_notice, mission_lead, responsibility_blocks,
                 status, created_at, updated_at
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'draft\', NOW(), NOW()
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'none\', ?, ?, ?, ?, \'draft\', NOW(), NOW()
             )'
         );
         $stmt->execute([
@@ -224,7 +224,6 @@ class RecruitmentOpeningRepository
             $this->nullableString($data['employment_context_label'] ?? null),
             (string) ($data['personnel_category'] ?? 'other'),
             isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
-            (string) ($data['clearance_level'] ?? 'none'),
             $this->jsonOrNull($data['candidate_profile_items'] ?? null),
             $this->nullableString($data['technical_notice'] ?? null),
             $this->nullableString($data['mission_lead'] ?? null),
@@ -243,7 +242,7 @@ class RecruitmentOpeningRepository
             'UPDATE recruitment_openings SET
                 unit_id = ?, personnel_job_role_id = ?, title = ?, summary = ?, description = ?,
                 requirements_json = ?, employment_contract_label = ?, employment_context_label = ?,
-                personnel_category = ?, arm_domain = ?, clearance_level = ?,
+                personnel_category = ?, arm_domain = ?,
                 candidate_profile_items = ?, technical_notice = ?, mission_lead = ?, responsibility_blocks = ?,
                 updated_at = NOW()
              WHERE id = ? AND tenant_id = ? AND status = \'draft\''
@@ -259,7 +258,6 @@ class RecruitmentOpeningRepository
             $this->nullableString($data['employment_context_label'] ?? null),
             (string) ($data['personnel_category'] ?? 'other'),
             isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
-            (string) ($data['clearance_level'] ?? 'none'),
             $this->jsonOrNull($data['candidate_profile_items'] ?? null),
             $this->nullableString($data['technical_notice'] ?? null),
             $this->nullableString($data['mission_lead'] ?? null),

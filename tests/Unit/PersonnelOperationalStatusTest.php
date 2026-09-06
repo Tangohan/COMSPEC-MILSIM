@@ -12,7 +12,7 @@ final class PersonnelOperationalStatusTest extends TestCase
     public function testReadyStatusIsComputedFromObjectiveChecks(): void
     {
         $status = PersonnelOperationalStatus::assess([
-            'unit' => true, 'role' => true, 'clearance' => true,
+            'unit' => true, 'role' => true,
             'qualification' => true, 'available' => true,
         ], true, true);
 
@@ -23,7 +23,7 @@ final class PersonnelOperationalStatusTest extends TestCase
     public function testAbsenceOverridesOtherwiseCompleteStatus(): void
     {
         $status = PersonnelOperationalStatus::assess([
-            'unit' => true, 'role' => true, 'clearance' => true,
+            'unit' => true, 'role' => true,
             'qualification' => true, 'available' => false,
         ], true, true);
 

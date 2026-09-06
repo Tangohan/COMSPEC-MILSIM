@@ -9,7 +9,7 @@ $error = $error ?? null;
 
 $accountNavKey = 'recruitment';
 $accountTitle = 'Profils de candidature';
-$accountLead = 'Enregistrez des préréglages (motivation, disponibilité, personnage…) réutilisables sur les formulaires d’enrôlement.';
+$accountLead = 'Enregistrez des préréglages (motivation, disponibilité, identité…) réutilisables sur les formulaires d’enrôlement.';
 require base_path('views/partials/account/shell_open.php');
 ?>
 

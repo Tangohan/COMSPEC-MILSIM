@@ -9,7 +9,6 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $orgRoles
  * @var list<array<string,mixed>> $units
  * @var list<array{id:int,label:string}>|list<array<string,mixed>> $jobRoleOptions
- * @var array<string,string> $clearanceLevels
  * @var array<string,mixed>|null $linkedRecruitmentOpening
  * @var array<string,mixed>|null $linkedUser
  * @var bool $needsAcceptanceOnboarding
@@ -23,7 +22,6 @@ $prefill = is_array($onboardingPrefill ?? null) ? $onboardingPrefill : [];
 $orgRoles = is_array($orgRoles ?? null) ? $orgRoles : [];
 $units = is_array($units ?? null) ? $units : [];
 $jobRoleOptions = is_array($jobRoleOptions ?? null) ? $jobRoleOptions : [];
-$clearanceLevels = is_array($clearanceLevels ?? null) ? $clearanceLevels : [];
 $linkedOpening = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
 $linkedUser = is_array($linkedUser ?? null) ? $linkedUser : null;
 $needsOnboarding = !empty($needsAcceptanceOnboarding);
@@ -203,17 +201,6 @@ $formAction = url('back-office/recruitments/' . $id . '/onboarding');
                 <?php endforeach; ?>
             </fieldset>
             <?php endif; ?>
-
-            <label class="rec-onb__field rec-onb__field--full" style="margin-top:1.25rem">
-                <span class="rec-onb__label">Niveau d’habilitation documents <span class="rec-onb__opt">(optionnel)</span></span>
-                <select name="clearance_level">
-                    <option value="">— Ne pas modifier —</option>
-                    <?php foreach ($clearanceLevels as $ck => $clabel): ?>
-                    <option value="<?= $h((string) $ck) ?>"<?= ((string) ($prefill['clearance_level'] ?? '')) === (string) $ck ? ' selected' : '' ?>><?= $h((string) $clabel) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <span class="rec-onb__hint">Contrôle l’accès aux documents classifiés. Laissez vide pour démarrer au niveau par défaut.</span>
-            </label>
 
             <div class="rec-onb__nav">
                 <button type="button" class="rec-onb__btn rec-onb__btn--ghost" data-rec-onb-prev>Retour</button>
