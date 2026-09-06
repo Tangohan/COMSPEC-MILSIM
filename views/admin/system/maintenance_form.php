@@ -77,8 +77,9 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-black text-slate-900">1) Portée</h2>
+            <p class="mt-2 text-sm text-slate-600">Une intervention sur tout le portail ferme l’accueil, les dossiers et l’administration. Arma 3 et le téléphone ATAK restent ouverts.</p>
             <div class="mt-4 grid gap-3 md:grid-cols-2">
-                <?php foreach (['global' => 'Tout le site', 'route' => 'Préfixe URL', 'module' => 'Module', 'custom' => 'Personnalisé'] as $mode => $label): ?>
+                <?php foreach (['global' => 'Tout le portail', 'route' => 'Préfixe URL', 'module' => 'Module', 'custom' => 'Personnalisé'] as $mode => $label): ?>
                     <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60">
                         <input type="radio" name="scope_mode" value="<?= $mode ?>" class="text-emerald-600" <?= $scopeType === $mode ? 'checked' : '' ?>>
                         <span class="font-semibold text-slate-800"><?= $label ?></span>

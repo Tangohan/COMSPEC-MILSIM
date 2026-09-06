@@ -584,6 +584,14 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(435, '2026-09-06', 'Le jeu et le téléphone restent ouverts pendant une intervention', 'Lorsque le portail est fermé pour une intervention, Arma 3 et le téléphone ATAK restent utilisables. La carte tactique et la liaison en jeu ne sont pas coupées. L’accueil, les dossiers et l’administration restent fermés. Rechargez le portail pour réessayer', [
+                'Arma 3 et le téléphone ATAK restent utilisables pendant une intervention du portail',
+                'La carte tactique et la liaison en jeu ne sont pas interrompues',
+            ], [
+                'L’accueil, les dossiers et l’administration restent fermés jusqu’à la réouverture',
+            ], [], ['personnel', 'command', 'atak'], [
+                'Pendant une intervention : ouvrez le téléphone ou lancez Arma. La carte et la liaison doivent répondre. L’accueil du portail doit afficher la page d’intervention.',
+            ]),
             $pr(434, '2026-09-06', 'Les copies d’accès inutiles sont retirées', 'Chaque communauté ne conserve plus que les trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire. Les centaines de copies jamais attribuées disparaissent. Les emplois déjà collés à un dossier restent. Rechargez le bureau effectifs après la mise à jour', [
                 'Un membre n’a plus qu’un niveau d’accès dans sa communauté',
                 'Les emplois du dossier restent des fonctions, sans ouvrir de droits',
