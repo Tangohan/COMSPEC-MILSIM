@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Support\MaintenanceMarkdown;
 use PHPUnit\Framework\TestCase;
 
 final class MaintenanceUiAssetTest extends TestCase
@@ -20,6 +21,10 @@ final class MaintenanceUiAssetTest extends TestCase
         self::assertStringContainsString('Athena', $view);
         self::assertStringContainsString('fog-team.jpg', $view);
         self::assertStringContainsString('Instrument Serif', $view);
+        self::assertStringContainsString('MaintenanceMarkdown', $view);
+        self::assertStringContainsString('linear-gradient(180deg, transparent 0%', $view);
+        self::assertStringNotContainsString('bar__mark', $view);
+        self::assertStringNotContainsString('letter-spacing: 0.28em', $view);
         self::assertStringNotContainsString('Space Mono', $view);
         self::assertStringNotContainsString('PORTAIL OPÉRATIONNEL', $view);
         self::assertStringNotContainsString('classification', $view);
@@ -29,5 +34,26 @@ final class MaintenanceUiAssetTest extends TestCase
         self::assertStringNotContainsString('JSON', $view);
         self::assertStringNotContainsString('les API', $view);
         self::assertStringNotContainsString('slug', strtolower($view));
+    }
+
+    public function testMaintenanceMarkdownRendersHorizontalRuleAndLanguageLabels(): void
+    {
+        $html = MaintenanceMarkdown::toHtml("FR\nBonjour le portail.\n\n---\n\nEN\nHello portal.");
+
+        self::assertStringContainsString('<p class="lang">FR</p>', $html);
+        self::assertStringContainsString('<p class="lang">EN</p>', $html);
+        self::assertStringContainsString('<hr>', $html);
+        self::assertStringContainsString('Bonjour le portail.', $html);
+        self::assertStringContainsString('Hello portal.', $html);
+        self::assertStringNotContainsString('---', $html);
+    }
+
+    public function testMaintenanceMarkdownEscapesHtml(): void
+    {
+        $html = MaintenanceMarkdown::toHtml('Hello <script>alert(1)</script> **world**');
+
+        self::assertStringNotContainsString('<script>', $html);
+        self::assertStringContainsString('&lt;script&gt;', $html);
+        self::assertStringContainsString('<strong>world</strong>', $html);
     }
 }
