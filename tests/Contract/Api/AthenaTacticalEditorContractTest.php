@@ -25,6 +25,16 @@ final class AthenaTacticalEditorContractTest extends TestCase
         self::assertStringContainsString("'/back-office/operations/carte-tactique'", $routes);
     }
 
+    public function testTacticalControllersTolerateMissingContainerRegistration(): void
+    {
+        $admin = file_get_contents(dirname(__DIR__, 3) . '/app/Controllers/Admin/AdminAthenaTacticalMapController.php');
+        $api = file_get_contents(dirname(__DIR__, 3) . '/app/Controllers/Api/AthenaTacticalApiController.php');
+        self::assertIsString($admin);
+        self::assertIsString($api);
+        self::assertStringContainsString('?AtakMapRepository $maps = null', $admin);
+        self::assertStringContainsString('?AthenaTacticalRepository $repository = null', $api);
+    }
+
     public function testSqfSuppliesTheCurrentWorldToLegacyMarkerChannel(): void
     {
         $sqf = file_get_contents(dirname(__DIR__, 3) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_pollAthenaMarkers.sqf');

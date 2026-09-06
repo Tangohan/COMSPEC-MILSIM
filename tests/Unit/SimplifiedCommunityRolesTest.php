@@ -28,6 +28,29 @@ final class SimplifiedCommunityRolesTest extends TestCase
         $permissions = TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles();
 
         self::assertContains('training.view', $permissions['member']);
+        foreach ([
+            'personnel.profile.view',
+            'personnel.progression.view',
+            'operations.sitrep.view',
+            'operations.sitrep.create',
+            'operations.aar.view',
+            'operations.readiness.view',
+            'operations.medical.view',
+            'operations.logistics.view',
+            'operations.comms.view',
+            'operations.doctrine.view',
+            'doctrine.view',
+            'media.view',
+            'intel.transmission.view',
+            'intel.transmission.contribute',
+            'cooperation.missions.view',
+            'cooperation.exchange.read',
+            'cooperation.exchange.write',
+            'cooperation.rex.submit',
+            'cooperation.rex.read',
+        ] as $permission) {
+            self::assertContains($permission, $permissions['member'], $permission);
+        }
         self::assertContains('organization.recruitment.manage', $permissions['recruiter']);
         self::assertContains('organization.effectifs.hub.view', $permissions['hr']);
         self::assertContains('organization.recruitment.manage', $permissions['hr']);

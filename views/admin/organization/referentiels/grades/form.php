@@ -3,6 +3,7 @@ $grade = $grade ?? null;
 $systems = $systems ?? [];
 $categories = $categories ?? [];
 $isEdit = $grade !== null;
+$returnTab = ($returnTab ?? 'fr') === 'us' ? 'us' : 'fr';
 $flashError = \App\Core\Session::getFlash('error');
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
@@ -62,7 +63,7 @@ $flashError = \App\Core\Session::getFlash('error');
         <?php endif; ?>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>
-            <a href="<?= url('back-office/referentiels/grades') ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
+            <a href="<?= url('back-office/referentiels/grades') ?>?tab=<?= rawurlencode($returnTab) ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
     <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>

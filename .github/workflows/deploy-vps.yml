@@ -72,10 +72,21 @@ jobs:
               COMPOSER_BIN="$(command -v composer)"
             fi
             COMPOSER_ALLOW_SUPERUSER=1 "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --no-interaction --optimize-autoloader
+            # Un dossier filesystem public/atak court-circuite la route PHP /atak
+            # (nginx : 301 vers /atak/ puis 403 Ubuntu). Ce n’est pas un asset versionné.
+            if [ -d public/atak ] && [ ! -e public/atak/index.php ]; then
+              echo "Removing stray public/atak directory (conflicts with /atak route)"
+              rm -rf public/atak
+            fi
             chown -R www-data:www-data storage
             if [ -d public/uploads ]; then
               chown -R www-data:www-data public/uploads
             fi
             if command -v systemctl >/dev/null 2>&1; then
               systemctl reload php8.4-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+            fi
+            if [ -f /etc/nginx/sites-available/athena.ttrd.fr ]; then
+              if ! grep -q 'location = /atak' /etc/nginx/sites-available/athena.ttrd.fr; then
+                echo "NOTE: ajouter le bloc location = /atak depuis docs/nginx.example.conf puis nginx -t && systemctl reload nginx"
+              fi
             fi

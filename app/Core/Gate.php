@@ -62,11 +62,7 @@ class Gate
 
     public function allows(string $permission): bool
     {
-        // This bypass is request-local and is enabled only after AuthMiddleware has
-        // reloaded the real platform administrator and explicitly verified admin.system.
-        if (\App\Services\Tenant\TenantContext::isIntervention()) {
-            return true;
-        }
+        // No identity or request context bypasses the function catalogue.
         return PermissionImplication::isGranted($this->permissions, $permission);
     }
 
