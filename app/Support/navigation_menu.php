@@ -244,6 +244,9 @@ function navigation_resolve_link(array $link): ?array
         'active_match' => $match,
         'description' => isset($link['description']) ? (string) $link['description'] : null,
     ];
+    if (!empty($link['skip_i18n'])) {
+        $out['skip_i18n'] = true;
+    }
 
     return navigation_apply_activity_hub_badge(navigation_apply_internal_messages_badge($out));
 }
@@ -478,9 +481,10 @@ function navigation_append_forum_rubric_links(array &$megaItem): void
         $slug = trim((string) ($root['slug'] ?? ''));
         if ($slug !== '') {
             $link = navigation_resolve_link([
-                'label' => (string) ($root['name'] ?? 'Rubrique'),
+                'label' => (string) ($root['name'] ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Rubrique') : 'Rubrique')),
                 'path' => 'forum/category/' . $slug,
                 'permission' => 'forum.view',
+                'skip_i18n' => true,
             ]);
             if ($link !== null) {
                 $resolved[] = $link;
@@ -497,12 +501,15 @@ function navigation_append_forum_rubric_links(array &$megaItem): void
                 continue;
             }
             $opts = [
-                'label' => (string) ($ch['name'] ?? 'Sous-rubrique'),
+                'label' => (string) ($ch['name'] ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Sous-rubrique') : 'Sous-rubrique')),
                 'path' => 'forum/category/' . $cs,
                 'permission' => 'forum.view',
+                'skip_i18n' => true,
             ];
             if ($parentName !== '') {
-                $opts['description'] = 'Rubrique « ' . $parentName . ' »';
+                $opts['description'] = function_exists('t')
+                    ? t('nav.forum_in_rubric', ['name' => $parentName], 'Rubrique « :name »')
+                    : ('Rubrique « ' . $parentName . ' »');
             }
             $link = navigation_resolve_link($opts);
             if ($link !== null) {
@@ -690,6 +697,16 @@ function build_navigation_menu(): array
     }
     unset($builtItem);
 
+    if (function_exists('i18n_phrase')) {
+        $ph = (string) ($builtSearch['placeholder'] ?? '');
+        if ($ph !== '') {
+            $builtSearch['placeholder'] = i18n_phrase('nav', $ph);
+        }
+    }
+    if (function_exists('i18n_translate_nav_item')) {
+        $menuOut = array_map('i18n_translate_nav_item', $menuOut);
+    }
+
     return [
         'brand' => $builtBrand,
         'search' => $builtSearch,
@@ -724,7 +741,7 @@ function navigation_scope_drawer_entries(): array
                 'label' => (string) ($item['label'] ?? ''),
                 'href' => (string) ($item['href'] ?? ''),
                 'routePath' => $rp,
-                'group' => 'Accès directs',
+                'group' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Accès directs') : 'Accès directs',
             ];
 
             continue;

@@ -23,6 +23,8 @@ final class SimplifiedCommunityRolesTest extends TestCase
         $manager = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MANAGER);
 
         self::assertContains('training.view', $member);
+        self::assertContains('admin.backoffice.view', $member);
+        self::assertContains('atak.terminals.view', $member);
         self::assertContains('organization.recruitment.manage', $hr);
         self::assertContains('organization.effectifs.hub.view', $hr);
         self::assertContains('admin.organization', $manager);

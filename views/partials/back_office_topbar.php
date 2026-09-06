@@ -18,6 +18,13 @@ $pageGroup = isset($boPageGroup) ? trim((string) $boPageGroup) : 'Administration
 $pageTitle = isset($boPageTitle) ? trim((string) $boPageTitle) : (isset($title) ? trim((string) $title) : 'Back-office');
 $pageAction = isset($boPageAction) ? trim((string) $boPageAction) : '';
 $pageActionUrl = isset($boPageActionUrl) ? trim((string) $boPageActionUrl) : '';
+if (function_exists('i18n_phrase')) {
+    $pageGroup = i18n_phrase('nav', $pageGroup);
+    $pageTitle = i18n_phrase('nav', $pageTitle);
+    if ($pageAction !== '') {
+        $pageAction = i18n_phrase('nav', $pageAction);
+    }
+}
 
 $topAlerts = [];
 if (isset($boTopAlerts) && is_array($boTopAlerts)) {
@@ -33,7 +40,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'fg' => '#1e4f80',
             'bg' => '#eaf2fb',
             'bd' => '#c9dcf0',
-            'title' => $boRecN . ' candidature(s) à instruire',
+            'title' => $boRecN . ' ' . (function_exists('i18n_phrase') ? i18n_phrase('nav', 'candidature(s) à instruire') : 'candidature(s) à instruire'),
             'href' => url('back-office/recruitments'),
         ];
     }
@@ -45,7 +52,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'fg' => '#a32222',
             'bg' => '#fdecec',
             'bd' => '#f6cccc',
-            'title' => $boModN . ' signalement(s) forum',
+            'title' => $boModN . ' ' . (function_exists('i18n_phrase') ? i18n_phrase('nav', 'signalement(s) forum') : 'signalement(s) forum'),
             'href' => url('back-office/forum-moderation'),
         ];
     }
@@ -53,7 +60,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
 ?>
 <header class="ath-topbar" role="banner">
     <div class="ath-topbar__inner">
-        <nav class="ath-topbar__crumb" aria-label="Fil d'Ariane">
+        <nav class="ath-topbar__crumb" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Fil d\'Ariane') : 'Fil d\'Ariane') ?>">
             <span><?= $h($pageGroup) ?></span>
             <span class="ath-topbar__crumb-sep" aria-hidden="true">/</span>
             <span class="ath-topbar__crumb-current"><?= $h($pageTitle) ?></span>
@@ -61,7 +68,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
         <div class="ath-topbar__spacer" aria-hidden="true"></div>
         <label class="ath-topbar__search" for="ath-top-search">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-            <input id="ath-top-search" type="search" placeholder="Pages, membres, documents…" autocomplete="off" spellcheck="false" aria-label="Rechercher dans le back-office" readonly>
+            <input id="ath-top-search" type="search" placeholder="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Pages, membres, documents…') : 'Pages, membres, documents…') ?>" autocomplete="off" spellcheck="false" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Rechercher dans le back-office') : 'Rechercher dans le back-office') ?>" readonly>
             <span class="ath-topbar__search-kbd" aria-hidden="true">⌘K</span>
         </label>
         <?php if ($topAlerts !== []): ?>
@@ -69,7 +76,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             <?php foreach ($topAlerts as $alert): ?>
                 <?php
                 $href = trim((string) ($alert['href'] ?? ''));
-                $tag = $h((string) ($alert['label'] ?? ''));
+                $tag = $h(function_exists('i18n_phrase') ? i18n_phrase('nav', (string) ($alert['label'] ?? '')) : (string) ($alert['label'] ?? ''));
                 $n = (int) ($alert['n'] ?? 0);
                 if ($n <= 0) {
                     continue;
@@ -99,9 +106,9 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
-        <a href="<?= $h(url('dashboard')) ?>" class="ath-topbar__portal" title="Retour au tableau de bord">
+        <a href="<?= $h(url('dashboard')) ?>" class="ath-topbar__portal" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path></svg>
-            <span>Tableau de bord</span>
+            <span><?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tableau de bord') : 'Tableau de bord') ?></span>
         </a>
         <?php if ($pageAction !== ''): ?>
         <div class="ath-topbar__divider" aria-hidden="true"></div>

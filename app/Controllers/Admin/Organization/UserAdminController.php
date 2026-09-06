@@ -55,6 +55,17 @@ class UserAdminController
         return OrganizationRoleLabels::mode($community, $tenant);
     }
 
+    private function gradeIsAvailableForDoctrinePicker(int $tenantId, int $gradeId): bool
+    {
+        foreach ($this->gradeRepository->listActiveForDoctrinePicker($tenantId) as $g) {
+            if ((int) ($g['id'] ?? 0) === $gradeId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return array{
      *   unit_name: string,
@@ -571,7 +582,7 @@ class UserAdminController
         }
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
-        $grades = $this->gradeRepository->listForTenant($tenantId);
+        $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.create',
@@ -610,6 +621,11 @@ class UserAdminController
         }
         $primaryRoleId = $this->userRepository->peekPrimaryRoleIdForTenant($tenantId, $roleIds);
         $gradeId = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
+        if ($gradeId !== null && $gradeId > 0 && !$this->gradeIsAvailableForDoctrinePicker($tenantId, $gradeId)) {
+            Session::flash('error', 'Le grade sélectionné n’est pas disponible.');
+
+            return Response::redirect($createUrl);
+        }
         $nationalityCode = trim((string) $request->input('nationality_code')) ?: null;
         $preferredGradeFormat = trim((string) $request->input('preferred_grade_format'));
         if (!in_array($preferredGradeFormat, ['classic', 'otan', 'hybrid'], true)) {
@@ -777,7 +793,7 @@ class UserAdminController
         if ($selectedRoleIds === [] && !empty($user['role_id'])) {
             $selectedRoleIds = [(int) $user['role_id']];
         }
-        $grades = $this->gradeRepository->listForTenant($tenantId);
+        $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
         $gradeCategories = $this->gradeCategoryRepository->listActive();
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($user);
         $positions = $this->positionRepository->listForTenant($tenantId);
@@ -979,11 +995,7 @@ class UserAdminController
             $rawGrade = $request->input('grade_id');
             $gradeId = $rawGrade !== '' && $rawGrade !== null ? (int) $rawGrade : null;
             if ($gradeId !== null && $gradeId > 0) {
-                $allowedGradeIds = array_map(
-                    static fn (array $g): int => (int) ($g['id'] ?? 0),
-                    $this->gradeRepository->listForTenant($tenantId)
-                );
-                if (!in_array($gradeId, $allowedGradeIds, true)) {
+                if (!$this->gradeIsAvailableForDoctrinePicker($tenantId, $gradeId)) {
                     Session::flash('error', 'Le grade sélectionné n’est pas disponible pour cette communauté.');
 
                     return Response::redirect($editUrl);

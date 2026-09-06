@@ -156,28 +156,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
         <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="eff-banner__action">Ouvrir les fiches</a>
     </aside>
     <?php endif; ?>
-    <div class="eff-catalog__head">
-        <div class="min-w-0">
-            <p class="eff-catalog__kicker">Ressources humaines</p>
-            <h1 class="eff-catalog__title">Effectifs</h1>
-            <p class="eff-catalog__lead">
-                Annuaire des membres de <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?>.
-                Identité, grade, fonction, unité et rôles se lisent ici ; une affectation ou une demande d’élévation se fait depuis le tableau.
-                Organigramme et grades : <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>">Structure et grades</a>.
-            </p>
-        </div>
-        <div class="eff-catalog__tools">
-            <?php if ($canEditProfiles): ?>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary">Ajouter un membre</a>
-            <?php endif; ?>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Demandes d’élévation</a>
-            <a href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Exporter en CSV</a>
-            <?php if ($hasActiveFilters): ?>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Réinitialiser</a>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <?php if ($canEditProfiles): ?>
     <div class="eff-catalog__notice">
             <p class="eff-catalog__kicker">Ancienneté réelle</p>
@@ -260,6 +238,12 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                 <label>&nbsp;</label>
                 <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="width:100%;height:2.25rem">Appliquer</button>
             </div>
+            <?php if ($hasActiveFilters): ?>
+            <div>
+                <label>&nbsp;</label>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn" style="width:100%;height:2.25rem;display:inline-flex;align-items:center;justify-content:center">Réinitialiser</a>
+            </div>
+            <?php endif; ?>
         </div>
         <div class="eff-catalog-checks">
             <label class="eff-catalog-check<?= !empty($filters['sans_affectation']) ? ' is-on' : '' ?>">

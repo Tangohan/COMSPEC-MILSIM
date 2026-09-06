@@ -26,7 +26,7 @@ $errorFlash = \App\Core\Session::getFlash('error');
 
 $shortcuts = [
     ['href' => url('back-office/configuration-initiale'), 'title' => 'Configuration initiale', 'desc' => 'Logo, contact, inscription et modules visibles.'],
-    ['href' => url('back-office/community'), 'title' => 'Identité de la communauté', 'desc' => 'Nom, langue, visibilité et options générales.'],
+    ['href' => url('back-office/community'), 'title' => 'Paramètres de la communauté', 'desc' => 'Nom, vitrine, inscription, accueil et profil.'],
     ['href' => url('back-office/organisation-effectifs'), 'title' => 'Structure des effectifs', 'desc' => 'Organigramme, groupes, sections et équipes.'],
     ['href' => url('back-office/integration-membres'), 'title' => 'Accueil des nouveaux membres', 'desc' => 'Suivi des arrivants, étapes et rendez-vous.'],
 ];

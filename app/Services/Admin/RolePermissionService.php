@@ -7,6 +7,7 @@ namespace App\Services\Admin;
 use App\Authorization\SystemReservedPermissions;
 use App\Repositories\RoleRepository;
 use App\Repositories\PermissionRepository;
+use App\Services\Rbac\CommunityAccessProfiles;
 
 class RolePermissionService
 {
@@ -73,6 +74,33 @@ class RolePermissionService
             $roleId,
             $this->assignablePermissionIdsForTenant($tenantId, $permissionIds)
         );
+    }
+
+    /**
+     * Enregistre les droits d’un niveau d’accès communauté, y compris les trois modèles.
+     *
+     * @param list<int> $permissionIds
+     */
+    public function setPermissionsForAccessRole(int $tenantId, int $roleId, array $permissionIds): void
+    {
+        if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            throw new \InvalidArgumentException('Ce niveau d’accès ne peut pas être modifié depuis cet espace.');
+        }
+        $ids = $this->assignablePermissionIdsForTenant($tenantId, $permissionIds);
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        $slug = (string) ($role['slug'] ?? '');
+        if ($slug === CommunityAccessProfiles::SLUG_MANAGER) {
+            foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
+                if ((string) ($row['slug'] ?? '') === 'admin.roles.manage') {
+                    $keep = (int) ($row['id'] ?? 0);
+                    if ($keep > 0 && !in_array($keep, $ids, true)) {
+                        $ids[] = $keep;
+                    }
+                    break;
+                }
+            }
+        }
+        $this->permissionRepository->setPermissionsForRole($roleId, $ids);
     }
 
     /**

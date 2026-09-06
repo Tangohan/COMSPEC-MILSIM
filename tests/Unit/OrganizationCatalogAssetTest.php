@@ -54,6 +54,12 @@ final class OrganizationCatalogAssetTest extends TestCase
         self::assertStringContainsString('Démarrer avec un modèle', $setup);
         self::assertStringContainsString('organization.catalog.manage', $perm);
         self::assertStringContainsString('ORGANIZATION_CATALOG_V1', $catalog);
+        self::assertStringContainsString('JOB_CATALOGS_FR_US_V1', $catalog);
+        $defs = (string) file_get_contents($root . '/app/Services/OrganizationCatalog/OrganizationKitDefinitions.php');
+        self::assertStringContainsString('official.french_army', $defs);
+        self::assertStringContainsString('official.us_sof', $defs);
+        $seed = (string) file_get_contents($root . '/bootstrap/configuration_updates_migration.php');
+        self::assertStringContainsString('JOB_CATALOGS_FR_US_V1', $seed);
         self::assertStringContainsString('Catalogue de l’organisation', $search);
         self::assertStringContainsString('Journal du catalogue', $search);
         self::assertStringContainsString('Gate::getInstance()', $ctrl);

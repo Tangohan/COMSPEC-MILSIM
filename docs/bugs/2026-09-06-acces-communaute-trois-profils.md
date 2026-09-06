@@ -39,6 +39,8 @@ Les copies restantes (adjoint, métiers du catalogue, opérateurs ATAK, etc.) so
 
 Corrigé (modèle en place ; suppression des copies à la migration).
 
-## Suite — administration du site
+## Suite
+
+Les trois modèles restent. Depuis le 6 septembre 2026, leurs droits se corrigent dans le bureau effectifs (écran Accès), et d’autres niveaux peuvent être créés. Voir `2026-09-06-acces-niveaux-personnalisables.md`.
 
 L’administration du site n’est plus un rôle à attribuer. Elle est portée sur le compte (`users.is_platform_admin`) et se gère dans une liste fermée, pas sur chaque dossier. La reprise des anciennes affectations « Gestionnaire de la plateforme » se fait à la migration. L’assistance et la modération restent des rôles site distincts.

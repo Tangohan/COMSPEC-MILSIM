@@ -138,13 +138,16 @@ final class DemoNdaController
         $success = Session::getFlash('success');
 
         return Response::view('demo_nda.feedback', [
-            'title' => 'Votre avis sur la démonstration',
+            'title' => 'Votre avis sur la preview Athena',
             'error' => is_string($error) ? $error : null,
             'success' => is_string($success) ? $success : null,
             'inboxConfigured' => demo_feedback_inbox_email() !== null,
             'ratings' => self::feedbackRatingLabels(),
             'highlights' => self::feedbackHighlightLabels(),
             'frictions' => self::feedbackFrictionLabels(),
+            'accessClarity' => self::feedbackAccessClarityLabels(),
+            'accessEnough' => self::feedbackAccessEnoughLabels(),
+            'accessJobs' => self::feedbackAccessJobsLabels(),
             'old' => Session::getFlash('old_input'),
         ]);
     }
@@ -195,6 +198,19 @@ final class DemoNdaController
             }
         }
 
+        $accessClarityLabels = self::feedbackAccessClarityLabels();
+        $accessEnoughLabels = self::feedbackAccessEnoughLabels();
+        $accessJobsLabels = self::feedbackAccessJobsLabels();
+        $accessClarity = (string) $request->input('access_clarity', '');
+        $accessEnough = (string) $request->input('access_enough', '');
+        $accessJobs = (string) $request->input('access_jobs', '');
+        if (!isset($accessClarityLabels[$accessClarity], $accessEnoughLabels[$accessEnough], $accessJobsLabels[$accessJobs])) {
+            Session::flash('error', 'Merci de répondre aux trois questions sur les niveaux d’accès.');
+            Session::flash('old_input', $this->feedbackOldInput($request));
+
+            return Response::redirect(url($path));
+        }
+
         $selectedHighlights = $this->normalizeMultiChoice($request->input('highlights'), $highlights);
         $selectedFrictions = $this->normalizeMultiChoice($request->input('frictions'), $frictions);
 
@@ -218,6 +234,9 @@ final class DemoNdaController
             'Facilité à se retrouver' => $ratings[$navigation],
             'Clarté des écrans' => $ratings[$clarity],
             'Ambiance visuelle' => $ratings[$lookFeel],
+            'Les trois niveaux d’accès sont-ils clairs ?' => $accessClarityLabels[$accessClarity],
+            'Les trois niveaux suffisent-ils ?' => $accessEnoughLabels[$accessEnough],
+            'Accès et emploi du dossier sont-ils distincts ?' => $accessJobsLabels[$accessJobs],
             'Ce qui a bien fonctionné' => $selectedHighlights !== []
                 ? implode(', ', $selectedHighlights)
                 : 'Rien de coché',
@@ -277,6 +296,8 @@ final class DemoNdaController
             'visual' => 'Design et ambiance réussis',
             'speed' => 'Pages rapides à charger',
             'content' => 'Textes compréhensibles',
+            'access' => 'Les trois niveaux d’accès sont faciles à comprendre',
+            'jobs' => 'Les emplois du dossier restent clairs (radio, médic…)',
         ];
     }
 
@@ -294,6 +315,46 @@ final class DemoNdaController
             'mobile_ux' => 'Gênant sur téléphone',
             'slow' => 'Sensation de lenteur',
             'inconsistent' => 'Écrans trop différents les uns des autres',
+            'access_unclear' => 'Les niveaux d’accès ne sont pas clairs',
+            'access_missing' => 'Il manque un niveau d’accès pour mon cas',
+            'jobs_mixed' => 'Accès et emploi du dossier se mélangent encore',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function feedbackAccessClarityLabels(): array
+    {
+        return [
+            'clear' => 'Oui, c’est clair',
+            'mixed' => 'À peu près',
+            'unclear' => 'Non, ce n’est pas clair',
+            'unseen' => 'Je n’ai pas encore vu cet écran',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function feedbackAccessEnoughLabels(): array
+    {
+        return [
+            'enough' => 'Les trois niveaux suffisent',
+            'missing' => 'Il manque un cas',
+            'unseen' => 'Je n’ai pas encore vu cet écran',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function feedbackAccessJobsLabels(): array
+    {
+        return [
+            'clear' => 'Oui, c’est distinct',
+            'mixed' => 'Ça se mélange encore',
+            'unseen' => 'Je n’ai pas encore vu cet écran',
         ];
     }
 
@@ -328,6 +389,9 @@ final class DemoNdaController
             'navigation' => (string) $request->input('navigation', ''),
             'clarity' => (string) $request->input('clarity', ''),
             'look_feel' => (string) $request->input('look_feel', ''),
+            'access_clarity' => (string) $request->input('access_clarity', ''),
+            'access_enough' => (string) $request->input('access_enough', ''),
+            'access_jobs' => (string) $request->input('access_jobs', ''),
             'highlights' => is_array($request->input('highlights')) ? $request->input('highlights') : [],
             'frictions' => is_array($request->input('frictions')) ? $request->input('frictions') : [],
             'ideas' => (string) $request->input('ideas', ''),

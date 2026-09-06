@@ -255,6 +255,7 @@ $brand = email_brand_name();
             <a class="btn btn-primary" href="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">Se connecter</a>
             <a class="btn btn-ghost" href="<?= htmlspecialchars($communityUrl, ENT_QUOTES, 'UTF-8') ?>">Voir l’entité de démo</a>
             <a class="btn btn-ghost" href="<?= htmlspecialchars($continueUrl, ENT_QUOTES, 'UTF-8') ?>">Continuer sans se connecter</a>
+            <a class="btn btn-ghost" href="<?= htmlspecialchars(url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/')), ENT_QUOTES, 'UTF-8') ?>">Donner votre avis</a>
         </div>
 
         <p class="disclaimer">

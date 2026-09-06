@@ -147,8 +147,52 @@ $currentTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
 );
 $tenantTypeFormAction = (string) ($tenantTypeFormAction ?? url('back-office/organisation/profil'));
 $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTenantType);
+$hubTab = (string) ($settingsHubTab ?? 'identite');
+if (!in_array($hubTab, ['identite', 'vitrine', 'inscription', 'accueil', 'portail', 'profil'], true)) {
+    $hubTab = 'identite';
+}
+$hubTabs = [
+    'identite' => ['label' => 'Identité', 'hint' => 'Nom, logo, représentation'],
+    'vitrine' => ['label' => 'Vitrine', 'hint' => 'Textes publics et visibilité'],
+    'inscription' => ['label' => 'Inscription', 'hint' => 'Candidature et accueil'],
+    'accueil' => ['label' => 'Accueil', 'hint' => 'Photos après connexion'],
+    'portail' => ['label' => 'Portail', 'hint' => 'Menus et marque'],
+    'profil' => ['label' => 'Profil', 'hint' => 'Cycle et type de communauté'],
+];
+$hubInscriptionUrl = $formAction . (str_contains($formAction, '?') ? '&' : '?') . 'onglet=inscription#coordonnees';
+$hubSubmitForm = $hubTab === 'inscription' ? 'bo-inscription-settings-form' : 'bo-community-settings-form';
+$hubSaveHints = [
+    'identite' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
+    'vitrine' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
+    'portail' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
+    'profil' => 'Enregistre le cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
+    'inscription' => 'Enregistre le parcours d’arrivée, le contact des candidats et le dossier.',
+    'accueil' => 'Chaque photo et le défilement s’enregistrent avec les boutons de cette rubrique.',
+];
+$hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
 ?>
-<div class="bo-community-settings">
+<div class="bo-community-settings bo-settings-hub" data-settings-hub data-active-tab="<?= $h($hubTab) ?>">
+
+    <p class="bo-settings-hub__intro">
+        Tous les réglages de la communauté sont regroupés ici. Choisissez une rubrique : l’écran reste sur celle-ci après un enregistrement. Le bouton Enregistrer reste visible en bas de page.
+    </p>
+
+    <div class="bo-settings-hub-tabs" role="tablist" aria-label="Rubriques des paramètres">
+        <?php foreach ($hubTabs as $tabKey => $tabMeta): ?>
+            <button
+                type="button"
+                class="bo-settings-hub-tab<?= $hubTab === $tabKey ? ' is-active' : '' ?>"
+                role="tab"
+                id="bo-settings-tab-<?= $h($tabKey) ?>"
+                data-settings-tab="<?= $h($tabKey) ?>"
+                aria-selected="<?= $hubTab === $tabKey ? 'true' : 'false' ?>"
+                tabindex="<?= $hubTab === $tabKey ? '0' : '-1' ?>"
+            >
+                <?= $h((string) $tabMeta['label']) ?>
+                <span class="bo-settings-hub-tab__hint"><?= $h((string) $tabMeta['hint']) ?></span>
+            </button>
+        <?php endforeach; ?>
+    </div>
 
     <?php if ($discordInviteMissing): ?>
         <?php
@@ -156,23 +200,12 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
         $notice_title = 'Lien Discord manquant';
         $notice_body = 'Le recrutement via Discord est actif, mais aucun lien d\'invitation n\'est renseigné. '
             . 'Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public. '
-            . '<a href="' . $h(url('back-office/community/inscription#coordonnees')) . '">Renseigner le lien Discord</a>';
+            . '<a href="' . $h($hubInscriptionUrl) . '">Renseigner le lien Discord</a>';
         include base_path('views/partials/bo_dsfr_notice.php');
         ?>
     <?php endif; ?>
-    <?php
-    $notice_tone = 'info';
-    $notice_title = 'Nouveaux réglages';
-    $notice_body = 'De nouveaux réglages sont disponibles ici&nbsp;: représentation de la communauté (unité réelle ou fictive), '
-        . 'bio du bandeau et texte «&nbsp;Qui sommes-nous&nbsp;?&nbsp;». '
-        . 'Les options d\'inscription (créneaux, motivation, mode de candidature) ont leur propre page. '
-        . '<a href="#accueil-connexion">Images d’accueil</a> · '
-        . '<a href="#representation-unite">Représentation</a> · <a href="#textes-publics">Textes publics</a> · '
-        . '<a href="' . $h(url('back-office/community/inscription')) . '">Inscription</a> · '
-        . '<a href="' . $h(url('back-office/community/presentation')) . '">Vitrine complète</a>';
-    include base_path('views/partials/bo_dsfr_notice.php');
-    ?>
 
+    <div data-settings-panel="accueil"<?= $hubTab === 'accueil' ? '' : ' hidden' ?>>
     <section class="ath-card ath-rise bo-setting-group" id="accueil-connexion">
         <p class="bo-setting-group__kicker">Connexion</p>
         <h2 class="bo-setting-group__title">Images d’accueil</h2>
@@ -273,15 +306,18 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
         <p class="bo-settings-note">Nombre maximum d’images atteint. Retirez-en une pour en ajouter une autre.</p>
         <?php endif; ?>
     </section>
+    </div>
 
     <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
         <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="settings_tab" value="<?= $h($hubTab) ?>">
 
         <div class="bo-settings-grid">
 
+            <div data-settings-panel="identite"<?= $hubTab === 'identite' ? '' : ' hidden' ?>>
             <section class="ath-card ath-rise bo-setting-group" id="identite">
                 <p class="bo-setting-group__kicker">Identité</p>
-                <h2 class="bo-setting-group__title">Vitrine et portail</h2>
+                <h2 class="bo-setting-group__title">Nom, logo et représentation</h2>
                 <div class="bo-setting-group__rows">
                     <div class="bo-setting-row bo-setting-row--stack">
                         <div class="bo-setting-row__copy">
@@ -289,7 +325,7 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                             <div class="bo-setting-row__help">Titre visible sur la page publique et le registre.</div>
                         </div>
                         <div class="bo-setting-row__control">
-                            <input type="text" id="tenant_name" name="tenant_name" class="bo-setting-row__field--wide" maxlength="255" required value="<?= $h((string) ($tenant['name'] ?? '')) ?>" placeholder="Ex. 92e RI">
+                            <input type="text" id="tenant_name" name="tenant_name" class="bo-setting-row__field--wide" maxlength="255" value="<?= $h((string) ($tenant['name'] ?? '')) ?>" placeholder="Ex. 92e RI">
                         </div>
                     </div>
                     <div class="bo-setting-row bo-setting-row--stack">
@@ -298,7 +334,7 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                             <div class="bo-setting-row__help">Lettres minuscules, chiffres et tirets. Mettez à jour les liens déjà partagés si vous la changez.</div>
                         </div>
                         <div class="bo-setting-row__control">
-                            <input type="text" id="tenant_slug" name="tenant_slug" class="bo-setting-row__field--wide" maxlength="50" required pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" value="<?= $h($slugHint) ?>" placeholder="mon-unite">
+                            <input type="text" id="tenant_slug" name="tenant_slug" class="bo-setting-row__field--wide" maxlength="50" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" value="<?= $h($slugHint) ?>" placeholder="mon-unite">
                         </div>
                     </div>
                     <div class="bo-setting-row">
@@ -344,7 +380,7 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <div class="bo-setting-row bo-setting-row--stack">
                         <div class="bo-setting-row__copy">
                             <div class="bo-setting-row__label">Message d’accueil <span style="font-weight:600;color:var(--ath-subtle)">(facultatif)</span></div>
-                            <div class="bo-setting-row__help">Texte court de bienvenue (portail / fiche). Distinct de la bio du bandeau public dans « Textes publics ».</div>
+                            <div class="bo-setting-row__help">Texte court de bienvenue sur le portail. Distinct de la bio du bandeau, réglée dans la rubrique Vitrine.</div>
                         </div>
                         <div class="bo-setting-row__control">
                             <textarea id="welcome_text" name="welcome_text" rows="3" maxlength="500" class="bo-setting-row__field--wide" placeholder="Présentez votre unité en quelques phrases…"><?= $h((string) ($c['welcome_text'] ?? '')) ?></textarea>
@@ -369,6 +405,7 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                         </div>
                     </div>
                     <div class="bo-setting-row bo-setting-row--stack" id="affiliation">
+                        <span id="representation-unite"></span>
                         <div class="bo-setting-row__copy">
                             <div class="bo-setting-row__label">Représentation de la communauté</div>
                             <div class="bo-setting-row__help">Choisissez une ou plusieurs entités du référentiel militaire (commandement, composante, régiment, commando…) ou indiquez un cadre fictif. La recherche fonctionne aussi sur les alias (ex. Hubert, 1RPIMA, USASOC).</div>
@@ -422,7 +459,9 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <p class="bo-settings-note"><a href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
                 <?php endif; ?>
             </section>
+            </div>
 
+            <div data-settings-panel="vitrine"<?= $hubTab === 'vitrine' ? '' : ' hidden' ?>>
             <section class="ath-card ath-rise bo-setting-group" id="textes-publics">
                 <p class="bo-setting-group__kicker">Vitrine</p>
                 <h2 class="bo-setting-group__title">Textes publics</h2>
@@ -487,16 +526,6 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                             <span class="bo-setting-row__value"><?= $slugHint !== '' ? 'En ligne' : 'Indisponible' ?></span>
                         </div>
                     </div>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Indexation moteurs</div>
-                            <div class="bo-setting-row__help">Autoriser le référencement de la vitrine par les moteurs de recherche.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <span class="bo-setting-row__value">Bientôt</span>
-                            <span class="ath-toggle is-off" aria-hidden="true" title="Réglage à venir"><span class="ath-toggle__knob"></span></span>
-                        </div>
-                    </div>
                     <div class="bo-setting-row bo-setting-row--stack">
                         <div class="bo-setting-row__copy">
                             <div class="bo-setting-row__label">Visibilité de l’organigramme</div>
@@ -547,7 +576,9 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <?php endforeach; ?>
                 </div>
             </section>
+            </div>
 
+            <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
             <section class="ath-card ath-rise bo-setting-group" id="navigation">
                 <p class="bo-setting-group__kicker">Navigation</p>
                 <h2 class="bo-setting-group__title">Portail</h2>
@@ -662,27 +693,9 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <?php endif; ?>
                 </div>
             </section>
+            </div>
 
-            <section class="ath-card ath-rise bo-setting-group" id="inscription">
-                <p class="bo-setting-group__kicker">Inscription</p>
-                <h2 class="bo-setting-group__title">Arrivée des membres</h2>
-                <div class="bo-setting-group__rows">
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Mode actuel</div>
-                            <div class="bo-setting-row__help">Parcours de candidature, rôle d’accueil, contact des candidats, créneaux et motivation.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <span class="bo-setting-row__value"><?= $h($registrationLabel) ?><?= $communityLocked ? ' · recrutement fermé' : '' ?></span>
-                        </div>
-                    </div>
-                </div>
-                <p class="bo-settings-note">
-                    <a href="<?= $h(url('back-office/community/inscription')) ?>">Gérer tous les paramètres d’inscription</a>
-                    · <a href="<?= $h(url('back-office/community/presentation') . '#pack-milsim-editor') ?>">Éditeur complet du dossier candidature</a>
-                </p>
-            </section>
-
+            <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
             <section class="ath-card ath-rise bo-setting-group" id="cycle-effectif">
                 <p class="bo-setting-group__kicker">Effectif</p>
                 <h2 class="bo-setting-group__title">Cycle administratif</h2>
@@ -698,12 +711,15 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     </label>
                 </div>
             </section>
+            </div>
 
         </div>
 
-        <details class="ath-card ath-rise bo-setting-group">
-            <summary class="bo-setting-group__title" style="cursor:pointer;list-style:none;">Images &amp; marque complémentaires</summary>
-            <div class="bo-setting-group__rows" style="margin-top:13px;">
+            <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
+        <section class="ath-card ath-rise bo-setting-group" id="marque">
+            <p class="bo-setting-group__kicker">Marque</p>
+            <h2 class="bo-setting-group__title">Images complémentaires et relais</h2>
+            <div class="bo-setting-group__rows">
                 <div class="bo-setting-row">
                     <div class="bo-setting-row__copy">
                         <div class="bo-setting-row__label">Bannière</div>
@@ -750,15 +766,22 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     </div>
                 </div>
             </div>
-        </details>
-
-        <div class="bo-settings-save">
-            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
-        </div>
+        </section>
+            </div>
     </form>
 
+    <div data-settings-panel="inscription"<?= $hubTab === 'inscription' ? '' : ' hidden' ?> id="inscription">
+        <?php
+        $settingsHubEmbedInscription = true;
+        include base_path('views/admin/organization/inscription_settings.php');
+        ?>
+    </div>
+
+    <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
     <form method="post" action="<?= $h($tenantTypeFormAction) ?>" class="ath-card ath-rise bo-setting-group" id="profil">
         <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="settings_tab" value="profil">
+        <span id="org-profil"></span>
         <p class="bo-setting-group__kicker">Profil</p>
         <h2 class="bo-setting-group__title">Type de communauté</h2>
         <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
@@ -793,11 +816,18 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
             <button type="submit" class="ath-btn">Appliquer le profil</button>
         </div>
     </form>
+    </div>
+
+    <div class="bo-settings-hub-save" data-settings-save>
+        <p class="bo-settings-hub-save__hint" data-settings-save-hint><?= $h($hubSaveHint) ?></p>
+        <button type="button" class="ath-btn ath-btn--solid" data-settings-submit="<?= $h($hubSubmitForm) ?>"<?= $hubTab === 'accueil' ? ' hidden' : '' ?>>Enregistrer</button>
+    </div>
 
     <p class="bo-settings-note">
-        Inscription et vitrine :
-        <a href="<?= $h(url('back-office/community/inscription')) ?>">Paramètres d’inscription</a>
-        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
+        Mise en page avancée de la vitrine :
+        <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
+        · <a href="<?= $h(url('back-office/media')) ?>">Médias</a>
+        · <a href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>
         · <a href="<?= $h(url('back-office/configuration-initiale')) ?>">Assistant de démarrage</a>
     </p>
 </div>
@@ -978,3 +1008,4 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
     }
 })();
 </script>
+<script src="<?= $h(asset_url('assets/js/community-settings-hub.js')) ?>"></script>

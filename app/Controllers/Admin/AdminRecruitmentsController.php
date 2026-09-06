@@ -31,6 +31,7 @@ use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
+use App\Services\Rbac\MilitaryOperationalRoleCatalog;
 use App\Support\EnlistmentAcceptedIdentity;
 
 class AdminRecruitmentsController
@@ -1089,8 +1090,18 @@ class AdminRecruitmentsController
             $last = '';
         }
 
-        $defaultUnitId = (int) ($linkedOpening['unit_id'] ?? 0);
-        $defaultJobRoleId = (int) ($linkedOpening['personnel_job_role_id'] ?? 0);
+        $defaultUnitId = is_array($linkedOpening) ? (int) ($linkedOpening['unit_id'] ?? 0) : 0;
+        $defaultJobRoleId = is_array($linkedOpening) ? (int) ($linkedOpening['personnel_job_role_id'] ?? 0) : 0;
+        if ($defaultJobRoleId > 0) {
+            try {
+                $linkedJob = $this->personnelJobRoleRepository->findRoleById($defaultJobRoleId, (int) $tenantId);
+                $linkedSlug = strtolower(trim((string) ($linkedJob['slug'] ?? '')));
+                if ($linkedSlug !== '' && isset(MilitaryOperationalRoleCatalog::catalogSlugSet()[$linkedSlug])) {
+                    $defaultJobRoleId = 0;
+                }
+            } catch (\Throwable) {
+            }
+        }
         $memberRoleId = $this->roleRepository->getIdBySlug((int) $tenantId, 'member');
         $selectedRoleIds = [];
         if ($submitterId > 0) {
@@ -1103,10 +1114,15 @@ class AdminRecruitmentsController
         $jobRoleOptions = [];
         try {
             if ($this->personnelJobRoleRepository->tablesExist()) {
-                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect((int) $tenantId);
+                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect((int) $tenantId, false, false);
             }
         } catch (\Throwable) {
             $jobRoleOptions = [];
+        }
+
+        $defaultAssignmentLabel = '';
+        if ($defaultJobRoleId < 1 && is_array($linkedOpening)) {
+            $defaultAssignmentLabel = trim((string) ($linkedOpening['title'] ?? ''));
         }
 
         $navCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
@@ -1124,6 +1140,7 @@ class AdminRecruitmentsController
                 'steam_profile' => $steamProfilePrefill,
                 'unit_id' => $defaultUnitId,
                 'personnel_job_role_id' => $defaultJobRoleId,
+                'assignment_label' => $defaultAssignmentLabel,
                 'role_ids' => $selectedRoleIds,
                 'clearance_level' => '',
             ],

@@ -127,6 +127,7 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
                     <span>Emplois métier (chef de groupe, recruteur, etc.).</span>
                 </span>
             </label>
+            <?php if ((int) ($item['role_count'] ?? 0) > 0): ?>
             <label class="bo-catalog__check">
                 <input type="checkbox" name="inclure[roles]" value="1" <?= !empty($parts['roles']) ? 'checked' : '' ?>>
                 <span>
@@ -134,6 +135,7 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
                     <span>Rôles de communauté, avec un profil de droits cohérent. Les rôles fondateurs restent intacts.</span>
                 </span>
             </label>
+            <?php endif; ?>
         </fieldset>
         <div class="bo-catalog__card-actions">
             <button type="submit" class="ath-btn ath-btn--solid">Appliquer à cette communauté</button>
@@ -144,7 +146,7 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
     <nav class="bo-catalog__hubs" aria-label="Écrans d’édition">
         <a class="ath-btn" href="<?= $h(url('back-office/groups')) ?>">Administrer les unités</a>
         <a class="ath-btn" href="<?= $h(url('back-office/referentiels/grades')) ?>">Administrer les grades</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/personnel-job-roles')) ?>">Administrer les fonctions</a>
+        <a class="ath-btn" href="<?= $h(function_exists('effectifs_workspace_url') ? effectifs_workspace_url('fonctions') : url('back-office/ressources/effectifs/fonctions')) ?>">Administrer les emplois</a>
         <a class="ath-btn" href="<?= $h(url('back-office/roles')) ?>">Administrer les rôles</a>
     </nav>
 </div>

@@ -30,23 +30,23 @@ return [
             ['label' => 'Paramètres', 'href' => 'back-office/organisation/parametres'],
         ]],
         ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique'],
-        ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INSCRIPTION', 'title' => 'Paramètres d’inscription', 'subtitle' => 'Mode de candidature, rôle d’accueil, contact des candidats, créneaux de disponibilité et section Motivation.', 'quick' => [
-            ['label' => 'Parcours', 'href' => 'back-office/community/inscription#parcours'],
-            ['label' => 'Contact', 'href' => 'back-office/community/inscription#coordonnees'],
-            ['label' => 'Dossier', 'href' => 'back-office/community/inscription#dossier'],
-            ['label' => 'Identité', 'href' => 'back-office/community'],
+        ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, vitrine, inscription, photos d’accueil, portail et profil.', 'quick' => [
+            ['label' => 'Identité', 'href' => 'back-office/community?onglet=identite'],
+            ['label' => 'Vitrine', 'href' => 'back-office/community?onglet=vitrine'],
+            ['label' => 'Inscription', 'href' => 'back-office/community?onglet=inscription'],
+            ['label' => 'Accueil', 'href' => 'back-office/community?onglet=accueil'],
         ]],
-        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, représentation d’unité, textes publics et navigation du portail.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/community#identite'],
-            ['label' => 'Textes publics', 'href' => 'back-office/community#textes-publics'],
-            ['label' => 'Visibilité', 'href' => 'back-office/community#visibilite'],
-            ['label' => 'Inscription', 'href' => 'back-office/community/inscription'],
+        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, vitrine, inscription, photos d’accueil, portail et profil.', 'quick' => [
+            ['label' => 'Identité', 'href' => 'back-office/community?onglet=identite'],
+            ['label' => 'Vitrine', 'href' => 'back-office/community?onglet=vitrine'],
+            ['label' => 'Inscription', 'href' => 'back-office/community?onglet=inscription'],
+            ['label' => 'Accueil', 'href' => 'back-office/community?onglet=accueil'],
         ]],
-        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, représentation d’unité, textes publics et navigation du portail.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/organisation/parametres#identite'],
-            ['label' => 'Textes publics', 'href' => 'back-office/organisation/parametres#textes-publics'],
-            ['label' => 'Visibilité', 'href' => 'back-office/organisation/parametres#visibilite'],
-            ['label' => 'Inscription', 'href' => 'back-office/community/inscription'],
+        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, vitrine, inscription, photos d’accueil, portail et profil.', 'quick' => [
+            ['label' => 'Identité', 'href' => 'back-office/organisation/parametres?onglet=identite'],
+            ['label' => 'Vitrine', 'href' => 'back-office/organisation/parametres?onglet=vitrine'],
+            ['label' => 'Inscription', 'href' => 'back-office/organisation/parametres?onglet=inscription'],
+            ['label' => 'Accueil', 'href' => 'back-office/organisation/parametres?onglet=accueil'],
         ]],
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Images et vidéos pour la vitrine publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
@@ -115,8 +115,8 @@ return [
         ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
             ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],
-            ['label' => 'Rôles', 'href' => 'back-office/roles'],
-            ['label' => 'Fonctions', 'href' => 'back-office/personnel-job-roles'],
+            ['label' => 'Accès', 'href' => 'back-office/ressources/effectifs/roles'],
+            ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
         ['path' => 'back-office/organisation/catalogue/historique', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Journal du catalogue', 'subtitle' => 'Toutes les applications de modèles dans cette communauté.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
@@ -154,16 +154,13 @@ return [
         ]],
         ['path' => 'back-office/roles', 'group' => 'Système', 'kicker' => 'RÔLES · TABLE', 'title' => 'Table des rôles', 'subtitle' => 'Liste structurée par famille opérationnelle.', 'css' => ['back-office-roles.css']],
         ['path' => 'back-office/personnel-job-roles/kits', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · ACCÈS', 'title' => 'Kits d’accès', 'subtitle' => 'Packs simples : lecture, modification, recrutement, paramètres — multi-sélectionnables et attribuables.', 'css' => ['back-office-catalog.css'], 'quick' => [
-            ['label' => 'Attributions', 'href' => 'back-office/personnel-job-roles/assignments'],
-            ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
+            ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
-        ['path' => 'back-office/personnel-job-roles/assignments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Attributions métier', 'subtitle' => 'Attribuez les emplois du référentiel à chaque membre de l’effectif.', 'quick' => [
-            ['label' => 'Référentiel', 'href' => 'back-office/personnel-job-roles'],
-            ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
+        ['path' => 'back-office/personnel-job-roles/assignments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois du dossier', 'subtitle' => 'Attribuez les emplois aux membres depuis le bureau effectifs.', 'quick' => [
+            ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
-        ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois & missions', 'subtitle' => 'Référentiel des emplois métier, catégories et droits associés.', 'quick' => [
-            ['label' => 'Affectations', 'href' => 'back-office/personnel-job-roles/assignments'],
-            ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
+        ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois du dossier', 'subtitle' => 'Libellés métier du dossier, distincts des niveaux d’accès.', 'quick' => [
+            ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
         ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · IMMERSION', 'title' => 'Réglages d’immersion', 'subtitle' => 'Activation du suivi, étapes d’avancement, filières et indicateur « dossier prêt ».', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],

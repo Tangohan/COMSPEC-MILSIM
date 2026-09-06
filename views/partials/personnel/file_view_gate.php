@@ -1,10 +1,7 @@
 <?php
 /**
- * Écran de choix affiché à l’arrivée sur un dossier personnel pour les
- * comptes disposant au minimum des droits RH (accès personnel).
- *
- * Variables attendues depuis file.php (déjà résolues) :
- * $displayName, $avatarUrl, $personnelFileBaseUrl.
+ * Ancien écran de choix de vue — plus inclus depuis la fiche.
+ * Le sélecteur Fiche / Commandement vit dans file_view_switcher.php.
  */
 $gatePublicUrl = $personnelFileBaseUrl . '?view=public';
 $gateRhUrl = $personnelFileBaseUrl . '?view=rh';

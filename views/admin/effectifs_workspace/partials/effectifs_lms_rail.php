@@ -42,34 +42,30 @@ $navClass = static function (string $id) use ($active): string {
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('roles'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>02</b>
-                <span>Rôles<em>Profils de gouvernance</em></span>
-            </a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('droits'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('droits'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>03</b>
-                <span>Droits d’accès<em>Habilitations et profils prêts</em></span>
+                <span>Accès<em>Niveaux et droits de la communauté</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('fonctions'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>04</b>
-                <span>Fonctions<em>Emplois métier des dossiers</em></span>
+                <b>03</b>
+                <span>Emplois<em>Libellés du dossier, pas des droits</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('affectations'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('affectations'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>05</b>
+                <b>04</b>
                 <span>Affectations<em>Unités et rattachements</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('elevations'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>06</b>
-                <span>Élévations<?= $nElevationOpen > 0 ? ' <i class="eff-nav-badge">' . $nElevationOpen . '</i>' : '' ?><em>Grade, rôle, droits</em></span>
+                <b>05</b>
+                <span>Élévations<?= $nElevationOpen > 0 ? ' <i class="eff-nav-badge">' . $nElevationOpen . '</i>' : '' ?><em>Grade et accès</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('qualifications'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>07</b>
+                <b>06</b>
                 <span>Qualifications<?= $nQualifExpiring > 0 ? ' <i class="eff-nav-badge">' . $nQualifExpiring . '</i>' : '' ?><em>Validité et recyclages</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('duplicates'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>08</b>
+                <b>07</b>
                 <span>Fiches jumelles<?= !empty($personnelDuplicateScan['group_count']) ? ' <i class="eff-nav-badge">' . (int) $personnelDuplicateScan['group_count'] . '</i>' : '' ?><em>Matricule, indicatif, nom</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('departs'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('departures'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>09</b>
+                <b>08</b>
                 <span>Anciens membres<em>Départs, archive, réintégration</em></span>
             </a>
         </nav>
@@ -77,19 +73,19 @@ $navClass = static function (string $id) use ($active): string {
         <p class="eff-section-label">Dossier RH</p>
         <nav class="eff-rail-nav" aria-label="Dossier RH individuel">
             <a href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_documents'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>10</b>
+                <b>09</b>
                 <span>Documents RH<em>Candidature, charte, évaluations…</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('mobilite'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_mobility'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>11</b>
+                <b>10</b>
                 <span>Mobilité<?= $nMobilityPending > 0 ? ' <i class="eff-nav-badge">' . $nMobilityPending . '</i>' : '' ?><em>Unité, poste, évolution</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('vivier'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_succession'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>12</b>
+                <b>11</b>
                 <span>Vivier<em>Succession chefs / instructeurs</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_alerts'), ENT_QUOTES, 'UTF-8') ?>">
-                <b>13</b>
+                <b>12</b>
                 <span>Alertes RH<?= $nRhAlerts > 0 ? ' <i class="eff-nav-badge">' . $nRhAlerts . '</i>' : '' ?><em>Qualifs, absences, inactivité</em></span>
             </a>
         </nav>
@@ -102,7 +98,7 @@ $navClass = static function (string $id) use ($active): string {
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url() . '?sans_role=1', ENT_QUOTES, 'UTF-8') ?>" class="eff-alert-chip">
                 <strong><?= $nNoRole ?></strong>
-                <span>Sans rôle</span>
+                <span>Sans accès</span>
             </a>
         </div>
 

@@ -75,8 +75,25 @@ $personnelAbsences = is_array($personnelAbsences ?? null) ? $personnelAbsences :
 $personnelActiveAbsences = is_array($personnelActiveAbsences ?? null) ? $personnelActiveAbsences : [];
 $personnelAbsencesSchemaReady = !empty($personnelAbsencesSchemaReady ?? false);
 $personnelAbsenceReasonLabels = is_array($personnelAbsenceReasonLabels ?? null) ? $personnelAbsenceReasonLabels : [];
-$personnelFileInitialTab = trim((string) ($_GET['tab'] ?? ''));
-$personnelFileAllowedTabs = ['resume', 'seniorite', 'ops', 'formation', 'logistique', 'historique', 'bilans', 'administratif', 'tableau'];
+$personnelFileTabAliases = [
+    'resume' => 'resume',
+    'portrait' => 'resume',
+    'seniorite' => 'ops',
+    'ops' => 'ops',
+    'unite' => 'ops',
+    'formation' => 'formation',
+    'logistique' => 'formation',
+    'parcours' => 'formation',
+    'historique' => 'historique',
+    'bilans' => 'historique',
+    'suivi' => 'historique',
+    'administratif' => 'administratif',
+    'dossier' => 'administratif',
+    'tableau' => 'administratif',
+];
+$personnelFileRawTab = trim((string) ($_GET['onglet'] ?? $_GET['tab'] ?? ''));
+$personnelFileAllowedTabs = ['resume', 'ops', 'formation', 'historique', 'administratif'];
+$personnelFileInitialTab = $personnelFileTabAliases[$personnelFileRawTab] ?? 'resume';
 if (!in_array($personnelFileInitialTab, $personnelFileAllowedTabs, true)) {
     $personnelFileInitialTab = 'resume';
 }
@@ -571,21 +588,18 @@ if (!function_exists('personnel_file_render_admin_value')) {
 ?>
 <?php
 $canAccessRhView = !empty($canAccessRhView ?? false);
-$personnelViewMode = isset($personnelViewMode) && in_array($personnelViewMode, ['public', 'rh'], true) ? $personnelViewMode : '';
+$personnelViewMode = isset($personnelViewMode) && in_array($personnelViewMode, ['public', 'rh'], true) ? $personnelViewMode : 'public';
 $personnelFileSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (string) ($targetUser['id'] ?? '');
 $personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
 $personnelFileIsRhFull = $canAccessRhView && $personnelViewMode === 'rh';
-$personnelFileIsRhGate = $canAccessRhView && $personnelViewMode === '';
-$personnelFileRhContext = $personnelFileIsRhFull || $personnelFileIsRhGate;
-/** Conteneur page : vue RH en plein largeur ; sinon colonne classique max-w-7xl. */
+$personnelFileRhContext = $personnelFileIsRhFull;
+/** Conteneur page : vue commandement en pleine largeur ; sinon colonne classique max-w-7xl. */
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'max-w-7xl mx-auto px-6 md:px-8';
 $personnelFileRootClass = 'personnel-file-root personnel-file';
-if ($personnelFileIsRhGate) {
-    $personnelFileRootClass .= ' personnel-file--rh-gate personnel-file--gate';
-} elseif ($personnelFileIsRhFull) {
+if ($personnelFileIsRhFull) {
     $personnelFileRootClass .= ' personnel-file--rh-full pt-20 pb-10';
 } else {
     $personnelFileRootClass .= ' personnel-file--public pt-20 pb-10';
@@ -593,11 +607,6 @@ if ($personnelFileIsRhGate) {
 ?>
 <div class="<?= htmlspecialchars($personnelFileRootClass, ENT_QUOTES, 'UTF-8') ?>">
     <?php
-    if ($canAccessRhView && $personnelViewMode === '') {
-        require base_path('views/partials/personnel/file_view_gate.php');
-        echo '</div>';
-        return;
-    }
     if ($personnelFileIsRhFull) {
         require base_path('views/partials/personnel/file_rh_view.php');
         echo '</div>';
@@ -610,12 +619,18 @@ if ($personnelFileIsRhGate) {
             <div class="personnel-file-hero__identity">
                 <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
                 <h1 class="personnel-file-hero__name"><?= htmlspecialchars($displayName) ?></h1>
-                <?php if ($callsign || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
+                <?php if ($callsign || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
                 <ul class="personnel-file-hero__meta">
                     <?php if ($callsign): ?>
                     <li>
                         <span class="personnel-file-hero__meta-label">Indicatif</span>
                         <p class="personnel-file-hero__meta-value"><?= htmlspecialchars($callsign) ?></p>
+                    </li>
+                    <?php endif; ?>
+                    <?php if (!empty($effectiveRankDisplay)): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label">Grade</span>
+                        <p class="personnel-file-hero__meta-value"><?= htmlspecialchars($effectiveRankDisplay) ?></p>
                     </li>
                     <?php endif; ?>
                     <?php if ($nicknamePrimary !== ''): ?>
@@ -659,6 +674,7 @@ if ($personnelFileIsRhGate) {
                     <span class="personnel-file-hero__badge personnel-file-hero__badge--warn">Non déployable</span>
                     <?php endif; ?>
                 </div>
+                <?php require base_path('views/partials/personnel/file_view_switcher.php'); ?>
                 <?php if (\App\Core\Session::get('user_id')): ?>
                 <?php $reportUid = (int) ($targetUser['id'] ?? 0); ?>
                 <details class="personnel-file-hero__report group">
@@ -726,210 +742,53 @@ if ($personnelFileIsRhGate) {
     </section>
 
     <?php
-    $personnelFileNoticesIncludeRhSwitcher = true;
-    $personnelFileNoticesIncludeOperatorTabs = true;
+    $personnelFileNoticesIncludeRhSwitcher = false;
+    $personnelFileNoticesIncludeOperatorTabs = false;
     require base_path('views/partials/personnel/file_page_notices.php');
     ?>
 
-    <?php if (!empty($viewerIsPersonnelSubject) || !empty($canEditProfile)): ?>
-    <!-- Complétude -->
-    <section class="w-full border-b border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto px-6 md:px-8 py-4">
-            <div class="flex flex-wrap items-center gap-4">
-                <span class="text-sm font-black text-slate-700">Profil complété à <?= $completenessScore ?>%</span>
-                <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: <?= min(100, max(0, $completenessScore)) ?>%"></div>
-                </div>
-                <?php if (!empty($sectionsCritiques) && $canEditProfile): ?>
-                <span class="text-xs text-amber-700 font-semibold"><?= count($sectionsCritiques) ?> point(s) prioritaire(s) : <?= htmlspecialchars(implode(', ', $sectionsCritiques)) ?></span>
-                <?php endif; ?>
-                <p class="basis-full text-[10px] text-slate-500">Le détail de chaque critère se trouve dans l’onglet <span class="font-semibold text-slate-700">Vue d’ensemble</span>.</p>
-            </div>
+    <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
+
+        <p class="personnel-file-hub__intro">
+            Cette fiche se lit en cinq rubriques : la personne, son unité, ses formations, le suivi, puis le dossier. La rubrique ouverte est conservée après un changement d’écran.
+        </p>
+
+        <nav class="personnel-file-hub-tabs" role="tablist" aria-label="Rubriques de la fiche">
+            <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('resume')" :class="tab === 'resume' && 'is-active'" :aria-selected="tab === 'resume'">
+                Portrait
+                <span class="personnel-file-hub-tab__hint">Qui est la personne</span>
+            </button>
+            <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('ops')" :class="tab === 'ops' && 'is-active'" :aria-selected="tab === 'ops'">
+                Unité
+                <span class="personnel-file-hub-tab__hint">Poste, affectations, ancienneté</span>
+            </button>
+            <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('formation')" :class="tab === 'formation' && 'is-active'" :aria-selected="tab === 'formation'">
+                Parcours
+                <span class="personnel-file-hub-tab__hint">Formations, habilitations, dotation</span>
+            </button>
+            <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('historique')" :class="tab === 'historique' && 'is-active'" :aria-selected="tab === 'historique'">
+                Suivi
+                <span class="personnel-file-hub-tab__hint">Historique et notes</span>
+            </button>
+            <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('administratif')" :class="tab === 'administratif' && 'is-active'" :aria-selected="tab === 'administratif'">
+                Dossier
+                <span class="personnel-file-hub-tab__hint">Coordonnées et informations enregistrées</span>
+            </button>
+        </nav>
+        <div class="personnel-file-hub-actions">
+            <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
+            <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>">Modifier le dossier</a>
+            <a href="<?= url('account/image') ?>">Photo de compte</a>
+            <a href="<?= url('account/portrait') ?>">Portrait opérateur</a>
+            <?php endif; ?>
+            <a href="<?= url('orbat') ?>">Organigramme</a>
+            <a href="<?= url('documents') ?>">Documents</a>
+            <?php if ($viewerIsPersonnelSubject): ?>
+            <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
+            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Espace RH</a>
+            <?php endif; ?>
         </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- Récap -->
-    <section class="w-full border-b border-slate-200 bg-gradient-to-r from-white via-emerald-50/40 to-white">
-        <div class="max-w-7xl mx-auto px-6 md:px-8 py-4 md:py-5">
-            <div class="flex flex-wrap gap-5 md:gap-8">
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
-                    <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : htmlspecialchars($missingLabel ?? 'Donnée manquante') ?></p>
-                    <?php if (!empty($showGradeReferenceBeside)): ?>
-                    <p class="text-[11px] text-slate-600 mt-0.5"><?= htmlspecialchars($gradeCodeBeside) ?></p>
-                    <?php endif; ?>
-                </div>
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unité</p>
-                    <p class="text-sm font-black text-slate-900 italic"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p>
-                </div>
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Habilitation</p>
-                    <p class="text-sm font-black text-[#059669] italic"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
-                </div>
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Préparation</p>
-                    <p class="text-sm font-black text-slate-900"><?= $readiness !== null ? $readiness . ' %' : '—' ?></p>
-                </div>
-                <?php if ($privatePersonnelIdentity): ?>
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Statut réseau</p>
-                    <p class="text-sm font-bold <?= ($targetUser['status'] ?? '') === 'active' ? 'text-emerald-600' : 'text-slate-500' ?> italic"><?= htmlspecialchars($accountStatusFr((string) ($targetUser['status'] ?? ''))) ?></p>
-                </div>
-                <?php endif; ?>
-                <?php if ($enlistmentFormatted): ?>
-                <div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Enrôlement</p>
-                    <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($enlistmentFormatted) ?></p>
-                </div>
-                <?php endif; ?>
-                <?php if ($seniorityGlobal !== null): ?>
-                <div class="min-w-[9.5rem] max-w-[14rem] shrink-0">
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Ancienneté globale</p>
-                    <p class="text-base font-black leading-tight text-slate-900 tabular-nums" title="<?= htmlspecialchars((string) ($seniorityGlobal['basis_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($seniorityGlobal['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                    <p class="mt-1 text-[9px] font-medium leading-snug text-slate-500 line-clamp-2"><?= htmlspecialchars((string) ($seniorityGlobal['basis_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </section>
-
-    <style>
-        /* Pleine largeur onglet tableau : lg:col-span-12 n’est pas dans le CSS Tailwind compilé */
-        @media (min-width: 1024px) {
-            .personnel-file-main.personnel-file-main--full {
-                grid-column: 1 / -1;
-            }
-        }
-    </style>
-    <div class="max-w-7xl mx-auto px-6 md:px-8 py-8 md:py-10" x-data="{ tab: '<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>' }">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-            <!-- Sidebar (masquée sur l’onglet tableau pour libérer toute la largeur) -->
-            <aside class="lg:col-span-3 lg:sticky lg:top-32 h-fit order-2 lg:order-1 space-y-5" x-show="tab !== 'tableau'" <?= $personnelFileInitialTab === 'tableau' ? 'style="display: none"' : '' ?>>
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ring-1 ring-emerald-900/[0.03]">
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Photo de compte</p>
-                    <div class="aspect-square max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
-                        <?php if ($avatarUrl): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" class="w-full h-full object-cover" loading="lazy" decoding="async" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
-                        <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
-                        <?php endif; ?>
-                    </div>
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Portrait opérateur</p>
-                    <div class="aspect-[3/4] max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
-                        <?php if ($portraitUrl): ?>
-                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" class="w-full h-full object-cover" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
-                        <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="space-y-3">
-                        <?php if (!empty($showMatriculePublic)): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 tracking-[0.3em] mb-0.5 uppercase"><?= htmlspecialchars($tenantMemberNumberLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php if ($tenantMemberNumber !== ''): ?>
-                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($tenantMemberNumber, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php elseif ($matriculeInternalOnly !== ''): ?>
-                            <p class="text-base font-black text-slate-900 font-mono"><?= htmlspecialchars($matriculeInternalOnly, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php else: ?>
-                            <p class="text-xs text-slate-400 italic">Non attribué</p>
-                            <?php endif; ?>
-                            <?php /* Attribution du matricule : édition du dossier, pas la vue publique. */ ?>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($callsign): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Indicatif</p>
-                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($callsign) ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($extraCallsignsList !== []): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Indicatifs secondaires</p>
-                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $extraCallsignsList), ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Identifiant Athena</p>
-                            <p class="text-sm font-semibold text-slate-700 font-mono"><?= $athenaIdentifier !== '' ? htmlspecialchars($athenaIdentifier) : '—' ?></p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Numéro de compte attribué une fois pour toutes</p>
-                        </div>
-                        <?php if ($unitName): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Unité</p>
-                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($unitName) ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($nicknamesList !== []): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Surnoms</p>
-                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $nicknamesList), ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($medalRackItems !== []): ?>
-                        <div>
-                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Décorations</p>
-                            <p class="text-xs font-semibold leading-relaxed text-slate-700"><?= htmlspecialchars(implode(' · ', $medalRackItems), ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
-                <div class="flex flex-col gap-2">
-                    <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>" class="text-[9px] font-black uppercase tracking-widest text-[#059669] hover:text-emerald-800">Éditer le dossier</a>
-                    <a href="<?= url('account/image') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">Photo de compte</a>
-                    <a href="<?= url('account/portrait') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">Portrait opérateur</a>
-                </div>
-                <?php endif; ?>
-                <a href="<?= url('orbat') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Voir ORBAT</a>
-                <a href="<?= url('documents') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Documents</a>
-                <?php if ($viewerIsPersonnelSubject): ?>
-                <a href="<?= url('formations/mes-formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Mes parcours</a>
-                <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-violet-600 hover:text-violet-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-violet-200"></span>Espace RH</a>
-                <?php endif; ?>
-                <a href="<?= url('formations') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Formations</a>
-                <a href="<?= url('dashboard') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Dashboard</a>
-            </aside>
-
-            <div class="personnel-file-main order-1 lg:order-2 min-w-0 space-y-5 lg:col-span-9" :class="{ 'personnel-file-main--full': tab === 'tableau' }">
-                <nav class="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm" aria-label="Sections du dossier personnel">
-                    <button type="button" @click="tab = 'resume'" :class="tab === 'resume' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Vue d’ensemble</button>
-                    <?php if ($seniorityDetailLines !== []): ?>
-                    <button type="button" @click="tab = 'seniorite'" :class="tab === 'seniorite' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Ancienneté</button>
-                    <?php endif; ?>
-                    <button type="button" @click="tab = 'ops'" :class="tab === 'ops' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Poste & affectations</button>
-                    <button type="button" @click="tab = 'formation'" :class="tab === 'formation' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Habilitations & parcours</button>
-                    <button type="button" @click="tab = 'logistique'" :class="tab === 'logistique' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Dotation & préparation</button>
-                    <button type="button" @click="tab = 'historique'" :class="tab === 'historique' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Historique & notes</button>
-                    <?php if ($canViewBilans): ?>
-                    <button type="button" @click="tab = 'bilans'" :class="tab === 'bilans' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Bilans</button>
-                    <?php endif; ?>
-                    <button type="button" @click="tab = 'administratif'" :class="tab === 'administratif' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Coordonnées & dossier</button>
-                    <button type="button" @click="tab = 'tableau'" :class="tab === 'tableau' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Tableau administratif</button>
-                </nav>
-
-                <?php if ($seniorityDetailLines !== []): ?>
-                <div class="space-y-8" x-show="tab === 'seniorite'" x-cloak>
-                    <section class="rounded-3xl border border-slate-200 bg-slate-50/90 p-6 shadow-sm md:p-8" aria-labelledby="personnel-seniority-detail-heading">
-                        <div class="mb-5">
-                            <h2 id="personnel-seniority-detail-heading" class="text-xs font-black uppercase tracking-[0.28em] text-slate-600">Autres indicateurs d’ancienneté</h2>
-                            <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-600 leading-relaxed">
-                                Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
-                            </p>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
-                            <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
-                                <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
-                                <p class="text-sm font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </section>
-                </div>
-                <?php endif; ?>
-
+            <div class="personnel-file-main min-w-0 space-y-5">
                 <div class="space-y-8" x-show="tab === 'resume'" x-cloak>
                     <?php if (!empty($rpDossierNeedsAttention)): ?>
                     <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950 shadow-sm" role="status">
@@ -949,8 +808,8 @@ if ($personnelFileIsRhGate) {
                     <section class="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm md:p-8">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                                <h2 class="text-xs font-black uppercase tracking-[0.35em] text-emerald-900">Back-office roleplay</h2>
-                                <p class="mt-2 text-sm text-slate-600 max-w-2xl">Suivi individuel, tutorat, timeline dossier et pilotage d’avancement recrutement.</p>
+                                <h2 class="text-xs font-black uppercase tracking-[0.35em] text-emerald-900">Suivi d’arrivée</h2>
+                                <p class="mt-2 text-sm text-slate-600 max-w-2xl">Étape d’arrivée dans l’unité, tuteur et dates importantes du dossier.</p>
                             </div>
                             <?php if ($rpProgress !== null): ?>
                             <div class="min-w-[10rem] rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
@@ -1030,17 +889,6 @@ if ($personnelFileIsRhGate) {
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <?php if ($personnelIsSelf): ?>
-                            <div class="sm:col-span-2 xl:col-span-3 rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white px-4 py-4 shadow-sm sm:px-5 sm:py-4">
-                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div class="min-w-0">
-                                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-violet-700/90">Dossier RH complet</p>
-                                        <p class="mt-1 text-sm leading-snug text-slate-800">Le suivi RH et les informations de cette fiche sont regroupés dans une seule vue, avec des intitulés expliqués.</p>
-                                    </div>
-                                    <a href="<?= htmlspecialchars($personnelFileBaseUrl . '?view=rh', ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:self-center">Ouvrir le dossier RH complet</a>
-                                </div>
-                            </div>
-                            <?php endif; ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Unité indiquée</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p>
@@ -1064,6 +912,15 @@ if ($personnelFileIsRhGate) {
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Incorporation</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= $enlistmentFormatted ? htmlspecialchars($enlistmentFormatted) : '—' ?></p>
                             </div>
+                            <?php if ($seniorityGlobal !== null): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Ancienneté</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityGlobal['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php if (!empty($seniorityGlobal['basis_label'])): ?>
+                                <p class="mt-1 text-[11px] leading-snug text-slate-500"><?= htmlspecialchars((string) $seniorityGlobal['basis_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($orgPositionDisplayLabel !== null): ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500"><?= $orgPositionDisplayKind === 'position' ? 'Poste organisationnel' : 'Profil dans la communauté' ?></p>
@@ -1517,6 +1374,24 @@ if ($personnelFileIsRhGate) {
                     </div>
                 </section>
                 <?php endif; ?>
+                <?php if ($seniorityDetailLines !== []): ?>
+                    <section class="rounded-3xl border border-slate-200 bg-slate-50/90 p-6 shadow-sm md:p-8" aria-labelledby="personnel-seniority-detail-heading">
+                        <div class="mb-5">
+                            <h2 id="personnel-seniority-detail-heading" class="text-xs font-black uppercase tracking-[0.28em] text-slate-600">Autres indicateurs d’ancienneté</h2>
+                            <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
+                            </p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
+                            <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
+                                <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-sm font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($seniorityRow['formatted'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
                 </div>
 
                 <div class="space-y-8" x-show="tab === 'formation'" x-cloak>
@@ -1702,7 +1577,7 @@ if ($personnelFileIsRhGate) {
                 </section>
                 </div>
 
-                <div class="space-y-8" x-show="tab === 'logistique'" x-cloak>
+                <div class="space-y-8" x-show="tab === 'formation'" x-cloak>
                 <!-- Équipement / dotation -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Équipement / dotation</h2>
@@ -1738,12 +1613,6 @@ if ($personnelFileIsRhGate) {
                 </div>
 
                 <div class="space-y-5" x-show="tab === 'historique'" x-cloak>
-                <?php if ($canViewBilans): ?>
-                <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3">
-                    <p class="text-sm text-emerald-950"><span class="font-bold">Bilans</span> — consultez ou créez les bilans d’étape et de recrutement.</p>
-                    <button type="button" @click="tab = 'bilans'" class="inline-flex min-h-[2rem] items-center rounded-lg bg-[#059669] px-3 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700">Ouvrir les bilans</button>
-                </div>
-                <?php endif; ?>
                 <?php if ($personnelOrgHistorySection): ?>
                 <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>
@@ -2006,15 +1875,12 @@ if ($personnelFileIsRhGate) {
                     </div>
                 </section>
                 <?php endforeach; ?>
-                <div class="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-sm text-emerald-950">Besoin d’une vue dense façon tableur ?</p>
-                    <button type="button" @click="tab = 'tableau'" class="inline-flex min-h-[2rem] items-center rounded-lg bg-[#059669] px-3 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700">Tableau administratif</button>
-                </div>
                 </div>
 
+                <?php if ($canViewBilans): ?>
                 <?php require base_path('views/partials/personnel/file_bilans_tab.php'); ?>
+                <?php endif; ?>
                 <?php require base_path('views/partials/personnel/file_tableau_admin_tab.php'); ?>
             </div>
-        </div>
     </div>
 </div>

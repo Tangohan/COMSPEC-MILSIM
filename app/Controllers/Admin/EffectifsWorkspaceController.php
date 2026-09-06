@@ -36,6 +36,8 @@ use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
+use App\Authorization\SystemReservedPermissions;
+use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
@@ -465,10 +467,23 @@ class EffectifsWorkspaceController
                 $roleSlugs[] = (string) ($r['slug'] ?? '');
             }
         }
-        $currentAccessKey = CommunityAccessProfiles::resolveFromSlugs($roleSlugs);
+        $currentAccessRoleId = 0;
         foreach ($roles as $r) {
-            if (CommunityAccessProfiles::slugToKey((string) ($r['slug'] ?? '')) === $currentAccessKey) {
+            $rid = (int) ($r['id'] ?? 0);
+            if ($rid > 0 && in_array($rid, $roleIds, true)) {
+                $currentAccessRoleId = $rid;
                 $roleNames[] = (string) ($r['name'] ?? '');
+                break;
+            }
+        }
+        $currentAccessKey = CommunityAccessProfiles::resolveFromSlugs($roleSlugs);
+        if ($currentAccessRoleId < 1) {
+            foreach ($roles as $r) {
+                if (CommunityAccessProfiles::slugToKey((string) ($r['slug'] ?? '')) === $currentAccessKey) {
+                    $currentAccessRoleId = (int) ($r['id'] ?? 0);
+                    $roleNames[] = (string) ($r['name'] ?? '');
+                    break;
+                }
             }
         }
         $jobRoles = [];
@@ -545,6 +560,7 @@ class EffectifsWorkspaceController
             'memberPersonnelProfile' => $personnelProfile,
             'memberRoleNames' => $roleNames,
             'currentAccessKey' => $currentAccessKey,
+            'currentAccessRoleId' => $currentAccessRoleId,
             'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
             'jobRoleOptions' => $jobRoleOptions,
@@ -1184,15 +1200,25 @@ class EffectifsWorkspaceController
 
             return Response::redirect(effectifs_workspace_url());
         }
-        $rawKey = strtolower(trim((string) $request->input('access_key', '')));
-        if (!in_array($rawKey, CommunityAccessProfiles::keys(), true)) {
-            Session::flash('error', 'Choisissez un niveau d’accès : Membre, Ressources humaines ou Gestionnaire.');
-
-            return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        $rawRoleId = (int) $request->input('access_role_id', 0);
+        $targetId = 0;
+        if ($rawRoleId > 0) {
+            $candidate = $this->roleRepository->findById($rawRoleId, $tenantId);
+            if ($candidate && $this->roleRepository->canAssignInTenantAdminContext($rawRoleId, $tenantId)) {
+                $targetId = $rawRoleId;
+            }
         }
-        $targetSlug = CommunityAccessProfiles::keyToSlug($rawKey);
-        $targetId = $this->roleRepository->getIdBySlug($tenantId, $targetSlug);
-        if ($targetId === null || $targetId < 1) {
+        if ($targetId < 1) {
+            $rawKey = strtolower(trim((string) $request->input('access_key', '')));
+            if (!in_array($rawKey, CommunityAccessProfiles::keys(), true)) {
+                Session::flash('error', 'Choisissez un niveau d’accès.');
+
+                return Response::redirect($this->redirectAfterMemberAction($request, $id));
+            }
+            $targetSlug = CommunityAccessProfiles::keyToSlug($rawKey);
+            $targetId = (int) ($this->roleRepository->getIdBySlug($tenantId, $targetSlug) ?? 0);
+        }
+        if ($targetId < 1) {
             Session::flash('error', 'Ce niveau d’accès n’est pas encore disponible pour la communauté.');
 
             return Response::redirect($this->redirectAfterMemberAction($request, $id));
@@ -1478,16 +1504,212 @@ class EffectifsWorkspaceController
         $tenantId = (int) Session::get('tenant_id');
         $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
         $gate = Gate::getInstance();
+        $selectedId = (int) $request->query('role', 0);
+        $selected = null;
+        foreach ($roles as $row) {
+            if ((int) ($row['id'] ?? 0) === $selectedId) {
+                $selected = $row;
+                break;
+            }
+        }
+        if ($selected === null && $roles !== []) {
+            $selected = $roles[0];
+            $selectedId = (int) ($selected['id'] ?? 0);
+        }
+        $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        $checkedIds = $selectedId > 0 ? $permSvc->getPermissionIdsForRole($selectedId) : [];
+        $groups = $this->accessPermissionGroups($tenantId);
+        $counts = $this->roleRepository->countPermissionsByRoleIds(array_map(
+            static fn (array $r): int => (int) ($r['id'] ?? 0),
+            $roles
+        ));
+        $memberCounts = $this->roleRepository->countMembersByRoleIds($tenantId, array_keys($counts));
 
         return $this->shell('admin.effectifs_workspace.roles', [
             'title' => 'Accès',
             'effectifsNav' => 'roles',
             'orgRoles' => $roles,
-            'accessProfiles' => CommunityAccessProfiles::definitions(),
-            'accessRolesByKey' => $this->accessRolesKeyed($roles),
+            'selectedAccessRole' => $selected,
+            'accessPermissionGroups' => $groups,
+            'checkedPermissionIds' => $checkedIds,
+            'accessPermissionCounts' => $counts,
+            'accessMemberCounts' => $memberCounts,
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'rosterCounts' => $this->rosterCounts($tenantId),
+            'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    public function createAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à créer un niveau d’accès.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $name = trim((string) $request->input('name', ''));
+        $copyId = (int) $request->input('copy_from', 0);
+        $newId = $this->roleRepository->createCustomAccessRole($tenantId, $name, trim((string) $request->input('description', '')));
+        if ($newId < 1) {
+            Session::flash('error', 'Indiquez un nom pour le nouveau niveau d’accès.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $sourceId = $copyId > 0 ? $copyId : (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
+        if ($sourceId > 0) {
+            $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+            try {
+                $permSvc->setPermissionsForAccessRole($tenantId, $newId, $permSvc->getPermissionIdsForRole($sourceId));
+            } catch (\InvalidArgumentException $e) {
+                Session::flash('error', $e->getMessage());
+
+                return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
+            }
+        }
+        Session::flash('success', 'Niveau d’accès créé. Cochez ensuite ce qu’il a le droit de faire.');
+
+        return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
+    }
+
+    public function saveAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les accès.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $roleId = (int) $request->input('role_id', 0);
+        if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            Session::flash('error', 'Ce niveau d’accès ne peut pas être modifié.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $this->roleRepository->updateAccessRoleLabel(
+            $tenantId,
+            $roleId,
+            (string) $request->input('name', ''),
+            (string) $request->input('description', '')
+        );
+        $rawIds = $request->input('permission_ids', []);
+        $permissionIds = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        try {
+            $permSvc->setPermissionsForAccessRole($tenantId, $roleId, $permissionIds);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        Session::flash('success', 'Niveau d’accès enregistré.');
+
+        return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+    }
+
+    public function restoreAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à rétablir un modèle.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $roleId = (int) $request->input('role_id', 0);
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        if (!$role || !CommunityAccessProfiles::isAccessSlug((string) ($role['slug'] ?? ''))) {
+            Session::flash('error', 'Seul un modèle de départ peut être rétabli.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . ($roleId > 0 ? '?role=' . $roleId : ''));
+        }
+        $key = CommunityAccessProfiles::slugToKey((string) $role['slug']);
+        $def = CommunityAccessProfiles::definitionByKey($key);
+        if ($def !== null) {
+            $this->roleRepository->updateAccessRoleLabel($tenantId, $roleId, (string) $def['name'], (string) $def['description']);
+        }
+        $wanted = CommunityAccessProfiles::permissionSlugsFor($key);
+        $ids = [];
+        foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
+            if (in_array((string) ($row['slug'] ?? ''), $wanted, true)) {
+                $ids[] = (int) ($row['id'] ?? 0);
+            }
+        }
+        $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        $permSvc->setPermissionsForAccessRole($tenantId, $roleId, $ids);
+        Session::flash('success', 'Le modèle de départ a été rétabli.');
+
+        return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+    }
+
+    public function deleteAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à supprimer un niveau d’accès.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $roleId = (int) $request->input('role_id', 0);
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        if (!$role || !CommunityAccessProfiles::isCustomAccessSlug((string) ($role['slug'] ?? ''))) {
+            Session::flash('error', 'Les trois modèles de départ ne peuvent pas être supprimés.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $memberId = (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
+        $actorId = (int) Session::get('user_id');
+        if ($memberId > 0) {
+            foreach ($this->roleRepository->userIdsWithRole($tenantId, $roleId) as $uid) {
+                try {
+                    $this->userRepository->syncOrganizationRoles($uid, $tenantId, [$memberId], $actorId);
+                } catch (\Throwable) {
+                }
+            }
+        }
+        $this->roleRepository->deleteCustomAccessRole($tenantId, $roleId);
+        Session::flash('success', 'Niveau d’accès retiré. Les personnes concernées sont revenues au niveau Membre.');
+
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     public function droits(Request $request, array $params = []): Response
@@ -1499,29 +1721,254 @@ class EffectifsWorkspaceController
 
     public function fonctions(Request $request, array $params = []): Response
     {
+        unset($params);
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $gate = Gate::getInstance();
+        $canManage = EffectifsLmsAccess::canManageAssignments($gate) || EffectifsLmsAccess::canManageRoles($gate);
+        $vue = strtolower(trim((string) $request->query('vue', '')));
+        if ($vue === 'attributions') {
+            return $this->shell('admin.effectifs_workspace.fonctions', array_merge(
+                $this->jobAssignmentPageData($request, $tenantId),
+                [
+                    'title' => 'Emplois',
+                    'effectifsNav' => 'fonctions',
+                    'jobsVue' => 'attributions',
+                    'canManageAssignments' => $canManage,
+                    'rosterCounts' => $this->rosterCounts($tenantId),
+                    'csrfToken' => Csrf::token(),
+                    'jobsWorkspaceEmbed' => true,
+                ]
+            ));
+        }
+
         $jobRoles = [];
+        $categories = [];
         if ($this->personnelJobRoleRepository->tablesExist()) {
             $jobRoles = $this->personnelJobRoleRepository->listRolesWithCategory($tenantId);
+            $categories = $this->personnelJobRoleRepository->listCategories($tenantId);
             try {
                 $kitSvc = \App\Core\Container::get(\App\Services\Personnel\PersonnelFunctionKitService::class);
                 $jobRoles = $kitSvc->filterRolesWithCategory($tenantId, $jobRoles);
             } catch (\Throwable) {
             }
         }
-        $gate = Gate::getInstance();
+        $creating = $request->query('nouveau') === '1';
+        $selectedId = (int) $request->query('emploi', 0);
+        $selected = null;
+        foreach ($jobRoles as $row) {
+            if ((int) ($row['id'] ?? 0) === $selectedId) {
+                $selected = $row;
+                break;
+            }
+        }
+        if ($selected === null && $jobRoles !== []) {
+            $selected = $jobRoles[0];
+            $selectedId = (int) ($selected['id'] ?? 0);
+        }
+        $holdersByRole = [];
+        if ($this->personnelJobRoleRepository->pivotTableExists() && $jobRoles !== []) {
+            $holdersByRole = $this->personnelJobRoleRepository->listHoldersByJobRoleIds(
+                $tenantId,
+                array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $jobRoles)
+            );
+        }
 
         return $this->shell('admin.effectifs_workspace.fonctions', [
-            'title' => 'Fonctions',
+            'title' => 'Emplois',
             'effectifsNav' => 'fonctions',
+            'jobsVue' => 'catalogue',
             'jobRoles' => $jobRoles,
-            'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
+            'jobCategories' => $categories,
+            'selectedJobRole' => $selected,
+            'creatingJobRole' => $creating,
+            'jobHoldersByRole' => $holdersByRole,
+            'canManageAssignments' => $canManage,
             'rosterCounts' => $this->rosterCounts($tenantId),
+            'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    public function createJobRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à créer un emploi.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->personnelJobRoleRepository->tablesExist()) {
+            Session::flash('error', 'Les emplois du dossier ne sont pas encore disponibles pour cette communauté.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $name = trim((string) $request->input('name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez le nom de l’emploi.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
+        }
+        $categoryId = $this->resolveJobCategoryId($tenantId, (int) $request->input('category_id', 0));
+        if ($categoryId < 1) {
+            Session::flash('error', 'Choisissez une catégorie, ou créez-en une d’abord.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
+        }
+        $slug = $this->personnelJobRoleRepository->uniqueSlugFromName($tenantId, $name);
+        $newId = $this->personnelJobRoleRepository->createRole(
+            $tenantId,
+            $categoryId,
+            $name,
+            $slug,
+            trim((string) $request->input('description', '')) ?: null,
+            0,
+            false
+        );
+        Session::flash('success', 'Emploi créé. Vous pouvez préciser sa description, puis l’attribuer aux membres.');
+
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $newId);
+    }
+
+    public function saveJobRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier un emploi.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) $request->input('id', 0);
+        $existing = $id > 0 ? $this->personnelJobRoleRepository->findRoleById($id, $tenantId) : null;
+        if ($id < 1 || !$existing) {
+            Session::flash('error', 'Emploi introuvable.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $name = trim((string) $request->input('name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez le nom de l’emploi.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
+        }
+        $categoryId = $this->resolveJobCategoryId($tenantId, (int) $request->input('category_id', 0));
+        if ($categoryId < 1) {
+            Session::flash('error', 'Choisissez une catégorie.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
+        }
+        $slug = trim((string) ($existing['slug'] ?? ''));
+        if ($slug === '') {
+            $slug = $this->personnelJobRoleRepository->uniqueSlugFromName($tenantId, $name, $id);
+        }
+        $mosCode = isset($existing['mos_code']) ? (is_string($existing['mos_code']) ? trim($existing['mos_code']) : null) : null;
+        $mosCode = $mosCode !== '' ? $mosCode : null;
+        $mosTitle = isset($existing['mos_specialty_title']) ? (is_string($existing['mos_specialty_title']) ? trim($existing['mos_specialty_title']) : null) : null;
+        $mosTitle = $mosTitle !== '' ? $mosTitle : null;
+        $this->personnelJobRoleRepository->updateRole(
+            $id,
+            $tenantId,
+            $categoryId,
+            $name,
+            $slug,
+            trim((string) $request->input('description', '')) ?: null,
+            (int) ($existing['sort_order'] ?? 0),
+            $mosCode,
+            $mosTitle
+        );
+        Session::flash('success', 'Emploi enregistré.');
+
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
+    }
+
+    public function deleteJobRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à retirer un emploi.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) $request->input('id', 0);
+        if ($id > 0 && $this->personnelJobRoleRepository->deleteRole($id, $tenantId)) {
+            Session::flash('success', 'Emploi retiré. Les dossiers concernés n’affichent plus ce libellé.');
+        } else {
+            Session::flash('error', 'Impossible de retirer cet emploi (modèle officiel ou introuvable).');
+        }
+
+        return Response::redirect(effectifs_workspace_url('fonctions'));
+    }
+
+    public function saveJobCategory(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à créer une catégorie.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $name = trim((string) $request->input('category_name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Indiquez le nom de la catégorie.');
+
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
+        }
+        $parentRaw = $request->input('parent_id');
+        $parentId = ($parentRaw === null || $parentRaw === '') ? null : (int) $parentRaw;
+        if ($parentId !== null && $parentId <= 0) {
+            $parentId = null;
+        }
+        $slug = $this->personnelJobRoleRepository->uniqueCategorySlugFromName($tenantId, $name);
+        $this->personnelJobRoleRepository->createCategory($tenantId, $parentId, $name, $slug, 0);
+        Session::flash('success', 'Catégorie créée.');
+
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
     }
 
     public function affectations(Request $request, array $params = []): Response
@@ -2215,6 +2662,131 @@ class EffectifsWorkspaceController
         }
 
         return $years . ' an' . ($years > 1 ? 's' : '');
+    }
+
+    /**
+     * @return list<array{label: string, items: list<array{id: int, name: string}>}>
+     */
+    private function accessPermissionGroups(int $tenantId): array
+    {
+        $order = CommunityAccessProfiles::moduleOrder();
+        $rank = array_flip($order);
+        $buckets = [];
+        foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
+            $code = (string) ($row['slug'] ?? '');
+            if ($code === '' || SystemReservedPermissions::isReserved($code)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            $label = trim((string) ($row['name'] ?? ''));
+            if ($id < 1 || $label === '') {
+                continue;
+            }
+            $mod = strtolower(trim((string) ($row['module'] ?? '')));
+            if ($mod === '') {
+                $mod = 'other';
+            }
+            $buckets[$mod][] = ['id' => $id, 'name' => $label];
+        }
+        uksort($buckets, static function (string $a, string $b) use ($rank): int {
+            $ra = $rank[$a] ?? 99;
+            $rb = $rank[$b] ?? 99;
+            if ($ra !== $rb) {
+                return $ra <=> $rb;
+            }
+
+            return strcmp($a, $b);
+        });
+        $out = [];
+        foreach ($buckets as $mod => $items) {
+            usort($items, static fn (array $x, array $y): int => strcmp((string) $x['name'], (string) $y['name']));
+            $out[] = [
+                'label' => CommunityAccessProfiles::moduleLabel($mod),
+                'items' => $items,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function jobAssignmentPageData(Request $request, int $tenantId): array
+    {
+        $search = trim((string) $request->query('search', ''));
+        $search = $search !== '' ? $search : null;
+        $filterJobRoleId = (int) $request->query('job_role_id', 0);
+        $filterJobRoleId = $filterJobRoleId > 0 ? $filterJobRoleId : null;
+        $onlyUnassigned = $request->query('unassigned') === '1' || $request->query('unassigned') === 'true';
+        if ($onlyUnassigned) {
+            $filterJobRoleId = null;
+        }
+        $page = max(1, (int) $request->query('page', 1));
+        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
+        $pjrAssignSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
+        $perPage = (int) ($pjrAssignSettings['assignments_page_size'] ?? 30);
+        $total = 0;
+        $rows = [];
+        $assignmentPivot = [];
+        $jobRoleOptions = [];
+        if ($this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
+            $total = $this->personnelJobRoleRepository->countUsersForJobRoleAssignments($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
+            $rows = $this->personnelJobRoleRepository->listUsersForJobRoleAssignments(
+                $tenantId,
+                $search,
+                $filterJobRoleId,
+                $onlyUnassigned,
+                $perPage,
+                ($page - 1) * $perPage
+            );
+            $userIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
+            $assignmentPivot = $this->personnelJobRoleRepository->pivotTableExists()
+                ? $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
+                : [];
+            $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+            $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
+                $tenantId,
+                (bool) ($pjrAssignSettings['show_english_labels'] ?? false),
+                (bool) ($pjrAssignSettings['show_category_in_role_picklist'] ?? false),
+                OrganizationRoleLabels::mode($community, $this->tenantRepository->findById($tenantId) ?: [])
+            );
+        }
+        $totalPages = max(1, (int) ceil($total / max(1, $perPage)));
+
+        return [
+            'assignmentRows' => $rows,
+            'assignmentPivot' => $assignmentPivot,
+            'jobRoleOptions' => $jobRoleOptions,
+            'jobRolePermissionCounts' => $this->personnelJobRoleRepository->tablesExist()
+                ? $this->personnelJobRoleRepository->permissionCountsForTenant($tenantId)
+                : [],
+            'pjrAssignSettings' => $pjrAssignSettings,
+            'pivotEnabled' => $this->personnelJobRoleRepository->pivotTableExists(),
+            'filters' => [
+                'search' => $search ?? '',
+                'job_role_id' => $filterJobRoleId ?? 0,
+                'unassigned' => $onlyUnassigned,
+            ],
+            'assignmentsTotal' => $total,
+            'assignmentsPage' => $page,
+            'assignmentsPerPage' => $perPage,
+            'assignmentsTotalPages' => $totalPages,
+            'activeTab' => 'assignments',
+        ];
+    }
+
+    private function resolveJobCategoryId(int $tenantId, int $categoryId): int
+    {
+        if ($categoryId > 0 && $this->personnelJobRoleRepository->findCategoryById($categoryId, $tenantId)) {
+            return $categoryId;
+        }
+        $categories = $this->personnelJobRoleRepository->listCategories($tenantId);
+        if ($categories !== []) {
+            return (int) ($categories[0]['id'] ?? 0);
+        }
+
+        return $this->personnelJobRoleRepository->createCategory($tenantId, null, 'Organisation', 'organisation', 0);
     }
 
     /**

@@ -29,16 +29,9 @@ final class AccessManagementController
             return Response::redirect(url('login'));
         }
 
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.access_management.index',
-            'title' => 'Gestion des accès',
-            'roles' => $this->listRoles($tenantId),
-            'permissions' => $this->listPermissions($tenantId),
-            'rules' => $this->listRules($tenantId),
-            'logs' => $this->listLogs($tenantId),
-            'users' => $this->listUsers($tenantId),
-            'activeTab' => (string) $request->query('tab', 'roles'),
-        ]);
+        unset($request, $params);
+
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     public function saveRole(Request $request, array $params = []): Response
@@ -48,9 +41,9 @@ final class AccessManagementController
 
             return Response::redirect(url('back-office/access-management?tab=roles'));
         }
-        Session::flash('error', 'Chaque communauté n’a que trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire.');
+        Session::flash('error', 'Pour créer ou corriger un niveau d’accès, ouvrez Accès dans le bureau effectifs.');
 
-        return Response::redirect(url('back-office/access-management?tab=roles'));
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     public function saveRule(Request $request, array $params = []): Response

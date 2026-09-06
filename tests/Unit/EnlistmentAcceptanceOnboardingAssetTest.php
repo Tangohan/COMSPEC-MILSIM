@@ -29,6 +29,15 @@ final class EnlistmentAcceptanceOnboardingAssetTest extends TestCase
         self::assertStringContainsString("'/onboarding'", $routes);
         self::assertStringContainsString('steam_profile', $view);
         self::assertStringContainsString('Finaliser l’intégration', $view);
+        self::assertStringContainsString('Emploi', $view);
+        self::assertStringContainsString('Nouvel emploi', $view);
+        self::assertStringNotContainsString('Fonction RH', $view);
+        self::assertStringContainsString('MilitaryOperationalRoleCatalog', $controller);
+        self::assertStringContainsString('assignment_label', $controller);
+        self::assertStringContainsString('listRoleOptionsForSelect', $controller);
+        self::assertStringContainsString('resolveOnboardingJobRoleId', $src);
+        self::assertStringContainsString('findOrCreateImportedRoleByLabel', $src);
+        self::assertStringContainsString('ensureForUnit', $src);
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/css/recruitment_onboarding.css');
     }
 

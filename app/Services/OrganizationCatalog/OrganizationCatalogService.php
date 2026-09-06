@@ -241,6 +241,9 @@ final class OrganizationCatalogService
         try {
             $this->configurationUpdates ??= \App\Core\Container::get(ConfigurationUpdateService::class);
             $this->configurationUpdates->markCompleted($tenantId, 'ORGANIZATION_CATALOG_V1', $userId);
+            if (in_array((string) $item['code'], OrganizationKitDefinitions::jobDoctrineCodes(), true)) {
+                $this->configurationUpdates->markCompleted($tenantId, 'JOB_CATALOGS_FR_US_V1', $userId);
+            }
         } catch (\Throwable) {
         }
 
@@ -810,7 +813,7 @@ final class OrganizationCatalogService
                 . ', '
                 . $this->countPhrase($functionsKept, 'déjà présente, inchangée', 'déjà présentes, inchangées');
         }
-        if ($parts['roles']) {
+        if ($parts['roles'] && ($rolesAdded > 0 || $rolesKept > 0)) {
             $bits[] = $this->countPhrase($rolesAdded, 'rôle ajouté', 'rôles ajoutés')
                 . ', '
                 . $this->countPhrase($rolesKept, 'déjà présent, inchangé', 'déjà présents, inchangés');

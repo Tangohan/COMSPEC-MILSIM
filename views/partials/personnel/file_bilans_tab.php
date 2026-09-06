@@ -64,7 +64,7 @@ if ($bilanStagePrefill === '') {
     $bilanStagePrefill = (string) ($bilanStageOptions[0] ?? 'Autre');
 }
 ?>
-<div class="space-y-6" x-show="tab === 'bilans'" x-cloak id="bilans">
+<div class="space-y-6" x-show="tab === 'historique'" x-cloak id="bilans">
     <section class="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-5 shadow-sm sm:p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>

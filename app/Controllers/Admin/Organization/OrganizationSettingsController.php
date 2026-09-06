@@ -25,14 +25,39 @@ use App\Support\LoginAccueilImageStorage;
 use App\Support\OrganizationRoleLabels;
 
 /**
- * Hub de paramétrage de la communauté : identité, images (logo, bannière, favicon,
- * couverture registre, menus), fuseau, langue, accès, modules publics.
- * Inscription : /back-office/community/inscription
- * Routes : /back-office/community et /back-office/organisation/parametres.
+ * Hub de paramétrage de la communauté : identité, vitrine, inscription, accueil,
+ * portail et profil. Routes : /back-office/community et /back-office/organisation/parametres.
+ * GET /back-office/community/inscription redirige vers le hub (onglet inscription).
  */
 final class OrganizationSettingsController
 {
     private const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+
+    /** @var list<string> */
+    private const SETTINGS_TABS = ['identite', 'vitrine', 'inscription', 'accueil', 'portail', 'profil'];
+
+    /** @var array<string, string> */
+    private const SETTINGS_TAB_ALIASES = [
+        'identite' => 'identite',
+        'affiliation' => 'identite',
+        'representation-unite' => 'identite',
+        'vitrine' => 'vitrine',
+        'textes-publics' => 'vitrine',
+        'visibilite' => 'vitrine',
+        'timezone' => 'vitrine',
+        'inscription' => 'inscription',
+        'parcours' => 'inscription',
+        'coordonnees' => 'inscription',
+        'dossier' => 'inscription',
+        'contact' => 'inscription',
+        'accueil' => 'accueil',
+        'accueil-connexion' => 'accueil',
+        'portail' => 'portail',
+        'navigation' => 'portail',
+        'profil' => 'profil',
+        'cycle-effectif' => 'profil',
+        'org-profil' => 'profil',
+    ];
 
     /** @var list<string> */
     private const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -94,6 +119,7 @@ final class OrganizationSettingsController
         }
         $slideshowRaw = $community['login_accueil_slideshow'] ?? true;
         $loginAccueilSlideshow = !in_array($slideshowRaw, [false, 0, '0', 'false', 'off'], true);
+        $settingsTab = $this->normalizeSettingsTab((string) $request->query('onglet', $request->query('tab', '')));
 
         return Response::view('layout.main', [
             'title' => 'Paramètres de la communauté',
@@ -119,6 +145,9 @@ final class OrganizationSettingsController
             'loginAccueilDefaultUrl' => LoginAccueilImageStorage::defaultPublicUrl(),
             'loginAccueilHint' => LoginAccueilImageStorage::hintText(),
             'personnelLifecycle' => PersonnelLifecycleSettings::resolve($settings),
+            'inscriptionFormAction' => url('back-office/community/inscription'),
+            'settingsHubTab' => $settingsTab,
+            'settingsHubEmbedInscription' => true,
         ]);
     }
 
@@ -127,23 +156,8 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
-        $tenantId = (int) Session::get('tenant_id');
-        $tenant = $this->tenantRepository->findById($tenantId);
-        if (!$tenant) {
-            return Response::redirect(url('dashboard'));
-        }
-        $settings = $this->tenantRepository->getSettings($tenantId);
-        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
 
-        return Response::view('layout.main', [
-            'title' => 'Paramètres d’inscription',
-            'content' => 'admin.organization.inscription_settings',
-            'tenant' => $tenant,
-            'community' => $community,
-            'roleOptions' => $this->loadRoleOptions($tenantId, $tenant, $community),
-            'defaultGuestRoleSlug' => trim((string) ($community['default_guest_role_slug'] ?? 'invite')),
-            'inscriptionFormAction' => url('back-office/community/inscription'),
-        ]);
+        return Response::redirect($this->settingsHubUrl($request, 'inscription'));
     }
 
     public function inscriptionUpdate(Request $request, array $params = []): Response
@@ -151,7 +165,7 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
-        $redirectTo = url('back-office/community/inscription');
+        $redirectTo = $this->settingsHubUrl($request, 'inscription');
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
@@ -178,7 +192,7 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
-        $redirectTo = url('back-office/organisation/parametres');
+        $redirectTo = $this->settingsHubUrl($request, 'profil');
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
@@ -195,7 +209,7 @@ final class OrganizationSettingsController
         if (!$confirm) {
             Session::flash('error', 'Veuillez cocher la case de confirmation avant de changer le profil de la communauté.');
 
-            return Response::redirect($redirectTo . '#org-profil');
+            return Response::redirect($redirectTo);
         }
 
         try {
@@ -210,7 +224,7 @@ final class OrganizationSettingsController
                 Session::flash('error', 'Impossible de modifier le profil de la communauté. Réessayez ou contactez le support.');
             }
 
-            return Response::redirect($redirectTo . '#org-profil');
+            return Response::redirect($redirectTo);
         }
 
         if (!empty($result['changed'])) {
@@ -227,7 +241,7 @@ final class OrganizationSettingsController
             );
         }
 
-        return Response::redirect($redirectTo . '#org-profil');
+        return Response::redirect($redirectTo);
     }
 
     public function update(Request $request, array $params = []): Response
@@ -235,7 +249,7 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
-        $redirectTo = $this->formActionFromRequest($request);
+        $redirectTo = $this->settingsHubUrl($request);
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
@@ -281,7 +295,7 @@ final class OrganizationSettingsController
 
     public function storeLoginAccueilImage(Request $request, array $params = []): Response
     {
-        $back = $this->accueilSettingsUrl();
+        $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -344,7 +358,7 @@ final class OrganizationSettingsController
 
     public function replaceLoginAccueilImage(Request $request, array $params = []): Response
     {
-        $back = $this->accueilSettingsUrl();
+        $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -390,7 +404,7 @@ final class OrganizationSettingsController
 
     public function deleteLoginAccueilImage(Request $request, array $params = []): Response
     {
-        $back = $this->accueilSettingsUrl();
+        $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -414,7 +428,7 @@ final class OrganizationSettingsController
 
     public function moveLoginAccueilImage(Request $request, array $params = []): Response
     {
-        $back = $this->accueilSettingsUrl();
+        $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -450,7 +464,7 @@ final class OrganizationSettingsController
 
     public function saveLoginAccueilSlideshow(Request $request, array $params = []): Response
     {
-        $back = $this->accueilSettingsUrl();
+        $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -478,9 +492,36 @@ final class OrganizationSettingsController
         return Response::redirect($back);
     }
 
-    private function accueilSettingsUrl(): string
+    private function accueilSettingsUrl(Request $request): string
     {
-        return url('back-office/organisation/parametres') . '#accueil-connexion';
+        return $this->settingsHubUrl($request, 'accueil') . '#accueil-connexion';
+    }
+
+    private function normalizeSettingsTab(string $raw): string
+    {
+        $tab = strtolower(trim($raw));
+        if ($tab === '') {
+            return 'identite';
+        }
+        if (isset(self::SETTINGS_TAB_ALIASES[$tab])) {
+            return self::SETTINGS_TAB_ALIASES[$tab];
+        }
+        if (in_array($tab, self::SETTINGS_TABS, true)) {
+            return $tab;
+        }
+
+        return 'identite';
+    }
+
+    private function settingsHubUrl(Request $request, string $tab = ''): string
+    {
+        $base = $this->formActionFromRequest($request);
+        if ($tab === '') {
+            $tab = (string) $request->input('settings_tab', $request->query('onglet', $request->query('tab', '')));
+        }
+        $tab = $this->normalizeSettingsTab($tab);
+
+        return $base . (str_contains($base, '?') ? '&' : '?') . 'onglet=' . rawurlencode($tab);
     }
 
     private function markLoginAccueilConfigured(int $tenantId): void

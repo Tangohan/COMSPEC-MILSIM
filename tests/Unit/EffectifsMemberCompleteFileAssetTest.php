@@ -18,8 +18,7 @@ final class EffectifsMemberCompleteFileAssetTest extends TestCase
         foreach (['Dossier RH complet', 'Qualifications', 'Absences', 'Documents RH', 'Mobilité et souhaits', 'Historique RH et bilans'] as $section) {
             self::assertStringContainsString($section, $view);
         }
-        self::assertStringContainsString('point d’entrée RH unique', $controller);
-        self::assertStringContainsString('Point d’entrée unique', $nav);
+        self::assertStringContainsString('bo-eff-jump', $view);
         self::assertStringNotContainsString("url('personnel/' . \$memberHubUserId . '/edit')", $nav);
         self::assertStringNotContainsString("url('back-office/users/' . \$memberHubUserId . '/edit')", $nav);
     }
