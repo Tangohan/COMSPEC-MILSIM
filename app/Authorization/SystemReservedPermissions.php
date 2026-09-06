@@ -8,8 +8,9 @@ namespace App\Authorization;
  * Habilitations réservées à l’administration de la plateforme.
  *
  * Invariant du produit : **aucun rôle de communauté (tenant) ne porte l’un de ces slugs**.
- * Ils ne peuvent être obtenus que par une attribution de rôle site (`site_role_assignments`
- * vers un rôle `roles.tenant_id IS NULL AND role_layer = 'site'`).
+ * `admin.system` ne s’obtient plus par un rôle : il vient du bit `users.is_platform_admin`.
+ * `site.support` et les autres slugs `site.*` restent des rôles site
+ * (`site_role_assignments` vers `roles.tenant_id IS NULL AND role_layer = 'site'`).
  *
  * Pourquoi une liste centrale : {@see PermissionImplication::isGranted()} traite `admin.system`
  * et `*` comme des laissez-passer universels, et `site.support` comme un agrégat transverse.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Services\Personnel\UnitJobRoleSyncService;
 use App\Support\LazyDatabaseConnection;
 use App\Support\SqlText;
 
@@ -847,6 +848,7 @@ class UnitRepository
         if ($extraPublic !== []) {
             $this->update($id, $tenantId, $extraPublic);
         }
+        $this->syncDerivedJobRole($tenantId, $id, (string) ($data['name'] ?? ''));
         $row = $this->findById($id, $tenantId);
         return $row ?? [];
     }
@@ -959,7 +961,31 @@ class UnitRepository
         $params[] = $tenantId;
         $stmt = $this->pdo()->prepare('UPDATE units SET ' . implode(', ', $fields) . ' WHERE id = ? AND tenant_id = ?');
         $stmt->execute($params);
-        return $stmt->rowCount() > 0;
+        $ok = $stmt->rowCount() > 0;
+        if (array_key_exists('name', $data)) {
+            $this->syncDerivedJobRole($tenantId, $id, (string) $data['name']);
+        }
+
+        return $ok;
+    }
+
+    private function syncDerivedJobRole(int $tenantId, int $unitId, string $name): void
+    {
+        if ($tenantId < 1 || $unitId < 1) {
+            return;
+        }
+        try {
+            $label = trim($name);
+            if ($label === '') {
+                $row = $this->findById($unitId, $tenantId);
+                $label = trim((string) ($row['name'] ?? ''));
+            }
+            if ($label === '') {
+                return;
+            }
+            (new UnitJobRoleSyncService($this->pdo()))->ensureForUnit($tenantId, $unitId, $label);
+        } catch (\Throwable) {
+        }
     }
 
     public function delete(int $id, int $tenantId): bool

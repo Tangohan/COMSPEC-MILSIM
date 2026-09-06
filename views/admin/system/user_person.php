@@ -60,6 +60,9 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Orphelin (plus d’orga active)</span>
                     <?php endif; ?>
                     <p class="text-xs text-slate-500"><?= count($memberships) ?> communauté(s) — le dossier métier reste propre à chacune</p>
+                    <?php if (!empty($personIsPlatformAdmin)): ?>
+                        <p class="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900">Administrateur du site</p>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -82,6 +85,19 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 </div>
             </dl>
         </header>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-base font-bold text-slate-900">Administration du site</h2>
+            <p class="mt-1 text-sm text-slate-600">
+                Ce n’est pas un niveau d’accès de communauté, et ce n’est pas un choix sur chaque dossier.
+                Les personnes habilitées sont nommées dans une liste fermée.
+            </p>
+            <p class="mt-3">
+                <a href="<?= $h(url('admin/system/administrateurs-site')) ?>" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
+                    Ouvrir la liste des administrateurs du site
+                </a>
+            </p>
+        </section>
 
         <?php if (!$hasLiveOrg): ?>
             <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">

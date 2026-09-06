@@ -139,20 +139,9 @@ function run_rbac_three_layer_migration(PDO $pdo): void
             $link->execute([$coId, $pid]);
         }
 
-        $emails = $pdo->prepare('SELECT DISTINCT LOWER(TRIM(email)) AS em FROM users WHERE tenant_id = ? AND role_id = ?');
-        $emails->execute([$tenantId, $superAdminId]);
-        while ($e = $emails->fetch(PDO::FETCH_ASSOC)) {
-            $em = (string) ($e['em'] ?? '');
-            if ($em === '') {
-                continue;
-            }
-            $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
-                ->execute([$em, $globalSiteRoleId]);
-        }
-
         $pdo->prepare('UPDATE users SET role_id = ? WHERE tenant_id = ? AND role_id = ?')->execute([$coId, $tenantId, $superAdminId]);
         $pdo->prepare('DELETE FROM roles WHERE id = ?')->execute([$superAdminId]);
-        echo "RBAC: tenant {$tenantId} — super_admin migré vers community_owner + site.\n";
+        echo "RBAC: tenant {$tenantId} — super_admin migré vers community_owner.\n";
     }
 
     // Retirer admin.system des rôles tenant (tenant_admin) si encore lié par erreur

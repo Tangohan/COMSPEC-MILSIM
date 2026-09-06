@@ -155,6 +155,7 @@ $bootstrapFiles = [
     'forum_reporting_workflow_migration.php',
     'request_telemetry_migration.php',
     'platform_admin_tenant_intervention_migration.php',
+    'users_platform_admin_flag_migration.php',
 ];
 foreach ($bootstrapFiles as $bf) {
     $path = $root . '/bootstrap/' . $bf;
@@ -309,6 +310,11 @@ try {
 run_permissions_action_migration($pdo);
 run_request_telemetry_migration($pdo);
 migratePlatformAdminTenantIntervention($pdo);
+try {
+    run_users_platform_admin_flag_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] users_platform_admin_flag : ' . $e->getMessage() . "\n";
+}
 try {
     run_forum_reporting_workflow_migration($pdo);
 } catch (Throwable $e) {
@@ -2634,13 +2640,6 @@ try {
     echo '  [ATTENTION] organization_catalog : ' . $e->getMessage() . "\n";
 }
 
-try {
-    \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
-    echo "Catalogue rôles militaires (synchronisation tenants) OK.\n";
-} catch (Throwable $e) {
-    echo '  [ATTENTION] military_role_catalog_sync : ' . $e->getMessage() . "\n";
-}
-
 $trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
 if (is_file($trainingOnboardingBulk)) {
     require_once $trainingOnboardingBulk;
@@ -3178,13 +3177,6 @@ if ($stmt && $stmt->fetch()) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
     }
 
-    try {
-        \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
-        echo "Catalogue rôles militaires (post-permissions) OK.\n";
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] military_role_catalog_sync (post-permissions) : ' . $e->getMessage() . "\n";
-    }
-
     // LMS : type de leçon canvas (slides / modales)
     try {
         $tc = $pdo->query("SHOW TABLES LIKE 'training_lessons'");
@@ -3263,14 +3255,8 @@ if ($stmt && $stmt->fetch()) {
     }
 
     $hash = password_hash('admin', PASSWORD_ARGON2ID);
-    $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
+    $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, is_platform_admin, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', 1, NOW(), NOW())")
         ->execute([$tenantId, $hash, $roleId, $gradeId]);
-
-    $siteGlobalId = $pdo->query('SELECT id FROM roles WHERE tenant_id IS NULL AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'site_super_admin') . ' LIMIT 1')->fetchColumn();
-    if ($siteGlobalId) {
-        $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
-            ->execute(['admin@athena.local', (int) $siteGlobalId]);
-    }
 
     $panels = [
         ['État civil', 'etat-civil', 'Identité et état civil', 10],
@@ -3301,13 +3287,6 @@ if ($stmt && $stmt->fetch()) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
     }
 
-    try {
-        \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
-        echo "Catalogue rôles militaires (seed tenant) OK.\n";
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] military_role_catalog_sync (seed) : ' . $e->getMessage() . "\n";
-    }
-
     echo "Seed OK. Compte : admin@athena.local / admin\n";
 }
 
@@ -3335,6 +3314,30 @@ try {
     $personnelRoleConsolidationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] personnel_role_consolidation : ' . $e->getMessage() . "\n";
+}
+
+$communityAccessProfilesMigrate = require $root . '/bootstrap/community_access_profiles_v1_migration.php';
+try {
+    echo "Migration community_access_profiles_v1 (trois niveaux d’accès)...\n";
+    $communityAccessProfilesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_access_profiles_v1 : ' . $e->getMessage() . "\n";
+}
+
+$unitDerivedJobRolesMigrate = require $root . '/bootstrap/unit_derived_job_roles_migration.php';
+try {
+    echo "Migration unit_derived_job_roles (emplois depuis l’ORBAT)...\n";
+    $unitDerivedJobRolesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] unit_derived_job_roles : ' . $e->getMessage() . "\n";
+}
+
+$communityAccessRolesPurgeMigrate = require $root . '/bootstrap/community_access_roles_purge_v1_migration.php';
+try {
+    echo "Migration community_access_roles_purge_v1 (retrait des copies d’accès)...\n";
+    $communityAccessRolesPurgeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_access_roles_purge_v1 : ' . $e->getMessage() . "\n";
 }
 
 $defaultTenantCleanupMigrate = require $root . '/bootstrap/default_tenant_cleanup_migration.php';

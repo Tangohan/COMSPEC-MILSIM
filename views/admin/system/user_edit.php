@@ -105,6 +105,18 @@ if ($uid < 1) {
             <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950" role="alert"><?= $h((string) $flashErr) ?></p>
         <?php endif; ?>
 
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-base font-bold text-slate-900">Administration du site</h2>
+            <p class="mt-1 text-sm text-slate-600">
+                Ce n’est pas un choix sur cette fiche. Les personnes habilitées sont nommées dans une liste fermée.
+            </p>
+            <p class="mt-3">
+                <a href="<?= $h(url('admin/system/administrateurs-site')) ?>" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
+                    Ouvrir la liste des administrateurs du site
+                </a>
+            </p>
+        </section>
+
         <form method="post" action="<?= $h($updateUrl) ?>" class="space-y-6">
             <?= \App\Core\Csrf::field() ?>
 

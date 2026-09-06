@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(223, $byKind['update']);
-        self::assertCount(229, $all);
+        self::assertSame(233, $byKind['update']);
+        self::assertCount(239, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -784,6 +784,26 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($maintUi);
         self::assertSame('00429', $maintUi['number_pad']);
         self::assertStringContainsString('intervention', strtolower((string) $maintUi['title']));
+        $accessProfiles = DevDispatchCatalog::find('update', '430');
+        self::assertNotNull($accessProfiles);
+        self::assertSame('00430', $accessProfiles['number_pad']);
+        self::assertStringContainsString('trois niveaux d’accès', strtolower((string) $accessProfiles['title']));
+        $orbatJobs = DevDispatchCatalog::find('update', '431');
+        self::assertNotNull($orbatJobs);
+        self::assertSame('00431', $orbatJobs['number_pad']);
+        self::assertStringContainsString('emploi', strtolower((string) $orbatJobs['title']));
+        $maintPage = DevDispatchCatalog::find('update', '432');
+        self::assertNotNull($maintPage);
+        self::assertSame('00432', $maintPage['number_pad']);
+        self::assertStringContainsString('maintenance', strtolower((string) $maintPage['title']));
+        $platformFlag = DevDispatchCatalog::find('update', '433');
+        self::assertNotNull($platformFlag);
+        self::assertSame('00433', $platformFlag['number_pad']);
+        self::assertStringContainsString('administration du site', strtolower((string) $platformFlag['title']));
+        $rolesPurge = DevDispatchCatalog::find('update', '434');
+        self::assertNotNull($rolesPurge);
+        self::assertSame('00434', $rolesPurge['number_pad']);
+        self::assertStringContainsString('copies d’accès', strtolower((string) $rolesPurge['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

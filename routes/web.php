@@ -990,6 +990,8 @@ return function (Router $router) {
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/platform-admin', [SystemUsersController::class, 'setPlatformAdmin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/merge', [SystemUsersController::class, 'mergeAccounts'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

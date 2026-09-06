@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Rbac;
 
 /**
- * Référentiel unique : rôles militaires / organisationnels (FR + label_en), hiérarchie catégorie → sous-catégorie.
- * Alimente `roles` (intra) et `personnel_job_roles` via MilitaryRoleCatalogSyncService.
+ * Référentiel unique : emplois militaires / organisationnels (FR + label_en), hiérarchie catégorie → sous-catégorie.
+ * Conservé comme documentation de métier. Il n’est plus recopié automatiquement dans les dossiers :
+ * les emplois naissent des unités de l’ORBAT.
  *
  * Les entrées détaillées sont dans {@see MilitaryOperationalRoleCatalogData}.
  *

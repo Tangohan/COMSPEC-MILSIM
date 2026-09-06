@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `personnel_job_roles` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
   `category_id` int unsigned NOT NULL,
+  `source_unit_id` int unsigned DEFAULT NULL,
   `name` varchar(120) NOT NULL,
   `slug` varchar(80) NOT NULL,
   `description` varchar(500) DEFAULT NULL,
@@ -31,8 +32,10 @@ CREATE TABLE IF NOT EXISTS `personnel_job_roles` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pjr_tenant_slug` (`tenant_id`,`slug`),
   KEY `pjr_tenant_cat` (`tenant_id`,`category_id`),
+  KEY `pjr_source_unit` (`source_unit_id`),
   CONSTRAINT `pjr_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `pjr_category_fk` FOREIGN KEY (`category_id`) REFERENCES `personnel_job_role_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `pjr_category_fk` FOREIGN KEY (`category_id`) REFERENCES `personnel_job_role_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `pjr_source_unit_fk` FOREIGN KEY (`source_unit_id`) REFERENCES `units` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `personnel_job_role_permissions` (

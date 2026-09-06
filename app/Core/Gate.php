@@ -13,6 +13,8 @@ class Gate
     /** @var list<string> */
     private array $permissions = [];
 
+    private bool $platformAdmin = false;
+
     /**
      * Permissions à périmètre unitaire : slug => liste d’IDs d’unités où le droit s’applique.
      *
@@ -32,6 +34,17 @@ class Gate
     {
         $this->permissions = $permissions;
         $this->unitPermissionMap = [];
+        $this->platformAdmin = false;
+    }
+
+    public function setPlatformAdmin(bool $enabled): void
+    {
+        $this->platformAdmin = $enabled;
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->platformAdmin;
     }
 
     /**
@@ -42,6 +55,7 @@ class Gate
     {
         $this->permissions = $flatPermissions;
         $this->unitPermissionMap = [];
+        $this->platformAdmin = false;
         foreach ($unitSlugToUnitIds as $slug => $ids) {
             $slug = (string) $slug;
             if ($slug === '') {
@@ -63,6 +77,10 @@ class Gate
     public function allows(string $permission): bool
     {
         // No identity or request context bypasses the function catalogue.
+        if ($this->platformAdmin) {
+            return true;
+        }
+
         return PermissionImplication::isGranted($this->permissions, $permission);
     }
 

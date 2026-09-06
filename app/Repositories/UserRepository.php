@@ -43,6 +43,8 @@ class UserRepository
 
     private static ?bool $hasMembershipTable = null;
 
+    private static ?bool $hasPlatformAdminColumn = null;
+
     private ?UserCommunityMembershipRepository $communityMemberships = null;
 
     /** @var array{join: string, grade_short: string, order_grade: string}|null */
@@ -59,7 +61,9 @@ class UserRepository
     protected function onDatabaseConnected(PDO $pdo): void
     {
         SilentSchemaMigration::run(base_path('bootstrap/user_community_identity_migration.php'), $pdo);
+        SilentSchemaMigration::run(base_path('bootstrap/users_platform_admin_flag_migration.php'), $pdo);
         self::$hasMembershipTable = null;
+        self::$hasPlatformAdminColumn = null;
     }
 
     public function communityMemberships(): UserCommunityMembershipRepository
@@ -890,7 +894,7 @@ class UserRepository
         if ($rows === []) {
             return null;
         }
-        foreach (['community_owner', 'tenant_admin'] as $slug) {
+        foreach (['community_owner', 'hr', 'member'] as $slug) {
             foreach ($rows as $r) {
                 if (($r['slug'] ?? '') === $slug) {
                     return (int) $r['id'];
@@ -2065,6 +2069,9 @@ class UserRepository
     public function update(int $userId, int $tenantId, array $data): bool
     {
         $allowed = ['email', 'password_hash', 'display_name', 'callsign', 'avatar_url', 'steam_id', 'role_id', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code'];
+        if ($this->hasPlatformAdminColumn()) {
+            $allowed[] = 'is_platform_admin';
+        }
         if ($this->hasProfileSlugColumn()) {
             $allowed[] = 'profile_slug';
         }
@@ -3000,7 +3007,186 @@ class UserRepository
         return $row !== false ? (string) $row : null;
     }
 
-    /** Nombre d'utilisateurs ayant le rôle donné (pour garde-fou dernier super-admin). */
+    public function hasPlatformAdminColumn(): bool
+    {
+        if (self::$hasPlatformAdminColumn === null) {
+            try {
+                $stmt = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_platform_admin' LIMIT 1"
+                );
+                self::$hasPlatformAdminColumn = $stmt !== false && (bool) $stmt->fetchColumn();
+            } catch (\Throwable) {
+                self::$hasPlatformAdminColumn = false;
+            }
+        }
+
+        return self::$hasPlatformAdminColumn;
+    }
+
+    public function emailHasPlatformAdmin(string $email): bool
+    {
+        if (!$this->hasPlatformAdminColumn()) {
+            return false;
+        }
+        $email = strtolower(trim($email));
+        if ($email === '' || str_ends_with($email, '@deleted.invalid')) {
+            return false;
+        }
+        $stmt = $this->pdo()->prepare(
+            'SELECT 1 FROM users WHERE ' . SqlText::normalizedEquals($this->pdo(), 'email')
+            . ' AND is_platform_admin = 1 LIMIT 1'
+        );
+        $stmt->execute([$email]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Nombre de personnes (e-mails distincts) administratrices du site.
+     */
+    public function countPlatformAdminPeople(): int
+    {
+        if (!$this->hasPlatformAdminColumn()) {
+            return 0;
+        }
+        $deleted = $this->hasDeletedAtColumn()
+            ? ' AND (deleted_at IS NULL OR deleted_at = \'\')'
+            : '';
+        $stmt = $this->pdo()->query(
+            'SELECT COUNT(DISTINCT LOWER(TRIM(email))) FROM users
+             WHERE is_platform_admin = 1
+               AND email NOT LIKE \'%@deleted.invalid\'
+               AND email NOT LIKE \'%@merged.invalid\''
+            . $deleted
+        );
+
+        return $stmt ? (int) $stmt->fetchColumn() : 0;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function listPlatformAdminEmails(): array
+    {
+        if (!$this->hasPlatformAdminColumn()) {
+            return [];
+        }
+        $deleted = $this->hasDeletedAtColumn()
+            ? ' AND (deleted_at IS NULL OR deleted_at = \'\')'
+            : '';
+        $stmt = $this->pdo()->query(
+            'SELECT DISTINCT LOWER(TRIM(email)) FROM users
+             WHERE is_platform_admin = 1
+               AND email NOT LIKE \'%@deleted.invalid\'
+               AND email NOT LIKE \'%@merged.invalid\''
+            . $deleted
+        );
+        $emails = [];
+        foreach (($stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : []) as $email) {
+            $mail = strtolower(trim((string) $email));
+            if ($mail !== '' && filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $mail;
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    /**
+     * @return list<array{email: string, display_name: string}>
+     */
+    public function listPlatformAdminPeople(): array
+    {
+        if (!$this->hasPlatformAdminColumn()) {
+            return [];
+        }
+        $deleted = $this->hasDeletedAtColumn()
+            ? ' AND (deleted_at IS NULL OR deleted_at = \'\')'
+            : '';
+        $stmt = $this->pdo()->query(
+            'SELECT LOWER(TRIM(email)) AS email, MAX(display_name) AS display_name
+             FROM users
+             WHERE is_platform_admin = 1
+               AND email NOT LIKE \'%@deleted.invalid\'
+               AND email NOT LIKE \'%@merged.invalid\''
+            . $deleted . '
+             GROUP BY LOWER(TRIM(email))
+             ORDER BY email ASC'
+        );
+        $people = [];
+        foreach (($stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : []) as $row) {
+            $mail = strtolower(trim((string) ($row['email'] ?? '')));
+            if ($mail === '' || !filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $people[] = [
+                'email' => $mail,
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+            ];
+        }
+
+        return $people;
+    }
+
+    /**
+     * @return array{ok: bool, error?: string}
+     */
+    public function setPlatformAdminForEmail(string $email, bool $enabled): array
+    {
+        if (!$this->hasPlatformAdminColumn()) {
+            return ['ok' => false, 'error' => 'Cette fonction n’est pas encore disponible.'];
+        }
+        $email = strtolower(trim($email));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || str_ends_with($email, '@deleted.invalid')) {
+            return ['ok' => false, 'error' => 'Adresse introuvable.'];
+        }
+        $exists = $this->pdo()->prepare(
+            'SELECT 1 FROM users WHERE ' . SqlText::normalizedEquals($this->pdo(), 'email') . ' LIMIT 1'
+        );
+        $exists->execute([$email]);
+        if (!$exists->fetchColumn()) {
+            return ['ok' => false, 'error' => 'Aucun compte pour cette adresse.'];
+        }
+        if (!$enabled && $this->emailHasPlatformAdmin($email) && $this->countPlatformAdminPeople() <= 1) {
+            return ['ok' => false, 'error' => 'Il doit rester au moins une personne administratrice du site.'];
+        }
+        $stmt = $this->pdo()->prepare(
+            'UPDATE users SET is_platform_admin = ?, updated_at = NOW() WHERE '
+            . SqlText::normalizedEquals($this->pdo(), 'email')
+        );
+        $stmt->execute([$enabled ? 1 : 0, $email]);
+
+        if (!$enabled) {
+            $this->revokeLegacyPlatformAdminAssignment($email);
+        }
+
+        return ['ok' => true];
+    }
+
+    private function revokeLegacyPlatformAdminAssignment(string $email): void
+    {
+        try {
+            $chk = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'site_role_assignments' LIMIT 1"
+            );
+            if (!$chk || !$chk->fetchColumn()) {
+                return;
+            }
+            $st = $this->pdo()->prepare(
+                'UPDATE site_role_assignments sra
+                 INNER JOIN roles r ON r.id = sra.role_id AND r.tenant_id IS NULL
+                 SET sra.revoked_at = UTC_TIMESTAMP()
+                 WHERE sra.email_normalized = ? AND sra.revoked_at IS NULL AND '
+                . SqlText::equals($this->pdo(), 'r.slug')
+            );
+            $st->execute([$email, \App\Services\Rbac\PlatformAdminFlag::LEGACY_ROLE_SLUG]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /** Nombre d'utilisateurs ayant le rôle donné (pour garde-fou dernier gestionnaire). */
     public function countUsersWithRole(int $roleId): int
     {
         if ($this->hasUserRolesTable()) {
@@ -3624,7 +3810,7 @@ class UserRepository
         $sql = "SELECT DISTINCT u.email FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner']);
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['community_owner']);
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($pack['params']);
         $emails = [];
@@ -3639,7 +3825,7 @@ class UserRepository
                 INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']}
-            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner']);
+            AND " . SqlText::inLiterals($this->pdo(), 'r.slug', ['community_owner']);
             try {
                 $st = $this->pdo()->prepare($sql2);
                 $st->execute($pack['params']);
@@ -3801,7 +3987,7 @@ class UserRepository
     {
         $ids = [];
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $slugIn = SqlText::inLiterals($this->pdo(), 'r.slug', ['tenant_admin', 'community_owner', 'forum_moderator', 'administrator']);
+        $slugIn = SqlText::inLiterals($this->pdo(), 'r.slug', ['community_owner']);
         $sql = "SELECT DISTINCT u.id FROM users u
             INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND u.status = 'active' AND {$pack['sql']} AND {$slugIn}";

@@ -697,8 +697,11 @@ final class OrganizationCatalogService
                         $slug,
                         isset($role['description']) ? (string) $role['description'] : null
                     );
+                    if ($newId < 1) {
+                        continue;
+                    }
                     $preset = trim((string) ($role['preset'] ?? ''));
-                    if ($newId > 0 && $preset !== '') {
+                    if ($preset !== '') {
                         $permIds = $this->presets->getPermissionIdsForPreset($tenantId, $preset);
                         if ($permIds !== []) {
                             $this->permissions->setPermissionsForRole($newId, $permIds);

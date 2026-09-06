@@ -121,42 +121,8 @@ final class TenantTypeConfig
     {
         return [
             self::TYPE_FULL => [],
-            self::TYPE_EFFECTIFS => [
-                [
-                    'name' => 'Gestionnaire effectifs',
-                    'slug' => 'personnel_manager',
-                    'description' => 'Gère les effectifs de la communauté',
-                    'is_system' => 1,
-                    'is_locked' => 0,
-                    'role_layer' => 'community',
-                ],
-                [
-                    'name' => 'Membre',
-                    'slug' => 'member',
-                    'description' => 'Membre de la communauté',
-                    'is_system' => 1,
-                    'is_locked' => 0,
-                    'role_layer' => 'community',
-                ],
-            ],
-            self::TYPE_ATAK => [
-                [
-                    'name' => 'Opérateur ATAK',
-                    'slug' => 'atak_operator',
-                    'description' => 'Opérateur du système ATAK',
-                    'is_system' => 1,
-                    'is_locked' => 0,
-                    'role_layer' => 'community',
-                ],
-                [
-                    'name' => 'Administrateur ATAK',
-                    'slug' => 'atak_admin',
-                    'description' => 'Administrateur du système ATAK',
-                    'is_system' => 1,
-                    'is_locked' => 0,
-                    'role_layer' => 'community',
-                ],
-            ],
+            self::TYPE_EFFECTIFS => [],
+            self::TYPE_ATAK => [],
         ];
     }
 

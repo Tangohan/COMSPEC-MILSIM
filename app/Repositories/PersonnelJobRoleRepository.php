@@ -418,14 +418,8 @@ class PersonnelJobRoleRepository
         if (!$this->tablesExist()) {
             return;
         }
+        unset($permissionIds);
         $this->pdo->prepare('DELETE FROM personnel_job_role_permissions WHERE personnel_job_role_id = ?')->execute([$jobRoleId]);
-        $ins = $this->pdo->prepare('INSERT INTO personnel_job_role_permissions (personnel_job_role_id, permission_id) VALUES (?, ?)');
-        foreach ($permissionIds as $pid) {
-            $pid = (int) $pid;
-            if ($pid > 0) {
-                $ins->execute([$jobRoleId, $pid]);
-            }
-        }
     }
 
     public function createCategory(int $tenantId, ?int $parentId, string $name, string $slug, int $sortOrder = 0): int
@@ -861,8 +855,8 @@ class PersonnelJobRoleRepository
     }
 
     /**
-     * Trouve un emploi existant par nom (insensible à la casse) dans le tenant, ou le crée dans une
-     * catégorie « Importé » dédiée. Utilisé pour la reprise de données texte libre (ex-primary_role).
+     * Trouve un emploi existant par nom (insensible à la casse) dans le tenant, ou le crée
+     * dans la catégorie Organisation. Utilisé pour un poste nommé à l’affectation.
      */
     public function findOrCreateImportedRoleByLabel(int $tenantId, string $label): ?int
     {
@@ -877,11 +871,9 @@ class PersonnelJobRoleRepository
             return (int) $existing;
         }
 
-        $catStmt = $this->pdo->prepare('SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . SqlText::equalsLiteral($this->pdo, 'slug', 'importe') . ' LIMIT 1');
-        $catStmt->execute([$tenantId]);
-        $categoryId = (int) ($catStmt->fetchColumn() ?: 0);
+        $categoryId = $this->findOrCreateOrganisationCategory($tenantId);
         if ($categoryId < 1) {
-            $categoryId = $this->createCategory($tenantId, null, 'Importé', 'importe', 9999);
+            return null;
         }
 
         $baseSlug = trim(preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($label, 'UTF-8')) ?? '', '-');
@@ -901,5 +893,47 @@ class PersonnelJobRoleRepository
         }
 
         return $this->createRole($tenantId, $categoryId, $label, $slug, null, 0, false);
+    }
+
+    public function ensureUserHasJobRole(int $tenantId, int $userId, int $jobRoleId): void
+    {
+        if (!$this->pivotTableExists() || $tenantId < 1 || $userId < 1 || $jobRoleId < 1) {
+            return;
+        }
+        $jr = $this->findRoleById($jobRoleId, $tenantId);
+        if (!$jr) {
+            return;
+        }
+        $chk = $this->pdo->prepare(
+            'SELECT 1 FROM personnel_profile_job_roles WHERE tenant_id = ? AND user_id = ? AND personnel_job_role_id = ? LIMIT 1'
+        );
+        $chk->execute([$tenantId, $userId, $jobRoleId]);
+        if ($chk->fetchColumn()) {
+            return;
+        }
+        $any = $this->pdo->prepare(
+            'SELECT 1 FROM personnel_profile_job_roles WHERE tenant_id = ? AND user_id = ? LIMIT 1'
+        );
+        $any->execute([$tenantId, $userId]);
+        $isPrimary = $any->fetchColumn() ? 0 : 1;
+        $ins = $this->pdo->prepare(
+            'INSERT IGNORE INTO personnel_profile_job_roles (tenant_id, user_id, personnel_job_role_id, is_primary, sort_order, created_at)
+             VALUES (?, ?, ?, ?, 0, NOW())'
+        );
+        $ins->execute([$tenantId, $userId, $jobRoleId, $isPrimary]);
+    }
+
+    private function findOrCreateOrganisationCategory(int $tenantId): int
+    {
+        foreach (['organisation', 'importe'] as $slug) {
+            $catStmt = $this->pdo->prepare('SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . SqlText::equalsLiteral($this->pdo, 'slug', $slug) . ' LIMIT 1');
+            $catStmt->execute([$tenantId]);
+            $categoryId = (int) ($catStmt->fetchColumn() ?: 0);
+            if ($categoryId > 0) {
+                return $categoryId;
+            }
+        }
+
+        return $this->createCategory($tenantId, null, 'Organisation', 'organisation', 0);
     }
 }

@@ -15,7 +15,7 @@ $canOrganization = $canOrganization ?? false;
                 </span>
                 <h2 class="text-lg font-black text-slate-900">Plateforme (/admin)</h2>
             </div>
-            <p class="text-sm text-slate-600">Tenants, rôles site, paramètres applicatifs transverses, maintenance BDD, audit global. Réservé aux super-administrateurs.</p>
+            <p class="text-sm text-slate-600">Communautés, rôles d’assistance, paramètres du site, maintenance et journal. Réservé à l’administration du site.</p>
         </a>
         <?php endif; ?>
 

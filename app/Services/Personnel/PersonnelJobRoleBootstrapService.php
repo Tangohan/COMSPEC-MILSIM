@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Repositories\PersonnelJobRoleRepository;
-use App\Services\Rbac\MilitaryRoleCatalogSyncService;
 use PDO;
 
 /**
- * Initialise le référentiel rôles métier (fiche personnel) à partir du catalogue militaire unique.
+ * Initialise le référentiel d’emplois à partir des unités déjà présentes — pas d’un catalogue semé.
  */
 final class PersonnelJobRoleBootstrapService
 {
@@ -22,6 +21,8 @@ final class PersonnelJobRoleBootstrapService
         if (!$this->jobRoleRepository->tablesExist()) {
             return;
         }
-        MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
+        $sync = new UnitJobRoleSyncService($pdo, $this->jobRoleRepository);
+        $sync->ensureOrganisationCategory($tenantId);
+        $sync->backfillFromUnits($tenantId);
     }
 }

@@ -9,8 +9,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
 
 $athKpis = [
     ['label' => 'CATÉGORIES', 'value' => (string) count($categories), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'arborescence'],
-    ['label' => 'EMPLOIS', 'value' => (string) count($roles), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'référentiel'],
-    ['label' => 'DROITS LIÉS', 'value' => (string) array_sum(array_map(static fn ($v): int => (int) $v, $permCounts)), 'delta' => '', 'tone' => '#c98a12', 'pct' => '—', 'note' => 'permissions'],
+    ['label' => 'EMPLOIS', 'value' => (string) count($roles), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'depuis l’ORBAT'],
     ['label' => 'STATUT', 'value' => !empty($personnelProfilesJobRoleReady) ? 'Prêt' : 'Migration', 'delta' => '', 'tone' => !empty($personnelProfilesJobRoleReady) ? '#0b8a5c' : '#c98a12', 'pct' => '—', 'note' => 'dossiers effectifs'],
 ];
 require base_path('views/partials/ath_kpis.php');

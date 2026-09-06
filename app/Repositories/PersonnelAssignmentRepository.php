@@ -358,6 +358,28 @@ class PersonnelAssignmentRepository
             $this->pdo->rollBack();
             throw $e;
         }
+
+        $this->syncJobsFromAssignments($userId, $normalized);
+    }
+
+    /**
+     * @param list<array{unit_id:int, role_name:string, is_primary?:bool, change_reason?:mixed}> $assignments
+     */
+    private function syncJobsFromAssignments(int $userId, array $assignments): void
+    {
+        if ($userId < 1 || $assignments === []) {
+            return;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+            $st->execute([$userId]);
+            $tenantId = (int) ($st->fetchColumn() ?: 0);
+            if ($tenantId < 1) {
+                return;
+            }
+            (new \App\Services\Personnel\UnitJobRoleSyncService($this->pdo))->applyAssignments($tenantId, $userId, $assignments);
+        } catch (\Throwable) {
+        }
     }
 
     /**

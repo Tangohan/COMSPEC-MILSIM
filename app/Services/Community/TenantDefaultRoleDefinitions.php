@@ -140,7 +140,7 @@ final class TenantDefaultRoleDefinitions
         return [
             [
                 'slug' => 'member',
-                'name' => 'Opérateur',
+                'name' => 'Membre',
                 'description' => 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.',
                 'role_layer' => 'intra',
                 'is_system' => 1,

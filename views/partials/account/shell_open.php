@@ -113,6 +113,12 @@ $navGroups = [
                 'hint' => 'E-mail ou application d’authentification',
             ],
             [
+                'key' => 'devices',
+                'href' => url('account/security/devices'),
+                'label' => 'Appareils liés',
+                'hint' => 'Téléphones et tablettes ATAK',
+            ],
+            [
                 'key' => 'password',
                 'href' => url('account/password'),
                 'label' => 'Mot de passe',

@@ -6,7 +6,7 @@ namespace App\Services\Community;
 
 use App\Authorization\TenantPermissionCatalog;
 use App\Repositories\UnitRepository;
-use App\Services\Rbac\MilitaryRoleCatalogSyncService;
+use App\Services\Rbac\CommunityAccessProfiles;
 use App\Services\Training\TenantPedagogyStructureService;
 use App\Support\SqlText;
 use PDO;
@@ -41,64 +41,17 @@ final class TenantSeedHelper
                 $permIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
 
-            $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-            $adminRole->execute([$tenantId, 'tenant_admin']);
-            $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-            $coRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-            $coRole->execute([$tenantId, 'community_owner']);
-            $communityOwnerId = (int) ($coRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-            if ($adminRoleId) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+            self::ensureAccessProfilesForTenant($pdo, $tenantId);
+            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+            foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
+                $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+                $rs->execute([$tenantId, $roleSlug]);
+                $roleId = (int) ($rs->fetchColumn() ?: 0);
+                if ($roleId < 1) {
+                    continue;
+                }
                 foreach ($permIds as $pid) {
-                    $link->execute([$adminRoleId, $pid]);
-                }
-            }
-            if ($communityOwnerId) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                foreach ($permIds as $pid) {
-                    $link->execute([$communityOwnerId, $pid]);
-                }
-            }
-
-            foreach (TenantDefaultRoleDefinitions::operationalRoles() as $def) {
-                $slug = $def['slug'];
-                $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-                $st->execute([$tenantId, $slug]);
-                if (!$st->fetch()) {
-                    $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
-                        ->execute([
-                            $tenantId,
-                            $def['name'],
-                            $slug,
-                            $def['description'],
-                            $def['is_system'],
-                            $def['is_locked'],
-                            $def['role_layer'],
-                        ]);
-                }
-            }
-
-            $modRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-            $modRole->execute([$tenantId, 'forum_moderator']);
-            $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-            if ($modRoleId) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
-                    if (isset($permIds[$slug])) {
-                        $link->execute([$modRoleId, $permIds[$slug]]);
-                    }
-                }
-            }
-
-            $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-            $memberRole->execute([$tenantId, 'member']);
-            $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-            if ($memberRoleId) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'] as $slug) {
-                    if (isset($permIds[$slug])) {
-                        $link->execute([$memberRoleId, $permIds[$slug]]);
-                    }
+                    $link->execute([$roleId, $pid]);
                 }
             }
         } else {
@@ -114,7 +67,7 @@ final class TenantSeedHelper
                 }
             }
             if ($permIds !== []) {
-                foreach (['community_owner', 'tenant_admin', 'member', 'atak_operator', 'atak_admin', 'personnel_manager'] as $roleSlug) {
+                foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
                     $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
                     $rs->execute([$tenantId, $roleSlug]);
                     $roleId = (int) ($rs->fetchColumn() ?: 0);
@@ -132,10 +85,6 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         if ($stmt->fetch()) {
-            try {
-                MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
-            } catch (\Throwable $_) {
-            }
             self::ensurePedagogyMandatoryUnits($tenantId);
 
             return;
@@ -153,10 +102,6 @@ final class TenantSeedHelper
             $insCat->execute([$tenantId, $c[0], $c[1], $c[2], $c[3], $c[4]]);
         }
 
-        try {
-            MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
-        } catch (\Throwable $_) {
-        }
         self::ensurePedagogyMandatoryUnits($tenantId);
     }
 
@@ -245,44 +190,22 @@ final class TenantSeedHelper
                 $docPermIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
         }
-        $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $adminRole->execute([$tenantId, 'tenant_admin']);
-        $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if ($adminRoleId && $docPermIds !== []) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
+            $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+            $rs->execute([$tenantId, $roleSlug]);
+            $roleId = (int) ($rs->fetchColumn() ?: 0);
+            if ($roleId < 1 || $docPermIds === []) {
+                continue;
+            }
+            if ($roleSlug === CommunityAccessProfiles::SLUG_MEMBER) {
+                if (isset($docPermIds['documents.view'])) {
+                    $link->execute([$roleId, $docPermIds['documents.view']]);
+                }
+                continue;
+            }
             foreach ($docPermIds as $pid) {
-                $link->execute([$adminRoleId, $pid]);
-            }
-        }
-        $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $memberRole->execute([$tenantId, 'member']);
-        $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if ($memberRoleId && isset($docPermIds['documents.view'])) {
-            $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$memberRoleId, $docPermIds['documents.view']]);
-        }
-        $officerRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $officerRole->execute([$tenantId, 'officer']);
-        $officerRoleId = (int) ($officerRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if (!$officerRoleId) {
-            $offDef = null;
-            foreach (TenantDefaultRoleDefinitions::operationalRoles() as $r) {
-                if (($r['slug'] ?? '') === 'officer') {
-                    $offDef = $r;
-                    break;
-                }
-            }
-            if ($offDef !== null) {
-                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
-                    ->execute([$tenantId, $offDef['name'], 'officer', $offDef['description'], 1, 0, 'intra']);
-                $officerRoleId = (int) $pdo->lastInsertId();
-            }
-        }
-        if ($officerRoleId) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (['documents.view', 'documents.upload', 'documents.update'] as $slug) {
-                if (isset($docPermIds[$slug])) {
-                    $link->execute([$officerRoleId, $docPermIds[$slug]]);
-                }
+                $link->execute([$roleId, $pid]);
             }
         }
 
@@ -327,16 +250,9 @@ final class TenantSeedHelper
             }
         }
 
-        $tenantAdminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $tenantAdminRole->execute([$tenantId, 'tenant_admin']);
-        $tenantAdminRoleId = $tenantAdminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
         $permOrg = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $permOrg->execute([$tenantId, 'admin.organization']);
         $permOrgId = $permOrg->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
-        if ($tenantAdminRoleId && $permOrgId) {
-            $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)')->execute([$tenantAdminRoleId, $permOrgId]);
-        }
-
         $coR = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $coR->execute([$tenantId, 'community_owner']);
         $coRid = $coR->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
@@ -350,7 +266,7 @@ final class TenantSeedHelper
             foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training'], ['training.publications.manage', 'Gérer les publications de formation', 'training']] as $p) {
                 self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
-            foreach (['tenant_admin', 'community_owner'] as $roleSlug) {
+            foreach (['community_owner'] as $roleSlug) {
                 $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
                 $adminRole->execute([$tenantId, $roleSlug]);
                 $adminRoleId = $adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? null;
@@ -370,69 +286,8 @@ final class TenantSeedHelper
      */
     public static function applyWizardCommunityRoles(PDO $pdo, int $tenantId, string $template): void
     {
-        TenantDefaultRoleDefinitions::applyCanonicalLabels($pdo, $tenantId);
-
-        $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        foreach (TenantDefaultRoleDefinitions::operationalRoles() as $def) {
-            $st->execute([$tenantId, $def['slug']]);
-            if (!$st->fetch()) {
-                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
-                    ->execute([
-                        $tenantId,
-                        $def['name'],
-                        $def['slug'],
-                        $def['description'],
-                        $def['is_system'],
-                        $def['is_locked'],
-                        $def['role_layer'],
-                    ]);
-            }
-        }
-
-        $permIds = [];
-        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
-        $q->execute([$tenantId]);
-        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-            $permIds[(string) $row['slug']] = (int) $row['id'];
-        }
-
-        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-        $roleId = static function (string $slug) use ($pdo, $tenantId): int {
-            $s = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-            $s->execute([$tenantId, $slug]);
-            $r = $s->fetch(PDO::FETCH_ASSOC);
-
-            return $r ? (int) $r['id'] : 0;
-        };
-
-        foreach (TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles() as $slug => $permSlugs) {
-            $rid = $roleId($slug);
-            if (!$rid) {
-                continue;
-            }
-            foreach ($permSlugs as $ps) {
-                if (isset($permIds[$ps])) {
-                    $link->execute([$rid, $permIds[$ps]]);
-                }
-            }
-        }
-
-        $inviteId = $roleId('invite');
-        if ($inviteId && isset($permIds['forum.view'])) {
-            $link->execute([$inviteId, $permIds['forum.view']]);
-        }
-
-        if ($template === 'standard') {
-            $modId = $roleId('forum_moderator');
-            if ($modId && isset($permIds['forum.moderate_organization'])) {
-                $link->execute([$modId, $permIds['forum.moderate_organization']]);
-            }
-        }
-
-        try {
-            MilitaryRoleCatalogSyncService::syncForTenant($pdo, $tenantId);
-        } catch (\Throwable $_) {
-        }
+        unset($template);
+        self::ensureAccessProfilesForTenant($pdo, $tenantId);
     }
 
     /**
@@ -442,39 +297,8 @@ final class TenantSeedHelper
      */
     public static function applyWizardCustomRoles(PDO $pdo, int $tenantId, array $roles): void
     {
-        if ($roles === []) {
-            return;
-        }
-        $permIds = [];
-        $q = $pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
-        $q->execute([$tenantId]);
-        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-            $permIds[(string) $row['slug']] = (int) $row['id'];
-        }
-        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-        $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 0, 0, \'intra\', NOW())');
-        $chk = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-
-        foreach ($roles as $r) {
-            $name = trim((string) ($r['name'] ?? ''));
-            $slug = trim((string) ($r['slug'] ?? ''));
-            if ($name === '' || $slug === '') {
-                continue;
-            }
-            $chk->execute([$tenantId, $slug]);
-            if ($chk->fetch()) {
-                continue;
-            }
-            $insRole->execute([$tenantId, $name, $slug, '']);
-            $rid = (int) $pdo->lastInsertId();
-            foreach ($r['permission_slugs'] ?? [] as $ps) {
-                $ps = is_string($ps) ? trim($ps) : '';
-                if ($ps === '' || !isset($permIds[$ps])) {
-                    continue;
-                }
-                $link->execute([$rid, $permIds[$ps]]);
-            }
-        }
+        unset($pdo, $tenantId, $roles);
+        // Les accès communauté sont uniquement Membre, Ressources humaines et Gestionnaire.
     }
 
     /**
@@ -535,63 +359,7 @@ final class TenantSeedHelper
             $permIdsBySlug[(string) $pr['slug']] = (int) $pr['id'];
         }
 
-        $chkRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
-        foreach (array_merge(
-            TenantDefaultRoleDefinitions::governanceRoles(),
-            TenantDefaultRoleDefinitions::operationalRoles(),
-            TenantDefaultRoleDefinitions::organicStaffRoles()
-        ) as $def) {
-            $chkRole->execute([$tenantId, $def['slug']]);
-            if (!$chkRole->fetch()) {
-                $insRole->execute([
-                    $tenantId,
-                    $def['name'],
-                    $def['slug'],
-                    $def['description'],
-                    $def['is_system'],
-                    $def['is_locked'],
-                    $def['role_layer'],
-                ]);
-            }
-        }
-
-        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-        foreach (['tenant_admin', 'community_owner'] as $roleSlug) {
-            $rid = self::roleId($pdo, $tenantId, $roleSlug);
-            if (!$rid) {
-                continue;
-            }
-            foreach ($permIdsBySlug as $pid) {
-                $link->execute([$rid, $pid]);
-            }
-        }
-
-        $modId = self::roleId($pdo, $tenantId, 'forum_moderator');
-        if ($modId) {
-            $modSlugs = array_unique(array_merge(
-                [
-                    'forum.view',
-                    'forum.create_topic',
-                    'forum.reply',
-                    'forum.edit_own',
-                    'forum.delete_own',
-                    'forum.moderate',
-                    'forum.moderate_organization',
-                    'forum.categories.manage',
-                    'forum.manage_categories',
-                    'interteam.missions.respond',
-                ],
-                TenantPermissionCatalog::forumModerateGranularSlugs()
-            ));
-            foreach ($modSlugs as $ms) {
-                if (isset($permIdsBySlug[$ms])) {
-                    $link->execute([$modId, $permIdsBySlug[$ms]]);
-                }
-            }
-        }
-
-        self::applyDefaultRolePermissionMaps($pdo, $tenantId, $permIdsBySlug, $link);
+        self::ensureAccessProfilesForTenant($pdo, $tenantId);
 
         try {
             $stDef = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_definitions' LIMIT 1");
@@ -622,12 +390,12 @@ final class TenantSeedHelper
     private static function applyDefaultRolePermissionMaps(PDO $pdo, int $tenantId, array $permIdsBySlug, ?\PDOStatement $link = null): void
     {
         $link ??= $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-        foreach (TenantDefaultRoleDefinitions::defaultPermissionSlugsForOperationalRoles() as $slug => $permSlugs) {
-            $rid = self::roleId($pdo, $tenantId, $slug);
+        foreach (CommunityAccessProfiles::definitions() as $def) {
+            $rid = self::roleId($pdo, $tenantId, $def['slug']);
             if (!$rid) {
                 continue;
             }
-            foreach ($permSlugs as $p) {
+            foreach (CommunityAccessProfiles::permissionSlugsFor($def['key']) as $p) {
                 if (isset($permIdsBySlug[$p])) {
                     $link->execute([$rid, $permIdsBySlug[$p]]);
                 }
@@ -636,21 +404,19 @@ final class TenantSeedHelper
     }
 
     /**
-     * Crée les rôles opérationnels / organiques manquants et rattache les permissions par défaut.
-     * Idempotent — utile pour les tenants créés avant l’extension du jeu de rôles (chaîne pédagogique).
+     * Garantit les trois profils d’accès (Membre, RH, Gestionnaire) et leurs habilitations.
      */
-    public static function ensureOperationalRolesForTenant(PDO $pdo, int $tenantId): void
+    public static function ensureAccessProfilesForTenant(PDO $pdo, int $tenantId): void
     {
         if ($tenantId <= 0) {
             return;
         }
         $chkRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
-        foreach (array_merge(
-            TenantDefaultRoleDefinitions::governanceRoles(),
-            TenantDefaultRoleDefinitions::operationalRoles(),
-            TenantDefaultRoleDefinitions::organicStaffRoles()
-        ) as $def) {
+        $updRole = $pdo->prepare(
+            'UPDATE roles SET name = ?, description = ?, is_system = 1, is_locked = 1, role_layer = ? WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug')
+        );
+        foreach (CommunityAccessProfiles::definitions() as $def) {
             $chkRole->execute([$tenantId, $def['slug']]);
             if (!$chkRole->fetch()) {
                 $insRole->execute([
@@ -662,6 +428,14 @@ final class TenantSeedHelper
                     $def['is_locked'],
                     $def['role_layer'],
                 ]);
+            } else {
+                $updRole->execute([
+                    $def['name'],
+                    $def['description'],
+                    $def['role_layer'],
+                    $tenantId,
+                    $def['slug'],
+                ]);
             }
         }
         $permIdsBySlug = [];
@@ -671,10 +445,14 @@ final class TenantSeedHelper
             $permIdsBySlug[(string) $pr['slug']] = (int) $pr['id'];
         }
         self::applyDefaultRolePermissionMaps($pdo, $tenantId, $permIdsBySlug);
-        try {
-            TenantDefaultRoleDefinitions::applyCanonicalLabels($pdo, $tenantId);
-        } catch (\Throwable) {
-        }
+    }
+
+    /**
+     * @deprecated Utiliser {@see ensureAccessProfilesForTenant()}
+     */
+    public static function ensureOperationalRolesForTenant(PDO $pdo, int $tenantId): void
+    {
+        self::ensureAccessProfilesForTenant($pdo, $tenantId);
     }
 
     private static function permissionsTableHasActionColumn(PDO $pdo): bool

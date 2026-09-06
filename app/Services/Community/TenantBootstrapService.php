@@ -9,6 +9,7 @@ use App\Repositories\TenantGradeOverrideRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Moderation\SystemModeratorAccountService;
+use App\Services\Rbac\CommunityAccessCollapseService;
 use App\Support\SqlText;
 use PDO;
 
@@ -57,16 +58,10 @@ final class TenantBootstrapService
             $tenantType = TenantTypeConfig::normalizeType((string) ($options['tenant_type'] ?? 'full'));
             $tenantId = $this->tenantRepository->create($name, $slug, $planSlug, $tenantType);
 
-            $gov = \App\Services\Community\TenantDefaultRoleDefinitions::governanceRoles();
-            $co = $gov[0];
-            $ta = $gov[1];
-            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 1, \'community\', NOW())')
-                ->execute([$tenantId, $co['name'], $co['slug'], $co['description']]);
-            $communityOwnerRoleId = (int) $pdo->lastInsertId();
-
-            $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, 1, 0, \'community\', NOW())')
-                ->execute([$tenantId, $ta['name'], $ta['slug'], $ta['description']]);
-            $tenantAdminRoleId = (int) $pdo->lastInsertId();
+            TenantSeedHelper::ensureAccessProfilesForTenant($pdo, $tenantId);
+            $coLookup = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+            $coLookup->execute([$tenantId, 'community_owner']);
+            $communityOwnerRoleId = (int) ($coLookup->fetchColumn() ?: 0);
 
             $wizard = is_array($options['wizard_normalized'] ?? null) ? $options['wizard_normalized'] : null;
             $gradeSystemCode = $wizard !== null ? (string) $wizard['grade_system_code'] : 'FR_CLASSIC';
@@ -95,15 +90,12 @@ final class TenantBootstrapService
                     new \App\Repositories\PersonnelJobRoleRepository()
                 ))->ensureDefaultsForTenant($pdo, $tenantId);
             } else {
-                $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId, $tenantAdminRoleId);
+                $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId);
                 if (!empty($seedConfig['seed_forum'])) {
                     TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
                     TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
                 }
             }
-
-            $st = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, permission_id FROM role_permissions WHERE role_id = ?');
-            $st->execute([$communityOwnerRoleId, $tenantAdminRoleId]);
 
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
 
@@ -200,6 +192,15 @@ final class TenantBootstrapService
 
             $communityCode = $this->generateUniqueCommunityCode($slug);
             $this->tenantRepository->updateCommunityCode($tenantId, $communityCode);
+
+            try {
+                (new CommunityAccessCollapseService(
+                    $pdo,
+                    new \App\Repositories\RoleRepository(),
+                    $this->userRepository
+                ))->collapseTenant($tenantId);
+            } catch (\Throwable) {
+            }
 
             $pdo->commit();
 
@@ -399,6 +400,7 @@ final class TenantBootstrapService
                     (int) ($u['display_order'] ?? 0),
                 ]);
                 $keyToId[$u['key']] = (int) $pdo->lastInsertId();
+                $this->syncWizardUnitJob($pdo, $tenantId, $keyToId[$u['key']], (string) $u['name']);
                 $progress = true;
             }
             if (!$progress && $next !== []) {
@@ -408,6 +410,17 @@ final class TenantBootstrapService
         }
         if ($remaining !== []) {
             throw new \RuntimeException('Impossible de créer l’ORBAT : unités restantes non résolues.');
+        }
+    }
+
+    private function syncWizardUnitJob(PDO $pdo, int $tenantId, int $unitId, string $name): void
+    {
+        if ($tenantId < 1 || $unitId < 1) {
+            return;
+        }
+        try {
+            (new \App\Services\Personnel\UnitJobRoleSyncService($pdo))->ensureForUnit($tenantId, $unitId, $name);
+        } catch (\Throwable) {
         }
     }
 
@@ -451,10 +464,10 @@ final class TenantBootstrapService
     /**
      * Seeds minimaux pour les tenants simplifiés (effectifs ou ATAK).
      */
-    private function seedSimplifiedTenant(PDO $pdo, int $tenantId, string $tenantType, int $communityOwnerRoleId, int $tenantAdminRoleId): void
+    private function seedSimplifiedTenant(PDO $pdo, int $tenantId, string $tenantType, int $communityOwnerRoleId): void
     {
         $permissions = TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [];
-        $roles = TenantTypeConfig::baseRolesByType()[$tenantType] ?? [];
+        TenantSeedHelper::ensureAccessProfilesForTenant($pdo, $tenantId);
 
         $permIds = [];
         foreach ($permissions as $p) {
@@ -463,34 +476,9 @@ final class TenantBootstrapService
             $permIds[$p['slug']] = (int) $pdo->lastInsertId();
         }
 
-        $slugEq = SqlText::equals($pdo, 'slug');
-        foreach ($roles as $r) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
-            $stmt->execute([$tenantId, $r['slug']]);
-            if (!$stmt->fetch()) {
-                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
-                    ->execute([
-                        $tenantId,
-                        $r['name'],
-                        $r['slug'],
-                        $r['description'],
-                        $r['is_system'],
-                        $r['is_locked'],
-                        $r['role_layer'],
-                    ]);
-                $roleId = (int) $pdo->lastInsertId();
-
-                foreach ($permIds as $slug => $pid) {
-                    $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                    $link->execute([$roleId, $pid]);
-                }
-            }
-        }
-
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
         foreach ($permIds as $pid) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
             $link->execute([$communityOwnerRoleId, $pid]);
-            $link->execute([$tenantAdminRoleId, $pid]);
         }
 
         if ($tenantType === TenantTypeConfig::TYPE_EFFECTIFS) {

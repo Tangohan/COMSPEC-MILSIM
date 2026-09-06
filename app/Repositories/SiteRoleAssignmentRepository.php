@@ -38,7 +38,8 @@ final class SiteRoleAssignmentRepository
     public function listAllWithAssignments(): array
     {
         $roles = $this->pdo->query(
-            "SELECT id, name, slug, description FROM roles WHERE tenant_id IS NULL AND role_layer = 'site' ORDER BY name ASC"
+            "SELECT id, name, slug, description FROM roles WHERE tenant_id IS NULL AND role_layer = 'site'
+             AND slug <> 'site_super_admin' ORDER BY name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $out = [];
@@ -60,9 +61,10 @@ final class SiteRoleAssignmentRepository
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
-        $chk = $this->pdo->prepare('SELECT id FROM roles WHERE id = ? AND tenant_id IS NULL AND role_layer = ? LIMIT 1');
+        $chk = $this->pdo->prepare('SELECT id, slug FROM roles WHERE id = ? AND tenant_id IS NULL AND role_layer = ? LIMIT 1');
         $chk->execute([$siteRoleId, 'site']);
-        if (!$chk->fetch()) {
+        $role = $chk->fetch(PDO::FETCH_ASSOC);
+        if (!$role || \App\Services\Rbac\PlatformAdminFlag::isLegacyRoleSlug((string) ($role['slug'] ?? ''))) {
             return false;
         }
         $ex = $this->pdo->prepare('SELECT id, revoked_at FROM site_role_assignments WHERE email_normalized = ? AND role_id = ? LIMIT 1');

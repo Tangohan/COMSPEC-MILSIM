@@ -18,6 +18,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Rbac\CommunityAccessProfiles;
 use App\Support\SqlText;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -134,7 +135,7 @@ final class InvitationAcceptController
         }
 
         $rstmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $fallbackSlugs = ['member', 'atak_operator', 'personnel_manager'];
+        $fallbackSlugs = CommunityAccessProfiles::slugs();
         $memberRoleId = 0;
         foreach ($fallbackSlugs as $slug) {
             $rstmt->execute([$tenantId, $slug]);
