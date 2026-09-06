@@ -69,7 +69,14 @@ final class RolePermissionMatrixRepository
         $roleIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles)));
         $memberCounts = $this->roles->countMembersByRoleIds($tenantId, $roleIds);
         $moduleRows = $this->loadModuleAccessMap($tenantId, $roleIds);
-        $permissionRows = $this->loadPermissionMap($tenantId, $roleIds);
+        // La matrice doit rester utilisable pendant un déploiement progressif ou en cas
+        // de dérive d'un ancien schéma : les résumés par module restent affichables même
+        // si le catalogue granulaire ne peut momentanément pas être lu.
+        try {
+            $permissionRows = $this->loadPermissionMap($tenantId, $roleIds);
+        } catch (\Throwable) {
+            $permissionRows = [];
+        }
 
         $rows = [];
         foreach ($roles as $role) {
@@ -375,6 +382,19 @@ final class RolePermissionMatrixRepository
                     (string) ($row['code'] ?? ''),
                     (string) ($row['name'] ?? ''),
                     (string) ($row['slug'] ?? ''),
+                    implode(' ', array_map(
+                        static fn (array $permission): string => implode(' ', [
+                            (string) ($permission['name'] ?? ''),
+                            (string) ($permission['slug'] ?? ''),
+                            (string) ($permission['module'] ?? ''),
+                            (string) ($permission['scope'] ?? ''),
+                        ]),
+                        (array) ($row['permissions'] ?? [])
+                    )),
+                    implode(' ', array_map(
+                        static fn (array $module): string => (string) ($module['access_label'] ?? ''),
+                        (array) ($row['modules'] ?? [])
+                    )),
                 ]));
                 if (!str_contains($hay, $q)) {
                     return false;

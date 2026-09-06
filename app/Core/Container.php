@@ -2537,7 +2537,9 @@ class Container
             ),
             \App\Controllers\Admin\Organization\RolePermissionMatrixController::class => new \App\Controllers\Admin\Organization\RolePermissionMatrixController(
                 self::get(\App\Repositories\RolePermissionMatrixRepository::class),
-                self::get(\App\Services\Rbac\RolePermissionMatrixService::class)
+                self::get(\App\Services\Rbac\RolePermissionMatrixService::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(UserRepository::class)
             ),
             \App\Controllers\Api\RolePermissionMatrixApiController::class => new \App\Controllers\Api\RolePermissionMatrixApiController(
                 self::get(\App\Repositories\RolePermissionMatrixRepository::class),

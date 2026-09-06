@@ -27,4 +27,13 @@ final class RolePermissionMatrixUxTest extends TestCase
             $routes
         );
     }
+
+    public function testServerSearchIncludesConcretePermissionMetadata(): void
+    {
+        $repository = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/RolePermissionMatrixRepository.php');
+
+        self::assertStringContainsString("\$permission['slug']", $repository);
+        self::assertStringContainsString("\$permission['module']", $repository);
+        self::assertStringContainsString("\$row['permissions']", $repository);
+    }
 }
