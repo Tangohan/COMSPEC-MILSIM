@@ -42,13 +42,13 @@ final class MilitaryOperationalRoleCatalogTest extends TestCase
 
     public function testPermissionBaselineIsKnown(): void
     {
-        $allowed = ['member', 'officer', 'instructor', 'medic', 'logistics', 'hr', 'rto', 'probation', 'all'];
+        $allowed = ['none'];
         foreach (MilitaryOperationalRoleCatalog::entries() as $e) {
             self::assertContains($e['permission_baseline'], $allowed, $e['slug']);
         }
     }
 
-    public function testRequestedSpecialOperationsRolesReceiveAllTenantPermissions(): void
+    public function testRequestedSpecialOperationsJobsAreVisualOnly(): void
     {
         $entries = [];
         foreach (MilitaryOperationalRoleCatalog::entries() as $entry) {
@@ -57,7 +57,8 @@ final class MilitaryOperationalRoleCatalogTest extends TestCase
 
         foreach (['sf_air_force_cct', 'sf_air_force_pj', 'sf_air_force_tacp', 'aero_160th_soar_pilot', 'sf_cag_b_squadron_operator'] as $slug) {
             self::assertArrayHasKey($slug, $entries);
-            self::assertSame('all', $entries[$slug]['permission_baseline'], $slug);
+            self::assertSame('none', $entries[$slug]['permission_baseline'], $slug);
+            self::assertSame(1, $entries[$slug]['is_visual_only'], $slug);
             self::assertNotSame('', trim((string) $entries[$slug]['mos_code']), $slug);
         }
     }

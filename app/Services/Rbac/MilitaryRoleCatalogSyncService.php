@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Rbac;
 
+use App\Services\AccessControl\FunctionBasedAccessCatalog;
 use App\Support\SqlText;
 use PDO;
 
@@ -88,8 +89,11 @@ final class MilitaryRoleCatalogSyncService
             $existingId = $sel->fetchColumn();
             $isInsert = !$existingId;
             $roleId = $isInsert ? null : (int) $existingId;
+            $isAccessRole = in_array($slug, FunctionBasedAccessCatalog::accessRoleSlugs(), true);
 
-            if ($isInsert) {
+            if ($isAccessRole) {
+                // A métier homonyme (notamment `hr`) ne doit jamais écraser un rôle d'accès classique.
+            } elseif ($isInsert) {
                 $fields = ['tenant_id', 'name', 'slug', 'description', 'is_system', 'is_locked', 'role_layer', 'created_at'];
                 $holders = ['?', '?', '?', '?', '1', '0', "'intra'", 'NOW()'];
                 $params = [
@@ -191,15 +195,9 @@ final class MilitaryRoleCatalogSyncService
                 $pdo->prepare($sql)->execute($upParams);
             }
 
-            if ($roleId > 0 && (int) ($entry['is_visual_only'] ?? 0) === 0) {
-                if ($entry['permission_baseline'] === 'all') {
-                    // Ces fonctions livrées avec accès complet doivent aussi recevoir les permissions
-                    // ajoutées après leur création. On limite strictement la copie au tenant courant.
-                    self::grantAllTenantPermissions($pdo, $tenantId, $roleId);
-                    // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
-                } elseif ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
-                    self::copyPermissionsFromBaseline($pdo, $tenantId, $roleId, $entry['permission_baseline']);
-                }
+            if ($roleId > 0 && !$isAccessRole && self::hasTable($pdo, 'role_permissions')) {
+                // Les fonctions et emplois militaires sont purement visuels, y compris après un ancien seed.
+                $pdo->prepare('DELETE FROM role_permissions WHERE role_id = ?')->execute([$roleId]);
             }
 
             if ($hasPjr && $roleId) {

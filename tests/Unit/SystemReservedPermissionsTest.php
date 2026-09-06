@@ -113,9 +113,9 @@ final class SystemReservedPermissionsTest extends TestCase
      * Garde-fou sur la raison d’être de l’invariant : `admin.system` est un laissez-passer
      * universel, et `admin.access` ne doit pas l’être.
      */
-    public function testAdminSystemIsUniversalWhileTenantAdminIsNot(): void
+    public function testReservedPlatformFunctionsAreNeverGranted(): void
     {
-        self::assertTrue(PermissionImplication::isGranted(['admin.system'], 'site.tenants.manage'));
+        self::assertFalse(PermissionImplication::isGranted(['admin.system'], 'site.tenants.manage'));
         self::assertFalse(PermissionImplication::isGranted(['admin.access'], 'admin.system'));
         self::assertFalse(PermissionImplication::isGranted(['admin.organization'], 'admin.system'));
         self::assertFalse(PermissionImplication::isGranted(['admin.access'], 'site.support'));

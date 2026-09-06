@@ -34,7 +34,7 @@ namespace App\Services\Rbac;
  *   display_group: int,
  *   display_weight: int,
  *   display_priority: int,
- *   permission_baseline: 'member'|'officer'|'instructor'|'medic'|'logistics'|'hr'|'rto'|'probation'|'all',
+ *   permission_baseline: 'none',
  *   mos_code?: string|null,
  *   mos_specialty_title?: string|null
  * }
@@ -139,11 +139,11 @@ final class MilitaryOperationalRoleCatalogData
                 'subcategory' => $sub,
                 'description' => $desc,
                 'semantic_tier' => $tier,
-                'is_visual_only' => $vis,
+                'is_visual_only' => 1,
                 'display_group' => $dg,
                 'display_weight' => $dw,
                 'display_priority' => $dp,
-                'permission_baseline' => $baseline,
+                'permission_baseline' => 'none',
             ];
         };
     }

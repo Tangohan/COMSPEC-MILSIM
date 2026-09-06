@@ -139,6 +139,7 @@ $bootstrapFiles = [
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
     'personnel_function_kits_migration.php',
+    'function_based_access_v2_migration.php',
     'document_versions_file_path_nullable_migration.php',
     'personnel_absences_migration.php',
     'positions_admin_category_migration.php',
@@ -3937,6 +3938,8 @@ if (PHP_SAPI !== 'cli') {
 // Le pipeline unique applique systématiquement tous les SQL versionnés puis vérifie l'état final.
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
+// FBAC must run last so no legacy seed can recreate a global or role-derived grant.
+run_function_based_access_v2_migration($pdo);
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 
 if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === false) {

@@ -566,6 +566,12 @@ function military_referential_seed(PDO $pdo): void
         [['1st SFOD-D', 'ACRONYM', 'en'], ['SFOD-D', 'ACRONYM', 'en'], ['Delta Force', 'NICKNAME', 'en'], ['CAG', 'ACRONYM', 'en'], ['Combat Applications Group', 'FORMER_NAME', 'en']],
         ['LAND'], ['SOF'], ['COMBAT'], ['DIRECT_ACTION', 'COUNTER_TERRORISM', 'HOSTAGE_RESCUE'], 'socom-mil');
 
+    $U('us-delta-b-squadron', 'US', 'us-army', 'SQUADRON',
+        'B Squadron — 1st SFOD-D', 'B Squadron', 'B Squadron (CAG)',
+        'Libellé de simulation rattaché au 1st SFOD-D ; structure actuelle non revendiquée comme officielle.', 'us-delta', 4, 41,
+        [['B Squadron', 'SHORT_NAME', 'en'], ['B SQN', 'ALTERNATIVE_SPELLING', 'en']],
+        ['LAND'], ['SOF'], ['COMBAT'], ['DIRECT_ACTION', 'COUNTER_TERRORISM', 'HOSTAGE_RESCUE'], 'socom-mil');
+
     $U('us-24sts', 'US', 'us-airforce', 'SQUADRON',
         '24th Special Tactics Squadron', '24th STS', '24th Special Tactics Squadron',
         '24th Special Tactics Squadron', 'us-jsoc', 3, 45,
