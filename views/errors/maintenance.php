@@ -71,7 +71,7 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
     <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <style>
         :root {
             --void: #050505;
@@ -145,30 +145,15 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
             position: relative;
             animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .brand {
-            margin: 0 0 0.85rem;
-            font-family: "Instrument Serif", Georgia, serif;
-            font-size: clamp(3.1rem, 12vw, 5.75rem);
-            font-weight: 400;
-            line-height: 0.9;
-            letter-spacing: -0.02em;
-            color: #fff;
-            text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
-        }
-        .brand em {
-            font-style: italic;
-            color: var(--accent);
-        }
         .headline {
             margin: 0;
-            max-width: 22ch;
-            font-size: clamp(1.28rem, 3vw, 1.7rem);
+            max-width: 18ch;
+            font-size: clamp(1.85rem, 6.5vw, 2.65rem);
             font-weight: 650;
-            line-height: 1.25;
-            letter-spacing: -0.02em;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
             color: #fff;
             text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
-            animation: rise 0.85s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .copy {
             margin-top: 1.15rem;
@@ -281,7 +266,6 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
         <div class="stage__veil" aria-hidden="true"></div>
         <div class="panel">
             <div class="sheet">
-                <p class="brand" aria-label="<?= htmlspecialchars($appLabel, ENT_QUOTES, 'UTF-8') ?>">Athena<em>.</em></p>
                 <h1 class="headline"><?= htmlspecialchars($pageHeading, ENT_QUOTES, 'UTF-8') ?></h1>
                 <div class="copy">
                     <?= $bodyHtml ?>
