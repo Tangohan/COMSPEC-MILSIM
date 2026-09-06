@@ -257,7 +257,7 @@ final class PersonnelFunctionKitService
         }
         $roleId = $this->ensureKitCommunityRole($tenantId, $kitId);
         if ($roleId < 1) {
-            return ['ok' => false, 'message' => 'Impossible de préparer le kit d’accès.'];
+            return ['ok' => false, 'message' => 'Les accès se choisissent sur la fiche du membre : Membre, Ressources humaines ou Gestionnaire.'];
         }
         try {
             $added = $this->users->addOrganizationRoleIfMissing($userId, $tenantId, $roleId, $actorUserId);
@@ -323,24 +323,9 @@ final class PersonnelFunctionKitService
         if ($kit === null || $tenantId < 1) {
             return 0;
         }
-        $roleId = $this->roles->createOrganizationRole(
-            $tenantId,
-            $kit['label'],
-            $kit['role_slug'],
-            $kit['summary']
-        );
-        if ($roleId < 1) {
-            return 0;
-        }
-        $this->roles->updateOrganizationRolePresentation($tenantId, $roleId, $kit['label'], $kit['summary']);
-        $permissionIds = $this->permissionIdsForSlugs($tenantId, $kit['permission_slugs']);
-        try {
-            $this->rolePermissions->setPermissionsForOrganizationTenantRole($tenantId, $roleId, $permissionIds);
-        } catch (\Throwable) {
-            // Rôle verrouillé ou hors périmètre : on laisse l’attribution UI sans bloquer l’écran.
-        }
+        $existing = $this->roles->getIdBySlug($tenantId, $kit['role_slug']);
 
-        return $roleId;
+        return $existing !== null && $existing > 0 ? $existing : 0;
     }
 
     /**

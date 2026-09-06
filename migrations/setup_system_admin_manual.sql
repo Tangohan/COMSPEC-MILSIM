@@ -1,10 +1,10 @@
 -- =============================================================================
--- Super-admin plateforme (site_super_admin) + propriétaire sur tenant « default »
+-- Administration du site (users.is_platform_admin) + propriétaire sur tenant « default »
 --
 -- Cas couverts :
 --   - Aucun tenant : crée le tenant slug `default`, rôles community_owner / tenant_admin.
 --   - Grades : schéma actuel = référentiel global (`grades` sans tenant_id). On prend un grade déjà en base.
---   - Pas encore de rôle site : crée permissions site + rôle site_super_admin + liaisons.
+--   - Pose le bit d’administration du site sur le compte (plus un rôle à attribuer).
 --   - Compte inexistant : INSERT utilisateur lié au tenant.
 --
 -- À personnaliser : @email et @hash uniquement.
@@ -77,12 +77,9 @@ UPDATE users SET
   role_id = @role_id,
   grade_id = IF(IFNULL(@grade_id, 0) > 0, @grade_id, grade_id),
   status = 'active',
+  is_platform_admin = 1,
   updated_at = NOW()
 WHERE tenant_id = @tid AND email = 'admin@athena.local';
-
-UPDATE site_role_assignments
-SET email_normalized = @email
-WHERE email_normalized = 'admin@athena.local' AND role_id = @site_rid;
 
 -- --- 6) Compte déjà présent avec cet email ---
 UPDATE users SET
@@ -90,23 +87,20 @@ UPDATE users SET
   role_id = @role_id,
   grade_id = IF(IFNULL(@grade_id, 0) > 0, @grade_id, grade_id),
   status = 'active',
+  is_platform_admin = 1,
   updated_at = NOW()
 WHERE tenant_id = @tid AND email = @email;
 
 -- --- 7) Création utilisateur si toujours absent ---
-INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
+INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, is_platform_admin, created_at, updated_at)
 SELECT @tid, @email, @hash, 'Administrateur', 'ADMIN', @role_id,
   IF(IFNULL(@grade_id, 0) > 0, @grade_id, NULL),
-  'active', NOW(), NOW()
+  'active', 1, NOW(), NOW()
 FROM DUAL
 WHERE NOT EXISTS (
   SELECT 1 FROM users WHERE tenant_id = @tid AND email = @email LIMIT 1
 );
 
-INSERT INTO site_role_assignments (email_normalized, role_id, created_at)
-VALUES (@email, @site_rid, NOW())
-ON DUPLICATE KEY UPDATE revoked_at = NULL;
-
 -- Vérification
-SELECT @tid AS tenant_id, @role_id AS role_communaute, @site_rid AS role_site;
-SELECT id, tenant_id, email, status, role_id, grade_id FROM users WHERE tenant_id = @tid AND email = @email;
+SELECT @tid AS tenant_id, @role_id AS role_communaute;
+SELECT id, tenant_id, email, status, role_id, grade_id, is_platform_admin FROM users WHERE tenant_id = @tid AND email = @email;

@@ -31,7 +31,7 @@ $platformBriefUrl = url('admin/system/brief');
     <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50/90 px-5 py-4 text-left text-sm text-slate-700">
         <p class="font-bold text-slate-900">Où agir selon votre rôle ?</p>
         <p class="mt-2 leading-relaxed">
-            <strong class="font-semibold text-slate-800">Réglage pour tout le site</strong> : réservé aux super-administrateurs (fermeture ou réouverture globale du brief).
+            <strong class="font-semibold text-slate-800">Réglage pour tout le site</strong> : réservé à l’administration du site (fermeture ou réouverture globale du brief).
         </p>
         <p class="mt-3 leading-relaxed">
             <strong class="font-semibold text-slate-800">Réglage pour votre unité</strong> : masquer uniquement la section « unité » dans le brief tout en laissant les canaux généraux ouverts — configuration forum du back-office de la communauté.

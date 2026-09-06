@@ -52,7 +52,8 @@ class SystemRoleController
             return Response::redirect(url('admin/roles'));
         }
         $role = $this->roleRepository->findById($id, null);
-        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
+        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')
+            || \App\Services\Rbac\PlatformAdminFlag::isLegacyRoleSlug((string) ($role['slug'] ?? ''))) {
             Session::flash('error', 'Rôle site introuvable.');
 
             return Response::redirect(url('admin/roles'));
@@ -79,7 +80,8 @@ class SystemRoleController
             return Response::redirect(url('admin/roles'));
         }
         $role = $this->roleRepository->findById($id, null);
-        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
+        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')
+            || \App\Services\Rbac\PlatformAdminFlag::isLegacyRoleSlug((string) ($role['slug'] ?? ''))) {
             return Response::redirect(url('admin/roles'));
         }
         if ($this->rolePermissionService->isRoleLocked($id) || !empty($role['is_system_critical'])) {
@@ -107,7 +109,8 @@ class SystemRoleController
             return Response::redirect(url('admin/roles'));
         }
         $role = $this->roleRepository->findById($id, null);
-        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')) {
+        if (!$role || ($role['tenant_id'] ?? null) !== null || (($role['role_layer'] ?? '') !== 'site')
+            || \App\Services\Rbac\PlatformAdminFlag::isLegacyRoleSlug((string) ($role['slug'] ?? ''))) {
             Session::flash('error', 'Rôle invalide.');
 
             return Response::redirect(url('admin/roles'));

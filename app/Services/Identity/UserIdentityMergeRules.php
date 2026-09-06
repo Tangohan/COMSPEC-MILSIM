@@ -25,7 +25,6 @@ final class UserIdentityMergeRules
         'totp_confirmed_at',
         'email_login_otp_enabled',
         'is_platform_admin',
-        'is_super_admin',
     ];
 
     /** Colonnes de dossier communauté — restent scopées tenant. */
@@ -153,11 +152,8 @@ final class UserIdentityMergeRules
                     $fields[$key] = $incoming;
                 }
             }
-            if (!empty($row['is_platform_admin'])) {
+            if (!empty($row['is_platform_admin']) || !empty($row['is_super_admin'])) {
                 $fields['is_platform_admin'] = 1;
-            }
-            if (!empty($row['is_super_admin'])) {
-                $fields['is_super_admin'] = 1;
             }
             $otherSteam = trim((string) ($row['steam_id'] ?? ''));
             if ($otherSteam === '') {

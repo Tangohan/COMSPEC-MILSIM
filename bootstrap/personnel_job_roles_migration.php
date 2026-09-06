@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Core\Database;
 use App\Repositories\PersonnelJobRoleRepository;
-use App\Services\Personnel\PersonnelJobRoleBootstrapService;
 
 /**
- * Tables rôles métier dossier + colonnes personnel_profiles ; seed par tenant.
+ * Tables rôles métier dossier + colonnes personnel_profiles.
+ * Les emplois ne sont plus semés : ils naissent des unités de l’ORBAT.
  */
 return function (PDO $pdo): void {
     require_once __DIR__ . '/personnel_profile_job_roles_migration.php';
@@ -37,12 +36,5 @@ return function (PDO $pdo): void {
     if (!$repo->tablesExist()) {
         return;
     }
-    $boot = new PersonnelJobRoleBootstrapService($repo);
-    $tenants = $pdo->query('SELECT id FROM tenants');
-    if ($tenants) {
-        while ($t = $tenants->fetch(PDO::FETCH_ASSOC)) {
-            $boot->ensureDefaultsForTenant($pdo, (int) $t['id']);
-        }
-    }
-    echo "Rôles métier dossier (seed par tenant) OK.\n";
+    echo "Tables emplois de dossier OK (sans catalogue semé).\n";
 };

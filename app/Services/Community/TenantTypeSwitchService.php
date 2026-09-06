@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Community;
 
 use App\Core\Database;
+use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Services\Rbac\CommunityAccessCollapseService;
+use App\Services\Rbac\CommunityAccessProfiles;
 use App\Support\SqlText;
 use PDO;
 
@@ -58,6 +62,15 @@ final class TenantTypeSwitchService
                 TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
             }
 
+            try {
+                (new CommunityAccessCollapseService(
+                    $pdo,
+                    new RoleRepository(),
+                    new UserRepository()
+                ))->collapseTenant($tenantId);
+            } catch (\Throwable) {
+            }
+
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -77,7 +90,6 @@ final class TenantTypeSwitchService
     private function ensureTypePermissionsAndRoles(PDO $pdo, int $tenantId, string $tenantType): void
     {
         $permissions = TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [];
-        $roles = TenantTypeConfig::baseRolesByType()[$tenantType] ?? [];
 
         $permIds = [];
         $slugEq = SqlText::equals($pdo, 'slug');
@@ -96,32 +108,9 @@ final class TenantTypeSwitchService
             $permIds[$p['slug']] = (int) $pdo->lastInsertId();
         }
 
-        foreach ($roles as $r) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
-            $stmt->execute([$tenantId, $r['slug']]);
-            $roleId = (int) ($stmt->fetchColumn() ?: 0);
-            if ($roleId < 1) {
-                $pdo->prepare(
-                    'INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
-                )->execute([
-                    $tenantId,
-                    $r['name'],
-                    $r['slug'],
-                    $r['description'],
-                    $r['is_system'],
-                    $r['is_locked'],
-                    $r['role_layer'],
-                ]);
-                $roleId = (int) $pdo->lastInsertId();
-            }
-            foreach ($permIds as $pid) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                $link->execute([$roleId, $pid]);
-            }
-        }
+        TenantSeedHelper::ensureAccessProfilesForTenant($pdo, $tenantId);
 
-        // Propriétaire / admin communauté : s’assurer qu’ils ont les permissions du profil.
-        foreach (['community_owner', 'tenant_admin'] as $govSlug) {
+        foreach (CommunityAccessProfiles::slugs() as $govSlug) {
             $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
             $stmt->execute([$tenantId, $govSlug]);
             $govRoleId = (int) ($stmt->fetchColumn() ?: 0);

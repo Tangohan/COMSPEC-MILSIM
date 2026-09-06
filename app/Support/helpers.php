@@ -1617,6 +1617,13 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('is_platform_admin')) {
+    function is_platform_admin(): bool
+    {
+        return \App\Core\Gate::getInstance()->isPlatformAdmin();
+    }
+}
+
 if (!function_exists('user_advanced_fiche_edit_grant')) {
     /**
      * Grant actif d’édition avancée de fiche (24 h), ou null.

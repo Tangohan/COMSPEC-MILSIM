@@ -19,8 +19,7 @@ $categoryCount = count($categories);
             <p class="eff-catalog__kicker">Emplois métier</p>
             <h1 class="eff-catalog__title">Fonctions</h1>
             <p class="eff-catalog__lead">
-                Les fonctions figurent sur les dossiers personnel — radio, médic, logistique, etc. —
-                distinctes des rôles d’administration.
+                Les fonctions suivent votre organigramme. Créer une unité dans l’ORBAT prépare déjà un emploi du même nom. Vous pouvez en ajouter d’autres librement. Ce ne sont pas des droits d’accès.
             </p>
         </div>
         <?php if ($canManageAssignments): ?>
@@ -44,8 +43,8 @@ $categoryCount = count($categories);
 
     <?php if ($jobRoles === []): ?>
         <div class="eff-catalog__empty">
-            <strong>Aucun emploi métier défini</strong>
-            Cette communauté n’a pas encore de fonctions dans le référentiel.
+            <strong>Aucun emploi pour l’instant</strong>
+            Créez vos unités dans l’organigramme : chaque unité propose déjà un emploi. Vous pouvez aussi en ajouter d’autres à la main.
             <?php if ($canManageAssignments): ?>
                 <p style="margin-top:1rem">
                     <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars(url('back-office/personnel-job-roles'), ENT_QUOTES, 'UTF-8') ?>">Créer le référentiel</a>

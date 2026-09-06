@@ -32,10 +32,14 @@ final class AccessControlApiController
             return Response::json(['ok' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         }
 
-        $st = $this->pdo->prepare('INSERT INTO roles (tenant_id, name, slug, level, is_system, created_at) VALUES (?, ?, ?, ?, 0, NOW())');
-        $st->execute([$tenantId, (string) $request->input('name'), (string) $request->input('slug'), (int) $request->input('level', 0)]);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Communauté active requise.'], 400);
+        }
 
-        return Response::json(['ok' => true, 'id' => (int) $this->pdo->lastInsertId()]);
+        return Response::json([
+            'ok' => false,
+            'error' => 'Chaque communauté n’a que trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire.',
+        ], 400);
     }
 
     public function permissions(Request $request, array $params = []): Response

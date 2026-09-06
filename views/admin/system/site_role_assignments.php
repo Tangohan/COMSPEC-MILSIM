@@ -9,7 +9,8 @@ $s = \App\Core\Session::getFlash('success');
         <h1 class="text-2xl font-black text-slate-900">Affectations rôles site</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour</a>
     </div>
-    <p class="text-slate-600 text-sm mb-6">Attribuez un rôle plateforme à un compte par email. Les rôles site ne sont pas gérables depuis l’administration d’une communauté.</p>
+    <p class="text-slate-600 text-sm mb-4">Attribuez un rôle d’assistance ou de modération à un compte, par adresse e-mail. Ces rôles ne se gèrent pas depuis une communauté.</p>
+    <p class="text-slate-600 text-sm mb-6">L’administration du site n’est plus un rôle : elle se gère dans la liste fermée des administrateurs du site.</p>
     <?php if ($f): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($f) ?></p><?php endif; ?>
     <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s) ?></p><?php endif; ?>
 
@@ -33,7 +34,7 @@ $s = \App\Core\Session::getFlash('success');
             <label class="block text-xs text-slate-500 mb-1">Rôle site</label>
             <select name="role_id" class="border border-slate-300 rounded px-3 py-2 text-sm">
                 <?php foreach ($siteRolesData as $block): ?>
-                    <option value="<?= (int) ($block['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($block['name'] ?? '')) ?> (<?= htmlspecialchars((string) ($block['slug'] ?? '')) ?>)</option>
+                    <option value="<?= (int) ($block['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($block['name'] ?? '')) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -44,7 +45,9 @@ $s = \App\Core\Session::getFlash('success');
     <?php foreach ($siteRolesData as $block): ?>
         <div class="mb-10">
             <h2 class="text-lg font-bold text-slate-900 mb-2"><?= htmlspecialchars((string) ($block['name'] ?? '')) ?></h2>
-            <p class="text-xs text-slate-500 mb-2">Slug : <?= htmlspecialchars((string) ($block['slug'] ?? '')) ?></p>
+            <?php if (trim((string) ($block['description'] ?? '')) !== ''): ?>
+                <p class="text-sm text-slate-600 mb-2"><?= htmlspecialchars((string) $block['description']) ?></p>
+            <?php endif; ?>
             <?php $assignments = $block['assignments'] ?? []; ?>
             <?php if (empty($assignments)): ?>
                 <p class="text-slate-500 text-sm">Aucune affectation active.</p>

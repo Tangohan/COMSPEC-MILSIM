@@ -39,7 +39,6 @@ $mobilityTypeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabel
 $absenceReasonLabels = is_array($absenceReasonLabels ?? null) ? $absenceReasonLabels : [];
 $dutyPosition = trim((string) ($dutyPosition ?? ''));
 $remainingTrainingDays = max(0, (int) ($remainingTrainingDays ?? 0));
-$memberEditorHtml = (string) ($memberEditorHtml ?? '');
 
 $elevationCooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
@@ -141,9 +140,6 @@ $memberHubTheme = 'lms';
 ?>
 <section class="eff-fiche-hero">
     <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
-    <?php if ($canEditProfiles): ?>
-        <a class="eff-btn eff-btn--primary" href="#modifier-dossier">Modifier le dossier complet</a>
-    <?php endif; ?>
     <div class="eff-fiche-hero__row">
         <span class="eff-fiche-hero__avatar" aria-hidden="true">
             <?php if ($avatarUrl !== ''): ?>
@@ -185,30 +181,6 @@ $memberHubTheme = 'lms';
     </div>
     <?php require base_path('views/partials/member_hub_nav.php'); ?>
 </section>
-
-<?php if ($canEditProfiles && $memberEditorHtml !== ''): ?>
-<details id="modifier-dossier" class="eff-card eff-editor" style="margin-bottom:1rem;scroll-margin-top:1rem">
-    <summary class="eff-editor__summary">
-        <span>
-            <span class="eff-card__title">Modifier le dossier complet</span>
-            <span class="eff-card__lead">Identité, affectation, matricules, équipement et notes de commandement.</span>
-        </span>
-        <span class="eff-editor__toggle" aria-hidden="true">Ouvrir l’éditeur</span>
-    </summary>
-    <div class="eff-editor__body"><?= $memberEditorHtml ?></div>
-</details>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var editor = document.getElementById('modifier-dossier');
-    if (!editor) return;
-    var openEditor = function () {
-        if (window.location.hash === '#modifier-dossier') editor.open = true;
-    };
-    openEditor();
-    window.addEventListener('hashchange', openEditor);
-});
-</script>
-<?php endif; ?>
 
 <div class="eff-fiche-grid">
     <article class="eff-card" style="grid-column:1/-1">
@@ -357,8 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </article>
 
     <article class="eff-card" id="fonctions">
-        <h2 class="eff-card__title">Fonctions opérationnelles</h2>
-        <p class="eff-card__lead">Une fonction décrit l’emploi exercé dans l’unité. Elle n’accorde aucun droit d’accès au site, même si son nom ressemble à celui d’un rôle.</p>
+        <h2 class="eff-card__title">Fonctions</h2>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags" style="margin-bottom:0.85rem">
                 <?php foreach ($jobRoles as $jr): ?>
@@ -407,41 +378,34 @@ document.addEventListener('DOMContentLoaded', function () {
     </article>
 
     <article class="eff-card">
-        <h2 class="eff-card__title">Rôles d’accès</h2>
-        <p class="eff-card__lead">Un rôle accorde des habilitations dans Athena. Il ne remplace pas la fonction opérationnelle affichée dans le dossier.</p>
-        <?php if ($roleNames === []): ?>
-            <p class="eff-card__lead">Aucun rôle attribué.</p>
-        <?php else: ?>
-            <div class="eff-tags" style="margin-bottom:0.85rem">
-                <?php foreach ($roleNames as $rn): ?>
-                    <span class="eff-tag"><?= htmlspecialchars((string) $rn, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+        <h2 class="eff-card__title">Niveau d’accès</h2>
+        <?php
+        $currentAccessKey = (string) ($currentAccessKey ?? \App\Services\Rbac\CommunityAccessProfiles::MEMBER);
+        $accessProfiles = is_array($accessProfiles ?? null) ? $accessProfiles : \App\Services\Rbac\CommunityAccessProfiles::definitions();
+        ?>
+        <p class="eff-card__lead">
+            Un seul niveau par personne. Aujourd’hui :
+            <strong><?= htmlspecialchars(\App\Services\Rbac\CommunityAccessProfiles::label($currentAccessKey), ENT_QUOTES, 'UTF-8') ?></strong>.
+        </p>
         <?php if ($canManageRoles && $orgRoles !== []): ?>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="return_to" value="member">
                 <fieldset class="eff-role-grid">
-                    <legend>Attribuer les rôles</legend>
-                    <?php foreach ($orgRoles as $role): ?>
-                        <?php
-                        $rid = (int) ($role['id'] ?? 0);
-                        if ($rid < 1) {
-                            continue;
-                        }
-                        $rname = trim((string) ($role['name'] ?? ''));
-                        ?>
+                    <legend>Attribuer l’accès</legend>
+                    <?php foreach ($accessProfiles as $profile): ?>
+                        <?php $pkey = (string) ($profile['key'] ?? ''); ?>
                         <label>
-                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" <?= in_array($rid, $memberRoleIds, true) ? 'checked' : '' ?>>
-                            <?= htmlspecialchars($rname !== '' ? $rname : 'Rôle', ENT_QUOTES, 'UTF-8') ?>
+                            <input type="radio" name="access_key" value="<?= htmlspecialchars($pkey, ENT_QUOTES, 'UTF-8') ?>" <?= $currentAccessKey === $pkey ? 'checked' : '' ?>>
+                            <span>
+                                <strong><?= htmlspecialchars((string) ($profile['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                <em><?= htmlspecialchars((string) ($profile['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
+                            </span>
                         </label>
                     <?php endforeach; ?>
                 </fieldset>
-                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer les rôles</button>
+                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’accès</button>
             </form>
-        <?php elseif ($canManageRoles): ?>
-            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le catalogue des rôles</a>
         <?php endif; ?>
     </article>
 

@@ -584,6 +584,38 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(434, '2026-09-06', 'Les copies d’accès inutiles sont retirées', 'Chaque communauté ne conserve plus que les trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire. Les centaines de copies jamais attribuées disparaissent. Les emplois déjà collés à un dossier restent. Rechargez le bureau effectifs après la mise à jour', [
+                'Un membre n’a plus qu’un niveau d’accès dans sa communauté',
+                'Les emplois du dossier restent des fonctions, sans ouvrir de droits',
+            ], [
+                'Les listes d’accès ne montrent plus des dizaines de métiers copiés d’avance',
+            ], [
+                'Des centaines de copies d’accès et d’emplois restaient en base alors que presque personne ne les avait',
+            ], ['personnel', 'command'], [
+                'Ouvrez le bureau effectifs : les accès proposés sont Membre, Ressources humaines et Gestionnaire. Les emplois déjà portés par un dossier n’ont pas disparu.',
+            ]),
+            $pr(431, '2026-09-06', 'Les emplois suivent l’organigramme', 'Les emplois du dossier ne sont plus remplis d’avance. Créer une unité dans l’ORBAT prépare déjà un emploi du même nom. Un poste nommé à l’affectation est ajouté. Vous pouvez aussi créer les vôtres', [
+                'Chaque unité de l’organigramme prépare un emploi du même nom',
+                'Un poste nommé lors de l’affectation est proposé dans le dossier',
+                'Les communautés peuvent ajouter ou retirer des emplois comme elles l’entendent',
+            ], [
+                'Les fonctions du bureau effectifs montrent ce que la communauté a réellement construit',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez l’ORBAT, créez une unité, puis affectez un membre : l’emploi correspondant apparaît sur le dossier.',
+            ]),
+            $pr(433, '2026-09-06', 'L’administration du site n’est plus un rôle', 'Administrer le site n’est plus un rôle à attribuer. Une liste fermée, dans l’administration du site, nomme les seules personnes habilitées. Ajouter quelqu’un demande de recopier une phrase de confirmation. Les communautés gardent leurs trois niveaux d’accès. Rechargez l’administration du site', [
+                'Une liste fermée nomme les personnes qui tiennent la plateforme',
+                'Ajouter ou retirer quelqu’un demande de recopier une phrase de confirmation',
+            ], [
+                'Le site garde toujours au moins une personne habilitée',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Administration du site, puis Administrateurs du site : la liste fermée doit s’afficher, sans case sur chaque dossier.',
+            ]),
+            $pr(430, '2026-09-06', 'Trois niveaux d’accès dans la communauté', 'Chaque membre a un seul niveau : Membre, Ressources humaines ou Gestionnaire. Les emplois du dossier restent des fonctions, pas des droits. Rechargez le bureau effectifs', [
+                'Trois niveaux d’accès seulement : Membre, Ressources humaines, Gestionnaire',
+            ], [
+                'L’attribution se fait sur la fiche du membre, un choix unique',
+            ], [], ['personnel', 'command']),
             $pr(429, '2026-09-06', 'Page d’intervention du portail', 'Lorsque le portail est fermé pour une intervention, une page claire reprend le ton de l’accueil Athena. Le texte explique que les dossiers restent protégés et qu’aucune action n’est demandée. Rechargez la page pour réessayer', [
                 'Une page d’intervention sobre, aux couleurs de l’accueil Athena',
                 'Le message indique que les dossiers, les cartes et les liaisons restent protégés',

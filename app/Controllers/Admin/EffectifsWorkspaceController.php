@@ -36,6 +36,7 @@ use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
+use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
@@ -219,7 +220,6 @@ class EffectifsWorkspaceController
         }
 
         $counts = $this->rosterCounts($tenantId);
-        $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
         $unitsRaw = $this->unitRepository->allForTenant($tenantId);
         $units = [];
@@ -269,7 +269,7 @@ class EffectifsWorkspaceController
                 'completion' => 'Ordre de complétion du dossier',
             ],
             'rosterCounts' => $counts,
-            'orgRoles' => $roles,
+            'orgRoles' => $this->roleRepository->forTenantAccessProfiles($tenantId),
             'orgUnits' => $units,
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
@@ -456,10 +456,18 @@ class EffectifsWorkspaceController
         $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($id);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
         $roleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
-        $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $allOrgRoles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
         $roleNames = [];
-        foreach ($roles as $r) {
+        $roleSlugs = [];
+        foreach ($allOrgRoles as $r) {
             if (in_array((int) ($r['id'] ?? 0), $roleIds, true)) {
+                $roleSlugs[] = (string) ($r['slug'] ?? '');
+            }
+        }
+        $currentAccessKey = CommunityAccessProfiles::resolveFromSlugs($roleSlugs);
+        foreach ($roles as $r) {
+            if (CommunityAccessProfiles::slugToKey((string) ($r['slug'] ?? '')) === $currentAccessKey) {
                 $roleNames[] = (string) ($r['name'] ?? '');
             }
         }
@@ -536,6 +544,8 @@ class EffectifsWorkspaceController
             'memberAssignments' => $assignments,
             'memberPersonnelProfile' => $personnelProfile,
             'memberRoleNames' => $roleNames,
+            'currentAccessKey' => $currentAccessKey,
+            'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleMax' => $jobRoleMax,
@@ -1174,17 +1184,20 @@ class EffectifsWorkspaceController
 
             return Response::redirect(effectifs_workspace_url());
         }
-        $raw = $request->input('role_ids', []);
-        $roleIds = [];
-        if (is_array($raw)) {
-            foreach ($raw as $rid) {
-                $r = (int) $rid;
-                if ($r > 0) {
-                    $roleIds[] = $r;
-                }
-            }
+        $rawKey = strtolower(trim((string) $request->input('access_key', '')));
+        if (!in_array($rawKey, CommunityAccessProfiles::keys(), true)) {
+            Session::flash('error', 'Choisissez un niveau d’accès : Membre, Ressources humaines ou Gestionnaire.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
         }
-        $roleIds = array_values(array_unique($roleIds));
+        $targetSlug = CommunityAccessProfiles::keyToSlug($rawKey);
+        $targetId = $this->roleRepository->getIdBySlug($tenantId, $targetSlug);
+        if ($targetId === null || $targetId < 1) {
+            Session::flash('error', 'Ce niveau d’accès n’est pas encore disponible pour la communauté.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        }
+        $roleIds = [$targetId];
         $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
         foreach ($roleIds as $rid) {
             if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
@@ -1220,7 +1233,7 @@ class EffectifsWorkspaceController
             'roles',
             implode(',', $roleIds)
         );
-        Session::flash('success', 'Rôles mis à jour.');
+        Session::flash('success', 'Niveau d’accès mis à jour.');
 
         return Response::redirect($this->redirectAfterMemberAction($request, $id));
     }
@@ -1463,13 +1476,15 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
         $gate = Gate::getInstance();
 
         return $this->shell('admin.effectifs_workspace.roles', [
-            'title' => 'Rôles',
+            'title' => 'Accès',
             'effectifsNav' => 'roles',
             'orgRoles' => $roles,
+            'accessProfiles' => CommunityAccessProfiles::definitions(),
+            'accessRolesByKey' => $this->accessRolesKeyed($roles),
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
@@ -1477,22 +1492,9 @@ class EffectifsWorkspaceController
 
     public function droits(Request $request, array $params = []): Response
     {
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        $gate = Gate::getInstance();
+        unset($request, $params);
 
-        return $this->shell('admin.effectifs_workspace.droits', [
-            'title' => 'Droits d’accès',
-            'effectifsNav' => 'droits',
-            'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
-            'canAccessManagement' => $gate->allows('admin.organization')
-                || $gate->allows('admin.access')
-                || $gate->allows('admin.access.manage'),
-            'rosterCounts' => $this->rosterCounts($tenantId),
-        ]);
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     public function fonctions(Request $request, array $params = []): Response
@@ -1869,7 +1871,7 @@ class EffectifsWorkspaceController
     private function elevationCatalogForTenant(int $tenantId): array
     {
         $grades = $this->gradeRepository->listForTenant($tenantId);
-        $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
         $jobRoles = [];
         if ($this->personnelJobRoleRepository->tablesExist()) {
             $jobRoles = $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId);
@@ -2213,5 +2215,19 @@ class EffectifsWorkspaceController
         }
 
         return $years . ' an' . ($years > 1 ? 's' : '');
+    }
+
+    /**
+     * @param list<array<string, mixed>> $roles
+     * @return array<string, array<string, mixed>>
+     */
+    private function accessRolesKeyed(array $roles): array
+    {
+        $out = [];
+        foreach ($roles as $row) {
+            $out[CommunityAccessProfiles::slugToKey((string) ($row['slug'] ?? ''))] = $row;
+        }
+
+        return $out;
     }
 }

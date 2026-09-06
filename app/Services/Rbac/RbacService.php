@@ -98,7 +98,7 @@ class RbacService
             return [];
         }
 
-        return array_values(array_unique(array_map('strval', $slugs)));
+        return PlatformAdminFlag::stripRoleGrants(array_map('strval', $slugs));
     }
 
     /** @return list<int> */
@@ -107,7 +107,8 @@ class RbacService
         $stmt = $this->pdo->prepare(
             'SELECT sra.role_id FROM site_role_assignments sra
              INNER JOIN roles r ON r.id = sra.role_id AND r.tenant_id IS NULL AND r.role_layer = \'site\'
-             WHERE sra.email_normalized = ? AND sra.revoked_at IS NULL'
+             WHERE sra.email_normalized = ? AND sra.revoked_at IS NULL
+               AND r.slug <> \'site_super_admin\''
         );
         $stmt->execute([$emailNormalized]);
 
@@ -122,7 +123,10 @@ class RbacService
         $tenantPerms = $this->loadPermissionsForRoles($tenantRoleIds);
         $sitePerms = $this->loadSitePermissionsForEmail($userEmail);
         $merged = array_values(array_unique([...$tenantPerms, ...$sitePerms]));
+        $isAdmin = $this->emailHasPlatformAdminFlag((string) $userEmail);
+        $merged = PlatformAdminFlag::mergeIntoPermissions($merged, $isAdmin);
         Gate::getInstance()->setPermissions($merged);
+        Gate::getInstance()->setPlatformAdmin($isAdmin);
     }
 
     /**
@@ -147,12 +151,18 @@ class RbacService
                     $ids,
                     (string) ($user['email'] ?? '')
                 );
+                $this->applyPlatformAdminFromUser($user);
 
                 return;
             }
             $sitePerms = $this->loadSitePermissionsForEmail((string) ($user['email'] ?? ''));
-            $flat = array_values(array_unique([...$flat, ...$sitePerms]));
+            $isAdmin = $this->userHasPlatformAdminFlag($user);
+            $flat = PlatformAdminFlag::mergeIntoPermissions(
+                array_values(array_unique([...$flat, ...$sitePerms])),
+                $isAdmin
+            );
             Gate::getInstance()->setFullRbacState($flat, $unitMap);
+            Gate::getInstance()->setPlatformAdmin($isAdmin);
 
             return;
         }
@@ -164,6 +174,7 @@ class RbacService
             $ids,
             (string) ($user['email'] ?? '')
         );
+        $this->applyPlatformAdminFromUser($user);
     }
 
     /**
@@ -186,6 +197,57 @@ class RbacService
         $sitePerms = $this->loadSitePermissionsForEmail($userEmail);
         $flat = array_values(array_unique([...$flat, ...$sitePerms]));
         Gate::getInstance()->setFullRbacState($flat, $unitMap);
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     */
+    private function applyPlatformAdminFromUser(array $user): void
+    {
+        $isAdmin = $this->userHasPlatformAdminFlag($user);
+        $gate = Gate::getInstance();
+        $flat = PlatformAdminFlag::mergeIntoPermissions($gate->permissionSlugs(), $isAdmin);
+        $unitMap = $gate->getUnitPermissionMap();
+        $gate->setFullRbacState($flat, $unitMap);
+        $gate->setPlatformAdmin($isAdmin);
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     */
+    private function userHasPlatformAdminFlag(array $user): bool
+    {
+        if (PlatformAdminFlag::isEnabled($user)) {
+            return true;
+        }
+
+        return $this->emailHasPlatformAdminFlag((string) ($user['email'] ?? ''));
+    }
+
+    private function emailHasPlatformAdminFlag(?string $email): bool
+    {
+        $email = strtolower(trim((string) $email));
+        if ($email === '') {
+            return false;
+        }
+        try {
+            $chk = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_platform_admin' LIMIT 1"
+            );
+            if (!$chk || !$chk->fetchColumn()) {
+                return false;
+            }
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM users WHERE ' . \App\Support\SqlText::normalizedEquals($this->pdo, 'email')
+                . ' AND is_platform_admin = 1 LIMIT 1'
+            );
+            $stmt->execute([$email]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

@@ -228,7 +228,81 @@ final class SystemUsersController
             'personHasLiveOrg' => $hasLiveOrg,
             'personMemberships' => $dossierMemberships,
             'personMergePreview' => $mergePreview,
+            'personIsPlatformAdmin' => $this->users->emailHasPlatformAdmin($email),
         ]);
+    }
+
+    public function platformAdmins(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.main', [
+            'title' => 'Administrateurs du site',
+            'content' => 'admin.system.platform_admins',
+            'platformAdmins' => $this->users->listPlatformAdminPeople(),
+            'platformAdminConfirmGrant' => \App\Services\Rbac\PlatformAdminFlag::CONFIRM_GRANT,
+            'platformAdminConfirmRevoke' => \App\Services\Rbac\PlatformAdminFlag::CONFIRM_REVOKE,
+        ]);
+    }
+
+    public function setPlatformAdmin(Request $request, array $params = []): Response
+    {
+        $back = url('admin/system/administrateurs-site');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $enabled = $request->input('action') === 'grant';
+        $expected = $enabled
+            ? \App\Services\Rbac\PlatformAdminFlag::CONFIRM_GRANT
+            : \App\Services\Rbac\PlatformAdminFlag::CONFIRM_REVOKE;
+        if (!\App\Services\Rbac\PlatformAdminFlag::confirmMatches((string) $request->input('confirmation', ''), $expected)) {
+            Session::flash('error', 'Recopiez la phrase de confirmation pour continuer.');
+
+            return Response::redirect($back);
+        }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', 'Indiquez l’adresse d’un compte existant.');
+
+            return Response::redirect($back);
+        }
+
+        $before = $this->users->emailHasPlatformAdmin($email);
+        $result = $this->users->setPlatformAdminForEmail($email, $enabled);
+        if ($result['ok'] === false) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect($back);
+        }
+        if ($before === $enabled) {
+            Session::flash('success', $enabled
+                ? 'Cette personne administrait déjà le site.'
+                : 'Cette personne n’administrait pas le site.');
+
+            return Response::redirect($back);
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $actorTenantId = (int) Session::get('tenant_id');
+        $this->audit->logChange(
+            AuditAction::PLATFORM_ADMIN_UPDATED,
+            $actorTenantId > 0 ? $actorTenantId : 0,
+            $actorId,
+            'user',
+            0,
+            ['is_platform_admin' => $before ? 1 : 0, 'email' => $email],
+            ['is_platform_admin' => $enabled ? 1 : 0, 'email' => $email],
+        );
+
+        Session::flash(
+            'success',
+            $enabled
+                ? 'Cette personne peut désormais administrer le site.'
+                : 'Cette personne n’administre plus le site.'
+        );
+
+        return Response::redirect($back);
     }
 
     /**

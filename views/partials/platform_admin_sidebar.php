@@ -69,7 +69,8 @@ $initials = count($words) > 1
         <div class="ath-sidebar__group is-open" data-ath-nav-group="securite">
             <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m9 18 6-6-6-6"></path></svg><span class="ath-sidebar__group-label">SÉCURITÉ & ACCÈS</span></button>
             <div class="ath-sidebar__group-body">
-                <?php $link('admin/users', 'Comptes utilisateurs', 'users', $active('admin/users')); ?>
+                <?php $link('admin/users', 'Comptes utilisateurs', 'users', $active('admin/users') && !$active('admin/system/administrateurs-site')); ?>
+                <?php $link('admin/system/administrateurs-site', 'Administrateurs du site', 'shield', $active('admin/system/administrateurs-site')); ?>
                 <?php $link('admin/system/advanced-fiche-edit', 'Édition avancée de fiche', 'users', $active('admin/system/advanced-fiche-edit')); ?>
                 <?php $link('admin/roles', 'Rôles système', 'shield', $active('admin/roles')); ?>
                 <?php $link('admin/site-roles', 'Affectations rôles site', 'shield', $active('admin/site-roles')); ?>

@@ -100,8 +100,7 @@ $roleplayChildren = array_values(array_filter([
 $orbatChildren = array_values(array_filter([
     ['label' => 'Structure & effectifs', 'href' => url('back-office/organisation-effectifs'), 'active' => $navOrbatActive],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
-    ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'active' => $navDoctrineActive],
-    ['label' => 'Attributions métier', 'href' => url('back-office/personnel-job-roles/assignments'), 'active' => $navAttributionsActive],
+    ['label' => 'Emplois du dossier', 'href' => url('back-office/personnel-job-roles'), 'active' => $navAttributionsActive || $navDoctrineActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([
@@ -134,9 +133,7 @@ $atakDeviceChildren = array_values(array_filter([
 ], static fn (?array $row): bool => is_array($row)));
 
 $rolesChildren = array_values(array_filter([
-    ['label' => 'Matrice des rôles', 'href' => url('back-office/roles-permissions'), 'active' => $navRolesActive],
-    ['label' => 'Table des rôles', 'href' => url('back-office/roles'), 'active' => $navRolesTableActive],
-    ['label' => 'Profils de permissions', 'href' => url('back-office/roles/presets'), 'active' => $navProfilsActive],
+    ['label' => 'Niveaux d’accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navRolesActive || $navRolesTableActive || $navProfilsActive || $navDoctrineActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $jnetChildren = [
@@ -289,8 +286,8 @@ $athNavGroups = [
         'items' => array_values(array_filter([
             ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'icon' => 'audit', 'active' => $boNavAudit],
             [
-                'label' => 'Rôles & accès',
-                'href' => url('back-office/roles-permissions'),
+                'label' => 'Accès',
+                'href' => effectifs_workspace_url('roles'),
                 'icon' => 'shield',
                 'active' => $navRolesActive || $navRolesTableActive || $navProfilsActive,
                 'children' => $rolesChildren,

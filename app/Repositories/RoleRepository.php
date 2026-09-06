@@ -7,6 +7,8 @@ namespace App\Repositories;
 use App\Core\Database;
 use App\Support\SqlText;
 use App\Services\Community\TenantDefaultRoleDefinitions;
+use App\Services\Rbac\CommunityAccessCollapseService;
+use App\Services\Rbac\CommunityAccessProfiles;
 use PDO;
 
 class RoleRepository
@@ -42,6 +44,34 @@ class RoleRepository
         return TenantDefaultRoleDefinitions::sortOrganizationRoleRows($rows);
     }
 
+    /**
+     * Les trois profils d’accès (Membre, RH, Gestionnaire).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forTenantAccessProfiles(int $tenantId): array
+    {
+        $slugs = CommunityAccessProfiles::slugs();
+        $ph = implode(',', array_fill(0, count($slugs), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM roles WHERE tenant_id = ? AND slug IN ($ph)"
+        );
+        $stmt->execute(array_merge([$tenantId], $slugs));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $bySlug = [];
+        foreach ($rows as $row) {
+            $bySlug[(string) ($row['slug'] ?? '')] = $row;
+        }
+        $ordered = [];
+        foreach (CommunityAccessProfiles::definitions() as $def) {
+            if (isset($bySlug[$def['slug']])) {
+                $ordered[] = $bySlug[$def['slug']];
+            }
+        }
+
+        return $ordered;
+    }
+
     /** @return list<array<string, mixed>> */
     public function forTenantByLayer(int $tenantId, string $layer): array
     {
@@ -59,7 +89,8 @@ class RoleRepository
     public function allSiteRoles(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT * FROM roles WHERE tenant_id IS NULL AND role_layer = 'site' ORDER BY name ASC"
+            "SELECT * FROM roles WHERE tenant_id IS NULL AND role_layer = 'site'
+             AND slug <> 'site_super_admin' ORDER BY name ASC"
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -215,7 +246,7 @@ class RoleRepository
     }
 
     /**
-     * Rôle communauté non verrouillé (kit catalogue). Ne touche jamais community_owner.
+     * Ne crée plus que les positions de service. Les trois accès sont déjà garantis ailleurs.
      */
     public function createOrganizationRole(int $tenantId, string $name, string $slug, ?string $description = null): int
     {
@@ -224,7 +255,7 @@ class RoleRepository
         if ($tenantId < 1 || $name === '' || $slug === '') {
             return 0;
         }
-        if (in_array($slug, ['community_owner', 'tenant_admin'], true)) {
+        if (!CommunityAccessCollapseService::mayCreateTenantRoleSlug($slug)) {
             return $this->getIdBySlug($tenantId, $slug) ?? 0;
         }
         $existing = $this->getIdBySlug($tenantId, $slug);
@@ -249,8 +280,11 @@ class RoleRepository
             return false;
         }
         $layer = (string) ($r['role_layer'] ?? 'community');
+        if ($layer !== 'community' && $layer !== 'intra') {
+            return false;
+        }
 
-        return $layer === 'community' || $layer === 'intra';
+        return CommunityAccessProfiles::isAccessSlug((string) ($r['slug'] ?? ''));
     }
 
     /**
@@ -471,6 +505,9 @@ class RoleRepository
         $existing = $this->getIdBySlug($tenantId, $slug);
         if ($existing !== null) {
             return $existing;
+        }
+        if (!CommunityAccessCollapseService::mayCreateTenantRoleSlug($slug)) {
+            return null;
         }
         try {
             $chk = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'role_definitions' LIMIT 1");

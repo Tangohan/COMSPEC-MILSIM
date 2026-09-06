@@ -108,14 +108,16 @@ final class CommunityReportNotificationService
             }
         }
 
-        $siteRoleEmails = $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
-            'site_super_admin',
-            'site_senior_moderator',
-            'site_moderator',
-            'site_report_supervisor',
-            'site_report_operator',
-            'site_support',
-        ]);
+        $siteRoleEmails = array_values(array_unique(array_merge(
+            $this->userRepository->listPlatformAdminEmails(),
+            $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
+                'site_senior_moderator',
+                'site_moderator',
+                'site_report_supervisor',
+                'site_report_operator',
+                'site_support',
+            ])
+        )));
         foreach ($siteRoleEmails as $email) {
             if ($reporterEmail !== '' && strcasecmp($reporterEmail, $email) === 0) {
                 continue;
@@ -312,14 +314,16 @@ final class CommunityReportNotificationService
             }
         }
 
-        $siteRoleEmails = $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
-            'site_super_admin',
-            'site_senior_moderator',
-            'site_moderator',
-            'site_report_supervisor',
-            'site_report_operator',
-            'site_support',
-        ]);
+        $siteRoleEmails = array_values(array_unique(array_merge(
+            $this->userRepository->listPlatformAdminEmails(),
+            $this->siteRoleAssignmentRepository->listActiveEmailsByRoleSlugs([
+                'site_senior_moderator',
+                'site_moderator',
+                'site_report_supervisor',
+                'site_report_operator',
+                'site_support',
+            ])
+        )));
         foreach ($siteRoleEmails as $email) {
             $display = $this->displayNameFromEmail($email);
             try {

@@ -61,6 +61,9 @@ final class AuditAction
     /** Édition complète de fiche depuis l’annuaire plateforme. */
     public const USER_PROFILE_UPDATED = 'user.profile_updated';
 
+    /** Attribution ou retrait de l’administration du site (bit users). */
+    public const PLATFORM_ADMIN_UPDATED = 'user.platform_admin_updated';
+
     /** Suppression (douce/anonymisation) d’un compte depuis l’annuaire plateforme. */
     public const USER_DELETED = 'user.deleted';
 

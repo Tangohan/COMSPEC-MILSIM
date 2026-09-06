@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `role_id` int unsigned DEFAULT NULL,
   `grade_id` int unsigned DEFAULT NULL,
   `status` varchar(50) DEFAULT 'pending',
+  `is_platform_admin` tinyint(1) NOT NULL DEFAULT 0,
   `last_login_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
@@ -170,6 +171,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `tenant_id` (`tenant_id`),
   KEY `role_id` (`role_id`),
   KEY `grade_id` (`grade_id`),
+  KEY `idx_users_is_platform_admin` (`is_platform_admin`),
   CONSTRAINT `users_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `users_role_id_fk` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `users_grade_id_fk` FOREIGN KEY (`grade_id`) REFERENCES `grades` (`id`) ON DELETE SET NULL ON UPDATE CASCADE

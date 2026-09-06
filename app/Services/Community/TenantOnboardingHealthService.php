@@ -221,6 +221,14 @@ final class TenantOnboardingHealthService
                 );
                 $ins->execute([$tenantId, $parentId, $u['name'], $u['slug'], $u['type'], (int) ($u['display_order'] ?? 0)]);
                 $keyToId[$u['key']] = (int) $pdo->lastInsertId();
+                try {
+                    (new \App\Services\Personnel\UnitJobRoleSyncService($pdo))->ensureForUnit(
+                        $tenantId,
+                        $keyToId[$u['key']],
+                        (string) ($u['name'] ?? '')
+                    );
+                } catch (\Throwable) {
+                }
                 $progress = true;
             }
             if (!$progress && $next !== []) {

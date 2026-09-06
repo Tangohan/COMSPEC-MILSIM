@@ -48,22 +48,7 @@ final class AccessManagementController
 
             return Response::redirect(url('back-office/access-management?tab=roles'));
         }
-        $tenantId = (int) Session::get('tenant_id');
-        $name = trim((string) $request->input('name'));
-        $slug = trim((string) $request->input('slug'));
-        if ($slug === '') {
-            $slug = $this->slugify($name);
-        }
-        $level = (int) $request->input('level', 0);
-        if ($tenantId < 1 || $name === '' || $slug === '') {
-            Session::flash('error', 'Indiquez un nom de rôle valide.');
-
-            return Response::redirect(url('back-office/access-management?tab=roles'));
-        }
-        $stmt = $this->pdo->prepare('INSERT INTO roles (tenant_id, name, slug, level, is_system, created_at) VALUES (?, ?, ?, ?, 0, NOW())');
-        $stmt->execute([$tenantId, $name, $slug, $level]);
-        $this->auditRuleChange($tenantId, (int) Session::get('user_id'), 'role.created', ['name' => $name, 'slug' => $slug]);
-        Session::flash('success', 'Rôle enregistré.');
+        Session::flash('error', 'Chaque communauté n’a que trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire.');
 
         return Response::redirect(url('back-office/access-management?tab=roles'));
     }
