@@ -6,137 +6,54 @@ use App\Services\Rbac\RolePermissionMatrixCatalog;
 $rows = is_array($matrixRows ?? null) ? $matrixRows : [];
 $stats = is_array($matrixStats ?? null) ? $matrixStats : [];
 $filters = is_array($matrixFilters ?? null) ? $matrixFilters : [];
+$members = is_array($assignableMembers ?? null) ? $assignableMembers : [];
 $moduleLabels = is_array($moduleLabels ?? null) ? $moduleLabels : RolePermissionMatrixCatalog::moduleLabelsFr();
 $accessLevelLabels = is_array($accessLevelLabels ?? null) ? $accessLevelLabels : RolePermissionMatrixCatalog::accessLevelLabelsFr();
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-
 $successFlash = \App\Core\Session::getFlash('success');
 $errorFlash = \App\Core\Session::getFlash('error');
-
-$reviewLabel = (string) ($stats['access_review_label'] ?? '—');
-$reviewUpToDate = !empty($stats['access_review_up_to_date']);
-$athKpis = [
-    ['label' => 'RÔLES DÉFINIS', 'value' => (string) (int) ($stats['roles_defined'] ?? 0), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '60%', 'note' => ((int) ($stats['technician_roles'] ?? 0)) . ' techniques'],
-    ['label' => 'TITULAIRES ADMIN', 'value' => (string) (int) ($stats['admin_holders'] ?? 0), 'delta' => '', 'tone' => '#c98a12', 'pct' => '12%', 'note' => 'accès total'],
-    ['label' => 'PERMISSIONS', 'value' => (string) (int) ($stats['permission_cells'] ?? 0), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '80%', 'note' => 'granularité par module'],
-    ['label' => 'REVUE D’ACCÈS', 'value' => $reviewLabel, 'delta' => '', 'tone' => $reviewUpToDate ? '#0b8a5c' : '#c98a12', 'pct' => $reviewUpToDate ? '100%' : '50%', 'note' => $reviewUpToDate ? 'à jour' : 'revue conseillée'],
-];
-require base_path('views/partials/ath_kpis.php');
+$memberLabel = static function (array $member): string {
+    $name = trim((string) ($member['callsign'] ?? $member['display_name'] ?? ''));
+    return $name !== '' ? $name . ' · ' . (string) ($member['email'] ?? '') : (string) ($member['email'] ?? '');
+};
 ?>
+<style>
+.rbac{--ink:#17212b;--muted:#66737e;--line:#dce3e7;--blue:#174f78;display:grid;gap:18px;color:var(--ink)}
+.rbac *{box-sizing:border-box}.rbac__flash{padding:12px 15px;border-radius:8px;font-weight:700}.rbac__flash--ok{background:#e9f7f0;color:#176a4a}.rbac__flash--err{background:#fff0ef;color:#a53029}
+.rbac__toolbar{display:grid;grid-template-columns:minmax(260px,2fr) repeat(3,minmax(130px,1fr)) auto;gap:10px;align-items:end;background:#fff;border:1px solid var(--line);padding:16px;border-radius:10px;box-shadow:0 3px 12px #1d34420a}
+.rbac__field{display:grid;gap:6px}.rbac__field span{font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rbac input,.rbac select{width:100%;height:42px;border:1px solid #cbd5da;border-radius:7px;background:#fff;padding:0 11px;color:var(--ink)}
+.rbac__actions{display:flex;gap:8px;flex-wrap:wrap}.rbac__btn{display:inline-flex;justify-content:center;align-items:center;min-height:42px;padding:0 15px;border:1px solid #bcc8ce;border-radius:7px;background:#fff;color:#32434e;font-size:12px;font-weight:800;text-decoration:none;cursor:pointer}.rbac__btn--primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.rbac__summary{display:flex;gap:8px;flex-wrap:wrap}.rbac__stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px}.rbac__stat b{font:800 18px/1 ui-monospace,monospace}.rbac__stat span{margin-left:6px;font-size:11px;color:var(--muted)}
+.rbac__list{display:grid;gap:12px}.rbac__role{background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:9px;overflow:hidden}.rbac__role[hidden]{display:none}.rbac__head{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:14px;align-items:center;padding:15px 17px}.rbac__title{margin:0;font-size:16px}.rbac__code{display:block;margin-top:4px;color:var(--muted);font:700 11px/1.3 ui-monospace,monospace}.rbac__badges{display:flex;gap:6px;flex-wrap:wrap}.rbac__badge{padding:5px 8px;border-radius:99px;background:#eef3f5;font-size:10px;font-weight:800}.rbac__badge--on{background:#e5f5ee;color:#08714a}.rbac__buttons{display:flex;gap:7px}
+.rbac__body{border-top:1px solid var(--line);padding:17px;display:grid;gap:18px}.rbac__modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.rbac__module{padding:10px;border:1px solid var(--line);border-radius:7px}.rbac__module b{display:block;font-size:11px}.rbac__module span{font-size:11px;color:var(--muted)}.rbac__permissions h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin:0 0 9px}.rbac__chips{display:flex;gap:6px;flex-wrap:wrap}.rbac__chip{border:1px solid #d5dde1;border-radius:5px;padding:6px 8px;background:#f8fafb}.rbac__chip b{display:block;font-size:11px}.rbac__chip code{font-size:9px;color:var(--muted)}.rbac__empty{color:var(--muted);font-size:12px}.rbac__edit{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:10px}.rbac__edit label{font-size:11px;font-weight:750}.rbac__edit label input,.rbac__edit label select{margin-top:5px}.rbac__checks{display:flex;gap:15px;flex-wrap:wrap;grid-column:1/-1}.rbac__checks label{display:flex;align-items:center;gap:6px}.rbac__checks input{width:auto;height:auto}.rbac__save{grid-column:1/-1;justify-self:end}.rbac__none{background:#fff;border:1px dashed #bcc8ce;padding:35px;text-align:center;border-radius:9px}.rbac dialog{border:0;border-radius:11px;padding:0;width:min(520px,calc(100% - 30px));box-shadow:0 20px 70px #101b2390}.rbac dialog::backdrop{background:#13232d99}.rbac__dialog{padding:22px;display:grid;gap:15px}.rbac__dialog h2{margin:0}.rbac__dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+@media(max-width:900px){.rbac__toolbar{grid-template-columns:1fr 1fr}.rbac__head{grid-template-columns:1fr}.rbac__edit{grid-template-columns:1fr}.rbac__save{justify-self:stretch}}@media(max-width:560px){.rbac__toolbar{grid-template-columns:1fr}}
+</style>
+<div class="rbac" data-rbac-root>
+<?php if (is_string($successFlash) && $successFlash !== ''): ?><div class="rbac__flash rbac__flash--ok"><?= $h($successFlash) ?></div><?php endif; ?>
+<?php if (is_string($errorFlash) && $errorFlash !== ''): ?><div class="rbac__flash rbac__flash--err"><?= $h($errorFlash) ?></div><?php endif; ?>
 
-<form method="get" action="<?= $h(url('back-office/roles-permissions')) ?>" class="ath-users-filters ath-rise">
-    <div>
-        <label class="ath-users-filters__label" for="rp-q">Recherche</label>
-        <input id="rp-q" type="search" name="q" value="<?= $h((string) ($filters['q'] ?? '')) ?>" class="bo-select" style="height:40px;" placeholder="Code, rôle…">
-    </div>
-    <div>
-        <label class="ath-users-filters__label" for="rp-scope">Périmètre</label>
-        <select id="rp-scope" name="scope" class="bo-select">
-            <option value="">Tous</option>
-            <option value="admin" <?= ($filters['scope'] ?? '') === 'admin' ? 'selected' : '' ?>>Accès complet</option>
-            <option value="section" <?= ($filters['scope'] ?? '') === 'section' ? 'selected' : '' ?>>Sa section</option>
-            <option value="read" <?= ($filters['scope'] ?? '') === 'read' ? 'selected' : '' ?>>Lecture</option>
-        </select>
-    </div>
-    <div>
-        <label class="ath-users-filters__label" for="rp-level">Niveau</label>
-        <select id="rp-level" name="level" class="bo-select">
-            <option value="">Tous</option>
-            <?php for ($lvl = 0; $lvl <= 5; $lvl++): ?>
-            <option value="<?= $lvl ?>" <?= (string) ($filters['level'] ?? '') === (string) $lvl ? 'selected' : '' ?>><?= $lvl ?></option>
-            <?php endfor; ?>
-        </select>
-    </div>
-    <div>
-        <label class="ath-users-filters__label" for="rp-active">État</label>
-        <select id="rp-active" name="active" class="bo-select">
-            <option value="">Tous</option>
-            <option value="1" <?= ($filters['active'] ?? '') === '1' ? 'selected' : '' ?>>Actif</option>
-            <option value="0" <?= ($filters['active'] ?? '') === '0' ? 'selected' : '' ?>>Inactif</option>
-        </select>
-    </div>
-    <button type="submit" class="ath-btn ath-btn--solid">Appliquer</button>
-    <a href="<?= $h(url('back-office/roles-permissions/export') . '?' . http_build_query(array_filter($filters))) ?>" class="ath-btn">Exporter CSV</a>
+<form method="get" action="<?= $h(url('back-office/roles-permissions')) ?>" class="rbac__toolbar">
+<label class="rbac__field"><span>Recherche instantanée</span><input type="search" name="q" value="<?= $h((string)($filters['q'] ?? '')) ?>" placeholder="Rôle, code, module ou droit…" data-role-search></label>
+<label class="rbac__field"><span>Périmètre</span><select name="scope"><option value="">Tous</option><option value="admin" <?= ($filters['scope'] ?? '') === 'admin' ? 'selected' : '' ?>>Accès complet</option><option value="section" <?= ($filters['scope'] ?? '') === 'section' ? 'selected' : '' ?>>Sa section</option><option value="read" <?= ($filters['scope'] ?? '') === 'read' ? 'selected' : '' ?>>Lecture</option></select></label>
+<label class="rbac__field"><span>Niveau</span><select name="level"><option value="">Tous</option><?php for($i=0;$i<=5;$i++): ?><option value="<?= $i ?>" <?= (string)($filters['level'] ?? '') === (string)$i ? 'selected' : '' ?>>Niveau <?= $i ?></option><?php endfor; ?></select></label>
+<label class="rbac__field"><span>État</span><select name="active"><option value="">Tous</option><option value="1" <?= ($filters['active'] ?? '') === '1' ? 'selected' : '' ?>>Actif</option><option value="0" <?= ($filters['active'] ?? '') === '0' ? 'selected' : '' ?>>Inactif</option></select></label>
+<div class="rbac__actions"><button class="rbac__btn rbac__btn--primary">Rechercher</button><a class="rbac__btn" href="<?= $h(url('back-office/roles-permissions')) ?>">Effacer</a></div>
 </form>
+<div class="rbac__summary"><div class="rbac__stat"><b><?= (int)($stats['roles_defined'] ?? 0) ?></b><span>rôles</span></div><div class="rbac__stat"><b><?= (int)($stats['permission_cells'] ?? 0) ?></b><span>accès modules</span></div><div class="rbac__stat"><b><?= (int)($stats['admin_holders'] ?? 0) ?></b><span>titulaires admin</span></div><a class="rbac__btn" href="<?= $h(url('back-office/roles-permissions/export') . '?' . http_build_query(array_filter($filters))) ?>">Exporter CSV</a></div>
 
-<form method="post" action="<?= $h(url('back-office/roles-permissions/revue')) ?>" class="ath-rise" style="display:flex;justify-content:flex-end;">
-    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-    <button type="submit" class="ath-btn">Marquer la revue trimestrielle</button>
-</form>
+<div class="rbac__list" data-role-list>
+<?php foreach ($rows as $row): $rid=(int)($row['id']??0); $permissions=(array)($row['permissions']??[]); $searchParts=[(string)($row['name']??''),(string)($row['code']??''),(string)($row['slug']??'')]; foreach($permissions as $p){$searchParts[]=(string)($p['name']??'').' '.(string)($p['slug']??'').' '.(string)($p['module']??'');} ?>
+<article class="rbac__role" id="role-<?= $rid ?>" data-role-card data-search="<?= $h(mb_strtolower(implode(' ', $searchParts),'UTF-8')) ?>">
+<header class="rbac__head"><div><h2 class="rbac__title"><?= $h((string)($row['name']??'')) ?></h2><span class="rbac__code"><?= $h((string)($row['code']??'')) ?> · <?= $h((string)($row['slug']??'')) ?></span></div><div class="rbac__badges"><span class="rbac__badge <?= !empty($row['is_active'])?'rbac__badge--on':'' ?>"><?= $h((string)($row['status_label']??'')) ?></span><span class="rbac__badge"><?= (int)($row['holders_count']??0) ?> titulaire(s)</span><span class="rbac__badge"><?= count($permissions) ?> droit(s)</span></div><div class="rbac__buttons"><button type="button" class="rbac__btn rbac__btn--primary" data-assign-role="<?= $rid ?>" data-role-name="<?= $h((string)($row['name']??'')) ?>">Attribuer</button><button type="button" class="rbac__btn" data-toggle-role aria-expanded="false">Voir les droits</button></div></header>
+<div class="rbac__body" hidden>
+<div class="rbac__modules"><?php foreach(RolePermissionMatrixCatalog::moduleKeys() as $key): ?><div class="rbac__module"><b><?= $h((string)($moduleLabels[$key]??$key)) ?></b><span><?= $h((string)($row['modules'][$key]['access_label']??'Aucun')) ?></span></div><?php endforeach; ?></div>
+<section class="rbac__permissions"><h3>Droits granulaires réellement accordés</h3><?php if($permissions===[]): ?><p class="rbac__empty">Aucune permission granulaire n’est liée à ce rôle.</p><?php else: ?><div class="rbac__chips"><?php foreach($permissions as $p): ?><span class="rbac__chip" title="<?= $h((string)($p['scope']??'')) ?>"><b><?= $h((string)($p['name']??$p['slug']??'')) ?></b><code><?= $h((string)($p['slug']??'')) ?></code></span><?php endforeach; ?></div><?php endif; ?></section>
+<form method="post" action="<?= $h(url('back-office/roles-permissions/save')) ?>" class="rbac__edit"><input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>"><input type="hidden" name="role_id" value="<?= $rid ?>"><label>Code<input name="code" value="<?= $h((string)($row['code']??'')) ?>"></label><label>Niveau<input name="level" type="number" min="0" max="5" value="<?= (int)($row['level']??0) ?>"></label><?php foreach(RolePermissionMatrixCatalog::moduleKeys() as $key): ?><label><?= $h((string)($moduleLabels[$key]??$key)) ?><select name="module_<?= $h($key) ?>"><?php foreach($accessLevelLabels as $levelKey=>$label): ?><option value="<?= $h((string)$levelKey) ?>" <?= ($row['modules'][$key]['access_level']??'')===$levelKey?'selected':'' ?>><?= $h((string)$label) ?></option><?php endforeach; ?></select></label><?php endforeach; ?><div class="rbac__checks"><label><input type="checkbox" name="can_delete" value="1" <?= !empty($row['can_delete'])?'checked':'' ?>> Suppression</label><label><input type="checkbox" name="can_export" value="1" <?= !empty($row['can_export'])?'checked':'' ?>> Export</label><label><input type="checkbox" name="is_active" value="1" <?= !empty($row['is_active'])?'checked':'' ?>> Actif</label><label><input type="checkbox" name="mark_reviewed" value="1"> Revu aujourd’hui</label></div><button class="rbac__btn rbac__btn--primary rbac__save">Enregistrer les droits</button></form>
+</div></article><?php endforeach; ?>
+<?php if($rows===[]): ?><div class="rbac__none">Aucun rôle ne correspond à ces critères. <a href="<?= $h(url('back-office/roles-permissions')) ?>">Réinitialiser la recherche</a></div><?php endif; ?>
+<div class="rbac__none" data-no-result hidden>Aucun rôle ne correspond à cette recherche.</div></div>
 
-<?php
-$athTableRows = [];
-$athTableRowHrefs = [];
-foreach ($rows as $row) {
-    $cells = [
-        (string) ($row['code'] ?? ''),
-        (string) ($row['name'] ?? ''),
-        (string) (int) ($row['level'] ?? 0),
-        (string) (int) ($row['holders_count'] ?? 0),
-    ];
-    foreach (RolePermissionMatrixCatalog::moduleKeys() as $moduleKey) {
-        $cells[] = (string) ($row['modules'][$moduleKey]['access_label'] ?? '—');
-    }
-    $cells[] = (string) ($row['can_delete_label'] ?? 'Non');
-    $cells[] = (string) ($row['can_export_label'] ?? 'Non');
-    $cells[] = (string) ($row['last_reviewed_label'] ?? '—');
-    $cells[] = (string) ($row['status_label'] ?? 'Actif');
-    $athTableRows[] = $cells;
-    $athTableRowHrefs[] = null;
-}
-
-$cols = ['CODE|m', 'RÔLE', 'NIVEAU|r', 'TITULAIRES|r'];
-foreach ($moduleLabels as $label) {
-    $cols[] = mb_strtoupper((string) $label, 'UTF-8');
-}
-$cols = array_merge($cols, ['SUPPRESSION', 'EXPORT', 'DERNIÈRE REVUE|m', 'ÉTAT|b']);
-
-$athTableTitle = 'Matrice des rôles';
-$athTableCount = (int) ($stats['filtered_count'] ?? count($rows));
-$athTableCols = $cols;
-$athTableFilters = ['Périmètre', 'Niveau', 'Actif'];
-$athTableMinWidth = '1620px';
-$athTableFoot = 'Affichage ' . count($rows) . ' sur ' . (int) ($stats['total_count'] ?? count($rows)) . ' · ' . date('d/m/Y H:i');
-$athTableExportUrl = url('back-office/roles-permissions/export') . '?' . http_build_query(array_filter($filters));
-require base_path('views/partials/ath_table.php');
-?>
-
-<?php if ($rows !== []): ?>
-<div class="ath-rise ath-roles-edit-stack">
-    <div class="ath-card" style="padding:16px 18px;">
-        <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;color:#8c979b;margin-bottom:12px;">MODIFIER UN RÔLE</div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            <?php foreach ($rows as $row): ?>
-            <details class="ath-roles-edit-item">
-                <summary class="ath-btn" style="justify-content:space-between;width:100%;">
-                    <span><?= $h((string) ($row['name'] ?? '')) ?></span>
-                    <span style="font-family:var(--ath-mono);font-size:10px;color:#8c979b;"><?= $h((string) ($row['code'] ?? '')) ?></span>
-                </summary>
-                <form method="post" action="<?= $h(url('back-office/roles-permissions/save')) ?>" class="ath-roles-edit-form">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <input type="hidden" name="role_id" value="<?= (int) ($row['id'] ?? 0) ?>">
-                    <label>Code</label>
-                    <input name="code" value="<?= $h((string) ($row['code'] ?? '')) ?>" class="bo-select" style="height:40px;">
-                    <label>Niveau (0–5)</label>
-                    <input name="level" type="number" min="0" max="5" value="<?= (int) ($row['level'] ?? 0) ?>" class="bo-select" style="height:40px;">
-                    <?php foreach (RolePermissionMatrixCatalog::moduleKeys() as $moduleKey): ?>
-                    <label><?= $h((string) ($moduleLabels[$moduleKey] ?? $moduleKey)) ?></label>
-                    <select name="module_<?= $h($moduleKey) ?>" class="bo-select">
-                        <?php foreach ($accessLevelLabels as $levelKey => $levelLabel): ?>
-                        <option value="<?= $h($levelKey) ?>" <?= (($row['modules'][$moduleKey]['access_level'] ?? '') === $levelKey) ? 'selected' : '' ?>><?= $h((string) $levelLabel) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <?php endforeach; ?>
-                    <label class="ath-users-filters__check"><input type="checkbox" name="can_delete" value="1" <?= !empty($row['can_delete']) ? 'checked' : '' ?>> Suppression autorisée</label>
-                    <label class="ath-users-filters__check"><input type="checkbox" name="can_export" value="1" <?= !empty($row['can_export']) ? 'checked' : '' ?>> Export autorisé</label>
-                    <label class="ath-users-filters__check"><input type="checkbox" name="is_active" value="1" <?= !empty($row['is_active']) ? 'checked' : '' ?>> Rôle actif</label>
-                    <label class="ath-users-filters__check"><input type="checkbox" name="mark_reviewed" value="1"> Marquer revue aujourd’hui</label>
-                    <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
-                </form>
-            </details>
-            <?php endforeach; ?>
-        </div>
-    </div>
+<dialog data-assign-dialog><form method="post" action="<?= $h(url('back-office/roles-permissions/assign')) ?>" class="rbac__dialog"><input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>"><input type="hidden" name="role_id" data-dialog-role><h2>Attribuer « <span data-dialog-name></span> »</h2><label class="rbac__field"><span>Membre actif</span><select name="user_id" required><option value="">Sélectionner un membre…</option><?php foreach($members as $member): ?><option value="<?= (int)($member['id']??0) ?>"><?= $h($memberLabel($member)) ?></option><?php endforeach; ?></select></label><div class="rbac__dialog-actions"><button type="button" class="rbac__btn" data-close-dialog>Annuler</button><button class="rbac__btn rbac__btn--primary">Attribuer le rôle</button></div></form></dialog>
 </div>
-<?php endif; ?>
+<script>(function(){var root=document.querySelector('[data-rbac-root]');if(!root)return;var norm=function(v){return(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')};var input=root.querySelector('[data-role-search]');if(input)input.addEventListener('input',function(){var q=norm(input.value),shown=0;root.querySelectorAll('[data-role-card]').forEach(function(card){var ok=norm(card.dataset.search).includes(q);card.hidden=!ok;if(ok)shown++});var empty=root.querySelector('[data-no-result]');if(empty)empty.hidden=shown!==0});root.addEventListener('click',function(e){var toggle=e.target.closest('[data-toggle-role]');if(toggle){var body=toggle.closest('[data-role-card]').querySelector('.rbac__body'),open=body.hidden;body.hidden=!open;toggle.textContent=open?'Masquer les droits':'Voir les droits';toggle.setAttribute('aria-expanded',open?'true':'false')}var assign=e.target.closest('[data-assign-role]');if(assign){var dialog=root.querySelector('[data-assign-dialog]');dialog.querySelector('[data-dialog-role]').value=assign.dataset.assignRole;dialog.querySelector('[data-dialog-name]').textContent=assign.dataset.roleName;dialog.showModal()}if(e.target.closest('[data-close-dialog]'))root.querySelector('[data-assign-dialog]').close()})})();</script>

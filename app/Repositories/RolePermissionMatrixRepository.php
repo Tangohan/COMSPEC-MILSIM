@@ -69,6 +69,14 @@ final class RolePermissionMatrixRepository
         $roleIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles)));
         $memberCounts = $this->roles->countMembersByRoleIds($tenantId, $roleIds);
         $moduleRows = $this->loadModuleAccessMap($tenantId, $roleIds);
+        // La matrice doit rester utilisable pendant un déploiement progressif ou en cas
+        // de dérive d'un ancien schéma : les résumés par module restent affichables même
+        // si le catalogue granulaire ne peut momentanément pas être lu.
+        try {
+            $permissionRows = $this->loadPermissionMap($tenantId, $roleIds);
+        } catch (\Throwable) {
+            $permissionRows = [];
+        }
 
         $rows = [];
         foreach ($roles as $role) {
@@ -110,6 +118,8 @@ final class RolePermissionMatrixRepository
                 'is_active' => $isActive,
                 'status_label' => $isActive ? 'Actif' : 'Inactif',
                 'role_layer' => (string) ($role['role_layer'] ?? 'community'),
+                'permissions' => $permissionRows[$roleId] ?? [],
+                'permissions_count' => count($permissionRows[$roleId] ?? []),
             ];
         }
 
@@ -322,6 +332,39 @@ final class RolePermissionMatrixRepository
     }
 
     /**
+     * Charge les droits RBAC réels, et non uniquement leur résumé par module.
+     *
+     * @param list<int> $roleIds
+     * @return array<int, list<array<string,string>>>
+     */
+    private function loadPermissionMap(int $tenantId, array $roleIds): array
+    {
+        if ($tenantId < 1 || $roleIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT rp.role_id, p.name, p.slug, p.module, p.scope
+             FROM role_permissions rp
+             INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
+             WHERE rp.role_id IN ({$ph})
+             ORDER BY rp.role_id, p.module, p.name, p.slug"
+        );
+        $st->execute(array_merge([$tenantId], $roleIds));
+        $map = [];
+        while ($permission = $st->fetch(PDO::FETCH_ASSOC)) {
+            $roleId = (int) ($permission['role_id'] ?? 0);
+            if ($roleId < 1) {
+                continue;
+            }
+            unset($permission['role_id']);
+            $map[$roleId][] = array_map(static fn (mixed $value): string => (string) $value, $permission);
+        }
+
+        return $map;
+    }
+
+    /**
      * @param list<array<string,mixed>> $rows
      * @param array{scope?: string, level?: string|int, active?: string, q?: string} $filters
      * @return list<array<string,mixed>>
@@ -339,6 +382,19 @@ final class RolePermissionMatrixRepository
                     (string) ($row['code'] ?? ''),
                     (string) ($row['name'] ?? ''),
                     (string) ($row['slug'] ?? ''),
+                    implode(' ', array_map(
+                        static fn (array $permission): string => implode(' ', [
+                            (string) ($permission['name'] ?? ''),
+                            (string) ($permission['slug'] ?? ''),
+                            (string) ($permission['module'] ?? ''),
+                            (string) ($permission['scope'] ?? ''),
+                        ]),
+                        (array) ($row['permissions'] ?? [])
+                    )),
+                    implode(' ', array_map(
+                        static fn (array $module): string => (string) ($module['access_label'] ?? ''),
+                        (array) ($row['modules'] ?? [])
+                    )),
                 ]));
                 if (!str_contains($hay, $q)) {
                     return false;

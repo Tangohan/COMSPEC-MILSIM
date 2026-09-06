@@ -10,17 +10,24 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\RolePermissionMatrixRepository;
+use App\Repositories\RoleRepository;
+use App\Repositories\UserRepository;
 use App\Services\Rbac\RolePermissionMatrixCatalog;
 use App\Services\Rbac\RolePermissionMatrixService;
+use InvalidArgumentException;
 
 final class RolePermissionMatrixController
 {
     public function __construct(
         private ?RolePermissionMatrixRepository $matrix = null,
         private ?RolePermissionMatrixService $service = null,
+        private ?RoleRepository $roles = null,
+        private ?UserRepository $users = null,
     ) {
         $this->matrix ??= new RolePermissionMatrixRepository();
         $this->service ??= new RolePermissionMatrixService($this->matrix);
+        $this->roles ??= new RoleRepository();
+        $this->users ??= new UserRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -41,6 +48,7 @@ final class RolePermissionMatrixController
             'active' => trim((string) $request->query('active', '')),
         ];
         $data = $this->matrix->listMatrix($tenantId, $filters);
+        $members = $this->users->listForTenant($tenantId, null, 'active', null, 200, 0);
 
         return Response::view('layout.main', [
             'content' => 'admin.roles_permissions.index',
@@ -63,7 +71,43 @@ final class RolePermissionMatrixController
             'moduleLabels' => RolePermissionMatrixCatalog::moduleLabelsFr(),
             'accessLevelLabels' => RolePermissionMatrixCatalog::accessLevelLabelsFr(),
             'csrfToken' => Csrf::token(),
+            'assignableMembers' => $members,
         ]);
+    }
+
+    public function assign(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $actorId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = $this->guard();
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/roles-permissions'));
+        }
+
+        $roleId = (int) $request->input('role_id', 0);
+        $userId = (int) $request->input('user_id', 0);
+        $role = $this->roles->findById($roleId, $tenantId);
+        $user = $this->users->findById($userId, $tenantId);
+        if (!$role || !$user || !$this->roles->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            Session::flash('error', 'Le membre ou le rôle sélectionné est invalide.');
+            return Response::redirect(url('back-office/roles-permissions'));
+        }
+
+        try {
+            $added = $this->users->addOrganizationRoleIfMissing($userId, $tenantId, $roleId, $actorId);
+            Session::flash('success', $added ? 'Rôle attribué au membre.' : 'Ce membre possède déjà ce rôle.');
+        } catch (InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect(url('back-office/roles-permissions') . '#role-' . $roleId);
     }
 
     public function save(Request $request, array $params = []): Response
