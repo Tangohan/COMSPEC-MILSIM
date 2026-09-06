@@ -584,6 +584,12 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(429, '2026-09-06', 'Page d’intervention du portail', 'Lorsque le portail est fermé pour une intervention, une page claire reprend le ton de l’accueil Athena. Le texte explique que les dossiers restent protégés et qu’aucune action n’est demandée. Rechargez la page pour réessayer', [
+                'Une page d’intervention sobre, aux couleurs de l’accueil Athena',
+                'Le message indique que les dossiers, les cartes et les liaisons restent protégés',
+            ], [
+                'Le bouton Réessayer ramène à l’accueil dès la réouverture',
+            ], [], ['personnel', 'command']),
             $pr(428, '2026-09-04', 'L’appareil photo envoie le cliché au poste, fonds d’écran sur l’accueil', 'L’appareil photo du téléphone prend un cliché et l’envoie au poste, onglet Photos. Vous pouvez choisir un fond d’écran sur l’accueil. Relancer Arma complètement après le nouveau pack', [
                 'L’appareil photo du téléphone prend un cliché et l’envoie au poste, onglet Photos',
                 'Le viseur se masque le temps de la prise, pour ne pas apparaître sur le cliché',

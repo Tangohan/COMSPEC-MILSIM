@@ -33,24 +33,24 @@ if ($scopeRaw === '' || $scopeRaw === 'global') {
 
 $presets = [
     'standard' => [
-        'label' => 'Maintenance standard',
-        'title' => 'Maintenance globale en cours',
-        'message' => "Nos équipes déploient une mise à jour stratégique.\nLe service revient très bientôt.",
+        'label' => 'Intervention planifiée',
+        'title' => 'Maintenance opérationnelle',
+        'message' => "Le portail Athena est fermé le temps d’une intervention de fond. Nous remettons à plat la gestion des communautés : un seul niveau d’accès par membre, des emplois qui suivent l’organigramme, des dossiers plus simples à tenir.\n\nVos dossiers, vos cartes et vos liaisons déjà établies restent protégés. Rien n’est demandé de votre côté. Les opérateurs déjà en mission conservent leur dernière situation connue jusqu’à la réouverture.\n\nNous rouvrons dès que les contrôles sont terminés. Merci de votre patience, et de la confiance que vous accordez à COMSPEC.",
     ],
     'security' => [
-        'label' => 'Incident sécurité',
-        'title' => 'Maintenance sécurité en cours',
-        'message' => "Une opération de sécurisation est en cours.\nL’accès public est temporairement suspendu.",
+        'label' => 'Sécurisation',
+        'title' => 'Sécurisation en cours',
+        'message' => "Une opération de sécurisation est en cours. L’accès public est temporairement suspendu.\n\nVos informations restent protégées. Merci de patienter jusqu’à la réouverture.",
     ],
     'infra' => [
-        'label' => 'Infra / Réseau',
-        'title' => 'Intervention infrastructure',
-        'message' => "Maintenance réseau et infrastructure en cours.\nDes coupures temporaires sont attendues.",
+        'label' => 'Réseau et hébergement',
+        'title' => 'Intervention réseau',
+        'message' => "Une intervention sur le réseau et l’hébergement est en cours. Le portail peut rester inaccessible le temps des contrôles.\n\nNous rouvrons dès que la liaison est rétablie.",
     ],
     'hotfix' => [
-        'label' => 'Hotfix urgent',
-        'title' => 'Déploiement correctif urgent',
-        'message' => "Un correctif critique est en cours de déploiement.\nMerci pour votre patience.",
+        'label' => 'Correctif urgent',
+        'title' => 'Correctif en cours',
+        'message' => "Un correctif urgent est en cours de déploiement. Le portail sera de nouveau disponible dès la fin de l’opération.\n\nMerci de votre patience.",
     ],
 ];
 $currentPreset = (string) ($row['message_preset'] ?? 'standard');
@@ -106,7 +106,7 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
             <div class="mt-5 grid gap-4">
                 <label class="text-sm font-bold text-slate-700">Titre
-                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Maintenance globale en cours'), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Maintenance opérationnelle'), ENT_QUOTES, 'UTF-8') ?>">
                 </label>
                 <label class="text-sm font-bold text-slate-700">Message
                     <textarea name="message" id="maint-message" rows="4" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
