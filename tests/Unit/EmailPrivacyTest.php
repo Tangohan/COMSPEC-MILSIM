@@ -25,13 +25,13 @@ final class EmailPrivacyTest extends TestCase
         self::assertSame('je***@exemple.fr', EmailPrivacy::mask('je***@exemple.fr'));
     }
 
-    public function testDisplayRevealsOnlyForSiteAdmin(): void
+    public function testDisplayNeverRevealsThroughAPlatformWideGrant(): void
     {
         Gate::getInstance()->setPermissions(['admin.organization']);
         self::assertSame('je***@exemple.fr', EmailPrivacy::display('jean.dupont@exemple.fr'));
 
         Gate::getInstance()->setPermissions(['admin.system']);
-        self::assertSame('jean.dupont@exemple.fr', EmailPrivacy::display('jean.dupont@exemple.fr'));
+        self::assertSame('je***@exemple.fr', EmailPrivacy::display('jean.dupont@exemple.fr'));
     }
 
     public function testMaskViewDataHidesOtherMembersButNotFormPrefill(): void

@@ -27,10 +27,11 @@ final class PermissionImplication
      */
     public static function isGranted(array $granted, string $permission): bool
     {
-        if ($permission === '') {
+        if ($permission === '' || SystemReservedPermissions::isReserved($permission)) {
             return false;
         }
-        if (in_array($permission, $granted, true) || in_array('*', $granted, true)) {
+        $granted = SystemReservedPermissions::filter($granted);
+        if (in_array($permission, $granted, true)) {
             return true;
         }
 
@@ -44,13 +45,6 @@ final class PermissionImplication
             return true;
         }
 
-        if (in_array('admin.system', $granted, true)) {
-            return true;
-        }
-
-        if (in_array('site.support', $granted, true) && self::impliedBySiteSupport($permission)) {
-            return true;
-        }
 
         if (in_array('admin.access', $granted, true) && in_array($permission, self::tenantCatalogSlugs(), true)) {
             return true;
