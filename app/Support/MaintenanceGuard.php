@@ -110,11 +110,16 @@ final class MaintenanceGuard
         if (str_starts_with($text, '{')) {
             $decoded = json_decode($text, true);
             if (is_array($decoded)) {
-                foreach (['FR', 'fr', 'EN', 'en'] as $key) {
-                    $picked = trim((string) ($decoded[$key] ?? ''));
-                    if ($picked !== '') {
-                        return $picked;
-                    }
+                $fr = trim((string) ($decoded['FR'] ?? $decoded['fr'] ?? ''));
+                $en = trim((string) ($decoded['EN'] ?? $decoded['en'] ?? ''));
+                if ($fr !== '' && $en !== '') {
+                    return "FR\n{$fr}\n\n---\n\nEN\n{$en}";
+                }
+                if ($fr !== '') {
+                    return $fr;
+                }
+                if ($en !== '') {
+                    return $en;
                 }
                 $first = reset($decoded);
                 if (is_string($first) && trim($first) !== '') {

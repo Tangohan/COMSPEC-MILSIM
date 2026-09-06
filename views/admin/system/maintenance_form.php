@@ -110,7 +110,8 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                     <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Nous revenons bientôt'), ENT_QUOTES, 'UTF-8') ?>">
                 </label>
                 <label class="text-sm font-bold text-slate-700">Message
-                    <textarea name="message" id="maint-message" rows="4" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <textarea name="message" id="maint-message" rows="6" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <span class="mt-1.5 block text-xs font-medium text-slate-500">Markdown pris en charge : titres, listes, gras, liens, séparateur <code>---</code>, libellés FR / EN.</span>
                 </label>
             </div>
 
