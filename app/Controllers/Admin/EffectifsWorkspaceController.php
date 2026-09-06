@@ -1809,7 +1809,9 @@ class EffectifsWorkspaceController
             'effectifsContent' => $content,
             'isBackOfficeShell' => true,
             'boSkipPageHead' => true,
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css'],
+            // The member page embeds the personnel editor. Its response only contains
+            // the view body, so its component stylesheet must be loaded by this shell.
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,

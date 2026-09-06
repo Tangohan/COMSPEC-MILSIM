@@ -79,7 +79,7 @@ foreach ($groups as $items) {
         <p>Les badges signalent les files qui demandent une décision. Les actions sensibles restent confirmées dans une fenêtre dédiée.</p>
     </div>
 
-    <section class="bo-eff-content ath-rise">
+    <section class="bo-eff-content<?= $innerContent === 'admin.effectifs_workspace.member' ? ' bo-eff-content--member' : '' ?> ath-rise">
         <?php
         $innerPath = base_path('views/' . str_replace('.', '/', $innerContent) . '.php');
         if (is_file($innerPath)) {

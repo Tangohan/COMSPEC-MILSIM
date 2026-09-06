@@ -187,11 +187,27 @@ $memberHubTheme = 'lms';
 </section>
 
 <?php if ($canEditProfiles && $memberEditorHtml !== ''): ?>
-<section id="modifier-dossier" class="eff-card" style="margin-bottom:1rem;scroll-margin-top:1rem">
-    <h2 class="eff-card__title">Modifier le dossier complet</h2>
-    <p class="eff-card__lead">Tous les champs du dossier sont regroupés ici, sans ouvrir une autre page.</p>
-    <?= $memberEditorHtml ?>
-</section>
+<details id="modifier-dossier" class="eff-card eff-editor" style="margin-bottom:1rem;scroll-margin-top:1rem">
+    <summary class="eff-editor__summary">
+        <span>
+            <span class="eff-card__title">Modifier le dossier complet</span>
+            <span class="eff-card__lead">Identité, affectation, matricules, équipement et notes de commandement.</span>
+        </span>
+        <span class="eff-editor__toggle" aria-hidden="true">Ouvrir l’éditeur</span>
+    </summary>
+    <div class="eff-editor__body"><?= $memberEditorHtml ?></div>
+</details>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var editor = document.getElementById('modifier-dossier');
+    if (!editor) return;
+    var openEditor = function () {
+        if (window.location.hash === '#modifier-dossier') editor.open = true;
+    };
+    openEditor();
+    window.addEventListener('hashchange', openEditor);
+});
+</script>
 <?php endif; ?>
 
 <div class="eff-fiche-grid">
