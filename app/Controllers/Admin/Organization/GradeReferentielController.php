@@ -28,7 +28,7 @@ class GradeReferentielController
         if (!(int) Session::get('tenant_id')) {
             return Response::redirect(url('login'));
         }
-        $tab = $request->input('tab') ?: 'fr';
+        $tab = $this->normalizeTab((string) $request->query('tab', 'fr'));
         $categoryFilter = (int) $request->query('categorie', 0);
         $categoryFilter = $categoryFilter > 0 ? $categoryFilter : null;
         $systems = $this->gradeSystemRepository->listActive();
@@ -58,12 +58,14 @@ class GradeReferentielController
         }
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
+        $returnTab = $this->normalizeGradeTab((string) $request->query('tab', 'fr'));
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
             'title' => 'Nouveau grade',
             'grade' => null,
             'systems' => $systems,
             'categories' => $categories,
+            'returnTab' => $returnTab,
         ]);
     }
 
@@ -77,6 +79,7 @@ class GradeReferentielController
             return Response::redirect(url('back-office/referentiels/grades/create'));
         }
         $systemId = (int) $request->input('grade_system_id');
+        $returnTab = $this->tabForSystemId($systemId);
         $categoryId = (int) $request->input('grade_category_id');
         $code = trim((string) $request->input('code'));
         $labelShort = trim((string) $request->input('label_short'));
@@ -97,7 +100,7 @@ class GradeReferentielController
             'is_active' => 1,
         ]);
         Session::flash('success', 'Grade créé.');
-        return Response::redirect(url('back-office/referentiels/grades'));
+        return Response::redirect($this->indexUrl($returnTab));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -113,12 +116,14 @@ class GradeReferentielController
         }
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
+        $returnTab = $this->tabForGrade($grade);
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
             'title' => 'Modifier le grade',
             'grade' => $grade,
             'systems' => $systems,
             'categories' => $categories,
+            'returnTab' => $returnTab,
         ]);
     }
 
@@ -158,7 +163,7 @@ class GradeReferentielController
             'is_active' => $request->input('is_active') ? 1 : 0,
         ]);
         Session::flash('success', 'Grade mis à jour.');
-        return Response::redirect(url('back-office/referentiels/grades'));
+        return Response::redirect($this->indexUrl($this->tabForSystemId($systemId)));
     }
 
     public function deactivate(Request $request, array $params = []): Response
@@ -171,11 +176,44 @@ class GradeReferentielController
             return Response::redirect(url('back-office/referentiels/grades'));
         }
         $id = (int) ($params['id'] ?? 0);
+        $grade = $id ? $this->gradeRepository->findById($id) : null;
         if ($id && $this->gradeRepository->setActive($id, false)) {
-            Session::flash('success', 'Grade désactivé.');
+            Session::flash('success', 'Grade supprimé du référentiel actif.');
         } else {
-            Session::flash('error', 'Impossible de désactiver le grade.');
+            Session::flash('error', 'Impossible de supprimer le grade.');
         }
-        return Response::redirect(url('back-office/referentiels/grades'));
+        return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
+    }
+
+    private function normalizeTab(string $tab): string
+    {
+        return in_array($tab, ['fr', 'us', 'otan', 'categories'], true) ? $tab : 'fr';
+    }
+
+    private function normalizeGradeTab(string $tab): string
+    {
+        return $tab === 'us' ? 'us' : 'fr';
+    }
+
+    /** @param array<string, mixed>|null $grade */
+    private function tabForGrade(?array $grade): string
+    {
+        return strtoupper((string) ($grade['country_code'] ?? 'FR')) === 'US' ? 'us' : 'fr';
+    }
+
+    private function tabForSystemId(int $systemId): string
+    {
+        foreach ($this->gradeSystemRepository->listActive() as $system) {
+            if ((int) ($system['id'] ?? 0) === $systemId) {
+                return strtoupper((string) ($system['country_code'] ?? 'FR')) === 'US' ? 'us' : 'fr';
+            }
+        }
+
+        return 'fr';
+    }
+
+    private function indexUrl(string $tab): string
+    {
+        return url('back-office/referentiels/grades') . '?tab=' . rawurlencode($this->normalizeGradeTab($tab));
     }
 }
