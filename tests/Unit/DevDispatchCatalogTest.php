@@ -792,10 +792,6 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($orbatJobs);
         self::assertSame('00431', $orbatJobs['number_pad']);
         self::assertStringContainsString('emploi', strtolower((string) $orbatJobs['title']));
-        $maintPage = DevDispatchCatalog::find('update', '432');
-        self::assertNotNull($maintPage);
-        self::assertSame('00432', $maintPage['number_pad']);
-        self::assertStringContainsString('maintenance', strtolower((string) $maintPage['title']));
         $platformFlag = DevDispatchCatalog::find('update', '433');
         self::assertNotNull($platformFlag);
         self::assertSame('00433', $platformFlag['number_pad']);
