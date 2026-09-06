@@ -20,9 +20,11 @@ final class MaintenanceUiAssetTest extends TestCase
         self::assertStringContainsString('Réessayer', $view);
         self::assertStringContainsString('Athena', $view);
         self::assertStringContainsString('fog-team.jpg', $view);
-        self::assertStringContainsString('Instrument Serif', $view);
         self::assertStringContainsString('MaintenanceMarkdown', $view);
         self::assertStringContainsString('linear-gradient(180deg, transparent 0%', $view);
+        self::assertStringNotContainsString('Instrument Serif', $view);
+        self::assertStringNotContainsString('class="brand"', $view);
+        self::assertStringNotContainsString('Athena<em>', $view);
         self::assertStringNotContainsString('bar__mark', $view);
         self::assertStringNotContainsString('letter-spacing: 0.28em', $view);
         self::assertStringNotContainsString('Space Mono', $view);
