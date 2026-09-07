@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
@@ -53,26 +54,24 @@ final class PersonnelCorrectionController
         $snapshot = $this->correctionService->currentSnapshot($targetId);
         $pending = $this->correctionRepository->listForTarget($tenantId, $targetId, 5);
         $hasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, $targetId);
-        $choices = PersonnelCorrectionRequestService::choiceCatalog();
-        $choices['grade_id'] = $this->gradeChoices($tenantId);
-        $choices['units'] = $this->unitChoices($tenantId);
-        $choices['job_roles'] = $this->jobRoleChoices($tenantId);
+        $staff = $this->canStaffManage();
 
         return Response::view('layout.main', [
-            'title' => 'Correction RH — anomalie',
+            'title' => $staff ? 'Dossier — Corrections RH' : 'Correction RH — anomalie',
             'content' => 'personnel.correction_form',
             'targetUser' => $target,
             'snapshot' => $snapshot,
-            'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(),
-            'fieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(),
+            'personnelProfile' => (new PersonnelProfileRepository())->getByUserId($targetId) ?? [],
+            'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels($staff),
+            'fieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog($staff),
             'fieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
-            'choiceCatalog' => $choices,
+            'choiceCatalog' => $this->correctionChoices($tenantId, $snapshot, $staff),
             'pending' => $pending,
             'hasOpen' => $hasOpen,
             'isSelf' => $isSelf,
-            'canApplyImmediately' => $this->canStaffManage(),
+            'canApplyImmediately' => $staff,
             'csrf' => Csrf::token(),
-            'backOfficePageCss' => ['personnel-dossier.css'],
+            'backOfficePageCss' => ['personnel-dossier.css', 'back-office-corrections.css'],
         ]);
     }
 
@@ -98,7 +97,7 @@ final class PersonnelCorrectionController
             return Response::redirect(url('personnel/' . max(1, $targetId)));
         }
 
-        $fields = $this->collectCorrectionFields($request);
+        $fields = $this->collectCorrectionFields($request, $this->canStaffManage());
         $applyNow = $this->canStaffManage() && (string) $request->input('apply_now', '') === '1';
         $result = $applyNow
             ? $this->correctionService->applyDirect(
@@ -152,21 +151,6 @@ final class PersonnelCorrectionController
         }
         unset($row);
 
-        $directTargetId = (int) $request->query('membre', 0);
-        $directTarget = $directTargetId > 0 ? $this->userRepository->findById($directTargetId, $tenantId) : null;
-        $directSnapshot = [];
-        $directPending = [];
-        $directHasOpen = false;
-        $choices = PersonnelCorrectionRequestService::choiceCatalog();
-        if (is_array($directTarget)) {
-            $directSnapshot = $this->correctionService->currentSnapshot((int) $directTarget['id']);
-            $directPending = $this->correctionRepository->listForTarget($tenantId, (int) $directTarget['id'], 5);
-            $directHasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, (int) $directTarget['id']);
-            $choices['grade_id'] = $this->gradeChoices($tenantId);
-            $choices['units'] = $this->unitChoices($tenantId);
-            $choices['job_roles'] = $this->jobRoleChoices($tenantId);
-        }
-
         $members = [];
         foreach ($this->userRepository->listForTenant($tenantId, null, 'active', null, null, null, true) as $u) {
             $id = (int) ($u['id'] ?? 0);
@@ -177,11 +161,30 @@ final class PersonnelCorrectionController
         }
         usort($members, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
 
+        $directTargetId = (int) $request->query('membre', 0);
+        $directTarget = $directTargetId > 0 ? $this->userRepository->findById($directTargetId, $tenantId) : null;
+        $directSnapshot = [];
+        $directPending = [];
+        $directHasOpen = false;
+        $directProfile = [];
+        $choices = PersonnelCorrectionRequestService::choiceCatalog();
+        if (is_array($directTarget)) {
+            $directSnapshot = $this->correctionService->currentSnapshot((int) $directTarget['id']);
+            $directPending = $this->correctionRepository->listForTarget($tenantId, (int) $directTarget['id'], 5);
+            $directHasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, (int) $directTarget['id']);
+            $directProfile = (new PersonnelProfileRepository())->getByUserId((int) $directTarget['id']) ?? [];
+            $choices = $this->correctionChoices($tenantId, $directSnapshot, true, false);
+            $choices['tutors'] = [];
+            foreach ($members as $m) {
+                $choices['tutors'][] = ['value' => (string) $m['id'], 'label' => $m['label']];
+            }
+        }
+
         return Response::view('layout.main', [
             'title' => 'Corrections RH en attente',
             'content' => 'personnel.corrections_queue',
             'requests' => $open,
-            'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(),
+            'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(true),
             'csrf' => Csrf::token(),
             'pendingCount' => count($open),
             'directMembers' => $members,
@@ -189,9 +192,10 @@ final class PersonnelCorrectionController
             'directSnapshot' => $directSnapshot,
             'directPending' => $directPending,
             'directHasOpen' => $directHasOpen,
-            'directFieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(),
+            'directFieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(true),
             'directFieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
             'directChoiceCatalog' => $choices,
+            'personnelProfile' => $directProfile,
             'backOfficePageCss' => ['back-office-corrections.css', 'personnel-dossier.css'],
         ]);
     }
@@ -219,7 +223,7 @@ final class PersonnelCorrectionController
             $tenantId,
             (int) $viewer['id'],
             $targetId,
-            $this->collectCorrectionFields($request),
+            $this->collectCorrectionFields($request, true),
             (string) $request->input('note', '')
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
@@ -289,16 +293,91 @@ final class PersonnelCorrectionController
     /**
      * @return array<string, mixed>
      */
-    private function collectCorrectionFields(Request $request): array
+    private function collectCorrectionFields(Request $request, bool $forStaff = false): array
     {
         $fields = [];
-        foreach (array_keys(PersonnelCorrectionRequestService::fieldLabels()) as $key) {
+        foreach (array_keys(PersonnelCorrectionRequestService::fieldLabels($forStaff)) as $key) {
+            if ($key === 'unit_assignments') {
+                if ($request->input($key) === null) {
+                    continue;
+                }
+                $fields[$key] = $this->collectIndexedRows(
+                    $request,
+                    'unit_assignments',
+                    'unit_primary_index'
+                );
+                continue;
+            }
+            if ($key === 'job_roles') {
+                if ($request->input($key) === null) {
+                    continue;
+                }
+                $fields[$key] = $this->collectIndexedRows(
+                    $request,
+                    'job_roles',
+                    'job_primary_index'
+                );
+                continue;
+            }
+            if ($key === 'deployable') {
+                if ($request->input($key) === null) {
+                    continue;
+                }
+                $fields[$key] = (string) $request->input('deployable', '0');
+                continue;
+            }
             if ($request->input($key) !== null) {
                 $fields[$key] = $request->input($key);
             }
         }
 
         return $fields;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function collectIndexedRows(Request $request, string $key, string $primaryIndexKey): array
+    {
+        $raw = $request->input($key, []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        $primary = (int) $request->input($primaryIndexKey, 0);
+        $out = [];
+        foreach ($raw as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $row['is_primary'] = ((int) $index === $primary) ? 1 : 0;
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     * @return array<string, list<array{value: string, label: string}>>
+     */
+    private function correctionChoices(int $tenantId, array $snapshot = [], bool $fullJobCatalog = false, bool $includeTutors = true): array
+    {
+        $choices = PersonnelCorrectionRequestService::choiceCatalog();
+        $choices['grade_id'] = $this->gradeChoices($tenantId);
+        $choices['units'] = $this->unitChoices($tenantId);
+        $keep = [];
+        foreach (PersonnelCorrectionRequestService::decodeJobRoleRows($snapshot['job_roles'] ?? []) as $row) {
+            $id = (int) ($row['role_id'] ?? $row['personnel_job_role_id'] ?? 0);
+            if ($id > 0) {
+                $keep[] = $id;
+            }
+        }
+        $choices['job_roles'] = $this->jobRoleChoices($tenantId, $keep, $fullJobCatalog);
+        if ($includeTutors) {
+            $choices['tutors'] = $this->tutorChoices($tenantId);
+        }
+
+        return $choices;
     }
 
     /** @param array<string, mixed> $user */
@@ -350,14 +429,17 @@ final class PersonnelCorrectionController
     }
 
     /** @return list<array{value: string, label: string}> */
-    private function jobRoleChoices(int $tenantId): array
+    private function jobRoleChoices(int $tenantId, array $keepRoleIds = [], bool $fullCatalog = false): array
     {
         $repo = new PersonnelJobRoleRepository();
         if (!$repo->tablesExist()) {
             return [];
         }
+        $source = $fullCatalog
+            ? $repo->listRoleOptionsForSelect($tenantId)
+            : $repo->listRoleOptionsForMemberDossier($tenantId, $keepRoleIds);
         $out = [];
-        foreach ($repo->listRoleOptionsForMemberDossier($tenantId) as $opt) {
+        foreach ($source as $opt) {
             $id = (int) ($opt['id'] ?? 0);
             if ($id < 1) {
                 continue;
@@ -365,6 +447,22 @@ final class PersonnelCorrectionController
             $label = trim((string) ($opt['label'] ?? $opt['name'] ?? ''));
             $out[] = ['value' => (string) $id, 'label' => $label !== '' ? $label : ('Emploi #' . $id)];
         }
+
+        return $out;
+    }
+
+    /** @return list<array{value: string, label: string}> */
+    private function tutorChoices(int $tenantId): array
+    {
+        $out = [];
+        foreach ($this->userRepository->listForTenant($tenantId, null, 'active', null, null, null, true) as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $out[] = ['value' => (string) $id, 'label' => $this->memberLabel($u)];
+        }
+        usort($out, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
 
         return $out;
     }

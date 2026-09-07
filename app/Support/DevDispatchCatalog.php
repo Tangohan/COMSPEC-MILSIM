@@ -594,6 +594,34 @@ final class DevDispatchCatalog
             ], [], ['personnel'], [
                 'Ouvrez le parcours d’immersion pour les cadences, le parcours RH pour les étapes, puis une fiche membre. Sans règles, personne n’avance tout seul.',
             ], 'Portail'),
+            $pr(475, '2026-09-07', 'Le dossier se corrige en entier, par onglets', 'Depuis Corrections RH, un responsable ouvre le dossier d’un membre et règle tout : personnage, plusieurs équipes et emplois, immersion, équipement, identifiants, notes et portrait. Les listes d’emplois affichent le nom de la fonction, et non un numéro. Rechargez Corrections RH, puis ouvrez un membre', [
+                'Dossier complet en onglets, avec en-tête et portrait',
+                'Jusqu’à quatre équipes et quatre emplois, dont un principal',
+                'Immersion, identifiants internes, notes de commandement et disponibilité pour un déploiement',
+            ], [
+                'La liste des emplois reprend le nom de la fonction, plus seulement un numéro',
+            ], [
+                'Une partie du dossier restait hors de portée sur cette page, et l’emploi principal pouvait s’afficher comme un numéro',
+            ], ['personnel'], [
+                'Ouvrez Corrections RH, choisissez un membre, puis parcourez les onglets. Enregistrez : la fiche, l’organigramme et le portail doivent reprendre les mêmes informations.',
+            ], 'Portail'),
+            $pr(474, '2026-09-07', 'Le fichier d’un document s’ouvre après un vrai dépôt', 'Enregistrer la fiche avec un fichier choisi dans Contenu dépose bien cette pièce. Si le fichier annoncé n’est plus disponible, la fiche le dit clairement. L’ouverture depuis le référentiel reprend une version encore présente. Rechargez la fiche, puis le document', [
+                'Choix du fichier dans Contenu, pris en compte par Enregistrer',
+                'Message clair si le fichier n’est plus disponible, pour en déposer un autre',
+            ], [
+                'Ouverture du document : une version encore présente est proposée si la dernière manque',
+            ], [], ['platform'], [
+                'Ouvrez la fiche du document, choisissez le fichier dans Contenu, puis Enregistrer. Depuis le référentiel, Ouvrir le fichier doit montrer cette pièce.',
+            ], 'Portail'),
+            $pr(473, '2026-09-07', 'L’écran de bienvenue s’ouvre en douceur', 'Après connexion, la marque, l’heure et le fond apparaissent progressivement. La carte de profil s’ouvre sans à-coup. Si votre système réduit les animations, l’écran s’affiche d’un seul tenant. Rechargez l’écran de bienvenue', [
+                'Apparition progressive de la marque, de l’heure et de l’invitation à continuer',
+                'Le fond se rapproche légèrement, comme un écran verrouillé',
+                'La carte de profil arrive en fondu lorsque vous appuyez sur Entrée',
+            ], [
+                'L’entrée dans le portail fond l’écran avant d’ouvrir l’espace de travail',
+            ], [], ['platform'], [
+                'Connectez-vous, puis observez l’écran de bienvenue. Appuyez sur Entrée : la carte de profil doit apparaître progressivement. Si votre système réduit les animations, tout s’affiche d’un coup.',
+            ], 'Portail'),
             $pr(472, '2026-09-07', 'Le portrait se change depuis le dossier', 'Sur la fiche, le lien Portrait ouvre maintenant l’édition du dossier, onglet Portrait. Vous y déposez la photo opérateur de cette fiche. Rechargez la fiche, puis Portrait', [
                 'Onglet Portrait dans l’édition du dossier, avec aperçu et dépôt de la photo',
                 'Le lien Portrait de la fiche ouvre cet onglet, plus une page de compte séparée',

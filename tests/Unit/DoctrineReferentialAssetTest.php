@@ -23,6 +23,7 @@ final class DoctrineReferentialAssetTest extends TestCase
         self::assertStringContainsString('Doctrines publiées', $indexView);
         self::assertStringContainsString('category_slug', $indexView);
         self::assertStringContainsString('data-doctrine-ack-form', $showView);
+        self::assertStringContainsString('fileAvailable', $showView);
         self::assertStringContainsString('doctrine-ack-modal__submit', $showView);
         self::assertStringContainsString('Je certifie avoir pris connaissance', $showView);
         self::assertStringContainsString('listPendingActionsForUser', $compliance);

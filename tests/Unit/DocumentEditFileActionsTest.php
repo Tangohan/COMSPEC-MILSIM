@@ -23,6 +23,9 @@ final class DocumentEditFileActionsTest extends TestCase
         self::assertStringContainsString('Je confirme le retrait du fichier joint', $edit);
         self::assertStringContainsString("url('documents/' . \$document['id'] . '/file')", $edit);
         self::assertStringContainsString("url('documents/' . \$document['id'] . '/download')", $edit);
+        self::assertStringContainsString('id="doc-edit-file"', $edit);
+        self::assertStringContainsString('n’est plus disponible', $edit);
+        self::assertGreaterThanOrEqual(2, substr_count($edit, 'enctype="multipart/form-data"'));
         self::assertStringNotContainsString('file_path', $edit);
 
         self::assertStringContainsString("/documents/gestion/{id}/retirer-fichier", $routes);
@@ -30,6 +33,8 @@ final class DocumentEditFileActionsTest extends TestCase
 
         self::assertStringContainsString('function detachFile', $controller);
         self::assertStringContainsString('confirm_detach', $controller);
+        self::assertStringContainsString('uploadNewVersion', $controller);
+        self::assertStringContainsString('nouvelle version du fichier est en place', $controller);
         self::assertStringContainsString('detachCurrentFile', $service);
         self::assertStringContainsString('viewerMayManageAttachedFile', $web);
         self::assertStringContainsString('denyAttachedFileAccess', $web);

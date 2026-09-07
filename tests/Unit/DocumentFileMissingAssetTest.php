@@ -19,6 +19,7 @@ final class DocumentFileMissingAssetTest extends TestCase
         self::assertStringNotContainsString('Fichier absent', $view);
         self::assertStringContainsString('missingDocumentFilePage', $controller);
         self::assertStringContainsString('documents/file_missing', $controller);
+        self::assertStringContainsString('resolveReadableAttachedFile', $controller);
         self::assertStringNotContainsString("setBody('Fichier absent')", $controller);
     }
 }

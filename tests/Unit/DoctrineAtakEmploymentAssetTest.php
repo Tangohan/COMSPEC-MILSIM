@@ -18,6 +18,7 @@ final class DoctrineAtakEmploymentAssetTest extends TestCase
         self::assertStringContainsString('all_members', $seed);
         self::assertStringContainsString('mandatory', $seed);
         self::assertStringContainsString('upgradeAtakEmploymentDoctrineIfDemoPlaceholder', $seed);
+        self::assertStringContainsString('ensureAtakEmploymentBundledFile', $seed);
         self::assertStringContainsString('COMSPEC Overwatch', $markdown);
         self::assertStringContainsString('Prise en compte obligatoire', $markdown);
     }

@@ -18,6 +18,7 @@ use App\Services\Doctrine\DoctrineDocumentAccessService;
 use App\Services\Doctrine\DocumentComplianceService;
 use App\Support\Doctrine\DoctrineComplianceStatus;
 use App\Support\Doctrine\DoctrineWorkflowStatus;
+use App\Support\DocumentAttachedFile;
 
 final class DoctrineDocumentsController
 {
@@ -101,6 +102,22 @@ final class DoctrineDocumentsController
             DoctrineComplianceStatus::OVERDUE,
         ], true);
 
+        $fileAvailable = DocumentAttachedFile::resolveOnDisk(
+            $doc['file_path'] ?? null,
+            isset($doc['original_name']) ? (string) $doc['original_name'] : null
+        ) !== null;
+        if (!$fileAvailable) {
+            foreach ($versions as $versionRow) {
+                if (DocumentAttachedFile::resolveOnDisk(
+                    $versionRow['file_path'] ?? null,
+                    isset($versionRow['original_name']) ? (string) $versionRow['original_name'] : null
+                ) !== null) {
+                    $fileAvailable = true;
+                    break;
+                }
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'documents/doctrine_show',
             'title' => (string) ($doctrine['reference_code'] ?? $doc['title'] ?? 'Doctrine'),
@@ -110,6 +127,7 @@ final class DoctrineDocumentsController
             'currentVersion' => $currentVersion,
             'compliance' => $compliance,
             'needsAckModal' => $needsAckModal,
+            'fileAvailable' => $fileAvailable,
             'deadlineLabel' => $this->complianceService->deadlineLabel($doctrine['acknowledgment_deadline_at'] ?? null),
             'csrf_token' => Csrf::token(),
         ]);

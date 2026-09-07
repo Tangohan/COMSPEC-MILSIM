@@ -88,9 +88,17 @@ $title = (string) ($title ?? 'Bienvenue');
             background-size: cover;
             background-repeat: no-repeat;
             opacity: 0;
+            transform: scale(1.04);
             transition: opacity 1.2s ease;
         }
-        .lock-slide.is-active { opacity: 1; }
+        .lock-slide.is-active {
+            opacity: 1;
+            animation: lockKen 28s ease-in-out infinite alternate;
+        }
+        @keyframes lockKen {
+            from { transform: scale(1.04); }
+            to { transform: scale(1.1); }
+        }
         .lock::before {
             content: "";
             position: absolute;
@@ -121,6 +129,8 @@ $title = (string) ($title ?? 'Bienvenue');
             letter-spacing: .18em;
             font-size: 14px;
             text-transform: uppercase;
+            opacity: 0;
+            animation: lockFadeIn .7s ease .15s forwards;
         }
         .brand-dot {
             width: 9px;
@@ -128,6 +138,7 @@ $title = (string) ($title ?? 'Bienvenue');
             border-radius: 50%;
             background: var(--green);
             box-shadow: 0 0 18px var(--green);
+            animation: lockPulse 2.6s ease-in-out 1s infinite;
         }
         .clock {
             position: absolute;
@@ -135,6 +146,15 @@ $title = (string) ($title ?? 'Bienvenue');
             bottom: 72px;
             z-index: 2;
         }
+        .clock .time,
+        .clock .date,
+        .clock .hint {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        .clock .time { animation: lockRise .85s ease .35s forwards; }
+        .clock .date { animation: lockRise .8s ease .55s forwards; }
+        .clock .hint { animation: lockRise .75s ease .78s forwards; }
         .time {
             font-size: clamp(70px, 9vw, 150px);
             line-height: .86;
@@ -166,16 +186,32 @@ $title = (string) ($title ?? 'Bienvenue');
             -webkit-backdrop-filter: blur(15px);
             opacity: 0;
             pointer-events: none;
-            transition: opacity .28s ease;
+            transition: opacity .42s ease;
             padding: 1.25rem;
         }
         .profile-layer.show {
             opacity: 1;
             pointer-events: auto;
         }
+        .lock:has(.profile-layer.show) .clock {
+            opacity: .28;
+            transition: opacity .4s ease;
+        }
         .card {
             width: min(460px, calc(100vw - 34px));
             text-align: center;
+            opacity: 0;
+            transform: translateY(22px) scale(.97);
+        }
+        .profile-layer.show .card {
+            animation: lockCardIn .55s cubic-bezier(.22, 1, .36, 1) forwards;
+        }
+        .lock.is-leaving .profile-layer,
+        .lock.is-leaving .clock,
+        .lock.is-leaving .brand {
+            animation: none !important;
+            opacity: 0 !important;
+            transition: opacity .35s ease;
         }
         .avatar {
             width: 124px;
@@ -284,10 +320,38 @@ $title = (string) ($title ?? 'Bienvenue');
             .clock { left: 24px; bottom: 36px; }
             .account-fact { font-size: 12px; }
         }
+        @keyframes lockFadeIn {
+            to { opacity: 1; }
+        }
+        @keyframes lockRise {
+            to { opacity: 1; transform: none; }
+        }
+        @keyframes lockCardIn {
+            to { opacity: 1; transform: none; }
+        }
+        @keyframes lockPulse {
+            0%, 100% { box-shadow: 0 0 12px var(--green); opacity: 1; }
+            50% { box-shadow: 0 0 22px var(--green); opacity: .72; }
+        }
         @media (prefers-reduced-motion: reduce) {
+            .brand,
+            .brand-dot,
+            .clock .time,
+            .clock .date,
+            .clock .hint,
+            .profile-layer.show .card,
+            .lock-slide.is-active {
+                animation: none !important;
+                opacity: 1;
+                transform: none;
+            }
             .profile-layer { transition: none; }
             .enter { transition: none; }
-            .lock-slide { transition: none; }
+            .lock-slide { transition: none; transform: none; }
+            .lock:has(.profile-layer.show) .clock { transition: none; opacity: 1; }
+            .lock.is-leaving .profile-layer,
+            .lock.is-leaving .clock,
+            .lock.is-leaving .brand { transition: none; opacity: 1 !important; }
         }
     </style>
 </head>
@@ -353,6 +417,7 @@ $title = (string) ($title ?? 'Bienvenue');
     var btn = document.getElementById('enter-btn');
     var lock = document.getElementById('lock');
     var submitting = false;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function formatDate() {
         var now = new Date();
@@ -365,6 +430,8 @@ $title = (string) ($title ?? 'Bienvenue');
     setInterval(formatDate, 1000);
 
     function showProfile() {
+        profile.classList.remove('show');
+        void profile.offsetWidth;
         profile.classList.add('show');
         profile.setAttribute('aria-hidden', 'false');
         if (btn) btn.focus({ preventScroll: true });
@@ -376,11 +443,12 @@ $title = (string) ($title ?? 'Bienvenue');
     function enterAthena() {
         if (submitting || !form) return;
         submitting = true;
+        if (lock && !reduceMotion) lock.classList.add('is-leaving');
         if (btn) {
             btn.textContent = 'Ouverture…';
             btn.disabled = true;
         }
-        form.submit();
+        window.setTimeout(function () { form.submit(); }, reduceMotion ? 0 : 220);
     }
 
     document.addEventListener('keydown', function (e) {
@@ -399,24 +467,22 @@ $title = (string) ($title ?? 'Bienvenue');
     });
 
     if (form) {
-        form.addEventListener('submit', function () {
-            if (btn && !submitting) {
-                btn.textContent = 'Ouverture…';
-                btn.disabled = true;
-            }
-            submitting = true;
+        form.addEventListener('submit', function (e) {
+            if (submitting) return;
+            e.preventDefault();
+            enterAthena();
         });
     }
 
     var slides = document.querySelectorAll('.lock-slide');
     var rotate = <?= $lockBackgroundRotate ? 'true' : 'false' ?>;
     var intervalMs = <?= (int) $lockBackgroundIntervalMs ?>;
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (rotate && slides.length > 1 && !reduceMotion) {
         var slideIndex = 0;
         window.setInterval(function () {
             slides[slideIndex].classList.remove('is-active');
             slideIndex = (slideIndex + 1) % slides.length;
+            void slides[slideIndex].offsetWidth;
             slides[slideIndex].classList.add('is-active');
         }, intervalMs);
     }

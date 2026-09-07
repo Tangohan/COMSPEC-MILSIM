@@ -353,6 +353,11 @@ class AdminDocumentsController
         $tenantId = (int) $tenantId;
         $tenantRow = (new TenantRepository())->findById($tenantId);
         $issuing = is_array($tenantRow) ? trim((string) ($tenantRow['name'] ?? '')) : '';
+        $attachedResolved = DocumentAttachedFile::resolveOnDisk(
+            $doc['file_path'] ?? null,
+            isset($doc['original_name']) ? (string) $doc['original_name'] : null
+        );
+        $hasPointer = DocumentAttachedFile::hasPointer($doc['file_path'] ?? null);
         return Response::view('layout.main', [
             'content' => 'admin.documents.edit',
             'title' => 'Modifier le document',
@@ -374,7 +379,8 @@ class AdminDocumentsController
             'manuscript' => DocumentManuscript::forView($doc, $issuing),
             'issuingAuthorityDefault' => $issuing,
             'documentFmPage' => true,
-            'hasAttachedFile' => DocumentAttachedFile::hasPointer($doc['file_path'] ?? null),
+            'hasAttachedFile' => $hasPointer || $attachedResolved !== null,
+            'attachedFileMissing' => $hasPointer && $attachedResolved === null,
             'attachedLabel' => DocumentAttachedFile::displayName(
                 isset($doc['original_name']) ? (string) $doc['original_name'] : null,
                 isset($doc['mime_type']) ? (string) $doc['mime_type'] : null
@@ -427,6 +433,45 @@ class AdminDocumentsController
             return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
         }
 
+        $fileReplaced = false;
+        $incoming = $_FILES['file'] ?? null;
+        if (is_array($incoming)) {
+            $uploadError = (int) ($incoming['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($uploadError === UPLOAD_ERR_OK) {
+                try {
+                    $result = $this->uploadService->uploadNewVersion(
+                        (int) $tenantId,
+                        $id,
+                        $incoming,
+                        null,
+                        (int) $userId
+                    );
+                    $this->documentAuditRepository->log($id, (int) $userId, 'version_created', null, [
+                        'version_id' => $result['version_id'] ?? 0,
+                        'from' => 'edit_form',
+                    ]);
+                    $this->auditService->logDocumentUploaded((int) $tenantId, (int) $userId, $id, $result['version_id']);
+                    $fileReplaced = true;
+                } catch (ModerationBlockedException $e) {
+                    Session::set('error', $e->getMessage());
+
+                    return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+                } catch (ModerationQuarantineException $e) {
+                    Session::set('error', $e->getMessage() . ' (réf. artefact #' . $e->artifactId . ').');
+
+                    return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+                } catch (\Throwable $e) {
+                    Session::set('error', 'Le fichier n’a pas pu être enregistré. Vérifiez le format (PDF, image ou vidéo courte) et la taille (10 Mo max).');
+
+                    return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+                }
+            } elseif ($uploadError !== UPLOAD_ERR_NO_FILE) {
+                Session::set('error', 'Le fichier n’a pas pu être reçu. Vérifiez la taille (10 Mo max) puis réessayez.');
+
+                return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
+            }
+        }
+
         $updateData = $this->documentDataFromRequest($request, (int) $tenantId, (int) $userId);
         $updateData['title'] = trim((string) $request->input('title'));
         $updateData['slug'] = $effectiveSlug;
@@ -475,7 +520,9 @@ class AdminDocumentsController
             $this->documentAuditRepository->log($id, (int) $userId, 'document_updated', $oldValues, $updateData);
         }
         $this->auditService->logDocumentUpdated((int) $tenantId, (int) $userId, $id);
-        Session::set('success', 'Document mis à jour.');
+        Session::set('success', $fileReplaced
+            ? 'Document mis à jour. La nouvelle version du fichier est en place.'
+            : 'Document mis à jour.');
         return Response::redirect(url('documents/gestion/' . $id . '/modifier'));
     }
 

@@ -51,6 +51,7 @@ function seedAtakEmploymentDoctrine(PDO $pdo, int $tenantId): void
     $existingId = (int) ($exists->fetchColumn() ?: 0);
     if ($existingId > 0) {
         upgradeAtakEmploymentDoctrineIfDemoPlaceholder($pdo, $tenantId, $existingId);
+        ensureAtakEmploymentBundledFile($pdo, $tenantId, $existingId);
 
         return;
     }
@@ -158,6 +159,8 @@ TXT;
         $seq->execute([$tenantId, 'SIC', 'ATAK', 2026]);
     } catch (\Throwable) {
     }
+
+    ensureAtakEmploymentBundledFile($pdo, $tenantId, $docId);
 }
 
 /**
@@ -227,5 +230,74 @@ TXT;
             $documentId,
         ]);
     } catch (\Throwable) {
+    }
+}
+
+/**
+ * Recopie le texte livré dans le dossier de la communauté si le pointeur
+ * officiel n’a plus de fichier sur le serveur. Ne touche pas à un dépôt
+ * déjà fait par un responsable (PDF ou autre version).
+ */
+function ensureAtakEmploymentBundledFile(PDO $pdo, int $tenantId, int $documentId): void
+{
+    if ($documentId < 1 || $tenantId < 1) {
+        return;
+    }
+    $root = dirname(__DIR__);
+    $bundled = $root . '/storage/documents/doctrine/sic-atak-2026-001.md';
+    if (!is_file($bundled)) {
+        return;
+    }
+
+    $st = $pdo->prepare(
+        'SELECT id, file_path FROM document_versions WHERE document_id = ? AND is_current = 1 LIMIT 1'
+    );
+    $st->execute([$documentId]);
+    $ver = $st->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($ver)) {
+        return;
+    }
+
+    $rel = str_replace('\\', '/', trim((string) ($ver['file_path'] ?? '')));
+    $rel = ltrim($rel, '/');
+    $isOfficialPointer = $rel === 'doctrine/sic-atak-2026-001.md'
+        || str_ends_with($rel, '/sic-atak-2026-001.md')
+        || str_contains($rel, '/documents/demo/');
+    if ($rel !== '' && !$isOfficialPointer) {
+        return;
+    }
+
+    $currentFull = $rel !== '' ? $root . '/storage/documents/' . $rel : '';
+    if ($currentFull !== '' && is_file($currentFull)) {
+        return;
+    }
+
+    $destRel = $tenantId . '/' . $documentId . '/v1.md';
+    $destFull = $root . '/storage/documents/' . $destRel;
+    $dir = dirname($destFull);
+    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        return;
+    }
+    if (!@copy($bundled, $destFull) || !is_file($destFull)) {
+        return;
+    }
+
+    $checksum = hash_file('sha256', $destFull) ?: '';
+    try {
+        $pdo->prepare(
+            'UPDATE document_versions
+             SET file_path = ?, checksum = ?, mime_type = ?, original_name = COALESCE(original_name, ?)
+             WHERE id = ?'
+        )->execute([
+            $destRel,
+            $checksum,
+            'text/markdown',
+            'sic-atak-2026-001.md',
+            (int) $ver['id'],
+        ]);
+    } catch (\Throwable) {
+        $pdo->prepare(
+            'UPDATE document_versions SET file_path = ?, checksum = ?, mime_type = ? WHERE id = ?'
+        )->execute([$destRel, $checksum, 'text/markdown', (int) $ver['id']]);
     }
 }
