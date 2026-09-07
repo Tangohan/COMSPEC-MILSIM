@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(275, $byKind['update']);
-        self::assertCount(281, $all);
+        self::assertSame(280, $byKind['update']);
+        self::assertCount(286, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -972,6 +972,28 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('00476', $cadencesRh['number_pad']);
         self::assertStringContainsString('cadence', strtolower((string) $cadencesRh['title']));
         self::assertStringContainsString('parcours', strtolower((string) $cadencesRh['title']));
+        $suiviFiche = DevDispatchCatalog::find('update', '477');
+        self::assertNotNull($suiviFiche);
+        self::assertSame('00477', $suiviFiche['number_pad']);
+        self::assertStringContainsString('parcours', strtolower((string) $suiviFiche['title']));
+        $dashTour = DevDispatchCatalog::find('update', '478');
+        self::assertNotNull($dashTour);
+        self::assertSame('00478', $dashTour['number_pad']);
+        self::assertStringContainsString('guide', strtolower((string) $dashTour['title']));
+        $playtimeAtak = DevDispatchCatalog::find('update', '479');
+        self::assertNotNull($playtimeAtak);
+        self::assertSame('00479', $playtimeAtak['number_pad']);
+        self::assertStringContainsString('temps', strtolower((string) $playtimeAtak['title']));
+        $doctrinePdf = DevDispatchCatalog::find('update', '480');
+        self::assertNotNull($doctrinePdf);
+        self::assertSame('00480', $doctrinePdf['number_pad']);
+        self::assertStringContainsString('manuel', strtolower((string) $doctrinePdf['title']));
+        $playtimeCtx = DevDispatchCatalog::find('update', '481');
+        self::assertNotNull($playtimeCtx);
+        self::assertSame('00481', $playtimeCtx['number_pad']);
+        self::assertStringContainsString('serveur', strtolower((string) $playtimeCtx['title']));
+        self::assertStringContainsString('zeus', strtolower((string) $playtimeCtx['title']));
+        self::assertStringContainsString('éditeur', strtolower((string) $playtimeCtx['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

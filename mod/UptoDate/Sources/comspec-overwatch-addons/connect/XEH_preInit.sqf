@@ -185,7 +185,7 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_playtime_enabled", "CHECKBOX",
-    ["Record playtime", "Sends time spent in mission to portal (mod connected)"],
+    ["Record playtime", "Sends time spent on the server, in Zeus, and in the editor to the portal (mod connected)"],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 

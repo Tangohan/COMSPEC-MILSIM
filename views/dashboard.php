@@ -167,7 +167,7 @@ require base_path('views/partials/alert_banners.php');
 
         <?php if ($dashboard_is_default_tenant): ?>
         <?php require base_path('views/partials/header_dashboard.php'); ?>
-        <section class="relative overflow-hidden border-b border-emerald-900/20 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#0f172a] text-white">
+        <section class="relative overflow-hidden border-b border-emerald-900/20 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#0f172a] text-white" id="dash-tour-join">
             <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-16">
                 <div class="max-w-3xl">
                     <p class="mb-4 text-[10px] font-black uppercase tracking-[0.45em] text-emerald-300/90"><?= $n('Sans organisation rattachée') ?></p>
@@ -249,7 +249,7 @@ require base_path('views/partials/alert_banners.php');
         $myApplicationsAllRoot = is_array($my_applications_all ?? null) ? $my_applications_all : [];
         ?>
         <?php if ($myApplicationsAllRoot !== []): ?>
-        <section class="border-b border-slate-200 bg-[#f8fafc]">
+        <section class="border-b border-slate-200 bg-[#f8fafc]" id="dash-tour-applications">
             <div class="mx-auto max-w-[100rem] px-4 py-10 sm:px-6 md:px-10">
                 <div class="mb-6 px-2 sm:px-0">
                     <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700"><?= $n('Vue d’ensemble') ?></p>
@@ -287,5 +287,6 @@ require base_path('views/partials/alert_banners.php');
     $lmsModuleEntryAuto = null;
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
+    <?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
 </body>
 </html>

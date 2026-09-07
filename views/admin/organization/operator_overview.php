@@ -23,6 +23,12 @@ $dutyLabel = trim((string) ($operatorDutyLabel ?? ''));
 $functionLabel = trim((string) ($operatorFunctionLabel ?? ''));
 $portraitUrl = trim((string) ($operatorPortraitUrl ?? ''));
 $onboardingNudge = trim((string) ($operatorOnboardingNudge ?? ''));
+$followup = is_array($operatorFollowup ?? null) ? $operatorFollowup : [];
+$followupVisible = !empty($followup['visible']);
+$followupAttention = !empty($followup['attention']);
+$followupItems = is_array($followup['attention_items'] ?? null) ? $followup['attention_items'] : [];
+$followupPhase = is_array($followup['phase'] ?? null) ? $followup['phase'] : null;
+$followupDeadlines = is_array($followup['deadlines'] ?? null) ? $followup['deadlines'] : [];
 
 $h = static fn (mixed $value): string => htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
 $displayName = trim((string) ($user['display_name'] ?? $profile['character_name'] ?? ''));
@@ -74,7 +80,7 @@ $elevationStatusLabel = static function (string $status): string {
     };
 };
 
-$hasSituation = $absences !== [] || $elevations !== [] || $mobility !== [] || $onboardingRemaining !== [] || $inboxUnread > 0 || $alerts !== [];
+$hasSituation = $absences !== [] || $elevations !== [] || $mobility !== [] || $onboardingRemaining !== [] || $inboxUnread > 0 || $alerts !== [] || $followupAttention;
 $linkClass = 'text-sm font-bold text-emerald-700 hover:underline';
 $cardClass = 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm';
 $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
@@ -97,6 +103,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             </div>
             <div class="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end">
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me')) ?>">Voir ma fiche</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Mon suivi</a>
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/mon-espace-rh')) ?>">Mes démarches</a>
             </div>
         </div>
@@ -127,6 +134,49 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             </div>
         </dl>
     </section>
+
+    <?php if ($followupVisible): ?>
+    <section class="<?= $h($cardClass) ?>">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-black text-slate-950">Votre parcours</h2>
+                <p class="mt-2 text-sm text-slate-600">
+                    <?php if ($followupPhase !== null): ?>
+                        Étape actuelle : <strong><?= $h((string) ($followupPhase['label'] ?? '')) ?></strong>
+                        <?php if (!empty($followupPhase['is_last'])): ?>
+                            · dernière étape prévue
+                        <?php elseif (!empty($followupPhase['next_label'])): ?>
+                            · suivante : <strong><?= $h((string) $followupPhase['next_label']) ?></strong>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        Entretien, visite médicale, rotation et bilan de votre dossier.
+                    <?php endif; ?>
+                </p>
+            </div>
+            <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
+        </div>
+        <?php if ($followupDeadlines !== []): ?>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <?php foreach ($followupDeadlines as $card): ?>
+            <article class="rounded-xl border px-4 py-3 <?= !empty($card['overdue']) ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50' ?>">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500"><?= $h((string) ($card['title'] ?? '')) ?></p>
+                <p class="mt-1 font-semibold text-slate-900"><?= $h((string) (($card['date_label'] ?? null) ?: ($card['fallback'] ?? '—'))) ?></p>
+                <?php if (!empty($card['overdue'])): ?>
+                <p class="mt-1 text-xs font-semibold text-rose-800">Échéance dépassée</p>
+                <?php endif; ?>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($followupAttention && $followupItems !== []): ?>
+        <ul class="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
+            <?php foreach ($followupItems as $item): ?>
+            <li><?= $h((string) $item) ?></li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
 
     <div class="grid gap-6 lg:grid-cols-2">
         <section class="<?= $h($cardClass) ?>">
@@ -192,6 +242,26 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                                 <?php endforeach; ?>
                             </ul>
                             <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('mon-integration')) ?>">Ouvrir Mon intégration</a>
+                        </li>
+                    <?php endif; ?>
+                    <?php if ($followupAttention): ?>
+                        <li class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                            <p class="font-semibold text-slate-900">Votre parcours dans l’unité</p>
+                            <p class="mt-1 text-sm text-slate-600">
+                                <?php if ($followupPhase !== null && !empty($followupPhase['next_label'])): ?>
+                                    Prochaine étape : <?= $h((string) $followupPhase['next_label']) ?>.
+                                <?php else: ?>
+                                    Des échéances ou des conditions de votre dossier demandent votre attention.
+                                <?php endif; ?>
+                            </p>
+                            <?php if ($followupItems !== []): ?>
+                            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                                <?php foreach (array_slice($followupItems, 0, 4) as $item): ?>
+                                    <li><?= $h((string) $item) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <?php endif; ?>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
                         </li>
                     <?php endif; ?>
                     <?php foreach ($alerts as $alert): ?>
@@ -301,7 +371,8 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <?php
             $shortcuts = [
-                ['label' => 'Ma fiche', 'hint' => 'Identité, grade et unité', 'href' => url('personnel/me')],
+                ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('personnel/me')],
+                ['label' => 'Mon suivi', 'hint' => 'Parcours, entretien, médical et bilans', 'href' => url('personnel/me') . '?onglet=suivi'],
                 ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('personnel/mon-espace-rh')],
                 ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('evenements')],
                 ['label' => 'Carte ATAK', 'hint' => 'Situation tactique', 'href' => url('atak')],

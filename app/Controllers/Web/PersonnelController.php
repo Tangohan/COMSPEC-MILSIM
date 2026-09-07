@@ -45,6 +45,7 @@ use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PositionRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\BadgeRepository;
+use App\Services\Personnel\PersonnelMemberFollowupSnapshot;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
@@ -654,12 +655,32 @@ class PersonnelController
                 'no_steam_staff' => !$isSelf && $steamIdResolved === null,
                 'schema_ready' => $ready,
                 'hours_label' => null,
+                'server_label' => null,
+                'zeus_label' => null,
+                'editor_label' => null,
+                'breakdown_label' => null,
                 'last_sync_label' => null,
             ];
             if ($steamIdResolved !== null && $ready) {
                 $ptRow = $this->armaPlaytimeRepository->getSummaryForUser((int) $tenantId, $uid);
                 $ptSecs = $ptRow !== null ? (int) ($ptRow['total_seconds'] ?? 0) : 0;
                 $armaPlaytime['hours_label'] = $this->formatArmaPlaytimeFrench($ptSecs);
+                $serverSecs = $ptRow !== null ? (int) ($ptRow['server_seconds'] ?? 0) : 0;
+                $zeusSecs = $ptRow !== null ? (int) ($ptRow['zeus_seconds'] ?? 0) : 0;
+                $editorSecs = $ptRow !== null ? (int) ($ptRow['editor_seconds'] ?? 0) : 0;
+                if ($serverSecs > 0) {
+                    $armaPlaytime['server_label'] = $this->formatArmaPlaytimeFrench($serverSecs);
+                }
+                if ($zeusSecs > 0) {
+                    $armaPlaytime['zeus_label'] = $this->formatArmaPlaytimeFrench($zeusSecs);
+                }
+                if ($editorSecs > 0) {
+                    $armaPlaytime['editor_label'] = $this->formatArmaPlaytimeFrench($editorSecs);
+                }
+                if (function_exists('format_arma_playtime_breakdown_french') && is_array($ptRow)) {
+                    $breakdown = format_arma_playtime_breakdown_french($ptRow);
+                    $armaPlaytime['breakdown_label'] = $breakdown !== '' ? $breakdown : null;
+                }
                 if ($ptRow && !empty($ptRow['last_report_at'])) {
                     $tsPt = strtotime((string) $ptRow['last_report_at']);
                     if ($tsPt) {
@@ -688,6 +709,14 @@ class PersonnelController
                 $armaSessionActivity = null;
             }
         }
+
+        $memberFollowup = PersonnelMemberFollowupSnapshot::build(
+            is_array($personnelProfile) ? $personnelProfile : [],
+            $roleplayFollowupConfig,
+            is_array($phaseChecklist) ? $phaseChecklist : null,
+            trim((string) ($target['created_at'] ?? '')) ?: null,
+            $rpTutorLabel
+        );
 
         $communityRoleLabel = null;
         $roleId = (int) ($target['role_id'] ?? 0);
@@ -870,6 +899,7 @@ class PersonnelController
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'roleplayEligibility' => $roleplayEligibility,
             'rpTutorLabel' => $rpTutorLabel,
+            'memberFollowup' => $memberFollowup,
             'roleplayTimelineEvents' => $roleplayTimelineEvents,
             'canViewBilans' => $canViewBilans,
             'canCreateBilans' => $canCreateBilans,

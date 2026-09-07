@@ -19,6 +19,7 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
         self::assertStringContainsString('upcomingForTenantWithUserRsvp', $controller);
         self::assertStringContainsString('listActiveForUser', $controller);
         self::assertStringContainsString('operatorOnboardingRemaining', $controller);
+        self::assertStringContainsString('operatorFollowup', $controller);
         self::assertStringContainsString('OPÉRATEUR · MA SITUATION', $controller);
 
         self::assertStringContainsString('Ce qui vous concerne', $view);
@@ -26,6 +27,8 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
         self::assertStringContainsString('Ma liaison ATAK', $view);
         self::assertStringContainsString('Communauté', $view);
         self::assertStringContainsString('Mes démarches', $view);
+        self::assertStringContainsString('Votre parcours', $view);
+        self::assertStringContainsString('Ouvrir le suivi complet', $view);
         self::assertStringContainsString('url(\'personnel/me\')', $view);
         self::assertStringContainsString('url(\'evenements\')', $view);
         self::assertStringContainsString('url(\'boite-reception\')', $view);
@@ -40,6 +43,7 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
 
         self::assertStringContainsString("'key' => 'ma-situation'", $nav);
         self::assertStringContainsString("'label' => 'Mes démarches'", $nav);
+        self::assertStringContainsString("'label' => 'Mon suivi'", $nav);
         self::assertStringContainsString('$isOperatorBoNav', $sidebar);
         self::assertStringContainsString('ESPACE OPÉRATEUR', $sidebar);
     }

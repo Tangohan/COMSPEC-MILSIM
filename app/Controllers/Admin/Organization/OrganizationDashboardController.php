@@ -43,7 +43,10 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\GradeDisplayService;
 use App\Services\Notifications\PersonalMessageUnreadCounter;
 use App\Services\Personnel\PersonnelDutyPositionService;
+use App\Services\Personnel\PersonnelMemberFollowupSnapshot;
 use App\Services\Personnel\PersonnelProfileGapScanService;
+use App\Services\Personnel\PhaseRules\PhaseTransitionService;
+use App\Services\Personnel\RoleplayFollowupSettings;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 use App\Support\AlertDisplayStyle;
@@ -678,6 +681,43 @@ class OrganizationDashboardController
             $onboardingNudge = '';
         }
 
+        $operatorFollowup = [
+            'visible' => false,
+            'attention' => false,
+            'attention_items' => [],
+        ];
+        try {
+            $rpCfg = RoleplayFollowupSettings::forTenant($tenantId);
+            $phaseCheck = null;
+            try {
+                $phaseCheck = Container::get(PhaseTransitionService::class)->checklistForMember($tenantId, $userId);
+            } catch (\Throwable) {
+                $phaseCheck = null;
+            }
+            $tutorLabel = null;
+            $tutorId = (int) ($profile['rp_tutor_user_id'] ?? 0);
+            if ($tutorId > 0) {
+                $tutor = $this->users->findById($tutorId, $tenantId);
+                if (is_array($tutor)) {
+                    $tutorLabel = trim((string) ($tutor['display_name'] ?? ''))
+                        ?: trim((string) ($tutor['callsign'] ?? ''));
+                }
+            }
+            $operatorFollowup = PersonnelMemberFollowupSnapshot::build(
+                is_array($profile) ? $profile : [],
+                $rpCfg,
+                is_array($phaseCheck) ? $phaseCheck : null,
+                trim((string) ($user['created_at'] ?? '')) ?: null,
+                $tutorLabel
+            );
+        } catch (\Throwable) {
+            $operatorFollowup = [
+                'visible' => false,
+                'attention' => false,
+                'attention_items' => [],
+            ];
+        }
+
         $portraitUrl = null;
         if (function_exists('personnel_operator_portrait_url')) {
             $portraitUrl = personnel_operator_portrait_url($profile);
@@ -709,6 +749,7 @@ class OrganizationDashboardController
             'operatorInboxUnread' => $inboxUnread,
             'operatorOnboardingRemaining' => $onboardingRemaining,
             'operatorOnboardingNudge' => $onboardingNudge,
+            'operatorFollowup' => $operatorFollowup,
         ]);
     }
 

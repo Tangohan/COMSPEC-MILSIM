@@ -1466,6 +1466,18 @@ CREATE TABLE IF NOT EXISTS `user_alert_dismissals` (
   CONSTRAINT `user_alert_dismissals_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `user_ui_tours` (
+  `user_id` int unsigned NOT NULL,
+  `tour_key` varchar(64) NOT NULL,
+  `dismissed_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`tour_key`),
+  KEY `idx_uut_dismissed` (`user_id`,`dismissed_at`),
+  CONSTRAINT `user_ui_tours_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Paramètres par tenant (clé/valeur, ex. forum_*)
 CREATE TABLE IF NOT EXISTS `site_settings` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,

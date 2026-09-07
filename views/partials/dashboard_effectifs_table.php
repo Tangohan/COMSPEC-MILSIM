@@ -164,6 +164,7 @@ $rowCount = count($rows);
                     $primaryRole = trim((string) ($row['primary_role'] ?? ''));
                     $status = trim((string) ($row['status'] ?? ''));
                     $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
+                    $playtimeDetail = trim((string) ($row['arma_playtime_detail'] ?? ''));
                     $playtimeSeconds = (int) ($row['arma_playtime_seconds'] ?? 0);
                     if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
                         $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
@@ -220,7 +221,7 @@ $rowCount = count($rows);
                                 <?php endif; ?>
                                 <?php if ($seniorityLabel !== '' && $playtimeLabel !== ''): ?> · <?php endif; ?>
                                 <?php if ($playtimeLabel !== ''): ?>
-                                    <span class="dash-eff-playtime"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="dash-eff-playtime"<?php if ($playtimeDetail !== ''): ?> title="<?= htmlspecialchars($playtimeDetail, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endif; ?>
                             </p>
                         <?php endif; ?>
@@ -287,6 +288,7 @@ $rowCount = count($rows);
                             $primaryRole = trim((string) ($row['primary_role'] ?? ''));
                             $status = trim((string) ($row['status'] ?? ''));
                             $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
+                            $playtimeDetail = trim((string) ($row['arma_playtime_detail'] ?? ''));
                             $playtimeSeconds = (int) ($row['arma_playtime_seconds'] ?? 0);
                             if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
                                 $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
@@ -354,7 +356,7 @@ $rowCount = count($rows);
                                 </td>
                                 <td class="das-hide-lg">
                                     <?php if ($playtimeLabel !== ''): ?>
-                                        <span class="dash-eff-playtime" title="Temps de mission transmis par la liaison terrain"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="dash-eff-playtime" title="<?= htmlspecialchars($playtimeDetail !== '' ? $playtimeDetail : 'Temps de mission transmis par la liaison terrain', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php else: ?>
                                         <span class="das-muted">—</span>
                                     <?php endif; ?>

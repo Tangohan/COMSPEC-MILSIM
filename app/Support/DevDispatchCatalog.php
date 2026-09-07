@@ -584,6 +584,43 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(481, '2026-09-07', 'Le temps de jeu distingue serveur, Zeus et éditeur', 'Le terminal envoie désormais séparément le temps passé en serveur, le temps passé en Zeus et le temps passé dans l’éditeur. Le tableau de bord garde le total ; la fiche affiche le détail. Relancez Arma après mise à jour du pack', [
+                'Temps en serveur, en Zeus et dans l’éditeur enregistrés à part',
+                'Détail visible sur la fiche du membre',
+            ], [
+                'Le total déjà enregistré reste affiché ; le détail se complète à partir des prochaines sessions',
+            ], [], ['atak', 'personnel'], [
+                'Reliez le terminal, jouez en serveur puis ouvrez Zeus : la fiche doit montrer deux durées distinctes. Dans l’éditeur, le temps s’ajoute à la troisième catégorie si le pack est relié au poste.',
+            ], 'Pack ATAK'),
+            $pr(480, '2026-09-07', 'Le manuel d’emploi ATAK / Athena est le document PDF officiel', 'Dans le catalogue, la doctrine d’emploi du terminal et du poste est désormais le manuel PDF officiel. Ouvrir et Télécharger proposent ce document, à la place de l’ancien texte. Rechargez le catalogue Documents', [
+                'Manuel PDF officiel pour la doctrine d’emploi ATAK / Athena',
+            ], [], [], ['atak'], [
+                'Ouvrez Documents, carte « Doctrine d’emploi d’ATAK / Overwatch Athena », puis Ouvrir : le manuel PDF doit s’afficher.',
+            ], 'Portail'),
+            $pr(479, '2026-09-07', 'Le temps en mission remonte depuis le terminal, et les listes des paramètres se lisent mieux', 'Lorsque le téléphone ATAK est relié au poste, le temps passé en mission est désormais envoyé automatiquement. Il apparaît ensuite sur le tableau de bord et la fiche. Dans Paramètres, le texte des listes (profil audio, grille, police de la mini-carte) est un peu plus grand. Relancez Arma après mise à jour du pack', [
+                'Envoi du temps de mission depuis le terminal relié au poste',
+                'Listes des paramètres plus lisibles',
+            ], [
+                'Le cumul n’est pas doublé si le pack Overwatch envoie déjà ce temps',
+            ], [], ['atak'], [
+                'Reliez le terminal, restez en mission quelques minutes, puis ouvrez le tableau de bord : le temps doit augmenter. Dans Paramètres, ouvrez une liste : le texte doit être lisible.',
+            ], 'Pack ATAK'),
+            $pr(478, '2026-09-07', 'Un guide visuel présente le tableau de bord', 'À l’ouverture du tableau de bord, un guide parcourt la barre haute puis les grandes zones de la page : identité, briefing, formations, activité. Vous pouvez le masquer à tout moment ; le choix est mémorisé sur votre compte. Le bouton Guide, dans la barre, permet de le relancer. Rechargez le tableau de bord', [
+                'Guide visuel de la barre de navigation et des sections du tableau de bord',
+                'Masquage immédiat, mémorisé d’une session à l’autre',
+                'Bouton Guide toujours disponible pour revoir les explications',
+            ], [], [], ['personnel'], [
+                'Ouvrez le tableau de bord. Le guide doit apparaître une première fois. Masquez-le, rechargez : il ne revient pas tout seul. Le bouton Guide en haut le relance.',
+            ], 'Portail'),
+            $pr(477, '2026-09-07', 'L’opérateur suit son parcours depuis son espace', 'Dans Mon espace opérationnel, l’étape actuelle, la suivante et les dates importantes du dossier apparaissent d’un coup d’œil. La fiche rassemble le suivi complet : entretien, visite médicale, rotation, prochain bilan, conditions du parcours et journal. L’arrivée sur le forum reste une démarche à part. Rechargez Mon espace opérationnel, puis la fiche', [
+                'Carte « Votre parcours » dans l’espace opérateur, avec un accès direct au suivi complet',
+                'Sur la fiche, rubrique Suivi : étapes, échéances, tuteur, conditions et journal',
+                'Rappel distinct de l’intégration d’arrivée, pour ne pas confondre les deux suivis',
+            ], [
+                'Le portrait de la fiche résume le parcours et renvoie vers le suivi complet',
+            ], [], ['personnel'], [
+                'Ouvrez Mon espace opérationnel : votre étape et vos dates doivent apparaître. Sur la fiche, ouvrez Suivi : entretien, médical, rotation, bilan et conditions du parcours doivent être visibles ensemble.',
+            ], 'Portail'),
             $pr(476, '2026-09-07', 'Cadences, parcours et sessions se règlent par communauté', 'Le suivi roleplay se personnalise : intervalles des bilans, période d’essai et rappels. Le parcours d’un membre avance selon des conditions que vous choisissez — qualifications, formations, temps en jeu selon la nature de session, présences pointées, ancienneté, dossier, tuteur. Vous décidez si un responsable valide le passage, ou s’il se fait tout seul lorsque tout est rempli. La fiche montre ce qui reste à faire, et chaque passage est consigné. Les communautés déjà en place ne changent rien tant qu’elles n’activent pas ces règles. Rechargez le suivi, le parcours et les dossiers', [
                 'Cadences des bilans, de l’essai et des rappels, propres à chaque communauté',
                 'Conditions de passage à l’étape suivante, avec validation d’un responsable ou passage automatique',

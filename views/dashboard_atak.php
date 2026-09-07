@@ -59,7 +59,7 @@ require base_path('views/partials/alert_banners.php');
     <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
     <?php require base_path('views/partials/header_dashboard.php'); ?>
 
-    <section class="atak-dash__hero" aria-labelledby="atak-dash-title">
+    <section class="atak-dash__hero" id="dash-tour-hero" aria-labelledby="atak-dash-title">
         <div class="atak-dash__hero-inner">
             <p class="atak-dash__eyebrow">Profil <?= htmlspecialchars($dashboardTypeLabel, ENT_QUOTES, 'UTF-8') ?></p>
             <h1 id="atak-dash-title" class="atak-dash__title">
@@ -69,9 +69,10 @@ require base_path('views/partials/alert_banners.php');
                 Poste de suivi terrain : ouvrez la carte, vérifiez les opérateurs en liaison et ajustez les réglages essentiels.
                 <?php
                 $selfPlaytimeAtak = trim((string) ($arma_playtime_label ?? ''));
+                $selfPlaytimeAtakDetail = trim((string) ($arma_playtime_detail ?? ''));
                 if ($selfPlaytimeAtak !== ''):
                 ?>
-                <span class="atak-dash__playtime">Votre temps en mission : <?= htmlspecialchars($selfPlaytimeAtak, ENT_QUOTES, 'UTF-8') ?>.</span>
+                <span class="atak-dash__playtime">Votre temps en mission : <?= htmlspecialchars($selfPlaytimeAtak, ENT_QUOTES, 'UTF-8') ?><?php if ($selfPlaytimeAtakDetail !== ''): ?> (<?= htmlspecialchars($selfPlaytimeAtakDetail, ENT_QUOTES, 'UTF-8') ?>)<?php endif; ?>.</span>
                 <?php endif; ?>
             </p>
             <p class="atak-dash__scope">
@@ -107,7 +108,7 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
-    <section class="atak-dash__modules" aria-label="Accès rapides">
+    <section class="atak-dash__modules" id="dash-tour-modules" aria-label="Accès rapides">
         <div class="atak-dash__modules-inner">
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
                 <p class="atak-dash__module-kicker">Situation</p>
@@ -133,7 +134,7 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
-    <section class="atak-dash__tools" aria-label="Outils carte">
+    <section class="atak-dash__tools" id="dash-tour-tools" aria-label="Outils carte">
         <div class="atak-dash__tools-inner">
             <?php if ($can_manage_invitations): ?>
             <a href="<?= htmlspecialchars(url('back-office/invitations'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Invitations<?= $pending_invitations_count > 0 ? ' (' . $pending_invitations_count . ')' : '' ?></a>
@@ -152,5 +153,6 @@ require base_path('views/partials/alert_banners.php');
     </section>
 </main>
 </div>
+<?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
 </body>
 </html>

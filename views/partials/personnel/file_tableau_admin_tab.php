@@ -221,6 +221,15 @@ if ($tableauAdminStandalone) {
     if (!empty($armaPlaytime['hours_label'])) {
         $pushRow($sheetRows, 'Compte', 'Temps de jeu Arma', (string) $armaPlaytime['hours_label']);
     }
+    if (!empty($armaPlaytime['server_label'])) {
+        $pushRow($sheetRows, 'Compte', 'Temps en serveur', (string) $armaPlaytime['server_label']);
+    }
+    if (!empty($armaPlaytime['zeus_label'])) {
+        $pushRow($sheetRows, 'Compte', 'Temps en Zeus', (string) $armaPlaytime['zeus_label']);
+    }
+    if (!empty($armaPlaytime['editor_label'])) {
+        $pushRow($sheetRows, 'Compte', 'Temps dans l’éditeur', (string) $armaPlaytime['editor_label']);
+    }
     if (!empty($canViewCommandNotes) && !empty($adminNotes)) {
         $pushRow($sheetRows, 'Encadrement', 'Notes de commandement', (string) $adminNotes);
     }
