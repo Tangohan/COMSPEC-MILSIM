@@ -7,10 +7,10 @@
  * @var string $cta_label
  * @var string|null $preview_html Contenu HTML déjà échappé / partiel sûr
  */
-$title = (string) ($title ?? 'Fonctionnalité premium');
-$text = (string) ($text ?? 'Disponible avec une offre supérieure pour votre communauté.');
+$title = (string) ($title ?? __('common.premium_feature'));
+$text = (string) ($text ?? __('common.premium_available_higher_plan'));
 $cta_href = (string) ($cta_href ?? url('platform/upgrade'));
-$cta_label = (string) ($cta_label ?? 'Voir les offres');
+$cta_label = (string) ($cta_label ?? __('common.view_plans'));
 $preview_html = $preview_html ?? null;
 ?>
 <div class="ds-soft-lock">
@@ -27,7 +27,7 @@ $preview_html = $preview_html ?? null;
         <?php endif; ?>
     </div>
     <div class="ds-soft-lock__cta">
-        <span class="ds-tag ds-tag--locked">Offre supérieure</span>
+        <span class="ds-tag ds-tag--locked"><?= htmlspecialchars(__('common.higher_plan'), ENT_QUOTES, 'UTF-8') ?></span>
         <p class="text-base font-bold text-slate-900"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></p>
         <p class="max-w-sm text-sm text-slate-600"><?= htmlspecialchars($text, ENT_QUOTES, 'UTF-8') ?></p>
         <a href="<?= htmlspecialchars($cta_href, ENT_QUOTES, 'UTF-8') ?>" class="ds-btn ds-btn--primary"><?= htmlspecialchars($cta_label, ENT_QUOTES, 'UTF-8') ?></a>

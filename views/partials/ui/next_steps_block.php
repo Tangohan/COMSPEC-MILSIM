@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** @var list<array{label: string, description: string, href: string, accent?: string}> $next_steps */
 $next_steps = $next_steps ?? [];
-$next_steps_title = isset($next_steps_title) ? trim((string) $next_steps_title) : 'Prochaine étape suggérée';
+$next_steps_title = isset($next_steps_title) ? trim((string) $next_steps_title) : __('common.next_suggested_step');
 $next_steps_intro = isset($next_steps_intro) ? trim((string) $next_steps_intro) : '';
 if ($next_steps === []) {
     return;
@@ -34,7 +34,7 @@ $accents = [
                     <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $step['label'], ENT_QUOTES, 'UTF-8') ?></p>
                     <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) $step['description'], ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
-                <span class="shrink-0 text-xs font-semibold text-emerald-800">Ouvrir →</span>
+                <span class="shrink-0 text-xs font-semibold text-emerald-800"><?= htmlspecialchars(__('common.open'), ENT_QUOTES, 'UTF-8') ?></span>
             </a>
         </li>
         <?php endforeach; ?>
