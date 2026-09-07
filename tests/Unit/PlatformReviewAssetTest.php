@@ -93,8 +93,8 @@ final class PlatformReviewAssetTest extends TestCase
         self::assertStringContainsString('data-prw-tab', $js);
         self::assertStringContainsString('data-prw-clarity', $js);
         self::assertStringContainsString('clarity_score', $js);
-        self::assertStringContainsString('avis=1', $js);
-        self::assertStringContainsString('traduction=1', $js);
+        self::assertStringContainsString("params.get('avis') === '1'", $js);
+        self::assertStringContainsString("params.get('traduction') === '1'", $js);
     }
 
     public function testEnglishCatalogCoversNewReviewKeys(): void
