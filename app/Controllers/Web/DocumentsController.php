@@ -14,7 +14,6 @@ use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\DocumentSecurityRepository;
 use App\Repositories\ModerationArtifactRepository;
-use App\Repositories\PersonnelProfileRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
@@ -36,7 +35,6 @@ class DocumentsController
         private AuditService $auditService,
         private ModerationArtifactRepository $moderationArtifactRepository,
         private DocumentTrainingReferencesService $documentTrainingReferencesService,
-        private PersonnelProfileRepository $personnelProfileRepository,
         private DocumentSecurityRepository $documentSecurityRepository,
         private DocumentDoctrineRepository $documentDoctrineRepository,
         private DocumentComplianceService $documentComplianceService,
@@ -106,7 +104,6 @@ class DocumentsController
         }));
         $documentTrainingRefs = $this->documentTrainingReferencesService->mapByDocumentId($tenantId, $docs);
         $collections = $this->buildCollections($docs, $categoriesList);
-        $accreditation = $this->personnelProfileRepository->getByUserId($userId);
         return Response::view('layout.main', [
             'content' => 'documents.index',
             'title' => 'Documents',
@@ -120,7 +117,6 @@ class DocumentsController
             'entity_id' => $entityId,
             'documentTrainingRefs' => $documentTrainingRefs,
             'collections' => $collections,
-            'viewerAccreditationLevel' => (string) ($accreditation['clearance_level'] ?? 'interne'),
             'canManageCollections' => $canManageCollections,
             'focus' => (string) ($request->input('focus') ?? ''),
         ]);
@@ -133,15 +129,6 @@ class DocumentsController
         }
 
         return Response::redirect(url('documents?focus=collections'));
-    }
-
-    public function accreditation(Request $request, array $params = []): Response
-    {
-        if (Gate::getInstance()->deny('documents.view')) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
-        }
-
-        return Response::redirect(url('dossier-operateur/accreditation'));
     }
 
     /**

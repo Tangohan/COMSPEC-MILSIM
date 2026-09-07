@@ -15,7 +15,6 @@ use App\Repositories\UnitRepository;
 use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
-use App\Services\Documents\DocumentAccessService;
 use App\Services\Steam\SteamWebApiService;
 use App\Support\Profile\PublicFlagCountryCatalog;
 
@@ -108,7 +107,6 @@ final class PlatformUserProfileService
             'extra_callsigns' => $extraCallsigns,
             'nicknames_text' => implode("\n", $nicknames),
             'steam_configured' => $this->steamWebApi->isConfigured(),
-            'clearance_options' => DocumentAccessService::getClassificationLevelLabels(),
             'flag_options' => PublicFlagCountryCatalog::optionsForSelect(),
             'status_options' => self::accountStatusOptions(),
             'blood_options' => self::bloodTypeOptions(),
@@ -385,12 +383,6 @@ final class PlatformUserProfileService
         $readinessRaw = $input['readiness_score'] ?? '';
         $readiness = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $enlistment = $this->normalizeDate((string) ($input['enlistment_date'] ?? ''));
-        $clearanceReview = $this->normalizeDate((string) ($input['clearance_reviewed_at'] ?? ''));
-        $clearance = trim((string) ($input['clearance_level'] ?? ''));
-        $clearanceLabels = DocumentAccessService::getClassificationLevelLabels();
-        if ($clearance !== '' && !isset($clearanceLabels[$clearance])) {
-            return ['ok' => false, 'error' => 'Le niveau d’habilitation n’est pas reconnu.'];
-        }
 
         $primaryUnitIdRaw = $input['primary_unit_id'] ?? '';
         $primaryUnitId = $primaryUnitIdRaw !== '' && $primaryUnitIdRaw !== null ? (int) $primaryUnitIdRaw : null;
@@ -432,8 +424,6 @@ final class PlatformUserProfileService
             'rank_display' => $clip((string) ($input['rank_display'] ?? ''), 100) ?: null,
             'rank_display_override' => $clip((string) ($input['rank_display_override'] ?? ''), 100) ?: null,
             'primary_unit_id' => $primaryUnitId,
-            'clearance_level' => $clearance !== '' ? $clearance : null,
-            'clearance_reviewed_at' => $clearanceReview,
             'readiness_score' => $readiness,
             'blood_type' => $blood !== '' ? $blood : null,
             'nationality' => $clip((string) ($input['nationality_rp'] ?? ''), 100) ?: null,

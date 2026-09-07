@@ -154,7 +154,6 @@ if ($seniorityGlobal !== null) {
 if ($privatePersonnelIdentity) {
     $pushRow($sheetRows, 'Compte', 'Statut du compte', $accountStatusFr((string) ($targetUser['status'] ?? '')));
 }
-$pushRow($sheetRows, 'Opérationnel', 'Habilitation', $clearanceLevel !== '' ? (string) $clearanceLevel : '');
 $pushRow($sheetRows, 'Opérationnel', 'Préparation', $readiness !== null ? $readiness . ' %' : '');
 $pushRow($sheetRows, 'Opérationnel', 'Déployable', $isDeployableFile ? 'Oui' : 'Non');
 $pushRow($sheetRows, 'Opérationnel', 'Complétude du dossier', $completenessScore . ' %');

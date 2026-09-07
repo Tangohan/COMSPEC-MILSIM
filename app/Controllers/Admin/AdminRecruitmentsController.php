@@ -23,7 +23,6 @@ use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
-use App\Services\Documents\DocumentAccessService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
@@ -1142,12 +1141,10 @@ class AdminRecruitmentsController
                 'personnel_job_role_id' => $defaultJobRoleId,
                 'assignment_label' => $defaultAssignmentLabel,
                 'role_ids' => $selectedRoleIds,
-                'clearance_level' => '',
             ],
             'orgRoles' => $this->roleRepository->forTenantOrganization((int) $tenantId),
             'units' => $this->unitRepository->allForTenant((int) $tenantId),
             'jobRoleOptions' => $jobRoleOptions,
-            'clearanceLevels' => DocumentAccessService::getClassificationLevelLabels(),
             'linkedRecruitmentOpening' => $linkedOpening,
             'linkedUser' => $linkedUser,
             'needsAcceptanceOnboarding' => $needsOnboarding,
@@ -1198,7 +1195,6 @@ class AdminRecruitmentsController
             'unit_id' => (int) $request->input('unit_id', 0),
             'personnel_job_role_id' => (int) $request->input('personnel_job_role_id', 0),
             'role_ids' => $roleIdsRaw,
-            'clearance_level' => trim((string) $request->input('clearance_level', '')),
             'assignment_label' => trim((string) $request->input('assignment_label', '')),
         ];
 

@@ -12,7 +12,7 @@ use Throwable;
 
 /**
  * Offboarding structuré : enregistre un départ (motif, date) et applique, si demandé,
- * la checklist de reprise d’accès (retrait des rôles organisation + habilitation).
+ * la checklist de reprise d’accès (retrait des rôles organisation).
  * La révocation d’accès n’est volontairement pas soumise au circuit d’élévation : il n’y a
  * rien à « approuver » dans le retrait des droits d’un membre qui part, et retarder la
  * révocation serait le vrai risque.
@@ -157,32 +157,21 @@ class MemberOffboardingService
 
         return [
             'ok' => true,
-            'message' => 'Membre réintégré (compte réactivé). Repassez les rôles et habilitations si besoin.',
+            'message' => 'Membre réintégré (compte réactivé). Repassez les rôles si besoin.',
         ];
     }
 
     /**
-     * Retire les rôles organisation et l’habilitation en cours. Best-effort par étape :
-     * un échec sur l’un n’empêche pas de tenter l’autre.
+     * Retire les rôles organisation. Best-effort.
      */
     private function revokeAccess(int $tenantId, int $targetUserId, int $actorUserId): bool
     {
-        $ok = true;
         try {
             $this->userRepository->syncOrganizationRoles($targetUserId, $tenantId, [], $actorUserId, true);
         } catch (Throwable) {
-            $ok = false;
-        }
-        try {
-            $this->personnelProfileRepository->ensureRecord($targetUserId);
-            $this->personnelProfileRepository->update($targetUserId, [
-                'clearance_level' => null,
-                'clearance_reviewed_at' => date('Y-m-d H:i:s'),
-            ]);
-        } catch (Throwable) {
-            $ok = false;
+            return false;
         }
 
-        return $ok;
+        return true;
     }
 }

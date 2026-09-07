@@ -14,7 +14,6 @@ use App\Repositories\PermissionRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
-use App\Services\Documents\DocumentAccessService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 
 /**
@@ -94,7 +93,6 @@ final class DashboardRhParcours
             'roles' => [],
             'job_roles' => [],
             'units' => [],
-            'clearance_levels' => [],
             'permissions' => [],
         ];
         $elevationCooldown = null;
@@ -135,8 +133,7 @@ final class DashboardRhParcours
      *   grades: list<array<string,mixed>>,
      *   roles: list<array<string,mixed>>,
      *   job_roles: list<array<string,mixed>>,
-     *   units: list<array<string,mixed>>,
-     *   clearance_levels: array<string,string>
+     *   units: list<array<string,mixed>>
      * }
      */
     public static function elevationCatalogForTenant(int $tenantId): array
@@ -166,7 +163,6 @@ final class DashboardRhParcours
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,
-            'clearance_levels' => DocumentAccessService::getClassificationLevelLabels(),
             'permissions' => Container::get(PermissionRepository::class)->allRequestableForTenant($tenantId),
         ];
     }

@@ -8,7 +8,6 @@ $sort = $sort ?? 'title_asc';
 $entity_type = $entity_type ?? null;
 $entity_id = $entity_id ?? null;
 $collections = $collections ?? [];
-$viewerAccreditationLevel = $viewerAccreditationLevel ?? 'interne';
 $canManageCollections = (bool) ($canManageCollections ?? false);
 /** Même droit que la gestion documentaire : documents.upload ou accès administration */
 $canUploadDocuments = (bool) ($canUploadDocuments ?? $canManageCollections);
@@ -195,14 +194,8 @@ $baseUrlList = url('documents');
             </form>
         </section>
 
-        <section id="collections" class="mt-8 grid gap-5 lg:grid-cols-3 <?= $focus === 'collections' ? 'ring-2 ring-emerald-300 rounded-3xl p-2' : '' ?>">
-            <article class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm lg:col-span-1">
-                <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Accréditation profil</p>
-                <p class="mt-2 text-2xl font-black text-emerald-950"><?= htmlspecialchars(strtoupper((string) $viewerAccreditationLevel)) ?></p>
-                <p class="mt-2 text-xs leading-relaxed text-emerald-900/85">Votre niveau d’accréditation de dossier opérateur est désormais pris en compte pour les contenus sensibles.</p>
-                <a class="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100" href="<?= url('documents/accreditation') ?>">Gérer mon accréditation</a>
-            </article>
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+        <section id="collections" class="mt-8 <?= $focus === 'collections' ? 'ring-2 ring-emerald-300 rounded-3xl p-2' : '' ?>">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Collections</p>

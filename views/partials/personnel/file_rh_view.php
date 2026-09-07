@@ -66,7 +66,7 @@ if ($rhRawAccountStatus !== '' && $rhRawAccountStatus !== 'active') {
     ];
 }
 
-$rhCriticalKeys = ['identity_matricule', 'identity_unit', 'security_clearance', 'assignment_role'];
+$rhCriticalKeys = ['identity_matricule', 'identity_unit', 'assignment_role'];
 $rhDetails = is_array($completeness['details'] ?? null) ? $completeness['details'] : [];
 $rhFieldLabels = is_array($completenessCheckLabels ?? null) ? $completenessCheckLabels : [];
 /** @var list<string> $rhOptionalMissingLabels */
@@ -96,10 +96,6 @@ $rhOperationalTone = match ($rhOperational['tone']) {
     'rose' => 'border-rose-200 bg-rose-50 text-rose-950',
     default => 'border-amber-200 bg-amber-50 text-amber-950',
 };
-$rhClearanceReviewedAt = trim((string) ($personnelProfile['clearance_reviewed_at'] ?? ''));
-$rhClearanceReviewLabel = $rhClearanceReviewedAt !== ''
-    ? 'Dernière vérification le ' . date('d/m/Y', strtotime($rhClearanceReviewedAt))
-    : 'Date de vérification non renseignée';
 ?>
 <?php
 $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $personnelFileShell !== ''
@@ -169,7 +165,7 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="mt-5 grid grid-cols-2 gap-4 border-t border-white/10 pt-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-6">
+            <div class="mt-5 grid grid-cols-2 gap-4 border-t border-white/10 pt-4 sm:grid-cols-3 md:grid-cols-5 lg:gap-6">
                 <?php if (!empty($matricule) && !empty($showMatriculePublic)): ?>
                 <div>
                     <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Matricule</p>
@@ -179,10 +175,6 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                 <div>
                     <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Grade / rang</p>
                     <p class="text-sm font-semibold text-white"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay, ENT_QUOTES, 'UTF-8') : '—' ?></p>
-                </div>
-                <div>
-                    <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Documents accessibles</p>
-                    <p class="text-sm font-semibold text-emerald-400"><?= $clearanceLevel !== '' ? htmlspecialchars($clearanceLevel, ENT_QUOTES, 'UTF-8') : '—' ?></p>
                 </div>
                 <div>
                     <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Situation actuelle</p>
@@ -202,7 +194,7 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
         </div>
     </section>
 
-    <section class="grid gap-4 lg:grid-cols-2" aria-label="Explication des indicateurs RH">
+    <section class="grid gap-4" aria-label="Explication des indicateurs RH">
         <article class="rounded-2xl border p-5 <?= $rhOperationalTone ?>">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -221,12 +213,6 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                     <?php endforeach; ?>
                 </ul>
             </details>
-        </article>
-        <article class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sky-950">
-            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">Quels documents puis-je ouvrir ?</p>
-            <h2 class="mt-1 text-xl font-black"><?= $clearanceLevel !== '' ? htmlspecialchars($clearanceLevel, ENT_QUOTES, 'UTF-8') : 'À définir' ?></h2>
-            <p class="mt-2 text-sm leading-relaxed text-sky-900">L’habilitation documentaire indique le niveau maximal des documents protégés que ce membre peut consulter. Ce n’est ni un grade, ni une note de performance.</p>
-            <p class="mt-4 text-xs font-semibold text-sky-800"><?= htmlspecialchars($rhClearanceReviewLabel, ENT_QUOTES, 'UTF-8') ?></p>
         </article>
     </section>
 

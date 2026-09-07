@@ -49,7 +49,6 @@ use App\Controllers\Api\ForumModerationReportInsightApiController;
 use App\Controllers\Api\ForumUploadController;
 use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\CommunityReportController;
-use App\Controllers\Api\DossierOperateurAccreditationApiController;
 use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
 use App\Controllers\Api\AtakApiController;
@@ -180,7 +179,6 @@ use App\Controllers\Web\LegalController;
 use App\Controllers\Web\DemoNdaController;
 use App\Controllers\Admin\System\SystemDemoNdaController;
 use App\Controllers\Admin\System\SystemCronController;
-use App\Controllers\Web\DossierOperateurController;
 use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
 use App\Controllers\Admin\Organization\DashboardPinsAdminController;
@@ -452,11 +450,6 @@ return function (Router $router) {
     $router->get('/documentation/marqueurs', [DocumentationController::class, 'markersLibrary'], [AuthMiddleware::class]);
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
-    $router->get('/dossier-operateur/accreditation', [DossierOperateurController::class, 'accreditation'], [AuthMiddleware::class]);
-    $router->get('/api/dossier-operateur/accreditation-management', [DossierOperateurAccreditationApiController::class, 'state'], [AuthMiddleware::class]);
-    $router->post('/api/dossier-operateur/accreditation-management/note', [DossierOperateurAccreditationApiController::class, 'addNote'], [AuthMiddleware::class]);
-    $router->post('/api/dossier-operateur/accreditation-management/review', [DossierOperateurAccreditationApiController::class, 'addReview'], [AuthMiddleware::class]);
-    $router->post('/api/dossier-operateur/accreditation-management/policy', [DossierOperateurAccreditationApiController::class, 'policy'], [AuthMiddleware::class]);
     $router->get('/api/operations/doctrine/documents', [DoctrineApiController::class, 'list'], [AuthMiddleware::class]);
     $router->post('/api/operations/doctrine/documents', [DoctrineApiController::class, 'store'], [AuthMiddleware::class]);
     $router->post('/api/operations/doctrine/versions/{versionId}/activate', [DoctrineApiController::class, 'activate'], [AuthMiddleware::class]);
@@ -621,7 +614,6 @@ return function (Router $router) {
     $router->get('/equipement', [HomeController::class, 'equipement']);
     $router->get('/documents', [DocumentsController::class, 'index'], $mwDocuments);
     $router->get('/documents/collections', [DocumentsController::class, 'collections'], $mwDocuments);
-    $router->get('/documents/accreditation', [DocumentsController::class, 'accreditation'], $mwDocuments);
     // Gestion documentaire (liste, détail, édition, historique, accès, arborescence) — accès par permissions documents.*
     $router->get('/documents/gestion', [AdminDocumentsController::class, 'index'], $mwDocuments);
     $router->get('/documents/gestion/ajout', [AdminDocumentsController::class, 'uploadForm'], $mwDocuments);

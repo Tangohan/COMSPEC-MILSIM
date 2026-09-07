@@ -196,7 +196,7 @@ class HomeController
         $dashboardPublishedOpenings = [];
         $dashboardTenantSlug = '';
         $canManageRecruitmentOffers = false;
-        $dashboardElevationCatalog = ['grades' => [], 'roles' => [], 'job_roles' => [], 'units' => [], 'clearance_levels' => []];
+        $dashboardElevationCatalog = ['grades' => [], 'roles' => [], 'job_roles' => [], 'units' => []];
         $canRequestSelfElevation = false;
         $elevationNoRecipients = false;
         $elevationCooldownSeconds = 0;

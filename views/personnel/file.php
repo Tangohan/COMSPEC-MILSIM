@@ -291,8 +291,6 @@ $rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
 $readinessMerged = max($rScore, $rExtra);
 $readiness = $readinessMerged > 0 ? $readinessMerged : null;
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
-$clearanceLevelRaw = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
-$clearanceLevel = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels()[$clearanceLevelRaw] ?? $clearanceLevelRaw;
 
 $avatarUrl = !empty($targetUser['avatar_url']) ? $targetUser['avatar_url'] : null;
 if ($avatarUrl && strpos($avatarUrl, 'http') !== 0) {
@@ -493,8 +491,6 @@ $completenessCheckLabels = [
     'identity_unit' => 'Unité ou affectation',
     'identity_enlistment' => 'Date d’incorporation',
     'assignment_role' => 'Rôle dans l’organigramme',
-    'security_clearance' => 'Niveau documentaire (clearance)',
-    'security_review' => 'Revue de l’habilitation (date)',
     'qualifications' => 'Qualification ou formation certifiée',
     'readiness' => 'Indicateur de disponibilité',
     'contact_email' => 'Adresse e-mail de contact',
@@ -505,7 +501,6 @@ $isDeployableFile = ((int) ($personnelProfile['deployable'] ?? 1)) === 1;
 $personnelOperationalStatus = \App\Support\PersonnelOperationalStatus::assess([
     'unit' => trim((string) ($unitName ?? '')) !== '',
     'role' => trim((string) ($personnelPrimaryPositionLabel ?? $communityRoleLabel ?? '')) !== '' || $personnelJobRoleAssignments !== [],
-    'clearance' => trim((string) ($clearanceLevel ?? '')) !== '',
     'qualification' => $qualifications !== [] || $trainingCertificates !== [] || $lmsEnrollmentsForPersonnel !== [],
     'available' => empty($personnelActiveAbsences),
 ], $isDeployableFile, (string) ($targetUser['status'] ?? '') === 'active');
@@ -664,9 +659,6 @@ if ($personnelFileIsRhFull) {
                         <span class="personnel-file-hero__badge-dot" aria-hidden="true"></span>
                         <?= htmlspecialchars($accountStatusFr($rawAccountStatus)) ?>
                     </span>
-                    <?php endif; ?>
-                    <?php if ($clearanceLevel): ?>
-                    <span class="personnel-file-hero__badge personnel-file-hero__badge--muted">Habilitation <?= htmlspecialchars($clearanceLevel) ?></span>
                     <?php endif; ?>
                     <?php if ($isDeployableFile): ?>
                     <span class="personnel-file-hero__badge">Déployable</span>
@@ -895,10 +887,6 @@ if ($personnelFileIsRhFull) {
                                 <?php if ($squadronExtra !== '' && ($unitName === null || $squadronExtra !== trim((string) $unitName))): ?>
                                 <p class="mt-2 text-[10px] text-slate-600">Mention dossier : <span class="font-semibold"><?= htmlspecialchars($squadronExtra) ?></span></p>
                                 <?php endif; ?>
-                            </div>
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Documents accessibles</p>
-                                <p class="mt-1 text-sm font-bold text-emerald-700"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Situation actuelle</p>
@@ -1395,15 +1383,6 @@ if ($personnelFileIsRhFull) {
                 </div>
 
                 <div class="space-y-8" x-show="tab === 'formation'" x-cloak>
-                <!-- Sécurité / habilitation -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Sécurité / habilitation</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Niveau documentaire</p><p class="text-sm font-black text-emerald-600"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date dernière revue</p><p class="text-sm font-black text-slate-900"><?= !empty($personnelProfile['clearance_reviewed_at']) ? date('d/m/Y', strtotime($personnelProfile['clearance_reviewed_at'])) : '—' ?></p></div>
-                    </div>
-                </section>
-
                 <!-- Formations Athena, attestations, qualifications dossier -->
                 <?php
                 $hasLmsSummary = $lmsEnrollmentsForPersonnel !== [] || $trainingCertificates !== [];

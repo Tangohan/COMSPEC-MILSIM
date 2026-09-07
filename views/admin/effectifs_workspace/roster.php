@@ -139,7 +139,6 @@ $metricNoUnit = !empty($filters['sans_affectation']);
 $metricNoRole = !empty($filters['sans_role']);
 $noUnitCount = (int) ($counts['no_unit'] ?? 0);
 $noRoleCount = (int) ($counts['no_role'] ?? 0);
-$clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
 ?>
 <div class="eff-catalog eff-catalog--roster">
     <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
@@ -191,10 +190,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
         <a class="eff-metric eff-metric--link<?= $metricNoRole ? ' is-active is-amber' : '' ?><?= !$metricNoRole && $noRoleCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url() . '?sans_role=1', ENT_QUOTES, 'UTF-8') ?>">
             <p class="eff-metric__k">Sans rôle</p>
             <p class="eff-metric__v"><?= $noRoleCount ?></p>
-        </a>
-        <a class="eff-metric eff-metric--link<?= $clearanceCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>">
-            <p class="eff-metric__k">Habilitation à revoir</p>
-            <p class="eff-metric__v"><?= $clearanceCount ?></p>
         </a>
     </div>
 
@@ -371,10 +366,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                     $availabilityScore = (int) ($row['availability_score'] ?? 0);
                     $presenceScore = (int) ($row['presence_score'] ?? 0);
                     $completionScore = (int) ($row['completion_score'] ?? 0);
-                    $clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue(
-                        $row['clearance_level'] ?? null,
-                        $row['clearance_reviewed_at'] ?? null
-                    );
                     $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($name, (string) ($row['character_name'] ?? ''));
                     $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
                     $radioAssigned = trim((string) ($row['radio_assigned'] ?? ''));
@@ -491,9 +482,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                                 <span class="eff-sheets__metric" title="Disponibilité">Disp. <?= $availabilityScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Présence">Prés. <?= $presenceScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Complétion du dossier">Doss. <?= $completionScore ?>%</span>
-                                <?php if ($clearanceOverdue): ?>
-                                    <span class="eff-sheets__badge eff-sheets__badge--watch" title="Habilitation accordée sans revue récente (&gt; <?= \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS ?> jours)">Habilitation à revoir</span>
-                                <?php endif; ?>
                                 <?php if ($canEditProfiles): ?>
                                     <details class="eff-sheets__pop">
                                         <summary class="eff-sheets__chip" style="height:1.4rem">Ancienneté</summary>

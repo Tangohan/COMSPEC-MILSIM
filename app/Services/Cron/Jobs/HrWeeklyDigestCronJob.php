@@ -14,11 +14,10 @@ use App\Services\Cron\CronJobInterface;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
-use App\Support\ClearanceReviewPolicy;
 
 /**
  * Résumé hebdomadaire au staff RH (bureau effectifs) : dossiers incomplets, membres sans
- * unité/rôle, élévations en attente, habilitations à revoir. Le runner peut être déclenché
+ * unité/rôle, élévations en attente. Le runner peut être déclenché
  * plus souvent qu’une fois par semaine (cron externe quotidien) — on se limite donc au lundi
  * et on déduplique par semaine ISO via cron_notification_log.
  */
@@ -49,7 +48,7 @@ final class HrWeeklyDigestCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Envoie un résumé hebdomadaire au staff du bureau effectifs : dossiers incomplets, membres sans unité/rôle, élévations en attente, habilitations à revoir.';
+        return 'Envoie un résumé hebdomadaire au staff du bureau effectifs : dossiers incomplets, membres sans unité/rôle, élévations en attente.';
     }
 
     public function run(): array
@@ -79,12 +78,8 @@ final class HrWeeklyDigestCronJob implements CronJobInterface
             $withoutRole = $this->users->countListForTenant($tenantId, null, null, null, true, null, true);
             $pendingElevations = $this->elevationRequests->countOpenForTenant($tenantId);
             $incompleteProfiles = $this->personnelProfiles->countIncompleteForTenant($tenantId);
-            $clearanceReviewDue = $this->personnelProfiles->countOverdueClearanceReviewForTenant(
-                $tenantId,
-                ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS
-            );
 
-            if ($withoutUnit + $withoutRole + $pendingElevations + $incompleteProfiles + $clearanceReviewDue === 0) {
+            if ($withoutUnit + $withoutRole + $pendingElevations + $incompleteProfiles === 0) {
                 $this->cronLog->markNotified(self::JOB, 'tenant_digest', $subjectId, 'email', null);
                 $skippedNothingToReport++;
                 continue;
@@ -115,7 +110,6 @@ final class HrWeeklyDigestCronJob implements CronJobInterface
                     $withoutUnit,
                     $withoutRole,
                     $pendingElevations,
-                    $clearanceReviewDue,
                     $rosterUrl,
                     $tenantId
                 )) {

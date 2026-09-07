@@ -108,7 +108,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
             <button type="button" class="dash-rh-choice" data-rh-go="elevation">
                 <span class="dash-rh-choice__kicker">Situation</span>
                 <strong>Élévation</strong>
-                <span class="dash-rh-choice__hint">Proposer un changement de grade, de rôle, de fonction, d’affectation ou d’habilitation.</span>
+                <span class="dash-rh-choice__hint">Proposer un changement de grade, de rôle, de fonction ou d’affectation.</span>
             </button>
             <button type="button" class="dash-rh-choice" data-rh-go="avancement">
                 <span class="dash-rh-choice__kicker">Mobilité</span>
