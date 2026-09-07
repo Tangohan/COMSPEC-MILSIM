@@ -27,4 +27,16 @@ final class MaintenanceUiAssetTest extends TestCase
         self::assertStringNotContainsString('JSON', $view);
         self::assertStringNotContainsString('slug', strtolower($view));
     }
+
+    public function testMaintenanceLayoutCannotOverflowANarrowViewport(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $view = (string) file_get_contents($root . '/views/errors/maintenance.php');
+
+        self::assertStringContainsString('overflow-x:hidden', $view);
+        self::assertStringContainsString('grid-template-columns:minmax(0,1fr)', $view);
+        self::assertStringContainsString('.layout > * { min-width:0; }', $view);
+        self::assertStringContainsString('.panel { position:relative; width:100%; max-width:100%; min-width:0;', $view);
+        self::assertStringContainsString('font-size:clamp(2.65rem,12.7vw,4rem)', $view);
+    }
 }
