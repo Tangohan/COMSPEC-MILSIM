@@ -176,7 +176,7 @@ if ($rowsJson === false) {
                 <p class="bo-seniority__eyebrow">Communauté · Effectifs & RH</p>
                 <h1 class="bo-seniority__title">Ancienneté</h1>
                 <p class="bo-seniority__lead">
-                    Choisissez les indicateurs affichés sur les fiches personnel et dans l’espace RH.
+                    Choisissez les indicateurs affichés sur les fiches personnel et dans Mes démarches.
                     Les durées se calculent à partir des périodes enregistrées sur chaque dossier.
                 </p>
             </div>

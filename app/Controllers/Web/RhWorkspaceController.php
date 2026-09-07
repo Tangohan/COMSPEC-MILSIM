@@ -116,8 +116,28 @@ final class RhWorkspaceController
             ? $this->hrDocuments->listForUser($tenantId, $userId, false, true)
             : [];
 
+        $elevationCatalog = [
+            'grades' => [],
+            'roles' => [],
+            'job_roles' => [],
+            'units' => [],
+            'permissions' => [],
+        ];
+        $elevationCooldown = null;
+        $elevationHasRecipients = false;
+        try {
+            $elevationCatalog = \App\Support\DashboardRhParcours::elevationCatalogForTenant($tenantId);
+        } catch (\Throwable) {
+        }
+        try {
+            $staffAlert = Container::get(EffectifsStaffAlertService::class);
+            $elevationCooldown = $staffAlert->secondsBeforeNextElevationRequest($userId, $userId);
+            $elevationHasRecipients = $staffAlert->listElevationRecipients($tenantId, $userId) !== [];
+        } catch (\Throwable) {
+        }
+
         return Response::view('layout.main', [
-            'title' => 'Espace RH et formations',
+            'title' => 'Mes démarches',
             'content' => 'personnel.rh_workspace',
             'rhGreetingName' => $greetingName,
             'rhTrainingAllowed' => $trainingAllowed,
@@ -139,6 +159,9 @@ final class RhWorkspaceController
             'rhHrDocsSchemaReady' => $hrDocsSchemaReady,
             'rhMyHrDocs' => $myHrDocs,
             'rhHrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'rhElevationCatalog' => $elevationCatalog,
+            'rhElevationCooldownSeconds' => $elevationCooldown,
+            'rhElevationHasRecipients' => $elevationHasRecipients,
         ]);
     }
 

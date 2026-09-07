@@ -32,6 +32,13 @@ final class PersonnelCommandChainAssetTest extends TestCase
         self::assertStringContainsString('PERSONNEL_COMMAND_CHAIN_V1', $seed);
         self::assertStringContainsString('.bo-eff-workspace .eff-chain__select', $css);
         self::assertStringContainsString('Désigner les chefs d’unité', $settings);
+        $wizard = (string) file_get_contents($root . '/views/community/create.php');
+        self::assertStringContainsString('wizard_founder_commands_root', $wizard);
+        self::assertStringContainsString('Vous êtes le chef de l’unité principale', $wizard);
+        $probe = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateProbes.php');
+        self::assertStringContainsString('hasCommandChainReviewed', $probe);
+        $boot = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
+        self::assertStringContainsString('applyWizardCommandChain', $boot);
         $search = (string) file_get_contents($root . '/app/Services/Portal/BackOfficeSearchService.php');
         self::assertStringContainsString('effectifs/chaine', $search);
         self::assertStringNotContainsString('endpoint', $view);

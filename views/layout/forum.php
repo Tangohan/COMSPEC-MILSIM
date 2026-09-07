@@ -84,6 +84,9 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <script src="<?= htmlspecialchars($baseUrl) ?>/assets/js/forum/forum_category_context.js" defer></script>
     <?php endif; ?>
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
+    <?php if (!empty(\App\Core\Session::get('user_id'))): ?>
+        <?php require base_path('views/partials/platform_review_modal.php'); ?>
+    <?php endif; ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
 <?php
     $cdnPhase = 'body';

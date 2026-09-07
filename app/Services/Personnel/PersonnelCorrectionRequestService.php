@@ -359,6 +359,74 @@ final class PersonnelCorrectionRequestService
     }
 
     /**
+     * Correction appliquée tout de suite par un responsable, sans file d’attente.
+     *
+     * @param array<string, mixed> $rawInput
+     * @return array{ok: bool, message: string}
+     */
+    public function applyDirect(
+        int $tenantId,
+        int $actorUserId,
+        int $targetUserId,
+        array $rawInput,
+        string $note = ''
+    ): array {
+        if ($tenantId < 1 || $actorUserId < 1 || $targetUserId < 1) {
+            return ['ok' => false, 'message' => 'Contexte invalide.'];
+        }
+        $target = $this->userRepository->findById($targetUserId, $tenantId);
+        if (!$target) {
+            return ['ok' => false, 'message' => 'Fiche introuvable.'];
+        }
+
+        $before = $this->currentSnapshot($targetUserId);
+        $proposed = $this->normalizeProposed($rawInput, $before);
+        if ($proposed === []) {
+            return ['ok' => false, 'message' => 'Aucune modification détectée. Corrigez au moins un champ.'];
+        }
+
+        $note = trim($note);
+        if (mb_strlen($note) > 1000) {
+            $note = mb_substr($note, 0, 1000);
+        }
+
+        $this->applyApprovedPayload($tenantId, $targetUserId, $proposed);
+        $this->requests->cancelPendingForTarget(
+            $tenantId,
+            $targetUserId,
+            $actorUserId,
+            'Le dossier a été corrigé directement.'
+        );
+
+        try {
+            $requestId = $this->requests->create(
+                $tenantId,
+                $targetUserId,
+                $actorUserId,
+                $proposed,
+                array_intersect_key($before, $proposed),
+                $note !== '' ? $note : 'Correction enregistrée sans demande.'
+            );
+            if ($requestId > 0) {
+                $this->requests->resolve(
+                    $requestId,
+                    $tenantId,
+                    'approved',
+                    $actorUserId,
+                    $note !== '' ? $note : 'Enregistré tout de suite.'
+                );
+            }
+        } catch (\Throwable) {
+            // L’écriture du dossier prime sur le journal.
+        }
+
+        return [
+            'ok' => true,
+            'message' => 'Le dossier a été mis à jour tout de suite.',
+        ];
+    }
+
+    /**
      * @return list<array{user_id: int, name: string, email: string}>
      */
     public function listStaffRecipients(int $tenantId, ?int $excludeUserId = null): array

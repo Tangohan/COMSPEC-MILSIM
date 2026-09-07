@@ -91,13 +91,15 @@ class AccountController
             $tenantId,
             (string) ($accountUser['created_at'] ?? '')
         );
+        $personnelProfile = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+        $accountHasPortrait = trim((string) ($personnelProfile['character_portrait_path'] ?? '')) !== '';
 
         return $this->accountView('account.index', 'Mon compte', [
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
             'accountSnapshot' => $accountSnapshot,
-            'systemHealth' => $this->getSystemHealth($tenantId),
             'onboardingSnapshot' => $onboardingSnapshot,
+            'accountHasPortrait' => $accountHasPortrait,
         ]);
     }
 
@@ -1026,7 +1028,7 @@ class AccountController
         return Response::redirect(url('account/portrait'));
     }
 
-    /** Portrait personnage (fiche, ORBAT, briefing) — distinct de l'avatar compte. */
+    /** Portrait unique affiché sur le portail, la fiche et l’organigramme. */
     public function portrait(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();

@@ -140,6 +140,9 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     </footer>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php if (!empty(\App\Core\Session::get('user_id'))): ?>
+        <?php require base_path('views/partials/platform_review_modal.php'); ?>
+    <?php endif; ?>
 <?php
     $marketingScripts = is_array($marketingScripts ?? null) ? $marketingScripts : [];
     foreach ($marketingScripts as $src):

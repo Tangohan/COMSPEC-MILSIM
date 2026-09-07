@@ -24,6 +24,8 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertStringContainsString('pd-form-grid__full', $view);
         self::assertStringContainsString('name="note"', $view);
         self::assertStringContainsString('Envoyer pour confirmation', $view);
+        self::assertStringContainsString('Enregistrer tout de suite', $view);
+        self::assertStringContainsString('apply_now', $view);
         self::assertStringNotContainsString('text-white', $view);
         self::assertStringNotContainsString('bg-slate-900', $view);
         self::assertStringNotContainsString('bg-slate-950', $view);
@@ -31,6 +33,8 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertStringContainsString("personnel-dossier.css", $controller);
         self::assertStringContainsString('fieldCatalog', $controller);
         self::assertStringContainsString("array_keys(PersonnelCorrectionRequestService::fieldLabels())", $controller);
+        self::assertStringContainsString('function applyDirect', $controller);
+        self::assertStringContainsString('function applyDirect', $service);
 
         self::assertStringContainsString('.pd-header__title', $css);
         self::assertStringContainsString('color: #0f172a', $css);

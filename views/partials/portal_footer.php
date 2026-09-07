@@ -55,6 +55,10 @@ $n = static function (string $fr): string {
                     <li><a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Fiches matériel') ?></a></li>
                     <li><a href="<?= htmlspecialchars(url('soutenir-atak'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Soutenir ATAK') ?></a></li>
                     <li><a href="<?= htmlspecialchars(url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/')), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Donner votre avis') ?></a></li>
+                    <?php if ($footerLoggedIn): ?>
+                    <li><a href="?avis=1" data-platform-review-open="review"><?= $n('Avis sur Athena') ?></a></li>
+                    <li><a href="?traduction=1" data-platform-review-open="translate"><?= $n('Aider à traduire') ?></a></li>
+                    <?php endif; ?>
                 </ul>
             </details>
 

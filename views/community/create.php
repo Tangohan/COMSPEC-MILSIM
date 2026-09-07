@@ -422,6 +422,15 @@ $wizardSteps = [
                         <p class="cc-section__text">Représentez la chaîne de commandement : une unité racine, puis des sous-niveaux si besoin (groupe, section, équipe, escouade).</p>
 
                         <label class="cc-checkrow mt-5">
+                            <input type="hidden" name="wizard_founder_commands_root" value="0">
+                            <input type="checkbox" name="wizard_founder_commands_root" value="1" id="wizard-founder-commands-root" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600" checked>
+                            <span>
+                                <strong>Vous êtes le chef de l’unité principale</strong>
+                                <span>Les autres postes restent vacants jusqu’à ce que vous les attribuiez dans Effectifs.</span>
+                            </span>
+                        </label>
+
+                        <label class="cc-checkrow mt-3">
                             <input type="checkbox" name="wizard_quick_fill" value="1" id="wizard-quick-fill" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
                             <span>
                                 <strong>Insérer une structure de départ</strong>
@@ -716,6 +725,41 @@ $wizardSteps = [
                     </section>
 
                     <section class="cc-section">
+                        <h2 class="cc-section__title">Ancienneté de l’organisation</h2>
+                        <p class="cc-section__text">Cette date sert au calcul d’ancienneté du fondateur et des membres. Vous pourrez la modifier ensuite.</p>
+                        <div class="mt-5 space-y-3">
+                            <label class="cc-choice">
+                                <input type="radio" name="wizard_org_founding_choice" value="today" class="sr-only" checked data-founding-choice>
+                                <span class="cc-choice__eyebrow">Recommandé</span>
+                                <span class="cc-choice__title">Cette communauté commence aujourd’hui</span>
+                                <span class="cc-choice__text">L’ancienneté du fondateur part d’aujourd’hui.</span>
+                            </label>
+                            <label class="cc-choice">
+                                <input type="radio" name="wizard_org_founding_choice" value="older" class="sr-only" data-founding-choice>
+                                <span class="cc-choice__eyebrow">Option</span>
+                                <span class="cc-choice__title">L’unité existait avant Athena</span>
+                                <span class="cc-choice__text">Indiquez la date de création réelle si vous la connaissez. Sinon, vous pourrez la saisir plus tard dans Ancienneté.</span>
+                            </label>
+                        </div>
+                        <div id="wizard-org-founding-date-wrap" class="mt-4 hidden max-w-sm">
+                            <label class="cc-label" for="wizard-org-founding-date">Date de création de l’unité</label>
+                            <input type="date" name="wizard_org_founding_date" id="wizard-org-founding-date" class="cc-select" max="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>">
+                            <p class="cc-hint">Facultatif pour l’instant. Une date dans le futur n’est pas acceptée.</p>
+                        </div>
+                    </section>
+
+                    <section class="cc-section">
+                        <h2 class="cc-section__title">Dès la création</h2>
+                        <p class="cc-section__text">Athena prépare déjà le cadre de départ. Vous pourrez tout ajuster ensuite.</p>
+                        <ul class="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
+                            <li>Le parcours d’arrivée des nouveaux membres est prêt.</li>
+                            <li>Le bureau effectifs utilise des réglages de départ (vous pourrez les personnaliser).</li>
+                            <li>Votre compte fondateur est en service actif.</li>
+                            <li>La fenêtre de connexion Overwatch reprend le nom de la communauté, avec les méthodes d’accès habituelles.</li>
+                        </ul>
+                    </section>
+
+                    <section class="cc-section">
                         <h2 class="cc-section__title">Récapitulatif</h2>
                         <p class="cc-section__text">Vérifiez les points essentiels avant de créer la communauté.</p>
                         <div id="wizard-recap" class="cc-recap mt-4">
@@ -908,6 +952,22 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         var extraRoles = document.querySelectorAll('#wizard-custom-roles-container .wizard-custom-role-row').length;
         if (extraRoles > 0) lines.push('Rôles supplémentaires : ' + extraRoles);
         lines.push('Unités : ' + unitsCount);
+        var kitRadio = form.querySelector('input[name="wizard_catalog_kit_code"]:checked');
+        var kitLabel = 'Sans modèle supplémentaire';
+        if (kitRadio && kitRadio.value) {
+            var kitTitle = kitRadio.closest('label') && kitRadio.closest('label').querySelector('.cc-choice__title');
+            kitLabel = kitTitle ? kitTitle.textContent.trim() : kitRadio.value;
+        }
+        lines.push('Modèle d’organisation : ' + kitLabel);
+        var founderRoot = form.querySelector('#wizard-founder-commands-root');
+        lines.push('Chef de l’unité principale : ' + (founderRoot && founderRoot.checked ? 'vous' : 'à désigner plus tard'));
+        var founding = (form.querySelector('input[name="wizard_org_founding_choice"]:checked') || {}).value || 'today';
+        if (founding === 'older') {
+            var foundingDate = (form.querySelector('[name="wizard_org_founding_date"]') || {}).value || '';
+            lines.push('Ancienneté : unité existante' + (foundingDate ? ' (depuis ' + foundingDate + ')' : ', date à préciser plus tard'));
+        } else {
+            lines.push('Ancienneté : commence aujourd’hui');
+        }
         lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : 'Français'));
         if (fgText) lines.push('Grade fondateur : ' + fgText);
         lines.push('Inscription : ' + regLabel);
@@ -1114,6 +1174,13 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
             var kitRadio = form.querySelector('input[name="wizard_catalog_kit_code"][value="' + String(wizardDraft.wizard_catalog_kit_code) + '"]');
             if (kitRadio) kitRadio.checked = true;
         }
+        if (wizardDraft.wizard_founder_commands_root !== undefined) {
+            var founderCb = document.getElementById('wizard-founder-commands-root');
+            if (founderCb) {
+                var fv = wizardDraft.wizard_founder_commands_root;
+                founderCb.checked = fv === '1' || fv === 1 || fv === true || fv === 'on';
+            }
+        }
         syncRegistrationModeUi();
         syncPaid();
         if (window.CommunityUnitAffiliation && typeof window.CommunityUnitAffiliation.restore === 'function') {
@@ -1121,7 +1188,18 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         }
     }
 
+    function syncFoundingUi() {
+        var wrap = document.getElementById('wizard-org-founding-date-wrap');
+        if (!wrap) return;
+        var choice = form.querySelector('input[name="wizard_org_founding_choice"]:checked');
+        wrap.classList.toggle('hidden', !(choice && choice.value === 'older'));
+    }
+    form.querySelectorAll('[data-founding-choice]').forEach(function (el) {
+        el.addEventListener('change', syncFoundingUi);
+    });
+
     restoreWizardDraft();
+    syncFoundingUi();
     showStep(resumeWizardStep);
 })();
 </script>

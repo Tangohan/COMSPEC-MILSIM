@@ -120,13 +120,58 @@ final class MemberIntegrationRepository
         return $avatar . ', ' . $portrait;
     }
 
-    private function personnelProfileJoinSql(string $userAlias = 'u', string $profileAlias = 'pp'): string
+    /**
+     * Une seule ligne de dossier par membre : les bases historiques peuvent
+     * contenir plusieurs fiches pour le même compte, ce qui multipliait le tableau.
+     */
+    private function personnelProfileJoinSql(string $userAlias = 'u', string $profileAlias = 'pp', string $tenantAlias = 'i'): string
     {
         if (!$this->hasTable('personnel_profiles')) {
             return '';
         }
 
-        return 'LEFT JOIN personnel_profiles ' . $profileAlias . ' ON ' . $profileAlias . '.user_id = ' . $userAlias . '.id';
+        $userIdExpr = $userAlias . '.id';
+        $hasProfileId = $this->hasColumn('personnel_profiles', 'id');
+        $hasTenant = $this->hasColumn('personnel_profiles', 'tenant_id');
+
+        if ($hasProfileId) {
+            $tenantPred = $hasTenant
+                ? ' AND (ppx.tenant_id = ' . $tenantAlias . '.tenant_id OR ppx.tenant_id IS NULL OR ppx.tenant_id = 0)'
+                : '';
+            $order = $hasTenant
+                ? ' ORDER BY (ppx.tenant_id = ' . $tenantAlias . '.tenant_id) DESC, ppx.id DESC'
+                : ' ORDER BY ppx.id DESC';
+
+            return 'LEFT JOIN personnel_profiles ' . $profileAlias . ' ON ' . $profileAlias . '.id = ('
+                . 'SELECT ppx.id FROM personnel_profiles ppx WHERE ppx.user_id = ' . $userIdExpr
+                . $tenantPred . $order . ' LIMIT 1)';
+        }
+
+        if ($hasTenant) {
+            return 'LEFT JOIN personnel_profiles ' . $profileAlias
+                . ' ON ' . $profileAlias . '.user_id = ' . $userIdExpr
+                . ' AND ' . $profileAlias . '.tenant_id = ' . $tenantAlias . '.tenant_id';
+        }
+
+        return 'LEFT JOIN personnel_profiles ' . $profileAlias . ' ON ' . $profileAlias . '.user_id = ' . $userIdExpr;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function uniqueByIntegrationId(array $rows): array
+    {
+        $unique = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1 || isset($unique[$id])) {
+                continue;
+            }
+            $unique[$id] = $row;
+        }
+
+        return array_values($unique);
     }
 
     public function findForTenant(int $tenantId, int $id): ?array
@@ -259,7 +304,75 @@ final class MemberIntegrationRepository
         $st = $this->pdo->prepare($sql);
         $st->execute($params);
 
-        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->uniqueByIntegrationId($st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * Conserve le suivi ouvert le plus récent par membre, retire les doublons.
+     */
+    public function deleteDuplicateActives(int $tenantId): int
+    {
+        if (!$this->tablesExist() || $tenantId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT id, user_id FROM member_integrations
+             WHERE tenant_id = ? AND status NOT IN (?, ?)
+             ORDER BY user_id ASC, id DESC'
+        );
+        $st->execute([
+            $tenantId,
+            MemberIntegrationCatalog::STATUS_COMPLETED,
+            MemberIntegrationCatalog::STATUS_CANCELLED,
+        ]);
+        $keep = [];
+        $drop = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $userId = (int) ($row['user_id'] ?? 0);
+            $id = (int) ($row['id'] ?? 0);
+            if ($userId < 1 || $id < 1) {
+                continue;
+            }
+            if (isset($keep[$userId])) {
+                $drop[] = $id;
+            } else {
+                $keep[$userId] = $id;
+            }
+        }
+        if ($drop === []) {
+            $this->backfillActiveUserKeys($tenantId);
+
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($drop), '?'));
+        $params = array_merge([$tenantId], $drop);
+        $this->pdo->prepare(
+            'DELETE FROM member_integrations WHERE tenant_id = ? AND id IN (' . $placeholders . ')'
+        )->execute($params);
+        $this->backfillActiveUserKeys($tenantId);
+
+        return count($drop);
+    }
+
+    private function backfillActiveUserKeys(int $tenantId): void
+    {
+        if (!$this->hasColumn('member_integrations', 'active_user_key')) {
+            return;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "UPDATE member_integrations
+                 SET active_user_key = user_id
+                 WHERE tenant_id = ? AND status NOT IN (?, ?)
+                   AND (active_user_key IS NULL OR active_user_key = 0)"
+            );
+            $st->execute([
+                $tenantId,
+                MemberIntegrationCatalog::STATUS_COMPLETED,
+                MemberIntegrationCatalog::STATUS_CANCELLED,
+            ]);
+        } catch (PDOException) {
+        }
     }
 
     /**
@@ -270,28 +383,42 @@ final class MemberIntegrationRepository
         if (!$this->tablesExist() || $tenantId < 1) {
             return 0;
         }
-        $st = $this->pdo->prepare(
-            'INSERT INTO member_integrations
-                (tenant_id, user_id, template_id, template_version, status, progress_percent, primary_referent_user_id,
-                 source, started_at, target_completion_at, created_by, created_at)
-             VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW())'
-        );
-        $st->execute([
+        $userId = (int) $data['user_id'];
+        $status = in_array((string) ($data['status'] ?? MemberIntegrationCatalog::STATUS_TO_START), MemberIntegrationCatalog::STATUSES, true)
+            ? (string) ($data['status'] ?? MemberIntegrationCatalog::STATUS_TO_START)
+            : MemberIntegrationCatalog::STATUS_TO_START;
+        $hasActiveKey = $this->hasColumn('member_integrations', 'active_user_key');
+        $activeKey = MemberIntegrationCatalog::isTerminalStatus($status) ? null : $userId;
+        $columns = 'tenant_id, user_id, template_id, template_version, status, progress_percent, primary_referent_user_id,
+                 source, started_at, target_completion_at, created_by, created_at';
+        $placeholders = '?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW()';
+        $params = [
             $tenantId,
-            (int) $data['user_id'],
+            $userId,
             !empty($data['template_id']) ? (int) $data['template_id'] : null,
             max(1, (int) ($data['template_version'] ?? 1)),
-            in_array((string) ($data['status'] ?? MemberIntegrationCatalog::STATUS_TO_START), MemberIntegrationCatalog::STATUSES, true)
-                ? (string) ($data['status'] ?? MemberIntegrationCatalog::STATUS_TO_START)
-                : MemberIntegrationCatalog::STATUS_TO_START,
+            $status,
             !empty($data['primary_referent_user_id']) ? (int) $data['primary_referent_user_id'] : null,
             (string) ($data['source'] ?? MemberIntegrationCatalog::SOURCE_MANUAL),
             $data['started_at'] ?? null,
             $data['target_completion_at'] ?? null,
             !empty($data['created_by']) ? (int) $data['created_by'] : null,
-        ]);
+        ];
+        if ($hasActiveKey) {
+            $columns .= ', active_user_key';
+            $placeholders .= ', ?';
+            $params[] = $activeKey;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'INSERT INTO member_integrations (' . $columns . ') VALUES (' . $placeholders . ')'
+            );
+            $st->execute($params);
 
-        return (int) $this->pdo->lastInsertId();
+            return (int) $this->pdo->lastInsertId();
+        } catch (PDOException) {
+            return 0;
+        }
     }
 
     /**

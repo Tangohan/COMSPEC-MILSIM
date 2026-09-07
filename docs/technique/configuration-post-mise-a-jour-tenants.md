@@ -73,3 +73,12 @@ php setup-database.php
 - `ATAK_INTEL_SCRAMBLE_V1` — données chiffrées roleplay (certificat / capture) ; configure via `admin/atak/roleplay#intel-scramble` ; nouveaux tenants : domaine « Réseau ami » seedé + marqué satisfait
 - `DASHBOARD_WARDROBE_SHOWCASE_V1` — tenues en vitrine du tableau de bord ; configure via `back-office/dashboard-tenues`
 - `LOGIN_ACCUEIL_IMAGES_V1` — photos de l’écran de bienvenue après connexion ; configure via `back-office/organisation/parametres#accueil-connexion` ; nouveaux tenants marqués satisfaits (photo du portail par défaut, aucune image personnalisée requise)
+- `SENIORITY_REAL_TENURE_V1` — date de création de l’organisation ; wizard : « commence aujourd’hui » (défaut) ou date réelle si l’unité existait avant ; sans date, reste en attente
+- `ORGANIZATION_CATALOG_V1` — modèle optionnel à la création ; sans modèle, le choix est considéré comme revu
+- `JOB_CATALOGS_FR_US_V1` — satisfait seulement si un modèle Armée française ou SOF américain est copié
+- `OVERWATCH_GAME_AUTH_V1` — fenêtre de connexion Overwatch : défauts + nom de la communauté, marqué revu à la création
+- `OPERATIONS_WORKSPACE_V1` — module prêt dès la création (aucun espace inventé)
+- `MEMBER_INTEGRATION_V1` — modèle de parcours d’arrivée seedé à la création
+- `DUTY_POSITION_V1` — fondateur passé en service actif **avant** `markSatisfiedForNewTenant`
+- `PERSONNEL_COMMAND_CHAIN_V1` — fondateur chef des unités racines si la case est cochée ; postes vacants acceptés ; revue posée à la création (probe : revue **ou** tous les chefs renseignés)
+- `PERSONNEL_HR_DESK_V1` — réglages de départ du bureau effectifs, marqués revus

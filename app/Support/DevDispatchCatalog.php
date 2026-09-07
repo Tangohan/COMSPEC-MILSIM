@@ -584,12 +584,80 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(469, '2026-09-07', 'Un bandeau rappelle que vous êtes dans un module Athena', 'Dans le bureau recrutement et l’espace formations, un bandeau indique que vous visionnez un module Athena. Un bouton Retour ramène au tableau de bord. Rechargez le recrutement ou les formations', [
+                'Bandeau « Vous visionnez un module ATHENA » dans le bureau recrutement et l’espace formations',
+                'Bouton Retour vers le tableau de bord, visible en haut de l’écran',
+            ], [], [], ['personnel'], [
+                'Ouvrez le bureau recrutement ou le catalogue des formations. Le bandeau doit rester visible en haut, avec Retour.',
+            ]),
+            $pr(468, '2026-09-07', 'L’opérateur retrouve sa situation dans son espace', 'Dans l’espace opérationnel, un opérateur voit sa communauté, son unité, son grade, ses absences, ses demandes en cours, les prochaines manœuvres et l’état de son téléphone ATAK. Les écrans d’administration restent réservés aux responsables. Rechargez Mon espace opérationnel', [
+                'Situation personnelle : communauté, indicatif, unité, grade et position de service',
+                'Absences, demandes d’élévation ou d’évolution, messages et prochaines manœuvres',
+                'Raccourcis vers la fiche, les démarches, les événements, la carte et la boîte de réception',
+            ], [
+                'L’état du téléphone ATAK se lit en langage courant, sans codes techniques',
+                'Le menu de gauche propose les pages qui concernent l’opérateur',
+            ], [
+                'L’espace opérationnel n’affichait presque rien d’utile pour un opérateur',
+            ], ['personnel'], [
+                'Ouvrez Mon back-office. Vous devez voir votre unité et, s’il y en a, vos absences ou les prochaines manœuvres. Les pages d’administration restent inaccessibles.',
+            ]),
             $pr(460, '2026-09-07', 'Le dossier ne propose plus le catalogue entier d’emplois', 'Sur Unité et rôle, la liste d’emplois ne montre plus l’ensemble du catalogue militaire. Vous voyez les emplois de vos unités, ceux déjà posés sur le dossier, et ceux créés pour votre communauté. Les copies inutilisées du catalogue sont retirées à la mise à jour. Relancez la mise à jour, puis rechargez le dossier', [
                 'Liste d’emplois du dossier limitée à l’organigramme et aux emplois déjà portés',
             ], [], [
                 'Le catalogue militaire (finances, forces spéciales, cyber…) n’apparaissait plus comme menu sur le dossier',
             ], ['personnel'], [
                 'Ouvrez un dossier, puis Unité et rôle. La liste Emploi doit rester courte. Le catalogue complet, s’il reste, se gère dans Emplois du bureau effectifs.',
+            ]),
+            $pr(467, '2026-09-07', 'Le compte a une seule photo, et une page plus courte', 'Sur Mon compte, la photo de compte disparaît : le portail n’en tenait déjà plus compte. Il reste le portrait, les préférences et la sécurité. L’unité et le grade restent sur la fiche. Rechargez Mon compte', [
+                'Une seule photo à gérer : le portrait, visible sur le portail et la fiche',
+            ], [
+                'La vue d’ensemble du compte tient en un aperçu et quatre destinations',
+                'Le menu de gauche ne répète plus deux fois les appareils ATAK, ni la charte déjà dans Mes démarches',
+            ], [
+                'La photo de compte restait affichée dans le menu alors qu’elle n’était plus utilisée',
+            ], ['personnel'], [
+                'Ouvrez Mon compte. Ajoutez ou changez le portrait. L’unité se règle sur la fiche personnelle.',
+            ]),
+            $pr(466, '2026-09-07', 'Absences et demandes sont réunies dans Mes démarches', 'La page d’absences, d’élévation et de documents s’appelle désormais Mes démarches. Elle ne mélange plus les formations, le hub et les raccourcis du portail. Le tableau de bord garde une démarche rapide ; la fiche reste le lieu de l’identité et du grade. Rechargez Mes démarches', [
+                'Un seul nom partout : Mes démarches, pour déclarer une absence, demander une élévation ou un souhait d’évolution, et consulter les documents partagés',
+                'Demande d’élévation disponible sur la page elle-même, plus seulement en raccourci sur le tableau de bord',
+            ], [
+                'Le tableau de bord propose une démarche rapide, avec un lien vers toutes les démarches',
+                'Les formations restent dans le catalogue ; la fiche personnelle reste le lieu de l’identité et du grade',
+            ], [
+                'La même page s’appelait Espace RH, Espace RH et formations ou Mon dossier RH selon l’endroit',
+            ], ['personnel'], [
+                'Ouvrez Personnel, puis Mes démarches. Sur le tableau de bord, Démarche rapide sert encore à une demande ponctuelle.',
+            ]),
+            $pr(465, '2026-09-07', 'La création d’une communauté pose déjà la chaîne, l’ancienneté et l’arrivée des membres', 'À la création, le fondateur peut être chef de l’unité principale, l’ancienneté part d’aujourd’hui ou d’une date réelle, le parcours d’arrivée et le bureau effectifs sont prêts, et la fenêtre Overwatch reprend le nom de la communauté. Les communautés déjà en place n’ont rien à refaire. Rechargez la page de création si vous ouvrez une nouvelle communauté', [
+                'Choix du chef de l’unité principale dès la création, les autres postes pouvant rester vacants',
+                'Ancienneté : la communauté commence aujourd’hui, ou une date de création réelle si l’unité existait avant',
+                'Parcours d’arrivée, bureau effectifs et service actif du fondateur prêts dès l’ouverture',
+                'Fenêtre de connexion Overwatch au nom de la communauté, avec les méthodes d’accès habituelles',
+            ], [
+                'Après la création, des raccourcis vers la chaîne, l’ancienneté et le parcours d’arrivée',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Créer une communauté. À l’organisation, indiquez si vous êtes chef de l’unité principale. À la dernière étape, confirmez si l’unité commence aujourd’hui ou existait déjà. Après création, le cockpit propose les ajustements restants.',
+            ]),
+            $pr(464, '2026-09-07', 'Athena vous demande votre avis, et vous pouvez aider à traduire', 'Une fenêtre s’ouvre sur le site pour noter Athena. Un second volet permet de proposer une formulation plus naturelle. Les responsables du site relisent les propositions. Rechargez le site', [
+                'Fenêtre d’avis sur Athena, avec une note de 0 à 10',
+                'Proposition d’une formulation plus naturelle, relue avant d’être reprise partout',
+            ], [], [], ['personnel', 'command'], [
+                'Connectez-vous, puis ouvrez Avis Athena en bas à gauche, ou Avis sur Athena dans le pied de page. Plus tard reporte l’invitation de quelques semaines.',
+            ]),
+            $pr(463, '2026-09-07', 'Le tableau d’intégration n’affiche plus le même membre en plusieurs lignes', 'Chaque arrivée n’apparaît qu’une fois. Si plusieurs suivis ouverts existaient pour la même personne, il n’en reste qu’un. Rechargez Intégration des nouveaux membres', [], [], [
+                'Un même membre pouvait occuper de nombreuses lignes identiques dans le tableau d’arrivée',
+            ], ['personnel', 'command'], [
+                'Ouvrez Intégration des nouveaux membres. Chaque personne en cours d’arrivée n’occupe plus qu’une ligne.',
+            ]),
+            $pr(462, '2026-09-07', 'Les corrections RH s’enregistrent aussi sans demande', 'Un responsable peut désormais corriger un dossier depuis Corrections RH, sans attendre qu’un membre envoie une demande. Il choisit la personne, corrige, et la fiche est mise à jour tout de suite. Les demandes déjà déposées se confirment ou se refusent comme avant. Rechargez Corrections RH', [
+                'Correction d’un dossier par un responsable, sans file d’attente',
+                'Choix du membre puis enregistrement immédiat depuis la page Corrections RH',
+            ], [
+                'Si une demande était déjà en attente pour ce dossier, elle est close quand le responsable enregistre tout de suite',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Corrections RH. En bas de page, choisissez un membre, corrigez les informations, puis enregistrez tout de suite. La fiche est à jour sans passer par une demande.',
             ]),
             $pr(461, '2026-09-07', 'La chaîne de commandement se règle depuis les effectifs', 'Vous désignez le chef de chaque unité dans le bureau effectifs, puis vous voyez qui relève de qui. Un membre relève du chef de son unité. Un chef relève du chef de l’unité immédiatement au-dessus. Rechargez Effectifs', [
                 'Désignation du chef de chaque unité depuis le bureau effectifs',
@@ -1560,7 +1628,7 @@ final class DevDispatchCatalog
             $pr(329, '2026-09-01', 'Les cartes Absence, Élévation et Avancement s’ouvrent', 'Sur le tableau de bord, un clic sur Absence, Élévation ou Avancement ouvre le formulaire correspondant. Le parcours ne reste plus bloqué sur le choix de la démarche', [], [], [
                 'Cliquer sur une des trois cartes n’ouvrait pas le formulaire',
             ], ['personnel'], [
-                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, puis cliquez sur Absence, Élévation ou Avancement.',
+                'Ouvrez le tableau de bord, descendez jusqu’à Démarche rapide, puis cliquez sur Absence, Élévation ou Avancement.',
             ], 'Portail'),
             $pr(327, '2026-09-01', 'Les opérateurs en liaison restent visibles sur la carte', 'Un opérateur présent dans les effectifs et en liaison disparaissait parfois de la carte d’un coup, puis réapparaissait. La liste des effectifs et la carte restent désormais alignées : tant qu’il est en liaison, son symbole reste affiché', [
                 'Les opérateurs en liaison restent visibles sur la carte, même quand le poste actualise les effectifs',
@@ -1665,7 +1733,7 @@ final class DevDispatchCatalog
             $pr(298, '2026-09-01', 'Une seule démarche RH à la fois sur le tableau de bord', 'En bas de page, vous choisissez d’abord Absence, Élévation ou Avancement. Les deux formulaires ne s’affichent plus côte à côte au milieu de l’écran', [], [], [
                 'Les demandes d’élévation et d’avancement occupaient toute la largeur, en même temps, au-dessus du reste du tableau de bord',
             ], ['personnel'], [
-                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH. Trois cartes, puis un seul formulaire.',
+                'Ouvrez le tableau de bord, descendez jusqu’à Démarche rapide. Trois cartes, puis un seul formulaire.',
             ], 'Portail'),
             $pr(297, '2026-09-01', 'Les positions en mission ne remplissent plus le journal', 'Sur la carte du poste, le panneau d’activité ne crée plus une carte à chaque position reçue. La carte et les effectifs restent à jour ; le journal garde les connexions, les messages et les vrais événements.', [], [
                 'Une connexion ou un changement d’indicatif continue d’apparaître',
@@ -1688,11 +1756,11 @@ final class DevDispatchCatalog
                 'Trois cartes de choix en bas de page, puis le formulaire correspondant',
                 'Déclaration d’absence, demande d’élévation et souhait d’avancement depuis le tableau de bord',
             ], [
-                'Le lien vers l’espace RH complet reste disponible à côté du parcours',
+                'Le lien vers toutes les démarches reste disponible à côté du parcours',
             ], [
                 'Les deux formulaires n’apparaissent plus en même temps, avec l’absence reléguée en bas de carte',
             ], ['personnel'], [
-                'Ouvrez le tableau de bord, descendez jusqu’à Mon dossier RH, choisissez Absence, Élévation ou Avancement, puis transmettez.',
+                'Ouvrez le tableau de bord, descendez jusqu’à Démarche rapide, choisissez Absence, Élévation ou Avancement, puis transmettez.',
             ], 'Portail 1.5.91'),
             $pr(293, '2026-09-01', 'Affichage dit vraiment ce qui est sur le poste', 'Dans Réglages carte, plus de texte d’atelier. Si les bâtiments sont déjà là et pas l’ombrage, le poste le dit clairement, au lieu de prétendre que rien n’a été relevé', [], [
                 'Les cases Villes et villages, Routes, sans notice technique',
@@ -1815,7 +1883,7 @@ final class DevDispatchCatalog
                 'Chaque membre peut demander une élévation (grade, rôle, fonction) ou un avancement, sans passer par le tableur des effectifs',
                 'Les organisateurs habilités ouvrent le formulaire d’annonce déjà en place, pour un article court visible des membres',
             ], [
-                'L’espace RH complet, les absences et le suivi des accès restent accessibles en un clic',
+                'Mes démarches, les absences et le suivi des accès restent accessibles en un clic',
             ], [], ['personnel'], [
                 'Ouvrez le tableau de bord. Les offres, votre dossier RH et, si vous organisez la communauté, la rédaction d’une annonce se trouvent sous les transmissions.',
             ], 'Portail 1.5.95'),

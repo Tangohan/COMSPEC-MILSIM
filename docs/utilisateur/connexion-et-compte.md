@@ -23,8 +23,7 @@ Rubrique regroupant typiquement :
 | Zone | Usage |
 |------|--------|
 | **Préférences** | Langue, fuseau horaire, thème ou options d’affichage, notifications par courriel. |
-| **Photo de compte** | Avatar visible dans la navigation et certaines listes. |
-| **Portrait opérateur** | Image « in-universe » pour fiches, ORBAT ou briefings (selon politique de la communauté). |
+| **Portrait** | Une seule photo, visible sur le portail et la fiche. |
 | **Adresse électronique** | Modification de l’identifiant de connexion (souvent avec confirmation). |
 | **Mot de passe** | Changement du secret d’accès. |
 | **Profils de candidature** | Préréglages pour accélérer les formulaires d’enrôlement (si activé). |

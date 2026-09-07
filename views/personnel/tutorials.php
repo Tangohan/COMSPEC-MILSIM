@@ -13,7 +13,7 @@
         <a href="<?= htmlspecialchars(url('personnel/me/edit')) ?>" class="inline-flex rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">Éditer mon dossier</a>
         <a href="<?= htmlspecialchars(url('orbat')) ?>" class="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Ouvrir l’organigramme</a>
         <a href="<?= htmlspecialchars(url('personnel/me')) ?>" class="inline-flex rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white">Ma fiche</a>
-        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh')) ?>" class="inline-flex rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Espace RH et formations</a>
+        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh')) ?>" class="inline-flex rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-100">Mes démarches</a>
       </div>
     </header>
 
@@ -132,7 +132,7 @@
             <p class="mt-1 mb-0 text-slate-600">Prénom, nom, indicatif et langue de l’interface.</p>
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-            <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('account/portrait')) ?>">Portrait et médias</a>
+            <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('account/portrait')) ?>">Portrait</a>
             <p class="mt-1 mb-0 text-slate-600">Image utilisée comme avatar sur le forum.</p>
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
