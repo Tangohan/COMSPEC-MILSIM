@@ -152,6 +152,46 @@ final class MemberIntegrationCatalog
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public static function stepStatusLabels(): array
+    {
+        return [
+            self::STEP_PENDING => 'À faire',
+            self::STEP_IN_PROGRESS => 'En cours',
+            self::STEP_WAITING_MEMBER => 'En attente du membre',
+            self::STEP_WAITING_STAFF => 'En attente de l’encadrement',
+            self::STEP_BLOCKED => 'Bloquée',
+            self::STEP_COMPLETED => 'Terminée',
+            self::STEP_SKIPPED => 'Passée',
+            self::STEP_CANCELLED => 'Annulée',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function appointmentStatusLabels(): array
+    {
+        return [
+            self::APPT_SCHEDULED => 'Planifié',
+            self::APPT_CANCELLED => 'Annulé',
+            self::APPT_DONE => 'Terminé',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function visibilityLabels(): array
+    {
+        return [
+            self::VISIBILITY_STAFF => 'Interne',
+            self::VISIBILITY_MEMBER => 'Visible du membre',
+        ];
+    }
+
     public static function isTerminalStatus(string $status): bool
     {
         return in_array($status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED], true);

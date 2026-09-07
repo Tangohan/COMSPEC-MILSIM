@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
+use App\Repositories\GradeRepository;
+use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
@@ -19,7 +23,7 @@ use App\Services\EmailService;
 final class PersonnelCorrectionRequestService
 {
     /**
-     * Champs de la fiche que le membre peut proposer (hors habilitation, grade attribué, rôles, e-mail).
+     * Champs de la fiche que le membre peut proposer (hors habilitation, e-mail, notes commandement).
      *
      * @var array<string, string>
      */
@@ -45,6 +49,10 @@ final class PersonnelCorrectionRequestService
         'rp_medical_due_date' => 'Échéance visite médicale',
         'rp_operational_function' => 'Fonction sur le dossier',
         'rank_display' => 'Grade ou titre affiché',
+        'rank_display_override' => 'Libellé court du grade',
+        'grade_id' => 'Grade attribué',
+        'unit_assignments' => 'Affectations d’unité',
+        'job_roles' => 'Emplois',
         'equipment_class' => 'Classe d’équipement',
         'kit_assigned' => 'Kit attribué',
         'radio_assigned' => 'Radio attribuée',
@@ -56,8 +64,19 @@ final class PersonnelCorrectionRequestService
     public const FIELD_GROUPS = [
         'identity' => 'Identité du personnage',
         'details' => 'Détails du personnage',
+        'assignment' => 'Affectation',
         'engagement' => 'Engagement et statut',
         'equipment' => 'Équipement',
+    ];
+
+    /** @var list<string> */
+    public const ORBAT_KEYS = [
+        'grade_id',
+        'unit_assignments',
+        'job_roles',
+        'rank_display',
+        'rank_display_override',
+        'enlistment_date',
     ];
 
     /** @var list<string> */
@@ -91,6 +110,10 @@ final class PersonnelCorrectionRequestService
         private EmailService $emailService,
         private UserNotificationPreferencesRepository $notificationPreferences,
         private UserProfileRepository $userProfiles,
+        private PersonnelAssignmentRepository $assignments,
+        private PersonnelJobRoleRepository $jobRoles,
+        private UnitRepository $units,
+        private GradeRepository $grades,
     ) {
     }
 
@@ -152,6 +175,8 @@ final class PersonnelCorrectionRequestService
     {
         $profile = $this->profiles->getByUserId($userId) ?? [];
         $userProfile = $this->userProfiles->getByUserId($userId) ?? [];
+        $userRow = $this->userRepository->findById($userId) ?? [];
+        $tenantId = (int) ($userRow['tenant_id'] ?? 0);
         $out = [];
         foreach (array_keys(self::CORRECTABLE_FIELDS) as $key) {
             if (in_array($key, self::USER_PROFILE_KEYS, true)) {
@@ -170,6 +195,19 @@ final class PersonnelCorrectionRequestService
                 $out[$key] = $this->jsonListToLines($profile['nicknames_json'] ?? null);
                 continue;
             }
+            if ($key === 'grade_id') {
+                $gid = (int) ($userRow['grade_id'] ?? 0);
+                $out[$key] = $gid > 0 ? (string) $gid : '';
+                continue;
+            }
+            if ($key === 'unit_assignments') {
+                $out[$key] = self::canonicalizeUnitAssignments($this->currentUnitAssignmentRows($userId));
+                continue;
+            }
+            if ($key === 'job_roles') {
+                $out[$key] = self::canonicalizeJobRoles($this->currentJobRoleRows($tenantId, $userId));
+                continue;
+            }
             $val = $profile[$key] ?? null;
             if ($val === null) {
                 $out[$key] = '';
@@ -181,6 +219,17 @@ final class PersonnelCorrectionRequestService
         }
 
         return $out;
+    }
+
+    /**
+     * Diff proposé vs fiche actuelle (champs présents dans $rawInput uniquement).
+     *
+     * @param array<string, mixed> $rawInput
+     * @return array<string, mixed>
+     */
+    public function proposedDiff(int $targetUserId, array $rawInput): array
+    {
+        return $this->normalizeProposed($rawInput, $this->currentSnapshot($targetUserId));
     }
 
     /**
@@ -373,12 +422,17 @@ final class PersonnelCorrectionRequestService
             if ($new === $old) {
                 continue;
             }
+            if (in_array($key, ['unit_assignments', 'job_roles'], true)) {
+                $out[$key] = $new;
+                continue;
+            }
             $max = match ($key) {
                 'bio' => 2000,
                 'extra_callsigns', 'nicknames' => 800,
                 'motto', 'languages', 'operator_tags', 'weapon_specialty', 'kit_assigned', 'vehicle_authorized' => 255,
                 'operator_status', 'rp_operational_function' => 160,
-                'callsign', 'nickname_primary', 'rank_display', 'first_name', 'last_name' => 120,
+                'callsign', 'nickname_primary', 'rank_display', 'rank_display_override', 'first_name', 'last_name' => 120,
+                'grade_id' => 12,
                 default => 150,
             };
             $out[$key] = mb_substr($new, 0, $max);
@@ -401,8 +455,23 @@ final class PersonnelCorrectionRequestService
         $userProfilePatch = [];
         $personnelPatch = [];
         foreach ($payload as $key => $value) {
-            if ($key !== 'weight_kg' && $value === '') {
+            if ($key !== 'weight_kg' && $value === '' && !in_array($key, ['unit_assignments', 'job_roles', 'grade_id'], true)) {
                 $value = null;
+            }
+            if ($key === 'grade_id') {
+                $gid = (int) $value;
+                $this->userRepository->update($targetUserId, $tenantId, [
+                    'grade_id' => $gid > 0 ? $gid : null,
+                ]);
+                continue;
+            }
+            if ($key === 'unit_assignments') {
+                $this->applyUnitAssignments($targetUserId, $value);
+                continue;
+            }
+            if ($key === 'job_roles') {
+                $this->applyJobRoles($tenantId, $targetUserId, $value);
+                continue;
             }
             if (in_array($key, self::USER_PROFILE_KEYS, true)) {
                 $userProfilePatch[$key] = $value;
@@ -487,8 +556,23 @@ final class PersonnelCorrectionRequestService
             'weight_kg' => ['type' => 'number', 'group' => 'details', 'min' => 20, 'max_num' => 300],
             'languages', 'nationality', 'birth_place' => ['type' => 'text', 'group' => 'details'],
             'operator_tags' => ['type' => 'text', 'group' => 'details', 'span' => 2],
-            'enlistment_date', 'rp_medical_due_date' => ['type' => 'date', 'group' => 'engagement'],
-            'rp_operational_function', 'rank_display' => ['type' => 'text', 'group' => 'engagement'],
+            'enlistment_date' => ['type' => 'date', 'group' => 'assignment'],
+            'rp_medical_due_date' => ['type' => 'date', 'group' => 'engagement'],
+            'rp_operational_function' => ['type' => 'text', 'group' => 'engagement'],
+            'rank_display', 'rank_display_override' => ['type' => 'text', 'group' => 'assignment'],
+            'grade_id' => ['type' => 'select', 'group' => 'assignment', 'choices' => 'grade_id'],
+            'unit_assignments' => [
+                'type' => 'unit_assignments',
+                'group' => 'assignment',
+                'span' => 2,
+                'help' => 'Unité principale et rôle dans l’unité. Les affectations complémentaires se proposent depuis le dossier.',
+            ],
+            'job_roles' => [
+                'type' => 'job_roles',
+                'group' => 'assignment',
+                'span' => 2,
+                'help' => 'Emploi principal du référentiel. Les emplois complémentaires se proposent depuis le dossier.',
+            ],
             'weapon_specialty' => ['type' => 'text', 'group' => 'equipment', 'span' => 2],
             default => ['type' => 'text', 'group' => 'equipment'],
         };
@@ -510,6 +594,17 @@ final class PersonnelCorrectionRequestService
 
     private function normalizeIncomingValue(string $key, mixed $raw): string
     {
+        if ($key === 'unit_assignments') {
+            return self::canonicalizeUnitAssignments(self::decodeAssignmentRows($raw));
+        }
+        if ($key === 'job_roles') {
+            return self::canonicalizeJobRoles(self::decodeJobRoleRows($raw));
+        }
+        if ($key === 'grade_id') {
+            $gid = (int) $raw;
+
+            return $gid > 0 ? (string) $gid : '';
+        }
         if (is_array($raw)) {
             $lines = [];
             foreach ($raw as $item) {
@@ -583,7 +678,7 @@ final class PersonnelCorrectionRequestService
         $targetName = $this->displayName($targetUser);
         $requesterName = $this->displayName($requester);
         $requesterEmail = trim((string) ($requester['email'] ?? ''));
-        $diffLines = $this->formatDiffLines($proposed, $before);
+        $diffLines = $this->formatDiffLines($proposed, $before, $tenantId);
         $queueUrl = url('back-office/personnel/corrections');
         $ficheUrl = url('personnel/' . (int) ($targetUser['id'] ?? 0));
 
@@ -643,7 +738,7 @@ final class PersonnelCorrectionRequestService
         $targetName = $this->displayName($target);
         $resolverName = $this->displayName($resolver);
         $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
-        $diffLines = $this->formatDiffLines($proposed, is_array($row['before'] ?? null) ? $row['before'] : []);
+        $diffLines = $this->formatDiffLines($proposed, is_array($row['before'] ?? null) ? $row['before'] : [], $tenantId);
         $ficheUrl = url('personnel/' . (int) $target['id']);
         $decisionLabel = $decision === 'approved' ? 'confirmée' : 'refusée';
 
@@ -700,27 +795,322 @@ final class PersonnelCorrectionRequestService
      * @param array<string, mixed> $before
      * @return list<string>
      */
-    private function formatDiffLines(array $proposed, array $before): array
+    private function formatDiffLines(array $proposed, array $before, ?int $tenantId = null): array
     {
         $lines = [];
         foreach ($proposed as $key => $newVal) {
             $label = self::CORRECTABLE_FIELDS[$key] ?? $key;
-            $old = array_key_exists($key, $before) ? $this->diffDisplayValue($before[$key]) : '';
-            $new = $this->diffDisplayValue($newVal);
+            $old = array_key_exists($key, $before) ? $this->displayFieldValue((string) $key, $before[$key], $tenantId) : '';
+            $new = $this->displayFieldValue((string) $key, $newVal, $tenantId);
             $lines[] = $label . ' : « ' . ($old !== '' ? $old : '—') . ' » → « ' . ($new !== '' ? $new : '—') . ' »';
         }
 
         return $lines;
     }
 
-    private function diffDisplayValue(mixed $value): string
+    public function displayFieldValue(string $key, mixed $value, ?int $tenantId = null): string
     {
+        if ($key === 'grade_id') {
+            $gid = (int) $value;
+            if ($gid < 1) {
+                return '';
+            }
+            $grade = $this->grades->findById($gid);
+            if (!$grade) {
+                return 'Grade #' . $gid;
+            }
+
+            return trim((string) ($grade['label_long'] ?? $grade['label_short'] ?? $grade['name'] ?? ('Grade #' . $gid)));
+        }
+        if ($key === 'unit_assignments') {
+            return $this->formatUnitAssignmentsLabel(self::decodeAssignmentRows($value));
+        }
+        if ($key === 'job_roles') {
+            return $this->formatJobRolesLabel(self::decodeJobRoleRows($value), $tenantId);
+        }
+
         $text = trim((string) $value);
         if ($text === '') {
             return '';
         }
 
         return trim((string) preg_replace('/\s+/u', ' ', str_replace(["\r\n", "\r", "\n"], ' · ', $text)));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    public static function canonicalizeUnitAssignments(array $rows): string
+    {
+        $norm = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            if ($unitId < 1) {
+                continue;
+            }
+            if (isset($seen[$unitId])) {
+                $idx = $seen[$unitId];
+                if (!empty($row['is_primary'])) {
+                    $norm[$idx]['is_primary'] = 1;
+                }
+                continue;
+            }
+            $seen[$unitId] = count($norm);
+            $norm[] = [
+                'unit_id' => $unitId,
+                'role_name' => mb_substr(trim((string) ($row['role_name'] ?? '')), 0, 120),
+                'is_primary' => !empty($row['is_primary']) ? 1 : 0,
+            ];
+        }
+        usort($norm, static function (array $a, array $b): int {
+            if ((int) $a['is_primary'] !== (int) $b['is_primary']) {
+                return (int) $b['is_primary'] <=> (int) $a['is_primary'];
+            }
+
+            return (int) $a['unit_id'] <=> (int) $b['unit_id'];
+        });
+        if ($norm !== []) {
+            $hasPrimary = false;
+            foreach ($norm as $row) {
+                if (!empty($row['is_primary'])) {
+                    $hasPrimary = true;
+                    break;
+                }
+            }
+            if (!$hasPrimary) {
+                $norm[0]['is_primary'] = 1;
+            }
+        }
+
+        return json_encode($norm, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    public static function canonicalizeJobRoles(array $rows): string
+    {
+        $norm = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            $roleId = (int) ($row['role_id'] ?? $row['personnel_job_role_id'] ?? 0);
+            if ($roleId < 1) {
+                continue;
+            }
+            if (isset($seen[$roleId])) {
+                $idx = $seen[$roleId];
+                if (!empty($row['is_primary'])) {
+                    $norm[$idx]['is_primary'] = 1;
+                }
+                continue;
+            }
+            $seen[$roleId] = count($norm);
+            $norm[] = [
+                'role_id' => $roleId,
+                'detail' => mb_substr(trim((string) ($row['detail'] ?? $row['role_detail'] ?? '')), 0, 150),
+                'is_primary' => !empty($row['is_primary']) ? 1 : 0,
+            ];
+        }
+        usort($norm, static function (array $a, array $b): int {
+            if ((int) $a['is_primary'] !== (int) $b['is_primary']) {
+                return (int) $b['is_primary'] <=> (int) $a['is_primary'];
+            }
+
+            return (int) $a['role_id'] <=> (int) $b['role_id'];
+        });
+        if ($norm !== []) {
+            $hasPrimary = false;
+            foreach ($norm as $row) {
+                if (!empty($row['is_primary'])) {
+                    $hasPrimary = true;
+                    break;
+                }
+            }
+            if (!$hasPrimary) {
+                $norm[0]['is_primary'] = 1;
+            }
+        }
+
+        return json_encode($norm, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
+    }
+
+    /** @return list<array<string, mixed>> */
+    public static function decodeAssignmentRows(mixed $raw): array
+    {
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public static function decodeJobRoleRows(mixed $raw): array
+    {
+        return self::decodeAssignmentRows($raw);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function currentUnitAssignmentRows(int $userId): array
+    {
+        $rows = [];
+        foreach ($this->assignments->listActiveForUserResolved($userId) as $row) {
+            $rows[] = [
+                'unit_id' => (int) ($row['unit_id'] ?? 0),
+                'role_name' => (string) ($row['role_name'] ?? ''),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function currentJobRoleRows(int $tenantId, int $userId): array
+    {
+        if ($tenantId < 1 || $userId < 1 || !$this->jobRoles->tablesExist() || !$this->jobRoles->pivotTableExists()) {
+            return [];
+        }
+        $rows = [];
+        foreach ($this->jobRoles->listPivotAssignmentsForUsers($tenantId, [$userId])[$userId] ?? [] as $row) {
+            $rows[] = [
+                'role_id' => (int) ($row['personnel_job_role_id'] ?? 0),
+                'detail' => (string) ($row['role_detail'] ?? ''),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function applyUnitAssignments(int $userId, mixed $raw): void
+    {
+        $parsed = [];
+        foreach (self::decodeAssignmentRows($raw) as $row) {
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            if ($unitId < 1) {
+                continue;
+            }
+            $parsed[] = [
+                'unit_id' => $unitId,
+                'role_name' => mb_substr(trim((string) ($row['role_name'] ?? '')), 0, 120),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+        if ($parsed === []) {
+            $this->assignments->replaceActiveAssignmentsFromDossier($userId, []);
+            $this->profiles->update($userId, ['primary_unit_id' => null]);
+
+            return;
+        }
+        $primaryId = null;
+        foreach ($parsed as $i => $row) {
+            if (!empty($row['is_primary']) && $primaryId === null) {
+                $primaryId = (int) $row['unit_id'];
+            } else {
+                $parsed[$i]['is_primary'] = $primaryId !== null ? false : !empty($row['is_primary']);
+            }
+        }
+        if ($primaryId === null) {
+            $parsed[0]['is_primary'] = true;
+            $primaryId = (int) $parsed[0]['unit_id'];
+        }
+        foreach ($parsed as &$row) {
+            if (trim((string) $row['role_name']) === '') {
+                $row['role_name'] = 'Membre';
+            }
+        }
+        unset($row);
+        $this->assignments->replaceActiveAssignmentsFromDossier($userId, $parsed);
+        $this->profiles->update($userId, ['primary_unit_id' => $primaryId]);
+    }
+
+    private function applyJobRoles(int $tenantId, int $userId, mixed $raw): void
+    {
+        if (!$this->jobRoles->tablesExist() || !$this->jobRoles->pivotTableExists()) {
+            return;
+        }
+        $rows = [];
+        foreach (self::decodeJobRoleRows($raw) as $row) {
+            $roleId = (int) ($row['role_id'] ?? $row['personnel_job_role_id'] ?? 0);
+            if ($roleId < 1) {
+                continue;
+            }
+            $rows[] = [
+                'personnel_job_role_id' => $roleId,
+                'role_detail' => trim((string) ($row['detail'] ?? $row['role_detail'] ?? '')),
+                'is_primary' => !empty($row['is_primary']),
+            ];
+        }
+        $this->jobRoles->replaceUserPivotJobRoles($tenantId, $userId, $rows);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function formatUnitAssignmentsLabel(array $rows): string
+    {
+        $parts = [];
+        foreach ($rows as $row) {
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            if ($unitId < 1) {
+                continue;
+            }
+            $unit = $this->units->findById($unitId);
+            $name = trim((string) ($unit['name'] ?? ''));
+            if ($name === '') {
+                $name = 'Unité #' . $unitId;
+            }
+            $role = trim((string) ($row['role_name'] ?? ''));
+            $bit = $role !== '' ? $name . ' — ' . $role : $name;
+            if (!empty($row['is_primary'])) {
+                $bit .= ' (principale)';
+            }
+            $parts[] = $bit;
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function formatJobRolesLabel(array $rows, ?int $tenantId = null): string
+    {
+        $parts = [];
+        foreach ($rows as $row) {
+            $roleId = (int) ($row['role_id'] ?? $row['personnel_job_role_id'] ?? 0);
+            if ($roleId < 1) {
+                continue;
+            }
+            $jr = ($tenantId !== null && $tenantId > 0)
+                ? $this->jobRoles->findRoleById($roleId, $tenantId)
+                : null;
+            $name = trim((string) ($jr['name'] ?? ''));
+            if ($name === '') {
+                $name = 'Emploi #' . $roleId;
+            }
+            $detail = trim((string) ($row['detail'] ?? $row['role_detail'] ?? ''));
+            $bit = $detail !== '' ? $name . ' — ' . $detail : $name;
+            if (!empty($row['is_primary'])) {
+                $bit .= ' (principal)';
+            }
+            $parts[] = $bit;
+        }
+
+        return implode(' · ', $parts);
     }
 
     private function wantsEmail(int $userId, string $event): bool

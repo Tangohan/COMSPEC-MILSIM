@@ -163,7 +163,9 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('back-office/users/create'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Créer un compte</a>
             <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Membres</a>
             <?php endif; ?>
+            <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
             <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Forum</a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Paramètres</a>
             <a href="<?= htmlspecialchars(url('back-office/atak/operateurs'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Effectifs en liaison</a>
             <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Ma fiche</a>

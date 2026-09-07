@@ -222,6 +222,19 @@ final class MemberIntegrationService
                 $duty->applyActiveDuty($tenantId, $userId, $actorUserId ?? 0);
             } catch (Throwable) {
             }
+            try {
+                (new \App\Support\PersonnelHrPdfService())->maybeAutoIssue(
+                    $tenantId,
+                    $userId,
+                    'integration',
+                    $actorUserId,
+                    [
+                        'title' => 'Attestation d’intégration',
+                        'detail' => 'Le parcours d’accueil est achevé.',
+                    ]
+                );
+            } catch (Throwable) {
+            }
         }
 
         return $this->integrations->findForTenant($tenantId, $integrationId);

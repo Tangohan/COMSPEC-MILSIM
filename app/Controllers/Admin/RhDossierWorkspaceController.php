@@ -15,12 +15,22 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\PersonnelSuccessionRepository;
+use App\Repositories\TenantAdminSettingsRepository;
+use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\MemberIntegrationRepository;
+use App\Repositories\MemberIntegrationTemplateRepository;
+use App\Repositories\PersonnelRoleplayTimelineRepository;
+use App\Services\Effectifs\PersonnelAutoAdvancementService;
+use App\Services\Effectifs\PersonnelHrWorkspaceSettings;
 use App\Services\Effectifs\RhAlertAggregatorService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Support\EffectifsLmsAccess;
+use App\Support\EffectifsWorkspaceShellExtras;
+use App\Support\MemberIntegrationCatalog;
 use App\Support\PersonnelHrDocumentStorage;
+use App\Support\PersonnelHrPdfService;
 
 /**
  * Dossier RH individuel : documents, mobilité, vivier, alertes agrégées.
@@ -39,10 +49,24 @@ final class RhDossierWorkspaceController
         private ?ElevationRequestRepository $elevationRequests = null,
         private ?PersonnelQualificationRepository $qualifications = null,
         private ?PersonnelDuplicateDetectionService $duplicateDetection = null,
+        private ?TenantAdminSettingsRepository $adminSettings = null,
+        private ?TenantRepository $tenants = null,
+        private ?PersonnelHrPdfService $hrPdf = null,
+        private ?PersonnelRoleplayTimelineRepository $roleplayTimeline = null,
+        private ?MemberIntegrationRepository $integrations = null,
+        private ?MemberIntegrationTemplateRepository $integrationTemplates = null,
+        private ?PersonnelAutoAdvancementService $autoAdvancement = null,
     ) {
         $this->elevationRequests ??= new ElevationRequestRepository();
         $this->qualifications ??= new PersonnelQualificationRepository();
         $this->duplicateDetection ??= new PersonnelDuplicateDetectionService();
+        $this->adminSettings ??= new TenantAdminSettingsRepository();
+        $this->tenants ??= new TenantRepository();
+        $this->hrPdf ??= new PersonnelHrPdfService();
+        $this->roleplayTimeline ??= new PersonnelRoleplayTimelineRepository();
+        $this->integrations ??= new MemberIntegrationRepository();
+        $this->integrationTemplates ??= new MemberIntegrationTemplateRepository();
+        $this->autoAdvancement ??= new PersonnelAutoAdvancementService();
     }
 
     public function documents(Request $request, array $params = []): Response
@@ -63,6 +87,11 @@ final class RhDossierWorkspaceController
                 ? $this->hrDocuments->countForTenant($tenantId)
                 : 0,
             'hrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'hrPdfTypeLabels' => array_intersect_key(
+                PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+                array_flip(PersonnelHrPdfService::GENERATABLE_TYPES)
+            ),
+            'hrWorkspaceSettings' => PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings),
             'hrSchemaReady' => $this->hrDocuments->tableExists(),
             'orgUsers' => $this->userRepository->listForTenant($tenantId, null, 'active', null, 200, 0, true),
             'csrfToken' => Csrf::token(),
@@ -165,6 +194,49 @@ final class RhDossierWorkspaceController
         }
 
         return PersonnelHrDocumentStorage::downloadResponse($row);
+    }
+
+    public function generateDocument(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à établir une pièce.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) $request->input('user_id');
+        $docType = trim((string) $request->input('doc_type', 'certificat'));
+        $title = trim((string) $request->input('title', ''));
+        $detail = trim((string) $request->input('detail', ''));
+        $visibility = trim((string) $request->input('visibility', 'STAFF')) === 'MEMBER' ? 'MEMBER' : 'STAFF';
+        if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+        $out = $this->hrPdf->issueAndStore(
+            $tenantId,
+            $userId,
+            $docType,
+            (int) Session::get('user_id'),
+            $visibility,
+            [
+                'title' => $title,
+                'detail' => $detail,
+            ]
+        );
+        Session::flash($out['ok'] ? 'success' : 'error', $out['message']);
+
+        return Response::redirect(effectifs_workspace_url('documents-rh'));
     }
 
     public function mobility(Request $request, array $params = []): Response
@@ -292,6 +364,17 @@ final class RhDossierWorkspaceController
             (int) Session::get('user_id'),
             $note !== '' ? mb_substr($note, 0, 500) : null
         );
+        if ($ok && $status === 'applied') {
+            $row = $this->mobility->findById($id, $tenantId);
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0) {
+                $target = trim((string) ($row['target_label'] ?? $row['target_unit_name'] ?? ''));
+                $this->hrPdf->maybeAutoIssue($tenantId, $uid, 'mobility', (int) Session::get('user_id'), [
+                    'title' => 'Décision d’affectation',
+                    'detail' => $target !== '' ? 'Destination : ' . $target : '',
+                ]);
+            }
+        }
         Session::flash($ok ? 'success' : 'error', $ok
             ? 'Demande de mobilité mise à jour.'
             : 'Demande introuvable ou déjà traitée.');
@@ -418,17 +501,178 @@ final class RhDossierWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $summary = $this->rhAlerts->summarize($tenantId);
+        $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
+        $inactivity = (int) ($hr['inactivity_days'] ?? RhAlertAggregatorService::INACTIVITY_DAYS);
+        $absence = (int) ($hr['absence_days'] ?? RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
+        $summary = $this->rhAlerts->summarize($tenantId, $inactivity, $absence);
 
         return $this->shell('admin.effectifs_workspace.rh_alerts', [
             'title' => 'Alertes RH',
             'effectifsNav' => 'rh_alerts',
             'rhAlertSummary' => $summary,
-            'rhInactiveMembers' => $this->rhAlerts->listInactiveMembers($tenantId),
-            'rhProlongedAbsences' => $this->rhAlerts->listProlongedAbsences($tenantId),
-            'rhInactivityDays' => RhAlertAggregatorService::INACTIVITY_DAYS,
-            'rhProlongedAbsenceDays' => RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS,
+            'rhInactiveMembers' => $this->rhAlerts->listInactiveMembers($tenantId, $inactivity),
+            'rhProlongedAbsences' => $this->rhAlerts->listProlongedAbsences($tenantId, 40, $absence),
+            'rhInactivityDays' => $inactivity,
+            'rhProlongedAbsenceDays' => $absence,
         ]);
+    }
+
+    public function roleplay(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+
+        return $this->shell('admin.effectifs_workspace.rh_roleplay', [
+            'title' => 'Suivi roleplay',
+            'effectifsNav' => 'rh_roleplay',
+            'roleplayConfig' => $this->roleplayFollowupConfig($tenantId),
+            'roleplayDueItems' => $this->roleplayTimeline->listDashboardDueItems($tenantId, 14, 80),
+        ]);
+    }
+
+    public function integration(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $rows = [];
+        $hasTemplate = false;
+        try {
+            $rows = $this->integrations->listDashboard($tenantId, [], 120);
+            $hasTemplate = $this->integrationTemplates->hasActiveTemplate($tenantId);
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.rh_integration', [
+            'title' => 'Intégration',
+            'effectifsNav' => 'rh_integration',
+            'integrationRows' => $rows,
+            'integrationStatusLabels' => MemberIntegrationCatalog::statusLabels(),
+            'integrationHasTemplate' => $hasTemplate,
+        ]);
+    }
+
+    public function settings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
+        $preview = [];
+        if (!empty($hr['advancement_enabled'])) {
+            try {
+                $preview = $this->autoAdvancement->evaluateTenant($tenantId, false)['preview'] ?? [];
+            } catch (\Throwable) {
+                $preview = [];
+            }
+        }
+        $dup = [];
+        try {
+            $all = $this->adminSettings->getForTenant($tenantId);
+            $dup = is_array($all['personnel_duplicates'] ?? null) ? $all['personnel_duplicates'] : [];
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.rh_settings', [
+            'title' => 'Réglages effectifs',
+            'effectifsNav' => 'rh_settings',
+            'hrWorkspaceSettings' => $hr,
+            'roleplayConfig' => $this->roleplayFollowupConfig($tenantId),
+            'duplicateSettings' => $dup,
+            'advancementPreview' => $preview,
+            'csrfToken' => Csrf::token(),
+            'canManageAdvancement' => EffectifsLmsAccess::canManageStatus(Gate::getInstance())
+                || EffectifsLmsAccess::canEditProfiles(Gate::getInstance()),
+        ]);
+    }
+
+    public function saveSettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance()) && !EffectifsLmsAccess::canManageStatus(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier ces réglages.');
+
+            return Response::redirect(effectifs_workspace_url('reglages'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('reglages'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $current = $this->adminSettings->getForTenant($tenantId);
+        $current['personnel_hr'] = [
+            'reviewed' => true,
+            'default_visibility' => (string) $request->input('default_visibility', 'STAFF'),
+            'auto_pdf_mobility' => $request->input('auto_pdf_mobility') === '1',
+            'auto_pdf_elevation' => $request->input('auto_pdf_elevation') === '1',
+            'auto_pdf_integration' => $request->input('auto_pdf_integration') === '1',
+            'advancement_enabled' => $request->input('advancement_enabled') === '1',
+            'advancement_months' => (int) $request->input('advancement_months', 12),
+            'advancement_mode' => (string) $request->input('advancement_mode', 'propose'),
+            'inactivity_days' => (int) $request->input('inactivity_days', 45),
+            'absence_days' => (int) $request->input('absence_days', 14),
+            'auto_start_integration' => $request->input('auto_start_integration') === '1',
+            'auto_start_on_assignment' => $request->input('auto_start_on_assignment') === '1',
+        ];
+        $this->adminSettings->saveForTenant($tenantId, $current);
+
+        $raw = $this->tenants->getSettings($tenantId);
+        $community = is_array($raw['community'] ?? null) ? $raw['community'] : [];
+        $rp = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+        $rp['enabled'] = $request->input('rp_followup_enabled') === '1' ? 1 : 0;
+        $rp['optional'] = $request->input('rp_followup_optional') === '1' ? 1 : 0;
+        $this->tenants->updateSettings($tenantId, [
+            'community' => [
+                'roleplay_followup' => $rp,
+            ],
+        ]);
+
+        Session::flash('success', 'Réglages du bureau effectifs enregistrés.');
+
+        return Response::redirect(effectifs_workspace_url('reglages'));
+    }
+
+    public function runAdvancement(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageStatus(Gate::getInstance()) && !EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à lancer la revue des avancements.');
+
+            return Response::redirect(effectifs_workspace_url('reglages'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('reglages'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $out = $this->autoAdvancement->evaluateTenant($tenantId, true, (int) Session::get('user_id'));
+        $eligible = (int) ($out['eligible'] ?? 0);
+        $proposed = (int) ($out['proposed'] ?? 0);
+        $applied = (int) ($out['applied'] ?? 0);
+        if ($eligible < 1) {
+            Session::flash('success', $out['message'] ?? 'Aucun dossier n’est éligible pour le moment.');
+        } elseif ($applied > 0) {
+            Session::flash('success', $applied . ' avancement' . ($applied > 1 ? 's' : '') . ' appliqué' . ($applied > 1 ? 's' : '') . '.');
+        } else {
+            Session::flash('success', $proposed . ' demande' . ($proposed > 1 ? 's' : '') . ' d’élévation créée' . ($proposed > 1 ? 's' : '') . '.');
+        }
+
+        return Response::redirect(effectifs_workspace_url('reglages'));
     }
 
     private function denyUnlessAccess(): ?Response
@@ -475,9 +719,15 @@ final class RhDossierWorkspaceController
         }
         $rhAlertTotal = 0;
         try {
-            $rhAlertTotal = (int) ($this->rhAlerts->summarize($tenantId)['total'] ?? 0);
+            $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
+            $rhAlertTotal = (int) ($this->rhAlerts->summarize(
+                $tenantId,
+                (int) ($hr['inactivity_days'] ?? null),
+                (int) ($hr['absence_days'] ?? null)
+            )['total'] ?? 0);
         } catch (\Throwable) {
         }
+        $extras = EffectifsWorkspaceShellExtras::counts($tenantId);
 
         return Response::view('layout.main', array_merge([
             'content' => 'admin.effectifs_workspace.shell',
@@ -499,7 +749,25 @@ final class RhDossierWorkspaceController
             'personnelDuplicateScan' => $dupScan,
             'mobilityPendingCount' => $mobilityPending,
             'rhAlertTotalCount' => $rhAlertTotal,
+            'roleplayDueCount' => $extras['roleplayDueCount'],
+            'integrationOpenCount' => $extras['integrationOpenCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
+    }
+
+    /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
+    private function roleplayFollowupConfig(int $tenantId): array
+    {
+        $settings = $this->tenants->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $cfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+
+        return [
+            'enabled' => !empty($cfg['enabled']),
+            'optional' => !empty($cfg['optional']),
+            'stages' => is_array($cfg['stages'] ?? null) ? $cfg['stages'] : [],
+            'recruitment_tracks' => is_array($cfg['recruitment_tracks'] ?? null) ? $cfg['recruitment_tracks'] : [],
+            'eligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
+        ];
     }
 }

@@ -67,6 +67,9 @@ final class TenantAdminSettingsRepository
                 'off_op_position_sharing' => $this->bool($current['atak_defaults']['off_op_position_sharing'] ?? false),
             ],
             'personnel_duplicates' => $this->sanitizePersonnelDuplicates($current['personnel_duplicates'] ?? []),
+            'personnel_hr' => \App\Services\Effectifs\PersonnelHrWorkspaceSettings::sanitize(
+                $current['personnel_hr'] ?? []
+            ),
         ];
     }
 
@@ -148,6 +151,7 @@ final class TenantAdminSettingsRepository
                 'enabled' => true,
                 'fields' => ['matricule', 'callsign'],
             ],
+            'personnel_hr' => \App\Services\Effectifs\PersonnelHrWorkspaceSettings::defaults(),
         ];
     }
 

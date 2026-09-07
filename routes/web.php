@@ -224,6 +224,7 @@ use App\Middleware\InterteamCooperationConsentMiddleware;
 use App\Middleware\InvitationSenderMiddleware;
 use App\Middleware\IntegrationsApiAuthMiddleware;
 use App\Middleware\ForumModerationConsoleMiddleware;
+use App\Middleware\ForumPublicMaintenanceMiddleware;
 use App\Middleware\ForumSanctionMiddleware;
 use App\Middleware\TenantMessagesSanctionMiddleware;
 use App\Middleware\DocumentsModuleSanctionMiddleware;
@@ -252,8 +253,8 @@ use App\Controllers\Web\SitePagesController;
 use App\Controllers\Web\PersonnelDeploymentController;
 
 return function (Router $router) {
-    $mwForum = [AuthMiddleware::class, ForumSanctionMiddleware::class];
-    $mwForumCoop = [AuthMiddleware::class, ForumSanctionMiddleware::class, InterteamCooperationConsentMiddleware::class];
+    $mwForum = [AuthMiddleware::class, ForumPublicMaintenanceMiddleware::class, ForumSanctionMiddleware::class];
+    $mwForumCoop = [AuthMiddleware::class, ForumPublicMaintenanceMiddleware::class, ForumSanctionMiddleware::class, InterteamCooperationConsentMiddleware::class];
     $mwMessages = [AuthMiddleware::class, TenantMessagesSanctionMiddleware::class];
     $mwDocuments = [AuthMiddleware::class, DocumentsModuleSanctionMiddleware::class];
     $mwTraining = [AuthMiddleware::class, TrainingModuleSanctionMiddleware::class];
@@ -1342,6 +1343,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/supprimer', [EffectifsWorkspaceController::class, 'deleteJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/categorie', [EffectifsWorkspaceController::class, 'saveJobCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'commandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'saveCommandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1365,6 +1368,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/documents-rh/{id}/fichier', [RhDossierWorkspaceController::class, 'downloadDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'documents'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'storeDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/documents-rh/etablir', [RhDossierWorkspaceController::class, 'generateDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/mobilite', [RhDossierWorkspaceController::class, 'mobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/mobilite', [RhDossierWorkspaceController::class, 'storeMobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/mobilite/{id}/statut', [RhDossierWorkspaceController::class, 'resolveMobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1372,6 +1376,11 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'storeSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/vivier/{id}/retirer', [RhDossierWorkspaceController::class, 'deactivateSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/alertes', [RhDossierWorkspaceController::class, 'alerts'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/roleplay', [RhDossierWorkspaceController::class, 'roleplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/integration', [RhDossierWorkspaceController::class, 'integration'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/reglages', [RhDossierWorkspaceController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/reglages', [RhDossierWorkspaceController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/reglages/avancements', [RhDossierWorkspaceController::class, 'runAdvancement'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWall'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWallPost'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

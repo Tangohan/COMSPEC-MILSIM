@@ -225,8 +225,36 @@ function navigation_tenant_type_allows_link(array $link): bool
  * @param array{path: string, active_match?: string, label: string, description?: string} $link
  * @return array{label: string, href: string, path: string, active_match: string, description?: string|null, badge?: string}|null
  */
+function navigation_path_is_forum(string $path): bool
+{
+    $p = strtolower(trim($path, '/'));
+    if ($p === 'forum' || str_starts_with($p, 'forum/')) {
+        return true;
+    }
+    if (str_contains($p, 'forum-moderation') || str_contains($p, 'forum-config')) {
+        return true;
+    }
+    if ($p === 'back-office/categories' || str_starts_with($p, 'back-office/forum/')) {
+        return true;
+    }
+    if ($p === 'admin/forum-config' || $p === 'admin/forum-moderation') {
+        return true;
+    }
+
+    return false;
+}
+
 function navigation_resolve_link(array $link): ?array
 {
+    $module = trim((string) ($link['module'] ?? ''));
+    $pathFragment = (string) ($link['path'] ?? '');
+    if (
+        function_exists('forum_public_nav_visible')
+        && !forum_public_nav_visible()
+        && ($module === 'forum' || navigation_path_is_forum($pathFragment))
+    ) {
+        return null;
+    }
     if (!navigation_item_allowed($link)) {
         return null;
     }
@@ -391,9 +419,17 @@ function navigation_normalize_live_blocks(array $liveRaw): array
         if ($id === '') {
             $id = 'live_' . count($out);
         }
+        $type = (string) ($block['type'] ?? 'placeholder');
+        if (
+            $type === 'forum_recent'
+            && function_exists('forum_public_nav_visible')
+            && !forum_public_nav_visible()
+        ) {
+            continue;
+        }
         $out[] = [
             'id' => $id,
-            'type' => (string) ($block['type'] ?? 'placeholder'),
+            'type' => $type,
             'enabled' => !empty($block['enabled']),
             'title' => (string) ($block['title'] ?? ''),
             'empty_message' => (string) ($block['empty_message'] ?? ''),
@@ -446,6 +482,9 @@ function navigation_image_file_exists(string $relativePath): bool
 function navigation_append_forum_rubric_links(array &$megaItem): void
 {
     if (($megaItem['variant'] ?? '') !== 'operations') {
+        return;
+    }
+    if (function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
         return;
     }
     if (!navigation_tenant_type_allows_item(['module' => 'forum'])) {
@@ -625,8 +664,16 @@ function build_navigation_menu(): array
                     if (!in_array($slot, ['primary', 'center', 'secondary'], true)) {
                         $slot = 'primary';
                     }
+                    $sectionTitle = (string) ($section['title'] ?? '');
+                    if (
+                        $sectionTitle === 'Forum & échanges'
+                        && function_exists('forum_public_nav_visible')
+                        && !forum_public_nav_visible()
+                    ) {
+                        $sectionTitle = 'Échanges';
+                    }
                     $sectionsOut[] = [
-                        'title' => (string) ($section['title'] ?? ''),
+                        'title' => $sectionTitle,
                         'slot' => $slot,
                         'links' => $linksOut,
                     ];

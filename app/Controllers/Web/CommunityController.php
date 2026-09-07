@@ -109,7 +109,8 @@ class CommunityController
             }
         }
         $forumMembersOnly = !empty($communityConfig['forum_members_only']);
-        $showForumCta = !$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant);
+        $showForumCta = (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
+            && (!$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant));
         $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 
         $publicLayout = TenantCommunityProfileService::resolvePublicPageLayout($communityConfig['public_page_layout'] ?? null);

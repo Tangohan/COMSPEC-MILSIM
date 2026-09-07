@@ -91,7 +91,9 @@ $kpiHref = static function (string $id) use ($moreUrl): array {
         'members_no_unit' => [url('back-office/users') . '?filter_no_unit=1', 'Corriger'],
         'members_no_role' => [url('back-office/users') . '?filter_no_role=1', 'Corriger'],
         'training_expiring' => [training_lms_admin_url(), 'Ouvrir'],
-        'moderation_open' => [url('back-office/forum-moderation'), 'Traiter'],
+        'moderation_open' => (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
+            ? ['', '']
+            : [url('back-office/forum-moderation'), 'Traiter'],
         default => ['', ''],
     };
 };

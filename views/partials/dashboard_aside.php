@@ -215,13 +215,18 @@ if ($canAdmin) {
     );
 }
 
-if ($canForum) {
+$forumNavOpen = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
+if ($canForum && $forumNavOpen) {
     $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([
         ['label' => 'Accueil du forum', 'href' => url('forum'), 'hint' => 'Rubriques et sujets'],
         ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
         $canForumCreate
             ? ['label' => 'Publier un sujet', 'href' => url('forum/new-topic'), 'hint' => 'Démarrer une discussion']
             : null,
+    ]));
+} elseif ($forumNavOpen === false) {
+    $navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
+        ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
     ]));
 }
 
@@ -351,7 +356,9 @@ if ($canAdmin) {
         ['label' => 'Back-office', 'href' => url('back-office'), 'hint' => 'Espace état-major'],
         ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable'],
         ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté'],
-        ['label' => 'Rubriques du forum', 'href' => url('back-office/categories'), 'hint' => 'Arborescence'],
+        (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
+            ? ['label' => 'Rubriques du forum', 'href' => url('back-office/categories'), 'hint' => 'Arborescence']
+            : null,
         ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, vitrine, inscription et accueil'],
     ]), 'backoffice');
 } else {

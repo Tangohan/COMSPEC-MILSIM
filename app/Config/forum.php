@@ -34,7 +34,13 @@ return [
     'category_colors' => ['orange', 'indigo', 'violet', 'rose', 'emerald', 'slate'],
 
     'forum_max_post_length' => 10000,
-    'enabled' => true,
+
+    /**
+     * Interrupteur produit : discussions membres (menus + pages).
+     * Remettre à true, ou FORUM_ENABLED=true, pour rouvrir le forum.
+     * Les contenus déjà écrits ne sont pas effacés.
+     */
+    'enabled' => filter_var(env('FORUM_ENABLED', false), FILTER_VALIDATE_BOOL),
 
     /** Hôtes considérés comme internes (en plus du host APP_URL), sans protocole. */
     'internal_link_hosts' => [],

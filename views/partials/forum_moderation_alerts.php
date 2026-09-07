@@ -2,6 +2,9 @@
 /**
  * Bandeau alertes modération (signalements + file contenu) — toutes les pages forum.
  */
+if (function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
+    return;
+}
 if (!function_exists('forum_user_can_moderate') || !forum_user_can_moderate()) {
     return;
 }

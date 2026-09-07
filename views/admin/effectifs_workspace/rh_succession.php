@@ -24,7 +24,7 @@ $readinessTone = [
 ?>
 <section class="eff-rh-hero">
     <p class="eff-page-kicker">Dossier RH</p>
-    <h1 class="eff-page-title">Succession et vivier</h1>
+    <h2 class="eff-page-title">Succession et vivier</h2>
     <p class="eff-page-lead">
         Personnes identifiées pour les postes de responsabilité : prêtes maintenant, sous trois mois, ou à accompagner.
         Le vivier n’affecte pas le membre : il sert à préparer les relèves.

@@ -812,7 +812,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <?php endif; ?>
 
         <div class="cc-shell space-y-10 py-8 md:py-10">
-            <?php $followedChannels = is_array($followed_channels ?? null) ? $followed_channels : []; ?>
+            <?php $followedChannels = (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
+                ? []
+                : (is_array($followed_channels ?? null) ? $followed_channels : []); ?>
             <?php if ($followedChannels !== []): ?>
             <section class="cc-card overflow-hidden" aria-labelledby="dash-channels-heading">
                 <div class="cc-card__head">

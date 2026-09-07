@@ -99,6 +99,7 @@ $boardEntryCount = (int) ($boardEntryCount ?? (
     count($boardPanels['permanences']) + count($boardPanels['infos']) + count($boardPanels['manifestations'])
     + count($boardPanels['flash']) + count($boardPanels['activites'])
 ));
+$boardCockpit = is_array($boardCockpit ?? null) ? $boardCockpit : [];
 $posturePill = match ($posture) {
     'VIGILANCE', 'ALERTE' => 'ops-board__pill--warn',
     'CRISE' => 'ops-board__pill--danger',
@@ -132,79 +133,79 @@ $familleModeleLabels = [
 ];
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/operational-board.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<div class="ops-board">
-    <header class="ops-board__hero">
-        <div class="ops-board__hero-inner">
-            <div>
-                <p class="ops-board__eyebrow">État-major · Pilotage</p>
-                <h1 class="ops-board__title">Tableau opérationnel</h1>
-                <p class="ops-board__lead">
-                    Consultez d’abord le mur publié, puis créez une fiche ou un modèle si besoin.
-                    Communauté : <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>.
-                </p>
-            </div>
-            <div>
-                <div class="ops-board__hero-meta" style="margin-bottom:0.65rem;justify-content:flex-end">
-                    <span class="ops-board__pill <?= htmlspecialchars($posturePill, ENT_QUOTES, 'UTF-8') ?>">Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                    <span class="ops-board__pill"><?= (int) $boardEntryCount ?> fiche<?= $boardEntryCount > 1 ? 's' : '' ?></span>
-                </div>
-                <div class="ops-board__actions" style="justify-content:flex-end">
-                    <?php if ($boardSchemaReady): ?>
-                        <a href="#ops-zone-view" class="ops-board__btn ops-board__btn--solid">Voir le tableau</a>
-                        <?php if ($boardPublicWallUrl !== ''): ?>
-                            <a href="<?= htmlspecialchars($boardPublicWallUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--solid" target="_blank" rel="noopener">Voir la page publiée</a>
-                        <?php else: ?>
-                            <a href="#ops-zone-publish" class="ops-board__btn ops-board__btn--solid">Lien public</a>
-                        <?php endif; ?>
-                        <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--amber">
-                            Brouillons<?= $boardDraftCount > 0 ? ' · ' . $boardDraftCount : '' ?>
-                        </a>
-                        <a href="<?= url('tableau-operationnel') ?>" class="ops-board__btn ops-board__btn--ghost">Vue membres</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </header>
-
+<div class="ops-board ops-board--pilotage">
     <div class="ops-board__deck">
     <?php
     $boardHelpIsPilotage = true;
     require base_path('views/operations/partials/board_help.php');
     ?>
+
+    <div class="ops-board__status">
+        <p class="ops-board__status-meta" aria-label="État du tableau">
+            <span class="ops-board__pill <?= htmlspecialchars($posturePill, ENT_QUOTES, 'UTF-8') ?>">Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?></span>
+            <?php if ($boardSchemaReady): ?>
+                <span class="ops-board__pill"><?= (int) $boardEntryCount ?> fiche<?= $boardEntryCount > 1 ? 's' : '' ?></span>
+            <?php endif; ?>
+            <span class="ops-board__pill"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>
+        </p>
+        <div class="ops-board__actions">
+            <?php if ($boardSchemaReady): ?>
+                <a href="#ops-zone-view" class="ops-board__btn ops-board__btn--solid">Voir le mur</a>
+                <?php if ($boardPublicWallUrl !== ''): ?>
+                    <a href="<?= htmlspecialchars($boardPublicWallUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--solid" target="_blank" rel="noopener">Page publiée</a>
+                <?php else: ?>
+                    <a href="#ops-zone-publish" class="ops-board__btn ops-board__btn--solid">Lien public</a>
+                <?php endif; ?>
+                <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--amber">
+                    Brouillons<?= $boardDraftCount > 0 ? ' · ' . $boardDraftCount : '' ?>
+                </a>
+                <a href="<?= url('tableau-operationnel') ?>" class="ops-board__btn ops-board__btn--ghost">Vue membres</a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php require base_path('views/operations/partials/board_pilotage.php'); ?>
+
     <?php if (!$boardSchemaReady): ?>
         <div class="ops-board__empty" role="status">
-            <p>Ce module n’est pas encore disponible sur cet environnement</p>
-            <span>Informez l’équipe d’hébergement : une étape d’installation doit encore être réalisée. Actualisez ensuite cette page.</span>
+            <p>Le mur de consignes n’est pas encore disponible sur cet environnement</p>
+            <span>Les événements, articles et le poste ATAK restent utilisables plus haut. Pour les fiches du mur, informez l’équipe d’hébergement, puis actualisez cette page.</span>
             <div class="ops-board__actions" style="justify-content:center;margin-top:1rem">
                 <button type="button" class="ops-board__btn ops-board__btn--solid" onclick="location.reload()">Actualiser la page</button>
             </div>
         </div>
     <?php else: ?>
-
     <nav class="ops-board__map" aria-label="Organisation de la page">
-        <a href="#ops-zone-view" class="ops-board__map-item ops-board__map-item--primary">
+        <a href="#ops-zone-pilotage" class="ops-board__map-item ops-board__map-item--primary">
             <span class="ops-board__map-step">1</span>
             <span>
-                <strong>Consulter</strong>
-                <em>Afficher et filtrer le tableau</em>
+                <strong>Piloter</strong>
+                <em>Événements, articles, ATAK</em>
+            </span>
+        </a>
+        <a href="#ops-zone-view" class="ops-board__map-item">
+            <span class="ops-board__map-step">2</span>
+            <span>
+                <strong>Consulter le mur</strong>
+                <em>Afficher et filtrer les fiches</em>
             </span>
         </a>
         <a href="#ops-zone-create" class="ops-board__map-item">
-            <span class="ops-board__map-step">2</span>
+            <span class="ops-board__map-step">3</span>
             <span>
                 <strong>Créer une fiche</strong>
                 <em>Création rapide ou éditeur complet</em>
             </span>
         </a>
         <a href="#ops-zone-templates" class="ops-board__map-item">
-            <span class="ops-board__map-step">3</span>
+            <span class="ops-board__map-step">4</span>
             <span>
                 <strong>Modèles</strong>
                 <em>Squelettes réutilisables</em>
             </span>
         </a>
         <a href="#ops-zone-publish" class="ops-board__map-item">
-            <span class="ops-board__map-step">4</span>
+            <span class="ops-board__map-step">5</span>
             <span>
                 <strong>Lien public</strong>
                 <em>Partager le mur en lecture seule</em>
@@ -215,7 +216,7 @@ $familleModeleLabels = [
     <!-- ========== 1. CONSULTER ========== -->
     <section id="ops-zone-view" class="ops-board__zone" aria-labelledby="ops-zone-view-title">
         <header class="ops-board__zone-head">
-            <p class="ops-board__zone-kicker">Étape 1 · Prioritaire</p>
+            <p class="ops-board__zone-kicker">Mur de consignes</p>
             <h2 id="ops-zone-view-title">Consulter le tableau</h2>
             <p>Filtrez et parcourez les fiches déjà présentes. Les actions de création sont plus bas, pour ne pas mélanger lecture et rédaction.</p>
         </header>
@@ -449,7 +450,7 @@ $familleModeleLabels = [
     <!-- ========== 2. CRÉER ========== -->
     <section id="ops-zone-create" class="ops-board__zone ops-board__zone--create" aria-labelledby="ops-zone-create-title">
         <header class="ops-board__zone-head">
-            <p class="ops-board__zone-kicker">Étape 2 · Quand vous devez publier</p>
+            <p class="ops-board__zone-kicker">Fiches · Quand vous devez publier</p>
             <h2 id="ops-zone-create-title">Créer une fiche</h2>
             <p>Utilisez la <strong>création rapide</strong> pour démarrer un brouillon du jour avec le bon type. Pour une saisie complète (affectations, moyens, consignes), ouvrez l’éditeur.</p>
         </header>
@@ -475,7 +476,7 @@ $familleModeleLabels = [
     <!-- ========== 3. MODÈLES ========== -->
     <section id="ops-zone-templates" class="ops-board__zone ops-board__zone--templates" aria-labelledby="ops-zone-templates-title">
         <header class="ops-board__zone-head">
-            <p class="ops-board__zone-kicker">Étape 3 · Préparation</p>
+            <p class="ops-board__zone-kicker">Fiches · Préparation</p>
             <h2 id="ops-zone-templates-title">Modèles</h2>
             <p>Un modèle est un <strong>squelette réutilisable</strong> (type, intitulé, consignes). Il ne s’affiche pas sur le mur : il sert uniquement à générer une nouvelle fiche brouillon.</p>
         </header>

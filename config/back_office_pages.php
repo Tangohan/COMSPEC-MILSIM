@@ -17,11 +17,16 @@ return [
         ['path' => 'jnet/courrier', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Messagerie d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet/systeme', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Système', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet/unite', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation, personnel, opérations et renseignement de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
         ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],
         ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations'],
-        ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Mur opérationnel', 'subtitle' => 'Administration du mur de permanence et des consignes.'],
+        ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Tableau opérationnel', 'subtitle' => 'Pilotez les événements, les articles, le poste ATAK et le mur de consignes depuis un même écran.', 'css' => ['operational-board.css'], 'quick' => [
+            ['label' => 'Événements', 'href' => 'back-office/events'],
+            ['label' => 'Articles', 'href' => 'back-office/articles'],
+            ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
+            ['label' => 'Vue membres', 'href' => 'tableau-operationnel'],
+        ]],
         ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion communautés'],
         ['path' => 'back-office/analytics', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Indicateurs d’usage'],
         ['path' => 'back-office/configuration-initiale', 'group' => 'Communauté', 'kicker' => 'PREMIERS PAS', 'title' => 'Configuration initiale', 'subtitle' => 'Votre communauté est en place. Complétez les derniers réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle d’accueil.', 'css' => ['back-office-initial-setup.css'], 'quick' => [
@@ -83,6 +88,14 @@ return [
         ['path' => 'back-office/integration-membres/modeles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Modèles de parcours', 'subtitle' => 'Un modèle publié s’applique aux nouvelles arrivées. Les suivis déjà commencés conservent leur version.', 'css' => ['member-integration.css'], 'quick' => [
             ['label' => 'Parcours', 'href' => 'back-office/integration-membres'],
             ['label' => 'Reprise', 'href' => 'back-office/integration-membres/reprise'],
+        ]],
+        ['path' => 'back-office/integration-membres/{id}', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Parcours d’arrivée', 'subtitle' => 'Étapes, dossier personnel, référents et rendez-vous pour ce membre.', 'css' => ['member-integration.css'], 'quick' => [
+            ['label' => 'Tous les parcours', 'href' => 'back-office/integration-membres'],
+            ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
+        ]],
+        ['path' => 'back-office/integration-membres/reprise', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INTÉGRATION', 'title' => 'Reprise des arrivées récentes', 'subtitle' => 'Ouvrez un parcours pour les membres déjà arrivés qui n’en ont pas encore.', 'css' => ['member-integration.css'], 'quick' => [
+            ['label' => 'Parcours', 'href' => 'back-office/integration-membres'],
+            ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
         ]],
         ['path' => 'back-office/integration-membres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégration des nouveaux membres', 'subtitle' => 'Parcours d’arrivée, référents, rendez-vous et dossier personnel.', 'css' => ['member-integration.css'], 'quick' => [
             ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],
@@ -162,19 +175,19 @@ return [
         ['path' => 'back-office/personnel-job-roles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EMPLOIS', 'title' => 'Emplois du dossier', 'subtitle' => 'Libellés métier du dossier, distincts des niveaux d’accès.', 'quick' => [
             ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
-        ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · IMMERSION', 'title' => 'Réglages d’immersion', 'subtitle' => 'Activation du suivi, étapes d’avancement, filières et indicateur « dossier prêt ».', 'quick' => [
+        ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ARRIVÉE', 'title' => 'Parcours d’immersion', 'subtitle' => 'Décidez comment votre communauté suit l’arrivée d’un membre : étapes, filière, tuteur et dossier prêt.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Activation', 'href' => 'back-office/roleplay/immersion#activation-options'],
-            ['label' => 'Listes', 'href' => 'back-office/roleplay/immersion#listes'],
+            ['label' => 'Affichage', 'href' => 'back-office/roleplay/immersion#activation-options'],
+            ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay/immersion#listes'],
         ]],
         ['path' => 'back-office/roleplay-followup/echeances', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ÉCHÉANCES', 'title' => 'Échéances', 'subtitle' => 'Entretiens, visites médicales et rotations de service pour tous les membres.', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
-            ['label' => 'Réglages d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
         ]],
         ['path' => 'back-office/roleplay-followup', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SUIVI', 'title' => 'Bureau de suivi', 'subtitle' => 'Tutorat, étapes d’immersion, bilans et échéances des dossiers.', 'quick' => [
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Réglages d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
         ]],
         ['path' => 'back-office/communications/history', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Historique des envois'],
         ['path' => 'back-office/communications/templates', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Modèles d’e-mail'],

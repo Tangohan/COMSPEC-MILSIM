@@ -757,6 +757,25 @@ class PersonnelJobRoleRepository
     }
 
     /**
+     * Emplois proposés sur un dossier : pas le catalogue militaire entier.
+     *
+     * @param list<int> $keepRoleIds
+     * @return list<array{id: int, slug: string, label: string, name: string, segments: list<string>, search: string, label_en?: string}>
+     */
+    public function listRoleOptionsForMemberDossier(
+        int $tenantId,
+        array $keepRoleIds = [],
+        bool $appendEnglishLabel = false,
+        bool $useCategoryPath = true,
+        string $organizationRoleLabelMode = 'fr'
+    ): array {
+        return \App\Services\Rbac\MilitaryOperationalRoleCatalog::filterOptionsForMemberDossier(
+            $this->listRoleOptionsForSelect($tenantId, $appendEnglishLabel, $useCategoryPath, $organizationRoleLabelMode),
+            $keepRoleIds
+        );
+    }
+
+    /**
      * @param list<array<string, mixed>> $options
      * @return list<array<string, mixed>>
      */

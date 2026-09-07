@@ -666,6 +666,57 @@ class UserRepository
     }
 
     /**
+     * Identifiants de rôles d’organisation pour une page de membres (évite un aller-retour par ligne).
+     *
+     * @param list<int> $userIds
+     * @return array<int, list<int>>
+     */
+    public function listOrganizationRoleIdsForUsers(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        $map = [];
+        foreach ($userIds as $id) {
+            $map[$id] = [];
+        }
+        if ($tenantId < 1 || $userIds === []) {
+            return $map;
+        }
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        if ($this->hasTenantUserRolesTable()) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT tur.user_id, tur.role_id FROM tenant_user_roles tur
+                 WHERE tur.tenant_id = ? AND tur.user_id IN (' . $placeholders . ') AND tur.org_unit_id IS NULL
+                 ORDER BY tur.user_id ASC, tur.role_id ASC'
+            );
+            $stmt->execute(array_merge([$tenantId], $userIds));
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                $rid = (int) ($row['role_id'] ?? 0);
+                if ($uid > 0 && $rid > 0 && isset($map[$uid]) && !in_array($rid, $map[$uid], true)) {
+                    $map[$uid][] = $rid;
+                }
+            }
+        }
+        $missing = array_values(array_filter($userIds, static fn (int $id): bool => ($map[$id] ?? []) === []));
+        if ($missing !== [] && $this->hasUserRolesTable()) {
+            $missingPh = implode(',', array_fill(0, count($missing), '?'));
+            $stmt = $this->pdo()->prepare(
+                'SELECT user_id, role_id FROM user_roles WHERE user_id IN (' . $missingPh . ') ORDER BY user_id ASC, role_id ASC'
+            );
+            $stmt->execute($missing);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $uid = (int) ($row['user_id'] ?? 0);
+                $rid = (int) ($row['role_id'] ?? 0);
+                if ($uid > 0 && $rid > 0 && isset($map[$uid]) && !in_array($rid, $map[$uid], true)) {
+                    $map[$uid][] = $rid;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    /**
      * Identifiants de rôles tenant pour RBAC (union multi-rôles + repli sur users.role_id).
      *
      * @return list<int>
@@ -1792,6 +1843,11 @@ class UserRepository
             $profileExtras .= ', pp.character_portrait_path';
         } else {
             $profileExtras .= ", '' AS character_portrait_path";
+        }
+        if ($this->personnelProfilesHasColumn('extra_callsigns_json')) {
+            $profileExtras .= ', pp.extra_callsigns_json';
+        } else {
+            $profileExtras .= ', NULL AS extra_callsigns_json';
         }
         if ($this->personnelProfilesHasColumn('deployable')) {
             $profileExtras .= ', pp.deployable';

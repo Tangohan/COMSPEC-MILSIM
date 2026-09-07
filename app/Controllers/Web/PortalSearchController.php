@@ -45,7 +45,7 @@ final class PortalSearchController
         $raw = trim((string) $request->query('q', ''));
         $scopes = [
             'documents' => $this->queryFlag($request, 'documents', true),
-            'forum' => $this->queryFlag($request, 'forum', true),
+            'forum' => $this->queryFlag($request, 'forum', !function_exists('forum_public_nav_visible') || forum_public_nav_visible()),
             'personnel' => $this->queryFlag($request, 'personnel', true),
             'events' => $this->queryFlag($request, 'events', true),
             'training' => $this->queryFlag($request, 'training', true),

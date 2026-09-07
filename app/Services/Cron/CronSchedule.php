@@ -35,6 +35,7 @@ final class CronSchedule
         'sse_analytical_nightly' => 1440,
         'sse_analyst_digest' => 1440,
         'member_integration_daily' => 1440,
+        'personnel_auto_advancement' => 1440,
     ];
 
     public static function intervalMinutes(string $jobKey): int

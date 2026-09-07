@@ -98,7 +98,7 @@ $membersChildren = array_values(array_filter([
 $roleplayChildren = array_values(array_filter([
     ['label' => 'Bureau de suivi', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive],
     ['label' => 'Échéances', 'href' => url('back-office/roleplay-followup/echeances'), 'active' => $navRoleplayDeadlinesActive],
-    ['label' => 'Réglages d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
+    ['label' => 'Parcours d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $orbatChildren = array_values(array_filter([
@@ -154,7 +154,7 @@ $athNavGroups = [
         'items' => array_values(array_filter([
             ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
             $canMurOperationnel
-                ? ['label' => 'Mur opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
+                ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
                 : null,
             ['label' => 'Agenda', 'href' => url('back-office/events') . '?vue=calendrier', 'icon' => 'cal', 'active' => $boNavEvents],
         ], static fn (?array $row): bool => is_array($row))),

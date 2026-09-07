@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(248, $byKind['update']);
-        self::assertCount(254, $all);
+        self::assertSame(260, $byKind['update']);
+        self::assertCount(266, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -860,6 +860,55 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($effWorkspaceLook);
         self::assertSame('00449', $effWorkspaceLook['number_pad']);
         self::assertStringContainsString('effectifs', strtolower((string) $effWorkspaceLook['title']));
+        $rosterHero = DevDispatchCatalog::find('update', '450');
+        self::assertNotNull($rosterHero);
+        self::assertSame('00450', $rosterHero['number_pad']);
+        self::assertStringContainsString('tableur', strtolower((string) $rosterHero['title']));
+        $jobsStayGone = DevDispatchCatalog::find('update', '451');
+        self::assertNotNull($jobsStayGone);
+        self::assertSame('00451', $jobsStayGone['number_pad']);
+        self::assertStringContainsString('emplois', strtolower((string) $jobsStayGone['title']));
+        $arrivalSheet = DevDispatchCatalog::find('update', '452');
+        self::assertNotNull($arrivalSheet);
+        self::assertSame('00452', $arrivalSheet['number_pad']);
+        self::assertStringContainsString('arrivée', strtolower((string) $arrivalSheet['title']));
+        $hrWorkspaceDocs = DevDispatchCatalog::find('update', '453');
+        self::assertNotNull($hrWorkspaceDocs);
+        self::assertSame('00453', $hrWorkspaceDocs['number_pad']);
+        self::assertStringContainsString('effectifs', strtolower((string) $hrWorkspaceDocs['title']));
+        $opsBoardPilot = DevDispatchCatalog::find('update', '454');
+        self::assertNotNull($opsBoardPilot);
+        self::assertSame('00454', $opsBoardPilot['number_pad']);
+        self::assertStringContainsString('tableau opérationnel', strtolower((string) $opsBoardPilot['title']));
+        $jobsPurgedAgain = DevDispatchCatalog::find('update', '455');
+        self::assertNotNull($jobsPurgedAgain);
+        self::assertSame('00455', $jobsPurgedAgain['number_pad']);
+        self::assertStringContainsString('emplois', strtolower((string) $jobsPurgedAgain['title']));
+        $immersionPath = DevDispatchCatalog::find('update', '456');
+        self::assertNotNull($immersionPath);
+        self::assertSame('00456', $immersionPath['number_pad']);
+        self::assertStringContainsString('immersion', strtolower((string) $immersionPath['title']));
+        $forumPause = DevDispatchCatalog::find('update', '457');
+        self::assertNotNull($forumPause);
+        self::assertSame('00457', $forumPause['number_pad']);
+        self::assertStringContainsString('forum', strtolower((string) $forumPause['title']));
+        self::assertStringContainsString('temporairement indisponible', strtolower((string) $forumPause['title']));
+        $jnetReal = DevDispatchCatalog::find('update', '458');
+        self::assertNotNull($jnetReal);
+        self::assertSame('00458', $jnetReal['number_pad']);
+        self::assertStringContainsString('extranet', strtolower((string) $jnetReal['title']));
+        $orbatCorr = DevDispatchCatalog::find('update', '459');
+        self::assertNotNull($orbatCorr);
+        self::assertSame('00459', $orbatCorr['number_pad']);
+        self::assertStringContainsString('affectation', strtolower((string) $orbatCorr['title']));
+        $jobsMenu = DevDispatchCatalog::find('update', '460');
+        self::assertNotNull($jobsMenu);
+        self::assertSame('00460', $jobsMenu['number_pad']);
+        self::assertStringContainsString('emplois', strtolower((string) $jobsMenu['title']));
+        $chainUpdate = DevDispatchCatalog::find('update', '461');
+        self::assertNotNull($chainUpdate);
+        self::assertSame('00461', $chainUpdate['number_pad']);
+        self::assertStringContainsString('chaîne de commandement', strtolower((string) $chainUpdate['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

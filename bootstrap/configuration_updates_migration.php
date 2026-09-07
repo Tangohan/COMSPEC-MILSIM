@@ -423,6 +423,32 @@ SQL
             'dismissible' => 1,
             'sort_order' => 84,
         ],
+        [
+            'code' => 'PERSONNEL_HR_DESK_V1',
+            'version' => '1',
+            'title' => 'Personnalisation du bureau effectifs',
+            'description' => 'Choisissez la visibilité des pièces du coffre, les seuils d’alerte, l’ouverture automatique du parcours d’accueil et, si vous le souhaitez, la revue des avancements de grade. Par défaut, un avancement crée une demande à valider.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/ressources/effectifs/reglages',
+            'estimate_minutes' => 6,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 86,
+        ],
+        [
+            'code' => 'PERSONNEL_COMMAND_CHAIN_V1',
+            'version' => '1',
+            'title' => 'Chaîne de commandement des unités',
+            'description' => 'Désignez le chef de chaque unité pour voir qui relève de qui. Un membre relève du chef de son unité ; un chef relève du chef de l’unité au-dessus. Les postes encore vacants peuvent rester vides.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/ressources/effectifs/chaine',
+            'estimate_minutes' => 5,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 87,
+        ],
     ];
 
     $upsert = $pdo->prepare(

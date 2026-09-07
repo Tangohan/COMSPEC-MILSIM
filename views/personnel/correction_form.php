@@ -87,10 +87,62 @@ foreach ($fieldCatalog as $key => $meta) {
               $value = (string) ($snapshot[$key] ?? '');
               $help = trim((string) ($meta['help'] ?? ''));
               $wrapClass = $span > 1 ? 'pd-form-grid__full' : '';
+              $unitRows = $key === 'unit_assignments' ? \App\Services\Personnel\PersonnelCorrectionRequestService::decodeAssignmentRows($snapshot[$key] ?? []) : [];
+              $jobRows = $key === 'job_roles' ? \App\Services\Personnel\PersonnelCorrectionRequestService::decodeJobRoleRows($snapshot[$key] ?? []) : [];
+              $primaryUnit = $unitRows[0] ?? ['unit_id' => 0, 'role_name' => '', 'is_primary' => 1];
+              foreach ($unitRows as $ur) {
+                  if (!empty($ur['is_primary'])) {
+                      $primaryUnit = $ur;
+                      break;
+                  }
+              }
+              $primaryJob = $jobRows[0] ?? ['role_id' => 0, 'detail' => '', 'is_primary' => 1];
+              foreach ($jobRows as $jr) {
+                  if (!empty($jr['is_primary'])) {
+                      $primaryJob = $jr;
+                      break;
+                  }
+              }
             ?>
             <div class="<?= $h($wrapClass) ?>">
               <label class="mb-1 block text-xs font-bold text-slate-600" for="corr-<?= $h($key) ?>"><?= $h($label) ?></label>
-              <?php if ($type === 'date'): ?>
+              <?php if ($type === 'unit_assignments'): ?>
+              <input type="hidden" name="unit_assignments[0][is_primary]" value="1">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-unit-id">Unité principale</label>
+                  <select id="corr-unit-id" name="unit_assignments[0][unit_id]" class="bo-select" <?= $disabled ? 'disabled' : '' ?>>
+                    <option value="">— Aucune —</option>
+                    <?php foreach ($choiceOptions('units', (string) ((int) ($primaryUnit['unit_id'] ?? 0))) as $opt): ?>
+                    <?php $ov = (string) ($opt['value'] ?? ''); ?>
+                    <option value="<?= $h($ov) ?>"<?= (string) ((int) ($primaryUnit['unit_id'] ?? 0)) === $ov ? ' selected' : '' ?>><?= $h((string) ($opt['label'] ?? $ov)) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-unit-role">Rôle dans l’unité</label>
+                  <input type="text" id="corr-unit-role" name="unit_assignments[0][role_name]" value="<?= $h((string) ($primaryUnit['role_name'] ?? '')) ?>" maxlength="120" <?= $disabled ? 'disabled' : '' ?>>
+                </div>
+              </div>
+              <?php elseif ($type === 'job_roles'): ?>
+              <input type="hidden" name="job_roles[0][is_primary]" value="1">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-job-id">Emploi principal</label>
+                  <select id="corr-job-id" name="job_roles[0][role_id]" class="bo-select" <?= $disabled ? 'disabled' : '' ?>>
+                    <option value="">— Non renseigné —</option>
+                    <?php foreach ($choiceOptions('job_roles', (string) ((int) ($primaryJob['role_id'] ?? 0))) as $opt): ?>
+                    <?php $ov = (string) ($opt['value'] ?? ''); ?>
+                    <option value="<?= $h($ov) ?>"<?= (string) ((int) ($primaryJob['role_id'] ?? 0)) === $ov ? ' selected' : '' ?>><?= $h((string) ($opt['label'] ?? $ov)) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-job-detail">Précision</label>
+                  <input type="text" id="corr-job-detail" name="job_roles[0][detail]" value="<?= $h((string) ($primaryJob['detail'] ?? '')) ?>" maxlength="150" <?= $disabled ? 'disabled' : '' ?>>
+                </div>
+              </div>
+              <?php elseif ($type === 'date'): ?>
               <input type="date" id="corr-<?= $h($key) ?>" name="<?= $h($key) ?>" value="<?= $h($value) ?>" <?= $disabled ? 'disabled' : '' ?> />
               <?php elseif ($type === 'number'): ?>
               <input type="number" id="corr-<?= $h($key) ?>" name="<?= $h($key) ?>" min="<?= (int) ($meta['min'] ?? 0) ?>" max="<?= (int) ($meta['max_num'] ?? 9999) ?>" value="<?= $h($value) ?>" <?= $disabled ? 'disabled' : '' ?> />

@@ -2329,6 +2329,94 @@ div.jnet-empty p:last-child { margin-bottom: 0; }
 
 .jnet-expand.is-open .jnet-expand__detail { display: block; }
 
+.jnet-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.jnet-shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 4.4rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--jnet-line);
+  border-radius: var(--jnet-radius);
+  background: var(--jnet-panel);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.jnet-shortcut:hover {
+  border-color: var(--jnet-line-active);
+  background: var(--jnet-hover);
+}
+
+.jnet-shortcut strong {
+  color: var(--jnet-text-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.jnet-shortcut span {
+  color: var(--jnet-muted);
+  font-size: 0.75rem;
+}
+
+.jnet-linklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jnet-linklist li + li {
+  border-top: 1px solid var(--jnet-line-soft);
+}
+
+.jnet-linklist a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.15rem;
+  text-decoration: none;
+}
+
+.jnet-linklist a:hover strong {
+  color: var(--jnet-green-bright);
+}
+
+.jnet-linklist strong {
+  color: var(--jnet-text-strong);
+  font-size: 0.86rem;
+}
+
+.jnet-linklist span {
+  color: var(--jnet-muted);
+  font-size: 0.76rem;
+}
+
+.jnet-app-card em {
+  display: inline-flex;
+  margin-top: 0.55rem;
+  min-width: 1.4rem;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--jnet-green-soft);
+  color: var(--jnet-green-bright);
+  font: 700 0.68rem var(--jnet-sans);
+  font-style: normal;
+}
+
+.jnet-statstrip strong small {
+  margin-left: 0.15rem;
+  color: var(--jnet-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
 /* -------------------------------------------------------------- responsive */
 
 @media (max-width: 1200px) {
@@ -2337,7 +2425,8 @@ div.jnet-empty p:last-child { margin-bottom: 0; }
   .jnet-compose__grid,
   .jnet-compose__cols { grid-template-columns: 1fr; }
   .jnet-home-grid,
-  .jnet-grid-2 { grid-template-columns: 1fr; }
+  .jnet-grid-2,
+  .jnet-shortcuts { grid-template-columns: 1fr 1fr; }
   .jnet-unit-head { grid-template-columns: 1fr; }
 }
 
@@ -2358,6 +2447,7 @@ div.jnet-empty p:last-child { margin-bottom: 0; }
   .jnet-nav-foot { display: none; }
   .jnet-nav a { margin: 0; }
   .jnet-statstrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jnet-shortcuts { grid-template-columns: 1fr; }
   .jnet-record__hero { grid-template-columns: 1fr; }
   .jnet-mission-card__elements { grid-template-columns: 1fr; }
 }

@@ -5,18 +5,25 @@ declare(strict_types=1);
 namespace App\Services\Jnet;
 
 use App\Core\Gate;
+use App\Repositories\DocumentRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\PlanningEntryRepository;
+use App\Repositories\SseCaseRepository;
+use App\Repositories\SseFieldNoteRepository;
+use App\Repositories\SseIntelEventRepository;
 use App\Repositories\SseInterestCaseRepository;
 use App\Repositories\SseWatchlistRepository;
+use App\Repositories\TenantMiniArticleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Support\OrbatRosterPayload;
 
 /**
- * Agrège données réelles (effectifs, ORBAT, mur ops, SSE) + compléments de démonstration
- * pour le portail JNET quand les jeux de données sont encore partiels.
+ * Agrège uniquement des données réelles de l’unité (effectifs, ORBAT, mur ops, SSE, documents).
+ * Aucun contenu de démonstration : une zone sans donnée reste vide.
  */
 final class JnetDashboardService
 {
@@ -33,21 +40,35 @@ final class JnetDashboardService
         private ?TenantRepository $tenants = null,
         private ?UnitRepository $units = null,
         private ?PersonnelProfileRepository $profiles = null,
+        private ?PersonnelQualificationRepository $qualifications = null,
         private ?PlanningEntryRepository $planning = null,
         private ?SseInterestCaseRepository $interestCases = null,
         private ?SseWatchlistRepository $watchlist = null,
+        private ?SseIntelEventRepository $intelEvents = null,
+        private ?SseFieldNoteRepository $fieldNotes = null,
+        private ?SseCaseRepository $sseCases = null,
+        private ?DocumentRepository $documents = null,
+        private ?TenantMiniArticleRepository $articles = null,
+        private ?TrainingCourseRepository $trainings = null,
     ) {
         $this->users ??= \App\Core\Container::get(UserRepository::class);
         $this->tenants ??= \App\Core\Container::get(TenantRepository::class);
         $this->units ??= new UnitRepository();
         $this->profiles ??= new PersonnelProfileRepository();
+        $this->qualifications ??= new PersonnelQualificationRepository();
         $this->planning ??= new PlanningEntryRepository();
         $this->interestCases ??= new SseInterestCaseRepository();
         $this->watchlist ??= new SseWatchlistRepository();
+        $this->intelEvents ??= new SseIntelEventRepository();
+        $this->fieldNotes ??= new SseFieldNoteRepository();
+        $this->sseCases ??= new SseCaseRepository();
+        $this->documents ??= new DocumentRepository();
+        $this->articles ??= new TenantMiniArticleRepository();
+        $this->trainings ??= new TrainingCourseRepository();
     }
 
     /**
-     * @return 'command'|'intel'|'leader'|'operator'
+     * @return 'command'|'intel'|'operator'
      */
     public function viewerLens(): string
     {
@@ -74,20 +95,17 @@ final class JnetDashboardService
         $command = $this->pickCommandStaff($personnel);
         $orbat = $this->loadOrbat($tenantId, $viewerUserId);
         $posture = $this->loadPosture($tenantId);
-        $feed = $this->buildIntelFeed($targets, $ops);
+        $articles = $this->loadPublishedArticles($tenantId, 4);
+        $documents = $this->loadPublishedDocuments($tenantId, 6);
+        $feed = $this->buildIntelFeed($tenantId, $targets, $ops, $articles);
         $present = count(array_filter($personnel, static fn (array $p): bool => ($p['duty'] ?? '') !== 'off'));
-        $authorized = max(count($personnel), 1);
-        if (count($personnel) < 8) {
-            $authorized = max($authorized, (int) ceil(count($personnel) * 1.2) + 4);
-        }
+        $authorized = count($personnel);
 
         return [
-            'classification' => 'SECRET // REL COMSPEC',
-            'networkLabel' => 'JOINT INTELLIGENCE NETWORK',
-            'dtg' => strtoupper(gmdate('dHi') . 'Z' . gmdate('M y')),
             'unitName' => community_display_name($tenant) ?: 'Unité',
-            'unitMotto' => trim((string) ($tenant['tagline'] ?? $tenant['motto'] ?? '')) ?: 'Prêts — Discrets — Efficaces',
+            'unitMotto' => $this->tenantMotto($tenant),
             'opsStatus' => $posture,
+            'opsStatusLabel' => $this->postureLabel($posture),
             'stats' => [
                 'personnelPresent' => $present,
                 'personnelAuth' => $authorized,
@@ -102,6 +120,9 @@ final class JnetDashboardService
             'orbatPreview' => $orbat,
             'viewerLens' => $this->viewerLens(),
             'targetsTotal' => count($targets),
+            'recentArticles' => $articles,
+            'recentDocuments' => $documents,
+            'quickLinks' => $this->quickLinks(),
         ];
     }
 
@@ -123,10 +144,10 @@ final class JnetDashboardService
 
         $subUnits = $hasRealOrbat
             ? $this->unitRowsFromOrbat(array_slice($nodes, 1), $personnel, $ops)
-            : $this->demoSubUnits();
+            : [];
 
         $duty = $this->strengthByDuty($personnel);
-        $readiness = $this->unitReadiness($subUnits, $duty);
+        $readiness = $this->unitReadiness($personnel, $duty);
 
         return array_merge($home, [
             'orbat' => $orbat,
@@ -138,7 +159,6 @@ final class JnetDashboardService
             'readiness' => $readiness,
             'keyPosts' => $this->keyPosts($personnel),
             'specialities' => $this->specialityCounts($personnel),
-            'unitAssets' => $this->unitAssets((string) ($home['unitName'] ?? 'unite')),
             'unitIdentity' => $this->unitIdentity($tenantId, (string) ($home['unitName'] ?? 'Unité'), $subUnits),
             'recentEvents' => array_slice($home['intelFeed'], 0, 6),
             'unitTaskings' => array_slice($ops, 0, 6),
@@ -146,8 +166,136 @@ final class JnetDashboardService
     }
 
     /**
-     * Aplatit l’arbre ORBAT en conservant la profondeur d’affichage.
+     * @return array<string, mixed>
+     */
+    public function buildLibrary(int $tenantId): array
+    {
+        $documents = $this->loadPublishedDocuments($tenantId, 40);
+        $grouped = [];
+        foreach ($documents as $doc) {
+            $cat = trim((string) ($doc['category'] ?? '')) !== '' ? (string) $doc['category'] : 'Sans rubrique';
+            $grouped[$cat][] = $doc;
+        }
+        $sections = [];
+        foreach ($grouped as $label => $items) {
+            $sections[] = ['label' => $label, 'items' => $items];
+        }
+
+        return [
+            'sections' => $sections,
+            'documents' => $documents,
+            'articles' => $this->loadPublishedArticles($tenantId, 12),
+            'trainings' => $this->loadPublishedTrainings($tenantId, 8),
+            'athenaDocs' => url('documents'),
+            'athenaArticles' => url('articles'),
+            'athenaTrainings' => url('formations'),
+            'sseGuide' => url('atak/sse/guide'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function buildExploitation(int $tenantId): array
+    {
+        $notes = 0;
+        $cases = 0;
+        $interests = 0;
+        try {
+            $notes = count($this->fieldNotes->listForTenant($tenantId, ['limit' => 200]));
+        } catch (\Throwable) {
+        }
+        try {
+            $cases = count($this->sseCases->listForTenant($tenantId, null, []));
+        } catch (\Throwable) {
+        }
+        try {
+            $interests = count($this->interestCases->listForTenant($tenantId, []));
+        } catch (\Throwable) {
+        }
+
+        return [
+            'counts' => [
+                'notes' => $notes,
+                'cases' => $cases,
+                'interests' => $interests,
+            ],
+            'links' => [
+                [
+                    'label' => 'Bureau SSE',
+                    'desc' => $cases > 0
+                        ? $cases . ' dossier' . ($cases > 1 ? 's' : '') . ' d’exploitation ouverts'
+                        : 'Dossiers, identités, sites et preuves terrain',
+                    'href' => url('atak/sse'),
+                    'count' => $cases,
+                ],
+                [
+                    'label' => 'Fiches terrain',
+                    'desc' => $notes > 0
+                        ? $notes . ' fiche' . ($notes > 1 ? 's' : '') . ' de renseignement'
+                        : 'Comptes rendus d’observation saisis depuis le terrain',
+                    'href' => url('atak/sse/fiches'),
+                    'count' => $notes,
+                ],
+                [
+                    'label' => 'Dossiers d’intérêt',
+                    'desc' => $interests > 0
+                        ? $interests . ' personne' . ($interests > 1 ? 's' : '') . ' ou objectif' . ($interests > 1 ? 's' : '') . ' suivis'
+                        : 'Personnes et objectifs suivis par le renseignement',
+                    'href' => url('atak/sse/interet'),
+                    'count' => $interests,
+                ],
+                [
+                    'label' => 'Laboratoire numérique',
+                    'desc' => 'Terminaux, acquisitions et artéfacts',
+                    'href' => url('atak/sse/numerique'),
+                    'count' => 0,
+                ],
+                [
+                    'label' => 'Croisements',
+                    'desc' => 'Corrélations et listes de surveillance',
+                    'href' => url('atak/sse/croisements'),
+                    'count' => 0,
+                ],
+                [
+                    'label' => 'Transmission',
+                    'desc' => 'Journaux de mission et comptes rendus',
+                    'href' => url('transmission'),
+                    'count' => 0,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Filtres d’annuaire dérivés des unités réellement présentes.
      *
+     * @param list<array<string, mixed>> $personnel
+     * @return list<array{key: string, label: string}>
+     */
+    public function personnelFilterOptions(array $personnel): array
+    {
+        $options = [
+            ['key' => 'all', 'label' => 'Tous'],
+            ['key' => 'off', 'label' => 'Indisponibles'],
+        ];
+        $units = [];
+        foreach ($personnel as $p) {
+            $unit = trim((string) ($p['unit'] ?? ''));
+            if ($unit === '' || $unit === '—') {
+                continue;
+            }
+            $units[$unit] = $unit;
+        }
+        ksort($units, SORT_NATURAL | SORT_FLAG_CASE);
+        foreach ($units as $unit) {
+            $options[] = ['key' => $unit, 'label' => $unit];
+        }
+
+        return $options;
+    }
+
+    /**
      * @param array<string, mixed> $node
      * @param list<array<string, mixed>> $out
      */
@@ -165,8 +313,6 @@ final class JnetDashboardService
     }
 
     /**
-     * Lignes du tableau des sous-unités à partir de l’ORBAT réel.
-     *
      * @param list<array<string, mixed>> $nodes
      * @param list<array<string, mixed>> $personnel
      * @param list<array<string, mixed>> $ops
@@ -183,7 +329,6 @@ final class JnetDashboardService
             }
             $members = is_array($node['members'] ?? null) ? $node['members'] : [];
             $strength = (int) ($node['strength'] ?? count($members));
-            $seed = crc32($label . '|' . $code);
 
             $readinessValues = [];
             foreach ($members as $m) {
@@ -191,11 +336,7 @@ final class JnetDashboardService
                     $readinessValues[] = (int) $m['readiness'];
                 }
             }
-            $readiness = $readinessValues !== []
-                ? (int) round(array_sum($readinessValues) / count($readinessValues))
-                : 58 + ($seed % 39);
 
-            $authorized = $strength > 0 ? $strength + ($seed % 4) : 6 + ($seed % 7);
             $present = 0;
             foreach ($personnel as $p) {
                 if (strcasecmp(trim((string) ($p['unit'] ?? '')), $label) === 0 && ($p['duty'] ?? '') !== 'off') {
@@ -203,11 +344,18 @@ final class JnetDashboardService
                 }
             }
             if ($present === 0 && $strength > 0) {
-                $present = max(1, (int) round($strength * (0.7 + (($seed % 25) / 100))));
+                $present = $strength;
+            }
+            $authorized = $strength > 0 ? $strength : $present;
+
+            $readiness = null;
+            if ($readinessValues !== []) {
+                $readiness = (int) round(array_sum($readinessValues) / count($readinessValues));
+            } elseif ($authorized > 0) {
+                $readiness = (int) round(($present / $authorized) * 100);
             }
 
             $unitId = (int) ($node['unitId'] ?? 0);
-            // Une opération n'est rattachée à une sous-unité que si la fiche lui est explicitement destinée.
             $tasking = null;
             foreach ($ops as $op) {
                 if ($unitId > 0 && (int) ($op['unit_id'] ?? 0) === $unitId) {
@@ -224,57 +372,16 @@ final class JnetDashboardService
                 'type' => (string) ($node['type'] ?? 'command'),
                 'leader' => $this->cleanLeader((string) ($node['leader'] ?? '')),
                 'leader_initials' => $this->initialsOf((string) ($node['leader'] ?? $label)),
-                'strength' => $strength > 0 ? $strength : $present,
-                'authorized' => max($authorized, $present),
+                'strength' => $strength,
+                'authorized' => $authorized,
                 'present' => $present,
-                'readiness' => max(0, min(100, $readiness)),
-                'status' => $this->readinessStatus($readiness),
+                'readiness' => $readiness,
+                'status' => $readiness !== null ? $this->readinessStatus($readiness) : 'Non renseigné',
                 'mission' => $this->cleanMission((string) ($node['mission'] ?? ''), $label),
-                'tasking' => $tasking !== null ? (string) ($tasking['title'] ?? '—') : '—',
+                'tasking' => $tasking !== null ? (string) ($tasking['title'] ?? '—') : '',
                 'tasking_state' => $tasking !== null ? (string) ($tasking['state'] ?? '') : '',
                 'href' => url('jnet/personnel?filtre=' . rawurlencode($label)),
                 'icon' => $node['chartIconUrl'] ?? null,
-            ];
-        }
-
-        return $rows;
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function demoSubUnits(): array
-    {
-        $demo = [
-            ['ALPHA', 'Section d’assaut ALPHA', 'Manœuvre débarquée, prise et tenue d’objectif.', 1],
-            ['BRAVO', 'Section d’assaut BRAVO', 'Appui, bouclage et réserve d’intervention.', 1],
-            ['CHARLIE', 'Groupe reconnaissance', 'Observation, jalonnement et renseignement de contact.', 1],
-            ['SUPPORT', 'Élément d’appui', 'Appui feu, transmissions et soutien santé.', 1],
-            ['LOG', 'Détachement soutien', 'Ravitaillement, maintenance et mouvements.', 1],
-            ['CMD', 'Poste de commandement', 'Conduite des opérations et coordination du renseignement.', 1],
-        ];
-        $rows = [];
-        foreach ($demo as [$code, $name, $mission, $depth]) {
-            $seed = crc32($code . $name);
-            $strength = 6 + ($seed % 9);
-            $readiness = 61 + ($seed % 37);
-            $rows[] = [
-                'id' => 0,
-                'code' => $code,
-                'name' => $name,
-                'depth' => $depth,
-                'type' => strtolower($code),
-                'leader' => '—',
-                'leader_initials' => substr($code, 0, 2),
-                'strength' => $strength,
-                'authorized' => $strength + ($seed % 4),
-                'present' => max(1, $strength - ($seed % 3)),
-                'readiness' => $readiness,
-                'status' => $this->readinessStatus($readiness),
-                'mission' => $mission,
-                'tasking' => '—',
-                'tasking_state' => '',
-                'href' => url('jnet/personnel'),
-                'icon' => null,
-                'demo' => true,
             ];
         }
 
@@ -287,23 +394,25 @@ final class JnetDashboardService
      */
     private function strengthByDuty(array $personnel): array
     {
-        $total = max(count($personnel), 1);
-        $buckets = ['active' => 0, 'deployed' => 0, 'off' => 0];
+        $total = count($personnel);
+        $buckets = ['active' => 0, 'off' => 0];
         foreach ($personnel as $p) {
             $duty = (string) ($p['duty'] ?? 'active');
+            if ($duty === 'deployed') {
+                $duty = 'active';
+            }
             $buckets[$duty] = ($buckets[$duty] ?? 0) + 1;
         }
         $labels = [
             'active' => 'En service',
-            'deployed' => 'En mission',
-            'off' => 'Repos / indisponible',
+            'off' => 'Indisponible',
         ];
         $out = [];
         foreach ($buckets as $key => $count) {
             $out[$key] = [
                 'label' => $labels[$key] ?? ucfirst($key),
                 'count' => $count,
-                'share' => (int) round(($count / $total) * 100),
+                'share' => $total > 0 ? (int) round(($count / $total) * 100) : 0,
             ];
         }
 
@@ -311,31 +420,25 @@ final class JnetDashboardService
     }
 
     /**
-     * @param list<array<string, mixed>> $subUnits
+     * @param list<array<string, mixed>> $personnel
      * @param array<string, array{label: string, count: int, share: int}> $duty
      * @return array<string, mixed>
      */
-    private function unitReadiness(array $subUnits, array $duty): array
+    private function unitReadiness(array $personnel, array $duty): array
     {
-        $values = array_map(static fn (array $u): int => (int) ($u['readiness'] ?? 0), $subUnits);
-        $overall = $values !== [] ? (int) round(array_sum($values) / count($values)) : 0;
-        $available = ($duty['active']['share'] ?? 0) + ($duty['deployed']['share'] ?? 0);
+        $total = count($personnel);
+        $available = $total > 0 ? (int) round((((int) ($duty['active']['count'] ?? 0)) / $total) * 100) : 0;
 
         return [
-            'overall' => $overall,
-            'label' => $this->readinessStatus($overall),
-            'components' => [
-                ['label' => 'Disponibilité du personnel', 'value' => min(100, $available)],
-                ['label' => 'Encadrement en place', 'value' => min(100, max(0, $overall + 6))],
-                ['label' => 'Qualifications à jour', 'value' => min(100, max(0, $overall - 4))],
-                ['label' => 'Moyens en ligne', 'value' => min(100, max(0, $overall + 2))],
+            'overall' => $available,
+            'label' => $total === 0 ? 'Aucun effectif' : $this->readinessStatus($available),
+            'components' => $total === 0 ? [] : [
+                ['label' => 'Personnel en service', 'value' => $available],
             ],
         ];
     }
 
     /**
-     * Postes clés de l’unité, pourvus à partir des fonctions déclarées.
-     *
      * @param list<array<string, mixed>> $personnel
      * @return list<array<string, mixed>>
      */
@@ -367,15 +470,18 @@ final class JnetDashboardService
                     }
                 }
             }
+            if ($match === null) {
+                continue;
+            }
             $posts[] = [
                 'title' => $title,
-                'holder' => $match !== null ? (string) ($match['name'] ?? '') : '',
-                'grade' => $match !== null ? (string) ($match['grade'] ?? '') : '',
-                'callsign' => $match !== null ? (string) ($match['callsign'] ?? '') : '',
+                'holder' => (string) ($match['name'] ?? ''),
+                'grade' => (string) ($match['grade'] ?? ''),
+                'callsign' => (string) ($match['callsign'] ?? ''),
                 'photo' => $match['photo'] ?? null,
-                'initials' => $match !== null ? (string) ($match['initials'] ?? '?') : '··',
-                'href' => $match !== null ? (string) ($match['href'] ?? '#') : '',
-                'vacant' => $match === null,
+                'initials' => (string) ($match['initials'] ?? '?'),
+                'href' => (string) ($match['href'] ?? '#'),
+                'vacant' => false,
             ];
         }
 
@@ -418,29 +524,6 @@ final class JnetDashboardService
     }
 
     /**
-     * Moyens de l’unité — repères de démonstration tant que le parc n’est pas suivi dans Athena.
-     *
-     * @return list<array{label: string, ready: int, total: int, note: string}>
-     */
-    private function unitAssets(string $unitName): array
-    {
-        $seed = crc32($unitName);
-        $make = static function (string $label, int $total, int $offset, string $note) use ($seed): array {
-            $down = ($seed >> $offset) % max(1, (int) ceil($total * 0.3));
-
-            return ['label' => $label, 'ready' => max(0, $total - $down), 'total' => $total, 'note' => $note];
-        };
-
-        return [
-            $make('Véhicules de transport', 8, 1, 'Rotation d’entretien hebdomadaire'),
-            $make('Véhicules d’appui', 4, 3, 'Un châssis en visite programmée'),
-            $make('Postes radio longue portée', 14, 5, 'Chiffrement à jour'),
-            $make('Optiques de nuit', 22, 7, 'Lot en reconditionnement'),
-            $make('Drones d’observation', 5, 9, 'Batteries en charge'),
-        ];
-    }
-
-    /**
      * @param list<array<string, mixed>> $subUnits
      * @return array<string, string>
      */
@@ -453,14 +536,14 @@ final class JnetDashboardService
             $tenant = [];
         }
         $created = (string) ($tenant['created_at'] ?? '');
-        $seed = crc32($unitName);
+        $affiliation = $this->tenantSetting($tenant, 'unit_affiliation_label');
+        $game = $this->tenantSetting($tenant, 'game_label');
 
         return [
             'code' => strtoupper($this->codeFromLabel($unitName)),
-            'higher' => 'Commandement interarmes COMSPEC',
-            'garrison' => 'Base de départ — zone d’opérations assignée',
-            'activated' => $created !== '' ? date('d/m/Y', strtotime($created) ?: time()) : '—',
-            'net' => 'Réseau JNET ' . str_pad((string) (100 + ($seed % 800)), 3, '0', STR_PAD_LEFT) . ' · veille permanente',
+            'higher' => $affiliation,
+            'theatre' => $game,
+            'activated' => $created !== '' ? date('d/m/Y', strtotime($created) ?: time()) : '',
             'elements' => (string) count($subUnits),
         ];
     }
@@ -475,11 +558,20 @@ final class JnetDashboardService
         };
     }
 
+    private function postureLabel(string $posture): string
+    {
+        return match (strtoupper($posture)) {
+            'RED' => 'Posture rouge',
+            'AMBER' => 'Posture orange',
+            default => 'Posture verte',
+        };
+    }
+
     private function cleanLeader(string $leader): string
     {
         $leader = trim($leader);
 
-        return $leader === '' || $leader === '—' ? 'Poste à pourvoir' : $leader;
+        return $leader === '' || $leader === '—' ? '' : $leader;
     }
 
     private function cleanMission(string $mission, string $fallbackLabel): string
@@ -489,7 +581,7 @@ final class JnetDashboardService
             return $mission;
         }
 
-        return 'Mission non renseignée pour ' . $fallbackLabel . '.';
+        return '';
     }
 
     private function codeFromLabel(string $label): string
@@ -553,10 +645,6 @@ final class JnetDashboardService
             $cards[] = $this->normalizePersonCard($e);
         }
 
-        if ($cards === []) {
-            $cards = $this->demoPersonnel();
-        }
-
         usort($cards, static function (array $a, array $b): int {
             return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
         });
@@ -570,21 +658,20 @@ final class JnetDashboardService
     public function findPersonnelCard(int $tenantId, int $userId): ?array
     {
         foreach ($this->loadPersonnelCards($tenantId) as $card) {
-            if ((int) ($card['id'] ?? 0) === $userId) {
-                $profile = null;
-                try {
-                    $profile = $this->profiles->getByUserId($userId);
-                } catch (\Throwable) {
-                }
-                $card['profile'] = is_array($profile) ? $profile : [];
-                $card['qualifications'] = $this->demoQualificationsFor($card);
-                $card['equipment'] = ['Kit individuel', 'Radio section', 'Optique de jour'];
-                $card['activity'] = ['Présent sur le réseau JNET', 'Dernière synchronisation récente'];
-                $card['documents'] = ['Fiche individuelle', 'Attestations de formation'];
-                $card['missionHistory'] = ['Participations récentes aux opérations de l’unité'];
-
-                return $card;
+            if ((int) ($card['id'] ?? 0) !== $userId) {
+                continue;
             }
+            $profile = null;
+            try {
+                $profile = $this->profiles->getByUserId($userId, $tenantId);
+            } catch (\Throwable) {
+            }
+            $card['profile'] = is_array($profile) ? $profile : [];
+            $card['profileFacts'] = $this->profileFacts(is_array($profile) ? $profile : []);
+            $card['qualifications'] = $this->loadQualifications($userId);
+            $card['dossierHref'] = url('personnel/' . $userId);
+
+            return $card;
         }
 
         return null;
@@ -598,41 +685,47 @@ final class JnetDashboardService
         $out = [];
         try {
             $cases = $this->interestCases->listForTenant($tenantId, []);
-            foreach ($cases as $i => $c) {
+            foreach ($cases as $c) {
                 $level = (string) ($c['interest_level'] ?? 'courant');
                 $kind = match ($level) {
-                    'critique', 'prioritaire' => 'HVT',
-                    'a_surveiller' => 'WATCHLIST',
-                    default => 'POI',
+                    'critique', 'prioritaire' => 'Objectif prioritaire',
+                    'a_surveiller' => 'Surveillance',
+                    default => 'Personne d’intérêt',
                 };
                 $priority = match ($level) {
-                    'critique' => 'CRITICAL',
-                    'prioritaire' => 'HIGH',
-                    'a_surveiller' => 'MEDIUM',
-                    default => 'LOW',
+                    'critique' => 'Critique',
+                    'prioritaire' => 'Élevée',
+                    'a_surveiller' => 'À surveiller',
+                    default => 'Courante',
                 };
-                $name = trim((string) ($c['temporary_designation'] ?? $c['suspected_alias'] ?? $c['reference_code'] ?? 'Inconnu'));
-                $conf = match ((string) ($c['confidence_level'] ?? '')) {
-                    'eleve', 'high' => 88,
-                    'moyen', 'medium' => 62,
-                    'faible', 'low' => 38,
-                    default => 55,
-                };
+                $name = trim((string) ($c['temporary_designation'] ?? $c['suspected_alias'] ?? $c['reference_code'] ?? ''));
+                if ($name === '') {
+                    $name = 'Dossier sans désignation';
+                }
+                $code = trim((string) ($c['reference_code'] ?? ''));
                 $out[] = [
-                    'id' => 'di-' . (int) ($c['id'] ?? $i),
+                    'id' => 'di-' . (int) ($c['id'] ?? 0),
                     'source' => 'interest',
                     'source_id' => (int) ($c['id'] ?? 0),
                     'name' => $name,
-                    'code' => $kind . '-' . str_pad((string) ((int) ($c['id'] ?? $i) % 100), 2, '0', STR_PAD_LEFT),
+                    'code' => $code,
                     'kind' => $kind,
                     'priority' => $priority,
-                    'confidence' => $conf,
+                    'priority_key' => match ($level) {
+                        'critique' => 'critical',
+                        'prioritaire' => 'high',
+                        'a_surveiller' => 'medium',
+                        default => 'low',
+                    },
+                    'confidence' => $this->confidencePercent((string) ($c['confidence_level'] ?? '')),
+                    'confidence_label' => (string) ($c['confidence_label'] ?? ''),
                     'alias' => (string) ($c['suspected_alias'] ?? ''),
-                    'org' => (string) ($c['suspected_affiliation'] ?? '—'),
-                    'lastKnown' => (string) ($c['mission_label'] ?? 'Dernière observation à confirmer'),
+                    'org' => (string) ($c['suspected_affiliation'] ?? ''),
+                    'lastKnown' => (string) ($c['mission_label'] ?? ''),
                     'lastSeen' => (string) ($c['updated_at'] ?? $c['acquisition_at'] ?? ''),
+                    'status_label' => (string) ($c['status_label'] ?? ''),
                     'photo' => null,
-                    'href' => url('jnet/cibles/di-' . (int) ($c['id'] ?? $i)),
+                    'href' => url('jnet/cibles/di-' . (int) ($c['id'] ?? 0)),
                     'sse_href' => url('atak/sse/interet/' . (int) ($c['id'] ?? 0)),
                 ];
             }
@@ -640,34 +733,36 @@ final class JnetDashboardService
         }
 
         try {
-            foreach ($this->watchlist->listActive($tenantId) as $i => $w) {
+            foreach ($this->watchlist->listActive($tenantId) as $w) {
                 $name = trim((string) ($w['display_name'] ?? (($w['last_name'] ?? '') . ' ' . ($w['first_name'] ?? ''))));
                 if ($name === '') {
-                    $name = (string) ($w['alias'] ?? 'Surveillance');
+                    $name = (string) ($w['alias'] ?? '');
+                }
+                if ($name === '') {
+                    continue;
                 }
                 $out[] = [
-                    'id' => 'wl-' . (int) ($w['id'] ?? $i),
+                    'id' => 'wl-' . (int) ($w['id'] ?? 0),
                     'source' => 'watchlist',
                     'source_id' => (int) ($w['id'] ?? 0),
                     'name' => $name,
-                    'code' => 'WATCH-' . str_pad((string) ((int) ($w['id'] ?? $i) % 100), 2, '0', STR_PAD_LEFT),
-                    'kind' => 'WATCHLIST',
-                    'priority' => ((string) ($w['threat_level'] ?? '') === 'prioritaire') ? 'HIGH' : 'MEDIUM',
-                    'confidence' => 70,
+                    'code' => '',
+                    'kind' => 'Surveillance',
+                    'priority' => ((string) ($w['threat_level'] ?? '') === 'prioritaire') ? 'Élevée' : 'À surveiller',
+                    'priority_key' => ((string) ($w['threat_level'] ?? '') === 'prioritaire') ? 'high' : 'medium',
+                    'confidence' => null,
+                    'confidence_label' => '',
                     'alias' => (string) ($w['alias'] ?? ''),
-                    'org' => '—',
-                    'lastKnown' => (string) ($w['notes'] ?? 'Sous surveillance'),
+                    'org' => '',
+                    'lastKnown' => (string) ($w['notes'] ?? ''),
                     'lastSeen' => '',
+                    'status_label' => '',
                     'photo' => null,
-                    'href' => url('jnet/cibles/wl-' . (int) ($w['id'] ?? $i)),
+                    'href' => url('jnet/cibles/wl-' . (int) ($w['id'] ?? 0)),
                     'sse_href' => url('atak/sse/croisements'),
                 ];
             }
         } catch (\Throwable) {
-        }
-
-        if ($out === []) {
-            $out = $this->demoTargets();
         }
 
         return $out;
@@ -680,16 +775,7 @@ final class JnetDashboardService
     {
         foreach ($this->loadTargets($tenantId) as $t) {
             if ((string) ($t['id'] ?? '') === $id) {
-                $t['photos'] = $this->demoTargetPhotos($t);
-                $t['timeline'] = [
-                    ['when' => 'H-2', 'label' => 'Observation terrain', 'detail' => (string) ($t['lastKnown'] ?? '')],
-                    ['when' => 'H-18', 'label' => 'Corrélation d’identité', 'detail' => 'Recoupement en cours'],
-                    ['when' => 'J-3', 'label' => 'Ouverture du dossier', 'detail' => 'Signalement initial'],
-                ];
-                $t['associates'] = ['Relais local non confirmé', 'Chauffeur occasionnel'];
-                $t['locations'] = [(string) ($t['lastKnown'] ?? 'Inconnu')];
-                $t['devices'] = ['Identifiant radio suspect', 'Terminal mobile (à confirmer)'];
-                $t['reports'] = ['Note de situation liée', 'Compte rendu d’observation'];
+                $t['locations'] = array_values(array_filter([trim((string) ($t['lastKnown'] ?? ''))]));
 
                 return $t;
             }
@@ -718,15 +804,16 @@ final class JnetDashboardService
                     default => $opStatus !== '' ? $opStatus : 'planning',
                 };
                 $stateLabel = match ($stateKey) {
-                    'active' => 'ACTIVE',
-                    'planning' => 'PLANNING',
-                    'standby' => 'STANDBY',
-                    default => strtoupper($stateKey),
+                    'active' => 'En cours',
+                    'planning' => 'En préparation',
+                    'standby' => 'En attente',
+                    default => 'Ouverte',
                 };
                 $priority = (string) ($row['priority'] ?? '');
                 $zone = trim((string) ($row['operation_zone'] ?? ''));
                 $chief = trim((string) ($row['chief_name'] ?? ''));
                 $required = (int) ($row['checklist_required'] ?? 0);
+                $when = (string) ($row['updated_at'] ?? $row['start_date'] ?? '');
 
                 $out[] = [
                     'id' => (int) ($row['id'] ?? 0),
@@ -736,6 +823,7 @@ final class JnetDashboardService
                     'zone' => $zone,
                     'priority' => $priority,
                     'unit_id' => (int) ($row['visibility_unit_id'] ?? 0),
+                    'when' => $when,
                     'href' => url('back-office/tableau-operationnel/fiche/' . (int) ($row['id'] ?? 0)),
                     'facts' => [
                         ['label' => 'Période', 'value' => $this->operationPeriod($row['start_date'] ?? null, $row['end_date'] ?? null)],
@@ -777,7 +865,6 @@ final class JnetDashboardService
         };
     }
 
-    /** Période lisible d'une opération, sans inventer une date absente. */
     private function operationPeriod(mixed $start, mixed $end): string
     {
         $fmt = static function (mixed $raw): ?string {
@@ -852,14 +939,13 @@ final class JnetDashboardService
 
             return $score($b) <=> $score($a);
         });
-        $picked = array_slice($ranked, 0, 3);
-        $roles = ['Commandant d’unité', 'Adjudant opérations', 'Adjudant renseignement'];
-        foreach ($picked as $i => &$p) {
-            if (trim((string) ($p['function'] ?? '')) === '' || ($p['function'] ?? '') === '—') {
-                $p['function'] = $roles[$i] ?? 'Cadre';
+        $picked = [];
+        foreach (array_slice($ranked, 0, 3) as $p) {
+            if ((int) ($p['id'] ?? 0) <= 0) {
+                continue;
             }
+            $picked[] = $p;
         }
-        unset($p);
 
         return $picked;
     }
@@ -867,34 +953,108 @@ final class JnetDashboardService
     /**
      * @param list<array<string, mixed>> $targets
      * @param list<array<string, mixed>> $ops
+     * @param list<array<string, mixed>> $articles
      * @return list<array<string, mixed>>
      */
-    private function buildIntelFeed(array $targets, array $ops): array
+    private function buildIntelFeed(int $tenantId, array $targets, array $ops, array $articles): array
     {
         $feed = [];
-        foreach (array_slice($targets, 0, 3) as $t) {
-            $feed[] = [
-                'time' => gmdate('Hi') . 'Z',
-                'kind' => 'IDENTITY',
-                'title' => 'Dossier cible mis à jour',
-                'detail' => ($t['name'] ?? '') . ' · ' . ($t['code'] ?? ''),
-                'href' => url('jnet/cibles/' . rawurlencode((string) ($t['id'] ?? ''))),
-            ];
-        }
-        foreach (array_slice($ops, 0, 2) as $o) {
-            $feed[] = [
-                'time' => gmdate('Hi', time() - 600) . 'Z',
-                'kind' => 'OPS',
-                'title' => 'État opérationnel',
-                'detail' => ($o['title'] ?? '') . ' — ' . ($o['state'] ?? ''),
-                'href' => (string) ($o['href'] ?? url('jnet/operations')),
-            ];
-        }
-        foreach ($this->demoIntelFeed() as $demo) {
-            $feed[] = $demo;
+
+        try {
+            foreach ($this->intelEvents->listForTenant($tenantId, ['limit' => 8]) as $ev) {
+                $summary = trim((string) ($ev['summary'] ?? ''));
+                $title = trim((string) ($ev['event_type_label'] ?? $ev['event_type'] ?? 'Événement'));
+                $href = url('atak/sse');
+                if ((int) ($ev['interest_case_id'] ?? 0) > 0) {
+                    $href = url('atak/sse/interet/' . (int) $ev['interest_case_id']);
+                } elseif ((int) ($ev['case_id'] ?? 0) > 0) {
+                    $href = url('atak/sse');
+                }
+                $when = (string) ($ev['event_time'] ?? $ev['created_at'] ?? '');
+                $feed[] = $this->feedItem($when, 'Terrain', $title, $summary, $href);
+            }
+        } catch (\Throwable) {
         }
 
+        try {
+            foreach ($this->fieldNotes->listForTenant($tenantId, ['limit' => 6]) as $note) {
+                $title = trim((string) ($note['title'] ?? $note['note_kind_label'] ?? 'Fiche terrain'));
+                $place = trim((string) ($note['place_label'] ?? ''));
+                $when = (string) ($note['observed_at'] ?? $note['created_at'] ?? '');
+                $id = (int) ($note['id'] ?? 0);
+                $feed[] = $this->feedItem(
+                    $when,
+                    'Fiche',
+                    $title !== '' ? $title : 'Fiche terrain',
+                    $place,
+                    $id > 0 ? url('atak/sse/fiches/' . $id) : url('atak/sse/fiches')
+                );
+            }
+        } catch (\Throwable) {
+        }
+
+        foreach (array_slice($targets, 0, 3) as $t) {
+            $when = (string) ($t['lastSeen'] ?? '');
+            $detail = trim(implode(' · ', array_filter([
+                (string) ($t['code'] ?? ''),
+                (string) ($t['status_label'] ?? ''),
+                (string) ($t['lastKnown'] ?? ''),
+            ])));
+            $feed[] = $this->feedItem(
+                $when,
+                'Dossier',
+                (string) ($t['name'] ?? 'Dossier de renseignement'),
+                $detail,
+                (string) ($t['href'] ?? url('jnet/cibles'))
+            );
+        }
+
+        foreach (array_slice($ops, 0, 3) as $o) {
+            $feed[] = $this->feedItem(
+                (string) ($o['when'] ?? ''),
+                'Opération',
+                (string) ($o['title'] ?? 'Opération'),
+                (string) ($o['state'] ?? ''),
+                url('jnet/operations/' . (int) ($o['id'] ?? 0))
+            );
+        }
+
+        foreach (array_slice($articles, 0, 3) as $article) {
+            $feed[] = $this->feedItem(
+                (string) ($article['when'] ?? ''),
+                'Article',
+                (string) ($article['title'] ?? 'Article'),
+                (string) ($article['excerpt'] ?? ''),
+                (string) ($article['href'] ?? url('articles'))
+            );
+        }
+
+        $feed = array_values(array_filter(
+            $feed,
+            static fn (array $row): bool => trim((string) ($row['title'] ?? '')) !== ''
+        ));
+        usort($feed, static function (array $a, array $b): int {
+            return ((int) ($b['sort'] ?? 0)) <=> ((int) ($a['sort'] ?? 0));
+        });
+
         return $feed;
+    }
+
+    /**
+     * @return array{time: string, kind: string, title: string, detail: string, href: string, sort: int}
+     */
+    private function feedItem(string $when, string $kind, string $title, string $detail, string $href): array
+    {
+        $stamp = strtotime($when);
+
+        return [
+            'time' => $this->formatWhen($when),
+            'kind' => $kind,
+            'title' => $title,
+            'detail' => $detail,
+            'href' => $href,
+            'sort' => $stamp ?: 0,
+        ];
     }
 
     /** @param array<string, mixed> $row */
@@ -904,13 +1064,12 @@ final class JnetDashboardService
         $display = trim((string) ($row['display_name'] ?? ''));
         $character = trim((string) ($row['character_name'] ?? ''));
         $callsign = trim((string) ($row['callsign'] ?? ''));
-        // Priorité milsim : identité de personnage → indicatif → nom affiché (évite le pseudo compte en tête).
         $name = $character !== ''
             ? $character
             : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur'));
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
-        $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? '—'));
-        $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? '—'));
+        $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? ''));
+        $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? ''));
         $avatar = null;
         if (function_exists('user_media_public_url')) {
             $avatar = user_media_public_url($row['avatar_url'] ?? null);
@@ -932,215 +1091,238 @@ final class JnetDashboardService
 
         return [
             'id' => $id,
-            'jnet_id' => 'PER-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT),
+            'jnet_id' => $id > 0 ? 'PER-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT) : '',
             'name' => $name,
-            'callsign' => $callsign !== '' ? $callsign : '—',
-            'grade' => $grade !== '' ? $grade : '—',
-            'unit' => $unit !== '' ? $unit : '—',
-            'function' => $function !== '' ? $function : '—',
+            'callsign' => $callsign,
+            'grade' => $grade,
+            'unit' => $unit,
+            'function' => $function,
             'role' => (string) ($row['role_name'] ?? ''),
             'status' => (string) ($row['status'] ?? 'active'),
             'duty' => $duty,
-            'duty_label' => match ($duty) {
-                'deployed' => 'DÉPLOYÉ',
-                'off' => 'REPOS',
-                default => 'ACTIF',
-            },
+            'duty_label' => $duty === 'off' ? 'Indisponible' : 'En service',
             'photo' => $avatar,
             'initials' => function_exists('user_display_initials') ? user_display_initials($name, 2) : strtoupper(substr($name, 0, 2)),
             'href' => url('jnet/personnel/' . $id),
-            'current_op' => '—',
-            'meta_line' => $metaBits !== [] ? implode(' · ', $metaBits) : '—',
+            'meta_line' => $metaBits !== [] ? implode(' · ', $metaBits) : '',
         ];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function demoPersonnel(): array
+    /**
+     * @return list<array{title: string, href: string, excerpt: string, when: string, pinned: bool}>
+     */
+    private function loadPublishedArticles(int $tenantId, int $limit): array
     {
-        $demo = [
-            ['name' => 'MILLER, John', 'grade' => 'O-3 / CPT', 'unit' => 'ALPHA', 'function' => 'Team Leader', 'callsign' => 'VIKING 1', 'duty' => 'active'],
-            ['name' => 'HARRIS, Tom', 'grade' => 'E-6 / SSG', 'unit' => 'ALPHA', 'function' => 'Combat Medic', 'callsign' => 'VIKING 1-3', 'duty' => 'deployed'],
-            ['name' => 'COLE, Ryan', 'grade' => 'E-6 / SSG', 'unit' => 'COMMAND', 'function' => 'Operations NCO', 'callsign' => 'RAVEN', 'duty' => 'active'],
-            ['name' => 'ANDERSEN, Lisa', 'grade' => 'O-4 / MAJ', 'unit' => 'COMMAND', 'function' => 'Commanding Officer', 'callsign' => 'OVERLORD', 'duty' => 'active'],
-            ['name' => 'NGUYEN, Minh', 'grade' => 'E-5 / SGT', 'unit' => 'BRAVO', 'function' => 'JTAC', 'callsign' => 'FALCON 2', 'duty' => 'active'],
-            ['name' => 'DUPONT, Marc', 'grade' => 'E-5 / SGT', 'unit' => 'BRAVO', 'function' => 'Team Leader', 'callsign' => 'WOLF 1', 'duty' => 'active'],
-            ['name' => 'SILVA, Ana', 'grade' => 'E-4 / CPL', 'unit' => 'SUPPORT', 'function' => 'SIGINT', 'callsign' => 'ECHO', 'duty' => 'active'],
-            ['name' => 'OKAFOR, James', 'grade' => 'E-7 / SFC', 'unit' => 'SUPPORT', 'function' => 'EOD', 'callsign' => 'BREACH', 'duty' => 'off'],
-        ];
+        try {
+            $rows = $this->articles->listPublishedForTenant($tenantId, $limit);
+        } catch (\Throwable) {
+            return [];
+        }
         $out = [];
-        foreach ($demo as $i => $d) {
-            $id = 9000 + $i;
+        foreach ($rows as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '' || $slug === '') {
+                continue;
+            }
             $out[] = [
-                'id' => $id,
-                'jnet_id' => 'PER-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT),
-                'name' => $d['name'],
-                'callsign' => $d['callsign'],
-                'grade' => $d['grade'],
-                'unit' => $d['unit'],
-                'function' => $d['function'],
-                'role' => $d['function'],
-                'status' => 'active',
-                'duty' => $d['duty'],
-                'duty_label' => match ($d['duty']) {
-                    'deployed' => 'DÉPLOYÉ',
-                    'off' => 'REPOS',
-                    default => 'ACTIF',
-                },
-                'photo' => null,
-                'initials' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', explode(',', $d['name'])[0] ?? 'X') ?: 'X', 0, 2)),
-                'href' => url('jnet/personnel/' . $id),
-                'current_op' => $d['duty'] === 'deployed' ? 'IRON VEIL' : '—',
-                'meta_line' => $d['grade'] . ' · ' . $d['callsign'],
-                'demo' => true,
+                'title' => $title,
+                'href' => url('articles/' . $slug),
+                'excerpt' => trim((string) ($row['excerpt'] ?? '')),
+                'when' => (string) ($row['published_at'] ?? $row['created_at'] ?? ''),
+                'pinned' => !empty($row['pinned']),
             ];
         }
 
         return $out;
     }
 
-    /** @return list<array<string, mixed>> */
-    private function demoTargets(): array
+    /**
+     * @return list<array{title: string, href: string, category: string, when: string}>
+     */
+    private function loadPublishedDocuments(int $tenantId, int $limit): array
     {
-        return [
-            [
-                'id' => 'demo-hvt-01',
-                'source' => 'demo',
-                'source_id' => 0,
-                'name' => 'ABU KARIM',
-                'code' => 'HVT-01',
-                'kind' => 'HVT',
-                'priority' => 'CRITICAL',
-                'confidence' => 92,
-                'alias' => 'Le Courtier',
-                'org' => 'Réseau Grijalba',
-                'lastKnown' => 'OBJ BRAVO',
-                'lastSeen' => '14 AUG',
-                'photo' => null,
-                'href' => url('jnet/cibles/demo-hvt-01'),
-            ],
-            [
-                'id' => 'demo-hvt-02',
-                'source' => 'demo',
-                'source_id' => 0,
-                'name' => 'AL-RASHID',
-                'code' => 'HVT-02',
-                'kind' => 'HVT',
-                'priority' => 'HIGH',
-                'confidence' => 87,
-                'alias' => 'M.',
-                'org' => 'Cellule logistique',
-                'lastKnown' => 'Corridor C-3',
-                'lastSeen' => '14 AUG',
-                'photo' => null,
-                'href' => url('jnet/cibles/demo-hvt-02'),
-            ],
-            [
-                'id' => 'demo-poi-14',
-                'source' => 'demo',
-                'source_id' => 0,
-                'name' => 'UNKNOWN 07',
-                'code' => 'POI-14',
-                'kind' => 'UNKNOWN',
-                'priority' => 'MEDIUM',
-                'confidence' => 43,
-                'alias' => '—',
-                'org' => 'Non établi',
-                'lastKnown' => 'Checkpoint Sud',
-                'lastSeen' => '12 AUG',
-                'photo' => null,
-                'href' => url('jnet/cibles/demo-poi-14'),
-            ],
-            [
-                'id' => 'demo-hvt-04',
-                'source' => 'demo',
-                'source_id' => 0,
-                'name' => 'HASSAN A.',
-                'code' => 'HVT-04',
-                'kind' => 'HVT',
-                'priority' => 'HIGH',
-                'confidence' => 78,
-                'alias' => 'Hass',
-                'org' => 'Facilitateur',
-                'lastKnown' => 'Quartier Est',
-                'lastSeen' => '11 AUG',
-                'photo' => null,
-                'href' => url('jnet/cibles/demo-hvt-04'),
-            ],
-        ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function demoIntelFeed(): array
-    {
-        return [
-            [
-                'time' => '2321Z',
-                'kind' => 'SSE',
-                'title' => 'SSE-0268',
-                'detail' => 'Terminal mobile récupéré sur OBJ BRAVO',
-                'href' => url('atak/sse'),
-            ],
-            [
-                'time' => '2314Z',
-                'kind' => 'IDENTITY',
-                'title' => 'Corrélation d’identité',
-                'detail' => 'UNKNOWN-14 ↔ HVT-02 · confiance 81 %',
-                'href' => url('jnet/cibles'),
-            ],
-            [
-                'time' => '2258Z',
-                'kind' => 'SIGINT',
-                'title' => 'SIGINT',
-                'detail' => 'Identifiant connu détecté',
-                'href' => url('jnet/renseignement'),
-            ],
-            [
-                'time' => '2241Z',
-                'kind' => 'FIELD',
-                'title' => 'Compte rendu terrain',
-                'detail' => 'VIKING-2 signale un mouvement de véhicule',
-                'href' => url('transmission'),
-            ],
-            [
-                'time' => '2217Z',
-                'kind' => 'GEOINT',
-                'title' => 'GEOINT',
-                'detail' => 'Dernière position HVT-01 mise à jour',
-                'href' => url('jnet/cibles/demo-hvt-01'),
-            ],
-        ];
-    }
-
-    /** @param array<string, mixed> $card @return list<string> */
-    private function demoQualificationsFor(array $card): array
-    {
-        $base = ['CLS', 'Radio section'];
-        $fn = strtoupper((string) ($card['function'] ?? ''));
-        if (str_contains($fn, 'MED')) {
-            return ['SOF MEDIC', 'AIRBORNE', 'HALO', 'CLS INSTRUCTOR'];
+        try {
+            $rows = $this->documents->listForTenant($tenantId, null, 'published', null, null, null, null, null, 'updated_desc');
+        } catch (\Throwable) {
+            return [];
         }
-        if (str_contains($fn, 'JTAC')) {
-            return ['JTAC', 'AIRBORNE', 'CAS'];
-        }
-        if (str_contains($fn, 'EOD')) {
-            return ['EOD', 'IEDD', 'AIRBORNE'];
+        $out = [];
+        foreach (array_slice($rows, 0, $limit) as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '' || $slug === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $title,
+                'href' => url('documents/' . $slug),
+                'category' => trim((string) ($row['category_name'] ?? '')),
+                'when' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
+            ];
         }
 
-        return array_merge($base, ['AIRBORNE']);
+        return $out;
     }
 
     /**
-     * @param array<string, mixed> $t
-     * @return list<array{label:string,kind:string,when:string}>
+     * @return list<array{title: string, href: string}>
      */
-    private function demoTargetPhotos(array $t): array
+    private function loadPublishedTrainings(int $tenantId, int $limit): array
+    {
+        try {
+            $rows = $this->trainings->listPublishedForDashboard($tenantId, $limit);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '' || $slug === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $title,
+                'href' => url('formations/' . $slug),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{label: string, name: string, status: string, expires: string}>
+     */
+    private function loadQualifications(int $userId): array
+    {
+        try {
+            $rows = $this->qualifications->listForUser($userId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $name = trim((string) ($row['qualification_name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $status = (string) ($row['status'] ?? '');
+            $statusLabel = match ($status) {
+                'valid', 'active' => 'Valide',
+                'expired' => 'Échue',
+                'pending' => 'En attente',
+                default => $status !== '' ? $status : '',
+            };
+            $expires = trim((string) ($row['expires_at'] ?? ''));
+            $out[] = [
+                'label' => $name,
+                'name' => $name,
+                'status' => $statusLabel,
+                'expires' => $expires !== '' && strtotime($expires) ? date('d/m/Y', strtotime($expires) ?: 0) : '',
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return list<array{label: string, value: string}>
+     */
+    private function profileFacts(array $profile): array
+    {
+        $map = [
+            'blood_type' => 'Groupe sanguin',
+            'nationality' => 'Nationalité',
+            'languages' => 'Langues',
+            'enlistment_date' => 'Date d’engagement',
+            'motto' => 'Devise',
+        ];
+        $facts = [];
+        foreach ($map as $key => $label) {
+            $raw = trim((string) ($profile[$key] ?? ''));
+            if ($raw === '') {
+                continue;
+            }
+            if ($key === 'enlistment_date' && strtotime($raw)) {
+                $raw = date('d/m/Y', strtotime($raw) ?: 0);
+            }
+            $facts[] = ['label' => $label, 'value' => $raw];
+        }
+
+        return $facts;
+    }
+
+    /**
+     * @return list<array{label: string, desc: string, href: string}>
+     */
+    private function quickLinks(): array
     {
         return [
-            ['label' => 'Portrait', 'kind' => 'PRIMARY', 'when' => '—'],
-            ['label' => 'Checkpoint', 'kind' => 'FIELD', 'when' => '12 AUG'],
-            ['label' => 'CCTV', 'kind' => 'FIELD', 'when' => '09 AUG'],
-            ['label' => 'SSE', 'kind' => 'SSE', 'when' => '06 AUG'],
-            ['label' => 'ISR', 'kind' => 'ISR', 'when' => '02 AUG'],
+            ['label' => 'Messagerie', 'desc' => 'Messages de l’unité', 'href' => url('jnet/courrier')],
+            ['label' => 'Opérations', 'desc' => 'Engagements en cours', 'href' => url('jnet/operations')],
+            ['label' => 'Carte tactique', 'desc' => 'Situation en temps réel', 'href' => url('atak')],
+            ['label' => 'Tableau opérationnel', 'desc' => 'Conduite depuis le poste', 'href' => url('back-office/tableau-operationnel')],
         ];
+    }
+
+    /** @param array<string, mixed> $tenant */
+    private function tenantMotto(array $tenant): string
+    {
+        foreach (['tagline', 'motto', 'registry_tagline'] as $key) {
+            $value = trim((string) ($tenant[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+        $fromSettings = $this->tenantSetting($tenant, 'tagline');
+        if ($fromSettings !== '') {
+            return $fromSettings;
+        }
+
+        return $this->tenantSetting($tenant, 'public_tagline');
+    }
+
+    /** @param array<string, mixed> $tenant */
+    private function tenantSetting(array $tenant, string $key): string
+    {
+        $settings = $tenant['settings'] ?? null;
+        if (is_string($settings) && $settings !== '') {
+            $decoded = json_decode($settings, true);
+            $settings = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($settings)) {
+            return '';
+        }
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : $settings;
+
+        return trim((string) ($community[$key] ?? ''));
+    }
+
+    private function confidencePercent(string $level): ?int
+    {
+        return match ($level) {
+            'confirme', 'tres_eleve' => 95,
+            'eleve', 'high' => 80,
+            'modere', 'moyen', 'medium' => 60,
+            'faible', 'low' => 35,
+            'tres_faible' => 15,
+            default => null,
+        };
+    }
+
+    private function formatWhen(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '' || str_starts_with($raw, '0000')) {
+            return '';
+        }
+        $stamp = strtotime($raw);
+        if (!$stamp) {
+            return '';
+        }
+
+        return date('d/m H:i', $stamp);
     }
 }

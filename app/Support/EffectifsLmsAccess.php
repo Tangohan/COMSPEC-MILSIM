@@ -62,6 +62,17 @@ final class EffectifsLmsAccess
             || $gate->allows('personnel.grades.manage');
     }
 
+    /**
+     * Unité, emploi, grade : application immédiate réservée RH / Gestionnaire.
+     * Les autres proposent une demande de correction.
+     */
+    public static function canApplyOrbatImmediately(Gate $gate): bool
+    {
+        return self::canManageAssignments($gate)
+            || self::canManageGrades($gate)
+            || self::canEditProfiles($gate);
+    }
+
     /** Peut solliciter une élévation RH auprès des personnes habilitées. */
     public static function canRequestElevation(Gate $gate): bool
     {

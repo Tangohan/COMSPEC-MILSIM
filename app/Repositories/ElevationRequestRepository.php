@@ -185,6 +185,21 @@ class ElevationRequestRepository
         return $row ?: null;
     }
 
+    public function hasOpenForTarget(int $tenantId, int $targetUserId): bool
+    {
+        if ($tenantId < 1 || $targetUserId < 1) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM elevation_requests
+             WHERE tenant_id = ? AND target_user_id = ? AND status IN ('pending', 'in_review')
+             LIMIT 1"
+        );
+        $stmt->execute([$tenantId, $targetUserId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function findByIdForTenant(int $id, int $tenantId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM elevation_requests WHERE id = ? AND tenant_id = ? LIMIT 1');

@@ -24,7 +24,7 @@ $iconDup = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="
 ?>
 <section class="eff-page-head">
     <p class="eff-page-kicker">Pilotage RH</p>
-    <h1 class="eff-page-title">Fiches jumelles</h1>
+    <h2 class="eff-page-title">Fiches jumelles</h2>
     <p class="eff-page-lead">
         Repérez les dossiers qui partagent une même valeur — matricule, indicatif, nom.
         Choisissez ce qui déclenche l’alerte, puis ouvrez les fiches concernées.

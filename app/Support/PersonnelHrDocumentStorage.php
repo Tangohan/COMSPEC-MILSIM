@@ -104,6 +104,43 @@ final class PersonnelHrDocumentStorage
         ];
     }
 
+    /**
+     * @return array{path:?string, original_name:?string, error:?string}
+     */
+    public static function storeFromBinary(int $tenantId, int $userId, string $bytes, string $originalName): array
+    {
+        if ($tenantId < 1 || $userId < 1 || $bytes === '') {
+            return ['path' => null, 'original_name' => null, 'error' => 'Dossier introuvable.'];
+        }
+        if (strlen($bytes) > self::MAX_BYTES) {
+            return ['path' => null, 'original_name' => null, 'error' => 'Document trop volumineux (maximum 15 Mo).'];
+        }
+        $original = trim($originalName);
+        if ($original === '') {
+            $original = 'piece.pdf';
+        }
+        if (!str_ends_with(strtolower($original), '.pdf')) {
+            $original .= '.pdf';
+        }
+        $relDir = self::PREFIX . $tenantId . '/' . $userId;
+        $absDir = base_path('storage/uploads/' . $relDir);
+        if (!is_dir($absDir) && !@mkdir($absDir, 0775, true) && !is_dir($absDir)) {
+            return ['path' => null, 'original_name' => null, 'error' => 'Impossible d’enregistrer le document pour le moment.'];
+        }
+        $name = bin2hex(random_bytes(16)) . '.pdf';
+        $abs = $absDir . DIRECTORY_SEPARATOR . $name;
+        if (@file_put_contents($abs, $bytes) === false) {
+            return ['path' => null, 'original_name' => null, 'error' => 'Enregistrement du document impossible.'];
+        }
+        @chmod($abs, 0640);
+
+        return [
+            'path' => $relDir . '/' . $name,
+            'original_name' => mb_substr($original, 0, 255),
+            'error' => null,
+        ];
+    }
+
     public static function absolutePath(string $relativePath): ?string
     {
         if (!self::isStoredPath($relativePath)) {

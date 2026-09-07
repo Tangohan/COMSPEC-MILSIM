@@ -33,6 +33,7 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
+use App\Services\Effectifs\PersonnelCommandChainService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
@@ -499,8 +500,9 @@ class EffectifsWorkspaceController
                 $jobRoleSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
                 $communitySettings = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
                 $jobRoleMax = (int) $jobRoleSettings['max_roles_per_member'];
-                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
+                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForMemberDossier(
                     $tenantId,
+                    array_map(static fn (array $r): int => (int) ($r['personnel_job_role_id'] ?? 0), $jobRoles),
                     (bool) $jobRoleSettings['show_english_labels'],
                     (bool) $jobRoleSettings['show_category_in_role_picklist'],
                     OrganizationRoleLabels::mode($communitySettings, $this->tenantRepository->findById($tenantId) ?: [])
@@ -539,6 +541,21 @@ class EffectifsWorkspaceController
             $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
             $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
             $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
+        } catch (\Throwable) {
+        }
+        $commandChain = [
+            'reports_to_id' => 0,
+            'reports_to_label' => '',
+            'chain_labels' => [],
+            'commands' => [],
+            'unit_name' => '',
+        ];
+        try {
+            $commandChain = (new PersonnelCommandChainService(
+                $this->unitRepository,
+                $this->userRepository,
+                $this->personnelAssignmentRepository
+            ))->chainForUser($tenantId, $id);
         } catch (\Throwable) {
         }
 
@@ -593,6 +610,7 @@ class EffectifsWorkspaceController
             'memberStageBilans' => $stageBilans,
             'dutyPosition' => $dutyPosition,
             'remainingTrainingDays' => $remainingTrainingDays,
+            'memberCommandChain' => $commandChain,
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
@@ -1992,6 +2010,67 @@ class EffectifsWorkspaceController
         ]);
     }
 
+    public function commandChain(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $gate = Gate::getInstance();
+        $data = (new PersonnelCommandChainService(
+            $this->unitRepository,
+            $this->userRepository,
+            $this->personnelAssignmentRepository
+        ))->workspace($tenantId);
+
+        return $this->shell('admin.effectifs_workspace.chaine', [
+            'title' => 'Chaîne de commandement',
+            'effectifsNav' => 'chaine',
+            'chainUnits' => $data['units'],
+            'chainMembers' => $data['members'],
+            'chainMemberOptions' => $data['memberOptions'],
+            'chainMissingCommanders' => $data['missing_commanders'],
+            'chainMissingSuperiors' => $data['missing_superiors'],
+            'chainWithoutUnit' => $data['without_unit'],
+            'commandChainMissingCount' => $data['missing_commanders'],
+            'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
+            'csrfToken' => Csrf::token(),
+            'rosterCounts' => $this->rosterCounts($tenantId),
+        ]);
+    }
+
+    public function saveCommandChain(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page, puis enregistrez de nouveau.');
+
+            return Response::redirect(effectifs_workspace_url('chaine'));
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à désigner les chefs d’unité.');
+
+            return Response::redirect(effectifs_workspace_url('chaine'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $raw = $request->input('commanders', []);
+        $commanders = is_array($raw) ? $raw : [];
+        $allowed = $this->userRepository->listActiveUserIdsForTenant($tenantId);
+        $result = (new PersonnelCommandChainService(
+            $this->unitRepository,
+            $this->userRepository,
+            $this->personnelAssignmentRepository
+        ))->saveCommanders($tenantId, $commanders, $allowed);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(effectifs_workspace_url('chaine'));
+    }
+
     public function elevationRequests(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -2161,6 +2240,21 @@ class EffectifsWorkspaceController
                 $ok ? 'success' : 'error',
                 $ok ? $apply['message'] : 'Statut invalide ou mise à jour impossible.'
             );
+            if ($ok) {
+                $targetId = (int) ($existing['target_user_id'] ?? 0);
+                if ($targetId > 0) {
+                    (new \App\Support\PersonnelHrPdfService())->maybeAutoIssue(
+                        $tenantId,
+                        $targetId,
+                        'elevation',
+                        (int) Session::get('user_id'),
+                        [
+                            'title' => 'Décision d’élévation',
+                            'detail' => (string) ($apply['message'] ?? ''),
+                        ]
+                    );
+                }
+            }
 
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }
@@ -2246,11 +2340,25 @@ class EffectifsWorkspaceController
         $rhAlertTotal = $extra['rhAlertTotalCount'] ?? null;
         if ($rhAlertTotal === null) {
             try {
-                $rhAlertTotal = (int) ((new \App\Services\Effectifs\RhAlertAggregatorService())->summarize($tenantId)['total'] ?? 0);
+                $hr = \App\Services\Effectifs\PersonnelHrWorkspaceSettings::forTenant($tenantId);
+                $rhAlertTotal = (int) ((new \App\Services\Effectifs\RhAlertAggregatorService())->summarize(
+                    $tenantId,
+                    (int) ($hr['inactivity_days'] ?? null),
+                    (int) ($hr['absence_days'] ?? null)
+                )['total'] ?? 0);
             } catch (\Throwable) {
                 $rhAlertTotal = 0;
             }
         }
+        $chainMissing = $extra['commandChainMissingCount'] ?? null;
+        if ($chainMissing === null) {
+            try {
+                $chainMissing = $this->unitRepository->countWithoutCommander($tenantId);
+            } catch (\Throwable) {
+                $chainMissing = 0;
+            }
+        }
+        $extras = \App\Support\EffectifsWorkspaceShellExtras::counts($tenantId);
 
         return Response::view('layout.main', array_merge([
             'content' => 'admin.effectifs_workspace.shell',
@@ -2267,6 +2375,9 @@ class EffectifsWorkspaceController
             'personnelDuplicateScan' => $dupScan,
             'mobilityPendingCount' => $mobilityPending,
             'rhAlertTotalCount' => $rhAlertTotal,
+            'commandChainMissingCount' => $chainMissing,
+            'roleplayDueCount' => $extras['roleplayDueCount'],
+            'integrationOpenCount' => $extras['integrationOpenCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }
@@ -2481,10 +2592,25 @@ class EffectifsWorkspaceController
             : [];
         $seniorityByUser = $this->rosterSeniorityPacksByUser($tenantId, $ids, $richById);
         $communityFallback = $this->communityNameForTenant($tenantId);
+        $accessRoleIdsByUser = $ids !== []
+            ? $this->userRepository->listOrganizationRoleIdsForUsers($tenantId, $ids)
+            : [];
         $out = [];
         foreach ($users as $u) {
             $id = (int) ($u['id'] ?? 0);
             $rich = $richById[$id] ?? [];
+            $accessRoleIds = array_values(array_filter(
+                array_map('intval', is_array($accessRoleIdsByUser[$id] ?? null) ? $accessRoleIdsByUser[$id] : []),
+                static fn (int $rid): bool => $rid > 0
+            ));
+            if ($accessRoleIds === []) {
+                $legacyRoleId = (int) ($u['role_id'] ?? 0);
+                if ($legacyRoleId > 0) {
+                    $accessRoleIds = [$legacyRoleId];
+                }
+            }
+            $portraitPath = trim((string) ($rich['character_portrait_path'] ?? $u['character_portrait_path'] ?? ''));
+            $extraCallsignsJson = $rich['extra_callsigns_json'] ?? ($u['extra_callsigns_json'] ?? null);
             $unitId = isset($rich['unit_id']) ? (int) $rich['unit_id'] : 0;
             $unitName = trim((string) ($rich['unit_name'] ?? ''));
             $path = trim((string) ($unitMeta[$unitId]['path'] ?? ''));
@@ -2534,6 +2660,9 @@ class EffectifsWorkspaceController
                 'presence_score' => $presenceScore,
                 'completion_score' => $completionScore,
                 'roles_display' => $u['roles_display'] ?? ($u['role_name'] ?? null),
+                'access_role_ids' => $accessRoleIds,
+                'character_portrait_path' => $portraitPath !== '' ? $portraitPath : null,
+                'extra_callsigns_json' => $extraCallsignsJson,
             ]);
         }
 

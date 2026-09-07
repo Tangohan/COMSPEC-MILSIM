@@ -4,7 +4,7 @@ $operations = is_array($operations ?? null) ? $operations : [];
 ?>
 <section class="jnet-panel">
     <div class="jnet-panel__head">
-        <h2>Mission board — opérations en cours</h2>
+        <h2>Opérations en cours</h2>
         <span class="jnet-meta"><?= count($operations) ?> engagement<?= count($operations) > 1 ? 's' : '' ?></span>
     </div>
     <div class="jnet-panel__body jnet-ops-board">
@@ -24,8 +24,8 @@ $operations = is_array($operations ?? null) ? $operations : [];
                 <?php endif; ?>
                 <div class="jnet-mail__actions">
                     <a class="jnet-btn jnet-btn--accent" href="<?= $h(url('jnet/operations/' . (int) ($op['id'] ?? 0))) ?>">Ouvrir l’opération</a>
-                    <a class="jnet-btn" href="<?= $h(url('back-office/tableau-operationnel')) ?>">Ouvrir Athena</a>
-                    <a class="jnet-btn" href="<?= $h(url('atak')) ?>">Ouvrir ATAK</a>
+                    <a class="jnet-btn" href="<?= $h(url('back-office/tableau-operationnel')) ?>">Tableau opérationnel</a>
+                    <a class="jnet-btn" href="<?= $h(url('atak')) ?>">Carte tactique</a>
                 </div>
             </article>
         <?php endforeach; ?>
@@ -38,4 +38,4 @@ $operations = is_array($operations ?? null) ? $operations : [];
         <?php endif; ?>
     </div>
 </section>
-<p class="jnet-meta">JNET = connaissance &amp; unité · Athena = commandement de l’opération · ATAK = carte temps réel · SSE = acquisition terrain.</p>
+<p class="jnet-meta">L’extranet donne l’état de surface. La conduite détaillée se tient sur le tableau opérationnel ; la carte temps réel est sur le téléphone ATAK.</p>

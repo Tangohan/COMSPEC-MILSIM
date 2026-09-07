@@ -44,7 +44,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'href' => url('back-office/recruitments'),
         ];
     }
-    if ($boModN > 0) {
+    if ($boModN > 0 && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())) {
         $topAlerts[] = [
             'label' => 'FORUM',
             'n' => $boModN,

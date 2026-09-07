@@ -29,7 +29,10 @@ final class MemberIntegrationEntryHook
         }
         try {
             $svc = Container::get(MemberIntegrationAutomationService::class);
-            $svc->ensureForNewMember($tenantId, $userId, $actorUserId, $source, $context);
+            $hr = \App\Services\Effectifs\PersonnelHrWorkspaceSettings::forTenant($tenantId);
+            if (!empty($hr['auto_start_integration'])) {
+                $svc->ensureForNewMember($tenantId, $userId, $actorUserId, $source, $context);
+            }
         } catch (Throwable) {
         }
         try {
@@ -53,7 +56,10 @@ final class MemberIntegrationEntryHook
         }
         try {
             $svc = Container::get(MemberIntegrationAutomationService::class);
-            $svc->maybeStartOnAssignmentChange($tenantId, $userId, $actorUserId, $context);
+            $hr = \App\Services\Effectifs\PersonnelHrWorkspaceSettings::forTenant($tenantId);
+            if (!empty($hr['auto_start_on_assignment'])) {
+                $svc->maybeStartOnAssignmentChange($tenantId, $userId, $actorUserId, $context);
+            }
         } catch (Throwable) {
         }
     }

@@ -72,11 +72,15 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
 
       <?php if ($proposed !== []): ?>
       <ul class="rh-corr__changes">
+        <?php
+          $proposedDisplay = is_array($row['proposed_display'] ?? null) ? $row['proposed_display'] : [];
+          $beforeDisplay = is_array($row['before_display'] ?? null) ? $row['before_display'] : [];
+        ?>
         <?php foreach ($proposed as $key => $newVal): ?>
         <?php
           $label = $fieldLabels[(string) $key] ?? (string) $key;
-          $old = isset($before[$key]) ? trim((string) $before[$key]) : '';
-          $new = trim((string) $newVal);
+          $old = trim((string) ($beforeDisplay[$key] ?? $before[$key] ?? ''));
+          $new = trim((string) ($proposedDisplay[$key] ?? $newVal));
         ?>
         <li>
           <span class="rh-corr__field"><?= $h($label) ?></span>

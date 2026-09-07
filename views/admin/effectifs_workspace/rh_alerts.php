@@ -26,7 +26,7 @@ $tipById = [
 ?>
 <section class="eff-rh-hero">
     <p class="eff-page-kicker">Dossier RH</p>
-    <h1 class="eff-page-title">Alertes RH</h1>
+    <h2 class="eff-page-title">Alertes RH</h2>
     <p class="eff-page-lead">
         Vue consolidée de ce qui demande un suivi : qualifications à renouveler, absences prolongées,
         inactivité, mobilité en attente et postes non pourvus.

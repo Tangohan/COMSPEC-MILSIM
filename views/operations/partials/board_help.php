@@ -16,16 +16,16 @@ $refUrl = url('documentation/fichier/tableau-operationnel');
     <div class="border-t border-slate-100 px-4 py-4 text-sm text-slate-700 space-y-3 leading-relaxed">
         <?php if ($boardHelpIsPilotage): ?>
             <p>
-                Cet écran est le <strong>pilotage</strong>. La page est organisée en étapes :
-                <strong>consulter</strong> le tableau, <strong>créer une fiche</strong>, gérer les <strong>modèles</strong>, puis partager le <strong>lien public</strong> (lecture seule).
+                Cet écran est le <strong>pilotage</strong>. En haut : événements, articles et poste ATAK, puis le
+                <strong>mur de consignes</strong> (consulter, créer une fiche, modèles, lien public).
                 La <strong>vue membres</strong> ne montre que les fiches déjà publiées.
             </p>
             <ol class="list-decimal pl-5 space-y-1.5">
-                <li><strong>Création rapide</strong> ou éditeur complet (ou modèle) → brouillon.</li>
+                <li>Ouvrir un <strong>événement</strong>, un <strong>article</strong> ou le <strong>poste ATAK</strong> depuis le bandeau du haut.</li>
+                <li><strong>Création rapide</strong> ou éditeur complet (ou modèle) → brouillon de fiche.</li>
                 <li>Compléter public, sensibilité, dates, priorité → <strong>Enregistrer</strong>.</li>
                 <li><strong>Approuver</strong> ou <strong>Mettre en ligne</strong> pour diffuser sur le mur.</li>
                 <li>Suivre Planifié / En cours ; cocher les <strong>points de contrôle</strong> ; <strong>Clôturer</strong>.</li>
-                <li>Au besoin : <strong>Mise à jour opérationnelle</strong>, <strong>Copier en brouillon</strong>, ou <strong>Retirer du mur</strong>.</li>
             </ol>
             <p>
                 La <strong>posture</strong> (Normale · Vigilance · Alerte · Crise) s’applique ici et s’affiche aussi sur le mur et la page publiée.

@@ -105,6 +105,65 @@ class PersonnelAssignmentRepository
         return $out;
     }
 
+    /**
+     * Unité principale actuelle par membre actif (priorité à l’affectation principale).
+     *
+     * @return array<int, int> user_id => unit_id
+     */
+    public function primaryUnitIdByUserForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $out = [];
+        if ($this->personnelAssignmentsTableExists()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT pa.user_id, pa.unit_id
+                 FROM personnel_assignments pa
+                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
+                 WHERE (pa.status = \'active\' OR pa.status = \'\' OR pa.status IS NULL)
+                   AND (pa.ended_at IS NULL OR pa.ended_at >= CURDATE())
+                   AND usr.status = \'active\'
+                 ORDER BY pa.is_primary DESC, pa.id ASC'
+            );
+            $stmt->execute([$tenantId, $tenantId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $userId = (int) ($row['user_id'] ?? 0);
+                $unitId = (int) ($row['unit_id'] ?? 0);
+                if ($userId < 1 || $unitId < 1 || isset($out[$userId])) {
+                    continue;
+                }
+                $out[$userId] = $unitId;
+            }
+            if ($out !== []) {
+                return $out;
+            }
+        }
+        if (!$this->userUnitsTableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT uu.user_id, uu.unit_id
+             FROM user_units uu
+             INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
+             INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ?
+             WHERE usr.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+             ORDER BY uu.is_primary DESC, uu.id ASC'
+        );
+        $stmt->execute([$tenantId, $tenantId]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $userId = (int) ($row['user_id'] ?? 0);
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            if ($userId < 1 || $unitId < 1 || isset($out[$userId])) {
+                continue;
+            }
+            $out[$userId] = $unitId;
+        }
+
+        return $out;
+    }
+
     /** @return list<array<string, mixed>> Affectations actives (status = active, ended_at null ou future). */
     public function listActiveForUser(int $userId): array
     {

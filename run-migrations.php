@@ -3342,10 +3342,26 @@ try {
 
 $unitDerivedJobRolesMigrate = require $root . '/bootstrap/unit_derived_job_roles_migration.php';
 try {
-    echo "Migration unit_derived_job_roles (emplois depuis l’ORBAT)...\n";
+    echo "Migration unit_derived_job_roles (schéma emplois, sans recréer le référentiel)...\n";
     $unitDerivedJobRolesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] unit_derived_job_roles : ' . $e->getMessage() . "\n";
+}
+
+$unusedRecreatedJobRolesPurgeMigrate = require $root . '/bootstrap/unused_recreated_job_roles_purge_v1_migration.php';
+try {
+    echo "Migration unused_recreated_job_roles_purge_v1 (retrait des emplois revenus et non attribués)...\n";
+    $unusedRecreatedJobRolesPurgeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] unused_recreated_job_roles_purge_v1 : ' . $e->getMessage() . "\n";
+}
+
+$unusedMilitaryCatalogJobsPurgeV2 = require $root . '/bootstrap/unused_military_catalog_jobs_purge_v2_migration.php';
+try {
+    echo "Migration unused_military_catalog_jobs_purge_v2 (retrait du catalogue militaire inutilisé)...\n";
+    $unusedMilitaryCatalogJobsPurgeV2($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] unused_military_catalog_jobs_purge_v2 : ' . $e->getMessage() . "\n";
 }
 
 $communityAccessRolesPurgeMigrate = require $root . '/bootstrap/community_access_roles_purge_v1_migration.php';

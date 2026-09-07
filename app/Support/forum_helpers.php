@@ -286,10 +286,48 @@ if (!function_exists('forum_organization_scope_accessible_for_current_viewer')) 
     }
 }
 
+if (!function_exists('forum_product_public_enabled')) {
+    /**
+     * Interrupteur produit global (config forum.enabled / FORUM_ENABLED).
+     * Indépendant des réglages par communauté.
+     */
+    function forum_product_public_enabled(): bool
+    {
+        $cfg = config('forum');
+        $raw = is_array($cfg) ? ($cfg['enabled'] ?? false) : false;
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        return forum_truthy($raw, false);
+    }
+}
+
+if (!function_exists('forum_public_nav_visible')) {
+    /** Menus, raccourcis et recherche : le forum n’apparaît que s’il est ouvert. */
+    function forum_public_nav_visible(): bool
+    {
+        return forum_product_public_enabled();
+    }
+}
+
 if (!function_exists('forum_is_enabled')) {
     function forum_is_enabled(): bool
     {
+        if (!forum_product_public_enabled()) {
+            return false;
+        }
+
         return brief_is_open_for_members_globally();
+    }
+}
+
+if (!function_exists('forum_public_maintenance_response')) {
+    function forum_public_maintenance_response(): \App\Core\Response
+    {
+        return \App\Core\Response::view('forum.maintenance', [
+            'title' => 'Le forum est temporairement indisponible',
+        ])->setStatusCode(503)->header('Retry-After', '3600');
     }
 }
 
@@ -1325,6 +1363,12 @@ if (!function_exists('forum_after_post_moderation')) {
 if (!function_exists('forum_api_disabled_response')) {
     function forum_api_disabled_response(int $tenantId): ?\App\Core\Response
     {
+        if (function_exists('forum_product_public_enabled') && !forum_product_public_enabled()) {
+            return \App\Core\Response::json([
+                'success' => false,
+                'error' => 'Le forum est temporairement indisponible.',
+            ], 503);
+        }
         if (function_exists('brief_is_open_for_members_globally') && brief_is_open_for_members_globally()) {
             return null;
         }
@@ -1338,10 +1382,13 @@ if (!function_exists('forum_api_disabled_response')) {
 
 if (!function_exists('forum_disabled_for_member_response')) {
     /**
-     * Brief fermé au niveau plateforme pour les membres (les modérateurs passent).
+     * Forum fermé : interrupteur produit (tout le monde) ou brief plateforme (membres).
      */
     function forum_disabled_for_member_response(int $tenantId): ?\App\Core\Response
     {
+        if (function_exists('forum_product_public_enabled') && !forum_product_public_enabled()) {
+            return forum_public_maintenance_response();
+        }
         $cfg = forum_config_for_tenant($tenantId);
         if (function_exists('brief_is_open_for_members_globally') && brief_is_open_for_members_globally()) {
             return null;

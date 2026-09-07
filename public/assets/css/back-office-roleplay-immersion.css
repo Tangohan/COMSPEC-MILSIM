@@ -1,0 +1,361 @@
+/**
+ * Back-office — Parcours d’immersion (suivi d’arrivée)
+ * Complète back-office-shell.css
+ */
+.bo-imm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bo-imm__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.75fr);
+  overflow: hidden;
+  background: linear-gradient(135deg, #10191d 0%, #1d2c31 68%, #243b40 100%);
+  border: 1px solid #26383d;
+  color: #fff;
+}
+
+.bo-imm__hero-copy {
+  padding: clamp(22px, 3vw, 36px);
+}
+
+.bo-imm__eyebrow {
+  display: block;
+  margin-bottom: 9px;
+  color: #d2a63d;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.bo-imm__hero h2 {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(20px, 2.1vw, 28px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.bo-imm__hero-copy > p {
+  max-width: 640px;
+  margin: 14px 0 0;
+  color: #d3dcde;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.bo-imm__hero-copy > p strong {
+  color: #fff;
+}
+
+.bo-imm__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.bo-imm__hero .ath-btn:not(.ath-btn--solid) {
+  border-color: #53676c;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bo-imm__orient {
+  padding: 24px 26px;
+  background: rgba(255, 255, 255, 0.055);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.bo-imm__orient-title {
+  display: block;
+  margin-bottom: 12px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.bo-imm__orient ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-imm__orient li {
+  display: grid;
+  gap: 2px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+}
+
+.bo-imm__orient li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.bo-imm__orient strong {
+  color: #fff;
+}
+
+.bo-imm__orient span {
+  color: #aebfc3;
+}
+
+.bo-imm__caps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bo-imm__cap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100%;
+  padding: 16px 18px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+}
+
+.bo-imm__cap--here {
+  border-color: #c5a04a;
+  background: #fffdf6;
+}
+
+.bo-imm__cap-kicker {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ath-accent);
+}
+
+.bo-imm__cap h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ath-ink);
+}
+
+.bo-imm__cap p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ath-subtle);
+}
+
+.bo-imm__cap a {
+  margin-top: auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ath-ink);
+  text-decoration: none;
+}
+
+.bo-imm__cap a:hover {
+  text-decoration: underline;
+}
+
+.bo-imm__status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bo-imm__tile {
+  padding: 14px 16px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+}
+
+.bo-imm__tile--ok {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.bo-imm__tile--warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.bo-imm__tile-kicker {
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ath-subtle);
+}
+
+.bo-imm__tile strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--ath-ink);
+}
+
+.bo-imm__tile span:last-child {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #667378;
+}
+
+.bo-imm__empty {
+  padding: 14px 16px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.bo-imm__empty strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #713f12;
+}
+
+.bo-imm__preview {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f4f7f7;
+  border-left: 3px solid #c98a12;
+}
+
+.bo-imm__preview-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ath-subtle);
+}
+
+.bo-imm__preview p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ath-ink);
+}
+
+.bo-imm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.bo-imm-list__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bo-imm-list__row input[type="text"] {
+  flex: 1;
+  min-height: 36px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--ath-line);
+  background: var(--ath-surface);
+  color: var(--ath-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bo-imm-list__row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--ath-ink);
+}
+
+.bo-imm-list__remove {
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--ath-line);
+  background: #fff;
+  color: #667378;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bo-imm-list__remove:hover {
+  border-color: #9f1239;
+  color: #9f1239;
+}
+
+.bo-imm-list__add {
+  align-self: flex-start;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px dashed var(--ath-line);
+  background: #fbfcfc;
+  color: var(--ath-ink);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bo-imm-list__add:hover {
+  border-color: var(--ath-ink);
+}
+
+.bo-imm-list__hint {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ath-subtle);
+}
+
+.bo-imm-list:has([data-imm-rows] .bo-imm-list__row) .bo-imm-list__hint,
+.bo-imm-list:has(.bo-imm-list__source[hidden]) .bo-imm-list__hint {
+  display: none;
+}
+
+.bo-imm-list__fallback {
+  min-height: 140px;
+  width: 100%;
+  resize: vertical;
+}
+
+.bo-imm .bo-settings-grid {
+  margin-top: 0;
+}
+
+.bo-imm .bo-setting-group--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .bo-imm__hero,
+  .bo-imm__caps,
+  .bo-imm__status {
+    grid-template-columns: 1fr;
+  }
+
+  .bo-imm__orient {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}

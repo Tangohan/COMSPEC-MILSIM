@@ -140,7 +140,9 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('back-office/users/create'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Créer un compte</a>
             <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Membres</a>
             <?php endif; ?>
+            <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
             <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Forum</a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(url('atak/passerelle'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Passerelle inter-équipes</a>
             <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Première liaison</a>
             <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">TACMAP</a>

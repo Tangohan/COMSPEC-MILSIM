@@ -255,6 +255,17 @@ final class TenantBootstrapService
             }
 
             try {
+                $adminSettings = \App\Core\Container::get(\App\Repositories\TenantAdminSettingsRepository::class);
+                $cur = $adminSettings->getForTenant($tenantId);
+                $cur['personnel_hr'] = \App\Services\Effectifs\PersonnelHrWorkspaceSettings::sanitize(
+                    array_merge($cur['personnel_hr'] ?? [], ['reviewed' => true])
+                );
+                $adminSettings->saveForTenant($tenantId, $cur);
+            } catch (\Throwable $e) {
+                // Réglages RH optionnels
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
@@ -266,6 +277,7 @@ final class TenantBootstrapService
                 $configSvc->markCompleted($tenantId, 'MISSION_PLANNING_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'AAR_CUSTOM_TEMPLATES_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'LOGIN_ACCUEIL_IMAGES_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'PERSONNEL_HR_DESK_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
             }

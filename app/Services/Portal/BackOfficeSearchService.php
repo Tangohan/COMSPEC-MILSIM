@@ -100,7 +100,7 @@ final class BackOfficeSearchService
         $eff = EffectifsLmsAccess::allows($gate);
         $all = [
             ['title' => 'Tableau de bord', 'subtitle' => 'Aperçu de la communauté', 'href' => url('back-office'), 'keywords' => 'accueil synthèse aperçu', 'ok' => true],
-            ['title' => 'Mur opérationnel', 'subtitle' => 'Tableau des actions en cours', 'href' => url('back-office/tableau-operationnel'), 'keywords' => 'mur opérationnel actions', 'ok' => $org],
+            ['title' => 'Tableau opérationnel', 'subtitle' => 'Événements, articles, ATAK et mur de consignes', 'href' => url('back-office/tableau-operationnel'), 'keywords' => 'mur opérationnel tableau événements articles atak', 'ok' => $org],
             ['title' => 'Effectifs', 'subtitle' => 'Tableur des membres', 'href' => url('back-office/ressources/effectifs'), 'keywords' => 'effectifs roster tableur personnel rh membres ancienneté', 'ok' => $eff],
             ['title' => 'Ancienneté', 'subtitle' => 'Dates de fondation et d’arrivée', 'href' => url('back-office/organisation/anciennete'), 'keywords' => 'ancienneté anciennete fondation tenure organisation', 'ok' => $org],
             ['title' => 'Annuaire des membres', 'subtitle' => 'Comptes de la communauté', 'href' => url('back-office/users'), 'keywords' => 'membres comptes utilisateurs annuaire', 'ok' => $org || $gate->allows('admin.users.manage')],
@@ -108,7 +108,7 @@ final class BackOfficeSearchService
             ['title' => 'Sanctions et absences', 'subtitle' => 'Modération interne', 'href' => url('back-office/moderation'), 'keywords' => 'sanctions absences discipline', 'ok' => $org],
             ['title' => 'Bureau de suivi', 'subtitle' => 'Suivi d’immersion des membres', 'href' => url('back-office/roleplay-followup'), 'keywords' => 'suivi immersion roleplay', 'ok' => $org],
             ['title' => 'Échéances de suivi', 'subtitle' => 'Dates à ne pas manquer', 'href' => url('back-office/roleplay-followup/echeances'), 'keywords' => 'échéances suivi', 'ok' => $org],
-            ['title' => 'Réglages d’immersion', 'subtitle' => 'Options du suivi', 'href' => url('back-office/roleplay/immersion'), 'keywords' => 'immersion réglages', 'ok' => $org],
+            ['title' => 'Parcours d’immersion', 'subtitle' => 'Étapes, filières et dossier prêt', 'href' => url('back-office/roleplay/immersion'), 'keywords' => 'immersion réglages parcours arrivée tutorat filière dossier prêt', 'ok' => $org],
             ['title' => 'Structure et effectifs', 'subtitle' => 'Organigramme de l’unité', 'href' => url('back-office/organisation-effectifs'), 'keywords' => 'structure organigramme orbat unités', 'ok' => $org || $eff],
             ['title' => 'Catalogue de l’organisation', 'subtitle' => 'Modèles, administration de la structure et journal des applications', 'href' => url('back-office/organisation/catalogue'), 'keywords' => 'catalogue modèles organisation armée française sof américain infanterie gaming journal historique emplois', 'ok' => $org],
             ['title' => 'Journal du catalogue', 'subtitle' => 'Historique complet des modèles appliqués à cette communauté', 'href' => url('back-office/organisation/catalogue/historique'), 'keywords' => 'journal historique catalogue applications modèles', 'ok' => $org],
@@ -135,7 +135,7 @@ final class BackOfficeSearchService
             ['title' => 'Certificats ATAK', 'subtitle' => 'Accès tablette', 'href' => url('back-office/atak/certificats'), 'keywords' => 'certificats atak', 'ok' => $org],
             ['title' => 'Fiche opérateur', 'subtitle' => 'Identité en session', 'href' => url('back-office/atak/fiche-operateur'), 'keywords' => 'fiche opérateur', 'ok' => $org],
             ['title' => 'Documents', 'subtitle' => 'Bibliothèque de la communauté', 'href' => url('documents/gestion'), 'keywords' => 'documents doctrine consignes', 'ok' => !$gate->deny('documents.view')],
-            ['title' => 'Forum', 'subtitle' => 'Modération des discussions', 'href' => url('back-office/forum-moderation'), 'keywords' => 'forum modération signalements', 'ok' => $org || $gate->allows('forum.moderate')],
+            ['title' => 'Forum', 'subtitle' => 'Modération des discussions', 'href' => url('back-office/forum-moderation'), 'keywords' => 'forum modération signalements', 'ok' => (function_exists('forum_public_nav_visible') && forum_public_nav_visible()) && ($org || $gate->allows('forum.moderate'))],
             ['title' => 'Paramètres de la communauté', 'subtitle' => 'Réglages généraux', 'href' => url('back-office/organisation/parametres'), 'keywords' => 'paramètres réglages communauté images accueil bienvenue connexion', 'ok' => $org || $gate->allows('admin.settings.manage')],
             ['title' => 'Images d’accueil', 'subtitle' => 'Photos de l’écran de bienvenue après connexion', 'href' => url('back-office/organisation/parametres') . '?onglet=accueil#accueil-connexion', 'keywords' => 'images accueil bienvenue connexion photos défilement écran', 'ok' => $org || $gate->allows('admin.settings.manage')],
             ['title' => 'Configuration système', 'subtitle' => 'Réglages avancés', 'href' => url('back-office/configuration'), 'keywords' => 'configuration système', 'ok' => $org],
@@ -144,6 +144,7 @@ final class BackOfficeSearchService
             ['title' => 'Journal d’audit', 'subtitle' => 'Historique des actions', 'href' => url('back-office/audit'), 'keywords' => 'audit journal historique', 'ok' => $org],
             ['title' => 'Intégrations', 'subtitle' => 'Services liés', 'href' => url('back-office/integrations'), 'keywords' => 'intégrations discord steam', 'ok' => $org],
             ['title' => 'Affectations', 'subtitle' => 'Unités de rattachement', 'href' => url('back-office/ressources/effectifs/affectations'), 'keywords' => 'affectations unités', 'ok' => $eff],
+            ['title' => 'Chaîne de commandement', 'subtitle' => 'Qui relève de qui', 'href' => url('back-office/ressources/effectifs/chaine'), 'keywords' => 'chaîne chef commandement supérieur relève organigramme', 'ok' => $eff],
         ];
         $out = [];
         foreach ($all as $row) {

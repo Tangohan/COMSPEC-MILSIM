@@ -10,6 +10,7 @@ $searchApiUrl = url('api/portal/search');
 $q = $query ?? '';
 $canSearchDocuments = $canSearchDocuments ?? true;
 $canSearchPersonnel = $canSearchPersonnel ?? true;
+$canSearchForum = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
 ?>
 <script>
 window.__portalHubUrl = <?= json_encode(url('hub'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
@@ -59,7 +60,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                     id="global-search"
                                     name="q"
                                     type="search"
-                                    placeholder="Document, membre, sujet de forum…"
+                                    placeholder="<?= $canSearchForum ? 'Document, membre, sujet de forum…' : 'Document, membre…' ?>"
                                     value="<?= htmlspecialchars($q) ?>"
                                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-14 pr-36 py-4 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
                                     autocomplete="off"
@@ -96,6 +97,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                     >
                                     <span>Documents</span>
                                 </label>
+                                <?php if ($canSearchForum): ?>
                                 <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
                                     <input
                                         id="scope-forum"
@@ -105,6 +107,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                     >
                                     <span>Forum</span>
                                 </label>
+                                <?php endif; ?>
                                 <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
                                     <input
                                         id="scope-personnel"
@@ -136,7 +139,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                     <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Résultats</h2>
                     <p id="portal-search-live" class="mt-2 text-2xl font-black tabular-nums text-slate-900" aria-live="polite"></p>
                     <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                        Les liens ouvrent directement la fiche document, le sujet forum ou la fiche personnel.
+                        Les liens ouvrent directement la fiche document<?= $canSearchForum ? ', le sujet du forum' : '' ?> ou la fiche personnel.
                     </p>
                 </div>
                 <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 p-6">

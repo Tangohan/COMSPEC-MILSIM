@@ -275,17 +275,18 @@ if (!function_exists('personnel_assigned_grade_label')) {
 
 if (!function_exists('personnel_operator_portrait_url')) {
     /**
-     * Photo opérateur (portrait) en priorité, sinon photo de compte.
+     * Portrait opérateur uniquement (pas la photo de compte, pas le visuel de repli).
      *
      * @param array<string, mixed> $row
      */
     function personnel_operator_portrait_url(array $row): ?string
     {
-        return user_site_avatar_url(
-            $row,
-            ['character_portrait_path' => (string) ($row['character_portrait_path'] ?? '')],
-            ['site_photo_priority' => 'operator']
-        );
+        $path = trim((string) ($row['character_portrait_path'] ?? ''));
+        if ($path === '') {
+            return null;
+        }
+
+        return function_exists('user_media_public_url') ? user_media_public_url($path) : $path;
     }
 }
 

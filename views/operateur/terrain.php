@@ -20,7 +20,9 @@ $terrain_pin_links = $terrain_pin_links ?? [];
     <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Liens</h2>
     <a href="<?= htmlspecialchars(url('evenements'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Calendrier des opérations</a>
     <a href="<?= htmlspecialchars(url('formations/mes-formations'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Mes formations</a>
+    <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
     <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Forum — briefings</a>
+    <?php endif; ?>
     <a href="<?= htmlspecialchars(url('modpacks'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Modpacks</a>
     <?php if (!empty($terrain_atak_url)): ?>
     <a href="<?= htmlspecialchars((string) $terrain_atak_url, ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm font-bold text-emerald-200">Module ATAK</a>

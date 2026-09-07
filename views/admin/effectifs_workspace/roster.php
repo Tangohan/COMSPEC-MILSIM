@@ -12,6 +12,7 @@ $totalPages = (int) ($rosterTotalPages ?? 1);
 $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
+$canManageRoles = (bool) ($canManageRoles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 $canBulkAny = $canManageStatus || $canManageAssignments;
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
@@ -155,24 +156,45 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="eff-banner__action">Ouvrir les fiches</a>
     </aside>
     <?php endif; ?>
-    <?php if ($canEditProfiles): ?>
-    <div class="eff-catalog__notice">
+    <div class="eff-roster-hero">
+        <div class="eff-roster-hero__copy">
+            <p class="eff-roster-hero__kicker">Tableur</p>
+            <p class="eff-roster-hero__title">Tous les dossiers, une seule liste</p>
+            <p class="eff-roster-hero__lead">
+                Chaque ligne est un dossier. Vous y voyez le portrait de l’opérateur, son affectation,
+                son niveau d’accès et les repères utiles pour le retrouver.
+                Un responsable peut corriger l’accès, l’unité ou l’ancienneté sans ouvrir la fiche.
+            </p>
+        </div>
+        <?php if ($canEditProfiles || $orgFoundingDate !== ''): ?>
+        <aside class="eff-roster-hero__seniority eff-catalog__notice">
             <p class="eff-catalog__kicker">Ancienneté réelle</p>
-        <p class="eff-catalog__notice-lead">
-            Date de création de l’organisation, y compris si elle est antérieure à l’arrivée sur Athena.
-            Pour un membre déjà présent avant le site, renseignez-le dans la colonne Indicateurs.
-        </p>
-        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__notice-form">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
-            <label>
-                Création de l’organisation
-                <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>">
-            </label>
-            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:2.1rem">Enregistrer pour tous les membres</button>
-        </form>
+            <p class="eff-catalog__notice-lead">
+                La date de création de l’organisation compte pour tout le monde, y compris si la communauté
+                existait avant l’arrivée sur Athena. Pour un membre déjà présent à cette époque, indiquez
+                son arrivée dans la colonne Indicateurs.
+            </p>
+            <?php if ($canEditProfiles): ?>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__notice-form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
+                <label>
+                    Création de l’organisation
+                    <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>">
+                </label>
+                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer pour tous les membres</button>
+            </form>
+            <?php else: ?>
+            <?php
+            $orgFoundedTs = strtotime($orgFoundingDate);
+            if ($orgFoundedTs !== false):
+            ?>
+            <p class="eff-roster-hero__seniority-date">Organisation créée le <?= htmlspecialchars(date('d/m/Y', $orgFoundedTs), ENT_QUOTES, 'UTF-8') ?>.</p>
+            <?php endif; ?>
+            <?php endif; ?>
+        </aside>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 
     <div class="eff-metrics eff-metrics--roster" aria-label="Synthèse des effectifs">
         <a class="eff-metric eff-metric--link<?= $metricAll ? ' is-active' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
@@ -296,9 +318,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <col data-col="grade" style="width:6.5rem">
                     <col data-col="fonction" style="width:9rem">
                     <col data-col="affectation" style="width:14rem">
-                    <col data-col="roles" style="width:11rem">
-                    <col data-col="reperes" style="width:12rem">
-                    <col data-col="indicateurs" style="width:14rem">
+                    <col data-col="roles" style="width:12rem">
+                    <col data-col="reperes" style="width:14rem">
+                    <col data-col="indicateurs" style="width:16rem">
                     <col data-col="statut" style="width:7.5rem">
                     <col data-col="actions" style="width:13rem">
                 </colgroup>
@@ -355,9 +377,36 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     $personnelEditUrl = effectifs_workspace_url('membres/' . $id) . '#modifier-dossier';
                     $avatarUrl = function_exists('personnel_operator_portrait_url')
                         ? (string) (personnel_operator_portrait_url($row) ?? '')
-                        : (function_exists('user_media_public_url')
-                            ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
-                            : trim((string) ($row['avatar_url'] ?? '')));
+                        : '';
+                    if ($avatarUrl !== '' && str_contains($avatarUrl, 'inconnu.svg')) {
+                        $avatarUrl = '';
+                    }
+                    $rowInitials = $initials($name, $email);
+                    $accessRoleIds = array_values(array_filter(
+                        array_map('intval', is_array($row['access_role_ids'] ?? null) ? $row['access_role_ids'] : []),
+                        static fn (int $rid): bool => $rid > 0
+                    ));
+                    $currentAccessRoleId = 0;
+                    foreach ($roles as $accessRole) {
+                        $rid = (int) ($accessRole['id'] ?? 0);
+                        if ($rid > 0 && in_array($rid, $accessRoleIds, true)) {
+                            $currentAccessRoleId = $rid;
+                            break;
+                        }
+                    }
+                    if ($currentAccessRoleId < 1 && $roleParts !== []) {
+                        foreach ($roles as $accessRole) {
+                            $roleName = trim((string) ($accessRole['name'] ?? ''));
+                            if ($roleName !== '' && in_array($roleName, $roleParts, true)) {
+                                $currentAccessRoleId = (int) ($accessRole['id'] ?? 0);
+                                break;
+                            }
+                        }
+                    }
+                    $orgNumber = trim((string) ($row['tenant_member_number'] ?? ''));
+                    $extraCallsigns = function_exists('personnel_decode_extra_callsigns')
+                        ? personnel_decode_extra_callsigns($row['extra_callsigns_json'] ?? null)
+                        : [];
                     $seniorityLabel = trim((string) ($row['seniority_label'] ?? '—'));
                     $prePlatformStart = trim((string) ($row['pre_platform_start'] ?? ''));
                     $enlistmentStart = trim((string) ($row['enlistment_date_resolved'] ?? ''));
@@ -379,9 +428,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <div class="eff-sheets__identity">
                                 <span class="eff-sheets__avatar" aria-hidden="true">
                                     <?php if ($avatarUrl !== ''): ?>
-                                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async">
+                                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
                                     <?php else: ?>
-                                        <?= htmlspecialchars($initials($name, $email), ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>
                                     <?php endif; ?>
                                 </span>
                                 <div class="eff-sheets__id-text">
@@ -448,43 +497,119 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </div>
                         </td>
                         <td>
-                            <?php if ($roleParts === []): ?>
-                                <span class="eff-sheets__badge eff-sheets__badge--watch">Sans rôle</span>
-                            <?php else: ?>
-                                <div class="eff-sheets__tags" title="<?= htmlspecialchars($rolesDisplay, ENT_QUOTES, 'UTF-8') ?>">
-                                    <?php foreach ($roleVisible as $rn): ?>
-                                        <span class="eff-sheets__badge eff-sheets__badge--muted"><?= htmlspecialchars($rn, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endforeach; ?>
-                                    <?php if ($roleExtra > 0): ?>
-                                        <span class="eff-sheets__badge eff-sheets__badge--info">+<?= $roleExtra ?></span>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <div class="eff-sheets__reperes">
-                                <span><b>Matricule</b> <?= $matricule !== '' ? htmlspecialchars($matricule, ENT_QUOTES, 'UTF-8') : '—' ?></span>
-                                <span><b>Radio</b> <?= $radioAssigned !== '' ? htmlspecialchars($radioAssigned, ENT_QUOTES, 'UTF-8') : '—' ?></span>
-                                <?php if ($memberBadges !== []): ?>
-                                    <?php $badgeNames = array_values(array_filter(array_map(static fn (array $badge): string => trim((string) ($badge['name'] ?? '')), $memberBadges))); ?>
-                                    <span class="eff-sheets__distinctions" title="<?= htmlspecialchars(implode(' · ', $badgeNames), ENT_QUOTES, 'UTF-8') ?>"><b>Distinctions</b> <?= count($memberBadges) ?> · <?= htmlspecialchars(implode(', ', array_slice($badgeNames, 0, 2)), ENT_QUOTES, 'UTF-8') ?><?= count($badgeNames) > 2 ? '…' : '' ?></span>
+                            <div class="eff-sheets__assign">
+                                <?php if ($roleParts === []): ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch">Sans rôle</span>
                                 <?php else: ?>
-                                    <span><b>Distinctions</b> —</span>
+                                    <div class="eff-sheets__tags" title="<?= htmlspecialchars($rolesDisplay, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?php foreach ($roleVisible as $rn): ?>
+                                            <span class="eff-sheets__badge eff-sheets__badge--muted"><?= htmlspecialchars($rn, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endforeach; ?>
+                                        <?php if ($roleExtra > 0): ?>
+                                            <span class="eff-sheets__badge eff-sheets__badge--info">+<?= $roleExtra ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($canManageRoles && $roles !== []): ?>
+                                    <details class="eff-sheets__pop">
+                                        <summary class="eff-sheets__chip"><?= $roleParts !== [] ? 'Modifier l’accès' : 'Attribuer l’accès' ?></summary>
+                                        <div class="eff-sheets__pop-panel">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+                                                <label for="eff-access-<?= $id ?>">Niveau d’accès</label>
+                                                <select id="eff-access-<?= $id ?>" name="access_role_id">
+                                                    <?php foreach ($roles as $accessRole): ?>
+                                                        <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
+                                                        <option value="<?= $rid ?>" <?= $currentAccessRoleId === $rid ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer l’accès</button>
+                                                <a class="eff-sheets__pop-link" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir le dossier</a>
+                                            </form>
+                                        </div>
+                                    </details>
                                 <?php endif; ?>
                             </div>
                         </td>
                         <td>
-                            <div class="eff-sheets__metrics">
-                                <span class="eff-sheets__metric" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">Anc. <?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if ($prePlatformStart !== ''): ?>
-                                    <span class="eff-sheets__badge eff-sheets__badge--info" title="Arrivée avant le site">Avant site</span>
+                            <dl class="eff-sheets__reperes">
+                                <div>
+                                    <dt>Matricule</dt>
+                                    <dd><?= $matricule !== '' ? htmlspecialchars($matricule, ENT_QUOTES, 'UTF-8') : '—' ?></dd>
+                                </div>
+                                <?php if ($orgNumber !== '' && strcasecmp($orgNumber, $matricule) !== 0): ?>
+                                <div>
+                                    <dt>N° communauté</dt>
+                                    <dd><?= htmlspecialchars($orgNumber, ENT_QUOTES, 'UTF-8') ?></dd>
+                                </div>
                                 <?php endif; ?>
-                                <span class="eff-sheets__metric" title="Disponibilité">Disp. <?= $availabilityScore ?>%</span>
-                                <span class="eff-sheets__metric" title="Présence">Prés. <?= $presenceScore ?>%</span>
-                                <span class="eff-sheets__metric" title="Complétion du dossier">Doss. <?= $completionScore ?>%</span>
+                                <div>
+                                    <dt>Radio</dt>
+                                    <dd><?= $radioAssigned !== '' ? htmlspecialchars($radioAssigned, ENT_QUOTES, 'UTF-8') : '—' ?></dd>
+                                </div>
+                                <?php if ($extraCallsigns !== []): ?>
+                                <div>
+                                    <dt>Autres indicatifs</dt>
+                                    <dd><?= htmlspecialchars(implode(', ', array_slice($extraCallsigns, 0, 3)), ENT_QUOTES, 'UTF-8') ?><?= count($extraCallsigns) > 3 ? '…' : '' ?></dd>
+                                </div>
+                                <?php endif; ?>
+                                <div>
+                                    <dt>Distinctions</dt>
+                                    <dd>
+                                        <?php if ($memberBadges !== []): ?>
+                                            <?php $badgeNames = array_values(array_filter(array_map(static fn (array $badge): string => trim((string) ($badge['name'] ?? '')), $memberBadges))); ?>
+                                            <span class="eff-sheets__distinctions" title="<?= htmlspecialchars(implode(' · ', $badgeNames), ENT_QUOTES, 'UTF-8') ?>"><?= count($memberBadges) ?> · <?= htmlspecialchars(implode(', ', array_slice($badgeNames, 0, 2)), ENT_QUOTES, 'UTF-8') ?><?= count($badgeNames) > 2 ? '…' : '' ?></span>
+                                        <?php else: ?>
+                                            —
+                                        <?php endif; ?>
+                                    </dd>
+                                </div>
+                            </dl>
+                        </td>
+                        <td>
+                            <div class="eff-sheets__metrics">
+                                <div class="eff-sheets__meter" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">
+                                    <div class="eff-sheets__meter-head">
+                                        <span>Ancienneté</span>
+                                        <strong><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                                    </div>
+                                    <?php if ($prePlatformStart !== ''): ?>
+                                        <p class="eff-sheets__meter-note">Présent avant le site<?= $prePlatformLabel !== '' ? ' · ' . htmlspecialchars($prePlatformLabel, ENT_QUOTES, 'UTF-8') : '' ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="eff-sheets__meter<?= $availabilityScore < 40 ? ' is-low' : '' ?>">
+                                    <div class="eff-sheets__meter-head">
+                                        <span>Disponibilité</span>
+                                        <strong><?= $availabilityScore ?> %</strong>
+                                    </div>
+                                    <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $availabilityScore ?>" aria-label="Disponibilité">
+                                        <span style="width:<?= max(0, min(100, $availabilityScore)) ?>%"></span>
+                                    </div>
+                                </div>
+                                <div class="eff-sheets__meter<?= $presenceScore < 40 ? ' is-low' : '' ?>">
+                                    <div class="eff-sheets__meter-head">
+                                        <span>Présence</span>
+                                        <strong><?= $presenceScore ?> %</strong>
+                                    </div>
+                                    <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $presenceScore ?>" aria-label="Présence">
+                                        <span style="width:<?= max(0, min(100, $presenceScore)) ?>%"></span>
+                                    </div>
+                                </div>
+                                <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>">
+                                    <div class="eff-sheets__meter-head">
+                                        <span>Dossier</span>
+                                        <strong><?= $completionScore ?> %</strong>
+                                    </div>
+                                    <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $completionScore ?>" aria-label="Complétion du dossier">
+                                        <span style="width:<?= max(0, min(100, $completionScore)) ?>%"></span>
+                                    </div>
+                                </div>
                                 <?php if ($canEditProfiles): ?>
                                     <details class="eff-sheets__pop">
-                                        <summary class="eff-sheets__chip" style="height:1.4rem">Ancienneté</summary>
+                                        <summary class="eff-sheets__chip">Corriger l’ancienneté</summary>
                                         <div class="eff-sheets__pop-panel">
                                             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
@@ -493,8 +618,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                                 <input id="eff-enlist-<?= $id ?>" type="date" name="enlistment_date" value="<?= htmlspecialchars($enlistmentStart, ENT_QUOTES, 'UTF-8') ?>">
                                                 <label for="eff-pre-<?= $id ?>">Arrivée avant le site</label>
                                                 <input id="eff-pre-<?= $id ?>" type="date" name="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformStart, ENT_QUOTES, 'UTF-8') ?>">
-                                                <p style="margin:0;font-size:11px;color:#64748b">Laissez vide s’il n’était pas membre avant l’ouverture du site.</p>
-                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:1.85rem">Enregistrer</button>
+                                                <p>Laissez vide s’il n’était pas membre avant l’ouverture du site.</p>
+                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer</button>
                                             </form>
                                         </div>
                                     </details>
