@@ -16,6 +16,14 @@ use App\Support\MemberIntegrationCatalog;
 /** @var array<string,string> $rsvpLabels */
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$t = static function (string $key, string $fallback): string {
+    if (!function_exists('__')) {
+        return $fallback;
+    }
+    $value = __($key);
+
+    return ($value === '' || $value === $key) ? $fallback : $value;
+};
 $fmtWhen = static function (mixed $v): string {
     $s = trim((string) $v);
     if ($s === '') {
@@ -138,16 +146,16 @@ if ($pendingInvites !== []) {
 <div class="mi-member">
     <header class="mi-member__hero">
         <div class="mi-member__hero-inner">
-            <p class="mi-member__eyebrow">Arrivée</p>
-            <h1 class="mi-member__title">Mon intégration</h1>
+            <p class="mi-member__eyebrow"><?= $h($t('common.integration_eyebrow', 'Arrivée')) ?></p>
+            <h1 class="mi-member__title"><?= $h($t('common.integration_title', 'Mon intégration')) ?></h1>
             <p class="mi-member__lead">
                 <?php if ($row === null): ?>
-                    Suivez ici les étapes d’arrivée, les rendez-vous et les messages de votre encadrement.
+                    <?= $h($t('common.integration_lead_empty', 'Suivez ici les étapes d’arrivée, les rendez-vous et les messages de votre encadrement.')) ?>
                 <?php elseif ($isTerminal): ?>
                     Votre parcours d’arrivée est <?= $h(mb_strtolower($intStatusLabel)) ?>.
                     Gardez cette page pour relire les étapes et les messages.
                 <?php else: ?>
-                    Avancez étape par étape : dossier, rendez-vous, et validations de votre référent.
+                    <?= $h($t('common.integration_lead_active', 'Avancez étape par étape : dossier, rendez-vous, et validations de votre référent.')) ?>
                 <?php endif; ?>
             </p>
             <?php if ($row !== null): ?>
@@ -172,9 +180,9 @@ if ($pendingInvites !== []) {
                 </div>
             <?php endif; ?>
             <div class="mi-member__hero-actions">
-                <a class="mi-btn" href="<?= $h(url('personnel/me')) ?>">Ma fiche</a>
-                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('personnel/mon-espace-rh')) ?>">Mes démarches</a>
-                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('account')) ?>">Mon compte</a>
+                <a class="mi-btn" href="<?= $h(url('personnel/me')) ?>"><?= $h($t('common.integration_my_file', 'Ma fiche')) ?></a>
+                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('personnel/mon-espace-rh')) ?>"><?= $h($t('common.integration_my_requests', 'Mes démarches')) ?></a>
+                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('account')) ?>"><?= $h($t('common.integration_my_account', 'Mon compte')) ?></a>
             </div>
         </div>
     </header>
@@ -182,7 +190,7 @@ if ($pendingInvites !== []) {
     <div class="mi-member__body">
         <?php if ($row === null): ?>
             <section class="mi-panel mi-member__empty" aria-labelledby="mi-empty-title">
-                <strong id="mi-empty-title">Aucun parcours d’arrivée ouvert</strong>
+                <strong id="mi-empty-title"><?= $h($t('common.integration_empty_title', 'Aucun parcours d’arrivée ouvert')) ?></strong>
                 <p>
                     Si vous venez d’arriver, votre encadrement peut ouvrir le suivi depuis
                     <em>Intégration des nouveaux membres</em>. En attendant, complétez votre fiche
@@ -197,7 +205,7 @@ if ($pendingInvites !== []) {
         <?php else: ?>
             <?php if ($nextAction !== null): ?>
                 <section class="mi-panel mi-member__next" aria-labelledby="mi-next-title">
-                    <p class="mi-member__kicker">À faire maintenant</p>
+                    <p class="mi-member__kicker"><?= $h($t('common.integration_next_kicker', 'À faire maintenant')) ?></p>
                     <h2 id="mi-next-title"><?= $h($nextAction['title']) ?></h2>
                     <p><?= $h($nextAction['body']) ?></p>
                     <div class="mi-actions">

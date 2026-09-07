@@ -13,7 +13,12 @@
   var launcher = document.getElementById('prw-launcher');
   var statusEl = root.querySelector('[data-prw-status]');
   var selectedScore = null;
+  var selectedClarity = null;
   var promptOpen = false;
+
+  function msg(attr, fallback) {
+    return root.getAttribute(attr) || fallback;
+  }
 
   function setStatus(msg, isError) {
     if (!statusEl) return;
@@ -89,6 +94,15 @@
     });
   });
 
+  root.querySelectorAll('[data-prw-clarity]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectedClarity = parseInt(btn.getAttribute('data-prw-clarity') || '-1', 10);
+      root.querySelectorAll('[data-prw-clarity]').forEach(function (other) {
+        other.classList.toggle('is-on', other === btn);
+      });
+    });
+  });
+
   root.querySelectorAll('[data-prw-tab]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       switchTab(btn.getAttribute('data-prw-tab') || 'review');
@@ -133,28 +147,37 @@
   if (saveReview) {
     saveReview.addEventListener('click', function () {
       if (selectedScore === null || selectedScore < 0) {
-        setStatus(saveReview.getAttribute('data-need-score') || 'Choisissez une note de 0 à 10.', true);
+        setStatus(msg('data-msg-need-score', 'Choisissez une note de 0 à 10.'), true);
         return;
       }
       var usage = root.querySelector('[data-prw-usage]');
+      var frequency = root.querySelector('[data-prw-frequency]');
+      var friction = root.querySelector('[data-prw-friction]');
+      var device = root.querySelector('[data-prw-device]');
       var highlights = root.querySelector('[data-prw-highlights]');
       var improvements = root.querySelector('[data-prw-improvements]');
+      var wishlist = root.querySelector('[data-prw-wishlist]');
       saveReview.disabled = true;
       post(reviewUrl, {
         score: selectedScore,
+        clarity_score: selectedClarity,
         usage_kind: usage ? usage.value : '',
+        frequency_kind: frequency ? frequency.value : '',
+        friction_area: friction ? friction.value : '',
+        device_kind: device ? device.value : '',
         highlights: highlights ? highlights.value : '',
-        improvements: improvements ? improvements.value : ''
+        improvements: improvements ? improvements.value : '',
+        wishlist: wishlist ? wishlist.value : ''
       }).then(function (res) {
         if (!res.ok) {
-          setStatus(readError(res.data, 'L’avis n’a pas pu être envoyé.'), true);
+          setStatus(readError(res.data, msg('data-msg-review-fail', 'L’avis n’a pas pu être envoyé.')), true);
           return;
         }
-        setStatus('Merci. Votre avis a bien été transmis.', false);
+        setStatus(msg('data-msg-review-ok', 'Merci. Votre avis a bien été transmis.'), false);
         promptOpen = false;
         window.setTimeout(close, 900);
       }).catch(function () {
-        setStatus('L’avis n’a pas pu être envoyé.', true);
+        setStatus(msg('data-msg-review-fail', 'L’avis n’a pas pu être envoyé.'), true);
       }).finally(function () {
         saveReview.disabled = false;
       });
@@ -178,15 +201,15 @@
         comment: comment ? comment.value : ''
       }).then(function (res) {
         if (!res.ok) {
-          setStatus(readError(res.data, 'La proposition n’a pas pu être envoyée.'), true);
+          setStatus(readError(res.data, msg('data-msg-translation-fail', 'La proposition n’a pas pu être envoyée.')), true);
           return;
         }
-        setStatus('Merci. Votre proposition sera relue.', false);
+        setStatus(msg('data-msg-translation-ok', 'Merci. Votre proposition sera relue.'), false);
         if (original) original.value = '';
         if (proposed) proposed.value = '';
         if (comment) comment.value = '';
       }).catch(function () {
-        setStatus('La proposition n’a pas pu être envoyée.', true);
+        setStatus(msg('data-msg-translation-fail', 'La proposition n’a pas pu être envoyée.'), true);
       }).finally(function () {
         saveTranslation.disabled = false;
       });

@@ -22,12 +22,26 @@ final class PlatformReviewAssetTest extends TestCase
         foreach (PlatformReviewCatalog::areaOptions() as $label) {
             self::assertDoesNotMatchRegularExpression('/[_\/]/', $label);
         }
+        foreach (PlatformReviewCatalog::frequencyOptions() as $label) {
+            self::assertDoesNotMatchRegularExpression('/[_\/]/', $label);
+        }
+        foreach (PlatformReviewCatalog::frictionOptions() as $label) {
+            self::assertDoesNotMatchRegularExpression('/[_\/]/', $label);
+        }
         self::assertSame('English', PlatformReviewCatalog::localeLabel('en'));
         self::assertSame('Français', PlatformReviewCatalog::localeLabel('fr'));
         self::assertSame('En attente', PlatformReviewCatalog::statusLabel('pending'));
         self::assertSame('Reprise', PlatformReviewCatalog::statusLabel('accepted'));
         self::assertSame('other', PlatformReviewCatalog::normalizeUsage('nope'));
+        self::assertSame('recruitment', PlatformReviewCatalog::normalizeUsage('recruitment'));
+        self::assertSame('weekly', PlatformReviewCatalog::normalizeFrequency('weekly'));
+        self::assertSame('atak', PlatformReviewCatalog::normalizeFriction('atak'));
+        self::assertSame('both', PlatformReviewCatalog::normalizeDevice('both'));
+        self::assertSame(4, PlatformReviewCatalog::normalizeClarity(4));
+        self::assertNull(PlatformReviewCatalog::normalizeClarity(9));
         self::assertSame('en', PlatformReviewCatalog::normalizeLocale('EN'));
+        self::assertArrayHasKey('training', PlatformReviewCatalog::areaOptions());
+        self::assertGreaterThanOrEqual(8, count(PlatformReviewCatalog::usageOptions()));
     }
 
     public function testSiteModalAndAdminAreWiredWithoutJargon(): void
@@ -60,16 +74,27 @@ final class PlatformReviewAssetTest extends TestCase
         self::assertStringContainsString('Aidez-nous à améliorer Athena', $modal);
         self::assertStringContainsString('Traductions', $modal);
         self::assertStringContainsString('Recommanderiez-vous Athena', $modal);
+        self::assertStringContainsString('data-prw-clarity', $modal);
+        self::assertStringContainsString('data-prw-frequency', $modal);
+        self::assertStringContainsString('data-prw-friction', $modal);
+        self::assertStringContainsString('data-prw-device', $modal);
+        self::assertStringContainsString('data-prw-wishlist', $modal);
+        self::assertStringContainsString('data-msg-need-score', $modal);
+        self::assertStringContainsString('clarity_score', $migration);
+        self::assertStringContainsString('wishlist', $migration);
         self::assertStringNotContainsString('endpoint', strtolower($admin));
         self::assertStringNotContainsString('json', strtolower($admin));
         self::assertStringNotContainsString('<code', $admin);
         self::assertStringContainsString('Avis et traductions', $admin);
         self::assertStringContainsString('Propositions de traduction', $admin);
         self::assertStringContainsString('Relancez la mise à jour du portail', $admin);
+        self::assertStringContainsString('Point de friction', $admin);
 
         self::assertStringContainsString('data-prw-tab', $js);
-        self::assertStringContainsString('avis=1', $js);
-        self::assertStringContainsString('traduction=1', $js);
+        self::assertStringContainsString('data-prw-clarity', $js);
+        self::assertStringContainsString('clarity_score', $js);
+        self::assertStringContainsString("params.get('avis') === '1'", $js);
+        self::assertStringContainsString("params.get('traduction') === '1'", $js);
     }
 
     public function testEnglishCatalogCoversNewReviewKeys(): void
@@ -78,9 +103,23 @@ final class PlatformReviewAssetTest extends TestCase
         $fr = require $root . '/lang/fr/common.php';
         $en = require $root . '/lang/en/common.php';
         $nav = require $root . '/lang/en/nav.php';
-        self::assertArrayHasKey('platform_review_title', $fr);
-        self::assertArrayHasKey('platform_review_title', $en);
-        self::assertArrayHasKey('platform_translate_send', $en);
+        self::assertSame(array_keys($fr), array_keys($en));
+        foreach ([
+            'platform_review_title',
+            'platform_review_clarity_q',
+            'platform_review_usage_recruitment',
+            'platform_review_frequency_weekly',
+            'platform_review_friction_atak',
+            'platform_review_device_mobile',
+            'platform_review_wishlist',
+            'platform_translate_area_training',
+            'platform_translate_send',
+            'integration_title',
+        ] as $key) {
+            self::assertArrayHasKey($key, $fr);
+            self::assertArrayHasKey($key, $en);
+            self::assertNotSame('', trim((string) $en[$key]));
+        }
         self::assertArrayHasKey('avis_sur_athena', $nav);
         self::assertArrayHasKey('aider_a_traduire', $nav);
     }

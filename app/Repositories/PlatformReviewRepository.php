@@ -66,18 +66,52 @@ final class PlatformReviewRepository
         int $score,
         string $usageKind,
         ?string $highlights,
-        ?string $improvements
+        ?string $improvements,
+        ?int $clarityScore = null,
+        string $frequencyKind = '',
+        string $frictionArea = '',
+        string $deviceKind = '',
+        ?string $wishlist = null
     ): bool {
         if (!$this->hasTable('platform_reviews') || $userId < 1) {
             return false;
         }
         $usageKind = PlatformReviewCatalog::normalizeUsage($usageKind);
         $score = max(0, min(10, $score));
+        $clarityScore = PlatformReviewCatalog::normalizeClarity($clarityScore);
+        $frequencyKind = PlatformReviewCatalog::normalizeFrequency($frequencyKind);
+        $frictionArea = PlatformReviewCatalog::normalizeFriction($frictionArea);
+        $deviceKind = PlatformReviewCatalog::normalizeDevice($deviceKind);
         $highlights = $this->clip($highlights, 2000);
         $improvements = $this->clip($improvements, 2000);
+        $wishlist = $this->clip($wishlist, 2000);
         $existing = $this->findForUser($userId);
+        $hasExtended = $this->hasColumn('platform_reviews', 'clarity_score');
         try {
             if ($existing) {
+                if ($hasExtended) {
+                    $st = $this->pdo->prepare(
+                        'UPDATE platform_reviews
+                         SET tenant_id = ?, score = ?, usage_kind = ?, clarity_score = ?, frequency_kind = ?,
+                             friction_area = ?, device_kind = ?, highlights = ?, improvements = ?, wishlist = ?,
+                             submitted_at = NOW(), snoozed_until = NULL, updated_at = NOW()
+                         WHERE user_id = ?'
+                    );
+
+                    return $st->execute([
+                        $tenantId !== null && $tenantId > 0 ? $tenantId : null,
+                        $score,
+                        $usageKind,
+                        $clarityScore,
+                        $frequencyKind,
+                        $frictionArea,
+                        $deviceKind,
+                        $highlights,
+                        $improvements,
+                        $wishlist,
+                        $userId,
+                    ]);
+                }
                 $st = $this->pdo->prepare(
                     'UPDATE platform_reviews
                      SET tenant_id = ?, score = ?, usage_kind = ?, highlights = ?, improvements = ?,
@@ -92,6 +126,28 @@ final class PlatformReviewRepository
                     $highlights,
                     $improvements,
                     $userId,
+                ]);
+            }
+            if ($hasExtended) {
+                $st = $this->pdo->prepare(
+                    'INSERT INTO platform_reviews
+                        (tenant_id, user_id, score, usage_kind, clarity_score, frequency_kind, friction_area,
+                         device_kind, highlights, improvements, wishlist, submitted_at, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                );
+
+                return $st->execute([
+                    $tenantId !== null && $tenantId > 0 ? $tenantId : null,
+                    $userId,
+                    $score,
+                    $usageKind,
+                    $clarityScore,
+                    $frequencyKind,
+                    $frictionArea,
+                    $deviceKind,
+                    $highlights,
+                    $improvements,
+                    $wishlist,
                 ]);
             }
             $st = $this->pdo->prepare(
@@ -325,6 +381,26 @@ final class PlatformReviewRepository
                 'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
             );
             $st->execute([$t]);
+
+            return (bool) $st->fetchColumn();
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        $t = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
+        $c = preg_replace('/[^a-zA-Z0-9_]/', '', $column) ?? '';
+        if ($t === '' || $c === '') {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$t, $c]);
 
             return (bool) $st->fetchColumn();
         } catch (PDOException) {

@@ -62,7 +62,14 @@ final class PlatformReviewApiController
             $score,
             (string) ($body['usage_kind'] ?? ''),
             isset($body['highlights']) ? (string) $body['highlights'] : null,
-            isset($body['improvements']) ? (string) $body['improvements'] : null
+            isset($body['improvements']) ? (string) $body['improvements'] : null,
+            isset($body['clarity_score']) && $body['clarity_score'] !== '' && $body['clarity_score'] !== null
+                ? (int) $body['clarity_score']
+                : null,
+            (string) ($body['frequency_kind'] ?? ''),
+            (string) ($body['friction_area'] ?? ''),
+            (string) ($body['device_kind'] ?? ''),
+            isset($body['wishlist']) ? (string) $body['wishlist'] : null
         );
         if (!$ok) {
             return ApiResponder::error('save_failed', 'L’avis n’a pas pu être enregistré.', 500);

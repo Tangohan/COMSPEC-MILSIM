@@ -23,8 +23,13 @@ return static function (PDO $pdo): void {
                 user_id INT UNSIGNED NOT NULL,
                 score TINYINT UNSIGNED NULL,
                 usage_kind VARCHAR(32) NOT NULL DEFAULT '',
+                clarity_score TINYINT UNSIGNED NULL,
+                frequency_kind VARCHAR(32) NOT NULL DEFAULT '',
+                friction_area VARCHAR(32) NOT NULL DEFAULT '',
+                device_kind VARCHAR(32) NOT NULL DEFAULT '',
                 highlights TEXT NULL,
                 improvements TEXT NULL,
+                wishlist TEXT NULL,
                 submitted_at DATETIME NULL,
                 snoozed_until DATETIME NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,6 +39,31 @@ return static function (PDO $pdo): void {
                 KEY idx_platform_reviews_score (score)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+    } else {
+        $columnExists = static function (PDO $pdo, string $table, string $column) use ($tableExists): bool {
+            if (!$tableExists($pdo, $table)) {
+                return false;
+            }
+            $st = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+
+            return (bool) $st->fetchColumn();
+        };
+        $alters = [
+            'clarity_score' => 'TINYINT UNSIGNED NULL',
+            'frequency_kind' => "VARCHAR(32) NOT NULL DEFAULT ''",
+            'friction_area' => "VARCHAR(32) NOT NULL DEFAULT ''",
+            'device_kind' => "VARCHAR(32) NOT NULL DEFAULT ''",
+            'wishlist' => 'TEXT NULL',
+        ];
+        foreach ($alters as $col => $definition) {
+            if (!$columnExists($pdo, 'platform_reviews', $col)) {
+                $pdo->exec('ALTER TABLE platform_reviews ADD COLUMN `' . $col . '` ' . $definition);
+            }
+        }
     }
 
     if (!$tableExists($pdo, 'translation_suggestions')) {

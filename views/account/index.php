@@ -26,16 +26,16 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
 <?php if ($showOnboarding): ?>
 <section class="account-hub__panel" aria-labelledby="onboarding-heading">
     <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker">Arrivée</p>
-        <h2 id="onboarding-heading" class="account-hub__panel-title">Votre arrivée n’est pas terminée</h2>
+        <p class="account-hub__panel-kicker"><?= htmlspecialchars(function_exists('__') ? __('common.integration_eyebrow') : 'Arrivée', ENT_QUOTES, 'UTF-8') ?></p>
+        <h2 id="onboarding-heading" class="account-hub__panel-title"><?= htmlspecialchars(function_exists('__') ? __('common.integration_account_heading') : 'Votre arrivée n’est pas terminée', ENT_QUOTES, 'UTF-8') ?></h2>
         <p class="account-hub__panel-desc">
             <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
                 ? htmlspecialchars($onboardingNudge, ENT_QUOTES, 'UTF-8')
-                : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.' ?>
+                : htmlspecialchars(function_exists('__') ? __('common.integration_account_nudge') : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.', ENT_QUOTES, 'UTF-8') ?>
         </p>
     </div>
     <div class="account-hub__panel-body">
-        <a href="<?= htmlspecialchars(url('mon-integration'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink">Ouvrir Mon intégration</a>
+        <a href="<?= htmlspecialchars(url('mon-integration'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink"><?= htmlspecialchars(function_exists('__') ? __('common.integration_open') : 'Ouvrir Mon intégration', ENT_QUOTES, 'UTF-8') ?></a>
     </div>
 </section>
 <?php endif; ?>
