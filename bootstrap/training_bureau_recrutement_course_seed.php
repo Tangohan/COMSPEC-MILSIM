@@ -23,13 +23,74 @@ function training_bureau_recrutement_course_banner_path(): string
 
 function training_bureau_recrutement_sync_course_cover(PDO $pdo, int $tenantId, string $slug): void
 {
-    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ? WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+    $st = $pdo->prepare('UPDATE training_courses SET thumbnail_path = ?, banner_path = ?, short_description = ?, description = ?, learning_objectives = ?, updated_at = ? WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
     $st->execute([
         training_bureau_recrutement_course_thumbnail_path(),
         training_bureau_recrutement_course_banner_path(),
+        training_bureau_recrutement_course_short_description(),
+        training_bureau_recrutement_course_description(),
+        training_bureau_recrutement_course_objectives(),
+        date('Y-m-d H:i:s'),
         $tenantId,
         $slug,
     ]);
+
+    training_bureau_recrutement_sync_seeded_lessons($pdo, $tenantId, $slug);
+}
+
+/**
+ * Republie la rédaction du parcours livré par la plateforme. Les leçons sont
+ * ciblées par leur position et leur type afin de ne toucher ni les ajouts de
+ * l'équipe locale, ni le questionnaire et ses résultats.
+ */
+function training_bureau_recrutement_sync_seeded_lessons(PDO $pdo, int $tenantId, string $slug): void
+{
+    $course = $pdo->prepare('SELECT id FROM training_courses WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+    $course->execute([$tenantId, $slug]);
+    $courseId = (int) $course->fetchColumn();
+    if ($courseId < 1) {
+        return;
+    }
+
+    $module = $pdo->prepare('SELECT id FROM training_modules WHERE course_id = ? AND position = ? LIMIT 1');
+    $updateModule = $pdo->prepare('UPDATE training_modules SET title = ?, description = ?, subtitle = ?, learning_objectives = ?, estimated_minutes = ?, updated_at = ? WHERE id = ?');
+    $updateLesson = $pdo->prepare('UPDATE training_lessons SET title = ?, summary = ?, content = ?, duration_minutes = ? WHERE module_id = ? AND lesson_type = ? AND position = ? LIMIT 1');
+    $now = date('Y-m-d H:i:s');
+
+    foreach (training_bureau_recrutement_module_specs() as $index => $spec) {
+        $module->execute([$courseId, $index + 1]);
+        $moduleId = (int) $module->fetchColumn();
+        if ($moduleId < 1) {
+            continue;
+        }
+        $updateModule->execute([
+            $spec['title'],
+            $spec['module_description'],
+            $spec['subtitle'],
+            training_bureau_recrutement_module_objectives_json($spec['module_learning_objectives']),
+            $spec['minutes'],
+            $now,
+            $moduleId,
+        ]);
+        $updateLesson->execute([
+            $spec['title'] . ' — parcours visuel',
+            $spec['lesson_summary'],
+            json_encode($spec['deck'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            max(6, (int) ceil(((int) $spec['minutes']) * 0.65)),
+            $moduleId,
+            'canvas',
+            1,
+        ]);
+        $updateLesson->execute([
+            $index === count(training_bureau_recrutement_module_specs()) - 1 ? 'Avant le questionnaire final' : 'À retenir — ' . $spec['title'],
+            'Les décisions à retenir et le réflexe à appliquer dès le prochain dossier.',
+            $spec['recap_html'],
+            5,
+            $moduleId,
+            'richtext',
+            2,
+        ]);
+    }
 }
 
 function run_training_bureau_recrutement_course_seed(PDO $pdo): void
@@ -160,9 +221,9 @@ function training_bureau_recrutement_seed_quiz_questions_for_module(PDO $pdo, in
 function training_bureau_recrutement_course_description(): string
 {
     return <<<'TXT'
-Ce parcours forme les membres de l’équipe recrutement à utiliser le Bureau recrutement du portail : file des dossiers, fiche instructeur, portail candidat, décision, journal et bilan après trente jours. Il décrit le geste métier attendu — qui suit le dossier, comment échanger sans confusion, comment motiver une décision — sans remplacer le règlement de votre communauté.
+Une candidature vient d’arriver. Qui la prend en charge ? Que peut lire le candidat ? Où consigner un doute sans l’exposer ? Et comment annoncer une décision sans laisser le dossier dans le flou ?
 
-Le ton reste institutionnel et pratique. Les scénarios reprennent les écrans réels. L’attestation valide la lecture du parcours sur le site ; elle ne remplace pas une habilitation opérationnelle décidée par votre unité.
+Ce parcours vous place dans la peau de l’instructeur, du premier tri jusqu’au bilan à trente jours. À chaque module, vous prenez une décision concrète dans les écrans du Bureau recrutement : prioriser la file, lire les signaux utiles, coordonner l’équipe, choisir le bon canal et clore proprement. L’attestation valide la maîtrise du parcours sur le site ; votre unité reste décisionnaire de l’habilitation opérationnelle.
 TXT;
 }
 
@@ -178,7 +239,7 @@ function training_bureau_recrutement_course_objectives(): string
 
 function training_bureau_recrutement_course_short_description(): string
 {
-    return 'Instruire une candidature de bout en bout : file, fiche, portail, décision, journal et bilan.';
+    return 'De la candidature reçue à la réponse envoyée : prenez les bonnes décisions, au bon endroit, sans perdre le fil.';
 }
 
 /** @return list<array<string, mixed>> */
@@ -189,57 +250,57 @@ function training_bureau_recrutement_module_specs(): array
             'title' => 'Le bureau et la file',
             'subtitle' => 'Où vivent les candidatures',
             'minutes' => 18,
-            'module_description' => 'Le Bureau recrutement regroupe la vue d’ensemble, la file des dossiers, le fil recruteurs et les réglages (délais, messages préfaits, offres). Ce module pose le cadre avant d’ouvrir une fiche.',
+            'module_description' => 'Une file n’est pas une simple liste : elle raconte où l’équipe perd du temps. Apprenez à repérer le prochain dossier utile, à comprendre ses alertes et à annoncer clairement qui le prend en charge.',
             'module_learning_objectives' => [
                 'Expliquer le rôle du Bureau recrutement par rapport au reste du portail.',
                 'Ouvrir la file et distinguer un dossier à traiter d’un dossier clos.',
                 'Savoir quand utiliser le fil recruteurs plutôt que le journal d’un dossier.',
             ],
             'deck' => training_bureau_recrutement_deck_bureau(),
-            'lesson_summary' => 'Vue d’ensemble du bureau, file des dossiers, délais d’alerte et messages préfaits.',
-            'recap_html' => '<p><strong>À retenir</strong> : la file est votre tableau de bord opérationnel ; chaque dossier a une fiche instructeur dédiée. Les délais d’alerte signalent les dossiers qui attendent trop longtemps.</p>',
+            'lesson_summary' => 'Transformer la file en plan d’action : priorité, attribution et première intervention.',
+            'recap_html' => '<p><strong>Votre prochain réflexe</strong> : commencez par les dossiers hors délai et sans référent. Ouvrez ensuite la fiche avant toute réponse : c’est là que l’équipe se coordonne et que l’instruction laisse une trace.</p>',
         ],
         [
             'title' => 'Lire une fiche dossier',
             'subtitle' => 'Récapitulatif, coordination, identité',
             'minutes' => 22,
-            'module_description' => 'La fiche instructeur concentre le récapitulatif, la coordination (référent et volontaires), l’identité reçue et les pièces. Savoir la lire évite les décisions précipitées.',
+            'module_description' => 'La fiche mélange faits, coordination et actions. Ce module donne un ordre de lecture rapide pour distinguer ce qui est établi, ce qui manque et ce que l’équipe doit encore arbitrer.',
             'module_learning_objectives' => [
                 'Lire l’étape et le statut en tête de fiche.',
                 'Désigner un référent ou se porter volontaire.',
                 'Relier les informations d’identité aux pièces et à l’avis de poste.',
             ],
             'deck' => training_bureau_recrutement_deck_fiche(),
-            'lesson_summary' => 'Structure de la fiche, coordination d’équipe et lecture de l’identité reçue.',
-            'recap_html' => '<p><strong>À retenir</strong> : un dossier sans référent dérive. La coordination et le récapitulatif doivent être clairs avant d’ouvrir le portail ou la décision.</p>',
+            'lesson_summary' => 'Lire une fiche comme un instructeur : faits, manques, responsabilité et prochaine action.',
+            'recap_html' => '<p><strong>Votre prochain réflexe</strong> : avant de juger le fond, vérifiez l’étape, le référent et les éléments manquants. Une fiche lisible doit permettre à un autre recruteur de reprendre le dossier sans deviner ce qui s’est passé.</p>',
         ],
         [
             'title' => 'Portail candidat et échanges',
             'subtitle' => 'Ce que voit le candidat',
             'minutes' => 20,
-            'module_description' => 'Le portail candidat est le canal sécurisé pour pièces, messages et suivi d’avancement. Ce module sépare ce qui est visible du côté candidat et ce qui reste interne.',
+            'module_description' => 'Chaque ligne envoyée sur le portail construit — ou abîme — la confiance du candidat. Apprenez à demander une action précise, à montrer un avancement honnête et à garder les débats d’équipe dans le journal interne.',
             'module_learning_objectives' => [
                 'Activer ou restreindre l’envoi de pièces et d’audio.',
                 'Choisir un affichage d’avancement clair pour le candidat.',
                 'Utiliser le fil de suivi sans y coller des notes internes.',
             ],
             'deck' => training_bureau_recrutement_deck_portail(),
-            'lesson_summary' => 'Réglages du portail, lien de suivi et bonne pratique des échanges.',
-            'recap_html' => '<p><strong>À retenir</strong> : tout message sur le fil est potentiellement lu par le candidat. Les notes internes vont dans le journal de la fiche.</p>',
+            'lesson_summary' => 'Écrire au candidat sans exposer les coulisses : visibilité, demandes et notes internes.',
+            'recap_html' => '<p><strong>Test avant envoi</strong> : le candidat comprend-il ce qu’on attend de lui, pourquoi et avant quand ? Si le texte parle plutôt des hésitations de l’équipe, déplacez-le dans le journal interne.</p>',
         ],
         [
             'title' => 'Décision, journal et bilan',
             'subtitle' => 'Clore correctement le dossier',
             'minutes' => 24,
-            'module_description' => 'Accepter, refuser, mettre en attente ou proposer un entretien : chaque issue a un message et une suite. Le journal trace l’instruction ; le bilan à trente jours améliore le processus.',
+            'module_description' => 'Une décision ne se résume pas à changer un statut. Il faut choisir l’issue juste, expliquer la suite en quelques lignes et laisser une chronologie exploitable pour l’équipe.',
             'module_learning_objectives' => [
                 'Choisir l’issue adaptée et motiver le message au candidat.',
                 'Enregistrer une note interne au bon moment du parcours.',
                 'Comprendre le bilan équipe / candidat après trente jours.',
             ],
             'deck' => training_bureau_recrutement_deck_decision(),
-            'lesson_summary' => 'Issues de décision, messages, journal de traçabilité et bilan à J+30.',
-            'recap_html' => '<p><strong>À retenir</strong> : une décision sans message clair crée de la frustration. Le journal et le bilan ferment la boucle qualité.</p>',
+            'lesson_summary' => 'Clore sans ambiguïté : décision motivée, trace interne et retour d’expérience à J+30.',
+            'recap_html' => '<p><strong>Avant de valider</strong> : relisez la décision comme si vous la receviez. L’issue est-elle nette ? La prochaine étape est-elle datée ? Le journal explique-t-il le raisonnement sans transformer une opinion en fait ?</p>',
         ],
     ];
 }
@@ -275,8 +336,8 @@ function training_bureau_recrutement_deck_bureau(): array
             [
                 'template' => 'title_hero',
                 'title' => 'Le Bureau recrutement',
-                'subtitle' => 'Un espace dédié, comme les formations',
-                'body' => '<p>Le <strong>Bureau recrutement</strong> est l’espace où votre communauté pilote les candidatures : vue d’ensemble, file des dossiers, fil entre recruteurs, analyses, délais d’alerte et messages préfaits. Il ne remplace pas le forum ni le dossier personnel : il concentre l’instruction avant l’adhésion.</p>',
+                'subtitle' => 'Votre relève commence ici',
+                'body' => '<p>À l’ouverture du bureau, ne cherchez pas à « vider la liste ». Cherchez le dossier qui réclame une action : une attente trop longue, aucun référent ou une pièce annoncée mais jamais vérifiée. La file donne la situation ; la fiche permet d’agir. <strong>Votre mission : faire avancer un candidat sans faire perdre le fil à l’équipe.</strong></p>',
                 'contextKicker' => 'Module 1 · Cadre',
                 'surface' => 'elevated',
                 'metric' => ['label' => 'Principe', 'value' => 'Un dossier = une fiche'],
@@ -349,9 +410,9 @@ function training_bureau_recrutement_deck_fiche(): array
         'slides' => [
             [
                 'template' => 'title_hero',
-                'title' => 'La fiche instructeur',
-                'subtitle' => 'Tout le dossier sur une page',
-                'body' => '<p>La fiche instructeur (ouverte avec le mode dossier) regroupe le <strong>récapitulatif</strong>, la <strong>coordination</strong>, le <strong>portail candidat</strong>, l’identité reçue, la décision, le journal et éventuellement le bilan. Un sommaire à droite permet de naviguer rapidement ; un guide animé explique chaque zone au premier passage.</p>',
+                'title' => 'Lire avant de trancher',
+                'subtitle' => 'Trois minutes pour reconstruire l’histoire du dossier',
+                'body' => '<p>Commencez par le récapitulatif : où en est la candidature ? Regardez ensuite la coordination : qui en répond, qui aide ? Terminez par les faits — identité, pièces, échanges et avis de poste. Cet ordre évite deux pièges : redemander une information déjà reçue et prendre une décision sur une impression isolée. <strong>À la fin de votre lecture, vous devez pouvoir nommer le manque et la prochaine action.</strong></p>',
                 'contextKicker' => 'Module 2 · Lecture',
                 'surface' => 'elevated',
                 'metric' => ['label' => 'Ordre conseillé', 'value' => 'Récap → coordination → identité'],
@@ -426,9 +487,9 @@ function training_bureau_recrutement_deck_portail(): array
         'slides' => [
             [
                 'template' => 'title_hero',
-                'title' => 'Le portail candidat',
-                'subtitle' => 'Un lien sécurisé, un dossier à la fois',
-                'body' => '<p>Le candidat suit son dossier via un <strong>lien sécurisé</strong>. Sur la fiche, vous décidez s’il peut déposer des fichiers ou un audio, et comment son avancement s’affiche. Ces réglages valent pour ce dossier seulement.</p>',
+                'title' => 'Deux espaces, deux voix',
+                'subtitle' => 'Au candidat l’action claire ; à l’équipe le raisonnement interne',
+                'body' => '<p>Le fil candidat n’est pas une copie du journal. Dans le premier, écrivez ce que la personne doit savoir ou faire : pièce attendue, créneau proposé, délai annoncé. Dans le second, consignez les vérifications, les réserves et les arbitrages. Avant d’envoyer, posez-vous une question simple : <strong>ce message aide-t-il réellement le candidat à avancer ?</strong></p>',
                 'contextKicker' => 'Module 3 · Canal',
                 'surface' => 'elevated',
                 'metric' => ['label' => 'Règle', 'value' => 'Interne ≠ candidat'],
@@ -500,9 +561,9 @@ function training_bureau_recrutement_deck_decision(): array
         'slides' => [
             [
                 'template' => 'title_hero',
-                'title' => 'Décider sans ambiguïté',
-                'subtitle' => 'Acceptation, refus, attente, entretien',
-                'body' => '<p>Sur la fiche, la zone <strong>Décision</strong> propose les issues métier. Un message joint (éventuellement un modèle préfait) part au candidat selon le choix. Un entretien demande un créneau. Après acceptation, vérifiez le rattachement au compte membre si besoin.</p>',
+                'title' => 'Une décision doit fermer une question',
+                'subtitle' => 'Et ouvrir la bonne suite',
+                'body' => '<p>« Accepté », « refusé » ou « en attente » ne suffit pas. Le candidat doit comprendre ce qui est décidé, ce qui se passe ensuite et, lorsqu’une action lui revient, à quelle échéance. Utilisez un modèle comme point de départ, jamais comme réponse automatique. <strong>Une bonne clôture ne laisse ni faux espoir, ni prochaine étape invisible.</strong></p>',
                 'contextKicker' => 'Module 4 · Issue',
                 'surface' => 'elevated',
                 'metric' => ['label' => 'Qualité', 'value' => 'Message motivé'],

@@ -494,8 +494,10 @@
     }
 
     /* Fallback sans Swiper */
+    root.classList.add('lms-canvas-player--fallback');
     var idx = -1;
     root.__lmsFbIndex = 0;
+    var slideFrames = qsa(root, '[data-lms-slide-frame]');
 
     function show(i) {
       var newI = Math.max(0, Math.min(i, total - 1));
@@ -504,6 +506,18 @@
       markVisited(idx);
       slides.forEach(function (el, j) {
         el.classList.toggle('hidden', j !== idx);
+      });
+      /*
+       * Les feuilles Swiper peuvent être présentes alors que son script est
+       * indisponible (CDN filtré, chargement interrompu…). Dans ce cas, masquer
+       * seulement le contenu laisse les cadres .swiper-slide dans le flux : la
+       * deuxième étape est bien activée, mais reste hors de la scène 16:9.
+       * Piloter aussi les cadres rend le lecteur autonome et évite les écrans
+       * blancs lorsque Swiper ne démarre pas.
+       */
+      slideFrames.forEach(function (frame, j) {
+        frame.hidden = j !== idx;
+        frame.setAttribute('aria-hidden', j === idx ? 'false' : 'true');
       });
       setPrevDisabled(idx === 0);
       syncNextButton(idx);
