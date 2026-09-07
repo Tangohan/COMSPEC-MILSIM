@@ -116,6 +116,24 @@ final class MemberIntegrationAssetTest extends TestCase
         self::assertStringNotContainsString('note interne', strtolower($email));
     }
 
+    public function testMemberSelfServicePageHasChromeAndFrenchStepLabels(): void
+    {
+        $css = (string) file_get_contents($this->root() . '/public/assets/css/member-integration.css');
+        $member = (string) file_get_contents($this->root() . '/views/member_integration/index.php');
+        $ctrl = (string) file_get_contents($this->root() . '/app/Controllers/Web/MemberIntegrationController.php');
+
+        self::assertStringContainsString('.mi-member', $css);
+        self::assertStringContainsString('.mi-member__hero', $css);
+        self::assertStringContainsString('.mi-member__next', $css);
+        self::assertStringContainsString('mi-member', $member);
+        self::assertStringContainsString('À faire maintenant', $member);
+        self::assertStringContainsString('Aucun parcours d’arrivée ouvert', $member);
+        self::assertStringContainsString('stepStatusLabels', $member);
+        self::assertStringNotContainsString("\$h(\$st['status']", $member);
+        self::assertStringContainsString('stepStatusLabels', $ctrl);
+        self::assertSame('À faire', MemberIntegrationCatalog::stepStatusLabels()[MemberIntegrationCatalog::STEP_PENDING]);
+    }
+
     public function testInvitationHashIsStableAndNotReversibleFromConstant(): void
     {
         $a = MemberIntegrationInvitationService::hashToken('abc');
