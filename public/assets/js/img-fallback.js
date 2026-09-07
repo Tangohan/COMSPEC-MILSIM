@@ -16,7 +16,7 @@
   var SELECTOR = 'img[' + ATTR + ']';
 
   var ALT_BY_KIND = {
-    avatar: 'Photo de compte indisponible',
+    avatar: 'Portrait indisponible',
     portrait: 'Portrait opérateur indisponible',
     media: 'Image indisponible',
     hero: 'Visuel de présentation indisponible',

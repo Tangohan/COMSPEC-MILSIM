@@ -27,6 +27,11 @@ final class PersonnelDutyPositionAssetTest extends TestCase
         self::assertStringContainsString('backfillTenant', $daily);
         $boot = (string) file_get_contents($this->root() . '/app/Services/Community/TenantBootstrapService.php');
         self::assertStringContainsString('applyActiveDuty($tenantId, $newUserId', $boot);
+        $dutyPos = strpos($boot, 'applyActiveDuty($tenantId, $newUserId');
+        $satPos = strpos($boot, 'markSatisfiedForNewTenant');
+        self::assertNotFalse($dutyPos);
+        self::assertNotFalse($satPos);
+        self::assertLessThan($satPos, $dutyPos, 'La position du fondateur doit être posée avant le marquage des évolutions.');
     }
 
     public function testOrganizerSurfacesAndCatalog(): void

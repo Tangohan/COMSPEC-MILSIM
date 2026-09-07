@@ -89,6 +89,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
                 $item(url('admin/maintenance'), 'Maintenance des données', 'Fenêtre de travaux');
                 $item(url('admin/analytics'), 'Indicateurs transverses', 'Usage agrégé');
                 $item(url('admin/system/retours-interface'), 'Retours sur l’interface', 'Notes et questionnaires des écrans');
+                $item(url('admin/system/avis-plateforme'), 'Avis et traductions', 'Note globale Athena et propositions de formulation');
                 ?>
             </ul>
         </article>

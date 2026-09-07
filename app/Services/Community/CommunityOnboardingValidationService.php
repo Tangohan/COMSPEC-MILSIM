@@ -148,6 +148,23 @@ final class CommunityOnboardingValidationService
             $step = $step ?? 'roles';
         }
 
+        $founderCommandsRoot = $this->wizardFlag($wizard, 'founder_commands_root', true);
+        $foundingChoice = strtolower(trim((string) ($wizard['org_founding_choice'] ?? $wizard['wizard_org_founding_choice'] ?? 'today')));
+        if (!in_array($foundingChoice, ['today', 'older'], true)) {
+            $foundingChoice = 'today';
+        }
+        $foundingDateRaw = trim((string) ($wizard['org_founding_date'] ?? $wizard['wizard_org_founding_date'] ?? ''));
+        $orgFoundingDate = null;
+        if ($foundingChoice === 'today') {
+            $orgFoundingDate = $this->todayInTimezone($tz);
+        } elseif ($foundingDateRaw !== '') {
+            $orgFoundingDate = $this->normalizePastDate($foundingDateRaw);
+            if ($orgFoundingDate === null) {
+                $errors[] = 'Indiquez une date de création de l’unité antérieure ou égale à aujourd’hui.';
+                $step = $step ?? 'review';
+            }
+        }
+
         if ($errors !== []) {
             return ['ok' => false, 'errors' => $errors, 'step' => $step];
         }
@@ -161,6 +178,9 @@ final class CommunityOnboardingValidationService
             'founder_grade_id' => $founderGradeId,
             'roles_template' => $rolesTemplate,
             'catalog_kit_code' => $kitCode,
+            'founder_commands_root' => $founderCommandsRoot,
+            'org_founding_choice' => $foundingChoice,
+            'org_founding_date' => $orgFoundingDate,
             'grade_overrides' => $this->normalizeGradeOverrides($wizard['grade_overrides'] ?? []),
             'community_profile' => $this->normalizeCommunityProfile($wizard),
             'custom_roles' => $this->normalizeCustomRoles($customRoles),
@@ -618,5 +638,61 @@ final class CommunityOnboardingValidationService
         }
 
         return $out;
+    }
+
+    private function wizardFlag(array $wizard, string $shortKey, bool $default): bool
+    {
+        $raw = $wizard[$shortKey] ?? $wizard['wizard_' . $shortKey] ?? null;
+        if (is_array($raw)) {
+            $raw = end($raw);
+        }
+        if ($raw === null || $raw === '') {
+            return $default;
+        }
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        $s = strtolower(trim((string) $raw));
+        if (in_array($s, ['0', 'false', 'no', 'off'], true)) {
+            return false;
+        }
+        if (in_array($s, ['1', 'true', 'yes', 'on'], true)) {
+            return true;
+        }
+
+        return $default;
+    }
+
+    private function todayInTimezone(string $timezone): string
+    {
+        try {
+            $tz = new \DateTimeZone($timezone !== '' ? $timezone : 'Europe/Paris');
+        } catch (\Throwable) {
+            $tz = new \DateTimeZone('Europe/Paris');
+        }
+
+        return (new \DateTimeImmutable('now', $tz))->format('Y-m-d');
+    }
+
+    private function normalizePastDate(string $raw): ?string
+    {
+        $t = trim($raw);
+        if ($t === '' || str_starts_with($t, '0000-00-00')) {
+            return null;
+        }
+        try {
+            if (!preg_match('/^(\d{4}-\d{2}-\d{2})/', $t, $m)) {
+                return null;
+            }
+            $d = new \DateTimeImmutable($m[1]);
+            $today = new \DateTimeImmutable('today');
+            if ($d > $today) {
+                return null;
+            }
+
+            return $d->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

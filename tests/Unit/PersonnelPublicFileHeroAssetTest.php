@@ -23,7 +23,8 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('personnel-file-hero__identity', $file);
         self::assertStringContainsString('personnel-file-hero__visual', $file);
         self::assertStringContainsString('personnel-file-hero__portrait', $file);
-        self::assertStringContainsString('personnel-file-hero__avatar-inset', $file);
+        self::assertStringNotContainsString('personnel-file-hero__avatar-inset', $file);
+        self::assertStringNotContainsString('Photo de compte', $file);
         self::assertStringContainsString('personnel-file-hero__report', $file);
         self::assertStringContainsString('personnel-file-hero__badges', $file);
         self::assertStringContainsString('personnel-file-hero__meta-label', $file);
@@ -49,7 +50,6 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString("\$personnelViewMode === 'rh';", $controller);
         self::assertStringContainsString('file_page_notices.php', $file);
 
-        self::assertStringContainsString('.personnel-file-hero__avatar-inset', $css);
         self::assertStringContainsString('.personnel-file-hero__report', $css);
         self::assertStringContainsString('width: fit-content', $css);
         self::assertStringContainsString('white-space: nowrap', $css);

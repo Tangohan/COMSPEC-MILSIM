@@ -120,7 +120,7 @@ return [
             ['label' => 'Tableur des membres', 'href' => 'back-office/ressources/effectifs'],
             ['label' => 'Centre de pilotage', 'href' => 'back-office'],
         ]],
-        ['path' => 'back-office/personnel/corrections', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RH', 'title' => 'Corrections RH', 'subtitle' => 'Demandes de mise à jour de fiche : rien n’est appliqué tant que vous n’avez pas confirmé.', 'css' => ['back-office-corrections.css'], 'quick' => [
+        ['path' => 'back-office/personnel/corrections', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RH', 'title' => 'Corrections RH', 'subtitle' => 'Confirmez les demandes, ou corrigez un dossier tout de suite, sans attendre.', 'css' => ['back-office-corrections.css', 'personnel-dossier.css'], 'quick' => [
             ['label' => 'Bureau effectifs', 'href' => 'back-office/ressources/effectifs'],
             ['label' => 'Annuaire', 'href' => 'personnel'],
         ]],

@@ -121,4 +121,7 @@ final class AuditAction
 
     /** Alerte staff envoyée depuis le détail d’un événement du journal. */
     public const AUDIT_ROLLBACK_ALERT = 'audit.rollback_alert';
+
+    public const PLATFORM_TRANSLATION_ACCEPTED = 'platform.translation_accepted';
+    public const PLATFORM_TRANSLATION_DECLINED = 'platform.translation_declined';
 }

@@ -60,9 +60,7 @@ require base_path('views/partials/account/shell_open.php');
 </section>
 
 <p class="account-hub__footer-note">
-    <a href="<?= htmlspecialchars(url('account/image'), ENT_QUOTES, 'UTF-8') ?>">Photo de compte</a>
-    ·
-    <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>">Portrait opérateur</a>
+    <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>">Portrait</a>
 </p>
 
 <?php require base_path('views/partials/account/shell_close.php'); ?>

@@ -13,8 +13,8 @@ if (!empty($personnelProfile['character_portrait_path'])) {
 }
 
 $accountNavKey = 'portrait';
-$accountTitle = 'Photo de profil';
-$accountLead = 'Image pour la fiche personnelle, l’organigramme et les briefings. Format vertical ou carré conseillé. JPG, PNG ou WebP — 2 Mo maximum.';
+$accountTitle = 'Portrait';
+$accountLead = 'Une seule photo, visible sur le portail, la fiche et l’organigramme. JPG, PNG ou WebP — 2 Mo maximum.';
 $accountUser = $user;
 require base_path('views/partials/account/shell_open.php');
 ?>
@@ -22,17 +22,17 @@ require base_path('views/partials/account/shell_open.php');
 <section class="account-hub__panel">
     <div class="account-hub__panel-head">
         <p class="account-hub__panel-kicker">Apparence</p>
-        <h2 class="account-hub__panel-title">Photo de profil</h2>
-        <p class="account-hub__panel-desc">Distincte de la photo de compte : ce visuel apparaît sur votre fiche et dans l’organigramme.</p>
+        <h2 class="account-hub__panel-title">Votre photo</h2>
+        <p class="account-hub__panel-desc">C’est celle que les autres membres voient sur le portail et sur la fiche.</p>
     </div>
     <div class="account-hub__panel-body">
         <div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:flex-start">
             <div style="display:grid;gap:.65rem;justify-items:center">
                 <div class="account-hub__media-preview account-hub__media-preview--portrait">
                     <?php if ($portraitUrl): ?>
-                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de profil actuelle">
+                        <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait actuel">
                     <?php else: ?>
-                    <img src="<?= htmlspecialchars(url('assets/images/inconnu.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="Aucune photo de profil">
+                    <img src="<?= htmlspecialchars(url('assets/images/inconnu.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="Aucun portrait">
                     <?php endif; ?>
                 </div>
                 <?php if (!$portraitUrl): ?>

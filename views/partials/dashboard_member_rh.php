@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * RH du membre connecté : élévation (même circuit que le bureau effectifs, pour soi)
- * et demandes d’évolution déjà prévues dans l’espace RH.
+ * et demandes d’évolution déjà prévues dans Mes démarches.
  *
  * @var array<string,mixed> $dashboard_elevation_catalog
  * @var bool $can_request_self_elevation
@@ -42,10 +42,10 @@ $elevStatusLabel = static function (string $status): string {
     <div class="dash-hub-panel__head">
         <div>
             <p class="dash-hub-panel__kicker">Personnel</p>
-            <h2 id="dash-member-rh-title" class="dash-hub-panel__title">Mon dossier RH</h2>
+            <h2 id="dash-member-rh-title" class="dash-hub-panel__title">Démarche rapide</h2>
             <p class="dash-hub-panel__lead">Demandez une élévation de grade ou de rôle, ou un avancement. L’encadrement reçoit la demande ; ce n’est pas le tableur de gestion des effectifs.</p>
         </div>
-        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="dash-hub-panel__ghost">Espace RH complet</a>
+        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="dash-hub-panel__ghost">Toutes les démarches</a>
     </div>
 
     <div class="dash-rh-grid">

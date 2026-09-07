@@ -15,7 +15,7 @@ $initials = (string) ($initials ?? '?');
 $class = (string) ($class ?? '');
 $imgClass = (string) ($imgClass ?? 'h-full w-full object-cover');
 $alt = (string) ($alt ?? '');
-$avatarAlt = $alt !== '' ? $alt : 'Photo de compte';
+$avatarAlt = $alt !== '' ? $alt : 'Portrait';
 ?>
 <span class="<?= htmlspecialchars($class, ENT_QUOTES, 'UTF-8') ?>">
 <?php if ($avatarSrc !== ''): ?>
@@ -27,7 +27,7 @@ $avatarAlt = $alt !== '' ? $alt : 'Photo de compte';
         decoding="async"
         data-img-fallback="avatar"
         data-img-initials="<?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>"
-        data-img-label="Photo de compte indisponible"
+        data-img-label="Portrait indisponible"
     >
 <?php else: ?>
     <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>

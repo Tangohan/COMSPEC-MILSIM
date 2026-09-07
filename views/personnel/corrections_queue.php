@@ -27,14 +27,14 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
       Aucune demande à confirmer.
     <?php else: ?>
       <?= $pendingCount ?> demande<?= $pendingCount > 1 ? 's' : '' ?> à confirmer.
-      La fiche n’est mise à jour qu’après votre validation.
+      La fiche n’est mise à jour qu’après votre validation. Vous pouvez aussi corriger un dossier sans demande, plus bas.
     <?php endif; ?>
   </p>
 
   <?php if ($requests === []): ?>
   <div class="rh-corr__empty" role="status">
     <p class="rh-corr__empty-title">File vide</p>
-    <p class="rh-corr__empty-text">Quand un membre signale une anomalie sur sa fiche, la demande apparaît ici pour confirmation ou refus.</p>
+    <p class="rh-corr__empty-text">Quand un membre signale une anomalie sur sa fiche, la demande apparaît ici pour confirmation ou refus. Vous pouvez aussi corriger un dossier tout de suite, sans attendre de demande.</p>
   </div>
   <?php else: ?>
   <div class="rh-corr__list">
@@ -107,4 +107,44 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
+
+  <section class="rh-corr__direct" aria-labelledby="rh-corr-direct-title">
+    <h2 id="rh-corr-direct-title" class="rh-corr__direct-title">Corriger un dossier sans demande</h2>
+    <p class="rh-corr__direct-lead">
+      Choisissez un membre, corrigez les informations, puis enregistrez.
+      La fiche est mise à jour tout de suite. S’il restait une demande en attente pour ce dossier, elle est close.
+    </p>
+    <form method="get" action="<?= $h(url('back-office/personnel/corrections')) ?>" class="rh-corr__pick">
+      <label class="rh-corr__comment" for="rh-corr-membre">
+        Membre
+        <select id="rh-corr-membre" name="membre" required>
+          <option value="">Choisir un membre</option>
+          <?php foreach (is_array($directMembers ?? null) ? $directMembers : [] as $opt): ?>
+            <?php $oid = (int) ($opt['id'] ?? 0); if ($oid < 1) { continue; } ?>
+            <option value="<?= $oid ?>" <?= (int) (($directTarget['id'] ?? 0)) === $oid ? 'selected' : '' ?>><?= $h((string) ($opt['label'] ?? 'Membre')) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <button type="submit" class="rh-corr__btn rh-corr__btn--ok">Ouvrir le dossier</button>
+    </form>
+
+    <?php if (is_array($directTarget ?? null) && (int) ($directTarget['id'] ?? 0) > 0): ?>
+      <?php
+        $targetUser = $directTarget;
+        $snapshot = is_array($directSnapshot ?? null) ? $directSnapshot : [];
+        $fieldCatalog = is_array($directFieldCatalog ?? null) ? $directFieldCatalog : [];
+        $fieldGroups = is_array($directFieldGroups ?? null) ? $directFieldGroups : [];
+        $choiceCatalog = is_array($directChoiceCatalog ?? null) ? $directChoiceCatalog : [];
+        $pending = is_array($directPending ?? null) ? $directPending : [];
+        $hasOpen = !empty($directHasOpen);
+        $isSelf = false;
+        $applyImmediately = true;
+        $embedded = true;
+        $canApplyImmediately = true;
+        $formAction = url('back-office/personnel/corrections/appliquer');
+        $csrf = (string) ($csrf ?? '');
+        require base_path('views/personnel/correction_form.php');
+      ?>
+    <?php endif; ?>
+  </section>
 </div>
