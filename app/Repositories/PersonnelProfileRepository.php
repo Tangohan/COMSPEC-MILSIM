@@ -173,6 +173,7 @@ class PersonnelProfileRepository
             'rp_last_interview_completed_at', 'rp_last_rotation_completed_at', 'rp_rotation_kind',
             'rp_blood_type_confirmed', 'rp_blood_type_confirmed_at',
             'rp_arma_blood_type', 'rp_arma_blood_type_at',
+            'current_phase_id',
         ];
         $set = [];
         $params = [];
@@ -250,30 +251,35 @@ class PersonnelProfileRepository
 
 
     /**
-     * Membres actifs dont le bilan roleplay est dû, cadence App\Support\RoleplayBilanPolicy
-     * (6/8/12 mois selon ancienneté depuis users.created_at). Une seule requête, pas de N+1.
+     * Membres actifs dont le bilan roleplay est dû.
      *
+     * @param array{first_year_days?: int, second_year_days?: int, ongoing_days?: int, grace_days?: int}|null $cadence
      * @return list<array{user_id: int, email: string, display_name: string, callsign: string, joined_at: string, rp_last_review_at: ?string, rp_tutor_user_id: ?int, next_due_at: string, is_overdue: int}>
      */
-    public function listRoleplayBilanDueForTenant(int $tenantId): array
+    public function listRoleplayBilanDueForTenant(int $tenantId, ?array $cadence = null): array
     {
+        $c = \App\Support\RoleplayBilanPolicy::normalizeCadence($cadence);
+        $first = (int) $c['first_year_days'];
+        $second = (int) $c['second_year_days'];
+        $ongoing = (int) $c['ongoing_days'];
+        $grace = (int) $c['grace_days'];
         $stmt = $this->pdo->prepare(
             "SELECT u.id AS user_id, u.email, u.display_name, u.callsign, u.created_at AS joined_at,
                     pp.rp_last_review_at, pp.rp_tutor_user_id,
                     DATE_ADD(COALESCE(pp.rp_last_review_at, u.created_at), INTERVAL
                         CASE
-                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . \App\Support\RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . '
-                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN ' . \App\Support\RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
-                            ELSE " . \App\Support\RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . "
+                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN {$first}
+                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN {$second}
+                            ELSE {$ongoing}
                         END DAY
                     ) AS next_due_at,
                     CASE WHEN DATE_ADD(COALESCE(pp.rp_last_review_at, u.created_at), INTERVAL
                         CASE
-                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . \App\Support\RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . '
-                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN ' . \App\Support\RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
-                            ELSE " . \App\Support\RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . '
+                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN {$first}
+                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN {$second}
+                            ELSE {$ongoing}
                         END DAY
-                    ) < DATE_SUB(NOW(), INTERVAL ' . \App\Support\RoleplayBilanPolicy::OVERDUE_GRACE_DAYS . " DAY) THEN 1 ELSE 0 END AS is_overdue
+                    ) < DATE_SUB(NOW(), INTERVAL {$grace} DAY) THEN 1 ELSE 0 END AS is_overdue
              FROM users u
              INNER JOIN personnel_profiles pp ON pp.user_id = u.id
              WHERE u.tenant_id = ? AND u.status = 'active'

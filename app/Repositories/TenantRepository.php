@@ -301,6 +301,17 @@ class TenantRepository
         $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
     }
 
+    /**
+     * Écrit le JSON de réglages tel quel (listes remplacées, pas fusionnées par index).
+     *
+     * @param array<string, mixed> $settings
+     */
+    public function replaceSettings(int $tenantId, array $settings): void
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+    }
+
     public function updateSubscriptionFromStripe(
         int $tenantId,
         ?string $stripeCustomerId,

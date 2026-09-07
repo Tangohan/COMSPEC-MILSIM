@@ -241,6 +241,13 @@ class EffectifsWorkspaceController
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
         $badgesByUserId = $rowIds !== [] ? $this->badgeRepository->listForUsers($tenantId, $rowIds) : [];
+        $phaseBadgesByUserId = [];
+        try {
+            $phaseBadgesByUserId = \App\Core\Container::get(\App\Services\Personnel\PhaseRules\PhaseTransitionService::class)
+                ->rosterBadgesForUsers($tenantId, $rowIds);
+        } catch (\Throwable) {
+            $phaseBadgesByUserId = [];
+        }
         $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
             $rowIds,
             $viewerId
@@ -278,6 +285,7 @@ class EffectifsWorkspaceController
             'elevationRecipientsCount' => count($elevationRecipients),
             'elevationCooldownByUserId' => $elevationCooldownByUserId,
             'badgesByUserId' => $badgesByUserId,
+            'phaseBadgesByUserId' => $phaseBadgesByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -2388,6 +2396,8 @@ class EffectifsWorkspaceController
             'commandChainMissingCount' => $chainMissing,
             'roleplayDueCount' => $extras['roleplayDueCount'],
             'integrationOpenCount' => $extras['integrationOpenCount'],
+            'phaseGateCount' => $extras['phaseGateCount'],
+            'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }

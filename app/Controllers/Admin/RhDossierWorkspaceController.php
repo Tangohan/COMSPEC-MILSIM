@@ -524,12 +524,25 @@ final class RhDossierWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $phaseAutoErrors = [];
+        try {
+            $phaseAutoErrors = \App\Core\Container::get(\App\Repositories\PersonnelPhaseRepository::class)
+                ->listOpenAutoErrors($tenantId, 20);
+        } catch (\Throwable) {
+            $phaseAutoErrors = [];
+        }
 
         return $this->shell('admin.effectifs_workspace.rh_roleplay', [
             'title' => 'Suivi roleplay',
             'effectifsNav' => 'rh_roleplay',
             'roleplayConfig' => $this->roleplayFollowupConfig($tenantId),
-            'roleplayDueItems' => $this->roleplayTimeline->listDashboardDueItems($tenantId, 14, 80),
+            'phaseAutoErrors' => $phaseAutoErrors,
+            'roleplayDueItems' => $this->roleplayTimeline->listDashboardDueItems(
+                $tenantId,
+                (int) \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId, $this->tenants)['horizon'],
+                80,
+                \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId, $this->tenants)
+            ),
         ]);
     }
 
@@ -751,6 +764,8 @@ final class RhDossierWorkspaceController
             'rhAlertTotalCount' => $rhAlertTotal,
             'roleplayDueCount' => $extras['roleplayDueCount'],
             'integrationOpenCount' => $extras['integrationOpenCount'],
+            'phaseGateCount' => $extras['phaseGateCount'],
+            'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }
@@ -758,16 +773,6 @@ final class RhDossierWorkspaceController
     /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
     private function roleplayFollowupConfig(int $tenantId): array
     {
-        $settings = $this->tenants->getSettings($tenantId);
-        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
-        $cfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
-
-        return [
-            'enabled' => !empty($cfg['enabled']),
-            'optional' => !empty($cfg['optional']),
-            'stages' => is_array($cfg['stages'] ?? null) ? $cfg['stages'] : [],
-            'recruitment_tracks' => is_array($cfg['recruitment_tracks'] ?? null) ? $cfg['recruitment_tracks'] : [],
-            'eligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
-        ];
+        return \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenants);
     }
 }

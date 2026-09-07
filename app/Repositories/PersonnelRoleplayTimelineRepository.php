@@ -94,12 +94,22 @@ class PersonnelRoleplayTimelineRepository
     }
 
     /**
+     * @param array{cadence?: array<string, mixed>, show_interview?: bool, show_medical?: bool, show_rotation?: bool, show_bilan?: bool} $options
      * @return list<array<string,mixed>>
      */
-    public function listDashboardDueItems(int $tenantId, int $upcomingDays = 14, int $limit = 20): array
+    public function listDashboardDueItems(int $tenantId, int $upcomingDays = 14, int $limit = 20, array $options = []): array
     {
         $upcomingDays = max(1, min(90, $upcomingDays));
         $limit = max(1, min(100, $limit));
+        $showInterview = array_key_exists('show_interview', $options) ? !empty($options['show_interview']) : true;
+        $showMedical = array_key_exists('show_medical', $options) ? !empty($options['show_medical']) : true;
+        $showRotation = array_key_exists('show_rotation', $options) ? !empty($options['show_rotation']) : true;
+        $showBilan = array_key_exists('show_bilan', $options) ? !empty($options['show_bilan']) : true;
+        $cadence = RoleplayBilanPolicy::normalizeCadence(is_array($options['cadence'] ?? null) ? $options['cadence'] : null);
+        $first = (int) $cadence['first_year_days'];
+        $second = (int) $cadence['second_year_days'];
+        $ongoing = (int) $cadence['ongoing_days'];
+        $grace = (int) $cadence['grace_days'];
 
         $rows = [];
 
@@ -218,20 +228,20 @@ class PersonnelRoleplayTimelineRepository
                        DATE_ADD(
                            COALESCE(pp.rp_last_review_at, u.created_at),
                            INTERVAL CASE
-                               WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . "
-                               WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN " . RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
-                               ELSE " . RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . "
+                               WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN {$first}
+                               WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN {$second}
+                               ELSE {$ongoing}
                            END DAY
                        ) AS due_date,
                        CASE
                            WHEN DATE_ADD(
                                COALESCE(pp.rp_last_review_at, u.created_at),
                                INTERVAL CASE
-                                   WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . "
-                                   WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN " . RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
-                                   ELSE " . RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . "
+                                   WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN {$first}
+                                   WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN {$second}
+                                   ELSE {$ongoing}
                                END DAY
-                           ) < DATE_SUB(NOW(), INTERVAL " . RoleplayBilanPolicy::OVERDUE_GRACE_DAYS . " DAY) THEN 'overdue'
+                           ) < DATE_SUB(NOW(), INTERVAL {$grace} DAY) THEN 'overdue'
                            ELSE 'upcoming'
                        END AS urgency
                 FROM users u
@@ -257,6 +267,23 @@ class PersonnelRoleplayTimelineRepository
             $tenantId, $upcomingDays,
         ]);
         $rows = array_merge($rows, $profileStmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        $rows = array_values(array_filter($rows, static function (array $row) use ($showInterview, $showMedical, $showRotation, $showBilan): bool {
+            $type = (string) ($row['event_type'] ?? '');
+            if ($type === 'entretien') {
+                return $showInterview;
+            }
+            if ($type === 'medical') {
+                return $showMedical;
+            }
+            if ($type === 'rotation') {
+                return $showRotation;
+            }
+            if ($type === 'bilan') {
+                return $showBilan;
+            }
+
+            return true;
+        }));
 
         usort($rows, static function (array $a, array $b): int {
             $aUrgency = (string) ($a['urgency'] ?? '');
