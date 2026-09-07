@@ -26,10 +26,10 @@ $communityReelsPage = !empty($communityReelsPage);
 
 $usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
-    ? 'Administration communauté'
+    ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Administration communauté') : 'Administration communauté')
     : (!empty($isPlatformAdminShell)
-        ? 'Administration plateforme'
-        : (!empty($isFormationWorkspace) ? 'Pilotage des formations' : ''));
+        ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Administration plateforme') : 'Administration plateforme')
+        : (!empty($isFormationWorkspace) ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Pilotage des formations') : 'Pilotage des formations') : ''));
 /**
  * Aside BO dépliable (rail étroit ~4.5rem → expand au survol / focus).
  * Activé sur tout le shell back-office / espace formation (réf. mes-formations / effectifs).
@@ -185,6 +185,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if (!empty($personnelFilePage) && is_file(base_path('public/assets/css/personnel-file.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php if (!empty($personnelFilePage) && is_file(base_path('public/assets/js/personnel-file-hub.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/personnel-file-hub.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php
     $alpineSrc = '';
@@ -405,7 +408,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                 class="fixed inset-y-0 <?= !empty($isPlatformAdminShell) ? 'right-0 border-l lg:border-l lg:border-r-0' : 'left-0 border-r lg:border-r' ?> z-[210] w-80 max-w-full overflow-x-hidden border-white/10 bg-black text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? ' ath-sidebar-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
                 :class="navOpen ? 'translate-x-0' : '<?= !empty($isPlatformAdminShell) ? 'translate-x-full' : '-translate-x-full' ?>'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
-                aria-label="Menu latéral"
+                aria-label="<?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Menu latéral') : 'Menu latéral', ENT_QUOTES, 'UTF-8') ?>"
                 @click.capture="if ($event.target.closest('a')) navOpen = false"
             >
                 <div class="flex h-full max-h-screen min-h-0 flex-col lg:max-h-none lg:min-h-[inherit]">
@@ -415,7 +418,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                             class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
                             @click="navOpen = false"
                         >
-                            Fermer
+                            <?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Fermer') : 'Fermer', ENT_QUOTES, 'UTF-8') ?>
                         </button>
                     </div>
                     <?php if (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)): ?>

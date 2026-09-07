@@ -45,7 +45,7 @@ class RoleRepository
     }
 
     /**
-     * Les trois profils d’accès (Membre, RH, Gestionnaire).
+     * Profils d’accès : les trois modèles, puis les rôles créés par la communauté.
      *
      * @return list<array<string, mixed>>
      */
@@ -53,14 +53,21 @@ class RoleRepository
     {
         $slugs = CommunityAccessProfiles::slugs();
         $ph = implode(',', array_fill(0, count($slugs), '?'));
+        $like = CommunityAccessProfiles::CUSTOM_PREFIX . '%';
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM roles WHERE tenant_id = ? AND slug IN ($ph)"
+            "SELECT * FROM roles WHERE tenant_id = ? AND (slug IN ($ph) OR slug LIKE ?) ORDER BY name ASC"
         );
-        $stmt->execute(array_merge([$tenantId], $slugs));
+        $stmt->execute(array_merge([$tenantId], $slugs, [$like]));
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $bySlug = [];
+        $custom = [];
         foreach ($rows as $row) {
-            $bySlug[(string) ($row['slug'] ?? '')] = $row;
+            $slug = (string) ($row['slug'] ?? '');
+            if (CommunityAccessProfiles::isCustomAccessSlug($slug)) {
+                $custom[] = $row;
+            } else {
+                $bySlug[$slug] = $row;
+            }
         }
         $ordered = [];
         foreach (CommunityAccessProfiles::definitions() as $def) {
@@ -68,8 +75,9 @@ class RoleRepository
                 $ordered[] = $bySlug[$def['slug']];
             }
         }
+        usort($custom, static fn (array $a, array $b): int => strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? '')));
 
-        return $ordered;
+        return array_merge($ordered, $custom);
     }
 
     /** @return list<array<string, mixed>> */
@@ -284,7 +292,38 @@ class RoleRepository
             return false;
         }
 
-        return CommunityAccessProfiles::isAccessSlug((string) ($r['slug'] ?? ''));
+        return CommunityAccessProfiles::isAssignableAccessSlug((string) ($r['slug'] ?? ''));
+    }
+
+    public function createCustomAccessRole(int $tenantId, string $name, ?string $description = null): int
+    {
+        $name = mb_substr(trim($name), 0, 160);
+        if ($tenantId < 1 || $name === '') {
+            return 0;
+        }
+        $base = strtolower($name);
+        if (function_exists('iconv')) {
+            $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $base);
+            if (is_string($converted) && $converted !== '') {
+                $base = $converted;
+            }
+        }
+        $base = preg_replace('/[^a-z0-9]+/', '-', $base) ?? '';
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = 'role';
+        }
+        $slug = CommunityAccessProfiles::CUSTOM_PREFIX . mb_substr($base, 0, 48);
+        $n = 2;
+        while ($this->getIdBySlug($tenantId, $slug) !== null) {
+            $slug = CommunityAccessProfiles::CUSTOM_PREFIX . mb_substr($base, 0, 40) . '-' . $n;
+            $n++;
+            if ($n > 80) {
+                return 0;
+            }
+        }
+
+        return $this->createOrganizationRole($tenantId, $name, $slug, $description);
     }
 
     /**
@@ -457,6 +496,70 @@ class RoleRepository
         $st = $this->pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE id = ? AND tenant_id = ?');
 
         return $st->execute([$nm, $desc, $roleId, $tenantId]);
+    }
+
+    public function updateAccessRoleLabel(int $tenantId, int $roleId, string $name, string $description): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r || !CommunityAccessProfiles::isAssignableAccessSlug((string) ($r['slug'] ?? ''))) {
+            return false;
+        }
+        $nm = mb_substr(trim($name), 0, 160);
+        if ($nm === '') {
+            return false;
+        }
+        $desc = mb_substr(trim($description), 0, 500);
+        $st = $this->pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE id = ? AND tenant_id = ?');
+
+        return $st->execute([$nm, $desc, $roleId, $tenantId]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function userIdsWithRole(int $tenantId, int $roleId): array
+    {
+        if ($tenantId < 1 || $roleId < 1) {
+            return [];
+        }
+        $ids = [];
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT DISTINCT u.id FROM users u
+                 LEFT JOIN user_roles ur ON ur.user_id = u.id
+                 LEFT JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
+                 WHERE u.tenant_id = ? AND (u.role_id = ? OR ur.role_id = ? OR tur.role_id = ?)'
+            );
+            $st->execute([$tenantId, $roleId, $roleId, $roleId]);
+            $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        } catch (\Throwable) {
+            $st = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND role_id = ?');
+            $st->execute([$tenantId, $roleId]);
+            $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+    }
+
+    public function deleteCustomAccessRole(int $tenantId, int $roleId): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r || !CommunityAccessProfiles::isCustomAccessSlug((string) ($r['slug'] ?? ''))) {
+            return false;
+        }
+        $this->pdo->prepare('DELETE FROM role_permissions WHERE role_id = ?')->execute([$roleId]);
+        try {
+            $this->pdo->prepare('DELETE FROM user_roles WHERE role_id = ?')->execute([$roleId]);
+        } catch (\Throwable) {
+        }
+        try {
+            $this->pdo->prepare('DELETE FROM tenant_user_roles WHERE role_id = ? AND tenant_id = ?')->execute([$roleId, $tenantId]);
+        } catch (\Throwable) {
+        }
+        $st = $this->pdo->prepare('DELETE FROM roles WHERE id = ? AND tenant_id = ?');
+        $st->execute([$roleId, $tenantId]);
+
+        return $st->rowCount() > 0;
     }
 
     /**

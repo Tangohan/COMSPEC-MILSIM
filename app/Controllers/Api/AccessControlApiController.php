@@ -38,7 +38,7 @@ final class AccessControlApiController
 
         return Response::json([
             'ok' => false,
-            'error' => 'Chaque communauté n’a que trois niveaux d’accès : Membre, Ressources humaines et Gestionnaire.',
+            'error' => 'Créez ou corrigez un niveau d’accès depuis Accès, dans le bureau effectifs.',
         ], 400);
     }
 

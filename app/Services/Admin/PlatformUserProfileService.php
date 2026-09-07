@@ -100,7 +100,7 @@ final class PlatformUserProfileService
             'personnel' => is_array($personnel) ? $personnel : [],
             'extras' => is_array($extras) ? $extras : [],
             'tenant' => is_array($tenant) ? $tenant : [],
-            'grades' => $tenantId > 0 ? $this->grades->listForTenant($tenantId) : [],
+            'grades' => $tenantId > 0 ? $this->grades->listActiveForDoctrinePicker($tenantId) : [],
             'grade_categories' => $this->gradeCategories->listActive(),
             'units' => $tenantId > 0 ? $this->units->allForTenant($tenantId) : [],
             'roles' => $tenantId > 0 ? $this->roles->forTenantOrganization($tenantId) : [],
@@ -228,7 +228,7 @@ final class PlatformUserProfileService
         if ($gradeId !== null && $gradeId > 0) {
             $allowedGradeIds = array_map(
                 static fn (array $g): int => (int) ($g['id'] ?? 0),
-                $this->grades->listForTenant($tenantId)
+                $this->grades->listActiveForDoctrinePicker($tenantId)
             );
             if (!in_array($gradeId, $allowedGradeIds, true)) {
                 return ['ok' => false, 'error' => 'Le grade sélectionné n’est pas disponible pour cette communauté.'];

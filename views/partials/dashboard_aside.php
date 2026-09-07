@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 $unitLabel = ($dashboard_tenant_label !== null && $dashboard_tenant_label !== '')
     ? (string) $dashboard_tenant_label
-    : (isset($unitLabel) ? (string) $unitLabel : 'Communauté');
+    : (isset($unitLabel) ? (string) $unitLabel : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Communauté') : 'Communauté'));
 $showStaff = !empty($show_staff_enlistments);
 $staffCount = (int) ($staffCount ?? 0);
 $opsCount = (int) ($opsCount ?? 0);
@@ -118,6 +118,16 @@ $links = static function (array $items): array {
         $out[] = $item;
     }
 
+    if (function_exists('i18n_phrase')) {
+        foreach ($out as &$row) {
+            $row['label'] = i18n_phrase('nav', (string) ($row['label'] ?? ''));
+            if (isset($row['hint'])) {
+                $row['hint'] = i18n_phrase('nav', (string) $row['hint']);
+            }
+        }
+        unset($row);
+    }
+
     return $out;
 };
 
@@ -134,6 +144,10 @@ $tile = static function (
     string $iconKey = '',
     string $extraHtml = ''
 ) use ($activeDashNav): array {
+    if (function_exists('i18n_phrase')) {
+        $label = i18n_phrase('nav', $label);
+        $hint = i18n_phrase('nav', $hint);
+    }
     return [
         'id' => $id,
         'label' => $label,
@@ -339,7 +353,11 @@ if ($canAdmin) {
         ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable'],
         ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté'],
         ['label' => 'Rubriques du forum', 'href' => url('back-office/categories'), 'hint' => 'Arborescence'],
-        ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, images et options'],
+        ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, vitrine, inscription et accueil'],
+    ]), 'backoffice');
+} else {
+    $backofficeTiles[] = $tile('backoffice', 'Back-office', 'Consultation personnelle', 'bo', null, $links([
+        ['label' => 'Mes données', 'href' => url('back-office'), 'hint' => 'Vos données ATAK et votre fiche'],
     ]), 'backoffice');
 }
 

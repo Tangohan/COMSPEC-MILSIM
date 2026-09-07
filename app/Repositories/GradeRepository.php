@@ -109,10 +109,33 @@ class GradeRepository
         $tenantRepo = new TenantRepository();
         $settings = $tenantRepo->getSettings($tenantId);
         $code = isset($settings['grade_system_code']) ? trim((string) $settings['grade_system_code']) : '';
-        if ($code === '') {
-            return $this->listActive();
+        $rows = $code === '' ? $this->listActive() : $this->listBySystemCode($code);
+
+        return $this->applyTenantOverrides($tenantId, $rows);
+    }
+
+    /**
+     * Tous les grades actifs (FR et US), avec les libellés éventuellement adaptés à la communauté.
+     * Pour les formulaires où la doctrine se choisit d’abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveForDoctrinePicker(int $tenantId = 0): array
+    {
+        $rows = $this->listActive();
+        if ($tenantId < 1) {
+            return $rows;
         }
-        $rows = $this->listBySystemCode($code);
+
+        return $this->applyTenantOverrides($tenantId, $rows);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function applyTenantOverrides(int $tenantId, array $rows): array
+    {
         $overrideRepo = new TenantGradeOverrideRepository();
         if (!$overrideRepo->tableExists()) {
             return $rows;

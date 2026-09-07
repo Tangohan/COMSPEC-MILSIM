@@ -40,39 +40,9 @@ final class RolePermissionMatrixController
         if ($forbidden instanceof Response) {
             return $forbidden;
         }
+        unset($request, $params);
 
-        $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'scope' => trim((string) $request->query('scope', '')),
-            'level' => trim((string) $request->query('level', '')),
-            'active' => trim((string) $request->query('active', '')),
-        ];
-        $data = $this->matrix->listMatrix($tenantId, $filters);
-        $members = $this->users->listForTenant($tenantId, null, 'active', null, 200, 0);
-
-        return Response::view('layout.main', [
-            'content' => 'admin.roles_permissions.index',
-            'title' => 'Rôles & permissions',
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Système',
-            'boPageTitle' => 'Rôles & permissions',
-            'boPageKicker' => 'SYSTÈME · ACCÈS',
-            'boPageSubtitle' => 'Matrice des rôles applicatifs : périmètre d’accès, actions autorisées et titulaires.',
-            'boPageAction' => 'Créer un rôle',
-            'boPageActionUrl' => url('back-office/roles'),
-            'boPageQuick' => [
-                ['label' => 'Rôles', 'href' => url('back-office/roles')],
-                ['label' => 'Permissions', 'href' => url('back-office/roles-permissions')],
-                ['label' => 'Titulaires', 'href' => url('back-office/users')],
-            ],
-            'matrixRows' => $data['rows'],
-            'matrixStats' => $data['stats'],
-            'matrixFilters' => $filters,
-            'moduleLabels' => RolePermissionMatrixCatalog::moduleLabelsFr(),
-            'accessLevelLabels' => RolePermissionMatrixCatalog::accessLevelLabelsFr(),
-            'csrfToken' => Csrf::token(),
-            'assignableMembers' => $members,
-        ]);
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     public function assign(Request $request, array $params = []): Response

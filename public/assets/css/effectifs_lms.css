@@ -1680,6 +1680,259 @@ div.eff-role-grid {
     line-height: 1.6;
 }
 
+.eff-access-layout {
+    display: grid;
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 860px) {
+    .eff-access-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.eff-access-rail {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #fff;
+    padding: 0.75rem;
+}
+
+.eff-access-rail__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.eff-access-rail__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.5rem;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.eff-access-rail__item span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.eff-access-rail__item:hover,
+.eff-access-rail__item.is-current {
+    background: #0f172a;
+    color: #fff;
+}
+
+.eff-access-rail__item:hover span,
+.eff-access-rail__item.is-current span {
+    color: #cbd5e1;
+}
+
+.eff-access-create {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.eff-access-create__title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.eff-access-create label,
+.eff-access-editor__identity label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.eff-access-create input,
+.eff-access-create select,
+.eff-access-editor__identity input,
+.eff-access-editor__identity textarea {
+    font: inherit;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.4rem;
+    background: #fff;
+}
+
+.eff-access-editor {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #fff;
+    padding: 1rem 1.15rem 1.25rem;
+}
+
+.eff-access-editor__identity {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.eff-access-editor__hint {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.eff-access-group {
+    margin: 0 0 1rem;
+}
+
+.eff-access-group h2 {
+    margin: 0 0 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f172a;
+}
+
+.eff-access-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.2rem 0.85rem;
+}
+
+.eff-access-group label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.875rem;
+    color: #0f172a;
+    padding: 0.35rem 0;
+}
+
+.eff-access-editor__save {
+    position: sticky;
+    bottom: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding: 0.75rem 0 0;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.eff-access-side-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+}
+
+.eff-jobs-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 1.1rem;
+}
+
+.eff-jobs-tabs__item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.eff-jobs-tabs__item:hover,
+.eff-jobs-tabs__item.is-current {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #fff;
+}
+
+.eff-jobs-category {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.eff-jobs-category summary {
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.eff-jobs-category .eff-access-create {
+    margin-top: 0.65rem;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.eff-jobs-holders {
+    margin: 0 0 1rem;
+}
+
+.eff-jobs-holders h2 {
+    margin: 0 0 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f172a;
+}
+
+.eff-jobs-holders ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.eff-jobs-holders a,
+.eff-jobs-holders li {
+    font-size: 0.875rem;
+    color: #0f172a;
+}
+
+.eff-jobs-holders a {
+    display: inline-flex;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    text-decoration: none;
+}
+
+.eff-jobs-holders a:hover {
+    background: #0f172a;
+    color: #fff;
+}
+
 .eff-roles-page .eff-empty {
     padding: 3.25rem 2rem 2.75rem;
 }
@@ -2763,9 +3016,15 @@ body.eff-sheets--resizing iframe {
     padding: 0 0 1.15rem;
     border-bottom: 1px solid var(--eff-line);
 }
+.eff-fiche-hero__nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem 1.25rem;
+    margin-bottom: 0.85rem;
+}
 .eff-fiche-hero__back {
     display: inline-flex;
-    margin-bottom: 0.85rem;
     font-size: 12px;
     font-weight: 700;
     color: var(--eff-muted);

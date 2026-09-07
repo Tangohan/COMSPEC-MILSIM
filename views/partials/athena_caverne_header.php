@@ -21,6 +21,9 @@ declare(strict_types=1);
 $h = static function (string $value): string {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 };
+$n = static function (string $fr) use ($h): string {
+    return $h(function_exists('i18n_phrase') ? i18n_phrase('nav', $fr) : $fr);
+};
 
 $baseUrl = $baseUrl ?? url('');
 $dashboardTenantLabel = $dashboard_tenant_label ?? null;
@@ -36,7 +39,7 @@ if ($unitLabel === '' && function_exists('portal_header_context')) {
     }
 }
 if ($unitLabel === '') {
-    $unitLabel = 'Communauté';
+    $unitLabel = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Communauté') : 'Communauté';
 }
 
 $currentPath = function_exists('navigation_current_path') ? navigation_current_path() : '';
@@ -75,6 +78,9 @@ $sectionLabelByKey = [
     'events' => 'Manœuvres',
 ];
 $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$currentKey] ?? 'Espace membre'));
+if (function_exists('i18n_phrase')) {
+    $sectionLabel = i18n_phrase('nav', $sectionLabel);
+}
 
 $canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
 $canOpenBackOffice = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
@@ -132,6 +138,12 @@ $navItems = array_values(array_filter(
     $navItems,
     static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
 ));
+if (function_exists('i18n_phrase')) {
+    foreach ($navItems as &$navItemRow) {
+        $navItemRow['label'] = i18n_phrase('nav', (string) ($navItemRow['label'] ?? ''));
+    }
+    unset($navItemRow);
+}
 
 if ($headerAllowsPath('atak') && !$headerAllowsPath('evenements')) {
     $ctaHref = url('atak');
@@ -146,6 +158,9 @@ if (!$headerAllowsPath('evenements') && !$headerAllowsPath('atak')) {
     $ctaHref = url('dashboard');
     $ctaLabel = 'Tableau de bord';
     $ctaActive = $currentKey === 'dashboard';
+}
+if (function_exists('i18n_phrase')) {
+    $ctaLabel = i18n_phrase('nav', (string) $ctaLabel);
 }
 
 $espaceLinks = [
@@ -178,6 +193,13 @@ $espaceLinks = array_values(array_filter(
     $espaceLinks,
     static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
 ));
+if (function_exists('i18n_phrase')) {
+    foreach ($espaceLinks as &$espaceLink) {
+        $espaceLink['label'] = i18n_phrase('nav', (string) ($espaceLink['label'] ?? ''));
+        $espaceLink['desc'] = i18n_phrase('nav', (string) ($espaceLink['desc'] ?? ''));
+    }
+    unset($espaceLink);
+}
 
 $cu = $headerCurrentUser ?? $currentUser ?? null;
 if (!is_array($cu)) {
@@ -188,14 +210,14 @@ if (!is_array($cu)) {
     }
 }
 $headerDisplayName = $cu
-    ? (string) ($cu['display_name'] ?? $cu['email'] ?? 'Opérateur')
-    : trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? 'Opérateur'));
+    ? (string) ($cu['display_name'] ?? $cu['email'] ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Opérateur') : 'Opérateur'))
+    : trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Opérateur') : 'Opérateur')));
 if ($headerDisplayName === '') {
-    $headerDisplayName = 'Opérateur';
+    $headerDisplayName = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Opérateur') : 'Opérateur';
 }
 
-$headerGradeLabel = 'Opérateur';
-$headerGradeLong = 'Opérateur';
+$headerGradeLabel = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Opérateur') : 'Opérateur';
+$headerGradeLong = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Opérateur') : 'Opérateur';
 $headerGradeOtan = null;
 $gr = $headerGrade ?? null;
 
@@ -211,7 +233,9 @@ if ($headerMatricule === null && is_array($pe)) {
     $sn = trim((string) ($pe['service_number'] ?? ''));
     $headerMatricule = $sn !== '' ? $sn : null;
 }
-$headerMatriculeLabel = $headerMatricule ? ('Matricule ' . (string) $headerMatricule) : 'Matricule non attribué';
+$headerMatriculeLabel = $headerMatricule
+    ? ((function_exists('i18n_phrase') ? i18n_phrase('nav', 'Matricule') : 'Matricule') . ' ' . (string) $headerMatricule)
+    : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Matricule non attribué') : 'Matricule non attribué');
 
 $statut = $cu ? (string) ($cu['status'] ?? '') : (string) (\App\Core\Session::get('status') ?? '');
 $statutLabel = match ($statut) {
@@ -221,6 +245,9 @@ $statutLabel = match ($statut) {
     'suspended' => 'Suspendu',
     default => 'Compte',
 };
+if (function_exists('i18n_phrase')) {
+    $statutLabel = i18n_phrase('nav', $statutLabel);
+}
 
 $athenaTenantIdForHeader = (int) (\App\Core\Session::get('tenant_id') ?? 0);
 
@@ -359,13 +386,19 @@ $alertsSeverity = (string) ($alertsCtx['alerts_severity'] ?? 'info');
  */
 $profileFacts = [
     ['label' => 'Grade', 'value' => $headerGradeLong, 'otan' => $headerGradeOtan],
-    ['label' => 'Fonction', 'value' => $fonctionLabel ?? 'Non renseignée'],
-    ['label' => 'Matricule', 'value' => $headerMatricule ? (string) $headerMatricule : 'Non attribué'],
+    ['label' => 'Fonction', 'value' => $fonctionLabel ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Non renseignée') : 'Non renseignée')],
+    ['label' => 'Matricule', 'value' => $headerMatricule ? (string) $headerMatricule : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Non attribué') : 'Non attribué')],
     ['label' => 'Statut', 'value' => $statutLabel],
     ['label' => 'Communauté', 'value' => $unitLabel],
 ];
 if ($affectationLabel !== null && strcasecmp($affectationLabel, $unitLabel) !== 0) {
     $profileFacts[] = ['label' => 'Affectation', 'value' => $affectationLabel];
+}
+if (function_exists('i18n_phrase')) {
+    foreach ($profileFacts as &$profileFact) {
+        $profileFact['label'] = i18n_phrase('nav', (string) ($profileFact['label'] ?? ''));
+    }
+    unset($profileFact);
 }
 
 /**
@@ -404,11 +437,18 @@ $profileMenuItems = array_values(array_filter(
     $profileMenuItems,
     static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
 ));
+if (function_exists('i18n_phrase')) {
+    foreach ($profileMenuItems as &$profileMenuItem) {
+        $profileMenuItem['label'] = i18n_phrase('nav', (string) ($profileMenuItem['label'] ?? ''));
+        $profileMenuItem['desc'] = i18n_phrase('nav', (string) ($profileMenuItem['desc'] ?? ''));
+    }
+    unset($profileMenuItem);
+}
 ?>
 <nav
     class="athena-header"
     role="navigation"
-    aria-label="Navigation principale"
+    aria-label="<?= $n('Navigation principale') ?>"
     data-athena-header
     data-tenant-type="<?= $h($headerTenantType) ?>"
 >
@@ -448,6 +488,10 @@ $profileMenuItems = array_values(array_filter(
                 <span class="athena-header__cta-label"><?= $h($ctaLabel) ?></span>
             </a>
 
+            <div class="athena-header__lang hidden sm:block">
+                <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
+            </div>
+
             <div class="athena-header__menu relative hidden md:block">
                 <button
                     type="button"
@@ -457,15 +501,15 @@ $profileMenuItems = array_values(array_filter(
                     aria-haspopup="true"
                     aria-controls="athena-header-espaces"
                 >
-                    Espaces
+                    <?= $n('Espaces') ?>
                     <svg class="athena-header__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="m6 9 6 6 6-6"/>
                     </svg>
                 </button>
-                <div class="athena-header__panel athena-header__panel--espaces hidden" id="athena-header-espaces" data-athena-panel="espaces" role="region" aria-label="Espaces Athena">
+                <div class="athena-header__panel athena-header__panel--espaces hidden" id="athena-header-espaces" data-athena-panel="espaces" role="region" aria-label="<?= $n('Espaces Athena') ?>">
                     <div class="athena-header__panel-head">
-                        <p class="athena-header__kicker">Commandement</p>
-                        <h3 class="athena-header__panel-title">Espaces</h3>
+                        <p class="athena-header__kicker"><?= $n('Commandement') ?></p>
+                        <h3 class="athena-header__panel-title"><?= $n('Espaces') ?></h3>
                     </div>
                     <div class="athena-header__espaces-grid">
                         <?php foreach ($espaceLinks as $link): ?>
@@ -486,7 +530,7 @@ $profileMenuItems = array_values(array_filter(
                     type="button"
                     class="athena-header__icon-btn"
                     data-athena-toggle="notif"
-                    aria-label="Annonces et alertes"
+                    aria-label="<?= $n('Annonces et alertes') ?>"
                     aria-expanded="false"
                     aria-controls="athena-header-notif"
                     aria-haspopup="dialog"
@@ -503,19 +547,19 @@ $profileMenuItems = array_values(array_filter(
                     id="athena-header-notif"
                     data-athena-panel="notif"
                     role="dialog"
-                    aria-label="Liste des annonces"
+                    aria-label="<?= $n('Liste des annonces') ?>"
                 >
                     <div class="athena-header__notif-card">
                         <div class="athena-header__notif-head">
                             <div>
-                                <p>Centre d’alerte</p>
-                                <h3>Annonces</h3>
+                                <p><?= $n('Centre d’alerte') ?></p>
+                                <h3><?= $n('Annonces') ?></h3>
                             </div>
                             <strong><?= (int) $alertsCount ?></strong>
                         </div>
                         <div class="athena-header__notif-list">
                             <?php if (($alertsCtx['alerts'] ?? []) === []): ?>
-                                <div class="athena-header__notif-empty">Aucune annonce active.</div>
+                                <div class="athena-header__notif-empty"><?= $n('Aucune annonce active.') ?></div>
                             <?php else: ?>
                                 <?php foreach ($alertsCtx['alerts'] as $a): ?>
                                     <?php if (!is_array($a)) {
@@ -532,6 +576,9 @@ $profileMenuItems = array_values(array_filter(
                                         'info' => 'Info',
                                         default => $aKind !== '' ? $aKind : 'Info',
                                     };
+                                    if (function_exists('i18n_phrase') && in_array($aKind, ['urgent', 'discount', 'novelty', 'rappel', 'info', ''], true)) {
+                                        $aKindLabel = i18n_phrase('nav', $aKindLabel);
+                                    }
                                     ?>
                                     <div class="athena-header__notif-item">
                                         <p class="athena-header__notif-meta"><?= $h($aScope !== '' ? $aScope . ' · ' . $aKindLabel : $aKindLabel) ?></p>
@@ -633,8 +680,8 @@ $profileMenuItems = array_values(array_filter(
                             </dl>
 
                             <?php if ($athenaSessionId !== ''): ?>
-                                <p class="athena-header__profile-sessionid" title="Identifiant discret de votre session Athena">
-                                    Session <?= $h($athenaSessionId) ?>
+                                <p class="athena-header__profile-sessionid" title="<?= $n('Identifiant discret de votre session Athena') ?>">
+                                    <?= $n('Session') ?> <?= $h($athenaSessionId) ?>
                                 </p>
                             <?php endif; ?>
 
@@ -644,7 +691,7 @@ $profileMenuItems = array_values(array_filter(
                                 <?php endforeach; ?>
                                 <form method="post" action="<?= $h(rtrim((string) $baseUrl, '/') . '/logout') ?>" class="athena-header__logout-form">
                                     <?= \App\Core\Csrf::field() ?>
-                                    <button type="submit" class="danger"><span>Déconnexion</span><em>Fermer la session</em></button>
+                                    <button type="submit" class="danger"><span><?= $n('Déconnexion') ?></span><em><?= $n('Fermer la session') ?></em></button>
                                 </form>
                             </div>
                         </div>

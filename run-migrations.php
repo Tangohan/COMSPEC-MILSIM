@@ -3324,6 +3324,22 @@ try {
     echo '  [ATTENTION] community_access_profiles_v1 : ' . $e->getMessage() . "\n";
 }
 
+$memberBackofficeAtakMigrate = require $root . '/bootstrap/member_backoffice_atak_view_migration.php';
+try {
+    echo "Migration member_backoffice_atak_view (consultation personnelle ATAK)...\n";
+    $memberBackofficeAtakMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] member_backoffice_atak_view : ' . $e->getMessage() . "\n";
+}
+
+$memberOperatorDailyMigrate = require $root . '/bootstrap/member_operator_daily_rights_migration.php';
+try {
+    echo "Migration member_operator_daily_rights (pack Membre / Opérateur)...\n";
+    $memberOperatorDailyMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] member_operator_daily_rights : ' . $e->getMessage() . "\n";
+}
+
 $unitDerivedJobRolesMigrate = require $root . '/bootstrap/unit_derived_job_roles_migration.php';
 try {
     echo "Migration unit_derived_job_roles (emplois depuis l’ORBAT)...\n";

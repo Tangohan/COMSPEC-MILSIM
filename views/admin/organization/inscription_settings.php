@@ -38,6 +38,8 @@ $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::n
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
+$settingsHubEmbed = !empty($settingsHubEmbedInscription);
+
 $renderToggle = static function (
     string $label,
     string $help,
@@ -64,6 +66,7 @@ $renderToggle = static function (
     <?php
 };
 ?>
+<?php if (!$settingsHubEmbed): ?>
 <div class="bo-community-settings">
 
     <?php if ($discordInviteMissing): ?>
@@ -76,10 +79,12 @@ $renderToggle = static function (
         include base_path('views/partials/bo_dsfr_notice.php');
         ?>
     <?php endif; ?>
+<?php endif; ?>
 
     <form method="post" action="<?= $h($formAction) ?>" id="bo-inscription-settings-form">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="em_settings_enlistment_partial" value="1">
+        <input type="hidden" name="settings_tab" value="inscription">
 
         <div class="bo-settings-grid">
 
@@ -159,6 +164,7 @@ $renderToggle = static function (
             </section>
 
             <section class="ath-card ath-rise bo-setting-group" id="coordonnees">
+                <span id="contact"></span>
                 <p class="bo-setting-group__kicker">Contact</p>
                 <h2 class="bo-setting-group__title">Coordonnées pour les candidats</h2>
                 <div class="bo-setting-group__rows">
@@ -244,11 +250,14 @@ $renderToggle = static function (
 
         </div>
 
+        <?php if (!$settingsHubEmbed): ?>
         <div class="bo-settings-save">
             <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
         </div>
+        <?php endif; ?>
     </form>
 
+    <?php if (!$settingsHubEmbed): ?>
     <p class="bo-settings-note">
         Identité et vitrine :
         <a href="<?= $h(url('back-office/community')) ?>">Identité &amp; options</a>
@@ -275,3 +284,4 @@ $renderToggle = static function (
     });
 })();
 </script>
+    <?php endif; ?>

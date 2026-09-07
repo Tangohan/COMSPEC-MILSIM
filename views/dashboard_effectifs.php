@@ -69,7 +69,7 @@ require base_path('views/partials/alert_banners.php');
             <p class="mb-8 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base">
                 Espace dédié au registre RH, au forum public et à la carte tactique. Formations et recrutement ne font pas partie de ce profil.
                 <?php if (function_exists('can') && (can('admin.organization') || can('admin.access'))): ?>
-                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#org-profil', ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline underline-offset-2">Vérifier ou réappliquer le profil</a>
+                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline underline-offset-2">Vérifier ou réappliquer le profil</a>
                 <?php endif; ?>
             </p>
             <div class="flex flex-col flex-wrap gap-3 sm:flex-row">

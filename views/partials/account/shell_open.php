@@ -186,12 +186,22 @@ $navGroups = [
     ],
 ];
 
+if (function_exists('i18n_translate_nav_item')) {
+    $navGroups = array_map('i18n_translate_nav_item', $navGroups);
+}
+if (function_exists('i18n_phrase')) {
+    $accountTitle = i18n_phrase('nav', $accountTitle);
+    if ($accountLead !== '') {
+        $accountLead = i18n_phrase('nav', $accountLead);
+    }
+}
+
 ?>
 <div class="account-hub">
     <header class="account-hub__hero">
         <div class="account-hub__hero-inner">
             <div>
-                <p class="account-hub__eyebrow">Espace personnel</p>
+                <p class="account-hub__eyebrow"><?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Espace personnel') : 'Espace personnel', ENT_QUOTES, 'UTF-8') ?></p>
                 <h1 class="account-hub__title"><?= htmlspecialchars($accountTitle, ENT_QUOTES, 'UTF-8') ?></h1>
                 <?php if ($accountLead !== ''): ?>
                 <p class="account-hub__lead"><?= htmlspecialchars($accountLead, ENT_QUOTES, 'UTF-8') ?></p>
@@ -221,10 +231,10 @@ $navGroups = [
             <div class="account-hub__hero-actions">
                 <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ghost">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    Tableau de bord
+                    <?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tableau de bord') : 'Tableau de bord', ENT_QUOTES, 'UTF-8') ?>
                 </a>
                 <?php if ($accountNavKey !== 'overview'): ?>
-                <a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ghost">Vue d’ensemble</a>
+                <a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ghost"><?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Vue d’ensemble') : 'Vue d’ensemble', ENT_QUOTES, 'UTF-8') ?></a>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
@@ -232,8 +242,8 @@ $navGroups = [
     </header>
 
     <div class="account-hub__body">
-        <nav class="account-hub__nav" aria-label="Sections du compte">
-            <p class="account-hub__nav-label">Navigation</p>
+        <nav class="account-hub__nav" aria-label="<?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Sections du compte') : 'Sections du compte', ENT_QUOTES, 'UTF-8') ?>">
+            <p class="account-hub__nav-label"><?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Navigation') : 'Navigation', ENT_QUOTES, 'UTF-8') ?></p>
             <?php foreach ($navGroups as $group): ?>
             <div class="account-hub__nav-group">
                 <p class="account-hub__nav-group-title"><?= htmlspecialchars((string) $group['title'], ENT_QUOTES, 'UTF-8') ?></p>

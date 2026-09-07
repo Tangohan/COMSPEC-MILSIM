@@ -26,5 +26,7 @@ final class CommunityAccessCollapseAssetTest extends TestCase
 
         self::assertStringNotContainsString('INSERT INTO personnel_job_role_permissions', $jobs);
         self::assertStringContainsString('community_access_roles_purge_v1_migration.php', $run);
+        self::assertStringContainsString('member_backoffice_atak_view_migration.php', $run);
+        self::assertStringContainsString('member_operator_daily_rights_migration.php', $run);
     }
 }

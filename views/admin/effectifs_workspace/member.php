@@ -134,12 +134,12 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
     }
 }
 
-$memberHubUserId = $id;
-$memberHubCurrent = 'effectifs';
-$memberHubTheme = 'lms';
 ?>
 <section class="eff-fiche-hero">
-    <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
+    <div class="eff-fiche-hero__nav">
+        <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
+        <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche</a>
+    </div>
     <div class="eff-fiche-hero__row">
         <span class="eff-fiche-hero__avatar" aria-hidden="true">
             <?php if ($avatarUrl !== ''): ?>
@@ -179,21 +179,18 @@ $memberHubTheme = 'lms';
             </div>
         </div>
     </div>
-    <?php require base_path('views/partials/member_hub_nav.php'); ?>
 </section>
 
+<nav class="bo-eff-jump" aria-label="Rubriques du dossier">
+    <strong>Dossier RH complet</strong>
+    <a href="#qualifications">Qualifications</a>
+    <a href="#absences">Absences</a>
+    <a href="#documents-rh">Documents RH</a>
+    <a href="#mobilite">Mobilité</a>
+    <a href="#historique-rh">Historique</a>
+</nav>
+
 <div class="eff-fiche-grid">
-    <article class="eff-card" style="grid-column:1/-1">
-        <h2 class="eff-card__title">Dossier RH complet</h2>
-        <p class="eff-card__lead">Toutes les informations et toutes les actions RH de ce membre sont réunies sur cette fiche Effectifs. Les espaces transverses restent accessibles pour ajouter une pièce ou traiter une demande, sans quitter le bureau Effectifs.</p>
-        <div class="eff-tags">
-            <a class="eff-btn eff-btn--ghost" href="#qualifications">Qualifications</a>
-            <a class="eff-btn eff-btn--ghost" href="#absences">Absences</a>
-            <a class="eff-btn eff-btn--ghost" href="#documents-rh">Documents RH</a>
-            <a class="eff-btn eff-btn--ghost" href="#mobilite">Mobilité</a>
-            <a class="eff-btn eff-btn--ghost" href="#historique-rh">Historique</a>
-        </div>
-    </article>
     <article class="eff-card">
         <h2 class="eff-card__title">Situation</h2>
         <dl class="eff-dl">
@@ -384,8 +381,10 @@ $memberHubTheme = 'lms';
         $accessProfiles = is_array($accessProfiles ?? null) ? $accessProfiles : \App\Services\Rbac\CommunityAccessProfiles::definitions();
         ?>
         <p class="eff-card__lead">
-            Un seul niveau par personne. Aujourd’hui :
-            <strong><?= htmlspecialchars(\App\Services\Rbac\CommunityAccessProfiles::label($currentAccessKey), ENT_QUOTES, 'UTF-8') ?></strong>.
+            Un seul niveau par personne.
+            <?php if ($roleNames !== []): ?>
+            Aujourd’hui : <strong><?= htmlspecialchars(implode(', ', $roleNames), ENT_QUOTES, 'UTF-8') ?></strong>.
+            <?php endif; ?>
         </p>
         <?php if ($canManageRoles && $orgRoles !== []): ?>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
@@ -393,19 +392,20 @@ $memberHubTheme = 'lms';
                 <input type="hidden" name="return_to" value="member">
                 <fieldset class="eff-role-grid">
                     <legend>Attribuer l’accès</legend>
-                    <?php foreach ($accessProfiles as $profile): ?>
-                        <?php $pkey = (string) ($profile['key'] ?? ''); ?>
+                    <?php foreach ($orgRoles as $accessRole): ?>
+                        <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
                         <label>
-                            <input type="radio" name="access_key" value="<?= htmlspecialchars($pkey, ENT_QUOTES, 'UTF-8') ?>" <?= $currentAccessKey === $pkey ? 'checked' : '' ?>>
+                            <input type="radio" name="access_role_id" value="<?= $rid ?>" <?= (int) ($currentAccessRoleId ?? 0) === $rid ? 'checked' : '' ?>>
                             <span>
-                                <strong><?= htmlspecialchars((string) ($profile['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
-                                <em><?= htmlspecialchars((string) ($profile['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
+                                <strong><?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                <em><?= htmlspecialchars((string) ($accessRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
                             </span>
                         </label>
                     <?php endforeach; ?>
                 </fieldset>
                 <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’accès</button>
             </form>
+            <p class="eff-card__hint"><a href="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>">Corriger ce qu’un niveau a le droit de faire</a></p>
         <?php endif; ?>
     </article>
 

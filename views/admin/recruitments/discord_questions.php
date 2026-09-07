@@ -26,7 +26,7 @@ $hintClass = 'mt-1.5 text-xs leading-relaxed text-slate-500';
         <p class="text-sm font-bold text-amber-950">Lien Discord manquant</p>
         <p class="mt-1 text-sm leading-relaxed text-amber-900">
             Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
-            <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="font-semibold underline decoration-amber-400 hover:text-amber-950">Renseigner le lien dans les paramètres →</a>
+            <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="font-semibold underline decoration-amber-400 hover:text-amber-950">Renseigner le lien dans les paramètres →</a>
         </p>
     </div>
     <?php endif; ?>

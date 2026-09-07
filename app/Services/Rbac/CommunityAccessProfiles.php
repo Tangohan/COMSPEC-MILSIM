@@ -9,10 +9,10 @@ use App\Authorization\TenantPermissionCatalog;
 use App\Services\Admin\TenantRolePermissionPresetService;
 
 /**
- * Accès communauté : trois profils exclusifs.
+ * Accès communauté : trois modèles de départ (Membre, RH, Gestionnaire), droits personnalisables.
  *
- * Les habilitations techniques (catalogue) restent en base : le portail en a besoin.
- * L’administrateur ne choisit plus que Membre, Ressources humaines ou Gestionnaire.
+ * Les habilitations techniques restent en base : le portail en a besoin.
+ * Le responsable coche ce que chaque niveau a le droit de faire, et peut en créer d’autres.
  */
 final class CommunityAccessProfiles
 {
@@ -23,6 +23,7 @@ final class CommunityAccessProfiles
     public const SLUG_MANAGER = 'community_owner';
     public const SLUG_HR = 'hr';
     public const SLUG_MEMBER = 'member';
+    public const CUSTOM_PREFIX = 'access-custom-';
 
     /**
      * @return list<string>
@@ -54,6 +55,80 @@ final class CommunityAccessProfiles
         };
     }
 
+    public static function isCustomAccessSlug(string $slug): bool
+    {
+        return str_starts_with(strtolower(trim($slug)), self::CUSTOM_PREFIX);
+    }
+
+    public static function isAssignableAccessSlug(string $slug): bool
+    {
+        $slug = strtolower(trim($slug));
+
+        return self::isAccessSlug($slug) || self::isCustomAccessSlug($slug);
+    }
+
+    /**
+     * @param list<string> $slugs
+     */
+    public static function hasCustomAccessSlug(array $slugs): bool
+    {
+        foreach ($slugs as $slug) {
+            if (self::isCustomAccessSlug((string) $slug)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function moduleLabel(string $module): string
+    {
+        return match (strtolower(trim($module))) {
+            'personnel' => 'Dossiers et effectifs',
+            'admin' => 'Administration de la communauté',
+            'forum' => 'Forum',
+            'documents' => 'Documents',
+            'training' => 'Formations',
+            'operations' => 'Opérations',
+            'atak' => 'Terminaux et liaison',
+            'finances' => 'Finances',
+            'intel' => 'Renseignement',
+            'cooperation' => 'Coopération',
+            'interteam' => 'Missions entre unités',
+            'organization' => 'Organisation',
+            'dashboard' => 'Tableau de bord',
+            'comms' => 'Communications',
+            'media' => 'Médias',
+            'courrier' => 'Courrier',
+            default => 'Autres accès',
+        };
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function moduleOrder(): array
+    {
+        return [
+            'personnel',
+            'admin',
+            'organization',
+            'forum',
+            'documents',
+            'training',
+            'operations',
+            'atak',
+            'intel',
+            'cooperation',
+            'interteam',
+            'dashboard',
+            'comms',
+            'media',
+            'courrier',
+            'finances',
+        ];
+    }
+
     public static function slugToKey(string $slug): string
     {
         return match (strtolower(trim($slug))) {
@@ -81,7 +156,7 @@ final class CommunityAccessProfiles
                 'key' => self::MEMBER,
                 'slug' => self::SLUG_MEMBER,
                 'name' => 'Membre',
-                'description' => 'Accès courant : forum, documents standards, formations en consultation, annuaire et fiche.',
+                'description' => 'Accès courant : forum, documents standards, formations en consultation, annuaire, fiche, back-office personnel et données ATAK.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 1,
@@ -208,11 +283,22 @@ final class CommunityAccessProfiles
             'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
             'documents.view', 'documents.download.standard',
             'training.view',
-            'personnel.profile.view',
+            'personnel.profile.view', 'personnel.progression.view',
             'operational.board.view',
             'organization.orbat.view',
             'operations.tactical.view',
             'operations.missions.view',
+            'operations.sitrep.view', 'operations.sitrep.create',
+            'operations.aar.view', 'operations.readiness.view',
+            'operations.medical.view', 'operations.logistics.view',
+            'operations.comms.view', 'operations.doctrine.view',
+            'doctrine.view', 'media.view',
+            'intel.transmission.view', 'intel.transmission.contribute',
+            'cooperation.missions.view',
+            'cooperation.exchange.read', 'cooperation.exchange.write',
+            'cooperation.rex.submit', 'cooperation.rex.read',
+            'admin.backoffice.view',
+            'atak.terminals.view',
         ];
     }
 
@@ -222,7 +308,6 @@ final class CommunityAccessProfiles
     public static function hrPermissionSlugs(): array
     {
         return array_values(array_unique(array_merge(self::memberPermissionSlugs(), [
-            'admin.backoffice.view',
             'admin.members.view',
             'admin.members.manage',
             'admin.members.invite',

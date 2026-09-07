@@ -13,8 +13,9 @@ use App\Services\Personnel\PersonnelDutyPositionService;
 use PDO;
 
 /**
- * Convertit une communauté vers les trois profils d’accès, sans inventer de droits.
- * Les copies hors Membre / RH / Gestionnaire sont retirées.
+ * Convertit une communauté vers les modèles d’accès (Membre / RH / Gestionnaire).
+ * Les copies hors modèles et hors niveaux créés par la communauté sont retirées.
+ * Les packs de départ ne sont posés que si le niveau n’a encore aucun droit.
  */
 final class CommunityAccessCollapseService
 {
@@ -46,6 +47,9 @@ final class CommunityAccessCollapseService
         if ($slug === '') {
             return false;
         }
+        if (CommunityAccessProfiles::isCustomAccessSlug($slug)) {
+            return true;
+        }
 
         return in_array($slug, self::retainedTenantSlugs(), true);
     }
@@ -73,7 +77,7 @@ final class CommunityAccessCollapseService
             return;
         }
 
-        $this->applyPermissionPacks($tenantId, $ids);
+        $this->applyPermissionPacksIfEmpty($tenantId, $ids);
         $this->stripNonAccessRolePermissions($tenantId);
         $this->clearJobRolePermissionLinks($tenantId);
         $this->remapUsers($tenantId, $ids);
@@ -100,7 +104,7 @@ final class CommunityAccessCollapseService
     /**
      * @param array<string, int> $ids
      */
-    private function applyPermissionPacks(int $tenantId, array $ids): void
+    private function applyPermissionPacksIfEmpty(int $tenantId, array $ids): void
     {
         $permIds = [];
         $q = $this->pdo->prepare('SELECT id, slug FROM permissions WHERE tenant_id = ?');
@@ -109,14 +113,17 @@ final class CommunityAccessCollapseService
             $permIds[(string) ($row['slug'] ?? '')] = (int) ($row['id'] ?? 0);
         }
 
-        $del = $this->pdo->prepare('DELETE FROM role_permissions WHERE role_id = ?');
+        $countSt = $this->pdo->prepare('SELECT COUNT(*) FROM role_permissions WHERE role_id = ?');
         $ins = $this->pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
         foreach (CommunityAccessProfiles::keys() as $key) {
             $roleId = $ids[$key] ?? 0;
             if ($roleId < 1) {
                 continue;
             }
-            $del->execute([$roleId]);
+            $countSt->execute([$roleId]);
+            if ((int) $countSt->fetchColumn() > 0) {
+                continue;
+            }
             foreach (CommunityAccessProfiles::permissionSlugsFor($key) as $slug) {
                 $pid = $permIds[$slug] ?? 0;
                 if ($pid > 0) {
@@ -130,11 +137,12 @@ final class CommunityAccessCollapseService
     {
         $access = CommunityAccessProfiles::slugs();
         $ph = implode(',', array_fill(0, count($access), '?'));
+        $like = CommunityAccessProfiles::CUSTOM_PREFIX . '%';
         $this->pdo->prepare(
             "DELETE rp FROM role_permissions rp
              INNER JOIN roles r ON r.id = rp.role_id
-             WHERE r.tenant_id = ? AND r.slug NOT IN ($ph)"
-        )->execute(array_merge([$tenantId], $access));
+             WHERE r.tenant_id = ? AND r.slug NOT IN ($ph) AND r.slug NOT LIKE ?"
+        )->execute(array_merge([$tenantId], $access, [$like]));
     }
 
     private function clearJobRolePermissionLinks(int $tenantId): void
@@ -169,6 +177,9 @@ final class CommunityAccessCollapseService
             }
             $currentIds = $this->userRepository->listOrganizationRoleIdsForUser($userId);
             $slugs = $this->slugsForRoleIds($tenantId, $currentIds);
+            if (CommunityAccessProfiles::hasCustomAccessSlug($slugs)) {
+                continue;
+            }
             $key = CommunityAccessProfiles::resolveFromSlugs($slugs);
             $targetId = $ids[$key] ?? ($ids[CommunityAccessProfiles::MEMBER] ?? 0);
             if ($targetId < 1) {
@@ -188,10 +199,11 @@ final class CommunityAccessCollapseService
     {
         $keep = self::retainedTenantSlugs();
         $ph = implode(',', array_fill(0, count($keep), '?'));
+        $like = CommunityAccessProfiles::CUSTOM_PREFIX . '%';
         $st = $this->pdo->prepare(
-            "SELECT id FROM roles WHERE tenant_id = ? AND slug NOT IN ($ph)"
+            "SELECT id FROM roles WHERE tenant_id = ? AND slug NOT IN ($ph) AND slug NOT LIKE ?"
         );
-        $st->execute(array_merge([$tenantId], $keep));
+        $st->execute(array_merge([$tenantId], $keep, [$like]));
         $leftover = array_values(array_filter(
             array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []),
             static fn (int $id): bool => $id > 0

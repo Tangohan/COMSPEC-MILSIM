@@ -349,6 +349,135 @@ if (!function_exists('__')) {
     }
 }
 
+if (!function_exists('t')) {
+    /**
+     * Traduction avec repli (évite d’afficher la clé technique si le catalogue EN manque).
+     *
+     * @param array<string, scalar|null> $replace
+     */
+    function t(string $key, array $replace = [], ?string $fallback = null): string
+    {
+        $translated = __($key, $replace);
+        if ($translated !== $key) {
+            return $translated;
+        }
+        if ($fallback === null || $fallback === '') {
+            return $translated;
+        }
+        if ($replace === []) {
+            return $fallback;
+        }
+        $search = [];
+        $with = [];
+        foreach ($replace as $k => $v) {
+            $search[] = ':' . $k;
+            $with[] = (string) ($v ?? '');
+        }
+
+        return str_replace($search, $with, $fallback);
+    }
+}
+
+if (!function_exists('i18n_slug')) {
+    /**
+     * Clé stable à partir d’une phrase française (sans iconv Windows).
+     */
+    function i18n_slug(string $text): string
+    {
+        $ascii = strtr(trim($text), [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c', 'ñ' => 'n', 'ÿ' => 'y', 'œ' => 'oe', 'æ' => 'ae',
+            'À' => 'a', 'Á' => 'a', 'Â' => 'a', 'Ä' => 'a',
+            'È' => 'e', 'É' => 'e', 'Ê' => 'e', 'Ë' => 'e',
+            'Ì' => 'i', 'Í' => 'i', 'Î' => 'i', 'Ï' => 'i',
+            'Ò' => 'o', 'Ó' => 'o', 'Ô' => 'o', 'Ö' => 'o',
+            'Ù' => 'u', 'Ú' => 'u', 'Û' => 'u', 'Ü' => 'u',
+            'Ç' => 'c', 'Ñ' => 'n',
+            '’' => ' ', '‘' => ' ', 'ʼ' => ' ', "'" => ' ', '`' => ' ',
+            '«' => ' ', '»' => ' ', '—' => ' ', '–' => ' ', '−' => ' ',
+            '…' => ' ', '≠' => ' ', '→' => ' ', '·' => ' ',
+        ]);
+        $ascii = strtolower($ascii);
+        $slug = preg_replace('/[^a-z0-9]+/', '_', $ascii) ?? '';
+
+        return trim($slug, '_');
+    }
+}
+
+if (!function_exists('i18n_phrase')) {
+    /**
+     * Traduit une phrase source française via lang/{locale}/{group}.php.
+     * En français, renvoie la phrase telle quelle (avec placeholders).
+     *
+     * @param array<string, scalar|null> $replace
+     */
+    function i18n_phrase(string $group, string $fr, array $replace = []): string
+    {
+        $fr = trim($fr);
+        if ($fr === '') {
+            return '';
+        }
+        $locale = function_exists('locale') ? locale() : 'fr';
+        if ($locale === 'fr') {
+            if ($replace === []) {
+                return $fr;
+            }
+            $search = [];
+            $with = [];
+            foreach ($replace as $k => $v) {
+                $search[] = ':' . $k;
+                $with[] = (string) ($v ?? '');
+            }
+
+            return str_replace($search, $with, $fr);
+        }
+        $slug = i18n_slug($fr);
+        if ($slug === '') {
+            return $fr;
+        }
+
+        return t($group . '.' . $slug, $replace, $fr);
+    }
+}
+
+if (!function_exists('i18n_translate_nav_item')) {
+    /**
+     * Localise les libellés d’un nœud de menu (label, hint, titres, enfants).
+     *
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    function i18n_translate_nav_item(array $item): array
+    {
+        if (!empty($item['skip_i18n'])) {
+            return $item;
+        }
+        foreach (['label', 'hint', 'desc', 'description', 'title', 'lead', 'eyebrow', 'cta_label', 'empty_message', 'placeholder', 'group', 'subtitle'] as $k) {
+            if (isset($item[$k]) && is_string($item[$k]) && $item[$k] !== '') {
+                $item[$k] = i18n_phrase('nav', $item[$k]);
+            }
+        }
+        foreach (['children', 'items', 'links', 'sections', 'live'] as $listKey) {
+            if (!isset($item[$listKey]) || !is_array($item[$listKey])) {
+                continue;
+            }
+            $item[$listKey] = array_map(
+                static fn ($row) => is_array($row) ? i18n_translate_nav_item($row) : $row,
+                $item[$listKey]
+            );
+        }
+        if (isset($item['featured']) && is_array($item['featured'])) {
+            $item['featured'] = i18n_translate_nav_item($item['featured']);
+        }
+
+        return $item;
+    }
+}
+
 if (!function_exists('locale_switch_url')) {
     /** URL pour basculer la langue puis revenir à la page courante (ou un chemin donné). */
     function locale_switch_url(string $locale, ?string $redirectPath = null): string
@@ -559,7 +688,7 @@ if (!function_exists('privacy_request_inbox_email')) {
 
 if (!function_exists('demo_feedback_inbox_email')) {
     /**
-     * Adresse qui reçoit le questionnaire de retour après une démonstration.
+     * Adresse qui reçoit le questionnaire de retour de la preview Athena.
      * Priorité : DEMO_NDA_FEEDBACK_EMAIL, APP_PUBLISHER_CONTACT_EMAIL, PRIVACY_REQUEST_EMAIL.
      */
     function demo_feedback_inbox_email(): ?string

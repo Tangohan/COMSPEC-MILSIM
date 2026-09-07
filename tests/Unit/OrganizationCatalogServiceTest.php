@@ -240,4 +240,96 @@ final class OrganizationCatalogServiceTest extends TestCase
         $archive = $svc->archivePrivate(11, OrganizationKitDefinitions::INFANTRY_LIGHT, 1);
         self::assertFalse($archive['ok']);
     }
+
+    public function testUsSofKitAddsJobsWithoutAccessRoles(): void
+    {
+        $kit = OrganizationKitDefinitions::usSof();
+        $itemRow = [
+            'id' => 12,
+            'code' => OrganizationKitDefinitions::US_SOF,
+            'title' => $kit['title'],
+            'summary' => $kit['summary'],
+            'version' => 1,
+            'visibility' => 'official',
+            'owner_tenant_id' => null,
+            'definition_json' => json_encode($kit),
+        ];
+
+        $catalog = $this->createMock(OrganizationCatalogRepository::class);
+        $catalog->method('tablesExist')->willReturn(true);
+        $catalog->method('upsertOfficial')->willReturn(12);
+        $catalog->method('findByCode')->willReturn($itemRow);
+        $catalog->expects($this->once())->method('recordInstall');
+
+        $units = $this->createMock(UnitRepository::class);
+        $units->method('findBySlugForTenant')->willReturn(null);
+        $units->method('allForTenant')->willReturn([]);
+        $units->method('create')->willReturnCallback(
+            static function (int $tenantId, array $data): array {
+                static $id = 5000;
+
+                return ['id' => ++$id, 'tenant_id' => $tenantId, 'name' => $data['name'] ?? ''];
+            }
+        );
+
+        $createdJobs = 0;
+        $jobRoles = $this->createMock(PersonnelJobRoleRepository::class);
+        $jobRoles->method('tablesExist')->willReturn(true);
+        $jobRoles->method('findCategoryIdBySlug')->willReturn(null);
+        $jobRoles->method('findRoleIdBySlug')->willReturn(null);
+        $jobRoles->method('createCategory')->willReturnCallback(
+            static function (): int {
+                static $id = 6000;
+
+                return ++$id;
+            }
+        );
+        $jobRoles->method('createRole')->willReturnCallback(
+            static function () use (&$createdJobs): int {
+                static $id = 7000;
+                $createdJobs++;
+
+                return ++$id;
+            }
+        );
+
+        $roles = $this->createMock(RoleRepository::class);
+        $roles->expects($this->never())->method('createOrganizationRole');
+        $roles->method('getIdBySlug')->willReturn(null);
+        $roles->method('forTenantOrganization')->willReturn([]);
+
+        $config = $this->createMock(ConfigurationUpdateService::class);
+        $config->expects($this->exactly(2))->method('markCompleted')->with(
+            33,
+            $this->logicalOr('ORGANIZATION_CATALOG_V1', 'JOB_CATALOGS_FR_US_V1'),
+            8
+        );
+
+        $tenants = $this->createMock(TenantRepository::class);
+        $tenants->method('getSettings')->willReturn([]);
+        $tenants->method('mergeSettings');
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo->method('inTransaction')->willReturn(false);
+        $pdo->expects($this->once())->method('beginTransaction');
+        $pdo->expects($this->once())->method('commit');
+
+        $svc = new OrganizationCatalogService(
+            $catalog,
+            $units,
+            $jobRoles,
+            $roles,
+            $this->createMock(PermissionRepository::class),
+            $this->createMock(TenantRolePermissionPresetService::class),
+            $tenants,
+            $this->createMock(AuditService::class),
+            $config,
+            $pdo
+        );
+
+        $out = $svc->apply(33, OrganizationKitDefinitions::US_SOF, ['orbat' => true, 'grades' => true, 'functions' => true, 'roles' => true], 8);
+        self::assertTrue($out['ok']);
+        self::assertSame(count($kit['job_roles']), $createdJobs);
+        self::assertStringNotContainsString('rôle', strtolower((string) ($out['report']['summary'] ?? '')));
+    }
 }

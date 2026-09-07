@@ -288,18 +288,19 @@ $formatDateFr = static function (?string $raw): string {
                 <section class="bo-user-edit__panel" aria-labelledby="sec-grade">
                     <h2 id="sec-grade" class="bo-user-edit__panel-title">Grade et doctrine</h2>
                     <p class="bo-user-edit__panel-lead">Référentiel de grade affiché côté compte administratif.</p>
-                    <div class="bo-user-edit__grid">
+                    <div class="bo-user-edit__grid" data-grade-doctrine>
                         <div>
                             <label for="nationality_code" class="bo-user-edit__label">Nationalité / doctrine</label>
-                            <select id="nationality_code" name="nationality_code" class="bo-user-edit__select">
+                            <select id="nationality_code" name="nationality_code" data-grade-doctrine-nation class="bo-user-edit__select">
                                 <option value="">Non renseignée</option>
                                 <option value="FR" <?= ($user['nationality_code'] ?? '') === 'FR' ? 'selected' : '' ?>>Française</option>
                                 <option value="US" <?= ($user['nationality_code'] ?? '') === 'US' ? 'selected' : '' ?>>Américaine</option>
                             </select>
+                            <p class="bo-user-edit__hint">La catégorie et le grade se mettent à jour selon la doctrine choisie.</p>
                         </div>
                         <div>
                             <label for="professional_category_code" class="bo-user-edit__label">Catégorie de personnel</label>
-                            <select id="professional_category_code" name="professional_category_code" class="bo-user-edit__select">
+                            <select id="professional_category_code" name="professional_category_code" data-grade-doctrine-category class="bo-user-edit__select">
                                 <option value="">Non renseignée</option>
                                 <?php foreach ($gradeCategories as $c): ?>
                                 <option value="<?= htmlspecialchars((string) $c['code'], ENT_QUOTES, 'UTF-8') ?>" <?= ($user['professional_category_code'] ?? '') === $c['code'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $c['label'], ENT_QUOTES, 'UTF-8') ?></option>
@@ -308,10 +309,15 @@ $formatDateFr = static function (?string $raw): string {
                         </div>
                         <div>
                             <label for="grade_id" class="bo-user-edit__label">Grade</label>
-                            <select id="grade_id" name="grade_id" class="bo-user-edit__select">
+                            <select id="grade_id" name="grade_id" data-grade-doctrine-grade class="bo-user-edit__select">
                                 <option value="">Aucun grade</option>
                                 <?php foreach ($grades as $g): ?>
-                                <option value="<?= (int) $g['id'] ?>" <?= (int) ($user['grade_id'] ?? 0) === (int) $g['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) ($g['label_long'] ?? $g['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                <option
+                                    value="<?= (int) $g['id'] ?>"
+                                    data-country="<?= htmlspecialchars((string) ($g['country_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                    data-category="<?= htmlspecialchars((string) ($g['category_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                    <?= (int) ($user['grade_id'] ?? 0) === (int) $g['id'] ? 'selected' : '' ?>
+                                ><?= htmlspecialchars((string) ($g['label_long'] ?? $g['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -324,6 +330,10 @@ $formatDateFr = static function (?string $raw): string {
                             </select>
                         </div>
                     </div>
+                    <?php if (empty($GLOBALS['grade_doctrine_cascade_js'])): ?>
+                    <?php $GLOBALS['grade_doctrine_cascade_js'] = true; ?>
+                    <script defer src="<?= htmlspecialchars(asset_url('assets/js/grade-doctrine-cascade.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+                    <?php endif; ?>
                 </section>
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-roles">

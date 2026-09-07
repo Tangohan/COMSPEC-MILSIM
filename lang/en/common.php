@@ -30,4 +30,13 @@ return [
     'your_rights' => 'Your rights',
     'account' => 'Account',
     'skip_to_content' => 'Skip to content',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'search' => 'Search',
+    'close' => 'Close',
+    'settings' => 'Settings',
+    'help' => 'Help',
+    'confirm' => 'Confirm',
+    'yes' => 'Yes',
+    'no' => 'No',
 ];

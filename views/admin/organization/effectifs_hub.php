@@ -140,40 +140,16 @@ $hubRows = [
         'ok' => $canStructure,
     ],
     [
-        'id' => 'roles',
-        'title' => 'Rôles et droits',
-        'desc' => 'Rôles de gouvernance et opérationnels, avec le détail des habilitations associées.',
-        'domain' => 'Rôles et droits',
+        'id' => 'access',
+        'title' => 'Niveaux d’accès',
+        'desc' => 'Ce qu’un membre a le droit de faire sur le portail. Distinct des emplois du dossier.',
+        'domain' => 'Accès',
         'domainKey' => 'roles',
-        'href' => url('back-office/roles'),
-        'volume' => $fmtCount($rolesCount, 'rôle', 'rôles'),
-        'cta' => 'Voir les rôles',
+        'href' => function_exists('effectifs_workspace_url') ? effectifs_workspace_url('roles') : url('back-office/ressources/effectifs/roles'),
+        'volume' => 'Un niveau par personne',
+        'cta' => 'Ouvrir les accès',
         'primary' => false,
         'ok' => $canRolesList,
-    ],
-    [
-        'id' => 'roles-canvas',
-        'title' => 'Toile des rôles et fonctions',
-        'desc' => 'Visualisez comment les rôles de la communauté se relient, à partir du référentiel des fonctions.',
-        'domain' => 'Rôles et droits',
-        'domainKey' => 'roles',
-        'href' => url('back-office/roles-functions'),
-        'volume' => 'Vue relationnelle',
-        'cta' => 'Ouvrir la toile',
-        'primary' => false,
-        'ok' => $canRolesCanvas,
-    ],
-    [
-        'id' => 'presets',
-        'title' => 'Profils de permissions',
-        'desc' => 'Appliquez en une fois un ensemble cohérent de droits sur un rôle existant.',
-        'domain' => 'Rôles et droits',
-        'domainKey' => 'roles',
-        'href' => url('back-office/roles/presets'),
-        'volume' => 'Modèles prêts à l’emploi',
-        'cta' => 'Appliquer un profil',
-        'primary' => false,
-        'ok' => $canPresets,
     ],
     [
         'id' => 'grades',
@@ -189,25 +165,13 @@ $hubRows = [
     ],
     [
         'id' => 'job-roles',
-        'title' => 'Fonctions métier',
-        'desc' => 'Intitulés de fonction sur les dossiers (radio, médic, logistique…), distincts des rôles d’administration.',
+        'title' => 'Emplois du dossier',
+        'desc' => 'Intitulés sur les dossiers (radio, médic, logistique…), distincts des niveaux d’accès. Création, correction et attribution au même endroit.',
         'domain' => 'Référentiels',
         'domainKey' => 'refs',
-        'href' => url('back-office/personnel-job-roles'),
-        'volume' => $fmtCount($jobRolesCount, 'fonction', 'fonctions'),
-        'cta' => 'Gérer les fonctions',
-        'primary' => false,
-        'ok' => $canStructure,
-    ],
-    [
-        'id' => 'job-assignments',
-        'title' => 'Attributions des fonctions',
-        'desc' => 'Associez les fonctions métier aux membres et contrôlez qui exerce quelles missions.',
-        'domain' => 'Référentiels',
-        'domainKey' => 'refs',
-        'href' => url('back-office/personnel-job-roles/assignments'),
-        'volume' => $fmtCount($jobRolesCount, 'fonction définie', 'fonctions définies'),
-        'cta' => 'Attribuer',
+        'href' => function_exists('effectifs_workspace_url') ? effectifs_workspace_url('fonctions') : url('back-office/ressources/effectifs/fonctions'),
+        'volume' => $fmtCount($jobRolesCount, 'emploi', 'emplois'),
+        'cta' => 'Gérer les emplois',
         'primary' => false,
         'ok' => $canStructure,
     ],
@@ -299,7 +263,7 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
 $athKpis = [
     ['label' => 'MEMBRES ACTIFS', 'value' => (string) $membersActive, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $membersActive > 0 ? '100%' : '0%', 'note' => 'comptes en service'],
     ['label' => 'REGROUPEMENTS', 'value' => (string) $groupsCount, 'delta' => '', 'tone' => '#1e4f80', 'pct' => $groupsCount > 0 ? '100%' : '0%', 'note' => $fmtCount($teamsCount, 'équipe', 'équipes')],
-    ['label' => 'RÔLES', 'value' => (string) $rolesCount, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'gouvernance et opérations'],
+    ['label' => 'ACCÈS', 'value' => (string) $rolesCount, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'niveaux de la communauté'],
     ['label' => 'OUTILS', 'value' => (string) $toolsCount, 'delta' => '', 'tone' => '#c98a12', 'pct' => '—', 'note' => 'selon vos droits'],
 ];
 ?>
@@ -329,7 +293,7 @@ $athKpis = [
                 <li><strong>Une personne</strong><span>Tableur des effectifs</span></li>
                 <li><strong>Une unité ou une équipe</strong><span>Structure et recrutement</span></li>
                 <li><strong>Un niveau hiérarchique</strong><span>Référentiel des grades</span></li>
-                <li><strong>Des accès Athena</strong><span>Rôles et droits</span></li>
+                <li><strong>Des accès Athena</strong><span>Niveaux d’accès</span></li>
             </ul>
         </aside>
     </section>

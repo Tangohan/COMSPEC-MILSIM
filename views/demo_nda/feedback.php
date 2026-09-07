@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$title = $title ?? 'Votre avis sur la démonstration';
+$title = $title ?? 'Votre avis sur la preview Athena';
 $error = is_string($error ?? null) ? $error : null;
 $success = is_string($success ?? null) ? $success : null;
 $inboxConfigured = !empty($inboxConfigured);
@@ -19,6 +19,9 @@ $oldOverall = (string) ($old['overall'] ?? '');
 $oldNav = (string) ($old['navigation'] ?? '');
 $oldClarity = (string) ($old['clarity'] ?? '');
 $oldLook = (string) ($old['look_feel'] ?? '');
+$oldAccessClarity = (string) ($old['access_clarity'] ?? '');
+$oldAccessEnough = (string) ($old['access_enough'] ?? '');
+$oldAccessJobs = (string) ($old['access_jobs'] ?? '');
 $oldHighlights = is_array($old['highlights'] ?? null) ? array_map('strval', $old['highlights']) : [];
 $oldFrictions = is_array($old['frictions'] ?? null) ? array_map('strval', $old['frictions']) : [];
 $oldIdeas = (string) ($old['ideas'] ?? '');
@@ -31,6 +34,9 @@ $ratingQuestions = [
     'clarity' => ['label' => 'Clarté des écrans', 'help' => 'Les textes, titres et informations étaient-ils faciles à lire ?', 'value' => $oldClarity],
     'look_feel' => ['label' => 'Ambiance visuelle', 'help' => 'Le rendu graphique vous a-t-il paru adapté et agréable ?', 'value' => $oldLook],
 ];
+$accessClarity = is_array($accessClarity ?? null) ? $accessClarity : \App\Controllers\Web\DemoNdaController::feedbackAccessClarityLabels();
+$accessEnough = is_array($accessEnough ?? null) ? $accessEnough : \App\Controllers\Web\DemoNdaController::feedbackAccessEnoughLabels();
+$accessJobs = is_array($accessJobs ?? null) ? $accessJobs : \App\Controllers\Web\DemoNdaController::feedbackAccessJobsLabels();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -429,10 +435,10 @@ $ratingQuestions = [
 <body>
     <main class="wrap">
         <header class="hero">
-            <p class="kicker">TTRD.FR · Démonstration</p>
+            <p class="kicker">Athena · Preview</p>
             <h1>Votre avis<span>.</span></h1>
             <p class="lead">
-                Quelques questions sur l’expérience d’utilisation. Vos réponses aident à améliorer les écrans et le parcours.
+                Cette version évolue. Dites-nous ce qui est clair, ce qui bloque, et si les trois niveaux d’accès (Membre, Ressources humaines, Gestionnaire) suffisent pour votre communauté.
             </p>
         </header>
 
@@ -487,9 +493,55 @@ $ratingQuestions = [
                 <?php endforeach; ?>
             </section>
 
-            <section class="block" aria-labelledby="sec-highlights">
+            <section class="block" aria-labelledby="sec-access">
                 <div class="block-head">
                     <span class="block-step" aria-hidden="true">2</span>
+                    <div class="block-titles">
+                        <h2 id="sec-access">Accès à la communauté</h2>
+                        <p>Un seul niveau par personne : Membre, Ressources humaines ou Gestionnaire. Les emplois du dossier (radio, médic…) décrivent la fonction, pas les droits.</p>
+                    </div>
+                </div>
+                <fieldset class="q">
+                    <legend class="q-label">Les trois niveaux sont-ils clairs ?</legend>
+                    <p class="q-help">Membre, Ressources humaines, Gestionnaire.</p>
+                    <div class="checks">
+                        <?php foreach ($accessClarity as $value => $label): ?>
+                            <label>
+                                <input type="radio" name="access_clarity" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>" <?= $oldAccessClarity === (string) $value ? 'checked' : '' ?> required>
+                                <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+                <fieldset class="q">
+                    <legend class="q-label">Ces trois niveaux suffisent-ils pour votre communauté ?</legend>
+                    <p class="q-help">S’il manque un cas réel, précisez-le ensuite dans vos idées.</p>
+                    <div class="checks">
+                        <?php foreach ($accessEnough as $value => $label): ?>
+                            <label>
+                                <input type="radio" name="access_enough" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>" <?= $oldAccessEnough === (string) $value ? 'checked' : '' ?> required>
+                                <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+                <fieldset class="q">
+                    <legend class="q-label">Sur une fiche, accès et emploi du dossier sont-ils distincts ?</legend>
+                    <p class="q-help">L’accès ouvre les outils. L’emploi décrit la fonction en jeu.</p>
+                    <div class="checks">
+                        <?php foreach ($accessJobs as $value => $label): ?>
+                            <label>
+                                <input type="radio" name="access_jobs" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>" <?= $oldAccessJobs === (string) $value ? 'checked' : '' ?> required>
+                                <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+            </section>
+
+            <section class="block" aria-labelledby="sec-highlights">
+                <div class="block-head">
+                    <span class="block-step" aria-hidden="true">3</span>
                     <div class="block-titles">
                         <h2 id="sec-highlights">Ce qui a bien fonctionné</h2>
                         <p>Cochez tout ce qui vous a paru réussi (optionnel).</p>
@@ -512,7 +564,7 @@ $ratingQuestions = [
 
             <section class="block" aria-labelledby="sec-frictions">
                 <div class="block-head">
-                    <span class="block-step" aria-hidden="true">3</span>
+                    <span class="block-step" aria-hidden="true">4</span>
                     <div class="block-titles">
                         <h2 id="sec-frictions">Ce qui a gêné</h2>
                         <p>Cochez les points qui ont freiné ou embrouillé (optionnel).</p>
@@ -535,7 +587,7 @@ $ratingQuestions = [
 
             <section class="block" aria-labelledby="sec-ideas">
                 <div class="block-head">
-                    <span class="block-step" aria-hidden="true">4</span>
+                    <span class="block-step" aria-hidden="true">5</span>
                     <div class="block-titles">
                         <h2 id="sec-ideas">Vos idées</h2>
                         <p>Fonctionnalités manquantes, détails à retravailler, priorités… tout est utile.</p>
@@ -553,7 +605,7 @@ $ratingQuestions = [
 
             <section class="block" aria-labelledby="sec-contact">
                 <div class="block-head">
-                    <span class="block-step" aria-hidden="true">5</span>
+                    <span class="block-step" aria-hidden="true">6</span>
                     <div class="block-titles">
                         <h2 id="sec-contact">Recontact</h2>
                         <p>Optionnel — si vous acceptez un échange court sur votre retour.</p>
@@ -590,7 +642,7 @@ $ratingQuestions = [
         </form>
         <?php endif; ?>
 
-        <p class="foot">Démonstration · <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?> · TTRD.FR</p>
+        <p class="foot">Preview Athena · <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?> · TTRD.FR</p>
     </main>
 </body>
 </html>

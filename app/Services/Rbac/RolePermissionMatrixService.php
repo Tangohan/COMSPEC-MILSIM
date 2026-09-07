@@ -76,6 +76,13 @@ final class RolePermissionMatrixService
                 !empty($row['can_export'])
             )
         );
+        $roleSlug = strtolower(trim((string) ($row['slug'] ?? '')));
+        if (CommunityAccessProfiles::isAccessSlug($roleSlug)) {
+            $slugs = array_merge(
+                $slugs,
+                CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::slugToKey($roleSlug))
+            );
+        }
         $slugs = array_values(array_unique(array_filter($slugs)));
 
         $tenantRows = $this->permissions->allForTenant($tenantId);

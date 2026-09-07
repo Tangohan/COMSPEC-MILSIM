@@ -591,12 +591,13 @@ class PersonnelController
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
         }
         $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
-        /** Droits RH minimum : accès à la vue RH (gate + tableau administratif pleine page). */
+        /** Accès commandement : tableau de suivi sur la même fiche (sans écran de choix). */
         $canAccessRhView = $canStaffView || $canStaffEdit || $canSensitive;
-        $personnelViewMode = trim((string) ($request->query('view', '') ?? ''));
-        if (!in_array($personnelViewMode, ['public', 'rh'], true)) {
-            $personnelViewMode = '';
+        $personnelViewRaw = strtolower(trim((string) ($request->query('view', '') ?? '')));
+        if ($personnelViewRaw === '') {
+            $personnelViewRaw = strtolower(trim((string) ($request->query('vue', '') ?? '')));
         }
+        $personnelViewMode = in_array($personnelViewRaw, ['rh', 'commandement'], true) ? 'rh' : 'public';
         /** Lecture compte (fuseau, langue, e-mail, dossier recrutement détaillé) : titulaire + staff / RH habilités (pas les autres membres). */
         $privatePersonnelIdentity = $isSelf || $canStaffView || $canStaffEdit || $canSensitive;
         $canEditNotes = $isSelf || $canStaffEdit;
@@ -670,7 +671,8 @@ class PersonnelController
         $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
             && $steamIdResolved !== null
             && $canEditProfile
-            && $personnelViewMode !== 'public';
+            && $canAccessRhView
+            && $personnelViewMode === 'rh';
 
         $armaPlaytime = null;
         if ($isSelf || $canStaffView) {

@@ -16,10 +16,10 @@ final class MemberHubPagesAssetTest extends TestCase
         $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
 
-        self::assertStringContainsString('member_hub_nav.php', $member);
         self::assertStringContainsString('member_hub_nav.php', $edit);
+        self::assertStringNotContainsString('member_hub_nav.php', $member);
         self::assertStringContainsString('Fiche Effectifs', $nav);
-        self::assertStringContainsString('Point d’entrée unique', $nav);
+        self::assertStringContainsString('bo-eff-jump', $member);
         self::assertStringNotContainsString("url('back-office/users/' . \$memberHubUserId . '/edit')", $nav);
         self::assertStringNotContainsString("url('personnel/' . \$memberHubUserId . '/edit')", $nav);
         self::assertStringContainsString('eff-fiche-hero', $member);

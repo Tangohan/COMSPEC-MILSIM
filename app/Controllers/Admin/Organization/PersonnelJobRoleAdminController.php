@@ -36,74 +36,24 @@ class PersonnelJobRoleAdminController
 
     public function index(Request $request, array $params = []): Response
     {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        if (!$this->canManageJobRoles()) {
-            Session::flash('error', 'Vous n’avez pas les droits pour gérer le référentiel des emplois.');
+        unset($request, $params);
 
-            return Response::redirect(url('dashboard'));
-        }
-        if (!$this->jobRoleRepository->tablesExist()) {
-            return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée. Exécutez les migrations.');
-        }
-        $categories = $this->jobRoleRepository->listCategories($tenantId);
-        $roles = $this->jobRoleRepository->listRolesWithCategory($tenantId);
-        $permCounts = $this->jobRoleRepository->permissionCountsForTenant($tenantId);
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.personnel_job_roles.index',
-            'title' => 'Rôles métier (dossier)',
-            'categories' => $categories,
-            'roles' => $roles,
-            'permCounts' => $permCounts,
-            'activeTab' => 'referentiel',
-            'personnelProfilesJobRoleReady' => $this->jobRoleRepository->personnelProfilesHaveJobRoleColumns(),
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function createRole(Request $request, array $params = []): Response
     {
-        return $this->editRole($request, ['id' => '0']);
+        unset($request, $params);
+
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
     }
 
     public function editRole(Request $request, array $params = []): Response
     {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        if (!$this->canManageJobRoles()) {
-            Session::flash('error', 'Permission refusée.');
-
-            return Response::redirect(url('dashboard'));
-        }
-        if (!$this->jobRoleRepository->tablesExist()) {
-            return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée.');
-        }
+        unset($request);
         $id = (int) ($params['id'] ?? 0);
-        $role = $id > 0 ? $this->jobRoleRepository->findRoleById($id, $tenantId) : null;
-        if ($id > 0 && !$role) {
-            Session::flash('error', 'Rôle introuvable.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
-        }
-        $categories = $this->jobRoleRepository->listCategories($tenantId);
-        $catOptions = $this->buildCategoryOptions($categories);
-        $permissions = $this->permissionRepository->allForTenant($tenantId);
-        $selectedPerm = $role ? $this->jobRoleRepository->getPermissionIdsForRole($id) : [];
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.personnel_job_roles.role_form',
-            'title' => $role ? 'Modifier le rôle métier' : 'Nouveau rôle métier',
-            'role' => $role,
-            'categories' => $categories,
-            'catOptions' => $catOptions,
-            'permissions' => $permissions,
-            'selectedPerm' => $selectedPerm,
-            'activeTab' => 'referentiel',
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions') . ($id > 0 ? '?emploi=' . $id : '?nouveau=1'));
     }
 
     public function saveRole(Request $request, array $params = []): Response
@@ -112,7 +62,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if (!$this->canManageJobRoles()) {
             Session::flash('error', 'Permission refusée.');
@@ -133,12 +83,12 @@ class PersonnelJobRoleAdminController
         if ($name === '' || $slug === '' || $categoryId <= 0) {
             Session::flash('error', 'Nom, identifiant et catégorie sont requis.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if (!$this->jobRoleRepository->findCategoryById($categoryId, $tenantId)) {
             Session::flash('error', 'Catégorie invalide.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
 
         $mosCodeRaw = trim((string) $request->input('mos_code', ''));
@@ -148,12 +98,12 @@ class PersonnelJobRoleAdminController
         if ($mosCodeRaw !== '' && $mosCode === null) {
             Session::flash('error', 'Le code de spécialité de référence (format type 11B, 25U, 17C) est invalide.');
 
-            return Response::redirect($id > 0 ? url('back-office/personnel-job-roles/roles/' . $id . '/edit') : url('back-office/personnel-job-roles/roles/create'));
+            return Response::redirect($id > 0 ? effectifs_workspace_url('fonctions') . '?emploi=' . $id : effectifs_workspace_url('fonctions') . '?nouveau=1');
         }
         if ($mosTitleRaw !== '' && $mosTitle === null) {
             Session::flash('error', 'L’intitulé officiel anglais est trop long ou invalide.');
 
-            return Response::redirect($id > 0 ? url('back-office/personnel-job-roles/roles/' . $id . '/edit') : url('back-office/personnel-job-roles/roles/create'));
+            return Response::redirect($id > 0 ? effectifs_workspace_url('fonctions') . '?emploi=' . $id : effectifs_workspace_url('fonctions') . '?nouveau=1');
         }
 
         if ($id > 0) {
@@ -161,7 +111,7 @@ class PersonnelJobRoleAdminController
             if (!$existing) {
                 Session::flash('error', 'Rôle introuvable.');
 
-                return Response::redirect(url('back-office/personnel-job-roles'));
+                return Response::redirect(effectifs_workspace_url('fonctions'));
             }
             if (!empty($existing['is_system'])) {
                 $mosCode = isset($existing['mos_code']) ? (is_string($existing['mos_code']) ? trim($existing['mos_code']) : null) : null;
@@ -178,7 +128,7 @@ class PersonnelJobRoleAdminController
             Session::flash('success', 'Rôle métier créé.');
         }
 
-        return Response::redirect(url('back-office/personnel-job-roles'));
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function deleteRole(Request $request, array $params = []): Response
@@ -187,7 +137,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if (!$this->canManageJobRoles()) {
             Session::flash('error', 'Permission refusée.');
@@ -196,7 +146,7 @@ class PersonnelJobRoleAdminController
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if ($this->jobRoleRepository->deleteRole($id, $tenantId)) {
             Session::flash('success', 'Rôle supprimé.');
@@ -204,7 +154,7 @@ class PersonnelJobRoleAdminController
             Session::flash('error', 'Suppression impossible (rôle système ou introuvable).');
         }
 
-        return Response::redirect(url('back-office/personnel-job-roles'));
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function saveCategory(Request $request, array $params = []): Response
@@ -213,7 +163,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if (!$this->canManageJobRoles()) {
             Session::flash('error', 'Permission refusée.');
@@ -232,7 +182,7 @@ class PersonnelJobRoleAdminController
         if ($name === '') {
             Session::flash('error', 'Le nom de la catégorie est requis.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if ($slug === '') {
             $slug = $this->slugifyCategory($name);
@@ -242,12 +192,12 @@ class PersonnelJobRoleAdminController
             if (!$existing) {
                 Session::flash('error', 'Catégorie introuvable.');
 
-                return Response::redirect(url('back-office/personnel-job-roles'));
+                return Response::redirect(effectifs_workspace_url('fonctions'));
             }
             if ($parentId === $id) {
                 Session::flash('error', 'Une catégorie ne peut pas être son propre parent.');
 
-                return Response::redirect(url('back-office/personnel-job-roles'));
+                return Response::redirect(effectifs_workspace_url('fonctions'));
             }
             $this->jobRoleRepository->updateCategory($id, $tenantId, $parentId, $name, $slug, $sortOrder);
             Session::flash('success', 'Catégorie enregistrée.');
@@ -256,7 +206,7 @@ class PersonnelJobRoleAdminController
             Session::flash('success', 'Catégorie créée.');
         }
 
-        return Response::redirect(url('back-office/personnel-job-roles'));
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function deleteCategory(Request $request, array $params = []): Response
@@ -265,7 +215,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if (!$this->canManageJobRoles()) {
             Session::flash('error', 'Permission refusée.');
@@ -274,7 +224,7 @@ class PersonnelJobRoleAdminController
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
-            return Response::redirect(url('back-office/personnel-job-roles'));
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if ($this->jobRoleRepository->deleteCategory($id, $tenantId)) {
             Session::flash('success', 'Catégorie supprimée.');
@@ -282,81 +232,14 @@ class PersonnelJobRoleAdminController
             Session::flash('error', 'Suppression impossible : sous-catégories ou rôles encore rattachés.');
         }
 
-        return Response::redirect(url('back-office/personnel-job-roles'));
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function assignments(Request $request, array $params = []): Response
     {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        if (!$this->canManageAssignments()) {
-            Session::flash('error', 'Vous n’avez pas les droits pour attribuer les emplois.');
+        unset($request, $params);
 
-            return Response::redirect(url('dashboard'));
-        }
-        if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
-            return (new Response())->setStatusCode(503)->setBody('Migration rôles métier non appliquée. Exécutez les migrations.');
-        }
-        $search = trim((string) $request->query('search', ''));
-        $search = $search !== '' ? $search : null;
-        $filterJobRoleId = (int) $request->query('job_role_id', 0);
-        $filterJobRoleId = $filterJobRoleId > 0 ? $filterJobRoleId : null;
-        $onlyUnassigned = $request->query('unassigned') === '1' || $request->query('unassigned') === 'true';
-        if ($onlyUnassigned) {
-            $filterJobRoleId = null;
-        }
-        $page = max(1, (int) $request->query('page', 1));
-        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
-        $pjrAssignSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
-        $perPage = $pjrAssignSettings['assignments_page_size'];
-        $total = $this->jobRoleRepository->countUsersForJobRoleAssignments($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-        $rows = $this->jobRoleRepository->listUsersForJobRoleAssignments(
-            $tenantId,
-            $search,
-            $filterJobRoleId,
-            $onlyUnassigned,
-            $perPage,
-            ($page - 1) * $perPage
-        );
-        $userIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
-        $assignmentPivot = $this->jobRoleRepository->pivotTableExists()
-            ? $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
-            : [];
-        $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
-        $tenantRow = $this->tenantRepository->findById($tenantId) ?: [];
-        $orgRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
-        $jobRoleOptions = $this->jobRoleRepository->listRoleOptionsForSelect(
-            $tenantId,
-            $pjrAssignSettings['show_english_labels'],
-            $pjrAssignSettings['show_category_in_role_picklist'],
-            $orgRoleLabelMode
-        );
-        $jobRolePermissionCounts = $this->jobRoleRepository->permissionCountsForTenant($tenantId);
-        $totalPages = max(1, (int) ceil($total / $perPage));
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.personnel_job_roles.assignments',
-            'title' => 'Attributions métier',
-            'assignmentRows' => $rows,
-            'assignmentPivot' => $assignmentPivot,
-            'jobRoleOptions' => $jobRoleOptions,
-            'jobRolePermissionCounts' => $jobRolePermissionCounts,
-            'pjrAssignSettings' => $pjrAssignSettings,
-            'pivotEnabled' => $this->jobRoleRepository->pivotTableExists(),
-            'filters' => [
-                'search' => $search ?? '',
-                'job_role_id' => $filterJobRoleId ?? 0,
-                'unassigned' => $onlyUnassigned,
-            ],
-            'assignmentsTotal' => $total,
-            'assignmentsPage' => $page,
-            'assignmentsPerPage' => $perPage,
-            'assignmentsTotalPages' => $totalPages,
-            'activeTab' => 'assignments',
-            'functionKitsActive' => $this->functionKits !== null && $this->functionKits->selectedKitIds($tenantId) !== [],
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
     }
 
     /**
@@ -467,7 +350,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
         }
         if (!$this->canManageAssignments()) {
             Session::flash('error', 'Permission refusée.');
@@ -488,7 +371,7 @@ class PersonnelJobRoleAdminController
         $this->tenantRepository->updateSettings($tenantId, $merged);
         Session::flash('success', 'Paramètres d’attribution enregistrés pour votre organisation.');
 
-        return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+        return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
     }
 
     public function saveAssignment(Request $request, array $params = []): Response
@@ -497,7 +380,7 @@ class PersonnelJobRoleAdminController
         if (!$tenantId || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
         }
         if (!$this->canManageAssignments()) {
             Session::flash('error', 'Permission refusée.');
@@ -507,19 +390,19 @@ class PersonnelJobRoleAdminController
         if (!$this->jobRoleRepository->tablesExist() || !$this->jobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
             Session::flash('error', 'Migration non appliquée.');
 
-            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
         }
         $userId = (int) $request->input('user_id', 0);
         if ($userId <= 0) {
             Session::flash('error', 'Utilisateur invalide.');
 
-            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
         }
         $user = $this->userRepository->findById($userId, $tenantId);
         if (!$user) {
             Session::flash('error', 'Utilisateur introuvable dans cette communauté.');
 
-            return Response::redirect(url('back-office/personnel-job-roles/assignments'));
+            return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');
         }
 
         $structureBefore = $this->structureChangeNotification->snapshot($tenantId, $userId);
@@ -867,17 +750,19 @@ class PersonnelJobRoleAdminController
             parse_str($rq, $parsed);
             if (is_array($parsed)) {
                 $allowed = array_intersect_key($parsed, array_flip(['search', 'job_role_id', 'unassigned', 'page']));
-                $qs = http_build_query(array_filter($allowed, static fn ($v) => $v !== null && $v !== ''));
+                $allowed['vue'] = 'attributions';
+                $qs = http_build_query(array_filter($allowed, static fn ($v) => $v !== null && $v !== '' && $v !== 0 && $v !== '0'));
                 if ($qs !== '') {
-                    return url('back-office/personnel-job-roles/assignments') . '?' . $qs;
+                    return effectifs_workspace_url('fonctions') . '?' . $qs;
                 }
             }
         }
         $q = $request->queryParams();
         $keep = array_intersect_key($q, array_flip(['search', 'job_role_id', 'unassigned', 'page']));
-        $qs = http_build_query(array_filter($keep, static fn ($v) => $v !== null && $v !== ''));
+        $keep['vue'] = 'attributions';
+        $qs = http_build_query(array_filter($keep, static fn ($v) => $v !== null && $v !== '' && $v !== 0 && $v !== '0'));
 
-        return $qs !== '' ? url('back-office/personnel-job-roles/assignments') . '?' . $qs : url('back-office/personnel-job-roles/assignments');
+        return $qs !== '' ? effectifs_workspace_url('fonctions') . '?' . $qs : effectifs_workspace_url('fonctions') . '?vue=attributions';
     }
 
     /**

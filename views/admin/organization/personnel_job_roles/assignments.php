@@ -13,9 +13,10 @@ $assignmentsTotal = (int) ($assignmentsTotal ?? 0);
 $assignmentsPerPage = (int) ($assignmentsPerPage ?? 30);
 $assignmentsTotalPages = (int) ($assignmentsTotalPages ?? 1);
 $activeTab = $activeTab ?? 'assignments';
-$flashSuccess = \App\Core\Session::getFlash('success');
-$flashError = \App\Core\Session::getFlash('error');
-$isAthShell = !empty($isBackOfficeShell);
+$jobsWorkspaceEmbed = !empty($jobsWorkspaceEmbed);
+$flashSuccess = $jobsWorkspaceEmbed ? null : \App\Core\Session::getFlash('success');
+$flashError = $jobsWorkspaceEmbed ? null : \App\Core\Session::getFlash('error');
+$isAthShell = $jobsWorkspaceEmbed || !empty($isBackOfficeShell);
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -23,16 +24,20 @@ $maxRoles = (int) ($pjrAssignSettings['max_roles_per_member'] ?? 5);
 $defaultExpand = (int) ($pjrAssignSettings['default_expand_role_rows'] ?? 3);
 
 $returnQuery = http_build_query(array_filter([
+    'vue' => $jobsWorkspaceEmbed ? 'attributions' : null,
     'search' => $filters['search'] ?? '',
     'job_role_id' => !empty($filters['job_role_id']) ? (int) $filters['job_role_id'] : null,
     'unassigned' => !empty($filters['unassigned']) ? '1' : null,
     'page' => $assignmentsPage > 1 ? $assignmentsPage : null,
 ], static fn ($v) => $v !== null && $v !== ''));
 
-$baseUrl = url('back-office/personnel-job-roles/assignments');
+$baseUrl = $jobsWorkspaceEmbed
+    ? effectifs_workspace_url('fonctions')
+    : url('back-office/personnel-job-roles/assignments');
 
-$assignmentsQuery = static function (int $page) use ($filters, $baseUrl): string {
+$assignmentsQuery = static function (int $page) use ($filters, $baseUrl, $jobsWorkspaceEmbed): string {
     $q = array_filter([
+        'vue' => $jobsWorkspaceEmbed ? 'attributions' : null,
         'search' => $filters['search'] ?? '',
         'job_role_id' => !empty($filters['job_role_id']) ? (int) $filters['job_role_id'] : null,
         'unassigned' => !empty($filters['unassigned']) ? '1' : null,
@@ -56,7 +61,7 @@ $rolesInCatalog = count($jobRoleOptions);
 $startRow = $assignmentsTotal > 0 ? (($assignmentsPage - 1) * $assignmentsPerPage) + 1 : 0;
 $endRow = min($assignmentsTotal, $assignmentsPage * $assignmentsPerPage);
 
-if ($isAthShell):
+if ($isAthShell && !$jobsWorkspaceEmbed):
     $athKpis = [
         ['label' => 'MEMBRES', 'value' => (string) $assignmentsTotal, 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'effectif filtré'],
         ['label' => 'EMPLOIS', 'value' => (string) $rolesInCatalog, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'référentiel'],
@@ -90,7 +95,7 @@ if ($isAthShell):
     </div>
     <?php endif; ?>
 
-    <?php if ($isAthShell): ?>
+    <?php if ($isAthShell && !$jobsWorkspaceEmbed): ?>
     <div class="ath-panel-dark ath-rise">
         <p class="ath-panel-dark__kicker">Autorisations &amp; emplois</p>
         <p class="ath-body" style="color:#d5dde0;margin-top:8px;">
@@ -99,7 +104,9 @@ if ($isAthShell):
             Pour consulter la liste fusionnée pour une personne (tous ses emplois attribués), utilisez le lien sous son nom.
         </p>
     </div>
+    <?php endif; ?>
 
+    <?php if ($isAthShell): ?>
     <details class="ath-roles-edit-item ath-rise">
         <summary class="pjr-assign-settings__summary">
             <span class="pjr-assign-settings__title">Paramètres d’attribution</span>
@@ -147,6 +154,9 @@ if ($isAthShell):
     </details>
 
     <form method="get" action="<?= $h($baseUrl) ?>" class="ath-users-filters ath-rise">
+        <?php if ($jobsWorkspaceEmbed): ?>
+        <input type="hidden" name="vue" value="attributions">
+        <?php endif; ?>
         <div>
             <label class="ath-users-filters__label" for="pjr-filter-search">Recherche</label>
             <input type="search" name="search" id="pjr-filter-search" value="<?= $h((string) ($filters['search'] ?? '')) ?>" placeholder="Nom, e-mail, indicatif…" class="bo-setting-row__field">
@@ -167,7 +177,7 @@ if ($isAthShell):
             Sans emploi attribué
         </label>
         <button type="submit" class="ath-btn ath-btn--solid">Appliquer les filtres</button>
-        <a href="<?= $h(url('back-office/personnel-job-roles')) ?>" class="ath-btn">Référentiel</a>
+        <a href="<?= $h($jobsWorkspaceEmbed ? effectifs_workspace_url('fonctions') : url('back-office/personnel-job-roles')) ?>" class="ath-btn"><?= $jobsWorkspaceEmbed ? 'Catalogue' : 'Référentiel' ?></a>
     </form>
     <?php else: ?>
     <details class="mb-8 rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm open:bg-amber-50/60">
@@ -267,7 +277,9 @@ if ($isAthShell):
                     <?php
                     $uid = (int) ($row['id'] ?? 0);
                     $slug = trim((string) ($row['profile_slug'] ?? ''));
-                    $personnelUrl = url('personnel/' . ($slug !== '' ? $slug : (string) $uid));
+                    $personnelUrl = $jobsWorkspaceEmbed
+                        ? effectifs_workspace_url('membres/' . $uid)
+                        : url('personnel/' . ($slug !== '' ? $slug : (string) $uid));
                     $pivotRows = isset($assignmentPivot[$uid]) ? $assignmentPivot[$uid] : [];
                     $nExisting = count($pivotRows);
                     $slotCount = min($maxRoles, max($nExisting, 1, min($defaultExpand, $maxRoles)));
@@ -291,7 +303,8 @@ if ($isAthShell):
                             <?php if (trim((string) ($row['callsign'] ?? '')) !== ''): ?>
                             <p class="<?= $isAthShell ? 'pjr-assign-member__callsign' : 'text-xs font-mono text-slate-600' ?>"><?= $h((string) $row['callsign']) ?></p>
                             <?php endif; ?>
-                            <a href="<?= $h($personnelUrl) ?>" class="<?= $isAthShell ? 'pjr-assign-member__link' : 'mt-1 inline-block text-xs font-medium text-cyan-700 hover:underline' ?>">Fiche personnelle</a>
+                            <a href="<?= $h($personnelUrl) ?>" class="<?= $isAthShell ? 'pjr-assign-member__link' : 'mt-1 inline-block text-xs font-medium text-cyan-700 hover:underline' ?>"><?= $jobsWorkspaceEmbed ? 'Fiche dans le tableur' : 'Fiche personnelle' ?></a>
+                            <?php if (!$jobsWorkspaceEmbed): ?>
                             <button
                                 type="button"
                                 class="pjr-open-member-perms <?= $isAthShell ? 'ath-btn pjr-assign-perms-btn' : 'mt-2 flex w-full max-w-[16rem] items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-left text-[11px] font-semibold text-indigo-900 shadow-sm transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400' ?>"
@@ -305,6 +318,7 @@ if ($isAthShell):
                                 <span>Autorisations liées aux emplois</span>
                                 <?php endif; ?>
                             </button>
+                            <?php endif; ?>
                         </td>
                         <td class="<?= $isAthShell ? '' : 'p-3 text-xs uppercase text-slate-600' ?>">
                             <?php if ($isAthShell): ?>

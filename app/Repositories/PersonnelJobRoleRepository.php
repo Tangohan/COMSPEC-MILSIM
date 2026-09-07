@@ -521,6 +521,55 @@ class PersonnelJobRoleRepository
         return $id ? (int) $id : null;
     }
 
+    public function uniqueSlugFromName(int $tenantId, string $name, int $exceptId = 0): string
+    {
+        $s = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if ($s === false) {
+            $s = $name;
+        }
+        $base = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '');
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = 'emploi';
+        }
+        $slug = $base;
+        $suffix = 2;
+        while ($suffix < 200) {
+            $existing = $this->findRoleIdBySlug($tenantId, $slug);
+            if ($existing === null || ($exceptId > 0 && $existing === $exceptId)) {
+                return $slug;
+            }
+            $slug = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $base . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+    }
+
+    public function uniqueCategorySlugFromName(int $tenantId, string $name): string
+    {
+        $s = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if ($s === false) {
+            $s = $name;
+        }
+        $base = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '');
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = 'categorie';
+        }
+        $slug = $base;
+        $suffix = 2;
+        while ($suffix < 200) {
+            if ($this->findCategoryIdBySlug($tenantId, $slug) === null) {
+                return $slug;
+            }
+            $slug = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $base . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+    }
+
     public function findCategoryIdBySlug(int $tenantId, string $slug): ?int
     {
         if (!$this->tablesExist() || $slug === '') {
