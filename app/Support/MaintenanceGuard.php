@@ -13,52 +13,31 @@ final class MaintenanceGuard
     ) {}
 
     /**
-     * Arma 3 et l’ATAK web restent ouverts pendant une intervention du portail.
-     * Le reste du site (accueil, dossiers, administration, renseignement) reste fermé.
+     * Seuls les points d'entrée indispensables à l'exploitation contournent la maintenance.
+     * Les pages publiques, l'authentification et les outils opérationnels font partie du site
+     * et doivent donc respecter une règle app_maintenance globale.
      */
-    public static function isOperationalPath(string $requestPath): bool
+    public static function isInfrastructurePath(string $requestPath): bool
     {
         $path = '/' . ltrim($requestPath, '/');
         if ($path !== '/') {
             $path = rtrim($path, '/') ?: '/';
         }
 
-        if ($path === '/atak/sse' || str_starts_with($path, '/atak/sse/')) {
-            return false;
+        $exactPaths = [
+            '/api/stripe/webhook',
+            '/api/health',
+            '/api/system/version',
+            '/cron/run',
+            '/maintenance-toggle.php',
+            '/sw.js',
+            '/manifest.webmanifest',
+        ];
+        if (in_array($path, $exactPaths, true)) {
+            return true;
         }
 
-        $prefixes = [
-            '/login',
-            '/logout',
-            '/connect',
-            '/atak',
-            '/tacmap',
-            '/overwatch',
-            '/c2',
-            '/operateur/terrain',
-            '/map-data',
-            '/api/atak',
-            '/api/markers',
-            '/api/units',
-            '/api/chat',
-            '/api/pings',
-            '/api/nine-line',
-            '/api/cas',
-            '/api/recon',
-            '/api/map-shapes',
-            '/api/flight-manifest',
-            '/api/intel',
-            '/api/fire-support',
-            '/api/danger-zones',
-            '/api/logistics',
-            '/api/replay',
-            '/api/iff',
-            '/api/tacmap',
-            '/api/overwatch',
-            '/api/medical-alerts',
-            '/api/vehicles',
-        ];
-
+        $prefixes = ['/assets', '/uploads', '/admin/system/updates', '/cron'];
         foreach ($prefixes as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
                 return true;
@@ -73,7 +52,7 @@ final class MaintenanceGuard
      */
     public function enforce(string $requestPath, ?string $module = null, ?array $userContext = null): void
     {
-        if (self::isOperationalPath($requestPath)) {
+        if (self::isInfrastructurePath($requestPath)) {
             return;
         }
 
@@ -104,7 +83,7 @@ final class MaintenanceGuard
         header('Retry-After: ' . self::DEFAULT_RETRY_AFTER);
 
         $title = $maintenance['title'] ?: 'Maintenance en cours';
-        $message = $maintenance['message'] ?: 'Le service est momentanément indisponible.';
+        $message = self::humanMessage($maintenance['message'] ?? null);
         $endsAt = $maintenance['ends_at'] ?? null;
         $code = $maintenance['maintenance_code'] ?? null;
         $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
@@ -120,6 +99,36 @@ final class MaintenanceGuard
             echo '</body></html>';
         }
         exit;
+    }
+
+    private static function humanMessage(mixed $raw): string
+    {
+        $text = trim((string) $raw);
+        if ($text === '') {
+            return 'Le service est momentanément indisponible.';
+        }
+        if (str_starts_with($text, '{')) {
+            $decoded = json_decode($text, true);
+            if (is_array($decoded)) {
+                $fr = trim((string) ($decoded['FR'] ?? $decoded['fr'] ?? ''));
+                $en = trim((string) ($decoded['EN'] ?? $decoded['en'] ?? ''));
+                if ($fr !== '' && $en !== '') {
+                    return "FR\n{$fr}\n\n---\n\nEN\n{$en}";
+                }
+                if ($fr !== '') {
+                    return $fr;
+                }
+                if ($en !== '') {
+                    return $en;
+                }
+                $first = reset($decoded);
+                if (is_string($first) && trim($first) !== '') {
+                    return trim($first);
+                }
+            }
+        }
+
+        return $text;
     }
 
     public static function resolveClientIp(): string

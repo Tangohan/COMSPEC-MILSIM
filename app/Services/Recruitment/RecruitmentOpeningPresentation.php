@@ -38,17 +38,6 @@ final class RecruitmentOpeningPresentation
         ];
     }
 
-    /** @return array<string, string> */
-    public static function clearanceLevels(): array
-    {
-        return [
-            'none' => 'Non requis',
-            'confidential' => 'Confidentiel défense',
-            'secret' => 'Secret',
-            'secret_defense' => 'Secret défense',
-        ];
-    }
-
     public static function personnelCategoryLabel(string $key): string
     {
         return self::personnelCategories()[$key] ?? $key;
@@ -61,11 +50,6 @@ final class RecruitmentOpeningPresentation
         }
 
         return self::armDomains()[$key] ?? $key;
-    }
-
-    public static function clearanceLabel(string $key): string
-    {
-        return self::clearanceLevels()[$key] ?? $key;
     }
 
     /** @return array<string, string> */

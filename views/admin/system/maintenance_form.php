@@ -33,24 +33,24 @@ if ($scopeRaw === '' || $scopeRaw === 'global') {
 
 $presets = [
     'standard' => [
-        'label' => 'Intervention planifiée',
-        'title' => 'Maintenance opérationnelle',
-        'message' => "Le portail Athena est fermé le temps d’une intervention de fond. Nous remettons à plat la gestion des communautés : un seul niveau d’accès par membre, des emplois qui suivent l’organigramme, des dossiers plus simples à tenir.\n\nVos dossiers, vos cartes et vos liaisons déjà établies restent protégés. Rien n’est demandé de votre côté. Les opérateurs déjà en mission conservent leur dernière situation connue jusqu’à la réouverture.\n\nNous rouvrons dès que les contrôles sont terminés. Merci de votre patience, et de la confiance que vous accordez à COMSPEC.",
+        'label' => 'Mise à jour planifiée',
+        'title' => 'Nous revenons bientôt',
+        'message' => "Athena est momentanément fermé le temps d’une mise à jour. Nous simplifions la gestion des communautés : un accès plus clair par membre, des rôles mieux alignés, des dossiers plus simples à suivre.\n\nVos données restent en sécurité. Vous n’avez rien à faire de votre côté. Pendant cette période, le site et les outils associés restent inaccessibles.\n\nMerci de votre patience, et de la confiance que vous accordez à Athena.",
     ],
     'security' => [
         'label' => 'Sécurisation',
         'title' => 'Sécurisation en cours',
-        'message' => "Une opération de sécurisation est en cours. L’accès public est temporairement suspendu.\n\nVos informations restent protégées. Merci de patienter jusqu’à la réouverture.",
+        'message' => "Nous renforçons la sécurité de la plateforme. L’accès est temporairement suspendu.\n\nVos informations restent protégées. Merci de patienter jusqu’à la réouverture.",
     ],
     'infra' => [
         'label' => 'Réseau et hébergement',
         'title' => 'Intervention réseau',
-        'message' => "Une intervention sur le réseau et l’hébergement est en cours. Le portail peut rester inaccessible le temps des contrôles.\n\nNous rouvrons dès que la liaison est rétablie.",
+        'message' => "Une intervention sur le réseau et l’hébergement est en cours. Le portail peut rester inaccessible le temps des contrôles.\n\nNous rouvrons dès que tout est rétabli.",
     ],
     'hotfix' => [
         'label' => 'Correctif urgent',
         'title' => 'Correctif en cours',
-        'message' => "Un correctif urgent est en cours de déploiement. Le portail sera de nouveau disponible dès la fin de l’opération.\n\nMerci de votre patience.",
+        'message' => "Un correctif urgent est en cours. Athena sera de nouveau disponible dès qu’il sera terminé.\n\nMerci de votre patience.",
     ],
 ];
 $currentPreset = (string) ($row['message_preset'] ?? 'standard');
@@ -77,7 +77,7 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-black text-slate-900">1) Portée</h2>
-            <p class="mt-2 text-sm text-slate-600">Une intervention sur tout le portail ferme l’accueil, les dossiers et l’administration. Arma 3 et le téléphone ATAK restent ouverts.</p>
+            <p class="mt-2 text-sm text-slate-600">Une intervention globale ferme tout le site : accueil public, authentification, dossiers, administration, Arma 3, ATAK et API. Seuls les points d’entrée techniques indispensables restent ouverts.</p>
             <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <?php foreach (['global' => 'Tout le portail', 'route' => 'Préfixe URL', 'module' => 'Module', 'custom' => 'Personnalisé'] as $mode => $label): ?>
                     <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60">
@@ -107,10 +107,11 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
             <div class="mt-5 grid gap-4">
                 <label class="text-sm font-bold text-slate-700">Titre
-                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Maintenance opérationnelle'), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Nous revenons bientôt'), ENT_QUOTES, 'UTF-8') ?>">
                 </label>
                 <label class="text-sm font-bold text-slate-700">Message
-                    <textarea name="message" id="maint-message" rows="4" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <textarea name="message" id="maint-message" rows="6" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <span class="mt-1.5 block text-xs font-medium text-slate-500">Markdown pris en charge : titres, listes, gras, liens, séparateur <code>---</code>, libellés FR / EN.</span>
                 </label>
             </div>
 

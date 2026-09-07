@@ -30,6 +30,16 @@ class Gate
         return self::$instance;
     }
 
+    /** À appeler au début de chaque requête HTTP (les workers PHP réutilisent sinon l’état précédent). */
+    public static function reset(): void
+    {
+        if (self::$instance === null) {
+            return;
+        }
+        self::$instance->setPermissions([]);
+        self::$instance->setPlatformAdmin(false);
+    }
+
     public function setPermissions(array $permissions): void
     {
         $this->permissions = $permissions;

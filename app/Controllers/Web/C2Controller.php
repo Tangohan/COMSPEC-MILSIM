@@ -28,7 +28,7 @@ final class C2Controller
                 'id' => 'operateur',
                 'label' => 'Opérateur',
                 'description' => 'Dossier et outils opérateur.',
-                'href' => url('dossier-operateur/accreditation'),
+                'href' => url('personnel/me'),
             ],
             [
                 'id' => 'terrain',

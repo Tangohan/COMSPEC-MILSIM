@@ -39,7 +39,7 @@ $imgPreview = $imgUrl !== '' ? url($imgUrl) : null;
 
 $accountNavKey = 'recruitment';
 $accountTitle = $preset ? 'Modifier le profil de candidature' : 'Nouveau profil de candidature';
-$accountLead = 'Dossier réutilisable pour les formulaires d’enrôlement : personnage, disponibilités, matériel et motivation.';
+$accountLead = 'Dossier réutilisable pour les formulaires d’enrôlement : identité, disponibilités, matériel et motivation.';
 require base_path('views/partials/account/shell_open.php');
 ?>
 
@@ -70,7 +70,7 @@ require base_path('views/partials/account/shell_open.php');
             <div class="account-hub__panel-head">
                 <p class="account-hub__panel-kicker">Personnage</p>
                 <h2 class="account-hub__panel-title">Personnage &amp; rôle-play</h2>
-                <p class="account-hub__panel-desc">L’identité personnage se limite au prénom et au nom (plus de nom de scène séparé).</p>
+                <p class="account-hub__panel-desc">L’identité se limite au prénom et au nom (plus de nom de scène séparé).</p>
             </div>
             <div class="account-hub__panel-body space-y-4">
             <div class="account-hub__form-grid account-hub__form-grid--2">
@@ -83,11 +83,11 @@ require base_path('views/partials/account/shell_open.php');
                     <input type="text" name="rp_last_name" maxlength="100" value="<?= htmlspecialchars((string) ($rp['last_name'] ?? '')) ?>" autocomplete="off">
                 </div>
                 <div>
-                    <label class="account-hub__label">Date de naissance (personnage)</label>
+                    <label class="account-hub__label">Date de naissance</label>
                     <input type="date" name="rp_birth_date" value="<?= htmlspecialchars((string) ($rp['birth_date'] ?? '')) ?>" autocomplete="off">
                 </div>
                 <div>
-                    <label class="account-hub__label">Nationalité (personnage)</label>
+                    <label class="account-hub__label">Nationalité</label>
                     <input type="text" name="rp_nationality" maxlength="100" value="<?= htmlspecialchars((string) ($rp['nationality'] ?? '')) ?>" autocomplete="off">
                 </div>
             </div>
@@ -96,11 +96,11 @@ require base_path('views/partials/account/shell_open.php');
                 <textarea name="rp_bio" rows="5" placeholder="Histoire courte, ton RP, unité d’origine fictive…"><?= htmlspecialchars((string) ($rp['bio'] ?? '')) ?></textarea>
             </div>
             <div>
-                <label class="account-hub__label">CV du personnage (parcours, spécialités)</label>
+                <label class="account-hub__label">CV (parcours, spécialités)</label>
                 <textarea name="rp_cv" rows="6" placeholder="Formation, opérations simulées, rôles habituels…"><?= htmlspecialchars((string) ($rp['cv'] ?? '')) ?></textarea>
             </div>
             <div>
-                <label class="account-hub__label">Portrait du personnage (JPG, PNG, WebP — max 2 Mo)</label>
+                <label class="account-hub__label">Photo de profil (JPG, PNG, WebP — max 2 Mo)</label>
                 <?php if ($imgPreview): ?>
                     <p class="account-hub__hint">Image actuelle :</p>
                     <img src="<?= htmlspecialchars($imgPreview) ?>" alt="" class="account-hub__media-preview account-hub__media-preview--portrait" style="margin:.5rem 0;height:6rem;width:6rem">

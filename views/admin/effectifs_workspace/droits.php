@@ -20,7 +20,7 @@ $canAccessManagement = (bool) ($canAccessManagement ?? false);
         <p class="eff-card-cta">Ouvrir →</p>
     </a>
     <a class="eff-card" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">
-        <h3>Rôles et habilitations</h3>
+        <h3>Rôles et droits</h3>
         <p>Consultez chaque rôle et le détail des autorisations associées.</p>
         <p class="eff-card-cta">Ouvrir →</p>
     </a>

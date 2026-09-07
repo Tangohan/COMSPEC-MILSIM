@@ -681,7 +681,7 @@ final class DevDispatchCatalog
             $pr(450, '2026-09-07', 'Le tableur se lit, se corrige et montre le vrai portrait', 'Le tableur des effectifs s’ouvre avec une vraie présentation : ce que la liste permet, et l’ancienneté réelle de l’organisation. Chaque ligne affiche le portrait de l’opérateur, des repères plus complets, et des indicateurs lisibles. Un responsable peut changer le niveau d’accès sans ouvrir la fiche. Rechargez Effectifs', [
                 'Présentation du tableur avec l’ancienneté réelle de l’organisation',
                 'Modification du niveau d’accès directement dans la liste',
-                'Repères enrichis : matricule, radio, habilitation et distinctions',
+                'Repères enrichis : matricule, radio et distinctions',
             ], [
                 'Les indicateurs d’ancienneté, de disponibilité, de présence et de dossier se lisent en toutes lettres',
             ], [
@@ -1093,7 +1093,7 @@ final class DevDispatchCatalog
             ], 'Overwatch 1.5.15 · SSE 0.7.20'),
             $pr(402, '2026-09-03', 'Le bureau effectifs rejoint le back-office clair', 'Sur l’annuaire des effectifs, l’alerte des fiches jumelles, les totaux, les filtres et les mentions manquantes adoptent la présentation claire du back-office ATAK. L’unité affichée est le dernier maillon, le chemin complet reste au survol. Rechargez le bureau effectifs', [
                 'Alerte des fiches jumelles dans le même registre clair que le reste du back-office',
-                'Totaux cliquables : membres, actifs, sans unité, sans rôle, habilitation à revoir',
+                'Totaux cliquables : membres, actifs, sans unité, sans rôle',
             ], [
                 'Textes d’introduction et d’affectation plus courts',
             ], [

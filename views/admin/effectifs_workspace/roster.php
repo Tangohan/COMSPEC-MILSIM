@@ -14,7 +14,6 @@ $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canManageRoles = (bool) ($canManageRoles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
-$clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
 $canBulkAny = $canManageStatus || $canManageAssignments;
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
@@ -141,7 +140,6 @@ $metricNoUnit = !empty($filters['sans_affectation']);
 $metricNoRole = !empty($filters['sans_role']);
 $noUnitCount = (int) ($counts['no_unit'] ?? 0);
 $noRoleCount = (int) ($counts['no_role'] ?? 0);
-$clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
 ?>
 <div class="eff-catalog eff-catalog--roster">
     <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
@@ -214,10 +212,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
         <a class="eff-metric eff-metric--link<?= $metricNoRole ? ' is-active is-amber' : '' ?><?= !$metricNoRole && $noRoleCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url() . '?sans_role=1', ENT_QUOTES, 'UTF-8') ?>">
             <p class="eff-metric__k">Sans rôle</p>
             <p class="eff-metric__v"><?= $noRoleCount ?></p>
-        </a>
-        <a class="eff-metric eff-metric--link<?= $clearanceCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>">
-            <p class="eff-metric__k">Habilitation à revoir</p>
-            <p class="eff-metric__v"><?= $clearanceCount ?></p>
         </a>
     </div>
 
@@ -413,10 +407,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                     $extraCallsigns = function_exists('personnel_decode_extra_callsigns')
                         ? personnel_decode_extra_callsigns($row['extra_callsigns_json'] ?? null)
                         : [];
-                    $clearanceRaw = trim((string) ($row['clearance_level'] ?? ''));
-                    $clearanceLabel = $clearanceRaw !== ''
-                        ? (string) ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw)
-                        : '';
                     $seniorityLabel = trim((string) ($row['seniority_label'] ?? '—'));
                     $prePlatformStart = trim((string) ($row['pre_platform_start'] ?? ''));
                     $enlistmentStart = trim((string) ($row['enlistment_date_resolved'] ?? ''));
@@ -425,10 +415,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                     $availabilityScore = (int) ($row['availability_score'] ?? 0);
                     $presenceScore = (int) ($row['presence_score'] ?? 0);
                     $completionScore = (int) ($row['completion_score'] ?? 0);
-                    $clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue(
-                        $row['clearance_level'] ?? null,
-                        $row['clearance_reviewed_at'] ?? null
-                    );
                     $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($name, (string) ($row['character_name'] ?? ''));
                     $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
                     $radioAssigned = trim((string) ($row['radio_assigned'] ?? ''));
@@ -563,15 +549,6 @@ $clearanceCount = (int) ($counts['clearance_review_due'] ?? 0);
                                 <div>
                                     <dt>Radio</dt>
                                     <dd><?= $radioAssigned !== '' ? htmlspecialchars($radioAssigned, ENT_QUOTES, 'UTF-8') : '—' ?></dd>
-                                </div>
-                                <div>
-                                    <dt>Habilitation</dt>
-                                    <dd>
-                                        <?= $clearanceLabel !== '' ? htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') : '—' ?>
-                                        <?php if ($clearanceOverdue): ?>
-                                            <span class="eff-sheets__badge eff-sheets__badge--watch">À revoir</span>
-                                        <?php endif; ?>
-                                    </dd>
                                 </div>
                                 <?php if ($extraCallsigns !== []): ?>
                                 <div>

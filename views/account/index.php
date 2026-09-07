@@ -33,7 +33,7 @@ $canAtakAdmin = function_exists('can') && (can('admin.access') || can('admin.sys
 
 $accountNavKey = 'overview';
 $accountTitle = 'Mon compte';
-$accountLead = 'Sécurité, apparence et préférences du portail — le dossier opérationnel (personnage, unité) reste sur votre fiche personnelle.';
+$accountLead = 'Sécurité, apparence et préférences du portail.';
 require base_path('views/partials/account/shell_open.php');
 
 $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
@@ -115,7 +115,7 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
                     <?php if ($callsign !== ''): ?>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php else: ?>Indicatif non renseigné<?php endif; ?>
                 </p>
                 <p class="account-hub__stat-meta">
-                    <?= $fullNameVal !== '' ? 'Personnage : ' . htmlspecialchars($fullNameVal, ENT_QUOTES, 'UTF-8') : 'Prénom et nom du personnage non renseignés' ?>
+                    <?= $fullNameVal !== '' ? 'Identité : ' . htmlspecialchars($fullNameVal, ENT_QUOTES, 'UTF-8') : 'Prénom et nom non renseignés' ?>
                 </p>
                 <p class="account-hub__stat-meta" style="margin-top:.55rem">
                     <a href="<?= htmlspecialchars($prefUrl, ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Modifier le profil</a>
@@ -150,7 +150,7 @@ $hubSections = [
             [
                 'href' => $prefUrl,
                 'title' => 'Profil & préférences',
-                'desc' => 'Prénom et nom du personnage, indicatif, fuseau, thème et barre latérale.',
+                'desc' => 'Prénom et nom, indicatif, fuseau, thème et barre latérale.',
                 'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
             ],
             [
@@ -189,7 +189,7 @@ $hubSections = [
     [
         'kicker' => 'Apparence',
         'title' => 'Images du compte',
-        'desc' => 'Trois visuels distincts : photo de compte, couverture du menu, portrait opérationnel.',
+        'desc' => 'Photo de compte, couverture du menu et photo de profil.',
         'actions' => [
             [
                 'href' => url('account/image'),
@@ -205,27 +205,27 @@ $hubSections = [
             ],
             [
                 'href' => url('account/portrait'),
-                'title' => 'Portrait opérateur',
-                'desc' => 'Image « in-universe » pour fiches, organigramme et briefings.',
+                'title' => 'Photo de profil',
+                'desc' => 'Image pour la fiche personnelle, l’organigramme et les briefings.',
                 'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
             ],
         ],
     ],
     [
         'kicker' => 'Unité',
-        'title' => 'Dossier opérationnel & candidatures',
-        'desc' => 'Le personnage, l’affectation et l’enrôlement se gèrent hors des réglages civils du compte.',
+        'title' => 'Fiche personnelle & candidatures',
+        'desc' => 'Affectation, enrôlement et formations se gèrent depuis la fiche personnelle.',
         'actions' => [
             [
                 'href' => url('personnel/me/edit'),
                 'title' => 'Modifier ma fiche personnelle',
-                'desc' => 'Personnage, unité, matricule, clearance, formations liées au rôle.',
+                'desc' => 'Unité, matricule, formations liées au rôle.',
                 'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>',
             ],
             [
                 'href' => url('personnel/me'),
                 'title' => 'Voir ma fiche',
-                'desc' => 'Aperçu du dossier tel qu’affiché aux membres habilités.',
+                'desc' => 'Aperçu du dossier tel qu’affiché aux membres autorisés.',
                 'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>',
             ],
             [

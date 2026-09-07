@@ -27,8 +27,6 @@ final class PersonnelDossierCompleteness
             'Affectation' => $hasAssignment,
             'Fonction' => trim((string) ($rich['job_role_display'] ?? '')) !== '',
             'Date d’engagement' => trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
-            'Niveau d’habilitation' => trim((string) ($rich['clearance_level'] ?? '')) !== '',
-            'Revue d’habilitation' => !empty($rich['clearance_reviewed_at']),
             'Score de disponibilité renseigné' => (int) ($rich['readiness_score'] ?? 0) > 0,
             'Adresse e-mail' => trim((string) ($user['email'] ?? '')) !== '',
         ];

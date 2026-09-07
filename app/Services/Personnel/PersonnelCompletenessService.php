@@ -71,8 +71,6 @@ class PersonnelCompletenessService
             'identity_unit' => $hasUnit,
             'identity_enlistment' => !empty($profile['enlistment_date'] ?? $personnelExtras['date_of_enlistment'] ?? null),
             'assignment_role' => $hasAssignmentRole,
-            'security_clearance' => !empty(trim((string) ($profile['clearance_level'] ?? $personnelExtras['clearance_level'] ?? ''))),
-            'security_review' => !empty($profile['clearance_reviewed_at'] ?? null),
             'qualifications' => $hasQualOrCert,
             'readiness' => $hasReadiness,
             'contact_email' => !empty(trim((string) ($user['email'] ?? ''))),
@@ -81,7 +79,6 @@ class PersonnelCompletenessService
         $critical = [
             'identity_matricule' => 'Matricule non défini',
             'identity_unit' => 'Affectation absente',
-            'security_clearance' => 'Clearance non définie',
             'assignment_role' => 'Rôle d\'affectation absent',
         ];
 
@@ -119,8 +116,6 @@ class PersonnelCompletenessService
             'identity_unit' => 'Affectation / unité (sélection dossier ou ORBAT)',
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (ORBAT ou rôle principal dossier)',
-            'security_clearance' => 'Niveau de clearance',
-            'security_review' => 'Clearance revue (date)',
             'qualifications' => 'Qualification OU formation certifiée',
             'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
             'contact_email' => 'Email de contact',
@@ -160,8 +155,6 @@ class PersonnelCompletenessService
             'identity_unit' => 'Affectation / unité (sélection dossier ou ORBAT)',
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (ORBAT ou rôle principal dossier)',
-            'security_clearance' => 'Niveau de clearance',
-            'security_review' => 'Clearance revue (date)',
             'qualifications' => 'Qualification OU formation certifiée',
             'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
             'contact_email' => 'Email de contact',
@@ -175,8 +168,6 @@ class PersonnelCompletenessService
             'identity_unit' => 'Affectation ou unité (dossier / organigramme)',
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (organigramme ou fiche)',
-            'security_clearance' => 'Niveau de clearance',
-            'security_review' => 'Date de revue de la clearance',
             'qualifications' => 'Qualification ou parcours de formation certifié',
             'readiness' => 'Indicateur de disponibilité',
             'contact_email' => 'Email de contact',
@@ -203,7 +194,6 @@ class PersonnelCompletenessService
         $critical = [
             'identity_matricule' => $forPlatformOperator ? 'Matricule non défini' : 'Matricule non renseigné',
             'identity_unit' => 'Affectation absente',
-            'security_clearance' => 'Clearance non définie',
             'assignment_role' => 'Rôle d\'affectation absent',
         ];
 

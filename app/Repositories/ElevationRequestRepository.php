@@ -28,8 +28,7 @@ class ElevationRequestRepository
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null,
-     *   clearance_level?: string|null
+     *   unit_id?: int|null
      * } $proposal
      */
     public function create(
@@ -44,41 +43,21 @@ class ElevationRequestRepository
         $roleId = $this->nullablePositiveId($proposal['role_id'] ?? null);
         $jobRoleId = $this->nullablePositiveId($proposal['job_role_id'] ?? null);
         $unitId = $this->nullablePositiveId($proposal['unit_id'] ?? null);
-        $clearanceLevel = $this->nullableClearanceLevel($proposal['clearance_level'] ?? null);
         $permissionIds = $this->normalizePermissionIds($proposal['permission_ids'] ?? []);
 
         if ($this->hasPermissionIdsColumn()) {
+            // proposed_clearance_level reste en schéma (nullable) mais n’est plus alimenté.
             $stmt = $this->pdo->prepare(
                 'INSERT INTO elevation_requests (
                     tenant_id, target_user_id, requested_by, kind, note,
                     proposed_grade_id, proposed_role_id, proposed_job_role_id, proposed_unit_id, proposed_clearance_level,
                     proposed_permission_ids, status, created_at
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, \'pending\', NOW())'
             );
             $stmt->execute([
                 $tenantId, $targetUserId, $requestedBy, $kind, $note !== '' ? $note : null,
-                $gradeId, $roleId, $jobRoleId, $unitId, $clearanceLevel,
+                $gradeId, $roleId, $jobRoleId, $unitId,
                 $permissionIds !== [] ? json_encode($permissionIds, JSON_THROW_ON_ERROR) : null,
-            ]);
-        } elseif ($this->hasClearanceColumn()) {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO elevation_requests (
-                    tenant_id, target_user_id, requested_by, kind, note,
-                    proposed_grade_id, proposed_role_id, proposed_job_role_id, proposed_unit_id, proposed_clearance_level,
-                    status, created_at
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())'
-            );
-            $stmt->execute([
-                $tenantId,
-                $targetUserId,
-                $requestedBy,
-                $kind,
-                $note !== '' ? $note : null,
-                $gradeId,
-                $roleId,
-                $jobRoleId,
-                $unitId,
-                $clearanceLevel,
             ]);
         } elseif ($this->hasProposalColumns()) {
             $stmt = $this->pdo->prepare(
@@ -268,14 +247,13 @@ class ElevationRequestRepository
     }
 
     /**
-     * Enregistre les choix du traitement (grade, rôle, fonction, affectation, niveau d’habilitation).
+     * Enregistre les choix du traitement (grade, rôle, fonction, affectation).
      *
      * @param array{
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null,
-     *   clearance_level?: string|null
+     *   unit_id?: int|null
      * } $proposal
      */
     public function saveProposalChoices(int $id, int $tenantId, array $proposal): bool
@@ -287,7 +265,7 @@ class ElevationRequestRepository
             $stmt = $this->pdo->prepare(
                 'UPDATE elevation_requests
                  SET proposed_grade_id = ?, proposed_role_id = ?, proposed_job_role_id = ?, proposed_unit_id = ?,
-                     proposed_clearance_level = ?, proposed_permission_ids = ?, updated_at = NOW()
+                     proposed_permission_ids = ?, updated_at = NOW()
                  WHERE id = ? AND tenant_id = ?'
             );
             $permissionIds = $this->normalizePermissionIds($proposal['permission_ids'] ?? []);
@@ -296,32 +274,8 @@ class ElevationRequestRepository
                 $this->nullablePositiveId($proposal['role_id'] ?? null),
                 $this->nullablePositiveId($proposal['job_role_id'] ?? null),
                 $this->nullablePositiveId($proposal['unit_id'] ?? null),
-                $this->nullableClearanceLevel($proposal['clearance_level'] ?? null),
                 $permissionIds !== [] ? json_encode($permissionIds, JSON_THROW_ON_ERROR) : null,
                 $id, $tenantId,
-            ]);
-
-            return $stmt->rowCount() > 0;
-        }
-        if ($this->hasClearanceColumn()) {
-            $stmt = $this->pdo->prepare(
-                'UPDATE elevation_requests
-                 SET proposed_grade_id = ?,
-                     proposed_role_id = ?,
-                     proposed_job_role_id = ?,
-                     proposed_unit_id = ?,
-                     proposed_clearance_level = ?,
-                     updated_at = NOW()
-                 WHERE id = ? AND tenant_id = ?'
-            );
-            $stmt->execute([
-                $this->nullablePositiveId($proposal['grade_id'] ?? null),
-                $this->nullablePositiveId($proposal['role_id'] ?? null),
-                $this->nullablePositiveId($proposal['job_role_id'] ?? null),
-                $this->nullablePositiveId($proposal['unit_id'] ?? null),
-                $this->nullableClearanceLevel($proposal['clearance_level'] ?? null),
-                $id,
-                $tenantId,
             ]);
 
             return $stmt->rowCount() > 0;
@@ -345,23 +299,6 @@ class ElevationRequestRepository
         ]);
 
         return $stmt->rowCount() > 0;
-    }
-
-    public function hasClearanceColumn(): bool
-    {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
-        }
-        $st = $this->pdo->prepare(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'elevation_requests' AND COLUMN_NAME = 'proposed_clearance_level'
-             LIMIT 1"
-        );
-        $st->execute();
-        $cached = (bool) $st->fetchColumn();
-
-        return $cached;
     }
 
     public function hasPermissionIdsColumn(): bool
@@ -399,13 +336,6 @@ class ElevationRequestRepository
         $id = (int) ($value ?? 0);
 
         return $id > 0 ? $id : null;
-    }
-
-    private function nullableClearanceLevel(mixed $value): ?string
-    {
-        $level = trim((string) ($value ?? ''));
-
-        return $level !== '' ? $level : null;
     }
 
     /** @return list<int> */

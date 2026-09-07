@@ -35,8 +35,6 @@ if ($blocks === [] && isset($opening['responsibility_blocks']) && is_array($open
 
 $pc = \App\Services\Recruitment\RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($opening['personnel_category'] ?? 'other'));
 $arm = \App\Services\Recruitment\RecruitmentOpeningPresentation::armDomainLabel(isset($opening['arm_domain']) ? (string) $opening['arm_domain'] : null);
-$clr = \App\Services\Recruitment\RecruitmentOpeningPresentation::clearanceLabel((string) ($opening['clearance_level'] ?? 'none'));
-$clrKey = (string) ($opening['clearance_level'] ?? 'none');
 $ref = (string) ($opening['reference_public'] ?? '');
 $unitName = (string) ($opening['unit_name'] ?? '');
 $title = (string) ($opening['title'] ?? '');
@@ -147,10 +145,6 @@ $communityUrl = url('c/' . rawurlencode($slug));
               <div class="ro-meta-card rounded-xl border border-slate-200/90 px-3.5 py-3 min-w-0">
                 <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Engagement</p>
                 <p class="mt-1 text-sm font-bold text-slate-800 leading-snug"><?= htmlspecialchars($engagement !== '' ? $engagement : 'Non précisé', ENT_QUOTES, 'UTF-8') ?></p>
-              </div>
-              <div class="rounded-xl border px-3.5 py-3 min-w-0 <?= $clrKey !== 'none' ? 'border-amber-200/90 bg-amber-50/60' : 'border-slate-200/90 ro-meta-card' ?>">
-                <p class="text-[10px] font-bold uppercase tracking-wide <?= $clrKey !== 'none' ? 'text-amber-700' : 'text-slate-400' ?>">Habilitation</p>
-                <p class="mt-1 text-sm font-bold leading-snug <?= $clrKey !== 'none' ? 'text-amber-900' : 'text-slate-800' ?>"><?= htmlspecialchars($clr, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
             </div>
           </header>

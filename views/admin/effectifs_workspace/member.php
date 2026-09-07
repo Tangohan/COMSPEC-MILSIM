@@ -97,11 +97,6 @@ $gradeId = (int) ($m['grade_id'] ?? 0);
 $fonction = trim((string) ($m['job_role_display'] ?? ''));
 $unit = trim((string) ($m['unit_name'] ?? ''));
 $unitId = (int) ($m['unit_id'] ?? 0);
-$clearanceRaw = trim((string) ($m['clearance_level'] ?? ''));
-$clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
-$clearanceLabel = $clearanceRaw !== '' ? ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw) : '';
-$clearanceReviewedAt = trim((string) ($m['clearance_reviewed_at'] ?? ''));
-$clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue($clearanceRaw, $clearanceReviewedAt);
 $nicknamePrimary = trim((string) ($profile['nickname_primary'] ?? ''));
 $matricule = trim((string) ($m['matricule_internal'] ?? ($profile['matricule_internal'] ?? '')));
 $athenaId = trim((string) ($m['athena_identifier'] ?? ''));
@@ -170,9 +165,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
                 <?php else: ?>
                     <span class="eff-tag eff-tag--warn">Sans unité</span>
                 <?php endif; ?>
-                <?php if ($clearanceLabel !== ''): ?>
-                    <span class="eff-tag"><?= htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php endif; ?>
                 <?php if ($seniorityLabel !== '' && $seniorityLabel !== '—'): ?>
                     <span class="eff-tag"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
                 <?php endif; ?>
@@ -209,22 +201,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <div>
                 <dt>Fonction</dt>
                 <dd><?= htmlspecialchars($fonction !== '' ? $fonction : '—', ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <div>
-                <dt>Habilitation</dt>
-                <dd>
-                    <?php if ($clearanceLabel !== ''): ?>
-                        <?= htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') ?>
-                        <?php if ($clearanceReviewedAt !== ''): ?>
-                            <span class="eff-card__hint">revue le <?= htmlspecialchars($fmtDate($clearanceReviewedAt), ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php endif; ?>
-                        <?php if ($clearanceOverdue): ?>
-                            <span class="eff-tag eff-tag--warn">À revoir</span>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        —
-                    <?php endif; ?>
-                </dd>
             </div>
             <div>
                 <dt>Dernière connexion</dt>
@@ -519,7 +495,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="return_to" value="member">
-                <p class="eff-card__lead">Demandez un changement de grade, de fonction, d’unité ou d’habilitation à une personne habilitée.</p>
+                <p class="eff-card__lead">Demandez un changement de grade, de fonction ou d’unité à une personne habilitée.</p>
                 <?php
                 $fieldIdPrefix = 'eff-member-elev';
                 $selectedKind = 'grade';
@@ -531,7 +507,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         <?php elseif ($elevationNoRecipients ?? false): ?>
             <p class="eff-card__lead">Élévation indisponible : aucun autre membre n’est habilité à traiter la demande.</p>
         <?php else: ?>
-            <p class="eff-card__lead">Les changements d’habilitation passent par une demande d’élévation.</p>
+            <p class="eff-card__lead">Les changements de grade, de fonction ou d’affectation passent par une demande d’élévation.</p>
         <?php endif; ?>
     </article>
 
@@ -567,7 +543,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php if ($canManageRoles): ?>
             <label class="eff-card__check">
                 <input type="checkbox" name="revoke_access" value="1">
-                Retirer immédiatement les rôles et l’habilitation
+                Retirer immédiatement les rôles
             </label>
             <?php endif; ?>
             <button type="submit" class="eff-btn eff-btn--warn">Confirmer le départ</button>

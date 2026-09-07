@@ -1465,11 +1465,6 @@ class EnlistmentController
 
         $currentJobLabel = $this->resolveCurrentPersonnelJobRoleLabel($tenantId, $userId, $pp);
 
-        $currentClearanceKey = is_array($pp) ? trim((string) ($pp['clearance_level'] ?? '')) : '';
-        $currentClearance = $currentClearanceKey !== ''
-            ? RecruitmentOpeningPresentation::clearanceLabel($currentClearanceKey)
-            : $unknownDossier;
-
         $targetUnit = trim((string) ($opening['unit_name'] ?? ''));
         $openingJobId = !empty($opening['personnel_job_role_id']) ? (int) $opening['personnel_job_role_id'] : 0;
         $targetJob = $this->personnelJobRoleDisplayName($tenantId, $openingJobId);
@@ -1484,8 +1479,6 @@ class EnlistmentController
         if ($targetEngagement === '') {
             $targetEngagement = '—';
         }
-        $openingClearanceKey = trim((string) ($opening['clearance_level'] ?? 'none'));
-        $targetClearance = RecruitmentOpeningPresentation::clearanceLabel($openingClearanceKey !== '' ? $openingClearanceKey : 'none');
 
         $targetCadre = RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($opening['personnel_category'] ?? 'other'))
             . ' · '
@@ -1520,13 +1513,12 @@ class EnlistmentController
                 $targetEngagement,
                 $targetEngagement !== '—' && $norm($unknownDossier, $targetEngagement)
             ),
-            $row('Habilitation requise à l’issue', $currentClearance, $targetClearance, $norm($currentClearance, $targetClearance)),
             $row('Cadre du poste (profil / domaine)', '—', $targetCadre, false),
         ];
 
         $lead = 'Vous êtes déjà membre de cette communauté : cette candidature ne correspond pas à une première inscription, '
-            . 'mais à une demande d’évolution de carrière (changement d’unité, de fonction sur l’affectation, de poste métier référencé sur le dossier, '
-            . 'd’engagement ou d’habilitation). Le tableau ci-dessous confronte ce que le portail affiche aujourd’hui dans votre dossier '
+            . 'mais à une demande d’évolution de carrière (changement d’unité, de fonction sur l’affectation, de poste métier référencé sur le dossier '
+            . 'ou d’engagement). Le tableau ci-dessous confronte ce que le portail affiche aujourd’hui dans votre dossier '
             . 'et ce que décrit l’avis pour le poste visé. La décision finale et les ajustements exacts du dossier restent du ressort du commandement et des RH.';
 
         $footnote = 'Si une ligne affiche « Non renseigné sur votre dossier », complétez votre fiche personnelle ou demandez au staff de mettre à jour votre affectation pour éviter tout malentendu.';

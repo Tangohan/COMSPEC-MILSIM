@@ -61,7 +61,6 @@ final class PlatformUserProfileEditAssetTest extends TestCase
             'grade_id',
             'preferred_grade_format',
             'primary_unit_id',
-            'clearance_level',
             'steam_id',
             'org_role_ids[]',
             'command_notes',
@@ -74,7 +73,7 @@ final class PlatformUserProfileEditAssetTest extends TestCase
         self::assertStringContainsString('Adresse e-mail', $view);
         self::assertStringContainsString('accountStatusOptions', $view);
         self::assertStringContainsString('status_options', $view);
-        self::assertStringContainsString('Identité du personnage', $view);
+        self::assertStringContainsString('Identité', $view);
         self::assertStringContainsString('Identité civile et contact', $view);
         self::assertStringContainsString('Dossier personnel', $view);
         self::assertStringContainsString('Liaison Steam', $view);

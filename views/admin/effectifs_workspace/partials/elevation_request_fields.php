@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Champs communs demande d’élévation (type, grade, rôle, fonction, affectation, note).
  *
  * @var string $fieldIdPrefix
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>,permissions?:list}|null $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,permissions?:list}|null $elevationCatalog
  * @var string|null $selectedKind
  * @var bool $includeUnit
  */
@@ -18,7 +18,6 @@ $grades = is_array($catalog['grades'] ?? null) ? $catalog['grades'] : [];
 $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
-$clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
 $permissions = is_array($catalog['permissions'] ?? null) ? $catalog['permissions'] : [];
 $selectedKind = isset($selectedKind) ? (string) $selectedKind : 'grade';
 $includeUnit = (bool) ($includeUnit ?? true);
@@ -108,15 +107,6 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
     <?php endforeach; ?>
 </select>
 <?php endif; ?>
-
-<label for="<?= htmlspecialchars($fid('clearance'), ENT_QUOTES, 'UTF-8') ?>">Niveau d’habilitation proposé</label>
-<select id="<?= htmlspecialchars($fid('clearance'), ENT_QUOTES, 'UTF-8') ?>" name="elevation_clearance_level">
-    <option value="">— Sans changement d’habilitation —</option>
-    <?php foreach ($clearanceLevels as $clValue => $clLabel): ?>
-        <option value="<?= htmlspecialchars((string) $clValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $clLabel, ENT_QUOTES, 'UTF-8') ?></option>
-    <?php endforeach; ?>
-</select>
-<p style="margin:0 0 .5rem;font-size:11px;color:rgba(15,23,42,.5)">Conditionne l’accès aux documents classifiés — la revue d’habilitation est marquée à jour dès l’application.</p>
 
 <?php if ($permissions !== []): ?>
 <fieldset class="elevation-access-rights">

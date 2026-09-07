@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @var int $elevationTotal
  * @var int $elevationTotalPages
  * @var array<string,string> $elevationKindLabels
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>,permissions?:list} $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,permissions?:list} $elevationCatalog
  * @var array{roles?:list,permissions?:list,byRole?:array} $elevationRoleMatrix
  */
 
@@ -37,7 +37,6 @@ $grades = is_array($catalog['grades'] ?? null) ? $catalog['grades'] : [];
 $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
-$clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
 $permissions = is_array($catalog['permissions'] ?? null) ? $catalog['permissions'] : [];
 $permissionLabels = [];
 foreach ($permissions as $permission) {
@@ -100,9 +99,6 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
     }
     if (!empty($labels['unit'])) {
         $bits[] = 'Affectation « ' . $labels['unit'] . ' »';
-    }
-    if (!empty($labels['clearance'])) {
-        $bits[] = 'Habilitation « ' . $labels['clearance'] . ' »';
     }
     $requestedRights = [];
     foreach ($requestedPermissionIds as $permissionId) {
@@ -262,7 +258,6 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
     $proposedRoleId = (int) ($r['proposed_role_id'] ?? 0);
     $proposedJobId = (int) ($r['proposed_job_role_id'] ?? 0);
     $proposedUnitId = (int) ($r['proposed_unit_id'] ?? 0);
-    $proposedClearance = trim((string) ($r['proposed_clearance_level'] ?? ''));
     $proposedPermissionIds = is_array($r['_permission_ids'] ?? null) ? $r['_permission_ids'] : [];
     $currentRoleIds = is_array($r['_current_role_ids'] ?? null) ? $r['_current_role_ids'] : [];
     $diff = is_array($r['_permission_diff'] ?? null) ? $r['_permission_diff'] : ['gained' => [], 'lost' => [], 'unchanged_count' => 0, 'rows' => []];
@@ -349,15 +344,6 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                     <?php foreach ($units as $u): ?>
                         <?php $uid = (int) ($u['id'] ?? 0); if ($uid < 1) continue; ?>
                         <option value="<?= $uid ?>" <?= $proposedUnitId === $uid ? 'selected' : '' ?>><?= htmlspecialchars((string) ($u['assignment_path'] ?? $u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label for="elev-clearance-<?= $id ?>">Habilitation à appliquer</label>
-                <select id="elev-clearance-<?= $id ?>" name="proposed_clearance_level" class="eff-elev-select">
-                    <option value="">— Ne pas modifier l’habilitation —</option>
-                    <?php foreach ($clearanceLevels as $clValue => $clLabel): ?>
-                        <option value="<?= htmlspecialchars((string) $clValue, ENT_QUOTES, 'UTF-8') ?>" <?= $proposedClearance === (string) $clValue ? 'selected' : '' ?>><?= htmlspecialchars((string) $clLabel, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -649,7 +635,6 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             var role = selectedLabel(form.querySelector('[name="proposed_role_id"]'));
             var job = selectedLabel(form.querySelector('[name="proposed_job_role_id"]'));
             var unit = selectedLabel(form.querySelector('[name="proposed_unit_id"]'));
-            var clearance = selectedLabel(form.querySelector('[name="proposed_clearance_level"]'));
             var selectedPermissions = Array.prototype.slice.call(form.querySelectorAll('[name="proposed_permission_ids[]"]:checked')).map(function (input) {
                 var label = input.closest('label');
                 var strong = label ? label.querySelector('strong') : null;
@@ -662,13 +647,12 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             if (role) lines.push('<li>Rôle → ' + role.replace(/</g, '&lt;') + ' <em>(' + modeLabel(form).replace(/</g, '&lt;') + ')</em></li>');
             if (job) lines.push('<li>Fonction → ' + job.replace(/</g, '&lt;') + '</li>');
             if (unit) lines.push('<li>Affectation → ' + unit.replace(/</g, '&lt;') + '</li>');
-            if (clearance) lines.push('<li>Habilitation → ' + clearance.replace(/</g, '&lt;') + ' <em>(conditionne l’accès aux documents classifiés)</em></li>');
             if (selectedPermissions.length) {
                 lines.push('<li>Droits individuels accordés → ' + selectedPermissions.map(function (permission) {
                     return permission.replace(/</g, '&lt;');
                 }).join(', ') + '</li>');
             }
-            if (!grade && !role && !job && !unit && !clearance && !selectedPermissions.length) {
+            if (!grade && !role && !job && !unit && !selectedPermissions.length) {
                 lines.push('<li><strong>Aucun changement sélectionné</strong> — seule l’acceptation sera enregistrée.</li>');
             }
             lines.push('</ul>');

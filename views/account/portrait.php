@@ -13,8 +13,8 @@ if (!empty($personnelProfile['character_portrait_path'])) {
 }
 
 $accountNavKey = 'portrait';
-$accountTitle = 'Portrait opérateur';
-$accountLead = 'Image « in-universe » pour la fiche personnelle, l’organigramme et les briefings. Portrait vertical ou carré conseillé. JPG, PNG ou WebP — 2 Mo maximum.';
+$accountTitle = 'Photo de profil';
+$accountLead = 'Image pour la fiche personnelle, l’organigramme et les briefings. Format vertical ou carré conseillé. JPG, PNG ou WebP — 2 Mo maximum.';
 $accountUser = $user;
 require base_path('views/partials/account/shell_open.php');
 ?>
@@ -22,28 +22,28 @@ require base_path('views/partials/account/shell_open.php');
 <section class="account-hub__panel">
     <div class="account-hub__panel-head">
         <p class="account-hub__panel-kicker">Apparence</p>
-        <h2 class="account-hub__panel-title">Portrait du personnage</h2>
-        <p class="account-hub__panel-desc">Distinct de la photo de compte : ce visuel représente votre opérateur dans l’univers MILSIM.</p>
+        <h2 class="account-hub__panel-title">Photo de profil</h2>
+        <p class="account-hub__panel-desc">Distincte de la photo de compte : ce visuel apparaît sur votre fiche et dans l’organigramme.</p>
     </div>
     <div class="account-hub__panel-body">
         <div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:flex-start">
             <div style="display:grid;gap:.65rem;justify-items:center">
                 <div class="account-hub__media-preview account-hub__media-preview--portrait">
                     <?php if ($portraitUrl): ?>
-                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur actuel">
+                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de profil actuelle">
                     <?php else: ?>
-                    <img src="<?= htmlspecialchars(url('assets/images/inconnu.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur inconnu">
+                    <img src="<?= htmlspecialchars(url('assets/images/inconnu.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="Aucune photo de profil">
                     <?php endif; ?>
                 </div>
                 <?php if (!$portraitUrl): ?>
-                <p class="account-hub__hint" style="text-align:center;max-width:10rem">Aucun portrait pour l’instant.</p>
+                <p class="account-hub__hint" style="text-align:center;max-width:10rem">Aucune photo pour l’instant.</p>
                 <?php endif; ?>
                 <?php if (!empty($user['id'])): ?>
-                <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre portrait opérateur." class="account-hub__btn" style="padding:.4rem .65rem;font-size:.625rem;background:#fff;color:#be123c;border:1px solid #fecdd3">Signaler ce portrait</button>
+                <button type="button" data-community-report data-cr-type="operator_visual" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre photo de profil." class="account-hub__btn" style="padding:.4rem .65rem;font-size:.625rem;background:#fff;color:#be123c;border:1px solid #fecdd3">Signaler cette photo</button>
                 <?php endif; ?>
             </div>
             <?php if ($portraitLocked): ?>
-            <div class="account-hub__flash account-hub__flash--warn" role="status">La modification de ce portrait a été verrouillée par un administrateur de la communauté.</div>
+            <div class="account-hub__flash account-hub__flash--warn" role="status">La modification de cette photo a été verrouillée par un administrateur de la communauté.</div>
             <?php else: ?>
             <form method="post" action="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="account-hub__form-grid" style="flex:1;min-width:min(100%,16rem)">
                 <?= \App\Core\Csrf::field() ?>
@@ -55,13 +55,13 @@ require base_path('views/partials/account/shell_open.php');
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <button type="submit" class="account-hub__btn account-hub__btn--ink">Enregistrer le portrait</button>
+                    <button type="submit" class="account-hub__btn account-hub__btn--ink">Enregistrer la photo</button>
                 </div>
             </form>
             <?php endif; ?>
         </div>
         <p class="account-hub__hint" style="margin-top:1.25rem">
-            Pour le reste du dossier (affectation, clearance, etc.), ouvrez
+            Pour le reste du dossier (affectation, formations, etc.), ouvrez
             <a href="<?= htmlspecialchars(url('personnel/me/edit'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">votre fiche personnelle</a>.
         </p>
     </div>

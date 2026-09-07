@@ -1415,7 +1415,6 @@ class PersonnelController
             'extraCallsigns' => $extraCallsigns,
             'extraCallsignSlots' => $extraCallsignSlots,
             'medalRackItems' => $medalRackItems,
-            'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
             'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
             'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
             'seniorityPrePlatformDate' => Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
@@ -1453,7 +1452,6 @@ class PersonnelController
             && function_exists('user_has_advanced_fiche_edit')
             && user_has_advanced_fiche_edit((int) $target['id']);
         $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
-        $clearanceReview = trim((string) $request->input('clearance_reviewed_at', $existingProfile['clearance_reviewed_at'] ?? ''));
         $readinessRaw = $request->input('readiness_score', $existingProfile['readiness_score'] ?? null);
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
@@ -1569,8 +1567,6 @@ class PersonnelController
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ),
             'primary_unit_id' => $primaryUnitId,
-            // clearance_level : hors élévation, sauf mode édition avancée 24 h (grant admin).
-            'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
             'enlistment_date' => trim((string) $request->input('enlistment_date', $existingProfile['enlistment_date'] ?? '')) ?: null,
             'equipment_class' => trim((string) $request->input('equipment_class')),
@@ -1659,16 +1655,6 @@ class PersonnelController
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
         if ($advancedEditActive) {
-            $clearanceRaw = $request->input('clearance_level');
-            if ($clearanceRaw !== null) {
-                $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
-                $clearanceIn = trim((string) $clearanceRaw);
-                if ($clearanceIn === '') {
-                    $data['clearance_level'] = null;
-                } elseif (isset($clearanceLabels[$clearanceIn])) {
-                    $data['clearance_level'] = $clearanceIn;
-                }
-            }
             $matriculeIn = trim((string) $request->input('matricule_internal'));
             if ($matriculeIn !== '') {
                 if (function_exists('mb_substr')) {

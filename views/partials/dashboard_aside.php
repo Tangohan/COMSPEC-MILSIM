@@ -284,7 +284,6 @@ if ($canDocs) {
     $espaceTiles[] = $tile('documents', 'Documents', 'Ordres et références', 'default', null, $links([
         ['label' => 'Bibliothèque', 'href' => url('documents'), 'hint' => 'Tous les documents'],
         ['label' => 'Collections', 'href' => url('documents/collections'), 'hint' => 'Dossiers thématiques'],
-        ['label' => 'Accréditation', 'href' => url('documents/accreditation'), 'hint' => 'Niveaux d’accès'],
         $canDocsUpload
             ? ['label' => 'Gestion', 'href' => url('documents/gestion'), 'hint' => 'Publication']
             : null,

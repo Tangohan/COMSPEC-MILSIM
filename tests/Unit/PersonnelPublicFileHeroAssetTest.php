@@ -28,7 +28,7 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('personnel-file-hero__badges', $file);
         self::assertStringContainsString('personnel-file-hero__meta-label', $file);
         self::assertStringContainsString('Indicatif', $file);
-        self::assertStringContainsString('Habilitation', $file);
+        self::assertStringNotContainsString('Habilitation', $file);
         self::assertStringContainsString('personnel-file--public', $file);
         self::assertStringContainsString('file_view_switcher.php', $file);
         self::assertStringNotContainsString('personnel-file--gate', $file);
