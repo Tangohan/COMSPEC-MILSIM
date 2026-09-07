@@ -18,6 +18,9 @@ $t = static function (string $key, string $fallback): string {
 };
 $currentLocale = function_exists('locale') ? locale() : 'fr';
 $usageOptions = PlatformReviewCatalog::usageOptions();
+$frequencyOptions = PlatformReviewCatalog::frequencyOptions();
+$frictionOptions = PlatformReviewCatalog::frictionOptions();
+$deviceOptions = PlatformReviewCatalog::deviceOptions();
 $areaOptions = PlatformReviewCatalog::areaOptions();
 $localeOptions = PlatformReviewCatalog::localeOptions();
 ?>
@@ -32,6 +35,11 @@ $localeOptions = PlatformReviewCatalog::localeOptions();
     data-snooze-url="<?= $h(url('api/platform-review/plus-tard')) ?>"
     data-translation-url="<?= $h(url('api/platform-review/traduction')) ?>"
     data-locale="<?= $h($currentLocale) ?>"
+    data-msg-need-score="<?= $h($t('common.platform_review_need_score', 'Choisissez une note de 0 à 10.')) ?>"
+    data-msg-review-fail="<?= $h($t('common.platform_review_send_fail', 'L’avis n’a pas pu être envoyé.')) ?>"
+    data-msg-review-ok="<?= $h($t('common.platform_review_send_ok', 'Merci. Votre avis a bien été transmis.')) ?>"
+    data-msg-translation-fail="<?= $h($t('common.platform_translate_send_fail', 'La proposition n’a pas pu être envoyée.')) ?>"
+    data-msg-translation-ok="<?= $h($t('common.platform_translate_send_ok', 'Merci. Votre proposition sera relue.')) ?>"
 >
     <button type="button" class="prw-launcher" id="prw-launcher" aria-haspopup="dialog" aria-expanded="false" aria-controls="prw-dialog">
         <span class="prw-launcher__mark" aria-hidden="true">★</span>
@@ -66,12 +74,55 @@ $localeOptions = PlatformReviewCatalog::localeOptions();
                     <span><?= $h($t('common.platform_review_score_high', 'Tout à fait')) ?></span>
                 </div>
 
+                <fieldset class="prw-field prw-field--choice">
+                    <legend><?= $h($t('common.platform_review_clarity_q', 'Athena est-elle claire à utiliser ?')) ?></legend>
+                    <div class="prw-choice" role="radiogroup" aria-label="<?= $h($t('common.platform_review_clarity_q', 'Athena est-elle claire à utiliser ?')) ?>">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <button type="button" class="prw-choice__btn" data-prw-clarity="<?= $i ?>" aria-label="<?= $i ?> / 5"><?= $i ?></button>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="prw-score__hints">
+                        <span><?= $h($t('common.platform_review_clarity_low', 'Pas clair')) ?></span>
+                        <span><?= $h($t('common.platform_review_clarity_high', 'Très clair')) ?></span>
+                    </div>
+                </fieldset>
+
                 <label class="prw-field">
                     <span><?= $h($t('common.platform_review_usage', 'Vous utilisez surtout Athena comme')) ?></span>
                     <select data-prw-usage>
                         <option value=""><?= $h($t('common.platform_review_usage_choose', 'Choisir…')) ?></option>
                         <?php foreach ($usageOptions as $value => $label): ?>
                             <option value="<?= $h($value) ?>"><?= $h($t('common.platform_review_usage_' . $value, $label)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
+                <label class="prw-field">
+                    <span><?= $h($t('common.platform_review_frequency', 'Vous ouvrez Athena…')) ?></span>
+                    <select data-prw-frequency>
+                        <option value=""><?= $h($t('common.platform_review_usage_choose', 'Choisir…')) ?></option>
+                        <?php foreach ($frequencyOptions as $value => $label): ?>
+                            <option value="<?= $h($value) ?>"><?= $h($t('common.platform_review_frequency_' . $value, $label)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
+                <label class="prw-field">
+                    <span><?= $h($t('common.platform_review_friction', 'Où perdez-vous le plus de temps ?')) ?></span>
+                    <select data-prw-friction>
+                        <option value=""><?= $h($t('common.platform_review_usage_choose', 'Choisir…')) ?></option>
+                        <?php foreach ($frictionOptions as $value => $label): ?>
+                            <option value="<?= $h($value) ?>"><?= $h($t('common.platform_review_friction_' . $value, $label)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
+                <label class="prw-field">
+                    <span><?= $h($t('common.platform_review_device', 'Vous utilisez surtout Athena sur')) ?></span>
+                    <select data-prw-device>
+                        <option value=""><?= $h($t('common.platform_review_usage_choose', 'Choisir…')) ?></option>
+                        <?php foreach ($deviceOptions as $value => $label): ?>
+                            <option value="<?= $h($value) ?>"><?= $h($t('common.platform_review_device_' . $value, $label)) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
@@ -84,6 +135,11 @@ $localeOptions = PlatformReviewCatalog::localeOptions();
                 <label class="prw-field">
                     <span><?= $h($t('common.platform_review_improvements', 'Ce que vous changeriez')) ?></span>
                     <textarea rows="3" maxlength="2000" data-prw-improvements placeholder="<?= $h($t('common.platform_review_improvements_ph', 'Un blocage, une confusion, une idée concrète…')) ?>"></textarea>
+                </label>
+
+                <label class="prw-field">
+                    <span><?= $h($t('common.platform_review_wishlist', 'Une fonctionnalité que vous aimeriez (facultatif)')) ?></span>
+                    <textarea rows="2" maxlength="2000" data-prw-wishlist placeholder="<?= $h($t('common.platform_review_wishlist_ph', 'Par exemple : un rappel, un écran manquant, un export…')) ?>"></textarea>
                 </label>
 
                 <div class="prw-actions">

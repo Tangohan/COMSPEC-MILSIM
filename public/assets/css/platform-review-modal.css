@@ -45,8 +45,8 @@
 }
 
 .prw-card {
-  width: min(100%, 560px);
-  max-height: min(90dvh, 760px);
+  width: min(100%, 600px);
+  max-height: min(92dvh, 860px);
   overflow: auto;
   border-radius: 20px;
   border: 1px solid #e2e8f0;
@@ -173,6 +173,44 @@
   font-size: 13px;
   font-weight: 600;
   color: #334155;
+}
+
+.prw-field--choice {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.prw-field--choice > legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.prw-choice {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.prw-choice__btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.prw-choice__btn.is-on {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
 }
 
 .prw-field select,

@@ -92,9 +92,14 @@ $member = static function (array $row) use ($h): string {
                                     <th>Membre</th>
                                     <th>Communauté</th>
                                     <th>Note</th>
+                                    <th>Clarté</th>
                                     <th>Usage</th>
+                                    <th>Fréquence</th>
+                                    <th>Point de friction</th>
+                                    <th>Appareil</th>
                                     <th>Ce qui aide</th>
                                     <th>À changer</th>
+                                    <th>Souhait</th>
                                     <th>Date</th>
                                 </tr>
                             </thead>
@@ -104,9 +109,14 @@ $member = static function (array $row) use ($h): string {
                                     <td><?= $member($row) ?></td>
                                     <td><?= $h(trim((string) ($row['tenant_name'] ?? '')) ?: '—') ?></td>
                                     <td><?= isset($row['score']) && $row['score'] !== null ? (int) $row['score'] . ' / 10' : '—' ?></td>
+                                    <td><?= isset($row['clarity_score']) && $row['clarity_score'] !== null && $row['clarity_score'] !== '' ? (int) $row['clarity_score'] . ' / 5' : '—' ?></td>
                                     <td><?= $h(PlatformReviewCatalog::usageLabel((string) ($row['usage_kind'] ?? ''))) ?></td>
+                                    <td><?= $h(trim((string) ($row['frequency_kind'] ?? '')) !== '' ? PlatformReviewCatalog::frequencyLabel((string) $row['frequency_kind']) : '—') ?></td>
+                                    <td><?= $h(trim((string) ($row['friction_area'] ?? '')) !== '' ? PlatformReviewCatalog::frictionLabel((string) $row['friction_area']) : '—') ?></td>
+                                    <td><?= $h(trim((string) ($row['device_kind'] ?? '')) !== '' ? PlatformReviewCatalog::deviceLabel((string) $row['device_kind']) : '—') ?></td>
                                     <td><?= $h(trim((string) ($row['highlights'] ?? '')) ?: '—') ?></td>
                                     <td><?= $h(trim((string) ($row['improvements'] ?? '')) ?: '—') ?></td>
+                                    <td><?= $h(trim((string) ($row['wishlist'] ?? '')) ?: '—') ?></td>
                                     <td><?php
                                         $rawDate = trim((string) ($row['submitted_at'] ?? ''));
                                         $ts = $rawDate !== '' ? strtotime($rawDate) : false;

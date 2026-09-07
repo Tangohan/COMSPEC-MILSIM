@@ -49,7 +49,7 @@ final class MemberIntegrationController
         $dossier = $this->service->dossierSnapshot($userId, $user, $tenantId);
 
         return Response::view('layout.main', [
-            'title' => 'Mon intégration',
+            'title' => function_exists('__') ? __('common.integration_title') : 'Mon intégration',
             'content' => 'member_integration.index',
             'integration' => $row,
             'steps' => $visibleSteps,
