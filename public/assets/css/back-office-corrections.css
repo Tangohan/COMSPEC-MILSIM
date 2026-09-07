@@ -1,5 +1,5 @@
 .rh-corr {
-  max-width: 52rem;
+  max-width: 72rem;
   padding: 0 1.25rem 2.5rem;
 }
 .rh-corr__count {
@@ -204,4 +204,8 @@
   margin-top: 1rem;
   padding-top: 0.9rem;
   border-top: 1px solid #e2e8f0;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: #fff;
 }

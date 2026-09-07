@@ -13,6 +13,10 @@
     var writePanel = document.getElementById('doc-origin-authored');
     if (uploadPanel) uploadPanel.classList.toggle('hidden', authored);
     if (writePanel) writePanel.classList.toggle('hidden', !authored);
+    if (uploadPanel) {
+      var fileInput = uploadPanel.querySelector('input[type="file"]');
+      if (fileInput) fileInput.disabled = authored;
+    }
     var without = document.getElementById('doc-without-file');
     if (without && authored) {
       without.checked = true;

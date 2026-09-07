@@ -90,7 +90,7 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
 
-    <form action="<?= url('documents/gestion/' . $document['id'] . '/modifier') ?>" method="post" id="doc-edit-form" class="mb-10">
+    <form action="<?= url('documents/gestion/' . $document['id'] . '/modifier') ?>" method="post" id="doc-edit-form" class="mb-10" enctype="multipart/form-data">
         <?= \App\Core\Csrf::field() ?>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-6">
@@ -142,12 +142,17 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
                     <div class="fm-origin-choice mb-4">
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
                             <input type="radio" name="document_origin" value="upload" class="mt-1" <?= $documentOrigin !== 'authored' ? 'checked' : '' ?> />
-                            <span><span class="block font-semibold">Joindre un fichier</span><span class="text-[11px] text-slate-500">La pièce jointe reste gérée plus bas, dans les versions.</span></span>
+                            <span><span class="block font-semibold">Joindre un fichier</span><span class="text-[11px] text-slate-500">Choisissez le fichier ici, puis Enregistrer. Il remplace la pièce jointe actuelle.</span></span>
                         </label>
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
                             <input type="radio" name="document_origin" value="authored" class="mt-1" <?= $documentOrigin === 'authored' ? 'checked' : '' ?> />
                             <span><span class="block font-semibold">Rédiger le document</span><span class="text-[11px] text-slate-500">Page de garde, signatures, puis le corps du texte.</span></span>
                         </label>
+                    </div>
+                    <div id="doc-origin-upload" class="<?= $documentOrigin === 'authored' ? 'hidden' : '' ?>">
+                        <label class="block text-sm font-medium text-slate-700 mb-1" for="doc-edit-file">Nouveau fichier</label>
+                        <input id="doc-edit-file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,application/pdf,image/jpeg,image/png,image/webp,video/mp4" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
+                        <p class="mt-1 text-[11px] text-slate-500">PDF, image ou vidéo courte, 10 Mo maximum. Laisser vide conserve le fichier actuel.</p>
                     </div>
                     <div id="doc-origin-authored" class="<?= $documentOrigin === 'authored' ? '' : 'hidden' ?>">
                         <?php
@@ -449,13 +454,19 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
 
     <?php
     $hasAttachedFile = !empty($hasAttachedFile);
+    $attachedFileMissing = !empty($attachedFileMissing);
     $attachedLabel = (string) ($attachedLabel ?? 'Fichier joint');
     $attachedKind = (string) ($attachedKind ?? 'Fichier joint');
     $attachedSize = (string) ($attachedSize ?? '');
     ?>
     <section class="border-t border-slate-200 pt-8 mb-8">
         <h2 class="text-lg font-bold text-slate-900 mb-4">Fichier joint</h2>
-        <?php if ($hasAttachedFile): ?>
+        <?php if ($attachedFileMissing): ?>
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-4">
+            <p class="text-sm text-amber-950">Le fichier n’est plus disponible. Déposez-en un nouveau dans Contenu, puis Enregistrer — ou utilisez le formulaire de version ci-dessous.</p>
+        </div>
+        <?php endif; ?>
+        <?php if ($hasAttachedFile && !$attachedFileMissing): ?>
         <div class="rounded-lg border border-slate-200 bg-white p-4">
             <p class="text-sm text-slate-800">
                 <strong><?= htmlspecialchars($attachedLabel) ?></strong>
@@ -474,8 +485,8 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
                 <button type="submit" class="mt-3 px-3 py-2 border border-red-200 text-red-800 text-sm font-semibold rounded hover:bg-red-50">Retirer le fichier</button>
             </form>
         </div>
-        <?php else: ?>
-        <p class="text-sm text-slate-500">Aucun fichier n’est joint à cette fiche. Vous pouvez en ajouter un ci-dessous.</p>
+        <?php elseif (!$attachedFileMissing): ?>
+        <p class="text-sm text-slate-500">Aucun fichier n’est joint à cette fiche. Vous pouvez en ajouter un dans Contenu, ou ci-dessous.</p>
         <?php endif; ?>
     </section>
 

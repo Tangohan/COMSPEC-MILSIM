@@ -1438,7 +1438,8 @@ class PersonnelController
             return $this->personnelForbiddenResponse(true, url('personnel'));
         }
         $fromEffectifs = (string) $request->input('effectifs_context', '') === '1';
-        $editUrl = $this->personnelPortraitEditUrl($target, $isSelf, $fromEffectifs);
+        $fromCorrections = (string) $request->input('from_corrections', '') === '1';
+        $editUrl = $this->personnelPortraitEditUrl($target, $isSelf, $fromEffectifs, $fromCorrections);
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
@@ -1481,8 +1482,11 @@ class PersonnelController
         return Response::redirect($editUrl);
     }
 
-    private function personnelPortraitEditUrl(array $target, bool $isSelf, bool $fromEffectifs): string
+    private function personnelPortraitEditUrl(array $target, bool $isSelf, bool $fromEffectifs, bool $fromCorrections = false): string
     {
+        if ($fromCorrections) {
+            return url('back-office/personnel/corrections') . '?membre=' . (int) ($target['id'] ?? 0);
+        }
         if ($fromEffectifs) {
             return effectifs_workspace_url('membres/' . (int) ($target['id'] ?? 0)) . '#edit-portrait';
         }

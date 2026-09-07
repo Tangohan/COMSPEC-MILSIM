@@ -60,14 +60,42 @@ final class PersonnelCorrectionRequestService
         'weapon_specialty' => 'Spécialité armement',
     ];
 
+    /**
+     * Champs supplémentaires du dossier, réservés à un responsable (pas à la demande membre).
+     *
+     * @var array<string, string>
+     */
+    public const STAFF_ONLY_FIELDS = [
+        'service_branch' => 'Arme ou service',
+        'deployable' => 'Disponible pour un déploiement',
+        'medal_rack' => 'Décorations et placards',
+        'rp_followup_stage' => 'Étape d’immersion',
+        'rp_followup_status' => 'Statut de suivi',
+        'rp_followup_progress' => 'Avancement (%)',
+        'rp_tutor_user_id' => 'Tuteur',
+        'rp_recruitment_stream' => 'Filière de recrutement',
+        'rp_recruitment_origin' => 'Origine du recrutement',
+        'rp_next_interview_date' => 'Prochain entretien',
+        'rp_service_rotation_date' => 'Prochaine rotation',
+        'rp_followup_notes' => 'Notes d’immersion',
+        'matricule_internal' => 'Matricule du dossier',
+        'clearance_level' => 'Niveau d’habilitation',
+        'command_notes' => 'Notes de commandement',
+    ];
+
     /** @var array<string, string> */
     public const FIELD_GROUPS = [
-        'identity' => 'Identité du personnage',
-        'details' => 'Détails du personnage',
+        'identity' => 'Personnage',
+        'details' => 'Physique et statut',
         'assignment' => 'Affectation',
-        'engagement' => 'Engagement et statut',
+        'engagement' => 'Engagement',
+        'immersion' => 'Suivi d’immersion',
         'equipment' => 'Équipement',
+        'identifiers' => 'Identifiants internes',
+        'command' => 'Notes de commandement',
     ];
+
+    public const ASSIGNMENT_SLOT_COUNT = 4;
 
     /** @var list<string> */
     public const ORBAT_KEYS = [
@@ -86,10 +114,16 @@ final class PersonnelCorrectionRequestService
     private const LINE_LIST_COLUMNS = [
         'extra_callsigns' => 'extra_callsigns_json',
         'nicknames' => 'nicknames_json',
+        'medal_rack' => 'medal_rack_json',
     ];
 
     /** @var list<string> */
-    private const DATE_KEYS = ['enlistment_date', 'rp_medical_due_date'];
+    private const DATE_KEYS = [
+        'enlistment_date',
+        'rp_medical_due_date',
+        'rp_next_interview_date',
+        'rp_service_rotation_date',
+    ];
 
     /** @var list<string> */
     private const STAFF_PERMISSION_SLUGS = [
@@ -118,8 +152,12 @@ final class PersonnelCorrectionRequestService
     }
 
     /** @return array<string, string> */
-    public static function fieldLabels(): array
+    public static function fieldLabels(bool $forStaff = false): array
     {
+        if ($forStaff) {
+            return self::CORRECTABLE_FIELDS + self::STAFF_ONLY_FIELDS;
+        }
+
         return self::CORRECTABLE_FIELDS;
     }
 
@@ -128,10 +166,10 @@ final class PersonnelCorrectionRequestService
      *
      * @return array<string, array<string, mixed>>
      */
-    public static function fieldCatalog(): array
+    public static function fieldCatalog(bool $forStaff = false): array
     {
         $out = [];
-        foreach (self::CORRECTABLE_FIELDS as $key => $label) {
+        foreach (self::fieldLabels($forStaff) as $key => $label) {
             $out[$key] = array_merge(self::fieldMeta($key), ['label' => $label]);
         }
 
@@ -165,6 +203,10 @@ final class PersonnelCorrectionRequestService
                 ['value' => 'Réserve', 'label' => 'Réserve'],
                 ['value' => 'Indisponible', 'label' => 'Indisponible'],
             ],
+            'rp_recruitment_origin' => [
+                ['value' => 'internal', 'label' => 'Interne'],
+                ['value' => 'external', 'label' => 'Externe'],
+            ],
         ];
     }
 
@@ -178,7 +220,7 @@ final class PersonnelCorrectionRequestService
         $userRow = $this->userRepository->findById($userId) ?? [];
         $tenantId = (int) ($userRow['tenant_id'] ?? 0);
         $out = [];
-        foreach (array_keys(self::CORRECTABLE_FIELDS) as $key) {
+        foreach (array_keys(self::fieldLabels(true)) as $key) {
             if (in_array($key, self::USER_PROFILE_KEYS, true)) {
                 $val = $userProfile[$key] ?? null;
                 $out[$key] = is_scalar($val) ? trim((string) $val) : '';
@@ -195,9 +237,22 @@ final class PersonnelCorrectionRequestService
                 $out[$key] = $this->jsonListToLines($profile['nicknames_json'] ?? null);
                 continue;
             }
+            if ($key === 'medal_rack') {
+                $out[$key] = $this->jsonListToLines($profile['medal_rack_json'] ?? null);
+                continue;
+            }
             if ($key === 'grade_id') {
                 $gid = (int) ($userRow['grade_id'] ?? 0);
                 $out[$key] = $gid > 0 ? (string) $gid : '';
+                continue;
+            }
+            if ($key === 'rp_tutor_user_id') {
+                $tid = (int) ($profile['rp_tutor_user_id'] ?? 0);
+                $out[$key] = $tid > 0 ? (string) $tid : '';
+                continue;
+            }
+            if ($key === 'deployable') {
+                $out[$key] = !isset($profile['deployable']) || (int) $profile['deployable'] === 1 ? '1' : '0';
                 continue;
             }
             if ($key === 'unit_assignments') {
@@ -258,7 +313,7 @@ final class PersonnelCorrectionRequestService
         }
 
         $before = $this->currentSnapshot($targetUserId);
-        $proposed = $this->normalizeProposed($rawInput, $before);
+        $proposed = $this->normalizeProposed(array_intersect_key($rawInput, self::CORRECTABLE_FIELDS), $before);
         if ($proposed === []) {
             return ['ok' => false, 'message' => 'Aucune modification détectée. Corrigez au moins un champ.'];
         }
@@ -475,7 +530,7 @@ final class PersonnelCorrectionRequestService
     private function normalizeProposed(array $raw, array $before): array
     {
         $out = [];
-        foreach (array_keys(self::CORRECTABLE_FIELDS) as $key) {
+        foreach (array_keys(self::fieldLabels(true)) as $key) {
             if (!array_key_exists($key, $raw)) {
                 continue;
             }
@@ -484,7 +539,7 @@ final class PersonnelCorrectionRequestService
                 continue;
             }
             $old = isset($before[$key]) ? trim((string) $before[$key]) : '';
-            if ($key === 'extra_callsigns' || $key === 'nicknames') {
+            if ($key === 'extra_callsigns' || $key === 'nicknames' || $key === 'medal_rack') {
                 $old = $this->normalizeIncomingValue($key, $old);
             }
             if ($new === $old) {
@@ -495,12 +550,12 @@ final class PersonnelCorrectionRequestService
                 continue;
             }
             $max = match ($key) {
-                'bio' => 2000,
-                'extra_callsigns', 'nicknames' => 800,
+                'bio', 'command_notes', 'rp_followup_notes' => 2000,
+                'extra_callsigns', 'nicknames', 'medal_rack' => 800,
                 'motto', 'languages', 'operator_tags', 'weapon_specialty', 'kit_assigned', 'vehicle_authorized' => 255,
-                'operator_status', 'rp_operational_function' => 160,
-                'callsign', 'nickname_primary', 'rank_display', 'rank_display_override', 'first_name', 'last_name' => 120,
-                'grade_id' => 12,
+                'operator_status', 'rp_operational_function', 'rp_followup_status', 'rp_followup_stage', 'rp_recruitment_stream' => 160,
+                'callsign', 'nickname_primary', 'rank_display', 'rank_display_override', 'first_name', 'last_name', 'matricule_internal', 'clearance_level', 'service_branch' => 120,
+                'grade_id', 'rp_tutor_user_id', 'rp_followup_progress', 'deployable' => 12,
                 default => 150,
             };
             $out[$key] = mb_substr($new, 0, $max);
@@ -525,6 +580,23 @@ final class PersonnelCorrectionRequestService
         foreach ($payload as $key => $value) {
             if ($key !== 'weight_kg' && $value === '' && !in_array($key, ['unit_assignments', 'job_roles', 'grade_id'], true)) {
                 $value = null;
+            }
+            if ($key === 'rp_tutor_user_id') {
+                $tid = (int) $value;
+                $personnelPatch['rp_tutor_user_id'] = $tid > 0 ? $tid : null;
+                continue;
+            }
+            if ($key === 'deployable') {
+                $personnelPatch['deployable'] = ($value === '1' || $value === 1 || $value === true) ? 1 : 0;
+                continue;
+            }
+            if ($key === 'rp_followup_progress') {
+                if ($value === null || $value === '') {
+                    $personnelPatch['rp_followup_progress'] = null;
+                } else {
+                    $personnelPatch['rp_followup_progress'] = max(0, min(100, (int) $value));
+                }
+                continue;
             }
             if ($key === 'grade_id') {
                 $gid = (int) $value;
@@ -633,15 +705,36 @@ final class PersonnelCorrectionRequestService
                 'type' => 'unit_assignments',
                 'group' => 'assignment',
                 'span' => 2,
-                'help' => 'Dans quelle équipe se trouve la personne, et sa place dans cette équipe (membre, chef, adjoint…). L’unité choisie ici est l’affectation principale, visible sur la fiche et l’organigramme.',
+                'help' => 'Jusqu’à quatre équipes. Cochez l’affectation principale : c’est celle visible sur la fiche et l’organigramme. La place dans l’équipe (membre, chef, adjoint…) se saisit à côté.',
             ],
             'job_roles' => [
                 'type' => 'job_roles',
                 'group' => 'assignment',
                 'span' => 2,
-                'help' => 'La fonction tenue, distincte de l’équipe. L’emploi décrit ce que la personne fait, pas un droit d’accès. Celui choisi ici est l’emploi principal, visible sur la fiche, l’organigramme et le forum.',
+                'help' => 'Jusqu’à quatre fonctions. Cochez l’emploi principal : il apparaît sur la fiche, l’organigramme et le forum. L’emploi décrit ce que la personne fait, pas un droit d’accès.',
             ],
             'weapon_specialty' => ['type' => 'text', 'group' => 'equipment', 'span' => 2],
+            'service_branch' => ['type' => 'text', 'group' => 'details'],
+            'deployable' => ['type' => 'checkbox', 'group' => 'equipment', 'span' => 2, 'help' => 'Décochez si la personne n’est pas disponible pour un départ.'],
+            'medal_rack' => [
+                'type' => 'textarea',
+                'group' => 'equipment',
+                'span' => 2,
+                'rows' => 3,
+                'help' => 'Une décoration ou un placard par ligne.',
+            ],
+            'rp_followup_stage' => ['type' => 'text', 'group' => 'immersion'],
+            'rp_followup_status' => ['type' => 'text', 'group' => 'immersion'],
+            'rp_followup_progress' => ['type' => 'number', 'group' => 'immersion', 'min' => 0, 'max_num' => 100],
+            'rp_tutor_user_id' => ['type' => 'select', 'group' => 'immersion', 'choices' => 'tutors'],
+            'rp_recruitment_stream' => ['type' => 'text', 'group' => 'immersion'],
+            'rp_recruitment_origin' => ['type' => 'select', 'group' => 'immersion', 'choices' => 'rp_recruitment_origin'],
+            'rp_next_interview_date' => ['type' => 'date', 'group' => 'immersion'],
+            'rp_service_rotation_date' => ['type' => 'date', 'group' => 'immersion'],
+            'rp_followup_notes' => ['type' => 'textarea', 'group' => 'immersion', 'span' => 2, 'rows' => 4],
+            'matricule_internal' => ['type' => 'text', 'group' => 'identifiers', 'help' => 'Identifiant unique du dossier, visible selon les réglages de la fiche.'],
+            'clearance_level' => ['type' => 'text', 'group' => 'identifiers'],
+            'command_notes' => ['type' => 'textarea', 'group' => 'command', 'span' => 2, 'rows' => 5, 'help' => 'Visibles par vous et le personnel habilité.'],
             default => ['type' => 'text', 'group' => 'equipment'],
         };
     }
@@ -673,6 +766,25 @@ final class PersonnelCorrectionRequestService
 
             return $gid > 0 ? (string) $gid : '';
         }
+        if ($key === 'rp_tutor_user_id') {
+            $tid = (int) $raw;
+
+            return $tid > 0 ? (string) $tid : '';
+        }
+        if ($key === 'deployable') {
+            if (is_array($raw)) {
+                $raw = end($raw);
+            }
+
+            return ((string) $raw === '1' || $raw === 1 || $raw === true || $raw === 'on') ? '1' : '0';
+        }
+        if ($key === 'rp_followup_progress') {
+            if ($raw === null || $raw === '') {
+                return '';
+            }
+
+            return (string) max(0, min(100, (int) $raw));
+        }
         if (is_array($raw)) {
             $lines = [];
             foreach ($raw as $item) {
@@ -687,7 +799,7 @@ final class PersonnelCorrectionRequestService
         if ($key === 'weight_kg' && $new !== '') {
             return (string) max(20, min(300, (int) $new));
         }
-        if ($key === 'extra_callsigns' || $key === 'nicknames') {
+        if ($key === 'extra_callsigns' || $key === 'nicknames' || $key === 'medal_rack') {
             $parts = preg_split('/\r\n|\r|\n/', $new) ?: [];
             $clean = [];
             foreach ($parts as $line) {
@@ -867,7 +979,7 @@ final class PersonnelCorrectionRequestService
     {
         $lines = [];
         foreach ($proposed as $key => $newVal) {
-            $label = self::CORRECTABLE_FIELDS[$key] ?? $key;
+            $label = self::fieldLabels(true)[$key] ?? $key;
             $old = array_key_exists($key, $before) ? $this->displayFieldValue((string) $key, $before[$key], $tenantId) : '';
             $new = $this->displayFieldValue((string) $key, $newVal, $tenantId);
             $lines[] = $label . ' : « ' . ($old !== '' ? $old : '—') . ' » → « ' . ($new !== '' ? $new : '—') . ' »';
@@ -895,6 +1007,28 @@ final class PersonnelCorrectionRequestService
         }
         if ($key === 'job_roles') {
             return $this->formatJobRolesLabel(self::decodeJobRoleRows($value), $tenantId);
+        }
+        if ($key === 'deployable') {
+            return ((string) $value === '1') ? 'Oui' : 'Non';
+        }
+        if ($key === 'rp_recruitment_origin') {
+            return match (trim((string) $value)) {
+                'internal' => 'Interne',
+                'external' => 'Externe',
+                default => trim((string) $value),
+            };
+        }
+        if ($key === 'rp_tutor_user_id') {
+            $tid = (int) $value;
+            if ($tid < 1) {
+                return '';
+            }
+            $user = $this->userRepository->findById($tid, $tenantId);
+            if (!$user) {
+                return 'Compte #' . $tid;
+            }
+
+            return $this->displayName($user);
         }
 
         $text = trim((string) $value);

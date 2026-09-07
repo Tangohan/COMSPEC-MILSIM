@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(272, $byKind['update']);
-        self::assertCount(278, $all);
+        self::assertSame(275, $byKind['update']);
+        self::assertCount(281, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -955,6 +955,18 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('00472', $dossierPortrait['number_pad']);
         self::assertStringContainsString('portrait', strtolower((string) $dossierPortrait['title']));
         self::assertStringContainsString('dossier', strtolower((string) $dossierPortrait['title']));
+        $welcomeMotion = DevDispatchCatalog::find('update', '473');
+        self::assertNotNull($welcomeMotion);
+        self::assertSame('00473', $welcomeMotion['number_pad']);
+        self::assertStringContainsString('bienvenue', strtolower((string) $welcomeMotion['title']));
+        $docFileFix = DevDispatchCatalog::find('update', '474');
+        self::assertNotNull($docFileFix);
+        self::assertSame('00474', $docFileFix['number_pad']);
+        self::assertStringContainsString('fichier', strtolower((string) $docFileFix['title']));
+        $dossierRh = DevDispatchCatalog::find('update', '475');
+        self::assertNotNull($dossierRh);
+        self::assertSame('00475', $dossierRh['number_pad']);
+        self::assertStringContainsString('dossier', strtolower((string) $dossierRh['title']));
         $cadencesRh = DevDispatchCatalog::find('update', '476');
         self::assertNotNull($cadencesRh);
         self::assertSame('00476', $cadencesRh['number_pad']);

@@ -19,20 +19,24 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
 
         self::assertStringContainsString('pd-page', $view);
         self::assertStringContainsString('pd-header__title', $view);
-        self::assertStringContainsString('Correction RH', $view);
+        self::assertStringContainsString('Corrections RH', $view);
         self::assertStringContainsString('pd-form-grid', $view);
         self::assertStringContainsString('pd-form-grid__full', $view);
+        self::assertStringContainsString('pd-tabs', $view);
         self::assertStringContainsString('name="note"', $view);
         self::assertStringContainsString('Envoyer pour confirmation', $view);
         self::assertStringContainsString('Enregistrer tout de suite', $view);
         self::assertStringContainsString('apply_now', $view);
+        self::assertStringContainsString('unit_assignments[', $view);
+        self::assertStringContainsString('from_corrections', $view);
         self::assertStringNotContainsString('text-white', $view);
         self::assertStringNotContainsString('bg-slate-900', $view);
         self::assertStringNotContainsString('bg-slate-950', $view);
 
         self::assertStringContainsString("personnel-dossier.css", $controller);
         self::assertStringContainsString('fieldCatalog', $controller);
-        self::assertStringContainsString("array_keys(PersonnelCorrectionRequestService::fieldLabels())", $controller);
+        self::assertStringContainsString('fieldLabels($forStaff)', $controller);
+        self::assertStringContainsString('listRoleOptionsForSelect', $controller);
         self::assertStringContainsString('function applyDirect', $controller);
         self::assertStringContainsString('function applyDirect', $service);
 
@@ -42,7 +46,8 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertStringContainsString('.pd-form-grid__full', $css);
         self::assertStringContainsString('.pd-container--narrow', $css);
 
-        self::assertStringContainsString('Identité du personnage', $service);
+        self::assertStringContainsString("'identity' => 'Personnage'", $service);
+        self::assertStringContainsString('STAFF_ONLY_FIELDS', $service);
         self::assertStringContainsString('applyApprovedPayload', $service);
         self::assertStringContainsString('USER_PROFILE_KEYS', $service);
         self::assertStringContainsString('extra_callsigns_json', $service);
@@ -99,6 +104,16 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertArrayNotHasKey('clearance_level', $labels);
         self::assertArrayNotHasKey('command_notes', $labels);
         self::assertArrayNotHasKey('matricule_internal', $labels);
+
+        $staffLabels = PersonnelCorrectionRequestService::fieldLabels(true);
+        $staffCatalog = PersonnelCorrectionRequestService::fieldCatalog(true);
+        foreach (['command_notes', 'matricule_internal', 'clearance_level', 'deployable', 'medal_rack', 'rp_tutor_user_id'] as $staffKey) {
+            self::assertArrayHasKey($staffKey, $staffLabels);
+            self::assertArrayHasKey($staffKey, $staffCatalog);
+        }
+        self::assertSame('checkbox', $staffCatalog['deployable']['type'] ?? '');
+        self::assertSame('command', $staffCatalog['command_notes']['group'] ?? '');
+        self::assertSame(4, PersonnelCorrectionRequestService::ASSIGNMENT_SLOT_COUNT);
 
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/personnel/correction_form.php');
         self::assertStringContainsString("name=\"<?= \$h(\$key) ?>\"", $view);

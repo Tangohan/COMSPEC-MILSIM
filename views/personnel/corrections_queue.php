@@ -111,7 +111,7 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
   <section class="rh-corr__direct" aria-labelledby="rh-corr-direct-title">
     <h2 id="rh-corr-direct-title" class="rh-corr__direct-title">Corriger un dossier sans demande</h2>
     <p class="rh-corr__direct-lead">
-      Choisissez un membre, corrigez les informations, puis enregistrez.
+      Choisissez un membre : le dossier s’ouvre en entier — personnage, équipes, emplois, immersion, équipement, identifiants, notes et portrait.
       La fiche est mise à jour tout de suite. S’il restait une demande en attente pour ce dossier, elle est close.
     </p>
     <form method="get" action="<?= $h(url('back-office/personnel/corrections')) ?>" class="rh-corr__pick">

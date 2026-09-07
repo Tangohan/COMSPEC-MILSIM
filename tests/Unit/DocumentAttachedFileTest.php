@@ -15,6 +15,10 @@ final class DocumentAttachedFileTest extends TestCase
         self::assertFalse(DocumentAttachedFile::hasPointer(''));
         self::assertFalse(DocumentAttachedFile::hasPointer('   '));
         self::assertTrue(DocumentAttachedFile::hasPointer('12/36/v1.pdf'));
+        self::assertSame('7/38/v2.pdf', DocumentAttachedFile::normalizeRelative('storage/documents/7/38/v2.pdf'));
+        self::assertSame('7/38/v2.pdf', DocumentAttachedFile::normalizeRelative('/documents/7/38/v2.pdf'));
+        self::assertSame('', DocumentAttachedFile::normalizeRelative('../secret.pdf'));
+        self::assertFalse(DocumentAttachedFile::hasPointer('../secret.pdf'));
     }
 
     public function testHumanLabelsStayReadable(): void

@@ -12,7 +12,61 @@ final class DocumentAttachedFile
 {
     public static function hasPointer(mixed $filePath): bool
     {
-        return trim((string) $filePath) !== '';
+        return self::normalizeRelative($filePath) !== '';
+    }
+
+    /**
+     * Chemin relatif sous storage/documents/, sans préfixe accidentel ni « .. ».
+     */
+    public static function normalizeRelative(mixed $filePath): string
+    {
+        $relative = str_replace('\\', '/', trim((string) $filePath));
+        $relative = ltrim($relative, '/');
+        if ($relative === '' || $relative === '.' || str_contains($relative, '..')) {
+            return '';
+        }
+        foreach (['storage/documents/', 'documents/'] as $prefix) {
+            if (str_starts_with($relative, $prefix)) {
+                $relative = substr($relative, strlen($prefix));
+            }
+        }
+
+        return ltrim($relative, '/');
+    }
+
+    public static function absolutePath(mixed $filePath): ?string
+    {
+        $relative = self::normalizeRelative($filePath);
+        if ($relative === '') {
+            return null;
+        }
+        $full = base_path('storage/documents/' . $relative);
+
+        return is_file($full) ? $full : null;
+    }
+
+    /**
+     * Fichier réellement lisible : pointeur courant, puis même dossier sous le nom d’origine.
+     */
+    public static function resolveOnDisk(mixed $filePath, ?string $originalName = null): ?string
+    {
+        $hit = self::absolutePath($filePath);
+        if ($hit !== null) {
+            return $hit;
+        }
+        $relative = self::normalizeRelative($filePath);
+        $original = basename(str_replace('\\', '/', trim((string) $originalName)));
+        if ($original === '' || $original === '.' || $original === '..') {
+            return null;
+        }
+        $dirRel = $relative !== '' ? dirname($relative) : '';
+        if ($dirRel === '.' || $dirRel === '/') {
+            $dirRel = '';
+        }
+        $prefix = $dirRel !== '' ? $dirRel . '/' : '';
+        $candidate = base_path('storage/documents/' . $prefix . $original);
+
+        return is_file($candidate) ? $candidate : null;
     }
 
     public static function humanKind(?string $mime): string

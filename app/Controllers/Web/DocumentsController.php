@@ -21,6 +21,7 @@ use App\Services\Moderation\ModerationArtifactState;
 use App\Repositories\Doctrine\DocumentDoctrineRepository;
 use App\Services\Doctrine\DoctrineDocumentAccessService;
 use App\Services\Doctrine\DocumentComplianceService;
+use App\Support\DocumentAttachedFile;
 use App\Support\DocumentManuscript;
 
 class DocumentsController
@@ -253,20 +254,18 @@ class DocumentsController
         if (!$doc) {
             return $this->missingDocumentFilePage(null, $id);
         }
-        if (empty($doc['file_path'])) {
-            return $this->missingDocumentFilePage($doc, $id);
-        }
         $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, false, '');
         if ($denied !== null) {
             return $denied;
         }
-        $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
-        if (!is_file($fullPath)) {
+        $resolved = $this->resolveReadableAttachedFile($doc, $id);
+        if ($resolved === null) {
             return $this->missingDocumentFilePage($doc, $id);
         }
+        $fullPath = $resolved['path'];
         $response = new Response();
-        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
-        $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
+        $downloadName = $resolved['name'];
+        $response->header('Content-Type', $resolved['mime']);
         $response->header('Content-Disposition', 'inline; filename="' . $downloadName . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
@@ -294,17 +293,15 @@ class DocumentsController
         if (!$doc) {
             return $this->missingDocumentFilePage(null, $id);
         }
-        if (empty($doc['file_path'])) {
-            return $this->missingDocumentFilePage($doc, $id);
-        }
         $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, true, trim((string) $request->input('security_session_token')));
         if ($denied !== null) {
             return $denied;
         }
-        $fullPath = base_path(self::STORAGE_BASE . $doc['file_path']);
-        if (!is_file($fullPath)) {
+        $resolved = $this->resolveReadableAttachedFile($doc, $id);
+        if ($resolved === null) {
             return $this->missingDocumentFilePage($doc, $id);
         }
+        $fullPath = $resolved['path'];
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
         $securitySessionToken = trim((string) $request->input('security_session_token'));
         if ($securitySessionToken !== '') {
@@ -312,8 +309,8 @@ class DocumentsController
             $this->documentSecurityRepository->logEvent($securitySessionToken, $id, $userId ? (int) $userId : null, 'document_downloaded');
         }
         $response = new Response();
-        $downloadName = basename((string) ($doc['original_name'] ?? '')) ?: basename((string) $doc['file_path']);
-        $response->header('Content-Type', $doc['mime_type'] ?: 'application/octet-stream');
+        $downloadName = $resolved['name'];
+        $response->header('Content-Type', $resolved['mime']);
         $response->header('Content-Disposition', 'attachment; filename="' . $downloadName . '"');
         $response->header('Content-Length', (string) filesize($fullPath));
         $response->setBodyStream(static function () use ($fullPath): void {
@@ -683,6 +680,56 @@ class DocumentsController
             'doctrineQuick' => $doctrineQuick,
             'canManage' => $canManage,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $doc
+     * @return array{path: string, mime: string, name: string}|null
+     */
+    private function resolveReadableAttachedFile(array $doc, int $documentId): ?array
+    {
+        $pack = $this->attachedFilePack($doc);
+        if ($pack !== null) {
+            return $pack;
+        }
+        foreach ($this->documentRepository->getVersions($documentId) as $version) {
+            $pack = $this->attachedFilePack($version);
+            if ($pack !== null) {
+                return $pack;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{path: string, mime: string, name: string}|null
+     */
+    private function attachedFilePack(array $row): ?array
+    {
+        $path = DocumentAttachedFile::resolveOnDisk(
+            $row['file_path'] ?? null,
+            isset($row['original_name']) ? (string) $row['original_name'] : null
+        );
+        if ($path === null) {
+            return null;
+        }
+        $name = basename((string) ($row['original_name'] ?? '')) ?: basename($path);
+        $name = str_replace(['"', "\r", "\n"], '', $name);
+        $mime = trim((string) ($row['mime_type'] ?? ''));
+        if ($mime === '') {
+            $mime = 'application/octet-stream';
+        }
+        if ($mime === 'text/markdown') {
+            $mime = 'text/plain; charset=utf-8';
+        }
+
+        return [
+            'path' => $path,
+            'mime' => $mime,
+            'name' => $name !== '' ? $name : 'document',
+        ];
     }
 
     /**

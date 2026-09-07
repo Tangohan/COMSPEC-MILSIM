@@ -18,6 +18,7 @@ class DocumentVersionRepository
 
     public function create(int $documentId, array $data): int
     {
+        $this->pdo->prepare('UPDATE document_versions SET is_current = 0 WHERE document_id = ?')->execute([$documentId]);
         $hasDoctrineCols = $this->columnExists('document_versions', 'version_major');
         if ($hasDoctrineCols) {
             $stmt = $this->pdo->prepare(

@@ -24,7 +24,7 @@ $referenceCode = trim((string) ($doctrine['reference_code'] ?? ''));
 $documentTitle = trim((string) ($document['title'] ?? ''));
 $statusRaw = (string) ($doctrine['doctrine_status'] ?? '');
 $statusLabel = DoctrineWorkflowStatus::label($statusRaw);
-$hasFile = !empty($document['file_path']) || !empty($document['version_id']);
+$hasFile = !empty($fileAvailable);
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/doctrine-referential.css'), ENT_QUOTES, 'UTF-8') ?>">
 
@@ -85,7 +85,7 @@ $hasFile = !empty($document['file_path']) || !empty($document['version_id']);
                 <a href="<?= url('documents/' . $docId . '/download') ?>" class="doctrine-ref__btn">Télécharger</a>
             </div>
             <?php else: ?>
-            <p class="doctrine-show__empty">Aucun fichier n’est attaché à cette version.</p>
+            <p class="doctrine-show__empty">Aucun fichier n’est attaché à cette version. Un responsable peut en déposer un depuis la fiche du document.</p>
             <?php endif; ?>
         </section>
 
