@@ -91,6 +91,11 @@ final class MemberIntegrationService
                 : null,
         ]);
         if ($id < 1) {
+            $again = $this->integrations->findActiveForUser($tenantId, $userId);
+            if ($again) {
+                return ['ok' => true, 'created' => false, 'integration_id' => (int) $again['id']];
+            }
+
             return ['ok' => false, 'created' => false, 'message' => 'Le suivi n’a pas pu être créé.'];
         }
         $started = date('Y-m-d H:i:s');

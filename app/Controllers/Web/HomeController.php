@@ -1112,7 +1112,7 @@ class HomeController
                 ? self::testerProgramPortalLinksForModuleCode($code)
                 : [
                     ['label' => 'Centre opérationnel', 'href' => url('hub')],
-                    ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+                    ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
                 ];
             if ($links === []) {
                 $links = [['label' => 'Centre opérationnel', 'href' => url('hub')]];
@@ -1140,7 +1140,7 @@ class HomeController
                 ['label' => 'Mes parcours', 'href' => url('formations/mes-formations')],
             ],
             'RH' => [
-                ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
                 ['label' => 'Ma fiche personnelle', 'href' => url('personnel/me')],
             ],
             'SIRH' => [
@@ -1149,7 +1149,7 @@ class HomeController
             ],
             default => [
                 ['label' => 'Centre opérationnel', 'href' => url('hub')],
-                ['label' => 'Espace RH et formations', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
             ],
         };
     }

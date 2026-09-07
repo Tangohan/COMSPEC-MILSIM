@@ -2143,6 +2143,15 @@ class Container
                 self::get(\App\Repositories\PlatformUxFeedbackRepository::class),
                 self::get(\App\Repositories\TenantRepository::class),
             ),
+            \App\Repositories\PlatformReviewRepository::class => new \App\Repositories\PlatformReviewRepository(),
+            \App\Controllers\Api\PlatformReviewApiController::class => new \App\Controllers\Api\PlatformReviewApiController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\PlatformReviewRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemPlatformReviewController::class => new \App\Controllers\Admin\System\SystemPlatformReviewController(
+                self::get(\App\Repositories\PlatformReviewRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+            ),
             \App\Controllers\Api\MePreferencesApiController::class => new \App\Controllers\Api\MePreferencesApiController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\UserUiPreferencesRepository::class),

@@ -2356,6 +2356,14 @@ try {
     echo '  [ATTENTION] platform_ux_feedback : ' . $e->getMessage() . "\n";
 }
 
+$platformReviewTranslateMigrate = require $root . '/bootstrap/platform_review_translation_migration.php';
+try {
+    echo "Migration platform_reviews (avis plateforme et traductions)...\n";
+    $platformReviewTranslateMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_reviews : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);

@@ -64,19 +64,59 @@ $navGroups = [
                 'key' => 'overview',
                 'href' => url('account'),
                 'label' => 'Vue d’ensemble',
-                'hint' => 'Résumé et accès rapides',
+                'hint' => 'Connexion, photo, raccourcis',
             ],
             [
                 'key' => 'preferences',
                 'href' => url('account/preferences'),
-                'label' => 'Profil & préférences',
-                'hint' => 'Identité, affichage, fuseau',
+                'label' => 'Profil et préférences',
+                'hint' => 'Nom, langue, affichage, e-mails',
+            ],
+        ],
+    ],
+    [
+        'title' => 'Sécurité',
+        'items' => [
+            [
+                'key' => 'mail',
+                'href' => url('account/mail'),
+                'label' => 'Adresse e-mail',
+                'hint' => 'Adresse de connexion',
             ],
             [
-                'key' => 'notifications',
-                'href' => url('account/preferences') . '#notifications-email',
-                'label' => 'Notifications e-mail',
-                'hint' => 'Messages automatiques du portail',
+                'key' => 'password',
+                'href' => url('account/password'),
+                'label' => 'Mot de passe',
+                'hint' => 'Changer le secret d’accès',
+            ],
+            [
+                'key' => 'security',
+                'href' => url('account/security'),
+                'label' => 'Double vérification',
+                'hint' => 'Code par e-mail ou application',
+            ],
+            [
+                'key' => 'devices',
+                'href' => url('account/security/devices'),
+                'label' => 'Appareils ATAK',
+                'hint' => 'Téléphones et tablettes liés',
+            ],
+        ],
+    ],
+    [
+        'title' => 'Apparence',
+        'items' => [
+            [
+                'key' => 'portrait',
+                'href' => url('account/portrait'),
+                'label' => 'Portrait',
+                'hint' => 'Une photo pour le portail et la fiche',
+            ],
+            [
+                'key' => 'banner',
+                'href' => url('account/banner'),
+                'label' => 'Couverture du menu',
+                'hint' => 'Bandeau du menu session',
             ],
         ],
     ],
@@ -87,100 +127,30 @@ $navGroups = [
                 'key' => 'donnees',
                 'href' => url('account/donnees'),
                 'label' => 'Mes données',
-                'hint' => 'Export RGPD de vos données',
+                'hint' => 'Copie des informations enregistrées',
             ],
         ],
     ],
     [
-        'title' => 'Sécurité',
-        'items' => [
-            [
-                'key' => 'atak-devices',
-                'href' => url('account/security/devices'),
-                'label' => 'Terminaux ATAK',
-                'hint' => 'Appairage et récupération',
-            ],
-            [
-                'key' => 'mail',
-                'href' => url('account/mail'),
-                'label' => 'Adresse e-mail',
-                'hint' => 'Adresse de connexion',
-            ],
-            [
-                'key' => 'security',
-                'href' => url('account/security'),
-                'label' => 'Double vérification',
-                'hint' => 'E-mail ou application d’authentification',
-            ],
-            [
-                'key' => 'devices',
-                'href' => url('account/security/devices'),
-                'label' => 'Appareils liés',
-                'hint' => 'Téléphones et tablettes ATAK',
-            ],
-            [
-                'key' => 'password',
-                'href' => url('account/password'),
-                'label' => 'Mot de passe',
-                'hint' => 'Changer le secret d’accès',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Apparence',
-        'items' => [
-            [
-                'key' => 'image',
-                'href' => url('account/image'),
-                'label' => 'Photo de compte',
-                'hint' => 'Navigation, forum, listes',
-            ],
-            [
-                'key' => 'banner',
-                'href' => url('account/banner'),
-                'label' => 'Couverture du menu',
-                'hint' => 'Bandeau du menu session',
-            ],
-            [
-                'key' => 'portrait',
-                'href' => url('account/portrait'),
-                'label' => 'Photo de profil',
-                'hint' => 'Fiche et organigramme',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Unité',
+        'title' => 'Communauté',
         'items' => [
             [
                 'key' => 'personnel',
-                'href' => url('personnel/me/edit'),
+                'href' => url('personnel/me'),
                 'label' => 'Fiche personnelle',
-                'hint' => 'Unité, matricule, formations',
+                'hint' => 'Unité, grade, affectations',
             ],
             [
                 'key' => 'access',
                 'href' => url('account/acces'),
-                'label' => 'Mes accès & rôle',
-                'hint' => 'Rôle, droits, demandes en cours',
-            ],
-            [
-                'key' => 'leave',
-                'href' => url('account/acces') . '#quitter',
-                'label' => 'Quitter',
-                'hint' => 'Quitter la communauté actuelle',
+                'label' => 'Mes accès',
+                'hint' => 'Rôle et départ de la communauté',
             ],
             [
                 'key' => 'recruitment',
                 'href' => url('account/recruitment-presets'),
                 'label' => 'Profils de candidature',
                 'hint' => 'Préréglages d’enrôlement',
-            ],
-            [
-                'key' => 'charter',
-                'href' => url('account/charte-formations'),
-                'label' => 'Charte des formations',
-                'hint' => 'Prise de connaissance du catalogue',
             ],
         ],
     ],
@@ -250,10 +220,6 @@ if (function_exists('i18n_phrase')) {
                 <?php foreach ($group['items'] as $item): ?>
                     <?php
                     $isActive = $accountNavKey === ($item['key'] ?? '');
-                    // notifications partage la page préférences
-                    if ($accountNavKey === 'preferences' && ($item['key'] ?? '') === 'notifications') {
-                        $isActive = false;
-                    }
                     ?>
                 <a href="<?= htmlspecialchars((string) $item['href'], ENT_QUOTES, 'UTF-8') ?>"
                    class="account-hub__nav-link<?= $isActive ? ' is-active' : '' ?>"

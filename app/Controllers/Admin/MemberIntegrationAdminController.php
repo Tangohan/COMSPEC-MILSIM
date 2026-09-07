@@ -110,6 +110,7 @@ final class MemberIntegrationAdminController
             'overdue' => $request->query('overdue', '') === '1',
         ];
         $view = $request->query('vue', '') === 'colonnes' ? 'colonnes' : 'tableau';
+        $this->integrations->deleteDuplicateActives($tenantId);
         $rows = $this->integrations->listDashboard($tenantId, $filters, 250);
         $byStep = [];
         foreach ($rows as $row) {

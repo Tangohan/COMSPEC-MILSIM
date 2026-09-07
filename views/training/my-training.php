@@ -383,7 +383,7 @@ $filterMeta = [
             <b>◆</b><span>Compétences<em>Cartographie des acquis</em></span><i></i>
         </a>
         <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="mf-link">
-            <b>◎</b><span>Espace RH<em>Dossier administratif</em></span><i></i>
+            <b>◎</b><span>Mes démarches<em>Absences et demandes</em></span><i></i>
         </a>
     </div>
 </aside>

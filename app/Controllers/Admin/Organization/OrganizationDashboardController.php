@@ -26,6 +26,9 @@ use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
 use App\Repositories\MissionPlanRepository;
 use App\Repositories\OpsBoardRepository;
+use App\Repositories\PersonnelAbsenceRepository;
+use App\Repositories\PersonnelAssignmentRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantAlertRepository;
@@ -35,10 +38,15 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Community\MemberOnboardingService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
+use App\Services\GradeDisplayService;
+use App\Services\Notifications\PersonalMessageUnreadCounter;
+use App\Services\Personnel\PersonnelDutyPositionService;
 use App\Services\Personnel\PersonnelProfileGapScanService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
+use App\Support\AlertDisplayStyle;
 
 class OrganizationDashboardController
 {
@@ -506,20 +514,196 @@ class OrganizationDashboardController
             $mission = null;
         }
 
+        $gradeLabel = '';
+        try {
+            $gradeId = (int) ($user['grade_id'] ?? 0);
+            if ($gradeId > 0) {
+                $gradeRow = (new GradeRepository())->findById($gradeId, $tenantId);
+                if (is_array($gradeRow)) {
+                    $gradeDisplay = Container::get(GradeDisplayService::class);
+                    $gradeLong = trim($gradeDisplay->headerTitle($gradeRow, $profile !== [] ? $profile : null));
+                    $gradeOtan = trim((string) ($gradeDisplay->headerShortCode($gradeRow, $profile !== [] ? $profile : null) ?? ''));
+                    if ($gradeLong !== '' && $gradeOtan !== '') {
+                        $gradeLabel = $gradeLong . ' · ' . $gradeOtan;
+                    } else {
+                        $gradeLabel = $gradeLong !== '' ? $gradeLong : $gradeOtan;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $gradeLabel = '';
+        }
+
+        $dutyLabel = '';
+        try {
+            $dutySlug = Container::get(PersonnelDutyPositionService::class)->currentDutySlug($tenantId, $userId);
+            $dutyLabel = PersonnelDutyPositionService::labelForSlug((string) $dutySlug);
+        } catch (\Throwable) {
+            $dutyLabel = '';
+        }
+
+        $functionLabel = '';
+        try {
+            $assignments = (new PersonnelAssignmentRepository())->listActiveForUserResolved($userId);
+            foreach ($assignments as $assignment) {
+                if (!is_array($assignment)) {
+                    continue;
+                }
+                $roleName = trim((string) ($assignment['role_name'] ?? ''));
+                if ($roleName !== '') {
+                    $functionLabel = $roleName;
+                    if (!empty($assignment['is_primary'])) {
+                        break;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $functionLabel = '';
+        }
+        if ($functionLabel === '') {
+            $functionLabel = trim((string) ($profile['rp_operational_function'] ?? $profile['primary_role'] ?? ''));
+        }
+
+        $absences = [];
+        try {
+            $absenceRepo = new PersonnelAbsenceRepository();
+            if ($absenceRepo->tableExists()) {
+                $absences = $absenceRepo->listActiveForUser($tenantId, $userId);
+            }
+        } catch (\Throwable) {
+            $absences = [];
+        }
+
+        $elevations = [];
+        try {
+            $open = [];
+            foreach (array_merge(
+                $this->elevationRequests->listForTarget($tenantId, $userId, 12),
+                $this->elevationRequests->listForRequester($tenantId, $userId, 12)
+            ) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $id = (int) ($row['id'] ?? 0);
+                $status = (string) ($row['status'] ?? '');
+                if ($id > 0 && in_array($status, ['pending', 'in_review'], true)) {
+                    $open[$id] = $row;
+                }
+            }
+            $elevations = array_values($open);
+        } catch (\Throwable) {
+            $elevations = [];
+        }
+
+        $mobility = [];
+        try {
+            $mobilityRepo = new PersonnelMobilityRequestRepository();
+            if ($mobilityRepo->tableExists()) {
+                foreach ($mobilityRepo->listForUser($tenantId, $userId, 12) as $row) {
+                    if ((string) ($row['status'] ?? '') === 'pending') {
+                        $mobility[] = $row;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $mobility = [];
+        }
+
+        $events = [];
+        try {
+            $events = $this->eventRepository->upcomingForTenantWithUserRsvp($tenantId, $userId, 5);
+        } catch (\Throwable) {
+            $events = [];
+        }
+
+        $alerts = [];
+        try {
+            foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
+                if (!is_array($alert)) {
+                    continue;
+                }
+                $style = (string) ($alert['display_style'] ?? '');
+                if (AlertDisplayStyle::isBackOfficeStyle($style)) {
+                    continue;
+                }
+                $title = trim((string) ($alert['title'] ?? ''));
+                if ($title === '') {
+                    continue;
+                }
+                $alerts[] = $alert;
+                if (count($alerts) >= 4) {
+                    break;
+                }
+            }
+        } catch (\Throwable) {
+            $alerts = [];
+        }
+
+        $inboxUnread = 0;
+        try {
+            $inboxUnread = (int) (Container::get(PersonalMessageUnreadCounter::class)
+                ->countsForUser($tenantId, $userId, Gate::getInstance())['total'] ?? 0);
+        } catch (\Throwable) {
+            try {
+                $inboxUnread = $this->tenantMessages->unreadCountForUser($tenantId, $userId);
+            } catch (\Throwable) {
+                $inboxUnread = 0;
+            }
+        }
+
+        $onboardingRemaining = [];
+        $onboardingNudge = '';
+        try {
+            $snapshot = (new MemberOnboardingService())->buildMemberSnapshot(
+                $userId,
+                $tenantId,
+                (string) ($user['created_at'] ?? '')
+            );
+            if ((int) ($snapshot['percent'] ?? 0) < 100) {
+                $onboardingNudge = trim((string) ($snapshot['nudge'] ?? ''));
+                foreach ($snapshot['steps'] ?? [] as $step) {
+                    if (!is_array($step) || !empty($step['done'])) {
+                        continue;
+                    }
+                    $onboardingRemaining[] = $step;
+                }
+            }
+        } catch (\Throwable) {
+            $onboardingRemaining = [];
+            $onboardingNudge = '';
+        }
+
+        $portraitUrl = null;
+        if (function_exists('personnel_operator_portrait_url')) {
+            $portraitUrl = personnel_operator_portrait_url($profile);
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.operator_overview',
-            'title' => 'Mon back-office',
+            'title' => 'Mon espace opérationnel',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérateur',
             'boPageTitle' => 'Mon espace opérationnel',
-            'boPageKicker' => 'BACK-OFFICE · CONSULTATION',
-            'boPageSubtitle' => 'Vos informations opérationnelles et les données essentielles de votre communauté.',
+            'boPageKicker' => 'OPÉRATEUR · MA SITUATION',
+            'boPageSubtitle' => 'Ce qui vous concerne : communauté, démarches, manœuvres et liaison ATAK.',
             'operatorTenant' => $tenant,
             'operatorUser' => $user,
             'operatorProfile' => $profile,
             'operatorUnits' => $units,
             'operatorTerminals' => $terminals,
             'operatorMission' => $mission,
+            'operatorGradeLabel' => $gradeLabel,
+            'operatorDutyLabel' => $dutyLabel,
+            'operatorFunctionLabel' => $functionLabel,
+            'operatorPortraitUrl' => $portraitUrl,
+            'operatorAbsences' => $absences,
+            'operatorElevations' => $elevations,
+            'operatorMobility' => $mobility,
+            'operatorEvents' => $events,
+            'operatorAlerts' => $alerts,
+            'operatorInboxUnread' => $inboxUnread,
+            'operatorOnboardingRemaining' => $onboardingRemaining,
+            'operatorOnboardingNudge' => $onboardingNudge,
         ]);
     }
 

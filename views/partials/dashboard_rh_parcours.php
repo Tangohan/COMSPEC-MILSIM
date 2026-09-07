@@ -91,10 +91,10 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
         <div class="dash-rh-parcours__head">
             <div>
                 <p class="cc-kicker cc-kicker--primary">Personnel</p>
-                <h2 id="dash-rh-parcours-title" class="dash-rh-foot__title">Mon dossier RH</h2>
+                <h2 id="dash-rh-parcours-title" class="dash-rh-foot__title">Démarche rapide</h2>
                 <p class="dash-rh-foot__lead">Choisissez d’abord le type de demande, puis complétez le formulaire. Une seule démarche à la fois.</p>
             </div>
-            <a class="dash-rh-parcours__full" href="<?= htmlspecialchars($workspaceUrl, ENT_QUOTES, 'UTF-8') ?>">Espace RH complet</a>
+            <a class="dash-rh-parcours__full" href="<?= htmlspecialchars($workspaceUrl, ENT_QUOTES, 'UTF-8') ?>">Toutes les démarches</a>
         </div>
 
         <p class="dash-rh-parcours__step" data-rh-step-label>Étape 1 sur 2 — Choisissez une démarche</p>

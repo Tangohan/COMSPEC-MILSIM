@@ -883,7 +883,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Effectifs</span>
                         </div>
                         <h3 class="org-dash__action-title">Ancienneté</h3>
-                        <p class="org-dash__action-text">Indicateurs visibles sur les fiches et dans l’espace RH.</p>
+                        <p class="org-dash__action-text">Indicateurs visibles sur les fiches et dans Mes démarches.</p>
                     </div>
                     <span class="org-dash__action-foot">Configurer →</span>
                 </a>

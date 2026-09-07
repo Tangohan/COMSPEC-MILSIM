@@ -121,20 +121,15 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
         <div class="px-5 py-5 md:px-8 md:py-7 lg:px-10">
             <div class="flex flex-wrap items-center gap-5 lg:gap-8">
                 <div class="flex shrink-0 items-center gap-3">
-                    <div class="relative h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Photo de compte">
-                        <?php if (!empty($avatarUrl)): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte" loading="eager" decoding="async" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
+                    <div class="relative h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Portrait">
+                        <?php if (!empty($portraitUrl)): ?>
+                        <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait" loading="eager" decoding="async" class="h-full w-full object-cover" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait indisponible" />
                         <?php else: ?>
                         <div class="flex h-full w-full items-center justify-center text-slate-500">
                             <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <?php if (!empty($portraitUrl)): ?>
-                    <div class="relative hidden sm:block h-16 w-12 md:h-[4.5rem] md:w-[3.4rem] shrink-0 overflow-hidden rounded-xl border-2 border-slate-600/50 bg-slate-950" title="Portrait opérateur">
-                        <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" class="h-full w-full object-cover object-top" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
-                    </div>
-                    <?php endif; ?>
                 </div>
                 <div class="min-w-0 grow">
                     <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90 mb-1">Vue commandement</p>

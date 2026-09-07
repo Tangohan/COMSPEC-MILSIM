@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(260, $byKind['update']);
-        self::assertCount(266, $all);
+        self::assertSame(268, $byKind['update']);
+        self::assertCount(274, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -909,6 +909,38 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($chainUpdate);
         self::assertSame('00461', $chainUpdate['number_pad']);
         self::assertStringContainsString('chaîne de commandement', strtolower((string) $chainUpdate['title']));
+        $directCorr = DevDispatchCatalog::find('update', '462');
+        self::assertNotNull($directCorr);
+        self::assertSame('00462', $directCorr['number_pad']);
+        self::assertStringContainsString('sans demande', strtolower((string) $directCorr['title']));
+        $integrationDupes = DevDispatchCatalog::find('update', '463');
+        self::assertNotNull($integrationDupes);
+        self::assertSame('00463', $integrationDupes['number_pad']);
+        self::assertStringContainsString('intégration', strtolower((string) $integrationDupes['title']));
+        $platformReview = DevDispatchCatalog::find('update', '464');
+        self::assertNotNull($platformReview);
+        self::assertSame('00464', $platformReview['number_pad']);
+        self::assertStringContainsString('avis', strtolower((string) $platformReview['title']));
+        $onboarding = DevDispatchCatalog::find('update', '465');
+        self::assertNotNull($onboarding);
+        self::assertSame('00465', $onboarding['number_pad']);
+        self::assertStringContainsString('création', strtolower((string) $onboarding['title']));
+        $demarches = DevDispatchCatalog::find('update', '466');
+        self::assertNotNull($demarches);
+        self::assertSame('00466', $demarches['number_pad']);
+        self::assertStringContainsString('démarches', strtolower((string) $demarches['title']));
+        $comptePhoto = DevDispatchCatalog::find('update', '467');
+        self::assertNotNull($comptePhoto);
+        self::assertSame('00467', $comptePhoto['number_pad']);
+        self::assertStringContainsString('photo', strtolower((string) $comptePhoto['title']));
+        $operatorSpace = DevDispatchCatalog::find('update', '468');
+        self::assertNotNull($operatorSpace);
+        self::assertSame('00468', $operatorSpace['number_pad']);
+        self::assertStringContainsString('opérateur', strtolower((string) $operatorSpace['title']));
+        $lmsBanner = DevDispatchCatalog::find('update', '469');
+        self::assertNotNull($lmsBanner);
+        self::assertSame('00469', $lmsBanner['number_pad']);
+        self::assertStringContainsString('module athena', strtolower((string) $lmsBanner['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

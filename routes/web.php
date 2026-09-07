@@ -545,6 +545,7 @@ return function (Router $router) {
     $router->get('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'form'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'submit'], [AuthMiddleware::class]);
     $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/back-office/personnel/corrections/appliquer', [\App\Controllers\Web\PersonnelCorrectionController::class, 'applyDirect'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
     $router->get('/admin/system/advanced-fiche-edit', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/advanced-fiche-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -897,6 +898,9 @@ return function (Router $router) {
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/avis-plateforme', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/avis-plateforme/traductions/{id}/reprendre', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'acceptTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/avis-plateforme/traductions/{id}/ecarter', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'declineTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/install-vps', [SystemCronController::class, 'installVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/uninstall-vps', [SystemCronController::class, 'uninstallVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1883,6 +1887,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/ux-feedback/state', [PlatformUxFeedbackApiController::class, 'state'], [AuthMiddleware::class]);
     $router->post('/api/ux-feedback/rating', [PlatformUxFeedbackApiController::class, 'saveRating'], [AuthMiddleware::class]);
     $router->post('/api/ux-feedback/survey', [PlatformUxFeedbackApiController::class, 'saveSurvey'], [AuthMiddleware::class]);
+    $router->get('/api/platform-review/state', [\App\Controllers\Api\PlatformReviewApiController::class, 'state'], [AuthMiddleware::class]);
+    $router->post('/api/platform-review', [\App\Controllers\Api\PlatformReviewApiController::class, 'saveReview'], [AuthMiddleware::class]);
+    $router->post('/api/platform-review/plus-tard', [\App\Controllers\Api\PlatformReviewApiController::class, 'snooze'], [AuthMiddleware::class]);
+    $router->post('/api/platform-review/traduction', [\App\Controllers\Api\PlatformReviewApiController::class, 'saveTranslation'], [AuthMiddleware::class]);
     $router->post('/api/tenant/access-request', [TenantAccessRequestApiController::class, 'store'], [AuthMiddleware::class]);
 
     $router->get('/api/access-control/roles', [AccessControlApiController::class, 'roles'], [AuthMiddleware::class]);

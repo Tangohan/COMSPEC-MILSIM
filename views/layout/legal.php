@@ -58,6 +58,9 @@ $legalActiveSection = $legalActiveSection ?? '';
     </div>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php if (!empty(\App\Core\Session::get('user_id'))): ?>
+        <?php require base_path('views/partials/platform_review_modal.php'); ?>
+    <?php endif; ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
     <?php if (is_file(base_path('public/assets/js/cookie_consent.js'))): ?>
     <script defer src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/cookie_consent.js"></script>

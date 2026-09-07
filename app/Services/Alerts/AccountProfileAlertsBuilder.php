@@ -39,29 +39,33 @@ final class AccountProfileAlertsBuilder
 
         if ($missingMedia !== []) {
             $labels = [
-                'avatar' => 'photo de compte',
-                'portrait' => 'portrait personnage',
-                'banner' => 'bannière',
+                'portrait' => 'portrait',
+                'banner' => 'couverture du menu',
             ];
             $parts = [];
             foreach ($missingMedia as $k) {
+                if ($k === 'avatar') {
+                    continue;
+                }
                 $parts[] = $labels[$k] ?? $k;
             }
-            $ctaUrl = in_array('portrait', $missingMedia, true)
-                ? url('account/portrait')
-                : url('account/image');
-            $out[] = [
-                'scope' => 'Compte',
-                'id' => -1003,
-                'kind' => 'novelty',
-                'title' => 'Photo à re-téléverser',
-                'body' => 'Après la migration, un fichier est introuvable sur le serveur ('
-                    . implode(', ', $parts)
-                    . '). Rechargez votre image pour la réafficher partout.',
-                'cta_label' => 'Recharger ma photo',
-                'cta_url' => $ctaUrl,
-                'coupon_code' => null,
-            ];
+            if ($parts !== []) {
+                $ctaUrl = in_array('portrait', $missingMedia, true)
+                    ? url('account/portrait')
+                    : url('account/banner');
+                $out[] = [
+                    'scope' => 'Compte',
+                    'id' => -1003,
+                    'kind' => 'novelty',
+                    'title' => 'Photo à re-téléverser',
+                    'body' => 'Après la migration, un fichier est introuvable sur le serveur ('
+                        . implode(', ', $parts)
+                        . '). Rechargez votre image pour la réafficher partout.',
+                    'cta_label' => 'Recharger ma photo',
+                    'cta_url' => $ctaUrl,
+                    'coupon_code' => null,
+                ];
+            }
         }
 
         if ($missingRp) {

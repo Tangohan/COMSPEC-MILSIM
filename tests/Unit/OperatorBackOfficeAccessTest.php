@@ -18,8 +18,9 @@ final class OperatorBackOfficeAccessTest extends TestCase
         self::assertStringContainsString('return $this->operatorOverview', $controller);
         self::assertStringContainsString("(int) (\$terminal['user_id'] ?? 0) === \$userId", $controller);
         self::assertStringContainsString('Il ne donne aucun droit d’administration.', $view);
-        self::assertStringContainsString('Mes données ATAK', $view);
-        self::assertStringContainsString('Mes données RP', $view);
+        self::assertStringContainsString('Ma liaison ATAK', $view);
+        self::assertStringContainsString('Ce qui vous concerne', $view);
         self::assertStringNotContainsString('pairing_token', $view);
+        self::assertStringNotContainsString('Mes données RP', $view);
     }
 }

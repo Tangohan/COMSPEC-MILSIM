@@ -532,7 +532,7 @@ if ($missingMediaUsers !== []):
                 $mid = (int) ($mu['id'] ?? 0);
                 $kinds = is_array($mu['missing'] ?? null) ? $mu['missing'] : [];
                 $kindLabels = [
-                    'avatar' => 'Photo de compte',
+                    'avatar' => 'Ancienne photo',
                     'portrait' => 'Portrait personnage',
                     'banner' => 'Bannière',
                 ];

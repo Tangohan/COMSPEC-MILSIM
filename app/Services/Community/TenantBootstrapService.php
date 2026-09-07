@@ -177,7 +177,7 @@ final class TenantBootstrapService
             if ($wizard !== null) {
                 $merge['grade_system_code'] = $gradeSystemCode;
                 $merge['timezone'] = (string) $wizard['timezone'];
-                $merge['onboarding_wizard_version'] = 2;
+                $merge['onboarding_wizard_version'] = 3;
                 $merge['onboarding_completed_at'] = date('c');
             }
             $this->tenantRepository->mergeSettings($tenantId, $merge);
@@ -231,13 +231,35 @@ final class TenantBootstrapService
             }
 
             try {
+                $overwatch = new \App\Services\Game\GameOverwatchExperienceService();
+                $ow = $overwatch->defaults();
+                $ow['display_name'] = mb_substr($name, 0, 80);
+                $overwatch->put($tenantId, $ow);
+            } catch (\Throwable $e) {
+                // Colonne Overwatch absente : non bloquant
+            }
+
+            try {
                 $kitCode = $wizard !== null ? trim((string) ($wizard['catalog_kit_code'] ?? '')) : '';
                 if ($kitCode !== '') {
                     $catalog = \App\Core\Container::get(\App\Services\OrganizationCatalog\OrganizationCatalogService::class);
                     $catalog->apply($tenantId, $kitCode, [], $newUserId);
+                } elseif ($wizard !== null) {
+                    $this->tenantRepository->updateSettings($tenantId, [
+                        'organization_catalog' => ['reviewed' => true],
+                    ]);
                 }
             } catch (\Throwable $e) {
                 // Le modèle est optionnel : la communauté reste créée.
+            }
+
+            try {
+                if ($wizard !== null) {
+                    $this->applyWizardCommandChain($pdo, $tenantId, $newUserId, $wizard);
+                    $this->applyWizardOrgFounding($tenantId, $wizard);
+                }
+            } catch (\Throwable) {
+                // Chaîne et ancienneté : non bloquant
             }
 
             try {
@@ -266,6 +288,13 @@ final class TenantBootstrapService
             }
 
             try {
+                $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+                $duty->applyActiveDuty($tenantId, $newUserId, $newUserId, true);
+            } catch (\Throwable $e) {
+                // Rôles absents : non bloquant
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
@@ -278,15 +307,9 @@ final class TenantBootstrapService
                 $configSvc->markCompleted($tenantId, 'AAR_CUSTOM_TEMPLATES_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'LOGIN_ACCUEIL_IMAGES_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'PERSONNEL_HR_DESK_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'OPERATIONS_WORKSPACE_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
-            }
-
-            try {
-                $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
-                $duty->applyActiveDuty($tenantId, $newUserId, $newUserId, true);
-            } catch (\Throwable $e) {
-                // Rôles absents : non bloquant
             }
 
             $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;
@@ -375,6 +398,49 @@ final class TenantBootstrapService
         throw new \RuntimeException(
             'Aucun grade référentiel en base. Exécutez les migrations (seed grades FR/US) puis réessayez.'
         );
+    }
+
+    /**
+     * @param array<string, mixed> $wizard
+     */
+    private function applyWizardCommandChain(PDO $pdo, int $tenantId, int $founderUserId, array $wizard): void
+    {
+        $commandsRoot = !empty($wizard['founder_commands_root']);
+        if ($commandsRoot && $founderUserId > 0) {
+            try {
+                $st = $pdo->prepare(
+                    'UPDATE units
+                     SET commander_user_id = ?
+                     WHERE tenant_id = ?
+                       AND (parent_id IS NULL OR parent_id = 0)
+                       AND (commander_user_id IS NULL OR commander_user_id = 0)'
+                );
+                $st->execute([$founderUserId, $tenantId]);
+            } catch (\Throwable) {
+            }
+        }
+        try {
+            $this->tenantRepository->updateSettings($tenantId, [
+                'personnel_command_chain' => ['reviewed' => true],
+            ]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $wizard
+     */
+    private function applyWizardOrgFounding(int $tenantId, array $wizard): void
+    {
+        $date = trim((string) ($wizard['org_founding_date'] ?? ''));
+        if ($date === '') {
+            return;
+        }
+        try {
+            $svc = \App\Core\Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class);
+            $svc->syncOrgFoundingForAllActiveMembers($tenantId, $date);
+        } catch (\Throwable) {
+        }
     }
 
     /**

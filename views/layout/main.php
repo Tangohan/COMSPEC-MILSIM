@@ -483,6 +483,16 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php endif; ?>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
+    <?php if (
+        !empty(\App\Core\Session::get('user_id'))
+        && empty($isBackOfficeShell)
+        && empty($isPlatformAdminShell)
+        && empty($isFormationWorkspace)
+        && empty($communityReelsPage)
+        && empty($communityShowcasePage)
+    ): ?>
+        <?php require base_path('views/partials/platform_review_modal.php'); ?>
+    <?php endif; ?>
     <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>

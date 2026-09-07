@@ -2066,6 +2066,16 @@ class EffectifsWorkspaceController
             $this->userRepository,
             $this->personnelAssignmentRepository
         ))->saveCommanders($tenantId, $commanders, $allowed);
+        if ($result['ok']) {
+            try {
+                $this->tenantRepository->updateSettings($tenantId, [
+                    'personnel_command_chain' => ['reviewed' => true],
+                ]);
+                \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+                    ->markCompleted($tenantId, 'PERSONNEL_COMMAND_CHAIN_V1', (int) Session::get('user_id'));
+            } catch (\Throwable) {
+            }
+        }
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(effectifs_workspace_url('chaine'));

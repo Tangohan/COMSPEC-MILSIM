@@ -155,9 +155,9 @@ class HubController
                 'featured' => true,
             ],
             [
-                'label' => 'Espace RH et formations',
+                'label' => 'Mes démarches',
                 'url' => url('personnel/mon-espace-rh'),
-                'description' => 'Charte, parcours, ancienneté et programmes de préqualification.',
+                'description' => 'Absences, élévation, souhait d’évolution et documents partagés.',
                 'icon' => 'rh_hub',
                 'accent' => 'violet',
             ],
