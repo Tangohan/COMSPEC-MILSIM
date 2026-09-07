@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-$haloLoaderHint = $haloLoaderHint ?? 'Chargement…';
+$haloLoaderHint = $haloLoaderHint ?? __('common.loading');
 $haloLoaderSeenKey = $haloLoaderSeenKey ?? 'athena-halo-loader-tacmap';
 $baseUrl = $baseUrl ?? url('');
 ?>
-<div id="halo-loader" class="halo-loader" role="status" aria-live="polite" aria-busy="true" aria-label="Chargement" data-halo-seen-key="<?= htmlspecialchars($haloLoaderSeenKey, ENT_QUOTES, 'UTF-8') ?>">
+<div id="halo-loader" class="halo-loader" role="status" aria-live="polite" aria-busy="true" aria-label="<?= htmlspecialchars(__('common.loading'), ENT_QUOTES, 'UTF-8') ?>" data-halo-seen-key="<?= htmlspecialchars($haloLoaderSeenKey, ENT_QUOTES, 'UTF-8') ?>">
     <div class="halo-loader__stage" aria-hidden="true">
         <svg class="halo-loader__grid" data-halo-grid viewBox="0 0 320 320" width="320" height="320" focusable="false"></svg>
     </div>

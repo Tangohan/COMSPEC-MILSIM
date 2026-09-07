@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+    'cl_nav_presentation' => 'Présentation',
     'about' => 'À propos',
     'contact' => 'Contact',
     'changelog' => 'Nouveautés',

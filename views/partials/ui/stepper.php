@@ -5,10 +5,10 @@
  */
 $steps = is_array($steps ?? null) ? $steps : [];
 ?>
-<ol class="ds-stepper" aria-label="Étapes">
+<ol class="ds-stepper" aria-label="<?= htmlspecialchars(__('common.steps'), ENT_QUOTES, 'UTF-8') ?>">
     <?php foreach ($steps as $i => $step): ?>
         <?php
-        $label = (string) ($step['label'] ?? ('Étape ' . ($i + 1)));
+        $label = (string) ($step['label'] ?? __('common.step_number', ['number' => $i + 1]));
         $done = !empty($step['done']);
         $active = !empty($step['active']);
         $cls = 'ds-stepper__item';
