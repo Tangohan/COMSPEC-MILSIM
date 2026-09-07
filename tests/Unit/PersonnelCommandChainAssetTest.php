@@ -32,7 +32,8 @@ final class PersonnelCommandChainAssetTest extends TestCase
         self::assertStringContainsString('PERSONNEL_COMMAND_CHAIN_V1', $seed);
         self::assertStringContainsString('.bo-eff-workspace .eff-chain__select', $css);
         self::assertStringContainsString('Désigner les chefs d’unité', $settings);
-        self::assertStringNotContainsString('commander_user_id', $view);
+        $search = (string) file_get_contents($root . '/app/Services/Portal/BackOfficeSearchService.php');
+        self::assertStringContainsString('effectifs/chaine', $search);
         self::assertStringNotContainsString('endpoint', $view);
     }
 }

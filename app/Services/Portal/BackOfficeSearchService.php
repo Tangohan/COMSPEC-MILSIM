@@ -144,6 +144,7 @@ final class BackOfficeSearchService
             ['title' => 'Journal d’audit', 'subtitle' => 'Historique des actions', 'href' => url('back-office/audit'), 'keywords' => 'audit journal historique', 'ok' => $org],
             ['title' => 'Intégrations', 'subtitle' => 'Services liés', 'href' => url('back-office/integrations'), 'keywords' => 'intégrations discord steam', 'ok' => $org],
             ['title' => 'Affectations', 'subtitle' => 'Unités de rattachement', 'href' => url('back-office/ressources/effectifs/affectations'), 'keywords' => 'affectations unités', 'ok' => $eff],
+            ['title' => 'Chaîne de commandement', 'subtitle' => 'Qui relève de qui', 'href' => url('back-office/ressources/effectifs/chaine'), 'keywords' => 'chaîne chef commandement supérieur relève organigramme', 'ok' => $eff],
         ];
         $out = [];
         foreach ($all as $row) {
