@@ -73,6 +73,7 @@ $headHtml = ob_get_clean();
     require base_path('views/training/partials/lms_page_boot_overlay.php');
     ?>
     <div class="lms-grain"></div>
+    <?php require base_path('views/partials/lms_athena_module_banner.php'); ?>
 
     <div class="min-h-screen relative z-10">
         <div class="grid lg:grid-cols-[290px_1fr] min-h-screen">

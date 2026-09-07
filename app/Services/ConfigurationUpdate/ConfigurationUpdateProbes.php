@@ -624,6 +624,9 @@ final class ConfigurationUpdateProbes
         if ($tenantId < 1) {
             return false;
         }
+        if ($this->hasCommandChainReviewed($tenantId)) {
+            return true;
+        }
         try {
             $st = $this->pdo->prepare(
                 'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND (commander_user_id IS NULL OR commander_user_id = 0)'
@@ -634,5 +637,18 @@ final class ConfigurationUpdateProbes
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    public function hasCommandChainReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        $settings = $this->tenants->getSettings($tenantId);
+        $block = is_array($settings['personnel_command_chain'] ?? null)
+            ? $settings['personnel_command_chain']
+            : [];
+
+        return !empty($block['reviewed']);
     }
 }

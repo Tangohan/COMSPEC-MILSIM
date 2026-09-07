@@ -51,7 +51,11 @@ final class OrganizationCatalogAssetTest extends TestCase
         self::assertStringContainsString('back-office/organisation/catalogue', $structure);
         self::assertStringContainsString('Démarrer avec un modèle', $wizard);
         self::assertStringContainsString('wizard_catalog_kit_code', $wizard);
+        self::assertStringContainsString('wizard_org_founding_choice', $wizard);
+        self::assertStringContainsString('Cette communauté commence aujourd’hui', $wizard);
         self::assertStringContainsString('Démarrer avec un modèle', $setup);
+        self::assertStringContainsString('Chaîne de commandement', $setup);
+        self::assertStringContainsString('Parcours d’arrivée', $setup);
         self::assertStringContainsString('organization.catalog.manage', $perm);
         self::assertStringContainsString('ORGANIZATION_CATALOG_V1', $catalog);
         self::assertStringContainsString('JOB_CATALOGS_FR_US_V1', $catalog);

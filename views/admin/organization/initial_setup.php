@@ -237,6 +237,17 @@ $renderToggle = static function (
             </section>
 
             <section class="ath-card ath-rise" style="padding:16px 18px;">
+                <p class="bo-setup__kicker">Effectifs</p>
+                <p class="bo-setup__type-title">Poursuivre la configuration</p>
+                <p class="bo-setup__type-desc">La création a déjà posé le cadre. Ces écrans permettent d’ajuster la chaîne de commandement, l’ancienneté et l’arrivée des nouveaux membres.</p>
+                <div class="bo-setup__type-action" style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <a href="<?= $h(effectifs_workspace_url('chaine')) ?>" class="ath-btn">Chaîne de commandement</a>
+                    <a href="<?= $h(url('back-office/organisation/anciennete')) ?>" class="ath-btn">Ancienneté</a>
+                    <a href="<?= $h(url('back-office/integration-membres/modeles')) ?>" class="ath-btn">Parcours d’arrivée</a>
+                </div>
+            </section>
+
+            <section class="ath-card ath-rise" style="padding:16px 18px;">
                 <p class="bo-setup__kicker">Profil de communauté</p>
                 <p class="bo-setup__type-title"><?= $h($setupTypeLabel) ?></p>
                 <?php if ($setupTypeDesc !== ''): ?>

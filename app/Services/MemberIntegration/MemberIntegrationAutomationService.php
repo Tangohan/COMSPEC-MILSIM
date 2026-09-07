@@ -102,6 +102,7 @@ final class MemberIntegrationAutomationService
 
     public function runDaily(int $tenantId): array
     {
+        $this->integrations->deleteDuplicateActives($tenantId);
         $rows = $this->integrations->listDashboard($tenantId, [
             'status' => '',
         ], 400);

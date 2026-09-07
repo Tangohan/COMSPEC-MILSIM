@@ -147,6 +147,7 @@ $jnetChildren = [
     ['label' => 'Système', 'href' => url('jnet/systeme'), 'active' => $boNavJnetSystem],
 ];
 
+$isOperatorBoNav = !empty($isOperatorBoNav);
 $athNavGroups = [
     [
         'key' => 'pilotage',
@@ -290,6 +291,21 @@ $athNavGroups = [
         ], static fn (?array $row): bool => is_array($row))),
     ],
 ];
+
+if ($isOperatorBoNav) {
+    array_unshift($athNavGroups, [
+        'key' => 'ma-situation',
+        'label' => 'MA SITUATION',
+        'items' => [
+            ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'icon' => 'users', 'active' => $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
+            ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh'), 'icon' => 'path', 'active' => str_contains($p, 'mon-espace-rh')],
+            ['label' => 'Événements', 'href' => url('evenements'), 'icon' => 'cal', 'active' => $p === 'evenements' || str_starts_with($p, 'evenements/')],
+            ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
+            ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'icon' => 'mail', 'active' => $p === 'boite-reception'],
+            ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'gear', 'active' => $p === 'account' || str_starts_with($p, 'account/')],
+        ],
+    ]);
+}
 
 $athNavFilterGroup = static function (array $groups) use ($boHrefAllowed): array {
     $out = [];

@@ -65,6 +65,7 @@ final class MemberIntegrationRepositorySchemaTest extends TestCase
 
         self::assertStringContainsString("hasColumn('users', 'avatar_url')", $repo);
         self::assertStringContainsString("hasColumn('personnel_profiles', 'character_portrait_path')", $repo);
+        self::assertStringContainsString('SELECT ppx.id FROM personnel_profiles ppx', $repo);
         self::assertStringContainsString('NULL AS avatar_url', $repo);
         self::assertDoesNotMatchRegularExpression('/SELECT[^;]+u\\.avatar_path/s', $repo);
     }
@@ -115,6 +116,54 @@ final class MemberIntegrationRepositorySchemaTest extends TestCase
         self::assertArrayHasKey('avatar_url', $one);
     }
 
+    public function testListDashboardDoesNotRepeatAMemberWhenProfileRowsAreDuplicated(): void
+    {
+        $pdo = $this->sqliteDashboard(true);
+        $portrait = $pdo->query('PRAGMA table_info(personnel_profiles)');
+        $hasPortrait = false;
+        if ($portrait !== false) {
+            while ($col = $portrait->fetch(PDO::FETCH_ASSOC)) {
+                if (($col['name'] ?? '') === 'character_portrait_path') {
+                    $hasPortrait = true;
+                    break;
+                }
+            }
+        }
+        for ($i = 0; $i < 19; $i++) {
+            if ($hasPortrait) {
+                $pdo->exec("INSERT INTO personnel_profiles (user_id, primary_unit_id, character_portrait_path) VALUES (5, 3, 'uploads/portraits/a.png')");
+            } else {
+                $pdo->exec('INSERT INTO personnel_profiles (user_id, primary_unit_id) VALUES (5, 3)');
+            }
+        }
+
+        $rows = (new MemberIntegrationRepository($pdo))->listDashboard(7, [], 50);
+
+        self::assertCount(1, $rows);
+        self::assertSame('Alpha', $rows[0]['display_name'] ?? null);
+        self::assertSame(1, (int) ($rows[0]['id'] ?? 0));
+    }
+
+    public function testDeleteDuplicateActivesKeepsTheLatestOpenFollowUp(): void
+    {
+        $pdo = $this->sqliteDashboard(false);
+        $pdo->exec(
+            "INSERT INTO member_integrations
+                (id, tenant_id, user_id, template_id, current_step_id, primary_referent_user_id,
+                 status, progress_percent, overdue_count, dossier_complete, created_at)
+             VALUES
+                (2, 7, 5, NULL, NULL, NULL, 'in_progress', 25, 0, 1, '2026-09-02 12:00:00'),
+                (3, 7, 5, NULL, NULL, NULL, 'in_progress', 25, 0, 1, '2026-09-03 12:00:00')"
+        );
+        $repo = new MemberIntegrationRepository($pdo);
+
+        self::assertSame(2, $repo->deleteDuplicateActives(7));
+        $rows = $repo->listDashboard(7, [], 50);
+        self::assertCount(1, $rows);
+        self::assertSame(3, (int) ($rows[0]['id'] ?? 0));
+        self::assertSame(0, $repo->deleteDuplicateActives(7));
+    }
+
     private function sqliteDashboard(bool $withPhotoColumns): PDO
     {
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -135,6 +184,7 @@ final class MemberIntegrationRepositorySchemaTest extends TestCase
         $pdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT)');
         $pdo->exec(
             'CREATE TABLE personnel_profiles (
+                id INTEGER PRIMARY KEY,
                 user_id INTEGER,
                 primary_unit_id INTEGER
                 ' . $portraitCol . '

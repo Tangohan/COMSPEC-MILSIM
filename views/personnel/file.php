@@ -292,10 +292,6 @@ $readinessMerged = max($rScore, $rExtra);
 $readiness = $readinessMerged > 0 ? $readinessMerged : null;
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
 
-$avatarUrl = !empty($targetUser['avatar_url']) ? $targetUser['avatar_url'] : null;
-if ($avatarUrl && strpos($avatarUrl, 'http') !== 0) {
-    $avatarUrl = $baseUrl . '/' . ltrim($avatarUrl, '/');
-}
 $portraitUrl = null;
 if (!empty($personnelProfile['character_portrait_path'])) {
     $portraitUrl = $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
@@ -694,16 +690,10 @@ if ($personnelFileIsRhFull) {
                             Anomalie / correction RH
                         </a>
                         <?php endif; ?>
-                        <?php if (!empty($avatarUrl)): ?>
-                        <button type="button" role="menuitem" data-community-report data-cr-type="profile_picture" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant la photo de compte affichée." class="flex w-full items-center gap-2 border-b border-white/10 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
-                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
-                            La photo de compte
-                        </button>
-                        <?php endif; ?>
                         <?php if (!empty($portraitUrl)): ?>
-                        <button type="button" role="menuitem" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait opérateur affiché." class="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
+                        <button type="button" role="menuitem" data-community-report data-cr-type="operator_visual" data-cr-id="<?= $reportUid ?>" data-cr-summary="Signalement concernant le portrait affiché." class="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-semibold text-white transition hover:bg-white/10 focus:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/60">
                             <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden="true"></span>
-                            Le portrait opérateur
+                            Le portrait
                         </button>
                         <?php endif; ?>
                     </div>
@@ -720,12 +710,6 @@ if ($personnelFileIsRhFull) {
                     <?php else: ?>
                     <div class="personnel-file-hero__portrait-empty">
                         <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($avatarUrl): ?>
-                    <div class="personnel-file-hero__avatar-inset" title="Photo de compte">
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" loading="eager" decoding="async" draggable="false" width="48" height="48" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
-                        <span class="personnel-file-hero__avatar-inset-label">Compte</span>
                     </div>
                     <?php endif; ?>
                 </figure>
@@ -770,14 +754,13 @@ if ($personnelFileIsRhFull) {
         <div class="personnel-file-hub-actions">
             <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
             <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>">Modifier le dossier</a>
-            <a href="<?= url('account/image') ?>">Photo de compte</a>
-            <a href="<?= url('account/portrait') ?>">Portrait opérateur</a>
+            <a href="<?= url('account/portrait') ?>">Portrait</a>
             <?php endif; ?>
             <a href="<?= url('orbat') ?>">Organigramme</a>
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
-            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Espace RH</a>
+            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
             <?php endif; ?>
         </div>
             <div class="personnel-file-main min-w-0 space-y-5">

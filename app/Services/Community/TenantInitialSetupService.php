@@ -14,7 +14,7 @@ use App\Repositories\TenantRepository;
  */
 final class TenantInitialSetupService
 {
-    public const VERSION = 1;
+    public const VERSION = 2;
 
     public function __construct(
         private ?TenantRepository $tenantRepository = null,

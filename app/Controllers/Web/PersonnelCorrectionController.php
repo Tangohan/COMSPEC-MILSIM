@@ -70,6 +70,7 @@ final class PersonnelCorrectionController
             'pending' => $pending,
             'hasOpen' => $hasOpen,
             'isSelf' => $isSelf,
+            'canApplyImmediately' => $this->canStaffManage(),
             'csrf' => Csrf::token(),
             'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
@@ -97,21 +98,25 @@ final class PersonnelCorrectionController
             return Response::redirect(url('personnel/' . max(1, $targetId)));
         }
 
-        $fields = [];
-        foreach (array_keys(PersonnelCorrectionRequestService::fieldLabels()) as $key) {
-            if ($request->input($key) !== null) {
-                $fields[$key] = $request->input($key);
-            }
-        }
-        $result = $this->correctionService->submit(
-            $tenantId,
-            $viewerId,
-            $targetId,
-            $fields,
-            (string) $request->input('note', '')
-        );
+        $fields = $this->collectCorrectionFields($request);
+        $applyNow = $this->canStaffManage() && (string) $request->input('apply_now', '') === '1';
+        $result = $applyNow
+            ? $this->correctionService->applyDirect(
+                $tenantId,
+                $viewerId,
+                $targetId,
+                $fields,
+                (string) $request->input('note', '')
+            )
+            : $this->correctionService->submit(
+                $tenantId,
+                $viewerId,
+                $targetId,
+                $fields,
+                (string) $request->input('note', '')
+            );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-        if ($result['ok'] && !empty($result['recipient_names'])) {
+        if ($result['ok'] && !$applyNow && !empty($result['recipient_names'])) {
             Session::flash(
                 'info',
                 'Notification envoyée à : ' . implode(', ', $result['recipient_names']) . '.'
@@ -147,6 +152,31 @@ final class PersonnelCorrectionController
         }
         unset($row);
 
+        $directTargetId = (int) $request->query('membre', 0);
+        $directTarget = $directTargetId > 0 ? $this->userRepository->findById($directTargetId, $tenantId) : null;
+        $directSnapshot = [];
+        $directPending = [];
+        $directHasOpen = false;
+        $choices = PersonnelCorrectionRequestService::choiceCatalog();
+        if (is_array($directTarget)) {
+            $directSnapshot = $this->correctionService->currentSnapshot((int) $directTarget['id']);
+            $directPending = $this->correctionRepository->listForTarget($tenantId, (int) $directTarget['id'], 5);
+            $directHasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, (int) $directTarget['id']);
+            $choices['grade_id'] = $this->gradeChoices($tenantId);
+            $choices['units'] = $this->unitChoices($tenantId);
+            $choices['job_roles'] = $this->jobRoleChoices($tenantId);
+        }
+
+        $members = [];
+        foreach ($this->userRepository->listForTenant($tenantId, null, 'active', null, null, null, true) as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $members[] = ['id' => $id, 'label' => $this->memberLabel($u)];
+        }
+        usort($members, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
+
         return Response::view('layout.main', [
             'title' => 'Corrections RH en attente',
             'content' => 'personnel.corrections_queue',
@@ -154,7 +184,48 @@ final class PersonnelCorrectionController
             'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(),
             'csrf' => Csrf::token(),
             'pendingCount' => count($open),
+            'directMembers' => $members,
+            'directTarget' => $directTarget,
+            'directSnapshot' => $directSnapshot,
+            'directPending' => $directPending,
+            'directHasOpen' => $directHasOpen,
+            'directFieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(),
+            'directFieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
+            'directChoiceCatalog' => $choices,
+            'backOfficePageCss' => ['back-office-corrections.css', 'personnel-dossier.css'],
         ]);
+    }
+
+    /** POST /back-office/personnel/corrections/appliquer */
+    public function applyDirect(Request $request, array $params = []): Response
+    {
+        $ctx = $this->authContext();
+        if ($ctx === null) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->canStaffManage()) {
+            Session::flash('error', 'Droits insuffisants.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        [$tenantId, $viewer] = $ctx;
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel/corrections'));
+        }
+        $targetId = (int) $request->input('target_user_id', 0);
+        $result = $this->correctionService->applyDirect(
+            $tenantId,
+            (int) $viewer['id'],
+            $targetId,
+            $this->collectCorrectionFields($request),
+            (string) $request->input('note', '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+        $suffix = $targetId > 0 ? ('?membre=' . $targetId) : '';
+
+        return Response::redirect(url('back-office/personnel/corrections') . $suffix);
     }
 
     /** POST /back-office/personnel/corrections/{id}/decide */
@@ -213,6 +284,37 @@ final class PersonnelCorrectionController
         }
 
         return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectCorrectionFields(Request $request): array
+    {
+        $fields = [];
+        foreach (array_keys(PersonnelCorrectionRequestService::fieldLabels()) as $key) {
+            if ($request->input($key) !== null) {
+                $fields[$key] = $request->input($key);
+            }
+        }
+
+        return $fields;
+    }
+
+    /** @param array<string, mixed> $user */
+    private function memberLabel(array $user): string
+    {
+        $dn = trim((string) ($user['display_name'] ?? ''));
+        if ($dn !== '') {
+            return $dn;
+        }
+        $cs = trim((string) ($user['callsign'] ?? ''));
+        if ($cs !== '') {
+            return $cs;
+        }
+        $em = trim((string) ($user['email'] ?? ''));
+
+        return $em !== '' ? $em : 'Membre';
     }
 
     /** @return list<array{value: string, label: string}> */

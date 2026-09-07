@@ -53,6 +53,7 @@ $initials = count($words) > 1
                 <?php $link('admin/analytics', 'Indicateurs transverses', 'chart', $active('admin/analytics')); ?>
                 <?php $link('admin/ops-center', 'Synthèse opérationnelle', 'chart', $active('admin/ops-center')); ?>
                 <?php if ($isPlatformAdmin) { $link('admin/system/retours-interface', 'Retours interface', 'book', $active('admin/system/retours-interface')); } ?>
+                <?php if ($isPlatformAdmin) { $link('admin/system/avis-plateforme', 'Avis et traductions', 'book', $active('admin/system/avis-plateforme')); } ?>
             </div>
         </div>
         <?php if ($isPlatformAdmin) { ?>

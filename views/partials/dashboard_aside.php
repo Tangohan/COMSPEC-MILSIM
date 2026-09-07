@@ -166,7 +166,7 @@ $navTiles = [
         ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'hint' => 'Briefing et indicateurs'],
         ['label' => 'Annonces', 'href' => url('dashboard') . '#dashboard-announce', 'hint' => 'Alertes et annonces'],
         ['label' => 'Offres de l’organisation', 'href' => url('dashboard') . '#dashboard-org-offers', 'hint' => 'Postes actuellement ouverts'],
-        ['label' => 'Mon dossier RH', 'href' => url('dashboard') . '#mon-dossier-rh', 'hint' => 'Absence, élévation ou avancement'],
+        ['label' => 'Démarche rapide', 'href' => url('dashboard') . '#mon-dossier-rh', 'hint' => 'Absence, élévation ou avancement'],
         (function_exists('can') && (can('admin.organization') || can('admin.access') || can('site.support')))
             ? ['label' => 'Rédiger un article', 'href' => url('back-office/articles/create'), 'hint' => 'Mini-article permanent']
             : null,
@@ -256,7 +256,7 @@ $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default'
         ? ['label' => 'Organisation (ORBAT)', 'href' => url('orbat'), 'hint' => 'Vue hiérarchique', 'lms_module' => 'effectifs']
         : null,
     ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade', 'lms_module' => 'effectifs'],
-    ['label' => 'Espace RH', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Dossier administratif', 'lms_module' => 'effectifs'],
+    ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Absences, élévation, documents', 'lms_module' => 'effectifs'],
     ['label' => 'Mon intégration', 'href' => url('mon-integration'), 'hint' => 'Étapes d’arrivée et rendez-vous', 'lms_module' => 'effectifs'],
     ['label' => 'Mon personnage (RP)', 'href' => url('roleplay'), 'hint' => 'Identité RP, suivi, bilans', 'lms_module' => 'effectifs'],
     ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances', 'lms_module' => 'effectifs'],
@@ -382,7 +382,7 @@ $acctInitials = function_exists('user_display_initials') ? user_display_initials
 <div class="dash-rail__identity">
     <span class="dash-rail__identity-avatar<?= $acctAvatarSrc ? ' dash-rail__identity-avatar--photo' : '' ?>">
         <?php if ($acctAvatarSrc): ?>
-            <img src="<?= $h((string) $acctAvatarSrc) ?>" alt="Photo de compte" class="dash-rail__identity-avatar-img" loading="lazy" data-img-fallback="avatar" data-img-initials="<?= $h($acctInitials) ?>" data-img-label="Photo de compte indisponible">
+            <img src="<?= $h((string) $acctAvatarSrc) ?>" alt="Portrait" class="dash-rail__identity-avatar-img" loading="lazy" data-img-fallback="avatar" data-img-initials="<?= $h($acctInitials) ?>" data-img-label="Portrait indisponible">
         <?php else: ?>
             <?= $h($acctInitials) ?>
         <?php endif; ?>
@@ -450,7 +450,7 @@ $acctSteamLinked = \App\Support\SteamId::normalize(is_array($acctUser) ? (string
 $accountLinks = [
     ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade'],
     ['label' => 'Modifier le dossier', 'href' => url('personnel/me/edit'), 'hint' => 'Mise à jour'],
-    ['label' => 'Compte', 'href' => url('account'), 'hint' => 'Sécurité et médias'],
+    ['label' => 'Compte', 'href' => url('account'), 'hint' => 'Connexion, photo et préférences'],
     ['label' => 'Préférences', 'href' => url('account/preferences'), 'hint' => 'Langue, affichage et e-mail'],
 ];
 if (!$acctSteamLinked) {

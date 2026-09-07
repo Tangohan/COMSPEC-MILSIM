@@ -53,6 +53,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('Pas de session', $wait);
         self::assertStringContainsString('Expérience en jeu', $bo);
         self::assertStringContainsString('OVERWATCH_GAME_AUTH_V1', $catalog);
+        $boot = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
+        self::assertStringContainsString('GameOverwatchExperienceService', $boot);
         self::assertStringContainsString('detected_mod_version', $svc);
         self::assertStringContainsString('Pack actuel', $sqfPoll);
         self::assertStringContainsString('version exigée', $sqfPoll);

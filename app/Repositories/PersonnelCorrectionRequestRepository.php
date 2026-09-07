@@ -147,6 +147,26 @@ final class PersonnelCorrectionRequestRepository
         return $stmt->rowCount() > 0;
     }
 
+    public function cancelPendingForTarget(int $tenantId, int $targetUserId, int $resolvedBy, string $note = ''): int
+    {
+        if ($tenantId < 1 || $targetUserId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            "UPDATE personnel_correction_requests
+             SET status = 'cancelled', resolution_note = ?, resolved_by = ?, resolved_at = NOW(), updated_at = NOW()
+             WHERE tenant_id = ? AND target_user_id = ? AND status = 'pending'"
+        );
+        $stmt->execute([
+            $note !== '' ? $note : null,
+            $resolvedBy > 0 ? $resolvedBy : null,
+            $tenantId,
+            $targetUserId,
+        ]);
+
+        return $stmt->rowCount();
+    }
+
     /** @param array<string, mixed> $row */
     private function hydrate(array $row): array
     {
