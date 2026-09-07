@@ -195,6 +195,7 @@ class HomeController
         $dashboardRhParcours = null;
         $dashboardPublishedOpenings = [];
         $dashboardTenantSlug = '';
+        $dashboardOrbat = null;
         $canManageRecruitmentOffers = false;
         $dashboardElevationCatalog = ['grades' => [], 'roles' => [], 'job_roles' => [], 'units' => []];
         $canRequestSelfElevation = false;
@@ -333,6 +334,19 @@ class HomeController
                             ->listPersonnelDirectoryRich($tid, '', 40, $canSeeInactiveEffectifs);
                     } catch (\Throwable) {
                         $dashboardEffectifsRows = [];
+                    }
+                }
+
+                $canViewOrbat = !$dashboardIsDefaultTenant && $allowsPersonnel && (
+                    $gate->allows('organization.orbat.view')
+                    || $gate->allows('organization.orbat.manage')
+                    || $canViewPersonnelDirectory
+                );
+                if ($canViewOrbat) {
+                    try {
+                        $dashboardOrbat = \App\Support\DashboardOrbatTree::buildForTenant($tid, $uid);
+                    } catch (\Throwable) {
+                        $dashboardOrbat = null;
                     }
                 }
 
@@ -811,6 +825,7 @@ class HomeController
             'can_view_atak_operators' => $canViewAtakOperators,
             'atak_operators_linked_count' => $atakOperatorsLinkedCount,
             'dashboard_effectifs_rows' => $dashboardEffectifsRows,
+            'dashboard_orbat' => $dashboardOrbat,
             'can_view_personnel_directory' => $canViewPersonnelDirectory,
             'can_open_effectifs_workspace' => $canOpenEffectifsWorkspace,
             'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,

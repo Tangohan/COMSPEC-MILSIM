@@ -1,0 +1,403 @@
+/**
+ * Dashboard ORBAT — organigramme RH dépliable avec portraits.
+ */
+.dash-orbat {
+  --do-ink: #0c1116;
+  --do-muted: #5b676d;
+  --do-line: #e3e8ea;
+  --do-bg: #f4f7f8;
+  --do-surface: #ffffff;
+  --do-accent: #0b8a5c;
+  --do-accent-soft: #e7f7f0;
+  margin: 0 0 1.25rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-orbat {
+    padding: 0 1.5rem;
+  }
+}
+
+.dash-orbat__frame {
+  max-width: 72rem;
+  margin: 0 auto;
+  border: 1px solid var(--do-line);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(11, 138, 92, 0.08), transparent 36%),
+    linear-gradient(180deg, #fbfcfd 0%, var(--do-bg) 100%);
+  box-shadow: 0 18px 40px rgba(12, 17, 22, 0.05);
+}
+
+.dash-orbat__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 1.35rem 1.25rem 1.1rem;
+  border-bottom: 1px solid var(--do-line);
+  background: linear-gradient(135deg, #101820 0%, #163028 100%);
+  color: #f4f7f8;
+}
+
+.dash-orbat__kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.92);
+}
+
+.dash-orbat__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.dash-orbat__lead {
+  margin: 0.45rem 0 0;
+  max-width: 36rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.dash-orbat__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dash-orbat__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0 0.85rem;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dash-orbat__btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.dash-orbat__btn--ghost:hover {
+  border-color: #fff;
+}
+
+.dash-orbat__btn--solid {
+  background: #fff;
+  color: var(--do-ink);
+}
+
+.dash-orbat__tree {
+  padding: 1rem 0.85rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .dash-orbat__tree {
+    padding: 1.15rem 1.15rem 1.5rem;
+  }
+}
+
+.dash-orbat__node {
+  border: 1px solid var(--do-line);
+  background: var(--do-surface);
+  margin: 0 0 0.65rem;
+}
+
+.dash-orbat__node[data-depth="1"],
+.dash-orbat__node[data-depth="2"],
+.dash-orbat__node[data-depth="3"],
+.dash-orbat__node[data-depth="4"] {
+  margin-left: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .dash-orbat__node[data-depth="1"] { margin-left: 1rem; }
+  .dash-orbat__node[data-depth="2"] { margin-left: 1.35rem; }
+  .dash-orbat__node[data-depth="3"] { margin-left: 1.7rem; }
+  .dash-orbat__node[data-depth="4"] { margin-left: 2rem; }
+}
+
+.dash-orbat__summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 0.7rem 0.75rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dash-orbat__summary::-webkit-details-marker {
+  display: none;
+}
+
+.dash-orbat__node[data-leaf="1"] > .dash-orbat__summary {
+  cursor: default;
+}
+
+.dash-orbat__node[data-leaf="1"] > .dash-orbat__summary .dash-orbat__chevron {
+  opacity: 0.25;
+}
+
+.dash-orbat__chevron {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--do-ink);
+  border-bottom: 2px solid var(--do-ink);
+  transform: rotate(-45deg);
+  transition: transform 0.18s ease;
+  justify-self: center;
+}
+
+.dash-orbat__node[open] > .dash-orbat__summary .dash-orbat__chevron {
+  transform: rotate(45deg);
+}
+
+.dash-orbat__unit-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--do-accent-soft);
+  color: var(--do-accent);
+  font-size: 0.95rem;
+  font-weight: 900;
+  border: 1px solid #c7eadb;
+}
+
+.dash-orbat__node--alpha .dash-orbat__unit-mark,
+.dash-orbat__node--command .dash-orbat__unit-mark {
+  background: #e8f1fb;
+  color: #1e4f80;
+  border-color: #c9dcf0;
+}
+
+.dash-orbat__node--bravo .dash-orbat__unit-mark {
+  background: #e7f7f0;
+  color: #0b6b47;
+  border-color: #bfe9d8;
+}
+
+.dash-orbat__node--support .dash-orbat__unit-mark {
+  background: #fdf3e2;
+  color: #8a5a06;
+  border-color: #f2ddb4;
+}
+
+.dash-orbat__node--special .dash-orbat__unit-mark {
+  background: #fdecec;
+  color: #a32222;
+  border-color: #f6cccc;
+}
+
+.dash-orbat__unit-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dash-orbat__unit-name {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--do-ink);
+  letter-spacing: -0.01em;
+}
+
+.dash-orbat__unit-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--do-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dash-orbat__summary-lead {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .dash-orbat__summary-lead {
+    display: block;
+  }
+}
+
+.dash-orbat__body {
+  padding: 0 0.9rem 0.95rem 2.6rem;
+  border-top: 1px solid #eef2f3;
+}
+
+.dash-orbat__mission {
+  margin: 0.8rem 0 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--do-muted);
+  line-height: 1.5;
+}
+
+.dash-orbat__eyebrow {
+  margin: 0.95rem 0 0.45rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--do-muted);
+}
+
+.dash-orbat__lead-block .dash-orbat__person {
+  max-width: 22rem;
+}
+
+.dash-orbat__people {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+@media (min-width: 640px) {
+  .dash-orbat__people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .dash-orbat__people {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dash-orbat__person {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--do-line);
+  background: #fbfcfd;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+a.dash-orbat__person:hover {
+  border-color: #bfe9d8;
+  background: var(--do-accent-soft);
+}
+
+.dash-orbat__person--lead {
+  background: linear-gradient(180deg, #f3fbf7 0%, #fff 70%);
+  border-color: #bfe9d8;
+  padding: 0.75rem 0.85rem;
+}
+
+.dash-orbat__person--lead-mini {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  max-width: 12rem;
+}
+
+.dash-orbat__person--lead-mini .dash-orbat__avatar {
+  width: 2rem;
+  height: 2rem;
+}
+
+.dash-orbat__person--lead-mini .dash-orbat__person-name {
+  font-size: 0.78rem;
+}
+
+.dash-orbat__person--lead-mini .dash-orbat__person-role {
+  display: none;
+}
+
+.dash-orbat__avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #d7dee1;
+  background: #e8eef0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dash-orbat__person--lead .dash-orbat__avatar {
+  width: 3.35rem;
+  height: 3.35rem;
+  border-color: #bfe9d8;
+}
+
+.dash-orbat__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dash-orbat__initials {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #3c474c;
+  letter-spacing: 0.04em;
+}
+
+.dash-orbat__person-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.dash-orbat__person-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--do-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-orbat__person-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--do-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-orbat__children {
+  margin-top: 0.75rem;
+  padding-top: 0.35rem;
+}
+
+@media (max-width: 639px) {
+  .dash-orbat__summary {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .dash-orbat__body {
+    padding-left: 0.9rem;
+  }
+}
