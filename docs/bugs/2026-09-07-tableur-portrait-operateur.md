@@ -31,6 +31,14 @@ La fonction de portrait renvoyait aussi le visuel de repli à la place d’un vi
 - Tests unitaires du portrait et des assets du tableur.
 - Contrôle visuel : une ligne avec portrait opérateur affiche cette image ; une ligne sans portrait affiche les initiales.
 
+## Variante — fiche membre
+
+La fiche Effectifs (`/back-office/ressources/effectifs/membres/{id}`) affichait encore la photo de compte en tête. Même règle que le tableur : portrait opérateur, sinon les initiales.
+
+## Fichiers touchés (complément)
+
+- `views/admin/effectifs_workspace/member.php`
+
 ## Statut
 
-corrigé
+Corrigé

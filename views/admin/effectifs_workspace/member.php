@@ -108,9 +108,15 @@ $communityTenureLabel = trim((string) ($m['seniority_community_label'] ?? ''));
 $preTenureLabel = trim((string) ($m['seniority_pre_platform_label'] ?? ''));
 $enlistmentStart = trim((string) ($m['enlistment_date_resolved'] ?? ($profile['enlistment_date'] ?? '')));
 $prePlatformStart = trim((string) ($m['pre_platform_start'] ?? ''));
-$avatarUrl = function_exists('user_media_public_url')
-    ? (user_media_public_url($m['avatar_url'] ?? null) ?? '')
-    : trim((string) ($m['avatar_url'] ?? ''));
+$portraitSource = [
+    'character_portrait_path' => trim((string) ($profile['character_portrait_path'] ?? $m['character_portrait_path'] ?? '')),
+];
+$avatarUrl = function_exists('personnel_operator_portrait_url')
+    ? (string) (personnel_operator_portrait_url($portraitSource) ?? '')
+    : '';
+if ($avatarUrl !== '' && str_contains($avatarUrl, 'inconnu.svg')) {
+    $avatarUrl = '';
+}
 $initials = function_exists('user_display_initials')
     ? user_display_initials($name !== '' ? $name : $email, 2)
     : mb_strtoupper(mb_substr($name !== '' ? $name : $email, 0, 2, 'UTF-8'), 'UTF-8');
@@ -138,7 +144,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
     <div class="eff-fiche-hero__row">
         <span class="eff-fiche-hero__avatar" aria-hidden="true">
             <?php if ($avatarUrl !== ''): ?>
-                <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async">
+                <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
             <?php else: ?>
                 <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
             <?php endif; ?>
@@ -264,6 +270,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
 
     <article class="eff-card">
         <h2 class="eff-card__title">Unité</h2>
+        <p class="eff-card__lead">L’affectation indique dans quelle équipe la personne est rattachée. L’affectation principale place la personne dans l’organigramme et sur la fiche.</p>
         <?php if ($assignments !== []): ?>
             <ul class="eff-card__list">
                 <?php foreach ($assignments as $a): ?>
@@ -339,6 +346,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
 
     <article class="eff-card" id="fonctions">
         <h2 class="eff-card__title">Fonctions</h2>
+        <p class="eff-card__lead">L’emploi décrit la fonction tenue, pas l’équipe et pas un droit d’accès. L’emploi principal apparaît sur la fiche, l’organigramme et le forum.</p>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags" style="margin-bottom:0.85rem">
                 <?php foreach ($jobRoles as $jr): ?>
@@ -375,12 +383,12 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
                         </label>
                     <?php endforeach; ?>
                 </fieldset>
-                <p class="eff-card__hint">Cochez les fonctions exercées et désignez celle qui doit apparaître en priorité dans le dossier et l’ordre de bataille.</p>
+                <p class="eff-card__hint">Cochez les fonctions exercées et désignez celle qui doit apparaître en priorité sur la fiche, l’organigramme et le forum.</p>
                 <button type="submit" class="eff-btn eff-btn--primary">Enregistrer les fonctions</button>
             </form>
         <?php elseif ($canManageAssignments && $jobRolesAvailable): ?>
             <p class="eff-card__lead">Le référentiel ne contient encore aucune fonction.</p>
-            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le référentiel des fonctions</a>
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le catalogue des emplois</a>
         <?php elseif ($canManageAssignments): ?>
             <p class="eff-card__lead">La gestion des fonctions sera disponible après application des migrations.</p>
         <?php endif; ?>

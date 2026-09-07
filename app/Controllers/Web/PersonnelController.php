@@ -1426,6 +1426,80 @@ class PersonnelController
         ]);
     }
 
+    public function updatePortrait(Request $request, array $params = []): Response
+    {
+        $currentUser = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId || !$currentUser) {
+            return Response::redirect(url('login'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);
+        if (!$target) {
+            return $this->personnelMissingResponse(true);
+        }
+        $isSelf = (int) $currentUser['id'] === (int) $target['id'];
+        $canStaffEdit = $this->canStaffEditPersonnel();
+        if (!$isSelf && !$canStaffEdit) {
+            return $this->personnelForbiddenResponse(true, url('personnel'));
+        }
+        $fromEffectifs = (string) $request->input('effectifs_context', '') === '1';
+        $editUrl = $this->personnelPortraitEditUrl($target, $isSelf, $fromEffectifs);
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($editUrl);
+        }
+        $uid = (int) $target['id'];
+        $personnelProfile = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+        $portraitLocked = !empty($personnelProfile['character_portrait_locked']);
+        if ($portraitLocked && !$canStaffEdit) {
+            Session::flash('error', 'La modification de cette photo a été verrouillée par un responsable de la communauté.');
+
+            return Response::redirect($editUrl);
+        }
+        $file = $_FILES['portrait'] ?? null;
+        $mime = null;
+        if (is_array($file) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && (int) ($file['size'] ?? 0) <= 2 * 1024 * 1024) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, (string) $file['tmp_name']);
+            finfo_close($finfo);
+        }
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!is_string($mime) || !isset($extensions[$mime])) {
+            Session::flash('error', 'Choisissez une image JPG, PNG ou WebP de 2 Mo maximum.');
+
+            return Response::redirect($editUrl);
+        }
+        $dir = base_path('public/uploads/portraits');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $name = $uid . '_' . time() . '.' . $extensions[$mime];
+        if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
+            Session::flash('error', 'Impossible d’enregistrer la photo.');
+
+            return Response::redirect($editUrl);
+        }
+        $this->personnelProfileRepository->updatePortraitPath($uid, 'uploads/portraits/' . $name);
+        Session::flash('success', 'Le portrait opérateur a été mis à jour. Il apparaît sur la fiche, l’organigramme et le portail.');
+
+        return Response::redirect($editUrl);
+    }
+
+    private function personnelPortraitEditUrl(array $target, bool $isSelf, bool $fromEffectifs): string
+    {
+        if ($fromEffectifs) {
+            return effectifs_workspace_url('membres/' . (int) ($target['id'] ?? 0)) . '#edit-portrait';
+        }
+
+        $base = $isSelf
+            ? url('personnel/me/edit')
+            : url('personnel/' . $this->personPathSegment($target) . '/edit');
+
+        return $base . '#edit-portrait';
+    }
+
     public function update(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();

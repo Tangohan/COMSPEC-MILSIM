@@ -35,14 +35,14 @@
       </section>
 
       <section class="rounded-2xl border border-cyan-200 bg-cyan-50/40 p-6 shadow-sm sm:p-8">
-        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700/80">Affectation</p>
-        <h2 class="mt-2 text-lg font-black tracking-tight text-cyan-950">Choisir son unité et son rôle</h2>
+        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700/80">Affectation et emploi</p>
+        <h2 class="mt-2 text-lg font-black tracking-tight text-cyan-950">L’équipe d’un côté, la fonction de l’autre</h2>
         <p class="mt-4 text-base leading-relaxed text-cyan-950/80">
-          L’organigramme (ORBAT) décrit la structure de la communauté. Votre dossier rattache votre personnage à une unité de cet organigramme et précise la fonction que vous y occupez.
+          L’<strong>affectation</strong> indique dans quelle unité ou équipe vous êtes. L’<strong>emploi</strong> indique ce que vous faites. Les deux se renseignent dans <em>Unité &amp; rôle</em>, mais ce n’est pas la même chose&nbsp;: une personne peut être dans la Gold Team tout en tenant un emploi de radio, de chef d’équipe ou de TACP.
         </p>
         <p class="mt-4 rounded-xl border border-cyan-100/80 bg-white/70 px-4 py-3 text-cyan-950/85">
-          <span class="font-semibold text-cyan-950">Quand s’en servir&nbsp;?</span>
-          Lorsque vous rejoignez une unité, que vous changez de poste, ou que votre fiche indique encore «&nbsp;sans unité&nbsp;».
+          <span class="font-semibold text-cyan-950">À quoi ça sert&nbsp;?</span>
+          L’affectation principale vous place dans l’organigramme. L’emploi principal apparaît sur la fiche, l’organigramme et le forum. L’emploi décrit la fonction, pas un droit d’accès.
         </p>
         <ol class="mt-6 list-decimal space-y-4 pl-5 text-cyan-950/90">
           <li>
@@ -50,29 +50,33 @@
             Ouvrez l’<a class="font-semibold text-cyan-900 underline underline-offset-2" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>. Si votre unité n’apparaît pas dans la liste du dossier, elle doit d’abord être créée côté organigramme ou administration.
           </li>
           <li>
-            <span class="font-semibold text-cyan-950">Renseignez l’affectation dans le dossier.</span>
-            Dans <a class="font-semibold text-cyan-900 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>">Éditer mon dossier</a>, section <em>Unité &amp; rôle</em>, choisissez l’<strong>unité principale</strong>, puis indiquez votre <strong>rôle dans l’unité</strong> (par exemple Officier opérations, Fusilier). Si votre communauté propose un <strong>rôle métier</strong> dans le référentiel, sélectionnez-le également.
+            <span class="font-semibold text-cyan-950">Renseignez l’affectation.</span>
+            Dans <a class="font-semibold text-cyan-900 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>">Éditer mon dossier</a>, section <em>Unité &amp; rôle</em>, choisissez l’<strong>équipe</strong>, puis votre <strong>place dans l’équipe</strong> (par exemple Membre, Chef d’équipe). Cochez l’affectation principale.
           </li>
           <li>
-            <span class="font-semibold text-cyan-950">Enregistrez pour publier l’affectation.</span>
-            L’enregistrement met à jour votre fiche et votre place visible dans l’organigramme. Sans enregistrement, le choix reste un brouillon sur l’écran d’édition.
+            <span class="font-semibold text-cyan-950">Renseignez l’emploi.</span>
+            Choisissez ensuite la <strong>fonction tenue</strong>. Si la liste reprend le nom d’une unité, c’est tout de même une fonction de dossier, pas un second rattachement d’équipe. Cochez l’emploi principal.
+          </li>
+          <li>
+            <span class="font-semibold text-cyan-950">Enregistrez pour publier.</span>
+            L’enregistrement met à jour votre fiche et votre place visible dans l’organigramme. Sans enregistrement, le choix reste un brouillon sur l’écran d’édition. Un changement d’unité, d’emploi ou de grade part souvent en confirmation auprès des Ressources humaines.
           </li>
         </ol>
       </section>
 
       <section class="rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm sm:p-8">
         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-500">Gain de temps</p>
-        <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900">Modèles de rôle (presets)</h2>
+        <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900">Modèles de fonction</h2>
         <p class="mt-4 text-base leading-relaxed text-slate-600">
-          Les modèles proposés dans la section <em>Unité &amp; rôle</em> préremplissent un rôle type et des suggestions d’équipement (classe, radio, armement…). Ils accélèrent la saisie&nbsp;; ils ne remplacent pas votre jugement.
+          Les modèles proposés dans la section <em>Unité &amp; rôle</em> préremplissent un emploi type et des suggestions d’équipement (classe, radio, armement…). Ils accélèrent la saisie&nbsp;; ils ne remplacent pas votre jugement.
         </p>
         <p class="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3 text-slate-700">
           <span class="font-semibold text-slate-900">Quand s’en servir&nbsp;?</span>
-          Quand vous créez ou refondez un profil opérationnel proche d’un métier connu (officier, fusilier, radio…), avant d’ajuster les détails à votre situation.
+          Quand vous créez ou refondez un profil opérationnel proche d’une fonction connue (officier, fusilier, radio…), avant d’ajuster les détails à votre situation.
         </p>
         <div class="mt-6 space-y-3 text-slate-700">
           <p class="mb-0">
-            Choisissez d’abord votre <strong>unité</strong>, puis appliquez un modèle si besoin. Relisez le rôle et les suggestions d’équipement, corrigez ce qui ne correspond pas, puis <strong>enregistrez</strong>.
+            Choisissez d’abord votre <strong>unité</strong>, puis appliquez un modèle si besoin. Relisez l’emploi et les suggestions d’équipement, corrigez ce qui ne correspond pas, puis <strong>enregistrez</strong>.
           </p>
           <p class="mb-0 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-slate-600">
             Un modèle ne choisit jamais l’unité à votre place&nbsp;: l’affectation reste toujours une décision explicite de votre part.
@@ -132,8 +136,8 @@
             <p class="mt-1 mb-0 text-slate-600">Prénom, nom, indicatif et langue de l’interface.</p>
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-            <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('account/portrait')) ?>">Portrait</a>
-            <p class="mt-1 mb-0 text-slate-600">Image utilisée comme avatar sur le forum.</p>
+            <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>#edit-portrait">Portrait</a>
+            <p class="mt-1 mb-0 text-slate-600">Photo du dossier, visible sur la fiche, l’organigramme et le portail.</p>
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
             <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>">Éditer le dossier</a>

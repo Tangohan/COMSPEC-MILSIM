@@ -754,7 +754,9 @@ if ($personnelFileIsRhFull) {
         <div class="personnel-file-hub-actions">
             <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
             <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>">Modifier le dossier</a>
-            <a href="<?= url('account/portrait') ?>">Portrait</a>
+            <a href="<?= url('personnel/' . (int) $targetUser['id'] . '/edit') ?>#edit-portrait">Portrait</a>
+            <?php elseif ($canEditProfile && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']) . '#edit-portrait', ENT_QUOTES, 'UTF-8') ?>">Portrait</a>
             <?php endif; ?>
             <a href="<?= url('orbat') ?>">Organigramme</a>
             <a href="<?= url('documents') ?>">Documents</a>
@@ -1140,7 +1142,8 @@ if ($personnelFileIsRhFull) {
                 </section>
 
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Rôle(s) métier (référentiel)</h2>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Emploi</h2>
+                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche, l’organigramme et le forum. Il n’ouvre aucun droit d’accès.</p>
                     <?php if ($personnelJobRoleAssignments !== []): ?>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):
@@ -1151,19 +1154,20 @@ if ($personnelFileIsRhFull) {
                             ?>
                         <div class="rounded-2xl border border-slate-200 p-5 bg-slate-50/50">
                             <div class="flex flex-wrap items-center gap-2 mb-2">
-                                <span class="text-[9px] font-black uppercase tracking-wider <?= $jrPrimary ? 'text-emerald-700' : 'text-slate-500' ?>"><?= $jrPrimary ? 'Rôle principal' : 'Rôle complémentaire' ?></span>
+                                <span class="text-[9px] font-black uppercase tracking-wider <?= $jrPrimary ? 'text-emerald-700' : 'text-slate-500' ?>"><?= $jrPrimary ? 'Emploi principal' : 'Emploi complémentaire' ?></span>
                             </div>
                             <p class="text-sm font-black text-slate-900"><?= $jrLabel !== '' ? htmlspecialchars($jrLabel) : '—' ?></p>
                         </div>
                         <?php endforeach; ?>
                     </div>
                     <?php else: ?>
-                    <p class="text-sm text-slate-500">Aucun rôle métier attribué pour l’instant.</p>
+                    <p class="text-sm text-slate-500">Aucun emploi attribué pour l’instant.</p>
                     <?php endif; ?>
                 </section>
 
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Affectations actives</h2>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Affectations actives</h2>
+                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">L’équipe dans laquelle la personne est rattachée. L’affectation principale place la personne dans l’organigramme et sur la fiche.</p>
                     <?php if ($assignments === []): ?>
                     <p class="text-sm text-slate-600">Aucune affectation d’unité enregistrée pour l’instant<?= $unitName || $primaryUnitFallbackName ? ' — l’unité indiquée dans le dossier peut provenir d’une saisie manuelle.' : '.' ?></p>
                     <?php if ($enlistmentFormatted): ?>
@@ -1199,7 +1203,7 @@ if ($personnelFileIsRhFull) {
                             </div>
                             <div class="grid md:grid-cols-2 gap-4">
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $asgUnit !== '' ? htmlspecialchars($asgUnit) : '—' ?></p></div>
-                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Fonction dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $asgRole !== '' ? htmlspecialchars($asgRole) : '—' ?></p></div>
+                                <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Place dans l’équipe</p><p class="text-sm font-black text-slate-900"><?= $asgRole !== '' ? htmlspecialchars($asgRole) : '—' ?></p></div>
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef d’unité</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($cmdLabel) ?></p></div>
                                 <?php if ($asgStartedDisp !== null): ?>
                                 <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Depuis le</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($asgStartedDisp) ?></p></div>
@@ -1211,7 +1215,7 @@ if ($personnelFileIsRhFull) {
                                 <div class="md:col-span-2">
                                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Durée sur cette affectation</p>
                                     <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($asgDurLabel) ?><?php if ($asgSpanOpen): ?> <span class="text-xs font-medium text-slate-500 normal-case">(à ce jour)</span><?php endif; ?></p>
-                                    <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps passé dans l’unité sur cette période et sur la fonction indiquée (même durée).</p>
+                                    <p class="mt-1 text-[10px] text-slate-500 leading-relaxed">Temps passé dans l’unité sur cette période et à la place indiquée (même durée).</p>
                                 </div>
                                 <?php endif; ?>
                             </div>

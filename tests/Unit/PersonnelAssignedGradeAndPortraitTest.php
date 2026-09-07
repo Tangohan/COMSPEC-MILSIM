@@ -86,5 +86,9 @@ final class PersonnelAssignedGradeAndPortraitTest extends TestCase
         $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
         self::assertStringContainsString('personnel_operator_portrait_url', $roster);
         self::assertStringContainsString('data-img-fallback="portrait"', $roster);
+        $member = (string) file_get_contents($root . '/views/admin/effectifs_workspace/member.php');
+        self::assertStringContainsString('personnel_operator_portrait_url', $member);
+        self::assertStringContainsString('data-img-fallback="portrait"', $member);
+        self::assertStringNotContainsString("\$m['avatar_url']", $member);
     }
 }

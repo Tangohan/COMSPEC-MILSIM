@@ -565,6 +565,7 @@ return function (Router $router) {
     $router->get('/personnel/{id}', [PersonnelController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/update', [PersonnelController::class, 'update'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/portrait', [PersonnelController::class, 'updatePortrait'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/generate-matricule', [PersonnelController::class, 'generateMatricule'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/member-number', [PersonnelController::class, 'updateMemberNumber'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/member-number/regenerate', [PersonnelController::class, 'regenerateMemberNumber'], [AuthMiddleware::class]);

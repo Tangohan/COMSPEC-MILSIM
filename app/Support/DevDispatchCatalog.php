@@ -584,6 +584,32 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(472, '2026-09-07', 'Le portrait se change depuis le dossier', 'Sur la fiche, le lien Portrait ouvre maintenant l’édition du dossier, onglet Portrait. Vous y déposez la photo opérateur de cette fiche. Rechargez la fiche, puis Portrait', [
+                'Onglet Portrait dans l’édition du dossier, avec aperçu et dépôt de la photo',
+                'Le lien Portrait de la fiche ouvre cet onglet, plus une page de compte séparée',
+            ], [], [
+                'Le lien Portrait opérateur n’ouvrait pas le dépôt de photo du dossier',
+            ], ['personnel'], [
+                'Ouvrez votre fiche, puis Portrait. Vous devez arriver sur l’onglet Portrait du dossier, avec la photo actuelle et le bouton pour en enregistrer une nouvelle.',
+            ]),
+            $pr(471, '2026-09-07', 'La fiche membre affiche le portrait opérateur', 'Sur la fiche Effectifs, la photo en tête est désormais le portrait opérateur, comme dans le tableur. S’il n’y en a pas, les initiales apparaissent. Rechargez la fiche membre', [
+                'Portrait opérateur en tête de la fiche membre',
+                'Initiales si le dossier n’a pas encore d’image opérateur',
+            ], [], [
+                'La fiche membre montrait encore la photo de compte',
+            ], ['personnel'], [
+                'Ouvrez une fiche membre depuis le tableur des effectifs. La photo en haut à gauche doit être le portrait opérateur, pas une autre image du compte.',
+            ]),
+            $pr(470, '2026-09-07', 'L’emploi et l’affectation se distinguent enfin', 'Sur Unité et rôle, l’affectation indique l’équipe, l’emploi indique la fonction. Chaque bloc dit à quoi il sert : fiche, organigramme, forum. L’emploi n’ouvre aucun droit. Rechargez le dossier', [
+                'Explication de l’affectation (l’équipe) et de l’emploi (la fonction) en haut de Unité et rôle',
+                'Libellés alignés : place dans l’équipe, emploi principal, modèles de fonction',
+            ], [
+                'La fiche et le guide du dossier reprennent les mêmes mots',
+            ], [
+                'Emploi et affectation se ressemblaient trop pour qu’on comprenne à quoi chacun sert',
+            ], ['personnel'], [
+                'Ouvrez Éditer mon dossier, puis Unité et rôle. Les deux encadrés Affectation et Emploi doivent dire clairement l’équipe d’un côté, la fonction de l’autre.',
+            ]),
             $pr(469, '2026-09-07', 'Un bandeau rappelle que vous êtes dans un module Athena', 'Dans le bureau recrutement et l’espace formations, un bandeau indique que vous visionnez un module Athena. Un bouton Retour ramène au tableau de bord. Rechargez le recrutement ou les formations', [
                 'Bandeau « Vous visionnez un module ATHENA » dans le bureau recrutement et l’espace formations',
                 'Bouton Retour vers le tableau de bord, visible en haut de l’écran',

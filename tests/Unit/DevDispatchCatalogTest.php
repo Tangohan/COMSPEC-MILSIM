@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(268, $byKind['update']);
-        self::assertCount(274, $all);
+        self::assertSame(271, $byKind['update']);
+        self::assertCount(277, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -941,6 +941,20 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($lmsBanner);
         self::assertSame('00469', $lmsBanner['number_pad']);
         self::assertStringContainsString('module athena', strtolower((string) $lmsBanner['title']));
+        $orbatClarity = DevDispatchCatalog::find('update', '470');
+        self::assertNotNull($orbatClarity);
+        self::assertSame('00470', $orbatClarity['number_pad']);
+        self::assertStringContainsString('emploi', strtolower((string) $orbatClarity['title']));
+        self::assertStringContainsString('affectation', strtolower((string) $orbatClarity['title']));
+        $memberPortrait = DevDispatchCatalog::find('update', '471');
+        self::assertNotNull($memberPortrait);
+        self::assertSame('00471', $memberPortrait['number_pad']);
+        self::assertStringContainsString('portrait opérateur', strtolower((string) $memberPortrait['title']));
+        $dossierPortrait = DevDispatchCatalog::find('update', '472');
+        self::assertNotNull($dossierPortrait);
+        self::assertSame('00472', $dossierPortrait['number_pad']);
+        self::assertStringContainsString('portrait', strtolower((string) $dossierPortrait['title']));
+        self::assertStringContainsString('dossier', strtolower((string) $dossierPortrait['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);
