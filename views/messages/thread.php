@@ -8,61 +8,57 @@ $thread = $msgThread ?? [];
 $messages = $msgMessages ?? [];
 $currentUid = (int) ($msgCurrentUserId ?? 0);
 $threadId = (int) ($thread['id'] ?? 0);
+$subject = trim((string) ($thread['subject'] ?? '')) ?: 'Conversation';
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 ?>
-<div class="max-w-3xl mx-auto px-4 py-10">
-    <a href="<?= htmlspecialchars(url('messages')) ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 mb-4 hover:text-emerald-800">
-        <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true"><path d="M12.5 4.5 6.5 10l6 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Messagerie interne
-    </a>
+<main class="msg-workspace msg-workspace--thread">
+    <nav class="msg-breadcrumb" aria-label="Fil d’Ariane"><a href="<?= htmlspecialchars(url('messages')) ?>"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12.5 4.5-6 5.5 6 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Toutes les conversations</a></nav>
 
-    <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm mb-6">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-emerald-300 to-transparent" aria-hidden="true"></div>
-        <div class="p-5 sm:p-6">
-            <h1 class="text-xl font-black tracking-tight text-slate-900 mb-1"><?= htmlspecialchars((string) ($thread['subject'] ?? 'Conversation')) ?></h1>
-            <p class="text-xs text-slate-500">Les personnes habilitées sur votre communauté peuvent lire et répondre dans cet échange.</p>
+    <?php if ($err): ?><div class="msg-alert msg-alert--error" role="alert"><?= htmlspecialchars($err) ?></div><?php endif; ?>
+    <?php if ($ok): ?><div class="msg-alert msg-alert--success" role="status"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
+
+    <section class="msg-chat">
+        <header class="msg-chat__header">
+            <span class="msg-chat__avatar"><?= htmlspecialchars(function_exists('mb_substr') ? mb_strtoupper(mb_substr($subject, 0, 1)) : strtoupper(substr($subject, 0, 1)), ENT_QUOTES, 'UTF-8') ?><i></i></span>
+            <div><p class="msg-section-kicker">Conversation interne</p><h1><?= htmlspecialchars($subject) ?></h1><span><i></i> Encadrement connecté au canal</span></div>
+            <div class="msg-chat__count"><?= count($messages) ?> message<?= count($messages) !== 1 ? 's' : '' ?></div>
+        </header>
+
+        <div class="msg-chat__stream" data-msg-stream>
+            <div class="msg-chat__privacy"><span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4.5" y="8" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg> Échange réservé aux participants habilités</span></div>
+            <?php foreach ($messages as $index => $m): ?>
+                <?php
+                $body = (string) ($m['body'] ?? '');
+                $senderId = (int) ($m['sender_user_id'] ?? 0);
+                $isMine = $currentUid > 0 && $senderId === $currentUid;
+                $name = trim((string) ($m['display_name'] ?? '')) ?: (string) ($m['email'] ?? 'Participant');
+                if ($isMine) { $name = 'Vous'; }
+                $when = (string) ($m['created_at'] ?? '');
+                $timestamp = $when !== '' ? strtotime($when) : false;
+                $dt = $timestamp ? date('d/m/Y · H:i', $timestamp) : $when;
+                $initial = function_exists('mb_substr') ? mb_strtoupper(mb_substr($name, 0, 1)) : strtoupper(substr($name, 0, 1));
+                ?>
+                <article class="msg-bubble-row<?= $isMine ? ' is-mine' : '' ?>">
+                    <?php if (!$isMine): ?><span class="msg-bubble-avatar"><?= htmlspecialchars($initial, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                    <div class="msg-bubble">
+                        <div class="msg-bubble__meta"><strong><?= htmlspecialchars($name) ?></strong><time><?= htmlspecialchars($dt) ?></time></div>
+                        <div class="msg-bubble__text"><?= nl2br(htmlspecialchars($body), false) ?></div>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
-    </div>
 
-    <?php if ($err): ?><div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900 mb-4"><?= htmlspecialchars($err) ?></div><?php endif; ?>
-    <?php if ($ok): ?><div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 mb-4"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
-
-    <div class="space-y-3 mb-8">
-        <?php foreach ($messages as $m): ?>
-            <?php
-            $body = (string) ($m['body'] ?? '');
-            $senderId = (int) ($m['sender_user_id'] ?? 0);
-            $isMine = $currentUid > 0 && $senderId === $currentUid;
-            $name = trim((string) ($m['display_name'] ?? ''));
-            if ($name === '') {
-                $name = (string) ($m['email'] ?? 'Participant');
-            }
-            if ($isMine) {
-                $name = 'Vous';
-            }
-            $when = (string) ($m['created_at'] ?? '');
-            $dt = $when !== '' && strtotime($when) ? date('d/m/Y H:i', strtotime($when)) : $when;
-            ?>
-            <div class="flex <?= $isMine ? 'justify-end' : 'justify-start' ?>">
-                <div class="max-w-[min(100%,32rem)] rounded-2xl px-4 py-3 shadow-sm border <?= $isMine
-                    ? 'bg-emerald-900 border-emerald-800 text-white'
-                    : 'bg-white border-slate-200 text-slate-800' ?>">
-                    <p class="text-[11px] font-bold mb-1.5 <?= $isMine ? 'text-emerald-100' : 'text-slate-500' ?>">
-                        <?= htmlspecialchars($name) ?> · <?= htmlspecialchars($dt) ?>
-                    </p>
-                    <div class="text-sm whitespace-pre-wrap <?= $isMine ? 'text-emerald-50' : 'text-slate-800' ?>"><?= htmlspecialchars($body) ?></div>
+        <footer class="msg-reply">
+            <form method="post" action="<?= htmlspecialchars(url('messages/' . $threadId . '/reply')) ?>" data-msg-form>
+                <?= \App\Core\Csrf::field() ?>
+                <label for="msg-reply-body">Votre réponse</label>
+                <div class="msg-reply__box">
+                    <textarea id="msg-reply-body" name="body" rows="3" maxlength="4000" required placeholder="Écrivez votre réponse…" data-msg-body></textarea>
+                    <button type="submit" aria-label="Envoyer la réponse"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 12h14" stroke="currentColor" stroke-width="1.7"/></svg></button>
                 </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
-    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-        <h2 class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Répondre</h2>
-        <form method="post" action="<?= htmlspecialchars(url('messages/' . $threadId . '/reply')) ?>" class="space-y-3">
-            <?= \App\Core\Csrf::field() ?>
-            <textarea name="body" rows="4" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Votre réponse…"></textarea>
-            <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-700">Envoyer</button>
-        </form>
+                <div class="msg-reply__hint"><span>Entrée pour aller à la ligne</span><span><b data-msg-count>0</b> / 4000</span></div>
+            </form>
+        </footer>
     </section>
-</div>
+</main>

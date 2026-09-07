@@ -48,6 +48,7 @@ final class TenantMessagesController
         return Response::view('layout.main', [
             'title' => 'Messagerie',
             'content' => 'messages.index',
+            'messagesPage' => true,
             'msgThreads' => $threads,
             'msgRecipientsConfigured' => $staffIds !== [],
         ]);
@@ -80,6 +81,7 @@ final class TenantMessagesController
         return Response::view('layout.main', [
             'title' => (string) ($thread['subject'] ?? 'Conversation'),
             'content' => 'messages.thread',
+            'messagesPage' => true,
             'msgThread' => $thread,
             'msgMessages' => $messages,
             'msgCurrentUserId' => $userId,
