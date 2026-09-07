@@ -77,7 +77,7 @@ class HubController
             $priorityEntries[] = [
                 'label' => 'Pilotage du mur opérationnel',
                 'url' => url('back-office/tableau-operationnel'),
-                'description' => 'Publier, valider et mettre à jour les informations affichées au mur.',
+                'description' => 'Événements, articles, poste ATAK et mur de consignes, depuis un même écran.',
                 'icon' => 'dashboard',
                 'accent' => 'amber',
             ];

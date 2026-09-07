@@ -9,7 +9,10 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
@@ -50,6 +53,10 @@ final class PersonnelCorrectionController
         $snapshot = $this->correctionService->currentSnapshot($targetId);
         $pending = $this->correctionRepository->listForTarget($tenantId, $targetId, 5);
         $hasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, $targetId);
+        $choices = PersonnelCorrectionRequestService::choiceCatalog();
+        $choices['grade_id'] = $this->gradeChoices($tenantId);
+        $choices['units'] = $this->unitChoices($tenantId);
+        $choices['job_roles'] = $this->jobRoleChoices($tenantId);
 
         return Response::view('layout.main', [
             'title' => 'Correction RH — anomalie',
@@ -59,7 +66,7 @@ final class PersonnelCorrectionController
             'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(),
             'fieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(),
             'fieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
-            'choiceCatalog' => PersonnelCorrectionRequestService::choiceCatalog(),
+            'choiceCatalog' => $choices,
             'pending' => $pending,
             'hasOpen' => $hasOpen,
             'isSelf' => $isSelf,
@@ -128,6 +135,17 @@ final class PersonnelCorrectionController
         }
         [$tenantId] = $ctx;
         $open = $this->correctionRepository->listOpenForTenant($tenantId, 150);
+        foreach ($open as &$row) {
+            $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+            $before = is_array($row['before'] ?? null) ? $row['before'] : [];
+            $row['proposed_display'] = [];
+            $row['before_display'] = [];
+            foreach ($proposed as $key => $val) {
+                $row['proposed_display'][(string) $key] = $this->correctionService->displayFieldValue((string) $key, $val, $tenantId);
+                $row['before_display'][(string) $key] = $this->correctionService->displayFieldValue((string) $key, $before[$key] ?? '', $tenantId);
+            }
+        }
+        unset($row);
 
         return Response::view('layout.main', [
             'title' => 'Corrections RH en attente',
@@ -195,5 +213,57 @@ final class PersonnelCorrectionController
         }
 
         return false;
+    }
+
+    /** @return list<array{value: string, label: string}> */
+    private function gradeChoices(int $tenantId): array
+    {
+        $out = [];
+        foreach ((new GradeRepository())->listForTenant($tenantId) as $g) {
+            $id = (int) ($g['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $label = trim((string) ($g['label_long'] ?? $g['label_short'] ?? $g['name'] ?? ''));
+            $out[] = ['value' => (string) $id, 'label' => $label !== '' ? $label : ('Grade #' . $id)];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{value: string, label: string}> */
+    private function unitChoices(int $tenantId): array
+    {
+        $out = [];
+        foreach ((new UnitRepository())->allForTenant($tenantId) as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $label = trim((string) ($u['name'] ?? ''));
+            $out[] = ['value' => (string) $id, 'label' => $label !== '' ? $label : ('Unité #' . $id)];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{value: string, label: string}> */
+    private function jobRoleChoices(int $tenantId): array
+    {
+        $repo = new PersonnelJobRoleRepository();
+        if (!$repo->tablesExist()) {
+            return [];
+        }
+        $out = [];
+        foreach ($repo->listRoleOptionsForMemberDossier($tenantId) as $opt) {
+            $id = (int) ($opt['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $label = trim((string) ($opt['label'] ?? $opt['name'] ?? ''));
+            $out[] = ['value' => (string) $id, 'label' => $label !== '' ? $label : ('Emploi #' . $id)];
+        }
+
+        return $out;
     }
 }

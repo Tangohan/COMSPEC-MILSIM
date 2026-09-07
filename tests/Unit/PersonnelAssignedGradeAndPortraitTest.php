@@ -55,6 +55,16 @@ final class PersonnelAssignedGradeAndPortraitTest extends TestCase
         ]);
         self::assertNotNull($url);
         self::assertStringContainsString('uploads/portraits/op.jpg', (string) $url);
+        self::assertStringNotContainsString('avatars/account.jpg', (string) $url);
+    }
+
+    public function testOperatorPortraitIsEmptyWithoutOperatorImage(): void
+    {
+        $url = personnel_operator_portrait_url([
+            'avatar_url' => 'uploads/avatars/account.jpg',
+            'character_portrait_path' => '',
+        ]);
+        self::assertNull($url);
     }
 
     public function testEffectifsSurfacesUseAssignedGradeAndOperatorPortrait(): void
@@ -73,5 +83,8 @@ final class PersonnelAssignedGradeAndPortraitTest extends TestCase
         self::assertStringContainsString('personnel_assigned_grade_label', $file);
         self::assertStringContainsString('$gradeCodeBeside', $file);
         self::assertStringContainsString('character_portrait_path', $repo);
+        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
+        self::assertStringContainsString('personnel_operator_portrait_url', $roster);
+        self::assertStringContainsString('data-img-fallback="portrait"', $roster);
     }
 }

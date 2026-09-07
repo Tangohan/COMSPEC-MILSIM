@@ -13,21 +13,27 @@ $tabs = [
     ['roles', 'Accès', 'roles', 0],
     ['fonctions', 'Emplois', 'fonctions', 0],
     ['affectations', 'Affectations', 'affectations', (int) ($counts['no_unit'] ?? 0)],
+    ['chaine', 'Chaîne', 'chaine', (int) ($commandChainMissingCount ?? 0)],
     ['qualifications', 'Qualifications', 'qualifications', (int) ($qualificationsExpiringCount ?? 0)],
     ['elevations', 'Élévations', 'elevations', (int) ($elevationOpenCount ?? 0)],
     ['rh_documents', 'Documents', 'documents-rh', 0],
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0)],
     ['rh_succession', 'Vivier', 'vivier', 0],
     ['rh_alerts', 'Alertes', 'alertes', (int) ($rhAlertTotalCount ?? 0)],
+    ['rh_roleplay', 'Roleplay', 'roleplay', (int) ($roleplayDueCount ?? 0)],
+    ['rh_integration', 'Intégration', 'integration', (int) ($integrationOpenCount ?? 0)],
     ['duplicates', 'Fiches jumelles', 'doublons', (int) ($personnelDuplicateScan['group_count'] ?? 0)],
     ['departures', 'Anciens membres', 'departs', 0],
+    ['rh_settings', 'Réglages', 'reglages', 0],
 ];
 ?>
 <div class="bo-eff-workspace" data-effectifs-workspace>
     <header class="bo-eff-head">
         <div class="bo-eff-head__copy">
             <h1 id="bo-eff-title">Effectifs</h1>
-            <p>Dossiers des membres : tableur, accès, emplois et suivi.</p>
+            <p><?= $active === 'roster'
+                ? 'Le tableur rassemble les dossiers de la communauté : qui est là, où il est affecté, quel accès il a, et ce qu’il reste à compléter.'
+                : 'Dossiers des membres : tableur, accès, emplois et suivi.' ?></p>
             <p class="bo-eff-head__meta" aria-label="État des effectifs">
                 <span><strong><?= $activeCount ?></strong> actifs</span>
                 <span><strong><?= $total ?></strong> dossiers</span>

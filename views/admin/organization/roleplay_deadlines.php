@@ -327,7 +327,7 @@ $resolveState = static function (?string $dateRaw, ?string $completedAt, string 
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
                 <a href="<?= $h(url('back-office/roleplay-followup')) ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Bureau de suivi</a>
-                <a href="<?= $h(url('back-office/roleplay/immersion')) ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Configurer le module</a>
+                <a href="<?= $h(url('back-office/roleplay/immersion')) ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Parcours d’immersion</a>
             </div>
         </div>
     </div>

@@ -13,9 +13,13 @@ use App\Repositories\CommunityEventRepository;
 use App\Repositories\InterteamMissionRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
+use App\Repositories\TenantAlertRepository;
+use App\Repositories\TenantMiniArticleRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
+use App\Support\ModuleFeatureAccess;
 
 final class OperationalBoardController
 {
@@ -84,6 +88,7 @@ final class OperationalBoardController
             'boardMemberOptions' => $memberOptions,
             'boardToday' => date('Y-m-d'),
             'boardEntryCount' => count($entries),
+            'boardCockpit' => $this->cockpitPayload($tenantId),
         ]);
     }
 
@@ -1325,6 +1330,87 @@ final class OperationalBoardController
             }
         }
         $this->planningEntries->replaceNotesForEntry($tenantId, $entryId, $notes, $userId);
+    }
+
+    /**
+     * Leviers déjà présents dans le produit (événements, articles, ATAK, missions, effectifs).
+     *
+     * @return array<string, mixed>
+     */
+    private function cockpitPayload(int $tenantId): array
+    {
+        $gate = Gate::getInstance();
+        $canOrg = $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('admin.system');
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        $atakEnabled = false;
+        try {
+            $atakEnabled = $featureGate->allows($tenantId, 'atak');
+        } catch (\Throwable) {
+            $atakEnabled = false;
+        }
+        $canAtak = $atakEnabled && (
+            $canOrg
+            || ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'view')
+        );
+        $canEffectifs = $canOrg || $gate->allows('organization.effectifs.hub.view');
+
+        $events = [];
+        if ($canOrg) {
+            try {
+                $events = $this->communityEvents->upcomingForTenant($tenantId, 6);
+            } catch (\Throwable) {
+                $events = [];
+            }
+        }
+
+        $articles = [];
+        $articlesReady = false;
+        if ($canOrg) {
+            $articlesRepo = new TenantMiniArticleRepository();
+            $articlesReady = $articlesRepo->schemaReady();
+            if ($articlesReady) {
+                try {
+                    $articles = $articlesRepo->listForTenant($tenantId, 6);
+                } catch (\Throwable) {
+                    $articles = [];
+                }
+            }
+        }
+
+        $alertsCount = 0;
+        if ($canOrg) {
+            try {
+                $alertsCount = count((new TenantAlertRepository())->listActiveForTenantDisplay($tenantId));
+            } catch (\Throwable) {
+                $alertsCount = 0;
+            }
+        }
+
+        $missions = [];
+        if ($canOrg) {
+            try {
+                $missions = $this->interteamMissions->listActiveForConsumerTenant($tenantId);
+            } catch (\Throwable) {
+                $missions = [];
+            }
+        }
+
+        return [
+            'can_events' => $canOrg,
+            'can_articles' => $canOrg,
+            'can_atak' => $canAtak,
+            'can_effectifs' => $canEffectifs,
+            'can_missions' => $canOrg,
+            'can_alerts' => $canOrg,
+            'can_ops_center' => $canOrg,
+            'events' => $events,
+            'articles' => $articles,
+            'articles_ready' => $articlesReady,
+            'alerts_count' => $alertsCount,
+            'missions' => $missions,
+        ];
     }
 
     /** @return list<string> */

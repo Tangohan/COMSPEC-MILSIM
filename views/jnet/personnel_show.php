@@ -3,11 +3,26 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $p = is_array($person ?? null) ? $person : [];
 $photo = $p['photo'] ?? null;
 $initials = (string) ($p['initials'] ?? '?');
+$facts = [
+    ['Indicatif', (string) ($p['callsign'] ?? '')],
+    ['Unité', (string) ($p['unit'] ?? '')],
+    ['Fonction', (string) ($p['function'] ?? '')],
+    ['Situation', (string) ($p['duty_label'] ?? '')],
+    ['Grade', (string) ($p['grade'] ?? '')],
+];
+$profileFacts = is_array($p['profileFacts'] ?? null) ? $p['profileFacts'] : [];
+$qualifications = is_array($p['qualifications'] ?? null) ? $p['qualifications'] : [];
+$dossierHref = (string) ($p['dossierHref'] ?? '');
 ?>
 <article class="jnet-panel jnet-record">
     <div class="jnet-panel__head">
-        <h2>Fiche personnel JNET</h2>
-        <a class="jnet-btn" href="<?= $h(url('jnet/personnel')) ?>">Retour</a>
+        <h2>Fiche personnel</h2>
+        <div class="jnet-mail__actions">
+            <?php if ($dossierHref !== ''): ?>
+                <a class="jnet-btn" href="<?= $h($dossierHref) ?>">Dossier complet</a>
+            <?php endif; ?>
+            <a class="jnet-btn" href="<?= $h(url('jnet/personnel')) ?>">Retour à l’annuaire</a>
+        </div>
     </div>
     <div class="jnet-panel__body">
         <div class="jnet-record__hero">
@@ -19,45 +34,37 @@ $initials = (string) ($p['initials'] ?? '?');
                 <?php endif; ?>
             </div>
             <div>
-                <p class="jnet-kicker"><?= $h((string) ($p['jnet_id'] ?? '')) ?></p>
+                <?php if (trim((string) ($p['jnet_id'] ?? '')) !== ''): ?>
+                    <p class="jnet-kicker"><?= $h((string) $p['jnet_id']) ?></p>
+                <?php endif; ?>
                 <h1><?= $h((string) ($p['name'] ?? '')) ?></h1>
                 <div class="jnet-record__grid">
-                    <div><span>Indicatif</span><strong><?= $h((string) ($p['callsign'] ?? '—')) ?></strong></div>
-                    <div><span>Unité</span><strong><?= $h((string) ($p['unit'] ?? '—')) ?></strong></div>
-                    <div><span>Fonction</span><strong><?= $h((string) ($p['function'] ?? '—')) ?></strong></div>
-                    <div><span>Statut</span><strong><?= $h((string) ($p['duty_label'] ?? '—')) ?></strong></div>
-                    <div><span>Grade</span><strong><?= $h((string) ($p['grade'] ?? '—')) ?></strong></div>
-                    <div><span>Opération</span><strong><?= $h((string) ($p['current_op'] ?? '—')) ?></strong></div>
+                    <?php foreach ($facts as [$label, $value]): ?>
+                        <?php if (trim($value) === ''): continue; endif; ?>
+                        <div><span><?= $h($label) ?></span><strong><?= $h($value) ?></strong></div>
+                    <?php endforeach; ?>
+                    <?php foreach ($profileFacts as $fact): ?>
+                        <div><span><?= $h((string) ($fact['label'] ?? '')) ?></span><strong><?= $h((string) ($fact['value'] ?? '')) ?></strong></div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
 
         <section class="jnet-section">
             <h3>Qualifications</h3>
-            <div class="jnet-tags">
-                <?php foreach (($p['qualifications'] ?? []) as $q): ?>
-                    <span><?= $h((string) $q) ?></span>
-                <?php endforeach; ?>
-            </div>
+            <?php if ($qualifications === []): ?>
+                <p class="jnet-empty">Aucune qualification enregistrée sur ce dossier.</p>
+            <?php else: ?>
+                <div class="jnet-tags">
+                    <?php foreach ($qualifications as $q): ?>
+                        <?php
+                        $label = is_array($q) ? (string) ($q['name'] ?? $q['label'] ?? '') : (string) $q;
+                        $extra = is_array($q) ? trim(implode(' · ', array_filter([(string) ($q['status'] ?? ''), (string) ($q['expires'] ?? '')]))) : '';
+                        ?>
+                        <span><?= $h($label) ?><?= $extra !== '' ? ' — ' . $h($extra) : '' ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
-        <section class="jnet-section">
-            <h3>Équipement</h3>
-            <ul class="jnet-bullet"><?php foreach (($p['equipment'] ?? []) as $e): ?><li><?= $h((string) $e) ?></li><?php endforeach; ?></ul>
-        </section>
-        <section class="jnet-section">
-            <h3>Activité</h3>
-            <ul class="jnet-bullet"><?php foreach (($p['activity'] ?? []) as $e): ?><li><?= $h((string) $e) ?></li><?php endforeach; ?></ul>
-        </section>
-        <section class="jnet-section">
-            <h3>Documents</h3>
-            <ul class="jnet-bullet"><?php foreach (($p['documents'] ?? []) as $e): ?><li><?= $h((string) $e) ?></li><?php endforeach; ?></ul>
-        </section>
-        <section class="jnet-section">
-            <h3>Historique de mission</h3>
-            <ul class="jnet-bullet"><?php foreach (($p['missionHistory'] ?? []) as $e): ?><li><?= $h((string) $e) ?></li><?php endforeach; ?></ul>
-        </section>
-        <?php if (empty($p['demo'])): ?>
-            <p class="jnet-meta">Relié au compte Athena — formations et dossier effectifs enrichiront progressivement cette fiche.</p>
-        <?php endif; ?>
     </div>
 </article>

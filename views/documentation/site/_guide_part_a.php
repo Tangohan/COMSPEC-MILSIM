@@ -523,6 +523,7 @@
         nom, est l’écran de <strong>consultation</strong> destiné à tous les membres autorisés à le voir : il n’affiche que les fiches déjà <strong>publiées</strong> et pertinentes pour la personne qui
         le consulte. Le <strong>tableau opérationnel</strong>, accessible depuis le back-office sous l’intitulé « Pilotage du mur opérationnel », est l’écran de <strong>gestion</strong> réservé aux
         personnes habilitées à créer, valider, publier, clôturer une fiche, définir des modèles ou changer la posture de la communauté.
+        Depuis ce même écran, le responsable ouvre aussi les <strong>événements</strong> à venir, les <strong>articles</strong> de la communauté et le <strong>poste ATAK</strong> (situation, sessions, carte, cycle de mission), sans quitter le tableau.
     </p>
     <p>
         Pour garder une vision d’ensemble sans quitter le pilotage, un bouton <strong>Vue membres</strong> permet de basculer instantanément vers ce que voient réellement les membres consultant le mur —

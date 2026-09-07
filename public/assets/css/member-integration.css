@@ -7,7 +7,8 @@
 .mi-table,
 .mi-panel,
 .mi-form,
-.mi-kanban {
+.mi-kanban,
+.mi-show {
   --mi-ink: var(--ath-ink, #0c1116);
   --mi-muted: var(--ath-muted, #6d7a80);
   --mi-subtle: var(--ath-subtle, #8c979b);
@@ -369,4 +370,187 @@
 
 .mi-admin .ath-table thead th:last-child {
   text-align: right;
+}
+
+/* ——— Fiche d’un parcours d’arrivée ——— */
+.mi-show {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mi-show-identity {
+  margin-bottom: 0;
+}
+
+.mi-show-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.mi-show-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--mi-muted);
+  margin-bottom: 6px;
+}
+
+.mi-show-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 1080px) {
+  .mi-show-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+  }
+}
+
+.mi-show-step {
+  margin-bottom: 10px;
+}
+
+.mi-show-step:last-of-type {
+  margin-bottom: 0;
+}
+
+.mi-show-step.is-done {
+  background: var(--mi-bg);
+}
+
+.mi-show-step__desc {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mi-muted);
+  line-height: 1.5;
+}
+
+.mi-show-step__actions {
+  margin-top: 12px;
+}
+
+.mi-show-force {
+  margin-top: 10px;
+}
+
+.mi-show-force > summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--mi-muted);
+  list-style: none;
+}
+
+.mi-show-force > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mi-show-force__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mi-line-soft);
+}
+
+.mi-show-journal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mi-show-journal > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mi-line-soft);
+}
+
+.mi-show-journal > li:last-child {
+  border-bottom: 0;
+}
+
+.mi-show-journal__body {
+  flex: 1 1 12rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mi-ink);
+}
+
+.mi-show-note {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--mi-line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mi-show-side-label {
+  margin: 12px 0 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mi-subtle);
+}
+
+.mi-show-side-label:first-child {
+  margin-top: 0;
+}
+
+.mi-show-bullets {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mi-ink);
+}
+
+.mi-show-bullets li + li {
+  margin-top: 4px;
+}
+
+.mi-show-side-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--mi-line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mi-show-danger .ath-form__title {
+  color: #9b1c1c;
+}
+
+.mi-show .ath-btn--danger {
+  background: #9b1c1c;
+  color: #fff;
+  border-color: #9b1c1c;
+}
+
+.mi-show .ath-btn--danger:hover {
+  background: #7f1414;
+  border-color: #7f1414;
+  color: #fff;
+}
+
+.mi-show .ath-list {
+  margin-top: 0;
+}
+
+.mi-show .ath-form__grid {
+  margin-top: 0;
 }

@@ -46,4 +46,71 @@ final class MilitaryOperationalRoleCatalog
 
         return $out;
     }
+
+    /** @return array<string, true> */
+    public static function catalogCategoryNameSet(): array
+    {
+        $out = [];
+        foreach (self::entries() as $e) {
+            $name = trim((string) ($e['category'] ?? ''));
+            if ($name !== '') {
+                $out[$name] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Liste dossier : unités / emplois communautaires, plus ceux déjà posés sur la fiche.
+     * Le catalogue militaire n’apparaît pas comme menu.
+     *
+     * @param list<array<string, mixed>> $options
+     * @param list<int> $keepRoleIds
+     * @return list<array<string, mixed>>
+     */
+    public static function filterOptionsForMemberDossier(array $options, array $keepRoleIds = []): array
+    {
+        $keep = [];
+        foreach ($keepRoleIds as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $keep[$id] = true;
+            }
+        }
+        $slugs = self::catalogSlugSet();
+        $categories = self::catalogCategoryNameSet();
+        $out = [];
+        foreach ($options as $opt) {
+            if (!is_array($opt)) {
+                continue;
+            }
+            $id = (int) ($opt['id'] ?? 0);
+            $slug = trim((string) ($opt['slug'] ?? ''));
+            if ($id > 0 && isset($keep[$id])) {
+                $out[] = $opt;
+                continue;
+            }
+            if (str_starts_with($slug, 'unit-')) {
+                $out[] = $opt;
+                continue;
+            }
+            if ($slug !== '' && isset($slugs[$slug])) {
+                continue;
+            }
+            $label = trim((string) ($opt['label'] ?? $opt['name'] ?? ''));
+            $root = $label;
+            if (str_contains($label, ' › ')) {
+                $root = explode(' › ', $label, 2)[0];
+            } elseif (str_contains($label, ' > ')) {
+                $root = explode(' > ', $label, 2)[0];
+            }
+            if ($root !== '' && isset($categories[$root])) {
+                continue;
+            }
+            $out[] = $opt;
+        }
+
+        return $out;
+    }
 }

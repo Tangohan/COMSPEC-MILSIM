@@ -696,7 +696,7 @@ final class RoleplayFollowupAdminController
         $stored = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
 
         return Response::view('layout.main', [
-            'title' => 'Réglages d’immersion',
+            'title' => 'Parcours d’immersion',
             'content' => 'admin.organization.roleplay_immersion_settings',
             'rpConfig' => $cfg,
             'rpEligibility' => is_array($stored['eligibility'] ?? null) ? $stored['eligibility'] : ($cfg['eligibility'] ?? []),

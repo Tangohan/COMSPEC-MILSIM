@@ -584,6 +584,102 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(460, '2026-09-07', 'Le dossier ne propose plus le catalogue entier d’emplois', 'Sur Unité et rôle, la liste d’emplois ne montre plus l’ensemble du catalogue militaire. Vous voyez les emplois de vos unités, ceux déjà posés sur le dossier, et ceux créés pour votre communauté. Les copies inutilisées du catalogue sont retirées à la mise à jour. Relancez la mise à jour, puis rechargez le dossier', [
+                'Liste d’emplois du dossier limitée à l’organigramme et aux emplois déjà portés',
+            ], [], [
+                'Le catalogue militaire (finances, forces spéciales, cyber…) n’apparaissait plus comme menu sur le dossier',
+            ], ['personnel'], [
+                'Ouvrez un dossier, puis Unité et rôle. La liste Emploi doit rester courte. Le catalogue complet, s’il reste, se gère dans Emplois du bureau effectifs.',
+            ]),
+            $pr(459, '2026-09-07', 'L’affectation passe par une demande, sauf pour les responsables', 'Sur Unité et rôle, le grade attribué, la date d’engagement et le titre affiché sont désormais au même endroit que l’unité et l’emploi. Un membre qui change ces éléments envoie une demande : rien n’est écrit tant qu’un responsable Ressources humaines ou Gestionnaire n’a pas confirmé. Ces responsables enregistrent encore tout de suite. Rechargez le dossier', [
+                'Grade attribué, date d’engagement et titre affiché réunis avec l’unité et l’emploi',
+                'Date de début visible sur chaque affectation en cours',
+            ], [
+                'Un membre voit clairement que l’affectation part en validation',
+            ], [
+                'Un changement d’unité, d’emploi ou de grade ne s’appliquait plus tout seul pour un membre',
+            ], ['personnel'], [
+                'Ouvrez un dossier, puis Unité et rôle. Changez l’unité ou le grade : si vous n’êtes pas Ressources humaines ou Gestionnaire, la demande apparaît dans Corrections. Un responsable confirme, puis le dossier se met à jour.',
+            ]),
+            $pr(458, '2026-09-07', 'L’extranet d’unité affiche la situation réelle', 'Le tableau d’unité reprend désormais le personnel, les opérations, le renseignement et les documents déjà publiés. Une zone sans donnée reste vide, au lieu d’afficher des exemples. Rechargez l’extranet d’unité', [
+                'Personnel, opérations et dossiers de renseignement issus des dossiers de l’unité',
+                'Articles et documents publiés, ouverts depuis le tableau',
+                'Journal alimenté par les fiches terrain et les événements réels',
+            ], [
+                'États vides honnêtes lorsqu’il n’y a encore ni mission, ni dossier, ni document',
+                'Accès directs vers la messagerie, les opérations, la carte et le tableau opérationnel',
+            ], [
+                'Les chiffres d’effectif et le journal n’inventent plus de contenu d’exemple',
+            ], ['command', 'personnel'], [
+                'Ouvrez l’extranet d’unité. Vous lisez la situation de votre communauté. S’il n’y a pas encore d’opération ou de dossier, l’écran le dit clairement, avec un lien vers le bon bureau.',
+            ]),
+            $pr(457, '2026-09-07', 'Le forum est temporairement indisponible', 'Le forum n’apparaît plus dans les menus du portail ni du back-office. Si vous ouvrez une ancienne adresse, une page indique que le forum est temporairement indisponible, avec un retour vers le portail. Les discussions déjà écrites sont conservées. Rechargez le portail', [
+                'Le forum n’apparaît plus dans les menus, les raccourcis et la recherche',
+                'Une page d’indisponibilité remplace les discussions, les sujets et les réponses',
+            ], [], [], ['command'], [
+                'Ouvrez le portail : le forum n’est plus dans le menu. Une ancienne adresse de discussion affiche une page d’indisponibilité, avec un retour vers l’accueil.',
+            ]),
+            $pr(455, '2026-09-07', 'Les emplois revenus tout seuls ont été retirés', 'Les emplois qui étaient réapparus tout seuls, sans être posés sur un dossier, ont été retirés. Ceux déjà attribués à un membre restent. Relancez la mise à jour, puis ouvrez Emplois', [], [], [
+                'Les emplois revenus tout seuls, sans être posés sur un dossier, ont été retirés',
+            ], ['personnel', 'command'], [
+                'Relancez la mise à jour du portail. Ouvrez ensuite Emplois : la liste ne conserve que les emplois déjà posés sur un dossier, et ceux que vous avez créés à la main.',
+            ]),
+            $pr(453, '2026-09-07', 'Le bureau effectifs range les pièces et suit l’accueil', 'Documents, roleplay, intégration et avancements se règlent dans le même bureau. Les pages du dossier se lisent comme le tableur. Rechargez Effectifs', [
+                'Établir une pièce (charte, certificat, décision d’affectation, évaluation) et la ranger dans le coffre',
+                'Onglets Roleplay, Intégration et Réglages dans le bureau effectifs',
+                'Revue des avancements de grade selon l’ancienneté, après activation : une demande à valider, sauf choix contraire',
+            ], [
+                'Pages Documents, Mobilité, Vivier, Alertes, Fiches jumelles et Anciens membres : mêmes fonds clairs que le tableur',
+                'Visibilité des pièces, seuils d’alerte et ouverture du parcours d’accueil personnalisables',
+            ], [
+                'Le formulaire d’ajout de pièce n’était pas lisible : blocs sombres sur fond clair',
+            ], ['personnel', 'command'], [
+                'Ouvrez Effectifs. Les pièces se déposent ou s’établissent. Roleplay et Intégration sont dans la barre. Réglages personnalise les seuils, les pièces et les avancements. Par défaut, un avancement crée une demande : il ne change pas le grade tout seul.',
+            ]),
+            $pr(456, '2026-09-07', 'Le parcours d’immersion dit enfin ce qu’il règle', 'La page d’immersion explique qu’elle suit l’arrivée d’un membre : étapes, filière, tuteur et dossier prêt. Le mode roleplay ATAK et les aides de jeu restent ailleurs. Rechargez le back-office', [
+                'Présentation claire : à quoi sert la page, ce que le staff verra ensuite, et où se trouvent les autres outils',
+                'Étapes et filières saisies ligne par ligne, avec ajout et retrait',
+            ], [
+                'L’indicateur « dossier prêt » rappelle le résultat sur la fiche, en français',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Roleplay, puis Parcours d’immersion. Le bandeau dit ce que la page règle. Les listes et l’indicateur se comprennent sans jargon.',
+            ]),
+            $pr(452, '2026-09-07', 'La fiche d’arrivée se lit comme le reste du poste', 'Ouvrir le parcours d’un nouveau membre affiche son nom, l’état en français, et une barre de progression. Chaque étape est une carte : on valide seulement si ce n’est pas déjà fait, et on force dans un encadré. Le dossier, les référents, les groupes et les rendez-vous suivent la même présentation que le reste du poste. Rechargez Intégration', [
+                'Fiche d’arrivée au nom du membre, avec l’état traduit et la progression',
+                'Validation d’étape uniquement tant que l’étape n’est pas terminée',
+            ], [
+                'Journal, dossier, référents, groupes et rendez-vous présentés en cartes lisibles',
+            ], [
+                'L’état de chaque étape s’affiche en toutes lettres',
+            ], ['personnel', 'command'], [
+                'Ouvrez Intégration, puis un parcours. Le titre porte le nom du membre. Les étapes et le dossier se lisent sans jargon.',
+            ]),
+            $pr(454, '2026-09-07', 'Le tableau opérationnel pilote événements, articles et ATAK', 'Le tableau opérationnel du poste rassemble désormais les leviers du quotidien : événements à venir, articles de la communauté, poste ATAK et carte, plus les missions, les annonces et les effectifs. Le mur de consignes reste dessous. L’écran reprend la présentation claire du back-office. Rechargez le tableau opérationnel', [
+                'Bandeau de pilotage : ouvrir un événement, un article ou le poste ATAK depuis le tableau',
+                'Raccourcis vers les missions, les annonces, les effectifs, le courrier et la planification',
+            ], [
+                'Présentation claire du poste, sans bandeau sombre au-dessus du mur',
+            ], [], ['command', 'atak'], [
+                'Ouvrez le tableau opérationnel. Les événements, les articles et le poste ATAK sont en haut. Le mur de consignes reste plus bas, comme avant.',
+            ]),
+            $pr(451, '2026-09-07', 'Les emplois retirés ne reviennent plus tout seuls', 'Un référentiel d’emplois vidé reste vide après une mise à jour. Les emplois ne se recréent plus d’eux-mêmes. Un emploi apparaît seulement si vous créez une unité, affectez quelqu’un, ou copiez un modèle. Rechargez le bureau effectifs', [
+                'Les emplois retirés du référentiel restent retirés après une mise à jour',
+            ], [], [
+                'Les emplois déjà retirés ne sont plus recréés automatiquement',
+            ], ['personnel', 'command'], [
+                'Ouvrez Emplois. Ce que vous avez retiré n’est plus revenu. Un nouvel emploi n’apparaît que si vous le créez, ou si vous copiez un modèle.',
+            ]),
+            $pr(450, '2026-09-07', 'Le tableur se lit, se corrige et montre le vrai portrait', 'Le tableur des effectifs s’ouvre avec une vraie présentation : ce que la liste permet, et l’ancienneté réelle de l’organisation. Chaque ligne affiche le portrait de l’opérateur, des repères plus complets, et des indicateurs lisibles. Un responsable peut changer le niveau d’accès sans ouvrir la fiche. Rechargez Effectifs', [
+                'Présentation du tableur avec l’ancienneté réelle de l’organisation',
+                'Modification du niveau d’accès directement dans la liste',
+                'Repères enrichis : matricule, radio, habilitation et distinctions',
+            ], [
+                'Les indicateurs d’ancienneté, de disponibilité, de présence et de dossier se lisent en toutes lettres',
+            ], [
+                'Le portrait affiché est celui de l’opérateur, pas la photo de compte',
+            ], ['personnel', 'command'], [
+                'Ouvrez Effectifs. Le bandeau du tableur explique la liste et l’ancienneté de l’organisation. Sur une ligne, le portrait, les repères et les indicateurs sont lisibles. Un responsable peut corriger l’accès depuis la colonne Rôles.',
+            ]),
             $pr(449, '2026-09-07', 'Le bureau effectifs se lit comme un poste de travail', 'Le tableur des membres s’ouvre tout de suite. Un titre, des onglets lisibles, puis le dossier. La fiche d’un membre suit la même présentation claire que le reste du back-office. Rechargez Effectifs', [
                 'Onglets Tableur, Accès, Emplois et suivi, sans page d’accueil au-dessus',
                 'Fiche membre alignée sur le reste du poste : fond clair, textes lisibles',

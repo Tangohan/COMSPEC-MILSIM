@@ -131,7 +131,7 @@ final class BackOfficePageContext
             if ($rulePath === '') {
                 continue;
             }
-            if ($path === $rulePath || str_starts_with($path, $rulePath . '/')) {
+            if (self::pathMatchesRule($path, $rulePath)) {
                 $len = strlen($rulePath);
                 if ($len > $bestLen) {
                     $bestLen = $len;
@@ -144,6 +144,23 @@ final class BackOfficePageContext
         }
 
         return self::fallbackFromPath($path);
+    }
+
+    private static function pathMatchesRule(string $path, string $rulePath): bool
+    {
+        if ($path === $rulePath || str_starts_with($path, $rulePath . '/')) {
+            return true;
+        }
+        if (!str_contains($rulePath, '{id}')) {
+            return false;
+        }
+        $quoted = array_map(
+            static fn (string $part): string => preg_quote($part, '#'),
+            explode('{id}', $rulePath)
+        );
+        $regex = '#^' . implode('[0-9]+', $quoted) . '(?:/|$)#';
+
+        return preg_match($regex, $path) === 1;
     }
 
     /**

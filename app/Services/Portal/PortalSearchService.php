@@ -63,7 +63,8 @@ final class PortalSearchService
         }
 
         $wantDocs = $scopes['documents'] ?? true;
-        $wantForum = $scopes['forum'] ?? true;
+        $wantForum = ($scopes['forum'] ?? true)
+            && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible());
         $wantPersonnel = $scopes['personnel'] ?? true;
         $wantEvents = $scopes['events'] ?? true;
         $wantTraining = $scopes['training'] ?? true;
@@ -251,8 +252,12 @@ final class PortalSearchService
             ['title' => 'Manœuvres', 'subtitle' => 'Présences et pointage', 'href' => url('manoeuvres'), 'keywords' => 'manoeuvres manœuvre manoeuvres pointage présence calendrier'],
             ['title' => 'Boîte de réception', 'subtitle' => 'Messages et actions', 'href' => url('boite-reception'), 'keywords' => 'boîte reception inbox messages'],
             ['title' => 'Centre d’actions', 'subtitle' => 'Éléments à traiter', 'href' => url('centre-actions'), 'keywords' => 'actions centre'],
-            ['title' => 'Nouveau sujet forum', 'subtitle' => 'Démarrer une discussion', 'href' => url('forum/new-topic'), 'keywords' => 'forum sujet nouveau publier'],
-            ['title' => 'Forum', 'subtitle' => 'Briefings et discussions', 'href' => url('forum'), 'keywords' => 'forum briefing'],
+            (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
+                ? ['title' => 'Nouveau sujet forum', 'subtitle' => 'Démarrer une discussion', 'href' => url('forum/new-topic'), 'keywords' => 'forum sujet nouveau publier']
+                : null,
+            (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
+                ? ['title' => 'Forum', 'subtitle' => 'Briefings et discussions', 'href' => url('forum'), 'keywords' => 'forum briefing']
+                : null,
             ['title' => 'Assistant', 'subtitle' => 'Aide guidée', 'href' => url('assistant'), 'keywords' => 'assistant aide'],
             ['title' => 'Recherche', 'subtitle' => 'Parcourir le portail', 'href' => url('search'), 'keywords' => 'recherche search'],
             ['title' => 'Formations', 'subtitle' => 'Catalogue des parcours', 'href' => url('formations'), 'keywords' => 'formations catalogue'],
@@ -262,6 +267,7 @@ final class PortalSearchService
             ['title' => 'Salle de guerre', 'subtitle' => 'Briefing collectif', 'href' => url('salle-de-guerre'), 'keywords' => 'salle guerre'],
             ['title' => 'Guide intégré', 'subtitle' => 'Aide et documentation du portail', 'href' => url('documentation'), 'keywords' => 'guide documentation aide'],
         ];
+        $all = array_values(array_filter($all, static fn ($row): bool => is_array($row)));
 
         $needle = mb_strtolower(trim($raw));
         if ($needle === '') {

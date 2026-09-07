@@ -63,26 +63,29 @@ final class JnetPortalController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        $filter = strtolower(trim((string) $request->query('filtre', 'all')));
+        $filter = trim((string) $request->query('filtre', 'all'));
         $all = $this->jnet->loadPersonnelCards($ctx['tenant_id']);
-        $filtered = array_values(array_filter($all, static function (array $p) use ($filter): bool {
-            if ($filter === '' || $filter === 'all') {
+        $needle = mb_strtoupper($filter);
+        $filtered = array_values(array_filter($all, static function (array $p) use ($filter, $needle): bool {
+            if ($filter === '' || strcasecmp($filter, 'all') === 0) {
                 return true;
             }
-            if ($filter === 'deployed') {
-                return ($p['duty'] ?? '') === 'deployed';
-            }
-            if ($filter === 'off') {
+            if (strcasecmp($filter, 'off') === 0) {
                 return ($p['duty'] ?? '') === 'off';
             }
-            $hay = strtoupper((string) ($p['unit'] ?? '') . ' ' . ($p['function'] ?? '') . ' ' . ($p['role'] ?? ''));
+            $unit = mb_strtoupper(trim((string) ($p['unit'] ?? '')));
+            if ($unit !== '' && $unit === $needle) {
+                return true;
+            }
+            $hay = mb_strtoupper((string) ($p['unit'] ?? '') . ' ' . ($p['function'] ?? '') . ' ' . ($p['role'] ?? '') . ' ' . ($p['name'] ?? '') . ' ' . ($p['callsign'] ?? ''));
 
-            return str_contains($hay, strtoupper($filter));
+            return str_contains($hay, $needle);
         }));
 
         return $this->render('personnel', 'Personnel', [
             'personnel' => $filtered,
             'personnelFilter' => $filter,
+            'personnelFilters' => $this->jnet->personnelFilterOptions($all),
             'personnelTotal' => count($all),
         ], 'personnel');
     }
@@ -188,27 +191,22 @@ final class JnetPortalController
 
     public function exploitation(Request $request, array $params = []): Response
     {
-        return $this->render('exploitation', 'Exploitation', [
-            'links' => [
-                ['label' => 'Bureau SSE', 'desc' => 'Dossiers, identités, sites et preuves terrain', 'href' => url('atak/sse')],
-                ['label' => 'Laboratoire numérique', 'desc' => 'Terminaux, acquisitions et artéfacts', 'href' => url('atak/sse/numerique')],
-                ['label' => 'Croisements', 'desc' => 'Corrélations et listes de surveillance', 'href' => url('atak/sse/croisements')],
-                ['label' => 'Transmission', 'desc' => 'Journaux de mission et comptes rendus', 'href' => url('transmission')],
-            ],
-        ], 'exploitation');
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return $this->render('exploitation', 'Exploitation', $this->jnet->buildExploitation($ctx['tenant_id']), 'exploitation');
     }
 
     public function library(Request $request, array $params = []): Response
     {
-        return $this->render('library', 'Bibliothèque', [
-            'sections' => [
-                ['label' => 'Doctrine & guides', 'items' => ['Procédures d’unité', 'Guide SSE', 'Normes de rédaction']],
-                ['label' => 'Briefings', 'items' => ['Briefing courant', 'Intentions de commandement', 'Situations hebdomadaires']],
-                ['label' => 'Archives', 'items' => ['Comptes rendus classés', 'Dossiers clos', 'Exports de mission']],
-            ],
-            'athenaDocs' => url('documents'),
-            'sseGuide' => url('atak/sse/guide'),
-        ], 'library');
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return $this->render('library', 'Bibliothèque', $this->jnet->buildLibrary($ctx['tenant_id']), 'library');
     }
 
     public function mail(Request $request, array $params = []): Response
@@ -584,7 +582,7 @@ final class JnetPortalController
             'boPageGroup' => 'Unité',
             'boPageKicker' => 'UNITÉ · EXTRANET',
             'boPageTitle' => $title,
-            'boPageSubtitle' => 'Situation, personnel, opérations et renseignement de l’unité.',
+            'boPageSubtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.',
             'boPageQuick' => [],
             'backOfficePageCss' => [
                 'jnet_portal.css',

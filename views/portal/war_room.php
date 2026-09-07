@@ -23,10 +23,12 @@
                 <h2 class="text-lg font-bold text-slate-900">Manœuvres</h2>
                 <p class="mt-2 text-sm text-slate-600">Présences et confirmations aux créneaux.</p>
             </a>
+            <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
             <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
                 <h2 class="text-lg font-bold text-slate-900">Forum</h2>
                 <p class="mt-2 text-sm text-slate-600">Briefings et annonces de la communauté.</p>
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>

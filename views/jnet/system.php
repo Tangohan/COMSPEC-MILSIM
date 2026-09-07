@@ -32,6 +32,6 @@ $prefLabel = match ($pref) {
             </button>
         </form>
 
-        <p class="jnet-meta">JNET Extranet — environnement de situation pour le jeu de rôle et la coordination. Les contenus sectoriels d’exemple seront progressivement reliés aux données de votre communauté.</p>
+        <p class="jnet-meta">L’extranet d’unité reprend la situation réelle de votre communauté : personnel, opérations, renseignement et documents déjà publiés.</p>
     </div>
 </section>

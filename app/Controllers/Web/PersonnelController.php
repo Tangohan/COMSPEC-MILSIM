@@ -1273,6 +1273,10 @@ class PersonnelController
                     'is_primary' => !empty($pr['is_primary']),
                 ];
             }
+            $jobRoleOptions = \App\Services\Rbac\MilitaryOperationalRoleCatalog::filterOptionsForMemberDossier(
+                $jobRoleOptions,
+                array_column($currentJobRoles, 'role_id')
+            );
         }
         $tenantSettingsForJobRoles = $this->tenantRepository->getSettings($tenantId);
         $maxJobRolesPerMember = \App\Services\Personnel\PersonnelJobRoleAssignmentsSettings::resolve($tenantSettingsForJobRoles)['max_roles_per_member'];
@@ -1416,6 +1420,9 @@ class PersonnelController
             'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
             'seniorityPrePlatformDate' => Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
                 ->getPersonStartDate($tenantId, $uid),
+            'canApplyOrbatImmediately' => EffectifsLmsAccess::canApplyOrbatImmediately(Gate::getInstance()),
+            'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
+                ->hasPendingForTarget($tenantId, $uid),
             'backOfficePageCss' => ['personnel-dossier.css'],
         ]);
     }
@@ -1673,6 +1680,50 @@ class PersonnelController
             }
             /* athena_identifier volontairement ignoré — jamais modifiable via ce grant. */
         }
+
+        $canApplyOrbat = EffectifsLmsAccess::canApplyOrbatImmediately(Gate::getInstance());
+        $applyOrbatNow = $canApplyOrbat;
+        $orbatQueued = false;
+        $orbatNotice = null;
+        $orbatInput = [
+            'rank_display' => trim((string) ($data['rank_display'] ?? '')),
+            'rank_display_override' => trim((string) ($data['rank_display_override'] ?? '')),
+            'enlistment_date' => substr(trim((string) ($data['enlistment_date'] ?? '')), 0, 10),
+            'unit_assignments' => PersonnelCorrectionRequestService::canonicalizeUnitAssignments($unitAssignmentsParsed),
+            'job_roles' => PersonnelCorrectionRequestService::canonicalizeJobRoles($jobRolesParsed),
+        ];
+        if ($request->input('grade_id') !== null) {
+            $gidIn = (int) $request->input('grade_id');
+            $orbatInput['grade_id'] = $gidIn > 0 ? (string) $gidIn : '';
+        }
+        if (!$canApplyOrbat) {
+            $correctionService = Container::get(PersonnelCorrectionRequestService::class);
+            $orbatDiff = array_intersect_key(
+                $correctionService->proposedDiff((int) $target['id'], $orbatInput),
+                array_flip(PersonnelCorrectionRequestService::ORBAT_KEYS)
+            );
+            if ($orbatDiff !== []) {
+                $noteParts = array_values(array_filter([
+                    $assignmentReason,
+                    $jobRoleReason,
+                ], static fn ($v): bool => is_string($v) && trim($v) !== ''));
+                $result = $correctionService->submit(
+                    $tenantId,
+                    $currentUserId,
+                    (int) $target['id'],
+                    $orbatInput,
+                    implode(' · ', $noteParts)
+                );
+                $orbatQueued = !empty($result['ok']);
+                $orbatNotice = (string) ($result['message'] ?? '');
+                $data['primary_unit_id'] = $existingProfile['primary_unit_id'] ?? null;
+                $data['rank_display'] = $existingProfile['rank_display'] ?? null;
+                $data['rank_display_override'] = $existingProfile['rank_display_override'] ?? null;
+                $data['enlistment_date'] = $existingProfile['enlistment_date'] ?? null;
+            }
+            $applyOrbatNow = false;
+        }
+
         $structureBefore = $this->structureChangeNotification->snapshot($tenantId, (int) $target['id']);
         $this->personnelProfileRepository->update((int) $target['id'], $data);
         if ($roleplayFollowupConfig['enabled']) {
@@ -1790,7 +1841,7 @@ class PersonnelController
             );
         }
 
-        if ($jobRolesEnabled) {
+        if ($jobRolesEnabled && $applyOrbatNow) {
             try {
                 $pivotResult = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], $jobRolesParsed);
                 $primaryRoleStr = $pivotResult['primary_role_display'];
@@ -1812,28 +1863,42 @@ class PersonnelController
             }
         }
         try {
-            if ($unitAssignmentsParsed !== []) {
-                foreach ($unitAssignmentsParsed as &$assignment) {
-                    if (trim((string) $assignment['role_name']) === '') {
-                        $assignment['role_name'] = !empty($assignment['is_primary']) && $assignmentRole !== ''
-                            ? $assignmentRole
-                            : 'Membre';
+            if ($applyOrbatNow) {
+                if ($unitAssignmentsParsed !== []) {
+                    foreach ($unitAssignmentsParsed as &$assignment) {
+                        if (trim((string) $assignment['role_name']) === '') {
+                            $assignment['role_name'] = !empty($assignment['is_primary']) && $assignmentRole !== ''
+                                ? $assignmentRole
+                                : 'Membre';
+                        }
                     }
+                    unset($assignment);
+                    $this->personnelAssignmentRepository->replaceActiveAssignmentsFromDossier((int) $target['id'], $unitAssignmentsParsed);
+                } else {
+                    $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier((int) $target['id'], $primaryUnitId, $assignmentRole, $assignmentReason);
                 }
-                unset($assignment);
-                $this->personnelAssignmentRepository->replaceActiveAssignmentsFromDossier((int) $target['id'], $unitAssignmentsParsed);
-            } else {
-                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier((int) $target['id'], $primaryUnitId, $assignmentRole, $assignmentReason);
             }
         } catch (\Throwable) {
             Session::flash('error', 'Le dossier a été enregistré, mais la synchronisation ORBAT / affectation a échoué. Réessayez ou contactez un administrateur.');
             return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
         }
 
+        if ($applyOrbatNow && $request->input('grade_id') !== null) {
+            $gid = (int) $request->input('grade_id');
+            if ($gid < 1) {
+                $this->userRepository->update((int) $target['id'], $tenantId, ['grade_id' => null]);
+            } else {
+                $gradeRow = $this->gradeRepository->findById($gid, $tenantId);
+                if ($gradeRow) {
+                    $this->userRepository->update((int) $target['id'], $tenantId, ['grade_id' => $gid]);
+                }
+            }
+        }
+
         $actorHistoryId = (int) Session::get('user_id');
         $oldUnitId = (int) ($existingProfile['primary_unit_id'] ?? 0);
         $newUnitId = (int) ($primaryUnitId ?? 0);
-        if ($assignmentReason !== null && $oldUnitId !== $newUnitId) {
+        if ($applyOrbatNow && $assignmentReason !== null && $oldUnitId !== $newUnitId) {
             $fromUnit = $oldUnitId > 0 ? $this->unitRepository->findById($oldUnitId, $tenantId) : null;
             $toUnit = $newUnitId > 0 ? $this->unitRepository->findById($newUnitId, $tenantId) : null;
             $fromLabel = trim((string) ($fromUnit['name'] ?? ''));
@@ -1860,7 +1925,7 @@ class PersonnelController
 
         $oldRoleLabel = trim((string) ($existingProfile['primary_role'] ?? ''));
         $newRoleLabel = trim((string) $primaryRoleStr);
-        if ($jobRoleReason !== null && $oldRoleLabel !== $newRoleLabel) {
+        if ($applyOrbatNow && $jobRoleReason !== null && $oldRoleLabel !== $newRoleLabel) {
             $historyTitle = $oldRoleLabel !== '' && $newRoleLabel !== '' ? 'Changement de fonction' : ($newRoleLabel !== '' ? 'Attribution de fonction' : 'Retrait de fonction');
             $historyDescription = 'De ' . ($oldRoleLabel !== '' ? $oldRoleLabel : 'aucune fonction')
                 . ' vers ' . ($newRoleLabel !== '' ? $newRoleLabel : 'aucune fonction') . '.';
@@ -2005,7 +2070,14 @@ class PersonnelController
             }
         }
 
-        Session::flash('success', 'Dossier mis à jour.');
+        if ($orbatQueued) {
+            Session::flash('success', 'Dossier enregistré. La demande d’affectation a été transmise : un responsable Ressources humaines ou Gestionnaire doit la confirmer avant mise à jour.');
+        } elseif ($orbatNotice !== null && $orbatNotice !== '') {
+            Session::flash('error', $orbatNotice);
+            Session::flash('success', 'Le reste du dossier a été enregistré.');
+        } else {
+            Session::flash('success', 'Dossier mis à jour.');
+        }
         if ((string) $request->input('effectifs_context', '') === '1') {
             return Response::redirect(effectifs_workspace_url('membres/' . (int) $target['id']));
         }

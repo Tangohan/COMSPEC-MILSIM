@@ -32,7 +32,7 @@ $statusTone = [
 ?>
 <section class="eff-rh-hero">
     <p class="eff-page-kicker">Dossier RH</p>
-    <h1 class="eff-page-title">Mobilité interne</h1>
+    <h2 class="eff-page-title">Mobilité interne</h2>
     <p class="eff-page-lead">
         Changements d’unité, candidatures à un poste et souhaits d’évolution.
         Les demandes en attente restent visibles jusqu’à décision.

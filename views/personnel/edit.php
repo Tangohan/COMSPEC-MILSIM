@@ -64,6 +64,10 @@ $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 $advancedEditActive = !empty($advancedEditActive);
+$canApplyOrbatImmediately = !empty($canApplyOrbatImmediately);
+$pendingOrbatCorrection = !empty($pendingOrbatCorrection);
+$grades = is_array($grades ?? null) ? $grades : [];
+$currentGradeId = (int) ($targetUser['grade_id'] ?? ($currentGrade['id'] ?? 0));
 $tzOptions = \App\Services\Admin\PlatformUserProfileService::timezoneOptions();
 $langOptions = \App\Services\Admin\PlatformUserProfileService::interfaceLanguageOptions();
 $familyOptions = \App\Services\Admin\PlatformUserProfileService::familySituationOptions();
@@ -227,10 +231,12 @@ $editValidTabIds = implode(',', array_map(
         <?php endif; ?>
         <div class="pd-savebar" role="region" aria-label="Enregistrement du dossier">
           <p class="pd-savebar__status" aria-live="polite">
-            <span x-show="!dirty">Modifiez les champs, puis enregistrez le dossier.</span>
+            <span x-show="!dirty"><?= $canApplyOrbatImmediately
+                ? 'Modifiez les champs, puis enregistrez le dossier.'
+                : 'L’identité s’enregistre tout de suite. Une affectation, un emploi ou un grade part en demande, sauf si vous êtes Ressources humaines ou Gestionnaire.' ?></span>
             <span x-cloak x-show="dirty" class="pd-savebar__status--dirty">Modifications non enregistrées</span>
           </p>
-          <button type="submit" class="pd-btn pd-btn--primary">Enregistrer les modifications</button>
+          <button type="submit" class="pd-btn pd-btn--primary"><?= $canApplyOrbatImmediately ? 'Enregistrer les modifications' : 'Enregistrer / envoyer pour validation' ?></button>
         </div>
         <div class="pd-card__body">
 
@@ -340,28 +346,8 @@ $editValidTabIds = implode(',', array_map(
                 </div>
               </div>
             </div>
-            <div>
-              <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Grades &amp; fonctions affichés</h3>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label for="rank_display" class="mb-1 block text-xs font-bold text-slate-600">Grade ou titre (optionnel)</label>
-                  <input type="text" name="rank_display" id="rank_display" value="<?= htmlspecialchars((string) ($p['rank_display'] ?? '')) ?>" placeholder="Sous-lieutenant, Chief…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                  <?php if ($gradeLabel !== ''): ?>
-                  <p class="mt-1 text-[11px] text-slate-500">Grade attribué par la communauté : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
-                  <?php endif; ?>
-                  <p class="mt-1 text-[11px] text-slate-500">Affiché en haut du site à la place du libellé de communauté, s’il est renseigné.</p>
-                </div>
-                <div>
-                  <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé (optionnel)</label>
-                  <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="O-5, OF-4…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                  <p class="mt-1 text-[11px] text-slate-500">Remplace le code affiché à côté du grade en haut du site (par exemple O-5 à la place de OF-4).</p>
-                </div>
-                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90 md:col-span-2 flex items-center">
-                  <?= $jobRolesEnabled
-                    ? 'Le <strong>rôle métier</strong> (principal et complémentaires, référentiel de la communauté) se choisit dans le bloc <button type="button" class="font-bold underline underline-offset-2" @click="tab = \'edit-orbat\'">Unité &amp; rôle</button> ci-dessous.'
-                    : 'Le <strong>rôle dans l’unité</strong> se renseigne dans le bloc <button type="button" class="font-bold underline underline-offset-2" @click="tab = \'edit-orbat\'">Unité &amp; rôle</button> ci-dessous.' ?>
-                </div>
-              </div>
+            <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90">
+              Grade attribué, titre affiché, unité et emploi se règlent dans <button type="button" class="font-bold underline underline-offset-2" @click="tab = 'edit-orbat'">Unité &amp; rôle</button>.
             </div>
             <div>
               <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Détails du personnage</h3>
@@ -469,9 +455,65 @@ $editValidTabIds = implode(',', array_map(
         <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Vous pouvez renseigner une affectation principale et des affectations complémentaires. La principale sert de référence pour le dossier, la fiche et le forum.</p>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Affectation, emploi, grade et date d’engagement. La principale sert de référence pour le dossier, la fiche et le forum.</p>
           </div>
           <div class="space-y-4 p-6">
+            <?php if ($pendingOrbatCorrection): ?>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
+              <p class="font-bold">Une demande est déjà en attente</p>
+              <p class="mt-1">Un responsable doit d’abord confirmer ou refuser la demande en cours avant d’en envoyer une autre sur l’affectation.</p>
+              <?php if ($canApplyOrbatImmediately): ?>
+              <p class="mt-2"><a class="font-semibold underline" href="<?= htmlspecialchars(url('back-office/personnel/corrections'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir les demandes de correction</a></p>
+              <?php endif; ?>
+            </div>
+            <?php elseif (!$canApplyOrbatImmediately): ?>
+            <div class="rounded-xl border border-cyan-200 bg-cyan-50/80 px-4 py-3 text-xs text-cyan-950">
+              <p class="font-bold">Validation Ressources humaines</p>
+              <p class="mt-1">Changer l’unité, l’emploi, le grade ou la date d’engagement envoie une demande. Rien n’est écrit tant qu’un responsable Ressources humaines ou Gestionnaire n’a pas confirmé.</p>
+            </div>
+            <?php endif; ?>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label for="grade_id" class="mb-1 block text-xs font-bold text-slate-600">Grade attribué</label>
+                <select name="grade_id" id="grade_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                  <option value="">— Aucun —</option>
+                  <?php foreach ($grades as $g): ?>
+                  <?php
+                    $gid = (int) ($g['id'] ?? 0);
+                    if ($gid < 1) {
+                        continue;
+                    }
+                    $glab = trim((string) ($g['label_long'] ?? $g['label_short'] ?? $g['name'] ?? $g['code'] ?? ''));
+                    if ($glab === '') {
+                        $glab = 'Grade #' . $gid;
+                    }
+                  ?>
+                  <option value="<?= $gid ?>"<?= $currentGradeId === $gid ? ' selected' : '' ?>><?= htmlspecialchars($glab, ENT_QUOTES, 'UTF-8') ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <p class="mt-1 text-[11px] text-slate-500">Grade officiel du dossier, distinct du titre affiché ci-dessous.</p>
+              </div>
+              <div>
+                <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’engagement</label>
+                <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars(substr(trim((string) ($p['enlistment_date'] ?? '')), 0, 10), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                <p class="mt-1 text-[11px] text-slate-500">Date de prise d’armes dans la communauté, utilisée pour l’ancienneté.</p>
+              </div>
+              <div>
+                <label for="rank_display" class="mb-1 block text-xs font-bold text-slate-600">Grade ou titre affiché</label>
+                <input type="text" name="rank_display" id="rank_display" value="<?= htmlspecialchars((string) ($p['rank_display'] ?? '')) ?>" placeholder="Sous-lieutenant, Chief…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                <?php if ($gradeLabel !== ''): ?>
+                <p class="mt-1 text-[11px] text-slate-500">Grade attribué : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
+                <?php endif; ?>
+                <p class="mt-1 text-[11px] text-slate-500">Affiché en haut du site à la place du libellé de communauté, s’il est renseigné.</p>
+              </div>
+              <div>
+                <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé</label>
+                <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="O-5, OF-4…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                <p class="mt-1 text-[11px] text-slate-500">Remplace le code affiché à côté du grade en haut du site (par exemple O-5 à la place de OF-4).</p>
+              </div>
+            </div>
+
             <?php if (!empty($personnelAssignments)): ?>
             <div class="overflow-x-auto rounded-xl border border-slate-200">
               <table class="min-w-full text-left text-xs">
@@ -479,14 +521,27 @@ $editValidTabIds = implode(',', array_map(
                   <tr>
                     <th class="px-3 py-2">Unité</th>
                     <th class="px-3 py-2">Rôle affectation</th>
+                    <th class="px-3 py-2">Depuis</th>
                     <th class="px-3 py-2">Principal</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                   <?php foreach ($personnelAssignments as $pa): ?>
+                  <?php
+                    $startedRaw = trim((string) ($pa['started_at'] ?? $pa['assigned_at'] ?? ''));
+                    $startedFr = '—';
+                    if ($startedRaw !== '') {
+                        try {
+                            $startedFr = (new DateTimeImmutable($startedRaw))->format('d/m/Y');
+                        } catch (Throwable) {
+                            $startedFr = $startedRaw;
+                        }
+                    }
+                  ?>
                   <tr class="bg-white">
                     <td class="px-3 py-2 font-semibold text-slate-900"><?= htmlspecialchars((string) ($pa['unit_name'] ?? '—')) ?></td>
                     <td class="px-3 py-2 text-slate-700"><?= htmlspecialchars((string) ($pa['role_name'] ?? '—')) ?></td>
+                    <td class="px-3 py-2 text-slate-600"><?= htmlspecialchars($startedFr, ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="px-3 py-2"><?= !empty($pa['is_primary']) ? '<span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-900">Oui</span>' : '—' ?></td>
                   </tr>
                   <?php endforeach; ?>

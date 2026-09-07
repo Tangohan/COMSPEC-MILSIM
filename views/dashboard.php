@@ -175,9 +175,11 @@ require base_path('views/partials/alert_banners.php');
                         <?= $n('Vous n’êtes rattaché à aucune organisation pour l’instant. Parcourez le registre des communautés, ou utilisez un code d’invitation pour rejoindre votre unité.') ?>
                     </p>
                     <div class="flex flex-col flex-wrap gap-4 sm:flex-row">
+                        <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
                         <a href="<?= url('forum') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#022c22] shadow-lg shadow-black/20 transition-colors hover:bg-emerald-400">
                             <?= $n('Forum') ?>
                         </a>
+                        <?php endif; ?>
                         <a href="<?= url('join') ?>" class="inline-flex items-center justify-center rounded-xl border-2 border-white/25 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-white/10">
                             <?= $n('Rejoindre une communauté') ?>
                         </a>

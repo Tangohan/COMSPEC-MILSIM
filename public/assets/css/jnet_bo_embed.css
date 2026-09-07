@@ -703,3 +703,30 @@ body.ath-bo-shell:has(.jnet-embed) .ath-page-head {
 body.ath-bo-shell:has(.jnet-embed) .ath-page-head__sub {
   max-width: 48rem;
 }
+
+.jnet-embed .jnet-shortcuts {
+  margin-bottom: 1rem;
+}
+
+.jnet-embed .jnet-shortcut {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.12);
+  border-radius: 0;
+}
+
+.jnet-embed .jnet-shortcut:hover {
+  background: rgba(11, 138, 92, 0.06);
+  border-color: rgba(11, 138, 92, 0.4);
+}
+
+.jnet-embed .jnet-shortcut strong { color: #0f172a; }
+.jnet-embed .jnet-shortcut span { color: rgba(15, 23, 42, 0.62); }
+
+.jnet-embed .jnet-linklist a:hover strong { color: #047857; }
+.jnet-embed .jnet-linklist strong { color: #0f172a; }
+.jnet-embed .jnet-linklist span { color: rgba(15, 23, 42, 0.62); }
+
+.jnet-embed .jnet-app-card em {
+  background: rgba(11, 138, 92, 0.1);
+  color: #047857;
+}

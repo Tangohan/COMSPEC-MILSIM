@@ -27,6 +27,30 @@ class UnitRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function countWithoutCommander(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo()->prepare(
+            'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND (commander_user_id IS NULL OR commander_user_id = 0)'
+        );
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countForTenant(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /** Unités visibles sur la fiche publique vitrine (ORBAT public). */
     public function listPublicForTenant(int $tenantId): array
     {

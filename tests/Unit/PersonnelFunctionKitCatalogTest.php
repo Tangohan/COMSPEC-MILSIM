@@ -102,4 +102,22 @@ final class PersonnelFunctionKitCatalogTest extends TestCase
         self::assertContains('maison_custom', $slugs);
         self::assertNotContains('medical_officer', $slugs);
     }
+
+    public function testDossierOptionsHideMilitaryCatalogExceptKeptAndUnitJobs(): void
+    {
+        $filtered = MilitaryOperationalRoleCatalog::filterOptionsForMemberDossier(
+            [
+                ['id' => 1, 'slug' => 'sf_air_force_cct', 'label' => 'Forces spéciales › Air Force Special Warfare › Combat Controller (CCT)'],
+                ['id' => 2, 'slug' => 'unit-44', 'label' => 'Organisation › 24th STS Gold Team SOF TACP'],
+                ['id' => 3, 'slug' => 'maison_custom', 'label' => 'Emploi maison'],
+                ['id' => 4, 'slug' => 'medical_officer', 'label' => 'Santé › Soins et médecine › Médecin militaire'],
+            ],
+            [1]
+        );
+        $ids = array_column($filtered, 'id');
+        self::assertContains(1, $ids);
+        self::assertContains(2, $ids);
+        self::assertContains(3, $ids);
+        self::assertNotContains(4, $ids);
+    }
 }

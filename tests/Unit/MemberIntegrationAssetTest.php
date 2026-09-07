@@ -164,6 +164,37 @@ final class MemberIntegrationAssetTest extends TestCase
         self::assertStringContainsString("'boPageTitle'", $ctrl);
     }
 
+    public function testShowScreenUsesLightBackOfficeChrome(): void
+    {
+        $css = (string) file_get_contents($this->root() . '/public/assets/css/member-integration.css');
+        $show = (string) file_get_contents($this->root() . '/views/admin/member_integration/show.php');
+        $pages = (string) file_get_contents($this->root() . '/config/back_office_pages.php');
+        $ctrl = (string) file_get_contents($this->root() . '/app/Controllers/Admin/MemberIntegrationAdminController.php');
+        $ctx = (string) file_get_contents($this->root() . '/app/Support/BackOfficePageContext.php');
+
+        self::assertStringContainsString('.mi-show', $css);
+        self::assertStringContainsString('.mi-show-grid', $css);
+        self::assertStringContainsString('.mi-show-force', $css);
+        self::assertStringContainsString('ath-form', $show);
+        self::assertStringContainsString('mi-show', $show);
+        self::assertStringContainsString('stepStatusLabels', $show);
+        self::assertStringContainsString('Valider malgré tout', $show);
+        self::assertStringContainsString('<details', $show);
+        self::assertStringNotContainsString('<h1', $show);
+        self::assertStringNotContainsString("\$h(\$st['status']", $show);
+        self::assertStringNotContainsString("\$h(\$ev['visibility']", $show);
+
+        $labels = MemberIntegrationCatalog::stepStatusLabels();
+        self::assertSame('À faire', $labels[MemberIntegrationCatalog::STEP_PENDING]);
+        self::assertNotContains('pending', array_values($labels));
+
+        self::assertStringContainsString("back-office/integration-membres/{id}", $pages);
+        self::assertStringContainsString('Parcours d’arrivée', $pages);
+        self::assertStringContainsString("'boPageTitle' => \$displayName", $ctrl);
+        self::assertStringContainsString('Fiche personnelle', $ctrl);
+        self::assertStringContainsString('{id}', $ctx);
+    }
+
     public function testConfigurationUpdateAndCronAreDeclared(): void
     {
         $cat = (string) file_get_contents($this->root() . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');

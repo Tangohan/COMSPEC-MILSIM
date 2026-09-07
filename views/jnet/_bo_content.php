@@ -27,15 +27,6 @@ $tabs = [
 ];
 ?>
 <div class="jnet-embed">
-    <aside class="jnet-beta jnet-beta--bo" role="note">
-        <span class="jnet-beta__tag">Version bêta</span>
-        <p>
-            L’extranet d’unité est encore en construction : la structure est posée, mais une partie
-            des contenus peut être illustrative. Pour la conduite opérationnelle, privilégiez le mur,
-            la carte et la messagerie habituels tant que chaque section n’est pas fiabilisée.
-        </p>
-    </aside>
-
     <nav class="jnet-bo-tabs" aria-label="Sections de l’extranet d’unité">
         <?php foreach ($tabs as $tab): ?>
             <?php

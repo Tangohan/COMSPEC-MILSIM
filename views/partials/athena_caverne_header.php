@@ -119,10 +119,12 @@ $headerAllowsPath = static function (string $path) use ($headerTenantType): bool
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
     ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
-    ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'],
-    ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'],
-    ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'],
 ];
+if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
+    $navItems[] = ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'];
+}
+$navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
+$navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
 if ($canRecruit) {
     $navItems[] = [
         'key' => 'recrutement',

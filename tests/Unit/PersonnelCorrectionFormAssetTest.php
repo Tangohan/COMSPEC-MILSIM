@@ -82,6 +82,15 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertArrayHasKey('family_situation', $choices);
         self::assertArrayHasKey('operator_status', $choices);
 
+        self::assertArrayHasKey('grade_id', $labels);
+        self::assertArrayHasKey('unit_assignments', $labels);
+        self::assertArrayHasKey('job_roles', $labels);
+        self::assertArrayHasKey('rank_display_override', $labels);
+        self::assertSame('assignment', $catalog['grade_id']['group'] ?? '');
+        self::assertSame('unit_assignments', $catalog['unit_assignments']['type'] ?? '');
+        self::assertContains('grade_id', PersonnelCorrectionRequestService::ORBAT_KEYS);
+        self::assertContains('unit_assignments', PersonnelCorrectionRequestService::ORBAT_KEYS);
+
         self::assertArrayNotHasKey('email', $labels);
         self::assertArrayNotHasKey('clearance_level', $labels);
         self::assertArrayNotHasKey('command_notes', $labels);

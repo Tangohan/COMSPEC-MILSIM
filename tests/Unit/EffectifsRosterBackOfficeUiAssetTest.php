@@ -43,5 +43,18 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
 
         self::assertStringContainsString('$pr(402,', $dispatch);
         self::assertStringContainsString('Le bureau effectifs rejoint le back-office clair', $dispatch);
+        self::assertStringContainsString('$pr(450,', $dispatch);
+
+        self::assertStringContainsString('eff-roster-hero', $roster);
+        self::assertStringContainsString('Ancienneté réelle', $roster);
+        self::assertStringContainsString('name="access_role_id"', $roster);
+        self::assertStringContainsString('data-img-fallback="portrait"', $roster);
+        self::assertStringContainsString('N° communauté', $roster);
+        self::assertStringContainsString('eff-sheets__meter', $roster);
+        self::assertStringContainsString('Disponibilité', $roster);
+
+        $controller = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
+        self::assertStringContainsString("'character_portrait_path'", $controller);
+        self::assertStringContainsString('listOrganizationRoleIdsForUsers', $controller);
     }
 }

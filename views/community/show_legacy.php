@@ -115,10 +115,12 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
     <?php endif; ?>
 
     <div class="flex flex-wrap gap-3 mb-10">
+        <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
         <?php if ($showForumCta): ?>
             <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Découvrir le forum</a>
         <?php else: ?>
             <span class="inline-flex items-center px-4 py-2.5 bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed" title="Forum réservé aux membres">Forum (réservé membres)</span>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>

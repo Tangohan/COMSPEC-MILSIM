@@ -80,6 +80,25 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('if (!$isSelf && !$canStaffEdit)', $controller);
     }
 
+    public function testOrbatTabCollectsAssignmentFieldsAndQueuesMemberChanges(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+        $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
+        $access = (string) file_get_contents($root . '/app/Support/EffectifsLmsAccess.php');
+
+        self::assertStringContainsString('name="grade_id"', $edit);
+        self::assertStringContainsString('name="enlistment_date"', $edit);
+        self::assertStringContainsString('Depuis', $edit);
+        self::assertStringContainsString('Validation Ressources humaines', $edit);
+        self::assertStringContainsString('canApplyOrbatImmediately', $edit);
+        self::assertStringContainsString('canApplyOrbatImmediately', $controller);
+        self::assertStringContainsString('proposedDiff', $controller);
+        self::assertStringContainsString('$applyOrbatNow', $controller);
+        self::assertStringContainsString('filterOptionsForMemberDossier', $controller);
+        self::assertStringContainsString('function canApplyOrbatImmediately', $access);
+    }
+
     public function testJobRolePersistenceSupportsLegacyPivotTablesAndReportsFailures(): void
     {
         $root = dirname(__DIR__, 2);

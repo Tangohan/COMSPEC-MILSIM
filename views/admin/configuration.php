@@ -198,7 +198,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/recruitments/messages-prefaits'), 'Messages préfaits (recrutement)', 'Modèles de commentaires internes pour traiter les candidatures.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
                 <?php $card(url('back-office/positions'), 'Postes organisationnels', 'Intitulés de fonction et affectations, distincts des rôles et habilitations.'); ?>
                 <?php $card(url('back-office/roleplay-followup'), 'Suivi roleplay', 'Pilotage tutorat, timeline dossiers et avancement individuel.'); ?>
-                <?php $card(url('back-office/roleplay/immersion'), 'Réglages d’immersion', 'Activation du suivi, étapes, filières et indicateur « dossier prêt ».', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
+                <?php $card(url('back-office/roleplay/immersion'), 'Parcours d’immersion', 'Suivi d’arrivée : étapes, filières, tuteur et indicateur « dossier prêt ».', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
             </div>
         </section>
 
@@ -247,7 +247,9 @@ $card = static function (string $href, string $title, string $desc, string $acce
         <section>
             <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Contenu, événements &amp; mesure</h2>
             <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
                 <?php $card(url('back-office/categories'), 'Catégories forum', 'Organisation des espaces de discussion.'); ?>
+                <?php endif; ?>
                 <?php $card(url('back-office/events'), 'Événements &amp; pointage', 'Séances, présences, rappels.'); ?>
                 <?php $card(url('back-office/analytics'), 'Analytics', 'Indicateurs d’usage de la communauté.'); ?>
                 <?php if ($canDocs): ?>
@@ -267,7 +269,9 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php endif; ?>
                 <?php $card(url('back-office/audit'), 'Journal d’activité', 'Traçabilité des actions administratives.'); ?>
                 <?php if ($gate->allows('forum.moderate') || $gate->allows('forum.moderate_organization') || $gate->allows('admin.organization') || $gate->allows('admin.access')): ?>
+                <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
                 <?php $card(url('back-office/forum-moderation'), 'Modération forum', 'Files et outils modérateur forum.'); ?>
+                <?php endif; ?>
                 <?php $card(url('admin/content-moderation'), 'Modération fichiers', 'Approbation des pièces jointes et médias.'); ?>
                 <?php endif; ?>
             </div>

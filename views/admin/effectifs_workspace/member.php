@@ -305,6 +305,42 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         <?php else: ?>
             <p class="eff-card__lead">Aucune affectation active.</p>
         <?php endif; ?>
+        <?php
+        $commandChain = is_array($memberCommandChain ?? null) ? $memberCommandChain : [];
+        $reportsTo = trim((string) ($commandChain['reports_to_label'] ?? ''));
+        $chainLabels = is_array($commandChain['chain_labels'] ?? null) ? $commandChain['chain_labels'] : [];
+        $commands = is_array($commandChain['commands'] ?? null) ? $commandChain['commands'] : [];
+        ?>
+        <?php if ($reportsTo !== '' || $commands !== [] || $chainLabels !== []): ?>
+            <dl class="eff-dl">
+                <?php if ($reportsTo !== ''): ?>
+                    <div>
+                        <dt>Relève de</dt>
+                        <dd>
+                            <?php if ((int) ($commandChain['reports_to_id'] ?? 0) > 0): ?>
+                                <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $commandChain['reports_to_id']), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($reportsTo, ENT_QUOTES, 'UTF-8') ?></a>
+                            <?php else: ?>
+                                <?= htmlspecialchars($reportsTo, ENT_QUOTES, 'UTF-8') ?>
+                            <?php endif; ?>
+                        </dd>
+                    </div>
+                <?php endif; ?>
+                <?php if ($chainLabels !== []): ?>
+                    <div>
+                        <dt>Chaîne</dt>
+                        <dd><?= htmlspecialchars(implode(' → ', $chainLabels), ENT_QUOTES, 'UTF-8') ?></dd>
+                    </div>
+                <?php endif; ?>
+                <?php if ($commands !== []): ?>
+                    <div>
+                        <dt>Commande</dt>
+                        <dd><?= htmlspecialchars(implode(', ', $commands), ENT_QUOTES, 'UTF-8') ?></dd>
+                    </div>
+                <?php endif; ?>
+            </dl>
+        <?php elseif ($assignments !== []): ?>
+            <p class="eff-card__hint">Chef non désigné pour cette unité. <a href="<?= htmlspecialchars(effectifs_workspace_url('chaine'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la chaîne de commandement</a></p>
+        <?php endif; ?>
         <?php if ($canManageAssignments): ?>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

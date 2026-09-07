@@ -121,7 +121,9 @@ require base_path('views/partials/ath_kpis.php');
 ?>
 
 <div class="ath-form__actions" style="border-top:0;margin:0 0 16px;padding-top:0;">
+    <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
     <a href="<?= $h(url('back-office/forum-moderation')) ?>" class="ath-btn">Console forum</a>
+    <?php endif; ?>
     <?php if (\App\Core\Gate::getInstance()->allows('admin.members.moderate')): ?>
     <a href="<?= $h(url('back-office/moderation')) ?>" class="ath-btn">Restrictions membres</a>
     <?php endif; ?>

@@ -591,4 +591,48 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasPersonnelHrDeskReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return \App\Services\Effectifs\PersonnelHrWorkspaceSettings::isReviewed($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasOrganizationUnits(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT 1 FROM units WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasCommandChainAssigned(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT COUNT(*) FROM units WHERE tenant_id = ? AND (commander_user_id IS NULL OR commander_user_id = 0)'
+            );
+            $st->execute([$tenantId]);
+
+            return (int) $st->fetchColumn() === 0 && $this->hasOrganizationUnits($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

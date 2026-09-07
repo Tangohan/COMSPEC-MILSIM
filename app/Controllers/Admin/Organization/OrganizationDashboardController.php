@@ -631,8 +631,9 @@ class OrganizationDashboardController
         ];
         $missingMediaUsers = is_array($mediaScan['users'] ?? null) ? $mediaScan['users'] : [];
 
-        $actionableAlerts = [
-            [
+        $actionableAlerts = [];
+        if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
+            $actionableAlerts[] = [
                 'id' => 'moderation_open',
                 'type' => 'Contenu',
                 'title' => 'Signalements modération à traiter',
@@ -641,7 +642,9 @@ class OrganizationDashboardController
                 'count' => $moderationOpen,
                 'link' => url('back-office/forum-moderation'),
                 'cta' => 'Traiter maintenant',
-            ],
+            ];
+        }
+        $actionableAlerts = array_merge($actionableAlerts, [
             [
                 'id' => 'alerts_active',
                 'type' => 'Sécurité',
@@ -692,7 +695,7 @@ class OrganizationDashboardController
                 'link' => url('back-office/centre-operations'),
                 'cta' => 'Corriger les anomalies',
             ],
-        ];
+        ]);
         usort($actionableAlerts, static fn (array $a, array $b): int => (int) ($b['impact_score'] ?? 0) <=> (int) ($a['impact_score'] ?? 0));
 
         $playbookCatalog = [

@@ -24,6 +24,9 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
 
         self::assertStringContainsString('bo-eff-head', $shell);
         self::assertStringContainsString('bo-eff-tabs', $shell);
+        self::assertStringContainsString('Roleplay', $shell);
+        self::assertStringContainsString('Intégration', $shell);
+        self::assertStringContainsString('Réglages', $shell);
         self::assertStringContainsString('Tableur', $shell);
         self::assertStringContainsString('Accès', $shell);
         self::assertStringContainsString('Emplois', $shell);
@@ -37,6 +40,7 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
         self::assertStringNotContainsString('eff-catalog__title', $roster);
         self::assertStringNotContainsString('Ressources humaines', $roster);
 
+        self::assertStringContainsString('.bo-eff-workspace .eff-rh-form', $css);
         self::assertStringContainsString('.bo-eff-workspace', $css);
         self::assertStringContainsString('.bo-eff-tabs', $css);
         self::assertStringContainsString('.bo-eff-head', $css);

@@ -37,7 +37,7 @@ $filterUrl = static function (?string $reason, int $p = 1) {
     <div class="eff-catalog__head">
         <div class="min-w-0">
             <p class="eff-catalog__kicker">Ressources humaines</p>
-            <h1 class="eff-catalog__title">Anciens membres</h1>
+            <h2 class="eff-catalog__title">Anciens membres</h2>
             <p class="eff-catalog__lead">
                 Historique des départs enregistrés : motif, date et statut de la reprise d’accès.
                 Utile pour repérer une réintégration future ou vérifier qu’un départ a bien été clôturé.

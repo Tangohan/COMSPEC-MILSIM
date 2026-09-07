@@ -16,11 +16,11 @@ $op = is_array($operation ?? null) ? $operation : [];
         <?php if (is_array($op['checklist'] ?? null)): ?>
             <p class="jnet-meta">Points de contrôle obligatoires : <?= (int) $op['checklist']['done'] ?> sur <?= (int) $op['checklist']['required'] ?> validés.</p>
         <?php endif; ?>
-        <p class="jnet-meta">Le détail de la conduite (ordres, participants, points de contrôle) se tient dans Athena ; JNET n’en donne que l’état de surface.</p>
+        <p class="jnet-meta">Le détail de la conduite (ordres, participants, points de contrôle) se tient sur le tableau opérationnel. L’extranet n’en donne que l’état de surface.</p>
         <div class="jnet-mail__actions">
-            <a class="jnet-btn jnet-btn--accent" href="<?= $h((string) ($op['href'] ?? url('back-office/tableau-operationnel'))) ?>">Ouvrir dans Athena</a>
-            <a class="jnet-btn" href="<?= $h(url('atak')) ?>">Carte ATAK</a>
-            <a class="jnet-btn" href="<?= $h(url('jnet/operations')) ?>">Retour au board</a>
+            <a class="jnet-btn jnet-btn--accent" href="<?= $h((string) ($op['href'] ?? url('back-office/tableau-operationnel'))) ?>">Ouvrir la fiche d’opération</a>
+            <a class="jnet-btn" href="<?= $h(url('atak')) ?>">Carte tactique</a>
+            <a class="jnet-btn" href="<?= $h(url('jnet/operations')) ?>">Retour aux opérations</a>
         </div>
     </div>
 </article>

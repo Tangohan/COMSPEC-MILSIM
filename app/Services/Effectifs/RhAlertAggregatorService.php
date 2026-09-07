@@ -39,8 +39,10 @@ final class RhAlertAggregatorService
      *   total: int
      * }
      */
-    public function summarize(int $tenantId): array
+    public function summarize(int $tenantId, ?int $inactivityDays = null, ?int $absenceDays = null): array
     {
+        $inactivityDays = max(14, min(180, $inactivityDays ?? self::INACTIVITY_DAYS));
+        $absenceDays = max(7, min(90, $absenceDays ?? self::PROLONGED_ABSENCE_DAYS));
         $items = [];
 
         $qualifCount = 0;
@@ -58,21 +60,21 @@ final class RhAlertAggregatorService
             'tone' => $qualifCount > 0 ? 'warn' : 'ok',
         ];
 
-        $absenceCount = $this->countProlongedAbsences($tenantId);
+        $absenceCount = $this->countProlongedAbsences($tenantId, $absenceDays);
         $items[] = [
             'id' => 'prolonged_absence',
             'severity' => 'Disponibilité',
-            'label' => 'Absence prolongée (≥ ' . self::PROLONGED_ABSENCE_DAYS . ' j)',
+            'label' => 'Absence prolongée (≥ ' . $absenceDays . ' j)',
             'count' => $absenceCount,
             'href' => effectifs_workspace_url('alertes'),
             'tone' => $absenceCount > 0 ? 'warn' : 'ok',
         ];
 
-        $inactiveCount = $this->countInactiveMembers($tenantId, self::INACTIVITY_DAYS);
+        $inactiveCount = $this->countInactiveMembers($tenantId, $inactivityDays);
         $items[] = [
             'id' => 'inactive_members',
             'severity' => 'Activité',
-            'label' => 'Sans activité depuis ' . self::INACTIVITY_DAYS . ' j',
+            'label' => 'Sans activité depuis ' . $inactivityDays . ' j',
             'count' => $inactiveCount,
             'href' => effectifs_workspace_url('alertes'),
             'tone' => $inactiveCount > 0 ? 'warn' : 'ok',
@@ -113,11 +115,12 @@ final class RhAlertAggregatorService
         return ['items' => $items, 'total' => $total];
     }
 
-    public function countProlongedAbsences(int $tenantId): int
+    public function countProlongedAbsences(int $tenantId, ?int $days = null): int
     {
         if (!$this->absences->tableExists() || $tenantId < 1) {
             return 0;
         }
+        $days = max(7, min(90, $days ?? self::PROLONGED_ABSENCE_DAYS));
         try {
             $st = $this->pdo->prepare(
                 "SELECT COUNT(DISTINCT user_id) FROM personnel_absences
@@ -128,7 +131,7 @@ final class RhAlertAggregatorService
                    AND (ends_on IS NULL OR ends_on >= CURDATE())
                    AND DATEDIFF(CURDATE(), starts_on) >= ?"
             );
-            $st->execute([$tenantId, self::PROLONGED_ABSENCE_DAYS]);
+            $st->execute([$tenantId, $days]);
 
             return (int) $st->fetchColumn();
         } catch (\Throwable) {
@@ -196,12 +199,13 @@ final class RhAlertAggregatorService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listProlongedAbsences(int $tenantId, int $limit = 40): array
+    public function listProlongedAbsences(int $tenantId, int $limit = 40, ?int $days = null): array
     {
         if (!$this->absences->tableExists() || $tenantId < 1) {
             return [];
         }
         $limit = max(1, min(100, $limit));
+        $days = max(7, min(90, $days ?? self::PROLONGED_ABSENCE_DAYS));
         try {
             $st = $this->pdo->prepare(
                 "SELECT a.*, u.display_name AS user_display_name, u.email AS user_email,
@@ -217,7 +221,7 @@ final class RhAlertAggregatorService
                  ORDER BY a.starts_on ASC
                  LIMIT {$limit}"
             );
-            $st->execute([$tenantId, self::PROLONGED_ABSENCE_DAYS]);
+            $st->execute([$tenantId, $days]);
 
             return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable) {

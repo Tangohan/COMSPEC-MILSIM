@@ -10,6 +10,15 @@ $schemaReady = !empty($hrSchemaReady);
 $canManage = !empty($canManage);
 $count = (int) ($hrDocumentsCount ?? count($docs));
 $csrf = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
+$hrSettings = is_array($hrWorkspaceSettings ?? null) ? $hrWorkspaceSettings : [];
+$defaultVisibility = (($hrSettings['default_visibility'] ?? 'STAFF') === 'MEMBER') ? 'MEMBER' : 'STAFF';
+$pdfTypes = is_array($hrPdfTypeLabels ?? null) ? $hrPdfTypeLabels : [
+    'charte' => 'Charte signée',
+    'reglement' => 'Règlement',
+    'certificat' => 'Certificat interne',
+    'affectation' => 'Décision d’affectation',
+    'evaluation' => 'Évaluation',
+];
 
 $typeCounts = [];
 foreach ($docs as $d) {
@@ -27,7 +36,7 @@ foreach ($docs as $d) {
 ?>
 <section class="eff-rh-hero">
     <p class="eff-page-kicker">Dossier RH</p>
-    <h1 class="eff-page-title">Documents RH</h1>
+    <h2 class="eff-page-title">Documents RH</h2>
     <p class="eff-page-lead">
         Coffre du dossier individuel : chartes, certificats, décisions d’affectation et évaluations.
         Chaque pièce est classée, datée, et sa visibilité est choisie.
@@ -123,8 +132,8 @@ foreach ($docs as $d) {
                     <?php $rhTip('tip-docs-vis', 'À propos de la visibilité', 'État-major uniquement : réservé aux gestionnaires. Visible du membre : le titulaire du dossier peut aussi consulter cette pièce.'); ?>
                 </span>
                 <select name="visibility" aria-label="Visibilité">
-                    <option value="STAFF">État-major uniquement</option>
-                    <option value="MEMBER">Visible du membre</option>
+                    <option value="STAFF" <?= $defaultVisibility === 'STAFF' ? 'selected' : '' ?>>État-major uniquement</option>
+                    <option value="MEMBER" <?= $defaultVisibility === 'MEMBER' ? 'selected' : '' ?>>Visible du membre</option>
                 </select>
             </div>
             <div class="eff-rh-field eff-rh-field--wide">
@@ -133,6 +142,50 @@ foreach ($docs as $d) {
             </div>
             <div class="eff-rh-form__actions">
                 <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Ajouter au dossier</button>
+            </div>
+        </form>
+    </section>
+    <section class="eff-rh-form" aria-labelledby="eff-docs-pdf-title">
+        <div class="eff-rh-form__head">
+            <h2 id="eff-docs-pdf-title" class="eff-rh-form__title">Établir une pièce</h2>
+            <p class="eff-rh-form__lead">La communauté produit une pièce datée (charte, certificat, décision d’affectation ou évaluation) et la range dans le coffre. Vous pouvez aussi déposer un fichier déjà signé ci-dessus.</p>
+        </div>
+        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh/etablir')) ?>" class="eff-rh-form__grid">
+            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Membre</span>
+                <select name="user_id" required aria-label="Membre pour la pièce">
+                    <option value="">Choisir un membre…</option>
+                    <?php foreach ($users as $u): ?>
+                        <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h(trim((string) ($u['display_name'] ?? '')) ?: (string) ($u['email'] ?? '')) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Type de pièce</span>
+                <select name="doc_type" aria-label="Type de pièce">
+                    <?php foreach ($pdfTypes as $k => $lab): ?>
+                        <option value="<?= $h((string) $k) ?>"><?= $h((string) $lab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Titre</span>
+                <input type="text" name="title" maxlength="200" placeholder="Laisser vide pour le titre du type" aria-label="Titre de la pièce">
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">Visibilité</span>
+                <select name="visibility" aria-label="Visibilité de la pièce établie">
+                    <option value="STAFF" <?= $defaultVisibility === 'STAFF' ? 'selected' : '' ?>>État-major uniquement</option>
+                    <option value="MEMBER" <?= $defaultVisibility === 'MEMBER' ? 'selected' : '' ?>>Visible du membre</option>
+                </select>
+            </div>
+            <div class="eff-rh-field eff-rh-field--wide">
+                <span class="eff-rh-field__label">Mention complémentaire</span>
+                <input type="text" name="detail" maxlength="500" placeholder="Unité, période, décision…" aria-label="Mention complémentaire">
+            </div>
+            <div class="eff-rh-form__actions">
+                <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Établir et ranger</button>
             </div>
         </form>
     </section>

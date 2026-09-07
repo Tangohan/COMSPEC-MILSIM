@@ -60,7 +60,13 @@ $publicModuleLabels = [
 ];
 $enabledPublicModules = array_filter(
     $publicModuleLabels,
-    static fn (string $label, string $key): bool => !empty($mods[$key]),
+    static function (string $label, string $key) use ($mods): bool {
+        if ($key === 'forum' && function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
+            return false;
+        }
+
+        return !empty($mods[$key]);
+    },
     ARRAY_FILTER_USE_BOTH
 );
 

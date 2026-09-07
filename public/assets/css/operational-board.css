@@ -405,6 +405,7 @@
 
 @media (min-width: 1100px) {
   .ops-board__map { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ops-board--pilotage .ops-board__map { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 .ops-board__map-item {
@@ -954,4 +955,223 @@
   .ops-pub .entry-card__badges {
     max-width: 42%;
   }
+}
+
+/* Pilotage back-office — charte Athena claire (pas d’écran sombre). */
+.ops-board--pilotage {
+  background: transparent;
+  color: var(--ath-ink, #0c1116);
+}
+
+.ops-board--pilotage .ops-board__deck {
+  padding-top: 0.35rem;
+  background: transparent;
+}
+
+.ops-board--pilotage .ops-board__btn--ghost {
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  border-color: var(--ath-line, #e3e8ea);
+}
+
+.ops-board--pilotage .ops-board__btn--ghost:hover {
+  background: var(--ath-surface-2, #f4f6f7);
+  color: var(--ath-ink, #0c1116);
+}
+
+.ops-board--pilotage .ops-board__pill {
+  border-color: var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-muted, #6d7a80);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.ops-board--pilotage .ops-board__pill--ok {
+  border-color: #cde8d8;
+  background: #eef8f2;
+  color: #146c43;
+}
+
+.ops-board--pilotage .ops-board__pill--warn {
+  border-color: var(--ath-warn-bd, #f2ddb4);
+  background: var(--ath-warn-bg, #fdf3e2);
+  color: #7a5410;
+}
+
+.ops-board--pilotage .ops-board__pill--danger {
+  border-color: #f3c4c4;
+  background: #fdecec;
+  color: #8a1f1f;
+}
+
+.ops-board__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ops-board__status-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.ops-board__cockpit {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.ops-board__cockpit-head h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ath-ink, #0c1116);
+}
+
+.ops-board__cockpit-head p:last-child {
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.ops-board__cockpit-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .ops-board__cockpit-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ops-board__cockpit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 12rem;
+  padding: 1rem 1.05rem 0.95rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+}
+
+.ops-board__cockpit-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ops-board__cockpit-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.ops-board__cockpit-card header span {
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ops-board__cockpit-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+}
+
+.ops-board__cockpit-card li a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ops-board__cockpit-card li a:hover {
+  border-color: var(--ath-line, #e3e8ea);
+  background: var(--ath-surface-2, #f4f6f7);
+}
+
+.ops-board__cockpit-card li strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.ops-board__cockpit-card li em {
+  font-style: normal;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.75rem;
+}
+
+.ops-board__cockpit-links li a {
+  flex-direction: row;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.ops-board__cockpit-empty {
+  margin: 0;
+  flex: 1 1 auto;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.ops-board__cockpit-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.ops-board__cockpit-levers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ops-board__cockpit-levers a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.ops-board__cockpit-levers a:hover {
+  background: var(--ath-surface-2, #f4f6f7);
+}
+
+.ops-board__cockpit-levers a.is-alert {
+  border-color: var(--ath-warn-bd, #f2ddb4);
+  background: var(--ath-warn-bg, #fdf3e2);
+  color: #7a5410;
+}
+
+.ops-board__cockpit-levers strong {
+  font-variant-numeric: tabular-nums;
 }

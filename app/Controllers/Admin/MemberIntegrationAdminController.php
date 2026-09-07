@@ -152,10 +152,25 @@ final class MemberIntegrationAdminController
         $user = $this->users->findById($userId, $tenantId) ?? [];
         $this->service->refresh($tenantId, $id, $this->actorId());
         $row = $this->integrations->findForTenant($tenantId, $id) ?? $row;
-        $row['display_name'] = (string) ($user['display_name'] ?? $user['callsign'] ?? $user['email'] ?? 'Membre');
+        $displayName = (string) ($user['display_name'] ?? $user['callsign'] ?? $user['email'] ?? 'Membre');
+        $row['display_name'] = $displayName;
+        $statusLabels = MemberIntegrationCatalog::statusLabels();
+        $statusKey = (string) ($row['status'] ?? '');
+        $statusLabel = $statusLabels[$statusKey] ?? 'En cours';
+        $pct = (int) ($row['progress_percent'] ?? 0);
+        $subtitleParts = ['Parcours d’arrivée', $statusLabel, $pct . ' % des étapes obligatoires'];
+        $subtitleParts[] = !empty($row['dossier_complete']) ? 'Dossier complet' : 'Dossier à compléter';
 
         return Response::view('layout.main', [
-            'title' => 'Parcours d’intégration',
+            'title' => $displayName,
+            'boPageTitle' => $displayName,
+            'boPageKicker' => 'COMMUNAUTÉ · INTÉGRATION',
+            'boPageSubtitle' => implode(' · ', $subtitleParts),
+            'boPageQuick' => [
+                ['label' => 'Tous les parcours', 'href' => url('back-office/integration-membres')],
+                ['label' => 'Modèles', 'href' => url('back-office/integration-membres/modeles')],
+                ['label' => 'Fiche personnelle', 'href' => url('personnel/' . $userId)],
+            ],
             'content' => 'admin.member_integration.show',
             'integration' => $row,
             'steps' => $this->integrations->listSteps($tenantId, $id),
@@ -166,8 +181,12 @@ final class MemberIntegrationAdminController
             'matricesAll' => $this->matrices->listMatrices($tenantId),
             'dossier' => $this->service->dossierSnapshot($userId, $user, $tenantId),
             'staff' => $this->users->allForTenant($tenantId),
-            'statusLabels' => MemberIntegrationCatalog::statusLabels(),
+            'statusLabels' => $statusLabels,
             'stepTypeLabels' => MemberIntegrationCatalog::stepTypeLabels(),
+            'stepStatusLabels' => MemberIntegrationCatalog::stepStatusLabels(),
+            'responsibleLabels' => MemberIntegrationCatalog::responsibleLabels(),
+            'appointmentStatusLabels' => MemberIntegrationCatalog::appointmentStatusLabels(),
+            'visibilityLabels' => MemberIntegrationCatalog::visibilityLabels(),
             'canManage' => $this->canManage(),
             'canAssign' => $this->canAssign(),
             'canNote' => $this->canNote(),

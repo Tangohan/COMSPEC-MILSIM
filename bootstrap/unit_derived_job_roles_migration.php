@@ -5,8 +5,9 @@ declare(strict_types=1);
 use App\Services\Personnel\UnitJobRoleSyncService;
 
 /**
- * Emplois de dossier = unités de l’ORBAT + postes nommés à l’affectation.
- * Retire le catalogue militaire inutilisé ; crée un emploi par unité existante.
+ * Emplois de dossier : schéma seulement.
+ * Ne recrée jamais un référentiel vidé. Un emploi naît à la création d’une unité,
+ * à une affectation, ou quand un responsable copie un modèle — pas à chaque migration.
  */
 return static function (PDO $pdo): void {
     $hasTable = static function (string $table) use ($pdo): bool {
@@ -72,6 +73,5 @@ return static function (PDO $pdo): void {
     $sync = new UnitJobRoleSyncService($pdo);
     $purged = $sync->purgeAllUnusedCatalogJobs();
     echo '  emplois catalogue inutilisés retirés : ' . $purged . "\n";
-    $created = $sync->backfillAllTenants();
-    echo '  emplois créés depuis les unités : ' . $created . "\n";
+    echo "  aucun emploi recréé (le référentiel vidé reste vide).\n";
 };

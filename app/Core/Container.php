@@ -622,6 +622,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\SseAnalystDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -903,6 +904,10 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
             ),
             \App\Controllers\Web\PersonnelCorrectionController::class => new \App\Controllers\Web\PersonnelCorrectionController(
                 self::get(AuthService::class),
@@ -983,6 +988,10 @@ class Container
             ),
             \App\Services\Cron\Jobs\PersonnelProgressionCronJob::class => new \App\Services\Cron\Jobs\PersonnelProgressionCronJob(
                 self::get(\App\Services\Personnel\PersonnelProgressionEvaluator::class),
+            ),
+            \App\Services\Effectifs\PersonnelAutoAdvancementService::class => new \App\Services\Effectifs\PersonnelAutoAdvancementService(),
+            \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class => new \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob(
+                self::get(\App\Services\Effectifs\PersonnelAutoAdvancementService::class),
             ),
             \App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class => new \App\Services\Cron\Jobs\PersonnelCapabilityCronJob(
                 self::get(\App\Services\Personnel\OperationalCapabilityService::class),

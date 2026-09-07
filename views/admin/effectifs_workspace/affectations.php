@@ -34,6 +34,7 @@ $typeLabel = static function (string $typeRaw): string {
                 Sans unité (<?= $membersWithoutUnit ?>)
             </a>
             <?php if ($canManageAssignments): ?>
+                <a class="eff-catalog__btn" href="<?= htmlspecialchars(effectifs_workspace_url('chaine'), ENT_QUOTES, 'UTF-8') ?>">Chaîne de commandement</a>
                 <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/organisation/structure'), ENT_QUOTES, 'UTF-8') ?>">Structure &amp; ORBAT</a>
                 <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('deploiement'), ENT_QUOTES, 'UTF-8') ?>">Déploiement</a>
             <?php endif; ?>

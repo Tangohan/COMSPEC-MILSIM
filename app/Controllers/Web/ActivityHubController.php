@@ -45,7 +45,8 @@ final class ActivityHubController
 
         $gate = Gate::getInstance();
         $resolver = Container::get(ModerationRestrictionResolver::class);
-        $activity_forum_available = $resolver->canReadForum($tenantId, $userId);
+        $activity_forum_available = $resolver->canReadForum($tenantId, $userId)
+            && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible());
         $activity_courrier_available = $gate->allows('courrier.view')
             && $resolver->isModuleAllowed($tenantId, $userId, ModerationRestrictionsCatalog::KEY_COURRIER);
 
