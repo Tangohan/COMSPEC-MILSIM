@@ -147,7 +147,7 @@ foreach ($fieldCatalog as $key => $meta) {
                   </select>
                 </div>
                 <div>
-                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-unit-role">Rôle dans l’unité</label>
+                  <label class="mb-1 block text-[11px] font-bold text-slate-500" for="corr-unit-role">Place dans l’équipe</label>
                   <input type="text" id="corr-unit-role" name="unit_assignments[0][role_name]" value="<?= $h((string) ($primaryUnit['role_name'] ?? '')) ?>" maxlength="120" <?= $disabled ? 'disabled' : '' ?>>
                 </div>
               </div>

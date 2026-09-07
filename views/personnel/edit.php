@@ -95,6 +95,14 @@ $knownValue = static function (...$values): string {
 
     return '';
 };
+$editPortraitUrl = function_exists('personnel_operator_portrait_url')
+    ? (string) (personnel_operator_portrait_url($p) ?? '')
+    : '';
+if ($editPortraitUrl !== '' && str_contains($editPortraitUrl, 'inconnu.svg')) {
+    $editPortraitUrl = '';
+}
+$editPortraitLocked = !empty($p['character_portrait_locked']);
+$editPortraitCanReplace = !$editPortraitLocked || !$isMe;
 
 $editNavGroups = [
     [
@@ -102,6 +110,7 @@ $editNavGroups = [
         'items' => [
             ['id' => 'edit-compte', 'label' => 'Compte &amp; interface', 'show' => $isMe],
             ['id' => 'edit-identite-rp', 'label' => 'Personnage (RP)', 'show' => true],
+            ['id' => 'edit-portrait', 'label' => 'Portrait', 'show' => true],
         ],
     ],
     [
@@ -159,7 +168,7 @@ $editValidTabIds = implode(',', array_map(
         <a href="<?= htmlspecialchars(url('back-office/users/' . (int) ($targetUser['id'] ?? 0) . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Compte</a>
         <?php endif; ?>
         <a href="<?= url('account/preferences') ?>" class="pd-btn">Préférences</a>
-        <a href="<?= url('account/portrait') ?>" class="pd-btn">Portrait</a>
+        <button type="button" class="pd-btn" @click="tab = 'edit-portrait'">Portrait</button>
         <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="pd-btn">Tutoriels</a>
       </div>
     </header>
@@ -221,7 +230,43 @@ $editValidTabIds = implode(',', array_map(
       </div>
       <?php endif; ?>
 
-      <form method="post" action="<?= htmlspecialchars($formAction) ?>" @input="dirty = true" @change="dirty = true" @submit="dirty = false">
+      <div x-cloak x-show="tab === 'edit-portrait'">
+        <section id="edit-portrait" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
+          <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-cyan-950">Portrait opérateur</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">C’est la photo du dossier : fiche, organigramme et portail. Une seule image, distincte d’un compte de connexion.</p>
+          </div>
+          <div class="flex flex-col gap-6 p-6 sm:flex-row sm:items-start">
+            <div class="flex h-40 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 text-lg font-black text-white">
+              <?php if ($editPortraitUrl !== ''): ?>
+              <img src="<?= htmlspecialchars($editPortraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur actuel" class="h-full w-full object-cover" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials(trim((string) ($targetUser['display_name'] ?? 'A')), 2) : 'A', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
+              <?php else: ?>
+              <span aria-hidden="true"><?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials(trim((string) ($targetUser['display_name'] ?? 'A')), 2) : 'A', ENT_QUOTES, 'UTF-8') ?></span>
+              <?php endif; ?>
+            </div>
+            <div class="min-w-0 flex-1">
+              <?php if ($editPortraitLocked && !$editPortraitCanReplace): ?>
+              <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">La modification de cette photo a été verrouillée par un responsable de la communauté.</p>
+              <?php else: ?>
+              <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/portrait'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="space-y-4">
+                <?= \App\Core\Csrf::field() ?>
+                <?php if ($effectifsEditContext): ?>
+                <input type="hidden" name="effectifs_context" value="1">
+                <?php endif; ?>
+                <div>
+                  <label for="dossier-portrait" class="mb-1 block text-xs font-bold text-slate-600">Choisir une image</label>
+                  <input id="dossier-portrait" type="file" name="portrait" accept="image/jpeg,image/png,image/webp" required class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                  <p class="mt-1 text-[11px] text-slate-500">JPG, PNG ou WebP — 2 Mo maximum.</p>
+                </div>
+                <button type="submit" class="pd-btn pd-btn--primary">Enregistrer le portrait</button>
+              </form>
+              <?php endif; ?>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <form method="post" action="<?= htmlspecialchars($formAction) ?>" x-show="tab !== 'edit-portrait'" @input="dirty = true" @change="dirty = true" @submit="dirty = false">
         <?= \App\Core\Csrf::field() ?>
         <?php if ($effectifsEditContext): ?>
         <input type="hidden" name="effectifs_context" value="1">
@@ -348,6 +393,7 @@ $editValidTabIds = implode(',', array_map(
             </div>
             <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90">
               Grade attribué, titre affiché, unité et emploi se règlent dans <button type="button" class="font-bold underline underline-offset-2" @click="tab = 'edit-orbat'">Unité &amp; rôle</button>.
+              Le portrait se règle dans <button type="button" class="font-bold underline underline-offset-2" @click="tab = 'edit-portrait'">Portrait</button>.
             </div>
             <div>
               <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Détails du personnage</h3>
@@ -455,7 +501,17 @@ $editValidTabIds = implode(',', array_map(
         <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Affectation, emploi, grade et date d’engagement. La principale sert de référence pour le dossier, la fiche et le forum.</p>
+            <p class="mt-1.5 max-w-3xl text-xs leading-relaxed text-cyan-900/85">Deux informations distinctes : l’équipe d’une part, la fonction de l’autre. L’affectation principale et l’emploi principal servent de référence sur la fiche, l’organigramme et le forum.</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-xl border border-cyan-200/80 bg-white/80 px-4 py-3">
+                <p class="text-[10px] font-black uppercase tracking-wider text-cyan-800">Affectation — l’équipe</p>
+                <p class="mt-1.5 text-xs leading-relaxed text-cyan-950/90">Indique <strong>dans quelle unité</strong> la personne est rattachée. La place dans l’équipe (membre, chef, adjoint…) se renseigne à part. Cochez l’affectation principale : c’est elle qui place la personne dans l’organigramme.</p>
+              </div>
+              <div class="rounded-xl border border-cyan-200/80 bg-white/80 px-4 py-3">
+                <p class="text-[10px] font-black uppercase tracking-wider text-cyan-800">Emploi — la fonction</p>
+                <p class="mt-1.5 text-xs leading-relaxed text-cyan-950/90">Indique <strong>ce que la personne fait</strong>, pas où elle est. L’emploi n’ouvre aucun droit d’accès. Cochez l’emploi principal : c’est celui qui apparaît sur la fiche, l’organigramme et le forum.</p>
+              </div>
+            </div>
           </div>
           <div class="space-y-4 p-6">
             <?php if ($pendingOrbatCorrection): ?>
@@ -520,7 +576,7 @@ $editValidTabIds = implode(',', array_map(
                 <thead class="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-600">
                   <tr>
                     <th class="px-3 py-2">Unité</th>
-                    <th class="px-3 py-2">Rôle affectation</th>
+                    <th class="px-3 py-2">Place dans l’équipe</th>
                     <th class="px-3 py-2">Depuis</th>
                     <th class="px-3 py-2">Principal</th>
                   </tr>
@@ -582,7 +638,7 @@ $editValidTabIds = implode(',', array_map(
                   <div class="flex items-start justify-between gap-3">
                     <div>
                       <label class="mb-1 block text-xs font-bold text-slate-600">Affectations d’unité</label>
-                      <p class="text-[11px] text-slate-500">Renseignez une ou plusieurs lignes. Cochez l’affectation principale pour indiquer celle qui sert de référence partout sur le portail.</p>
+                      <p class="text-[11px] text-slate-500">Choisissez l’équipe. Une personne peut avoir plusieurs affectations (détachement, double casquette). Une seule est principale : c’est l’unité de référence sur la fiche et l’organigramme.</p>
                     </div>
                     <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="rows.length < maxRows">Ajouter une affectation</button>
                   </div>
@@ -617,8 +673,8 @@ $editValidTabIds = implode(',', array_map(
                           </select>
                         </div>
                         <div class="min-w-[220px] flex-1">
-                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Rôle dans l’unité</label>
-                          <input type="text" :name="'unit_assignments[' + idx + '][role_name]'" x-model="row.role_name" maxlength="120" placeholder="Ex. Chef d’équipe, tireur, appui…" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Place dans l’équipe</label>
+                          <input type="text" :name="'unit_assignments[' + idx + '][role_name]'" x-model="row.role_name" maxlength="120" placeholder="Ex. Membre, chef d’équipe, adjoint…" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
                         </div>
                         <button type="button" class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="rows.length > 1">Retirer</button>
                       </div>
@@ -635,13 +691,13 @@ $editValidTabIds = implode(',', array_map(
                 <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
                   <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <label class="block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
-                      <p class="mt-1 text-[11px] text-slate-500">Recherche dans les catégories, métiers, codes MOS et intitulés anglais.</p>
+                      <label class="block text-xs font-bold text-slate-600">Emploi</label>
+                      <p class="mt-1 text-[11px] text-slate-500">Choisissez la fonction tenue. Si la liste reprend le nom d’une unité, c’est tout de même une fonction de dossier, pas un second rattachement d’équipe.</p>
                     </div>
                     <label class="relative block sm:w-80">
-                      <span class="sr-only">Rechercher un rôle métier</span>
+                      <span class="sr-only">Rechercher une fonction</span>
                       <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
-                      <input type="search" x-model.debounce.150ms="roleQuery" placeholder="Rechercher un métier…" autocomplete="off" class="w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                      <input type="search" x-model.debounce.150ms="roleQuery" placeholder="Rechercher une fonction…" autocomplete="off" class="w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
                     </label>
                   </div>
                   <div class="space-y-2">
@@ -650,7 +706,7 @@ $editValidTabIds = implode(',', array_map(
                         <label class="flex shrink-0 items-center gap-1.5 text-[10px] font-bold text-slate-600">
                           <input type="hidden" :name="'job_roles[' + idx + '][is_primary]'" :value="primaryIdx === idx ? '1' : '0'">
                           <input type="radio" name="job_roles_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
-                          Principal
+                          Emploi principal
                         </label>
                         <div class="min-w-[220px] flex-1">
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
@@ -660,7 +716,7 @@ $editValidTabIds = implode(',', array_map(
                               <option :value="opt.id" x-text="opt.label"></option>
                             </template>
                           </select>
-                          <p x-show="roleQuery && matchingRoleCount() === 0" class="mt-1 text-[10px] font-semibold text-amber-700">Aucun rôle correspondant.</p>
+                          <p x-show="roleQuery && matchingRoleCount() === 0" class="mt-1 text-[10px] font-semibold text-amber-700">Aucune fonction correspondante.</p>
                         </div>
                         <div class="min-w-[160px] flex-1">
                           <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
@@ -669,19 +725,19 @@ $editValidTabIds = implode(',', array_map(
                         <button type="button" class="shrink-0 rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="roles.length > 1">Retirer</button>
                       </div>
                     </template>
-                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length < maxRoles">Ajouter un rôle</button>
+                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length < maxRoles">Ajouter un emploi</button>
                   </div>
-                  <p class="mt-1 text-[11px] text-slate-600">Le rôle coché « Principal » sert de référence pour le dossier, l’organigramme et le forum. Les autres sont affichés comme rôles complémentaires.</p>
+                  <p class="mt-1 text-[11px] text-slate-600">L’emploi coché « Emploi principal » apparaît sur la fiche, l’organigramme et le forum. Les autres sont des emplois complémentaires. L’emploi décrit la fonction, pas un droit d’accès.</p>
                 </div>
                 <?php else: ?>
-                <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Référentiel de rôles métier non disponible sur cet environnement (migration à exécuter).</p>
+                <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Le catalogue d’emplois n’est pas encore disponible dans cette communauté.</p>
                 <?php endif; ?>
               </div>
             </div>
             <?php if (!empty($dossierPresets)): ?>
             <div class="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4">
-              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Presets de fonction</p>
-              <p class="mt-1 text-xs text-emerald-950/90">Remplit le rôle ci-dessus et les suggestions d’équipement (section équipement). Choisissez l’unité vous-même. <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="font-bold underline">Guide</a>.</p>
+              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Modèles de fonction</p>
+              <p class="mt-1 text-xs text-emerald-950/90">Remplit l’emploi ci-dessus et des suggestions d’équipement. L’équipe se choisit toujours à part. <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="font-bold underline">Guide</a>.</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <?php foreach ($dossierPresets as $pr): ?>
                 <button type="button" class="personnel-preset-btn rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-left text-[11px] font-bold text-emerald-950 shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50" data-preset-id="<?= htmlspecialchars((string) ($pr['id'] ?? '')) ?>" title="<?= htmlspecialchars((string) ($pr['description'] ?? '')) ?>">
@@ -693,7 +749,7 @@ $editValidTabIds = implode(',', array_map(
             <?php endif; ?>
             <p class="text-[11px] text-slate-500">
               <a href="<?= htmlspecialchars(url('orbat')) ?>" class="font-semibold text-cyan-800 underline-offset-2 hover:underline">Voir l’organigramme</a>
-              — Vue d’ensemble des unités ; les affectations détaillées peuvent aussi être gérées par le personnel habilité.
+              — Vue d’ensemble des unités. Les affectations détaillées peuvent aussi être gérées par les Ressources humaines.
             </p>
             <div class="grid gap-4 md:grid-cols-2">
               <div>
