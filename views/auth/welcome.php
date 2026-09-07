@@ -14,7 +14,7 @@
 
 $brand = trim((string) ($brand ?? (function_exists('email_brand_name') ? email_brand_name() : 'Athena')));
 $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
-$displayName = trim((string) ($displayName ?? 'Opérateur'));
+$displayName = trim((string) ($displayName ?? (function_exists('t') ? t('auth.welcome_operator') : 'Opérateur')));
 $gradeLabel = trim((string) ($gradeLabel ?? ''));
 $avatarUrl = is_string($avatarUrl ?? null) && $avatarUrl !== '' ? $avatarUrl : null;
 $initials = trim((string) ($initials ?? 'A'));
@@ -36,7 +36,15 @@ if ($lockBackgroundIntervalMs < 4000 || $lockBackgroundIntervalMs > 20000) {
 }
 $error = \App\Core\Session::getFlash('error');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-$title = (string) ($title ?? 'Bienvenue');
+$title = (string) ($title ?? (function_exists('t') ? t('auth.welcome_title') : 'Bienvenue'));
+$welcomeText = static fn (string $key, string $fallback, array $replace = []): string =>
+    function_exists('t') ? t('auth.' . $key, $replace, $fallback) : $fallback;
+$screenAria = $welcomeText('welcome_screen_aria', 'Écran d’accueil :brand', ['brand' => $brand]);
+$continueHint = $welcomeText('welcome_continue_hint', 'Appuyez sur Entrée pour continuer');
+$enterLabel = $welcomeText('welcome_enter_brand', 'Entrer dans :brand', ['brand' => $brand]);
+$profileReady = $welcomeText('welcome_profile_ready', 'Profil synchronisé · accès autorisé');
+$openingLabel = $welcomeText('welcome_opening', 'Ouverture…');
+$browserLocale = function_exists('locale') && locale() === 'en' ? 'en-GB' : 'fr-FR';
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>">
@@ -292,7 +300,7 @@ $title = (string) ($title ?? 'Bienvenue');
     </style>
 </head>
 <body>
-<section class="lock" id="lock" role="main" aria-label="Écran d’accueil <?= $brandText ?>">
+<section class="lock" id="lock" role="main" aria-label="<?= $h($screenAria) ?>">
     <div class="lock-slides" aria-hidden="true">
         <?php foreach ($lockBackgroundUrls as $i => $slideUrl): ?>
             <div class="lock-slide<?= $i === 0 ? ' is-active' : '' ?>"
@@ -308,7 +316,7 @@ $title = (string) ($title ?? 'Bienvenue');
     <div class="clock">
         <div class="time" id="time" aria-live="polite">––:––</div>
         <div class="date" id="date"></div>
-        <div class="hint">Appuyez sur Entrée pour continuer</div>
+        <div class="hint"><?= $h($continueHint) ?></div>
     </div>
 
     <div class="profile-layer" id="profile" aria-hidden="true">
@@ -339,9 +347,9 @@ $title = (string) ($title ?? 'Bienvenue');
 
             <form method="post" action="<?= $h($enterUrl) ?>" id="enter-form">
                 <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="enter" id="enter-btn">Entrer dans <?= $brandText ?></button>
+                <button type="submit" class="enter" id="enter-btn"><?= $h($enterLabel) ?></button>
             </form>
-            <div class="small">Profil synchronisé · accès autorisé</div>
+            <div class="small"><?= $h($profileReady) ?></div>
         </div>
     </div>
 </section>
@@ -353,13 +361,15 @@ $title = (string) ($title ?? 'Bienvenue');
     var btn = document.getElementById('enter-btn');
     var lock = document.getElementById('lock');
     var submitting = false;
+    var browserLocale = <?= json_encode($browserLocale, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    var openingLabel = <?= json_encode($openingLabel, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;
 
     function formatDate() {
         var now = new Date();
         document.getElementById('time').textContent =
-            now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            now.toLocaleTimeString(browserLocale, { hour: '2-digit', minute: '2-digit' });
         document.getElementById('date').textContent =
-            now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+            now.toLocaleDateString(browserLocale, { weekday: 'long', day: 'numeric', month: 'long' });
     }
     formatDate();
     setInterval(formatDate, 1000);
@@ -377,7 +387,7 @@ $title = (string) ($title ?? 'Bienvenue');
         if (submitting || !form) return;
         submitting = true;
         if (btn) {
-            btn.textContent = 'Ouverture…';
+            btn.textContent = openingLabel;
             btn.disabled = true;
         }
         form.submit();
@@ -401,7 +411,7 @@ $title = (string) ($title ?? 'Bienvenue');
     if (form) {
         form.addEventListener('submit', function () {
             if (btn && !submitting) {
-                btn.textContent = 'Ouverture…';
+                btn.textContent = openingLabel;
                 btn.disabled = true;
             }
             submitting = true;

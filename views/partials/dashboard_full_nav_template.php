@@ -9,7 +9,13 @@ declare(strict_types=1);
 ?>
 <template id="dashTplFullNav">
     <?php if (empty($dashNavFullGroups)): ?>
-        <p class="rounded-xl px-4 py-6 text-sm leading-relaxed text-slate-500">Aucun accès supplémentaire n’est listé pour votre profil. Si un module manque, contactez un responsable de l’unité.</p>
+        <p class="rounded-xl px-4 py-6 text-sm leading-relaxed text-slate-500"><?= htmlspecialchars(
+            function_exists('i18n_phrase')
+                ? i18n_phrase('nav', 'Aucun accès supplémentaire n’est listé pour votre profil. Si un module manque, contactez un responsable de l’unité.')
+                : 'Aucun accès supplémentaire n’est listé pour votre profil. Si un module manque, contactez un responsable de l’unité.',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?></p>
     <?php else: ?>
         <?php foreach ($dashNavFullGroups as $groupTitle => $items): ?>
             <?php if (!is_array($items) || $items === []) {

@@ -45,7 +45,7 @@ final class LoginWelcomeProfileService
         }
         if ($displayName === '') {
             $local = explode('@', (string) ($user['email'] ?? ''), 2)[0] ?? '';
-            $displayName = $local !== '' ? $local : 'Opérateur';
+            $displayName = $local !== '' ? $local : $this->translate('welcome_operator', 'Opérateur');
         }
 
         $profile = $userId > 0 ? $this->personnelProfiles->getByUserId($userId) : null;
@@ -116,9 +116,9 @@ final class LoginWelcomeProfileService
     private function accountFacts(int $userId, int $tenantId, ?array $profile, array $user): array
     {
         return [
-            ['label' => 'Ancienneté', 'value' => $this->resolveSeniorityLabel($profile, $user)],
-            ['label' => 'Rôle / Fonction', 'value' => $this->resolveFunctionLabel($tenantId, $profile)],
-            ['label' => 'Affectation', 'value' => $this->resolveAssignmentLabel($userId, $tenantId, $profile)],
+            ['label' => $this->translate('welcome_fact_seniority', 'Ancienneté'), 'value' => $this->resolveSeniorityLabel($profile, $user)],
+            ['label' => $this->translate('welcome_fact_role', 'Rôle / Fonction'), 'value' => $this->resolveFunctionLabel($tenantId, $profile)],
+            ['label' => $this->translate('welcome_fact_assignment', 'Affectation'), 'value' => $this->resolveAssignmentLabel($userId, $tenantId, $profile)],
         ];
     }
 
@@ -133,31 +133,38 @@ final class LoginWelcomeProfileService
             $raw = $user['created_at'] ?? null;
         }
         if (!$raw) {
-            return 'Non renseignée';
+            return $this->translate('welcome_not_provided', 'Non renseignée');
         }
         $ts = strtotime((string) $raw);
         if ($ts === false) {
-            return 'Non renseignée';
+            return $this->translate('welcome_not_provided', 'Non renseignée');
         }
         $daysSince = max(0, (int) floor((time() - $ts) / 86400));
         $yearsSince = intdiv($daysSince, 365);
         $monthsSince = intdiv($daysSince % 365, 30);
         if ($yearsSince > 0) {
-            $label = $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '');
+            $label = $this->translate(
+                $yearsSince > 1 ? 'welcome_years' : 'welcome_year',
+                $yearsSince . ' an' . ($yearsSince > 1 ? 's' : ''),
+                ['count' => $yearsSince]
+            );
             if ($monthsSince > 0) {
-                $label .= ' et ' . $monthsSince . ' mois';
+                $label = $this->translate('welcome_years_months', $label . ' et ' . $monthsSince . ' mois', [
+                    'years' => $label,
+                    'months' => $this->translate('welcome_months', $monthsSince . ' mois', ['count' => $monthsSince]),
+                ]);
             }
 
             return $label;
         }
         if ($monthsSince > 0) {
-            return $monthsSince . ' mois';
+            return $this->translate('welcome_months', $monthsSince . ' mois', ['count' => $monthsSince]);
         }
         if ($daysSince > 0) {
-            return $daysSince . ' jour' . ($daysSince > 1 ? 's' : '');
+            return $this->translate($daysSince > 1 ? 'welcome_days' : 'welcome_day', $daysSince . ' jour' . ($daysSince > 1 ? 's' : ''), ['count' => $daysSince]);
         }
 
-        return 'Moins d’un jour';
+        return $this->translate('welcome_less_than_day', 'Moins d’un jour');
     }
 
     /**
@@ -166,7 +173,7 @@ final class LoginWelcomeProfileService
     private function resolveFunctionLabel(int $tenantId, ?array $profile): string
     {
         if (!is_array($profile)) {
-            return 'Non renseignée';
+            return $this->translate('welcome_not_provided', 'Non renseignée');
         }
 
         $jobRoleId = (int) ($profile['personnel_job_role_id'] ?? 0);
@@ -195,7 +202,7 @@ final class LoginWelcomeProfileService
             return $rpFunction;
         }
 
-        return 'Non renseignée';
+        return $this->translate('welcome_not_provided', 'Non renseignée');
     }
 
     /**
@@ -231,6 +238,12 @@ final class LoginWelcomeProfileService
             }
         }
 
-        return 'Non renseignée';
+        return $this->translate('welcome_not_provided', 'Non renseignée');
+    }
+
+    /** @param array<string, scalar|null> $replace */
+    private function translate(string $key, string $fallback, array $replace = []): string
+    {
+        return function_exists('t') ? t('auth.' . $key, $replace, $fallback) : $fallback;
     }
 }

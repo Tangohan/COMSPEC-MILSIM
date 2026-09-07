@@ -6,11 +6,19 @@ if ($doctrinePending === []) {
     return;
 }
 $doctrinePendingCount = count($doctrinePending);
+$n = static fn (string $fr, array $replace = []): string => htmlspecialchars(
+    function_exists('i18n_phrase') ? i18n_phrase('nav', $fr, $replace) : $fr,
+    ENT_QUOTES,
+    'UTF-8'
+);
 ?>
 <section class="dash-doctrine-pending" id="documents-a-prendre-en-compte" aria-labelledby="dash-doctrine-pending-title">
     <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm">
-        <h2 id="dash-doctrine-pending-title" class="text-sm font-black uppercase tracking-[0.14em] text-amber-950">Documents à prendre en compte</h2>
-        <p class="mt-1 text-sm text-amber-900/90"><?= $doctrinePendingCount ?> document<?= $doctrinePendingCount > 1 ? 's' : '' ?> nécessite<?= $doctrinePendingCount > 1 ? 'nt' : '' ?> votre attention.</p>
+        <h2 id="dash-doctrine-pending-title" class="text-sm font-black uppercase tracking-[0.14em] text-amber-950"><?= $n('Documents à prendre en compte') ?></h2>
+        <p class="mt-1 text-sm text-amber-900/90"><?= $n(
+            $doctrinePendingCount > 1 ? ':count documents nécessitent votre attention.' : ':count document nécessite votre attention.',
+            ['count' => $doctrinePendingCount]
+        ) ?></p>
         <ul class="mt-4 space-y-2">
             <?php foreach ($doctrinePending as $item): ?>
             <li>
@@ -21,6 +29,6 @@ $doctrinePendingCount = count($doctrinePending);
             </li>
             <?php endforeach; ?>
         </ul>
-        <p class="mt-3"><a href="<?= url('documents') . '?category_slug=doctrine&doctrine_filter=action' ?>" class="text-xs font-black uppercase tracking-wide text-amber-900">Voir le référentiel doctrinal</a></p>
+        <p class="mt-3"><a href="<?= url('documents') . '?category_slug=doctrine&doctrine_filter=action' ?>" class="text-xs font-black uppercase tracking-wide text-amber-900"><?= $n('Voir le référentiel doctrinal') ?></a></p>
     </div>
 </section>

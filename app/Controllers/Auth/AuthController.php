@@ -166,7 +166,7 @@ class AuthController
         $background = $this->loginAccueilBackgroundService->forTenant($tenantId, $community);
 
         return Response::view('auth.welcome', [
-            'title' => 'Bienvenue',
+            'title' => function_exists('t') ? t('auth.welcome_title') : 'Bienvenue',
             'brand' => $brand,
             'displayName' => $profile['display_name'],
             'gradeLabel' => $profile['grade_label'],

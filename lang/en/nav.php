@@ -656,4 +656,9 @@ return [
     'corriger_ce_qu_un_niveau_a_le_droit_de_faire_comme_un_role_discord' => 'Adjust what an access level is allowed to do, like a Discord role',
     'emplois' => 'Jobs',
     'libelles_du_dossier_distincts_des_niveaux_d_acces' => 'File labels, separate from access levels',
+    'documents_a_prendre_en_compte' => 'Documents requiring your attention',
+    'count_document_necessite_votre_attention' => ':count document requires your attention.',
+    'count_documents_necessitent_votre_attention' => ':count documents require your attention.',
+    'voir_le_referentiel_doctrinal' => 'View the doctrine library',
+    'aucun_acces_supplementaire_n_est_liste_pour_votre_profil_si_un_module_manque_contactez_un_responsable_de_l_unite' => 'No additional access is listed for your profile. If a module is missing, contact a unit manager.',
 ];
