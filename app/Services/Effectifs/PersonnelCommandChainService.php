@@ -102,9 +102,7 @@ final class PersonnelCommandChainService
         });
 
         $memberRows = [];
-        $seen = [];
         foreach ($labels as $userId => $label) {
-            $seen[$userId] = true;
             $unitId = (int) ($primaryByUser[$userId] ?? 0);
             $chainIds = self::resolveChainIds($userId, $unitsById, $primaryByUser, $commandedByUser);
             $reportsTo = $chainIds[0] ?? 0;
@@ -216,17 +214,17 @@ final class PersonnelCommandChainService
                 continue;
             }
             $commanderId = (int) $userKey;
+            $next = $commanderId > 0 ? $commanderId : null;
+            $current = $known[$unitId] > 0 ? $known[$unitId] : null;
+            if ($next === $current) {
+                continue;
+            }
             if ($commanderId > 0 && !isset($allowed[$commanderId])) {
                 return [
                     'ok' => false,
                     'updated' => 0,
                     'message' => 'Un chef choisi n’appartient pas à cette communauté.',
                 ];
-            }
-            $next = $commanderId > 0 ? $commanderId : null;
-            $current = $known[$unitId] > 0 ? $known[$unitId] : null;
-            if ($next === $current) {
-                continue;
             }
             $this->units->update($unitId, $tenantId, ['commander_user_id' => $next]);
             $updated++;

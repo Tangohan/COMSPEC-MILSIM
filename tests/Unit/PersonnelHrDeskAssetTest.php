@@ -26,6 +26,7 @@ final class PersonnelHrDeskAssetTest extends TestCase
         self::assertStringContainsString("'rh_settings', 'Réglages'", $shell);
 
         self::assertStringContainsString("effectifs/documents-rh/etablir", $routes);
+        self::assertStringContainsString("effectifs/chaine", $routes);
         self::assertStringContainsString("effectifs/roleplay", $routes);
         self::assertStringContainsString("effectifs/integration", $routes);
         self::assertStringContainsString("effectifs/reglages", $routes);

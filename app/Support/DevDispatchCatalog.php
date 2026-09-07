@@ -591,6 +591,15 @@ final class DevDispatchCatalog
             ], ['personnel'], [
                 'Ouvrez un dossier, puis Unité et rôle. La liste Emploi doit rester courte. Le catalogue complet, s’il reste, se gère dans Emplois du bureau effectifs.',
             ]),
+            $pr(461, '2026-09-07', 'La chaîne de commandement se règle depuis les effectifs', 'Vous désignez le chef de chaque unité dans le bureau effectifs, puis vous voyez qui relève de qui. Un membre relève du chef de son unité. Un chef relève du chef de l’unité immédiatement au-dessus. Rechargez Effectifs', [
+                'Désignation du chef de chaque unité depuis le bureau effectifs',
+                'Lecture, pour chaque membre, de la personne dont il relève et de la chaîne jusqu’au sommet',
+                'Rappel du chef et de la chaîne sur la fiche du membre',
+            ], [
+                'Les unités déjà rangées dans l’organigramme servent telles quelles : on ne redemande pas l’arbre',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Effectifs, puis Chaîne. Pour chaque unité, choisissez le chef. Enregistrez : le tableau du dessous montre qui relève de qui. La fiche d’un membre reprend la même lecture.',
+            ]),
             $pr(459, '2026-09-07', 'L’affectation passe par une demande, sauf pour les responsables', 'Sur Unité et rôle, le grade attribué, la date d’engagement et le titre affiché sont désormais au même endroit que l’unité et l’emploi. Un membre qui change ces éléments envoie une demande : rien n’est écrit tant qu’un responsable Ressources humaines ou Gestionnaire n’a pas confirmé. Ces responsables enregistrent encore tout de suite. Rechargez le dossier', [
                 'Grade attribué, date d’engagement et titre affiché réunis avec l’unité et l’emploi',
                 'Date de début visible sur chaque affectation en cours',
