@@ -6314,7 +6314,10 @@ public static partial class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}{sessJson}}}";
+                var ctx = args.Length > 4 ? (args[4] ?? "").Trim().ToLowerInvariant() : "server";
+                if (ctx != "zeus" && ctx != "editor") ctx = "server";
+                var contextJson = $",\"context\":\"{EscapeJson(ctx)}\"";
+                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}{sessJson}{contextJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/playtime", payload);
                 return;
             }

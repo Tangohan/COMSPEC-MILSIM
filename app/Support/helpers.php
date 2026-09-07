@@ -2028,6 +2028,32 @@ if (!function_exists('format_arma_playtime_french')) {
     }
 }
 
+if (!function_exists('format_arma_playtime_breakdown_french')) {
+    /**
+     * Détail lisible : serveur, Zeus, éditeur (chaîne vide si rien n’est encore distingué).
+     *
+     * @param array<string, mixed> $summary
+     */
+    function format_arma_playtime_breakdown_french(array $summary): string
+    {
+        $parts = [];
+        $server = (int) ($summary['server_seconds'] ?? 0);
+        $zeus = (int) ($summary['zeus_seconds'] ?? 0);
+        $editor = (int) ($summary['editor_seconds'] ?? 0);
+        if ($server > 0) {
+            $parts[] = 'en serveur ' . format_arma_playtime_french($server);
+        }
+        if ($zeus > 0) {
+            $parts[] = 'en Zeus ' . format_arma_playtime_french($zeus);
+        }
+        if ($editor > 0) {
+            $parts[] = 'dans l’éditeur ' . format_arma_playtime_french($editor);
+        }
+
+        return implode(' · ', $parts);
+    }
+}
+
 if (!function_exists('sse_ui_theme_options')) {
     /**
      * Apparence unique du portail SSE (bureau type LMS Effectifs / tableau de bord).

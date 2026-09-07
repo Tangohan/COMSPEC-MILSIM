@@ -124,6 +124,7 @@ use App\Controllers\Admin\System\SystemSubscriptionPlansController;
 use App\Controllers\Admin\Organization\TenantAlertsController;
 use App\Controllers\Admin\Organization\TenantMiniArticlesController;
 use App\Controllers\Api\AlertDismissController;
+use App\Controllers\Api\UiTourController;
 use App\Controllers\Api\MePreferencesApiController;
 use App\Controllers\Api\PlatformUxFeedbackApiController;
 use App\Controllers\Api\AccessControlApiController;
@@ -2413,6 +2414,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/alerts/dismiss', [AlertDismissController::class, 'handle'], [AuthMiddleware::class]);
+    $router->post('/api/ui-tours/dismiss', [UiTourController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/api/back-office/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/admin/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
 };

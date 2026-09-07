@@ -52,15 +52,17 @@ final class PersonnelPhaseRulesAssetTest extends TestCase
         $root = $this->root();
         $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
         $file = (string) file_get_contents($root . '/views/personnel/file.php');
+        $suivi = (string) file_get_contents($root . '/views/partials/personnel/file_suivi_complet.php');
         $shell = (string) file_get_contents($root . '/views/admin/effectifs_workspace/shell.php');
         $extras = (string) file_get_contents($root . '/app/Support/EffectifsWorkspaceShellExtras.php');
         $svc = (string) file_get_contents($root . '/app/Services/Personnel/PhaseRules/PhaseTransitionService.php');
 
         self::assertStringContainsString('VALIDATION REQUISE', $svc);
         self::assertStringContainsString('phaseBadgesByUserId', $roster);
-        self::assertStringContainsString('id="parcours-rh"', $file);
-        self::assertStringContainsString('phase_mode', $file);
-        self::assertStringContainsString('override', $file);
+        self::assertStringContainsString('parcours-rh', $suivi);
+        self::assertStringContainsString('phase_mode', $suivi);
+        self::assertStringContainsString('override', $suivi);
+        self::assertStringContainsString('file_suivi_complet.php', $file);
         self::assertStringContainsString('phaseGateCount', $shell);
         self::assertStringContainsString('countPendingGates', $extras);
         self::assertStringContainsString('countOpenAutoErrors', $extras);

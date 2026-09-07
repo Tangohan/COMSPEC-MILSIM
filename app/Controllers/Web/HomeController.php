@@ -190,6 +190,7 @@ class HomeController
         $canOpenEffectifsWorkspace = false;
         $canSeeInactiveEffectifs = false;
         $armaPlaytimeLabel = null;
+        $armaPlaytimeDetail = null;
         $armaPlaytimeSeconds = 0;
         $dashboardTenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
         $dashboardRhParcours = null;
@@ -368,19 +369,29 @@ class HomeController
                             continue;
                         }
                         $effUid = (int) ($effRow['id'] ?? 0);
-                        $secs = (int) (($playtimeByUser[$effUid]['total_seconds'] ?? 0));
+                        $sum = $playtimeByUser[$effUid] ?? [];
+                        $secs = (int) ($sum['total_seconds'] ?? 0);
                         $effRow['arma_playtime_seconds'] = $secs;
                         $effRow['arma_playtime_label'] = $secs > 0
                             ? format_arma_playtime_french($secs)
                             : null;
+                        $detail = function_exists('format_arma_playtime_breakdown_french')
+                            ? format_arma_playtime_breakdown_french($sum)
+                            : '';
+                        $effRow['arma_playtime_detail'] = $detail !== '' ? $detail : null;
                     }
                     unset($effRow);
                     if ($uid > 0) {
-                        $selfSecs = (int) (($playtimeByUser[$uid]['total_seconds'] ?? 0));
+                        $selfSum = $playtimeByUser[$uid] ?? [];
+                        $selfSecs = (int) ($selfSum['total_seconds'] ?? 0);
                         $armaPlaytimeLabel = $selfSecs > 0
                             ? format_arma_playtime_french($selfSecs)
                             : null;
                         $armaPlaytimeSeconds = $selfSecs;
+                        $selfDetail = function_exists('format_arma_playtime_breakdown_french')
+                            ? format_arma_playtime_breakdown_french($selfSum)
+                            : '';
+                        $armaPlaytimeDetail = $selfDetail !== '' ? $selfDetail : null;
                     }
                 } catch (\Throwable) {
                     // Table absente ou indisponible : le dashboard reste utilisable sans cette colonne.
@@ -830,6 +841,7 @@ class HomeController
             'can_open_effectifs_workspace' => $canOpenEffectifsWorkspace,
             'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,
             'arma_playtime_label' => $armaPlaytimeLabel,
+            'arma_playtime_detail' => $armaPlaytimeDetail,
             'arma_playtime_seconds' => $armaPlaytimeSeconds,
             'dashboard_rh_parcours' => $dashboardRhParcours,
             'dashboard_published_openings' => $dashboardPublishedOpenings,
@@ -845,6 +857,7 @@ class HomeController
             'can_publish_dashboard_articles' => $canPublishDashboardArticles,
             'doctrine_pending' => $doctrinePending,
             'dashboard_mini_articles' => $dashboardMiniArticles,
+            'dashboard_ui_tour' => $this->dashboardUiTourPayload($currentUser),
         ]);
     }
 
@@ -872,6 +885,33 @@ class HomeController
         }
 
         return $text;
+    }
+
+    /**
+     * @param array<string, mixed>|null $currentUser
+     * @return array{enabled: bool, key: string, dismissed: bool, csrf: string, save_url: string}
+     */
+    private function dashboardUiTourPayload(?array $currentUser): array
+    {
+        $payload = [
+            'enabled' => true,
+            'key' => \App\Repositories\UserUiTourRepository::KEY_DASHBOARD,
+            'dismissed' => false,
+            'csrf' => \App\Core\Csrf::token(),
+            'save_url' => url('api/ui-tours/dismiss'),
+        ];
+        $uid = (int) ($currentUser['id'] ?? Session::get('user_id') ?? 0);
+        if ($uid < 1) {
+            return $payload;
+        }
+        try {
+            $payload['dismissed'] = (new \App\Repositories\UserUiTourRepository())
+                ->isDismissed($uid, $payload['key']);
+        } catch (\Throwable) {
+            $payload['dismissed'] = false;
+        }
+
+        return $payload;
     }
 
     /**

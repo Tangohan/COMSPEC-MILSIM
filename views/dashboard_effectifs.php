@@ -63,7 +63,7 @@ require base_path('views/partials/alert_banners.php');
     <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
     <?php require base_path('views/partials/header_dashboard.php'); ?>
 
-    <section class="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-100">
+    <section class="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-100" id="dash-tour-hero">
         <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-14">
             <p class="mb-3 text-[10px] font-black uppercase tracking-[0.45em] text-emerald-700">Profil bureau des effectifs</p>
             <h1 class="mb-4 max-w-3xl text-3xl font-black uppercase tracking-tight text-slate-900 md:text-4xl">
@@ -155,7 +155,7 @@ require base_path('views/partials/alert_banners.php');
     <?php endif; ?>
 
     <?php if ($can_view_personnel_directory && $dashboard_effectifs_rows !== []): ?>
-    <section class="bg-[#f8fafc]">
+    <section class="bg-[#f8fafc]" id="dash-tour-effectifs">
         <div class="mx-auto max-w-[100rem] px-4 py-10 sm:px-6 md:px-10">
             <div class="mb-6">
                 <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Aperçu</p>
@@ -185,5 +185,6 @@ require base_path('views/partials/alert_banners.php');
     </section>
 </main>
 </div>
+<?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
 </body>
 </html>

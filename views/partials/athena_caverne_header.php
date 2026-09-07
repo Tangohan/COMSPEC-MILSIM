@@ -448,6 +448,7 @@ if (function_exists('i18n_phrase')) {
 }
 ?>
 <nav
+    id="dash-tour-nav"
     class="athena-header"
     role="navigation"
     aria-label="<?= $n('Navigation principale') ?>"
@@ -463,7 +464,7 @@ if (function_exists('i18n_phrase')) {
             </span>
         </a>
 
-        <div class="athena-header__nav-center">
+        <div class="athena-header__nav-center" id="dash-tour-nav-links">
             <?php foreach ($navItems as $index => $item): ?>
                 <?php if ($index > 0): ?><span class="athena-header__sep" aria-hidden="true">/</span><?php endif; ?>
                 <?php
@@ -478,7 +479,12 @@ if (function_exists('i18n_phrase')) {
             <?php endforeach; ?>
         </div>
 
-        <div class="athena-header__actions">
+        <div class="athena-header__actions" id="dash-tour-nav-actions">
+            <?php if (!empty(($dashboard_ui_tour ?? [])['enabled'])): ?>
+            <button type="button" class="athena-header__guide-btn" id="dash-tour-start" data-dash-tour-start title="Guide du tableau de bord">
+                Guide
+            </button>
+            <?php endif; ?>
             <a
                 href="<?= $h($ctaHref) ?>"
                 class="athena-header__cta<?= $ctaActive ? ' is-active' : '' ?>"

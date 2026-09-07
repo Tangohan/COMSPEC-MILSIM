@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+final class AtakPlaytimeAndSettingsSelectAssetTest extends TestCase
+{
+    public function testPlaytimeIsReportedFromPackWhenLinked(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $atak = (string) file_get_contents(
+            $root . '/mod/Overwatch 2026/ProdVersion/GPT/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_playtimeTracker.sqf'
+        );
+        $ow = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_playtimeTracker.sqf'
+        );
+        $pre = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/XEH_preInit.sqf'
+        );
+        $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+
+        self::assertStringContainsString('ReportPlaytime', $atak);
+        self::assertStringContainsString('COMSPEC_ATAK_AthenaReady', $atak);
+        self::assertStringContainsString('comspec_overwatch_connect', $atak);
+        self::assertStringContainsString('is3DEN', $atak);
+        self::assertStringContainsString('_flushCtx', $atak);
+        self::assertStringContainsString('ReportPlaytime', $ow);
+        self::assertStringContainsString('comspec_overwatch_playtime_enabled', $pre);
+        self::assertStringContainsString('ReportPlaytime', $ext);
+        self::assertStringContainsString('ctx != "zeus" && ctx != "editor"', $ext);
+    }
+}

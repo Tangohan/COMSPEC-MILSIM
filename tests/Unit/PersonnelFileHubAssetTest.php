@@ -22,6 +22,7 @@ final class PersonnelFileHubAssetTest extends TestCase
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
         $bilans = (string) file_get_contents($root . '/views/partials/personnel/file_bilans_tab.php');
         $tableau = (string) file_get_contents($root . '/views/partials/personnel/file_tableau_admin_tab.php');
+        $suivi = (string) file_get_contents($root . '/views/partials/personnel/file_suivi_complet.php');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
 
         self::assertFileExists($root . '/public/assets/js/personnel-file-hub.js');
@@ -41,7 +42,9 @@ final class PersonnelFileHubAssetTest extends TestCase
         self::assertStringContainsString("'seniorite' => 'ops'", $file);
         self::assertStringContainsString("'bilans' => 'historique'", $file);
         self::assertStringContainsString("'tableau' => 'administratif'", $file);
-        self::assertStringContainsString('Suivi d’arrivée', $file);
+        self::assertStringContainsString('file_suivi_complet.php', $file);
+        self::assertStringContainsString('Suivi du dossier', $suivi);
+        self::assertStringContainsString('suivi-complet', $suivi);
 
         self::assertStringNotContainsString('Vue d’ensemble</button>', $file);
         self::assertStringNotContainsString('Tableau administratif</button>', $file);
@@ -61,6 +64,8 @@ final class PersonnelFileHubAssetTest extends TestCase
         self::assertStringContainsString('personnel-file-tab', $js);
         self::assertStringContainsString('localStorage', $js);
         self::assertStringContainsString("onglet", $js);
+        self::assertStringContainsString("'suivi-complet': 'historique'", $js);
+        self::assertStringContainsString("'parcours-rh': 'historique'", $js);
         self::assertStringContainsString('personnel-file-hub.js', $layout);
         $hubJsPos = strpos($layout, 'personnel-file-hub.js');
         $alpinePos = strpos($layout, 'alpine.min.js');

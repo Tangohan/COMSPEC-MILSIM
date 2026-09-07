@@ -87,6 +87,8 @@ $personnelFileTabAliases = [
     'historique' => 'historique',
     'bilans' => 'historique',
     'suivi' => 'historique',
+    'suivi-complet' => 'historique',
+    'parcours-rh' => 'historique',
     'administratif' => 'administratif',
     'dossier' => 'administratif',
     'tableau' => 'administratif',
@@ -366,50 +368,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         }
     }
 }
-$rpDateFr = static function (?string $date): ?string {
-    $raw = trim((string) $date);
-    if ($raw === '') {
-        return null;
-    }
-    $ts = strtotime($raw);
-    if (!$ts) {
-        return null;
-    }
-
-    return date('d/m/Y', $ts);
-};
-$rpMedicalBlood = trim((string) (($personnelProfile['rp_blood_type_confirmed'] ?? '') !== '' ? $personnelProfile['rp_blood_type_confirmed'] : ($personnelProfile['blood_type'] ?? '')));
-$rpArmaBlood = trim((string) ($personnelProfile['rp_arma_blood_type'] ?? ''));
-$rpRotationKindLabel = \App\Support\RoleplayDeadlinePolicy::rotationKindLabel((string) ($personnelProfile['rp_rotation_kind'] ?? 'service'));
-$rpTimelineCards = [
-    [
-        'title' => 'Prochain entretien individuel',
-        'date' => $rpDateFr((string) ($personnelProfile['rp_next_interview_date'] ?? '')),
-        'fallback' => 'À planifier',
-        'accent' => 'border-emerald-300 bg-emerald-50/60',
-        'note' => null,
-    ],
-    [
-        'title' => 'Visite médicale',
-        'date' => $rpDateFr((string) ($personnelProfile['rp_medical_due_date'] ?? '')),
-        'fallback' => 'Échéance non renseignée',
-        'accent' => ($rpArmaBlood !== '' && $rpMedicalBlood !== '' && $rpArmaBlood !== $rpMedicalBlood)
-            ? 'border-amber-300 bg-amber-50/60'
-            : 'border-slate-200 bg-slate-50/70',
-        'note' => $rpMedicalBlood !== ''
-            ? ('Groupe sanguin : ' . $rpMedicalBlood . ($rpArmaBlood !== '' && $rpArmaBlood !== $rpMedicalBlood ? ' · En jeu : ' . $rpArmaBlood : ''))
-            : ($rpArmaBlood !== ''
-                ? ('En jeu : ' . $rpArmaBlood . ' — à confirmer au bilan')
-                : 'Groupe sanguin à confirmer au bilan'),
-    ],
-    [
-        'title' => 'Rotation',
-        'date' => $rpDateFr((string) ($personnelProfile['rp_service_rotation_date'] ?? '')),
-        'fallback' => 'Non planifiée',
-        'accent' => 'border-slate-200 bg-slate-50/70',
-        'note' => 'Objet : ' . $rpRotationKindLabel,
-    ],
-];
 $rpTimelineStatusFr = static function (?string $s): string {
     return match (trim((string) $s)) {
         'planned' => 'Prévu',
@@ -726,7 +684,7 @@ if ($personnelFileIsRhFull) {
     <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
 
         <p class="personnel-file-hub__intro">
-            Cette fiche se lit en cinq rubriques : la personne, son unité, ses formations, le suivi, puis le dossier. La rubrique ouverte est conservée après un changement d’écran.
+            Cette fiche se lit en cinq rubriques : la personne, son unité, ses formations, le suivi (parcours et échéances), puis le dossier. La rubrique ouverte est conservée après un changement d’écran.
         </p>
 
         <nav class="personnel-file-hub-tabs" role="tablist" aria-label="Rubriques de la fiche">
@@ -744,7 +702,7 @@ if ($personnelFileIsRhFull) {
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('historique')" :class="tab === 'historique' && 'is-active'" :aria-selected="tab === 'historique'">
                 Suivi
-                <span class="personnel-file-hub-tab__hint">Historique et notes</span>
+                <span class="personnel-file-hub-tab__hint">Parcours, échéances et historique</span>
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('administratif')" :class="tab === 'administratif' && 'is-active'" :aria-selected="tab === 'administratif'">
                 Dossier
@@ -762,6 +720,7 @@ if ($personnelFileIsRhFull) {
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
+            <a href="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id']) . '?onglet=suivi', ENT_QUOTES, 'UTF-8') ?>" @click.prevent="setTab('historique')">Mon suivi</a>
             <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
             <?php endif; ?>
         </div>
@@ -781,136 +740,14 @@ if ($personnelFileIsRhFull) {
                         <img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Couverture du dossier" class="h-36 w-full object-cover sm:h-44 md:h-52" loading="lazy" decoding="async" data-img-fallback="cover" data-img-label="Couverture indisponible" />
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($roleplayFollowupConfig['enabled'])): ?>
-                    <section class="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm md:p-8">
-                        <div class="flex flex-wrap items-start justify-between gap-4">
-                            <div>
-                                <h2 class="text-xs font-black uppercase tracking-[0.35em] text-emerald-900">Suivi d’arrivée</h2>
-                                <p class="mt-2 text-sm text-slate-600 max-w-2xl">Étape d’arrivée dans l’unité, tuteur et dates importantes du dossier.</p>
-                            </div>
-                            <?php if ($rpProgress !== null): ?>
-                            <div class="min-w-[10rem] rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
-                                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-900">Progression</p>
-                                <p class="mt-1 text-xl font-black text-slate-900"><?= $rpProgress ?>%</p>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="mt-5 grid gap-3 md:grid-cols-3">
-                            <?php foreach ($rpTimelineCards as $card): ?>
-                            <article class="rounded-2xl border p-4 <?= htmlspecialchars($card['accent']) ?>">
-                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-600"><?= htmlspecialchars($card['title']) ?></p>
-                                <p class="mt-2 text-lg font-black text-slate-900"><?= htmlspecialchars($card['date'] ?? $card['fallback']) ?></p>
-                                <?php if (!empty($card['note'])): ?>
-                                <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) $card['note']) ?></p>
-                                <?php endif; ?>
-                            </article>
-                            <?php endforeach; ?>
-                        </div>
-                        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Étape</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStage !== '' ? htmlspecialchars($rpStage) : '—' ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Statut</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpStatus !== '' ? htmlspecialchars($rpStatus) : '—' ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Filière</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTrack !== '' ? htmlspecialchars($rpTrack) : '—' ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Fonction (dossier)</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpFunction !== '' ? htmlspecialchars($rpFunction) : '—' ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Profil recrutement</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpOriginLabel !== '' ? htmlspecialchars($rpOriginLabel) : '—' ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Tuteur</p><p class="mt-1 text-sm font-semibold text-slate-900"><?= $rpTutorLabel !== null && $rpTutorLabel !== '' ? htmlspecialchars($rpTutorLabel) : '—' ?></p></div>
-                        </div>
-                        <?php if ($roleplayEligibility['checks'] !== []): ?>
-                        <div class="mt-5 rounded-2xl border <?= !empty($roleplayEligibility['eligible']) ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/60' ?> p-4">
-                            <p class="text-[10px] font-black uppercase tracking-wider <?= !empty($roleplayEligibility['eligible']) ? 'text-emerald-900' : 'text-amber-900' ?>">Indicateur dossier prêt (suivi)</p>
-                            <ul class="mt-2 space-y-1.5 text-xs text-slate-700">
-                                <?php foreach ($roleplayEligibility['checks'] as $check): ?>
-                                <li class="flex items-start gap-2"><span class="font-black <?= !empty($check['ok']) ? 'text-emerald-700' : 'text-amber-700' ?>"><?= !empty($check['ok']) ? '✓' : '!' ?></span><span><?= htmlspecialchars((string) ($check['label'] ?? 'Critère')) ?></span></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($rpNotes !== ''): ?>
-                        <div class="mt-5 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Notes de suivi</p>
-                            <p class="mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars($rpNotes)) ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($roleplayTimelineEvents !== []): ?>
-                        <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Timeline dossier roleplay</p>
-                            <ol class="mt-3 space-y-3">
-                                <?php foreach ($roleplayTimelineEvents as $ev):
-                                    $evDate = !empty($ev['event_date']) ? date('d/m/Y', strtotime((string) $ev['event_date'])) : (!empty($ev['created_at']) ? date('d/m/Y', strtotime((string) $ev['created_at'])) : '—');
-                                    $dueDate = !empty($ev['due_date']) ? date('d/m/Y', strtotime((string) $ev['due_date'])) : null;
-                                    $statusRaw = (string) ($ev['status'] ?? 'planned');
-                                    $isOverdue = $dueDate !== null && !in_array($statusRaw, ['completed', 'cancelled'], true) && strtotime((string) $ev['due_date']) < strtotime(date('Y-m-d'));
-                                    $statusClass = match ($statusRaw) {
-                                        'completed' => 'bg-emerald-100 text-emerald-800',
-                                        'blocked' => 'bg-rose-100 text-rose-800',
-                                        'cancelled' => 'bg-slate-200 text-slate-700',
-                                        default => 'bg-amber-100 text-amber-800',
-                                    };
-                                    $actor = trim((string) ($ev['actor_display_name'] ?? '')) ?: trim((string) ($ev['actor_callsign'] ?? ''));
-                                ?>
-                                <li class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars((string) ($ev['event_type'] ?? 'événement')) ?></span>
-                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold <?= $statusClass ?>"><?= htmlspecialchars($rpTimelineStatusFr($statusRaw)) ?></span>
-                                        <?php if ($isOverdue): ?><span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">En retard</span><?php endif; ?>
-                                    </div>
-                                    <p class="mt-1 text-sm font-semibold text-slate-900"><?= htmlspecialchars((string) ($ev['title'] ?? 'Événement')) ?></p>
-                                    <?php if (!empty($ev['detail'])): ?><p class="mt-1 text-sm text-slate-700 leading-relaxed"><?= nl2br(htmlspecialchars((string) $ev['detail'])) ?></p><?php endif; ?>
-                                    <p class="mt-2 text-[11px] text-slate-500">Date: <span class="font-semibold text-slate-700"><?= htmlspecialchars($evDate) ?></span><?php if ($dueDate !== null): ?> · Échéance: <span class="font-semibold <?= $isOverdue ? 'text-rose-700' : 'text-slate-700' ?>"><?= htmlspecialchars($dueDate) ?></span><?php endif; ?><?php if (!empty($ev['progress_delta']) || (string) ($ev['progress_delta'] ?? '') === '0'): ?> · Impact progression: <span class="font-semibold text-slate-700"><?= (int) $ev['progress_delta'] >= 0 ? '+' : '' ?><?= (int) $ev['progress_delta'] ?></span><?php endif; ?><?php if ($actor !== ''): ?> · Par: <span class="font-semibold text-slate-700"><?= htmlspecialchars($actor) ?></span><?php endif; ?></p>
-                                </li>
-                                <?php endforeach; ?>
-                            </ol>
-                        </div>
-                        <?php endif; ?>
-                    </section>
-                    <?php endif; ?>
                     <?php
-                    $phaseCheck = is_array($phaseChecklist ?? null) ? $phaseChecklist : null;
+                    $memberFollowup = is_array($memberFollowup ?? null) ? $memberFollowup : [];
+                    $phaseChecklist = is_array($phaseChecklist ?? null) ? $phaseChecklist : null;
                     $armaAct = is_array($armaSessionActivity ?? null) ? $armaSessionActivity : null;
-                    $phaseJournal = is_array($phaseTransitions ?? null) ? $phaseTransitions : [];
+                    $suiviCompletMode = 'compact';
+                    $suiviCompletUseAlpineTab = true;
+                    require base_path('views/partials/personnel/file_suivi_complet.php');
                     ?>
-                    <?php if ($phaseCheck && !empty($phaseCheck['next'])): ?>
-                    <section id="parcours-rh" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Parcours</h2>
-                        <p class="mt-2 text-sm text-slate-600">Étape actuelle : <strong><?= htmlspecialchars((string) ($phaseCheck['phase']['label'] ?? '—')) ?></strong>
-                            · suivante : <strong><?= htmlspecialchars((string) ($phaseCheck['next']['label'] ?? '—')) ?></strong>
-                            · <?= (($phaseCheck['effect'] ?? '') === 'automatic') ? 'Passage automatique lorsque tout est rempli' : 'Validation d’un responsable requise' ?></p>
-                        <?php $items = is_array($phaseCheck['evaluation']['items'] ?? null) ? $phaseCheck['evaluation']['items'] : []; ?>
-                        <?php if ($items === []): ?>
-                        <p class="mt-3 text-sm text-slate-600">Aucune condition n’est encore définie pour cette étape. Le membre n’est pas éligible tant que le parcours n’est pas configuré.</p>
-                        <?php else: ?>
-                        <ul class="mt-4 space-y-2 text-sm">
-                            <?php foreach ($items as $it): ?>
-                            <li class="flex items-start gap-2">
-                                <span class="<?= !empty($it['passed']) ? 'text-emerald-700' : 'text-slate-600' ?>"><?= !empty($it['passed']) ? '✓' : '○' ?></span>
-                                <span><?= htmlspecialchars((string) ($it['reason'] ?? $it['label'] ?? '')) ?></span>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php endif; ?>
-                        <?php if (!empty($canStaffEdit) || !empty($canEditProfile)): ?>
-                        <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/phase'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 flex flex-wrap gap-2">
-                            <?= \App\Core\Csrf::field() ?>
-                            <button type="submit" name="phase_mode" value="manual" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold <?= !empty($phaseCheck['evaluation']['eligible']) ? 'text-slate-900' : 'text-slate-400' ?>" <?= empty($phaseCheck['evaluation']['eligible']) ? 'disabled' : '' ?>>
-                                Passer à <?= htmlspecialchars((string) ($phaseCheck['next']['label'] ?? 'l’étape suivante')) ?>
-                            </button>
-                            <?php if (function_exists('can') && (can('personnel.progression.override') || can('admin.organization') || can('admin.access'))): ?>
-                            <input type="text" name="override_reason" maxlength="500" placeholder="Motif du passage forcé" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                            <button type="submit" name="phase_mode" value="override" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Forcer le passage</button>
-                            <?php endif; ?>
-                        </form>
-                        <?php endif; ?>
-                        <?php if ($phaseJournal !== []): ?>
-                        <ol class="mt-4 space-y-2 text-xs text-slate-600">
-                            <?php foreach ($phaseJournal as $tr): ?>
-                            <li><?= htmlspecialchars(date('d/m/Y', strtotime((string) ($tr['created_at'] ?? 'now')))) ?>
-                                — <?= htmlspecialchars((string) ($tr['from_label'] ?? '—')) ?> → <?= htmlspecialchars((string) ($tr['to_label'] ?? '—')) ?>
-                                <?php if (!empty($tr['override_reason'])): ?> · Motif : <?= htmlspecialchars((string) $tr['override_reason']) ?><?php endif; ?>
-                            </li>
-                            <?php endforeach; ?>
-                        </ol>
-                        <?php endif; ?>
-                    </section>
-                    <?php endif; ?>
                     <?php if ($armaAct): ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Activité Arma (30 jours)</h2>
@@ -985,10 +822,23 @@ if ($personnelFileIsRhFull) {
                                     <p class="mt-2 text-sm text-slate-600">Non renseigné sur ce dossier.</p>
                                 <?php elseif (!empty($armaPlaytime['schema_ready']) && $steamId !== null && ($armaPlaytime['hours_label'] ?? null) !== null): ?>
                                     <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $armaPlaytime['hours_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if (!empty($armaPlaytime['server_label']) || !empty($armaPlaytime['zeus_label']) || !empty($armaPlaytime['editor_label'])): ?>
+                                        <ul class="mt-2 space-y-0.5 text-xs text-slate-600">
+                                            <?php if (!empty($armaPlaytime['server_label'])): ?>
+                                                <li>En serveur : <?= htmlspecialchars((string) $armaPlaytime['server_label'], ENT_QUOTES, 'UTF-8') ?></li>
+                                            <?php endif; ?>
+                                            <?php if (!empty($armaPlaytime['zeus_label'])): ?>
+                                                <li>En Zeus : <?= htmlspecialchars((string) $armaPlaytime['zeus_label'], ENT_QUOTES, 'UTF-8') ?></li>
+                                            <?php endif; ?>
+                                            <?php if (!empty($armaPlaytime['editor_label'])): ?>
+                                                <li>Dans l’éditeur : <?= htmlspecialchars((string) $armaPlaytime['editor_label'], ENT_QUOTES, 'UTF-8') ?></li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    <?php endif; ?>
                                     <?php if (!empty($armaPlaytime['last_sync_label'])): ?>
                                         <p class="mt-2 text-xs text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $armaPlaytime['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
-                                    <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail.</p>
+                                    <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail. Le détail (serveur, Zeus, éditeur) se complète au fil des prochaines sessions.</p>
                                 <?php elseif ($steamId !== null): ?>
                                     <p class="mt-2 text-sm text-slate-600">Le cumul sera affiché après mise à jour du suivi côté portail.</p>
                                 <?php endif; ?>
@@ -1639,6 +1489,11 @@ if ($personnelFileIsRhFull) {
                 </div>
 
                 <div class="space-y-5" x-show="tab === 'historique'" x-cloak>
+                <?php
+                $suiviCompletMode = 'full';
+                $suiviCompletUseAlpineTab = false;
+                require base_path('views/partials/personnel/file_suivi_complet.php');
+                ?>
                 <?php if ($personnelOrgHistorySection): ?>
                 <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>

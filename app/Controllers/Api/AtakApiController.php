@@ -5525,7 +5525,10 @@ class AtakApiController
         if ($user === null) {
             return Response::json(['ok' => true, 'matched' => false, 'recorded' => false]);
         }
-        $this->armaPlaytimeRepository->addSeconds($tenantId, (int) $user['id'], $seconds);
+        $context = \App\Repositories\ArmaPlaytimeRepository::normalizeContext(
+            (string) ($body['context'] ?? $body['playtime_context'] ?? 'server')
+        );
+        $this->armaPlaytimeRepository->addSeconds($tenantId, (int) $user['id'], $seconds, $context);
         try {
             $body['user_id'] = (int) $user['id'];
             $body['steam_uid'] = $uidRaw;
@@ -5533,7 +5536,13 @@ class AtakApiController
         } catch (\Throwable) {
         }
 
-        return Response::json(['ok' => true, 'matched' => true, 'recorded' => true, 'recorded_seconds' => $seconds]);
+        return Response::json([
+            'ok' => true,
+            'matched' => true,
+            'recorded' => true,
+            'recorded_seconds' => $seconds,
+            'recorded_context' => $context,
+        ]);
     }
 
     public function chatIndex(Request $request, array $params = []): Response

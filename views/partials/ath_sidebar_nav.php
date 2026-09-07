@@ -300,6 +300,7 @@ if ($isOperatorBoNav) {
         'label' => 'MA SITUATION',
         'items' => [
             ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'icon' => 'users', 'active' => $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
+            ['label' => 'Mon suivi', 'href' => url('personnel/me') . '?onglet=suivi', 'icon' => 'path', 'active' => false],
             ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh'), 'icon' => 'path', 'active' => str_contains($p, 'mon-espace-rh')],
             ['label' => 'Événements', 'href' => url('evenements'), 'icon' => 'cal', 'active' => $p === 'evenements' || str_starts_with($p, 'evenements/')],
             ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],

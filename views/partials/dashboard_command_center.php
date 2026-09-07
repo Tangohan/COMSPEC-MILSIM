@@ -292,7 +292,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         ?>
 
         <!-- Hero sombre (réf. Caverne) — catalogue immédiatement après -->
-        <section class="dash-hero" aria-labelledby="dash-hero-title">
+        <section class="dash-hero" id="dash-tour-hero" aria-labelledby="dash-hero-title">
             <div class="dash-hero__shell">
                 <h1 id="dash-hero-title" class="dash-hero__title">Dashboard</h1>
 
@@ -337,9 +337,10 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                     · <?= htmlspecialchars($statutLabel, ENT_QUOTES, 'UTF-8') ?>
                                     <?php
                                     $selfPlaytime = trim((string) ($arma_playtime_label ?? ''));
+                                    $selfPlaytimeDetail = trim((string) ($arma_playtime_detail ?? ''));
                                     if ($selfPlaytime !== ''):
                                     ?>
-                                        · Temps en mission <?= htmlspecialchars($selfPlaytime, ENT_QUOTES, 'UTF-8') ?>
+                                        · <span title="<?= $selfPlaytimeDetail !== '' ? htmlspecialchars($selfPlaytimeDetail, ENT_QUOTES, 'UTF-8') : 'Temps en mission' ?>">Temps en mission <?= htmlspecialchars($selfPlaytime, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php endif; ?>
                                 </span>
                             </span>
@@ -445,7 +446,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <div class="dash-ops-stack">
             <div class="dash-ops-stack__inner">
                 <?php if ($showLiaisonStrip): ?>
-                <section class="dash-liaison" aria-labelledby="dash-atak-operators-heading">
+                <section class="dash-liaison" id="dash-tour-liaison" aria-labelledby="dash-atak-operators-heading">
                     <p id="dash-atak-operators-heading" class="cc-section-label dash-ops-stack__label">Liaison tactique</p>
                     <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-liaison__card">
                         <div class="dash-liaison__copy">
@@ -472,7 +473,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <?php endif; ?>
 
                 <?php if ($showRsvpQuick): ?>
-                <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
+                <section class="dash-rsvp-quick" id="dash-tour-rsvp" aria-labelledby="dash-rsvp-quick-heading">
                     <div class="dash-rsvp-quick__shell">
                         <div class="dash-rsvp-quick__info">
                             <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
@@ -507,7 +508,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <?php endif; ?>
 
         <?php if (!empty($showcase_training_feature)): ?>
-        <section class="dash-showcase" aria-labelledby="dash-showcase-heading" <?php if (!empty($showcase_items)): ?>x-data="trainingShowcase"<?php endif; ?>>
+        <section class="dash-showcase" id="dash-tour-formations" aria-labelledby="dash-showcase-heading" <?php if (!empty($showcase_items)): ?>x-data="trainingShowcase"<?php endif; ?>>
             <div class="dash-showcase__head">
                 <div>
                     <p class="dash-showcase__kicker">Catalogue</p>
@@ -579,7 +580,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         $canManageKitPins = !empty($can_manage_kit_pins) || \App\Authorization\DashboardPinsAccess::canManage();
         ?>
         <?php if ($kitFeature): ?>
-        <section class="dash-showcase dash-showcase--kits" aria-labelledby="dash-kit-heading" <?php if ($kitItems !== []): ?>x-data="kitShowcase"<?php endif; ?>>
+        <section class="dash-showcase dash-showcase--kits" id="dash-tour-kits" aria-labelledby="dash-kit-heading" <?php if ($kitItems !== []): ?>x-data="kitShowcase"<?php endif; ?>>
             <div class="dash-showcase__head">
                 <div>
                     <p class="dash-showcase__kicker">Équipement</p>
@@ -684,7 +685,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         </div>
         <?php endif; ?>
 
-        <section class="dash-apps-full" aria-labelledby="dash-activity-heading">
+        <section class="dash-apps-full" id="dash-tour-activity" aria-labelledby="dash-activity-heading">
             <p id="dash-activity-heading" class="cc-section-label dash-apps-full__label">Votre activité</p>
             <div class="cc-card overflow-hidden">
                 <div class="cc-card__head">
@@ -793,7 +794,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         $hasApplicationsTable = $myApplicationsAll !== [] || ($showStaff && $staffApplicationsAll !== []);
         ?>
         <?php if ($hasApplicationsTable): ?>
-        <section class="dash-apps-full !pt-0" aria-labelledby="dash-applications-heading">
+        <section class="dash-apps-full !pt-0" id="dash-tour-applications" aria-labelledby="dash-applications-heading">
             <p id="dash-applications-heading" class="cc-section-label dash-apps-full__label">Candidatures</p>
             <?php require base_path('views/partials/dashboard_applications_table.php'); ?>
         </section>
@@ -809,7 +810,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <?php require base_path('views/partials/dashboard_orbat.php'); ?>
         <?php endif; ?>
         <?php if ($hasEffectifsTable): ?>
-        <section class="dash-apps-full !pt-0" aria-labelledby="dash-effectifs-heading">
+        <section class="dash-apps-full !pt-0" id="dash-tour-effectifs" aria-labelledby="dash-effectifs-heading">
             <p id="dash-effectifs-heading" class="cc-section-label dash-apps-full__label">Effectifs</p>
             <?php require base_path('views/partials/dashboard_effectifs_table.php'); ?>
         </section>

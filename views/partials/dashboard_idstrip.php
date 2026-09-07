@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Attend les variables calculées par dashboard_command_center (unité, grade, matricule, etc.).
  */
 ?>
-        <section class="dash-idstrip" aria-label="Identité opérationnelle">
+        <section class="dash-idstrip" id="dash-tour-identity" aria-label="Identité opérationnelle">
             <div class="dash-idstrip__shell">
                 <div class="dash-idstrip__facts">
                     <div class="dash-idstrip__fact">

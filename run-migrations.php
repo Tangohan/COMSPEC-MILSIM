@@ -136,6 +136,7 @@ $bootstrapFiles = [
     'arma_playtime_migration.php',
     'roleplay_game_sessions_migration.php',
     'personnel_phase_rules_migration.php',
+    'user_ui_tours_migration.php',
     'operator_game_registry_migration.php',
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
@@ -284,6 +285,7 @@ run_rank_catalog_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_roleplay_game_sessions_migration($pdo);
 run_personnel_phase_rules_migration($pdo);
+run_user_ui_tours_migration($pdo);
 run_operator_game_registry_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);

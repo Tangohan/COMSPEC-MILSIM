@@ -173,6 +173,33 @@ body.layout-light .athena-header,
   }
 }
 
+.athena-header__guide-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.athena-header__guide-btn:hover,
+.athena-header__guide-btn:focus-visible {
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #6ee7b7;
+  outline: none;
+}
+
 .athena-header__sep {
   flex-shrink: 0;
   color: #404040;

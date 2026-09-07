@@ -14,6 +14,8 @@
     historique: 'historique',
     bilans: 'historique',
     suivi: 'historique',
+    'suivi-complet': 'historique',
+    'parcours-rh': 'historique',
     administratif: 'administratif',
     dossier: 'administratif',
     tableau: 'administratif'
