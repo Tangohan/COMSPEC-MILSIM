@@ -41,6 +41,9 @@ $unitLabel = ($dashboard_tenant_label !== null && $dashboard_tenant_label !== ''
     <?php if (is_file(base_path('public/assets/css/dashboard-impact.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/dashboard-orbat.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-orbat.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -141,6 +144,15 @@ require base_path('views/partials/alert_banners.php');
             </a>
         </div>
     </section>
+
+    <?php
+    $dashboard_orbat = is_array($dashboard_orbat ?? null) ? $dashboard_orbat : null;
+    ?>
+    <?php if ($dashboard_orbat !== null): ?>
+    <section class="bg-[#f4f7f8] py-8">
+        <?php require base_path('views/partials/dashboard_orbat.php'); ?>
+    </section>
+    <?php endif; ?>
 
     <?php if ($can_view_personnel_directory && $dashboard_effectifs_rows !== []): ?>
     <section class="bg-[#f8fafc]">
