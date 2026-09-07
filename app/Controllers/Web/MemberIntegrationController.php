@@ -60,6 +60,7 @@ final class MemberIntegrationController
             'groups' => $this->matrices->listAssignmentsForUser($tenantId, $userId),
             'dossier' => $dossier,
             'statusLabels' => MemberIntegrationCatalog::statusLabels(),
+            'stepStatusLabels' => MemberIntegrationCatalog::stepStatusLabels(),
             'rsvpLabels' => MemberIntegrationCatalog::rsvpLabels(),
         ]);
     }
