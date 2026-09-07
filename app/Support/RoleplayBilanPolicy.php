@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Services\Personnel\RoleplayFollowupSettings;
 use DateTimeImmutable;
 use Throwable;
 
 /**
- * Politique de cadence des bilans roleplay : l’intervalle entre deux bilans se resserre
- * pour les membres récents et s’espace avec l’ancienneté dans la communauté.
- * Ancienneté = depuis la date de création du compte (users.created_at).
+ * Politique de cadence des bilans roleplay.
+ * Les constantes restent les défauts historiques ; un tableau de cadence tenant peut les remplacer.
  */
 final class RoleplayBilanPolicy
 {
@@ -26,19 +26,26 @@ final class RoleplayBilanPolicy
     /** Marge avant de considérer un bilan en retard (et pas seulement dû). */
     public const OVERDUE_GRACE_DAYS = 14;
 
-    public static function intervalDaysForSeniority(int $seniorityDays): int
+    /**
+     * @param array<string, mixed>|null $cadence
+     */
+    public static function intervalDaysForSeniority(int $seniorityDays, ?array $cadence = null): int
     {
+        $c = self::normalizeCadence($cadence);
         if ($seniorityDays < 365) {
-            return self::FIRST_YEAR_INTERVAL_DAYS;
+            return $c['first_year_days'];
         }
         if ($seniorityDays < 730) {
-            return self::SECOND_YEAR_INTERVAL_DAYS;
+            return $c['second_year_days'];
         }
 
-        return self::ONGOING_INTERVAL_DAYS;
+        return $c['ongoing_days'];
     }
 
-    public static function nextReviewDueAt(?string $joinedAt, ?string $lastReviewAt): ?DateTimeImmutable
+    /**
+     * @param array<string, mixed>|null $cadence
+     */
+    public static function nextReviewDueAt(?string $joinedAt, ?string $lastReviewAt, ?array $cadence = null): ?DateTimeImmutable
     {
         $joinedAt = trim((string) $joinedAt);
         $lastReviewAt = trim((string) $lastReviewAt);
@@ -53,22 +60,38 @@ final class RoleplayBilanPolicy
             return null;
         }
         $seniorityDays = (int) $joinedDate->diff(new DateTimeImmutable('now'))->days;
-        $interval = self::intervalDaysForSeniority($seniorityDays);
+        $interval = self::intervalDaysForSeniority($seniorityDays, $cadence);
 
         return $baseDate->modify('+' . $interval . ' days');
     }
 
-    public static function isDue(?string $joinedAt, ?string $lastReviewAt): bool
+    /**
+     * @param array<string, mixed>|null $cadence
+     */
+    public static function isDue(?string $joinedAt, ?string $lastReviewAt, ?array $cadence = null): bool
     {
-        $due = self::nextReviewDueAt($joinedAt, $lastReviewAt);
+        $due = self::nextReviewDueAt($joinedAt, $lastReviewAt, $cadence);
 
         return $due !== null && $due <= new DateTimeImmutable('now');
     }
 
-    public static function isOverdue(?string $joinedAt, ?string $lastReviewAt): bool
+    /**
+     * @param array<string, mixed>|null $cadence
+     */
+    public static function isOverdue(?string $joinedAt, ?string $lastReviewAt, ?array $cadence = null): bool
     {
-        $due = self::nextReviewDueAt($joinedAt, $lastReviewAt);
+        $c = self::normalizeCadence($cadence);
+        $due = self::nextReviewDueAt($joinedAt, $lastReviewAt, $cadence);
 
-        return $due !== null && $due->modify('+' . self::OVERDUE_GRACE_DAYS . ' days') < new DateTimeImmutable('now');
+        return $due !== null && $due->modify('+' . $c['grace_days'] . ' days') < new DateTimeImmutable('now');
+    }
+
+    /**
+     * @param array<string, mixed>|null $cadence
+     * @return array{enabled: bool, first_year_days: int, second_year_days: int, ongoing_days: int, grace_days: int}
+     */
+    public static function normalizeCadence(?array $cadence): array
+    {
+        return RoleplayFollowupSettings::bilanCadence(['bilans' => is_array($cadence) ? $cadence : []]);
     }
 }

@@ -449,6 +449,32 @@ SQL
             'dismissible' => 1,
             'sort_order' => 87,
         ],
+        [
+            'code' => 'ROLEPLAY_FOLLOWUP_CADENCE_V1',
+            'version' => '1',
+            'title' => 'Cadence du suivi roleplay',
+            'description' => 'Choisissez les intervalles des bilans, la période d’essai, les rappels et ce qui apparaît au calendrier. Tant que vous n’enregistrez pas, les délais historiques restent en place.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/roleplay/immersion#cadences',
+            'estimate_minutes' => 8,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 88,
+        ],
+        [
+            'code' => 'PERSONNEL_PHASE_RULES_V1',
+            'version' => '1',
+            'title' => 'Configurer mon parcours RH',
+            'description' => 'Définissez les étapes du parcours et, si vous le souhaitez, les conditions de passage (qualifications, formations, temps en jeu, présences, dossier, tuteur). Sans règles, personne n’avance automatiquement.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/roleplay/regles-phases',
+            'estimate_minutes' => 12,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 89,
+        ],
     ];
 
     $upsert = $pdo->prepare(

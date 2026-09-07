@@ -6,6 +6,9 @@ require base_path('views/admin/effectifs_workspace/partials/rh_ui_helpers.php');
 $rows = is_array($roleplayDueItems ?? null) ? $roleplayDueItems : [];
 $cfg = is_array($roleplayConfig ?? null) ? $roleplayConfig : [];
 $enabled = !empty($cfg['enabled']);
+$phaseGateCount = (int) ($phaseGateCount ?? 0);
+$phaseAutoErrorCount = (int) ($phaseAutoErrorCount ?? 0);
+$phaseAutoErrors = is_array($phaseAutoErrors ?? null) ? $phaseAutoErrors : [];
 $overdue = 0;
 $upcoming = 0;
 foreach ($rows as $row) {
@@ -44,14 +47,65 @@ $typeLabels = [
             <strong class="eff-rh-tile__value"><?= $upcoming ?></strong>
             <span class="eff-rh-tile__label">dans les 14 prochains jours</span>
         </article>
+        <article class="eff-rh-tile <?= $phaseGateCount > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
+            <span class="eff-rh-tile__kicker">Validations</span>
+            <strong class="eff-rh-tile__value"><?= $phaseGateCount ?></strong>
+            <span class="eff-rh-tile__label">passage<?= $phaseGateCount > 1 ? 's' : '' ?> en attente d’un responsable</span>
+        </article>
+        <article class="eff-rh-tile <?= $phaseAutoErrorCount > 0 ? 'eff-rh-tile--warn' : '' ?>">
+            <span class="eff-rh-tile__kicker">Passages automatiques</span>
+            <strong class="eff-rh-tile__value"><?= $phaseAutoErrorCount ?></strong>
+            <span class="eff-rh-tile__label"><?= $phaseAutoErrorCount > 0 ? 'erreur' . ($phaseAutoErrorCount > 1 ? 's' : '') . ' à relire' : 'aucune erreur en cours' ?></span>
+        </article>
     </div>
 </section>
 
 <p class="bo-eff-jump">
     <strong>Aller plus loin</strong>
     <a href="<?= $h(url('back-office/roleplay-followup')) ?>">Ouvrir le suivi complet</a>
+    <a href="<?= $h(url('back-office/roleplay/regles-phases')) ?>">Configurer le parcours</a>
     <a href="<?= $h(effectifs_workspace_url('reglages')) ?>">Réglages du bureau</a>
 </p>
+
+<?php if ($phaseAutoErrors !== []): ?>
+<div class="eff-catalog" style="margin-bottom:1.25rem">
+    <div class="eff-catalog__head">
+        <div class="min-w-0">
+            <p class="eff-catalog__kicker">Parcours</p>
+            <h2 class="eff-catalog__title">Passages automatiques en échec</h2>
+            <p class="eff-catalog__lead">Ces membres remplissaient les conditions, mais le passage n’a pas pu être enregistré. Relisez le dossier, puis corrigez ou forcez le passage si besoin.</p>
+        </div>
+    </div>
+    <div class="eff-sheets" role="region" aria-label="Erreurs de passage automatique" tabindex="0">
+        <table class="eff-sheets__table">
+            <thead>
+                <tr>
+                    <th>Membre</th>
+                    <th>Motif</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($phaseAutoErrors as $err): ?>
+                    <?php
+                    $errUid = (int) ($err['user_id'] ?? 0);
+                    $errName = trim((string) ($err['display_name'] ?? '')) ?: trim((string) ($err['callsign'] ?? '')) ?: 'Membre';
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($errName, ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($err['error_label'] ?? 'Passage automatique impossible'), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td>
+                            <?php if ($errUid > 0): ?>
+                            <a href="<?= $h(url('personnel/' . $errUid)) ?>">Ouvrir la fiche</a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="eff-catalog">
     <div class="eff-catalog__head">

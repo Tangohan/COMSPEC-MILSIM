@@ -160,7 +160,12 @@ class OrganizationDashboardController
         $orgRoleplayTimelineRows = [];
         $orgRoleplayTimelineError = null;
         try {
-            $orgRoleplayTimelineRows = $this->personnelRoleplayTimelineRepository->listDashboardDueItems($tenantId, 21, 12);
+            $orgRoleplayTimelineRows = $this->personnelRoleplayTimelineRepository->listDashboardDueItems(
+                $tenantId,
+                (int) \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId)['horizon'],
+                12,
+                \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId)
+            );
         } catch (\Throwable) {
             $orgRoleplayTimelineError = 'Suivi roleplay indisponible.';
         }

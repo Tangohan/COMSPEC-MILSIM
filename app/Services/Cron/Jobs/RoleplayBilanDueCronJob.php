@@ -13,6 +13,7 @@ use App\Services\Cron\CronJobInterface;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Services\Personnel\RoleplayFollowupSettings;
 use App\Support\RoleplayBilanPolicy;
 
 /**
@@ -60,13 +61,26 @@ final class RoleplayBilanDueCronJob implements CronJobInterface
         $skippedDedup = 0;
         $skippedNothingToReport = 0;
         $roleplayFollowupUrl = url('back-office/roleplay-followup');
+        $cadence = RoleplayFollowupSettings::bilanCadence([]);
 
         foreach ($this->tenants->listBasicAll() as $tenant) {
             $tenantId = (int) ($tenant['id'] ?? 0);
             if ($tenantId < 1) {
                 continue;
             }
-            $due = $this->personnelProfiles->listRoleplayBilanDueForTenant($tenantId);
+            $cfg = RoleplayFollowupSettings::forTenant($tenantId, $this->tenants);
+            if (empty($cfg['enabled'])) {
+                continue;
+            }
+            $cadence = RoleplayFollowupSettings::bilanCadence($cfg);
+            if (empty($cadence['enabled'])) {
+                continue;
+            }
+            $notif = is_array($cfg['notifications'] ?? null) ? $cfg['notifications'] : [];
+            if (array_key_exists('email_reminders', $notif) && empty($notif['email_reminders'])) {
+                continue;
+            }
+            $due = $this->personnelProfiles->listRoleplayBilanDueForTenant($tenantId, $cadence);
             if ($due === []) {
                 continue;
             }
@@ -152,9 +166,9 @@ final class RoleplayBilanDueCronJob implements CronJobInterface
                 'skipped_dedup' => $skippedDedup,
                 'skipped_no_recipient' => $skippedNothingToReport,
                 'cadence' => [
-                    'first_year_days' => RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS,
-                    'second_year_days' => RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS,
-                    'ongoing_days' => RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS,
+                    'first_year_days' => $cadence['first_year_days'] ?? RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS,
+                    'second_year_days' => $cadence['second_year_days'] ?? RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS,
+                    'ongoing_days' => $cadence['ongoing_days'] ?? RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS,
                 ],
             ],
         ];

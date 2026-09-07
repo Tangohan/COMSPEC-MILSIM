@@ -199,6 +199,8 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php $card(url('back-office/positions'), 'Postes organisationnels', 'Intitulés de fonction et affectations, distincts des rôles et habilitations.'); ?>
                 <?php $card(url('back-office/roleplay-followup'), 'Suivi roleplay', 'Pilotage tutorat, timeline dossiers et avancement individuel.'); ?>
                 <?php $card(url('back-office/roleplay/immersion'), 'Parcours d’immersion', 'Suivi d’arrivée : étapes, filières, tuteur et indicateur « dossier prêt ».', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
+                <?php $card(url('back-office/roleplay/regles-phases'), 'Parcours RH', 'Étapes du parcours et conditions de passage à l’étape suivante.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
+                <?php $card(url('back-office/roleplay/sessions'), 'Sessions Arma', 'Types de sessions, pointage et temps retenu pour le suivi.', 'border-emerald-200/80 hover:border-emerald-400 hover:bg-emerald-50/40'); ?>
             </div>
         </section>
 

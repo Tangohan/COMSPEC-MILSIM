@@ -5,7 +5,7 @@ $active = (string) ($effectifsNav ?? 'roster');
 $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $total = (int) ($counts['total'] ?? 0);
 $activeCount = (int) ($counts['active'] ?? 0);
-$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhAlertTotalCount ?? 0);
+$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhAlertTotalCount ?? 0) + (int) ($phaseAutoErrorCount ?? 0);
 $innerContent = (string) ($effectifsContent ?? 'admin.effectifs_workspace.roster');
 
 $tabs = [
@@ -20,7 +20,7 @@ $tabs = [
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0)],
     ['rh_succession', 'Vivier', 'vivier', 0],
     ['rh_alerts', 'Alertes', 'alertes', (int) ($rhAlertTotalCount ?? 0)],
-    ['rh_roleplay', 'Roleplay', 'roleplay', (int) ($roleplayDueCount ?? 0)],
+    ['rh_roleplay', 'Roleplay', 'roleplay', (int) ($roleplayDueCount ?? 0) + (int) ($phaseGateCount ?? 0)],
     ['rh_integration', 'Intégration', 'integration', (int) ($integrationOpenCount ?? 0)],
     ['duplicates', 'Fiches jumelles', 'doublons', (int) ($personnelDuplicateScan['group_count'] ?? 0)],
     ['departures', 'Anciens membres', 'departs', 0],

@@ -58,37 +58,9 @@ use App\Services\Personnel\PersonnelCorrectionRequestService;
 
 class PersonnelController
 {
-    /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
     private function roleplayFollowupConfig(int $tenantId): array
     {
-        $settings = $this->tenantRepository->getSettings($tenantId);
-        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
-        $cfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
-        $stages = [];
-        foreach (($cfg['stages'] ?? []) as $s) {
-            $v = trim((string) $s);
-            if ($v !== '') {
-                $stages[] = $v;
-            }
-        }
-        if ($stages === []) {
-            $stages = ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
-        }
-        $tracks = [];
-        foreach (($cfg['recruitment_tracks'] ?? []) as $s) {
-            $v = trim((string) $s);
-            if ($v !== '') {
-                $tracks[] = $v;
-            }
-        }
-
-        return [
-            'enabled' => !empty($cfg['enabled']),
-            'optional' => !empty($cfg['optional']),
-            'stages' => array_values(array_unique($stages)),
-            'recruitment_tracks' => array_values(array_unique($tracks)),
-            'eligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
-        ];
+        return \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
     }
 
     /** @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
@@ -697,6 +669,26 @@ class PersonnelController
             }
         }
 
+        $phaseChecklist = null;
+        $phaseTransitions = [];
+        $armaSessionActivity = null;
+        if ($isSelf || $canStaffView) {
+            try {
+                $phaseChecklist = Container::get(\App\Services\Personnel\PhaseRules\PhaseTransitionService::class)
+                    ->checklistForMember((int) $tenantId, $uid);
+                $phaseTransitions = Container::get(\App\Repositories\PersonnelPhaseRepository::class)
+                    ->listTransitionsForUser((int) $tenantId, $uid, 20);
+            } catch (\Throwable) {
+                $phaseChecklist = null;
+            }
+            try {
+                $armaSessionActivity = Container::get(\App\Repositories\RoleplayGameSessionRepository::class)
+                    ->memberActivity30d((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $armaSessionActivity = null;
+            }
+        }
+
         $communityRoleLabel = null;
         $roleId = (int) ($target['role_id'] ?? 0);
         if ($roleId > 0) {
@@ -803,13 +795,11 @@ class PersonnelController
                     }
                 }
             }
-            $bilanStageOptions = $roleplayFollowupConfig['stages'] ?? [];
-            if (!is_array($bilanStageOptions) || $bilanStageOptions === []) {
-                $bilanStageOptions = ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
-            }
-            foreach (['Suivi périodique', 'Fin de période d’essai', 'Bilan annuel', 'Autre'] as $extraStage) {
-                if (!in_array($extraStage, $bilanStageOptions, true)) {
-                    $bilanStageOptions[] = $extraStage;
+            $bilanStageOptions = \App\Services\Personnel\RoleplayFollowupSettings::activeStageBilanLabels($roleplayFollowupConfig);
+            foreach ($roleplayFollowupConfig['stages'] ?? [] as $stage) {
+                $stage = trim((string) $stage);
+                if ($stage !== '' && !in_array($stage, $bilanStageOptions, true)) {
+                    $bilanStageOptions[] = $stage;
                 }
             }
         }
@@ -897,6 +887,10 @@ class PersonnelController
             'personnelFilePage' => true,
             'layoutMainCompact' => true,
             'compactPortalMain' => true,
+            'phaseChecklist' => $phaseChecklist,
+            'phaseTransitions' => $phaseTransitions,
+            'armaSessionActivity' => $armaSessionActivity,
+            'canStaffEdit' => $canStaffEdit,
         ]);
     }
 

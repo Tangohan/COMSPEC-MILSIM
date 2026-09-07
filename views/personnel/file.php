@@ -863,6 +863,66 @@ if ($personnelFileIsRhFull) {
                         <?php endif; ?>
                     </section>
                     <?php endif; ?>
+                    <?php
+                    $phaseCheck = is_array($phaseChecklist ?? null) ? $phaseChecklist : null;
+                    $armaAct = is_array($armaSessionActivity ?? null) ? $armaSessionActivity : null;
+                    $phaseJournal = is_array($phaseTransitions ?? null) ? $phaseTransitions : [];
+                    ?>
+                    <?php if ($phaseCheck && !empty($phaseCheck['next'])): ?>
+                    <section id="parcours-rh" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Parcours</h2>
+                        <p class="mt-2 text-sm text-slate-600">Étape actuelle : <strong><?= htmlspecialchars((string) ($phaseCheck['phase']['label'] ?? '—')) ?></strong>
+                            · suivante : <strong><?= htmlspecialchars((string) ($phaseCheck['next']['label'] ?? '—')) ?></strong>
+                            · <?= (($phaseCheck['effect'] ?? '') === 'automatic') ? 'Passage automatique lorsque tout est rempli' : 'Validation d’un responsable requise' ?></p>
+                        <?php $items = is_array($phaseCheck['evaluation']['items'] ?? null) ? $phaseCheck['evaluation']['items'] : []; ?>
+                        <?php if ($items === []): ?>
+                        <p class="mt-3 text-sm text-slate-600">Aucune condition n’est encore définie pour cette étape. Le membre n’est pas éligible tant que le parcours n’est pas configuré.</p>
+                        <?php else: ?>
+                        <ul class="mt-4 space-y-2 text-sm">
+                            <?php foreach ($items as $it): ?>
+                            <li class="flex items-start gap-2">
+                                <span class="<?= !empty($it['passed']) ? 'text-emerald-700' : 'text-slate-600' ?>"><?= !empty($it['passed']) ? '✓' : '○' ?></span>
+                                <span><?= htmlspecialchars((string) ($it['reason'] ?? $it['label'] ?? '')) ?></span>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+                        <?php if (!empty($canStaffEdit) || !empty($canEditProfile)): ?>
+                        <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/phase'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 flex flex-wrap gap-2">
+                            <?= \App\Core\Csrf::field() ?>
+                            <button type="submit" name="phase_mode" value="manual" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold <?= !empty($phaseCheck['evaluation']['eligible']) ? 'text-slate-900' : 'text-slate-400' ?>" <?= empty($phaseCheck['evaluation']['eligible']) ? 'disabled' : '' ?>>
+                                Passer à <?= htmlspecialchars((string) ($phaseCheck['next']['label'] ?? 'l’étape suivante')) ?>
+                            </button>
+                            <?php if (function_exists('can') && (can('personnel.progression.override') || can('admin.organization') || can('admin.access'))): ?>
+                            <input type="text" name="override_reason" maxlength="500" placeholder="Motif du passage forcé" class="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                            <button type="submit" name="phase_mode" value="override" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Forcer le passage</button>
+                            <?php endif; ?>
+                        </form>
+                        <?php endif; ?>
+                        <?php if ($phaseJournal !== []): ?>
+                        <ol class="mt-4 space-y-2 text-xs text-slate-600">
+                            <?php foreach ($phaseJournal as $tr): ?>
+                            <li><?= htmlspecialchars(date('d/m/Y', strtotime((string) ($tr['created_at'] ?? 'now')))) ?>
+                                — <?= htmlspecialchars((string) ($tr['from_label'] ?? '—')) ?> → <?= htmlspecialchars((string) ($tr['to_label'] ?? '—')) ?>
+                                <?php if (!empty($tr['override_reason'])): ?> · Motif : <?= htmlspecialchars((string) $tr['override_reason']) ?><?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ol>
+                        <?php endif; ?>
+                    </section>
+                    <?php endif; ?>
+                    <?php if ($armaAct): ?>
+                    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Activité Arma (30 jours)</h2>
+                        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Temps brut</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars(function_exists('format_arma_playtime_french') ? format_arma_playtime_french((int) ($armaAct['raw'] ?? 0)) : ((int) ($armaAct['raw'] ?? 0) . ' s')) ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Temps retenu</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars(function_exists('format_arma_playtime_french') ? format_arma_playtime_french((int) ($armaAct['validated'] ?? 0)) : ((int) ($armaAct['validated'] ?? 0) . ' s')) ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Sessions</p><p class="mt-1 text-sm font-semibold"><?= (int) ($armaAct['sessions'] ?? 0) ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Présences pointées</p><p class="mt-1 text-sm font-semibold"><?= (int) ($armaAct['presences'] ?? 0) ?></p></div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Taux de présence</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars((string) ($armaAct['rate'] ?? 0)) ?> %</p></div>
+                        </div>
+                    </section>
+                    <?php endif; ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

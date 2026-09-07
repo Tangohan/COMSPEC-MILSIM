@@ -50,7 +50,10 @@ final class RoleplayPageController
 
         $joinedAt = trim((string) ($user['created_at'] ?? '')) ?: null;
         $lastReviewAt = trim((string) ($profile['rp_last_review_at'] ?? '')) ?: null;
-        $nextDueAt = RoleplayBilanPolicy::nextReviewDueAt($joinedAt, $lastReviewAt);
+        $cadence = \App\Services\Personnel\RoleplayFollowupSettings::bilanCadence(
+            \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId)
+        );
+        $nextDueAt = RoleplayBilanPolicy::nextReviewDueAt($joinedAt, $lastReviewAt, $cadence);
 
         $timeline = $this->timelineRepository->tableExists()
             ? $this->timelineRepository->listForUser($tenantId, $userId, 30)
@@ -64,7 +67,7 @@ final class RoleplayPageController
             'rpTutorLabel' => $tutorLabel,
             'rpNextDueAt' => $nextDueAt?->format('Y-m-d'),
             'rpLastReviewAt' => $lastReviewAt,
-            'rpOverdue' => RoleplayBilanPolicy::isOverdue($joinedAt, $lastReviewAt),
+            'rpOverdue' => RoleplayBilanPolicy::isOverdue($joinedAt, $lastReviewAt, $cadence),
             'rpTimeline' => $timeline,
         ]);
     }

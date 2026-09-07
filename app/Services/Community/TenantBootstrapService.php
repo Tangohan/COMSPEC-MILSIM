@@ -295,6 +295,13 @@ final class TenantBootstrapService
             }
 
             try {
+                $phaseRepo = \App\Core\Container::get(\App\Repositories\PersonnelPhaseRepository::class);
+                $phaseRepo->seedDefaultPhases($tenantId);
+            } catch (\Throwable $e) {
+                // Parcours RH optionnel : aucune règle n’est créée ici.
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.

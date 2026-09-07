@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(476, '2026-09-07', 'Cadences, parcours et sessions se règlent par communauté', 'Le suivi roleplay se personnalise : intervalles des bilans, période d’essai et rappels. Le parcours d’un membre avance selon des conditions que vous choisissez — qualifications, formations, temps en jeu selon la nature de session, présences pointées, ancienneté, dossier, tuteur. Vous décidez si un responsable valide le passage, ou s’il se fait tout seul lorsque tout est rempli. La fiche montre ce qui reste à faire, et chaque passage est consigné. Les communautés déjà en place ne changent rien tant qu’elles n’activent pas ces règles. Rechargez le suivi, le parcours et les dossiers', [
+                'Cadences des bilans, de l’essai et des rappels, propres à chaque communauté',
+                'Conditions de passage à l’étape suivante, avec validation d’un responsable ou passage automatique',
+                'Sur la fiche, ce qu’il reste à remplir, le journal des passages, et des pastilles dans les effectifs',
+                'Sessions Arma : temps brut, temps retenu, pointage réel distinct d’une simple inscription',
+            ], [
+                'Le bureau effectifs signale les validations disponibles et les passages automatiques en échec',
+            ], [], ['personnel'], [
+                'Ouvrez le parcours d’immersion pour les cadences, le parcours RH pour les étapes, puis une fiche membre. Sans règles, personne n’avance tout seul.',
+            ], 'Portail'),
             $pr(472, '2026-09-07', 'Le portrait se change depuis le dossier', 'Sur la fiche, le lien Portrait ouvre maintenant l’édition du dossier, onglet Portrait. Vous y déposez la photo opérateur de cette fiche. Rechargez la fiche, puis Portrait', [
                 'Onglet Portrait dans l’édition du dossier, avec aperçu et dépôt de la photo',
                 'Le lien Portrait de la fiche ouvre cet onglet, plus une page de compte séparée',

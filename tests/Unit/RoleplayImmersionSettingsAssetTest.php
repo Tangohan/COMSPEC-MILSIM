@@ -59,6 +59,12 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         self::assertStringContainsString('data-imm-list', $js);
         self::assertStringContainsString('Ajouter une étape', $view);
         self::assertStringContainsString('Ajouter une filière', $view);
+        self::assertStringContainsString('id="cadences"', $view);
+        self::assertStringContainsString('name="rp_bilans_first_year_days"', $view);
+        self::assertStringContainsString('name="rp_probation_duration_days"', $view);
+        self::assertStringContainsString('name="rp_probation_alert_enabled"', $view);
+        self::assertStringContainsString('Parcours RH', $view);
+        self::assertStringContainsString('Sessions Arma', $view);
     }
 
     public function testSidebarAndSearchUseTheHumanTitle(): void
@@ -71,6 +77,12 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         self::assertStringContainsString('Parcours d’immersion', $nav);
         self::assertStringContainsString('Parcours d’immersion', $configNav);
         self::assertStringContainsString('Parcours d’immersion', $search);
+        self::assertStringContainsString('Parcours RH', $nav);
+        self::assertStringContainsString('Sessions Arma', $nav);
+        self::assertStringContainsString('Parcours RH', $configNav);
+        self::assertStringContainsString('Sessions Arma', $configNav);
+        self::assertStringContainsString('Parcours RH', $search);
+        self::assertStringContainsString('Sessions Arma', $search);
         self::assertStringNotContainsString("['label' => 'Réglages d’immersion', 'href' => url('back-office/roleplay/immersion')", $nav);
     }
 }

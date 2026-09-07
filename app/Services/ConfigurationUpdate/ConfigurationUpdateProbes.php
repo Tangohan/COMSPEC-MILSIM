@@ -651,4 +651,57 @@ final class ConfigurationUpdateProbes
 
         return !empty($block['reviewed']);
     }
+
+    public function isRoleplayFollowupEnabled(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return !empty(\App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenants)['enabled']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasRoleplayCadenceReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return \App\Services\Personnel\RoleplayFollowupSettings::isCadenceReviewed($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasPersonnelPhaseRuleSets(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            return (new \App\Repositories\PersonnelPhaseRepository())->countRuleSets($tenantId) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasPersonnelPhaseRulesReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $settings = $this->tenants->getSettings($tenantId);
+            $block = is_array($settings['personnel_phase_rules'] ?? null)
+                ? $settings['personnel_phase_rules']
+                : [];
+
+            return !empty($block['reviewed']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

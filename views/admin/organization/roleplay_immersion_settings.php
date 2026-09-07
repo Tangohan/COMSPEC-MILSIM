@@ -45,6 +45,37 @@ $followupUrl = url('back-office/roleplay-followup');
 $deadlinesUrl = url('back-office/roleplay-followup/echeances');
 $personnelUrl = url('personnel');
 $atakRoleplayUrl = url('admin/atak/roleplay');
+$phaseRulesUrl = url('back-office/roleplay/regles-phases');
+$sessionsUrl = url('back-office/roleplay/sessions');
+
+$bilans = is_array($cfg['bilans'] ?? null) ? $cfg['bilans'] : [];
+$interview = is_array($cfg['interview'] ?? null) ? $cfg['interview'] : [];
+$medical = is_array($cfg['medical'] ?? null) ? $cfg['medical'] : [];
+$rotation = is_array($cfg['rotation'] ?? null) ? $cfg['rotation'] : [];
+$probation = is_array($cfg['probation'] ?? null) ? $cfg['probation'] : [];
+$notifications = is_array($cfg['notifications'] ?? null) ? $cfg['notifications'] : [];
+$stageBilanTypes = is_array($cfg['stage_bilan_types'] ?? null) ? $cfg['stage_bilan_types'] : [];
+$stageBilanLabels = [];
+foreach ($stageBilanTypes as $row) {
+    if (is_array($row)) {
+        $lab = trim((string) ($row['label'] ?? ''));
+        if ($lab !== '') {
+            $stageBilanLabels[] = $lab;
+        }
+    } elseif (is_string($row) && trim($row) !== '') {
+        $stageBilanLabels[] = trim($row);
+    }
+}
+if ($stageBilanLabels === []) {
+    $stageBilanLabels = ['Suivi périodique', 'Fin de période d’essai', 'Bilan annuel', 'Autre'];
+}
+$bilansEnabled = array_key_exists('enabled', $bilans) ? !empty($bilans['enabled']) : true;
+$interviewVisible = array_key_exists('visible', $interview) ? !empty($interview['visible']) : true;
+$medicalVisible = array_key_exists('visible', $medical) ? !empty($medical['visible']) : true;
+$rotationVisible = array_key_exists('visible', $rotation) ? !empty($rotation['visible']) : true;
+$rotationRequireInterview = array_key_exists('require_interview', $rotation) ? !empty($rotation['require_interview']) : true;
+$probationAlert = array_key_exists('alert_enabled', $probation) ? !empty($probation['alert_enabled']) : true;
+$emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($notifications['email_reminders']) : true;
 ?>
 <div class="bo-imm bo-community-settings">
 
@@ -93,6 +124,18 @@ $atakRoleplayUrl = url('admin/atak/roleplay');
             <h3>Échéances</h3>
             <p>Entretiens, visites médicales et rotations : ce qui est en retard, ce qui arrive.</p>
             <a href="<?= $h($deadlinesUrl) ?>">Voir le calendrier</a>
+        </article>
+        <article class="bo-imm__cap">
+            <span class="bo-imm__cap-kicker">Parcours RH</span>
+            <h3>Règles de passage</h3>
+            <p>Décidez ce qu’un membre doit avoir fait pour passer à l’étape suivante, et si un responsable valide ou si le passage se fait tout seul.</p>
+            <a href="<?= $h($phaseRulesUrl) ?>">Configurer le parcours</a>
+        </article>
+        <article class="bo-imm__cap">
+            <span class="bo-imm__cap-kicker">En session</span>
+            <h3>Sessions Arma</h3>
+            <p>Types de sessions, catégories d’heures et pointage. Distinct du suivi d’arrivée ci-dessus.</p>
+            <a href="<?= $h($sessionsUrl) ?>">Ouvrir les sessions</a>
         </article>
         <article class="bo-imm__cap">
             <span class="bo-imm__cap-kicker">En session</span>
@@ -256,6 +299,212 @@ $atakRoleplayUrl = url('admin/atak/roleplay');
             </div>
         </section>
 
+        <section class="ath-card ath-rise bo-setting-group" id="cadences">
+            <p class="bo-setting-group__kicker">Cadences</p>
+            <h2 class="bo-setting-group__title">Bilans périodiques</h2>
+            <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
+                Ces délais décident quand un bilan d’étape apparaît sur le bureau et dans les rappels.
+                Ils ne changent pas le parcours de grades.
+            </p>
+            <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_bilans_enabled" value="1" style="margin-top:3px;min-height:auto;" <?= $bilansEnabled ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Suivre les bilans périodiques</span>
+                        <span class="bo-setting-row__help">Si décoché, les rappels et le calendrier n’affichent plus ces bilans.</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Pendant la première année — tous les (jours)</div>
+                        <div class="bo-setting-row__help">Par défaut 180 jours (environ six mois).</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="30" max="730" name="rp_bilans_first_year_days" class="bo-setting-row__field--wide" value="<?= (int) ($bilans['first_year_days'] ?? 180) ?>">
+                    </div>
+                </div>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Entre un et deux ans — tous les (jours)</div>
+                        <div class="bo-setting-row__help">Par défaut 240 jours (environ huit mois).</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="30" max="730" name="rp_bilans_second_year_days" class="bo-setting-row__field--wide" value="<?= (int) ($bilans['second_year_days'] ?? 240) ?>">
+                    </div>
+                </div>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Ensuite — tous les (jours)</div>
+                        <div class="bo-setting-row__help">Par défaut 365 jours (une fois par an).</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="30" max="730" name="rp_bilans_ongoing_days" class="bo-setting-row__field--wide" value="<?= (int) ($bilans['ongoing_days'] ?? 365) ?>">
+                    </div>
+                </div>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Marge avant « en retard » (jours)</div>
+                        <div class="bo-setting-row__help">Un bilan dû reste « à faire » pendant cette marge, puis passe en retard.</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="0" max="60" name="rp_bilans_grace_days" class="bo-setting-row__field--wide" value="<?= (int) ($bilans['grace_days'] ?? 14) ?>">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ath-card ath-rise bo-setting-group" id="echeances-cadence">
+            <p class="bo-setting-group__kicker">Échéances</p>
+            <h2 class="bo-setting-group__title">Entretien, médical et rotation</h2>
+            <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
+                Choisissez ce qui apparaît dans le calendrier. Si vous indiquez un délai après « réalisé », la prochaine date est proposée automatiquement.
+            </p>
+            <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_interview_visible" value="1" style="margin-top:3px;min-height:auto;" <?= $interviewVisible ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Afficher les entretiens individuels</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Prochain entretien — jours après réalisation</div>
+                        <div class="bo-setting-row__help">0 = ne pas proposer de date suivante.</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="0" max="730" name="rp_interview_next_after_days" class="bo-setting-row__field--wide" value="<?= (int) ($interview['next_after_days'] ?? 0) ?>">
+                    </div>
+                </div>
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_medical_visible" value="1" style="margin-top:3px;min-height:auto;" <?= $medicalVisible ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Afficher les visites médicales</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Prochaine visite — jours après réalisation</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="0" max="730" name="rp_medical_next_after_days" class="bo-setting-row__field--wide" value="<?= (int) ($medical['next_after_days'] ?? 0) ?>">
+                    </div>
+                </div>
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_rotation_visible" value="1" style="margin-top:3px;min-height:auto;" <?= $rotationVisible ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Afficher les rotations de service</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Prochaine rotation — jours après réalisation</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="0" max="730" name="rp_rotation_next_after_days" class="bo-setting-row__field--wide" value="<?= (int) ($rotation['next_after_days'] ?? 0) ?>">
+                    </div>
+                </div>
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_rotation_require_interview" value="1" style="margin-top:3px;min-height:auto;" <?= $rotationRequireInterview ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Exiger un entretien avant une rotation</span>
+                        <span class="bo-setting-row__help">Le staff ne peut planifier ou valider une rotation tant qu’un entretien n’a pas été réalisé.</span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <section class="ath-card ath-rise bo-setting-group" id="essai">
+            <p class="bo-setting-group__kicker">Période d’essai</p>
+            <h2 class="bo-setting-group__title">Durée et alerte</h2>
+            <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
+                L’alerte rappelle au staff les dossiers encore en essai au-delà du délai. Le libellé sert à ouvrir le bon type de bilan.
+            </p>
+            <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Durée de référence (jours)</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="14" max="365" name="rp_probation_duration_days" class="bo-setting-row__field--wide" value="<?= (int) ($probation['duration_days'] ?? 60) ?>">
+                    </div>
+                </div>
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_probation_alert_enabled" value="1" style="margin-top:3px;min-height:auto;" <?= $probationAlert ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Alerter le staff au-delà de ce délai</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Alerte après (jours)</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="14" max="365" name="rp_probation_alert_after_days" class="bo-setting-row__field--wide" value="<?= (int) ($probation['alert_after_days'] ?? 60) ?>">
+                    </div>
+                </div>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Libellé du bilan d’essai</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="text" maxlength="80" name="rp_probation_bilan_label" class="bo-setting-row__field--wide" value="<?= $h((string) ($probation['bilan_label'] ?? 'Fin de période d’essai')) ?>">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ath-card ath-rise bo-setting-group" id="notifications">
+            <p class="bo-setting-group__kicker">Rappels</p>
+            <h2 class="bo-setting-group__title">Notifications et calendrier</h2>
+            <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_notif_email_reminders" value="1" style="margin-top:3px;min-height:auto;" <?= $emailReminders ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Envoyer les rappels par e-mail</span>
+                        <span class="bo-setting-row__help">Tuteurs et responsables reçoivent un message le lundi si un bilan est dû.</span>
+                    </span>
+                </label>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Calendrier — jours à venir</div>
+                        <div class="bo-setting-row__help">Ce qui apparaît dans le bureau effectifs et les échéances (1 à 90).</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="1" max="90" name="rp_notif_calendar_horizon_days" class="bo-setting-row__field--wide" value="<?= (int) ($notifications['calendar_horizon_days'] ?? 14) ?>">
+                    </div>
+                </div>
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__copy">
+                        <div class="bo-setting-row__label">Rappel avant l’échéance (jours)</div>
+                        <div class="bo-setting-row__help">0 = pas de rappel anticipé. Réservé aux prochains envois.</div>
+                    </div>
+                    <div class="bo-setting-row__control">
+                        <input type="number" min="0" max="30" name="rp_notif_remind_before_days" class="bo-setting-row__field--wide" value="<?= (int) ($notifications['remind_before_days'] ?? 0) ?>">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ath-card ath-rise bo-setting-group bo-setting-group--wide" id="types-bilans">
+            <p class="bo-setting-group__kicker">Types</p>
+            <h2 class="bo-setting-group__title">Types de bilans d’étape</h2>
+            <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
+                Ces libellés apparaissent dans le menu du bilan sur la fiche. Une ligne = un type.
+            </p>
+            <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row__control">
+                        <div class="bo-imm-list" data-imm-list>
+                            <div data-imm-rows></div>
+                            <button type="button" class="bo-imm-list__add" data-imm-add>Ajouter un type</button>
+                            <textarea id="rp_stage_bilan_types" name="rp_stage_bilan_types" rows="6" class="bo-imm-list__fallback" data-imm-source data-placeholder="Ex. Suivi périodique"><?= $h(implode("\n", $stageBilanLabels)) ?></textarea>
+                            <p class="bo-imm-list__hint">Si les boutons n’apparaissent pas, écrivez un type par ligne.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="bo-settings-save">
             <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le suivi d’immersion</button>
         </div>
@@ -265,6 +514,8 @@ $atakRoleplayUrl = url('admin/atak/roleplay');
         <a href="<?= $h($followupUrl) ?>">Bureau de suivi</a>
         · <a href="<?= $h($deadlinesUrl) ?>">Échéances</a>
         · <a href="<?= $h($personnelUrl) ?>">Dossiers personnel</a>
+        · <a href="<?= $h($phaseRulesUrl) ?>">Parcours RH</a>
+        · <a href="<?= $h($sessionsUrl) ?>">Sessions Arma</a>
         · <a href="<?= $h($atakRoleplayUrl) ?>">Mode roleplay ATAK</a>
     </p>
 </div>

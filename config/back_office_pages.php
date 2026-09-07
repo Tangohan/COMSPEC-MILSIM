@@ -178,8 +178,20 @@ return [
         ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ARRIVÉE', 'title' => 'Parcours d’immersion', 'subtitle' => 'Décidez comment votre communauté suit l’arrivée d’un membre : étapes, filière, tuteur et dossier prêt.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
+            ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
             ['label' => 'Affichage', 'href' => 'back-office/roleplay/immersion#activation-options'],
             ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay/immersion#listes'],
+        ]],
+        ['path' => 'back-office/roleplay/regles-phases', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · PARCOURS', 'title' => 'Parcours RH', 'subtitle' => 'Ordonnez les étapes du parcours et les conditions de passage à l’étape suivante. Un jeu vide n’avance personne.', 'quick' => [
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
+            ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
+        ]],
+        ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Types de sessions, catégories d’heures, pointage et temps retenu pour le suivi.', 'quick' => [
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
         ['path' => 'back-office/roleplay-followup/echeances', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ÉCHÉANCES', 'title' => 'Échéances', 'subtitle' => 'Entretiens, visites médicales et rotations de service pour tous les membres.', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],

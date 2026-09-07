@@ -13,6 +13,8 @@ use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
+use App\Services\Personnel\RoleplayFollowupSettings;
+use App\Support\RoleplayBilanPolicy;
 use App\Support\RoleplayDeadlinePolicy;
 
 final class RoleplayFollowupAdminController
@@ -58,6 +60,7 @@ final class RoleplayFollowupAdminController
         }
 
         $cfg = $this->roleplayFollowupConfig($tenantId);
+        $cadence = RoleplayFollowupSettings::bilanCadence($cfg);
 
         $rows = [];
         $enabled = !empty($cfg['enabled']);
@@ -111,7 +114,7 @@ final class RoleplayFollowupAdminController
             $rpProgress = $p['rp_followup_progress'] ?? null;
             $rpLastReviewAt = trim((string) ($p['rp_last_review_at'] ?? '')) ?: null;
             $rpJoinedAt = trim((string) ($u['created_at'] ?? '')) ?: null;
-            $rpBilanNextDueAt = \App\Support\RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt);
+            $rpBilanNextDueAt = RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt, $cadence);
             $rows[] = [
                 'user_id' => $uid,
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
@@ -132,7 +135,7 @@ final class RoleplayFollowupAdminController
                 'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,
                 'rp_last_review_at' => $rpLastReviewAt,
                 'rp_bilan_next_due_at' => $rpBilanNextDueAt?->format('Y-m-d'),
-                'rp_bilan_overdue' => \App\Support\RoleplayBilanPolicy::isOverdue($rpJoinedAt, $rpLastReviewAt),
+                'rp_bilan_overdue' => RoleplayBilanPolicy::isOverdue($rpJoinedAt, $rpLastReviewAt, $cadence),
                 'eligible' => !empty($snapshot['eligible']),
                 'latest_timeline' => $timeline[0] ?? null,
             ];
@@ -340,9 +343,14 @@ final class RoleplayFollowupAdminController
         $existing = $this->personnelProfileRepository->getByUserId($uid) ?? [];
         $oldDate = trim((string) ($existing[$field] ?? ''));
         $note = trim((string) $request->input('deadline_note', ''));
+        $cfg = RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
+        $rotationCfg = is_array($cfg['rotation'] ?? null) ? $cfg['rotation'] : [];
+        $requireInterview = array_key_exists('require_interview', $rotationCfg)
+            ? !empty($rotationCfg['require_interview'])
+            : true;
         $rotationKind = RoleplayDeadlinePolicy::normalizeRotationKind((string) $request->input('rotation_kind', (string) ($existing['rp_rotation_kind'] ?? 'service')));
         $bloodType = RoleplayDeadlinePolicy::normalizeBloodType((string) $request->input('blood_type', ''));
-        if ($kind === 'rotation' && in_array($action, ['save', 'complete'], true)) {
+        if ($kind === 'rotation' && in_array($action, ['save', 'complete'], true) && $requireInterview) {
             $interviewDoneAt = trim((string) ($existing['rp_last_interview_completed_at'] ?? '')) ?: null;
             $rotationDoneAt = trim((string) ($existing['rp_last_rotation_completed_at'] ?? '')) ?: null;
             if (!RoleplayDeadlinePolicy::canProceedWithRotation($interviewDoneAt, $rotationDoneAt)) {
@@ -378,6 +386,17 @@ final class RoleplayFollowupAdminController
             }
         } elseif ($action === 'complete') {
             $newDate = null;
+            $afterDays = 0;
+            if ($kind === 'entretien') {
+                $afterDays = (int) (($cfg['interview']['next_after_days'] ?? 0));
+            } elseif ($kind === 'medical') {
+                $afterDays = (int) (($cfg['medical']['next_after_days'] ?? 0));
+            } elseif ($kind === 'rotation') {
+                $afterDays = (int) (($cfg['rotation']['next_after_days'] ?? 0));
+            }
+            if ($afterDays > 0) {
+                $newDate = (new \DateTimeImmutable('today'))->modify('+' . $afterDays . ' days')->format('Y-m-d');
+            }
         } else {
             $newDate = null;
         }
@@ -690,16 +709,13 @@ final class RoleplayFollowupAdminController
             return Response::redirect(url('login'));
         }
 
-        $cfg = $this->roleplayFollowupConfig($tenantId);
-        $raw = $this->tenantRepository->getSettings($tenantId);
-        $community = is_array($raw['community'] ?? null) ? $raw['community'] : [];
-        $stored = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+        $cfg = RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
 
         return Response::view('layout.main', [
             'title' => 'Parcours d’immersion',
             'content' => 'admin.organization.roleplay_immersion_settings',
             'rpConfig' => $cfg,
-            'rpEligibility' => is_array($stored['eligibility'] ?? null) ? $stored['eligibility'] : ($cfg['eligibility'] ?? []),
+            'rpEligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
             'immersionFormAction' => url('back-office/roleplay/immersion'),
         ]);
     }
@@ -717,70 +733,21 @@ final class RoleplayFollowupAdminController
             return Response::redirect($redirectTo);
         }
 
-        $parseLines = static function (string $raw): array {
-            $out = [];
-            foreach (preg_split('/\R/u', $raw) ?: [] as $line) {
-                $v = trim((string) $line);
-                if ($v !== '') {
-                    $out[] = $v;
-                }
-            }
-
-            return array_values(array_unique($out));
-        };
-
-        $this->tenantRepository->updateSettings($tenantId, [
-            'community' => [
-                'roleplay_followup' => [
-                    'enabled' => $request->input('rp_followup_enabled') ? 1 : 0,
-                    'optional' => $request->input('rp_followup_optional') ? 1 : 0,
-                    'stages' => $parseLines((string) $request->input('rp_followup_stages')),
-                    'recruitment_tracks' => $parseLines((string) $request->input('rp_followup_tracks')),
-                    'eligibility' => [
-                        'min_completeness' => max(0, min(100, (int) $request->input('rp_eligibility_min_completeness', 50))),
-                        'min_readiness' => max(0, min(100, (int) $request->input('rp_eligibility_min_readiness', 30))),
-                        'require_unit' => $request->input('rp_eligibility_require_unit') ? 1 : 0,
-                        'require_callsign' => $request->input('rp_eligibility_require_callsign') ? 1 : 0,
-                        'require_tutor' => $request->input('rp_eligibility_require_tutor') ? 1 : 0,
-                    ],
-                ],
-            ],
-        ]);
+        $patch = RoleplayFollowupSettings::patchFromImmersionPost($request->all());
+        RoleplayFollowupSettings::saveForTenant($tenantId, $patch, $this->tenantRepository);
+        try {
+            \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+                ->markCompleted($tenantId, 'ROLEPLAY_FOLLOWUP_CADENCE_V1', (int) Session::get('user_id') ?: null);
+        } catch (\Throwable) {
+        }
         Session::flash('success', 'Réglages du suivi d’immersion enregistrés.');
 
         return Response::redirect($redirectTo);
     }
 
-    /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
+    /** @return array<string, mixed> */
     private function roleplayFollowupConfig(int $tenantId): array
     {
-        $settings = $this->tenantRepository->getSettings($tenantId);
-        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
-        $cfg = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
-        $stages = [];
-        foreach (($cfg['stages'] ?? []) as $s) {
-            $v = trim((string) $s);
-            if ($v !== '') {
-                $stages[] = $v;
-            }
-        }
-        if ($stages === []) {
-            $stages = ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
-        }
-        $tracks = [];
-        foreach (($cfg['recruitment_tracks'] ?? []) as $s) {
-            $v = trim((string) $s);
-            if ($v !== '') {
-                $tracks[] = $v;
-            }
-        }
-
-        return [
-            'enabled' => !empty($cfg['enabled']),
-            'optional' => !empty($cfg['optional']),
-            'stages' => array_values(array_unique($stages)),
-            'recruitment_tracks' => array_values(array_unique($tracks)),
-            'eligibility' => is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [],
-        ];
+        return RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
     }
 }

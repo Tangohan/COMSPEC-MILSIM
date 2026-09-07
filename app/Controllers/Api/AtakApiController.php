@@ -5526,6 +5526,12 @@ class AtakApiController
             return Response::json(['ok' => true, 'matched' => false, 'recorded' => false]);
         }
         $this->armaPlaytimeRepository->addSeconds($tenantId, (int) $user['id'], $seconds);
+        try {
+            $body['user_id'] = (int) $user['id'];
+            $body['steam_uid'] = $uidRaw;
+            \App\Core\Container::get(\App\Services\Personnel\RoleplayGameSessionService::class)->heartbeat($tenantId, $body);
+        } catch (\Throwable) {
+        }
 
         return Response::json(['ok' => true, 'matched' => true, 'recorded' => true, 'recorded_seconds' => $seconds]);
     }
@@ -11498,5 +11504,63 @@ class AtakApiController
             'service_requests' => $requests,
             'count' => count($requests)
         ]);
+    }
+
+    public function gameSessionDiscover(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'discover');
+    }
+
+    public function gameSessionJoin(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'join');
+    }
+
+    public function gameSessionHeartbeat(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'heartbeat');
+    }
+
+    public function gameSessionCheckIn(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'checkIn');
+    }
+
+    public function gameSessionCheckOut(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'checkOut');
+    }
+
+    public function gameSessionLeave(Request $request, array $params = []): Response
+    {
+        return $this->gameSessionAction($request, 'leave');
+    }
+
+    private function gameSessionAction(Request $request, string $method): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, true);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        if (is_array($actor) && !empty($actor['steam_uid'])) {
+            $body['steam_uid'] = $body['steam_uid'] ?? $actor['steam_uid'];
+        }
+        try {
+            $svc = \App\Core\Container::get(\App\Services\Personnel\RoleplayGameSessionService::class);
+            $out = $svc->{$method}($tenantId, $body);
+        } catch (\Throwable) {
+            return Response::json(['ok' => false], 503);
+        }
+
+        return Response::json($out);
     }
 }

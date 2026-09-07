@@ -24,6 +24,7 @@ $currentSort = (string) ($filters['tri'] ?? 'nom');
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
 $badgesByUserId = is_array($badgesByUserId ?? null) ? $badgesByUserId : [];
+$phaseBadgesByUserId = is_array($phaseBadgesByUserId ?? null) ? $phaseBadgesByUserId : [];
 $cooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
     if ($hours < 24) {
@@ -419,6 +420,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     $matricule = trim((string) ($row['matricule_internal'] ?? '')) ?: trim((string) ($row['service_number'] ?? ''));
                     $radioAssigned = trim((string) ($row['radio_assigned'] ?? ''));
                     $memberBadges = is_array($badgesByUserId[$id] ?? null) ? $badgesByUserId[$id] : [];
+                    $phaseBadge = is_array($phaseBadgesByUserId[$id] ?? null) ? $phaseBadgesByUserId[$id] : null;
                     ?>
                     <tr>
                         <?php if ($canBulkAny): ?>
@@ -435,6 +437,17 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 </span>
                                 <div class="eff-sheets__id-text">
                                     <strong class="eff-sheets__name"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>
+                                        <?php
+                                        $phaseKind = (string) ($phaseBadge['kind'] ?? 'progress');
+                                        $phaseClass = match ($phaseKind) {
+                                            'gate' => 'eff-sheets__badge--watch',
+                                            'ready' => 'eff-sheets__badge--ok',
+                                            default => 'eff-sheets__badge--muted',
+                                        };
+                                        ?>
+                                        <span class="eff-sheets__badge <?= $phaseClass ?>"><?= htmlspecialchars((string) $phaseBadge['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
                                     <?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?>
                                         <span class="eff-sheets__meta">Indicatif · <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php endif; ?>

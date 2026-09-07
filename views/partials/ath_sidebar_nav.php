@@ -99,6 +99,8 @@ $roleplayChildren = array_values(array_filter([
     ['label' => 'Bureau de suivi', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive],
     ['label' => 'Échéances', 'href' => url('back-office/roleplay-followup/echeances'), 'active' => $navRoleplayDeadlinesActive],
     ['label' => 'Parcours d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
+    ['label' => 'Parcours RH', 'href' => url('back-office/roleplay/regles-phases'), 'active' => str_starts_with($p, 'back-office/roleplay/regles-phases')],
+    ['label' => 'Sessions Arma', 'href' => url('back-office/roleplay/sessions'), 'active' => str_starts_with($p, 'back-office/roleplay/sessions')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $orbatChildren = array_values(array_filter([
