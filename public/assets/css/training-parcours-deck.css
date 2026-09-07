@@ -444,6 +444,21 @@
   overflow: hidden;
 }
 
+/* Lecteur canvas de secours : fonctionne même si le JavaScript Swiper du CDN
+   ne se charge pas alors que sa feuille de styles, elle, est déjà appliquée. */
+.lms-deck-page .lms-canvas-player--fallback .lms-canvas-swiper .swiper-wrapper {
+  display: block;
+  transform: none !important;
+}
+
+.lms-deck-page .lms-canvas-player--fallback [data-lms-slide-frame] {
+  width: 100% !important;
+}
+
+.lms-deck-page .lms-canvas-player--fallback [data-lms-slide-frame][hidden] {
+  display: none !important;
+}
+
 .lms-deck-page .lms-canvas-slide {
   height: 100%;
   min-height: 0;

@@ -48,7 +48,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
                 $slideWrap .= ' lms-canvas-slide--elevated';
             }
             ?>
-            <div class="swiper-slide">
+            <div class="swiper-slide" data-lms-slide-frame>
                 <div class="<?= htmlspecialchars($slideWrap) ?>" data-lms-slide data-index="<?= (int) $i ?>">
                 <?php if (!empty($sl['contextKicker'])): ?>
                 <p class="lms-canvas-context-kicker"><?= htmlspecialchars((string) $sl['contextKicker']) ?></p>
