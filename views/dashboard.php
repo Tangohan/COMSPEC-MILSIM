@@ -47,6 +47,9 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
     <?php if (is_file(base_path('public/assets/css/dashboard-impact.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/dashboard-orbat.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-orbat.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/announce-tiles.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/announce-tiles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
