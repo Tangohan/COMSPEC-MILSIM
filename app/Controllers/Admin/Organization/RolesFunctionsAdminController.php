@@ -39,79 +39,9 @@ class RolesFunctionsAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $forbidden = $this->guardBackOfficeAccess();
-        if ($forbidden instanceof Response) {
-            return $forbidden;
-        }
+        unset($request, $params);
 
-        $pdo = Database::getPdo();
-        [$roleDefinitions, $defRel] = $this->loadDefinitionCatalog();
-
-        $tenantRoles = $this->roleRepository->forTenantOrganization($tenantId);
-        $roleRelations = [];
-        try {
-            $st = $pdo->prepare(
-                "SELECT rr.id, rr.relation_type, rf.slug AS from_slug, rf.name AS from_name, rt.slug AS to_slug, rt.name AS to_name
-                 FROM role_relations rr
-                 INNER JOIN roles rf ON rf.id = rr.from_role_id AND rf.tenant_id = rr.tenant_id AND rf.role_layer IN ('community','intra')
-                 INNER JOIN roles rt ON rt.id = rr.to_role_id AND rt.tenant_id = rr.tenant_id AND rt.role_layer IN ('community','intra')
-                 WHERE rr.tenant_id = ?"
-            );
-            $st->execute([$tenantId]);
-            $roleRelations = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\Throwable) {
-        }
-
-        $units = $this->unitRepository->allForTenant($tenantId);
-        $presets = $this->presetService->listPresetMeta();
-
-        $requiredRoleDefinitionsFeature = $this->requiredRoleDefinitionRepository->tableExists();
-        $requiredDefinitionIds = $requiredRoleDefinitionsFeature
-            ? $this->requiredRoleDefinitionRepository->listDefinitionIdsForTenant($tenantId)
-            : [];
-        $coverageRows = $requiredRoleDefinitionsFeature && $requiredDefinitionIds !== []
-            ? $this->requiredRoleDefinitionRepository->coverageForRequiredDefinitions($tenantId, $requiredDefinitionIds)
-            : [];
-
-        $assignRolesByDefinition = [];
-        foreach ($coverageRows as $row) {
-            $did = (int) ($row['definition_id'] ?? 0);
-            if ($did < 1) {
-                continue;
-            }
-            $filtered = [];
-            foreach ($row['roles_for_definition'] ?? [] as $r) {
-                $rid = (int) ($r['id'] ?? 0);
-                if ($rid > 0 && $this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
-                    $filtered[] = $r;
-                }
-            }
-            $assignRolesByDefinition[$did] = $filtered;
-        }
-
-        $assignMembers = $requiredRoleDefinitionsFeature
-            ? $this->userRepository->listForTenant($tenantId, null, 'active', null, 200, 0)
-            : [];
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.roles_functions',
-            'title' => 'Cellule S1 — Doctrine des fonctions',
-            'roleDefinitions' => $roleDefinitions,
-            'definitionRelations' => $defRel,
-            'tenantRoles' => $tenantRoles,
-            'roleRelations' => $roleRelations,
-            'units' => $units,
-            'rolePresetMeta' => $presets,
-            'requiredRoleDefinitionsFeature' => $requiredRoleDefinitionsFeature,
-            'requiredDefinitionIds' => $requiredDefinitionIds,
-            'coverageRows' => $coverageRows,
-            'assignMembers' => $assignMembers,
-            'assignRolesByDefinitionJson' => (static function (array $map): string {
-                $json = json_encode($map, JSON_UNESCAPED_UNICODE);
-
-                return $json !== false ? $json : '{}';
-            })($assignRolesByDefinition),
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function referentiel(Request $request, array $params = []): Response
@@ -120,19 +50,9 @@ class RolesFunctionsAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $forbidden = $this->guardBackOfficeAccess();
-        if ($forbidden instanceof Response) {
-            return $forbidden;
-        }
+        unset($request, $params);
 
-        [$roleDefinitions, $definitionRelations] = $this->loadDefinitionCatalog();
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.roles_functions_referentiel',
-            'title' => 'Référentiel des fonctions',
-            'roleDefinitions' => $roleDefinitions,
-            'definitionRelations' => $definitionRelations,
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     public function catalogue(Request $request, array $params = []): Response
@@ -141,18 +61,9 @@ class RolesFunctionsAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $forbidden = $this->guardBackOfficeAccess();
-        if ($forbidden instanceof Response) {
-            return $forbidden;
-        }
+        unset($request, $params);
 
-        [$roleDefinitions] = $this->loadDefinitionCatalog();
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.roles_functions_catalogue',
-            'title' => 'Catalogue des fonctions',
-            'roleDefinitions' => $roleDefinitions,
-        ]);
+        return Response::redirect(effectifs_workspace_url('fonctions'));
     }
 
     /**

@@ -38,61 +38,9 @@ class RoleAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $layer = trim((string) $request->query('layer', ''));
-        $roles = match ($layer) {
-            'community' => $this->rolePermissionService->listOrganizationRolesByLayer($tenantId, 'community'),
-            'intra' => $this->rolePermissionService->listOrganizationRolesByLayer($tenantId, 'intra'),
-            default => $this->rolePermissionService->listOrganizationRoles($tenantId),
-        };
+        unset($request, $params);
 
-        $tierFilter = trim((string) $request->query('tier', ''));
-        $validTiers = ['authority', 'function', 'specialty', 'status', 'support', 'liaison'];
-        if ($tierFilter !== '' && !in_array($tierFilter, $validTiers, true)) {
-            $tierFilter = '';
-        }
-        if ($tierFilter !== '') {
-            $roles = array_values(array_filter(
-                $roles,
-                static function (array $r) use ($tierFilter): bool {
-                    $t = (string) ($r['semantic_tier'] ?? 'function');
-
-                    return $t === $tierFilter;
-                }
-            ));
-        }
-
-        $roleIds = array_values(array_filter(
-            array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles),
-            static fn (int $id): bool => $id > 0
-        ));
-        $permissionCounts = $this->roleRepository->countPermissionsByRoleIds($roleIds);
-        $memberCounts = $this->roleRepository->countMembersByRoleIds($tenantId, $roleIds);
-
-        $roleViewSections = $this->buildRoleViewSections($roles);
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.roles.index',
-            'title' => 'Table des rôles',
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Système',
-            'boPageTitle' => 'Table des rôles',
-            'boPageKicker' => 'RÔLES · TABLE',
-            'boPageSubtitle' => 'Liste structurée par famille opérationnelle. Le nombre de droits indique combien d’habilitations sont actives pour chaque rôle.',
-            'boPageAction' => 'Créer un rôle',
-            'boPageActionUrl' => url('back-office/access-management'),
-            'boPageQuick' => [
-                ['label' => 'Gouvernance', 'href' => url('back-office/roles') . '?layer=community'],
-                ['label' => 'Rôles opérationnels', 'href' => url('back-office/roles') . '?layer=intra'],
-                ['label' => 'Profils prêts', 'href' => url('back-office/roles/presets')],
-            ],
-            'backOfficePageCss' => ['back-office-roles.css'],
-            'roles' => $roles,
-            'permissionCounts' => $permissionCounts,
-            'memberCounts' => $memberCounts,
-            'roleLayerFilter' => $layer,
-            'roleTierFilter' => $tierFilter,
-            'roleViewSections' => $roleViewSections,
-        ]);
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     /**
@@ -191,24 +139,9 @@ class RoleAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $gate = Gate::getInstance();
-        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
-            Session::flash('error', 'Vous n’avez pas la permission de gérer les profils de droits.');
+        unset($request, $params);
 
-            return Response::redirect(url('dashboard'));
-        }
-
-        $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.roles.presets',
-            'title' => 'Profils de permissions',
-            'presetMeta' => $this->presetService->listPresetMeta(),
-            'customPresetKits' => $this->listCustomPresetKits($tenantId),
-            'allPermissions' => $this->permissionRepository->allForTenant($tenantId),
-            'roles' => $roles,
-            'presetsPreviewUrl' => url('back-office/roles/presets/preview'),
-        ]);
+        return Response::redirect(effectifs_workspace_url('roles'));
     }
 
     /**

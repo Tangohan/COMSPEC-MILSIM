@@ -584,6 +584,128 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(449, '2026-09-07', 'Le bureau effectifs se lit comme un poste de travail', 'Le tableur des membres s’ouvre tout de suite. Un titre, des onglets lisibles, puis le dossier. La fiche d’un membre suit la même présentation claire que le reste du back-office. Rechargez Effectifs', [
+                'Onglets Tableur, Accès, Emplois et suivi, sans page d’accueil au-dessus',
+                'Fiche membre alignée sur le reste du poste : fond clair, textes lisibles',
+            ], [
+                'Le titre Effectifs n’est plus répété deux fois sur le tableur',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Effectifs. Vous arrivez sur le tableur. Les autres sections sont dans la barre sous le titre. La fiche d’un membre s’ouvre dans le même espace, sans écran sombre.',
+            ]),
+            $pr(448, '2026-09-07', 'Une fiche, deux vues : plus d’écran de choix', 'Ouvrir le dossier d’un membre affiche directement la fiche. Un responsable passe à la vue commandement depuis le bandeau, sans page intermédiaire. Les mutations restent dans le bureau effectifs. Rechargez une fiche', [
+                'Ouverture directe de la fiche, y compris pour un responsable',
+                'Sélecteur Fiche / Commandement sur le bandeau d’identité',
+            ], [
+                'Le poste Effectifs conserve un raccourci pour voir la fiche telle que les membres la voient',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez une fiche. Un responsable voit Fiche et Commandement en haut. Sans clic supplémentaire, c’est la fiche. Un ancien favori vers la vue de suivi ouvre toujours cette vue.',
+            ]),
+            $pr(447, '2026-09-06', 'Un seul écran pour les emplois du dossier', 'Les emplois se créent, se corrigent et s’attribuent dans le bureau effectifs. Plus besoin d’aller au référentiel d’un côté et aux attributions de l’autre. Un emploi reste un libellé de dossier, pas un droit d’accès. Rechargez le bureau effectifs', [
+                'Catalogue des emplois dans Effectifs : nom, catégorie, description, titulaires',
+                'Onglet pour voir qui tient quel emploi et l’attribuer membre par membre',
+            ], [
+                'Les anciennes adresses du référentiel et des attributions ouvrent désormais cet écran',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Effectifs, puis Emplois. Le catalogue est à gauche. Qui tient quel emploi est le second onglet. Un ancien favori vers le référentiel doit arriver ici.',
+            ]),
+            $pr(446, '2026-09-06', 'Effectifs et Organisation : deux portes, plus de labyrinthe', 'Le menu du back-office ne propose plus qu’Effectifs pour le quotidien des dossiers, et Organisation pour l’organigramme et le catalogue. Accès et Emplois sont sous Effectifs. Les anciennes pages (table, matrice, toile, profils) renvoient vers le bon écran. Rechargez le back-office', [
+                'Menu Personnel : Effectifs (tableur, accès, emplois, candidatures) et Organisation (organigramme, catalogue)',
+                'Dans le bureau effectifs : Accès à la place de Rôles et Droits, Emplois à la place de Fonctions',
+            ], [
+                'Les anciens raccourcis ouvrent désormais Accès ou Emplois, sans page intermédiaire',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez le back-office : sous Personnel, Effectifs et Organisation. Accès n’apparaît plus dans Système. Un ancien favori vers la matrice doit arriver sur les niveaux d’accès.',
+            ]),
+            $pr(445, '2026-09-06', 'Deux catalogues d’emplois : Armée française et SOF américain', 'Les communautés peuvent copier un modèle d’emplois inspiré de l’armée de terre française, ou un modèle inspiré des forces spéciales américaines. L’organigramme type et les grades suivent le modèle choisi. Les niveaux d’accès de la communauté ne changent pas. Ouvrez le catalogue de l’organisation', [
+                'Catalogue Armée française : commandement, infanterie, appui, transmissions, génie, santé, logistique, renseignement et forces spéciales',
+                'Catalogue SOF américain : détachement, Rangers, action navale, guerre spéciale aérienne et soutien',
+                'Grades français ou américains selon le modèle choisi',
+            ], [
+                'Ces modèles n’ajoutent pas de droits d’accès : les emplois restent des fonctions de dossier',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez Catalogue de l’organisation, puis Armée française ou SOF américain. Cochez Fonctions, et Organigramme si vous voulez la structure type. Les emplois déjà présents restent.',
+            ]),
+            $pr(444, '2026-09-06', 'Les niveaux d’accès se corrigent comme un rôle Discord', 'Membre, Ressources humaines et Gestionnaire restent les trois modèles de départ. Un responsable peut cocher ce que chaque niveau a le droit de faire, en créer un autre, ou rétablir le modèle. L’attribution se fait toujours personne par personne. Rechargez le bureau effectifs', [
+                'Correction des droits de chaque niveau, y compris Ressources humaines',
+                'Création d’un niveau supplémentaire à partir d’un modèle existant',
+                'Rétablissement du modèle de départ pour Membre, Ressources humaines ou Gestionnaire',
+            ], [
+                'Un membre a toujours un seul niveau à la fois',
+                'Les emplois du dossier restent des fonctions, pas des droits',
+            ], [
+                'Les trois niveaux existaient mais leurs droits n’étaient pas modifiables',
+            ], ['personnel', 'command'], [
+                'Ouvrez Bureau effectifs, puis Accès. Choisissez Ressources humaines, décochez un droit, enregistrez. Créez un niveau Recrutement à partir de Ressources humaines.',
+            ]),
+            $pr(443, '2026-09-06', 'La fiche d’un opérateur se lit en cinq rubriques', 'Portrait, unité, parcours, suivi et dossier remplacent la longue suite de sections. Le nom, le grade et la photo suffisent en haut de page. La rubrique ouverte est conservée. Rechargez la fiche', [
+                'Cinq rubriques sur la fiche publique : Portrait, Unité, Parcours, Suivi, Dossier',
+                'La rubrique ouverte est conservée après un changement d’écran',
+            ], [
+                'Le bandeau d’identité porte déjà le grade et l’unité, sans recopier la photo à côté',
+                'Le suivi d’arrivée s’affiche dans le portrait, avec des intitulés métier',
+            ], [
+                'Neuf sections, photos en double et un bandeau de récap rendaient la fiche difficile à parcourir',
+            ], ['personnel'], [
+                'Ouvrez une fiche publique : cinq rubriques sous le nom. Passez à Unité, rechargez : Unité reste ouverte.',
+            ]),
+            $pr(442, '2026-09-06', 'Les paramètres de la communauté tiennent sur un écran', 'Identité, vitrine, inscription, photos d’accueil, portail et profil se règlent dans un même écran, par rubriques. Après un enregistrement, la rubrique ouverte est conservée. Le bouton Enregistrer reste visible en bas de page. Rechargez le back-office', [
+                'Toutes les options de la communauté regroupées dans un même écran',
+                'Rubriques : Identité, Vitrine, Inscription, Accueil, Portail, Profil',
+                'Le bouton Enregistrer reste affiché en bas de l’écran',
+            ], [
+                'Après enregistrement, l’écran revient sur la même rubrique',
+            ], [
+                'Les réglages d’inscription n’étaient plus accessibles depuis la page des paramètres',
+            ], ['command'], [
+                'Ouvrez Paramètres de la communauté : les six rubriques doivent apparaître en haut. Enregistrez depuis Inscription : l’écran doit rester sur Inscription.',
+            ]),
+            $pr(441, '2026-09-06', 'L’opérateur voit ses données ATAK et sa synthèse', 'Le niveau Membre, souvent affiché comme Opérateur, ouvre la consultation personnelle : ses données ATAK, sa fiche, le forum, les documents, les formations et le suivi de mission. Ni les finances, ni l’administration, ni le renseignement interpersonnel. Rechargez le bureau effectifs après la mise à jour', [
+                'Consultation personnelle des données ATAK liées au compte',
+                'Ouverture de la synthèse personnelle dans le back-office',
+                'Suivi de mission, forum, documents et formations conservés',
+            ], [], [
+                'La fiche Opérateur laissait ATAK et la synthèse personnelle vides',
+            ], ['personnel', 'atak', 'command'], [
+                'Ouvrez la fiche du niveau Membre ou Opérateur : ATAK et Systèmes doivent afficher « Sa fiche ». Consulter les terminaux ATAK et Voir le back-office doivent figurer dans les droits.',
+            ]),
+            $pr(440, '2026-09-06', 'La doctrine choisit les grades proposés', 'Lors de la création ou de la modification d’un membre, choisir Français ou Américain met à jour la catégorie de personnel et la liste des grades. Un grade américain n’apparaît plus mélangé aux grades français. Rechargez le back-office', [
+                'Liste des grades filtrée selon la doctrine choisie',
+                'Catégorie de personnel limitée aux grades de cette doctrine',
+            ], [], [
+                'La doctrine américaine proposait encore les grades français',
+            ], ['personnel', 'command'], [
+                'Ouvrez Nouvel utilisateur, choisissez Américain : les grades affichés doivent être américains (Captain, Sergeant…). Choisissez Français : les grades français reviennent.',
+            ]),
+            $pr(439, '2026-09-06', 'L’intégration pose l’emploi du dossier', 'Après acceptation d’une candidature, l’étape d’affectation permet de choisir l’emploi du dossier, ou d’en nommer un s’il n’est pas encore dans la liste. L’emploi décrit la fonction, pas les droits. Rechargez le parcours d’intégration', [
+                'Choix d’un emploi existant lors de l’intégration',
+                'Un nom d’emploi saisi à cette étape est ajouté au dossier',
+            ], [
+                'L’emploi n’ouvre aucun droit d’accès',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez une candidature acceptée, puis l’intégration. À l’étape Affectation, un champ Emploi doit apparaître. Un nom d’offre peut être repris comme nouvel emploi.',
+            ]),
+            $pr(438, '2026-09-06', 'Le portail s’affiche aussi en anglais', 'Une fois l’anglais choisi, le bandeau, les menus, le tableau de bord, l’espace compte et le pied de page s’affichent en anglais. Le français reste disponible. Les textes rédigés par la communauté restent tels qu’ils ont été saisis', [
+                'Choix de langue visible dans le bandeau une fois connecté',
+                'Menus, tableau de bord, espace compte et pied de page en anglais lorsque l’anglais est choisi',
+            ], [], [], ['platform'], [
+                'Dans le bandeau, passez en anglais : le menu et le tableau de bord doivent changer de langue. Les noms d’unités et les messages du forum restent inchangés.',
+            ]),
+            $pr(437, '2026-09-06', 'Le membre voit son back-office et ses données ATAK', 'Le niveau Membre ouvre désormais la consultation personnelle du back-office : vos données ATAK et votre fiche, sans droit d’administration. Rechargez le bureau effectifs après la mise à jour', [
+                'Le niveau Membre peut ouvrir le back-office personnel',
+                'Les terminaux ATAK liés au compte apparaissent dans cette consultation',
+            ], [
+                'L’administration, le tableur des liaisons et les paramètres de la communauté restent réservés aux autres niveaux',
+            ], [], ['personnel', 'atak', 'command'], [
+                'Ouvrez le tableau de bord, puis Back-office. Vos données ATAK et votre fiche doivent s’afficher. La fiche du niveau Membre doit lister « Voir le back-office » et « Consulter les terminaux ATAK ».',
+            ]),
+            $pr(436, '2026-09-06', 'Le questionnaire de la preview est de nouveau accessible', 'Vous pouvez de nouveau donner votre avis sur cette version d’Athena, depuis le pied de page, le tableau de bord, ou l’adresse publique du questionnaire. Les trois niveaux d’accès de la communauté font partie des questions. Rechargez le portail', [
+                'Un questionnaire public permet de dire ce qui est clair et ce qui bloque',
+                'Les trois niveaux d’accès (Membre, Ressources humaines, Gestionnaire) sont posés en questions fermées',
+            ], [
+                'Le lien « Donner votre avis » apparaît dans le pied de page et sur le tableau de bord',
+            ], [], ['personnel', 'command'], [
+                'Ouvrez le pied de page du portail, puis Donner votre avis. Le questionnaire doit s’afficher sans code d’accès.',
+            ]),
             $pr(435, '2026-09-06', 'Le jeu et le téléphone restent ouverts pendant une intervention', 'Lorsque le portail est fermé pour une intervention, Arma 3 et le téléphone ATAK restent utilisables. La carte tactique et la liaison en jeu ne sont pas coupées. L’accueil, les dossiers et l’administration restent fermés. Rechargez le portail pour réessayer', [
                 'Arma 3 et le téléphone ATAK restent utilisables pendant une intervention du portail',
                 'La carte tactique et la liaison en jeu ne sont pas interrompues',

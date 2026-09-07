@@ -20,6 +20,9 @@ $ctx = $loggedIn ? portal_header_context() : [
 ];
 
 $defaultAccent = 'slate';
+$n = static function (string $fr): string {
+    return htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', $fr) : $fr, ENT_QUOTES, 'UTF-8');
+};
 
 /*
  * Navbar Athena (style Caverne) unifiée : appliquée à toutes les pages membre
@@ -83,7 +86,7 @@ if ($useAthenaHeader) {
                     </a>
                 </div>
 
-                <nav class="portal-nav__menu relative z-[1] hidden min-w-0 xl:flex xl:justify-start" aria-label="Navigation principale" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
+                <nav class="portal-nav__menu relative z-[1] hidden min-w-0 xl:flex xl:justify-start" aria-label="<?= $n('Navigation principale') ?>" data-accent="<?= htmlspecialchars($defaultAccent) ?>">
                     <ul class="flex h-full items-center gap-1 sm:gap-1.5">
                         <?php foreach ($nav['menu'] as $item): ?>
                             <?php
@@ -157,8 +160,8 @@ if ($useAthenaHeader) {
                         <a href="<?= htmlspecialchars($nav['search']['action']) ?>"
                            class="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:inline-flex"
                            data-portal-search-url
-                           title="Recherche portail"
-                           aria-label="Ouvrir la recherche portail (Ctrl+K)">
+                           title="<?= $n('Recherche portail') ?>"
+                           aria-label="<?= $n('Ouvrir la recherche portail (Ctrl+K)') ?>">
                             <kbd class="pointer-events-none inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border border-slate-200 bg-slate-100 px-1 font-mono text-[9px] font-bold tracking-wide text-slate-800">Ctrl</kbd>
                             <span class="text-[10px] font-medium text-slate-400" aria-hidden="true">+</span>
                             <kbd class="pointer-events-none inline-flex h-6 min-w-[1.25rem] items-center justify-center rounded border border-slate-200 bg-slate-100 px-1 font-mono text-[9px] font-bold text-slate-800">K</kbd>
@@ -169,9 +172,9 @@ if ($useAthenaHeader) {
                         <button type="button"
                                 data-portal-help-trigger
                                 class="hidden shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900 sm:inline-flex"
-                                title="Signaler un problème ou demander de l’aide aux modérateurs"
-                                aria-label="Aide : signalement ou demande aux modérateurs">
-                            Aide
+                                title="<?= $n('Signaler un problème ou demander de l’aide aux modérateurs') ?>"
+                                aria-label="<?= $n('Aide : signalement ou demande aux modérateurs') ?>">
+                            <?= $n('Aide') ?>
                         </button>
                         <?php require base_path('views/partials/portal_alerts_bell.php'); ?>
                     <?php endif; ?>
@@ -182,9 +185,9 @@ if ($useAthenaHeader) {
                         <a href="<?= htmlspecialchars($baseUrl) ?>/account"
                            class="group hidden items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-slate-50 sm:flex">
                             <div class="max-w-[140px] text-right">
-                                <p class="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Compte</p>
+                                <p class="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-500"><?= $n('Compte') ?></p>
                                 <p class="truncate text-xs font-semibold text-slate-900" title="<?= htmlspecialchars($ctx['display_name']) ?>">
-                                    <?= htmlspecialchars($ctx['display_name'] !== '' ? $ctx['display_name'] : 'Compte') ?>
+                                    <?= htmlspecialchars($ctx['display_name'] !== '' ? $ctx['display_name'] : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Compte') : 'Compte')) ?>
                                 </p>
                             </div>
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition group-hover:border-emerald-400 group-hover:bg-white group-hover:text-emerald-700">
@@ -198,7 +201,7 @@ if ($useAthenaHeader) {
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit"
                                     class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
-                                    aria-label="Déconnexion">
+                                    aria-label="<?= $n('Déconnexion') ?>">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                 </svg>
@@ -207,7 +210,7 @@ if ($useAthenaHeader) {
                     <?php else: ?>
                         <a href="<?= htmlspecialchars($baseUrl) ?>/login"
                            class="rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
-                            Connexion
+                            <?= $n('Connexion') ?>
                         </a>
                     <?php endif; ?>
 
@@ -216,7 +219,7 @@ if ($useAthenaHeader) {
                             data-mobile-nav-toggle
                             aria-expanded="false"
                             aria-controls="portal-nav-drawer"
-                            aria-label="Ouvrir le menu">
+                            aria-label="<?= $n('Ouvrir le menu') ?>">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
@@ -236,15 +239,15 @@ if ($useAthenaHeader) {
          data-mobile-nav-drawer
          role="dialog"
          aria-modal="true"
-         aria-label="Menu de navigation"
+         aria-label="<?= $n('Menu de navigation') ?>"
          tabindex="-1"
          hidden>
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <span class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Navigation</span>
+            <span class="text-xs font-black uppercase tracking-[0.2em] text-slate-500"><?= $n('Navigation') ?></span>
             <button type="button"
                     class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
                     data-mobile-nav-close
-                    aria-label="Fermer le menu">
+                    aria-label="<?= $n('Fermer le menu') ?>">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -255,12 +258,12 @@ if ($useAthenaHeader) {
             <button type="button"
                     data-portal-help-trigger
                     class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-rose-600 bg-rose-600 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-sm transition hover:bg-rose-500"
-                    aria-label="Aide : signalement ou demande aux modérateurs">
-                HELP — aide &amp; signalement
+                    aria-label="<?= $n('Aide : signalement ou demande aux modérateurs') ?>">
+                <?= $n('HELP — aide & signalement') ?>
             </button>
             <p class="mb-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-600">
-                <span class="font-bold text-slate-800">Périmètre des accès :</span>
-                seuls les modules autorisés pour votre profil sont listés ci-dessous (communauté de session).
+                <span class="font-bold text-slate-800"><?= $n('Périmètre des accès :') ?></span>
+                <?= $n('seuls les modules autorisés pour votre profil sont listés ci-dessous (communauté de session).') ?>
             </p>
             <?php endif; ?>
             <?php foreach ($nav['menu'] as $item): ?>
@@ -329,7 +332,7 @@ if ($useAthenaHeader) {
                                 <div class="mx-1 mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                     <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]"
                                           style="background: var(--nav-accent-soft); color: var(--nav-accent);">
-                                        <?= htmlspecialchars((string) (($mfeat['eyebrow'] ?? '') !== '' ? $mfeat['eyebrow'] : 'Module')) ?>
+                                        <?= htmlspecialchars((string) (($mfeat['eyebrow'] ?? '') !== '' ? $mfeat['eyebrow'] : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Module') : 'Module'))) ?>
                                     </span>
                                     <h4 class="mt-2 text-lg font-black uppercase tracking-tight text-slate-950">
                                         <?= htmlspecialchars((string) ($mfeat['title'] ?? '')) ?>

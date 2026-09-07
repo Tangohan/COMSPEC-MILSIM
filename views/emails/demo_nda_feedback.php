@@ -19,19 +19,19 @@ foreach ($answers as $question => $answer) {
     $textLines[] = (string) $question . "\n" . (string) $answer . "\n";
 }
 
-$body = '<p>Un retour a été envoyé depuis le <strong>questionnaire de démonstration</strong> '
+$body = '<p>Un retour a été envoyé depuis le <strong>questionnaire de la preview Athena</strong> '
     . '(<strong>' . $brandSafe . '</strong>).</p>'
     . '<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">'
     . $rows
     . '</table>';
 
 $html = email_html_layout(
-    'Retour démonstration — ' . $brand,
-    'Questionnaire démo',
+    'Retour preview Athena — ' . $brand,
+    'Questionnaire preview',
     $body,
     ['accent' => 'emerald']
 );
 
-$text = "Retour questionnaire — démonstration ({$brand})\n\n" . implode("\n", $textLines);
+$text = "Retour questionnaire — preview Athena ({$brand})\n\n" . implode("\n", $textLines);
 
 return ['html' => $html, 'text' => $text];

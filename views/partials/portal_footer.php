@@ -6,57 +6,61 @@ declare(strict_types=1);
  */
 $footerLoggedIn = (bool) \App\Core\Session::get('user_id');
 $year = (int) date('Y');
+$n = static function (string $fr): string {
+    return htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', $fr) : $fr, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <footer class="portal-footer" data-portal-footer>
     <div class="portal-footer__inner">
         <div class="portal-footer__brand">
             <p class="portal-footer__mark" aria-hidden="true">ATHENA<span class="portal-footer__mark-dot">.</span></p>
             <p class="portal-footer__lead">
-                Centralisez le recrutement, la présence, les formations et la coordination opérationnelle.
+                <?= $n('Centralisez le recrutement, la présence, les formations et la coordination opérationnelle.') ?>
             </p>
             <div class="portal-footer__cta">
                 <?php if ($footerLoggedIn): ?>
-                    <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--solid">Tableau de bord</a>
-                    <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--ghost">Communautés</a>
+                    <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--solid"><?= $n('Tableau de bord') ?></a>
+                    <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--ghost"><?= $n('Communautés') ?></a>
                 <?php else: ?>
-                    <a href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--solid">Créer un compte</a>
-                    <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--ghost">Explorer les communautés</a>
+                    <a href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--solid"><?= $n('Créer un compte') ?></a>
+                    <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="portal-footer__btn portal-footer__btn--ghost"><?= $n('Explorer les communautés') ?></a>
                 <?php endif; ?>
             </div>
         </div>
 
-        <nav class="portal-footer__nav" aria-label="Liens du pied de page">
+        <nav class="portal-footer__nav" aria-label="<?= $n('Liens du pied de page') ?>">
             <details class="portal-footer__group" open>
                 <summary class="portal-footer__summary">
-                    <span class="portal-footer__heading">Accès rapide</span>
+                    <span class="portal-footer__heading"><?= $n('Accès rapide') ?></span>
                     <span class="portal-footer__chevron" aria-hidden="true"></span>
                 </summary>
                 <ul class="portal-footer__list">
-                    <li><a href="<?= htmlspecialchars(url('home'), ENT_QUOTES, 'UTF-8') ?>">Accueil</a></li>
-                    <li><a href="<?= htmlspecialchars(url('documentation'), ENT_QUOTES, 'UTF-8') ?>">Wiki</a></li>
-                    <li><a href="<?= htmlspecialchars(url('documents'), ENT_QUOTES, 'UTF-8') ?>">Documents</a></li>
-                    <li><a href="<?= htmlspecialchars(url('formations'), ENT_QUOTES, 'UTF-8') ?>">Formations</a></li>
-                    <li><a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>">ATAK &amp; cartographie</a></li>
+                    <li><a href="<?= htmlspecialchars(url('home'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Accueil') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('documentation'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Wiki') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('documents'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Documents') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('formations'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Formations') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('ATAK & cartographie') ?></a></li>
                 </ul>
             </details>
 
             <details class="portal-footer__group" open>
                 <summary class="portal-footer__summary">
-                    <span class="portal-footer__heading">Plateforme</span>
+                    <span class="portal-footer__heading"><?= $n('Plateforme') ?></span>
                     <span class="portal-footer__chevron" aria-hidden="true"></span>
                 </summary>
                 <ul class="portal-footer__list">
-                    <li><a href="<?= htmlspecialchars(url('enlistment'), ENT_QUOTES, 'UTF-8') ?>">Enrôlement</a></li>
-                    <li><a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>">Overwatch</a></li>
-                    <li><a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>">Tacmap</a></li>
-                    <li><a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>">Fiches matériel</a></li>
-                    <li><a href="<?= htmlspecialchars(url('soutenir-atak'), ENT_QUOTES, 'UTF-8') ?>">Soutenir ATAK</a></li>
+                    <li><a href="<?= htmlspecialchars(url('enlistment'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Enrôlement') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Overwatch') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Tacmap') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Fiches matériel') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('soutenir-atak'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Soutenir ATAK') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/')), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Donner votre avis') ?></a></li>
                 </ul>
             </details>
 
             <details class="portal-footer__group" open>
                 <summary class="portal-footer__summary">
-                    <span class="portal-footer__heading">Légal</span>
+                    <span class="portal-footer__heading"><?= $n('Légal') ?></span>
                     <span class="portal-footer__chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="portal-footer__list portal-footer__list--legal">
@@ -70,8 +74,8 @@ $year = (int) date('Y');
     </div>
 
     <div class="portal-footer__bar">
-        <p class="portal-footer__copy">© <?= $year ?> Athena Comspec. Tous droits réservés.</p>
-        <p class="portal-footer__tag">Outils de gestion pour communautés MILSIM.</p>
+        <p class="portal-footer__copy">© <?= $year ?> Athena Comspec. <?= $n('Tous droits réservés.') ?></p>
+        <p class="portal-footer__tag"><?= $n('Outils de gestion pour communautés MILSIM.') ?></p>
     </div>
 </footer>
 <script>

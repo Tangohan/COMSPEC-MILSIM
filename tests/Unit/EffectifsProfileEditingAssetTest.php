@@ -27,6 +27,8 @@ final class EffectifsProfileEditingAssetTest extends TestCase
         self::assertStringContainsString("\$request->input('effectifs_context', '') === '1'", $controller);
         self::assertIsString($member);
         self::assertStringContainsString('id="modifier-dossier"', $member);
+        self::assertStringContainsString("url('personnel/' . \$id)", $member);
+        self::assertStringContainsString('Voir la fiche', $member);
         self::assertStringContainsString('<?= \$memberEditorHtml ?>', $member);
         self::assertIsString($roster);
         self::assertStringContainsString("\$personnelEditUrl = effectifs_workspace_url('membres/' . \$id) . '#modifier-dossier';", $roster);

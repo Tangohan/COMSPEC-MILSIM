@@ -436,17 +436,14 @@ $sheetCount = count($sheetRows);
 }
 </style>
 
-<div class="space-y-4" <?= $tableauAdminStandalone ? '' : 'x-show="tab === \'tableau\'" x-cloak' ?>>
+<div class="space-y-4" <?= $tableauAdminStandalone ? '' : 'x-show="tab === \'administratif\'" x-cloak' ?>>
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-            <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-800">Tableau administratif</h2>
-            <p class="mt-1.5 text-sm text-slate-600">Vue tableur du dossier : identité, affectations, dates et blocs administratifs — <?= (int) $sheetCount ?> ligne<?= $sheetCount === 1 ? '' : 's' ?>.</p>
+            <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-800">Vue regroupée du dossier</h2>
+            <p class="mt-1.5 text-sm text-slate-600">Identité, affectations, dates et informations enregistrées, présentées en lignes — <?= (int) $sheetCount ?> ligne<?= $sheetCount === 1 ? '' : 's' ?>.</p>
         </div>
-        <?php if (!$tableauAdminStandalone): ?>
-        <button type="button" @click="tab = 'administratif'" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-slate-300 bg-white px-3 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50">Vue cartes (coordonnées)</button>
-        <?php endif; ?>
     </div>
-    <div class="personnel-sheets" role="region" aria-label="Tableau administratif du dossier">
+    <div class="personnel-sheets" role="region" aria-label="Vue regroupée du dossier">
         <table class="personnel-sheets__table">
             <thead>
                 <tr>

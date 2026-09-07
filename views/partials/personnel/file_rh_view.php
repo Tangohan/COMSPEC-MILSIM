@@ -1,13 +1,11 @@
 <?php
 /**
- * Vue RH du dossier personnel : hero d’identification + tableau
- * administratif en plein largeur (shell sans max-w-7xl).
+ * Vue commandement du dossier : bandeau d’identification + tableau
+ * administratif en pleine largeur (shell sans max-w-7xl).
  *
  * Variables attendues depuis file.php (déjà résolues).
- * Optionnel : $personnelFileShell (classes conteneur plein largeur).
+ * Optionnel : $personnelFileShell (classes conteneur pleine largeur).
  */
-$rhGateUrl = $personnelFileBaseUrl;
-$rhPublicUrl = $personnelFileBaseUrl . '?view=public';
 $rhTargetUserId = (int) ($targetUser['id'] ?? 0);
 $rhEditUrl = \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())
     ? effectifs_workspace_url('membres/' . $rhTargetUserId) . '#modifier-dossier'
@@ -139,7 +137,7 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                     <?php endif; ?>
                 </div>
                 <div class="min-w-0 grow">
-                    <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90 mb-1">Dossier RH complet</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90 mb-1">Vue commandement</p>
                     <h1 class="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-white truncate">
                         <?= htmlspecialchars((string) $displayName, ENT_QUOTES, 'UTF-8') ?>
                     </h1>
@@ -151,6 +149,7 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
                         <span class="text-slate-400"><?= htmlspecialchars((string) $unitName, ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endif; ?>
                     </div>
+                    <?php require base_path('views/partials/personnel/file_view_switcher.php'); ?>
                 </div>
                 <div class="flex shrink-0 flex-wrap items-center gap-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold <?= $rhRawAccountStatus === 'active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-600/30 text-slate-400' ?>">
@@ -217,22 +216,13 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
         </article>
     </section>
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <a href="<?= htmlspecialchars($rhGateUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-            Changer de vue
+    <?php if (!empty($canEditProfile)): ?>
+    <div class="flex flex-wrap items-center justify-end gap-3">
+        <a href="<?= htmlspecialchars($rhEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+            Modifier le dossier
         </a>
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="<?= htmlspecialchars($rhPublicUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                Vue publique
-            </a>
-            <?php if (!empty($canEditProfile)): ?>
-            <a href="<?= htmlspecialchars($rhEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
-                Modifier le dossier
-            </a>
-            <?php endif; ?>
-        </div>
     </div>
+    <?php endif; ?>
 
     <?php
     $personnelFileNoticesIncludeRhSwitcher = false;

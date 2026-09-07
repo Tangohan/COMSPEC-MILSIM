@@ -395,6 +395,11 @@ final class TenantSeedHelper
             if (!$rid) {
                 continue;
             }
+            $cnt = $pdo->prepare('SELECT COUNT(*) FROM role_permissions WHERE role_id = ?');
+            $cnt->execute([$rid]);
+            if ((int) $cnt->fetchColumn() > 0) {
+                continue;
+            }
             foreach (CommunityAccessProfiles::permissionSlugsFor($def['key']) as $p) {
                 if (isset($permIdsBySlug[$p])) {
                     $link->execute([$rid, $permIdsBySlug[$p]]);
@@ -414,7 +419,7 @@ final class TenantSeedHelper
         $chkRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $insRole = $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
         $updRole = $pdo->prepare(
-            'UPDATE roles SET name = ?, description = ?, is_system = 1, is_locked = 1, role_layer = ? WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug')
+            'UPDATE roles SET is_system = 1, role_layer = ? WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug')
         );
         foreach (CommunityAccessProfiles::definitions() as $def) {
             $chkRole->execute([$tenantId, $def['slug']]);
@@ -430,8 +435,6 @@ final class TenantSeedHelper
                 ]);
             } else {
                 $updRole->execute([
-                    $def['name'],
-                    $def['description'],
                     $def['role_layer'],
                     $tenantId,
                     $def['slug'],

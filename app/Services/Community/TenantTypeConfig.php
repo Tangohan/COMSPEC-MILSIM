@@ -23,19 +23,19 @@ final class TenantTypeConfig
     {
         return [
             self::TYPE_FULL => [
-                'label' => 'Complet',
-                'description' => 'Forum, formations, recrutement, effectifs et carte tactique : l’ensemble des outils Athena pour piloter une unité.',
-                'consequences' => 'Tous les modules du portail deviennent disponibles. Les données déjà présentes restent en place.',
+                'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Complet') : 'Complet',
+                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Forum, formations, recrutement, effectifs et carte tactique : l’ensemble des outils Athena pour piloter une unité.') : 'Forum, formations, recrutement, effectifs et carte tactique : l’ensemble des outils Athena pour piloter une unité.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tous les modules du portail deviennent disponibles. Les données déjà présentes restent en place.') : 'Tous les modules du portail deviennent disponibles. Les données déjà présentes restent en place.',
             ],
             self::TYPE_EFFECTIFS => [
-                'label' => 'Bureau des effectifs',
-                'description' => 'Registre RH (pseudo, indicatif, fonctions, affectations), forum public et carte tactique ATAK.',
-                'consequences' => 'Formations, recrutement, documents et messagerie interne ne seront plus accessibles. Effectifs, forum, administration et carte ATAK restent disponibles.',
+                'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Bureau des effectifs') : 'Bureau des effectifs',
+                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Registre RH (pseudo, indicatif, fonctions, affectations), forum public et carte tactique ATAK.') : 'Registre RH (pseudo, indicatif, fonctions, affectations), forum public et carte tactique ATAK.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Formations, recrutement, documents et messagerie interne ne seront plus accessibles. Effectifs, forum, administration et carte ATAK restent disponibles.') : 'Formations, recrutement, documents et messagerie interne ne seront plus accessibles. Effectifs, forum, administration et carte ATAK restent disponibles.',
             ],
             self::TYPE_ATAK => [
-                'label' => 'Carte ATAK',
-                'description' => 'Carte et coordination terrain, avec le forum public pour les échanges de la communauté.',
-                'consequences' => 'La carte tactique, le forum public et l’administration restent accessibles. Effectifs, formations et recrutement seront masqués.',
+                'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Carte ATAK') : 'Carte ATAK',
+                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Carte et coordination terrain, avec le forum public pour les échanges de la communauté.') : 'Carte et coordination terrain, avec le forum public pour les échanges de la communauté.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte tactique, le forum public et l’administration restent accessibles. Effectifs, formations et recrutement seront masqués.') : 'La carte tactique, le forum public et l’administration restent accessibles. Effectifs, formations et recrutement seront masqués.',
             ],
         ];
     }
@@ -153,7 +153,7 @@ final class TenantTypeConfig
         $types = self::availableTypes();
         $key = self::normalizeType($tenantType);
 
-        return (string) ($types[$key]['label'] ?? 'Complet');
+        return (string) ($types[$key]['label'] ?? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Complet') : 'Complet'));
     }
 
     /**

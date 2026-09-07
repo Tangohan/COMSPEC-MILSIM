@@ -291,6 +291,8 @@ return function (Router $router) {
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
     $router->post('/acces-demonstration', [DemoNdaController::class, 'submit']);
+    $router->get('/retour-preview', [DemoNdaController::class, 'feedbackForm']);
+    $router->post('/retour-preview', [DemoNdaController::class, 'feedbackSubmit']);
     $router->get('/retour-demonstration', [DemoNdaController::class, 'feedbackForm']);
     $router->post('/retour-demonstration', [DemoNdaController::class, 'feedbackSubmit']);
     // Communautés multi-tenant (slug) + Stripe (sans auth)
@@ -1329,8 +1331,16 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'saveAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/nouveau', [EffectifsWorkspaceController::class, 'createJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/supprimer', [EffectifsWorkspaceController::class, 'deleteJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/categorie', [EffectifsWorkspaceController::class, 'saveJobCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -541,6 +541,43 @@ final class ConfigurationUpdateProbes
         }
     }
 
+    public function hasFrenchArmyOrUsSofJobCatalog(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1
+                 FROM organization_catalog_installs i
+                 INNER JOIN organization_catalog_items c ON c.id = i.item_id
+                 WHERE i.tenant_id = ? AND c.code IN (?, ?)
+                 LIMIT 1'
+            );
+            $st->execute([
+                $tenantId,
+                \App\Services\OrganizationCatalog\OrganizationKitDefinitions::FRENCH_ARMY,
+                \App\Services\OrganizationCatalog\OrganizationKitDefinitions::US_SOF,
+            ]);
+            if ($st->fetchColumn()) {
+                return true;
+            }
+        } catch (\Throwable) {
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM personnel_job_roles
+                 WHERE tenant_id = ? AND (slug LIKE 'armeefr-%' OR slug LIKE 'ussof-%')
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function hasDutyPositionsForActiveMembers(int $tenantId): bool
     {
         if ($tenantId < 1) {

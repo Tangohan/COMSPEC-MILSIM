@@ -199,7 +199,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
     <div class="ath-banner-warn ath-rise" role="alert">
         <div class="ath-banner-warn__kicker">Recrutement Discord</div>
         <div class="ath-banner-warn__text">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</div>
-        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Renseigner le lien</a>
+        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Renseigner le lien</a>
     </div>
     <?php endif; ?>
     <?php if ($missingMediaCount > 0): ?>
@@ -269,7 +269,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                     <p class="org-dash__setup-lead">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</p>
                 </div>
                 <div class="org-dash__setup-actions">
-                    <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Renseigner le lien</a>
+                    <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Renseigner le lien</a>
                 </div>
             </div>
         </div>

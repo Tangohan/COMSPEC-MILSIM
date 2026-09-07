@@ -14,8 +14,11 @@ final class DemoNdaGateService
 {
     public const GATE_PATH = '/acces-demonstration';
 
-    /** Questionnaire de retour après (ou pendant) la démo — accessible hors session. */
-    public const FEEDBACK_PATH = '/retour-demonstration';
+    /** Questionnaire public de la preview — accessible hors session. */
+    public const FEEDBACK_PATH = '/retour-preview';
+
+    /** Ancienne adresse, conservée pour les liens déjà partagés. */
+    public const LEGACY_FEEDBACK_PATH = '/retour-demonstration';
 
     private const SETTING_ACCESS_CODE = 'demo_nda.access_code';
     private const SETTING_BYPASS_IPS = 'demo_nda.bypass_ips';
@@ -129,7 +132,7 @@ final class DemoNdaGateService
      */
     public static function pathBypassesGate(string $path): bool
     {
-        if (self::pathIsPublicAsset($path) || $path === self::GATE_PATH || $path === self::FEEDBACK_PATH) {
+        if (self::pathIsPublicAsset($path) || $path === self::GATE_PATH || $path === self::FEEDBACK_PATH || $path === self::LEGACY_FEEDBACK_PATH) {
             return true;
         }
         $exact = [

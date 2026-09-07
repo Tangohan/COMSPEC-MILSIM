@@ -46,7 +46,9 @@ $mbTrain = is_array($mb['trainings'] ?? null) ? $mb['trainings'] : [];
 $mbExcerpt = $mb['consigne_excerpt'] ?? null;
 $mbPinsA = $mb['pins_anchor_href'] ?? (url('dashboard') . '#dashboard-community-pins');
 $mbModpack = is_array($mb['modpack'] ?? null) ? $mb['modpack'] : null;
-$monthsFr = ['JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUN', 'JUL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC'];
+$monthsFr = (function_exists('locale') && locale() === 'en')
+    ? ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    : ['JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUN', 'JUL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC'];
 
 $staffPending = $staff_enlistments_pending ?? [];
 $myPending = $my_enlistments_pending ?? [];
@@ -60,11 +62,12 @@ $hasEnlistments = $myPending !== [] || ($showStaff && $staffPending !== []);
 
 $unitLabel = ($dashboard_tenant_label !== null && $dashboard_tenant_label !== '')
     ? (string) $dashboard_tenant_label
-    : 'Communauté';
+    : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Communauté') : 'Communauté');
 
 $todayLabel = date('d/m/Y');
 if (class_exists(\IntlDateFormatter::class)) {
-    $fmtFr = new \IntlDateFormatter('fr_FR', \IntlDateFormatter::FULL, \IntlDateFormatter::NONE);
+    $dateLocale = (function_exists('locale') && locale() === 'en') ? 'en_GB' : 'fr_FR';
+    $fmtFr = new \IntlDateFormatter($dateLocale, \IntlDateFormatter::FULL, \IntlDateFormatter::NONE);
     $fmtFr->setPattern('EEEE d MMMM yyyy');
     $formatted = $fmtFr->format(new \DateTimeImmutable('now'));
     if (is_string($formatted) && $formatted !== '') {
@@ -874,6 +877,16 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 </div>
             </section>
             <?php endif; ?>
+
+            <?php
+            $previewFeedbackUrl = url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/'));
+            ?>
+            <section class="cc-card border-emerald-200 bg-emerald-50/40 p-5" aria-labelledby="dash-preview-feedback-heading">
+                <p id="dash-preview-feedback-heading" class="cc-kicker text-emerald-800">Preview Athena</p>
+                <h2 class="mt-1.5 text-base font-black tracking-tight text-slate-900">Votre avis compte</h2>
+                <p class="mt-1.5 text-sm text-slate-600">Cette version évolue. Dites-nous ce qui est clair, ce qui bloque, et si les trois niveaux d’accès suffisent.</p>
+                <a href="<?= htmlspecialchars($previewFeedbackUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-card__link mt-3 inline-flex">Ouvrir le questionnaire</a>
+            </section>
 
             <?php if (is_array($dashboard_tester_program) && !empty($dashboard_tester_program['communities'])): ?>
             <section class="cc-card border-amber-200 bg-amber-50/40 p-5" aria-labelledby="dash-tester-heading">

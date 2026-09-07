@@ -44,19 +44,19 @@ $athIco = static function (string $key) use ($athIcoPaths, $h): string {
         . $h($d) . '"></path></svg>';
 };
 
-$navMembersActive = $boNavUsers;
+$navMembersActive = $boNavUsers || $boNavEffWorkspace;
 $navRecruesActive = $boNavRec && !$boNavRecSettings && !$boNavRecMessages;
 $navSanctionsActive = $boNavMod;
 $navRoleplayActive = $boNavRoleplayFollowup;
 $navRoleplayDeadlinesActive = !empty($boNavRoleplayDeadlines);
 $navRoleplayImmersionActive = $boNavRoleplayImmersion;
 $navRoleplaySectionActive = $boNavRoleplaySection;
-$navOrbatActive = $boNavEff || $boNavEffWorkspace;
+$navOrbatActive = $boNavEff || !empty($boNavStructure);
 $navDoctrineActive = $boNavRolesFx;
 $navAttributionsActive = $boNavPjrAssignments || ($boNavPjr && !$boNavPjrAssignments && empty($boNavPjrKits));
 $navFunctionKitsActive = !empty($boNavPjrKits);
 $navFormationsActive = $boNavLmsRes || $boNavLmsSubPage;
-$navCommunityActive = $boNavOrgSettings;
+$navCommunityActive = $boNavOrgSettings || $boNavCommInscription;
 $navPublicPageActive = $boNavCommPres;
 $navInscriptionActive = $boNavCommInscription;
 $navMediasActive = $boNavMedia;
@@ -69,6 +69,9 @@ $navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
+$navAccessActive = $navRolesActive || $navRolesTableActive || $navProfilsActive
+    || str_contains($p, '/effectifs/roles') || str_contains($p, '/effectifs/droits');
+$navJobsActive = $navAttributionsActive || $navDoctrineActive || str_contains($p, '/effectifs/fonctions');
 $navRsvpActive = $boNavEvents && !$boNavEventInsights;
 $navRsvpHistActive = $boNavEventInsights;
 $boNavPlanning = !empty($boNavPlanning);
@@ -84,7 +87,8 @@ $recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
     : null;
 
 $membersChildren = array_values(array_filter([
-    ['label' => 'Effectifs', 'href' => effectifs_workspace_url(), 'active' => $navMembersActive],
+    ['label' => 'Accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive],
+    ['label' => 'Emplois', 'href' => effectifs_workspace_url('fonctions'), 'active' => $navJobsActive],
     ['label' => 'Candidatures', 'href' => url('back-office/recruitments'), 'active' => $navRecruesActive, 'warn' => true],
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
@@ -98,14 +102,12 @@ $roleplayChildren = array_values(array_filter([
 ], static fn (?array $row): bool => is_array($row)));
 
 $orbatChildren = array_values(array_filter([
-    ['label' => 'Structure & effectifs', 'href' => url('back-office/organisation-effectifs'), 'active' => $navOrbatActive],
+    ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
-    ['label' => 'Emplois du dossier', 'href' => url('back-office/personnel-job-roles'), 'active' => $navAttributionsActive || $navDoctrineActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([
-    ['label' => 'Identité & options', 'href' => url('back-office/community'), 'active' => $navCommunityActive],
-    ['label' => 'Paramètres d’inscription', 'href' => url('back-office/community/inscription'), 'active' => $navInscriptionActive],
+    ['label' => 'Paramètres', 'href' => url('back-office/community'), 'active' => $navCommunityActive || $navInscriptionActive],
     ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'active' => $navPublicPageActive],
     $canMediaBo
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
@@ -130,10 +132,6 @@ $atakDeviceChildren = array_values(array_filter([
     ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
-], static fn (?array $row): bool => is_array($row)));
-
-$rolesChildren = array_values(array_filter([
-    ['label' => 'Niveaux d’accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navRolesActive || $navRolesTableActive || $navProfilsActive || $navDoctrineActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $jnetChildren = [
@@ -166,19 +164,19 @@ $athNavGroups = [
         'label' => 'PERSONNEL',
         'items' => array_values(array_filter([
             [
-                'label' => 'Membres',
-                'href' => url('back-office/users'),
+                'label' => 'Effectifs',
+                'href' => effectifs_workspace_url(),
                 'icon' => 'users',
-                'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive,
+                'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive || $navAccessActive || $navJobsActive,
                 'badge' => $recBadgeStr,
                 'warn' => $recBadgeStr !== null,
                 'children' => $membersChildren,
             ],
             [
-                'label' => 'Ordre de bataille',
+                'label' => 'Organisation',
                 'href' => url('back-office/organisation-effectifs'),
                 'icon' => 'orbat',
-                'active' => $navOrbatActive || $navDoctrineActive || $navAttributionsActive || !empty($navFunctionKitsActive) || !empty($boNavCatalog),
+                'active' => $navOrbatActive || !empty($boNavCatalog),
                 'children' => $orbatChildren,
             ],
             [
@@ -285,13 +283,6 @@ $athNavGroups = [
         'label' => 'SYSTÈME',
         'items' => array_values(array_filter([
             ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'icon' => 'audit', 'active' => $boNavAudit],
-            [
-                'label' => 'Accès',
-                'href' => effectifs_workspace_url('roles'),
-                'icon' => 'shield',
-                'active' => $navRolesActive || $navRolesTableActive || $navProfilsActive,
-                'children' => $rolesChildren,
-            ],
             $canIntegrationsBo
                 ? ['label' => 'Intégrations', 'href' => url('back-office/integrations'), 'icon' => 'plug', 'active' => $boNavInteg, 'warn' => true]
                 : null,
@@ -355,6 +346,9 @@ $athNavResolveGroups = static function (array $groups) use ($p): array {
 };
 
 $athNavGroups = $athNavResolveGroups($athNavGroups);
+if (function_exists('i18n_translate_nav_item')) {
+    $athNavGroups = array_map('i18n_translate_nav_item', $athNavGroups);
+}
 
 $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
     $children = is_array($item['children'] ?? null) ? $item['children'] : [];

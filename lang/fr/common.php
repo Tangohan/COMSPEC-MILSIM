@@ -30,4 +30,13 @@ return [
     'your_rights' => 'Vos droits',
     'account' => 'Compte',
     'skip_to_content' => 'Aller au contenu',
+    'save' => 'Enregistrer',
+    'cancel' => 'Annuler',
+    'search' => 'Rechercher',
+    'close' => 'Fermer',
+    'settings' => 'Paramètres',
+    'help' => 'Aide',
+    'confirm' => 'Confirmer',
+    'yes' => 'Oui',
+    'no' => 'Non',
 ];

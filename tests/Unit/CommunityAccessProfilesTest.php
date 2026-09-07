@@ -35,9 +35,22 @@ final class CommunityAccessProfilesTest extends TestCase
             self::assertSame($slugs, SystemReservedPermissions::filter($slugs));
             self::assertContains('forum.view', $slugs);
         }
+        $member = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MEMBER);
+        self::assertContains('admin.backoffice.view', $member);
+        self::assertContains('atak.terminals.view', $member);
+        self::assertContains('operations.sitrep.create', $member);
+        self::assertContains('intel.transmission.contribute', $member);
+        self::assertContains('media.view', $member);
+        self::assertNotContains('admin.organization', $member);
+        self::assertNotContains('atak.terminals.manage', $member);
+        self::assertNotContains('atak.sse.access', $member);
+        self::assertNotContains('finances.view', $member);
+
         $hr = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::HR);
         self::assertContains('organization.effectifs.hub.view', $hr);
         self::assertContains('personnel.profile.update', $hr);
+        self::assertContains('admin.backoffice.view', $hr);
+        self::assertContains('atak.terminals.view', $hr);
         self::assertNotContains('admin.organization', $hr);
 
         $manager = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MANAGER);
@@ -55,6 +68,7 @@ final class CommunityAccessProfilesTest extends TestCase
         self::assertCount(5, $kept);
         self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('member'));
         self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('status_active_duty'));
+        self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('access-custom-recrutement'));
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('tenant_admin'));
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('atak_operator'));
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('infantry_rifleman'));

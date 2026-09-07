@@ -62,17 +62,19 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
     require base_path('views/admin/organization/partials/org_role_multi_picker.php');
     ?>
 </div>
+<div data-grade-doctrine class="space-y-4">
 <div>
     <label for="<?= htmlspecialchars($fid('nationality_code'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Nationalité / doctrine</label>
-    <select id="<?= htmlspecialchars($fid('nationality_code'), ENT_QUOTES, 'UTF-8') ?>" name="nationality_code" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
+    <select id="<?= htmlspecialchars($fid('nationality_code'), ENT_QUOTES, 'UTF-8') ?>" name="nationality_code" data-grade-doctrine-nation class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
         <option value="">—</option>
         <option value="FR">Français</option>
         <option value="US">Américain</option>
     </select>
+    <p class="mt-1 text-xs text-slate-500">La catégorie et le grade se mettent à jour selon la doctrine choisie.</p>
 </div>
 <div>
     <label for="<?= htmlspecialchars($fid('professional_category_code'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Catégorie de personnel</label>
-    <select id="<?= htmlspecialchars($fid('professional_category_code'), ENT_QUOTES, 'UTF-8') ?>" name="professional_category_code" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
+    <select id="<?= htmlspecialchars($fid('professional_category_code'), ENT_QUOTES, 'UTF-8') ?>" name="professional_category_code" data-grade-doctrine-category class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
         <option value="">—</option>
         <?php foreach ($gradeCategories as $c): ?>
         <option value="<?= htmlspecialchars($c['code']) ?>"><?= htmlspecialchars($c['label']) ?></option>
@@ -81,10 +83,14 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
 </div>
 <div>
     <label for="<?= htmlspecialchars($fid('grade_id'), ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-medium text-slate-700">Grade</label>
-    <select id="<?= htmlspecialchars($fid('grade_id'), ENT_QUOTES, 'UTF-8') ?>" name="grade_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
+    <select id="<?= htmlspecialchars($fid('grade_id'), ENT_QUOTES, 'UTF-8') ?>" name="grade_id" data-grade-doctrine-grade class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
         <option value="">—</option>
         <?php foreach ($grades as $g): ?>
-        <option value="<?= (int) $g['id'] ?>"><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></option>
+        <option
+            value="<?= (int) $g['id'] ?>"
+            data-country="<?= htmlspecialchars((string) ($g['country_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+            data-category="<?= htmlspecialchars((string) ($g['category_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+        ><?= htmlspecialchars($g['label_long'] ?? $g['name'] ?? '') ?></option>
         <?php endforeach; ?>
     </select>
 </div>
@@ -96,3 +102,10 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
         <option value="hybrid">Hybride (ex. Capitaine (OF-2))</option>
     </select>
 </div>
+</div>
+<?php
+if (empty($GLOBALS['grade_doctrine_cascade_js'])) {
+    $GLOBALS['grade_doctrine_cascade_js'] = true;
+    echo '<script defer src="' . htmlspecialchars(asset_url('assets/js/grade-doctrine-cascade.js'), ENT_QUOTES, 'UTF-8') . '"></script>';
+}
+?>

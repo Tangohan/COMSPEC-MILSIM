@@ -15,23 +15,31 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
         $rhController = (string) file_get_contents($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
         $shell = (string) file_get_contents($root . '/views/admin/effectifs_workspace/shell.php');
         $css = (string) file_get_contents($root . '/public/assets/css/back-office-effectifs-workspace.css');
+        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
 
         self::assertStringContainsString("Response::view('layout.main'", $controller);
         self::assertStringContainsString("'effectifsContent' => \$content", $controller);
         self::assertStringContainsString("Response::view('layout.main'", $rhController);
         self::assertStringContainsString("'effectifsContent' => \$content", $rhController);
 
-        self::assertStringContainsString('Pilotage quotidien', $shell);
-        self::assertStringContainsString('Organisation & accès', $shell);
-        self::assertStringContainsString('Parcours RH', $shell);
-        self::assertStringContainsString('bo-eff-hero__badges', $shell);
-        self::assertStringContainsString('data-eff-modal-open', $shell);
-        self::assertStringContainsString('<dialog class="bo-eff-modal"', $shell);
-        self::assertStringContainsString('showModal()', $shell);
+        self::assertStringContainsString('bo-eff-head', $shell);
+        self::assertStringContainsString('bo-eff-tabs', $shell);
+        self::assertStringContainsString('Tableur', $shell);
+        self::assertStringContainsString('Accès', $shell);
+        self::assertStringContainsString('Emplois', $shell);
+        self::assertStringContainsString('Ajouter un membre', $shell);
+        self::assertStringNotContainsString('centre de conduite', $shell);
+        self::assertStringNotContainsString('Pilotage quotidien', $shell);
+        self::assertStringNotContainsString('Actions rapides', $shell);
+        self::assertStringNotContainsString('bo-eff-hero', $shell);
+        self::assertStringNotContainsString('<dialog', $shell);
+
+        self::assertStringNotContainsString('eff-catalog__title', $roster);
+        self::assertStringNotContainsString('Ressources humaines', $roster);
 
         self::assertStringContainsString('.bo-eff-workspace', $css);
-        self::assertStringContainsString('.bo-eff-subnav', $css);
-        self::assertStringContainsString('.bo-eff-modal::backdrop', $css);
-        self::assertStringContainsString('@media(max-width:640px)', $css);
+        self::assertStringContainsString('.bo-eff-tabs', $css);
+        self::assertStringContainsString('.bo-eff-head', $css);
+        self::assertStringContainsString('@media (max-width: 720px)', $css);
     }
 }

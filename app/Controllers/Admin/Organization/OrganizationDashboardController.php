@@ -179,7 +179,7 @@ class OrganizationDashboardController
                     'title' => 'Lien Discord manquant',
                     'body' => 'Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.',
                     'cta_label' => 'Renseigner le lien',
-                    'cta_url' => url('back-office/organisation/parametres') . '#contact',
+                    'cta_url' => url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees',
                 ];
             }
         } catch (\Throwable) {
@@ -940,7 +940,7 @@ class OrganizationDashboardController
             'usersForCommander' => $userRepository->allForTenant($tenantId),
             'roles' => $roleRepository->forTenantOrganization($tenantId),
             'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
-            'grades' => $gradeRepository->listForTenant($tenantId),
+            'grades' => $gradeRepository->listActiveForDoctrinePicker($tenantId),
             'gradeCategories' => $gradeCategoryRepository->listActive(),
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'steamWebConfigured' => \App\Core\Container::get(\App\Services\Steam\SteamWebApiService::class)->isConfigured(),

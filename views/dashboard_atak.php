@@ -78,7 +78,7 @@ require base_path('views/partials/alert_banners.php');
                 <span class="atak-dash__scope-kicker">Périmètre actif</span>
                 <span>Carte tactique, forum public et administration — formations, effectifs et recrutement restent hors périmètre.</span>
                 <?php if ($canAdjustTenantType): ?>
-                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#org-profil', ENT_QUOTES, 'UTF-8') ?>">
+                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
                     Vérifier ou réappliquer le profil
                 </a>
                 <?php endif; ?>

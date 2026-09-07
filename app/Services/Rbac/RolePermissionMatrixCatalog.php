@@ -231,7 +231,9 @@ final class RolePermissionMatrixCatalog
                     'atak.sse.access', 'atak.sse.case.manage', 'atak.sse.export',
                     'operations.missions.view', 'operations.aar.view',
                 ],
-                self::LEVEL_SA_FICHE => [],
+                self::LEVEL_SA_FICHE => [
+                    'atak.terminals.view',
+                ],
                 self::LEVEL_INSTRUCTION => [
                     'atak.terminals.view', 'operations.missions.view',
                 ],
@@ -274,7 +276,9 @@ final class RolePermissionMatrixCatalog
                 self::LEVEL_LECTURE => [
                     'admin.backoffice.view', 'admin.audit.view',
                 ],
-                self::LEVEL_SA_FICHE => [],
+                self::LEVEL_SA_FICHE => [
+                    'admin.backoffice.view',
+                ],
                 self::LEVEL_INSTRUCTION => [
                     'admin.backoffice.view',
                 ],
@@ -390,9 +394,9 @@ final class RolePermissionMatrixCatalog
                 'modules' => [
                     self::MODULE_MEMBERS => self::LEVEL_SA_FICHE,
                     self::MODULE_OPERATIONS => self::LEVEL_LECTURE,
-                    self::MODULE_ATAK => self::LEVEL_NONE,
+                    self::MODULE_ATAK => self::LEVEL_SA_FICHE,
                     self::MODULE_FINANCES => self::LEVEL_NONE,
-                    self::MODULE_SYSTEMS => self::LEVEL_NONE,
+                    self::MODULE_SYSTEMS => self::LEVEL_SA_FICHE,
                 ],
                 'can_delete' => false,
                 'can_export' => false,

@@ -243,7 +243,7 @@ $renderToggle = static function (
                     <p class="bo-setup__type-desc"><?= $h($setupTypeDesc) ?></p>
                 <?php endif; ?>
                 <div class="bo-setup__type-action">
-                    <a href="<?= $h(url('back-office/organisation/parametres') . '#profil') ?>" class="ath-btn">Modifier le type de communauté</a>
+                    <a href="<?= $h(url('back-office/organisation/parametres') . '?onglet=profil#profil') ?>" class="ath-btn">Modifier le type de communauté</a>
                 </div>
             </section>
         </aside>

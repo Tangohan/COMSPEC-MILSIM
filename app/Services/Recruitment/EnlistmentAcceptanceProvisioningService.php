@@ -20,6 +20,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Personnel\MatriculeService;
 use App\Services\Personnel\TenantMemberNumberService;
+use App\Services\Personnel\UnitJobRoleSyncService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Platform\FeatureGateService;
@@ -398,36 +399,17 @@ final class EnlistmentAcceptanceProvisioningService
             }
         }
 
-        $jobRoleId = isset($options['personnel_job_role_id']) ? (int) $options['personnel_job_role_id'] : 0;
         $unitId = isset($options['unit_id']) ? (int) $options['unit_id'] : 0;
         $assignmentLabel = trim((string) ($options['assignment_label'] ?? ''));
+        $jobRoleId = $this->resolveOnboardingJobRoleId($tenantId, $userId, $unitId, $options, $warnings);
         if ($assignmentLabel === '') {
             $assignmentLabel = 'Membre';
         }
-
-        if ($jobRoleId > 0 && $this->personnelJobRoleRepository !== null) {
-            try {
-                if (
-                    $this->personnelJobRoleRepository->tablesExist()
-                    && $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId)
-                ) {
-                    if ($this->personnelJobRoleRepository->pivotTableExists()) {
-                        $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, [[
-                            'personnel_job_role_id' => $jobRoleId,
-                            'role_detail' => '',
-                            'is_primary' => true,
-                        ]]);
-                    }
-                    $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
-                    if ($jr && $assignmentLabel === 'Membre') {
-                        $jn = trim((string) ($jr['name'] ?? ''));
-                        if ($jn !== '') {
-                            $assignmentLabel = $jn;
-                        }
-                    }
-                }
-            } catch (Throwable $e) {
-                $warnings[] = 'Fonction RH non appliquée : ' . $this->shortExceptionMessage($e);
+        if ($jobRoleId > 0 && $this->personnelJobRoleRepository !== null && $assignmentLabel === 'Membre') {
+            $jr = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
+            $jn = trim((string) ($jr['name'] ?? ''));
+            if ($jn !== '') {
+                $assignmentLabel = $jn;
             }
         }
 
@@ -1163,6 +1145,61 @@ final class EnlistmentAcceptanceProvisioningService
         $this->userRepository->markEmailVerifiedWithoutStatusChange($userId, $tenantId);
 
         return true;
+    }
+
+    /**
+     * Emploi du dossier : liste, nom saisi, ou emploi lié à l’unité.
+     *
+     * @param array<string, mixed> $options
+     * @param list<string> $warnings
+     */
+    private function resolveOnboardingJobRoleId(
+        int $tenantId,
+        int $userId,
+        int $unitId,
+        array $options,
+        array &$warnings
+    ): int {
+        if ($this->personnelJobRoleRepository === null || !$this->personnelJobRoleRepository->tablesExist()) {
+            return 0;
+        }
+
+        $jobRoleId = isset($options['personnel_job_role_id']) ? (int) $options['personnel_job_role_id'] : 0;
+        $named = trim((string) ($options['assignment_label'] ?? ''));
+        try {
+            if ($jobRoleId < 1 && $named !== '' && !UnitJobRoleSyncService::isGenericAssignmentLabel($named)) {
+                $created = $this->personnelJobRoleRepository->findOrCreateImportedRoleByLabel($tenantId, $named);
+                if ($created !== null && $created > 0) {
+                    $jobRoleId = $created;
+                }
+            }
+            if ($jobRoleId < 1 && $unitId > 0 && $this->unitRepository !== null) {
+                $unit = $this->unitRepository->findById($unitId, $tenantId);
+                $unitName = trim((string) ($unit['name'] ?? ''));
+                if ($unitName !== '') {
+                    $ensured = (new UnitJobRoleSyncService())->ensureForUnit($tenantId, $unitId, $unitName);
+                    if ($ensured !== null && $ensured > 0) {
+                        $jobRoleId = $ensured;
+                    }
+                }
+            }
+            if (
+                $jobRoleId > 0
+                && $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId)
+                && $this->personnelJobRoleRepository->pivotTableExists()
+            ) {
+                $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, [[
+                    'personnel_job_role_id' => $jobRoleId,
+                    'role_detail' => '',
+                    'is_primary' => true,
+                ]]);
+            }
+        } catch (Throwable $e) {
+            $warnings[] = 'Emploi non appliqué : ' . $this->shortExceptionMessage($e);
+            return 0;
+        }
+
+        return $jobRoleId;
     }
 
     private function staffEmails(int $tenantId): array

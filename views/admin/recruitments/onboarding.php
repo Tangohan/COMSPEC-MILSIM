@@ -211,9 +211,11 @@ $formAction = url('back-office/recruitments/' . $id . '/onboarding');
         <section class="rec-onb__panel" data-rec-onb-panel="4" hidden>
             <div class="rec-onb__panel-head">
                 <p class="rec-onb__eyebrow">Étape 4 sur 4</p>
-                <h2 class="rec-onb__panel-title">Affectation (unité & fonction)</h2>
+                <h2 class="rec-onb__panel-title">Affectation (unité et emploi)</h2>
                 <p class="rec-onb__panel-text">
-                    Placez le membre dans l’organigramme. Les valeurs de l’offre de recrutement sont pré-remplies quand elles existent.
+                    Placez le membre dans l’organigramme et choisissez l’emploi du dossier.
+                    L’emploi décrit la fonction (radio, médic, chef d’équipe…) : il n’ouvre aucun droit d’accès.
+                    Les valeurs de l’offre de recrutement sont pré-remplies quand elles existent.
                 </p>
             </div>
             <div class="rec-onb__grid">
@@ -231,25 +233,26 @@ $formAction = url('back-office/recruitments/' . $id . '/onboarding');
                     </select>
                 </label>
                 <label class="rec-onb__field">
-                    <span class="rec-onb__label">Fonction RH</span>
+                    <span class="rec-onb__label">Emploi</span>
                     <select name="personnel_job_role_id">
-                        <option value="0">— Aucune —</option>
+                        <option value="0">— Choisir ou nommer ci-dessous —</option>
                         <?php foreach ($jobRoleOptions as $opt): ?>
                             <?php
                             $jid = (int) ($opt['id'] ?? 0);
                             if ($jid < 1) {
                                 continue;
                             }
-                            $jlabel = (string) ($opt['label'] ?? $opt['name'] ?? ('Fonction #' . $jid));
+                            $jlabel = (string) ($opt['name'] ?? $opt['label'] ?? ('Emploi #' . $jid));
                             ?>
                         <option value="<?= $jid ?>"<?= (int) ($prefill['personnel_job_role_id'] ?? 0) === $jid ? ' selected' : '' ?>><?= $h($jlabel) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="rec-onb__hint">Emplois du dossier, issus de l’organigramme ou déjà créés dans votre communauté.</span>
                 </label>
                 <label class="rec-onb__field rec-onb__field--full">
-                    <span class="rec-onb__label">Libellé d’affectation <span class="rec-onb__opt">(optionnel)</span></span>
-                    <input type="text" name="assignment_label" maxlength="120" value="" placeholder="Ex. Tireur, Chef d’équipe…">
-                    <span class="rec-onb__hint">Si vide, le nom de la fonction RH (ou « Membre ») est utilisé.</span>
+                    <span class="rec-onb__label">Nouvel emploi <span class="rec-onb__opt">(si absent de la liste)</span></span>
+                    <input type="text" name="assignment_label" maxlength="120" value="<?= $h((string) ($prefill['assignment_label'] ?? '')) ?>" placeholder="Ex. Technicien cyber, Chef d’équipe…">
+                    <span class="rec-onb__hint">Un nom saisi ici est ajouté au référentiel et collé au dossier. Si vide, l’emploi choisi (ou celui de l’unité) est utilisé.</span>
                 </label>
             </div>
 

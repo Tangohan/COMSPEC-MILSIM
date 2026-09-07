@@ -1829,7 +1829,7 @@ final class EmailService
             EmailEvents::DEMO_NDA_FEEDBACK,
             'demo_nda_feedback',
             $to,
-            '[' . $brand . '] Retour questionnaire — démonstration',
+            '[' . $brand . '] Retour questionnaire — preview Athena',
             [
                 'brand' => $brand,
                 'answers' => $answers,

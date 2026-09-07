@@ -362,12 +362,12 @@ if ($uid < 1) {
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Grade, doctrine et affectation</h2>
-                    <p class="text-sm text-slate-600">Grade de la communauté et unité d’affectation.</p>
+                    <p class="text-sm text-slate-600">Le grade proposé suit la doctrine choisie (française ou américaine).</p>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-4 sm:grid-cols-2" data-grade-doctrine>
                     <div>
                         <label for="nationality_code" class="<?= $labelClass ?>">Doctrine</label>
-                        <select id="nationality_code" name="nationality_code" class="<?= $fieldClass ?>">
+                        <select id="nationality_code" name="nationality_code" data-grade-doctrine-nation class="<?= $fieldClass ?>">
                             <option value="">Non renseignée</option>
                             <?php
                             $docCur = trim((string) ($user['nationality_code'] ?? ''));
@@ -376,10 +376,11 @@ if ($uid < 1) {
                                 <option value="<?= $h((string) $val) ?>" <?= $docCur === (string) $val ? 'selected' : '' ?>><?= $h($lab) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <p class="mt-1 text-xs text-slate-500">La catégorie et le grade se mettent à jour selon la doctrine choisie.</p>
                     </div>
                     <div>
                         <label for="professional_category_code" class="<?= $labelClass ?>">Catégorie de personnel</label>
-                        <select id="professional_category_code" name="professional_category_code" class="<?= $fieldClass ?>">
+                        <select id="professional_category_code" name="professional_category_code" data-grade-doctrine-category class="<?= $fieldClass ?>">
                             <option value="">Non renseignée</option>
                             <?php
                             $catCur = trim((string) ($user['professional_category_code'] ?? ''));
@@ -392,10 +393,15 @@ if ($uid < 1) {
                     </div>
                     <div>
                         <label for="grade_id" class="<?= $labelClass ?>">Grade</label>
-                        <select id="grade_id" name="grade_id" class="<?= $fieldClass ?>">
+                        <select id="grade_id" name="grade_id" data-grade-doctrine-grade class="<?= $fieldClass ?>">
                             <option value="">Aucun grade</option>
                             <?php foreach ($grades as $g): ?>
-                                <option value="<?= (int) ($g['id'] ?? 0) ?>" <?= (int) ($user['grade_id'] ?? 0) === (int) ($g['id'] ?? 0) ? 'selected' : '' ?>>
+                                <option
+                                    value="<?= (int) ($g['id'] ?? 0) ?>"
+                                    data-country="<?= $h((string) ($g['country_code'] ?? '')) ?>"
+                                    data-category="<?= $h((string) ($g['category_code'] ?? '')) ?>"
+                                    <?= (int) ($user['grade_id'] ?? 0) === (int) ($g['id'] ?? 0) ? 'selected' : '' ?>
+                                >
                                     <?= $h((string) ($g['label_long'] ?? $g['name'] ?? '')) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -561,5 +567,9 @@ if ($uid < 1) {
                 </button>
             </div>
         </form>
+        <?php if (empty($GLOBALS['grade_doctrine_cascade_js'])): ?>
+        <?php $GLOBALS['grade_doctrine_cascade_js'] = true; ?>
+        <script defer src="<?= htmlspecialchars(asset_url('assets/js/grade-doctrine-cascade.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+        <?php endif; ?>
     </div>
 </div>

@@ -12,7 +12,7 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $file = (string) file_get_contents($root . '/views/personnel/file.php');
-        $gate = (string) file_get_contents($root . '/views/partials/personnel/file_view_gate.php');
+        $switcher = (string) file_get_contents($root . '/views/partials/personnel/file_view_switcher.php');
         $css = (string) file_get_contents($root . '/public/assets/css/personnel-file.css');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
@@ -30,9 +30,11 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('Indicatif', $file);
         self::assertStringNotContainsString('Habilitation', $file);
         self::assertStringContainsString('personnel-file--public', $file);
-        self::assertStringContainsString('personnel-file--gate', $file);
-        self::assertStringContainsString('personnel-file-gate__hero', $gate);
-        self::assertStringContainsString('personnel-file-gate__choices', $gate);
+        self::assertStringContainsString('file_view_switcher.php', $file);
+        self::assertStringNotContainsString('personnel-file--gate', $file);
+        self::assertStringNotContainsString('file_view_gate.php', $file);
+        self::assertStringContainsString('>Fiche</a>', $switcher);
+        self::assertStringContainsString('>Commandement</a>', $switcher);
 
         self::assertStringNotContainsString('min-h-screen pt-20 pb-24', $file);
         self::assertStringNotContainsString('title="Avatar compte"', $file);
@@ -44,7 +46,7 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('$viewerIsPersonnelSubject', $file);
         self::assertStringContainsString('$canEditProfile && !empty($viewerIsPersonnelSubject)', $file);
         self::assertStringContainsString('$steamProfileSyncOffered && $personnelViewMode !== \'public\'', $file);
-        self::assertStringContainsString('&& $personnelViewMode !== \'public\';', $controller);
+        self::assertStringContainsString("\$personnelViewMode === 'rh';", $controller);
         self::assertStringContainsString('file_page_notices.php', $file);
 
         self::assertStringContainsString('.personnel-file-hero__avatar-inset', $css);
@@ -57,21 +59,19 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('compactPortalMain', $layout);
         self::assertStringContainsString("'personnelFilePage' => true", $controller);
         self::assertStringContainsString("'compactPortalMain'", $controller);
-        self::assertStringContainsString('.personnel-file--gate', $css);
-        self::assertStringContainsString('body:has(.personnel-file--gate)', $css);
-        self::assertStringContainsString('min-height: 0 !important', $css);
-        self::assertStringContainsString('.personnel-file-gate__hero', $css);
+        self::assertStringContainsString('.personnel-file-switcher', $css);
+        self::assertStringContainsString('.personnel-file-switcher__item.is-current', $css);
         self::assertStringContainsString('.personnel-file-portal-main', $css);
 
         self::assertStringContainsString('Le dossier public se lit d’un coup d’œil', $dispatch);
         self::assertStringContainsString('sans grand vide blanc', $dispatch);
+        self::assertStringContainsString('Une fiche, deux vues', $dispatch);
     }
 
     public function testPageNoticesSitBelowIdentityBanner(): void
     {
         $root = dirname(__DIR__, 2);
         $file = (string) file_get_contents($root . '/views/personnel/file.php');
-        $gate = (string) file_get_contents($root . '/views/partials/personnel/file_view_gate.php');
         $rh = (string) file_get_contents($root . '/views/partials/personnel/file_rh_view.php');
         $notices = (string) file_get_contents($root . '/views/partials/personnel/file_page_notices.php');
 
@@ -79,29 +79,25 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('Absence en cours', $notices);
         self::assertStringContainsString('$personnelFileNoticesIncludeOperatorTabs', $notices);
         self::assertStringContainsString('$viewerIsPersonnelSubject', $notices);
+        self::assertStringContainsString('Vue commandement', $notices);
+        self::assertStringNotContainsString('Choisir la vue RH', $notices);
 
         $heroPos = strpos($file, 'class="personnel-file-hero"');
+        $fileSwitcherPos = strpos($file, 'file_view_switcher.php');
         $fileNoticesPos = strpos($file, 'file_page_notices.php');
         self::assertNotFalse($heroPos);
+        self::assertNotFalse($fileSwitcherPos);
         self::assertNotFalse($fileNoticesPos);
-        self::assertGreaterThan($heroPos, $fileNoticesPos);
-
-        $gateHeroPos = strpos($gate, 'personnel-file-gate__hero');
-        $gateNoticesPos = strpos($gate, 'file_page_notices.php');
-        $gateChoicesPos = strpos($gate, 'personnel-file-gate__choices');
-        self::assertNotFalse($gateHeroPos);
-        self::assertNotFalse($gateNoticesPos);
-        self::assertNotFalse($gateChoicesPos);
-        self::assertGreaterThan($gateHeroPos, $gateNoticesPos);
-        self::assertGreaterThan($gateNoticesPos, $gateChoicesPos);
+        self::assertGreaterThan($heroPos, $fileSwitcherPos);
+        self::assertGreaterThan($fileSwitcherPos, $fileNoticesPos);
 
         $rhHeroPos = strpos($rh, '<!-- Hero RH -->');
-        $rhActionsPos = strpos($rh, 'Changer de vue');
+        $rhSwitcherPos = strpos($rh, 'file_view_switcher.php');
         $rhNoticesPos = strpos($rh, 'file_page_notices.php');
         self::assertNotFalse($rhHeroPos);
-        self::assertNotFalse($rhActionsPos);
+        self::assertNotFalse($rhSwitcherPos);
         self::assertNotFalse($rhNoticesPos);
-        self::assertGreaterThan($rhHeroPos, $rhActionsPos);
-        self::assertGreaterThan($rhActionsPos, $rhNoticesPos);
+        self::assertGreaterThan($rhHeroPos, $rhSwitcherPos);
+        self::assertGreaterThan($rhSwitcherPos, $rhNoticesPos);
     }
 }
