@@ -53,6 +53,29 @@ final class RateLimitMiddlewareTest extends TestCase
         self::assertSame($ok, $response);
     }
 
+    public function testExpensiveTerrainOverlayIsLimitedByClientIp(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/api/atak/terrain/hillshade?mapId=1';
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.12';
+
+        $limiter = $this->createMock(FileRateLimiter::class);
+        $limiter->expects($this->once())
+            ->method('tooManyAttempts')
+            ->with(
+                'rl:atak_terrain_overlay:/api/atak/terrain/hillshade:ip:203.0.113.12',
+                30,
+                60
+            )
+            ->willReturn(true);
+        $mw = new RateLimitMiddleware($limiter);
+        $response = $mw(new Request(), static fn () => self::fail('next must not run'));
+
+        self::assertSame(429, $response->statusCode());
+        self::assertSame('60', $response->headerValue('Retry-After'));
+    }
+
     public function testReconUploadsAreNotGuestScrapeLimited(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';

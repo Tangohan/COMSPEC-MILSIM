@@ -19,6 +19,8 @@ final class AtakTerrainHillshadeOverlayAssetTest extends TestCase
         self::assertStringContainsString('MAX_RASTER_EDGE = 512', $carto);
         self::assertStringContainsString('catch (Throwable)', $carto);
         self::assertStringContainsString('@imagecreatetruecolor($outW, $outH)', $carto);
+        self::assertStringContainsString('getGrid($tenantId, $mapId, false)', $carto);
+        self::assertStringContainsString('LOCK_EX | LOCK_NB', $carto);
 
         self::assertStringContainsString('catch (Throwable)', $api);
         self::assertStringContainsString('setBodyStream', $api);

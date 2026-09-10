@@ -57,6 +57,17 @@ final class RateLimitMiddleware
         $uid = (int) (Session::get('user_id') ?? 0);
         $actorKey = $uid > 0 ? ('uid:' . $uid) : ('ip:' . $ip);
 
+        // Les rasters de relief sont coûteux (lecture du DEM et, à froid, génération
+        // GD). Ils doivent rester protégés même pour une session authentifiée : la
+        // clé par IP évite qu'un compte victime bloque tous ses autres terminaux.
+        if ($method === 'GET' && in_array($path, [
+            '/api/atak/terrain/hillshade',
+            '/api/atak/terrain/slope',
+            '/api/atak/terrain/contours',
+        ], true)) {
+            return [30, 60, 'rl:atak_terrain_overlay:' . $path . ':ip:' . $ip];
+        }
+
         // Scraping / mirroring massif (GET) — invités uniquement ; bots SEO exemptés.
         if ($method === 'GET' && $uid <= 0 && !$this->isExemptGetPath($path) && !$this->isSearchEngineUa()) {
             return [120, 60, 'rl:get_scrape:' . $actorKey];
