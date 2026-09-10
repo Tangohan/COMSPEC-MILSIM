@@ -1,0 +1,2 @@
+params [["_delta",1]]; private _data=uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]; private _b=_data getOrDefault ["briefing",createHashMap]; private _total=_b getOrDefault ["total",0]; if (_total<1) exitWith {false}; private _idx=((_b getOrDefault ["index",0])+_delta) max 0 min (_total-1); _b set ["index",_idx];
+if (!isNil "comspec_overwatch_connect_fnc_googleBriefingStep") then {[_delta] call comspec_overwatch_connect_fnc_googleBriefingStep;}; ["BRIEFING"] call comspec_atak_native_fnc_pageRender; true

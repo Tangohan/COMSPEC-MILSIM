@@ -1,0 +1,11 @@
+#define ATAK_BG0 {0.025,0.030,0.027,0.98}
+#define ATAK_BG1 {0.045,0.055,0.048,0.98}
+#define ATAK_BG2 {0.070,0.082,0.072,1}
+#define ATAK_GREEN {0.36,0.78,0.42,1}
+#define ATAK_GREEN_DIM {0.18,0.38,0.21,1}
+#define ATAK_TEXT {0.90,0.94,0.91,1}
+#define ATAK_TEXT_DIM {0.58,0.64,0.60,1}
+#define ATAK_BORDER {0.15,0.19,0.16,1}
+#define ATAK_WARNING {0.95,0.67,0.20,1}
+#define ATAK_DANGER {0.88,0.25,0.22,1}
+#define ATAK_INFO {0.35,0.58,0.72,1}

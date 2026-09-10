@@ -1,0 +1,1 @@
+params ["_tool"]; _tool=toUpper _tool; if !(_tool in ["SELECT","PAN","MARKER","PING","MEASURE","ROUTE","ZONE","DRAW","COORD","SITREP"]) exitWith {false}; private _s=uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap]; _s set ["mapMode",_tool]; missionNamespace setVariable ["COMSPEC_ATAK_MapTool",_tool,false]; true
