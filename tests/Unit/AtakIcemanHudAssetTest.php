@@ -72,6 +72,9 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('ctrlSetBackgroundColor [0, 0, 0, 0]', $upd);
         self::assertStringContainsString('ctrlPosition _mapCtrl', $upd);
         self::assertStringContainsString('4660', $upd);
+        self::assertStringContainsString('BCE_fnc_ATAK_getAPPs', $upd);
+        self::assertStringContainsString('COMSPEC_ATAK_MenuHydratedDisplay', $upd);
+        self::assertStringContainsString('forEach _nativeIdentity', $upd);
 
         self::assertStringNotContainsString('MQ-9', $upd);
         self::assertStringNotContainsString('RETASK', $upd);
