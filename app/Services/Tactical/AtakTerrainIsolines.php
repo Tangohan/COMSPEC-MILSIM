@@ -230,8 +230,14 @@ final class AtakTerrainIsolines
         $key = static function (array $p): string {
             return ((string) round($p[0], 1)) . ',' . ((string) round($p[1], 1));
         };
-        $used = [];
+        /** @var array<string, list<int>> $byEndpoint */
+        $byEndpoint = [];
         $n = count($segs);
+        for ($i = 0; $i < $n; $i++) {
+            $byEndpoint[$key($segs[$i][0])][] = $i;
+            $byEndpoint[$key($segs[$i][1])][] = $i;
+        }
+        $used = [];
         $lines = [];
         for ($i = 0; $i < $n; $i++) {
             if (isset($used[$i])) {
@@ -241,36 +247,43 @@ final class AtakTerrainIsolines
             $line = [$segs[$i][0], $segs[$i][1]];
             $head = $key($line[0]);
             $tail = $key($line[count($line) - 1]);
-            $grew = true;
-            while ($grew) {
+            while (true) {
                 $grew = false;
-                for ($j = 0; $j < $n; $j++) {
-                    if (isset($used[$j])) {
-                        continue;
+                foreach ([$tail, $head] as $endpoint) {
+                    foreach ($byEndpoint[$endpoint] ?? [] as $j) {
+                        if (isset($used[$j])) {
+                            continue;
+                        }
+                        $a = $key($segs[$j][0]);
+                        $b = $key($segs[$j][1]);
+                        if ($a === $tail) {
+                            $line[] = $segs[$j][1];
+                            $tail = $b;
+                            $used[$j] = true;
+                            $grew = true;
+                        } elseif ($b === $tail) {
+                            $line[] = $segs[$j][0];
+                            $tail = $a;
+                            $used[$j] = true;
+                            $grew = true;
+                        } elseif ($b === $head) {
+                            array_unshift($line, $segs[$j][0]);
+                            $head = $a;
+                            $used[$j] = true;
+                            $grew = true;
+                        } elseif ($a === $head) {
+                            array_unshift($line, $segs[$j][1]);
+                            $head = $b;
+                            $used[$j] = true;
+                            $grew = true;
+                        }
+                        if ($grew) {
+                            break 2;
+                        }
                     }
-                    $a = $key($segs[$j][0]);
-                    $b = $key($segs[$j][1]);
-                    if ($a === $tail) {
-                        $line[] = $segs[$j][1];
-                        $tail = $b;
-                        $used[$j] = true;
-                        $grew = true;
-                    } elseif ($b === $tail) {
-                        $line[] = $segs[$j][0];
-                        $tail = $a;
-                        $used[$j] = true;
-                        $grew = true;
-                    } elseif ($b === $head) {
-                        array_unshift($line, $segs[$j][0]);
-                        $head = $a;
-                        $used[$j] = true;
-                        $grew = true;
-                    } elseif ($a === $head) {
-                        array_unshift($line, $segs[$j][1]);
-                        $head = $b;
-                        $used[$j] = true;
-                        $grew = true;
-                    }
+                }
+                if (!$grew) {
+                    break;
                 }
             }
             $lines[] = $line;
