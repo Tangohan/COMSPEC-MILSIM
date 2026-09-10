@@ -29,42 +29,73 @@ final class AtakTerrainCartography
      */
     public function ensure(int $tenantId, int $mapId, bool $force = false): ?array
     {
-        $grid = $this->terrain->getGrid($tenantId, $mapId, true);
-        if (!is_array($grid) || !is_string($grid['heights'] ?? null) || $grid['heights'] === '') {
+        // Le blob DEM peut être volumineux. Ne le chargeons pas à chaque GET lorsque
+        // les produits correspondant au même relevé existent déjà sur disque.
+        $meta = $this->terrain->getGrid($tenantId, $mapId, false);
+        if (!is_array($meta)) {
             return null;
         }
-        $filled = (int) ($grid['filled_cells'] ?? 0);
+        $filled = (int) ($meta['filled_cells'] ?? 0);
         if ($filled < 9) {
-            return $grid;
+            return $meta;
         }
-        $stamp = (string) ($grid['sampled_at'] ?? $grid['updated_at'] ?? '');
+        $stamp = (string) ($meta['sampled_at'] ?? $meta['updated_at'] ?? '');
         $dir = $this->dir($tenantId, $mapId);
         $stampFile = $dir . '/stamp.txt';
-        if (!$force && is_file($stampFile) && is_file($dir . '/hillshade.png') && is_file($dir . '/contours.json')) {
+        $cacheComplete = is_file($dir . '/hillshade.png')
+            && is_file($dir . '/slope.png')
+            && is_file($dir . '/contours.json');
+        if (!$force && is_file($stampFile) && $cacheComplete) {
             $prev = trim((string) @file_get_contents($stampFile));
             if ($prev === $stamp && $stamp !== '') {
-                return $grid;
+                return $meta;
             }
         }
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-            return $grid;
+            return $meta;
         }
-        try {
-            $this->writeHillshade($dir . '/hillshade.png', $grid);
-        } catch (Throwable) {
-        }
-        try {
-            $this->writeSlope($dir . '/slope.png', $grid);
-        } catch (Throwable) {
-        }
-        try {
-            $geo = AtakTerrainIsolines::geoJson($grid, 10, 50);
-            @file_put_contents($dir . '/contours.json', json_encode($geo, JSON_UNESCAPED_UNICODE));
-        } catch (Throwable) {
-        }
-        @file_put_contents($stampFile, $stamp);
 
-        return $grid;
+        // Un seul processus régénère un relief donné. Sous rafale, les autres
+        // requêtes servent immédiatement l'ancienne image au lieu d'empiler des
+        // calculs jusqu'à la limite d'exécution PHP.
+        $lock = @fopen($dir . '/generation.lock', 'c');
+        if ($lock === false || !@flock($lock, LOCK_EX | LOCK_NB)) {
+            if (is_resource($lock)) {
+                fclose($lock);
+            }
+
+            return $meta;
+        }
+        try {
+            // Un autre processus a pu terminer entre le contrôle et le verrou.
+            if (!$force && is_file($stampFile) && $cacheComplete
+                && trim((string) @file_get_contents($stampFile)) === $stamp && $stamp !== '') {
+                return $meta;
+            }
+            $grid = $this->terrain->getGrid($tenantId, $mapId, true);
+            if (!is_array($grid) || !is_string($grid['heights'] ?? null) || $grid['heights'] === '') {
+                return $meta;
+            }
+            try {
+                $this->writeHillshade($dir . '/hillshade.png', $grid);
+            } catch (Throwable) {
+            }
+            try {
+                $this->writeSlope($dir . '/slope.png', $grid);
+            } catch (Throwable) {
+            }
+            try {
+                $geo = AtakTerrainIsolines::geoJson($grid, 10, 50);
+                @file_put_contents($dir . '/contours.json', json_encode($geo, JSON_UNESCAPED_UNICODE));
+            } catch (Throwable) {
+            }
+            @file_put_contents($stampFile, $stamp);
+
+            return $grid;
+        } finally {
+            @flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
 
     public function hillshadePath(int $tenantId, int $mapId): ?string
