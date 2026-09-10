@@ -35,8 +35,12 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('cTabBFTmembers', $relabel);
         self::assertStringContainsString('cTabBFTgroups', $relabel);
         self::assertStringContainsString('setMarkerTextLocal', $relabel);
+        self::assertStringContainsString('17000 + 2620', $relabel);
         self::assertStringContainsString('cTab_fnc_updateLists', $install);
         self::assertStringContainsString('athena_relabelBft', $install);
+        self::assertStringContainsString('cTab_updatePulse', $install);
+        self::assertStringContainsString('cTabIfOpen', $install);
+        self::assertStringContainsString('applyCtabBftCallsign', $install);
         self::assertStringContainsString('athena_installBftLabels', $post);
         self::assertStringContainsString('athena_bftUnitLabel', $cfg);
         self::assertStringContainsString('1.0.80', $cfg);
@@ -45,5 +49,34 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('01', $note);
         self::assertStringContainsString('indicatif', $note);
         self::assertStringNotContainsString('endpoint', $note);
+
+        $applyCtab = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_applyCtabBftCallsign.sqf'
+        );
+        $set = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_setCallsign.sqf'
+        );
+        $sync = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_syncCallsignFromAthena.sqf'
+        );
+        $cfgConnect = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
+        );
+        $bugCtab = (string) file_get_contents(
+            $root . '/docs/bugs/2026-09-10-ctab-bft-indicatif-athena.md'
+        );
+        $veh = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_initVehicleTracking.sqf'
+        );
+        self::assertStringContainsString('class applyCtabBftCallsign', $cfgConnect);
+        self::assertStringContainsString('cTab_groupId', $applyCtab);
+        self::assertStringContainsString('COMSPEC_CtabBftCallsign', $applyCtab);
+        self::assertStringContainsString('saveProfileNamespace', $applyCtab);
+        self::assertStringContainsString('applyCtabBftCallsign', $set);
+        self::assertStringContainsString('applyCtabBftCallsign', $sync);
+        self::assertStringContainsString('GetInMan', $veh);
+        self::assertStringContainsString('applyCtabBftCallsign', $veh);
+        self::assertStringContainsString('indicatif', strtolower($bugCtab));
+        self::assertStringNotContainsString('endpoint', $bugCtab);
     }
 }

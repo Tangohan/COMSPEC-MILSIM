@@ -1,6 +1,7 @@
 /*
     Si le compte Athena est lié, récupère l’indicatif Effectifs (GetPlayerAvatarInfo)
-    et l’applique localement quand le profil jeu est encore vide ou invalide.
+    et l’applique localement. Un indicatif Athena différent remplace le profil jeu.
+    Dans tous les cas, le suivi d’effectif cTab est recalé et mémorisé.
     Ne reprend jamais le nom de communauté ni le nom affiché.
 */
 params [["_force", false, [true]]];
@@ -29,11 +30,16 @@ if (_mid != "") then {
     missionNamespace setVariable ["COMSPEC_BftId", _mid, false];
 };
 
-if (!_force && {_local isNotEqualTo ""} && {[_local] call comspec_overwatch_connect_fnc_isUsableCallsign}) exitWith {
-    false
+if (
+    !_force
+    && {_local isNotEqualTo ""}
+    && {[_local] call comspec_overwatch_connect_fnc_isUsableCallsign}
+    && {(toLower _local) isEqualTo (toLower _callsign)}
+) then {
+    [_callsign] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
+} else {
+    [_callsign, true, "athena"] call comspec_overwatch_connect_fnc_setCallsign;
 };
-
-[_callsign, true, "athena"] call comspec_overwatch_connect_fnc_setCallsign;
 0 spawn {
     uiSleep 0.5;
     ["", true] call comspec_overwatch_connect_fnc_syncAtakRealism;

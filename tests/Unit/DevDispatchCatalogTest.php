@@ -994,6 +994,16 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('serveur', strtolower((string) $playtimeCtx['title']));
         self::assertStringContainsString('zeus', strtolower((string) $playtimeCtx['title']));
         self::assertStringContainsString('éditeur', strtolower((string) $playtimeCtx['title']));
+        $ctabBftCs = DevDispatchCatalog::find('update', '482');
+        self::assertNotNull($ctabBftCs);
+        self::assertSame('00482', $ctabBftCs['number_pad']);
+        self::assertStringContainsString('indicatif', strtolower((string) $ctabBftCs['title']));
+        self::assertStringContainsString('effectif', strtolower((string) $ctabBftCs['title']));
+        $idOverlay = DevDispatchCatalog::find('update', '483');
+        self::assertNotNull($idOverlay);
+        self::assertSame('00483', $idOverlay['number_pad']);
+        self::assertStringContainsString('identité', strtolower((string) $idOverlay['title']));
+        self::assertStringContainsString('encart', strtolower((string) $idOverlay['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

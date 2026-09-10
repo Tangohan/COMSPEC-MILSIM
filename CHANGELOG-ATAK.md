@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Athena — 2026-09-10
+
+### Correction — Encart d’identité sur la carte
+
+Sur la carte du téléphone, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste en bas à gauche, au-dessus des outils, hors du tiroir. Relancer Arma complètement.
+
+---
+
 ## Portail 1.5.98 — 2026-09-04
 
 ### Administration — remise à zéro ATAK et Steam
