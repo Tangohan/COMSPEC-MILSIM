@@ -1,6 +1,7 @@
 /*
     Tick HUD carte ATAK Enhanced :
-    - bandeau identité noir juste sous l’heure (Indicatif, Rôle, Grille, Radio)
+    - encart identité superposé (Indicatif, Nom, Groupe, Fonction, Position),
+      comme les outils carte, en bas à gauche au-dessus de Map Tools
     - cartouche curseur (GRILLE, DIST, SOL, GIS, PORTÉE) en bas à droite
     - pas de boutons zoom +/− (ils se calaient sur le tiroir)
     Ne jamais restyler ni masquer le bouton natif des outils carte, ni le pied d’application IceMan.
@@ -206,48 +207,28 @@ private _fncAbsPos = {
     };
     [_ax, _ay, _aw, _ah]
 };
-private _fncOsd = {
-    params ["_d", "_idc"];
-    private _c = _d displayCtrl (17000 + _idc);
-    if (isNull _c) then { _c = _d displayCtrl _idc; };
-    _c
-};
 
-// Bandeau noir juste sous l’heure (bas du bandeau OSD, centré sur l’horloge).
-private _barH = (_visH * 0.042) max 0.022;
-private _barW = (_visW * 0.72) min 0.50;
-private _barY = _visY + 0.001;
-private _barX = _visX + ((_visW - _barW) / 2);
-private _timeCtrl = [_disp, 2613] call _fncOsd;
-private _headerCtrl = _disp displayCtrl 1;
-if (isNull _headerCtrl) then { _headerCtrl = _disp displayCtrl (17000 + 1); };
-if (!isNull _timeCtrl) then {
-    ([_timeCtrl] call _fncAbsPos) params ["_tx", "_ty", "_tw", "_th"];
-    if (_tw > 0.02 && {_th > 0.006}) then {
-        _barH = (_th * 0.95) max 0.020;
-        _barY = _ty + _th + 0.002;
-        _barW = ((_tw * 3.4) max (_visW * 0.58)) min (_visW * 0.90);
-        _barX = _tx + (_tw / 2) - (_barW / 2);
+// Encart identité : même style que Map Tools, au-dessus des outils carte.
+private _idW = (_visW * 0.42) min 0.30;
+if (_idW < 0.12) then { _idW = (_visW * 0.48) max 0.10; };
+private _idH = (_visH * 0.28) max 0.118;
+private _toolsReserve = (_visH * 0.14) max 0.055;
+private _mtCtrl = _disp displayCtrl (17000 + 12012);
+if (isNull _mtCtrl) then { _mtCtrl = _disp displayCtrl 12012; };
+if (!isNull _mtCtrl && {ctrlShown _mtCtrl}) then {
+    ([_mtCtrl] call _fncAbsPos) params ["", "_mty", "", "_mth"];
+    if (_mth > 0.012 && {_mty > _visY}) then {
+        _toolsReserve = (((_visY + _visH) - _mty) + 0.006) max 0.04;
     };
 };
-if (!isNull _headerCtrl) then {
-    ([_headerCtrl] call _fncAbsPos) params ["_hx", "_hy", "_hw", "_hh"];
-    // Bandeau OSD seulement (pas un groupe d’écran 17000+1 trop haut).
-    if (_hw > 0.12 && {_hh > 0.010} && {_hh < (_visH * 0.16)} && {(_hy + _hh) <= (_visY + 0.05)}) then {
-        _barY = _hy + _hh + 0.002;
-        if (_barW > (_hw * 0.94)) then { _barW = _hw * 0.90; };
-        if (_barX < _hx || {(_barX + _barW) > (_hx + _hw)}) then {
-            _barX = _hx + ((_hw - _barW) / 2);
-        };
-    };
+private _idX = _visX + _pad;
+private _idY = _visY + _visH - _idH - _toolsReserve - _pad;
+if (_idY < (_visY + _pad)) then { _idY = _visY + _pad; };
+if ((_idX + _idW) > (_cursorX - 0.008)) then {
+    _idW = ((_cursorX - _idX - 0.008) max 0.10);
 };
-if (_barY < _visY) then { _barY = _visY + 0.001; };
-if (_barX < _visX) then { _barX = _visX; };
-if ((_barX + _barW) > (_visX + _visW)) then {
-    _barW = ((_visX + _visW) - _barX) max 0.10;
-};
-_unitBox ctrlSetPosition [_barX, _barY, _barW, _barH];
-_unitBox ctrlSetBackgroundColor [0, 0, 0, 0.94];
+_unitBox ctrlSetPosition [_idX, _idY, _idW, _idH];
+_unitBox ctrlSetBackgroundColor _bgPanel;
 _unitBox ctrlSetFade 0;
 _unitBox ctrlEnable false;
 
@@ -324,38 +305,54 @@ if (!(_cs isEqualType "")) then { _cs = str _cs; };
 _cs = trim _cs;
 if (_cs isEqualTo "") then { _cs = "—"; };
 
-private _role = "";
-if (!isNil "comspec_overwatch_connect_fnc_getUnitRole") then {
-    _role = [_player] call comspec_overwatch_connect_fnc_getUnitRole;
+private _fncCleanTxt = {
+    params ["_v"];
+    if (!(_v isEqualType "")) then { _v = str _v; };
+    _v = trim _v;
+    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else { _v }
 };
-if (!(_role isEqualType "")) then { _role = str _role; };
-_role = trim _role;
-if (_role isEqualTo "" || {(toLower _role) in ["operator", "operateur"]}) then { _role = "—"; };
 
-private _radioTxt = "—";
-if (!isNil "comspec_overwatch_connect_fnc_getRadioState") then {
-    private _radioRaw = [_player] call comspec_overwatch_connect_fnc_getRadioState;
-    if (_radioRaw isEqualType "") then {
-        private _rp = _radioRaw splitString "|";
-        private _freq = if ((count _rp) > 1) then { _rp select 1 } else { "N/A" };
-        private _ch = if ((count _rp) > 2) then { _rp select 2 } else { "N/A" };
-        if (!(_freq in ["", "N/A"])) then {
-            _radioTxt = if ((_freq find "MHz") >= 0) then { _freq } else { format ["%1 MHz", _freq] };
-        } else {
-            if (!(_ch in ["", "N/A", "0"])) then {
-                _radioTxt = format ["canal %1", _ch];
-            };
+private _opName = [missionNamespace getVariable ["comspec_profile_name", ""]] call _fncCleanTxt;
+if (_opName isEqualTo "") then {
+    if (!isNil "comspec_overwatch_connect_fnc_collectOperatorIdentity") then {
+        private _ident = [_player] call comspec_overwatch_connect_fnc_collectOperatorIdentity;
+        if (_ident isEqualType createHashMap) then {
+            private _fn = [_ident getOrDefault ["first_name_detected", ""]] call _fncCleanTxt;
+            private _ln = [_ident getOrDefault ["last_name_detected", ""]] call _fncCleanTxt;
+            _opName = trim (format ["%1 %2", _fn, _ln]);
         };
     };
 };
+if (_opName isEqualTo "") then { _opName = "—"; };
+
+private _grpTxt = "";
+if (!isNil "comspec_overwatch_connect_fnc_inGameGroupLabel") then {
+    _grpTxt = [_player] call comspec_overwatch_connect_fnc_inGameGroupLabel;
+};
+_grpTxt = [_grpTxt] call _fncCleanTxt;
+if (_grpTxt isEqualTo "") then { _grpTxt = "—"; };
+
+private _fnTxt = [missionNamespace getVariable ["comspec_profile_function", ""]] call _fncCleanTxt;
+if (_fnTxt isEqualTo "") then {
+    _fnTxt = [missionNamespace getVariable ["comspec_profile_role", ""]] call _fncCleanTxt;
+};
+if (_fnTxt isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_getUnitRole"}) then {
+    _fnTxt = [[_player] call comspec_overwatch_connect_fnc_getUnitRole] call _fncCleanTxt;
+};
+if (_fnTxt isEqualTo "" || {(toLower _fnTxt) in ["operator", "operateur"]}) then { _fnTxt = "—"; };
 
 private _unitHtml = format [
-    "<t font='RobotoCondensedBold' size='0.52' color='#E8EEF2' align='left'>" +
-    "INDICATIF  %1    RÔLE  %2    GRILLE  %3    RADIO  %4</t>",
+    "<t font='EtelkaMonospacePro' size='0.58' color='#5EC7F2' align='left'>" +
+    "INDICATIF  %1<br/>" +
+    "NOM       %2<br/>" +
+    "GROUPE    %3<br/>" +
+    "FONCTION  %4<br/>" +
+    "POSITION  %5</t>",
     _cs,
-    _role,
-    [_playerPos] call _fncGrid,
-    _radioTxt
+    _opName,
+    _grpTxt,
+    _fnTxt,
+    [_playerPos] call _fncGrid
 ];
 
 _cursorBox ctrlSetStructuredText parseText _cursorHtml;
@@ -373,5 +370,6 @@ _zoomIn ctrlCommit 0;
 _zoomOut ctrlCommit 0;
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIUpdate") then {
+    // Chrome 88500+ : mapUIDestroy depuis mapUIUpdate (pas de rail ni menu clic droit).
     [_disp, _mapCtrl, [_visX, _visY, _visW, _visH]] call comspec_overwatch_atak_athena_fnc_mapUIUpdate;
 };

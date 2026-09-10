@@ -34,6 +34,7 @@ if (_veh != player && {driver _veh == player}) then {
 
 [format ["[Athena] Callsign registered : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
 [_callsign] call comspec_overwatch_connect_fnc_applyGroupIdFromCallsign;
+[_callsign] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
 
 if (
     missionNamespace getVariable ["COMSPEC_AthenaReady", false]

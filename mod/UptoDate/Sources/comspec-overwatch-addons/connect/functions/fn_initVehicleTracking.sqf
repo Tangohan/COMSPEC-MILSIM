@@ -14,6 +14,10 @@ player addEventHandler ["GetInMan", {
     params ["_unit", "_role", "_vehicle", "_turret"];
     if (_vehicle isEqualTo _unit) exitWith {};
 
+    if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {
+        [] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
+    };
+
     if (!isNil "comspec_overwatch_connect_fnc_hideAceMenu") then {
         [] call comspec_overwatch_connect_fnc_hideAceMenu;
     };
@@ -63,6 +67,9 @@ player addEventHandler ["Respawn", {
     // Grâce déjà posée par initATAK (Respawn / EntityRespawned) — ici on rebind seulement.
     [{
         [] call comspec_overwatch_connect_fnc_initVehicleTracking;
+        if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {
+            [] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
+        };
     }, [], 0.5] call CBA_fnc_waitAndExecute;
 }];
 

@@ -305,6 +305,7 @@ class CfgFunctions {
             class initOperatorProfileSync {};
             class setCallsign {};
             class applyGroupIdFromCallsign {};
+            class applyCtabBftCallsign {};
             class fillZeusGroupId {};
             
             // ATAK Phase 1 & 2 - Nouvelles fonctions

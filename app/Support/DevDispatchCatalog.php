@@ -584,6 +584,21 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(483, '2026-09-10', 'L’encart d’identité revient sur la carte du téléphone', 'Sur la carte, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste au-dessus des outils, hors du tiroir. Relancez Arma après mise à jour du pack', [
+                'Encart superposé avec l’indicatif, le nom, le groupe, la fonction et la position',
+            ], [], [
+                'L’identité n’apparaissait plus sur la carte, ou se réduisait à une bande illisible sous l’heure',
+            ], ['atak'], [
+                'Ouvrez le téléphone, carte : l’encart en bas à gauche doit montrer les cinq lignes. Les outils carte restent visibles en dessous.',
+            ], 'Pack ATAK'),
+            $pr(482, '2026-09-10', 'L’indicatif Athena s’affiche enfin sur le suivi d’effectif', 'Dès que le compte est lié, le téléphone reprend l’indicatif de la fiche. Il le conserve en véhicule, après un retour, et à la prochaine session. Relancez Arma après mise à jour du pack', [
+                'Le suivi d’effectif de la tablette affiche l’indicatif Athena, plus le nom de groupe du jeu',
+                'L’indicatif reste mémorisé d’une session à l’autre',
+            ], [], [
+                'Le téléphone gardait un ancien indicatif ou un numéro d’équipe au lieu de celui de la fiche',
+            ], ['atak'], [
+                'Reliez le terminal, ouvrez le téléphone : le bandeau et le symbole de suivi doivent montrer le même indicatif que la fiche. Montez dans un véhicule, puis relancez Arma : l’indicatif reste.',
+            ], 'Pack ATAK'),
             $pr(481, '2026-09-07', 'Le temps de jeu distingue serveur, Zeus et éditeur', 'Le terminal envoie désormais séparément le temps passé en serveur, le temps passé en Zeus et le temps passé dans l’éditeur. Le tableau de bord garde le total ; la fiche affiche le détail. Relancez Arma après mise à jour du pack', [
                 'Temps en serveur, en Zeus et dans l’éditeur enregistrés à part',
                 'Détail visible sur la fiche du membre',

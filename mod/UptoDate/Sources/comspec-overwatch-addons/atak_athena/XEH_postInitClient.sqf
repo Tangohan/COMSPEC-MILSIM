@@ -12,7 +12,7 @@ private _forceCheckLayout = {
     uiNamespace setVariable ["BCE_fnc_ATAK_Check_Layout", _code];
 };
 call _forceCheckLayout;
-{ [_forceCheckLayout, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
+{ [_forceCheckLayout, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15, 25];
 
 // Caméra overlay : téléphone = rttN (l’opérateur marche) ; cliché = vue scène puis restauration.
 private _forceCamCapture = {
@@ -44,6 +44,8 @@ call _forceCamCapture;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 1] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 3] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 8] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 15] call CBA_fnc_waitAndExecute;
+[{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 25] call CBA_fnc_waitAndExecute;
 [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 1] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installReportsLayout; }, [], 3] call CBA_fnc_waitAndExecute;
@@ -206,6 +208,21 @@ private _ensureAtakApps = {
 // Liaison Athena établie : démarrer le watcher DLL + un balayage unique
 ["COMSPEC_AthenaLinkChanged", {
     params [["_state", ""]];
+    if (_state in ["ready", "linked"]) then {
+        private _path = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
+        if (fileExists _path) then {
+            private _code = compile preprocessFileLineNumbers _path;
+            if (_code isEqualType {}) then {
+                BCE_fnc_ATAK_Check_Layout = _code;
+                missionNamespace setVariable ["BCE_fnc_ATAK_Check_Layout", _code];
+                uiNamespace setVariable ["BCE_fnc_ATAK_Check_Layout", _code];
+            };
+        };
+        [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels;
+        if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {
+            [] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
+        };
+    };
     if (_state isNotEqualTo "ready") exitWith {};
     [] spawn {
         private _deadline = diag_tickTime + 30;

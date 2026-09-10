@@ -133,8 +133,10 @@ switch (_function) do {
         };
         if (_cs != "" && {[_cs] call comspec_overwatch_connect_fnc_isUsableCallsign}) then {
             private _local = [true] call comspec_overwatch_connect_fnc_getCallsign;
-            if (_local isEqualTo "") then {
+            if (_local isEqualTo "" || {(toLower _local) isNotEqualTo (toLower _cs)}) then {
                 [_cs, true, "bft_athena"] call comspec_overwatch_connect_fnc_setCallsign;
+            } else {
+                [_cs] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
             };
         };
     };
