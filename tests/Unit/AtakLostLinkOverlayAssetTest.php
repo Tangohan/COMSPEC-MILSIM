@@ -52,6 +52,17 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('Reconnexion en cours…', $view);
     }
 
+    public function testConcurrentOrIsolatedPingFailureDoesNotReportAnOutage(): void
+    {
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
+
+        self::assertStringContainsString('if (atakPingInFlight) return atakPingInFlight;', $view);
+        self::assertStringContainsString('ATAK_PING_FAILURES_BEFORE_OUTAGE = 2', $view);
+        self::assertStringContainsString('atakPingFailureStreak = lastPingOk ? 0 : atakPingFailureStreak + 1', $view);
+        self::assertStringContainsString('outageEl.hidden = !outageConfirmed', $view);
+        self::assertStringNotContainsString('outageEl.hidden = lastPingOk', $view);
+    }
+
     public function testInGameLostLinkDropsOldGraphicAndKeepsOneTimer(): void
     {
         $overlay = (string) file_get_contents(
