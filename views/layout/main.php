@@ -176,6 +176,12 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($accountHubPage) && is_file(base_path('public/assets/css/account-hub.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/account-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($messagesPage) && is_file(base_path('public/assets/css/messages.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/messages.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php if (!empty($messagesPage) && is_file(base_path('public/assets/js/messages.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/messages.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
     <?php if (!empty($opsWorkspacePage) && is_file(base_path('public/assets/css/ops-workspace.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/ops-workspace.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/tactical-marker-chip.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
