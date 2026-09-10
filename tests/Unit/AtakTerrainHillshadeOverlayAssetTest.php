@@ -21,6 +21,8 @@ final class AtakTerrainHillshadeOverlayAssetTest extends TestCase
         self::assertStringContainsString('@imagecreatetruecolor($outW, $outH)', $carto);
         self::assertStringContainsString('getGrid($tenantId, $mapId, false)', $carto);
         self::assertStringContainsString('LOCK_EX | LOCK_NB', $carto);
+        self::assertStringContainsString("false, 'hillshade'", $carto);
+        self::assertStringContainsString("'/stamp-' . $name . '.txt'", $carto);
 
         self::assertStringContainsString('catch (Throwable)', $api);
         self::assertStringContainsString('setBodyStream', $api);
