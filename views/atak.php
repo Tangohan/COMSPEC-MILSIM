@@ -3547,6 +3547,9 @@ if ($atakMapConfig) {
       }
       var lastMeasuredLatencyMs = null;
       var lastPingOk = false;
+      var atakPingInFlight = null;
+      var atakPingFailureStreak = 0;
+      var ATAK_PING_FAILURES_BEFORE_OUTAGE = 2;
       function setMetricValue(id, text, tone) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -3598,31 +3601,53 @@ if ($atakMapConfig) {
         );
       }
       function measurePingLatency() {
+        // Le démarrage et le polling périodique peuvent demander le ping au même
+        // instant. Partager la requête empêche une réponse ancienne en échec de
+        // réafficher le bandeau après qu'une autre a déjà réussi.
+        if (atakPingInFlight) return atakPingInFlight;
         var t0 = performance.now();
         var ctrl = new AbortController();
         var to = setTimeout(function () { ctrl.abort(); }, 5000);
-        return fetch('<?= url("api/atak/ping") ?>', { credentials: 'include', signal: ctrl.signal, cache: 'no-store' })
-          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok && !!(d && d.ok), data: d }; }); })
+        atakPingInFlight = fetch('<?= url("api/atak/ping") ?>', { credentials: 'include', signal: ctrl.signal, cache: 'no-store' })
+          .then(function (r) {
+            return r.json()
+              .then(function (d) { return { ok: r.ok && !!(d && d.ok), status: r.status, data: d }; })
+              .catch(function () { return { ok: false, status: r.status, data: null }; });
+          })
           .then(function (res) {
             clearTimeout(to);
             lastPingOk = !!res.ok;
             lastMeasuredLatencyMs = lastPingOk ? (performance.now() - t0) : null;
+            atakPingFailureStreak = lastPingOk ? 0 : atakPingFailureStreak + 1;
+            var outageConfirmed = atakPingFailureStreak >= ATAK_PING_FAILURES_BEFORE_OUTAGE;
             var outageEl = document.getElementById('atak-api-outage');
-            if (outageEl) outageEl.hidden = lastPingOk;
+            if (outageEl) outageEl.hidden = !outageConfirmed;
             if (connectionLostEl && lastPingOk) {
               connectionLostEl.classList.remove('show');
             }
             if (lastPingOk) setNetworkChip(true);
+            else if (outageConfirmed) setNetworkChip(false);
             return res;
           })
           .catch(function () {
             clearTimeout(to);
             lastPingOk = false;
             lastMeasuredLatencyMs = null;
+            atakPingFailureStreak += 1;
+            var outageConfirmed = atakPingFailureStreak >= ATAK_PING_FAILURES_BEFORE_OUTAGE;
             var outageEl = document.getElementById('atak-api-outage');
-            if (outageEl) outageEl.hidden = false;
-            setNetworkChip(false);
+            if (outageEl) outageEl.hidden = !outageConfirmed;
+            if (outageConfirmed) setNetworkChip(false);
+            return { ok: false, status: 0, data: null };
           });
+        atakPingInFlight = atakPingInFlight.then(function (res) {
+          atakPingInFlight = null;
+          return res;
+        }, function (err) {
+          atakPingInFlight = null;
+          throw err;
+        });
+        return atakPingInFlight;
       }
       var lastLiaisonChipAt = 0;
       function refreshLiaisonChipQuiet() {
