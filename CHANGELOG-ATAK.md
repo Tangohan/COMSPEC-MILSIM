@@ -13,7 +13,7 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ### Correction — Encart d’identité sur la carte
 
-Sur la carte du téléphone, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste en bas à gauche, au-dessus des outils, hors du tiroir. Relancer Arma complètement.
+Sur la carte du téléphone, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste en bas à gauche, au-dessus des outils, hors du tiroir. Le menu d’applications est désormais reconstruit à chaque nouvelle ouverture d’écran et l’identité native reste visible en secours si l’encart ne peut pas être créé. Relancer Arma complètement.
 
 ---
 

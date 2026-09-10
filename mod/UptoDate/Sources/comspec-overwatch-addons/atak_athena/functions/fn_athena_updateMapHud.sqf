@@ -58,6 +58,19 @@ private _overlay = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Ctrl", contro
 private _overlayOn = !isNull _overlay && {ctrlShown _overlay} && {ctrlParent _overlay isEqualTo _disp};
 if (_overlayOn) exitWith { [_disp] call _fncHide; };
 
+// BCE construit le fond du tiroir avant ses boutons. Sur certaines reprises de
+// mission / mises a jour du PBO, le display existe donc avec un grand panneau
+// noir mais aucun menu. Rehydrater une fois par instance de display, et non a
+// chaque tick du HUD (ATAK_getAPPs recree les controles du tiroir).
+private _hydratedDisplay = uiNamespace getVariable ["COMSPEC_ATAK_MenuHydratedDisplay", displayNull];
+if (_hydratedDisplay isNotEqualTo _disp) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_MenuHydratedDisplay", _disp];
+    if (!isNil "BCE_fnc_ATAK_getAPPs") then {
+        [true, true] call BCE_fnc_ATAK_getAPPs;
+        diag_log "[COMSPEC][MAP] ATAK application menu hydrated";
+    };
+};
+
 private _mode = "";
 if (!isNil "cTab_fnc_getSettings") then {
     _mode = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;
@@ -113,13 +126,13 @@ if (!isNull _bgGroup) then {
         };
     };
 };
+private _nativeIdentity = [];
 {
     private _c = _disp displayCtrl (17000 + _x);
     if (isNull _c) then { continue };
     _c ctrlSetBackgroundColor _bgPanel;
     _c ctrlSetTextColor _cyan;
-    // Identité native IceMan : masquée, remplacée par le cartouche COMSPEC.
-    _c ctrlShow false;
+    _nativeIdentity pushBack _c;
 } forEach [2620, 2621, 2622];
 
 {
@@ -170,7 +183,15 @@ private _acctBanner = [_disp, _idcAcct, "RscStructuredText"] call _fncEnsure;
 private _zoomIn = [_disp, _idcZoomIn, "RscButton"] call _fncEnsure;
 private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 
-if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {};
+if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {
+    // Ne jamais supprimer toute identite si la creation dynamique du cartouche
+    // echoue sur une version BCE : les trois lignes IceMan restent le repli.
+    { _x ctrlShow true; } forEach _nativeIdentity;
+};
+
+// Le cartouche COMSPEC est maintenant garanti : seulement alors masquer le
+// triplet natif, sinon un echec ctrlCreate produisait exactement une carte vide.
+{ _x ctrlShow false; } forEach _nativeIdentity;
 
 private _pad = _visW * 0.012;
 _heading ctrlShow false;
