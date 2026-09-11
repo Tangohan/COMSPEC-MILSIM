@@ -691,7 +691,21 @@ public static partial class Extension
         System.Threading.Interlocked.Exchange(ref _lastAuth401ReauthTicks, now);
         _ = Task.Run(() =>
         {
-            try { VerifyClientInitSync(); } catch { /* ignore */ }
+            try
+            {
+                var verify = VerifyClientInitSync();
+                if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
+                    || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
+                    || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                {
+                    // A 401 followed by a rejected client-init is not a transient POST
+                    // failure. Tell SQF to close its transmission gate; otherwise every
+                    // periodic producer keeps hammering authenticated endpoints forever.
+                    SetGameAuth("C2_UNAUTHORIZED", _gameAuthProgress, "C2_UNAUTHORIZED");
+                    InvokeCallback("AuthInvalidated", verify);
+                }
+            }
+            catch { /* the normal network backoff handles transport failures */ }
         });
     }
 
@@ -1566,7 +1580,10 @@ public static partial class Extension
             using var resp = SendGet(uri, cts.Token);
             var code = (int)resp.StatusCode;
             if (code == 401 || code == 403)
+            {
+                MaybeReauthAfter401(uri.AbsoluteUri);
                 return FormatAtakExtArray("ERROR", "unauthorized");
+            }
             if (code < 200 || code >= 300)
                 return FormatAtakExtArray("ERROR", "http_" + code);
             var body = ReadContentUtf8(resp, cts.Token);
@@ -8892,7 +8909,10 @@ public static partial class Extension
             if (code == 404)
                 return FormatAtakExtArray("OK", "pending");
             if (code == 401 || code == 403)
+            {
+                MaybeReauthAfter401(uri.AbsoluteUri);
                 return FormatAtakExtArray("ERROR", "unauthorized");
+            }
             if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
                 return FormatAtakExtArray("ERROR", "migration_required");
             var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
