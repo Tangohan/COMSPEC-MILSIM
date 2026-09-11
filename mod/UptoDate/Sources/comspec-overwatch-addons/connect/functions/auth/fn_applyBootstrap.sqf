@@ -48,21 +48,31 @@ if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
 };
 
 if (_state isEqualTo "READY") then {
-    private _wasReady = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-    if (!(_wasReady isEqualType true)) then { _wasReady = false; };
-    missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
-    missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
-    missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-    private _linkCs = [true] call comspec_overwatch_connect_fnc_getCallsign;
-    private _detail = _tenant;
-    if (!(_linkCs isEqualTo "")) then {
-        _detail = if (_detail isEqualTo "") then { _linkCs } else { format ["%1 — %2", _tenant, _linkCs] };
+    private _errUpper = toUpper _err;
+    private _c2Blocked = (_errUpper find "C2_") == 0;
+    if (_c2Blocked) then {
+        // Compte / profil connus, mais le canal poste refuse encore : pas de Tx.
+        missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
+        missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+        missionNamespace setVariable ["COMSPEC_LinkDetail", "Compte trouvé — canal poste à rouvrir", false];
+        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     } else {
-        if (_detail isEqualTo "") then { _detail = "Opérateur"; };
-    };
-    missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
-    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
-    if (!_wasReady) then {
-        ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
+        private _wasReady = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+        if (!(_wasReady isEqualType true)) then { _wasReady = false; };
+        missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
+        missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
+        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+        private _linkCs = [true] call comspec_overwatch_connect_fnc_getCallsign;
+        private _detail = _tenant;
+        if (!(_linkCs isEqualTo "")) then {
+            _detail = if (_detail isEqualTo "") then { _linkCs } else { format ["%1 — %2", _tenant, _linkCs] };
+        } else {
+            if (_detail isEqualTo "") then { _detail = "Opérateur"; };
+        };
+        missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
+        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+        if (!_wasReady) then {
+            ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
+        };
     };
 };

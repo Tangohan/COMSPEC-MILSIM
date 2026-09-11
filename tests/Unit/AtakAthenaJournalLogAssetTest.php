@@ -58,7 +58,7 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
 
         self::assertStringContainsString('comspec_profile_name', $upd);
         self::assertStringContainsString('Compte non connecté', $upd);
-        self::assertStringContainsString('Steam NON LINK', $upd);
+        self::assertStringContainsString('Steam non associé', $upd);
         self::assertStringContainsString('AFFECTATION', $upd);
 
         self::assertStringContainsString('9770', $lay);

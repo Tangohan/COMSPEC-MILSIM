@@ -478,6 +478,11 @@ public static partial class Extension
         }
         _gameAccessToken = "";
         _gameAccessExpiresAt = DateTimeOffset.MinValue;
+        // Couper aussi la clé communauté / session ATAK : sinon « Se déconnecter »
+        // laisse le canal poste ouvert avec l’ancienne clé.
+        ApplyApiKeyHeaders("");
+        _sessionToken = "";
+        _tenantId = "";
         var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
         store.RefreshToken = "";
         store.PairingToken = "";

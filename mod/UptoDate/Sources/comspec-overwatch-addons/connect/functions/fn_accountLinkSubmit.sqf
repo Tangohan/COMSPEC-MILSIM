@@ -257,7 +257,11 @@ if (_prefix != "OK") exitWith {
 
         case "unauthorized";
         case "http_401": {
-            "Liaison refusée. Générez un nouveau code sur le portail (Appairer), vérifiez l’adresse (…/public), ou utilisez un Steam déjà lié au profil."
+            if (!_useSteam) then {
+                "Le code a été traité, mais la session n’a pas pu être confirmée. Générez un nouveau code sur le portail, quittez Arma complètement, puis réessayez."
+            } else {
+                "Liaison refusée. Générez un code sur le portail (Appairer), vérifiez l’adresse (…/public), ou reconnectez-vous à Athena avant de réessayer."
+            }
         };
 
         case "extension_empty": {
@@ -397,6 +401,10 @@ if (_connectOk) then {
     ["COMSPEC_Info", ["Compte Athena connecte."]] call comspec_overwatch_connect_fnc_showNotification;
     [] call comspec_overwatch_connect_fnc_measureLatency;
     [] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;
+
+    if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+        [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+    };
 
     0 spawn {
         uiSleep 0.5;

@@ -55,13 +55,19 @@ switch (_function) do {
     case "AuthInvalidated": {
         // La DLL a confirmé le 401 par un nouvel appel client-init : ce n'est pas
         // une panne réseau passagère. Fermer immédiatement toutes les boucles Tx.
+        // Ne pas écraser un handshake encore en cours (session en cours de restauration).
+        if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {
+            ["WARN", "Athena", "401 pendant le handshake — en attente de connexion manuelle", _data] call comspec_overwatch_connect_fnc_log;
+        };
         missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
         missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["comspec_overwatch_auth_error", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "Session Athena refusée — reconnectez-vous", false];
-        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 600, false];
-        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 600, false];
+        // Pause courte : un appairage juste après doit pouvoir rouvrir le canal.
+        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 45, false];
+        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 45, false];
+        missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", false, false];
         ["ERROR", "Athena", "Session refusée par le poste — transmissions arrêtées", _data] call comspec_overwatch_connect_fnc_log;
         ["[Athena] Session expirée ou compte non lié. Reconnectez-vous avant de transmettre.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;

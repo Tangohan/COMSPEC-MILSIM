@@ -79,6 +79,24 @@ final class AtakActivityWebLogTest extends TestCase
         self::assertSame(['Carte web', 'TOC'], $actors);
     }
 
+    public function testEffectifsIngestIdenticalLabelIsThrottledHard(): void
+    {
+        $label = 'Effectifs en liaison : 2';
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'effectifs', $label, 'Carte web');
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'effectifs', $label, 'Carte web');
+        $this->svc->recordIngest($this->tenantId, $this->mapId, 'effectifs', 'Nouveau contact en liaison — TA1', 'Carte web');
+
+        $list = $this->svc->listFiltered($this->tenantId, $this->mapId, [
+            'type' => 'donnees',
+            'limit' => 20,
+        ]);
+
+        self::assertCount(2, $list['events']);
+        $labels = array_map(static fn (array $e): string => (string) ($e['label'] ?? ''), $list['events']);
+        sort($labels);
+        self::assertSame(['Effectifs en liaison : 2', 'Nouveau contact en liaison — TA1'], $labels);
+    }
+
     public function testPositionIngestHeartbeatsAreNotJournalised(): void
     {
         $this->svc->recordIngest($this->tenantId, $this->mapId, 'position', 'Position reçue — HAWK-1', 'HAWK-1');

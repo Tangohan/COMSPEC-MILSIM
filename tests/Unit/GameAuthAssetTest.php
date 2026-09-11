@@ -101,10 +101,13 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('C2_DEGRADED', $dll);
         self::assertStringContainsString('return FinishGameAuthReady(verify);', $dll);
         self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
-        // Workshop 06-09 : READY suffit pour démarrer (isC2Ok = diagnostic seulement).
+        // READY = compte/profil ; les Tx exigent aussi canStartSync (isC2Ok).
         self::assertStringContainsString('isEqualTo "READY"', $isReady);
         self::assertStringNotContainsString('isC2Ok', $isReady);
         self::assertStringContainsString('C2_', $isC2);
+        $canStart = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_canStartSync.sqf');
+        self::assertStringContainsString('isC2Ok', $canStart);
+        self::assertStringContainsString('canStartSync', $wait);
         self::assertStringContainsString('Session Athena prête', $wait);
         self::assertStringContainsString('_apiKeyValidatedByClientInit', $attach);
         self::assertStringContainsString('EnsureFreshGameAccessToken', $attach);
@@ -114,7 +117,7 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString("'expires_in' => self::ACCESS_TTL_SEC", $svc);
         $enter = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_enterAthena.sqf');
         self::assertStringContainsString('ConnectC2', $enter);
-        self::assertStringContainsString('startSyncLoops', $enter);
+        self::assertStringContainsString('reopenTransmitChannel', $enter);
     }
 
     public function testRejectedC2ReauthenticationStopsSqfTransmitters(): void

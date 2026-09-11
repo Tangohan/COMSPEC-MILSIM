@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.521;
-        versionStr = "1.5.21";
-        versionAr[] = {1, 5, 21};
+        version = 1.526;
+        versionStr = "1.5.26";
+        versionAr[] = {1, 5, 26};
     };
 };
 
@@ -504,6 +504,8 @@ class CfgFunctions {
             class portalUrl {};
             class isReady {};
             class isC2Ok {};
+            class canStartSync {};
+            class reopenTransmitChannel {};
             class enterAthena {};
         };
     };

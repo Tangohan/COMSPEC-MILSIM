@@ -43,7 +43,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "1.18.12";
+    private const string ExtensionVersion = "2.0.22";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -678,6 +678,7 @@ public static partial class Extension
             || url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/playtime", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/weather", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/video-feeds", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/flight-manifest", StringComparison.OrdinalIgnoreCase)
@@ -691,6 +692,11 @@ public static partial class Extension
     {
         if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
         if (!IsAuthSensitiveEndpoint(url)) return;
+        // Pendant le handshake SQF : ne pas tuer la session (restauration / Steam encore en cours).
+        if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
+            or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
+            or "LOADING_BRANDING" or "LOADING_CONFIGURATION" or "CONNECTING_C2")
+            return;
         var now = DateTime.UtcNow.Ticks;
         if (now - System.Threading.Interlocked.Read(ref _lastAuth401ReauthTicks) <= TimeSpan.FromSeconds(30).Ticks)
             return;
@@ -705,7 +711,10 @@ public static partial class Extension
 
                 var verify = VerifyClientInitSync();
                 if (verify.StartsWith("OK|", StringComparison.Ordinal))
+                {
+                    SetGameAuth("READY", 100, "");
                     return;
+                }
 
                 if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
                     || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
@@ -2122,6 +2131,18 @@ public static partial class Extension
         return _apiKey.Length > 0 || _gameAccessToken.Length > 0;
     }
 
+    /// <summary>
+    /// Après Redeem / LinkBySteam : la clé communauté doit être utilisée.
+    /// Un jeton jeu encore en mémoire force Bearer et fait échouer client-init (401),
+    /// alors que le code a déjà été consommé côté portail (« code accepté »).
+    /// </summary>
+    private static void ClearGameBearerForCommunityLink()
+    {
+        _gameAccessToken = "";
+        _gameAccessExpiresAt = DateTimeOffset.MinValue;
+        _sessionToken = "";
+    }
+
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
@@ -2801,14 +2822,16 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
                 ApplySteamUid(steamNorm);
-                _sessionToken = "";
                 // Valide immédiatement la clé (évite Redeem OK puis Connect 401 à cause d’un round-trip SQF).
                 var verify = VerifyClientInitSync();
                 if (!verify.StartsWith("OK|", StringComparison.Ordinal))
                     return verify;
+                // Remet le canal poste au vert après un 401 précoce (READY + C2_* sinon).
+                SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
@@ -2882,13 +2905,14 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
                 ApplySteamUid(steamNorm);
-                _sessionToken = "";
                 var verifySteam = VerifyClientInitSync();
                 if (!verifySteam.StartsWith("OK|", StringComparison.Ordinal))
                     return verifySteam;
+                SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
@@ -6350,6 +6374,8 @@ public static partial class Extension
 
             if (function == "ReportPlaytime" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
+                // Sans jeton / clé : ne pas marteler le portail (401 silencieux).
+                if (!HasPortalAuth()) return;
                 var uid = args[0] ?? "";
                 if (!TryNormalizeSteamUid(uid, out var uidNorm))
                 {

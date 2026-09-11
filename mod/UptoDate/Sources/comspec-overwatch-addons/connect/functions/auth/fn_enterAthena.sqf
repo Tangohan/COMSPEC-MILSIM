@@ -1,6 +1,6 @@
 /*
     Bouton ENTRER : tente d’ouvrir le canal poste avec le Steam du joueur,
-    applique le profil, démarre les transmissions si READY, puis ferme.
+    applique le profil, démarre les transmissions si canal OK, puis ferme.
 */
 if (!hasInterface) exitWith {};
 
@@ -17,13 +17,20 @@ if ((count _steam) >= 8) then {
 private _raw = ["COMSPECExtension" callExtension ["ConnectC2", []]] call comspec_overwatch_connect_fnc_extResult;
 ["INFO", "Athena", format ["ENTRER — canal poste %1", _raw]] call comspec_overwatch_connect_fnc_log;
 
-[] call comspec_overwatch_connect_fnc_applyBootstrap;
-[] call comspec_overwatch_connect_fnc_pollAuth;
-
-if ([] call comspec_overwatch_connect_fnc_isReady) then {
-    [] call comspec_overwatch_connect_fnc_startSyncLoops;
-    closeDialog 1;
+private _opened = false;
+if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+    _opened = [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
 } else {
-    // Comme le pack Workshop 06-09 : fermer quand même si le profil est déjà là.
-    closeDialog 1;
+    [] call comspec_overwatch_connect_fnc_applyBootstrap;
+    [] call comspec_overwatch_connect_fnc_pollAuth;
+    if ([] call comspec_overwatch_connect_fnc_canStartSync) then {
+        [] call comspec_overwatch_connect_fnc_startSyncLoops;
+        _opened = true;
+    };
 };
+
+if (!_opened && {!isNull _d}) then {
+    (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#e8b84a'>Canal poste encore refusé — reconnectez-vous ou utilisez un nouveau code Appairer.</t>";
+};
+
+closeDialog 1;

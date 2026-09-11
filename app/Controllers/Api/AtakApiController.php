@@ -5585,17 +5585,19 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $actor = $this->guardArmaWrite($request, $tenantId, true);
+        // Compte déjà connu via jeton jeu : ne pas exiger Steam dans le corps.
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
         if ($actor instanceof Response) {
             return $actor;
         }
         $body = $this->jsonBody($request);
         $uidRaw = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['playerUid'] ?? $body['steam_id'] ?? ''));
         if ($uidRaw === null) {
-            return Response::json([
-                'error' => 'player_uid required',
-                'message' => 'Identifiant Steam requis pour enregistrer le temps de jeu.',
-            ], 400);
+            $fromSession = ComspecApiKeyAuth::matchedSteamId();
+            if ($fromSession !== null) {
+                $uidRaw = SteamId::normalize($fromSession);
+            }
         }
         $seconds = (int) ($body['session_seconds'] ?? $body['seconds'] ?? 0);
         if ($seconds < 1) {
@@ -5605,9 +5607,28 @@ class AtakApiController
         if (!$this->armaPlaytimeRepository->schemaReady()) {
             return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
         }
-        $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uidRaw);
+        // Priorité : opérateur de la session jeu (évite matched:false silencieux si le Steam
+        // du corps ne matche pas encore la fiche alors que le Bearer est valide).
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        if ($user === null && $uidRaw !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uidRaw);
+        }
         if ($user === null) {
+            if ($uidRaw === null && $sessionUserId === null) {
+                return Response::json([
+                    'error' => 'player_uid required',
+                    'message' => 'Identifiant Steam requis pour enregistrer le temps de jeu.',
+                ], 400);
+            }
+
             return Response::json(['ok' => true, 'matched' => false, 'recorded' => false]);
+        }
+        if ($uidRaw === null) {
+            $uidRaw = SteamId::normalize((string) ($user['steam_id'] ?? ''));
         }
         $context = \App\Repositories\ArmaPlaytimeRepository::normalizeContext(
             (string) ($body['context'] ?? $body['playtime_context'] ?? 'server')
@@ -5615,7 +5636,9 @@ class AtakApiController
         $this->armaPlaytimeRepository->addSeconds($tenantId, (int) $user['id'], $seconds, $context);
         try {
             $body['user_id'] = (int) $user['id'];
-            $body['steam_uid'] = $uidRaw;
+            if ($uidRaw !== null) {
+                $body['steam_uid'] = $uidRaw;
+            }
             \App\Core\Container::get(\App\Services\Personnel\RoleplayGameSessionService::class)->heartbeat($tenantId, $body);
         } catch (\Throwable) {
         }

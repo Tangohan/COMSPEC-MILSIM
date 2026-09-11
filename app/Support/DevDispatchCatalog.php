@@ -584,18 +584,50 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(488, '2026-09-11', 'Après Appairer, la position reprend vraiment vers le poste', 'Un code accepté ne laisse plus le canal poste coupé après un refus au démarrage. Dès que la liaison est bonne, la position et la fiche repartent : vous devez apparaître dans les effectifs. Quittez Arma, rechargez le pack et la liaison, puis utilisez un nouveau code Appairer', [
+                'Rouverture automatique du canal poste après un code Appairer accepté',
+            ], [
+                'Les envois ne démarrent plus tant que le canal poste n’est pas vraiment ouvert',
+            ], [
+                'Code accepté et marqueur parfois visible, mais effectifs vides et refus répétés en jeu',
+                'Message « Liaison réussie » alors que les transmissions étaient déjà coupées',
+            ], ['atak'], [
+                'Quittez Arma complètement. Pack Overwatch 1.5.26 et liaison 2.0.22. Nouveau code Appairer. Déplacez-vous : vous devez apparaître dans Effectifs en liaison sous une minute.',
+            ], 'Carte ATAK · Overwatch 1.5.26 · liaison 2.0.22'),
+            $pr(487, '2026-09-11', 'Athena lié : on voit l’état et on peut se déconnecter', 'Quand le compte est déjà lié, le téléphone Athena affiche le canal poste, Steam, la dernière position remontée et le suivi du temps de mission. Deux boutons permettent de rouvrir le canal ou de fermer la session. Relancez Arma après mise à jour du pack', [
+                'État de liaison lisible : Steam, canal poste, position, temps de mission',
+                'Boutons Rouvrir le canal et Déconnecter lorsque le compte est lié',
+            ], [
+                'Le bandeau Liaison OK actualise l’état au lieu de relancer Entrer en silence',
+            ], [
+                'Impossible de se déconnecter une fois la liaison établie',
+                'Aucun retour visible sur les remontées ou l’appairage une fois lié',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.82 · Overwatch 1.5.25 · liaison 2.0.21). Ouvrez Athena lié : lisez l’état, testez Déconnecter puis reconnectez-vous.',
+            ], 'Téléphone Athena · Overwatch 1.5.25'),
+            $pr(486, '2026-09-11', 'Le temps de mission remonte de nouveau sur la fiche', 'Après une session avec le mod lié au portail, le cumul « Temps de jeu en mission » se met à jour, y compris en solo hors éditeur. Relancez Arma après mise à jour du pack et de la liaison, puis jouez au moins quelques minutes avec le compte connecté', [
+                'Le temps de mission est compté dès que la liaison Athena est prête, y compris en session solo hors éditeur',
+            ], [
+                'Enregistrement du temps rattaché au compte déjà connecté, même si l’identifiant Steam n’est pas renvoyé à chaque envoi',
+            ], [
+                'Cumul figé sur la fiche (dernière remontée ancienne) alors que des sessions avaient lieu avec le mod lié',
+                'Sessions solo hors éditeur jamais prises en compte',
+            ], ['atak', 'personnel'], [
+                'Déployez le portail. Rechargez le pack (1.5.24) et la liaison (2.0.20). Connectez-vous en jeu, jouez au moins cinq minutes, puis rouvrez votre fiche : la date de dernière remontée doit avancer.',
+            ], 'Fiche opérateur · Overwatch 1.5.24 · liaison 2.0.20'),
             $pr(485, '2026-09-11', 'Appairer génère de nouveau un code pour Arma', 'Sur la carte ATAK, Appairer propose un code à coller en jeu. Le chemin pour lier Overwatch est séparé de celui qui valide un téléphone. En jeu, l’écran Lier le jeu met le code en premier. Connexion et appairage passent uniquement par l’interface native du téléphone (plus de page web embarquée). Déployez le portail et rechargez le pack', [
                 'Bouton Générer un code dans Appairer : le code s’affiche et se copie',
                 'Section distincte pour valider un code déjà affiché sur le téléphone',
                 'Écran en jeu recentré sur le code du portail, avec messages plus clairs',
-                'Connexion Athena et liaison mobile en écrans natifs dans ATAK, sans navigateur embarqué',
+                'Connexion Athena et liaison mobile en écrans natifs dans le téléphone ATAK (e-mail, mot de passe, code Appairer)',
             ], [], [
                 'Appairer ne produisait aucun code',
                 'Textes « Connexion en jeu » confus entre portail et Arma',
                 'Message de refus illisible lors d’une liaison refusée',
                 'Zone noire vide en haut de l’écran de connexion en jeu',
+                'Panneau Athena limité à « Compte non connecté » sans formulaire',
             ], ['atak'], [
-                'Sur le portail : Appairer → Générer un code. Dans Arma : Connexion Athena → Lier le jeu → coller uniquement ce code. Vérifiez le pied de fenêtre : pack 1.5.21.',
+                'Sur le portail : Appairer → Générer un code. Dans Arma : téléphone → Athena → coller le code, ou e-mail / Steam. Vérifiez le pied : pack 1.5.23.',
             ], 'Carte ATAK · liaison'),
             $pr(484, '2026-09-11', 'La liaison Athena tient : positions, messages et indicatif remontent', 'Après connexion au compte, les transmissions vers le poste repartent. Dès que le compte est trouvé, l’environnement est prêt comme sur le pack du 6 septembre. Le bouton Entrer rouvre le canal poste si besoin. Relancez Arma après mise à jour du pack et de la liaison', [
                 'Connexion Athena propose Lier le jeu avec le code généré sur le portail ou un code de secours',

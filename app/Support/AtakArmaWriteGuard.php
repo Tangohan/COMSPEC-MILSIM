@@ -55,6 +55,13 @@ final class AtakArmaWriteGuard
                 'message' => 'Identifiant Steam non reconnu. Relancez la liaison depuis Athena.',
             ], 400);
         }
+        // Session jeu déjà validée (Bearer) : reprendre le Steam stocké si le corps n’en a pas.
+        if ($steam === null) {
+            $fromSession = ComspecApiKeyAuth::matchedSteamId();
+            if ($fromSession !== null) {
+                $steam = SteamId::normalize($fromSession);
+            }
+        }
 
         $sessionToken = AtakGameSession::extractPresentedToken();
         if ($sessionToken === '') {
@@ -119,10 +126,13 @@ final class AtakArmaWriteGuard
                     'message' => 'Ce compte Athena n’est pas autorisé.',
                 ], 403);
             }
-        } elseif ($requireSteam || $this->requireSteamFromEnv()) {
+        } elseif (($requireSteam || $this->requireSteamFromEnv())
+            && ComspecApiKeyAuth::matchedUserId() === null
+        ) {
             // Une ancienne DLL peut pousser une position toutes les quelques secondes sans UID.
             // Le refus reste strict, mais une seule entrée Liaison par fenêtre suffit pour le
             // diagnostic (sinon le journal devient inutilisable pendant toute la mission).
+            // Compte déjà connu via jeton jeu : ne pas exiger un Steam dans le corps.
             $this->logThrottled(
                 $tenantId,
                 'steam_required',

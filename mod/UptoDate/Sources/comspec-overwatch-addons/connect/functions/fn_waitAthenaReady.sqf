@@ -25,8 +25,14 @@ missionNamespace setVariable ["COMSPEC_HandshakeQuiet", false, false];
 
 if ([] call comspec_overwatch_connect_fnc_isReady) then {
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
-    ["INFO", "Athena", "Session Athena prête"] call comspec_overwatch_connect_fnc_log;
-    true
+    if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
+        && {[] call comspec_overwatch_connect_fnc_canStartSync}) then {
+        ["INFO", "Athena", "Session Athena prête"] call comspec_overwatch_connect_fnc_log;
+        true
+    } else {
+        ["WARN", "Athena", "Compte trouvé — canal poste encore refusé (pas de Tx)"] call comspec_overwatch_connect_fnc_log;
+        false
+    }
 } else {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Connexion Athena requise", false];

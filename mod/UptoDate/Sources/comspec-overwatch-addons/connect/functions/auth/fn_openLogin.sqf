@@ -1,9 +1,16 @@
 /*
-    Ouvre la connexion Athena (e-mail / code / Steam).
-    Uniquement sur action joueur — jamais au démarrage de mission.
-    Sur le téléphone ATAK : createDisplay pour ne pas fermer cTab.
+    Ouvre la connexion Athena.
+    Sur ATAK Enhanced : formulaire natif dans le téléphone (pas de dialog / HTML).
+    Sinon : écran Connexion classique.
 */
 if (!hasInterface) exitWith {};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_authFocus"
+    && {missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]}
+) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_authFocus;
+};
+
 if (!isNull (uiNamespace getVariable ["COMSPEC_AthenaAuth_Display", displayNull])) exitWith {};
 
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];

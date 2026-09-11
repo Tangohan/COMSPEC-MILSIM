@@ -374,6 +374,10 @@ window.ATAKWebLog = (function () {
     }
     var nextKnown = {};
     for (var j = 0; j < signs.length; j++) nextKnown[signs[j]] = 1;
+    var departed = [];
+    Object.keys(lastNewCallsigns).forEach(function (cs) {
+      if (!nextKnown[cs]) departed.push(cs);
+    });
     if (signs.length === 0) {
       if (!emptyRosterSince) emptyRosterSince = now;
       if (now - emptyRosterSince < EMPTY_ROSTER_CONFIRM_MS) {
@@ -382,25 +386,28 @@ window.ATAKWebLog = (function () {
     } else {
       emptyRosterSince = 0;
     }
-    lastNewCallsigns = nextKnown;
-    if (fp === lastUnitsFp && newcomers.length === 0) return;
-    if (newcomers.length === 0 && lastUnitsAt && (now - lastUnitsAt) < UNITS_THROTTLE_MS) {
-      lastUnitsFp = fp;
+    // Aucun changement utile (même composition) : ne rien journaliser.
+    if (fp === lastUnitsFp && newcomers.length === 0 && departed.length === 0) {
       return;
     }
+    lastNewCallsigns = nextKnown;
     lastUnitsFp = fp;
     lastUnitsAt = now;
-    var label;
+    var label = '';
     if (newcomers.length === 1) {
       label = 'Nouveau contact en liaison — ' + newcomers[0];
     } else if (newcomers.length > 1) {
       label = newcomers.length + ' nouveaux contacts en liaison';
+    } else if (departed.length === 1) {
+      label = 'Contact hors liaison — ' + departed[0];
+    } else if (departed.length > 1) {
+      label = departed.length + ' contacts hors liaison';
     } else if (count < 1) {
       lastNewCallsigns = {};
       label = 'Aucun contact en liaison pour le moment';
     } else {
-      var preview = signs.slice(0, 4).join(', ');
-      label = 'Effectifs en liaison : ' + count + (preview ? ' (' + preview + (signs.length > 4 ? '…' : '') + ')' : '');
+      // Snapshot périodique « Effectifs en liaison : N » volontairement retiré (bruit inutile).
+      return;
     }
     ingest(label, { persist: true, ingestKind: 'effectifs' });
   }
