@@ -13,9 +13,16 @@ params [
 if (!hasInterface) exitWith { false };
 if (isNull player || {!alive player}) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
+if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };
 if !([] call comspec_overwatch_connect_fnc_isReady) exitWith { false };
 
-if (!_force) then {
+// Pendant / juste après handshake : ignorer _force pour ne pas bypass le backoff 401.
+private _forceEff = _force;
+private _readyAt = missionNamespace getVariable ["COMSPEC_AthenaReadyAt", -1e9];
+if (!(_readyAt isEqualType 0)) then { _readyAt = -1e9; };
+if ((diag_tickTime - _readyAt) < 12) then { _forceEff = false; };
+
+if (!_forceEff) then {
     private _backoff = missionNamespace getVariable ["COMSPEC_OperatorProfileBackoffUntil", 0];
     if (diag_tickTime < _backoff) exitWith { false };
 };
@@ -23,7 +30,7 @@ if (!_force) then {
 private _payload = [player, _event, _reason] call comspec_overwatch_connect_fnc_buildOperatorProfile;
 private _fp = _payload getOrDefault ["fingerprint", ""];
 private _lastFp = missionNamespace getVariable ["COMSPEC_OperatorFingerprint", ""];
-if (!_force && {(toLower _event) isNotEqualTo "register"} && {_fp isEqualTo _lastFp} && {_fp isNotEqualTo ""}) exitWith {
+if (!_forceEff && {(toLower _event) isNotEqualTo "register"} && {_fp isEqualTo _lastFp} && {_fp isNotEqualTo ""}) exitWith {
     false
 };
 
@@ -87,13 +94,26 @@ if (_result getOrDefault ["pending", false]) then {
     if (!_ok) then {
         private _blob = toUpper (format ["%1 %2", _status, _detail]);
         private _http503 = (_blob find "503") >= 0 || {(_blob find "INDISPONIBLE") >= 0};
-        private _transient = _http503 || {(toUpper _status) in ["TIMEOUT", "NETWORK_ERROR"]};
+        private _authFail = (_blob find "UNAUTHORIZED") >= 0
+            || {(_blob find "401") >= 0}
+            || {(_blob find "403") >= 0}
+            || {(_blob find "FORBIDDEN") >= 0};
+        private _transient = _http503
+            || {_authFail}
+            || {(toUpper _status) in ["TIMEOUT", "NETWORK_ERROR"]};
         if (_transient) then {
             private _n = (missionNamespace getVariable ["COMSPEC_OperatorProfileFailCount", 0]) + 1;
             missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", _n, false];
-            private _exp = (2 ^ ((_n - 1) min 5));
-            private _delay = ((8 * _exp) min 300);
-            if (!_http503) then { _delay = 30; };
+            private _delay = 30;
+            if (_authFail) then {
+                // 401 au boot : ne pas marteler le thread jeu (HTTP sync).
+                _delay = (20 * ((2 ^ ((_n - 1) min 4)) min 8)) min 300;
+            } else {
+                if (_http503) then {
+                    private _exp = (2 ^ ((_n - 1) min 5));
+                    _delay = ((8 * _exp) min 300);
+                };
+            };
             missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + _delay, false];
         };
     };

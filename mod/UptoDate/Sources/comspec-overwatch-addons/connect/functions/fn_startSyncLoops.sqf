@@ -9,8 +9,17 @@ if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
-[] call comspec_overwatch_connect_fnc_sendFactionSettings;
-[] call comspec_overwatch_connect_fnc_initOperatorProfileSync;
+// Faction settings / fiche : différés — HTTP sync au même frame que l’open ATAK = gel.
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+    [] call comspec_overwatch_connect_fnc_sendFactionSettings;
+}, [], 3] call CBA_fnc_waitAndExecute;
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+    [] call comspec_overwatch_connect_fnc_initOperatorProfileSync;
+}, [], 5] call CBA_fnc_waitAndExecute;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
 // Les GET d’Athena sont asynchrones (cache) : relancer vite après le premier tick vide.

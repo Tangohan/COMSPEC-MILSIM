@@ -84,7 +84,8 @@ switch (_function) do {
         // Pause courte : un appairage juste après doit pouvoir rouvrir le canal.
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 45, false];
         missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 45, false];
-        missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", false, false];
+        // Ne pas remettre SyncLoopsStarted à false : les PFH restent (gate AthenaReady)
+        // et reopenTransmitChannel évite ainsi d’empiler une 2ᵉ série de boucles.
         ["ERROR", "Athena", "Session refusée par le poste — transmissions arrêtées", _data] call comspec_overwatch_connect_fnc_log;
         ["[Athena] Session expirée ou compte non lié. Reconnectez-vous avant de transmettre.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;

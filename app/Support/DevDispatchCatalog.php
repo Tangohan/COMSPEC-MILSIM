@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(501, '2026-09-11', 'Le téléphone ne fige plus le jeu à la première ouverture', 'À l’ouverture du téléphone ATAK, le jeu ne se bloque plus pendant les premières secondes de liaison. Les envois vers le poste attendent que la connexion soit stable, et l’écran ne passe plus en blanc laiteux si une texture d’état manque', [
+                'Transmissions différées jusqu’à stabilisation de la liaison',
+                'Moins de tentatives répétées quand l’accès est encore refusé',
+                'Écran téléphone sans voile blanc si l’habillage d’état est absent',
+            ], [], [
+                'Gel du jeu à la première ouverture du téléphone',
+                'Écran blanc / laiteux sur ATAK',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.38 · liaison 2.0.28). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.38 · liaison 2.0.28'),
             $pr(500, '2026-09-11', 'Les tenues denses de la communauté s’ouvrent enfin en jeu', 'Dans l’arsenal Athena, la première collection s’ouvre toute seule. L’aperçu montre aussi lunettes, jumelles, JVN, radio et le contenu des poches. Les tenues très chargées ne sont plus bloquées par la liaison : elles se chargent correctement pour l’aperçu et l’import', [
                 'Collections ouvertes dès l’affichage (ou toutes si la liste est courte)',
                 'Aperçu enrichi : JVN, radio, contenu gilet / sac',

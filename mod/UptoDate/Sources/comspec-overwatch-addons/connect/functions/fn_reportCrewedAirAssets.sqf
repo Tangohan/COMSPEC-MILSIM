@@ -4,6 +4,7 @@
 */
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];

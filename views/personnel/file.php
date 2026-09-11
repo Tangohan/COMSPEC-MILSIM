@@ -839,12 +839,7 @@ if ($personnelFileIsRhFull) {
                                         <p class="mt-2 text-xs text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $armaPlaytime['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                     <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail. Le détail (serveur, Zeus, éditeur) se complète au fil des prochaines sessions.</p>
-                                    <?php
-                                        $viewerId = (int) (auth()['id'] ?? 0);
-                                        $fileUserId = (int) ($targetUser['id'] ?? 0);
-                                        $canForceHint = $viewerId > 0 && $fileUserId > 0 && $viewerId === $fileUserId;
-                                    ?>
-                                    <?php if ($canForceHint): ?>
+                                    <?php if (!empty($viewerIsPersonnelSubject)): ?>
                                         <p class="mt-3 rounded-lg border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-[11px] leading-snug text-slate-700">Pour forcer une remontée depuis le jeu : téléphone Athena → <span class="font-semibold">Remonter le temps</span>, ou Resynch Athena. Rechargez ensuite cette page.</p>
                                     <?php endif; ?>
                                 <?php elseif ($steamId !== null): ?>
