@@ -41,4 +41,22 @@ final class AtakUnitsRosterAssetTest extends TestCase
         self::assertStringContainsString('isInLiaison(prev)', $js);
         self::assertStringContainsString('now - rosterMissingSince[k] < ROSTER_GRACE_MS', $js);
     }
+
+    public function testOfflinePlayersAreRemovedFromMapWhileTrackedAiRemainLastKnown(): void
+    {
+        $map = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map.js');
+
+        self::assertStringContainsString("if (live === 'offline' && !trackedAi) return", $map);
+        self::assertStringContainsString("var lastKnown = trackedAi && (live === 'offline' || live === 'delayed')", $map);
+    }
+
+    public function testPositionIsNotDroppedWhileSteamIdentityIsStillLoading(): void
+    {
+        $extension = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs'
+        );
+
+        self::assertStringNotContainsString('if (!isProxyContact && steamNorm.Length == 0)', $extension);
+        self::assertStringContainsString('EnqueueOrSend(_baseUrl + "/api/atak/position", payload)', $extension);
+    }
 }

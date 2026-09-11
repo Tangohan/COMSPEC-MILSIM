@@ -9,6 +9,14 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 
 ---
 
+## Athena / Overwatch — 2026-09-11
+
+### Correction — Effectifs réellement en liaison
+
+La position d’un joueur est désormais transmise même si son identifiant Steam tarde à être disponible après une arrivée en cours de partie ; la liaison Athena authentifiée suffit pendant ce bref délai. Sur la carte web, les joueurs déconnectés disparaissent dès leur passage hors liaison, tandis que les dernières positions des IA suivies restent disponibles pour le COP. Relancer Arma complètement après la mise à jour du mod.
+
+---
+
 ## Athena — 2026-09-10
 
 ### Correction — Encart d’identité sur la carte
