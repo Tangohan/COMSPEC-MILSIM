@@ -52,6 +52,21 @@ switch (_function) do {
         ["WARN", "Athena", format ["Accès refusé — pause %1 s, nouvelle tentative ensuite", round _sec]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] Accès refusé — pause %1 s", round _sec], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
+    case "AuthInvalidated": {
+        // La DLL a confirmé le 401 par un nouvel appel client-init : ce n'est pas
+        // une panne réseau passagère. Fermer immédiatement toutes les boucles Tx.
+        missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
+        missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
+        missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+        missionNamespace setVariable ["COMSPEC_LinkDetail", "Session Athena refusée — reconnectez-vous", false];
+        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 600, false];
+        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 600, false];
+        ["ERROR", "Athena", "Session refusée par le poste — transmissions arrêtées", _data] call comspec_overwatch_connect_fnc_log;
+        ["[Athena] Session expirée ou compte non lié. Reconnectez-vous avant de transmettre.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
+        [] call comspec_overwatch_connect_fnc_updateLinkDiary;
+        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+        ["COMSPEC_AthenaLinkChanged", ["offline"]] call CBA_fnc_localEvent;
+    };
     case "RateLimited": {
         // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.
         private _fromDll = parseNumber _data;

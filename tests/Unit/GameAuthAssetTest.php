@@ -96,6 +96,19 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
     }
 
+    public function testRejectedC2ReauthenticationStopsSqfTransmitters(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        $callback = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
+
+        self::assertStringContainsString('InvokeCallback("AuthInvalidated", verify)', $dll);
+        self::assertStringContainsString('MaybeReauthAfter401(uri.AbsoluteUri)', $dll);
+        self::assertStringContainsString('case "AuthInvalidated"', $callback);
+        self::assertStringContainsString('["COMSPEC_AthenaReady", false, false]', $callback);
+        self::assertStringContainsString('["COMSPEC_AthenaLinkChanged", ["offline"]]', $callback);
+    }
+
     public function testMissingSteamOnPositionIsLoggedOncePerWindow(): void
     {
         $guard = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/AtakArmaWriteGuard.php');
