@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <PublishAot>true</PublishAot>
+    <AssemblyName>COMSPECATAKNativeExtension_x64</AssemblyName>
+    <Version>1.0.0</Version>
+    <InformationalVersion>1.0.0-native</InformationalVersion>
+    <DefineConstants>$(DefineConstants);COMSPEC_ATAK_NATIVE</DefineConstants>
+    <PublishDir>bin\publish\</PublishDir>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension.cs" Link="Extension.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\GoogleSlidesDeck.cs" Link="GoogleSlidesDeck.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\BetaNoticeWindow.cs" Link="BetaNoticeWindow.cs" />
+  </ItemGroup>
+</Project>

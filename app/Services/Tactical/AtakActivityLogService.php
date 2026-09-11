@@ -1009,7 +1009,7 @@ final class AtakActivityLogService
     /**
      * Mémorise la détection des mods compagnons remontée par le jeu (handshake position).
      *
-     * @param array{has_ctab?: bool, has_atak_enhanced?: bool, has_athena_ctab?: bool, mod_athena?: bool} $flags
+     * @param array{has_ctab?: bool, has_atak_enhanced?: bool, has_athena_ctab?: bool, has_atak_native?: bool, mod_athena?: bool} $flags
      */
     public function touchModDetection(int $tenantId, int $mapId, array $flags): void
     {
@@ -1019,12 +1019,13 @@ final class AtakActivityLogService
         $hasCtab = !empty($flags['has_ctab']);
         $hasEnhanced = !empty($flags['has_atak_enhanced']);
         $hasAthenaCtab = !empty($flags['has_athena_ctab']);
-        $hasAthena = !empty($flags['mod_athena']) || $hasCtab || $hasEnhanced || $hasAthenaCtab;
+        $hasAtakNative = !empty($flags['has_atak_native']);
+        $hasAthena = !empty($flags['mod_athena']) || $hasCtab || $hasEnhanced || $hasAthenaCtab || $hasAtakNative;
         if (!$hasAthena && !$hasCtab && !$hasEnhanced) {
             return;
         }
         $now = time();
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($now, $hasAthena, $hasCtab, $hasEnhanced, $hasAthenaCtab): void {
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($now, $hasAthena, $hasCtab, $hasEnhanced, $hasAthenaCtab, $hasAtakNative): void {
             $mods = is_array($data['mod_detection'] ?? null) ? $data['mod_detection'] : [];
             if ($hasAthena) {
                 $mods['athena_at'] = $now;
@@ -1038,6 +1039,10 @@ final class AtakActivityLogService
             if ($hasAthenaCtab) {
                 $mods['athena_ctab_at'] = $now;
             }
+            if ($hasAtakNative) {
+                $mods['atak_native_at'] = $now;
+                $mods['atak_native_product'] = 'comspec_atak_native';
+            }
             $data['mod_detection'] = $mods;
         });
     }
@@ -1045,7 +1050,7 @@ final class AtakActivityLogService
     /**
      * Horodatages de dernière détection mods (secondes Unix), 0 si inconnu / expiré.
      *
-     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int}
+     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int,atak_native_at:int}
      */
     public function getModDetection(int $tenantId, int $mapId): array
     {
@@ -1054,6 +1059,7 @@ final class AtakActivityLogService
             'ctab_at' => 0,
             'atak_enhanced_at' => 0,
             'athena_ctab_at' => 0,
+            'atak_native_at' => 0,
         ];
         if ($tenantId < 1 || $mapId < 1) {
             return $empty;

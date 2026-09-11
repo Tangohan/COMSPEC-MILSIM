@@ -794,18 +794,29 @@ internal static class DpapiGameStore
 
     private static string FilePath()
     {
+#if COMSPEC_ATAK_NATIVE
+        var productDirectory = "atak-native";
+#else
+        var productDirectory = "version-beta";
+#endif
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Arma 3", "COMSPEC", "version-beta", "secure");
+            "Arma 3", "COMSPEC", productDirectory, "secure");
         Directory.CreateDirectory(dir);
         return Path.Combine(dir, "session.bin");
     }
 
     private static string LegacyFilePath()
     {
+#if COMSPEC_ATAK_NATIVE
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "COMSPEC", "ATAK Native", "session.bin");
+#else
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "COMSPEC", "Overwatch", "session.bin");
+#endif
     }
 
     internal static Payload? Load()

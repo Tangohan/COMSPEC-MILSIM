@@ -1,0 +1,2 @@
+params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10]]; if (_message isEqualTo "") exitWith {false}; if !(profileNamespace getVariable ["COMSPEC_ATAK_Notifications",true]) exitWith {false};
+private _s=uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap]; private _q=_s getOrDefault ["notifications",[]]; _q pushBack createHashMapFromArray [["type",toUpper _type],["message",_message],["expires",diag_tickTime+(_duration max 1)],["priority",_priority]]; while {count _q>12} do {_q deleteAt 0;}; _s set ["notifications",_q]; true

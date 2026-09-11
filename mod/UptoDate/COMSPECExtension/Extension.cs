@@ -15,6 +15,17 @@ namespace COMSPECExtension;
 
 public static partial class Extension
 {
+#if COMSPEC_ATAK_NATIVE
+    private const string ClientProduct = "comspec_atak_native";
+    private const string ClientDisplayName = "COMSPEC ATAK Native";
+    private const string ClientUiGeneration = "native-rsc-v1";
+    private const string ExtensionProductName = "COMSPECATAKNativeExtension";
+#else
+    private const string ClientProduct = "comspec_overwatch";
+    private const string ClientDisplayName = "COMSPEC Overwatch";
+    private const string ClientUiGeneration = "legacy-mixed";
+    private const string ExtensionProductName = "COMSPECExtension";
+#endif
     // Timeout HttpClient = plafond global ; les appels sync utilisent aussi un CTS dédié.
     // 3 s était trop juste pour TLS+DNS sur le premier appel (redeem / whoami).
     private const int SyncTimeoutSeconds = 8;
@@ -117,7 +128,7 @@ public static partial class Extension
             client.DefaultRequestHeaders.ExpectContinue = false;
             client.DefaultRequestHeaders.TryAddWithoutValidation(
                 "User-Agent",
-                "COMSPECExtension/" + ExtensionVersion);
+                ExtensionProductName + "/" + CurrentExtensionVersion());
         }
         catch
         {
@@ -337,6 +348,9 @@ public static partial class Extension
     private static string BuildClientInitBody()
     {
         var sb = new StringBuilder("{\"mapId\":1");
+        sb.Append(",\"client_product\":\"").Append(ClientProduct).Append('"');
+        sb.Append(",\"client_name\":\"").Append(ClientDisplayName).Append('"');
+        sb.Append(",\"ui_generation\":\"").Append(ClientUiGeneration).Append('"');
         if (_tenantId.Length > 0)
         {
             if (long.TryParse(_tenantId, out var tid) && tid > 0)
@@ -1880,7 +1894,7 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 2.0.17");
+            Output(output, outputSize, ExtensionProductName + " " + CurrentExtensionVersion());
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -2087,7 +2101,7 @@ public static partial class Extension
             req.Headers.Remove("Authorization");
             req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
             req.Headers.Remove("User-Agent");
-            req.Headers.TryAddWithoutValidation("User-Agent", "COMSPECExtension/" + ExtensionVersion);
+            req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
         }
         var gameTok = _gameAccessToken;
         if (gameTok.Length > 0)
@@ -2095,7 +2109,7 @@ public static partial class Extension
             req.Headers.Remove("Authorization");
             req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + gameTok);
             req.Headers.Remove("User-Agent");
-            req.Headers.TryAddWithoutValidation("User-Agent", "COMSPECExtension/" + ExtensionVersion);
+            req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
         }
         var sess = _sessionToken;
         if (sess.Length > 0)
@@ -2227,7 +2241,7 @@ public static partial class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 2.0.17";
+            return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
 
         if (function == "SetTelemetryBatch")
@@ -2238,7 +2252,7 @@ public static partial class Extension
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
-            return FormatAtakExtArray("2.0.17", "COMSPEC Extension ATAK");
+            return FormatAtakExtArray(CurrentExtensionVersion(), ClientDisplayName + " Extension");
         }
 
         var gameAuth = HandleGameAuth(function, args);
@@ -3041,10 +3055,11 @@ public static partial class Extension
             {
                 if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=1", out var unitsUri, out var unitsErr) || unitsUri is null)
                     return "ERR|" + unitsErr;
-                var response = SendGet(unitsUri, token);
-                response.EnsureSuccessStatusCode();
-                var body = ReadContentUtf8(response, token);
-                return "OK|" + SimplifyUnitsJson(body);
+                return ServePollGet("GetUnits", unitsUri.AbsoluteUri, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyUnitsJson(body));
+                });
             }
             if (function == "GetClientIp")
             {
@@ -8804,6 +8819,12 @@ public static partial class Extension
                 if (!doc.RootElement.TryGetProperty("extension_version", out _)
                     && !doc.RootElement.TryGetProperty("dll_version", out _))
                     writer.WriteString("extension_version", CurrentExtensionVersion());
+                if (!doc.RootElement.TryGetProperty("client_product", out _))
+                    writer.WriteString("client_product", ClientProduct);
+                if (!doc.RootElement.TryGetProperty("client_name", out _))
+                    writer.WriteString("client_name", ClientDisplayName);
+                if (!doc.RootElement.TryGetProperty("ui_generation", out _))
+                    writer.WriteString("ui_generation", ClientUiGeneration);
                 writer.WriteEndObject();
             }
             return Encoding.UTF8.GetString(stream.ToArray());

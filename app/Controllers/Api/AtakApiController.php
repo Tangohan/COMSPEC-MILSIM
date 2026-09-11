@@ -1173,6 +1173,18 @@ class AtakApiController
         if ($modVersion !== '' && mb_strlen($modVersion) <= 48) {
             $meta['mod_version'] = $modVersion;
         }
+        $clientProduct = trim((string) ($body['client_product'] ?? ''));
+        $clientName = trim((string) ($body['client_name'] ?? ''));
+        $uiGeneration = trim((string) ($body['ui_generation'] ?? ''));
+        if ($clientProduct !== '' && preg_match('/^[a-z0-9_-]{2,48}$/', $clientProduct)) {
+            $meta['client_product'] = $clientProduct;
+        }
+        if ($clientName !== '') {
+            $meta['client_name'] = mb_substr($clientName, 0, 80);
+        }
+        if ($uiGeneration !== '' && preg_match('/^[a-z0-9._-]{2,48}$/i', $uiGeneration)) {
+            $meta['ui_generation'] = $uiGeneration;
+        }
 
         $role = trim((string) ($body['role'] ?? (is_array($extra) ? ($extra['role'] ?? '') : '')));
         if ($role !== '') {
@@ -1456,9 +1468,9 @@ class AtakApiController
     }
 
     /**
-     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int} $primary
-     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int} $secondary
-     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int}
+     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int,atak_native_at:int} $primary
+     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int,atak_native_at:int} $secondary
+     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int,atak_native_at:int}
      */
     private function mergeModDetection(array $primary, array $secondary): array
     {
@@ -1479,7 +1491,8 @@ class AtakApiController
      *   site: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string,count:int},
      *   athena: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string},
      *   ctab: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string},
-     *   atak_enhanced: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string}
+     *   atak_enhanced: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string},
+     *   atak_native: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string}
      * }
      */
     private function buildTransmissionSources(int $tenantId, int $mapId, ?int $armaAgo, array $units): array
@@ -1499,6 +1512,8 @@ class AtakApiController
         $enhancedFresh = false;
         $enhancedSeen = false;
         $athenaFresh = false;
+        $nativeFresh = false;
+        $nativeSeen = false;
         foreach ($units as $u) {
             if (!is_array($u)) {
                 continue;
@@ -1521,6 +1536,13 @@ class AtakApiController
             if ($this->truthyFlag($extra['mod_athena'] ?? null) || trim((string) ($extra['mod_version'] ?? '')) !== '') {
                 if ($fresh) {
                     $athenaFresh = true;
+                }
+            }
+            if (strtolower(trim((string) ($extra['client_product'] ?? ''))) === 'comspec_atak_native') {
+                if ($fresh) {
+                    $nativeFresh = true;
+                } else {
+                    $nativeSeen = true;
                 }
             }
             if ($this->truthyFlag($extra['has_ctab'] ?? null)) {
@@ -1565,11 +1587,19 @@ class AtakApiController
             $enhancedState = 'present';
         }
 
+        $nativeState = 'absent';
+        if ($nativeFresh) {
+            $nativeState = 'linked';
+        } elseif ($nativeSeen || ($detect['atak_native_at'] ?? 0) > 0) {
+            $nativeState = 'present';
+        }
+
         return [
             'site' => $this->transmissionSourceRow('site', 'Sur le site', 'On the site', $siteState, $webCount),
             'athena' => $this->transmissionSourceRow('athena', 'Mod Athena', 'Athena mod', $athenaState),
             'ctab' => $this->transmissionSourceRow('ctab', 'cTab', 'cTab', $ctabState),
             'atak_enhanced' => $this->transmissionSourceRow('atak_enhanced', 'ATAK Enhanced', 'ATAK Enhanced', $enhancedState),
+            'atak_native' => $this->transmissionSourceRow('atak_native', 'COMSPEC ATAK Native', 'COMSPEC ATAK Native', $nativeState),
         ];
     }
 
@@ -3392,9 +3422,10 @@ class AtakApiController
             ], $callSign !== '' ? $callSign : null)
         );
         try {
-            // client-init = toujours le mod Athena ; cTab / Enhanced si le handshake les annonce.
+            $clientProduct = strtolower(trim((string) ($body['client_product'] ?? '')));
             $this->activityLog->touchModDetection($tenantId, $mapId, [
                 'mod_athena' => true,
+                'has_atak_native' => $clientProduct === 'comspec_atak_native',
                 'has_ctab' => $this->truthyFlag($body['has_ctab'] ?? false),
                 'has_atak_enhanced' => $this->truthyFlag($body['has_atak_enhanced'] ?? false),
                 'has_athena_ctab' => $this->truthyFlag($body['has_athena_ctab'] ?? false),
@@ -3402,7 +3433,11 @@ class AtakApiController
         } catch (\Throwable) {
         }
 
-        $payload = ['ok' => true];
+        $payload = [
+            'ok' => true,
+            'client_product' => trim((string) ($body['client_product'] ?? 'comspec_overwatch')),
+            'ui_generation' => trim((string) ($body['ui_generation'] ?? 'legacy-mixed')),
+        ];
         if ($sessionToken !== '') {
             $payload['session_token'] = $sessionToken;
             $payload['expires_in'] = $expiresIn;
@@ -5380,6 +5415,7 @@ class AtakApiController
                 'has_atak_enhanced' => $this->truthyFlag($extra['has_atak_enhanced'] ?? false)
                     || $this->truthyFlag($extra['wr_mpu5'] ?? false),
                 'has_athena_ctab' => $this->truthyFlag($extra['has_athena_ctab'] ?? false),
+                'has_atak_native' => strtolower(trim((string) ($extra['client_product'] ?? ''))) === 'comspec_atak_native',
             ]);
         } catch (\Throwable) {
         }

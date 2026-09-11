@@ -1,0 +1,2 @@
+private _padding=safeZoneW*0.012; private _gap=safeZoneW*0.006; private _top=safeZoneH*0.055; private _bottom=safeZoneH*0.045; private _rail=safeZoneW*0.105; private _right=safeZoneW*0.225;
+createHashMapFromArray [["x",safeZoneX],["y",safeZoneY],["w",safeZoneW],["h",safeZoneH],["padding",_padding],["gap",_gap],["top",_top],["bottom",_bottom],["rail",_rail],["right",_right],["bodyY",safeZoneY+_top],["bodyH",safeZoneH-_top-_bottom],["centerX",safeZoneX+_rail],["centerW",safeZoneW-_rail-_right]]

@@ -1,8 +1,9 @@
-/* COMSPEC ATAK — canaux de transmission (site / Athena / cTab / ATAK Enhanced) */
+/* COMSPEC ATAK — canaux de transmission, clients natif et historiques distingués */
 window.ATAKTransmissions = (function () {
-  var KEYS = ['site', 'athena', 'ctab', 'atak_enhanced'];
+  var KEYS = ['site', 'atak_native', 'athena', 'ctab', 'atak_enhanced'];
   var FALLBACK = {
     site: { label: 'Sur le site', label_en: 'On the site', state: 'absent', state_label: 'Absent', state_label_en: 'Absent' },
+    atak_native: { label: 'COMSPEC ATAK Native', label_en: 'COMSPEC ATAK Native', state: 'absent', state_label: 'Absent', state_label_en: 'Absent' },
     athena: { label: 'Mod Athena', label_en: 'Athena mod', state: 'absent', state_label: 'Absent', state_label_en: 'Absent' },
     ctab: { label: 'cTab', label_en: 'cTab', state: 'absent', state_label: 'Absent', state_label_en: 'Absent' },
     atak_enhanced: { label: 'ATAK Enhanced', label_en: 'ATAK Enhanced', state: 'absent', state_label: 'Absent', state_label_en: 'Absent' }

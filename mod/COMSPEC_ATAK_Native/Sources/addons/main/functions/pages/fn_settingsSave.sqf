@@ -1,0 +1,1 @@
+params [["_values",createHashMap]]; {profileNamespace setVariable ["COMSPEC_ATAK_"+_x,_y];} forEach _values; saveProfileNamespace; ["SUCCESS","Paramètres enregistrés",3,20] call comspec_atak_native_fnc_notify; true

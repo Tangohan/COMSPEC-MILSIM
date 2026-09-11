@@ -1,0 +1,10 @@
+disableSerialization;
+private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
+private _display = _state getOrDefault ["display",displayNull];
+if (isNull _display) exitWith { [] call comspec_atak_native_fnc_schedulerStop };
+private _now = diag_tickTime;
+if ((_now - (_state getOrDefault ["lastFast",0])) >= 0.25) then { _state set ["lastFast",_now]; [] call comspec_atak_native_fnc_localDataRefresh; };
+if ((_now - (_state getOrDefault ["lastSecond",0])) >= 1) then { _state set ["lastSecond",_now]; [] call comspec_atak_native_fnc_statusUpdate; [] call comspec_atak_native_fnc_notificationsRender; };
+private _refresh = profileNamespace getVariable ["COMSPEC_ATAK_BftRefresh",3];
+if ((_now - (_state getOrDefault ["lastRemote",0])) >= _refresh) then { _state set ["lastRemote",_now]; [] call comspec_atak_native_fnc_remoteSync; };
+if ((_now - (_state getOrDefault ["lastSlow",0])) >= 10) then { _state set ["lastSlow",_now]; [] call comspec_atak_native_fnc_importLegacyData; };

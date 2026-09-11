@@ -1,4 +1,7 @@
 if (!hasInterface) exitWith {};
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
+    diag_log "[COMSPEC ATAK NATIVE][WARN][BOOT] Legacy ATAK client PostInit suppressed";
+};
 
 // Forcer notre Check_Layout (sans `_fade` / nil) — BCE et le cache CfgFunctions
 // peuvent sinon garder l’ancienne version jusqu’à un redémarrage Arma incomplet.

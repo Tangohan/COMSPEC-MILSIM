@@ -370,6 +370,10 @@ if ($atakMapConfig) {
             <span class="atak-tx-chip-key">Sur le site</span>
             <span class="atak-tx-chip-value" id="atak-tx-site-value">Absent</span>
           </li>
+          <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-atak_native" data-state="absent" title="Client COMSPEC ATAK Native autonome détecté en jeu">
+            <span class="atak-tx-chip-key">ATAK Native</span>
+            <span class="atak-tx-chip-value" id="atak-tx-atak_native-value">Absent</span>
+          </li>
           <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-athena" data-state="absent" title="Mod Athena (Overwatch) en jeu">
             <span class="atak-tx-chip-key">Mod Athena</span>
             <span class="atak-tx-chip-value" id="atak-tx-athena-value">Absent</span>
@@ -964,6 +968,10 @@ if ($atakMapConfig) {
           <div class="atak-health-card">
             <span class="atak-health-label">Sur le site</span>
             <span class="atak-health-cell atak-health-muted" id="health-tx-site">Absent</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">COMSPEC ATAK Native</span>
+            <span class="atak-health-cell atak-health-muted" id="health-tx-atak_native">Absent</span>
           </div>
           <div class="atak-health-card">
             <span class="atak-health-label">Mod Athena</span>
