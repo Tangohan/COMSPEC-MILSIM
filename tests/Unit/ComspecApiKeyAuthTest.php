@@ -54,11 +54,18 @@ final class ComspecApiKeyAuthTest extends TestCase
         self::assertSame('bearer-secret', ComspecApiKeyAuth::extractPresentedKey());
     }
 
-    public function testExtractPresentedKeyPrefersComspecHeaderOverBearer(): void
+    public function testExtractPresentedKeyPrefersGameBearerOverLegacyHeader(): void
     {
-        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'from-header';
-        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer from-bearer';
-        self::assertSame('from-header', ComspecApiKeyAuth::extractPresentedKey());
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'stale-legacy-key';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer current-game-session';
+        self::assertSame('current-game-session', ComspecApiKeyAuth::extractPresentedKey());
+    }
+
+    public function testExtractPresentedKeyFallsBackFromEmptyBearerToLegacyHeader(): void
+    {
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'current-legacy-key';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer   ';
+        self::assertSame('current-legacy-key', ComspecApiKeyAuth::extractPresentedKey());
     }
 
     public function testExtractPresentedKeyFallsBackToJsonObjectCache(): void
