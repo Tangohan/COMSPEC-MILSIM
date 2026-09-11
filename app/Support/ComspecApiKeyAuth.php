@@ -72,24 +72,45 @@ final class ComspecApiKeyAuth
 
     public static function extractPresentedKey(): string
     {
-        // Game Auth deliberately sends its short-lived access token as Bearer while
-        // legacy extension state can still contain an obsolete X-COMSPEC-KEY. The
-        // authenticated session must win; otherwise middleware rejects every ATAK
-        // route on the stale header before it ever examines the valid Bearer token.
+        $candidates = self::presentedAuthCandidates();
+
+        return $candidates[0] ?? '';
+    }
+
+    /**
+     * Secrets présentés. Le Bearer jeu est prioritaire (évite qu’une X-COMSPEC-KEY
+     * périmée écrase une session Athena valide). Si le Bearer est invalide,
+     * requestPresentsValidKey réessaie les autres candidats.
+     *
+     * @return list<string>
+     */
+    public static function presentedAuthCandidates(): array
+    {
+        $out = [];
+        $seen = [];
+        $push = static function (string $raw) use (&$out, &$seen): void {
+            $v = trim($raw);
+            if ($v === '' || isset($seen[$v])) {
+                return;
+            }
+            $seen[$v] = true;
+            $out[] = $v;
+        };
+
         $auth = trim((string) ($_SERVER['HTTP_AUTHORIZATION'] ?? ''));
         if (strncasecmp($auth, 'Bearer ', 7) === 0) {
-            $bearer = trim(substr($auth, 7));
-            if ($bearer !== '') {
-                return $bearer;
-            }
+            $push(substr($auth, 7));
         }
-
         $header = $_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? null;
-        if (is_string($header) && trim($header) !== '') {
-            return trim($header);
+        if (is_string($header)) {
+            $push($header);
+        }
+        $fromJson = self::keyFromJsonObject(self::peekJsonObject());
+        if ($fromJson !== '') {
+            $push($fromJson);
         }
 
-        return self::keyFromJsonObject(self::peekJsonObject());
+        return $out;
     }
 
     /**
@@ -153,28 +174,34 @@ final class ComspecApiKeyAuth
     public static function requestPresentsValidKey(): bool
     {
         self::$matchedTenantId = null;
-        $presented = self::extractPresentedKey();
-        if ($presented === '') {
+        $candidates = self::presentedAuthCandidates();
+        if ($candidates === []) {
             return false;
         }
 
         $secret = self::expectedSecret();
-        if ($secret !== '' && hash_equals($secret, $presented)) {
-            return true;
-        }
-
-        try {
-            $tenantId = (new TenantAtakConfigRepository())->findTenantIdByAccessKey($presented);
-            if ($tenantId !== null) {
-                self::$matchedTenantId = $tenantId;
-
+        foreach ($candidates as $presented) {
+            if ($secret !== '' && hash_equals($secret, $presented)) {
                 return true;
             }
-        } catch (\Throwable) {
-            // Ignore DB errors — fall through to false.
+
+            try {
+                $tenantId = (new TenantAtakConfigRepository())->findTenantIdByAccessKey($presented);
+                if ($tenantId !== null) {
+                    self::$matchedTenantId = $tenantId;
+
+                    return true;
+                }
+            } catch (\Throwable) {
+                // Ignore DB errors — try next candidate.
+            }
+
+            if (self::acceptGameSessionToken($presented)) {
+                return true;
+            }
         }
 
-        return self::acceptGameSessionToken($presented);
+        return false;
     }
 
     /**

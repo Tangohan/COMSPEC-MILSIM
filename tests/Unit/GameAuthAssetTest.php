@@ -90,10 +90,23 @@ final class GameAuthAssetTest extends TestCase
     public function testSteamSessionBecomesReadyEvenIfC2PingFails(): void
     {
         $dll = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/GameAuth.cs');
+        $isReady = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_isReady.sqf');
+        $isC2 = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_isC2Ok.sqf');
+        $wait = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_waitAthenaReady.sqf');
+        $attach = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        $authPhp = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/ComspecApiKeyAuth.php');
+        $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
         self::assertStringContainsString('FinishGameAuthReady', $dll);
         self::assertStringContainsString('C2_DEGRADED', $dll);
         self::assertStringContainsString('return FinishGameAuthReady(verify);', $dll);
         self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
+        self::assertStringContainsString('isC2Ok', $isReady);
+        self::assertStringContainsString('C2_DEGRADED', $isC2);
+        self::assertStringContainsString('transmissions coupées', $wait);
+        self::assertStringContainsString('_apiKeyValidatedByClientInit', $attach);
+        self::assertStringContainsString('EnsureFreshGameAccessToken', $attach);
+        self::assertStringContainsString('presentedAuthCandidates', $authPhp);
+        self::assertStringContainsString("'expires_in' => self::ACCESS_TTL_SEC", $svc);
     }
 
     public function testRejectedC2ReauthenticationStopsSqfTransmitters(): void

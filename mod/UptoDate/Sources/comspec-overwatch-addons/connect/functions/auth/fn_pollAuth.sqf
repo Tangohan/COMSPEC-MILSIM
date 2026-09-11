@@ -25,6 +25,7 @@ if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc
 if (_extDet isEqualTo "") then { _extDet = "1.18.0"; };
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
+missionNamespace setVariable ["comspec_overwatch_auth_error", _err, false];
 if (!(_name isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_name", _name, false]; };
 if (!(_tenant isEqualTo "")) then { missionNamespace setVariable ["comspec_tenant_name", _tenant, false]; };
 if (!(_unit isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_unit", _unit, false]; };
@@ -48,7 +49,7 @@ private _login = !_syncing && {!_ready};
 
 {
     (_d displayCtrl _x) ctrlShow _login;
-} forEach [9401, 9402, 9420, 9421, 9422, 9425];
+} forEach [9401, 9402, 9420, 9421, 9422, 9425, 9426];
 (_d displayCtrl 9413) ctrlShow (_syncing || {_ready});
 (_d displayCtrl 9423) ctrlShow _ready;
 if (!_login) then {

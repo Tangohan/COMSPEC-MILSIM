@@ -11,6 +11,15 @@ _result set ["mode", "full"];
 _result set ["reason", ""];
 _result set ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "linked"]];
 
+// Canal C2 refusé / dégradé : coupe toutes les Tx poste (évite spam 401).
+if !([] call comspec_overwatch_connect_fnc_isC2Ok) exitWith {
+    _result set ["can_transmit", false];
+    _result set ["mode", "none"];
+    _result set ["reason", "c2_degraded"];
+    _result set ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "degraded"]];
+    _result
+};
+
 private _atak = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
 
 // Gel / redémarrage appareil (distinct déconnexion réseau)
