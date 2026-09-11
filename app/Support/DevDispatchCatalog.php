@@ -584,6 +584,63 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(506, '2026-09-11', 'Affichage situation sous toutes les JVN', 'Sous jumelles de vision nocturne, les alliés, marqueurs et véhicules proches apparaissent directement dans le champ de vision, avec la distance. Vous pouvez aussi marquer un bâtiment pour en voir la silhouette. Si le mod F-PANO ECOTI est déjà chargé, Overwatch laisse la place pour éviter le double affichage', [
+                'Projection alliés / marqueurs / véhicules sous JVN',
+                'Silhouette de bâtiment marqué depuis le menu ACE',
+                'Réglages : Affichage situation (JVN), filtres Alliés / Marqueurs / Véhicules',
+                'Compatibilité : pas de conflit avec F-PANO ECOTI',
+            ], [], [
+                'Besoin de repères dans le champ de vision sans ouvrir la carte',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.43). Quittez Arma complètement. Activez les JVN en mission.',
+            ], 'Overwatch 1.5.43'),
+            $pr(507, '2026-09-11', 'Comptes-rendus plus lisibles sur le téléphone', 'Dans l’application Comptes-rendus, la liste reçue et le formulaire Nouveau ne se chevauchent plus. Les champs sont plus aérés, le fond opaque évite le texte de la carte qui transparaît, et Envoyer / Effacer restent accessibles au-dessus de Retour', [
+                'Onglet Reçus : liste, Localiser / Effacer et détail sur des lignes distinctes',
+                'Onglet Nouveau : champs espacés et boutons d’envoi dégagés',
+                'Libellés en français (Reçus, Nouveau, Envoyer…)',
+            ], [], [
+                'Écran Comptes-rendus trop serré ou illisible',
+                'Localiser / Effacer coupés par le détail',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.43 · Athena 1.0.90). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.43 · Athena 1.0.90'),
+            $pr(505, '2026-09-11', 'Les ordres traités se retirent du téléphone', 'Dans Ordres reçus, un ordre déjà accepté, refusé ou terminé propose désormais Supprimer pour le retirer de la liste. Pendant l’exécution, Terminer clôt l’ordre. Les boutons correspondent enfin à l’état sélectionné', [
+                'Bouton Supprimer sur les ordres clos (refusés, annulés, terminés)',
+                'Bouton Terminer pendant l’exécution',
+                'Messages plus clairs si une réponse n’est plus possible',
+            ], [], [
+                'Impossible de nettoyer la liste Ordres reçus',
+                'Accepter / Refuser restaient affichés sur un ordre déjà refusé',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.42). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.42'),
+            $pr(504, '2026-09-11', 'Bandeau de liaison plus clair sur le téléphone', 'Sous la barre d’état du téléphone ATAK, le bandeau est plus compact et affiche l’état OK/NOK, la dernière sync, la fiabilité, l’indicatif et le nom, ainsi que les versions Overwatch, Athena et liaison', [
+                'Bandeau plus compact, deux lignes lisibles',
+                'Dernière sync, fiabilité, identité opérateur',
+                'Versions Overwatch / Athena / liaison visibles',
+            ], [], [
+                'Bandeau OK/NOK trop large ou trop pauvre en infos',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.41 · Athena 1.0.89). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.41 · Athena 1.0.89'),
+            $pr(503, '2026-09-11', 'Correction du plantage lié au bandeau de liaison', 'L’ouverture du téléphone ATAK ne plante plus à cause du bandeau OK / NOK. Celui-ci affiche de nouveau l’état de liaison, le débit et la perte sans bloquer le jeu', [
+                'Bandeau de liaison stabilisé à l’ouverture',
+                'Affichage OK / NOK · débit · perte rétabli',
+            ], [], [
+                'Crash ou gel dès l’ouverture du téléphone',
+                'Bandeau sombre vide sous la barre d’état',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.40). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.40'),
+            $pr(502, '2026-09-11', 'Ouverture du téléphone ATAK plus fluide', 'La première ouverture du téléphone ne surcharge plus le jeu d’un coup : le menu d’applications et les raccourcis du bureau se mettent en place juste après l’affichage. Le message trompeur « canal poste encore refusé » au démarrage disparaît quand la liaison est en réalité en cours de stabilisation', [
+                'Menu d’applications reconstruit hors du premier instant d’ouverture',
+                'Raccourcis du bureau créés après un court délai',
+                'Journal de liaison plus fidèle pendant la stabilisation',
+            ], [], [
+                'Hitch / gel ressenti à l’ouverture du téléphone malgré 1.5.38',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.39 · liaison 2.0.28). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.39 · liaison 2.0.28'),
             $pr(501, '2026-09-11', 'Le téléphone ne fige plus le jeu à la première ouverture', 'À l’ouverture du téléphone ATAK, le jeu ne se bloque plus pendant les premières secondes de liaison. Les envois vers le poste attendent que la connexion soit stable, et l’écran ne passe plus en blanc laiteux si une texture d’état manque', [
                 'Transmissions différées jusqu’à stabilisation de la liaison',
                 'Moins de tentatives répétées quand l’accès est encore refusé',

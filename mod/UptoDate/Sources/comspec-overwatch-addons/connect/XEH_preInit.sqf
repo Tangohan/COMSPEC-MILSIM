@@ -365,6 +365,61 @@ private _fnc_applyNet = {
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_ecoti_hud", "CHECKBOX",
+    [
+        "Affichage situation (JVN)",
+        "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne. Désactivé automatiquement si le mod F-PANO ECOTI est déjà chargé."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_nvg_only", "CHECKBOX",
+    [
+        "Seulement avec les JVN",
+        "Si coché, l’affichage situation n’apparaît que lorsque la vision nocturne est active (toutes les JVN)."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_allies", "CHECKBOX",
+    ["Alliés dans le champ de vision", "Affiche les opérateurs amis proches et la distance."],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_markers", "CHECKBOX",
+    ["Marqueurs dans le champ de vision", "Affiche les repères de carte visibles depuis la vision nocturne."],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_vehicles", "CHECKBOX",
+    ["Véhicules dans le champ de vision", "Affiche les véhicules et aéronefs amis proches."],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_max_dist", "SLIDER",
+    ["Distance max. (m)", "Au-delà, les éléments ne sont plus projetés dans le champ de vision."],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    [200, 2500, 1200, 0]
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_max_icons", "SLIDER",
+    ["Nombre max. d’éléments", "Limite le nombre d’icônes dessinées pour préserver la fluidité."],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    [10, 80, 40, 0]
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_log_level", "LIST",
     [
         "Journal technique (fichier RPT)",

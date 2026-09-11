@@ -61,11 +61,14 @@ if (_status in ["DONE", "CLOSED"]) then {
 };
 if (_status isEqualTo "FAILED") then {
     _stTxt = "Refusé";
-    _next = "";
+    _next = "Vous pouvez retirer cet ordre de la liste avec Supprimer.";
 };
 if (_status isEqualTo "CANCELLED") then {
     _stTxt = "Annulé";
-    _next = "";
+    _next = "Vous pouvez retirer cet ordre de la liste avec Supprimer.";
+};
+if (_status in ["DONE", "CLOSED"] && {_next isEqualTo ""}) then {
+    _next = "Vous pouvez retirer cet ordre de la liste avec Supprimer.";
 };
 if (_status isEqualTo "DELIVERED") then {
     _stTxt = "Remis";

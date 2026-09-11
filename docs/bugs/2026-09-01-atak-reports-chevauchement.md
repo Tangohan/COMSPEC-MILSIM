@@ -39,4 +39,4 @@ Tests unitaires `AtakReportsLayoutAssetTest`. Contrôle visuel en jeu après rec
 
 ## Statut
 
-Corrigé (pack à reconstruire).
+Corrigé à nouveau (1.5.43 / Athena 1.0.90) : inbox sans chevauchement Localiser/détail, formulaire Nouveau espacé + champs opaques, Envoyer/Effacer hors barre Retour.

@@ -105,9 +105,14 @@ private _newOnes = [];
 
     if (_id isEqualTo "") then { continue };
 
+    if (_id in (missionNamespace getVariable ["COMSPEC_OrdersDismissed", []])) then { continue };
+
     if (_type isEqualTo "") then { _type = "MOVE"; };
 
     if (_targetType isEqualTo "") then { _targetType = "all"; };
+
+    if (_status isEqualTo "") then { _status = "PENDING"; };
+    _status = toUpper _status;
 
 
 

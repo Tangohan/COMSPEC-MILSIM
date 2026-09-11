@@ -16,11 +16,15 @@ lbClear _list;
 private _myName = name player;
 private _myCallsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
+private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
+if (!(_dismissed isEqualType [])) then { _dismissed = []; };
 private _shown = [];
 
 {
     private _order = _x;
     if (!(_order isEqualType createHashMap)) then { continue };
+    private _oidEarly = _order getOrDefault ["id", ""];
+    if (_oidEarly isNotEqualTo "" && {_oidEarly in _dismissed}) then { continue };
     if (!([_order] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
 
     private _issuer = _order getOrDefault ["issuer", ""];

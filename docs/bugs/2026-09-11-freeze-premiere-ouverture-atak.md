@@ -41,4 +41,11 @@
 
 ## Statut
 
-corrigé — Overwatch 1.5.38 · liaison 2.0.28
+partiel — 1.5.38 coupe le spam 401 ; hitch UI 1ʳᵉ ouverture traité en **1.5.39** (hydratation menu + raccourcis différés, log handshake corrigé). FPANO non requis.
+
+## Suite 1.5.39
+
+- `waitAthenaReady` : ne plus juger via `canStartSync` pendant Quiet (faux « canal refusé »)
+- `updateMapHud` : `BCE_fnc_ATAK_getAPPs` différé ~0,85 s
+- `installDesktopShortcut` : ctrlCreate différé ~0,9 s après ouverture display
+

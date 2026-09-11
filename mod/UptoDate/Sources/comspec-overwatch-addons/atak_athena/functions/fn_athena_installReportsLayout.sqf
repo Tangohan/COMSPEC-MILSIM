@@ -56,10 +56,7 @@ if (!(missionNamespace getVariable ["COMSPEC_ReportsUpdateWrapped", false]) && {
     missionNamespace setVariable ["COMSPEC_Prev_Iceman_alerts_updatePanel", Iceman_fnc_alerts_updatePanel];
     Iceman_fnc_alerts_updatePanel = {
         private _r = _this call (missionNamespace getVariable ["COMSPEC_Prev_Iceman_alerts_updatePanel", {}]);
-        private _group = uiNamespace getVariable ["Iceman_ATAK_Alerts_group", controlNull];
-        if (!isNull _group && {(_group getVariable ["COMSPEC_ReportsNativeW", -1]) > 0}) then {
-            [] call comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout;
-        };
+        [] call comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout;
         _r
     };
     missionNamespace setVariable ["COMSPEC_ReportsUpdateWrapped", true];

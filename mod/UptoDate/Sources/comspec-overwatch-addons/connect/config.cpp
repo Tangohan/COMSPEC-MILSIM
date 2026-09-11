@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.538;
-        versionStr = "1.5.38";
-        versionAr[] = {1, 5, 38};
+        version = 1.543;
+        versionStr = "1.5.43";
+        versionAr[] = {1, 5, 43};
     };
 };
 
@@ -387,6 +387,14 @@ class CfgFunctions {
             class appendLinkLog {};
             class appendModuleLog {};
             class isModModuleEnabled {};
+            class ecotiFpanoPresent {};
+            class ecotiIsAvailable {};
+            class ecotiIsActive {};
+            class ecotiFormatDistance {};
+            class ecotiDrawBuilding {};
+            class ecotiDraw {};
+            class ecotiInit {};
+            class ecotiMarkBuilding {};
             class pollModModules {};
             class pollExperience {};
             class applyTenantExperience {};

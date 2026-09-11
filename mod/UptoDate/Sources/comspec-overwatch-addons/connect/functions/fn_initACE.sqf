@@ -51,6 +51,17 @@ private _tabletAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _ecotiMarkAction = [
+    "COMSPEC_EcotiMarkBuilding", "Marquer ce bâtiment (affichage situation)", "", {
+        [] call comspec_overwatch_connect_fnc_ecotiMarkBuilding;
+    }, {
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { missionNamespace getVariable ["comspec_overwatch_ecoti_hud", true] }
+        && { !([] call comspec_overwatch_connect_fnc_ecotiFpanoPresent) }
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiMarkAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _resynchAction = [
     "COMSPEC_Resynch", "Resynch Athena (tout renvoyer)", "", {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openResynch") then {

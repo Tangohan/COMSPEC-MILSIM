@@ -204,8 +204,17 @@ COMSPEC_Athena_desktopShortcutPFH = [{
 
     private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 
-    if (isNull _display) exitWith {};
+    if (isNull _display) exitWith {
+        uiNamespace setVariable ["COMSPEC_Athena_desktopShortcutReadyAt", nil];
+    };
 
+    // Différer le ctrlCreate massif hors du 1er frame d’ouverture ATAK.
+    private _readyAt = uiNamespace getVariable ["COMSPEC_Athena_desktopShortcutReadyAt", -1];
+    if (_readyAt < 0) then {
+        _readyAt = diag_tickTime + 0.9;
+        uiNamespace setVariable ["COMSPEC_Athena_desktopShortcutReadyAt", _readyAt];
+    };
+    if (diag_tickTime < _readyAt) exitWith {};
 
 
     private _defs = missionNamespace getVariable ["COMSPEC_Athena_desktopShortcutsDef", []];

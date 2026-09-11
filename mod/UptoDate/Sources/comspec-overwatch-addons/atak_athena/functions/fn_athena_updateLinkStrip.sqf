@@ -1,22 +1,34 @@
 /*
-    Bandeau liaison sur le téléphone ATAK (sous la barre d’état cTab) :
-    OK / NOK · débit estimé · taux d’erreur.
+    Bandeau liaison compact sous la barre d’état cTab :
+    OK/NOK · dernière sync · fiabilité · débit/perte
+    Indicatif · nom · versions Overwatch / Athena
+
+    Lecture seule — ne jamais appeler refreshLinkState ici
+    (récursion updateStatusBadges → crash).
 */
 if (!hasInterface) exitWith { false };
+
+if (missionNamespace getVariable ["COMSPEC_LinkStripUpdating", false]) exitWith { false };
+missionNamespace setVariable ["COMSPEC_LinkStripUpdating", true, false];
 
 private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _disp) then {
     _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
 };
-if (isNull _disp) exitWith { false };
+if (isNull _disp) exitWith {
+    missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
+    false
+};
 
 private _IDC = 99871;
 private _ctrl = _disp displayCtrl _IDC;
 
-// Ancre : batterie (2) ou en-tête (1)
 private _bat = _disp displayCtrl 2;
 if (isNull _bat) then { _bat = _disp displayCtrl 1; };
-if (isNull _bat) exitWith { false };
+if (isNull _bat) exitWith {
+    missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
+    false
+};
 
 (ctrlPosition _bat) params ["_bx", "_by", "_bw", "_bh"];
 private _hdr = _disp displayCtrl 1;
@@ -32,21 +44,44 @@ if (!isNull _hdr) then {
     _hh = _h0;
 };
 
-// Ligne sous la barre noire native (ne masque pas horloge / signal)
+// Plus compact que l’ancien bandeau (0.85 → ~0.62 × hauteur statut, 2 lignes serrées)
 private _sy = _hy + _hh;
-private _sh = (_hh * 0.85) max 0.016;
+private _sh = (_hh * 1.05) max 0.022;
+private _inset = _hw * 0.012;
+_hx = _hx + _inset;
+_hw = (_hw - (_inset * 2)) max (_bw * 4);
 
 if (isNull _ctrl) then {
     _ctrl = _disp ctrlCreate ["RscStructuredText", _IDC];
-    if (isNull _ctrl) exitWith { false };
+    if (isNull _ctrl) exitWith {
+        missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
+        false
+    };
 };
 
 _ctrl ctrlSetPosition [_hx, _sy, _hw, _sh];
-_ctrl ctrlSetBackgroundColor [0.02, 0.04, 0.05, 0.88];
+_ctrl ctrlSetBackgroundColor [0.015, 0.03, 0.04, 0.78];
 _ctrl ctrlCommit 0;
 
-// --- Métriques ---
-[] call comspec_overwatch_connect_fnc_refreshLinkState;
+private _fncShort = {
+    params ["_txt", ["_max", 14]];
+    if (!(_txt isEqualType "")) then { _txt = str _txt; };
+    _txt = trim _txt;
+    if (_txt isEqualTo "") exitWith { "" };
+    if ((count _txt) > _max) then { (_txt select [0, _max - 1]) + "…" } else { _txt };
+};
+
+private _fncAgo = {
+    params ["_tick"];
+    if (!(_tick isEqualType 0) || {_tick < 0}) exitWith { "—" };
+    private _sec = round (diag_tickTime - _tick);
+    if (_sec < 0) then { _sec = 0; };
+    if (_sec < 60) exitWith { format ["%1s", _sec] };
+    if (_sec < 3600) exitWith { format ["%1m", round (_sec / 60)] };
+    format ["%1h", round (_sec / 3600)]
+};
+
+// --- État liaison ---
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 if (!(_state isEqualType "")) then { _state = "offline"; };
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
@@ -56,7 +91,6 @@ if (!(_lastHealth isEqualType 0)) then { _lastHealth = -1; };
 private _healthFresh = (_lastHealth >= 0) && {(diag_tickTime - _lastHealth) < 90};
 
 private _ok = (_state isEqualTo "linked") && {_ready || _healthFresh};
-// Dégradé : encore « OK » mais on le signale via la couleur erreur
 private _degraded = _state isEqualTo "degraded";
 
 private _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
@@ -90,36 +124,112 @@ private _rateTxt = if (!_ok && {!_degraded}) then {
         "—"
     } else {
         if (_bitrateKbps < 10) then {
-            format ["%1 kbit/s", (_bitrateKbps toFixed 1)]
+            format ["%1k", (_bitrateKbps toFixed 1)]
         } else {
-            format ["%1 kbit/s", round _bitrateKbps]
+            format ["%1k", round _bitrateKbps]
         }
     }
 };
 
-private _errTxt = if (!_ok && {!_degraded} && {_sentWin < 1}) then {
-    "—"
-} else {
-    format ["perte %1%%", round _loss]
-};
+private _errTxt = format ["%1%%", round _loss];
 private _errColor = switch (true) do {
     case (_loss >= 25): { "#ff8a7a" };
     case (_loss >= 10): { "#ffd27a" };
-    default { "#c8d8e8" };
+    default { "#a8b8c8" };
 };
 
+// Fiabilité : 100 − perte, pénalisée si hors liaison / santé ancienne / latence haute
+private _reliab = ((100 - _loss) max 0) min 100;
+if (!_ok && {!_degraded}) then { _reliab = 0; };
+if (_degraded) then { _reliab = _reliab min 72; };
+if (_lastHealth >= 0 && {(diag_tickTime - _lastHealth) > 45}) then {
+    _reliab = _reliab min 55;
+};
+private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
+if ((_ms isEqualType 0) && {_ms >= 0}) then {
+    if (_ms >= 400) then { _reliab = _reliab min 50; };
+    if (_ms >= 800) then { _reliab = _reliab min 30; };
+};
+_reliab = round _reliab;
+private _reliabColor = switch (true) do {
+    case (_reliab >= 85): { "#7dffb0" };
+    case (_reliab >= 60): { "#ffd27a" };
+    default { "#ff8a7a" };
+};
+
+private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+private _syncTxt = [_lastSync] call _fncAgo;
+if ((_ms isEqualType 0) && {_ms >= 0} && {_lastSync >= 0}) then {
+    _syncTxt = format ["%1/%2ms", _syncTxt, round _ms];
+};
+
+// Identité
+private _cs = "";
+if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
+    _cs = [true] call comspec_overwatch_connect_fnc_getCallsign;
+};
+if (!(_cs isEqualType "")) then { _cs = ""; };
+private _name = missionNamespace getVariable ["comspec_profile_name", ""];
+if (!(_name isEqualType "")) then { _name = ""; };
+_name = trim _name;
+if (_name isEqualTo "" && {!isNull player}) then { _name = name player; };
+_cs = [_cs, 12] call _fncShort;
+_name = [_name, 16] call _fncShort;
+private _who = if (_cs isNotEqualTo "" && {_name isNotEqualTo ""} && {(toLower _cs) isNotEqualTo (toLower _name)}) then {
+    format ["%1 · %2", _cs, _name]
+} else {
+    if (_cs isNotEqualTo "") then { _cs } else { if (_name isNotEqualTo "") then { _name } else { "—" } }
+};
+
+// Versions (cache liaison une fois)
+private _owV = "";
+if (!isNil "comspec_overwatch_connect_fnc_getModVersion") then {
+    _owV = [] call comspec_overwatch_connect_fnc_getModVersion;
+};
+if (!(_owV isEqualType "") || {_owV isEqualTo ""}) then {
+    _owV = getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr");
+};
+private _atakV = getText (configFile >> "CfgPatches" >> "comspec_overwatch_atak_athena" >> "versionStr");
+if (_atakV isEqualTo "") then { _atakV = "—"; };
+
+private _extV = missionNamespace getVariable ["COMSPEC_ExtensionVersionCached", ""];
+if (!(_extV isEqualType "")) then { _extV = ""; };
+if (_extV isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
+    private _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+    if ((_extRaw isEqualType "") && {_extRaw isNotEqualTo ""}) then {
+        private _extParts = _extRaw splitString "|";
+        if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
+            private _bits = (_extParts select 1) splitString " ";
+            if ((count _bits) >= 2) then { _extV = _bits select 1; } else { _extV = _extParts select 1; };
+        };
+        _extV = trim _extV;
+        if (_extV isNotEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_ExtensionVersionCached", _extV, false];
+        };
+    };
+};
+if (_extV isEqualTo "") then { _extV = "—"; };
+
+private _sep = "<t color='#4a5a68'> · </t>";
 private _html = format [
-    "<t align='center' size='0.72' shadow='1'><t color='%1'>%2</t><t color='#6a7a88'> · </t><t color='#c8e8ff'>%3</t><t color='#6a7a88'> · </t><t color='%4'>%5</t></t>",
+    "<t align='center' size='0.52' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
     _okColor,
     _okTxt,
+    _sep,
+    _syncTxt,
+    _reliabColor,
+    _reliab,
     _rateTxt,
     _errColor,
-    _errTxt
+    _errTxt,
+    _who,
+    _owV,
+    _atakV,
+    _extV
 ];
 _ctrl ctrlSetStructuredText parseText _html;
 _ctrl ctrlShow true;
 
-// Teinte légère de l’icône signal (décorative cTab)
 private _sig = _disp displayCtrl 3;
 if (!isNull _sig) then {
     if (_ok) then {
@@ -133,4 +243,5 @@ if (!isNull _sig) then {
     };
 };
 
+missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
 true

@@ -104,6 +104,11 @@ final class AtakBridgeModulesService
                 'description' => 'Diffuse les alertes / BDA envoyés depuis Athena vers les appareils cTab en jeu.',
             ],
             [
+                'id' => 'ecoti_hud',
+                'label' => 'Affichage situation (JVN)',
+                'description' => 'Autorise l’affichage situation sous jumelles de vision nocturne : alliés, marqueurs, véhicules et silhouette de bâtiment. Sans effet si le mod F-PANO ECOTI est déjà chargé.',
+            ],
+            [
                 'id' => 'report_routing',
                 'label' => 'Routage des rapports tactiques',
                 'description' => 'Applique les règles de distribution aux rapports, sans masquer les données existantes.',
