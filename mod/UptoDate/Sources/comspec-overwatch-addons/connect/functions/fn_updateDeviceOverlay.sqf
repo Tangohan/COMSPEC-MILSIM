@@ -65,7 +65,8 @@ private _fncResolveTex = {
     params ["_paa", ["_png", ""]];
     if (_paa isNotEqualTo "" && {fileExists _paa}) exitWith { _paa };
     if (_png isNotEqualTo "" && {fileExists _png}) exitWith { _png };
-    _paa
+    // Texture absente : ne pas renvoyer un .paa manquant (RscPicture → écran blanc laiteux).
+    ""
 };
 
 private _fncIsPhoneRect = {
@@ -258,12 +259,13 @@ if (!isNull _fx) then {
         _fx ctrlShow true;
         _fx ctrlCommit 0;
     } else {
+        // RscPicture sans fichier valide = blanc laiteux : ne jamais afficher vide.
         _fx ctrlShow false;
     };
 };
 
 if (!isNull _overlay) then {
-    if (_captionPlace isEqualTo "center") then {
+    if (_captionPlace isEqualTo "center" || {_tex isEqualTo "" && {_title isNotEqualTo "" || {_detail isNotEqualTo ""}}}) then {
         _overlay ctrlSetPosition _pos;
         _overlay ctrlSetBackgroundColor [0.027, 0.039, 0.055, 0.72];
         _overlay ctrlSetStructuredText parseText "";
