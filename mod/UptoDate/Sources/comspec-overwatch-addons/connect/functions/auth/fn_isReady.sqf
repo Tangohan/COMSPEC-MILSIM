@@ -1,8 +1,5 @@
 /*
-    Session Athena prête pour les transmissions (compte + canal C2).
-    Profil / indicatif peuvent déjà être appliqués via applyBootstrap si state=READY
-    même en C2_DEGRADED ; les boucles Tx exigent isC2Ok.
+    Session Athena prête (compte lié, état READY).
+    Aligné sur le pack Workshop 06-09-2026 qui fonctionnait en session.
 */
-private _state = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
-if !(_state isEqualTo "READY") exitWith { false };
-[] call comspec_overwatch_connect_fnc_isC2Ok
+(missionNamespace getVariable ["comspec_overwatch_auth_state", ""]) isEqualTo "READY"

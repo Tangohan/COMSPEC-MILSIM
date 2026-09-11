@@ -1,5 +1,6 @@
 /*
     Applique le profil et la communauté renvoyés par Athena. Jamais d’identifiant saisi par le joueur.
+    READY → liaison prête (comportement Workshop 06-09-2026).
 */
 private _auth = [] call comspec_overwatch_connect_fnc_authStateCells;
 private _state = _auth getOrDefault ["state", ""];
@@ -47,9 +48,11 @@ if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
 };
 
 if (_state isEqualTo "READY") then {
-    private _c2Ok = [] call comspec_overwatch_connect_fnc_isC2Ok;
     private _wasReady = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
     if (!(_wasReady isEqualType true)) then { _wasReady = false; };
+    missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
+    missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
+    missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
     private _linkCs = [true] call comspec_overwatch_connect_fnc_getCallsign;
     private _detail = _tenant;
     if (!(_linkCs isEqualTo "")) then {
@@ -57,28 +60,9 @@ if (_state isEqualTo "READY") then {
     } else {
         if (_detail isEqualTo "") then { _detail = "Opérateur"; };
     };
-    if (_c2Ok) then {
-        missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
-        missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
-        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
-        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
-        if (!_wasReady) then {
-            ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
-        };
-    } else {
-        missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
-        missionNamespace setVariable ["COMSPEC_LinkState", "degraded", false];
-        private _errUp = toUpper _err;
-        private _why = if (_errUp isEqualTo "C2_UNAUTHORIZED") then {
-            "Compte lié — transmissions refusées (réessayez Connexion Athena)"
-        } else {
-            "Compte lié — transmissions coupées (canal poste indisponible)"
-        };
-        missionNamespace setVariable ["COMSPEC_LinkDetail", _why, false];
-        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
-        if (_wasReady) then {
-            ["COMSPEC_AthenaLinkChanged", ["degraded"]] call CBA_fnc_localEvent;
-        };
+    missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
+    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+    if (!_wasReady) then {
+        ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
     };
 };

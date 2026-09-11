@@ -22,10 +22,9 @@ private _steamNotice = _auth getOrDefault ["steam_notice", ""];
 missionNamespace setVariable ["COMSPEC_SteamLinked", _steamLinked, false];
 
 if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc_packVersion; };
-if (_extDet isEqualTo "") then { _extDet = "1.18.0"; };
+if (_extDet isEqualTo "") then { _extDet = "2.0.18"; };
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
-missionNamespace setVariable ["comspec_overwatch_auth_error", _err, false];
 if (!(_name isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_name", _name, false]; };
 if (!(_tenant isEqualTo "")) then { missionNamespace setVariable ["comspec_tenant_name", _tenant, false]; };
 if (!(_unit isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_unit", _unit, false]; };
@@ -49,17 +48,31 @@ private _login = !_syncing && {!_ready};
 
 {
     (_d displayCtrl _x) ctrlShow _login;
-} forEach [9401, 9402, 9420, 9421, 9422, 9425, 9426];
+} forEach [9401, 9402, 9420, 9421, 9422, 9425];
 (_d displayCtrl 9413) ctrlShow (_syncing || {_ready});
 (_d displayCtrl 9423) ctrlShow _ready;
+(_d displayCtrl 9426) ctrlShow (_login || {_ready});
 if (!_login) then {
     (_d displayCtrl 9403) ctrlShow false;
     (_d displayCtrl 9424) ctrlShow false;
 };
 
-if (!(_brand isEqualTo "") && {_brand find "http" == 0}) then {
-    (_d displayCtrl 9414) htmlLoad _brand;
+// Marque communauté en RscStructuredText uniquement (plus de RscHTML / htmlLoad)
+private _brandCtrl = _d displayCtrl 9414;
+if (!isNull _brandCtrl) then {
+    private _brandTitle = if (!(_tenant isEqualTo "")) then { _tenant } else { "COMSPEC OVERWATCH" };
+    private _brandSub = if (_ready) then {
+        "Environnement opérationnel"
+    } else {
+        if (_syncing) then { "Synchronisation en cours" } else { "Connexion et appairage — interface native" };
+    };
+    _brandCtrl ctrlSetStructuredText parseText format [
+        "<t align='center' size='0.78' color='#e8f4f0'>%1</t><br/><t align='center' size='0.55' color='#7aa89a'>%2</t>",
+        _brandTitle,
+        _brandSub
+    ];
 };
+// URL de branding HTML du portail ignorée volontairement (_brand) — pas de navigateur embarqué.
 
 private _pic = _d displayCtrl 9431;
 if (!isNull _pic) then {

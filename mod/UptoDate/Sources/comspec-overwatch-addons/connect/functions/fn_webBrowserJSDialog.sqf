@@ -195,6 +195,14 @@ switch (true) do {
         call _fnc_refresh;
     };
     case ((_cmd select [0, 13]) isEqualTo "account:link|"): {
+        // Si UI ATAK only : fermer le Chromium et ouvrir le dialog Rsc d’appairage
+        if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
+            if (!isNull (findDisplay 9974)) then { closeDialog 0; };
+            0 spawn {
+                uiSleep 0.08;
+                [] call comspec_overwatch_connect_fnc_accountLinkShow;
+            };
+        };
         private _rest = _cmd select [13, (count _cmd) - 13];
         private _parts = _rest splitString "|";
         private _url = if ((count _parts) >= 1) then { trim (_parts select 0) } else { "" };
@@ -244,7 +252,8 @@ switch (true) do {
         call _fnc_refresh;
     };
     case (_cmd isEqualTo "phone:refresh"): {
-        [false] call comspec_overwatch_connect_fnc_phoneConnectShow;
+        // Toujours le dialog Rsc natif (plus d’injection HTML)
+        [true] call comspec_overwatch_connect_fnc_phoneConnectShow;
     };
     case (_cmd isEqualTo "briefing:board"): {
         [] call comspec_overwatch_connect_fnc_openBriefingBoard;

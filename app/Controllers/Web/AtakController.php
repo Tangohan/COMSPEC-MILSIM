@@ -360,7 +360,7 @@ class AtakController
             'code' => $created['code'],
             'expires_at' => $created['expires_at'],
             'api_url' => atak_client_base_url($this->atakConfigRepository->getByTenantId($tenantId)),
-            'hint' => 'Dans Arma : téléphone ATAK → Connexion Athena → Code de secours, puis entrez ce code.',
+            'hint' => 'Dans Arma : Connexion Athena → Lier le jeu, puis saisissez ce code.',
         ]);
     }
 

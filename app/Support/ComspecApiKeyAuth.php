@@ -19,6 +19,12 @@ final class ComspecApiKeyAuth
     /** @var int|null Tenant résolu via clé de communauté (dernière requête validée). */
     private static ?int $matchedTenantId = null;
 
+    /** @var string|null Steam lié à la session jeu acceptée (si présent en base). */
+    private static ?string $matchedSteamId = null;
+
+    /** @var int|null Utilisateur lié à la session jeu acceptée. */
+    private static ?int $matchedUserId = null;
+
     /** @var string|null php://input lu une fois (middleware + contrôleurs). */
     private static ?string $rawJsonCache = null;
 
@@ -68,6 +74,28 @@ final class ComspecApiKeyAuth
     public static function matchedTenantId(): ?int
     {
         return self::$matchedTenantId;
+    }
+
+    /** Steam porté par la session jeu validée (null si auth hors session jeu ou Steam absent). */
+    public static function matchedSteamId(): ?string
+    {
+        $s = self::$matchedSteamId;
+        if ($s === null || $s === '') {
+            return null;
+        }
+
+        return $s;
+    }
+
+    /** Utilisateur de la session jeu validée (null hors session jeu). */
+    public static function matchedUserId(): ?int
+    {
+        $id = self::$matchedUserId;
+        if ($id === null || $id < 1) {
+            return null;
+        }
+
+        return $id;
     }
 
     public static function extractPresentedKey(): string
@@ -167,6 +195,8 @@ final class ComspecApiKeyAuth
     public static function resetForTests(): void
     {
         self::$matchedTenantId = null;
+        self::$matchedSteamId = null;
+        self::$matchedUserId = null;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
     }
@@ -174,6 +204,8 @@ final class ComspecApiKeyAuth
     public static function requestPresentsValidKey(): bool
     {
         self::$matchedTenantId = null;
+        self::$matchedSteamId = null;
+        self::$matchedUserId = null;
         $candidates = self::presentedAuthCandidates();
         if ($candidates === []) {
             return false;
@@ -341,6 +373,10 @@ final class ComspecApiKeyAuth
             return false;
         }
         self::$matchedTenantId = $tid;
+        $uid = (int) ($row['user_id'] ?? 0);
+        self::$matchedUserId = $uid > 0 ? $uid : null;
+        $steam = trim((string) ($row['steam_id'] ?? ''));
+        self::$matchedSteamId = $steam !== '' ? $steam : null;
 
         return true;
     }
