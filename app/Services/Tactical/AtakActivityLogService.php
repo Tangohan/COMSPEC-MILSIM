@@ -18,6 +18,8 @@ final class AtakActivityLogService
     private const INIT_THROTTLE_SEC = 90;
     private const ERROR_THROTTLE_SEC = 12;
     private const INGEST_THROTTLE_SEC = 20;
+    /** Remontées « effectifs » : anti-spam fort (même libellé / composition). */
+    private const INGEST_EFFECTIFS_THROTTLE_SEC = 300;
     private const SESSION_TTL_SEC = 86400;
     /** Présence des visiteurs web sur la Tacmap (TTL court). */
     private const WEB_PRESENCE_TTL_SEC = 90;
@@ -184,17 +186,22 @@ final class AtakActivityLogService
         if ($actor !== null && $actor !== '') {
             $actor = Utf8Text::normalize($actor);
         }
-        $fp = md5($kind . '|' . mb_strtolower((string) ($actor ?? ''), 'UTF-8'));
+        // Effectifs : empreinte sur le libellé pour ne pas republier le même snapshot toutes les 20 s.
+        $fpSeed = $kind === 'effectifs'
+            ? ($kind . '|' . mb_strtolower($label, 'UTF-8'))
+            : ($kind . '|' . mb_strtolower((string) ($actor ?? ''), 'UTF-8'));
+        $fp = md5($fpSeed);
+        $throttleSec = $kind === 'effectifs' ? self::INGEST_EFFECTIFS_THROTTLE_SEC : self::INGEST_THROTTLE_SEC;
         $safeMeta = $this->sanitizeMeta(array_merge($meta, ['kind' => $kind]));
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($fp, $label, $actor, $safeMeta): void {
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($fp, $label, $actor, $safeMeta, $throttleSec): void {
             $now = time();
             $th = is_array($data['ingest_throttle'] ?? null) ? $data['ingest_throttle'] : [];
             $last = (int) ($th[$fp] ?? 0);
-            if ($last > 0 && ($now - $last) < self::INGEST_THROTTLE_SEC) {
+            if ($last > 0 && ($now - $last) < $throttleSec) {
                 return;
             }
             $th[$fp] = $now;
-            $data['ingest_throttle'] = $this->pruneThrottleMap($th, $now, self::INGEST_THROTTLE_SEC * 8);
+            $data['ingest_throttle'] = $this->pruneThrottleMap($th, $now, max($throttleSec * 4, self::INGEST_THROTTLE_SEC * 8));
             $this->appendEvent($data, self::TYPE_INGEST, $label, $actor, $safeMeta);
         });
     }

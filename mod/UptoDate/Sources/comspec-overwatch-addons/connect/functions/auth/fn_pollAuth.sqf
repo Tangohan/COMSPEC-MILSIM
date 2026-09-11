@@ -22,7 +22,7 @@ private _steamNotice = _auth getOrDefault ["steam_notice", ""];
 missionNamespace setVariable ["COMSPEC_SteamLinked", _steamLinked, false];
 
 if (_modDet isEqualTo "") then { _modDet = [] call comspec_overwatch_connect_fnc_packVersion; };
-if (_extDet isEqualTo "") then { _extDet = "2.0.18"; };
+if (_extDet isEqualTo "") then { _extDet = "2.0.19"; };
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
 if (!(_name isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_name", _name, false]; };
@@ -263,4 +263,8 @@ private _foot = if (_modMin isEqualTo "") then {
 
 if (_syncing && {!_ready}) then {
     [{ [] call comspec_overwatch_connect_fnc_pollAuth; }, [], 0.35] call CBA_fnc_waitAndExecute;
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 };

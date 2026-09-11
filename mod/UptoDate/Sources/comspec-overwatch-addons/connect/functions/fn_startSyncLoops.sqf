@@ -5,7 +5,7 @@
         Évite de spammer le portail / le scheduler tant que la liaison n’est pas prête.
 */
 if (!hasInterface) exitWith {};
-if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
+if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 

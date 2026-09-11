@@ -28,8 +28,11 @@ final class AtakPlaytimeAndSettingsSelectAssetTest extends TestCase
         self::assertStringContainsString('is3DEN', $atak);
         self::assertStringContainsString('_flushCtx', $atak);
         self::assertStringContainsString('ReportPlaytime', $ow);
+        self::assertStringContainsString('COMSPEC_AthenaReady', $ow);
         self::assertStringContainsString('comspec_overwatch_playtime_enabled', $pre);
         self::assertStringContainsString('ReportPlaytime', $ext);
         self::assertStringContainsString('ctx != "zeus" && ctx != "editor"', $ext);
+        self::assertStringContainsString('/api/atak/playtime', $ext);
+        self::assertStringContainsString('HasPortalAuth()', $ext);
     }
 }

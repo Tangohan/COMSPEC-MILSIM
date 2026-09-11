@@ -124,6 +124,8 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             params ["_st"];
             if (!(_st in ["ready", "linked"])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
+                && {!([] call comspec_overwatch_connect_fnc_canStartSync)}) exitWith {};
             missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
             [] call comspec_overwatch_connect_fnc_startSyncLoops;
             if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {

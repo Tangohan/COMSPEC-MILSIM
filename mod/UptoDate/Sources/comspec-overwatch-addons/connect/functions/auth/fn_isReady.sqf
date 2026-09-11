@@ -1,5 +1,5 @@
 /*
     Session Athena prête (compte lié, état READY).
-    Aligné sur le pack Workshop 06-09-2026 qui fonctionnait en session.
+    Les transmissions exigent aussi isC2Ok / canStartSync (canal poste).
 */
 (missionNamespace getVariable ["comspec_overwatch_auth_state", ""]) isEqualTo "READY"

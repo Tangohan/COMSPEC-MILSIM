@@ -13,8 +13,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlaytimeStarted", true, false];
 
     private _classify = {
         if (is3DEN || {is3DENPreview}) exitWith {"editor"};
-        if (!isMultiplayer) exitWith {""};
         if (!isNull curatorCamera || {!isNull findDisplay 312}) exitWith {"zeus"};
+        // Solo (hors éditeur) et multijoueur : même seau « serveur ».
         "server"
     };
 
@@ -22,14 +22,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlaytimeStarted", true, false];
         params ["_secs", "_flushCtx"];
         if (_secs < 1) exitWith {};
         if (_flushCtx isEqualTo "") exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_ATAK_AthenaReady", false])) exitWith {};
         private _uid = if (isNull player) then {""} else {getPlayerUID player};
-        if (_uid isEqualTo "__SERVER__" || {_uid isEqualTo "_SP_PLAYER_"}) exitWith {};
+        // __SERVER__ uniquement : en solo la liaison reprend le Steam de session.
+        if (_uid isEqualTo "__SERVER__") exitWith {};
         private _callsign = ["callsign", ""] call COMSPEC_fnc_getState;
         if (_callsign isEqualTo "") then {
             _callsign = if (isNull player) then {""} else {name player};
         };
         private _tenantId = missionNamespace getVariable ["COMSPEC_ATAK_tenant_id", ""];
         ["ReportPlaytime", [_uid, str _secs, _callsign, _tenantId, _flushCtx]] call COMSPEC_fnc_extensionCall;
+        missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", diag_tickTime, false];
     };
 
     while {true} do {
