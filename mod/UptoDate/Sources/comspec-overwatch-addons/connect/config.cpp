@@ -503,6 +503,7 @@ class CfgFunctions {
             class logout {};
             class portalUrl {};
             class isReady {};
+            class isC2Ok {};
         };
     };
 };

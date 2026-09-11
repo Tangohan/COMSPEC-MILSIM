@@ -514,6 +514,7 @@ final class GameAuthService
         $payload['tokens'] = [
             'access_token' => $access,
             'refresh_token' => $refresh,
+            'expires_in' => self::ACCESS_TTL_SEC,
             'device_id' => $deviceId,
             'pairing_token' => $pairingPlain,
         ];

@@ -498,7 +498,9 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Session Game Auth déjà émise : le ping C2 (clé API) ne doit plus bloquer READY.
+    /// Session Game Auth déjà émise. Si le ping C2 échoue, READY + C2_DEGRADED :
+    /// le profil reste applicable, mais SQF ne doit pas démarrer les boucles Tx
+    /// tant que l’erreur C2 n’est pas levée (voir fn_isC2Ok / fn_isReady).
     /// </summary>
     private static string FinishGameAuthReady(string verify)
     {
@@ -536,12 +538,18 @@ public static partial class Extension
                 var pairing = tokens.TryGetProperty("pairing_token", out var pt) ? (pt.GetString() ?? "") : "";
                 var device = tokens.TryGetProperty("device_id", out var di) ? (di.GetString() ?? "") : "";
                 if (access.Length > 0)
+                {
                     _gameAccessToken = access;
+                    // Bearer jeu suffit : une ancienne clé CBA/profil ne doit plus partir en X-COMSPEC-KEY.
+                    ApplyApiKeyHeaders("");
+                }
                 if (tokens.TryGetProperty("expires_in", out var exp)
                     && exp.ValueKind == JsonValueKind.Number
                     && exp.TryGetInt32(out var expSeconds)
                     && expSeconds > 0)
                     _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(expSeconds, 30, 86400));
+                else if (access.Length > 0)
+                    _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(7200);
                 if (device.Length >= 16)
                     _gameDeviceId = device;
                 var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();

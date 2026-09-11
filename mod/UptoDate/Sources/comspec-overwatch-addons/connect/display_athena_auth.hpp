@@ -124,6 +124,16 @@ class COMSPEC_AthenaAuth_Dialog {
             h = 0.034 * safezoneH;
             action = "[false] spawn comspec_overwatch_connect_fnc_loginSteam;";
         };
+        class LinkGameBtn: COMSPEC_RscButton {
+            idc = 9426;
+            text = "Lier le jeu (code du portail)";
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.584 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.034 * safezoneH;
+            tooltip = "Saisir le code généré sur Athena (Connexion en jeu) ou un code de secours.";
+            action = "closeDialog 0; [] spawn { uiSleep 0.05; [] call comspec_overwatch_connect_fnc_accountLinkShow; };";
+        };
         class OperatorPortrait: RscPictureKeepAspect {
             idc = 9431;
             text = "";
@@ -147,7 +157,7 @@ class COMSPEC_AthenaAuth_Dialog {
             idc = 9423;
             text = "ENTRER";
             x = 0.33 * safezoneW + safezoneX;
-            y = 0.640 * safezoneH + safezoneY;
+            y = 0.660 * safezoneH + safezoneY;
             w = 0.34 * safezoneW;
             h = 0.042 * safezoneH;
             action = "closeDialog 1;";

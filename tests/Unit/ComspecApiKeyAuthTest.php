@@ -59,6 +59,7 @@ final class ComspecApiKeyAuthTest extends TestCase
         $_SERVER['HTTP_X_COMSPEC_KEY'] = 'stale-legacy-key';
         $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer current-game-session';
         self::assertSame('current-game-session', ComspecApiKeyAuth::extractPresentedKey());
+        self::assertSame(['current-game-session', 'stale-legacy-key'], ComspecApiKeyAuth::presentedAuthCandidates());
     }
 
     public function testExtractPresentedKeyFallsBackFromEmptyBearerToLegacyHeader(): void
@@ -66,6 +67,28 @@ final class ComspecApiKeyAuthTest extends TestCase
         $_SERVER['HTTP_X_COMSPEC_KEY'] = 'current-legacy-key';
         $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer   ';
         self::assertSame('current-legacy-key', ComspecApiKeyAuth::extractPresentedKey());
+    }
+
+    public function testPresentedAuthCandidatesListsBearerThenHeader(): void
+    {
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'stale-key';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer game-token-value';
+        self::assertSame(['game-token-value', 'stale-key'], ComspecApiKeyAuth::presentedAuthCandidates());
+    }
+
+    public function testRequestPresentsValidKeyCandidatesIncludeStaleHeaderAndBearer(): void
+    {
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'definitely-not-a-valid-community-key';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . str_repeat('a', 40);
+
+        putenv('X_COMSPEC_KEY=');
+        putenv('ATAK_INTEL_SECRET=');
+        unset($_ENV['X_COMSPEC_KEY'], $_ENV['ATAK_INTEL_SECRET']);
+
+        $candidates = ComspecApiKeyAuth::presentedAuthCandidates();
+        self::assertContains('definitely-not-a-valid-community-key', $candidates);
+        self::assertContains(str_repeat('a', 40), $candidates);
+        self::assertSame(2, count($candidates));
     }
 
     public function testExtractPresentedKeyFallsBackToJsonObjectCache(): void

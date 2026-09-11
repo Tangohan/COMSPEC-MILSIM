@@ -57,6 +57,7 @@ switch (_function) do {
         // une panne réseau passagère. Fermer immédiatement toutes les boucles Tx.
         missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
         missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
+        missionNamespace setVariable ["comspec_overwatch_auth_error", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "Session Athena refusée — reconnectez-vous", false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 600, false];

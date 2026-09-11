@@ -584,6 +584,17 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(484, '2026-09-11', 'La liaison Athena tient : positions, messages et indicatif remontent', 'Après connexion au compte, les transmissions vers le poste ne sont plus refusées à tort. Les positions, messages et ordres repartent. L’indicatif de la fiche remplace le nom d’équipe du jeu sur le suivi et sur l’encart de la carte. Si le canal poste est coupé, le téléphone le dit clairement au lieu d’envoyer dans le vide. Relancez Arma après mise à jour du pack et de la liaison', [
+                'Connexion Athena propose Lier le jeu avec le code généré sur le portail ou un code de secours',
+            ], [
+                'Le compte peut être lié sans démarrer des envois refusés lorsque le canal poste est indisponible',
+            ], [
+                'Refus répétés après une session annoncée comme prête (positions, chat, fiche opérateur)',
+                'Indicatif du jeu (ex. ALPHA 2-3) à la place de celui de la fiche sur le suivi d’effectif',
+                'Encart d’identité vide sur la carte alors que le compte était lié',
+            ], ['atak'], [
+                'Quittez Arma complètement, rechargez le pack et la liaison, puis reconnectez-vous. Vérifiez la carte : indicatif, nom, groupe et fonction doivent apparaître.',
+            ], 'Pack ATAK · liaison'),
             $pr(483, '2026-09-10', 'L’encart d’identité revient sur la carte du téléphone', 'Sur la carte, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste au-dessus des outils, hors du tiroir. Relancez Arma après mise à jour du pack', [
                 'Encart superposé avec l’indicatif, le nom, le groupe, la fonction et la position',
             ], [], [

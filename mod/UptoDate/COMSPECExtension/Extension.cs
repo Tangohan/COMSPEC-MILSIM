@@ -32,6 +32,8 @@ public static partial class Extension
     private const int UploadTimeoutSeconds = 60;
     private static string _baseUrl = "";
     private static string _apiKey = "";
+    /// <summary>True après un client-init OK avec cette clé communauté (évite d’envoyer une clé CBA périmée avec un Bearer jeu).</summary>
+    private static bool _apiKeyValidatedByClientInit;
     /// <summary>Tenant issu du redeem / Connect (requis par client-init côté portail).</summary>
     private static string _tenantId = "";
     /// <summary>SteamID64 mémorisé (liaison / Connect / UpdatePosition) — identité côté DLL, pas seulement SQF.</summary>
@@ -415,6 +417,8 @@ public static partial class Extension
             if (resp.IsSuccessStatusCode)
             {
                 TryRememberSessionFromInitBody(respBody);
+                if (_apiKey.Length > 0)
+                    _apiKeyValidatedByClientInit = true;
                 return "OK|connected";
             }
 
@@ -683,7 +687,7 @@ public static partial class Extension
 
     private static void MaybeReauthAfter401(string url)
     {
-        if (_apiKey.Length == 0 || string.IsNullOrEmpty(_baseUrl)) return;
+        if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
         if (!IsAuthSensitiveEndpoint(url)) return;
         var now = DateTime.UtcNow.Ticks;
         if (now - System.Threading.Interlocked.Read(ref _lastAuth401ReauthTicks) <= TimeSpan.FromSeconds(30).Ticks)
@@ -693,7 +697,14 @@ public static partial class Extension
         {
             try
             {
+                // Mode jeu-seul : tenter un refresh avant de déclarer le canal mort.
+                if (_gameAccessToken.Length > 0)
+                    EnsureFreshGameAccessToken();
+
                 var verify = VerifyClientInitSync();
+                if (verify.StartsWith("OK|", StringComparison.Ordinal))
+                    return;
+
                 if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
                     || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
                     || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
@@ -2059,6 +2070,8 @@ public static partial class Extension
         var key = SanitizeSecret(apiKey);
         lock (HeaderLock)
         {
+            if (!string.Equals(_apiKey, key, StringComparison.Ordinal))
+                _apiKeyValidatedByClientInit = false;
             _apiKey = key;
             // Nettoyage best-effort d’éventuelles clés héritées d’anciennes versions de la DLL.
             try
@@ -2110,17 +2123,28 @@ public static partial class Extension
     /// <summary>Attache X-COMSPEC-KEY (+ session / Steam mémorisés) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
+        // Jeton jeu : rafraîchir avant envoi, et ne pas coller une X-COMSPEC-KEY périmée
+        // qui ferait échouer le middleware PHP (clé header avant Bearer).
+        if (_gameAccessToken.Length > 0)
+            EnsureFreshGameAccessToken();
+
+        var gameTok = _gameAccessToken;
         var key = _apiKey;
-        if (key.Length > 0)
+        var sendCommunityKey = key.Length > 0
+            && (gameTok.Length == 0 || _apiKeyValidatedByClientInit);
+
+        if (sendCommunityKey)
         {
             req.Headers.Remove("X-COMSPEC-KEY");
             req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
-            req.Headers.Remove("Authorization");
-            req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
+            if (gameTok.Length == 0)
+            {
+                req.Headers.Remove("Authorization");
+                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
+            }
             req.Headers.Remove("User-Agent");
             req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
         }
-        var gameTok = _gameAccessToken;
         if (gameTok.Length > 0)
         {
             req.Headers.Remove("Authorization");
@@ -6116,7 +6140,11 @@ public static partial class Extension
                     _baseUrl = normalized;
                     EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
-                    ApplyApiKeyHeaders(key);
+                    // Ne pas écraser une session jeu avec une clé CBA / profil vide ou périmée.
+                    if (_gameAccessToken.Length == 0)
+                        ApplyApiKeyHeaders(key);
+                    else if (SanitizeSecret(key).Length > 0 && _apiKey.Length == 0)
+                        ApplyApiKeyHeaders(key);
                     if (args.Length > 2 && _gameAccessToken.Length == 0)
                         ApplyTenantId(args[2]);
                     // Conserver exactement la même identité que le chemin synchrone. Sans ces
@@ -6128,7 +6156,7 @@ public static partial class Extension
                         ApplyModVersion(args[4]);
                     if (args.Length > 5)
                         ApplyBloodType(args[5]);
-                    if (_apiKey.Length > 0)
+                    if (_apiKey.Length > 0 || _gameAccessToken.Length > 0)
                         StartClientInitAsync();
                 }
                 return;

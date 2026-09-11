@@ -156,7 +156,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Footer: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.48' color='#4a5c6e'>Sur le portail : Connexion en jeu → générer un code. En multijoueur, Steam peut être détecté automatiquement.</t>";
+            text = "<t align='center' size='0.48' color='#4a5c6e'>Sur le portail : Connexion en jeu → générer un code, ou utiliser un code de secours. En multijoueur, Steam déjà lié peut suffire.</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.595 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
