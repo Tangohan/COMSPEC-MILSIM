@@ -3055,10 +3055,11 @@ public static partial class Extension
             {
                 if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=1", out var unitsUri, out var unitsErr) || unitsUri is null)
                     return "ERR|" + unitsErr;
-                var response = SendGet(unitsUri, token);
-                response.EnsureSuccessStatusCode();
-                var body = ReadContentUtf8(response, token);
-                return "OK|" + SimplifyUnitsJson(body);
+                return ServePollGet("GetUnits", unitsUri.AbsoluteUri, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyUnitsJson(body));
+                });
             }
             if (function == "GetClientIp")
             {

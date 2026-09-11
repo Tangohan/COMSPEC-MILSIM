@@ -36,7 +36,7 @@ Un seul CBA PFH à 0,2 s orchestre : données locales à 0,25 s, statut à 1 s, 
 
 ## Extension et callbacks
 
-`extensionCall` est l'unique adaptateur direct du nouvel addon vers `COMSPECATAKNativeExtension`; il ne journalise jamais les arguments. Le binaire possède un nom, un User-Agent et un stockage de session séparés. Lorsque Overwatch est aussi chargé, `remoteSync` peut réutiliser ses producteurs `pollAthenaMarkers`, `pollOrders` et `pollChatMessages` comme compatibilité facultative. Le dispatcher traite notamment Connected, Error, NetworkHiccup, AccessDenied, RateLimited/Clear, BftIdentity et les callbacks Google Slides.
+`extensionCall` est l'unique adaptateur direct du nouvel addon vers `COMSPECATAKNativeExtension`; il ne journalise jamais les arguments. Le binaire possède un nom, un User-Agent et un stockage de session séparés. `remoteSync` utilise directement la DLL native pour normaliser unités, marqueurs, ordres et messages dans le store, sans dépendre des fonctions Overwatch. Le dispatcher traite notamment Connected, Error, NetworkHiccup, AccessDenied, RateLimited/Clear, BftIdentity et les callbacks Google Slides.
 
 ## Carte et interactions
 

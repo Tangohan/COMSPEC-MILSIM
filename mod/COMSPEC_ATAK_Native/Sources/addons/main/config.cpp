@@ -19,6 +19,7 @@ class CfgFunctions {
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
+            class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
