@@ -584,16 +584,31 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
-            $pr(484, '2026-09-11', 'La liaison Athena tient : positions, messages et indicatif remontent', 'Après connexion au compte, les transmissions vers le poste ne sont plus refusées à tort. Les positions, messages et ordres repartent. L’indicatif de la fiche remplace le nom d’équipe du jeu sur le suivi et sur l’encart de la carte. Si le canal poste est coupé, le téléphone le dit clairement au lieu d’envoyer dans le vide. Relancez Arma après mise à jour du pack et de la liaison', [
+            $pr(485, '2026-09-11', 'Appairer génère de nouveau un code pour Arma', 'Sur la carte ATAK, Appairer propose un code à coller en jeu. Le chemin pour lier Overwatch est séparé de celui qui valide un téléphone. En jeu, l’écran Lier le jeu met le code en premier. Connexion et appairage passent uniquement par l’interface native du téléphone (plus de page web embarquée). Déployez le portail et rechargez le pack', [
+                'Bouton Générer un code dans Appairer : le code s’affiche et se copie',
+                'Section distincte pour valider un code déjà affiché sur le téléphone',
+                'Écran en jeu recentré sur le code du portail, avec messages plus clairs',
+                'Connexion Athena et liaison mobile en écrans natifs dans ATAK, sans navigateur embarqué',
+            ], [], [
+                'Appairer ne produisait aucun code',
+                'Textes « Connexion en jeu » confus entre portail et Arma',
+                'Message de refus illisible lors d’une liaison refusée',
+                'Zone noire vide en haut de l’écran de connexion en jeu',
+            ], ['atak'], [
+                'Sur le portail : Appairer → Générer un code. Dans Arma : Connexion Athena → Lier le jeu → coller uniquement ce code. Vérifiez le pied de fenêtre : pack 1.5.21.',
+            ], 'Carte ATAK · liaison'),
+            $pr(484, '2026-09-11', 'La liaison Athena tient : positions, messages et indicatif remontent', 'Après connexion au compte, les transmissions vers le poste repartent. Dès que le compte est trouvé, l’environnement est prêt comme sur le pack du 6 septembre. Le bouton Entrer rouvre le canal poste si besoin. Relancez Arma après mise à jour du pack et de la liaison', [
                 'Connexion Athena propose Lier le jeu avec le code généré sur le portail ou un code de secours',
+                'Le bouton Entrer rouvre le canal poste lorsque le compte est déjà trouvé',
             ], [
-                'Le compte peut être lié sans démarrer des envois refusés lorsque le canal poste est indisponible',
+                'Comportement de liaison aligné sur le pack Workshop du 6 septembre (compte trouvé = prêt)',
             ], [
                 'Refus répétés après une session annoncée comme prête (positions, chat, fiche opérateur)',
                 'Indicatif du jeu (ex. ALPHA 2-3) à la place de celui de la fiche sur le suivi d’effectif',
                 'Encart d’identité vide sur la carte alors que le compte était lié',
+                'Compte trouvé, Entrer sans effet, téléphone resté non connecté',
             ], ['atak'], [
-                'Quittez Arma complètement, rechargez le pack et la liaison, puis reconnectez-vous. Vérifiez la carte : indicatif, nom, groupe et fonction doivent apparaître.',
+                'Quittez Arma complètement, rechargez le pack et la liaison, puis reconnectez-vous. Si besoin, appuyez sur Entrer. Vérifiez la carte : indicatif, nom, groupe et fonction doivent apparaître.',
             ], 'Pack ATAK · liaison'),
             $pr(483, '2026-09-10', 'L’encart d’identité revient sur la carte du téléphone', 'Sur la carte, un encart se superpose comme les outils carte : indicatif, nom, groupe, fonction et position. Il reste au-dessus des outils, hors du tiroir. Relancez Arma après mise à jour du pack', [
                 'Encart superposé avec l’indicatif, le nom, le groupe, la fonction et la position',

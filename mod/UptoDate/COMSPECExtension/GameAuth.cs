@@ -80,6 +80,8 @@ public static partial class Extension
                 _baseUrl = url;
             var modVer = args.Length > 1 ? ArmaString(args[1]) : "";
             RememberDetectedMod(modVer);
+            if (args.Length > 2)
+                ApplySteamUid(ArmaString(args[2]));
             return RestoreGameSession(modVer);
         }
 
@@ -173,7 +175,7 @@ public static partial class Extension
                 TabCell(_gameBrandingUrl),
                 IdentityCell(_gameTenantSlug),
                 TabCell(_modVersion),
-                TabCell(ExtensionVersion),
+                TabCell(CurrentExtensionVersion()),
                 TabCell(_minModRequired),
                 TabCell(_gameProfileAvatar),
                 IdentityCell(_gameProfileRole),
@@ -498,7 +500,7 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Session Game Auth déjà émise. Si le ping C2 échoue, READY + C2_DEGRADED :
+    /// Session Game Auth déjà émise. Si le ping C2 échoue, READY + erreur C2_* :
     /// le profil reste applicable, mais SQF ne doit pas démarrer les boucles Tx
     /// tant que l’erreur C2 n’est pas levée (voir fn_isC2Ok / fn_isReady).
     /// </summary>
@@ -509,8 +511,28 @@ public static partial class Extension
             SetGameAuth("READY", 100, "");
             return "OK|READY";
         }
-        SetGameAuth("READY", 100, "C2_DEGRADED");
+        var detail = verify.StartsWith("ERR|", StringComparison.Ordinal) && verify.Length > 4
+            ? verify[4..]
+            : "degraded";
+        SetGameAuth("READY", 100, MapC2AuthError(detail));
         return "OK|READY";
+    }
+
+    private static string MapC2AuthError(string detail)
+    {
+        var d = (detail ?? "").Trim().ToLowerInvariant();
+        if (d.StartsWith("c2_", StringComparison.Ordinal))
+            return d.ToUpperInvariant();
+        return d switch
+        {
+            "unauthorized" => "C2_UNAUTHORIZED",
+            "steam_required" => "C2_STEAM_REQUIRED",
+            "steam_not_linked" => "C2_STEAM_NOT_LINKED",
+            "invalid_steam" => "C2_INVALID_STEAM",
+            "account_disabled" => "C2_ACCOUNT_DISABLED",
+            "tenant_required" => "C2_TENANT_REQUIRED",
+            _ => "C2_DEGRADED",
+        };
     }
 
     private static string ApplyGameAuthResponse(string json, string source, bool persistTokens = true)
@@ -566,10 +588,14 @@ public static partial class Extension
             {
                 _gameAccountId = account.TryGetProperty("id", out var aid) ? (aid.GetString() ?? "") : "";
                 _gameAccountEmail = account.TryGetProperty("email", out var aem) ? (aem.GetString() ?? "") : "";
+                if (account.TryGetProperty("steam_id", out var asid))
+                    ApplySteamUid(asid.GetString());
             }
             if (root.TryGetProperty("session", out var session))
             {
                 _gameSessionExpiresAt = session.TryGetProperty("expires_at", out var sexp) ? (sexp.GetString() ?? "") : "";
+                if (session.TryGetProperty("steam_id", out var ssid))
+                    ApplySteamUid(ssid.GetString());
             }
             if (root.TryGetProperty("tenant", out var tenant))
             {
@@ -596,6 +622,8 @@ public static partial class Extension
                 _gameSteamNotice = notices.TryGetProperty("steam_message", out var smEl)
                     ? (smEl.GetString() ?? "")
                     : "";
+                if (notices.TryGetProperty("steam_id", out var nSid))
+                    ApplySteamUid(nSid.GetString());
             }
             SetGameAuth("LOADING_BRANDING", 74, "");
             if (root.TryGetProperty("branding", out var brand))

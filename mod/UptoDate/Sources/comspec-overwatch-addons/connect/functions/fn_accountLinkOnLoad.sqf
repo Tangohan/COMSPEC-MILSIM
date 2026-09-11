@@ -34,9 +34,9 @@ if (!isNull _steamCtrl) then { _steamCtrl ctrlSetText _steam; };
 private _status = _display displayCtrl 9203;
 if (!isNull _status) then {
     private _hint = if (_steam isEqualTo "") then {
-        "Collez votre identifiant Steam (profil Athena), ou générez un code sur le portail."
+        "Collez le code généré sur le portail (Appairer), ou votre identifiant Steam déjà lié."
     } else {
-        "Steam prérempli — validez la liaison, ou saisissez un code."
+        "Préférez le code du portail. Sinon, validez avec Steam déjà lié au profil."
     };
     _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#6a7c90'>%1</t>", _hint];
 };

@@ -158,7 +158,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
             idc = -1;
 
-            text = "<t align='center' size='0.52' color='#b0c4d4'>Sur votre téléphone, ouvrez l’adresse ci-dessous puis saisissez le code.</t>";
+            text = "<t align='center' size='0.52' color='#b0c4d4'>Adresse à ouvrir sur votre téléphone, puis le code affiché. Écran natif (sans navigateur embarqué).</t>";
 
             x = COMSPEC_PHONE_PX(470);
 

@@ -431,6 +431,8 @@ public static partial class Extension
                     return modBlock;
                 if (respBody.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase))
                     return "ERR|steam_not_linked";
+                if (respBody.Contains("steam_required", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|steam_required";
                 if (respBody.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
                     return "ERR|account_disabled";
                 if (respBody.Contains("tenant_context_required", StringComparison.OrdinalIgnoreCase)
@@ -2120,37 +2122,36 @@ public static partial class Extension
         return _apiKey.Length > 0 || _gameAccessToken.Length > 0;
     }
 
-    /// <summary>Attache X-COMSPEC-KEY (+ session / Steam mémorisés) sur une requête.</summary>
+    /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
-        // Jeton jeu : rafraîchir avant envoi, et ne pas coller une X-COMSPEC-KEY périmée
-        // qui ferait échouer le middleware PHP (clé header avant Bearer).
+        // Jeton jeu : uniquement Bearer. Ne jamais coller X-COMSPEC-KEY (souvent une
+        // ancienne clé CBA) — le portail peut la lire en premier et répondre 401.
         if (_gameAccessToken.Length > 0)
             EnsureFreshGameAccessToken();
 
         var gameTok = _gameAccessToken;
-        var key = _apiKey;
-        var sendCommunityKey = key.Length > 0
-            && (gameTok.Length == 0 || _apiKeyValidatedByClientInit);
-
-        if (sendCommunityKey)
-        {
-            req.Headers.Remove("X-COMSPEC-KEY");
-            req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
-            if (gameTok.Length == 0)
-            {
-                req.Headers.Remove("Authorization");
-                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
-            }
-            req.Headers.Remove("User-Agent");
-            req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
-        }
         if (gameTok.Length > 0)
         {
+            try { req.Headers.Remove("X-COMSPEC-KEY"); } catch { /* ignore */ }
+            try { req.Headers.Remove("X-ATAK-TOKEN"); } catch { /* ignore */ }
             req.Headers.Remove("Authorization");
             req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + gameTok);
             req.Headers.Remove("User-Agent");
             req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
+        }
+        else
+        {
+            var key = _apiKey;
+            if (key.Length > 0)
+            {
+                req.Headers.Remove("X-COMSPEC-KEY");
+                req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
+                req.Headers.Remove("Authorization");
+                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key);
+                req.Headers.Remove("User-Agent");
+                req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
+            }
         }
         var sess = _sessionToken;
         if (sess.Length > 0)
@@ -2644,8 +2645,8 @@ public static partial class Extension
             var prevKey = _apiKey;
             var prevTenant = _tenantId;
             var keyArg = SanitizeSecret(args.Length > 1 ? args[1] : "");
-            // Ne pas remplacer une clé longue (Redeem) par une valeur SQF plus courte (troncature CBA/EDITBOX).
-            if (keyArg.Length > 0)
+            // Session jeu active : ignorer toute clé CBA / profil (sinon 401 ensuite).
+            if (_gameAccessToken.Length == 0 && keyArg.Length > 0)
             {
                 if (prevKey.Length == 0 || keyArg.Length >= prevKey.Length || keyArg == prevKey)
                     ApplyApiKeyHeaders(keyArg);
@@ -6140,10 +6141,8 @@ public static partial class Extension
                     _baseUrl = normalized;
                     EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
-                    // Ne pas écraser une session jeu avec une clé CBA / profil vide ou périmée.
+                    // Ne jamais réinjecter une clé CBA si une session jeu est active.
                     if (_gameAccessToken.Length == 0)
-                        ApplyApiKeyHeaders(key);
-                    else if (SanitizeSecret(key).Length > 0 && _apiKey.Length == 0)
                         ApplyApiKeyHeaders(key);
                     if (args.Length > 2 && _gameAccessToken.Length == 0)
                         ApplyTenantId(args[2]);

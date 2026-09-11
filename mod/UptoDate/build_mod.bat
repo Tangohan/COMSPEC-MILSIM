@@ -144,9 +144,11 @@ echo [DEPLOY] Synchronisation avec le dossier Arma 3...
 set "WORKSHOP_MOD=%ARMA_PATH%\!Workshop\%MOD_NAME%"
 set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
 set "WORKSHOP_CONTENT=F:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
+:: Pack communauté SOAR : Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch).
+set "SOAR_FN=%ARMA_PATH%\!Workshop\@# S.O.A.R - FN"
 
 if exist "%ARMA_PATH%" (
-    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%" "%WORKSHOP_MOD%") do (
+    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%" "%WORKSHOP_MOD%" "%SOAR_FN%") do (
         if exist %%~T (
             echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
             echo [DEPLOY] Cible: %%~T

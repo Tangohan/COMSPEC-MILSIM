@@ -30,13 +30,22 @@ class COMSPEC_AthenaAuth_Dialog {
             w = 0.38 * safezoneW;
             h = 0.032 * safezoneH;
         };
-        class BrandingHtml: RscHTML {
-            idc = 9414;
+        // Panneau marque / communauté — Rsc natif uniquement (pas de RscHTML / htmlLoad)
+        class BrandingPanelBg: RscText {
+            idc = -1;
             x = 0.31 * safezoneW + safezoneX;
             y = 0.150 * safezoneH + safezoneY;
             w = 0.38 * safezoneW;
             h = 0.118 * safezoneH;
             colorBackground[] = {0.03, 0.07, 0.10, 1};
+        };
+        class BrandingPanel: RscStructuredText {
+            idc = 9414;
+            text = "<t align='center' size='0.7' color='#7aa89a'>COMSPEC OVERWATCH</t><br/><t align='center' size='0.55' color='#8aa0b4'>Connexion et appairage en interface native</t>";
+            x = 0.31 * safezoneW + safezoneX;
+            y = 0.160 * safezoneH + safezoneY;
+            w = 0.38 * safezoneW;
+            h = 0.100 * safezoneH;
         };
         class Title: RscStructuredText {
             idc = 9416;
@@ -126,13 +135,13 @@ class COMSPEC_AthenaAuth_Dialog {
         };
         class LinkGameBtn: COMSPEC_RscButton {
             idc = 9426;
-            text = "Lier le jeu (code du portail)";
+            text = "Lier le jeu (code Appairer)";
             x = 0.33 * safezoneW + safezoneX;
             y = 0.584 * safezoneH + safezoneY;
             w = 0.34 * safezoneW;
             h = 0.034 * safezoneH;
-            tooltip = "Saisir le code généré sur Athena (Connexion en jeu) ou un code de secours.";
-            action = "closeDialog 0; [] spawn { uiSleep 0.05; [] call comspec_overwatch_connect_fnc_accountLinkShow; };";
+            tooltip = "Saisir le code généré sur le portail (Appairer). Écran natif — pas de navigateur.";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_AthenaAuth_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 1; }; [] spawn { uiSleep 0.05; [] call comspec_overwatch_connect_fnc_accountLinkShow; };";
         };
         class OperatorPortrait: RscPictureKeepAspect {
             idc = 9431;
@@ -160,7 +169,7 @@ class COMSPEC_AthenaAuth_Dialog {
             y = 0.660 * safezoneH + safezoneY;
             w = 0.34 * safezoneW;
             h = 0.042 * safezoneH;
-            action = "closeDialog 1;";
+            action = "[] call comspec_overwatch_connect_fnc_enterAthena;";
             show = 0;
         };
         class Status: RscStructuredText {

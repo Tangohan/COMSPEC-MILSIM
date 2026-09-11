@@ -522,6 +522,7 @@ final class GameAuthService
             'steam_status' => (string) ($steamLink['status'] ?? 'none'),
             'steam_linked' => $this->hasSteamId($steamId) || !empty($steamLink['linked_now']),
             'steam_message' => (string) ($steamLink['notice'] ?? ''),
+            'steam_id' => $this->hasSteamId($steamId) ? $steamId : '',
         ];
 
         return ['ok' => true, 'status' => 200, 'payload' => $payload];
@@ -605,6 +606,7 @@ final class GameAuthService
             'account' => [
                 'id' => (string) ($account['public_id'] ?? ''),
                 'email' => (string) ($account['email'] ?? ''),
+                'steam_id' => SteamId::normalize((string) ($account['steam_id'] ?? $user['steam_id'] ?? '')) ?? '',
             ],
             'tenant' => [
                 'id' => $tenantId,

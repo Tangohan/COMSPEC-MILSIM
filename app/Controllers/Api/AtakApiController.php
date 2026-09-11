@@ -3343,6 +3343,26 @@ class AtakApiController
 
         $steamRaw = $this->armaGuard->extractSteamRaw($request, $body);
         $steam = $steamRaw !== '' ? SteamId::normalize($steamRaw) : null;
+        // Session jeu déjà validée : reprendre le Steam stocké côté serveur si le client
+        // ne l’a pas renvoyé (restauration de session sans SetSteamId).
+        if ($steam === null) {
+            $fromSession = ComspecApiKeyAuth::matchedSteamId();
+            if ($fromSession !== null) {
+                $steam = SteamId::normalize($fromSession);
+            }
+        }
+        // Compte déjà connu via le jeton jeu : Steam du profil opérateur si la session n’en a pas.
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        $userFromGameSession = null;
+        if ($sessionUserId !== null) {
+            $userFromGameSession = $this->userRepository->findById($sessionUserId, $tenantId);
+            if ($steam === null && is_array($userFromGameSession)) {
+                $fromUser = SteamId::normalize((string) ($userFromGameSession['steam_id'] ?? ''));
+                if ($fromUser !== null) {
+                    $steam = $fromUser;
+                }
+            }
+        }
         if ($steamRaw !== '' && $steam === null) {
             $this->activityLog?->recordAuthAttempt($tenantId, false, 'Initialisation jeu refusée — Steam invalide', [
                 'reason' => 'invalid_steam_uid',
@@ -3356,8 +3376,13 @@ class AtakApiController
 
         $sessionToken = '';
         $expiresIn = 0;
-        $requireSteam = ComspecApiKeyAuth::matchedTenantId() !== null
-            || filter_var((string) (($_ENV['ATAK_ARMA_REQUIRE_STEAM'] ?? null) ?: (getenv('ATAK_ARMA_REQUIRE_STEAM') ?: '')), FILTER_VALIDATE_BOOLEAN);
+        // Jeton jeu : l’opérateur est déjà identifié — ne pas exiger un Steam dans le corps.
+        $identifiedViaGameSession = $sessionUserId !== null && is_array($userFromGameSession);
+        $requireSteam = !$identifiedViaGameSession
+            && (
+                ComspecApiKeyAuth::matchedTenantId() !== null
+                || filter_var((string) (($_ENV['ATAK_ARMA_REQUIRE_STEAM'] ?? null) ?: (getenv('ATAK_ARMA_REQUIRE_STEAM') ?: '')), FILTER_VALIDATE_BOOLEAN)
+            );
         if ($steam === null && $requireSteam) {
             $this->activityLog?->recordAuthAttempt($tenantId, false, 'Initialisation jeu refusée — Steam manquant', [
                 'reason' => 'steam_required',
@@ -3410,6 +3435,29 @@ class AtakApiController
             $issued = AtakGameSession::issue($tenantId, $steam, ComspecApiKeyAuth::extractPresentedKey());
             $sessionToken = $issued['token'];
             $expiresIn = $issued['expires_in'];
+        } elseif ($identifiedViaGameSession) {
+            $user = $userFromGameSession;
+            $status = strtolower(trim((string) ($user['status'] ?? 'active')));
+            if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+                $this->activityLog?->recordAuthAttempt($tenantId, false, 'Initialisation jeu refusée — compte non autorisé', [
+                    'reason' => 'account_disabled',
+                ]);
+
+                return Response::json([
+                    'error' => 'account_disabled',
+                    'message' => 'Ce compte Athena n’est pas autorisé.',
+                ], 403);
+            }
+            if ($callSign === '') {
+                $fromProfile = trim((string) ($user['callsign'] ?? ''));
+                if ($fromProfile === '') {
+                    $uid = (int) ($user['id'] ?? 0);
+                    $fromProfile = $uid > 0 ? sprintf('U-%05d', $uid) : '';
+                }
+                if ($fromProfile !== '') {
+                    $callSign = $fromProfile;
+                }
+            }
         }
 
         $this->activityLog->recordClientInit(

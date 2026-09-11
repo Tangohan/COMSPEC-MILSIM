@@ -1,4 +1,4 @@
-// Connexion Athena — code court et/ou Steam + barre de transmission (idd 9972)
+// Connexion Athena — code du portail (prioritaire) + Steam / URL en secours (idd 9972)
 class COMSPEC_AccountLink_Dialog {
     idd = 9972;
     movingEnable = 1;
@@ -26,7 +26,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Connexion Athena</t><t align='center' size='0.55' color='#e8b84a'>  ·  BÊTA</t>";
+            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Lier le jeu à Athena</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.155 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -35,7 +35,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#8aa0b4'>Saisissez le code généré sur le portail (Connexion en jeu), ou laissez-le vide pour vous identifier via Steam déjà lié à votre profil.</t>";
+            text = "<t align='center' size='0.55' color='#8aa0b4'>Sur le portail Athena : Appairer → Générer un code. Collez uniquement ce code ci-dessous (pas l’adresse du site).</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.185 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -60,51 +60,11 @@ class COMSPEC_AccountLink_Dialog {
             h = 0.042 * safezoneH;
         };
 
-        class UrlLabel: RscStructuredText {
-            idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>ADRESSE DU PORTAIL ATHENA</t>";
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.290 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.018 * safezoneH;
-        };
-
-        class UrlEdit: RscEdit {
-            idc = 9201;
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.310 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.030 * safezoneH;
-            colorBackground[] = {0.04, 0.08, 0.12, 1};
-            colorText[] = {0.9, 0.95, 0.95, 1};
-            autocomplete = "";
-        };
-
-        class SteamLabel: RscStructuredText {
-            idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>IDENTIFIANT STEAM (profil Athena)</t>";
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.350 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.018 * safezoneH;
-        };
-
-        class SteamEdit: RscEdit {
-            idc = 9206;
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.370 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.030 * safezoneH;
-            colorBackground[] = {0.04, 0.08, 0.12, 1};
-            colorText[] = {0.95, 0.98, 0.9, 1};
-            autocomplete = "";
-        };
-
         class CodeLabel: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>CODE DE LIAISON (optionnel si Steam déjà lié)</t>";
+            text = "<t size='0.55' color='#5a9e88'>CODE DU PORTAIL (Appairer → Générer un code)</t>";
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.410 * safezoneH + safezoneY;
+            y = 0.290 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
             h = 0.018 * safezoneH;
         };
@@ -112,12 +72,52 @@ class COMSPEC_AccountLink_Dialog {
         class CodeEdit: RscEdit {
             idc = 9202;
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.430 * safezoneH + safezoneY;
+            y = 0.310 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
             h = 0.034 * safezoneH;
             colorBackground[] = {0.04, 0.08, 0.12, 1};
             colorText[] = {0.95, 0.98, 0.9, 1};
             sizeEx = 0.04;
+            autocomplete = "";
+        };
+
+        class SteamLabel: RscStructuredText {
+            idc = -1;
+            text = "<t size='0.55' color='#5a9e88'>IDENTIFIANT STEAM (si déjà lié au profil, code optionnel)</t>";
+            x = 0.34 * safezoneW + safezoneX;
+            y = 0.355 * safezoneH + safezoneY;
+            w = 0.32 * safezoneW;
+            h = 0.018 * safezoneH;
+        };
+
+        class SteamEdit: RscEdit {
+            idc = 9206;
+            x = 0.34 * safezoneW + safezoneX;
+            y = 0.375 * safezoneH + safezoneY;
+            w = 0.32 * safezoneW;
+            h = 0.030 * safezoneH;
+            colorBackground[] = {0.04, 0.08, 0.12, 1};
+            colorText[] = {0.95, 0.98, 0.9, 1};
+            autocomplete = "";
+        };
+
+        class UrlLabel: RscStructuredText {
+            idc = -1;
+            text = "<t size='0.55' color='#5a9e88'>ADRESSE DU PORTAIL (laisser tel quel sauf consigne)</t>";
+            x = 0.34 * safezoneW + safezoneX;
+            y = 0.415 * safezoneH + safezoneY;
+            w = 0.32 * safezoneW;
+            h = 0.018 * safezoneH;
+        };
+
+        class UrlEdit: RscEdit {
+            idc = 9201;
+            x = 0.34 * safezoneW + safezoneX;
+            y = 0.435 * safezoneH + safezoneY;
+            w = 0.32 * safezoneW;
+            h = 0.030 * safezoneH;
+            colorBackground[] = {0.04, 0.08, 0.12, 1};
+            colorText[] = {0.9, 0.95, 0.95, 1};
             autocomplete = "";
         };
 
@@ -156,7 +156,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Footer: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.48' color='#4a5c6e'>Sur le portail : Connexion en jeu → générer un code, ou utiliser un code de secours. En multijoueur, Steam déjà lié peut suffire.</t>";
+            text = "<t align='center' size='0.48' color='#4a5c6e'>Portail : carte ATAK → Appairer → Générer un code. Si Steam est déjà lié au profil, vous pouvez laisser le code vide.</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.595 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;

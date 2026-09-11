@@ -255,6 +255,11 @@ if (_prefix != "OK") exitWith {
 
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
 
+        case "unauthorized";
+        case "http_401": {
+            "Liaison refusée. Générez un nouveau code sur le portail (Appairer), vérifiez l’adresse (…/public), ou utilisez un Steam déjà lié au profil."
+        };
+
         case "extension_empty": {
 
             "Le module Athena est chargé, mais l’échange n’a pas répondu. Réessayez."
@@ -271,7 +276,7 @@ if (_prefix != "OK") exitWith {
 
             } else {
 
-                format ["Liaison impossible (%1).", _err]
+                format ["Liaison impossible. Vérifiez le code du portail ou Steam (%1).", _err]
 
             }
 
