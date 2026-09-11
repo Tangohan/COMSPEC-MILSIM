@@ -60,8 +60,13 @@ if (
 if (!(_key isEqualTo "")) then {
     missionNamespace setVariable ["comspec_overwatch_api_key", _key];
 };
-private _tenant = "";
-// La communauté n’est plus une saisie joueur : Athena la détermine après authentification.
+private _tenant = [missionNamespace getVariable ["comspec_overwatch_tenant_id", ""]] call _cleanSecret;
+if (_tenant isEqualTo "") then {
+    _tenant = [profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""]] call _cleanSecret;
+};
+if (_tenant isNotEqualTo "") then {
+    missionNamespace setVariable ["comspec_overwatch_tenant_id", _tenant];
+};
 
 _url = [_url] call _cleanSecret;
 if (_url isEqualTo "") exitWith {
@@ -96,7 +101,10 @@ if (
 if (!(_key isEqualTo "")) then {
     missionNamespace setVariable ["comspec_overwatch_api_key", _key];
 };
-_tenant = "";
+_tenant = [missionNamespace getVariable ["comspec_overwatch_tenant_id", ""]] call _cleanSecret;
+if (_tenant isEqualTo "") then {
+    _tenant = [profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""]] call _cleanSecret;
+};
 if (_key isEqualTo "" && {!([] call comspec_overwatch_connect_fnc_isReady)}) then {
     ["[Athena] Session Athena requise — ouvrez la fenêtre de connexion."] call comspec_overwatch_connect_fnc_appendLinkLog;
 };

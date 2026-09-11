@@ -267,23 +267,27 @@
 
     <h4>Première liaison ATAK</h4>
     <p>
-        Rejoindre la situation tactique pour la première fois passe par une <strong>première liaison</strong> : l’étape où un participant connecte son
-        client à l’environnement de l’unité et apparaît pour la première fois sur la carte partagée. Cette liaison associe l’appareil ou le client au
-        callsign du membre, de sorte que ses remontées ultérieures soient correctement attribuées. C’est une étape à réaliser au calme, avant une
-        activité, plutôt que dans la précipitation juste avant un lancement.
+        Rejoindre la situation tactique pour la première fois passe par une <strong>première liaison</strong> :
+        préparer le compte, installer le pack Overwatch, puis <strong>Appairer</strong> le jeu avec un code généré sur le portail.
+        Cette étape associe votre client à votre fiche et à votre indicatif, afin que vos remontées soient correctement attribuées.
+        Réalisez-la au calme, avant une activité.
+    </p>
+    <p>
+        Parcours guidé&nbsp;:
+        <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>
+        · guide détaillé&nbsp;:
+        <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>">Connexion &amp; clé d’accès</a>.
     </p>
     <ol class="site-docs__steps">
-        <li><strong>Vérifier les prérequis</strong> — Assurez-vous que votre <a href="#equipement-et-modpacks">modpack</a> est à jour et que votre
-            compte dispose bien de l’accès aux outils cartes &amp; tactique.</li>
-        <li><strong>Récupérer les paramètres de liaison</strong> — Depuis le portail, obtenez les éléments de connexion fournis par votre organisation
-            pour rejoindre l’environnement de situation.</li>
-        <li><strong>Associer votre callsign</strong> — Établissez la liaison de façon à ce que votre indicatif corresponde à votre fiche personnel,
-            sans réutiliser celui d’un autre membre.</li>
-        <li><strong>Confirmer votre présence sur la carte</strong> — Vérifiez que votre marqueur apparaît au bon endroit et avec le bon état avant de
-            considérer la liaison comme réussie.</li>
-        <li><strong>Tester avant l’activité</strong> — Réalisez cette première liaison en amont, pour disposer du temps nécessaire en cas d’ajustement,
-            plutôt qu’au moment du rassemblement.</li>
+        <li><strong>Préparer le compte</strong> — Identifiant Steam et nom / indicatif dans vos préférences.</li>
+        <li><strong>Installer le pack</strong> — Overwatch après CBA, puis quitter Arma complètement après chaque mise à jour.</li>
+        <li><strong>Appairer</strong> — Sur la carte, générer un code ; en jeu, téléphone → Athena → coller uniquement le code → Lier (puis Entrer si besoin).</li>
+        <li><strong>Confirmer sur la carte</strong> — Vérifier que votre marqueur / indicatif apparaît avant l’activité.</li>
     </ol>
+    <p>
+        Les administrateurs génèrent une <strong>clé d’accès communauté</strong> une fois dans la configuration ATAK.
+        Les membres n’ont en général pas à coller cette clé : Appairer la configure automatiquement.
+    </p>
 
     <h4>Configuration ATAK (administration)</h4>
     <p>

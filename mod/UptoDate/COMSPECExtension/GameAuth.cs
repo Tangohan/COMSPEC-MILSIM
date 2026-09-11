@@ -34,6 +34,7 @@ public static partial class Extension
     private static int _gameProfileRevision;
     private static string _gameDeviceId = "";
     private static string _minModRequired = "";
+    private static DateTimeOffset _gameAuthBecameReadyAt = DateTimeOffset.MinValue;
     private static readonly object GameAuthLock = new();
 
     private static string HandleGameAuth(string function, string[] args)
@@ -148,10 +149,13 @@ public static partial class Extension
     {
         lock (GameAuthLock)
         {
+            var wasReady = string.Equals(_gameAuthState, "READY", StringComparison.Ordinal);
             _gameAuthState = state;
             _gameAuthStep = state;
             _gameAuthProgress = Math.Clamp(progress, 0, 100);
             _gameAuthError = error;
+            if (string.Equals(state, "READY", StringComparison.Ordinal) && !wasReady)
+                _gameAuthBecameReadyAt = DateTimeOffset.UtcNow;
         }
     }
 
@@ -227,6 +231,14 @@ public static partial class Extension
 
     private static string ComposeBftGroupLabel(string armaGroup, string callsign)
     {
+        // Priorité : identifiant Arma tactique (Alpha 2-2…), puis indicatif · affectation.
+        var arma = (armaGroup ?? "").Trim();
+        if (arma.Length > 0
+            && !LooksLikeCommunityTitle(arma)
+            && !LooksLikeInternalUrl(arma)
+            && arma.Length <= 96)
+            return arma;
+
         var cs = (callsign ?? "").Trim();
         if (cs.Length == 0) cs = (_gameProfileCallsign ?? "").Trim();
         if (LooksLikeInternalUrl(cs) || LooksLikeCommunityTitle(cs) || cs.Length > 40)
@@ -236,9 +248,6 @@ public static partial class Extension
             unit = "";
         if (cs.Length > 0 && unit.Length > 0)
             return cs + " · " + unit;
-        var arma = (armaGroup ?? "").Trim();
-        if (arma.Length > 0 && !LooksLikeCommunityTitle(arma) && !LooksLikeInternalUrl(arma))
-            return arma;
         if (cs.Length > 0) return cs;
         if (unit.Length > 0) return unit;
         return "";

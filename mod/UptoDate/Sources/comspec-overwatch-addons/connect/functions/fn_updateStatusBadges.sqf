@@ -83,3 +83,7 @@ if (!isNull _chat) then {
     if (!isNull _sCtrl) then { _sCtrl ctrlSetStructuredText parseText _syncHtml; };
     if (!isNull _dCtrl) then { _dCtrl ctrlSetStructuredText parseText _detailHtml; };
 };
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
+};

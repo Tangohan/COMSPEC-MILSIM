@@ -14,17 +14,18 @@ if (isNull _grp) exitWith {};
 private _pics = _grp getVariable ["COMSPEC_ArsenalPreviewPics", []];
 private _namesCtrl = _grp getVariable ["COMSPEC_ArsenalPreviewNames", controlNull];
 private _icons = [_loadout] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
-private _shown = _icons select { (_x select 2) isNotEqualTo "" };
+private _shown = _icons select { ((_x select 2) isNotEqualTo "") || {(_x select 3) isNotEqualTo ""} };
+private _withPic = _shown select { (_x select 2) isNotEqualTo "" };
 
 {
     if (isNull _x) then { continue };
-    if (_forEachIndex >= count _shown) then {
+    if (_forEachIndex >= count _withPic) then {
         _x ctrlSetText "";
         _x ctrlSetTooltip "";
         _x ctrlShow false;
         continue;
     };
-    (_shown select _forEachIndex) params ["_kind", "_class", "_pic", "_dn"];
+    (_withPic select _forEachIndex) params ["_kind", "_class", "_pic", "_dn"];
     _x ctrlSetText _pic;
     _x ctrlSetTooltip (if (_dn isEqualTo "") then { _kind } else { format ["%1 — %2", _kind, _dn] });
     _x ctrlShow true;
@@ -38,18 +39,27 @@ if (!isNull _namesCtrl) then {
         _bits pushBack format ["<t color='#8aa8a0'>%1</t>  %2", _kind, _dn];
     } forEach _shown;
 
+    private _err = missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadoutError", ""];
     private _head = if (_caption isEqualTo "") then {
-        "Cliquez une tenue pour voir l’équipement."
+        "Sélectionnez une tenue pour afficher l’équipement."
     } else {
         _caption
     };
     private _body = if (_bits isEqualTo []) then {
-        ""
+        if (_caption isEqualTo "") then {
+            "<br/><t color='#7a9088'>Arme · tenue · gilet · casque · sac · JVN · radio…</t>"
+        } else {
+            if (_err isEqualTo "too_large") then {
+                "<br/><t color='#ffb080'>Tenue trop dense pour l’aperçu en jeu — ouvrez-la sur le poste (Mes tenues) ou mettez à jour le pack, puis réessayez.</t>"
+            } else {
+                "<br/><t color='#7a9088'>Équipement non disponible pour cette tenue.</t>"
+            }
+        }
     } else {
         "<br/>" + (_bits joinString "   ·   ")
     };
     _namesCtrl ctrlSetStructuredText parseText format [
-        "<t size='0.95' color='#d8f6ec'>%1</t><t size='0.82' color='#c5d4cf'>%2</t>",
+        "<t size='0.92' color='#d8f6ec'>%1</t><t size='0.80' color='#c5d4cf'>%2</t>",
         _head,
         _body
     ];

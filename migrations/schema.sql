@@ -791,6 +791,7 @@ CREATE TABLE IF NOT EXISTS `atak_units` (
   `call_sign` varchar(255) NOT NULL,
   `military_id` varchar(32) DEFAULT NULL,
   `role` varchar(255) DEFAULT NULL,
+  `group_name` varchar(96) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'linked',
   `grid_ref` varchar(100) DEFAULT NULL,
   `heading` decimal(10,4) DEFAULT NULL,
@@ -802,6 +803,7 @@ CREATE TABLE IF NOT EXISTS `atak_units` (
   KEY `tenant_map` (`tenant_id`,`map_id`),
   KEY `map_callsign` (`map_id`,`call_sign`),
   KEY `idx_atak_units_tenant_military` (`tenant_id`,`military_id`),
+  KEY `idx_atak_units_tenant_group` (`tenant_id`,`group_name`),
   CONSTRAINT `atak_units_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -934,6 +936,21 @@ CREATE TABLE IF NOT EXISTS `atak_unit_intel_events` (
   KEY `idx_intel_type` (`tenant_id`,`map_id`,`event_type`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `atak_chat_channels` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `channel_key` varchar(64) NOT NULL,
+  `label` varchar(120) NOT NULL,
+  `kind` varchar(16) NOT NULL DEFAULT 'custom',
+  `created_by_callsign` varchar(64) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_atak_chat_channel` (`tenant_id`,`map_id`,`channel_key`),
+  KEY `idx_atak_chat_channels_tenant_map` (`tenant_id`,`map_id`),
+  CONSTRAINT `atak_chat_channels_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
@@ -941,10 +958,29 @@ CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
   `author` varchar(255) NOT NULL,
   `body` text NOT NULL,
   `source` varchar(16) NOT NULL DEFAULT 'game',
+  `channel_key` varchar(64) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
+  KEY `idx_atak_chat_channel` (`tenant_id`,`map_id`,`channel_key`,`id`),
   CONSTRAINT `atak_chat_messages_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_viewshed_overlays` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `call_sign` varchar(64) NOT NULL DEFAULT '',
+  `center_x` double NOT NULL,
+  `center_y` double NOT NULL,
+  `radius_m` double NOT NULL DEFAULT 500,
+  `polygon_json` mediumtext,
+  `expires_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_atak_viewshed_tenant_map` (`tenant_id`,`map_id`,`updated_at`),
+  CONSTRAINT `atak_viewshed_overlays_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `atak_medical_alert_triage` (

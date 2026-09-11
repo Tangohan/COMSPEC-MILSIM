@@ -26,6 +26,6 @@ private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaG
 if (isNull _group) exitWith {};
 private _page = [_group, 9790] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _page && {ctrlShown _page}) then {
-    private _email = [_group, 9792] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
-    if (!isNull _email) then { ctrlSetFocus _email; };
+    private _pair = [_group, 9799] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+    if (!isNull _pair) then { ctrlSetFocus _pair; };
 };

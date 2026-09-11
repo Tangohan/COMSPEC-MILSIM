@@ -119,10 +119,28 @@ private _ensureAtakApps = {
     _this call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanBda;
 }] call CBA_fnc_addEventHandler;
 
-// Messages de groupe Iceman → journal local Athena (pas le TOC web)
+// Dual-send : messages de groupe Iceman → journal radio Athena (TOC web)
 ["Iceman_ATAK_GroupMessage", {
     _this call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanGroup;
 }] call CBA_fnc_addEventHandler;
+
+// Viewshed IceMan → calque temporaire sur la carte du poste
+if (isNil "COMSPEC_ViewshedBridgeEH") then {
+    COMSPEC_ViewshedBridgeEH = true;
+    [{
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        private _state = missionNamespace getVariable ["Iceman_ATAK_Elevation_state", nil];
+        if (isNil "_state" || {!(_state isEqualType createHashMap)}) exitWith {};
+        private _mode = _state getOrDefault ["mode", ""];
+        if (_mode isNotEqualTo "viewshed") exitWith {};
+        private _pos = _state getOrDefault ["viewshedPoint", []];
+        if ((count _pos) < 2) exitWith {};
+        private _fp = format ["%1:%2:%3", round (_pos select 0), round (_pos select 1), round (_state getOrDefault ["radiusM", 500])];
+        if (_fp isEqualTo (missionNamespace getVariable ["COMSPEC_LastViewshedFp", ""])) exitWith {};
+        missionNamespace setVariable ["COMSPEC_LastViewshedFp", _fp, false];
+        [_pos, _state getOrDefault ["radiusM", 500]] call comspec_overwatch_connect_fnc_publishViewshed;
+    }, 8, []] call CBA_fnc_addPerFrameHandler;
+};
 
 // Contact permanent HQ dans la messagerie ATAK / cTab
 [] call comspec_overwatch_atak_athena_fnc_athena_installHqContact;
@@ -466,3 +484,15 @@ missionNamespace setVariable ["COMSPEC_AtakPhoneProxInside", createHashMap, fals
 [{
     [] call comspec_overwatch_atak_athena_fnc_athena_phoneProximityTick;
 }, 1.5, []] call CBA_fnc_addPerFrameHandler;
+
+// Bandeau OK/NOK · débit · err sur le téléphone ATAK (quand ouvert)
+[{
+    private _d = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    if (isNull _d) then {
+        _d = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+    };
+    if (isNull _d) exitWith {};
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
+    };
+}, 2, []] call CBA_fnc_addPerFrameHandler;

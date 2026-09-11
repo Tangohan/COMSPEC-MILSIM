@@ -5,6 +5,8 @@ if (!hasInterface) exitWith {};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Settings_group", controlNull];
 if (isNull _group) exitWith {};
+private _body = _group controlsGroupCtrl 9839;
+if (!isNull _body) then { _group = _body; };
 
 private _ctrl = {
     params ["_idc"];

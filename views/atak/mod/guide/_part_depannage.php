@@ -11,11 +11,11 @@
         <tbody>
             <tr>
                 <td>« Hors liaison » permanent</td>
-                <td>Vérifier clé communauté, compte lié, pare-feu, version du pack à jour</td>
+                <td>Nouveau code Appairer ; Steam sur le compte ; quitter Arma complètement ; pack à jour ; clé communauté générée côté admin</td>
             </tr>
             <tr>
-                <td>Position absente sur Tacmap</td>
-                <td>Indicatif vide, pas encore en mission active, terminal requis non possédé</td>
+                <td>Position absente sur la carte</td>
+                <td>Canal poste ouvert (Athena / Entrer) ; bougez un peu ; attendre jusqu’à une minute ; indicatif renseigné</td>
             </tr>
             <tr>
                 <td>Hub sans overlays réalisme</td>

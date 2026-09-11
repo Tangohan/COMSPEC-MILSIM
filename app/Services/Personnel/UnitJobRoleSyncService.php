@@ -223,12 +223,8 @@ final class UnitJobRoleSyncService
     public function purgeAllUnusedCatalogJobs(): int
     {
         $n = 0;
-        $st = $this->pdo->query('SELECT id FROM tenants');
-        if (!$st) {
-            return 0;
-        }
-        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-            $n += $this->purgeUnusedCatalogJobs((int) ($row['id'] ?? 0));
+        foreach ($this->tenantIds() as $tenantId) {
+            $n += $this->purgeUnusedCatalogJobs($tenantId);
         }
 
         return $n;
@@ -292,12 +288,8 @@ final class UnitJobRoleSyncService
     public function purgeAllUnusedAutoCreatedJobs(): int
     {
         $n = 0;
-        $st = $this->pdo->query('SELECT id FROM tenants');
-        if (!$st) {
-            return 0;
-        }
-        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-            $n += $this->purgeUnusedAutoCreatedJobs((int) ($row['id'] ?? 0));
+        foreach ($this->tenantIds() as $tenantId) {
+            $n += $this->purgeUnusedAutoCreatedJobs($tenantId);
         }
 
         return $n;
@@ -310,15 +302,26 @@ final class UnitJobRoleSyncService
     public function backfillAllTenants(): int
     {
         $n = 0;
-        $st = $this->pdo->query('SELECT id FROM tenants');
-        if (!$st) {
-            return 0;
-        }
-        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-            $n += $this->backfillFromUnits((int) ($row['id'] ?? 0));
+        foreach ($this->tenantIds() as $tenantId) {
+            $n += $this->backfillFromUnits($tenantId);
         }
 
         return $n;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function tenantIds(): array
+    {
+        $st = $this->pdo->query('SELECT id FROM tenants');
+        if (!$st) {
+            return [];
+        }
+        $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        $st->closeCursor();
+
+        return array_values(array_filter($ids, static fn (int $id): bool => $id > 0));
     }
 
     private function findIdForUnit(int $tenantId, int $unitId): ?int
@@ -433,17 +436,30 @@ final class UnitJobRoleSyncService
 
     private function deleteEmptyCategories(int $tenantId): void
     {
+        // MariaDB refuse DELETE + sous-requête sur la même table (erreur 1093 « Table 'c' specified twice »).
+        // On sélectionne les ids puis on DELETE par liste.
         $guard = 0;
         while ($guard++ < 20) {
             $st = $this->pdo->prepare(
-                'DELETE c FROM personnel_job_role_categories c
+                'SELECT c.id
+                 FROM personnel_job_role_categories c
                  WHERE c.tenant_id = ?
                    AND c.slug <> ?
                    AND NOT EXISTS (SELECT 1 FROM personnel_job_roles r WHERE r.category_id = c.id)
                    AND NOT EXISTS (SELECT 1 FROM personnel_job_role_categories ch WHERE ch.parent_id = c.id)'
             );
             $st->execute([$tenantId, self::CATEGORY_SLUG]);
-            if ($st->rowCount() < 1) {
+            $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            $st->closeCursor();
+            if ($ids === []) {
+                break;
+            }
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $del = $this->pdo->prepare(
+                "DELETE FROM personnel_job_role_categories WHERE tenant_id = ? AND id IN ({$placeholders})"
+            );
+            $del->execute(array_merge([$tenantId], $ids));
+            if ($del->rowCount() < 1) {
                 break;
             }
         }

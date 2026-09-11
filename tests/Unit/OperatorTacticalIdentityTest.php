@@ -47,6 +47,10 @@ final class OperatorTacticalIdentityTest extends TestCase
             OperatorTacticalIdentity::groupLabel('YB1', '24th STS Gold Team SOF TACP', $tenant, $tenant, $tenant)
         );
         self::assertSame(
+            'Alpha 2-2',
+            OperatorTacticalIdentity::groupLabel('TA1', '24th STS', $tenant, $tenant, 'Alpha 2-2')
+        );
+        self::assertSame(
             'Alpha 1-2',
             OperatorTacticalIdentity::groupLabel('', '', $tenant, $tenant, 'Alpha 1-2')
         );

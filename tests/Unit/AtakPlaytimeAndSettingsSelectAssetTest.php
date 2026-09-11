@@ -29,6 +29,24 @@ final class AtakPlaytimeAndSettingsSelectAssetTest extends TestCase
         self::assertStringContainsString('_flushCtx', $atak);
         self::assertStringContainsString('ReportPlaytime', $ow);
         self::assertStringContainsString('COMSPEC_AthenaReady', $ow);
+        self::assertStringContainsString('COMSPEC_PlaytimeAccum', $ow);
+        $forcePt = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_forcePlaytimeReport.sqf'
+        );
+        $forceSync = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_forceSyncData.sqf'
+        );
+        $cfg = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
+        );
+        $page = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/athena_page.hpp'
+        );
+        self::assertStringContainsString('class forcePlaytimeReport', $cfg);
+        self::assertStringContainsString('forcePlaytimeReport', $forceSync);
+        self::assertStringContainsString('temps de mission', $forceSync);
+        self::assertStringContainsString('ReportPlaytime', $forcePt);
+        self::assertStringContainsString('Remonter le temps', $page);
         self::assertStringContainsString('comspec_overwatch_playtime_enabled', $pre);
         self::assertStringContainsString('ReportPlaytime', $ext);
         self::assertStringContainsString('ctx != "zeus" && ctx != "editor"', $ext);

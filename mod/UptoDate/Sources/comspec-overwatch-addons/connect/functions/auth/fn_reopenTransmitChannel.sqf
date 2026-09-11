@@ -15,6 +15,12 @@ missionNamespace setVariable ["COMSPEC_LastFactionSettingsBody", "", false];
 [] call comspec_overwatch_connect_fnc_applyBootstrap;
 [] call comspec_overwatch_connect_fnc_pollAuth;
 
+// Un AuthInvalidated a pu laisser C2_UNAUTHORIZED alors que le jeton est déjà bon.
+private _dllState = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
+if (_dllState isEqualTo "READY") then {
+    missionNamespace setVariable ["comspec_overwatch_auth_error", "", false];
+};
+
 if (!([] call comspec_overwatch_connect_fnc_canStartSync)) exitWith { false };
 
 [] call comspec_overwatch_connect_fnc_startSyncLoops;

@@ -38,7 +38,7 @@ final class AtakZeusGroupIdCallsignAssetTest extends TestCase
 
         self::assertStringContainsString('class applyGroupIdFromCallsign', $cfg);
         self::assertStringContainsString('class fillZeusGroupId', $cfg);
-        self::assertStringContainsString('1.5.16', $cfg);
+        self::assertStringContainsString('1.5.28', $cfg);
 
         self::assertStringContainsString('setGroupIdGlobal', $apply);
         self::assertStringContainsString('profileName', $apply);
@@ -47,6 +47,11 @@ final class AtakZeusGroupIdCallsignAssetTest extends TestCase
         self::assertStringContainsString('applyGroupIdFromCallsign', $set);
 
         self::assertStringContainsString('identifiant du groupe', $fill);
+        self::assertStringContainsString('Indicatif', $fill);
+        self::assertStringContainsString('COMSPEC_BftGroup', $fill);
+        self::assertStringContainsString('setGroupIdGlobal', $fill);
+        self::assertStringContainsString('forcePlaytimeReport', $fill);
+        self::assertStringContainsString('updatePosition', $fill);
         self::assertStringContainsString('ctrlSetText _cs', $fill);
         self::assertStringContainsString('fillZeusGroupId', $inject);
         self::assertStringContainsString('fillZeusGroupId', $register);

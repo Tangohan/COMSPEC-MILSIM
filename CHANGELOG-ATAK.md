@@ -7,6 +7,46 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
+Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Athena 1.0.88 / Overwatch 1.5.37 / liaison 2.0.27 — 2026-09-11
+
+### Correction — Tenues communauté denses et collections
+
+Dans l’arsenal Athena, la première collection s’ouvre dès l’affichage. L’aperçu montre lunettes, jumelles, JVN, radio et le contenu des poches. Les tenues très chargées se chargent correctement (plus de blocage « trop volumineuse »). La liste communauté n’est plus coupée quand il y a beaucoup de tenues. Relancer Arma complètement.
+
+---
+
+## Athena 1.0.88 / Overwatch 1.5.36 / liaison 2.0.26 — 2026-09-11
+
+### Nouveau — Canaux radio, Wave, zones de vue
+
+Canaux radio (Groupe, Commandement, Général, JTAC, Air + personnalisés), pastilles Wave sur la carte, ETA d’itinéraire, zones de vue terrain vers le poste.
+
+### Nouveau — Barre de liaison OK / NOK
+
+Sous la barre d’état du téléphone : OK ou NOK, débit estimé, taux de perte ; teinte de l’icône signal.
+
+### Amélioration — Première liaison, Paramètres, arsenal
+
+Parcours Appairage clarifié, Paramètres / Athena plus lisibles, arsenal Mes tenues / Communauté, remontée forcée du temps de mission.
+
+### Correction — Radio, fantômes carte, Appairer
+
+Journal radio jeu ↔ poste rétabli ; opérateurs hors liaison retirés de la carte ; canal poste rouvert après Appairer ; temps de mission à nouveau remonté.
+
+Relancer Arma complètement. Portail : Ctrl+F5 + migrations si besoin.
+
+---
+
+## Athena 1.0.83 / Overwatch 1.5.27 — 2026-09-11
+
+### Correction — Indicatif, nom, rôle et groupe BFT
+
+Sur la carte, les trois lignes d’identité (indicatif, nom, rôle) restent visibles en bas à droite. L’identifiant de groupe saisi dans les données techniques (ex. Alpha 2-2) est synchronisé vers le suivi d’effectif et remonté au poste. Relancer Arma complètement après mise à jour du pack et de la liaison.
+
 ---
 
 ## Athena / Overwatch — 2026-09-11

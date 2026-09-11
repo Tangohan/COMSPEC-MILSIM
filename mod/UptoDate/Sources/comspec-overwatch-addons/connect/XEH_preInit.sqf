@@ -37,25 +37,25 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_enabled", "CHECKBOX",
-    ["Enable Overwatch", "Athena connection"],
+    ["Activer Overwatch", "Active la liaison Athena / poste de commandement."],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_api_url", "EDITBOX",
-    ["URL Athena", "Base du portail (ex. https://athena.ttrd.fr/public) — sans slash final, avec /public si le site l’utilise"],
+    ["Adresse du portail", "Adresse Athena (ex. https://athena.ttrd.fr/public) — sans slash final, avec /public si le site l’utilise. Aussi réglable dans Paramètres ATAK."],
     "COMSPEC Overwatch", "https://athena.ttrd.fr/public"
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_api_key", "EDITBOX",
-    ["Athena access key", "Provided by admin (required in production). Leave empty locally if server does not require key."],
+    ["Clé d’accès communauté", "Fournie par l’administration. Laissez vide en local si le poste n’exige pas de clé. Aussi réglable dans Paramètres ATAK."],
     "COMSPEC Overwatch", ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_tenant_id", "EDITBOX",
-    ["Community identifier (ignored)", "Ignored. Athena chooses your community after you sign in."],
+    ["Identifiant de communauté", "Numéro ou code de votre communauté. Utile si plusieurs communautés partagent la même adresse. Aussi réglable dans Paramètres ATAK."],
     "COMSPEC Overwatch", ""
 ] call CBA_fnc_addSetting;
 
@@ -646,7 +646,7 @@ if (hasInterface) then {
     missionNamespace setVariable ["COMSPEC_IntelStore", [], false];
     missionNamespace setVariable ["COMSPEC_IntelHeatmap", createHashMap, false];
     missionNamespace setVariable ["COMSPEC_RadioReplay", [], false];
-    missionNamespace setVariable ["COMSPEC_Comms_Channel", "SQUAD", false];
+    missionNamespace setVariable ["COMSPEC_Comms_Channel", "general", false];
     missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", false];
     missionNamespace setVariable ["COMSPEC_OrdersSeen", [], false];
 };

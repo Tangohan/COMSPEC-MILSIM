@@ -1,9 +1,13 @@
-/* COMSPEC ATAK - Tchat / journal radio (+ mentions @) */
+/* COMSPEC ATAK - Tchat / journal radio (+ mentions @ + canaux) */
 window.ATAKChat = (function () {
   var sessionStartMs = Date.now();
   var lastMessagesFp = '';
   var cachedMessages = [];
-  var LS_PREFIX = 'atak_chat_cleared_before_v1_';
+  var channelsCache = [];
+  var activeChannel = 'general';
+  var unreadByChannel = {};
+  var LS_PREFIX = 'atak_chat_cleared_before_v2_';
+  var LS_CHANNEL = 'atak_chat_active_channel_v1_';
   var LS_MENTION_SEEN = 'atak_chat_mention_seen_v1_';
   var mentionState = {
     open: false,
@@ -48,7 +52,60 @@ window.ATAKChat = (function () {
   }
 
   function clearStorageKey() {
-    return LS_PREFIX + String(getMapId());
+    return LS_PREFIX + String(getMapId()) + '_' + String(activeChannel || 'general');
+  }
+
+  function activeChannelStorageKey() {
+    return LS_CHANNEL + String(getMapId());
+  }
+
+  function loadActiveChannel() {
+    try {
+      var v = String(localStorage.getItem(activeChannelStorageKey()) || '').trim();
+      if (v) activeChannel = v;
+    } catch (e) { /* ignore */ }
+  }
+
+  function persistActiveChannel() {
+    try {
+      localStorage.setItem(activeChannelStorageKey(), String(activeChannel || 'general'));
+    } catch (e) { /* ignore */ }
+  }
+
+  function messageChannelKey(m) {
+    var ck = String((m && (m.channel_key || m.channel)) || '').trim();
+    if (ck) return ck.toLowerCase();
+    var body = String((m && m.body) || '');
+    var upper = body.toUpperCase();
+    if (upper.indexOf('GROUPE|') === 0 || upper === 'GROUPE') return 'groupe';
+    if (upper.indexOf('[HQ]') >= 0 || upper.indexOf('][COMMAND]') >= 0) return 'commandement';
+    var parsed = parseCommsBody(body);
+    if (parsed && parsed.channel) {
+      var ch = String(parsed.channel).toUpperCase();
+      if (ch === 'COMMAND' || ch === 'HQ' || ch === 'C2') return 'commandement';
+      if (ch === 'JTAC') return 'jtac';
+      if (ch === 'AIR') return 'air';
+      if (ch === 'SQUAD' || ch === 'GLOBAL') return 'general';
+      if (ch === 'GROUPE' || ch === 'GROUP') return 'groupe';
+      return ch.toLowerCase();
+    }
+    return 'general';
+  }
+
+  function channelLabel(key) {
+    var k = String(key || 'general').toLowerCase();
+    var found = channelsCache.find(function (c) {
+      return String(c.channel_key || '').toLowerCase() === k;
+    });
+    if (found && found.label) return String(found.label);
+    var map = {
+      groupe: 'Groupe',
+      commandement: 'Commandement',
+      general: 'Général',
+      jtac: 'JTAC',
+      air: 'Air'
+    };
+    return map[k] || (k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' '));
   }
 
   function mentionSeenKey() {
@@ -114,8 +171,10 @@ window.ATAKChat = (function () {
 
   function filterVisible(list) {
     var before = getClearedBeforeId();
+    var ch = String(activeChannel || 'general').toLowerCase();
     return (list || []).filter(function (m) {
       if (isHiddenSystemMessage(m)) return false;
+      if (messageChannelKey(m) !== ch) return false;
       var id = messageId(m);
       if (before < 1) return true;
       return id < 1 || id > before;
@@ -519,8 +578,194 @@ window.ATAKChat = (function () {
     return true;
   }
 
+  function fetchChannels() {
+    if (!isNodeConfigured()) return Promise.resolve([]);
+    return fetch(getApiBase() + '/api/chat/channels?mapId=' + getMapId(), { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : { channels: [] }; })
+      .then(function (data) {
+        var list = Array.isArray(data) ? data : (data && data.channels) || [];
+        channelsCache = list;
+        renderChannels();
+        return list;
+      })
+      .catch(function () {
+        if (!channelsCache.length) {
+          channelsCache = [
+            { channel_key: 'groupe', label: 'Groupe', kind: 'system' },
+            { channel_key: 'commandement', label: 'Commandement', kind: 'system' },
+            { channel_key: 'general', label: 'Général', kind: 'system' },
+            { channel_key: 'jtac', label: 'JTAC', kind: 'system' },
+            { channel_key: 'air', label: 'Air', kind: 'system' }
+          ];
+          renderChannels();
+        }
+        return channelsCache;
+      });
+  }
+
+  function renderChannels() {
+    var el = document.getElementById('atak-chat-channels');
+    var badge = document.getElementById('atak-chat-channel-badge');
+    if (badge) badge.textContent = channelLabel(activeChannel);
+    if (!el) return;
+    if (!channelsCache.length) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = channelsCache.map(function (c) {
+      var key = String(c.channel_key || '').toLowerCase();
+      var label = String(c.label || channelLabel(key));
+      var on = key === String(activeChannel || '').toLowerCase();
+      var unread = unreadByChannel[key] || 0;
+      var unreadHtml = unread > 0 && !on
+        ? '<span class="atak-chat-channel-unread" aria-label="' + unread + ' nouveaux">' + (unread > 9 ? '9+' : unread) + '</span>'
+        : '';
+      return '<button type="button" role="tab" class="atak-chat-channel-tab' + (on ? ' is-active' : '') +
+        '" data-channel="' + escapeHtml(key) + '" aria-selected="' + (on ? 'true' : 'false') + '">' +
+        escapeHtml(label) + unreadHtml + '</button>';
+    }).join('');
+    el.querySelectorAll('[data-channel]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setActiveChannel(btn.getAttribute('data-channel') || 'general');
+      });
+    });
+  }
+
+  function setActiveChannel(key) {
+    var next = String(key || 'general').toLowerCase() || 'general';
+    if (next === activeChannel) return;
+    activeChannel = next;
+    persistActiveChannel();
+    unreadByChannel[next] = 0;
+    lastMessagesFp = '';
+    renderChannels();
+    fetchMessages();
+  }
+
+  function refreshUnreadFromList(list) {
+    var map = {};
+    (list || []).forEach(function (m) {
+      if (isHiddenSystemMessage(m)) return;
+      var ck = messageChannelKey(m);
+      if (ck === String(activeChannel || '').toLowerCase()) return;
+      var id = messageId(m);
+      var beforeKey = LS_PREFIX + String(getMapId()) + '_' + ck;
+      var before = 0;
+      try {
+        before = parseInt(localStorage.getItem(beforeKey) || '0', 10) || 0;
+      } catch (e) { /* ignore */ }
+      if (id > 0 && id <= before) return;
+      map[ck] = (map[ck] || 0) + 1;
+    });
+    unreadByChannel = map;
+    renderChannels();
+  }
+
+  function createChannel() {
+    var label = window.prompt('Nom du nouveau canal radio :', '');
+    if (label == null) return;
+    label = String(label).trim();
+    if (!label) return;
+    if (!isNodeConfigured()) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison indisponible pour créer un canal.');
+      return;
+    }
+    fetch(getApiBase() + '/api/chat/channels', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mapId: getMapId(), label: label, author: getAuthor() })
+    }).then(function (r) {
+      if (!r.ok) {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de créer le canal.');
+        return null;
+      }
+      return r.json();
+    }).then(function (data) {
+      if (!data) return;
+      var ch = data.channel || data;
+      var key = String((ch && ch.channel_key) || '').toLowerCase();
+      return fetchChannels().then(function () {
+        if (key) setActiveChannel(key);
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Canal « ' + channelLabel(key || label) + ' » créé.', { silent: true });
+        }
+      });
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de créer le canal.');
+    });
+  }
+
+  function purgeChannelHistory() {
+    var label = channelLabel(activeChannel);
+    var ok = window.confirm(
+      'Effacer définitivement tout l’historique du canal « ' + label + ' » pour tout le monde (poste et opérateurs) ?\n\nCette action est irréversible.'
+    );
+    if (!ok) return;
+    var confirm2 = window.prompt(
+      'Pour confirmer, tapez EFFACER_CANAL',
+      ''
+    );
+    if (String(confirm2 || '').trim().toUpperCase() !== 'EFFACER_CANAL') {
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification('Effacement annulé.', { silent: true });
+      }
+      return;
+    }
+    if (!isNodeConfigured()) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison indisponible.');
+      return;
+    }
+    fetch(getApiBase() + '/api/chat/purge', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mapId: getMapId(),
+        channel: activeChannel,
+        confirm: 'EFFACER_CANAL'
+      })
+    }).then(function (r) {
+      if (r.status === 401 || r.status === 403) {
+        if (window.ATAKShowError) {
+          window.ATAKShowError('Seul le poste de commandement peut effacer l’historique radio.');
+        }
+        return null;
+      }
+      if (!r.ok) {
+        return r.json().then(function (j) {
+          if (window.ATAKShowError) {
+            window.ATAKShowError((j && j.message) || 'Impossible d’effacer l’historique.');
+          }
+          return null;
+        }).catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible d’effacer l’historique.');
+          return null;
+        });
+      }
+      return r.json();
+    }).then(function (data) {
+      if (!data) return;
+      lastMessagesFp = '';
+      cachedMessages = (cachedMessages || []).filter(function (m) {
+        return messageChannelKey(m) !== String(activeChannel || '').toLowerCase();
+      });
+      setClearedBeforeId(0);
+      renderList(cachedMessages);
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification(
+          (data && data.message) || ('Historique du canal « ' + label + ' » effacé pour tout le monde.'),
+          { silent: true }
+        );
+      }
+      fetchMessages();
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible d’effacer l’historique.');
+    });
+  }
+
   function fetchMessages() {
-    var url = getApiBase() + '/api/chat?mapId=' + getMapId();
+    var url = getApiBase() + '/api/chat?mapId=' + getMapId() + '&limit=120';
     fetch(url, { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) {
@@ -547,12 +792,12 @@ window.ATAKChat = (function () {
         var list = Array.isArray(data) ? data : [];
         var prevFp = lastMessagesFp;
         cachedMessages = list;
+        refreshUnreadFromList(cachedMessages);
         var visible = filterVisible(list);
         var fp = visible.map(function (m) {
           return (m && m.id != null ? m.id : '') + ':' + (m && (m.body || m.message) ? String(m.body || m.message).length : 0);
-        }).join('|') + '#' + visible.length + '@' + getClearedBeforeId();
+        }).join('|') + '#' + visible.length + '@' + getClearedBeforeId() + '#' + activeChannel;
         if (fp === lastMessagesFp) {
-          // Resync Assistances même si le tchat n’a pas changé (API médicale parfois vide).
           if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromChatMessages === 'function') {
             window.ATAKMedicalAlerts.ingestFromChatMessages(list);
           }
@@ -564,7 +809,6 @@ window.ATAKChat = (function () {
         if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromChatMessages === 'function') {
           window.ATAKMedicalAlerts.ingestFromChatMessages(list);
         }
-        // Premier chargement : mémoriser sans toast. Ensuite : priorités, mentions, puis toast des nouveaux messages.
         if (prevFp !== '') notifyPriorityComms(list);
         scanMentionsForMe(list, { notify: prevFp !== '' });
         notifyIncomingChat(list, { notify: prevFp !== '' });
@@ -589,11 +833,15 @@ window.ATAKChat = (function () {
 
   function appendMessage(msg) {
     if (isHiddenSystemMessage(msg)) return;
-    if (messageId(msg) > 0 && messageId(msg) <= getClearedBeforeId()) {
-      return;
-    }
     if (msg) {
       cachedMessages = cachedMessages.concat([msg]);
+      refreshUnreadFromList(cachedMessages);
+    }
+    if (messageChannelKey(msg) !== String(activeChannel || 'general').toLowerCase()) {
+      return;
+    }
+    if (messageId(msg) > 0 && messageId(msg) <= getClearedBeforeId()) {
+      return;
     }
     var el = document.getElementById('atak-chat-messages');
     if (el) {
@@ -621,15 +869,10 @@ window.ATAKChat = (function () {
     }
   }
 
-  /** Formate un envoi web comme un message de groupe (symétrique jeu→web). */
+  /** Formate un envoi web selon le canal actif. */
   function formatOutgoingBody(text) {
     var author = String(getAuthor() || 'TOC').trim() || 'TOC';
-    var groupId = author;
-    try {
-      if (window.ATAK_CHAT_GROUP_ID) {
-        groupId = String(window.ATAK_CHAT_GROUP_ID).trim() || author;
-      }
-    } catch (e) { /* ignore */ }
+    var ch = String(activeChannel || 'general').toLowerCase();
     var grid = '------';
     try {
       if (window.ATAKMap && typeof window.ATAKMap.getCursorGrid === 'function') {
@@ -637,8 +880,20 @@ window.ATAKChat = (function () {
         if (g) grid = g;
       }
     } catch (e2) { /* ignore */ }
-    // GROUPE|groupId|indicatif|grille|texte — même contrat que le bridge Iceman.
-    return 'GROUPE|' + groupId + '|' + author + '|' + grid + '|' + text;
+    if (ch === 'groupe') {
+      var groupId = author;
+      try {
+        if (window.ATAK_CHAT_GROUP_ID) {
+          groupId = String(window.ATAK_CHAT_GROUP_ID).trim() || author;
+        }
+      } catch (e) { /* ignore */ }
+      return 'GROUPE|' + groupId + '|' + author + '|' + grid + '|' + text;
+    }
+    if (ch === 'commandement') {
+      return '[00:00:00][COMMAND][IMPORTANT][HQ] ' + text;
+    }
+    var token = ch === 'jtac' ? 'JTAC' : (ch === 'air' ? 'AIR' : (ch === 'general' ? 'SQUAD' : ch.toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12) || 'SQUAD'));
+    return '[00:00:00][' + token + '][ROUTINE][FREE] ' + text;
   }
 
   /* ——— Autocomplete @ ——— */
@@ -801,7 +1056,13 @@ window.ATAKChat = (function () {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mapId: getMapId(), author: author, body: formatOutgoingBody(body) })
+      body: JSON.stringify({
+        mapId: getMapId(),
+        author: author,
+        body: formatOutgoingBody(body),
+        channel: activeChannel,
+        channel_key: activeChannel
+      })
     }).then(function (r) {
       if (!r.ok) {
         if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le message.');
@@ -933,18 +1194,35 @@ window.ATAKChat = (function () {
     if (clearBtn && !clearBtn._atakBound) {
       clearBtn._atakBound = true;
       clearBtn.addEventListener('click', function () {
-        if (!window.confirm('Vider l’affichage du tchat ? Les messages restent disponibles côté serveur ; le journal Liaison n’est pas modifié.')) {
+        if (!window.confirm('Effacer mon affichage du canal « ' + channelLabel(activeChannel) + ' » ? Les messages restent disponibles pour les autres ; le journal Liaison n’est pas modifié.')) {
           return;
         }
         clearDisplay();
       });
     }
+    var purgeBtn = document.getElementById('atak-chat-purge');
+    if (purgeBtn && !purgeBtn._atakBound) {
+      purgeBtn._atakBound = true;
+      purgeBtn.addEventListener('click', purgeChannelHistory);
+    }
+    var createBtn = document.getElementById('atak-chat-channel-create');
+    if (createBtn && !createBtn._atakBound) {
+      createBtn._atakBound = true;
+      createBtn.addEventListener('click', createChannel);
+    }
+    loadActiveChannel();
+    fetchChannels().then(function () { fetchMessages(); });
   });
 
   return {
     appendMessage: appendMessage,
     fetchMessages: fetchMessages,
+    fetchChannels: fetchChannels,
     clearDisplay: clearDisplay,
+    purgeChannelHistory: purgeChannelHistory,
+    createChannel: createChannel,
+    setActiveChannel: setActiveChannel,
+    getActiveChannel: function () { return activeChannel; },
     parseCommsBody: parseCommsBody,
     formatMsg: formatMsg,
     extractMentionTokens: extractMentionTokens,

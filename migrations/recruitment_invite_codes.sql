@@ -44,11 +44,12 @@ CREATE TABLE IF NOT EXISTS `recruitment_invite_code_uses` (
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS 
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'invite_code_id');
 
+-- Branche « déjà présent » : DO 0 (pas de result set) — un SELECT ici bloquait PDO (erreur 2014).
 SET @sql = IF(@col_exists = 0, 
   'ALTER TABLE `enlistments` 
    ADD COLUMN `invite_code_id` INT UNSIGNED DEFAULT NULL COMMENT "Code d\'invitation utilisé pour cette candidature" AFTER `recruitment_opening_id`,
    ADD INDEX `idx_invite_code` (`invite_code_id`)',
-  'SELECT "Column invite_code_id already exists" AS message');
+  'DO 0');
 
 PREPARE stmt FROM @sql;
 EXECUTE stmt;

@@ -1,7 +1,7 @@
 /*
     Identifiant de groupe pour le suivi d’effectif (téléphone / poste).
-    Indicatif + affectation Athena. Jamais le titre de communauté.
-    Repli : nom de groupe Arma s’il n’est pas le nom de communauté.
+    Priorité : identifiant Arma tactique (ex. Alpha 2-2), puis indicatif · affectation.
+    Jamais le titre de communauté ni le nom de profil.
 */
 params [["_unit", objNull, [objNull]]];
 
@@ -23,6 +23,20 @@ private _fncIsTenant = {
     if (_s isEqualTo "" || {_s in ["error", "grpnull", "-", "none", "n/a"]}) exitWith { false };
     private _tenant = toLower (trim (str (missionNamespace getVariable ["comspec_tenant_name", ""])));
     [_s, _tenant] call _fncSameOrTruncated
+};
+
+private _fncIsProfileName = {
+    params ["_s", "_u"];
+    private _gl = toLower (trim _s);
+    if (_gl isEqualTo "" || {_gl in ["error", "grpnull", "none", "n/a"]}) exitWith { true };
+    if (isNull _u) exitWith { false };
+    private _nm = toLower (trim (name _u));
+    if (_nm isNotEqualTo "" && {_gl isEqualTo _nm}) exitWith { true };
+    if (_u isEqualTo player) then {
+        private _pn = toLower (trim profileName);
+        if (_pn isNotEqualTo "" && {_gl isEqualTo _pn}) exitWith { true };
+    };
+    false
 };
 
 private _fncAssignment = {
@@ -48,6 +62,29 @@ private _fncCallsignOf = {
     if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then { _cs } else { "" }
 };
 
+// Groupe BFT forcé (Zeus / synchro) prioritaire.
+private _forced = trim (_unit getVariable ["COMSPEC_BftGroup", ""]);
+if (_forced isEqualTo "") then {
+    _forced = trim (missionNamespace getVariable ["COMSPEC_BftGroup", ""]);
+};
+if (
+    _forced isNotEqualTo ""
+    && {!([_forced] call _fncIsTenant)}
+    && {!([_forced, _unit] call _fncIsProfileName)}
+) exitWith { _forced };
+
+// Identifiant Arma tactique (Alpha 2-2, GOLD, etc.) — source de sync BFT groupe.
+private _gid = trim (groupId (group _unit));
+if (!(_gid isEqualType "")) then { _gid = str _gid; };
+_gid = trim _gid;
+if (
+    _gid isNotEqualTo ""
+    && {!((toLower _gid) in ["error", "grpnull"])}
+    && {!([_gid] call _fncIsTenant)}
+    && {!([_gid, _unit] call _fncIsProfileName)}
+    && {!((count _gid) > 24 && {!([_gid] call comspec_overwatch_connect_fnc_isUsableCallsign)})}
+) exitWith { _gid };
+
 private _cs = [_unit] call _fncCallsignOf;
 private _asg = "";
 if (_unit isEqualTo player || {_unit isEqualTo (missionNamespace getVariable ["cTab_player", objNull])}) then {
@@ -58,11 +95,4 @@ if (_cs isNotEqualTo "" && {_asg isNotEqualTo ""}) exitWith { format ["%1 · %2"
 if (_cs isNotEqualTo "" && {_asg isEqualTo ""}) exitWith { _cs };
 if (_cs isEqualTo "" && {_asg isNotEqualTo ""}) exitWith { _asg };
 
-private _gid = trim (groupId (group _unit));
-if (!(_gid isEqualType "")) then { _gid = str _gid; };
-_gid = trim _gid;
-if (_gid isEqualTo "" || {(toLower _gid) in ["error", "grpnull"]}) exitWith { "" };
-if ([_gid] call _fncIsTenant) exitWith { "" };
-if ((count _gid) > 24 && {!([_gid] call comspec_overwatch_connect_fnc_isUsableCallsign)}) exitWith { "" };
-
-_gid
+""

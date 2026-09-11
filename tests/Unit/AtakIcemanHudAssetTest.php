@@ -37,7 +37,7 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
-        self::assertStringContainsString('1.0.80', $cfg);
+        self::assertStringContainsString('1.0.84', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
         self::assertStringContainsString('athena_updateMapHud', $layout);
 
@@ -74,7 +74,8 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('4660', $upd);
         self::assertStringContainsString('BCE_fnc_ATAK_getAPPs', $upd);
         self::assertStringContainsString('COMSPEC_ATAK_MenuHydratedDisplay', $upd);
-        self::assertStringContainsString('forEach _nativeIdentity', $upd);
+        self::assertStringContainsString('athena_fillIdentityOverlay', $upd);
+        self::assertStringContainsString('ctrlShow true', $upd);
 
         self::assertStringNotContainsString('MQ-9', $upd);
         self::assertStringNotContainsString('RETASK', $upd);

@@ -39,7 +39,11 @@ function migration_mysql_dsn(
 function migration_pdo_is_alive(PDO $pdo): bool
 {
     try {
-        $pdo->query('SELECT 1');
+        $st = $pdo->query('SELECT 1');
+        if ($st !== false) {
+            $st->fetchColumn();
+            $st->closeCursor();
+        }
 
         return true;
     } catch (Throwable) {

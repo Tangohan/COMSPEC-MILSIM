@@ -1,92 +1,133 @@
 <?php
-$baseUrl = url('');
+declare(strict_types=1);
+
+$baseUrl = rtrim(url(''), '/');
+$firstLinkUrl = url('atak/premiere-liaison');
+$atakUrl = url('atak');
+$modUrl = url('atak/mod');
+$guideUrl = url('atak/mod/guide');
+$adminConfigUrl = url('admin/atak-config');
+$canAdmin = function_exists('can') && (can('admin.system') || can('admin.organization') || can('admin.access'));
 ?>
 <div class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Tutoriel — Mod Arma COMSPEC Overwatch</h1>
-    <p class="text-sm text-slate-600 mb-8">Installation et configuration du mod Arma 3 pour la liaison avec l’overlay ATAK / Tacmap.</p>
+    <h1 class="text-2xl font-black text-slate-900 mb-2">Guide — Connexion ATAK / Overwatch</h1>
+    <p class="text-sm text-slate-600 mb-6">
+        Comment installer le pack, appairer votre compte et (pour l’équipe technique) générer la clé d’accès communauté.
+    </p>
 
-    <nav class="mb-8 pb-4 border-b border-slate-200">
-        <a href="<?= $baseUrl ?>/atak" class="text-slate-600 hover:text-slate-900 text-sm font-medium">← Retour à l’overlay ATAK</a>
-        <span class="mx-2 text-slate-400">·</span>
-        <a href="<?= $baseUrl ?>/atak/setup" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Assistant Mod Arma</a>
-        <span class="mx-2 text-slate-400">·</span>
-        <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Configuration ATAK (admin)</a>
+    <nav class="mb-8 pb-4 border-b border-slate-200 flex flex-wrap gap-x-3 gap-y-2 text-sm">
+        <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Première liaison (parcours guidé)</a>
+        <span class="text-slate-300">·</span>
+        <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Carte ATAK</a>
+        <span class="text-slate-300">·</span>
+        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Télécharger le pack</a>
+        <span class="text-slate-300">·</span>
+        <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Guide du pack</a>
     </nav>
+
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 mb-8 text-sm text-emerald-950 leading-relaxed">
+        <strong>Pour les membres :</strong> suivez d’abord
+        <a class="underline font-semibold" href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.
+        Le chemin normal est <strong>compte + pack + code Appairer</strong>. Vous n’avez en général pas besoin de coller une clé technique dans Arma.
+    </div>
 
     <div class="prose prose-slate max-w-none space-y-10">
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">1. Prérequis</h2>
-            <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li>Arma 3 à jour</li>
-                <li><strong>CBA A3</strong> (Community Base Addons) — requis pour les paramètres en jeu</li>
-                <li>Optionnel : cTab si vous utilisez des fonctionnalités compatibles (tablette, messagerie)</li>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">1. Ce qu’il faut distinguer</h2>
+            <ul class="list-disc pl-6 text-slate-700 space-y-2 text-sm">
+                <li><strong>Code Appairer</strong> — généré sur le portail (carte → Appairer, ou Première liaison). À coller dans le téléphone Athena en jeu. Valable environ 30 minutes, usage unique. C’est le chemin recommandé pour les membres.</li>
+                <li><strong>Clé d’accès communauté</strong> — générée une fois par un administrateur. Elle autorise la liaison jeu pour toute la communauté. Avec Appairer, elle est transmise automatiquement : les membres n’ont pas à la recopier.</li>
+                <li><strong>Code terminal / téléphone</strong> — autre code, pour autoriser un appareil (menu Associer ce terminal). Ce n’est pas le code Appairer Overwatch.</li>
             </ul>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">2. Téléchargement</h2>
-            <p class="text-slate-700 text-sm mb-2">Récupérez le mod COMSPEC Overwatch au format .zip (release ou livrable de votre équipe).</p>
-            <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li>Lien de téléchargement : à fournir par votre administrateur (page <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-900 underline">Configuration ATAK</a> ou annonces).</li>
-                <li>Le fichier se présente comme <code class="bg-slate-100 px-1 rounded">COMSPEC_Overwatch.zip</code> ou <code class="bg-slate-100 px-1 rounded">@COMSPECOverwatch.zip</code>.</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">3. Installation</h2>
-            <ol class="list-decimal pl-6 text-slate-700 space-y-2 text-sm">
-                <li>Extraire l’archive dans le dossier des mods Arma 3 (souvent <code class="bg-slate-100 px-1 rounded">C:\Program Files (x86)\Steam\steamapps\common\Arma 3</code> ou le répertoire de votre launcher).</li>
-                <li>Vous devez obtenir un dossier nommé <code class="bg-slate-100 px-1 rounded">@COMSPECOverwatch</code> (ou le nom indiqué dans l’archive).</li>
-                <li>Dans le launcher Arma 3 (ou votre gestionnaire de mods), activer <strong>COMSPEC Overwatch</strong> dans la liste des mods.</li>
-                <li>Vérifier que <strong>CBA A3</strong> est bien chargé avant COMSPEC Overwatch.</li>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">2. Membres — se connecter en 4 étapes</h2>
+            <ol class="list-decimal pl-6 text-slate-700 space-y-3 text-sm">
+                <li>
+                    <strong>Compte</strong> — Dans vos préférences : identifiant Steam + nom ou indicatif.
+                </li>
+                <li>
+                    <strong>Pack</strong> —
+                    <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-900 underline">Téléchargez Overwatch</a>,
+                    activez-le après CBA, quittez Arma complètement après chaque mise à jour.
+                </li>
+                <li>
+                    <strong>Appairer</strong> —
+                    Sur la <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-900 underline">carte ATAK</a>,
+                    cliquez <strong>Appairer</strong> → <strong>Générer un code</strong> → Copier.
+                    En jeu : téléphone → application <strong>Athena</strong> → coller uniquement le code (pas l’adresse du site) → Lier.
+                    Si le compte est déjà reconnu, appuyez sur <strong>Entrer</strong>.
+                </li>
+                <li>
+                    <strong>Contrôle</strong> — Revenez sur la carte : votre indicatif doit apparaître sous une minute (bougez un peu en jeu).
+                </li>
             </ol>
+            <p class="text-sm text-slate-600 mt-3">
+                Variantes : bouton <strong>Steam</strong> ou connexion e-mail / mot de passe dans le même panneau Athena, si votre communauté les utilise.
+            </p>
+            <p class="mt-4">
+                <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 hover:bg-emerald-700">
+                    Ouvrir le parcours Première liaison
+                </a>
+            </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">4. Configuration</h2>
-            <p class="text-slate-700 text-sm mb-2">Une fois en jeu (menu principal ou éditeur), ouvrez les paramètres CBA :</p>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">3. Réglage avancé (si Appairer ne suffit pas)</h2>
+            <p class="text-slate-700 text-sm mb-2">
+                Dans le téléphone : <strong>Paramètres</strong> → rubrique <strong>Liaison au poste</strong> :
+            </p>
             <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li><strong>URL du serveur</strong> : saisir l’URL de base du nœud ATAK (ex. <code class="bg-slate-100 px-1 rounded">https://votre-domaine.com:3001</code> ou l’URL indiquée par votre admin). Pas de slash final.</li>
-                <li><strong>Clé / code</strong> : si votre équipe utilise une clé d’accès, la saisir ici. Cette clé est affichée dans la section « Identifiants / config mod » de la <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-900 underline">Configuration ATAK</a> (réservée aux admins).</li>
+                <li><strong>Adresse du portail</strong> — en général <code class="bg-slate-100 px-1 rounded text-xs"><?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?></code></li>
+                <li><strong>Clé d’accès communauté</strong> — uniquement si un admin vous l’a communiquée (sinon laissez vide si déjà mémorisée)</li>
+                <li><strong>Identifiant de communauté</strong> — utile si plusieurs communautés partagent la même adresse</li>
             </ul>
-            <p class="text-slate-700 text-sm mt-3">Les opérateurs peuvent consulter la zone « Configuration pour le jeu » sur la <a href="<?= $baseUrl ?>/atak" class="text-slate-900 underline">page ATAK</a> pour retrouver l’adresse du serveur et les identifiants à coller dans le mod.</p>
+            <p class="text-slate-700 text-sm mt-2">
+                Puis <strong>Enregistrer la liaison</strong>. Les mêmes valeurs existent aussi dans Options → Extensions (CBA).
+            </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">5. Connexion</h2>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">4. Administrateurs — générer la clé d’accès</h2>
+            <p class="text-slate-700 text-sm mb-2">
+                Une clé communauté active est nécessaire pour que Appairer et la liaison jeu fonctionnent pleinement.
+            </p>
             <ol class="list-decimal pl-6 text-slate-700 space-y-2 text-sm">
-                <li>Lancer une mission (éditeur, multijoueur, etc.).</li>
-                <li>Le mod se connecte automatiquement au nœud ATAK au chargement du jeu.</li>
-                <li>Sur l’overlay web (page ATAK), vérifier que le statut affiche « Réseau actif » et que les unités ou marqueurs apparaissent si le serveur en envoie.</li>
-                <li>En cas d’échec : vérifier l’URL, la clé, le pare-feu et que le nœud ATAK (serveur Node) est bien démarré.</li>
+                <li>Ouvrez <strong>Configuration ATAK</strong> (back-office).</li>
+                <li>Section <strong>Accès mod Overwatch</strong> → <strong>Générer une clé d’accès</strong> (ou Régénérer).</li>
+                <li>Copiez immédiatement la clé affichée (elle ne sera plus montrée en entier ensuite).</li>
+                <li>Publiez aussi le pack Overwatch pour les membres.</li>
+                <li>Indiquez aux membres le parcours <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="underline">Première liaison</a> — pas de collage manuel de clé pour chacun.</li>
             </ol>
+            <?php if ($canAdmin): ?>
+            <p class="mt-4">
+                <a href="<?= htmlspecialchars($adminConfigUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-4 py-2.5 hover:bg-slate-50">
+                    Ouvrir Configuration ATAK
+                </a>
+            </p>
+            <?php endif; ?>
+            <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                <strong>Attention :</strong> régénérer la clé invalide l’ancienne. Les opérateurs déjà liés via Appairer devront souvent générer un nouveau code et se reconnecter.
+            </div>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">5 bis. Lier votre compte Athena (code en jeu)</h2>
-            <ol class="list-decimal pl-6 text-slate-700 space-y-2 text-sm">
-                <li>Sur le site, ouvrez la page <a href="<?= $baseUrl ?>/atak" class="text-slate-900 underline">ATAK</a>.</li>
-                <li>Cliquez sur <strong>Lier le jeu</strong> (en haut à droite).</li>
-                <li>Appuyez sur <strong>Générer un code</strong>, puis copiez le code affiché (valable 30 minutes, usage unique).</li>
-                <li>Dans Arma, touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>, puis collez le code.</li>
-            </ol>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">6. Fonctions disponibles</h2>
-            <p class="text-slate-700 text-sm mb-2">Selon la version du mod et la configuration du serveur :</p>
-            <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li><strong>Position</strong> : envoi périodique de la position du joueur vers l’overlay (carte en temps réel).</li>
-                <li><strong>Marqueurs</strong> : synchronisation des marqueurs carte (création, modification, suppression) entre le jeu et l’overlay.</li>
-                <li><strong>Photos / intel</strong> : envoi de captures (type CTAB) vers l’overlay pour partage avec les opérateurs.</li>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">5. Dépannage rapide</h2>
+            <ul class="list-disc pl-6 text-slate-700 space-y-2 text-sm">
+                <li><strong>Code refusé / liaison impossible</strong> — générez un nouveau code, quittez Arma complètement, vérifiez Steam sur le compte.</li>
+                <li><strong>Invisible sur la carte</strong> — canal poste ouvert (Athena prêt / Entrer), bougez un peu, attendez jusqu’à une minute.</li>
+                <li><strong>Adresse collée dans le champ code</strong> — le champ code n’accepte que le code Appairer, jamais l’URL du site.</li>
+                <li><strong>Pack ancien</strong> — rechargez le pack de la communauté, quittez Arma, relancez.</li>
             </ul>
-            <p class="text-slate-700 text-sm mt-3">Pour plus de détails, consulter les instructions de votre équipe ou la section « Instructions » dans la <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-900 underline">Configuration ATAK</a>.</p>
         </section>
     </div>
 
     <p class="mt-10 text-sm text-slate-500">
-        <a href="<?= $baseUrl ?>/atak" class="text-slate-700 hover:underline font-medium">Ouvrir l’overlay ATAK</a>
+        <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Première liaison</a>
         ·
-        <a href="<?= $baseUrl ?>/dashboard" class="text-slate-700 hover:underline font-medium">Dashboard</a>
+        <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Carte ATAK</a>
+        ·
+        <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Tableau de bord</a>
     </p>
 </div>

@@ -3737,6 +3737,24 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakChatChannelsMigrate = require $root . '/bootstrap/atak_chat_channels_migration.php';
+try {
+    echo "Migration atak_chat_channels + channel_key (canaux radio)...\n";
+    $atakChatChannelsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_chat_channels : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakViewshedMigrate = require $root . '/bootstrap/atak_viewshed_overlays_migration.php';
+try {
+    echo "Migration atak_viewshed_overlays (calques de vue terrain)...\n";
+    $atakViewshedMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_viewshed_overlays : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakExplosiveTimersMigrate = require $root . '/bootstrap/atak_explosive_timers_migration.php';
 try {
     echo "Migration atak_explosive_timers (charges à retardement ATAK)...\n";
@@ -3987,8 +4005,14 @@ if (PHP_SAPI !== 'cli') {
 // Le pipeline unique applique systématiquement tous les SQL versionnés puis vérifie l'état final.
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
+$migrationEnsurePdo();
 // FBAC must run last so no legacy seed can recreate a global or role-derived grant.
-run_function_based_access_v2_migration($pdo);
+try {
+    run_function_based_access_v2_migration($pdo);
+} catch (Throwable $e) {
+    echo "\n[ATTENTION] FBAC v2 : " . $e->getMessage() . "\n";
+    $migrationFlush();
+}
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 
 if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === false) {

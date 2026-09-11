@@ -35,7 +35,7 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('cTabBFTmembers', $relabel);
         self::assertStringContainsString('cTabBFTgroups', $relabel);
         self::assertStringContainsString('setMarkerTextLocal', $relabel);
-        self::assertStringContainsString('17000 + 2620', $relabel);
+        self::assertStringContainsString('athena_fillIdentityOverlay', $relabel);
         self::assertStringContainsString('cTab_fnc_updateLists', $install);
         self::assertStringContainsString('athena_relabelBft', $install);
         self::assertStringContainsString('cTab_updatePulse', $install);
@@ -43,7 +43,8 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('applyCtabBftCallsign', $install);
         self::assertStringContainsString('athena_installBftLabels', $post);
         self::assertStringContainsString('athena_bftUnitLabel', $cfg);
-        self::assertStringContainsString('1.0.80', $cfg);
+        self::assertStringContainsString('athena_fillIdentityOverlay', $cfg);
+        self::assertStringContainsString('1.0.84', $cfg);
         self::assertStringContainsString('COMSPEC_BftLabelMode', $label);
         self::assertStringContainsString('cs_role', $label);
         self::assertStringContainsString('01', $note);

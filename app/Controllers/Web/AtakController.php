@@ -642,31 +642,8 @@ class AtakController
         if ($block !== null) {
             return $block;
         }
-        $tenantId = (int) Session::get('tenant_id');
-        $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
-        $nodeUrl = atak_client_base_url($config);
-
-        $atakModDownloadUrl = null;
-        if ($tenantId) {
-            $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-            if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod');
-            }
-        }
-
-        return Response::view('layout.main', [
-            'content' => 'atak-setup',
-            'title' => 'Assistant Mod Arma — Installation, configuration, vérification',
-            'nodeAtakUrl' => $nodeUrl,
-            'atakConfig' => $config ? [
-                'arma_server_host' => $config['arma_server_host'] ?? null,
-                'arma_server_port' => $config['arma_server_port'] ?? null,
-                'arma_mod_credentials' => $config['arma_mod_credentials'] ?? null,
-                'instructions' => $config['instructions'] ?? null,
-            ] : null,
-            'atakModDownloadUrl' => $atakModDownloadUrl,
-        ]);
+        return Response::redirect(url('atak/premiere-liaison'));
     }
 
     public function tuto(Request $request, array $params = []): Response
@@ -678,7 +655,7 @@ class AtakController
 
         return Response::view('layout.main', [
             'content' => 'atak-tuto',
-            'title' => 'Tutoriel — Mod Arma COMSPEC Overwatch',
+            'title' => 'Guide — Connexion ATAK / Overwatch',
         ]);
     }
 

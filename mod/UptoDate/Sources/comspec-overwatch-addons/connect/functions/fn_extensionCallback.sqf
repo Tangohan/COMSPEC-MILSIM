@@ -57,7 +57,24 @@ switch (_function) do {
         // une panne réseau passagère. Fermer immédiatement toutes les boucles Tx.
         // Ne pas écraser un handshake encore en cours (session en cours de restauration).
         if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {
-            ["WARN", "Athena", "401 pendant le handshake — en attente de connexion manuelle", _data] call comspec_overwatch_connect_fnc_log;
+            ["WARN", "Athena", "401 pendant le handshake — rouverture prévue après stabilisation", _data] call comspec_overwatch_connect_fnc_log;
+            // Ne pas tuer AthenaReady pendant le quiet, mais planifier une rouverture
+            // (sinon un C2_UNAUTHORIZED côté DLL laisse le tchat coupé sans retry).
+            if !(missionNamespace getVariable ["COMSPEC_QuietReopenScheduled", false]) then {
+                missionNamespace setVariable ["COMSPEC_QuietReopenScheduled", true, false];
+                [{
+                    missionNamespace setVariable ["COMSPEC_QuietReopenScheduled", false, false];
+                    if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+                    if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]
+                        && {missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]}) exitWith {};
+                    if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+                        private _ok = [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                        if (_ok) then {
+                            ["INFO", "Athena", "Canal poste rouvert après 401 de handshake"] call comspec_overwatch_connect_fnc_log;
+                        };
+                    };
+                }, [], 22] call CBA_fnc_waitAndExecute;
+            };
         };
         missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
         missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
@@ -73,6 +90,16 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
         ["COMSPEC_AthenaLinkChanged", ["offline"]] call CBA_fnc_localEvent;
+        // Après la pause, retenter l’ouverture du canal (souvent un 401 précoce, pas une vraie déconnexion).
+        [{
+            if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
+            if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+                private _ok = [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                if (_ok) then {
+                    ["INFO", "Athena", "Canal poste rouvert après refus temporaire"] call comspec_overwatch_connect_fnc_log;
+                };
+            };
+        }, [], 48] call CBA_fnc_waitAndExecute;
     };
     case "RateLimited": {
         // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.

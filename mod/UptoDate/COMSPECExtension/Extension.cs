@@ -43,7 +43,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.22";
+        private const string ExtensionVersion = "2.0.27";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
@@ -685,6 +685,7 @@ public static partial class Extension
             || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/operator/register", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/operator/sync", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/chat", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -696,6 +697,10 @@ public static partial class Extension
         if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
             or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
             or "LOADING_BRANDING" or "LOADING_CONFIGURATION" or "CONNECTING_C2")
+            return;
+        // Grace juste après READY : des 401 d’envois partis trop tôt ne doivent pas couper le canal.
+        if (_gameAuthBecameReadyAt != DateTimeOffset.MinValue
+            && (DateTimeOffset.UtcNow - _gameAuthBecameReadyAt) < TimeSpan.FromSeconds(25))
             return;
         var now = DateTime.UtcNow.Ticks;
         if (now - System.Threading.Interlocked.Read(ref _lastAuth401ReauthTicks) <= TimeSpan.FromSeconds(30).Ticks)
@@ -1954,6 +1959,14 @@ public static partial class Extension
     }
 
     private const int MaxOutputBytes = 8000;
+
+    /// <summary>Cache détail tenue pour GetWardrobeChunk (évite ERR|too_large).</summary>
+    private static string _wardrobeDetailCacheId = "";
+    private static string _wardrobeDetailCache = "";
+    private static int _wardrobeDetailChunkSize = MaxOutputBytes - 80;
+
+    /// <summary>Cache liste tenues pour pagination ListWardrobes / ListWardrobesPage.</summary>
+    private static string _wardrobesListCache = "";
 
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionArgs")]
     public static int RvExtensionArgs(nint output, int outputSize, nint function, nint args, int argCount)
@@ -3302,22 +3315,39 @@ public static partial class Extension
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner
+            // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
+            // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
             if (function == "ListWardrobes")
             {
-                var url = _baseUrl + "/api/atak/wardrobes";
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                var startLine = 0;
+                if (args.Length >= 1 && int.TryParse((args[0] ?? "0").Trim(), out var sl) && sl >= 0)
+                    startLine = sl;
+                if (startLine == 0 || string.IsNullOrEmpty(_wardrobesListCache))
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|migration_required";
-                    return "ERR|http_" + code;
+                    var url = _baseUrl + "/api/atak/wardrobes";
+                    var resp = SendGet(url, token);
+                    var respBody = ReadContentUtf8(resp, token);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var code = (int)resp.StatusCode;
+                        if (code == 401 || code == 403) return "ERR|unauthorized";
+                        if (code == 503) return "ERR|migration_required";
+                        return "ERR|http_" + code;
+                    }
+                    _wardrobesListCache = SimplifyWardrobesListJson(respBody);
                 }
-                var simplified = SimplifyWardrobesListJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return FormatWardrobesListPage(_wardrobesListCache, startLine);
+            }
+            if (function == "ListWardrobesPage" && args.Length >= 1)
+            {
+                if (!int.TryParse((args[0] ?? "0").Trim(), out var pageLine) || pageLine < 0)
+                    return "ERR|invalid_page";
+                if (string.IsNullOrEmpty(_wardrobesListCache))
+                    return "ERR|list_empty";
+                return FormatWardrobesListPage(_wardrobesListCache, pageLine);
             }
             // Une wardrobe complète. Args : [id] → OK|id\tname\tpayload
+            // Si trop gros : OK|CHUNKED\tid\tname\tchunks\tchunkSize\ttotalLen puis GetWardrobeChunk.
             if (function == "GetWardrobe" && args.Length >= 1)
             {
                 var wid = (args[0] ?? "").Trim();
@@ -3334,9 +3364,57 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyWardrobeDetailJson(respBody);
-                if (simplified.Length > MaxOutputBytes - 4)
-                    return "ERR|too_large";
-                return "OK|" + simplified;
+                if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
+                var cap = MaxOutputBytes - 4;
+                if (simplified.Length <= cap)
+                {
+                    _wardrobeDetailCacheId = "";
+                    _wardrobeDetailCache = "";
+                    return "OK|" + simplified;
+                }
+                _wardrobeDetailCacheId = wid;
+                _wardrobeDetailCache = simplified;
+                _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                var chunks = (_wardrobeDetailCache.Length + _wardrobeDetailChunkSize - 1) / _wardrobeDetailChunkSize;
+                var t1 = simplified.IndexOf('\t');
+                var t2 = t1 < 0 ? -1 : simplified.IndexOf('\t', t1 + 1);
+                var idPart = t1 > 0 ? simplified.Substring(0, t1) : wid;
+                var namePart = (t1 >= 0 && t2 > t1) ? simplified.Substring(t1 + 1, t2 - t1 - 1) : "";
+                return "OK|CHUNKED\t" + idPart + "\t" + namePart + "\t" + chunks + "\t" + _wardrobeDetailChunkSize + "\t" + simplified.Length;
+            }
+            // Segment d’une tenue dense. Args : [id, chunkIndex] → OK|index\ttotal\tslice
+            if (function == "GetWardrobeChunk" && args.Length >= 2)
+            {
+                var wid = (args[0] ?? "").Trim();
+                if (wid.Length < 1) return "ERR|invalid_id";
+                if (!int.TryParse((args[1] ?? "0").Trim(), out var chunkIdx) || chunkIdx < 0)
+                    return "ERR|invalid_chunk";
+                if (_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache))
+                {
+                    var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
+                    var resp = SendGet(url, token);
+                    var respBody = ReadContentUtf8(resp, token);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var code = (int)resp.StatusCode;
+                        if (code == 404) return "ERR|not_found";
+                        if (code == 401 || code == 403) return "ERR|unauthorized";
+                        if (code == 503) return "ERR|migration_required";
+                        return "ERR|http_" + code;
+                    }
+                    var simplified = SimplifyWardrobeDetailJson(respBody);
+                    if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
+                    _wardrobeDetailCacheId = wid;
+                    _wardrobeDetailCache = simplified;
+                    _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                }
+                var chunkSize = _wardrobeDetailChunkSize > 0 ? _wardrobeDetailChunkSize : (MaxOutputBytes - 80);
+                var totalChunks = (_wardrobeDetailCache.Length + chunkSize - 1) / chunkSize;
+                if (chunkIdx >= totalChunks) return "ERR|chunk_oob";
+                var offset = chunkIdx * chunkSize;
+                var len = Math.Min(chunkSize, _wardrobeDetailCache.Length - offset);
+                var slice = _wardrobeDetailCache.Substring(offset, len);
+                return "OK|" + chunkIdx + "\t" + totalChunks + "\t" + slice;
             }
             // Sync une wardrobe. Args : [name, payload, collectionSlug?, notes?]
             // Native AOT : pas de JsonSerializer.Serialize(Dictionary<object>) — NotSupportedException → ERR|invalid.
@@ -3498,6 +3576,50 @@ public static partial class Extension
                     var simplifiedChat = TruncateTabLinesKeepingNewest(SimplifyChatMessagesJson(body), MaxOutputBytes - 4);
                     return "OK|" + simplifiedChat;
                 });
+            }
+            if (function == "GetChatChannels")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/chat/channels?mapId=" + Uri.EscapeDataString(mapId);
+                return ServePollGet("GetChatChannels:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return "OK|" + TruncateForExt(SimplifyChatChannelsJson(body));
+                });
+            }
+            if (function == "CreateChatChannel" && args.Length >= 1)
+            {
+                if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+                    return "ERR|no_auth";
+                var label = (args[0] ?? "").Trim();
+                if (label.Length == 0) return "ERR|label_empty";
+                var author = args.Length > 1 ? (args[1] ?? "") : "";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":1,\"label\":\"{EscapeJson(label)}\",\"author\":\"{EscapeJson(author)}\"{steamJson}{sessJson}}}";
+                try
+                {
+                    using var channelCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    using var req = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/chat/channels")
+                    {
+                        Content = JsonContent(payload)
+                    };
+                    AttachApiKeyHeader(req);
+                    using var resp = HttpClient.SendAsync(req, channelCts.Token).GetAwaiter().GetResult();
+                    var respBody = ReadContentUtf8(resp, channelCts.Token);
+                    var code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300)
+                        return code is 401 or 403 ? "ERR|unauthorized" : ("ERR|http_" + code);
+                    return "OK|" + TruncateForExt(respBody);
+                }
+                catch
+                {
+                    return "ERR|network";
+                }
             }
             // Alertes tactiques Athena (Contact / FRAGO / BDA / …) → inbox cTab.
             // Lignes : id\tkind\tkind_label\tcall_sign\tgrid\tsummary\tcreated_at\tseverity
@@ -4943,6 +5065,40 @@ public static partial class Extension
         catch { return ""; }
     }
 
+    private static string FormatWardrobesListPage(string fullList, int startLine)
+    {
+        if (string.IsNullOrEmpty(fullList))
+            return "OK|END\n";
+        var lines = fullList.Split('\n');
+        if (startLine < 0) startLine = 0;
+        if (startLine >= lines.Length)
+            return "OK|END\n";
+        var headerBudget = 24; // "OK|NEXT\t12345\n"
+        var cap = MaxOutputBytes - 4 - headerBudget;
+        var sb = new StringBuilder();
+        var i = startLine;
+        for (; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (string.IsNullOrEmpty(line)) continue;
+            var add = (sb.Length > 0 ? 1 : 0) + line.Length;
+            if (sb.Length > 0 && sb.Length + add > cap)
+                break;
+            if (sb.Length == 0 && line.Length > cap)
+            {
+                // Ligne unique trop longue : tronquer plutôt que bloquer la page.
+                sb.Append(line.AsSpan(0, cap));
+                i++;
+                break;
+            }
+            if (sb.Length > 0) sb.Append('\n');
+            sb.Append(line);
+        }
+        if (i >= lines.Length)
+            return "OK|END\n" + sb;
+        return "OK|NEXT\t" + i + "\n" + sb;
+    }
+
     private static string SimplifyWardrobesListJson(string json)
     {
         try
@@ -5072,7 +5228,7 @@ public static partial class Extension
     }
     /// <summary>
     /// Simplifie GET /api/chat pour SQF.
-    /// Lignes : id\tauthor\tbody\tcreated_at
+    /// Lignes : id\tauthor\tbody\tcreated_at\tchannel_key
     /// </summary>
     private static string SimplifyChatMessagesJson(string json)
     {
@@ -5100,10 +5256,57 @@ public static partial class Extension
                         ? ca.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)
                         : (ca.GetString() ?? "");
                 }
+                var channelKey = "";
+                if (el.TryGetProperty("channel_key", out var ck))
+                    channelKey = ck.GetString() ?? "";
+                else if (el.TryGetProperty("channel", out var ch))
+                    channelKey = ch.GetString() ?? "";
+                if (string.IsNullOrWhiteSpace(channelKey))
+                    channelKey = "general";
                 sb.Append(Clean(id)).Append('\t')
                   .Append(Clean(author)).Append('\t')
                   .Append(Clean(body)).Append('\t')
-                  .Append(Clean(created)).Append('\n');
+                  .Append(Clean(created)).Append('\t')
+                  .Append(Clean(channelKey)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string TruncateForExt(string payload)
+    {
+        if (string.IsNullOrEmpty(payload)) return "";
+        var cap = MaxOutputBytes - 4;
+        return payload.Length <= cap ? payload : payload.Substring(0, cap);
+    }
+
+    /// <summary>Simplifie GET /api/chat/channels — lignes key\tlabel\tkind</summary>
+    private static string SimplifyChatChannelsJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            JsonElement arr;
+            if (root.ValueKind == JsonValueKind.Array)
+                arr = root;
+            else if (root.TryGetProperty("channels", out var ch) && ch.ValueKind == JsonValueKind.Array)
+                arr = ch;
+            else
+                return "";
+            var sb = new StringBuilder();
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            foreach (var el in arr.EnumerateArray())
+            {
+                var key = el.TryGetProperty("channel_key", out var k) ? (k.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(key)) continue;
+                var label = el.TryGetProperty("label", out var l) ? (l.GetString() ?? key) : key;
+                var kind = el.TryGetProperty("kind", out var ki) ? (ki.GetString() ?? "custom") : "custom";
+                sb.Append(Clean(key)).Append('\t')
+                  .Append(Clean(label)).Append('\t')
+                  .Append(Clean(kind)).Append('\n');
             }
             return sb.ToString();
         }
@@ -6407,16 +6610,59 @@ public static partial class Extension
 
             if (function == "SendChat" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
+                // Sans jeton / clé : ne pas marteler le portail (401 silencieux sur le journal radio).
+                if (!HasPortalAuth()) return;
                 var author = args[0] ?? "Unknown";
                 var body = args[1] ?? "";
+                var channelKey = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                if (channelKey.Length == 0)
+                {
+                    // Inférer depuis le corps (GROUPE / COMMAND / …)
+                    var bodyU = body.ToUpperInvariant();
+                    if (bodyU.StartsWith("GROUPE|", StringComparison.Ordinal) || bodyU == "GROUPE")
+                        channelKey = "groupe";
+                    else if (bodyU.Contains("[HQ]", StringComparison.Ordinal) || bodyU.Contains("][COMMAND]", StringComparison.Ordinal))
+                        channelKey = "commandement";
+                    else if (bodyU.Contains("][JTAC]", StringComparison.Ordinal))
+                        channelKey = "jtac";
+                    else if (bodyU.Contains("][AIR]", StringComparison.Ordinal))
+                        channelKey = "air";
+                    else
+                        channelKey = "general";
+                }
                 var steamJson = _steamUid.Length > 0
                     ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
                     : "";
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"{steamJson}{sessJson}}}";
+                var channelJson = $",\"channel_key\":\"{EscapeJson(channelKey)}\",\"channel\":\"{EscapeJson(channelKey)}\"";
+                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"{steamJson}{sessJson}{channelJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/chat", payload);
+                return;
+            }
+
+            if (function == "CreateChatChannel" || function == "GetChatChannels")
+            {
+                // Géré en synchrone par TryGetSyncResponse.
+                return;
+            }
+
+            if (function == "PublishViewshed" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 3)
+            {
+                if (!HasPortalAuth()) return;
+                var callSign = args[0] ?? "";
+                var x = args[1] ?? "0";
+                var y = args[2] ?? "0";
+                var radius = args.Length > 3 ? (args[3] ?? "500") : "500";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"center_x\":{x},\"center_y\":{y},\"radius_m\":{radius}{steamJson}{sessJson}}}";
+                EnqueueOrSend(_baseUrl + "/api/atak/viewshed", payload);
                 return;
             }
 

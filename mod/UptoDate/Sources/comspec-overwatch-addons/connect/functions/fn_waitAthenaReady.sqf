@@ -21,10 +21,22 @@ while {diag_tickTime < _deadline} do {
     uiSleep 0.5;
 };
 
-missionNamespace setVariable ["COMSPEC_HandshakeQuiet", false, false];
-
 if ([] call comspec_overwatch_connect_fnc_isReady) then {
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
+    // Quiet prolongé : AuthInvalidated ignore les 401 tardifs du handshake.
+    // À la fin : lever le quiet et s’assurer que les boucles (dont le tchat) tournent.
+    [{
+        missionNamespace setVariable ["COMSPEC_HandshakeQuiet", false, false];
+        if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel"
+            && {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+                || {!(missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false])}}) then {
+            [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+        } else {
+            if (!isNil "comspec_overwatch_connect_fnc_startSyncLoops") then {
+                [] call comspec_overwatch_connect_fnc_startSyncLoops;
+            };
+        };
+    }, [], 20] call CBA_fnc_waitAndExecute;
     if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
         && {[] call comspec_overwatch_connect_fnc_canStartSync}) then {
         ["INFO", "Athena", "Session Athena prête"] call comspec_overwatch_connect_fnc_log;
@@ -34,6 +46,7 @@ if ([] call comspec_overwatch_connect_fnc_isReady) then {
         false
     }
 } else {
+    missionNamespace setVariable ["COMSPEC_HandshakeQuiet", false, false];
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Connexion Athena requise", false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;

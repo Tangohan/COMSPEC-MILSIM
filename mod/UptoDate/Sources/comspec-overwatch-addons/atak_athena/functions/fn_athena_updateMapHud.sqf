@@ -14,6 +14,10 @@ if (isNull _disp) then {
     _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
 };
 
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
+};
+
 private _idcHeading = 99887810;
 private _idcCursor = 99887811;
 private _idcUnit = 99887812;
@@ -184,14 +188,14 @@ private _zoomIn = [_disp, _idcZoomIn, "RscButton"] call _fncEnsure;
 private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 
 if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {
-    // Ne jamais supprimer toute identite si la creation dynamique du cartouche
-    // echoue sur une version BCE : les trois lignes IceMan restent le repli.
+    // Repli : triplet IceMan Indicatif / Nom / Rôle toujours visible.
     { _x ctrlShow true; } forEach _nativeIdentity;
+    [_disp] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
 };
 
-// Le cartouche COMSPEC est maintenant garanti : seulement alors masquer le
-// triplet natif, sinon un echec ctrlCreate produisait exactement une carte vide.
-{ _x ctrlShow false; } forEach _nativeIdentity;
+// Ne plus masquer le triplet IceMan : c’est la superposition Indicatif / Nom / Rôle.
+{ _x ctrlShow true; _x ctrlSetFade 0; _x ctrlCommit 0; } forEach _nativeIdentity;
+[_disp] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
 
 private _pad = _visW * 0.012;
 _heading ctrlShow false;

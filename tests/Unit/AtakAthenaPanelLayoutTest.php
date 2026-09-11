@@ -33,8 +33,10 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringContainsString('idc = 9701', $hpp);
         self::assertStringContainsString('idc = 9805', $hpp);
         self::assertStringContainsString('idc = 9806', $hpp);
+        self::assertStringContainsString('idc = 9807', $hpp);
         self::assertStringContainsString('Déconnecter', $hpp);
         self::assertStringContainsString('Rouvrir canal', $hpp);
+        self::assertStringContainsString('Remonter le temps', $hpp);
         self::assertStringContainsString('idc = 9770', $hpp);
         self::assertStringContainsString('idc = 9773', $hpp);
 
@@ -42,6 +44,7 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringContainsString('Connexion Athena', $lay);
         self::assertStringContainsString('9805', $lay);
         self::assertStringContainsString('9806', $lay);
+        self::assertStringContainsString('9807', $lay);
         self::assertStringContainsString('9770', $lay);
         self::assertStringContainsString('ctrlPosition _group', $lay);
 
@@ -56,7 +59,7 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringNotContainsString('packet_loss', $upd);
 
         self::assertStringContainsString('logout', $auth);
-        self::assertStringContainsString('1.0.82', $cfg);
+        self::assertStringContainsString('1.0.84', $cfg);
         self::assertStringContainsString('athena_homeAction', $cfg);
         self::assertStringContainsString('athena_selectHome', $cfg);
     }

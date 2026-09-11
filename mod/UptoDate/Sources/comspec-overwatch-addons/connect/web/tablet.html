@@ -1237,7 +1237,18 @@
         <div id="radio-feed"></div>
       </div>
       <div class="panel-view" id="view-chat">
-        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="chat" title="Vider l’historique local du tchat">Vider</button></div>
+        <div class="panel-toolbar">
+          <label class="chat-channel-label" for="chat-channel">Canal</label>
+          <select id="chat-channel" class="chat-channel-select" title="Canal radio actif" aria-label="Canal radio">
+            <option value="general">Général</option>
+            <option value="groupe">Groupe</option>
+            <option value="commandement">Commandement</option>
+            <option value="jtac">JTAC</option>
+            <option value="air">Air</option>
+          </select>
+          <button type="button" class="btn" id="chat-channel-create" title="Créer un canal radio">Nouveau</button>
+          <button type="button" class="btn-clear" data-clear="chat" title="Vider uniquement mon affichage de ce fil (l’historique reste pour les autres)">Vider mon affichage</button>
+        </div>
         <div class="feed-empty" id="chat-empty">Aucun message du poste de commandement ni du terrain pour le moment.</div>
         <div id="chat-feed"></div>
         <div class="composer">
@@ -2386,7 +2397,8 @@
     if (kind === "chat") {
       chatLines = [];
       renderChat();
-      setFooterMsg("Journal de messagerie vidé (local)");
+      send("chat:clear");
+      setFooterMsg("Affichage du canal vidé (historique serveur inchangé)");
       return;
     }
     if (kind === "orders") {
@@ -2731,9 +2743,20 @@
     if (!inp) return;
     var txt = (inp.value || "").trim();
     if (!txt) return;
-    send("chat:send|" + txt.replace(/\|/g, "/"));
+    var chEl = document.getElementById("chat-channel");
+    var ch = chEl ? String(chEl.value || "general") : "general";
+    send("chat:send|" + ch.replace(/\|/g, "_") + "|" + txt.replace(/\|/g, "/"));
     inp.value = "";
     setFooterMsg("Message transmis…");
+  }
+
+  function createChatChannel() {
+    var name = window.prompt("Nom du nouveau canal radio :", "");
+    if (name == null) return;
+    name = String(name).trim();
+    if (!name) return;
+    send("chat:create|" + name.replace(/\|/g, "/"));
+    setFooterMsg("Création du canal…");
   }
 
   var chatSendBtn = document.getElementById("chat-send");
@@ -2748,6 +2771,19 @@
         ev.preventDefault();
         sendChat();
       }
+    });
+  }
+  var chatChannelSel = document.getElementById("chat-channel");
+  if (chatChannelSel) {
+    chatChannelSel.addEventListener("change", function () {
+      send("chat:channel|" + String(chatChannelSel.value || "general").replace(/\|/g, "_"));
+    });
+  }
+  var chatChannelCreate = document.getElementById("chat-channel-create");
+  if (chatChannelCreate) {
+    chatChannelCreate.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      createChatChannel();
     });
   }
 

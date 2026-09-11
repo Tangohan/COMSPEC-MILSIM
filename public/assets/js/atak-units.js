@@ -2,6 +2,7 @@
 window.ATAKUnits = (function () {
   var units = [];
   var filterLive = true;
+  var filterWave = false;
   var filterText = '';
   /** Filtre équipe de feu : '' = toutes, '__none__' = sans équipe, sinon id. */
   var filterFireTeamId = '';
@@ -577,6 +578,10 @@ window.ATAKUnits = (function () {
       if (shouldHideEnemyAi(u, units)) return false;
       if (filterLive && !isInLiaison(u)) return false;
       if (!matchesFireTeamFilter(u)) return false;
+      if (filterWave) {
+        var exW = parseExtra(u);
+        if (!(exW.wr_mpu5 === true || exW.wr_mpu5 === 1 || exW.wr_mpu5 === 'true')) return false;
+      }
       if (filterText) {
         var t = filterText.toLowerCase();
         var ex = parseExtra(u);
@@ -601,7 +606,7 @@ window.ATAKUnits = (function () {
       }
       return true;
     });
-    var fp = filterLive + '|' + filterText + '|' + filterFireTeamId + '\n' + displayFingerprint(filtered);
+    var fp = filterLive + '|' + filterWave + '|' + filterText + '|' + filterFireTeamId + '\n' + displayFingerprint(filtered);
     if (fp === lastRenderFp) return;
     lastRenderFp = fp;
     renderTable(filtered);
@@ -620,7 +625,10 @@ window.ATAKUnits = (function () {
       var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
         ? window.ATAKUnitPopup.statusLabelFr(statusClass)
         : statusClass;
-      var cardClass = 'atak-unit-card ' + (statusClass === 'delayed' ? 'delayed' : (statusClass === 'offline' ? 'delayed' : 'linked'));
+      var cardClass = 'atak-unit-card ' + (
+        statusClass === 'offline' ? 'offline'
+          : (statusClass === 'delayed' ? 'delayed' : 'linked')
+      );
       if (isPhone) cardClass += ' atak-unit-card--phone';
       var healthNorm = String(health || '').toLowerCase();
       if (healthNorm === 'wounded' || healthNorm === 'injured') cardClass += ' atak-unit-bft-wounded';
@@ -706,6 +714,32 @@ window.ATAKUnits = (function () {
         vitals.push('<span class="atak-unit-vital atak-unit-vital--listen">À l’écoute</span>');
         cardClass += ' atak-unit-bft-radio-listen';
       }
+      if (ex.wr_mpu5 === true || ex.wr_mpu5 === 1 || ex.wr_mpu5 === 'true') {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--wave" title="Wave Relay">Wave</span>');
+        if (ex.wr_gateway === true || ex.wr_gateway === 1 || ex.wr_gateway === 'true') {
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--wave" title="Passerelle Wave">Passerelle</span>');
+        }
+        if (ex.wr_bridge === true || ex.wr_bridge === 1 || ex.wr_bridge === 'true') {
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--wave" title="Pont radio actif">Pont</span>');
+        }
+      }
+      var etaSec = u.eta_seconds != null ? Number(u.eta_seconds) : (ex.eta_seconds != null ? Number(ex.eta_seconds) : NaN);
+      var distM = u.distance_to_destination_m != null ? Number(u.distance_to_destination_m)
+        : (ex.distance_to_destination_m != null ? Number(ex.distance_to_destination_m) : NaN);
+      if (!isNaN(distM) && distM >= 0 && distM < 30) {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--route">Point atteint</span>');
+      } else {
+        if (!isNaN(etaSec) && etaSec >= 0) {
+          var em = Math.floor(etaSec / 60);
+          var es = Math.floor(etaSec % 60);
+          var etaLabel = em > 0 ? (em + ' min') : (es + ' s');
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--route" title="Temps estimé restant">ETA ' + esc(etaLabel) + '</span>');
+        }
+        if (!isNaN(distM) && distM >= 0) {
+          var dLabel = distM >= 1000 ? ((distM / 1000).toFixed(1) + ' km') : (Math.round(distM) + ' m');
+          vitals.push('<span class="atak-unit-vital atak-unit-vital--route" title="Distance restante">Restant ' + esc(dLabel) + '</span>');
+        }
+      }
 
       var tooltipParts = [];
       if (healthNorm !== 'ok' && healthNorm !== 'stable') tooltipParts.push('État : ' + healthLabel);
@@ -714,6 +748,8 @@ window.ATAKUnits = (function () {
       if (radio != null) tooltipParts.push('Radio ' + radio);
       if (emitting) tooltipParts.push('Émet');
       if (onMonNet) tooltipParts.push('Réseau surveillé');
+      if (ex.wr_mpu5 === true || ex.wr_mpu5 === 1 || ex.wr_mpu5 === 'true') tooltipParts.push('Wave Relay');
+      if (!isNaN(etaSec) && etaSec >= 0) tooltipParts.push('ETA itinéraire');
       var tooltip = tooltipParts.join(' · ');
 
       var callsignKey = (u.call_sign || '').toUpperCase().trim();
@@ -894,9 +930,25 @@ window.ATAKUnits = (function () {
     var filterEl = document.getElementById('atak-units-filter');
     var btnLive = document.getElementById('atak-filter-live');
     var btnAll = document.getElementById('atak-filter-all');
+    var btnWave = document.getElementById('atak-filter-wave');
     if (filterEl) filterEl.addEventListener('input', function () { filterText = this.value; render(); });
-    if (btnLive) btnLive.addEventListener('click', function () { filterLive = true; btnLive.classList.add('active'); if (btnAll) btnAll.classList.remove('active'); render(); });
-    if (btnAll) btnAll.addEventListener('click', function () { filterLive = false; btnAll.classList.add('active'); if (btnLive) btnLive.classList.remove('active'); render(); });
+    if (btnLive) btnLive.addEventListener('click', function () {
+      filterLive = true;
+      btnLive.classList.add('active');
+      if (btnAll) btnAll.classList.remove('active');
+      render();
+    });
+    if (btnAll) btnAll.addEventListener('click', function () {
+      filterLive = false;
+      btnAll.classList.add('active');
+      if (btnLive) btnLive.classList.remove('active');
+      render();
+    });
+    if (btnWave) btnWave.addEventListener('click', function () {
+      filterWave = !filterWave;
+      btnWave.classList.toggle('active', filterWave);
+      render();
+    });
   }
 
   if (document.readyState === 'loading') {
