@@ -72,13 +72,21 @@ final class ComspecApiKeyAuth
 
     public static function extractPresentedKey(): string
     {
-        $header = $_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? null;
-        if (is_string($header) && $header !== '') {
-            return trim($header);
+        // Game Auth deliberately sends its short-lived access token as Bearer while
+        // legacy extension state can still contain an obsolete X-COMSPEC-KEY. The
+        // authenticated session must win; otherwise middleware rejects every ATAK
+        // route on the stale header before it ever examines the valid Bearer token.
+        $auth = trim((string) ($_SERVER['HTTP_AUTHORIZATION'] ?? ''));
+        if (strncasecmp($auth, 'Bearer ', 7) === 0) {
+            $bearer = trim(substr($auth, 7));
+            if ($bearer !== '') {
+                return $bearer;
+            }
         }
-        $auth = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
-        if (str_starts_with($auth, 'Bearer ')) {
-            return trim(substr($auth, 7));
+
+        $header = $_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? null;
+        if (is_string($header) && trim($header) !== '') {
+            return trim($header);
         }
 
         return self::keyFromJsonObject(self::peekJsonObject());
