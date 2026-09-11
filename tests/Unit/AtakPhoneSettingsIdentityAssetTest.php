@@ -90,7 +90,8 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         self::assertStringContainsString('%1 · %2', $grp);
         self::assertStringContainsString('inGameGroupLabel', $pos);
         self::assertStringNotContainsString('trim (groupId (group _unit))', $pos);
-        self::assertStringContainsString('inGameGroupLabel', $layout);
+        self::assertStringContainsString('athena_fillIdentityOverlay', $layout);
+        self::assertStringContainsString('COMSPEC_BftGroup', $grp);
         self::assertStringNotContainsString('groupId group cTab_player, [cTab_player] call CBA_fnc_getGroupIndex', $layout);
         self::assertStringContainsString('Ne reprend jamais le nom de communauté', $sync);
         self::assertStringContainsString('CallsignCell', $dll);

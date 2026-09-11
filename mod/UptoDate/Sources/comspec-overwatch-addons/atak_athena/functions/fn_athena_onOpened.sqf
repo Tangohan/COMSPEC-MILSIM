@@ -27,9 +27,23 @@ private _paint = {
     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 };
 [] call _paint;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
+};
 {
     [_paint, [], _x] call CBA_fnc_waitAndExecute;
 } forEach [0.08, 0.25, 0.7, 1.4];
+{
+    [
+        {
+            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
+                [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
+            };
+        },
+        [],
+        _x
+    ] call CBA_fnc_waitAndExecute;
+} forEach [0.1, 0.5, 1.2];
 
 [_token] spawn {
     params ["_token"];

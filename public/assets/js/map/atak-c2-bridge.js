@@ -142,11 +142,11 @@
     } catch (eP) { prefs = {}; }
     var entities = state.lastUnits.map(normalizeUnit).filter(function (e) {
       if (!e || e.id == null || (e.x == null && e.lat == null)) return false;
-      // Une position BFT humaine connue reste une information tactique partagee.
-      // Ne jamais faire disparaitre un joueur a cause d'un etat de liaison ou
-      // d'un reglage local : LOST/STALE change son apparence, pas sa visibilite.
-      if (e.status === 'LOST' && !e.keepLastKnown && !e.isPlayer) return false;
-      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown && !e.isPlayer) return false;
+      // Aligné sur le rendu legacy (atak-map.js) : un joueur hors liaison quitte
+      // la carte. Seules les IA suivies (keepLastKnown) gardent la dernière position.
+      // Avant : LOST restait visible pour les joueurs → fantômes « encore connectés ».
+      if (e.status === 'LOST' && !e.keepLastKnown) return false;
+      if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown) return false;
       return true;
     });
     state.manager.setEntities(entities);

@@ -97,23 +97,8 @@ private _batX = if (isNull _bat) then { _MapX } else { (ctrlPosition _bat) selec
     };
 } forEach [2620, 2621, 2622];
 
-private _callSign = _disp displayCtrl (17000 + 2620);
-if (!isNull _callSign && {!isNil "cTab_player"} && {!isNull cTab_player}) then {
-    private _bftGrp = "";
-    if (!isNil "comspec_overwatch_connect_fnc_inGameGroupLabel") then {
-        _bftGrp = [cTab_player] call comspec_overwatch_connect_fnc_inGameGroupLabel;
-    };
-    if (!(_bftGrp isEqualType "")) then { _bftGrp = str _bftGrp; };
-    _bftGrp = trim _bftGrp;
-    if (_bftGrp isEqualTo "") then { _bftGrp = "—"; };
-    private _bftCs = "";
-    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel") then {
-        _bftCs = [cTab_player] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
-    };
-    if (!(_bftCs isEqualType "")) then { _bftCs = str _bftCs; };
-    _bftCs = trim _bftCs;
-    if (_bftCs isEqualTo "") then { _bftCs = _bftGrp; };
-    _callSign ctrlSetText _bftCs;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay") then {
+    [_disp, missionNamespace getVariable ["cTab_player", player]] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
 };
 
 private _tool = _disp displayCtrl (17000 + 1300);

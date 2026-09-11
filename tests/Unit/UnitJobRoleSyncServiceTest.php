@@ -53,5 +53,7 @@ final class UnitJobRoleSyncServiceTest extends TestCase
         self::assertStringContainsString('catalogCategoryNameSet', $purge);
         self::assertStringContainsString('purgeUnusedUnitDerivedJobs', $purge);
         self::assertStringContainsString("slug LIKE 'unit-%'", $purge);
+        self::assertStringContainsString('SELECT c.id', $purge);
+        self::assertStringNotContainsString('DELETE c FROM personnel_job_role_categories c', $purge);
     }
 }

@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.526;
-        versionStr = "1.5.26";
-        versionAr[] = {1, 5, 26};
+        version = 1.537;
+        versionStr = "1.5.37";
+        versionAr[] = {1, 5, 37};
     };
 };
 
@@ -91,6 +91,7 @@ class CfgFunctions {
             class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
+            class forcePlaytimeReport {};
             class updatePosition {};
             class bftPlatform {};
             class applyNetworkProfile {};
@@ -112,6 +113,7 @@ class CfgFunctions {
             class arsenalItemPicture {};
             class arsenalLoadoutIcons {};
             class arsenalCloudLoadout {};
+            class arsenalListWardrobes {};
             class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
@@ -251,6 +253,9 @@ class CfgFunctions {
             class orderInboxOnLoad {};
             class orderRespond {};
             class formatCommsMessage {};
+            class createChatChannel {};
+            class clearLocalChatChannel {};
+            class publishViewshed {};
             class getBriefingSlides {};
             class getFireTeams {};
             class downloadBriefingSlide {};

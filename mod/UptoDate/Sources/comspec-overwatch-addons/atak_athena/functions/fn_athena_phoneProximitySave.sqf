@@ -10,6 +10,8 @@ if (!(_radius isEqualType 0)) then { _radius = 200; };
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Settings_group", controlNull];
 if (!isNull _group) then {
+    private _body = _group controlsGroupCtrl 9839;
+    if (!isNull _body) then { _group = _body; };
     private _cb = _group controlsGroupCtrl 9849;
     if (isNull _cb) then {
         private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];

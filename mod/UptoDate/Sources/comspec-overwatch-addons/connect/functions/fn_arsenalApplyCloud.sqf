@@ -8,7 +8,13 @@ if (_id isEqualTo "") exitWith { false };
 
 private _loadout = [_id] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
 if (_loadout isEqualTo []) exitWith {
-    ["Cette tenue est introuvable ou trop volumineuse.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    private _err = missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadoutError", ""];
+    private _msg = if (_err isEqualTo "too_large") then {
+        "Cette tenue est trop dense pour être chargée en jeu. Ouvrez-la sur le poste (Mes tenues) ou mettez à jour le pack."
+    } else {
+        "Cette tenue est introuvable ou inaccessible."
+    };
+    [_msg, "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 

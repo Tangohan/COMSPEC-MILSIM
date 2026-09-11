@@ -584,6 +584,113 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(500, '2026-09-11', 'Les tenues denses de la communauté s’ouvrent enfin en jeu', 'Dans l’arsenal Athena, la première collection s’ouvre toute seule. L’aperçu montre aussi lunettes, jumelles, JVN, radio et le contenu des poches. Les tenues très chargées ne sont plus bloquées par la liaison : elles se chargent correctement pour l’aperçu et l’import', [
+                'Collections ouvertes dès l’affichage (ou toutes si la liste est courte)',
+                'Aperçu enrichi : JVN, radio, contenu gilet / sac',
+                'Tenues denses importables malgré la limite de transfert',
+                'Liste communauté complète même avec beaucoup de tenues',
+            ], [], [
+                'Collections affichées avec un compteur mais sans tenues visibles',
+                'Tenue dense : aperçu vide ou message « trop volumineuse »',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.37 · liaison 2.0.27). Quittez Arma complètement, ouvrez l’arsenal puis Athena.',
+            ], 'Overwatch 1.5.37 · liaison 2.0.27'),
+            $pr(499, '2026-09-11', 'État de liaison visible sur la barre du téléphone', 'Sous la barre d’état du téléphone ATAK, une ligne indique clairement si la liaison est OK ou NOK, le débit estimé vers le poste, et le taux d’erreur. L’icône de signal change aussi de teinte selon l’état', [
+                'Bandeau OK / NOK · débit · erreur sous la barre d’état',
+                'Teinte de l’icône signal selon la liaison',
+            ], [], [], ['atak'], [
+                'Rechargez le pack (Athena 1.0.88 · Overwatch 1.5.36). Quittez Arma complètement, ouvrez le téléphone.',
+            ], 'Overwatch 1.5.36 · Athena 1.0.88'),
+            $pr(498, '2026-09-11', 'Paramètres et connexion Athena plus lisibles', 'Dans le téléphone, les écrans Paramètres et Athena affichent des libellés plus grands et plus contrastés. Les aides sous Appairer et Liaison au poste ne sont plus illisibles, et les champs avancés ne se chevauchent plus', [
+                'Libellés et champs agrandis dans Paramètres',
+                'Textes d’aide Appairer / liaison plus lisibles',
+            ], [], [
+                'Textes trop petits ou superposés sur Paramètres et Athena',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.87 · Overwatch 1.5.35). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.35 · Athena 1.0.87'),
+            $pr(497, '2026-09-11', 'Les opérateurs hors liaison quittent enfin la carte', 'Un opérateur dont le signal n’arrive plus disparaît de la carte du poste. Avant, son symbole pouvait rester visible comme s’il était encore en liaison. La liste Effectifs distingue clairement un contact hors liaison d’un simple retard de position', [
+                'Symboles des opérateurs hors liaison retirés de la carte',
+                'Liste Effectifs : hors liaison distinct du signal différé',
+            ], [], [
+                'Opérateurs déjà déconnectés encore affichés sur la carte',
+            ], ['atak'], [
+                'Actualisez la page de la carte du poste (Ctrl+F5).',
+            ], 'Portail'),
+            $pr(496, '2026-09-11', 'Canaux radio, Wave et zones de vue sur la carte', 'Le journal radio du poste et du téléphone propose désormais des canaux (Groupe, Commandement, Général, JTAC, Air) et des canaux personnalisés créables par chacun. Vous pouvez effacer votre affichage d’un canal ; le poste peut aussi effacer définitivement l’historique. Sur la carte, les opérateurs Wave, la progression d’itinéraire et les zones de vue posées en jeu apparaissent clairement', [
+                'Onglets de canaux radio sur le journal du poste',
+                'Création de canaux personnalisés depuis le poste ou le jeu',
+                'Effacement d’affichage local et purge d’historique réservée au poste',
+                'Pastilles Wave / passerelle / pont sur les effectifs',
+                'ETA et distance restante sur les opérateurs en itinéraire',
+                'Zones de vue terrain remontées depuis le téléphone vers la carte',
+            ], [], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.34 · liaison 2.0.26) et actualisez la carte du poste. Lancez les migrations si besoin.',
+            ], 'Overwatch 1.5.34 · liaison 2.0.26 · Portail'),
+            $pr(495, '2026-09-11', 'Le journal radio reprend entre le jeu et le poste', 'Les messages tapés depuis le téléphone ou les messages de groupe remontent de nouveau au journal radio du poste, et les messages envoyés depuis le poste réapparaissent dans le téléphone. La liaison ne coupe plus le fil radio pendant la stabilisation de connexion', [
+                'Échanges téléphone ↔ journal radio du poste rétablis après connexion',
+            ], [
+                'Si un refus survient pendant le démarrage, le canal se rouvre automatiquement une fois stabilisé',
+            ], [
+                'Messages de groupe ou journal radio absents d’un côté alors que la position remontait encore',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.33 · liaison 2.0.25). Quittez Arma complètement, reconnectez-vous, puis testez un message dans chaque sens.',
+            ], 'Overwatch 1.5.33 · liaison 2.0.25'),
+            $pr(494, '2026-09-11', 'Cinq aides pour se lier et se retrouver sur ATAK', 'Vous pouvez vérifier en un clic si le poste vous voit, voir votre état de liaison à côté d’Appairer, trouver Mes tenues depuis le hub, et ouvrir Athena sur le code Appairer en premier. Les réglages techniques de liaison restent repliés derrière Afficher les réglages avancés', [
+                'Bouton Vérifier ma présence sur Première liaison',
+                'Pastille En liaison / Pas encore vu sur la carte',
+                'Entrée Mes tenues sur le hub ATAK et le panneau Compte',
+                'Athena : code Appairer en tête de l’écran connexion',
+                'Paramètres : liaison simple, avancé sur demande',
+            ], [], [], ['atak'], [
+                'Rechargez le pack (Athena 1.0.86 · Overwatch 1.5.32). Portail : Première liaison + carte Appairer.',
+            ], 'Overwatch 1.5.32 · Athena 1.0.86 · Portail'),
+            $pr(493, '2026-09-11', 'Connexion ATAK clarifiée pour les membres', 'Le parcours Première liaison et le guide Connexion décrivent clairement Appairer, le téléphone Athena et le rôle de la clé d’accès. L’assistant d’installation renvoie vers Première liaison. Les administrateurs voient comment générer la clé sans la faire coller à chaque membre', [
+                'Première liaison recentrée sur compte, pack, code Appairer, contrôle carte',
+                'Guide Connexion : distinction Appairer / clé communauté / code terminal',
+            ], [
+                'Configuration ATAK et panneau Appairer de la carte alignés sur le même vocabulaire',
+            ], [
+                'Ancien tutoriel encore centré sur un serveur Node et le collage manuel de clé',
+            ], ['atak'], [
+                'Ouvrez /atak/premiere-liaison puis /atak/tuto. Admin : Configuration ATAK → Accès mod Overwatch.',
+            ], 'Portail'),
+            $pr(492, '2026-09-11', 'La liaison au poste se règle aussi dans Athena', 'Dans Paramètres du téléphone, une rubrique Liaison au poste permet de saisir l’adresse du portail, la clé d’accès communauté et l’identifiant de communauté. Ces valeurs restent synchronisées avec Options → Extensions. Enregistrer la liaison applique et reconnecte', [
+                'Rubrique Liaison au poste dans Paramètres Athena',
+                'Adresse, clé d’accès et identifiant de communauté éditables en jeu',
+            ], [
+                'Même réglages disponibles dans Options → Extensions, libellés en français',
+            ], [], ['atak'], [
+                'Rechargez le pack (Athena 1.0.85 · Overwatch 1.5.31). Ouvrez Paramètres → faites défiler jusqu’à Liaison au poste.',
+            ], 'Overwatch 1.5.31 · Athena 1.0.85'),
+            $pr(491, '2026-09-11', 'À l’arsenal, les tenues Athena sont plus claires', 'Dans la fenêtre Athena de l’arsenal, chaque colonne indique clairement Mes tenues ou Communauté. Les boutons disent Partager / Importer, et les deux suppressions ne se ressemblent plus : une retire de votre arsenal, l’autre de la communauté. Une ligne d’aide suit votre sélection', [
+                'Libellés Partager cette tenue / Importer cette tenue',
+                'Supprimer de mon arsenal distinct de Retirer de la communauté',
+                'Aide contextuelle selon la sélection',
+            ], [
+                'Collections triées, tenues indentées dans la liste',
+            ], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.30), quittez Arma complètement, ouvrez l’arsenal puis Athena.',
+            ], 'Overwatch 1.5.30'),
+            $pr(490, '2026-09-11', 'Le temps de mission se remonte aussi à la demande', 'Depuis le téléphone Athena, Remonter le temps envoie immédiatement le cumul vers le portail. Resynch Athena et la validation du groupe Zeus le font aussi. Rechargez ensuite votre fiche pour voir la date de dernière remontée avancer', [
+                'Bouton Remonter le temps sur Athena lorsque le compte est lié',
+                'Resynch Athena inclut désormais le temps de mission',
+            ], [], [
+                'Cumul figé avec une ancienne date de dernière remontée alors que la liaison fonctionnait',
+            ], ['atak', 'personnel'], [
+                'Rechargez le pack (Athena 1.0.84 · Overwatch 1.5.28). Compte lié → Remonter le temps. Rouvrez la fiche : la dernière remontée doit être à l’instant.',
+            ], 'Fiche opérateur · Overwatch 1.5.28 · Athena 1.0.84'),
+            $pr(489, '2026-09-11', 'Indicatif, nom et rôle reviennent sur la carte ; le groupe BFT suit Zeus', 'Sur la carte du téléphone, les trois lignes d’identité affichent de nouveau l’indicatif, le nom et le rôle. L’identifiant de groupe saisi dans les données techniques (ex. Alpha 2-2) est repris pour le suivi d’effectif et remonté au poste. Quittez Arma, rechargez le pack, puis rouvrez la carte', [
+                'Trois lignes visibles sur la carte : indicatif, nom, rôle',
+                'Validation de l’identifiant de groupe Zeus synchronisée vers le suivi d’effectif',
+            ], [
+                'Le groupe tactique du jeu est préféré au titre de communauté pour le suivi',
+            ], [
+                'Carte sans indicatif, nom ni rôle alors que la liaison fonctionnait',
+                'Identifiant de groupe Zeus non repris dans les effectifs du poste',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.83 · Overwatch 1.5.27 · liaison 2.0.23). Ouvrez la carte : les trois lignes doivent apparaître. Dans Données techniques, validez un groupe puis vérifiez Effectifs.',
+            ], 'Carte ATAK · Overwatch 1.5.27 · Athena 1.0.83 · liaison 2.0.23'),
             $pr(488, '2026-09-11', 'Après Appairer, la position reprend vraiment vers le poste', 'Un code accepté ne laisse plus le canal poste coupé après un refus au démarrage. Dès que la liaison est bonne, la position et la fiche repartent : vous devez apparaître dans les effectifs. Quittez Arma, rechargez le pack et la liaison, puis utilisez un nouveau code Appairer', [
                 'Rouverture automatique du canal poste après un code Appairer accepté',
             ], [

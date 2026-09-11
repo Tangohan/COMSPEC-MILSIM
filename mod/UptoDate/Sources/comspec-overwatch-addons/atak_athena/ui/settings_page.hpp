@@ -1,4 +1,5 @@
-// App « Paramètres » — identité, rôle libre, affichage carte, équipe, groupe, alerte téléphones.
+// App « Paramètres » — identité, rôle, carte, équipe, groupe, alerte, liaison au poste.
+// Typo lisible : libellés ~0.82, champs plus hauts, section liaison aérée.
 #ifndef QUOTE
     #define QUOTE(var1) #var1
 #endif
@@ -43,7 +44,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             x = 0;
             y = 0;
             w = QUOTE(COMSPEC_SET_W(3));
-            h = QUOTE(COMSPEC_SET_H(0.56));
+            h = QUOTE(COMSPEC_SET_H(0.54));
             size = QUOTE(COMSPEC_SET_H(0.36));
             text = "  Paramètres";
             onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
@@ -54,175 +55,322 @@ class COMSPEC_ATAK_Settings: ATAK_Message
         {
             idc = -1;
             x = 0;
-            y = QUOTE(COMSPEC_SET_H(0.56));
+            y = QUOTE(COMSPEC_SET_H(0.54));
             w = QUOTE(COMSPEC_SET_W(3));
             h = QUOTE(COMSPEC_SET_H(0.05));
             colorBackground[] = SET_ACCENT;
         };
 
-        class Summary: RscStructuredText
+        class BodyScroll: RscControlsGroup
         {
-            idc = 9841;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(0.68));
-            w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.78));
-            text = "Chargement des paramètres…";
-            colorBackground[] = SET_BG_STRIP;
-            class Attributes
+            idc = 9839;
+            x = 0;
+            y = QUOTE(COMSPEC_SET_H(0.62));
+            w = QUOTE(COMSPEC_SET_W(3));
+            h = QUOTE(COMSPEC_SET_H(9.10));
+            class VScrollbar
             {
-                font = "RobotoCondensed";
-                color = "#E6EEF0";
-                align = "left";
-                valign = "middle";
-                shadow = 1;
-                size = "0.64";
+                width = 0.014;
+                autoScrollEnabled = 1;
+                color[] = {0.45, 0.72, 0.62, 0.85};
             };
-        };
-
-        class LblCallsign: RscStructuredText
-        {
-            idc = -1;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(1.52));
-            w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.28));
-            text = "Indicatif";
-            colorBackground[] = {0, 0, 0, 0};
-            class Attributes
+            class HScrollbar
             {
-                font = "RobotoCondensed";
-                color = "#5EC8F0";
-                align = "left";
-                size = "0.58";
+                height = 0;
             };
-        };
-        class EditCallsign: RscEdit
-        {
-            idc = 9842;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(1.78));
-            w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.42));
-            colorBackground[] = SET_EDIT_BG;
-            colorText[] = {0.95, 0.98, 0.9, 1};
-            sizeEx = QUOTE(COMSPEC_SET_H(0.28));
-            autocomplete = "";
-            tooltip = "Indicatif court de votre fiche Effectifs, par exemple YB1. Pas le nom de la communauté.";
-        };
-
-        class LblRole: LblCallsign
-        {
-            y = QUOTE(COMSPEC_SET_H(2.56));
-            text = "Rôle";
-        };
-        class EditRole: EditCallsign
-        {
-            idc = 9843;
-            y = QUOTE(COMSPEC_SET_H(2.84));
-            tooltip = "Saisissez le rôle que vous voulez (Breacher, médecin, chef d’équipe…). Il apparaît auprès de l’équipe et, si vous le choisissez, sur la carte.";
-        };
-
-        class LblMapLabel: LblCallsign
-        {
-            y = QUOTE(COMSPEC_SET_H(3.30));
-            text = "Affichage sur la carte";
-        };
-        class ComboMapLabel: RscCombo
-        {
-            idc = 9850;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(3.58));
-            w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.42));
-            colorBackground[] = SET_EDIT_BG;
-            colorSelectBackground[] = {0.06, 0.22, 0.12, 1};
-            sizeEx = QUOTE(COMSPEC_SET_H(0.26));
-            tooltip = "Ce que vous voyez sur les pions de la carte : l’indicatif seul, ou l’indicatif suivi du rôle.";
-        };
-
-        class LblFire: LblCallsign
-        {
-            y = QUOTE(COMSPEC_SET_H(4.04));
-            text = "Équipe de feu";
-        };
-        class ComboFire: ComboMapLabel
-        {
-            idc = 9844;
-            y = QUOTE(COMSPEC_SET_H(4.32));
-            tooltip = "";
-        };
-
-        class LblGroup: LblCallsign
-        {
-            y = QUOTE(COMSPEC_SET_H(4.78));
-            text = "Groupe en jeu";
-        };
-        class ComboGroup: ComboMapLabel
-        {
-            idc = 9845;
-            y = QUOTE(COMSPEC_SET_H(5.04));
-            tooltip = "";
-        };
-
-        class LblProximity: LblCallsign
-        {
-            y = QUOTE(COMSPEC_SET_H(5.50));
-            text = "Alerte téléphones suivis";
-        };
-        class ComboProximity: ComboMapLabel
-        {
-            idc = 9849;
-            y = QUOTE(COMSPEC_SET_H(5.76));
-            tooltip = "";
-            onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave";
-        };
-
-        class Feedback: RscStructuredText
-        {
-            idc = 9847;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(6.22));
-            w = QUOTE(COMSPEC_SET_W(2.84));
-            h = QUOTE(COMSPEC_SET_H(0.40));
-            text = "Indicatif, rôle libre, affichage carte, équipe et groupe. Enregistrez pour appliquer.";
-            colorBackground[] = SET_BG_BODY;
-            class Attributes
+            class controls
             {
-                font = "RobotoCondensed";
-                color = "#C8D8E0";
-                align = "left";
-                valign = "top";
-                size = "0.58";
+                class Summary: RscStructuredText
+                {
+                    idc = 9841;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(0.08));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.78));
+                    text = "Chargement des paramètres…";
+                    colorBackground[] = SET_BG_STRIP;
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#E6EEF0";
+                        align = "left";
+                        valign = "middle";
+                        shadow = 1;
+                        size = "0.86";
+                    };
+                };
+
+                class LblCallsign: RscStructuredText
+                {
+                    idc = -1;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(0.96));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.34));
+                    text = "Indicatif";
+                    colorBackground[] = {0, 0, 0, 0};
+                    class Attributes
+                    {
+                        font = "RobotoCondensedBold";
+                        color = "#9ADCF5";
+                        align = "left";
+                        size = "0.88";
+                    };
+                };
+                class EditCallsign: RscEdit
+                {
+                    idc = 9842;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(1.28));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.46));
+                    colorBackground[] = SET_EDIT_BG;
+                    colorText[] = {0.95, 0.98, 0.9, 1};
+                    sizeEx = QUOTE(COMSPEC_SET_H(0.30));
+                    autocomplete = "";
+                    tooltip = "Indicatif court de votre fiche Effectifs, par exemple YB1. Pas le nom de la communauté.";
+                };
+
+                class LblRole: LblCallsign
+                {
+                    y = QUOTE(COMSPEC_SET_H(1.86));
+                    text = "Rôle";
+                };
+                class EditRole: EditCallsign
+                {
+                    idc = 9843;
+                    y = QUOTE(COMSPEC_SET_H(2.18));
+                    tooltip = "Saisissez le rôle que vous voulez (Breacher, médecin, chef d’équipe…). Il apparaît auprès de l’équipe et, si vous le choisissez, sur la carte.";
+                };
+
+                class LblMapLabel: LblCallsign
+                {
+                    y = QUOTE(COMSPEC_SET_H(2.76));
+                    text = "Affichage sur la carte";
+                };
+                class ComboMapLabel: RscCombo
+                {
+                    idc = 9850;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(3.08));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.46));
+                    colorBackground[] = SET_EDIT_BG;
+                    colorSelectBackground[] = {0.06, 0.22, 0.12, 1};
+                    sizeEx = QUOTE(COMSPEC_SET_H(0.28));
+                    tooltip = "Ce que vous voyez sur les pions de la carte : l’indicatif seul, ou l’indicatif suivi du rôle.";
+                };
+
+                class LblFire: LblCallsign
+                {
+                    y = QUOTE(COMSPEC_SET_H(3.66));
+                    text = "Équipe de feu";
+                };
+                class ComboFire: ComboMapLabel
+                {
+                    idc = 9844;
+                    y = QUOTE(COMSPEC_SET_H(3.98));
+                    tooltip = "";
+                };
+
+                class LblGroup: LblCallsign
+                {
+                    y = QUOTE(COMSPEC_SET_H(4.56));
+                    text = "Groupe en jeu";
+                };
+                class ComboGroup: ComboMapLabel
+                {
+                    idc = 9845;
+                    y = QUOTE(COMSPEC_SET_H(4.88));
+                    tooltip = "";
+                };
+
+                class LblProximity: LblCallsign
+                {
+                    y = QUOTE(COMSPEC_SET_H(5.46));
+                    text = "Alerte téléphones suivis";
+                };
+                class ComboProximity: ComboMapLabel
+                {
+                    idc = 9849;
+                    y = QUOTE(COMSPEC_SET_H(5.78));
+                    tooltip = "";
+                    onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave";
+                };
+
+                class Feedback: RscStructuredText
+                {
+                    idc = 9847;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(6.36));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.42));
+                    text = "Indicatif, rôle, carte, équipe et groupe. Enregistrez pour appliquer.";
+                    colorBackground[] = SET_BG_BODY;
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#D0E0E8";
+                        align = "left";
+                        valign = "middle";
+                        size = "0.80";
+                    };
+                };
+
+                class BtnSave: COMSPEC_ATAK_BtnGo
+                {
+                    idc = 9846;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(6.86));
+                    w = QUOTE(COMSPEC_SET_W(1.80));
+                    h = QUOTE(COMSPEC_SET_H(0.50));
+                    size = QUOTE(COMSPEC_SET_H(0.28));
+                    text = "Enregistrer";
+                    colorBackground[] = SET_BTN;
+                    colorBackground2[] = SET_BTN;
+                    colorBackgroundFocused[] = SET_BTN_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_settingsSave";
+                };
+
+                class BtnRefresh: BtnSave
+                {
+                    idc = 9848;
+                    x = QUOTE(COMSPEC_SET_W(1.96));
+                    w = QUOTE(COMSPEC_SET_W(0.96));
+                    text = "Actualiser";
+                    colorBackground[] = ATAK_BTN;
+                    colorBackground2[] = ATAK_BTN;
+                    colorBackgroundFocused[] = ATAK_BTN_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateSettings";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+
+                class LblLinkSection: RscStructuredText
+                {
+                    idc = 9856;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(7.50));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.78));
+                    text = "<t color='#7CFF9A' size='1.05'>Liaison au poste</t><br/><t color='#B8C8D4' size='0.95'>Préférez Appairer sur le portail. Les réglages avancés sont rarement nécessaires.</t>";
+                    colorBackground[] = {0.04, 0.10, 0.08, 0.92};
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#D0D8E0";
+                        align = "left";
+                        size = "0.90";
+                    };
+                };
+
+                class BtnToggleAdvanced: COMSPEC_ATAK_BtnGo
+                {
+                    idc = 9857;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(8.40));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.48));
+                    size = QUOTE(COMSPEC_SET_H(0.28));
+                    text = "Afficher les réglages avancés";
+                    colorBackground[] = ATAK_BTN;
+                    colorBackground2[] = ATAK_BTN;
+                    colorBackgroundFocused[] = ATAK_BTN_F;
+                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_connectionToggleAdvanced";
+                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+
+                class LblPortal: LblCallsign
+                {
+                    idc = 9858;
+                    y = QUOTE(COMSPEC_SET_H(9.02));
+                    text = "Adresse du portail";
+                    show = 0;
+                };
+                class EditPortal: EditCallsign
+                {
+                    idc = 9851;
+                    y = QUOTE(COMSPEC_SET_H(9.34));
+                    show = 0;
+                    tooltip = "Adresse du portail Athena, par ex. https://athena.ttrd.fr/public — sans slash final.";
+                };
+
+                class LblAccessKey: LblCallsign
+                {
+                    idc = 9859;
+                    y = QUOTE(COMSPEC_SET_H(9.92));
+                    text = "Clé d’accès communauté";
+                    show = 0;
+                };
+                class EditAccessKey: EditCallsign
+                {
+                    idc = 9852;
+                    y = QUOTE(COMSPEC_SET_H(10.24));
+                    password = 1;
+                    show = 0;
+                    tooltip = "Clé fournie par l’administration. Laissez vide si Appairer a déjà configuré la liaison.";
+                };
+
+                class LblCommunity: LblCallsign
+                {
+                    idc = 9860;
+                    y = QUOTE(COMSPEC_SET_H(10.82));
+                    text = "Identifiant de communauté";
+                    show = 0;
+                };
+                class EditCommunity: EditCallsign
+                {
+                    idc = 9853;
+                    y = QUOTE(COMSPEC_SET_H(11.14));
+                    show = 0;
+                    tooltip = "Utile si plusieurs communautés partagent la même adresse. Souvent renseigné automatiquement.";
+                };
+
+                class LinkFeedback: RscStructuredText
+                {
+                    idc = 9855;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(11.72));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.52));
+                    text = "Statut de liaison à jour après Appairer ou Enregistrer.";
+                    colorBackground[] = SET_BG_BODY;
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#D0E0E8";
+                        align = "left";
+                        valign = "top";
+                        size = "0.82";
+                    };
+                };
+
+                class BtnSaveLink: COMSPEC_ATAK_BtnGo
+                {
+                    idc = 9854;
+                    x = QUOTE(COMSPEC_SET_W(0.08));
+                    y = QUOTE(COMSPEC_SET_H(12.34));
+                    w = QUOTE(COMSPEC_SET_W(2.84));
+                    h = QUOTE(COMSPEC_SET_H(0.50));
+                    size = QUOTE(COMSPEC_SET_H(0.28));
+                    text = "Enregistrer la liaison";
+                    show = 0;
+                    colorBackground[] = SET_BTN;
+                    colorBackground2[] = SET_BTN;
+                    colorBackgroundFocused[] = SET_BTN_F;
+                    onButtonClick = "[] spawn comspec_overwatch_atak_athena_fnc_athena_connectionSave";
+                    class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
+                };
+
+                class Spacer: RscText
+                {
+                    idc = -1;
+                    x = 0;
+                    y = QUOTE(COMSPEC_SET_H(12.96));
+                    w = QUOTE(COMSPEC_SET_W(0.1));
+                    h = QUOTE(COMSPEC_SET_H(0.24));
+                    colorBackground[] = {0, 0, 0, 0};
+                };
             };
-        };
-
-        class BtnSave: COMSPEC_ATAK_BtnGo
-        {
-            idc = 9846;
-            x = QUOTE(COMSPEC_SET_W(0.08));
-            y = QUOTE(COMSPEC_SET_H(6.66));
-            w = QUOTE(COMSPEC_SET_W(1.80));
-            h = QUOTE(COMSPEC_SET_H(0.46));
-            size = QUOTE(COMSPEC_SET_H(0.26));
-            text = "Enregistrer";
-            colorBackground[] = SET_BTN;
-            colorBackground2[] = SET_BTN;
-            colorBackgroundFocused[] = SET_BTN_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_settingsSave";
-        };
-
-        class BtnRefresh: BtnSave
-        {
-            idc = 9848;
-            x = QUOTE(COMSPEC_SET_W(1.96));
-            w = QUOTE(COMSPEC_SET_W(0.96));
-            text = "Actualiser";
-            colorBackground[] = ATAK_BTN;
-            colorBackground2[] = ATAK_BTN;
-            colorBackgroundFocused[] = ATAK_BTN_F;
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateSettings";
-            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
         };
     };
 };

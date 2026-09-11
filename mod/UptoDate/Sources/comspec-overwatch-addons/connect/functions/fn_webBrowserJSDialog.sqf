@@ -113,8 +113,38 @@ switch (true) do {
         };
     };
     case ((_cmd select [0, 10]) isEqualTo "chat:send|"): {
-        private _text = _cmd select [10, (count _cmd) - 10];
+        private _rest = _cmd select [10, (count _cmd) - 10];
+        private _parts = _rest splitString "|";
+        private _channel = "general";
+        private _text = _rest;
+        if ((count _parts) >= 2) then {
+            _channel = trim (_parts select 0);
+            _parts deleteAt 0;
+            _text = _parts joinString "|";
+        };
+        if (_channel isNotEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_Comms_Channel", _channel, false];
+        };
         [_text] call comspec_overwatch_connect_fnc_tabletChatSend;
+        call _fnc_refresh;
+    };
+    case ((_cmd select [0, 13]) isEqualTo "chat:channel|"): {
+        private _ch = trim (_cmd select [13, (count _cmd) - 13]);
+        if (_ch isNotEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_Comms_Channel", _ch, false];
+            ["COMSPEC_Info", [format ["Canal radio : %1", _ch]]] call comspec_overwatch_connect_fnc_showNotification;
+        };
+        call _fnc_refresh;
+    };
+    case ((_cmd select [0, 12]) isEqualTo "chat:create|"): {
+        private _label = trim (_cmd select [12, (count _cmd) - 12]);
+        if (_label isNotEqualTo "") then {
+            [_label] call comspec_overwatch_connect_fnc_createChatChannel;
+        };
+        call _fnc_refresh;
+    };
+    case (_cmd isEqualTo "chat:clear"): {
+        [] call comspec_overwatch_connect_fnc_clearLocalChatChannel;
         call _fnc_refresh;
     };
     case ((_cmd select [0, 13]) isEqualTo "order:status|"): {

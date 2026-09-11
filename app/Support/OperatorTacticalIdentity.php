@@ -77,14 +77,14 @@ final class OperatorTacticalIdentity
         string $communityLabel = '',
         string $armaGroup = ''
     ): string {
+        $arma = trim($armaGroup);
+        if ($arma !== '' && !self::looksLikeCommunityTitle($arma, $tenantName, $communityLabel) && mb_strlen($arma) <= 96) {
+            return $arma;
+        }
         $cs = self::sanitizeCallsign($callsign, $tenantName, $communityLabel);
         $asg = self::unitAssignment($unit, $tenantName, $communityLabel);
         if ($cs !== '' && $asg !== '') {
             return $cs . ' · ' . $asg;
-        }
-        $arma = trim($armaGroup);
-        if ($arma !== '' && !self::looksLikeCommunityTitle($arma, $tenantName, $communityLabel)) {
-            return $arma;
         }
         if ($cs !== '') {
             return $cs;

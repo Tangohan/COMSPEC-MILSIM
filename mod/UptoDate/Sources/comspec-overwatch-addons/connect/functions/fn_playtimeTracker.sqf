@@ -3,10 +3,13 @@ if (!hasInterface) exitWith {};
 /*
     Cumul mission → portail (serveur / Zeus / éditeur).
     N’envoie que lorsque la liaison Athena est prête (comme le téléphone ATAK).
+    Resynch / Zeus / bouton Athena peuvent forcer une remontée immédiate.
 */
-private _accum = 0;
+private _accum = missionNamespace getVariable ["COMSPEC_PlaytimeAccum", 0];
+if (!(_accum isEqualType 0)) then { _accum = 0; };
 private _lastTick = diag_tickTime;
-private _ctx = "";
+private _ctx = missionNamespace getVariable ["COMSPEC_PlaytimeCtx", ""];
+if (!(_ctx isEqualType "")) then { _ctx = ""; };
 
 private _classify = {
     if (is3DEN || {is3DENPreview}) exitWith {"editor"};
@@ -37,6 +40,10 @@ private _flush = {
     missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", diag_tickTime, false];
 };
 
+missionNamespace setVariable ["COMSPEC_PlaytimeLastTick", _lastTick, false];
+missionNamespace setVariable ["COMSPEC_PlaytimeAccum", _accum, false];
+missionNamespace setVariable ["COMSPEC_PlaytimeCtx", _ctx, false];
+
 while { true } do {
     sleep 5;
     private _enabled = missionNamespace getVariable ["comspec_overwatch_enabled", true];
@@ -47,7 +54,21 @@ while { true } do {
     private _now = diag_tickTime;
     private _dt = _now - _lastTick;
     _lastTick = _now;
+    missionNamespace setVariable ["COMSPEC_PlaytimeLastTick", _now, false];
     if (_dt > 120) then { _dt = 120 };
+
+    // Remontée forcée (Resynch / Zeus / Athena) : laisser fn_forcePlaytimeReport gérer.
+    if (missionNamespace getVariable ["COMSPEC_PlaytimeForceFlush", false]) then {
+        missionNamespace setVariable ["COMSPEC_PlaytimeForceFlush", false, false];
+        if (!isNil "comspec_overwatch_connect_fnc_forcePlaytimeReport") then {
+            [] call comspec_overwatch_connect_fnc_forcePlaytimeReport;
+            _accum = missionNamespace getVariable ["COMSPEC_PlaytimeAccum", 0];
+            if (!(_accum isEqualType 0)) then { _accum = 0; };
+            _ctx = missionNamespace getVariable ["COMSPEC_PlaytimeCtx", _ctx];
+            if (!(_ctx isEqualType "")) then { _ctx = ""; };
+            continue;
+        };
+    };
 
     private _newCtx = [] call _classify;
     private _inEditor = _newCtx isEqualTo "editor";
@@ -75,4 +96,7 @@ while { true } do {
             };
         };
     };
+
+    missionNamespace setVariable ["COMSPEC_PlaytimeAccum", _accum, false];
+    missionNamespace setVariable ["COMSPEC_PlaytimeCtx", _ctx, false];
 };

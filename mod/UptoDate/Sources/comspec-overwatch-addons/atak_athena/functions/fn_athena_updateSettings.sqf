@@ -1,5 +1,5 @@
 /*
-    Remplit la page Paramètres (identité, rôle libre, carte, équipe, groupe).
+    Remplit la page Paramètres (identité, rôle, carte, équipe, groupe, liaison).
 */
 if (!hasInterface) exitWith {};
 
@@ -14,6 +14,13 @@ if (isNull _group) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_Settings_group", _group];
             };
         };
+    };
+};
+if (!isNull _group) then {
+    private _body = _group controlsGroupCtrl 9839;
+    if (!isNull _body) then {
+        _group = _body;
+        uiNamespace setVariable ["COMSPEC_ATAK_Settings_group", _body];
     };
 };
 if (isNull _group) exitWith {};
@@ -208,4 +215,74 @@ if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
         "Indicatif, rôle (texte libre), affichage sur la carte, équipe de feu et groupe. Enregistrez pour appliquer."
     };
     _fb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>", _hint];
+};
+
+private _cleanSecret = {
+    params [["_s", ""]];
+    if (!(_s isEqualType "")) then { _s = format ["%1", _s]; };
+    trim _s
+};
+
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
+private _key = [missionNamespace getVariable ["comspec_overwatch_api_key", ""]] call _cleanSecret;
+if ((count _key) < 8) then {
+    _key = [profileNamespace getVariable ["comspec_overwatch_saved_api_key", ""]] call _cleanSecret;
+};
+private _tenant = [missionNamespace getVariable ["comspec_overwatch_tenant_id", ""]] call _cleanSecret;
+if (_tenant isEqualTo "") then {
+    _tenant = [profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""]] call _cleanSecret;
+};
+
+private _portalEdit = [9851] call _ctrl;
+if (!isNull _portalEdit) then { _portalEdit ctrlSetText _url; };
+
+private _keyEdit = [9852] call _ctrl;
+if (!isNull _keyEdit) then {
+    // Ne pas réafficher la clé en clair : laisser vide si déjà mémorisée.
+    if ((ctrlText _keyEdit) isEqualTo "") then {
+        _keyEdit ctrlSetText "";
+        if ((count _key) >= 8) then {
+            _keyEdit ctrlSetTooltip format ["Clé déjà mémorisée (%1 caractères). Laissez vide pour la conserver, ou saisissez-en une nouvelle.", count _key];
+        };
+    };
+};
+
+private _tidEdit = [9853] call _ctrl;
+if (!isNull _tidEdit) then { _tidEdit ctrlSetText _tenant; };
+
+private _linkFb = [9855] call _ctrl;
+if (!isNull _linkFb) then {
+    private _tenantName = missionNamespace getVariable ["comspec_tenant_name", ""];
+    if (!(_tenantName isEqualType "")) then { _tenantName = ""; };
+    private _linkState = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+    if (!(_linkState isEqualType "")) then { _linkState = "offline"; };
+    private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+    if (!(_ready isEqualType true)) then { _ready = false; };
+    private _statusLine = if (_ready || {_linkState isEqualTo "linked"}) then {
+        "<t color='#9ee0c0'>Liaison OK — préférez Appairer si vous devez reconnecter.</t>"
+    } else {
+        "<t color='#ffd27a'>À régler — utilisez Appairer sur le portail, puis Entrer en jeu.</t>"
+    };
+    private _keyNote = if ((count _key) >= 8) then { format ["Clé mémorisée (%1 car.)", count _key] } else { "Aucune clé mémorisée" };
+    private _commNote = if (_tenantName isNotEqualTo "") then {
+        format ["Communauté : %1", _tenantName]
+    } else {
+        if (_tenant isNotEqualTo "") then { format ["Identifiant saisi : %1", _tenant] } else { "Identifiant de communauté non renseigné" };
+    };
+    _linkFb ctrlSetStructuredText parseText format [
+        "<t size='1.05'>%1<br/>%2 · %3</t>",
+        _statusLine,
+        _keyNote,
+        _commNote
+    ];
+};
+
+private _advOpen = _group getVariable ["COMSPEC_AtakLinkAdvanced", false];
+{
+    private _c = [_x] call _ctrl;
+    if (!isNull _c) then { _c ctrlShow _advOpen; };
+} forEach [9851, 9852, 9853, 9854, 9858, 9859, 9860];
+private _tog = [9857] call _ctrl;
+if (!isNull _tog) then {
+    _tog ctrlSetText (if (_advOpen) then { "Masquer les réglages avancés" } else { "Afficher les réglages avancés" });
 };

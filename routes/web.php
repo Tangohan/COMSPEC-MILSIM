@@ -1999,6 +1999,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/device-alerts', [AtakApiController::class, 'deviceAlertsIndex']);
     $router->get('/api/atak/session-restore', [AtakApiController::class, 'sessionRestore']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
+    $router->get('/api/atak/me-link-status', [AtakApiController::class, 'meLinkStatus']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/activity', [AtakApiController::class, 'activityStore']);
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);
@@ -2083,6 +2084,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/game-session/leave', [AtakApiController::class, 'gameSessionLeave']);
     $router->get('/api/chat', [AtakApiController::class, 'chatIndex']);
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);
+    $router->get('/api/chat/channels', [AtakApiController::class, 'chatChannelsIndex']);
+    $router->post('/api/chat/channels', [AtakApiController::class, 'chatChannelsStore']);
+    $router->post('/api/chat/purge', [AtakApiController::class, 'chatPurge']);
+    $router->get('/api/atak/viewshed', [AtakApiController::class, 'viewshedIndex']);
+    $router->post('/api/atak/viewshed', [AtakApiController::class, 'viewshedStore']);
     $router->get('/api/atak/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
     $router->post('/api/atak/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
     $router->patch('/api/atak/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);

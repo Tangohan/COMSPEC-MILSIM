@@ -8,7 +8,7 @@ if (!hasInterface) exitWith {};
 _msg = trim _msg;
 if (_msg isEqualTo "") exitWith {};
 
-private _channel = missionNamespace getVariable ["COMSPEC_Comms_Channel", "SQUAD"];
+private _channel = missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"];
 private _priority = missionNamespace getVariable ["COMSPEC_Comms_Priority", "ROUTINE"];
 private _kind = "FREE";
 

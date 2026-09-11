@@ -24,6 +24,7 @@ class AtakDataRepository
 
 
     private ?bool $hasPosColumns = null;
+    private ?bool $hasGroupNameColumn = null;
 
     /** @var array<string, list<array{id: int, call_sign: string}>> */
     private array $pendingStaleDisconnects = [];
@@ -49,6 +50,24 @@ class AtakDataRepository
         }
 
         return $this->hasPosColumns;
+    }
+
+    private function hasGroupNameColumn(): bool
+    {
+        if ($this->hasGroupNameColumn !== null) {
+            return $this->hasGroupNameColumn;
+        }
+        try {
+            $st = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'group_name' LIMIT 1"
+            );
+            $this->hasGroupNameColumn = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $this->hasGroupNameColumn = false;
+        }
+
+        return $this->hasGroupNameColumn;
     }
 
     /** @return array{0: ?float, 1: ?float} */
@@ -805,7 +824,22 @@ class AtakDataRepository
             $row['grid_ref'] = (string) round($posX) . ' ' . round($posY);
         }
         $extra = self::decodeExtra($row['extra'] ?? null);
-        $shown = self::displayCallSign((string) ($row['call_sign'] ?? ''), is_array($extra) ? $extra : []);
+        if (!is_array($extra)) {
+            $extra = [];
+        }
+        $colGroup = trim((string) ($row['group_name'] ?? ''));
+        if ($colGroup !== '') {
+            if (trim((string) ($extra['group_name'] ?? '')) === '') {
+                $extra['group_name'] = $colGroup;
+            }
+            if (trim((string) ($extra['group'] ?? '')) === '') {
+                $extra['group'] = $colGroup;
+            }
+        } elseif (trim((string) ($extra['group_name'] ?? $extra['group'] ?? '')) !== '') {
+            $row['group_name'] = trim((string) ($extra['group_name'] ?? $extra['group'] ?? ''));
+        }
+        $row['extra'] = $extra;
+        $shown = self::displayCallSign((string) ($row['call_sign'] ?? ''), $extra);
         $row['display_call_sign'] = $shown;
 
         return $row;
@@ -1134,7 +1168,12 @@ class AtakDataRepository
         // hasPos AVANT le SELECT : sans migration pos_x/pos_y, un SELECT pos_* plante
         // toute la méthode (pas d’INSERT, pas de setLastActivity) → /units vide.
         $hasPos = $this->hasPosColumns();
+        $hasGroupName = $this->hasGroupNameColumn();
         $incomingExtra = self::decodeExtra($extraJson);
+        $groupName = trim((string) ($incomingExtra['group_name'] ?? $incomingExtra['group'] ?? ''));
+        if (mb_strlen($groupName) > 96) {
+            $groupName = mb_substr($groupName, 0, 96);
+        }
         $existing = null;
         $allyId = trim((string) ($incomingExtra['ally_id'] ?? ''));
         if ($allyId !== '' && (self::isProxyContactExtra($incomingExtra) || self::looksLikeAutoAllyId($allyId))) {
@@ -1200,17 +1239,41 @@ class AtakDataRepository
                     $storeGrid = '';
                 }
             }
-            if ($hasPos) {
+            if ($hasPos && $hasGroupName) {
+                $this->pdo()->prepare(
+                    'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, group_name = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$callSign, $storeGrid, $heading, $role, $groupName !== '' ? $groupName : null, $extraJson, 'linked', $storeX, $storeY, $unitId]);
+            } elseif ($hasPos) {
                 $this->pdo()->prepare(
                     'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
                 )->execute([$callSign, $storeGrid, $heading, $role, $extraJson, 'linked', $storeX, $storeY, $unitId]);
+            } elseif ($hasGroupName) {
+                $this->pdo()->prepare(
+                    'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, group_name = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$callSign, $storeGrid, $heading, $role, $groupName !== '' ? $groupName : null, $extraJson, 'linked', $unitId]);
             } else {
                 $this->pdo()->prepare(
                     'UPDATE atak_units SET call_sign = ?, grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
                 )->execute([$callSign, $storeGrid, $heading, $role, $extraJson, 'linked', $unitId]);
             }
         } else {
-            if ($hasPos) {
+            if ($hasPos && $hasGroupName) {
+                $this->pdo()->prepare(
+                    'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, group_name, status, grid_ref, heading, pos_x, pos_y, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                )->execute([
+                    $tenantId,
+                    $mapId,
+                    $callSign,
+                    $role,
+                    $groupName !== '' ? $groupName : null,
+                    'linked',
+                    $validPos ? $gridRef : '',
+                    $heading,
+                    $validPos ? $posX : null,
+                    $validPos ? $posY : null,
+                    $extraJson,
+                ]);
+            } elseif ($hasPos) {
                 $this->pdo()->prepare(
                     'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, pos_x, pos_y, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
                 )->execute([
@@ -1225,6 +1288,10 @@ class AtakDataRepository
                     $validPos ? $posY : null,
                     $extraJson,
                 ]);
+            } elseif ($hasGroupName) {
+                $this->pdo()->prepare(
+                    'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, group_name, status, grid_ref, heading, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                )->execute([$tenantId, $mapId, $callSign, $role, $groupName !== '' ? $groupName : null, 'linked', $validPos ? $gridRef : '', $heading, $extraJson]);
             } else {
                 $this->pdo()->prepare(
                     'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
@@ -1476,13 +1543,25 @@ class AtakDataRepository
         return is_array($row) ? $row : null;
     }
 
-    public function getChatMessages(int $tenantId, int $mapId, int $limit = 100): array
+    public function getChatMessages(int $tenantId, int $mapId, int $limit = 100, ?string $channelKey = null): array
     {
         $limit = max(1, min($limit, 500));
-        $stmt = $this->pdo()->prepare(
-            'SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
-        );
-        $stmt->execute([$tenantId, $mapId]);
+        $channelKey = $channelKey !== null && $channelKey !== ''
+            ? \App\Support\AtakChatChannel::normalizeKey($channelKey)
+            : null;
+        if ($channelKey !== null) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_chat_messages
+                 WHERE tenant_id = ? AND map_id = ? AND channel_key = ?
+                 ORDER BY created_at DESC LIMIT ' . $limit
+            );
+            $stmt->execute([$tenantId, $mapId, $channelKey]);
+        } else {
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+            );
+            $stmt->execute([$tenantId, $mapId]);
+        }
 
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
@@ -1492,38 +1571,79 @@ class AtakDataRepository
      *
      * @return list<array<string, mixed>>
      */
-    public function getChatMessagesAfter(int $tenantId, int $mapId, int $afterId, int $limit = 50): array
+    public function getChatMessagesAfter(int $tenantId, int $mapId, int $afterId, int $limit = 50, ?string $channelKey = null): array
     {
         $afterId = max(0, $afterId);
         $limit = max(1, min($limit, 200));
         if ($afterId < 1) {
-            return $this->getChatMessages($tenantId, $mapId, $limit);
+            return $this->getChatMessages($tenantId, $mapId, $limit, $channelKey);
         }
-        $stmt = $this->pdo()->prepare(
-            'SELECT * FROM atak_chat_messages
-             WHERE tenant_id = ? AND map_id = ? AND id > ?
-             ORDER BY id ASC
-             LIMIT ' . $limit
-        );
-        $stmt->execute([$tenantId, $mapId, $afterId]);
+        $channelKey = $channelKey !== null && $channelKey !== ''
+            ? \App\Support\AtakChatChannel::normalizeKey($channelKey)
+            : null;
+        if ($channelKey !== null) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_chat_messages
+                 WHERE tenant_id = ? AND map_id = ? AND channel_key = ? AND id > ?
+                 ORDER BY id ASC
+                 LIMIT ' . $limit
+            );
+            $stmt->execute([$tenantId, $mapId, $channelKey, $afterId]);
+        } else {
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_chat_messages
+                 WHERE tenant_id = ? AND map_id = ? AND id > ?
+                 ORDER BY id ASC
+                 LIMIT ' . $limit
+            );
+            $stmt->execute([$tenantId, $mapId, $afterId]);
+        }
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function addChatMessage(int $tenantId, int $mapId, string $author, string $body, string $source = 'game'): array
-    {
+    public function addChatMessage(
+        int $tenantId,
+        int $mapId,
+        string $author,
+        string $body,
+        string $source = 'game',
+        ?string $channelKey = null
+    ): array {
         $source = self::normalizeChatSource($source);
+        $key = \App\Support\AtakChatChannel::normalizeKey(
+            $channelKey !== null && trim($channelKey) !== ''
+                ? $channelKey
+                : \App\Support\AtakChatChannel::inferFromBody($body)
+        );
+        $this->ensureSystemChatChannels($tenantId, $mapId);
         try {
             $this->pdo()->prepare(
-                'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body, source) VALUES (?, ?, ?, ?, ?)'
-            )->execute([$tenantId, $mapId, $author, $body, $source]);
+                'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body, source, channel_key)
+                 VALUES (?, ?, ?, ?, ?, ?)'
+            )->execute([$tenantId, $mapId, $author, $body, $source, $key]);
         } catch (\PDOException $e) {
-            if (!str_contains($e->getMessage(), 'source')) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'channel_key')) {
+                try {
+                    $this->pdo()->prepare(
+                        'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body, source) VALUES (?, ?, ?, ?, ?)'
+                    )->execute([$tenantId, $mapId, $author, $body, $source]);
+                } catch (\PDOException $e2) {
+                    if (!str_contains($e2->getMessage(), 'source')) {
+                        throw $e2;
+                    }
+                    $this->pdo()->prepare(
+                        'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)'
+                    )->execute([$tenantId, $mapId, $author, $body]);
+                }
+            } elseif (str_contains($msg, 'source')) {
+                $this->pdo()->prepare(
+                    'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)'
+                )->execute([$tenantId, $mapId, $author, $body]);
+            } else {
                 throw $e;
             }
-            $this->pdo()->prepare(
-                'INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)'
-            )->execute([$tenantId, $mapId, $author, $body]);
         }
         $id = (int) $this->pdo()->lastInsertId();
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_chat_messages WHERE id = ?');
@@ -1533,8 +1653,213 @@ class AtakDataRepository
             return [];
         }
         $row['source'] = self::normalizeChatSource(isset($row['source']) ? (string) $row['source'] : $source);
+        if (!isset($row['channel_key']) || trim((string) $row['channel_key']) === '') {
+            $row['channel_key'] = $key;
+        }
 
         return $row;
+    }
+
+    /**
+     * Efface définitivement l’historique radio (canal ou toute la carte).
+     * Réservé au poste de commandement (API web).
+     */
+    public function purgeChatMessages(int $tenantId, int $mapId, ?string $channelKey = null): int
+    {
+        if ($channelKey !== null && trim($channelKey) !== '') {
+            $key = \App\Support\AtakChatChannel::normalizeKey($channelKey);
+            $stmt = $this->pdo()->prepare(
+                'DELETE FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ? AND channel_key = ?'
+            );
+            $stmt->execute([$tenantId, $mapId, $key]);
+
+            return (int) $stmt->rowCount();
+        }
+        $stmt = $this->pdo()->prepare(
+            'DELETE FROM atak_chat_messages WHERE tenant_id = ? AND map_id = ?'
+        );
+        $stmt->execute([$tenantId, $mapId]);
+
+        return (int) $stmt->rowCount();
+    }
+
+    public function ensureSystemChatChannels(int $tenantId, int $mapId): void
+    {
+        static $seeded = [];
+        $cacheKey = $tenantId . ':' . $mapId;
+        if (isset($seeded[$cacheKey])) {
+            return;
+        }
+        try {
+            $ins = $this->pdo()->prepare(
+                'INSERT IGNORE INTO atak_chat_channels
+                    (tenant_id, map_id, channel_key, label, kind, created_by_callsign)
+                 VALUES (?, ?, ?, ?, ?, NULL)'
+            );
+            foreach (\App\Support\AtakChatChannel::systemRows() as $row) {
+                $ins->execute([
+                    $tenantId,
+                    $mapId,
+                    $row['channel_key'],
+                    $row['label'],
+                    $row['kind'],
+                ]);
+            }
+            $seeded[$cacheKey] = true;
+        } catch (\Throwable) {
+            // Table absente avant migration : ignorer.
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listChatChannels(int $tenantId, int $mapId): array
+    {
+        $this->ensureSystemChatChannels($tenantId, $mapId);
+        try {
+            $stmt = $this->pdo()->prepare(
+                'SELECT channel_key, label, kind, created_by_callsign, created_at
+                 FROM atak_chat_channels
+                 WHERE tenant_id = ? AND map_id = ?
+                 ORDER BY FIELD(kind, \'system\', \'custom\'), label ASC'
+            );
+            $stmt->execute([$tenantId, $mapId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            $rows = [];
+        }
+        if ($rows === []) {
+            foreach (\App\Support\AtakChatChannel::systemRows() as $sys) {
+                $rows[] = [
+                    'channel_key' => $sys['channel_key'],
+                    'label' => $sys['label'],
+                    'kind' => $sys['kind'],
+                    'created_by_callsign' => null,
+                    'created_at' => null,
+                ];
+            }
+        }
+
+        return array_map(static function (array $r): array {
+            $key = \App\Support\AtakChatChannel::normalizeKey((string) ($r['channel_key'] ?? 'general'));
+
+            return [
+                'channel_key' => $key,
+                'label' => \App\Support\AtakChatChannel::labelFor($key, isset($r['label']) ? (string) $r['label'] : null),
+                'kind' => (string) ($r['kind'] ?? 'custom') === 'system' ? 'system' : 'custom',
+                'created_by_callsign' => isset($r['created_by_callsign']) ? (string) $r['created_by_callsign'] : null,
+                'created_at' => isset($r['created_at']) ? (string) $r['created_at'] : null,
+            ];
+        }, $rows);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function createChatChannel(
+        int $tenantId,
+        int $mapId,
+        string $label,
+        ?string $createdByCallsign = null
+    ): ?array {
+        $this->ensureSystemChatChannels($tenantId, $mapId);
+        $label = trim($label);
+        if ($label === '') {
+            return null;
+        }
+        $key = \App\Support\AtakChatChannel::slugify($label);
+        if ($key === '' || \App\Support\AtakChatChannel::isSystemKey($key)) {
+            $key = 'canal_' . substr(sha1($label . microtime(true)), 0, 8);
+        }
+        $display = \App\Support\AtakChatChannel::labelFor($key, $label);
+        try {
+            $this->pdo()->prepare(
+                'INSERT INTO atak_chat_channels
+                    (tenant_id, map_id, channel_key, label, kind, created_by_callsign)
+                 VALUES (?, ?, ?, ?, \'custom\', ?)
+                 ON DUPLICATE KEY UPDATE label = VALUES(label)'
+            )->execute([$tenantId, $mapId, $key, $display, $createdByCallsign]);
+        } catch (\Throwable) {
+            return null;
+        }
+        $stmt = $this->pdo()->prepare(
+            'SELECT channel_key, label, kind, created_by_callsign, created_at
+             FROM atak_chat_channels
+             WHERE tenant_id = ? AND map_id = ? AND channel_key = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $mapId, $key]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? [
+            'channel_key' => (string) $row['channel_key'],
+            'label' => (string) $row['label'],
+            'kind' => (string) ($row['kind'] ?? 'custom'),
+            'created_by_callsign' => isset($row['created_by_callsign']) ? (string) $row['created_by_callsign'] : null,
+            'created_at' => isset($row['created_at']) ? (string) $row['created_at'] : null,
+        ] : null;
+    }
+
+    /**
+     * @param array{center_x: float, center_y: float, radius_m?: float, polygon?: list<array{0: float, 1: float}>|null, call_sign?: string, ttl_sec?: int} $payload
+     * @return array<string, mixed>|null
+     */
+    public function upsertViewshedOverlay(int $tenantId, int $mapId, array $payload): ?array
+    {
+        $cs = trim((string) ($payload['call_sign'] ?? ''));
+        $cx = (float) ($payload['center_x'] ?? 0);
+        $cy = (float) ($payload['center_y'] ?? 0);
+        $radius = max(50.0, min(5000.0, (float) ($payload['radius_m'] ?? 500)));
+        $poly = $payload['polygon'] ?? null;
+        $polyJson = is_array($poly) ? (json_encode($poly, JSON_UNESCAPED_UNICODE) ?: null) : null;
+        $ttl = max(60, min(3600, (int) ($payload['ttl_sec'] ?? 600)));
+        try {
+            if ($cs !== '') {
+                $this->pdo()->prepare(
+                    'DELETE FROM atak_viewshed_overlays
+                     WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+                )->execute([$tenantId, $mapId, $cs]);
+            }
+            $this->pdo()->prepare(
+                'INSERT INTO atak_viewshed_overlays
+                    (tenant_id, map_id, call_sign, center_x, center_y, radius_m, polygon_json, expires_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))'
+            )->execute([$tenantId, $mapId, $cs, $cx, $cy, $radius, $polyJson, $ttl]);
+            $id = (int) $this->pdo()->lastInsertId();
+            $stmt = $this->pdo()->prepare('SELECT * FROM atak_viewshed_overlays WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? $row : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listViewshedOverlays(int $tenantId, int $mapId): array
+    {
+        try {
+            $this->pdo()->prepare(
+                'DELETE FROM atak_viewshed_overlays
+                 WHERE tenant_id = ? AND map_id = ?
+                   AND expires_at IS NOT NULL AND expires_at < NOW()'
+            )->execute([$tenantId, $mapId]);
+            $stmt = $this->pdo()->prepare(
+                'SELECT * FROM atak_viewshed_overlays
+                 WHERE tenant_id = ? AND map_id = ?
+                 ORDER BY updated_at DESC
+                 LIMIT 20'
+            );
+            $stmt->execute([$tenantId, $mapId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public static function normalizeChatSource(?string $source): string

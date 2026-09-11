@@ -26,8 +26,17 @@ missionNamespace setVariable ["comspec_profile_function", _function, false];
 if (!(_avatar isEqualTo "")) then {
     missionNamespace setVariable ["comspec_profile_avatar", _avatar, false];
 };
-// Ne plus considérer un identifiant CBA comme autorité.
-missionNamespace setVariable ["comspec_overwatch_tenant_id", "", false];
+// Conserve l’identifiant saisi / profil pour Connect et playtime.
+// La session Athena reste autorité pour le nom de communauté et la clé de session.
+private _keptTenant = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
+if (!(_keptTenant isEqualType "")) then { _keptTenant = ""; };
+if (_keptTenant isEqualTo "") then {
+    _keptTenant = profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""];
+    if (!(_keptTenant isEqualType "")) then { _keptTenant = ""; };
+};
+if (_keptTenant isNotEqualTo "") then {
+    missionNamespace setVariable ["comspec_overwatch_tenant_id", _keptTenant, false];
+};
 
 if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
     missionNamespace setVariable ["comspec_profile_callsign", _cs, false];

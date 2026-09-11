@@ -11,6 +11,13 @@ params [
     ["_credibility", -1]
 ];
 if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
+// Canal poste réellement ouvert — pas seulement un READY trompeur pendant le handshake.
+if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
+    && {!([] call comspec_overwatch_connect_fnc_canStartSync)}) exitWith {};
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+// Ne plus bloquer le chat pendant HandshakeQuiet : AuthInvalidated ignore déjà
+// les 401 pendant cette fenêtre. Couper SendChat ici coupait le journal radio
+// jeu↔web pendant ~20 s (et plus si la quiet était prolongée).
 
 private _validIntelTypes = ["PING", "CHAT", "PHOTO", "ENEMY_INF", "VEH", "AIR", "IED", "SIGNAL", "HUMINT"];
 if !(_type in _validIntelTypes) then { _type = "HUMINT"; };
@@ -88,7 +95,9 @@ switch (_type) do {
         };
         if (_author isEqualTo "") then { _author = name _unit; };
         ["SendChat", "attempt", format ["CHAT %1", _author], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data]];
+        private _chKey = missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"];
+        if (!(_chKey isEqualType "") || {_chKey isEqualTo ""}) then { _chKey = "general"; };
+        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data, _chKey]];
         private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
         if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
             ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;

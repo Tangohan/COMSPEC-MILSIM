@@ -1964,6 +1964,74 @@ class AtakApiController
         ]);
     }
 
+    /**
+     * Indique si l’opérateur connecté apparaît en liaison sur la carte (effectifs live).
+     */
+    public function meLinkStatus(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return Response::json([
+                'visible' => false,
+                'status' => 'login_required',
+                'message' => 'Connectez-vous au portail pour vérifier votre présence.',
+            ], 401);
+        }
+
+        $user = $this->userRepository->findById($userId, $tenantId) ?: $this->userRepository->findById($userId);
+        if (!is_array($user)) {
+            return Response::json([
+                'visible' => false,
+                'status' => 'unknown',
+                'message' => 'Compte introuvable.',
+            ]);
+        }
+
+        $callsign = trim((string) ($user['callsign'] ?? ''));
+        $steam = \App\Support\SteamId::normalize((string) ($user['steam_id'] ?? ''));
+        $mapId = $this->mapId($request);
+
+        $unit = null;
+        if ($steam !== null && $steam !== '') {
+            try {
+                $unit = $this->atak->findUnitBySteamUid($tenantId, $mapId, $steam);
+            } catch (\Throwable) {
+                $unit = null;
+            }
+        }
+        if ($unit === null && $callsign !== '') {
+            try {
+                $unit = $this->atak->getUnitByCallSign($tenantId, $mapId, $callsign);
+            } catch (\Throwable) {
+                $unit = null;
+            }
+        }
+
+        $status = is_array($unit) ? trim((string) ($unit['status'] ?? '')) : '';
+        $visible = in_array($status, ['linked', 'delayed'], true);
+        $matched = is_array($unit) ? trim((string) ($unit['call_sign'] ?? '')) : '';
+
+        $message = match (true) {
+            $visible => 'Vous apparaissez en liaison sur la carte.',
+            $status === 'offline' => 'Une fiche existe mais n’est pas en liaison active. Rouvrez le canal en jeu (Entrer) et bougez un peu.',
+            $callsign === '' && ($steam === null || $steam === '') => 'Renseignez Steam et un indicatif, puis Appairer.',
+            default => 'Pas encore visible. En jeu : Athena prêt / Entrer, puis attendez jusqu’à une minute.',
+        };
+
+        return Response::json([
+            'visible' => $visible,
+            'status' => $status !== '' ? $status : 'absent',
+            'callsign' => $callsign !== '' ? $callsign : null,
+            'matched_callsign' => $matched !== '' ? $matched : null,
+            'message' => $message,
+        ]);
+    }
+
     public function whoami(Request $request, array $params = []): Response
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -5670,13 +5738,15 @@ class AtakApiController
         $limit = (int) ($request->query('limit') ?: 100);
         $afterRaw = $request->query('after');
         $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
+        $channelRaw = trim((string) ($request->query('channel') ?? $request->query('channel_key') ?? ''));
+        $channelKey = $channelRaw !== '' ? \App\Support\AtakChatChannel::normalizeKey($channelRaw) : null;
         // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
         $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
         try {
             if ($afterId > 0) {
-                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit);
+                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit, $channelKey);
             } else {
-                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
             }
         } catch (\Throwable) {
             return Response::json([]);
@@ -5739,6 +5809,16 @@ class AtakApiController
             if ($mp !== null) {
                 $chatRow['mp'] = $mp;
             }
+            $ck = trim((string) ($chatRow['channel_key'] ?? ''));
+            if ($ck === '') {
+                $ck = \App\Support\AtakChatChannel::inferFromBody(
+                    isset($chatRow['body']) ? (string) $chatRow['body'] : null
+                );
+            } else {
+                $ck = \App\Support\AtakChatChannel::normalizeKey($ck);
+            }
+            $chatRow['channel_key'] = $ck;
+            $chatRow['channel_label'] = \App\Support\AtakChatChannel::labelFor($ck);
         }
         unset($chatRow);
 
@@ -6688,6 +6768,12 @@ class AtakApiController
         $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? 'Anonymous';
         $bodyText = $body['body'] ?? '';
+        $channelKey = trim((string) ($body['channel'] ?? $body['channel_key'] ?? ''));
+        if ($channelKey === '' && is_string($bodyText)) {
+            $channelKey = \App\Support\AtakChatChannel::inferFromBody($bodyText);
+        } else {
+            $channelKey = \App\Support\AtakChatChannel::normalizeKey($channelKey);
+        }
         $chatActivityMeta = $this->buildActivityMeta(
             $tenantId,
             $mapId,
@@ -6697,6 +6783,7 @@ class AtakApiController
         );
         $source = $gameActor !== null ? 'game' : 'web';
         $chatActivityMeta['source'] = $source;
+        $chatActivityMeta['channel_key'] = $channelKey;
 
         // Réglages d’affichage camps (CBA / params mission → Tacmap) :
         // appliqués silencieusement — jamais stockés ni affichés dans le journal radio.
@@ -6734,12 +6821,15 @@ class AtakApiController
             }
         }
         if (!$medicalDup) {
-            $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText, $source);
+            $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText, $source, $channelKey);
         }
         if (is_array($row)) {
             $row['source'] = AtakDataRepository::normalizeChatSource(
                 isset($row['source']) ? (string) $row['source'] : $source
             );
+            $ck = trim((string) ($row['channel_key'] ?? $channelKey));
+            $row['channel_key'] = \App\Support\AtakChatChannel::normalizeKey($ck !== '' ? $ck : 'general');
+            $row['channel_label'] = \App\Support\AtakChatChannel::labelFor($row['channel_key']);
         }
 
         // Messages de groupe ATAK Enhanced (GROUPE|…)
@@ -7049,6 +7139,209 @@ class AtakApiController
             );
         }
         return Response::json($row, 201);
+    }
+
+    /**
+     * Liste des canaux radio (système + custom) pour la carte.
+     */
+    public function chatChannelsIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $rows = $this->atak->listChatChannels($tenantId, $mapId);
+
+        return Response::json(['channels' => $rows, 'mapId' => $mapId]);
+    }
+
+    /**
+     * Création d’un canal custom — ouverte à tout opérateur lié (jeu) ou au poste (web).
+     */
+    public function chatChannelsStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $gameActor = null;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $gameActor = is_array($actor) ? $actor : null;
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $label = trim((string) ($body['label'] ?? $body['name'] ?? ''));
+        if ($label === '') {
+            return Response::json([
+                'error' => 'label_required',
+                'message' => 'Indiquez un nom pour le canal radio.',
+            ], 422);
+        }
+        $by = trim((string) ($body['call_sign'] ?? $body['author'] ?? ''));
+        if ($by === '' && is_array($gameActor)) {
+            $by = trim((string) ($gameActor['call_sign'] ?? ''));
+        }
+        if ($by === '') {
+            $by = trim((string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Poste'));
+        }
+        $row = $this->atak->createChatChannel($tenantId, $mapId, $label, $by !== '' ? $by : null);
+        if ($row === null) {
+            return Response::json([
+                'error' => 'channel_create_failed',
+                'message' => 'Impossible de créer ce canal pour le moment.',
+            ], 500);
+        }
+        $this->activityLog?->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_CHAT,
+            'Canal radio créé — ' . (string) ($row['label'] ?? $label),
+            $by !== '' ? $by : 'Poste',
+            [
+                'channel_key' => (string) ($row['channel_key'] ?? ''),
+                'kind' => 'custom',
+                'source' => $gameActor !== null ? 'game' : 'web',
+            ]
+        );
+
+        return Response::json(['ok' => true, 'channel' => $row], 201);
+    }
+
+    /**
+     * Purge serveur de l’historique radio — réservée au poste (session web), pas au jeu seul.
+     * Efface un canal ou tout le journal de la carte.
+     */
+    public function chatPurge(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+
+        // Refuser le flux jeu (clé API) : la purge est un acte de commandement au poste.
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Seul le poste de commandement peut effacer l’historique radio.',
+            ], 403);
+        }
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return Response::json([
+                'error' => 'unauthorized',
+                'message' => 'Connectez-vous au poste pour effacer l’historique radio.',
+            ], 401);
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $channelRaw = trim((string) ($body['channel'] ?? $body['channel_key'] ?? ''));
+        $channelKey = $channelRaw !== '' ? \App\Support\AtakChatChannel::normalizeKey($channelRaw) : null;
+        $confirm = trim((string) ($body['confirm'] ?? ''));
+        $expected = $channelKey !== null ? 'EFFACER_CANAL' : 'EFFACER_TOUT';
+        if ($confirm !== $expected && strtoupper($confirm) !== $expected) {
+            return Response::json([
+                'error' => 'confirm_required',
+                'message' => $channelKey !== null
+                    ? 'Confirmez l’effacement de ce canal en validant l’action proposée.'
+                    : 'Confirmez l’effacement de tout le journal radio en validant l’action proposée.',
+                'confirm_token' => $expected,
+            ], 422);
+        }
+
+        $deleted = $this->atak->purgeChatMessages($tenantId, $mapId, $channelKey);
+        $label = $channelKey !== null
+            ? \App\Support\AtakChatChannel::labelFor($channelKey)
+            : 'tout le journal';
+        $who = trim((string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Poste'));
+        $this->activityLog?->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_CHAT,
+            'Historique radio effacé — ' . $label . ' (' . $deleted . ' message(s))',
+            $who !== '' ? $who : 'Poste',
+            [
+                'channel_key' => $channelKey,
+                'deleted' => $deleted,
+                'source' => 'web',
+                'action' => 'purge',
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'deleted' => $deleted,
+            'channel_key' => $channelKey,
+            'message' => $channelKey !== null
+                ? 'L’historique du canal « ' . $label . ' » a été effacé pour tout le monde.'
+                : 'Tout l’historique radio de cette carte a été effacé pour tout le monde.',
+        ]);
+    }
+
+    /**
+     * Calques de vue terrain (viewshed) publiés depuis le jeu.
+     */
+    public function viewshedIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $rows = $this->atak->listViewshedOverlays($tenantId, $mapId);
+
+        return Response::json(['overlays' => $rows, 'mapId' => $mapId]);
+    }
+
+    public function viewshedStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $row = $this->atak->upsertViewshedOverlay($tenantId, $mapId, [
+            'call_sign' => (string) ($body['call_sign'] ?? $body['author'] ?? ''),
+            'center_x' => (float) ($body['center_x'] ?? $body['x'] ?? 0),
+            'center_y' => (float) ($body['center_y'] ?? $body['y'] ?? 0),
+            'radius_m' => (float) ($body['radius_m'] ?? $body['radius'] ?? 500),
+            'polygon' => isset($body['polygon']) && is_array($body['polygon']) ? $body['polygon'] : null,
+            'ttl_sec' => (int) ($body['ttl_sec'] ?? 600),
+        ]);
+        if ($row === null) {
+            return Response::json([
+                'error' => 'viewshed_failed',
+                'message' => 'Impossible d’enregistrer la zone de vue pour le moment.',
+            ], 500);
+        }
+
+        return Response::json(['ok' => true, 'overlay' => $row], 201);
     }
 
     /**

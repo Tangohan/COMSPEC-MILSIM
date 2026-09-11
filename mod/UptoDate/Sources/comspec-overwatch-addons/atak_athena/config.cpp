@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.82;
-        versionStr = "1.0.82";
-        versionAr[] = {1, 0, 81};
+        version = 1.0.88;
+        versionStr = "1.0.88";
+        versionAr[] = {1, 0, 88};
     };
 };
 
@@ -94,6 +94,7 @@ class CfgFunctions
             class athena_onNotify {};
             class athena_statusOnOpened {};
             class athena_updateStatus {};
+            class athena_updateLinkStrip {};
             class athena_openStatus {};
             class athena_soundOnOpened {};
             class athena_updateSound {};
@@ -103,6 +104,8 @@ class CfgFunctions
             class athena_settingsOnOpened {};
             class athena_updateSettings {};
             class athena_settingsSave {};
+            class athena_connectionSave {};
+            class athena_connectionToggleAdvanced {};
             class athena_phoneProximitySave {};
             class athena_phoneProximityTick {};
             class athena_phoneProximityAlert {};
@@ -127,6 +130,7 @@ class CfgFunctions
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
             class athena_bftUnitLabel {};
+            class athena_fillIdentityOverlay {};
             class athena_relabelBft {};
             class athena_installBftLabels {};
         };

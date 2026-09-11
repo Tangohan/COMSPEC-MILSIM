@@ -300,6 +300,7 @@ if ($atakMapConfig) {
           <span class="atak-session-profile-chip-value" id="atak-session-profile-badge"></span>
         </button>
         <button type="button" class="atak-header-action atak-header-action--primary" id="atak-btn-game-link" title="Lier Arma ou valider un terminal">Appairer</button>
+        <span class="atak-header-action atak-link-pill" id="atak-link-status-pill" hidden title="État de votre liaison jeu">—</span>
         <button type="button" class="atak-header-action atak-header-secondary" id="atak-btn-phone-link" title="Générer un QR pour ouvrir la carte sur un téléphone">Téléphone</button>
       </div>
       <?php endif; ?>
@@ -436,8 +437,9 @@ if ($atakMapConfig) {
         <div class="atak-game-link-head">
           <h3 class="atak-account-section-title">Lier Arma (Overwatch)</h3>
           <span class="atak-pill atak-pill--muted" id="atak-device-pair-pill">Valable 30 min</span>
+          <span class="atak-pill atak-pill--muted" id="atak-me-link-pill" hidden>—</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code ici. Dans Arma, ouvrez <strong>Connexion Athena</strong> → <strong>Lier le jeu</strong>, puis saisissez uniquement ce code. Ne collez pas l’adresse du site dans le champ code.</p>
+        <p class="atak-game-link-hint">Générez un code ici. Dans Arma : téléphone → application <strong>Athena</strong> → coller <strong>uniquement ce code</strong> (pas l’adresse du site) → Lier. Si le compte est déjà reconnu, appuyez sur <strong>Entrer</strong>. <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Première liaison</a> · <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Guide</a>.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Code à saisir dans Arma</p>
@@ -491,7 +493,9 @@ if ($atakMapConfig) {
           <a href="<?= url('dashboard') ?>">Tableau de bord</a>
           <a href="<?= url('overwatch') ?>">Overwatch</a>
           <a href="<?= url('soutenir-atak') ?>">Soutenir ATAK</a>
-          <a href="<?= url('atak/tuto') ?>">Guide du mod</a>
+          <a href="<?= url('atak/premiere-liaison') ?>">Première liaison</a>
+          <a href="<?= url('atak/tuto') ?>">Guide connexion</a>
+          <a href="<?= url('equipment') ?>">Mes tenues</a>
           <?php if ($canAccessAdminAtakConfig): ?>
           <a href="<?= url('admin/atak-config') ?>">Configuration admin</a>
           <?php endif; ?>
@@ -2001,13 +2005,20 @@ if ($atakMapConfig) {
         <div class="atak-panel-strip">
           <span class="atak-panel-strip-title">Journal radio</span>
           <div class="atak-panel-strip-actions">
-            <span class="atak-panel-strip-badge">SQUAD</span>
-            <button type="button" class="atak-chat-clear" id="atak-chat-clear" title="Vider l’affichage du tchat (l’historique serveur n’est pas effacé)" aria-label="Vider le tchat">
+            <span class="atak-panel-strip-badge" id="atak-chat-channel-badge">Général</span>
+            <button type="button" class="atak-chat-clear" id="atak-chat-clear" title="Effacer mon affichage de ce canal (l’historique reste pour les autres)" aria-label="Effacer mon affichage">
               <svg class="atak-chat-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
                 <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
               </svg>
             </button>
+            <button type="button" class="atak-chat-purge" id="atak-chat-purge" title="Effacer définitivement l’historique de ce canal pour tout le monde (poste uniquement)" aria-label="Effacer l’historique du canal">
+              Effacer l’historique
+            </button>
           </div>
+        </div>
+        <div class="atak-chat-channels" id="atak-chat-channels" role="tablist" aria-label="Canaux radio"></div>
+        <div class="atak-chat-channel-tools">
+          <button type="button" class="atak-chat-channel-create" id="atak-chat-channel-create" title="Créer un canal radio">Nouveau canal</button>
         </div>
         <div class="atak-chat-messages" id="atak-chat-messages">
           <div class="atak-empty-state atak-empty-state--compact" id="atak-chat-empty">
@@ -3047,6 +3058,7 @@ if ($atakMapConfig) {
           <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif, rôle, notes…" />
           <button type="button" class="btn-live active" id="atak-filter-live">En liaison</button>
           <button type="button" class="btn-all" id="atak-filter-all">Tous</button>
+          <button type="button" class="btn-all" id="atak-filter-wave" title="Afficher uniquement les opérateurs Wave Relay">Wave</button>
         </div>
         <div class="atak-ft-filter-row">
           <label class="atak-ft-filter-label" for="atak-ft-filter">Équipe de feu
@@ -3144,6 +3156,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= $base ?>/assets/js/paris-datetime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-viewshed.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-orders.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-waypoints.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-gps-routes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -4252,6 +4265,56 @@ if ($atakMapConfig) {
             });
           });
         }
+      })();
+
+      (function initMeLinkStatus() {
+        var headerPill = document.getElementById('atak-link-status-pill');
+        var panelPill = document.getElementById('atak-me-link-pill');
+        var headerBtn = document.getElementById('atak-btn-game-link');
+        if (!headerPill && !panelPill) return;
+        var url = <?= json_encode(url('api/atak/me-link-status'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var loggedIn = <?= !empty($currentUser) ? 'true' : 'false' ?>;
+        if (!loggedIn) {
+          if (headerPill) {
+            headerPill.hidden = false;
+            headerPill.textContent = 'Hors compte';
+            headerPill.className = 'atak-header-action atak-link-pill atak-pill--muted';
+          }
+          return;
+        }
+        function apply(body) {
+          var visible = !!(body && body.visible);
+          var label = visible ? 'En liaison' : 'Pas encore vu';
+          var tone = visible ? 'atak-pill--ok' : 'atak-pill--warn';
+          if (headerPill) {
+            headerPill.hidden = false;
+            headerPill.textContent = label;
+            headerPill.className = 'atak-header-action atak-link-pill ' + tone;
+            headerPill.title = (body && body.message) ? body.message : label;
+          }
+          if (panelPill) {
+            panelPill.hidden = false;
+            panelPill.textContent = label;
+            panelPill.className = 'atak-pill ' + tone;
+            panelPill.title = (body && body.message) ? body.message : label;
+          }
+          if (headerBtn && !visible) {
+            headerBtn.title = 'Vous n’êtes pas encore visible — générez un code Appairer';
+          } else if (headerBtn && visible) {
+            headerBtn.title = 'Déjà en liaison — vous pouvez générer un nouveau code si besoin';
+          }
+        }
+        function poll() {
+          fetch(url, { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json().catch(function () { return null; }); })
+            .then(function (body) {
+              if (!body) return;
+              apply(body);
+            })
+            .catch(function () {});
+        }
+        poll();
+        setInterval(poll, 20000);
       })();
 
       (function initPhoneLink() {

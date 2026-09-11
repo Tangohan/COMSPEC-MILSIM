@@ -33,7 +33,9 @@ foreach ($dataSummary as $k => $v) {
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Configuration ATAK / Tacmap</h1>
         <p class="text-sm text-slate-600 mt-2 max-w-3xl">
             Réglages de votre communauté pour la carte tactique web, la liaison avec Arma&nbsp;3 (mod COMSPEC Overwatch) et les informations affichées aux opérateurs.
-            Les champs ci-dessous alimentent directement la page Tacmap, l’assistant d’installation et le panneau «&nbsp;Configuration pour le jeu&nbsp;».
+            Pour les membres&nbsp;: parcours <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
+            et <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" class="underline">guide connexion</a>.
+            La clé d’accès se génère ci-dessous&nbsp;; Appairer la transmet automatiquement.
         </p>
     </header>
 
@@ -57,7 +59,10 @@ foreach ($dataSummary as $k => $v) {
         <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
             <p class="text-sm font-bold text-amber-950 mb-1">Nouvelle clé d’accès — à copier immédiatement</p>
             <p class="text-xs text-amber-900 mb-3 leading-relaxed">
-                Cette valeur ne sera plus affichée en entier après avoir quitté cette page. Communiquez-la uniquement aux opérateurs autorisés (paramètres du mod Overwatch, ou via la liaison «&nbsp;Connexion en jeu&nbsp;» qui la récupère automatiquement).
+                Cette valeur ne sera plus affichée en entier après avoir quitté cette page.
+                Les membres n’ont en général <strong>pas</strong> besoin de cette clé : orientez-les vers
+                <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
+                (Appairer). Conservez la clé pour le dépannage ou les réglages avancés.
             </p>
             <div class="flex flex-wrap items-center gap-2">
                 <code id="atak-new-access-key" class="flex-1 min-w-[12rem] rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 break-all"><?= htmlspecialchars($newAccessKeyPlain) ?></code>
@@ -511,7 +516,11 @@ foreach ($dataSummary as $k => $v) {
             <div class="border border-emerald-200 rounded-xl p-5 bg-emerald-50/40 shadow-sm">
                 <h2 class="text-sm font-bold text-emerald-950 mb-4">Accès mod Overwatch (Arma&nbsp;3)</h2>
                 <p class="text-xs text-emerald-900/80 mb-4 leading-relaxed">
-                    Ces informations permettent au mod de se connecter à votre communauté. Les joueurs peuvent aussi obtenir automatiquement l’adresse et la clé via «&nbsp;Connexion en jeu&nbsp;» (code ou Steam) sur la Tacmap.
+                    Générez une <strong>clé d’accès</strong> pour votre communauté. Les membres se connectent ensuite avec
+                    <strong>Appairer</strong> (code sur la carte) : la clé est transmise automatiquement.
+                    Ils n’ont en général <em>pas</em> à coller cette clé dans Arma.
+                    Parcours membre&nbsp;: <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
+                    · <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" class="underline">Guide connexion</a>.
                 </p>
                 <div class="grid sm:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -520,7 +529,7 @@ foreach ($dataSummary as $k => $v) {
                             <input type="text" readonly id="atak-tenant-id" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white font-mono" value="<?= (int) $tenantId ?>" />
                             <button type="button" class="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50" onclick="navigator.clipboard.writeText(document.getElementById('atak-tenant-id').value); this.textContent='OK';">Copier</button>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1.5">À indiquer dans les options du mod si votre plateforme héberge plusieurs communautés.</p>
+                        <p class="text-xs text-slate-500 mt-1.5">Réglage avancé dans Paramètres Athena / Options Extensions, si plusieurs communautés partagent la même adresse.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Adresse du portail (mod)</label>
@@ -545,10 +554,10 @@ foreach ($dataSummary as $k => $v) {
                             <?php elseif ($platformKeyConfigured): ?>
                                 <p class="text-xs text-slate-600 mt-1">Aucune clé spécifique à votre communauté&nbsp;: la clé plateforme est utilisée pour le moment. Générez une clé dédiée pour isoler l’accès de votre communauté.</p>
                             <?php else: ?>
-                                <p class="text-xs text-amber-800 mt-1">Aucune clé configurée. Générez-en une pour activer la liaison jeu et la connexion téléphone.</p>
+                                <p class="text-xs text-amber-800 mt-1">Aucune clé configurée. Générez-en une pour activer Appairer et la liaison jeu.</p>
                             <?php endif; ?>
                         </div>
-                        <form action="<?= $baseUrl ?>/admin/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus pour le mod tant que les joueurs n’auront pas relancé une liaison.');">
+                        <form action="<?= $baseUrl ?>/admin/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus tant que les joueurs n’auront pas refait Appairer.');">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit" class="px-4 py-2 bg-emerald-800 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
                                 <?= $hasTenantAccessKey ? 'Régénérer la clé' : 'Générer une clé d’accès' ?>
@@ -557,9 +566,9 @@ foreach ($dataSummary as $k => $v) {
                     </div>
                 </div>
                 <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside leading-relaxed">
-                    <li>Après génération, les joueurs peuvent utiliser <strong>Connexion en jeu</strong> sur la Tacmap (code) — la clé est transmise automatiquement.</li>
-                    <li>Sinon, coller manuellement l’adresse + la clé (+ identifiant de communauté) dans les options du mod.</li>
-                    <li>La connexion téléphone (QR) nécessite une liaison déjà établie en jeu.</li>
+                    <li><strong>Membres :</strong> carte → <strong>Appairer</strong> → Générer un code → coller dans Athena (téléphone en jeu). Pas de clé à recopier.</li>
+                    <li><strong>Fallback rare :</strong> adresse + clé (+ identifiant) dans Paramètres Athena → Liaison au poste, ou Options → Extensions.</li>
+                    <li>La connexion téléphone (QR) est un autre parcours (terminal), distinct d’Appairer Overwatch.</li>
                 </ul>
             </div>
 

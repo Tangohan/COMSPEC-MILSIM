@@ -71,6 +71,19 @@ if (_posOk) then {
     _lines pushBack format ["<t color='#ffe08a'>Localisation : %1.</t>", _why];
 };
 
+// --- TEMPS DE MISSION ---
+private _ptOk = false;
+if (!isNil "comspec_overwatch_connect_fnc_forcePlaytimeReport") then {
+    _ptOk = [true] call comspec_overwatch_connect_fnc_forcePlaytimeReport;
+    if (!(_ptOk isEqualType true)) then { _ptOk = false; };
+};
+if (_ptOk) then {
+    _parts pushBack "temps de mission";
+    _lines pushBack "<t color='#9dffc4'>Temps de mission remonté vers le portail.</t>";
+} else {
+    _lines pushBack "<t color='#ffe08a'>Temps de mission : remontée non effectuée (liaison ou délai).</t>";
+};
+
 // --- DATA (carte / capteurs) ---
 missionNamespace setVariable ["COMSPEC_LastFactionSettingsBody", "", false];
 if (!isNil "comspec_overwatch_connect_fnc_sendFactionSettings") then {

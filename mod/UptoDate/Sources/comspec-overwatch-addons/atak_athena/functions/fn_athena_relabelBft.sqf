@@ -156,15 +156,8 @@ if (!isNil "cTabBFTvehicles" && {cTabBFTvehicles isEqualType []}) then {
 
 private _headerUnit = player;
 if (!isNil "cTab_player" && {!isNull cTab_player}) then { _headerUnit = cTab_player; };
-private _headerCs = [_headerUnit] call comspec_overwatch_atak_athena_fnc_athena_bftUnitLabel;
-if (_headerCs isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_getCallsign"}) then {
-    _headerCs = [true] call comspec_overwatch_connect_fnc_getCallsign;
-};
-if (_headerCs isNotEqualTo "") then {
-    {
-        private _disp = uiNamespace getVariable [_x, displayNull];
-        if (isNull _disp) then { continue };
-        private _ctrl = _disp displayCtrl (17000 + 2620);
-        if (!isNull _ctrl) then { _ctrl ctrlSetText _headerCs; };
-    } forEach ["cTab_Android_dlg", "cTab_Android_dsp", "cTab_Tablet_dlg"];
-};
+{
+    private _disp = uiNamespace getVariable [_x, displayNull];
+    if (isNull _disp) then { continue };
+    [_disp, _headerUnit] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
+} forEach ["cTab_Android_dlg", "cTab_Android_dsp", "cTab_Tablet_dlg"];

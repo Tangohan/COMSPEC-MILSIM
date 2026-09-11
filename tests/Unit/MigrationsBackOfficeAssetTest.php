@@ -16,6 +16,9 @@ final class MigrationsBackOfficeAssetTest extends TestCase
         self::assertStringNotContainsString("defined('COMSPEC_MIGRATIONS_WEB_FULL')", $runner);
         self::assertStringContainsString("glob($dir . '/*.sql')", $post);
         self::assertStringContainsString('Aucun compte ni communauté de démonstration', $post);
+        self::assertStringContainsString('EXECUTE|CALL', $post);
+        self::assertStringContainsString('comspec_supplementary_sql_is_excluded', $post);
+        self::assertStringContainsString('_manual\\.sql', $post);
     }
 
     public function testBackOfficeUsesDsfrServiceThemeAndChecksDemoAccounts(): void

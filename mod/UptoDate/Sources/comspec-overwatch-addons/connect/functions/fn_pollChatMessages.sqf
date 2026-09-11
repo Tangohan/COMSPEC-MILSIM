@@ -13,7 +13,9 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 
-private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+// Lecture seule : ne pas exiger le mode « full » (écran cassé = position seule).
+// Sinon le journal TOC → jeu restait muet alors que la liaison position tenait.
+private _txGate = [false] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
@@ -111,6 +113,9 @@ if (!_bootstrapped) exitWith {
     private _author = _cols select 1;
     private _msgBody = _cols select 2;
     private _created = if ((count _cols) > 3) then { _cols select 3 } else { "" };
+    // Colonne optionnelle channel_key (extension 2.0.26+)
+    private _channelKey = if ((count _cols) > 4) then { toLower (trim (_cols select 4)) } else { "general" };
+    if (_channelKey isEqualTo "") then { _channelKey = "general"; };
 
     private _bodyU = toUpper _msgBody;
     if ((_bodyU find "REGLAGES AFFICHAGE") == 0) then { continue };
@@ -230,7 +235,8 @@ if (!_bootstrapped) exitWith {
         _detail,
         mapGridPosition player,
         _timeStr,
-        _fromLabel
+        _fromLabel,
+        _channelKey
     ];
 
     // Les messages radio / TOC du journal web doivent aussi apparaître dans Group Messages.

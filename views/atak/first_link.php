@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 $fl = is_array($firstLink ?? null) ? $firstLink : [];
-$steps = is_array($steps ?? null) ? $steps : [];
 
 $accountReady = !empty($fl['account_ready']);
 $steamLinked = !empty($fl['steam_linked']);
@@ -10,6 +9,7 @@ $hasIdentity = !empty($fl['has_identity']);
 $hasMod = !empty($fl['has_mod']);
 $gameLinkReady = !empty($fl['game_link_ready']);
 $canViewOperators = !empty($fl['can_view_operators']);
+$hasAccessKey = !empty($fl['has_access_key']);
 
 $displayName = (string) ($fl['display_name'] ?? '');
 $callsign = (string) ($fl['callsign'] ?? '');
@@ -18,36 +18,34 @@ $identityLabel = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayN
 $accountUrl = (string) ($fl['account_url'] ?? url('account/preferences'));
 $modPageUrl = (string) ($fl['mod_page_url'] ?? url('atak/mod'));
 $modDownloadUrl = $fl['mod_download_url'] ?? null;
-$setupUrl = (string) ($fl['setup_url'] ?? url('atak/setup'));
 $tutoUrl = (string) ($fl['tuto_url'] ?? url('atak/tuto'));
 $atakUrl = (string) ($fl['atak_url'] ?? url('atak'));
 $operateursUrl = (string) ($fl['operateurs_url'] ?? url('back-office/atak/operateurs'));
-$nodeUrl = trim((string) ($fl['node_url'] ?? ''));
+$portalUrl = (string) ($fl['portal_url'] ?? rtrim(url(''), '/'));
 $gameLinkUrl = (string) ($fl['game_link_url'] ?? url('atak/game-link'));
+$guideUrl = (string) ($fl['guide_url'] ?? url('atak/mod/guide'));
 
-// Stepper dynamique : étape active = première incomplete (pack/liaison/contrôle = progressions guidées côté UI)
 $activeIndex = 0;
 if ($accountReady) {
     $activeIndex = 1;
 }
-$stepsForUi = [
+$steps = [
     ['label' => 'Compte', 'done' => $accountReady, 'active' => $activeIndex === 0],
     ['label' => 'Pack', 'done' => false, 'active' => $activeIndex === 1],
-    ['label' => 'Liaison', 'done' => false, 'active' => false],
+    ['label' => 'Appairer', 'done' => false, 'active' => false],
     ['label' => 'Contrôle', 'done' => false, 'active' => false],
 ];
-$steps = $stepsForUi;
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/atak-first-link.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
-<div class="at-first-link" data-first-link data-game-link-url="<?= htmlspecialchars($gameLinkUrl, ENT_QUOTES, 'UTF-8') ?>">
+<div class="at-first-link" data-first-link data-game-link-url="<?= htmlspecialchars($gameLinkUrl, ENT_QUOTES, 'UTF-8') ?>" data-me-link-url="<?= htmlspecialchars(url('api/atak/me-link-status'), ENT_QUOTES, 'UTF-8') ?>">
     <header class="at-first-link__hero">
         <div class="at-first-link__hero-inner">
             <p class="at-first-link__eyebrow">Carte tactique · mise en service</p>
             <h1 class="at-first-link__title">Première liaison</h1>
             <p class="at-first-link__lead">
-                Suivez ce parcours une fois, au calme, avant une activité. À la fin, votre compte Athena sera
-                relié au jeu et votre présence pourra apparaître correctement sur la carte partagée.
+                Quatre étapes, une seule fois, avant une activité. À la fin, votre compte est relié à Arma
+                et votre présence peut apparaître sur la carte partagée.
             </p>
             <div class="at-first-link__progress">
                 <?php require base_path('views/partials/ui/stepper.php'); ?>
@@ -57,18 +55,24 @@ $steps = $stepsForUi;
 
     <div class="at-first-link__body">
 
+        <aside class="at-first-link__callout at-first-link__callout--ok" style="margin-bottom:1.25rem;">
+            <strong>Méthode recommandée :</strong> compte Athena + pack Overwatch + code <strong>Appairer</strong>.
+            Vous n’avez en général <em>pas</em> besoin de coller une clé technique dans le jeu :
+            le code Appairer configure la liaison pour vous.
+        </aside>
+
         <section class="at-first-link__step<?= $accountReady ? ' is-done' : ' is-active' ?>" id="fl-step-compte" aria-labelledby="fl-compte-title">
             <div class="at-first-link__step-head">
                 <span class="at-first-link__badge" aria-hidden="true"><?= $accountReady ? '✓' : '1' ?></span>
                 <div>
                     <p class="at-first-link__step-kicker">Étape 1</p>
-                    <h2 id="fl-compte-title" class="at-first-link__step-title">Préparer votre compte Athena</h2>
+                    <h2 id="fl-compte-title" class="at-first-link__step-title">Préparer votre compte</h2>
                 </div>
             </div>
             <div class="at-first-link__step-body">
                 <p class="at-first-link__copy">
-                    La carte reconnaît les opérateurs via le compte portail. Sans identifiant Steam et sans
-                    nom / indicatif, la liaison en jeu ne pourra pas vous rattacher proprement.
+                    La carte reconnaît les opérateurs via le compte portail. Sans Steam et sans nom / indicatif,
+                    le jeu ne pourra pas vous rattacher correctement.
                 </p>
                 <ul class="at-first-link__checklist">
                     <li>
@@ -87,10 +91,10 @@ $steps = $stepsForUi;
                     </li>
                 </ul>
                 <?php if ($accountReady): ?>
-                <p class="at-first-link__callout at-first-link__callout--ok">Compte prêt pour la liaison.</p>
+                <p class="at-first-link__callout at-first-link__callout--ok">Compte prêt pour Appairer.</p>
                 <?php else: ?>
                 <p class="at-first-link__callout at-first-link__callout--warn">
-                    Complétez votre fiche avant de continuer. Revenez ensuite sur cette page : l’étape se mettra à jour.
+                    Complétez votre fiche, puis revenez ici : l’étape se mettra à jour.
                 </p>
                 <?php endif; ?>
                 <div class="at-first-link__actions">
@@ -111,13 +115,13 @@ $steps = $stepsForUi;
             </div>
             <div class="at-first-link__step-body">
                 <p class="at-first-link__copy">
-                    Le pack relie Arma à Athena (positions, marqueurs, outils de situation). Installez-le
-                    une fois, puis activez-le à chaque session avec CBA.
+                    Le pack relie Arma au poste (positions, marqueurs, téléphone Athena). Installez-le une fois,
+                    puis activez-le à chaque session <strong>après CBA</strong>.
                 </p>
                 <ul class="at-first-link__checklist">
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span>Avoir <strong>Arma 3</strong> à jour et le module <strong>CBA</strong> activé.</span>
+                        <span>Arma 3 à jour et module <strong>CBA</strong> activé.</span>
                     </li>
                     <li>
                         <span class="at-first-link__mark<?= $hasMod ? ' is-ok' : '' ?>" aria-hidden="true"><?= $hasMod ? '✓' : '' ?></span>
@@ -125,13 +129,13 @@ $steps = $stepsForUi;
                             <?php if ($hasMod): ?>
                                 Télécharger le pack publié par votre communauté.
                             <?php else: ?>
-                                Demander à un administrateur de publier le pack (aucun fichier disponible pour l’instant).
+                                Demander à un administrateur de publier le pack (aucun fichier pour l’instant).
                             <?php endif; ?>
                         </span>
                     </li>
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span>Extraire l’archive dans vos mods, activer <strong>Overwatch</strong> dans le lanceur, derrière CBA.</span>
+                        <span>Extraire l’archive, activer <strong>Overwatch</strong> dans le lanceur, derrière CBA. Quitter Arma complètement après chaque mise à jour.</span>
                     </li>
                 </ul>
                 <div class="at-first-link__actions">
@@ -139,12 +143,11 @@ $steps = $stepsForUi;
                     <a class="at-first-link__btn at-first-link__btn--mint" href="<?= htmlspecialchars((string) $modDownloadUrl, ENT_QUOTES, 'UTF-8') ?>">Télécharger le pack</a>
                     <?php endif; ?>
                     <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($modPageUrl, ENT_QUOTES, 'UTF-8') ?>">Page du pack</a>
-                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($setupUrl, ENT_QUOTES, 'UTF-8') ?>">Assistant d’installation</a>
+                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>">Guide d’installation</a>
                 </div>
                 <?php if (!$hasMod): ?>
                 <p class="at-first-link__callout at-first-link__callout--warn">
-                    Sans pack publié, vous pouvez tout de même préparer le compte et le code de liaison ;
-                    l’installation se fera dès que l’équipe aura déposé le fichier.
+                    Sans pack publié, préparez le compte et le code Appairer ; l’installation suivra dès que l’équipe aura déposé le fichier.
                 </p>
                 <?php endif; ?>
             </div>
@@ -155,38 +158,64 @@ $steps = $stepsForUi;
                 <span class="at-first-link__badge" aria-hidden="true">3</span>
                 <div>
                     <p class="at-first-link__step-kicker">Étape 3</p>
-                    <h2 id="fl-liaison-title" class="at-first-link__step-title">Relier le jeu à votre compte</h2>
+                    <h2 id="fl-liaison-title" class="at-first-link__step-title">Appairer le jeu (code)</h2>
                 </div>
             </div>
             <div class="at-first-link__step-body">
                 <p class="at-first-link__copy">
-                    Deux méthodes : Steam déjà renseigné (souvent suffisant), ou un <strong>code de liaison</strong>
-                    à usage unique à saisir en jeu. Le code expire après une trentaine de minutes.
+                    Générez un code ici (ou sur la carte via <strong>Appairer</strong>). Dans Arma, ouvrez le téléphone,
+                    application <strong>Athena</strong>, puis collez uniquement ce code. Ne collez pas l’adresse du site dans le champ code.
                 </p>
                 <ol class="at-first-link__checklist" style="list-style:decimal;padding-left:1.2rem;">
                     <li style="display:list-item;">Lancez Arma avec Overwatch activé.</li>
-                    <li style="display:list-item;">Ouvrez le panneau de liaison (touche <strong>K</strong> → Compte Athena, ou téléphone ATAK Enhanced → Connexion Athena).</li>
-                    <li style="display:list-item;">Saisissez le code ci-dessous, puis validez.</li>
+                    <li style="display:list-item;">Ouvrez le téléphone ATAK → application <strong>Athena</strong>.</li>
+                    <li style="display:list-item;">Collez le code généré ci-dessous, puis validez (Lier).</li>
+                    <li style="display:list-item;">Si le compte est déjà reconnu : bouton <strong>Entrer</strong> pour rouvrir le canal poste.</li>
                 </ol>
 
-                <?php if ($nodeUrl !== ''): ?>
+                <p class="at-first-link__copy" style="margin-top:0.9rem;margin-bottom:0.35rem;">
+                    Autres possibilités (si votre communauté les autorise) :
+                </p>
+                <ul class="at-first-link__checklist">
+                    <li>
+                        <span class="at-first-link__mark" aria-hidden="true"></span>
+                        <span><strong>Steam</strong> — si votre Steam est déjà sur la fiche, essayez le bouton Steam dans Athena.</span>
+                    </li>
+                    <li>
+                        <span class="at-first-link__mark" aria-hidden="true"></span>
+                        <span><strong>E-mail / mot de passe</strong> — connexion Athena dans le même panneau du téléphone.</span>
+                    </li>
+                </ul>
+
+                <?php if ($portalUrl !== ''): ?>
                 <p class="at-first-link__copy" style="margin-top:0.85rem;margin-bottom:0;">
-                    Si le mod demande une adresse de serveur de liaison, utilisez celle-ci :
+                    Adresse du portail (réglage avancé, rarement nécessaire si Appairer a réussi) :
                 </p>
                 <div class="at-first-link__copy-row">
-                    <pre id="fl-node-url"><?= htmlspecialchars($nodeUrl, ENT_QUOTES, 'UTF-8') ?></pre>
-                    <button type="button" class="at-first-link__btn at-first-link__btn--ghost" data-fl-copy="fl-node-url">Copier</button>
+                    <pre id="fl-portal-url"><?= htmlspecialchars($portalUrl, ENT_QUOTES, 'UTF-8') ?></pre>
+                    <button type="button" class="at-first-link__btn at-first-link__btn--ghost" data-fl-copy="fl-portal-url">Copier</button>
                 </div>
+                <p class="at-first-link__copy" style="margin-top:0.4rem;font-size:0.92em;opacity:0.9;">
+                    Si besoin : téléphone → <strong>Paramètres</strong> → rubrique <strong>Liaison au poste</strong> → coller l’adresse, puis Enregistrer la liaison.
+                </p>
+                <?php endif; ?>
+
+                <?php if (!$hasAccessKey): ?>
+                <p class="at-first-link__callout at-first-link__callout--warn">
+                    Votre communauté n’a pas encore de clé d’accès. Un administrateur doit en générer une dans
+                    Configuration ATAK pour que la liaison jeu fonctionne pleinement.
+                </p>
                 <?php endif; ?>
 
                 <?php if ($gameLinkReady): ?>
                 <div class="at-first-link__actions" style="margin-top:1rem;">
                     <button type="button" class="at-first-link__btn at-first-link__btn--mint" id="fl-game-link-btn">
-                        Générer un code de liaison
+                        Générer un code Appairer
                     </button>
+                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir Appairer sur la carte</a>
                 </div>
                 <div class="at-first-link__code-box" id="fl-game-link-result" hidden>
-                    <p class="at-first-link__code-label">Votre code</p>
+                    <p class="at-first-link__code-label">Code à coller dans Athena (Arma)</p>
                     <p class="at-first-link__code" id="fl-game-link-code">————</p>
                     <p class="at-first-link__code-meta" id="fl-game-link-meta"></p>
                     <button type="button" class="at-first-link__btn at-first-link__btn--ghost" id="fl-game-link-copy">Copier le code</button>
@@ -194,8 +223,8 @@ $steps = $stepsForUi;
                 <p class="at-first-link__error" id="fl-game-link-error" hidden></p>
                 <?php else: ?>
                 <p class="at-first-link__callout at-first-link__callout--warn">
-                    La génération de code n’est pas encore disponible sur ce serveur. Utilisez l’identifiant Steam
-                    de votre compte, ou demandez à un administrateur d’activer la liaison jeu.
+                    La génération de code n’est pas encore disponible sur ce serveur. Demandez à un administrateur
+                    d’activer la liaison jeu, ou utilisez Steam / e-mail dans Athena.
                 </p>
                 <?php endif; ?>
 
@@ -209,50 +238,51 @@ $steps = $stepsForUi;
 
         <section class="at-first-link__step" id="fl-step-controle" aria-labelledby="fl-controle-title">
             <div class="at-first-link__step-head">
-                <span class="at-first-link__badge" aria-hidden="true">4</span>
+                <span class="at-first-link__badge" aria-hidden="true" id="fl-controle-badge">4</span>
                 <div>
                     <p class="at-first-link__step-kicker">Étape 4</p>
-                    <h2 id="fl-controle-title" class="at-first-link__step-title">Contrôler votre présence sur la carte</h2>
+                    <h2 id="fl-controle-title" class="at-first-link__step-title">Contrôler votre présence</h2>
                 </div>
             </div>
             <div class="at-first-link__step-body">
                 <p class="at-first-link__copy">
-                    Une fois en mission (ou en éditeur avec le pack), ouvrez la carte dans le navigateur et
-                    vérifiez que votre indicatif apparaît. Faites ce contrôle avant une activité réelle.
+                    Une fois en mission (ou en éditeur avec le pack), vérifiez ici si le poste vous voit.
+                    Bougez un peu en jeu, puis actualisez.
                 </p>
+                <div class="at-first-link__callout" id="fl-presence-status" role="status" aria-live="polite">
+                    Cliquez sur « Vérifier ma présence » après Appairer et quelques secondes en jeu.
+                </div>
                 <ul class="at-first-link__checklist">
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span>Ouvrir la carte Athena dans un onglet du navigateur.</span>
+                        <span>Être en jeu avec Overwatch actif et le canal poste ouvert (Athena prêt / Entrer).</span>
                     </li>
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span>Être en jeu avec Overwatch actif et la liaison validée.</span>
-                    </li>
-                    <li>
-                        <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span>Confirmer que votre marqueur / indicatif est visible (après quelques secondes).</span>
+                        <span>Attendre jusqu’à une minute et se déplacer un peu.</span>
                     </li>
                 </ul>
                 <div class="at-first-link__actions">
+                    <button type="button" class="at-first-link__btn at-first-link__btn--mint" id="fl-presence-btn">Vérifier ma présence</button>
                     <a class="at-first-link__btn at-first-link__btn--primary" href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir la carte</a>
                     <?php if ($canViewOperators): ?>
                     <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($operateursUrl, ENT_QUOTES, 'UTF-8') ?>">Voir les opérateurs en liaison</a>
                     <?php endif; ?>
-                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($tutoUrl, ENT_QUOTES, 'UTF-8') ?>">Tutoriel détaillé du pack</a>
+                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>">Mes tenues</a>
+                    <a class="at-first-link__btn at-first-link__btn--ghost" href="<?= htmlspecialchars($tutoUrl, ENT_QUOTES, 'UTF-8') ?>">Guide détaillé</a>
                 </div>
                 <p class="at-first-link__callout at-first-link__callout--ok">
-                    Si vous n’apparaissez pas : vérifiez Steam, le code de liaison, et que le pack est bien activé.
-                    Signalez le problème à l’encadrement plutôt que de laisser un marqueur incohérent.
+                    Si vous n’apparaissez pas : vérifiez Steam, générez un <strong>nouveau</strong> code Appairer,
+                    quittez Arma complètement, puis réessayez.
                 </p>
             </div>
         </section>
 
         <p class="at-first-link__footer">
-            Besoin d’aller plus loin ?
-            <a href="<?= htmlspecialchars($setupUrl, ENT_QUOTES, 'UTF-8') ?>">Assistant d’installation</a>
+            Aller plus loin :
+            <a href="<?= htmlspecialchars($tutoUrl, ENT_QUOTES, 'UTF-8') ?>">Guide connexion &amp; clé</a>
             ·
-            <a href="<?= htmlspecialchars($tutoUrl, ENT_QUOTES, 'UTF-8') ?>">Tutoriel technique</a>
+            <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>">Guide du pack</a>
             ·
             <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">Tableau de bord</a>
         </p>
@@ -317,8 +347,7 @@ $steps = $stepsForUi;
     });
   }
 
-  if (!btn || !gameLinkUrl) return;
-
+  if (btn && gameLinkUrl) {
   btn.addEventListener('click', function () {
     if (busy) return;
     busy = true;
@@ -342,7 +371,7 @@ $steps = $stepsForUi;
         busy = false;
         btn.disabled = false;
         if (!res.ok || !res.body || !res.body.code) {
-          btn.textContent = 'Générer un code de liaison';
+          btn.textContent = 'Générer un code Appairer';
           showError(
             (res.body && res.body.message)
               ? res.body.message
@@ -354,16 +383,78 @@ $steps = $stepsForUi;
         if (codeEl) codeEl.textContent = res.body.code;
         if (metaEl) {
           metaEl.textContent = res.body.hint
-            || 'Dans Arma : touche K → Compte Athena, puis saisissez ce code.';
+            || 'Dans Arma : téléphone → Athena → coller ce code (pas l’adresse du site). Valable environ 30 minutes.';
         }
         if (resultEl) resultEl.hidden = false;
       })
       .catch(function () {
         busy = false;
         btn.disabled = false;
-        btn.textContent = 'Générer un code de liaison';
+        btn.textContent = 'Générer un code Appairer';
         showError('Réseau indisponible. Réessayez dans un instant.');
       });
   });
+  }
+  var meLinkUrl = root.getAttribute('data-me-link-url') || '';
+  var presenceBtn = document.getElementById('fl-presence-btn');
+  var presenceEl = document.getElementById('fl-presence-status');
+  var presenceBadge = document.getElementById('fl-controle-badge');
+  var presenceBusy = false;
+
+  function setPresenceUi(visible, message) {
+    if (!presenceEl) return;
+    presenceEl.textContent = message || '';
+    presenceEl.classList.remove('at-first-link__callout--ok', 'at-first-link__callout--warn');
+    presenceEl.classList.add(visible ? 'at-first-link__callout--ok' : 'at-first-link__callout--warn');
+    if (presenceBadge) {
+      presenceBadge.textContent = visible ? '✓' : '4';
+    }
+    var step = document.getElementById('fl-step-controle');
+    if (step) {
+      if (visible) step.classList.add('is-done');
+      else step.classList.remove('is-done');
+    }
+  }
+
+  function checkPresence() {
+    if (!meLinkUrl || presenceBusy) return;
+    presenceBusy = true;
+    if (presenceBtn) {
+      presenceBtn.disabled = true;
+      presenceBtn.textContent = 'Vérification…';
+    }
+    fetch(meLinkUrl, { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } })
+      .then(function (r) {
+        return r.text().then(function (raw) {
+          var j = null;
+          try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+          return { ok: r.ok, body: j };
+        });
+      })
+      .then(function (res) {
+        presenceBusy = false;
+        if (presenceBtn) {
+          presenceBtn.disabled = false;
+          presenceBtn.textContent = 'Vérifier ma présence';
+        }
+        if (!res.body) {
+          setPresenceUi(false, 'Impossible de vérifier pour le moment.');
+          return;
+        }
+        setPresenceUi(!!res.body.visible, res.body.message || (res.body.visible ? 'Visible.' : 'Pas encore visible.'));
+      })
+      .catch(function () {
+        presenceBusy = false;
+        if (presenceBtn) {
+          presenceBtn.disabled = false;
+          presenceBtn.textContent = 'Vérifier ma présence';
+        }
+        setPresenceUi(false, 'Réseau indisponible. Réessayez dans un instant.');
+      });
+  }
+
+  if (presenceBtn) {
+    presenceBtn.addEventListener('click', checkPresence);
+  }
 })();
 </script>

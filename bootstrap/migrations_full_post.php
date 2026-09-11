@@ -8,17 +8,20 @@ declare(strict_types=1);
  */
 
 /**
- * Exécute une instruction SQL pour le mode « complémentaire » : les SELECT / SHOW / EXPLAIN
+ * Exécute une instruction SQL pour le mode « complémentaire » : les SELECT / SHOW / EXPLAIN / EXECUTE
  * doivent passer par query() et vider le curseur, sinon PDO MySQL peut lever 2014 sur l’instruction suivante.
+ * EXECUTE est inclus car un PREPARE peut cibler un SELECT (branche « déjà présent ») et laisser un result set ouvert.
  */
 function comspec_supplementary_run_statement(PDO $pdo, string $stmt): void
 {
     $sql = $stmt . (str_ends_with($stmt, ';') ? '' : ';');
     $head = ltrim($stmt);
-    if (preg_match('/^(SELECT|SHOW|DESCRIBE|DESC|EXPLAIN|WITH)\b/is', $head) === 1) {
+    if (preg_match('/^(SELECT|SHOW|DESCRIBE|DESC|EXPLAIN|WITH|EXECUTE|CALL)\b/is', $head) === 1) {
         $st = $pdo->query($sql);
         if ($st !== false) {
-            $st->fetchAll(PDO::FETCH_ASSOC);
+            do {
+                $st->fetchAll(PDO::FETCH_ASSOC);
+            } while ($st->nextRowset());
             $st->closeCursor();
         }
 
@@ -29,9 +32,63 @@ function comspec_supplementary_run_statement(PDO $pdo, string $stmt): void
 }
 
 /**
+ * Fichiers SQL exclus du rejeu automatique (manuels / dangereux hors SSH ciblé).
+ */
+function comspec_supplementary_sql_is_excluded(string $basename): bool
+{
+    if (strcasecmp($basename, 'schema.sql') === 0) {
+        return true;
+    }
+    // Scripts destinés à une exécution manuelle contrôlée (hash placeholder, e-mail perso…).
+    if (preg_match('/_manual\.sql$/i', $basename) === 1) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Après une erreur 2014 (curseur non bufferisé), la connexion est inutilisable jusqu’à reconnexion.
+ *
  * @param callable():void $flush
  */
-function comspec_run_all_supplementary_sql_files(PDO $pdo, string $root, callable $flush): void
+function comspec_supplementary_recover_pdo(PDO &$pdo, callable $flush, string $reason): void
+{
+    if (!function_exists('migration_reconnect_pdo')) {
+        return;
+    }
+    try {
+        // Forcer une nouvelle session : is_alive échoue déjà sur 2014, mais on ignore le court-circuit.
+        $name = (string) ($_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '');
+        $user = (string) ($_ENV['DB_USER'] ?? getenv('DB_USER') ?: '');
+        $pass = (string) ($_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '');
+        if ($name === '' || $user === '') {
+            return;
+        }
+        $dsn = function_exists('migration_mysql_dsn') ? migration_mysql_dsn() : '';
+        if ($dsn === '') {
+            return;
+        }
+        $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        if (function_exists('migration_apply_session_collation')) {
+            migration_apply_session_collation($pdo);
+        }
+        try {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+        } catch (Throwable) {
+        }
+        echo "  [INFO] Reconnexion MySQL après curseur bloqué ({$reason})\n";
+        $flush();
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
+        $flush();
+    }
+}
+
+/**
+ * @param callable():void $flush
+ */
+function comspec_run_all_supplementary_sql_files(PDO &$pdo, string $root, callable $flush): void
 {
     $dir = $root . '/migrations';
     if (!is_dir($dir)) {
@@ -43,7 +100,7 @@ function comspec_run_all_supplementary_sql_files(PDO $pdo, string $root, callabl
 
     $paths = glob($dir . '/*.sql') ?: [];
     $paths = array_values(array_filter($paths, static function (string $p): bool {
-        return strcasecmp(basename($p), 'schema.sql') !== 0;
+        return !comspec_supplementary_sql_is_excluded(basename($p));
     }));
     sort($paths, SORT_STRING);
 
@@ -80,8 +137,12 @@ function comspec_run_all_supplementary_sql_files(PDO $pdo, string $root, callabl
                 $ok++;
             } catch (PDOException $e) {
                 $errs++;
-                echo '  [ATTENTION] ' . $e->getMessage() . ' (…' . substr($stmt, 0, 72) . "…)\n";
+                $msg = $e->getMessage();
+                echo '  [ATTENTION] ' . $msg . ' (…' . substr($stmt, 0, 72) . "…)\n";
                 $flush();
+                if (str_contains($msg, '2014') || str_contains($msg, 'unbuffered')) {
+                    comspec_supplementary_recover_pdo($pdo, $flush, $base);
+                }
             }
         }
 
