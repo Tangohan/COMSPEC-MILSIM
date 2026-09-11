@@ -2076,13 +2076,9 @@ window.ATAKMap = (function () {
       var extra = extraOf(u);
       var trackedAi = isTrackedAi(u, extra);
       var live = unitLive(u);
-      // La couche carte est un COP partage : une position joueur deja recue ne
-      // doit pas etre retiree par le TTL ou par le filtre local des retards.
-      // L'etat hors liaison reste porte par le style du symbole et l'infobulle.
-      if (live === 'offline' && !trackedAi && !isValidPos(
-        u.pos_x != null ? parseFloat(u.pos_x) : NaN,
-        u.pos_y != null ? parseFloat(u.pos_y) : NaN
-      ) && !String(u.grid_ref || '').trim()) return;
+      // Un joueur hors liaison ne doit plus rester sur la carte à sa dernière
+      // position connue. Seules les IA suivies conservent ce comportement COP.
+      if (live === 'offline' && !trackedAi) return;
       var id = (u.id != null && String(u.id) !== '')
         ? ('unit_' + String(u.id))
         : (String(u.call_sign || u.callsign || '').trim()

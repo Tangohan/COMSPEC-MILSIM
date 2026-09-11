@@ -6175,11 +6175,9 @@ public static partial class Extension
                         || vehicleJson.Contains("\"source\":\"phone\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"ally\"", StringComparison.Ordinal)
                         || vehicleJson.Contains("\"source\":\"gps\"", StringComparison.Ordinal));
-                // Ne jamais marteler l'API avec un acteur joueur anonyme. getPlayerUID peut rester
-                // vide quelques instants au JIP : la boucle SQF réessaiera naturellement dès que
-                // Steam sera disponible. Les contacts relais restent autorisés via la session liée.
-                if (!isProxyContact && steamNorm.Length == 0)
-                    return;
+                // Ne pas jeter la position quand getPlayerUID tarde à devenir disponible (JIP,
+                // certains lanceurs/profils). La requête reste authentifiée par la liaison Athena ;
+                // le serveur résout l'acteur et complètera l'identité dès que Steam sera connu.
                 // Mémo pose pour uploads photo : jamais depuis une IA / un téléphone relais
                 // (sinon l’indicatif opérateur devient ALLY-… ou l’inverse).
                 if (!isProxyContact && callSign.Length > 0)
