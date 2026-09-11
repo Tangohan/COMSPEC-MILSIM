@@ -59,7 +59,7 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringNotContainsString('packet_loss', $upd);
 
         self::assertStringContainsString('logout', $auth);
-        self::assertStringContainsString('1.0.84', $cfg);
+        self::assertStringContainsString('1.0.88', $cfg);
         self::assertStringContainsString('athena_homeAction', $cfg);
         self::assertStringContainsString('athena_selectHome', $cfg);
     }
