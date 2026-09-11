@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.43 — 2026-09-11
+
+### Nouveau — Affichage situation sous toutes les JVN
+
+Sous jumelles de vision nocturne, les alliés, marqueurs et véhicules proches apparaissent dans le champ de vision avec la distance. Depuis ACE, **Marquer ce bâtiment** dessine la silhouette du bâtiment regardé. Si le mod F-PANO ECOTI est déjà chargé, Overwatch n’affiche pas le sien. Réglages : Options → Extensions → COMSPEC Overwatch → Affichage situation. Relancer Arma complètement.
+
+---
+
 ## Athena 1.0.88 / Overwatch 1.5.37 / liaison 2.0.27 — 2026-09-11
 
 ### Correction — Tenues communauté denses et collections

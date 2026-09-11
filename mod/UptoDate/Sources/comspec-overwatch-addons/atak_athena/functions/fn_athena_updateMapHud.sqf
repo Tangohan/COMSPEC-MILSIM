@@ -14,10 +14,6 @@ if (isNull _disp) then {
     _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
 };
 
-if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
-    [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
-};
-
 private _idcHeading = 99887810;
 private _idcCursor = 99887811;
 private _idcUnit = 99887812;
@@ -66,12 +62,21 @@ if (_overlayOn) exitWith { [_disp] call _fncHide; };
 // mission / mises a jour du PBO, le display existe donc avec un grand panneau
 // noir mais aucun menu. Rehydrater une fois par instance de display, et non a
 // chaque tick du HUD (ATAK_getAPPs recree les controles du tiroir).
+// Différé hors du 1er frame d’ouverture : évite un hitch / voile laiteux.
 private _hydratedDisplay = uiNamespace getVariable ["COMSPEC_ATAK_MenuHydratedDisplay", displayNull];
 if (_hydratedDisplay isNotEqualTo _disp) then {
     uiNamespace setVariable ["COMSPEC_ATAK_MenuHydratedDisplay", _disp];
     if (!isNil "BCE_fnc_ATAK_getAPPs") then {
-        [true, true] call BCE_fnc_ATAK_getAPPs;
-        diag_log "[COMSPEC][MAP] ATAK application menu hydrated";
+        [{
+            params ["_d"];
+            private _cur = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+            if (isNull _cur) then { _cur = uiNamespace getVariable ["cTab_Android_dsp", displayNull]; };
+            if (isNull _cur || {_cur isNotEqualTo _d}) exitWith {};
+            if (!isNil "BCE_fnc_ATAK_getAPPs") then {
+                [true, true] call BCE_fnc_ATAK_getAPPs;
+                diag_log "[COMSPEC][MAP] ATAK application menu hydrated (deferred)";
+            };
+        }, [_disp], 0.85] call CBA_fnc_waitAndExecute;
     };
 };
 

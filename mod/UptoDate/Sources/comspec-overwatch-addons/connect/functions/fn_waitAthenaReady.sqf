@@ -37,9 +37,14 @@ if ([] call comspec_overwatch_connect_fnc_isReady) then {
             };
         };
     }, [], 20] call CBA_fnc_waitAndExecute;
-    if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
-        && {[] call comspec_overwatch_connect_fnc_canStartSync}) then {
-        ["INFO", "Athena", "Session Athena prête"] call comspec_overwatch_connect_fnc_log;
+    // Ne pas appeler canStartSync ici : HandshakeQuiet est encore true → faux « canal refusé ».
+    private _c2Ok = if (!isNil "comspec_overwatch_connect_fnc_isC2Ok") then {
+        [] call comspec_overwatch_connect_fnc_isC2Ok
+    } else {
+        true
+    };
+    if (_c2Ok) then {
+        ["INFO", "Athena", "Session Athena prête (stabilisation liaison en cours)"] call comspec_overwatch_connect_fnc_log;
         true
     } else {
         ["WARN", "Athena", "Compte trouvé — canal poste encore refusé (pas de Tx)"] call comspec_overwatch_connect_fnc_log;

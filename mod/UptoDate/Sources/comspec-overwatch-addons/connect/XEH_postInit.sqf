@@ -150,6 +150,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
+    // Affichage situation JVN (Draw3D) — désactivé si F-PANO ECOTI est chargé.
+    [{
+        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
+            [] call comspec_overwatch_connect_fnc_ecotiInit;
+        };
+    }, [], 3] call CBA_fnc_waitAndExecute;
+
     // Charges ACE (minuterie + déclenchement TOC) → section ATAK web.
     [{
         isClass (configFile >> "CfgPatches" >> "ace_explosives")

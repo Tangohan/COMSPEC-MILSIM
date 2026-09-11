@@ -29,16 +29,24 @@ lbClear _list;
 
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 if (!(_orders isEqualType [])) then { _orders = []; };
+private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
+if (!(_dismissed isEqualType [])) then { _dismissed = []; };
 
 private _rows = [];
 {
     if (!(_x isEqualType createHashMap)) then { continue };
     private _id = _x getOrDefault ["id", ""];
     if (_id isEqualTo "") then { continue };
+    if (_id in _dismissed) then { continue };
     private _type = toUpper (_x getOrDefault ["type", "MOVE"]);
     if (_type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) then { continue };
     if (!isNil "comspec_overwatch_connect_fnc_orderConcernsPlayer") then {
         if (!([_x] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
+    };
+    // Normaliser un statut vide renvoyé par la liaison (« - » → PENDING).
+    private _stRaw = trim (_x getOrDefault ["status", "PENDING"]);
+    if (_stRaw isEqualTo "" || {_stRaw isEqualTo "-"}) then {
+        _x set ["status", "PENDING"];
     };
     _rows pushBack _x;
 } forEach _orders;

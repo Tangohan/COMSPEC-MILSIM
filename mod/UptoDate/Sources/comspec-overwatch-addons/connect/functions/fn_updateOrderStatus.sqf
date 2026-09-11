@@ -4,7 +4,7 @@
 */
 params ["_orderId", ["_status", "ACK"], ["_note", ""]];
 
-private _valid = ["PENDING", "ACK", "EXEC", "FAILED", "CANCELLED", "DELIVERED"];
+private _valid = ["PENDING", "ACK", "EXEC", "DONE", "FAILED", "CANCELLED", "DELIVERED"];
 if !((toUpper _status) in _valid) exitWith { false };
 
 private _current = "PENDING";

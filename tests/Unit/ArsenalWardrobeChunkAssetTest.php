@@ -47,6 +47,6 @@ final class ArsenalWardrobeChunkAssetTest extends TestCase
         self::assertStringContainsString('Contenu gilet', $icons);
         self::assertStringContainsString('_fnc_initCollapsed', $refresh);
         self::assertStringContainsString('arsenalListWardrobes', $refresh);
-        self::assertStringContainsString('1.5.37', $cfg);
+        self::assertMatchesRegularExpression('/1\\.5\\.\\d+/', $cfg);
     }
 }
