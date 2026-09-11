@@ -1,5 +1,5 @@
 if (!hasInterface) exitWith {};
-if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_atak_native")) exitWith {
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
     diag_log "[COMSPEC ATAK NATIVE][WARN][BOOT] Legacy ATAK client PostInit suppressed";
 };
 

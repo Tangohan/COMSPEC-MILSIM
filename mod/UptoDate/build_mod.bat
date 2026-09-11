@@ -70,15 +70,6 @@ if %ERRORLEVEL% NEQ 0 (
     goto :build_fail
 )
 
-:: Client ATAK natif principal (RscControls/SQF, sans navigateur)
-if not exist "%SOURCES_DIR%\atak_native\config.cpp" (
-    echo [ERREUR] Sources ATAK Native manquantes >> "%BUILD_LOG%"
-    goto :build_fail
-)
-echo [BUILD] Compilation de comspec_overwatch_atak_native...
-"%BUILDER_PATH%" "%SOURCES_DIR%\atak_native" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_native >> "%BUILD_LOG%" 2>&1
-if %ERRORLEVEL% NEQ 0 goto :build_fail
-
 :: Bridge optionnel ATAK Enhanced (cTab/BCE) - ignore si AddonBuilder echoue
 if exist "%SOURCES_DIR%\atak_athena\config.cpp" (
     echo [BUILD] Compilation de comspec_overwatch_atak_athena... >> "%BUILD_LOG%"

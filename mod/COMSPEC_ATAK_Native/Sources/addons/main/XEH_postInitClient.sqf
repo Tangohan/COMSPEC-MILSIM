@@ -1,6 +1,12 @@
 if (!hasInterface) exitWith {};
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
+private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
+private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
 ["COMSPEC ATAK", "OpenTerminal", "Ouvrir COMSPEC ATAK", { [] call comspec_atak_native_fnc_open }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];

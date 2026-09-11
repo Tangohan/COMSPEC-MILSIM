@@ -7,9 +7,9 @@ L'audit a couvert les 2 987 fichiers de `mod/`, les sources dépaquetées sous `
 | Génération | Source active/packaging | Dépendances UI | Décision |
 |---|---|---|---|
 | Connecteur/classic tablet | `connect`, compilé obligatoirement avant les autres PBO | dialogs natifs et ancien navigateur selon fonction | conservé comme réseau et compatibilité ; pas utilisé pour rendre ATAK Native |
-| Bridge Athena ATAK Enhanced | `atak_athena`, PBO optionnel explicitement packagé | cTab, BCE | conservé sur disque, bootstrap supprimé lorsque `atak_native` existe |
+| Bridge Athena ATAK Enhanced | `atak_athena`, PBO optionnel explicitement packagé | cTab, BCE | conservé sur disque, bootstrap supprimé lorsque `COMSPEC_ATAK_Native` existe |
 | SSE indépendant | `mod/@COMSPEC_SSE/addons/*` | CBA, ACE uniquement dans addon compat | données réutilisables, aucune dépendance UI dure ajoutée |
-| ATAK Native | `atak_native`, nouveau PBO obligatoire | Arma UI + CBA + connect | client principal |
+| ATAK Native | `mod/COMSPEC_ATAK_Native`, mod/PBO/DLL autonomes | Arma UI + CBA | client principal |
 
 ## Matrice fonctionnelle
 
@@ -35,7 +35,7 @@ L'audit a couvert les 2 987 fichiers de `mod/`, les sources dépaquetées sous `
 
 ## Contrats extension observés
 
-Les commandes réutilisées comprennent notamment Connect, Ping, UpdatePosition, GetMarkers/SendMarker, GetOrders/UpdateOrderStatus, GetChatMessages/SendChat, images/uploads, slides, profils et BFT. Les endpoints `/api/atak/*` et `/api/sse/*` restent encapsulés par `COMSPECExtension`; aucun HTTP n'est réimplémenté en SQF.
+Les commandes réutilisées comprennent notamment Connect, Ping, UpdatePosition, GetMarkers/SendMarker, GetOrders/UpdateOrderStatus, GetChatMessages/SendChat, images/uploads, slides, profils et BFT. Les endpoints `/api/atak/*` et `/api/sse/*` restent encapsulés par la DLL dédiée `COMSPECATAKNativeExtension`; aucun HTTP n'est réimplémenté en SQF. Le site reçoit explicitement `client_product=comspec_atak_native`, `client_name=COMSPEC ATAK Native` et `ui_generation=native-rsc-v1`.
 
-Les fonctions historiques ne sont pas supprimées. Leur chargement simultané est empêché par la présence de `CfgPatches/comspec_overwatch_atak_native`, avec canary RPT explicite. Cela permet un rollback en retirant seulement le PBO natif.
+Les fonctions historiques ne sont pas supprimées. Leur chargement simultané est empêché par la présence de `CfgPatches/comspec_atak_native_main`, avec canary RPT explicite. Cela permet un rollback en retirant seulement le PBO natif.
 

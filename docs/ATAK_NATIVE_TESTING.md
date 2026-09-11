@@ -3,9 +3,9 @@
 ## Vérifications statiques avant build
 
 1. Vérifier les accolades/configs et l'existence de toutes les fonctions déclarées dans `CfgFunctions`.
-2. Rechercher dans `atak_native` les chaînes interdites (`html`, `javascript`, `leaflet`, `webview`, `cef`, `JSDialog`) ; seules les mentions documentaires éventuelles sont permises, jamais du code.
-3. Construire avec `mod/UptoDate/build_mod.bat` sous Windows/Arma Tools. `atak_native.pbo` est obligatoire.
-4. Publier en staging avec `workshop-pack.ps1`; l'absence du PBO natif doit interrompre le script.
+2. Rechercher dans `COMSPEC_ATAK_Native` les chaînes interdites (`html`, `javascript`, `leaflet`, `webview`, `cef`, `JSDialog`) ; seules les mentions documentaires éventuelles sont permises, jamais du code.
+3. Construire avec `mod/COMSPEC_ATAK_Native/build_mod.bat` sous Windows/Arma Tools. `main.pbo` et `COMSPECATAKNativeExtension_x64.dll` sont obligatoires.
+4. Vérifier que la sortie se trouve uniquement dans `mod/COMSPEC_ATAK_Native/@COMSPEC_ATAK_Native` et non dans le pack Overwatch.
 
 ## Matrice en jeu
 
@@ -28,4 +28,4 @@ Tester 16:9, 16:10 et ultrawide, trois tailles d'interface Arma, carte à plusie
 
 ## Limites de CI
 
-Le moteur Arma 3, Arma Tools/AddonBuilder et `COMSPECExtension_x64.dll` Windows sont nécessaires pour les scénarios runtime. Sur un hôte Linux, les contrôles statiques valident la structure mais ne remplacent pas les dix essais en jeu ni l'inspection du RPT réel.
+Le moteur Arma 3, Arma Tools/AddonBuilder et `COMSPECATAKNativeExtension_x64.dll` Windows sont nécessaires pour les scénarios runtime. Sur un hôte Linux, les contrôles statiques valident la structure mais ne remplacent pas les dix essais en jeu ni l'inspection du RPT réel.

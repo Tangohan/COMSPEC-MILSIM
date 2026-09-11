@@ -2,9 +2,9 @@
 
 ## Périmètre
 
-`comspec_overwatch_atak_native` est le client ATAK principal. Son affichage est composé exclusivement de `RscDisplay`, `RscControls`, `RscMapControl` et SQF. Il n'ouvre ni page distante, ni CEF/WebView, et ne contient aucun HTML, JavaScript, CSS ou Leaflet. Athena est une **source de données facultative** : la carte moteur, le joueur, le groupe, les outils et les marqueurs locaux restent utilisables hors ligne.
+`comspec_atak_native_main` est le client ATAK principal du mod autonome `@COMSPEC_ATAK_Native`. Son affichage est composé exclusivement de `RscDisplay`, `RscControls`, `RscMapControl` et SQF. Il n'ouvre ni page distante, ni CEF/WebView, et ne contient aucun HTML, JavaScript, CSS ou Leaflet. Athena est une **source de données facultative** : la carte moteur, le joueur, le groupe, les outils et les marqueurs locaux restent utilisables hors ligne.
 
-Le PBO utilise le préfixe `z\comspec_overwatch\addons\atak_native`, dépend seulement de l'UI Arma, CBA/XEH et du connecteur COMSPEC. ACE, ACRE, BCE et cTab ne sont pas des dépendances. L'ancien addon `atak_athena` détecte ce patch et interrompt ses deux bootstraps afin d'empêcher deux terminaux concurrents.
+Le PBO utilise le préfixe `z\comspec_atak_native\addons\main` et dépend seulement de l'UI Arma et de CBA/XEH. ACE, ACRE, BCE, cTab et `@COMSPECOverwatch` ne sont pas obligatoires. Sa DLL dédiée est `COMSPECATAKNativeExtension_x64.dll`; elle annonce `comspec_atak_native` et `native-rsc-v1` à Athena. L'ancien addon `atak_athena` détecte ce patch et interrompt ses deux bootstraps afin d'empêcher deux terminaux concurrents.
 
 ## Cycle de vie
 
@@ -25,7 +25,7 @@ La grille calcule barre haute/basse, rail, centre et inspecteur à partir de `sa
 `uiNamespace/COMSPEC_ATAK_Data` sépare `units`, `markers`, `tasks`, `messages`, `intel`, `photos`, `zones`, `routes`, `events`, `briefing` et leurs revisions. Le flux est :
 
 ```
-COMSPECExtension / moteur → normalisation → store → dirty/revision → UI / onDraw
+COMSPECATAKNativeExtension / moteur → normalisation → store → dirty/revision → UI / onDraw
 ```
 
 `storeSet` incrémente les revisions et marque un domaine sale. Les fonctions réseau ne détiennent aucun control. `importLegacyData` adapte les stores fonctionnels établis (`COMSPEC_Orders`, `COMSPEC_Athena_AlertInbox`, `COMSPEC_IntelStore`) plutôt que de dupliquer les contrats.
@@ -36,7 +36,7 @@ Un seul CBA PFH à 0,2 s orchestre : données locales à 0,25 s, statut à 1 s, 
 
 ## Extension et callbacks
 
-`extensionCall` est l'unique adaptateur direct du nouvel addon vers `COMSPECExtension`; il ne journalise jamais les arguments. `remoteSync` réutilise les producteurs éprouvés `pollAthenaMarkers`, `pollOrders` et `pollChatMessages`. Le dispatcher traite notamment Connected, Error, NetworkHiccup, AccessDenied, RateLimited/Clear, BftIdentity et les callbacks Google Slides. Le dispatcher historique reste installé pour préserver l'authentification et les services globaux du connecteur.
+`extensionCall` est l'unique adaptateur direct du nouvel addon vers `COMSPECATAKNativeExtension`; il ne journalise jamais les arguments. Le binaire possède un nom, un User-Agent et un stockage de session séparés. Lorsque Overwatch est aussi chargé, `remoteSync` peut réutiliser ses producteurs `pollAthenaMarkers`, `pollOrders` et `pollChatMessages` comme compatibilité facultative. Le dispatcher traite notamment Connected, Error, NetworkHiccup, AccessDenied, RateLimited/Clear, BftIdentity et les callbacks Google Slides.
 
 ## Carte et interactions
 
@@ -52,5 +52,5 @@ CBA fournit XEH, keybind, événements et PFH. Les informations ACE/ACRE peuvent
 
 ## Construction
 
-`build_mod.bat` traite `atak_native.pbo` comme obligatoire après `connect.pbo`. `workshop-pack.ps1` refuse la publication si ce PBO est absent, puis l'ajoute au paquet. Le bridge historique cTab/BCE reste optionnel mais s'auto-supprime au boot lorsque le client natif est chargé.
+`mod/COMSPEC_ATAK_Native/build_mod.bat` publie la DLL NativeAOT distincte puis construit `main.pbo` dans `@COMSPEC_ATAK_Native`. Le pipeline Overwatch ne possède ni ne copie plus cet addon. Son bridge historique cTab/BCE s'auto-supprime au boot lorsque le patch natif est chargé.
 

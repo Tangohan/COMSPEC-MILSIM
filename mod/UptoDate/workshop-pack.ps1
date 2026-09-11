@@ -116,10 +116,6 @@ if (Test-Path -LiteralPath $changelog) {
 Write-Step "Copie PBO"
 Copy-Item -LiteralPath $pboMain -Destination (Join-Path $OutDir "addons\main.pbo") -Force
 Copy-Item -LiteralPath $pboConnect -Destination (Join-Path $OutDir "addons\connect.pbo") -Force
-$pboNative = Join-Path $SourceMod "addons\atak_native.pbo"
-if (-not (Test-Path -LiteralPath $pboNative)) { throw "atak_native.pbo absent — le client principal ne peut pas être publié" }
-Copy-Item -LiteralPath $pboNative -Destination (Join-Path $OutDir "addons\atak_native.pbo") -Force
-Write-Host "  + atak_native.pbo (client ATAK natif principal)"
 $pboAthena = Join-Path $SourceMod "addons\atak_athena.pbo"
 if (Test-Path -LiteralPath $pboAthena) {
     Copy-Item -LiteralPath $pboAthena -Destination (Join-Path $OutDir "addons\atak_athena.pbo") -Force

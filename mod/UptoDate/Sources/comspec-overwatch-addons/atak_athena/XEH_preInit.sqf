@@ -1,5 +1,5 @@
 // Pré-init bridge Athena ↔ ATAK Enhanced (cTab).
-if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_atak_native")) exitWith {
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
     missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
     diag_log "[COMSPEC ATAK NATIVE][WARN][BOOT] Legacy ATAK bootstrap suppressed";
 };
