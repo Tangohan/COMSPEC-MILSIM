@@ -90,7 +90,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", false];
 if (!isNull _sum) then {
     private _n = count _rows;
     private _txt = if (_n < 1) then {
-        "<t color='#c8d0d8'>Aucun ordre C2 pour le moment</t>"
+        "<t color='#c8d0d8'>Aucun ordre pour le moment</t>"
     } else {
         format [
             "<t color='#ffd27a'>%1</t> ordre%2 · <t color='#9ed8b4'>%3</t> à traiter",

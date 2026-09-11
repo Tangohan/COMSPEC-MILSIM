@@ -160,7 +160,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.52));
             size = QUOTE(COMSPEC_ATHENA_H(0.30));
-            text = "Remonter le temps";
+            text = "Envoyer le temps de mission";
             show = 0;
             colorBackground[] = ATHENA_BTN_ACCENT;
             colorBackground2[] = ATHENA_BTN_ACCENT;

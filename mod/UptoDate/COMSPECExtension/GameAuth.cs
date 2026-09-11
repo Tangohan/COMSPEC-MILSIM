@@ -308,13 +308,32 @@ public static partial class Extension
         DpapiGameStore.Save(next);
     }
 
+    /// <summary>
+    /// Appairer (RedeemGameLink) ne pose pas de refresh_token DPAPI : la clé communauté
+    /// reste en mémoire. Ne pas la dégrader en SESSION_EXPIRED au retour lobby / JIP.
+    /// </summary>
+    private static string TryResumeCommunityKeySession()
+    {
+        if (_apiKey.Length < 16 || string.IsNullOrEmpty(_baseUrl))
+            return "";
+        var verify = VerifyClientInitSync();
+        if (!verify.StartsWith("OK|", StringComparison.Ordinal))
+            return "";
+        return FinishGameAuthReady(verify);
+    }
+
     private static string RestoreGameSession(string modVersion)
     {
         SetGameAuth("RESTORING_SESSION", 24, "");
         EnsureGameDeviceId();
         var store = DpapiGameStore.Load();
         if (store == null || string.IsNullOrEmpty(store.RefreshToken))
+        {
+            var resumed = TryResumeCommunityKeySession();
+            if (resumed.Length > 0)
+                return resumed;
             return FailGameAuth("SESSION_EXPIRED");
+        }
         if (!string.IsNullOrEmpty(store.BaseUrl))
             _baseUrl = NormalizeBaseUrl(store.BaseUrl);
 
@@ -334,6 +353,9 @@ public static partial class Extension
             DpapiGameStore.ClearTokens(keepDeviceId: true);
             _gameAccessToken = "";
             _gameAccessExpiresAt = DateTimeOffset.MinValue;
+            var resumedAfterRevoke = TryResumeCommunityKeySession();
+            if (resumedAfterRevoke.Length > 0)
+                return resumedAfterRevoke;
             return FailGameAuth("SESSION_EXPIRED");
         }
 

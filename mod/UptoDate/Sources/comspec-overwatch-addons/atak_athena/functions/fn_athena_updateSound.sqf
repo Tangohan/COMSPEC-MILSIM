@@ -69,7 +69,7 @@ if (!isNull _btnQuiet) then {
 
 private _btnScreen = _group controlsGroupCtrl 9836;
 if (!isNull _btnScreen) then {
-    _btnScreen ctrlSetText (["Notifs écran : off", "Notifs écran : on"] select _screen);
+    _btnScreen ctrlSetText (["Alertes à l’écran : non", "Alertes à l’écran : oui"] select _screen);
 };
 
 private _btnRp = _group controlsGroupCtrl 9837;

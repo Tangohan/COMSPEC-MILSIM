@@ -316,7 +316,7 @@ private _callsignAction = [
 [_callsignAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ordersAction = [
-    "COMSPEC_OrderInbox", "Ordres C2 (TASK)", "", {
+    "COMSPEC_OrderInbox", "Ordres reçus", "", {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openTask") then {
             [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
         } else {

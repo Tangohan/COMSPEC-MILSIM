@@ -2707,6 +2707,8 @@ public static partial class Extension
                     var gameVerify = VerifyClientInitSync();
                     if (gameVerify.StartsWith("OK|", StringComparison.Ordinal))
                     {
+                        // Aligné Redeem : Connect réussi = session READY pour le handshake SQF.
+                        SetGameAuth("READY", 100, "");
                         EnsureScreenshotWatchers();
                         return gameVerify;
                     }
@@ -2718,6 +2720,9 @@ public static partial class Extension
             var verify = VerifyClientInitSync();
             if (verify.StartsWith("OK|", StringComparison.Ordinal))
             {
+                // Reprise après lobby / JIP avec clé Appairer (profil) : READY manquait ici
+                // → le joueur devait coller un nouveau code alors que la clé était encore valide.
+                SetGameAuth("READY", 100, "");
                 EnsureScreenshotWatchers();
                 return verify;
             }
@@ -2731,6 +2736,7 @@ public static partial class Extension
                 var restored = VerifyClientInitSync();
                 if (restored.StartsWith("OK|", StringComparison.Ordinal))
                 {
+                    SetGameAuth("READY", 100, "");
                     EnsureScreenshotWatchers();
                     return restored;
                 }

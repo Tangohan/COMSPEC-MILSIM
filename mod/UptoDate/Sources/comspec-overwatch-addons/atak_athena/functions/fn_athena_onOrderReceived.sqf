@@ -60,7 +60,7 @@ if (
     private _safePayload = _payload replaceString ["<", "&lt;"];
     _safePayload = _safePayload replaceString [">", "&gt;"];
     private _body = format [
-        "<t color='#ffd36a'>ORDRE ATHENA</t><br/>From: %1<br/>Grid: %2<br/>Time: %3<br/>Type: %4<br/>Priority: %5<br/><br/>%6<br/><br/>ATHENA_ORDER_ID=%7",
+        "<t color='#ffd36a'>ORDRE ATHENA</t><br/>De : %1<br/>Grille : %2<br/>Heure : %3<br/>Type : %4<br/>Priorité : %5<br/><br/>%6<br/><br/>ATHENA_ORDER_ID=%7",
         _issuer,
         _grid,
         _time,

@@ -594,6 +594,26 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack (Overwatch 1.5.43). Quittez Arma complètement. Activez les JVN en mission.',
             ], 'Overwatch 1.5.43'),
+            $pr(509, '2026-09-11', 'Liaison ATAK reprise après déconnexion', 'Après un Appairage réussi, quitter la mission ou le lobby puis rejoindre ne demande plus un nouveau code. La liaison déjà enregistrée sur le profil Arma se rétablit toute seule. Une déconnexion volontaire depuis le téléphone ou le hub exige toujours un nouvel Appairage', [
+                'Retour lobby / nouvelle mission : reprise de la liaison sans code',
+                'Relance complète d’Arma : même reprise tant que le profil n’a pas été délié',
+                'Déconnecter volontairement : nouvel Appairage requis (comportement voulu)',
+            ], [], [
+                'Devoir coller un nouveau code Appairer à chaque retour en mission',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.45). Quittez Arma complètement, puis testez un aller-retour lobby sans Déconnecter.',
+            ], 'Overwatch 1.5.45'),
+            $pr(508, '2026-09-11', 'ATAK en jeu plus clair et plus français', 'Sur le téléphone, les badges de liaison, les comptes-rendus et les ordres parlent enfin le même langage que le reste du portail. Le bandeau de liaison est plus compact, le détail des rapports et des ordres affiche De / Grille / Heure, et les raccourcis bureau comme ACE disent Ordres reçus', [
+                'Badges hub : Lié à Athena / Hors liaison',
+                'Comptes-rendus : détail, types et libellés de formulaire en français',
+                'Ordres reçus : libellés De / Grille / Heure / Priorité ; raccourci et menu ACE renommés',
+                'Sons et état : Alertes à l’écran, Envoyer le temps de mission, Dernière sync. terminal',
+                'Bandeau de liaison encore plus compact',
+            ], [], [
+                'Textes encore en anglais dans Reports, Ordres ou sur le hub',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.45 · Athena 1.0.91). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.45 · Athena 1.0.91'),
             $pr(507, '2026-09-11', 'Comptes-rendus plus lisibles sur le téléphone', 'Dans l’application Comptes-rendus, la liste reçue et le formulaire Nouveau ne se chevauchent plus. Les champs sont plus aérés, le fond opaque évite le texte de la carte qui transparaît, et Envoyer / Effacer restent accessibles au-dessus de Retour', [
                 'Onglet Reçus : liste, Localiser / Effacer et détail sur des lignes distinctes',
                 'Onglet Nouveau : champs espacés et boutons d’envoi dégagés',

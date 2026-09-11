@@ -210,7 +210,7 @@ class COMSPEC_ATAK_Sound: ATAK_Message
         {
             idc = 9836;
             x = QUOTE(COMSPEC_SOUND_W(1.54));
-            text = "Notifs écran";
+            text = "Alertes à l’écran";
             onButtonClick = "['toggle_screen'] call comspec_overwatch_atak_athena_fnc_athena_soundAction";
         };
 

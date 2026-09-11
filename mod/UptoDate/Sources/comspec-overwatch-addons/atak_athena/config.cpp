@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.090;
-        versionStr = "1.0.90";
-        versionAr[] = {1, 0, 90};
+        version = 1.091;
+        versionStr = "1.0.91";
+        versionAr[] = {1, 0, 91};
     };
 };
 
@@ -275,7 +275,7 @@ class ATAK_APPs
     };
     class AtakTask: message
     {
-        text = "<t size='1'>TASK</t>";
+        text = "<t size='1'>Ordres reçus</t>";
         textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
@@ -414,7 +414,7 @@ class RscTitles
         };
         class AtakTask: message
         {
-            text = "<t size='1'>TASK</t>";
+            text = "<t size='1'>Ordres reçus</t>";
             textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property

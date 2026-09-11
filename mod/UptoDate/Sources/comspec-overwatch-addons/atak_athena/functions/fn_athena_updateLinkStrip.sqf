@@ -44,10 +44,10 @@ if (!isNull _hdr) then {
     _hh = _h0;
 };
 
-// Plus compact que l’ancien bandeau (0.85 → ~0.62 × hauteur statut, 2 lignes serrées)
+// Plus compact : ~0,86 × hauteur barre d’état
 private _sy = _hy + _hh;
-private _sh = (_hh * 1.05) max 0.022;
-private _inset = _hw * 0.012;
+private _sh = (_hh * 0.86) max 0.018;
+private _inset = _hw * 0.018;
 _hx = _hx + _inset;
 _hw = (_hw - (_inset * 2)) max (_bw * 4);
 
@@ -212,7 +212,7 @@ if (_extV isEqualTo "") then { _extV = "—"; };
 
 private _sep = "<t color='#4a5a68'> · </t>";
 private _html = format [
-    "<t align='center' size='0.52' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
+    "<t align='center' size='0.45' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8' size='0.90'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
     _okColor,
     _okTxt,
     _sep,

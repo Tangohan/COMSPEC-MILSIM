@@ -66,9 +66,9 @@ private _shortcuts = [
 
         "\A3\ui_f\data\map\markers\military\pickup_CA.paa",
 
-        "Ordres C2 — app TASK (liste et réponses)",
+        "Ordres reçus — liste et réponses",
 
-        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>TASK<br/>Ordres</t>",
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Ordres<br/>reçus</t>",
 
         "order"
 
