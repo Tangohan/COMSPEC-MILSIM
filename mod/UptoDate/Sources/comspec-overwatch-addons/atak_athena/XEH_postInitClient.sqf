@@ -91,7 +91,7 @@ private _ensureAtakApps = {
             _apps pushBack _app;
             _changed = true;
         };
-    } forEach ["AtakTask", "BDA_Report", "BII_Identifi", "AtakNote"];
+    } forEach ["AtakTask", "AtakComms", "BDA_Report", "BII_Identifi", "AtakNote"];
 
     if (_changed) then {
         profileNamespace setVariable ["BCE_ATAK_APPs", _apps];

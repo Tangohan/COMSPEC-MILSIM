@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.092;
-        versionStr = "1.0.92";
-        versionAr[] = {1, 0, 92};
+        version = 1.095;
+        versionStr = "1.0.95";
+        versionAr[] = {1, 0, 95};
     };
 };
 
@@ -129,6 +129,11 @@ class CfgFunctions
             class athena_taskSyncButtons {};
             class athena_syncOrdersToGroupChat {};
             class athena_openTask {};
+            class athena_commsOnOpened {};
+            class athena_updateComms {};
+            class athena_commsSelectChannel {};
+            class athena_commsSend {};
+            class athena_openComms {};
             class athena_bftUnitLabel {};
             class athena_fillIdentityOverlay {};
             class athena_relabelBft {};
@@ -244,6 +249,7 @@ class RscControlsGroup;
 #include "ui\bii_page.hpp"
 #include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
+#include "ui\comms_page.hpp"
 #include "ui\resynch_page.hpp"
 
 class ATAK_APPs
@@ -284,6 +290,18 @@ class ATAK_APPs
             PAGE_CTRL = "COMSPEC_ATAK_Task";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
             ATAK_Buttons = "COMSPEC_Task_Menu";
+        };
+    };
+    class AtakComms: message
+    {
+        text = "<t size='1'>Messagerie</t>";
+        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.12;
+            PAGE_CTRL = "COMSPEC_ATAK_Comms";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
         };
     };
     class AtakStatus: message
@@ -423,6 +441,18 @@ class RscTitles
                 PAGE_CTRL = "COMSPEC_ATAK_Task";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
                 ATAK_Buttons = "COMSPEC_Task_Menu";
+            };
+        };
+        class AtakComms: message
+        {
+            text = "<t size='1'>Messagerie</t>";
+            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.12;
+                PAGE_CTRL = "COMSPEC_ATAK_Comms";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
             };
         };
         class AtakStatus: message

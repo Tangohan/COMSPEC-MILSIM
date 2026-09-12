@@ -76,6 +76,20 @@ private _shortcuts = [
 
     [
 
+        198740, 198741, 1110,
+
+        "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa",
+
+        "Messagerie — canaux radio vers le poste",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Messagerie</t>",
+
+        "messages"
+
+    ],
+
+    [
+
         198726, 198727, 750,
 
         "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa",
@@ -172,6 +186,10 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
 
     if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"}) exitWith {
         [] call comspec_overwatch_atak_athena_fnc_athena_openSettings;
+    };
+
+    if (_tab isEqualTo "messages" || {_tab isEqualTo "comms"} || {_tab isEqualTo "messagerie"} || {_tab isEqualTo "radio"}) exitWith {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
     };
 
     if (_tab isEqualTo "account") then {

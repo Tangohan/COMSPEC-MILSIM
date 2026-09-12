@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.547;
-        versionStr = "1.5.47";
-        versionAr[] = {1, 5, 47};
+        version = 1.550;
+        versionStr = "1.5.50";
+        versionAr[] = {1, 5, 50};
     };
 };
 
@@ -249,6 +249,7 @@ class CfgFunctions {
             class pollMissionPlan {};
             class pollTacticalAlerts {};
             class pollChatMessages {};
+            class pollChatChannels {};
             class orderInboxShow {};
             class orderInboxOnLoad {};
             class orderRespond {};

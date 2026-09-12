@@ -584,6 +584,47 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(516, '2026-09-12', 'Steam associé reste associé après connexion e-mail', 'Après une connexion Athena par e-mail ou code, l’identifiant Steam de la session est bien rattaché au compte quand il était libre. L’écran du téléphone affiche « associé » de façon stable, y compris après une reprise de liaison, et le bouton Steam fonctionne dès que le compte est renseigné', [
+                'Connexion e-mail / code : envoi de l’identifiant Steam de la session',
+                'Badge Steam : état réel du compte, conservé après reprise',
+                'Compte déjà lié sur le portail : badge associé sans fausse alerte',
+                'Session e-mail sans Steam : reprise possible, association au retour en jeu',
+            ], [], [
+                'Steam restait « non associé » alors que le compte était trouvé',
+                'Association perdue après reconnexion',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.49 · Athena 1.0.94) et déployez le portail. Quittez Arma complètement. Connectez-vous une fois par e-mail en multijoueur, vérifiez Steam associé, quittez puis rejoignez.',
+            ], 'Overwatch 1.5.49 · Athena 1.0.94'),
+            $pr(514, '2026-09-12', 'La photo prise au sync remonte comme Quick Picture', 'Lorsqu’un cliché est détecté sur le disque (sync automatique), il emprunte désormais le même chemin que Quick Picture : légende Enhanced avec grille, une seule entrée au poste, plus de doublon « sidecar » sans métadonnées', [
+                'Sync disque → même pont que Quick Picture (grille + légende)',
+                'Une seule remontée par cliché (plus de doublon sidecar)',
+                'Grille mémorisée avec la position pour les métadonnées photo',
+            ], [], [
+                'Entrée « Photo ATAK (sidecar) » sans grille à côté de Enhanced',
+                'Photo sync absente ou incomplète sur le PANNEAU',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.49 · liaison 2.0.30). Quittez Arma complètement. Prenez une photo Quick Picture : une seule entrée Enhanced avec grille au poste.',
+            ], 'Overwatch 1.5.49 · liaison 2.0.30'),
+            $pr(515, '2026-09-12', 'Messagerie ATAK avec canaux radio', 'Le téléphone dispose désormais d’une application Messagerie COMSPEC, en français, avec les canaux déjà connus du journal radio (Groupe, Commandement, Général, JTAC, Air et canaux personnalisés). Vous choisissez un canal, lisez le fil et envoyez vers le poste. Group Messages IceMan reste disponible en miroir', [
+                'Application Messagerie dans le tiroir ATAK et sur le bureau',
+                'Sélection de canal, fil filtré, bouton Envoyer',
+                'Effacer l’affichage local d’un canal sans toucher l’historique du poste',
+                'Menu ACE et raccourci clavier messagerie ouvrent cette application',
+            ], [], [
+                'Group Messages IceMan restait une liste plate en anglais, sans canaux',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.49 · Athena 1.0.93). Quittez Arma complètement. Ouvrez Messagerie, changez de canal, envoyez un message vers le poste.',
+            ], 'Overwatch 1.5.49 · Athena 1.0.93'),
+            $pr(512, '2026-09-12', 'Téléphone ATAK : textes et panneaux lisibles', 'Sur le téléphone, l’écran Appairer n’empile plus les textes les uns sur les autres. Le tiroir d’applications reste dans le cadre de l’écran. La fiche de liaison et les Paramètres se scrollent jusqu’au bout sans cacher les boutons ni couper les libellés', [
+                'Appairer : titre, aide et champs espacés ; texte d’aide plus court',
+                'Tiroir d’apps : plus de débordement à droite du cadre',
+                'Fiche Liaison OK : contenu scrollable au-dessus de Rouvrir / Déconnecter',
+                'Paramètres : libellés complets, Liaison au poste accessible en bas de page',
+            ], [], [
+                'Textes Appairer illisibles ; panneau coupé à droite ; fiche et Paramètres tronqués',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.48 · Athena 1.0.93). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.48 · Athena 1.0.93'),
             $pr(506, '2026-09-11', 'Affichage situation sous toutes les JVN', 'Sous jumelles de vision nocturne, les alliés, marqueurs et véhicules proches apparaissent directement dans le champ de vision, avec la distance. Vous pouvez aussi marquer un bâtiment pour en voir la silhouette. Si le mod F-PANO ECOTI est déjà chargé, Overwatch laisse la place pour éviter le double affichage', [
                 'Projection alliés / marqueurs / véhicules sous JVN',
                 'Silhouette de bâtiment marqué depuis le menu ACE',

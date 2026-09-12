@@ -327,8 +327,12 @@ private _ordersAction = [
 [_ordersAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _messagesAction = [
-    "COMSPEC_Messages", "Messagerie Athena", "", {
-        ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    "COMSPEC_Messages", "Messagerie", "", {
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openComms") then {
+            [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+        } else {
+            ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+        };
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_messagesAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;

@@ -485,7 +485,36 @@ switch (_function) do {
             };
         };
     };
-
+    case "PhotoDiskSync": {
+        // Watcher DLL : nouveau fichier disque → même pont que Quick Picture (grille + légende).
+        private _path = trim _data;
+        if (_path isEqualTo "") exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+        private _segs = _path splitString "\/";
+        private _name = if ((count _segs) > 0) then { _segs select ((count _segs) - 1) } else { "" };
+        private _baseLow = toLower _name;
+        if (_baseLow find "comspec_sse_face" >= 0) exitWith {};
+        if (_baseLow find "comspec_fiche_" >= 0) exitWith {};
+        // Anti double miroir Captures / Screenshots (même nom, chemins distincts).
+        private _seen = missionNamespace getVariable ["COMSPEC_Athena_PhotoDiskSeen", []];
+        if (!(_seen isEqualType [])) then { _seen = []; };
+        if (_baseLow isNotEqualTo "" && {_baseLow in _seen}) exitWith {};
+        if (_baseLow isNotEqualTo "") then {
+            _seen pushBack _baseLow;
+            while { (count _seen) > 80 } do { _seen deleteAt 0; };
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoDiskSeen", _seen, false];
+        };
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto") then {
+            [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
+        } else {
+            if (!isNil "comspec_overwatch_connect_fnc_captureReconImage") then {
+                private _grid = mapGridPosition player;
+                private _cap = format ["Photo ATAK Enhanced — grille %1 (%2)", _grid, _name];
+                [_path, _cap, "CTAB", "", true] call comspec_overwatch_connect_fnc_captureReconImage;
+            };
+        };
+    };
     case "PostError": {
         // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
         // data = "code|path|ageSec"

@@ -43,7 +43,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.29";
+        private const string ExtensionVersion = "2.0.31";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -6516,6 +6516,9 @@ public static partial class Extension
                 // args[13] = version mod Overwatch (optionnel)
                 if (args.Length > 13)
                     ApplyModVersion(args[13]);
+                // args[14] = grille carte (mapGridPosition) — pour uploads watcher / Quick Picture
+                if (args.Length > 14 && !string.IsNullOrWhiteSpace(args[14]))
+                    _lastPhotoGrid = args[14]!.Trim();
                 // Position2D carte : X/Y hors origine (0,0) = menu / parse raté — ne pas poster
                 if (Math.Abs(posX) < 1.0 && Math.Abs(posY) < 1.0)
                     return;
@@ -7035,6 +7038,23 @@ public static partial class Extension
         var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
         if (!TryClaimPhotoDedup(dedupKey))
             return "OK|duplicate";
+        // Même cliché via chemin complet (watcher) et nom seul (NotifyNewPhoto SQF) :
+        // une seule remontée — évite le doublon « Enhanced » + « sidecar ».
+        try
+        {
+            var leaf = Path.GetFileName(normalized);
+            if (!string.IsNullOrWhiteSpace(leaf))
+            {
+                var leafKey = "leaf|" + leaf.ToLowerInvariant();
+                if (!string.Equals(leafKey, dedupKey, StringComparison.OrdinalIgnoreCase)
+                    && !TryClaimPhotoDedup(leafKey))
+                {
+                    ReleasePhotoDedup(dedupKey);
+                    return "OK|duplicate";
+                }
+            }
+        }
+        catch { /* ignore */ }
 
         // File plafonnée : évite accumulation si Athena est down.
         if (PhotoJobs.Count >= PhotoQueueMax)
@@ -7086,6 +7106,14 @@ public static partial class Extension
         }
         PhotoDedupTicks[key] = now;
         return true;
+    }
+
+    /// <summary>True si la clé dédup est encore chaude (sans la réclamer).</summary>
+    private static bool IsPhotoDedupHot(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        if (!PhotoDedupTicks.TryGetValue(key, out var prev)) return false;
+        return DateTime.UtcNow.Ticks - prev < TimeSpan.FromSeconds(PhotoDedupTtlSeconds).Ticks;
     }
 
     /// <summary>
@@ -7508,31 +7536,15 @@ public static partial class Extension
                     && fi.LastWriteTimeUtc < startedUtc.AddSeconds(-WatcherMinAgeSeconds))
                     return;
 
-                var author = _lastPhotoAuthor.Length > 0
-                    ? _lastPhotoAuthor
-                    : (_callSign.Length > 0 ? _callSign : "Unknown");
-                var caption = "Photo ATAK (sidecar) — " + (Path.GetFileName(fullPath) ?? "capture");
-                var args = new string?[]
-                {
-                    fullPath,
-                    author,
-                    _lastPhotoPosX,
-                    _lastPhotoPosY,
-                    _lastPhotoPosZ,
-                    _lastPhotoGrid,
-                    _lastPhotoHeading,
-                    _lastPhotoPosZ,
-                    caption,
-                    "",
-                    "WEST",
-                    "",
-                    "CTAB",
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    "",
-                    "",
-                    ""
-                };
-                EnqueueReconImage(args);
+                // Remontée via le pipeline Quick Picture (SQF bridgeIcemanPhoto) :
+                // grille, légende Enhanced, anti-doublon — plus d’upload « sidecar » nu.
+                // Ne pas CLAIMER le dédup ici : NotifyNewPhoto le fera. On saute seulement
+                // si le même nom est déjà en file (cliché Quick Picture déjà signalé).
+                var leaf = Path.GetFileName(fullPath) ?? "";
+                if (!string.IsNullOrWhiteSpace(leaf)
+                    && IsPhotoDedupHot("leaf|" + leaf.ToLowerInvariant()))
+                    return;
+                InvokeCallback("PhotoDiskSync", fullPath);
             }
             finally
             {

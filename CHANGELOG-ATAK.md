@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.49 / Athena 1.0.93 — 2026-09-12
+
+### Nouveau — Messagerie ATAK avec canaux
+
+Application **Messagerie** COMSPEC dans le téléphone : canaux radio (Groupe, Commandement, Général, JTAC, Air + personnalisés), fil par canal, envoi vers le poste. Libellés en français. Group Messages IceMan reste en miroir.
+
+---
+
 ## Overwatch 1.5.43 — 2026-09-11
 
 ### Nouveau — Affichage situation sous toutes les JVN
