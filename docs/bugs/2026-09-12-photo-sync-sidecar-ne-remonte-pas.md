@@ -22,14 +22,13 @@
 - La sync de position envoie aussi la grille pour les métadonnées de repli.
 - Déduplication par nom de fichier (`leaf|…`) pour n’avoir qu’une remontée par cliché.
 
-Relancer Arma complètement après le pack Overwatch 1.5.49 (liaison 2.0.30).
+Relancer Arma complètement après le pack Overwatch 1.5.50 (liaison 2.0.30).
 
 ## Fichiers touchés
 
 - `mod/UptoDate/COMSPECExtension/Extension.cs`
 - `mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf`
 - `mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updatePosition.sqf`
-- `mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp`
 - `docs/bugs/2026-09-12-photo-sync-sidecar-ne-remonte-pas.md`
 - `tests/Unit/AtakPhotoDiskSyncAssetTest.php`
 
@@ -41,4 +40,4 @@ Relancer Arma complètement après le pack Overwatch 1.5.49 (liaison 2.0.30).
 
 ## Statut
 
-corrigé (Overwatch 1.5.49 · liaison 2.0.30)
+corrigé (Overwatch 1.5.50 · liaison 2.0.30)

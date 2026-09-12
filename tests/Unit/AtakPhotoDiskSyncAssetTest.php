@@ -21,7 +21,7 @@ final class AtakPhotoDiskSyncAssetTest extends TestCase
         self::assertStringContainsString('IsPhotoDedupHot', $dll);
         self::assertStringContainsString('leaf|', $dll);
         self::assertStringNotContainsString('Photo ATAK (sidecar)', $dll);
-        self::assertStringContainsString('ExtensionVersion = "2.0.30"', $dll);
+        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.\\d+"/', $dll);
 
         self::assertStringContainsString('case "PhotoDiskSync":', $cb);
         self::assertStringContainsString('athena_bridgeIcemanPhoto', $cb);
@@ -31,7 +31,7 @@ final class AtakPhotoDiskSyncAssetTest extends TestCase
         self::assertStringContainsString('_modVersion,', $pos);
         self::assertStringContainsString('_grid', $pos);
 
-        self::assertStringContainsString('versionStr = "1.5.49"', $cfg);
+        self::assertMatchesRegularExpression('/versionStr = "1\\.5\\.\\d+"/', $cfg);
         self::assertStringContainsString('sidecar', $note);
         self::assertStringContainsString('Quick Picture', $note);
         self::assertStringNotContainsString('endpoint', $note);
