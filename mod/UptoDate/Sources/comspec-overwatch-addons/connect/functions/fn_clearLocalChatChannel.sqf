@@ -25,5 +25,21 @@ if (_gMessages isEqualType []) then {
     };
 };
 
+private _active = toLower (trim (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"]));
+if (_active in ["squad", "global", ""]) then { _active = "general"; };
+if (_active in ["hq", "c2", "command"]) then { _active = "commandement"; };
+if (_active in ["group"]) then { _active = "groupe"; };
+private _store = +(missionNamespace getVariable ["COMSPEC_Comms_Messages", []]);
+if (_store isEqualType []) then {
+    _store = _store select {
+        private _ck = toLower (trim (_x param [4, "general"]));
+        if (_ck in ["squad", "global", ""]) then { _ck = "general"; };
+        if (_ck in ["hq", "c2", "command"]) then { _ck = "commandement"; };
+        if (_ck in ["group"]) then { _ck = "groupe"; };
+        !(_ck isEqualTo _active)
+    };
+    missionNamespace setVariable ["COMSPEC_Comms_Messages", _store, false];
+};
+
 ["Affichage du canal effacé (historique serveur inchangé).", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 true

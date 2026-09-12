@@ -1,5 +1,5 @@
 /*
-    Marque le bâtiment sous le regard (ou le plus proche) pour le wireframe FOV.
+    Marque le bâtiment sous le regard (ou le plus proche) pour silhouette + badge.
 */
 if (!hasInterface) exitWith {};
 if (!([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)) exitWith {
@@ -34,5 +34,36 @@ if (isNull _building) exitWith {
     ["Aucun bâtiment repéré sous le regard.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 };
 
+private _prevMk = missionNamespace getVariable ["COMSPEC_EcotiBuildingMarker", ""];
+if (_prevMk isNotEqualTo "" && {_prevMk in allMapMarkers}) then {
+    deleteMarkerLocal _prevMk;
+};
+
+private _dn = getText (configFile >> "CfgVehicles" >> typeOf _building >> "displayName");
+if (_dn isEqualTo "") then { _dn = "Bâtiment"; };
+private _grid = mapGridPosition _building;
+private _label = format ["%1 (%2)", _dn, _grid];
+
+private _mkName = format ["COMSPEC_ECOTI_BLDG_%1", round (random 99999)];
+private _pos = getPosATL _building;
+private _mk = createMarkerLocal [_mkName, _pos];
+_mk setMarkerTypeLocal "mil_box";
+_mk setMarkerColorLocal "ColorGreen";
+_mk setMarkerTextLocal _label;
+_mk setMarkerAlphaLocal 0.9;
+
 missionNamespace setVariable ["COMSPEC_EcotiMarkedBuilding", _building, false];
-["Bâtiment marqué pour l’affichage situation (JVN).", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+missionNamespace setVariable ["COMSPEC_EcotiMarkedBuildingName", _dn, false];
+missionNamespace setVariable ["COMSPEC_EcotiBuildingMarker", _mkName, false];
+missionNamespace setVariable ["COMSPEC_EcotiCutawayFloor", 0, false];
+private _cutaway = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+private _msg = if (_cutaway isEqualType true && {_cutaway}) then {
+    format ["Bâtiment désigné : %1 (découpage étage 1 — ACE pour changer).", _dn]
+} else {
+    format ["Bâtiment désigné : %1.", _dn]
+};
+[
+    _msg,
+    "system",
+    "info"
+] call comspec_overwatch_connect_fnc_announce;

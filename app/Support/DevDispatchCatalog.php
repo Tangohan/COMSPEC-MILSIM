@@ -584,6 +584,110 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(522, '2026-09-12', 'Découpage d’étage sous JVN', 'Quand un bâtiment est désigné sous jumelles de vision nocturne, vous pouvez activer le découpage d’étage (désactivé par défaut) : la silhouette est coupée au plafond choisi, la dalle est mise en évidence et les points intérieurs de cet étage apparaissent. Le menu ACE permet de changer d’étage. Les murs ne s’ouvrent pas — c’est une limite du moteur, pas un réglage reporté', [
+                'Paramètres ATAK : Découpage d’étage, OFF par défaut (nécessite Affichage situation)',
+                'Silhouette coupée à l’étage choisi + dalle mise en évidence',
+                'Points intérieurs de l’étage + ACE Changer d’étage',
+                'Plus de libellé trompeur « à venir »',
+            ], [], [
+                'Réglage « découpage 3D à venir » sans effet utile',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.56 · Athena 1.0.101). Quittez Arma. Activez Affichage situation puis Découpage d’étage. Désignez un bâtiment sous JVN, puis ACE → Changer d’étage.',
+            ], 'Overwatch 1.5.56 · Athena 1.0.101'),
+            $pr(521, '2026-09-12', 'Messagerie : canaux créés depuis le téléphone', 'Dans Messagerie, vous pouvez créer un canal radio personnalisé directement depuis le téléphone. Le fil indique clairement qui a écrit (Vous, De…, Du poste) avec un meilleur contraste. L’ancienne entrée Groups / Group Messages IceMan disparaît du tiroir : vous ouvrez Messagerie COMSPEC, en français', [
+                'Création d’un canal personnalisé (nom + Créer) depuis Messagerie',
+                'Fil plus lisible : expéditeur, heure, contraste, détail au survol',
+                'Groups / Group Messages IceMan masqué ; bascule vers Messagerie',
+            ], [], [
+                'Canal custom seulement depuis le journal web',
+                'Liste compacte peu lisible',
+                'Group Messages anglais encore accessible dans le tiroir',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.55 · Athena 1.0.101). Quittez Arma complètement. Ouvrez Messagerie : créez un canal, lisez le fil, vérifiez l’absence de Groups dans le tiroir.',
+            ], 'Overwatch 1.5.55 · Athena 1.0.101'),
+            $pr(520, '2026-09-12', 'Les marqueurs du téléphone remontent au poste', 'Les repères posés sur la carte du téléphone (INF, Marker Widget, cTab) apparaissent désormais sur la carte du poste dès que le canal est ouvert, même si votre contact n’est pas encore visible dans Effectifs. Une liaison un peu dégradée ne fait plus perdre le marqueur : il repart dès que possible', [
+                'Pose d’un INF / repère ATAK → affichage au poste sous quelques secondes',
+                'Pas besoin d’être déjà dans Effectifs pour que le repère remonte',
+                'Rattrapage automatique si la liaison était momentanément saturée',
+            ], [], [
+                'Losange INF visible sur le téléphone mais absent de la carte Athena',
+                'Photos reçues et sync OK, marqueurs absents',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32). Quittez Arma complètement. Posez un INF sur le téléphone : il doit apparaître au poste sous ~10 s.',
+            ], 'Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32'),
+            $pr(519, '2026-09-12', 'Affichage situation sous JVN enrichi et désactivé par défaut', 'Sous jumelles de vision nocturne, l’affichage situation est désormais désactivé tant que vous ne l’activez pas. Dans Paramètres du téléphone, vous pouvez l’allumer : les noms et distances sont plus lisibles, l’objet regardé est souligné, l’itinéraire du poste apparaît, et vous pouvez éclairer une zone ou désigner un bâtiment depuis le menu ACE. Le découpage réel des murs des bâtiments n’est pas encore disponible ; la silhouette (cadre et étages) reste affichée', [
+                'Réglage Paramètres ATAK : Affichage situation (JVN), désactivé par défaut',
+                'Badges plus lisibles (nom et distance)',
+                'Contour de l’objet regardé',
+                'Itinéraire GPS du poste et points tracés localement',
+                'Éclairage de zone et désignation de bâtiment (menu ACE)',
+                'Découpage 3D des bâtiments reporté (silhouette conservée)',
+            ], [], [
+                'Badges gris peu lisibles ; fonction active sans choix clair dans Paramètres',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.54 · Athena 1.0.99). Quittez Arma complètement. Ouvrez ATAK → Paramètres → Affichage situation (JVN) → Activé sous JVN. Activez les JVN en mission.',
+            ], 'Overwatch 1.5.54 · Athena 1.0.99'),
+            $pr(518, '2026-09-12', 'Ordres reçus : détail et actions enfin fiables', 'Dans Ordres reçus, le détail de l’ordre sélectionné s’affiche correctement. Accepter et Refuser fonctionnent sur un ordre à traiter. Sur un ordre déjà refusé, accepté ou terminé, le bouton devient Supprimer pour le retirer de la liste. Terminer reste disponible pendant l’exécution', [
+                'Détail de l’ordre visible dès la sélection',
+                'Accepter / Refuser sur un ordre à traiter, avec mise à jour de l’état',
+                'Supprimer pour retirer un ordre clos de la liste',
+                'Terminer pendant l’exécution',
+            ], [], [
+                'Zone de détail vide ; Accepter / Refuser encore affichés sur un ordre déjà refusé',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.53 · Athena 1.0.98). Quittez Arma complètement. Ouvrez Ordres reçus : sélectionnez un ordre, lisez le détail, testez Accepter / Refuser puis Supprimer.',
+            ], 'Overwatch 1.5.53 · Athena 1.0.98'),
+            $pr(517, '2026-09-12', 'La position remonte dès que le canal poste est ouvert', 'Dès que la liaison Athena est bonne et le canal poste ouvert, votre position part automatiquement vers le poste sous quelques secondes. Vous apparaissez dans Effectifs sans devoir ouvrir Transmettre. Le téléphone précise aussi pourquoi la position n’est « pas encore » remontée si un frein temporaire s’applique', [
+                'Remontée de position automatique dès l’ouverture du canal',
+                'Reprise automatique si les boucles de sync n’avaient pas démarré',
+                'Téléphone déjà ouvert reconnu comme terminal équipé',
+                'Aide lisible sur la fiche Athena quand la position n’est pas encore partie',
+            ], [], [
+                'Liaison OK et photos reçues, mais « Position remontée : pas encore » et Effectifs vides',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.52 · Athena 1.0.97). Quittez Arma complètement. En mission, ouvrez le canal : sous ~10 s, Position remontée passe à « il y a Xs » et vous apparaissez au poste.',
+            ], 'Overwatch 1.5.52 · Athena 1.0.97'),
+            $pr(516, '2026-09-12', 'Steam associé reste associé après connexion e-mail', 'Après une connexion Athena par e-mail ou code, l’identifiant Steam de la session est bien rattaché au compte quand il était libre. L’écran du téléphone affiche « associé » de façon stable, y compris après une reprise de liaison, et le bouton Steam fonctionne dès que le compte est renseigné', [
+                'Connexion e-mail / code : envoi de l’identifiant Steam de la session',
+                'Badge Steam : état réel du compte, conservé après reprise',
+                'Compte déjà lié sur le portail : badge associé sans fausse alerte',
+                'Session e-mail sans Steam : reprise possible, association au retour en jeu',
+            ], [], [
+                'Steam restait « non associé » alors que le compte était trouvé',
+                'Association perdue après reconnexion',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.51 · Athena 1.0.95) et déployez le portail. Quittez Arma complètement. Connectez-vous une fois par e-mail en multijoueur, vérifiez Steam associé, quittez puis rejoignez.',
+            ], 'Overwatch 1.5.51 · Athena 1.0.95'),
+            $pr(514, '2026-09-12', 'La photo prise au sync remonte comme Quick Picture', 'Lorsqu’un cliché est détecté sur le disque (sync automatique), il emprunte désormais le même chemin que Quick Picture : légende Enhanced avec grille, une seule entrée au poste, plus de doublon « sidecar » sans métadonnées', [
+                'Sync disque → même pont que Quick Picture (grille + légende)',
+                'Une seule remontée par cliché (plus de doublon sidecar)',
+                'Grille mémorisée avec la position pour les métadonnées photo',
+            ], [], [
+                'Entrée « Photo ATAK (sidecar) » sans grille à côté de Enhanced',
+                'Photo sync absente ou incomplète sur le PANNEAU',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.50 · liaison 2.0.30). Quittez Arma complètement. Prenez une photo Quick Picture : une seule entrée Enhanced avec grille au poste.',
+            ], 'Overwatch 1.5.50 · liaison 2.0.30'),
+            $pr(515, '2026-09-12', 'Messagerie ATAK avec canaux radio', 'Le téléphone dispose désormais d’une application Messagerie COMSPEC, en français, avec les canaux déjà connus du journal radio (Groupe, Commandement, Général, JTAC, Air et canaux personnalisés). Vous choisissez un canal, lisez le fil et envoyez vers le poste. Group Messages IceMan reste disponible en miroir', [
+                'Application Messagerie dans le tiroir ATAK et sur le bureau',
+                'Sélection de canal, fil filtré, bouton Envoyer',
+                'Effacer l’affichage local d’un canal sans toucher l’historique du poste',
+                'Menu ACE et raccourci clavier messagerie ouvrent cette application',
+            ], [], [
+                'Group Messages IceMan restait une liste plate en anglais, sans canaux',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.49 · Athena 1.0.93). Quittez Arma complètement. Ouvrez Messagerie, changez de canal, envoyez un message vers le poste.',
+            ], 'Overwatch 1.5.49 · Athena 1.0.93'),
+            $pr(512, '2026-09-12', 'Téléphone ATAK : textes et panneaux lisibles', 'Sur le téléphone, l’écran Appairer n’empile plus les textes les uns sur les autres. Le tiroir d’applications reste dans le cadre de l’écran. La fiche de liaison et les Paramètres se scrollent jusqu’au bout sans cacher les boutons ni couper les libellés', [
+                'Appairer : titre, aide et champs espacés ; texte d’aide plus court',
+                'Tiroir d’apps : plus de débordement à droite du cadre',
+                'Fiche Liaison OK : contenu scrollable au-dessus de Rouvrir / Déconnecter',
+                'Paramètres : libellés complets, Liaison au poste accessible en bas de page',
+            ], [], [
+                'Textes Appairer illisibles ; panneau coupé à droite ; fiche et Paramètres tronqués',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.50 · Athena 1.0.95). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.50 · Athena 1.0.95'),
             $pr(506, '2026-09-11', 'Affichage situation sous toutes les JVN', 'Sous jumelles de vision nocturne, les alliés, marqueurs et véhicules proches apparaissent directement dans le champ de vision, avec la distance. Vous pouvez aussi marquer un bâtiment pour en voir la silhouette. Si le mod F-PANO ECOTI est déjà chargé, Overwatch laisse la place pour éviter le double affichage', [
                 'Projection alliés / marqueurs / véhicules sous JVN',
                 'Silhouette de bâtiment marqué depuis le menu ACE',
@@ -594,6 +698,45 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack (Overwatch 1.5.43). Quittez Arma complètement. Activez les JVN en mission.',
             ], 'Overwatch 1.5.43'),
+            $pr(511, '2026-09-12', 'Bilan des dégâts lisible et ordres toujours signalés', 'Le formulaire de bilan des dégâts sur le téléphone ne noie plus l’opérateur sous quinze champs : seuls les essentiels restent visibles, en français. Un nouvel ordre reste annoncé même si les alertes à l’écran sont coupées, sans double bandeau, et Ordres reçus s’ouvre doucement si le téléphone est déjà en main', [
+                'Bilan des dégâts : champs secondaires masqués, listes en français, contenu envoyé inchangé',
+                'App bilan autonome : titre et boutons en français',
+                'Nouvel ordre : toast visible si alertes écran OFF ; pastille Athena conservée',
+                'Téléphone déjà ouvert : bascule douce vers Ordres reçus',
+            ], [], [
+                'Formulaire BDA illisible ; ordre reçu sans retour visible quand les alertes écran sont coupées',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.47 · Athena 1.0.92). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.47 · Athena 1.0.92'),
+            $pr(510, '2026-09-12', 'Liaison jeu maintenue toute la nuit', 'Une machine laissée allumée avec Arma ouvert garde désormais la liaison au poste sans nouvel Appairage. Le jeton court se renouvelle tout seul, et le journal de session ne se remplit plus de messages « Session jeu ignorée » toutes les quelques secondes', [
+                'Renouvellement silencieux du jeton de session avant expiration',
+                'Repli automatique sur la clé communauté si le jeton d’accès Athena est périmé',
+                'Journal Liaison : au plus un avertissement « session ignorée » toutes les dix minutes',
+            ], [], [
+                'PC allumé toute la nuit : rafales d’événements ACCÈS « Session jeu ignorée » au réveil',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.46) et déployez le portail. Quittez Arma complètement. Test : laisser une mission ouverte plus de 4 h, ou réduire temporairement la durée de session en local.',
+            ], 'Overwatch 1.5.46'),
+            $pr(509, '2026-09-11', 'Liaison ATAK reprise après déconnexion', 'Après un Appairage réussi, quitter la mission ou le lobby puis rejoindre ne demande plus un nouveau code. La liaison déjà enregistrée sur le profil Arma se rétablit toute seule. Une déconnexion volontaire depuis le téléphone ou le hub exige toujours un nouvel Appairage', [
+                'Retour lobby / nouvelle mission : reprise de la liaison sans code',
+                'Relance complète d’Arma : même reprise tant que le profil n’a pas été délié',
+                'Déconnecter volontairement : nouvel Appairage requis (comportement voulu)',
+            ], [], [
+                'Devoir coller un nouveau code Appairer à chaque retour en mission',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.45). Quittez Arma complètement, puis testez un aller-retour lobby sans Déconnecter.',
+            ], 'Overwatch 1.5.45'),
+            $pr(508, '2026-09-11', 'ATAK en jeu plus clair et plus français', 'Sur le téléphone, les badges de liaison, les comptes-rendus et les ordres parlent enfin le même langage que le reste du portail. Le bandeau de liaison est plus compact, le détail des rapports et des ordres affiche De / Grille / Heure, et les raccourcis bureau comme ACE disent Ordres reçus', [
+                'Badges hub : Lié à Athena / Hors liaison',
+                'Comptes-rendus : détail, types et libellés de formulaire en français',
+                'Ordres reçus : libellés De / Grille / Heure / Priorité ; raccourci et menu ACE renommés',
+                'Sons et état : Alertes à l’écran, Envoyer le temps de mission, Dernière sync. terminal',
+                'Bandeau de liaison encore plus compact',
+            ], [], [
+                'Textes encore en anglais dans Reports, Ordres ou sur le hub',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.45 · Athena 1.0.91). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.45 · Athena 1.0.91'),
             $pr(507, '2026-09-11', 'Comptes-rendus plus lisibles sur le téléphone', 'Dans l’application Comptes-rendus, la liste reçue et le formulaire Nouveau ne se chevauchent plus. Les champs sont plus aérés, le fond opaque évite le texte de la carte qui transparaît, et Envoyer / Effacer restent accessibles au-dessus de Retour', [
                 'Onglet Reçus : liste, Localiser / Effacer et détail sur des lignes distinctes',
                 'Onglet Nouveau : champs espacés et boutons d’envoi dégagés',

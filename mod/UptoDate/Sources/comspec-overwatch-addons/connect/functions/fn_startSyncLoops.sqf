@@ -42,10 +42,19 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "normale"];
 [format ["[Athena] Profil réseau actif — charge estimée : %1.", _loadHint]] call comspec_overwatch_connect_fnc_appendLinkLog;
 // PFH 1 s : l’intervalle réel (profil / seuil / heartbeat) est décidé dans updatePosition.
+// Première remontée forcée (x2) : au démarrage des boucles + 2 s plus tard si encore vide.
 0 spawn {
     uiSleep 0.5;
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (isNull player || {!alive player}) exitWith {};
+    [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+};
+0 spawn {
+    uiSleep 2.5;
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (isNull player || {!alive player}) exitWith {};
+    private _last = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+    if ((_last isEqualType 0) && {_last >= 0}) exitWith {};
     [player, true] call comspec_overwatch_connect_fnc_updatePosition;
 };
 [{

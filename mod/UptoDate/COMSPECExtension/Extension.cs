@@ -43,9 +43,13 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.28";
+        private const string ExtensionVersion = "2.0.32";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
+    /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
+    private static DateTimeOffset _sessionExpiresAt = DateTimeOffset.MinValue;
+    /// <summary>Anti-rafale pour le renouvellement silencieux de session ATAK.</summary>
+    private static long _lastSessionRenewTicks;
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
     private static string _militaryId = "";
     /// <summary>Indicatif tactique confirmé par Athena (client-init).</summary>
@@ -458,6 +462,53 @@ public static partial class Extension
         }
     }
 
+    private static void RememberAtakSessionToken(string token, int expiresInSec = 0)
+    {
+        var t = (token ?? "").Trim();
+        if (t.Length < 32)
+            return;
+        _sessionToken = t;
+        var ttl = expiresInSec > 0 ? expiresInSec : 14400;
+        _sessionExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 60, 86400));
+    }
+
+    /// <summary>
+    /// Renouvelle le jeton opaque ATAK avant expiration (nuit / PC allumé).
+    /// Sans ça, le portail ignore le jeton mort via la clé API mais journalise en boucle.
+    /// </summary>
+    private static void EnsureFreshAtakSession()
+    {
+        if (_sessionToken.Length == 0 || string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return;
+
+        // Ancien jeton sans échéance : horodater 4 h à partir de maintenant (une fois).
+        if (_sessionExpiresAt == DateTimeOffset.MinValue)
+        {
+            _sessionExpiresAt = DateTimeOffset.UtcNow.AddSeconds(14400);
+            return;
+        }
+
+        if (DateTimeOffset.UtcNow < _sessionExpiresAt.AddSeconds(-120))
+            return;
+
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastSessionRenewTicks) <= TimeSpan.FromSeconds(45).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastSessionRenewTicks, now);
+
+        // Ne plus envoyer le jeton mort pendant le client-init / les posts suivants.
+        _sessionToken = "";
+        _sessionExpiresAt = DateTimeOffset.MinValue;
+        try
+        {
+            VerifyClientInitSync();
+        }
+        catch
+        {
+            // La clé communauté / Bearer suffit ; le prochain cycle retentera.
+        }
+    }
+
     private static void TryRememberSessionFromInitBody(string respBody)
     {
         if (string.IsNullOrWhiteSpace(respBody) || respBody[0] != '{') return;
@@ -468,8 +519,14 @@ public static partial class Extension
             if (root.TryGetProperty("session_token", out var tok))
             {
                 var t = (tok.GetString() ?? "").Trim();
+                var exp = 0;
+                if (root.TryGetProperty("expires_in", out var expEl)
+                    && expEl.ValueKind == JsonValueKind.Number
+                    && expEl.TryGetInt32(out var expSec)
+                    && expSec > 0)
+                    exp = expSec;
                 if (t.Length >= 32)
-                    _sessionToken = t;
+                    RememberAtakSessionToken(t, exp);
             }
             if (root.TryGetProperty("steam_uid", out var su))
             {
@@ -2154,6 +2211,7 @@ public static partial class Extension
         _gameAccessToken = "";
         _gameAccessExpiresAt = DateTimeOffset.MinValue;
         _sessionToken = "";
+        _sessionExpiresAt = DateTimeOffset.MinValue;
     }
 
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
@@ -2187,6 +2245,7 @@ public static partial class Extension
                 req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
             }
         }
+        EnsureFreshAtakSession();
         var sess = _sessionToken;
         if (sess.Length > 0)
         {
@@ -2396,7 +2455,15 @@ public static partial class Extension
                 if (status is "pending" or "waiting") return "OK|pending";
                 if (status is "expired") { _pendingPairDeviceCode = ""; return "ERR|expired"; }
                 if (status is not "approved") return "ERR|" + SanitizeIdentityField(status);
-                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String)
+                {
+                    var exp = 0;
+                    if (root.TryGetProperty("expires_in", out var expEl)
+                        && expEl.ValueKind == JsonValueKind.Number
+                        && expEl.TryGetInt32(out var expSec))
+                        exp = expSec;
+                    RememberAtakSessionToken(tok.GetString() ?? "", exp);
+                }
                 if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
                 if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
                 if (root.TryGetProperty("military_id", out var mi) && mi.ValueKind == JsonValueKind.String) _militaryId = mi.GetString() ?? _militaryId;
@@ -2436,7 +2503,15 @@ public static partial class Extension
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String)
+                {
+                    var exp = 0;
+                    if (root.TryGetProperty("expires_in", out var expEl)
+                        && expEl.ValueKind == JsonValueKind.Number
+                        && expEl.TryGetInt32(out var expSec))
+                        exp = expSec;
+                    RememberAtakSessionToken(tok.GetString() ?? "", exp);
+                }
                 if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
                 if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
                 if (root.TryGetProperty("tokens", out _))
@@ -2707,6 +2782,8 @@ public static partial class Extension
                     var gameVerify = VerifyClientInitSync();
                     if (gameVerify.StartsWith("OK|", StringComparison.Ordinal))
                     {
+                        // Aligné Redeem : Connect réussi = session READY pour le handshake SQF.
+                        SetGameAuth("READY", 100, "");
                         EnsureScreenshotWatchers();
                         return gameVerify;
                     }
@@ -2718,6 +2795,9 @@ public static partial class Extension
             var verify = VerifyClientInitSync();
             if (verify.StartsWith("OK|", StringComparison.Ordinal))
             {
+                // Reprise après lobby / JIP avec clé Appairer (profil) : READY manquait ici
+                // → le joueur devait coller un nouveau code alors que la clé était encore valide.
+                SetGameAuth("READY", 100, "");
                 EnsureScreenshotWatchers();
                 return verify;
             }
@@ -2731,6 +2811,7 @@ public static partial class Extension
                 var restored = VerifyClientInitSync();
                 if (restored.StartsWith("OK|", StringComparison.Ordinal))
                 {
+                    SetGameAuth("READY", 100, "");
                     EnsureScreenshotWatchers();
                     return restored;
                 }
@@ -6435,6 +6516,9 @@ public static partial class Extension
                 // args[13] = version mod Overwatch (optionnel)
                 if (args.Length > 13)
                     ApplyModVersion(args[13]);
+                // args[14] = grille carte (mapGridPosition) — pour uploads watcher / Quick Picture
+                if (args.Length > 14 && !string.IsNullOrWhiteSpace(args[14]))
+                    _lastPhotoGrid = args[14]!.Trim();
                 // Position2D carte : X/Y hors origine (0,0) = menu / parse raté — ne pas poster
                 if (Math.Abs(posX) < 1.0 && Math.Abs(posY) < 1.0)
                     return;
@@ -6742,10 +6826,16 @@ public static partial class Extension
 
             if (function == "SendMarker" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                var armaName = args[0] ?? "";
-                var markerDataRaw = SanitizeLooseJsonObject(args[1] ?? "{}");
-                var layerId = args.Length > 2 ? (args[2] ?? "1") : "1";
-                var deleted = args.Length > 3 && (args[3] ?? "") == "1";
+                var armaName = ArmaString(args[0] ?? "");
+                // NormalizeArmaJson d’abord : guillemets doublés SQF → sinon Sanitize
+                // renvoyait "{}" et le poste stockait un marqueur sans position (invisible).
+                var markerDataRaw = SanitizeLooseJsonObject(NormalizeArmaJson(args[1] ?? "{}"));
+                var layerId = args.Length > 2 ? ArmaString(args[2] ?? "1") : "1";
+                if (string.IsNullOrWhiteSpace(layerId)) layerId = "1";
+                var deleted = args.Length > 3 && ArmaString(args[3] ?? "") == "1";
+                // Ne jamais publier un upsert vide : ça écraserait un bon marqueur / créerait un fantôme.
+                if (!deleted && (string.IsNullOrWhiteSpace(markerDataRaw) || markerDataRaw == "{}"))
+                    return;
                 var steamJson = _steamUid.Length > 0
                     ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
                     : "";
@@ -6954,6 +7044,23 @@ public static partial class Extension
         var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
         if (!TryClaimPhotoDedup(dedupKey))
             return "OK|duplicate";
+        // Même cliché via chemin complet (watcher) et nom seul (NotifyNewPhoto SQF) :
+        // une seule remontée — évite le doublon « Enhanced » + « sidecar ».
+        try
+        {
+            var leaf = Path.GetFileName(normalized);
+            if (!string.IsNullOrWhiteSpace(leaf))
+            {
+                var leafKey = "leaf|" + leaf.ToLowerInvariant();
+                if (!string.Equals(leafKey, dedupKey, StringComparison.OrdinalIgnoreCase)
+                    && !TryClaimPhotoDedup(leafKey))
+                {
+                    ReleasePhotoDedup(dedupKey);
+                    return "OK|duplicate";
+                }
+            }
+        }
+        catch { /* ignore */ }
 
         // File plafonnée : évite accumulation si Athena est down.
         if (PhotoJobs.Count >= PhotoQueueMax)
@@ -7005,6 +7112,14 @@ public static partial class Extension
         }
         PhotoDedupTicks[key] = now;
         return true;
+    }
+
+    /// <summary>True si la clé dédup est encore chaude (sans la réclamer).</summary>
+    private static bool IsPhotoDedupHot(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        if (!PhotoDedupTicks.TryGetValue(key, out var prev)) return false;
+        return DateTime.UtcNow.Ticks - prev < TimeSpan.FromSeconds(PhotoDedupTtlSeconds).Ticks;
     }
 
     /// <summary>
@@ -7316,7 +7431,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7424,31 +7542,15 @@ public static partial class Extension
                     && fi.LastWriteTimeUtc < startedUtc.AddSeconds(-WatcherMinAgeSeconds))
                     return;
 
-                var author = _lastPhotoAuthor.Length > 0
-                    ? _lastPhotoAuthor
-                    : (_callSign.Length > 0 ? _callSign : "Unknown");
-                var caption = "Photo ATAK (sidecar) — " + (Path.GetFileName(fullPath) ?? "capture");
-                var args = new string?[]
-                {
-                    fullPath,
-                    author,
-                    _lastPhotoPosX,
-                    _lastPhotoPosY,
-                    _lastPhotoPosZ,
-                    _lastPhotoGrid,
-                    _lastPhotoHeading,
-                    _lastPhotoPosZ,
-                    caption,
-                    "",
-                    "WEST",
-                    "",
-                    "CTAB",
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    "",
-                    "",
-                    ""
-                };
-                EnqueueReconImage(args);
+                // Remontée via le pipeline Quick Picture (SQF bridgeIcemanPhoto) :
+                // grille, légende Enhanced, anti-doublon — plus d’upload « sidecar » nu.
+                // Ne pas CLAIMER le dédup ici : NotifyNewPhoto le fera. On saute seulement
+                // si le même nom est déjà en file (cliché Quick Picture déjà signalé).
+                var leaf = Path.GetFileName(fullPath) ?? "";
+                if (!string.IsNullOrWhiteSpace(leaf)
+                    && IsPhotoDedupHot("leaf|" + leaf.ToLowerInvariant()))
+                    return;
+                InvokeCallback("PhotoDiskSync", fullPath);
             }
             finally
             {
@@ -7646,7 +7748,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7790,7 +7895,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7923,7 +8031,8 @@ public static partial class Extension
 
     private static string SanitizeLooseJsonObject(string raw)
     {
-        var trimmed = (raw ?? "").Trim();
+        // Même filet que les autres POST jeu (guillemets doublés, virgules FR).
+        var trimmed = NormalizeArmaJson(raw ?? "").Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
             return "{}";
         var sanitized = System.Text.RegularExpressions.Regex.Replace(
@@ -7970,7 +8079,10 @@ public static partial class Extension
                     return;
                 }
                 if (code == 401 && _sessionToken.Length > 0)
+                {
                     _sessionToken = "";
+                    _sessionExpiresAt = DateTimeOffset.MinValue;
+                }
                 NotePostError(code, url);
             }
             catch
@@ -9106,6 +9218,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.StartsWith('{')) return "{\"mapId\":1}";
         try
         {
+            EnsureFreshAtakSession();
             using var doc = JsonDocument.Parse(trimmed);
             using var stream = new MemoryStream();
             using (var writer = new Utf8JsonWriter(stream))
@@ -9114,6 +9227,9 @@ public static partial class Extension
                 var hasMapId = false;
                 foreach (var prop in doc.RootElement.EnumerateObject())
                 {
+                    // Toujours réécrire le jeton courant (évite un session_token mort collé par SQF).
+                    if (prop.NameEquals("session_token") || prop.NameEquals("game_session"))
+                        continue;
                     if (prop.NameEquals("mapId") || prop.NameEquals("map_id")) hasMapId = true;
                     prop.WriteTo(writer);
                 }
@@ -9123,7 +9239,7 @@ public static partial class Extension
                     writer.WriteString("api_key", _apiKey);
                 if (_steamUid.Length > 0 && !doc.RootElement.TryGetProperty("steam_uid", out _))
                     writer.WriteString("steam_uid", _steamUid);
-                if (_sessionToken.Length > 0 && !doc.RootElement.TryGetProperty("session_token", out _))
+                if (_sessionToken.Length > 0)
                     writer.WriteString("session_token", _sessionToken);
                 if (_modVersion.Length > 0 && !doc.RootElement.TryGetProperty("mod_version", out _))
                     writer.WriteString("mod_version", _modVersion);

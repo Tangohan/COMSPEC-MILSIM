@@ -80,24 +80,47 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             colorBackground[] = ATAK_BG_PANEL;
         };
 
-        class Status: RscStructuredText
+        // Fiche liée : zone scrollable au-dessus des boutons bas (Rouvrir / Déconnecter / temps).
+        class StatusHost: RscControlsGroup
         {
-            idc = 9701;
+            idc = 9698;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
             y = QUOTE(COMSPEC_ATHENA_H(2.20));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(8.80));
-            size = QUOTE(0.028);
-            text = "";
-            colorBackground[] = ATHENA_BG_STRIP;
-            class Attributes
+            h = QUOTE(COMSPEC_ATHENA_H(7.60));
+            show = 0;
+            class VScrollbar
             {
-                font = "RobotoCondensed";
-                color = "#C8CDD2";
-                align = "left";
-                valign = "top";
-                shadow = 1;
-                size = "1";
+                width = 0.012;
+                autoScrollEnabled = 1;
+                color[] = {0.45, 0.72, 0.62, 0.85};
+            };
+            class HScrollbar
+            {
+                height = 0;
+            };
+            class controls
+            {
+                class Status: RscStructuredText
+                {
+                    idc = 9701;
+                    x = 0;
+                    y = 0;
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    h = QUOTE(COMSPEC_ATHENA_H(7.60));
+                    size = QUOTE(0.028);
+                    text = "";
+                    colorBackground[] = ATHENA_BG_STRIP;
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#C8CDD2";
+                        align = "left";
+                        valign = "top";
+                        shadow = 1;
+                        size = "1";
+                    };
+                };
             };
         };
 
@@ -160,7 +183,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.52));
             size = QUOTE(COMSPEC_ATHENA_H(0.30));
-            text = "Remonter le temps";
+            text = "Envoyer le temps de mission";
             show = 0;
             colorBackground[] = ATHENA_BTN_ACCENT;
             colorBackground2[] = ATHENA_BTN_ACCENT;
@@ -187,9 +210,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
                     y = QUOTE(COMSPEC_ATHENA_H(0.04));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.72));
-                    size = QUOTE(0.034);
-                    text = "<t color='#FFD27A' size='1.08'>Compte non connecté</t><br/><t color='#C0D0DC' size='1'>Commencez par le code Appairer du portail.</t>";
+                    h = QUOTE(COMSPEC_ATHENA_H(1.10));
+                    size = QUOTE(0.032);
+                    text = "<t color='#FFD27A' size='1.05'>Compte non connecté</t><br/><t color='#C0D0DC' size='0.95'>Préférez le code Appairer du portail, ou connectez-vous ci-dessous.</t>";
                     colorBackground[] = {0.12, 0.08, 0.04, 0.94};
                     class Attributes
                     {
@@ -205,11 +228,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9802;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(0.84));
+                    y = QUOTE(COMSPEC_ATHENA_H(1.22));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.68));
-                    size = QUOTE(0.032);
-                    text = "<t color='#7CFF9A' size='1.08'>1 · Appairer</t><br/><t color='#C0D0DC' size='1'>Carte ATAK → Appairer → Générer un code. Collez uniquement le code ici.</t>";
+                    h = QUOTE(COMSPEC_ATHENA_H(0.78));
+                    size = QUOTE(0.030);
+                    text = "<t color='#7CFF9A' size='1.05'>1 · Appairer</t><br/><t color='#C0D0DC' size='0.92'>Portail → Appairer → Générer un code. Collez-le ici, puis Lier (pas le code e-mail).</t>";
                     colorBackground[] = {0.04, 0.10, 0.08, 0.92};
                     class Attributes
                     {
@@ -225,10 +248,10 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9799;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(1.60));
+                    y = QUOTE(COMSPEC_ATHENA_H(2.10));
                     w = QUOTE(COMSPEC_ATHENA_W(1.72));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.52));
-                    sizeEx = QUOTE(0.036);
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    sizeEx = QUOTE(0.034);
                     colorBackground[] = ATAK_BG_EDIT;
                     colorText[] = {0.95, 0.98, 0.9, 1};
                     autocomplete = "";
@@ -238,25 +261,26 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9800;
                     x = QUOTE(COMSPEC_ATHENA_W(1.86));
-                    y = QUOTE(COMSPEC_ATHENA_H(1.60));
+                    y = QUOTE(COMSPEC_ATHENA_H(2.10));
                     w = QUOTE(COMSPEC_ATHENA_W(1.08));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.52));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
                     text = "Lier";
                     colorBackground[] = ATHENA_BTN_OK;
                     colorBackground2[] = ATHENA_BTN_OK;
                     colorBackgroundFocused[] = ATHENA_BTN_OK_F;
                     onButtonClick = "['pair'] spawn comspec_overwatch_atak_athena_fnc_athena_authAction";
+                    tooltip = "Échange le code Appairer du portail (pas le code e-mail)";
                     class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
                 class BtnEnter: COMSPEC_ATAK_Btn
                 {
                     idc = 9801;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(2.22));
+                    y = QUOTE(COMSPEC_ATHENA_H(2.70));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.34));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
                     text = "Entrer";
                     show = 0;
                     colorBackground[] = ATHENA_BTN_OK;
@@ -269,11 +293,11 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9804;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(2.82));
+                    y = QUOTE(COMSPEC_ATHENA_H(3.28));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.42));
-                    size = QUOTE(0.030);
-                    text = "<t color='#C8D8E4' size='1.05'>2 · Ou compte Athena (e-mail / Steam)</t>";
+                    h = QUOTE(COMSPEC_ATHENA_H(0.62));
+                    size = QUOTE(0.028);
+                    text = "<t color='#C8D8E4' size='1.02'>2 · Ou compte Athena</t><br/><t color='#A8B8C4' size='0.90'>Mot de passe : Se connecter. Sans mot de passe : Code par e-mail, puis Valider le code reçu.</t>";
                     colorBackground[] = {0, 0, 0, 0};
                     class Attributes
                     {
@@ -287,9 +311,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9792;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(3.30));
+                    y = QUOTE(COMSPEC_ATHENA_H(3.72));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
                     colorBackground[] = ATAK_BG_EDIT;
                     colorText[] = {0.94, 0.95, 0.96, 1};
@@ -300,9 +324,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9793;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(3.86));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.26));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
                     colorBackground[] = ATAK_BG_EDIT;
                     colorText[] = {0.94, 0.95, 0.96, 1};
@@ -314,9 +338,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9794;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(3.86));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.26));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
                     colorBackground[] = ATAK_BG_EDIT;
                     colorText[] = {0.94, 0.95, 0.96, 1};
@@ -328,11 +352,12 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9795;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.44));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.82));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
                     text = "Se connecter";
+                    tooltip = "Connexion avec l’adresse e-mail et le mot de passe Athena";
                     colorBackground[] = ATHENA_BTN_OK;
                     colorBackground2[] = ATHENA_BTN_OK;
                     colorBackgroundFocused[] = ATHENA_BTN_OK_F;
@@ -343,11 +368,12 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9796;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.04));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.40));
                     w = QUOTE(COMSPEC_ATHENA_W(1.40));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.28));
                     text = "Code par e-mail";
+                    tooltip = "Recevoir un code temporaire sur votre boîte e-mail Athena";
                     colorBackground[] = ATHENA_BTN;
                     colorBackground2[] = ATHENA_BTN;
                     colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
@@ -357,40 +383,42 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9797;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.44));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.82));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.50));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.32));
-                    text = "Valider le code";
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
+                    text = "Valider le code reçu";
                     show = 0;
                     colorBackground[] = ATHENA_BTN_OK;
                     colorBackground2[] = ATHENA_BTN_OK;
                     colorBackgroundFocused[] = ATHENA_BTN_OK_F;
                     onButtonClick = "['otp_ok'] call comspec_overwatch_atak_athena_fnc_athena_authAction";
+                    tooltip = "Valide uniquement le code temporaire reçu par e-mail (pas le code Appairer)";
                     class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
                 class BtnSteam: COMSPEC_ATAK_Btn
                 {
                     idc = 9798;
                     x = QUOTE(COMSPEC_ATHENA_W(1.54));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.04));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.40));
                     w = QUOTE(COMSPEC_ATHENA_W(1.40));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.28));
                     text = "Steam";
                     colorBackground[] = ATHENA_BTN_ACCENT;
                     colorBackground2[] = ATHENA_BTN_ACCENT;
                     colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
                     onButtonClick = "['steam'] spawn comspec_overwatch_atak_athena_fnc_athena_authAction";
+                    tooltip = "Connexion si ce Steam est déjà associé au compte Athena";
                 };
                 class BtnPhoneLink: COMSPEC_ATAK_Btn
                 {
                     idc = 9803;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.64));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.96));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.28));
                     text = "Liaison mobile (adresse / code)";
                     colorBackground[] = ATHENA_BTN;
                     colorBackground2[] = ATHENA_BTN;

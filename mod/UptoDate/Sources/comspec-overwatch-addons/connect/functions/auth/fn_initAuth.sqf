@@ -1,5 +1,5 @@
 /*
-    BOOT → restaure la session, sinon identifiant Steam du joueur.
+    BOOT → restaure la session jeu, sinon Steam, sinon clé Appairer (profil Arma).
     Pas de fenêtre de connexion ici (tuile Connexion Athena en secours).
 */
 if (!hasInterface) exitWith {};
@@ -18,5 +18,18 @@ private _init = ["COMSPECExtension" callExtension ["Init", [_url]]] call comspec
 if ([] call comspec_overwatch_connect_fnc_restoreSession) exitWith { true };
 // Menu principal : pas encore de joueur. La mission relancera Steam (display 46).
 if (isNull player && {isNull findDisplay 46}) exitWith { true };
-[true] call comspec_overwatch_connect_fnc_loginSteam;
+if ([true] call comspec_overwatch_connect_fnc_loginSteam) exitWith { true };
+
+// Appairer persiste la clé communauté dans le profil : la reprendre après retour lobby / JIP.
+private _savedKey = profileNamespace getVariable ["comspec_overwatch_saved_api_key", ""];
+if (!(_savedKey isEqualType "")) then { _savedKey = ""; };
+_savedKey = trim _savedKey;
+if ((count _savedKey) < 16) exitWith { true };
+
+["INFO", "Athena", "Reprise liaison Appairer (profil)"] call comspec_overwatch_connect_fnc_log;
+[] call comspec_overwatch_connect_fnc_connect;
+[] call comspec_overwatch_connect_fnc_applyBootstrap;
+if ([] call comspec_overwatch_connect_fnc_isReady) then {
+    ["INFO", "Athena", "Liaison Appairer reprise — pas de nouveau code"] call comspec_overwatch_connect_fnc_log;
+};
 true

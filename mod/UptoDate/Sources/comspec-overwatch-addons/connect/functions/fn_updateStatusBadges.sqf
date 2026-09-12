@@ -10,10 +10,10 @@ private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1
 private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
 
 private _syncLabel = switch (_state) do {
-    case "linked": { "Linked to Athena" };
+    case "linked": { "Lié à Athena" };
     case "connecting": { "Connexion…" };
-    case "disabled": { "Overwatch disabled" };
-    default { "Not connected" };
+    case "disabled": { "Overwatch désactivé" };
+    default { "Hors liaison" };
 };
 
 private _syncColor = switch (_state) do {
@@ -37,7 +37,7 @@ if (_lastSync >= 0) then {
         };
     };
 } else {
-    _ago = "Position · not yet sent";
+    _ago = "Position · pas encore envoyée";
 };
 
 if (_ms >= 0) then {

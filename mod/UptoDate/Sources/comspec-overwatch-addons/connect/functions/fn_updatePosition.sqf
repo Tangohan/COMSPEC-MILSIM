@@ -9,7 +9,12 @@ params ["_unit", ["_force", false, [true]]];
 if (!hasInterface) exitWith { if (_force) then { "" } else { nil } };
 if (isNull _unit || !alive _unit) exitWith { if (_force) then { "dead" } else { nil } };
 if (isNull player || _unit != player) exitWith { if (_force) then { "dead" } else { nil } };
-if !([] call comspec_overwatch_connect_fnc_isReady) exitWith { if (_force) then { "" } else { nil } };
+// Canal poste (AthenaReady) prioritaire : isReady seul peut flicker hors READY
+// alors que la liaison UI reste « ouverte » → position jamais remontée.
+private _canalOk = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+if (!_canalOk && {!([ ] call comspec_overwatch_connect_fnc_isReady)}) exitWith {
+    if (_force) then { "" } else { nil }
+};
 // Quit jeu / fin mission : ne plus pousser position ni évaluer d’alerte médicale
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { if (_force) then { "" } else { nil } };
 
@@ -72,6 +77,7 @@ if (
 private _pos = getPosWorld _unit;
 private _posAsl = getPosASL _unit;
 private _aslZ = _posAsl select 2;
+private _grid = mapGridPosition _unit;
 
 // Menu / spawn origine (0,0) : ne jamais appeler UpdatePosition (spam journal Liaison côté Athena)
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith {
@@ -540,7 +546,8 @@ _unit setVariable ["COMSPEC_PliAt", time, true];
     [_heading, 2] call _fnc_num,
     _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson, _steamUid, _groupName,
     [_aslZ, 3] call _fnc_num,
-    _modVersion
+    _modVersion,
+    _grid
 ]];
 
 private _trail = missionNamespace getVariable ["COMSPEC_PositionTrail", []];

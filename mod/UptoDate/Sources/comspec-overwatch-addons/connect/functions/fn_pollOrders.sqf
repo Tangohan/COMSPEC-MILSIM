@@ -79,38 +79,26 @@ private _newOnes = [];
         if (_s isEqualTo "-") then { "" } else { _s };
     };
 
-    private _id = [_cols select 0] call _unblank;
-
-    private _type = [_cols select 1] call _unblank;
-
-    private _target = [_cols select 2] call _unblank;
-
-    private _priority = [_cols select 3] call _unblank;
-
-    private _issuer = [_cols select 4] call _unblank;
-
-    private _status = [_cols select 5] call _unblank;
-
-    private _payload = if ((count _cols) > 6) then { [_cols select 6] call _unblank } else { "" };
-
-    private _targetType = if ((count _cols) > 7) then { [_cols select 7] call _unblank } else { "all" };
-
-    private _targetRef = if ((count _cols) > 8) then { [_cols select 8] call _unblank } else { "" };
-
-    private _aliases = if ((count _cols) > 9) then { [_cols select 9] call _unblank } else { "" };
-
-    private _typeLabel = if ((count _cols) > 10) then { [_cols select 10] call _unblank } else { "" };
-
-
-
+    private _id = trim ([_cols select 0] call _unblank);
     if (_id isEqualTo "") then { continue };
 
-    if (_id in (missionNamespace getVariable ["COMSPEC_OrdersDismissed", []])) then { continue };
+    private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
+    if (!(_dismissed isEqualType [])) then { _dismissed = []; };
+    if (_id in _dismissed) then { continue };
+
+    private _type = [_cols select 1] call _unblank;
+    private _target = [_cols select 2] call _unblank;
+    private _priority = [_cols select 3] call _unblank;
+    private _issuer = [_cols select 4] call _unblank;
+    private _status = [_cols select 5] call _unblank;
+    private _payload = if ((count _cols) > 6) then { [_cols select 6] call _unblank } else { "" };
+    private _targetType = if ((count _cols) > 7) then { [_cols select 7] call _unblank } else { "all" };
+    private _targetRef = if ((count _cols) > 8) then { [_cols select 8] call _unblank } else { "" };
+    private _aliases = if ((count _cols) > 9) then { [_cols select 9] call _unblank } else { "" };
+    private _typeLabel = if ((count _cols) > 10) then { [_cols select 10] call _unblank } else { "" };
 
     if (_type isEqualTo "") then { _type = "MOVE"; };
-
     if (_targetType isEqualTo "") then { _targetType = "all"; };
-
     if (_status isEqualTo "") then { _status = "PENDING"; };
     _status = toUpper _status;
 

@@ -85,20 +85,22 @@ class COMSPEC_ATAK_Task: ATAK_Message
             };
         };
 
+        // Liste courte : laisse de la place au détail (sinon la zone vide de la liste
+        // masque le corps de l’ordre et donne l’impression que rien ne s’affiche).
         class OrderList: RscListBox
         {
             idc = 9902;
             x = QUOTE(COMSPEC_TASK_W(0.08));
             y = QUOTE(COMSPEC_TASK_H(1.04));
             w = QUOTE(COMSPEC_TASK_W(2.84));
-            h = QUOTE(COMSPEC_TASK_H(2.72));
+            h = QUOTE(COMSPEC_TASK_H(1.70));
             colorBackground[] = {0.09, 0.09, 0.09, 0.94};
             colorSelect[] = ATAK_LIST_SEL;
             colorSelect2[] = ATAK_LIST_SEL;
             colorSelectBackground[] = ATAK_LIST_SEL_BG;
             colorSelectBackground2[] = ATAK_LIST_SEL_BG;
             sizeEx = QUOTE(COMSPEC_TASK_H(0.38));
-            rowHeight = QUOTE(COMSPEC_TASK_H(0.56));
+            rowHeight = QUOTE(COMSPEC_TASK_H(0.52));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_taskSelect";
         };
 
@@ -106,12 +108,12 @@ class COMSPEC_ATAK_Task: ATAK_Message
         {
             idc = 9903;
             x = QUOTE(COMSPEC_TASK_W(0.08));
-            y = QUOTE(COMSPEC_TASK_H(3.82));
+            y = QUOTE(COMSPEC_TASK_H(2.82));
             w = QUOTE(COMSPEC_TASK_W(2.84));
-            h = QUOTE(COMSPEC_TASK_H(2.20));
-            size = QUOTE(COMSPEC_TASK_H(0.32));
-            text = "";
-            colorBackground[] = TASK_BG_BODY;
+            h = QUOTE(COMSPEC_TASK_H(3.10));
+            size = QUOTE(COMSPEC_TASK_H(0.30));
+            text = "<t color='#8aa0b4'>Sélectionnez un ordre pour afficher le détail.</t>";
+            colorBackground[] = {0.12, 0.13, 0.14, 0.96};
             class Attributes
             {
                 font = "RobotoCondensed";
@@ -119,7 +121,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
                 align = "left";
                 valign = "top";
                 shadow = 1;
-                size = "1";
+                size = "0.92";
             };
         };
 
@@ -127,9 +129,9 @@ class COMSPEC_ATAK_Task: ATAK_Message
         {
             idc = 9904;
             x = QUOTE(COMSPEC_TASK_W(0.08));
-            y = QUOTE(COMSPEC_TASK_H(6.10));
+            y = QUOTE(COMSPEC_TASK_H(6.02));
             w = QUOTE(COMSPEC_TASK_W(1.38));
-            h = QUOTE(COMSPEC_TASK_H(0.58));
+            h = QUOTE(COMSPEC_TASK_H(0.56));
             size = QUOTE(COMSPEC_TASK_H(0.34));
             text = "Accepter";
             colorBackground[] = TASK_OK;
@@ -152,7 +154,7 @@ class COMSPEC_ATAK_Task: ATAK_Message
         {
             idc = 9907;
             x = QUOTE(COMSPEC_TASK_W(0.08));
-            y = QUOTE(COMSPEC_TASK_H(6.76));
+            y = QUOTE(COMSPEC_TASK_H(6.66));
             w = QUOTE(COMSPEC_TASK_W(2.84));
             h = QUOTE(COMSPEC_TASK_H(0.46));
             size = QUOTE(COMSPEC_TASK_H(0.30));

@@ -3962,6 +3962,20 @@ class AtakApiController
         }
         $existingRow = $this->atak->findMarkerByArmaName($tenantId, $mapId, (string) $armaName);
         $markerData = $this->normalizeArmaMarkerData($body['markerData'] ?? '{}', (string) $armaName);
+        $decodedCheck = json_decode($markerData, true);
+        $decodedCheck = is_array($decodedCheck) ? $decodedCheck : [];
+        $posCheck = $decodedCheck['pos'] ?? null;
+        $hasPos = is_array($posCheck)
+            && isset($posCheck[0], $posCheck[1])
+            && is_numeric($posCheck[0])
+            && is_numeric($posCheck[1])
+            && (abs((float) $posCheck[0]) >= 0.5 || abs((float) $posCheck[1]) >= 0.5);
+        if (!$hasPos) {
+            return Response::json([
+                'error' => 'invalid_marker_pos',
+                'message' => 'Repère sans position valide. Reposez le marqueur sur la carte en jeu.',
+            ], 400);
+        }
         $row = $this->atak->upsertMarkerByArmaName($tenantId, $mapId, $layerId, (string) $armaName, $markerData);
         $decoded = json_decode($markerData, true);
         $decoded = is_array($decoded) ? $decoded : [];

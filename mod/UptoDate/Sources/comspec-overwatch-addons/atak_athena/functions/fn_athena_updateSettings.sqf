@@ -207,6 +207,38 @@ if (!isNull _cbProx) then {
     missionNamespace setVariable ["COMSPEC_AtakPhoneProxFilling", false, false];
 };
 
+private _cbEcoti = [9862] call _ctrl;
+if (!isNull _cbEcoti) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiHudFilling", true, false];
+    private _ecotiOn = missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false];
+    if (!(_ecotiOn isEqualType true)) then { _ecotiOn = false; };
+    private _profEcoti = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+    if (_profEcoti isEqualType true) then { _ecotiOn = _profEcoti; };
+    lbClear _cbEcoti;
+    private _iOff = _cbEcoti lbAdd "Désactivé";
+    _cbEcoti lbSetData [_iOff, "0"];
+    private _iOn = _cbEcoti lbAdd "Activé sous JVN";
+    _cbEcoti lbSetData [_iOn, "1"];
+    _cbEcoti lbSetCurSel (if (_ecotiOn) then { _iOn } else { _iOff });
+    missionNamespace setVariable ["COMSPEC_AtakEcotiHudFilling", false, false];
+};
+
+private _cbEcotiCut = [9871] call _ctrl;
+if (!isNull _cbEcotiCut) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", true, false];
+    private _cutOn = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+    if (!(_cutOn isEqualType true)) then { _cutOn = false; };
+    private _profCut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+    if (_profCut isEqualType true) then { _cutOn = _profCut; };
+    lbClear _cbEcotiCut;
+    private _iCutOff = _cbEcotiCut lbAdd "Désactivé";
+    _cbEcotiCut lbSetData [_iCutOff, "0"];
+    private _iCutOn = _cbEcotiCut lbAdd "Activé (bâtiment désigné)";
+    _cbEcotiCut lbSetData [_iCutOn, "1"];
+    _cbEcotiCut lbSetCurSel (if (_cutOn) then { _iCutOn } else { _iCutOff });
+    missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", false, false];
+};
+
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     private _hint = if (_cs isEqualTo "") then {

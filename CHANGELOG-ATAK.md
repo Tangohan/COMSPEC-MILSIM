@@ -11,6 +11,46 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.56 / Athena 1.0.101 — 2026-09-12
+
+### Amélioration — Découpage d’étage sous JVN
+
+Sur un bâtiment désigné, le découpage d’étage (désactivé par défaut) coupe la silhouette au plafond choisi, met en évidence la dalle et marque les points intérieurs. ACE permet de changer d’étage. Les murs ne s’ouvrent pas (limite du moteur) ; ce n’est plus un réglage « à venir ».
+
+---
+
+## Overwatch 1.5.55 / Athena 1.0.101 — 2026-09-12
+
+### Amélioration — Messagerie : canaux, fil et Groups IceMan
+
+Dans Messagerie, vous créez un canal radio personnalisé depuis le téléphone. Le fil indique clairement De / Vous / Du poste avec un meilleur contraste. L’entrée IceMan Groups / Group Messages disparaît du tiroir : l’opérateur arrive sur Messagerie COMSPEC, en français.
+
+---
+
+## Overwatch 1.5.54 / Athena 1.0.99 / liaison 2.0.32 — 2026-09-12
+
+### Correction — Marqueurs téléphone → carte du poste
+
+Les repères posés sur le téléphone (INF, Marker Widget, cTab) remontent sur la carte Athena dès que le canal poste est ouvert, même si Effectifs est encore vide. Une liaison momentanément dégradée ne fait plus perdre le marqueur.
+
+---
+
+## Overwatch 1.5.52 / Athena 1.0.97 — 2026-09-12
+
+### Correction — Position invisible au poste malgré liaison OK
+
+Dès que le canal poste est ouvert, la position part automatiquement vers le poste. Vous apparaissez dans Effectifs sans ouvrir Transmettre. Si un frein temporaire s’applique, la fiche Athena l’indique clairement.
+
+---
+
+## Overwatch 1.5.49 / Athena 1.0.93 — 2026-09-12
+
+### Nouveau — Messagerie ATAK avec canaux
+
+Application **Messagerie** COMSPEC dans le téléphone : canaux radio (Groupe, Commandement, Général, JTAC, Air + personnalisés), fil par canal, envoi vers le poste. Libellés en français. Groups / Group Messages IceMan est masqué au profit de Messagerie.
+
+---
+
 ## Overwatch 1.5.43 — 2026-09-11
 
 ### Nouveau — Affichage situation sous toutes les JVN

@@ -273,6 +273,8 @@ private _normalizeEntry = {
 
 private _sendMarker = {
     params ["_armaName", "_json", "_deleted"];
+    // Indépendant du contact BFT / position : file si canal pas prêt.
+    // Pas de gate canTransmit ici — un INF posé doit remonter dès que la session est OK.
     if (_athenaReady) then {
         private _flag = if (_deleted) then { "1" } else { "0" };
         private _body = if (_deleted) then { "{}" } else { _json };

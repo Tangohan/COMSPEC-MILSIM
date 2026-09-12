@@ -22,6 +22,8 @@ private _detail = _group controlsGroupCtrl 9903;
 if (isNull _list) exitWith {};
 
 private _prevId = uiNamespace getVariable ["COMSPEC_ATAK_Task_selectedId", ""];
+if (!(_prevId isEqualType "")) then { _prevId = str _prevId; };
+_prevId = trim _prevId;
 private _selKeep = -1;
 
 uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", true];
@@ -35,15 +37,16 @@ if (!(_dismissed isEqualType [])) then { _dismissed = []; };
 private _rows = [];
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    private _id = _x getOrDefault ["id", ""];
+    private _id = trim (str (_x getOrDefault ["id", ""]));
     if (_id isEqualTo "") then { continue };
+    // Normaliser l’id en chaîne (lbSetData + comparaisons).
+    _x set ["id", _id];
     if (_id in _dismissed) then { continue };
     private _type = toUpper (_x getOrDefault ["type", "MOVE"]);
     if (_type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) then { continue };
     if (!isNil "comspec_overwatch_connect_fnc_orderConcernsPlayer") then {
         if (!([_x] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
     };
-    // Normaliser un statut vide renvoyé par la liaison (« - » → PENDING).
     private _stRaw = trim (_x getOrDefault ["status", "PENDING"]);
     if (_stRaw isEqualTo "" || {_stRaw isEqualTo "-"}) then {
         _x set ["status", "PENDING"];
@@ -55,14 +58,14 @@ reverse _rows;
 
 private _pending = 0;
 {
-    private _st = toUpper (_x getOrDefault ["status", "PENDING"]);
+    private _st = toUpper (trim (_x getOrDefault ["status", "PENDING"]));
     if (!(_st in ["ACK", "EXEC", "DONE", "CLOSED", "FAILED", "CANCELLED", "DELIVERED"])) then {
         _pending = _pending + 1;
     };
 } forEach _rows;
 
 {
-    private _id = _x getOrDefault ["id", ""];
+    private _id = str (_x getOrDefault ["id", ""]);
     private _kind = "Ordre";
     if (!isNil "comspec_overwatch_connect_fnc_orderTypeLabel") then {
         private _lbl = [_x] call comspec_overwatch_connect_fnc_orderTypeLabel;
@@ -70,7 +73,7 @@ private _pending = 0;
     };
     private _who = _x getOrDefault ["issuer", "C2"];
     if (!(_who isEqualType "") || {_who isEqualTo ""}) then { _who = "C2"; };
-    private _st = toUpper (_x getOrDefault ["status", "PENDING"]);
+    private _st = toUpper (trim (_x getOrDefault ["status", "PENDING"]));
     private _stTxt = "À traiter";
     if (_st isEqualTo "ACK") then { _stTxt = "Accepté"; };
     if (_st isEqualTo "EXEC") then { _stTxt = "En cours"; };
@@ -90,7 +93,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", false];
 if (!isNull _sum) then {
     private _n = count _rows;
     private _txt = if (_n < 1) then {
-        "<t color='#c8d0d8'>Aucun ordre C2 pour le moment</t>"
+        "<t color='#c8d0d8'>Aucun ordre pour le moment</t>"
     } else {
         format [
             "<t color='#ffd27a'>%1</t> ordre%2 · <t color='#9ed8b4'>%3</t> à traiter",
@@ -110,14 +113,17 @@ if (_selKeep >= 0) then {
     } else {
         if (!isNull _detail) then {
             _detail ctrlSetStructuredText parseText "<t color='#8aa0b4'>Les ordres du commandement apparaîtront ici dès leur réception.</t>";
+            _detail ctrlCommit 0;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
         [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
     };
 };
 
-if ((lbCurSel _list) >= 0) then {
-    [_list, lbCurSel _list] call comspec_overwatch_atak_athena_fnc_athena_taskSelect;
+// Toujours rafraîchir détail + boutons (ne pas compter seulement sur onLBSelChanged).
+private _cur = lbCurSel _list;
+if (_cur >= 0) then {
+    [_list, _cur] call comspec_overwatch_atak_athena_fnc_athena_taskSelect;
 } else {
     [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };

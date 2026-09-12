@@ -33,7 +33,13 @@ if (_tab isEqualTo "chat" || {_tab isEqualTo "msg"}) then { _tab = "messages"; }
 if (_tab isEqualTo "phone" || {_tab isEqualTo "link"} || {_tab isEqualTo "callsign"} || {_tab isEqualTo "account"}) then { _tab = "liaison"; };
 if (_tab isEqualTo "orders") then { _tab = "order"; };
 if (_tab isEqualTo "photos") then { _tab = "photo"; };
-if (_tab isEqualTo "apps" || {_tab isEqualTo "hub"} || {_tab isEqualTo "bft"} || {_tab isEqualTo "status"} || {_tab isEqualTo "help"} || {_tab isEqualTo "radio"}) then { _tab = "all"; };
+if (_tab isEqualTo "apps" || {_tab isEqualTo "hub"} || {_tab isEqualTo "bft"} || {_tab isEqualTo "status"} || {_tab isEqualTo "help"}) then { _tab = "all"; };
+if (_tab isEqualTo "radio" || {_tab isEqualTo "comms"} || {_tab isEqualTo "messagerie"}) then { _tab = "messages"; };
+
+// Messagerie canaux → app Messagerie COMSPEC (pas IceMan Group Messages)
+if (_tab isEqualTo "messages") exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+};
 
 // Ordres C2 → app TASK (liste + réponses), pas seulement l’onglet Athena
 if (_tab isEqualTo "order" || {_tab isEqualTo "task"} || {_tab isEqualTo "tasks"}) exitWith {

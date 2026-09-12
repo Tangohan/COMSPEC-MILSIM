@@ -319,7 +319,7 @@ if (_lastRealism > 0) then {
     } else {
         format ["il y a %1 min", round (_age / 60)]
     };
-    _body = _body + (["Sync. terminal", _ageTxt, "#8aa0b4"] call _row);
+    _body = _body + (["Dernière sync. terminal", _ageTxt, "#8aa0b4"] call _row);
 };
 
 _body = _body + (["Zone radio", _zoneTxt, if (_zoneTxt isEqualTo "Aucune") then { "#7dffb0" } else { "#ffd27a" }] call _row);

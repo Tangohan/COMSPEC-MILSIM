@@ -65,6 +65,30 @@ if (!(_inbox isEqualType [])) then { _inbox = []; };
 private _added = 0;
 private _groupPanelDirty = false;
 
+// Fil Messagerie COMSPEC (canaux) — [id, author, body, time, channelKey, isMine]
+private _fnPushComms = {
+    params ["_id", "_author", "_text", "_timeStr", ["_channelKey", "general"], ["_isMine", false]];
+    if ((trim _text) isEqualTo "") exitWith { false };
+    _channelKey = toLower (trim _channelKey);
+    if (_channelKey in ["", "squad", "global"]) then { _channelKey = "general"; };
+    if (_channelKey in ["hq", "c2", "command"]) then { _channelKey = "commandement"; };
+    if (_channelKey in ["group"]) then { _channelKey = "groupe"; };
+    if (_timeStr isEqualTo "") then { _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString; };
+    if (_id isEqualTo "") then { _id = format ["local_%1", floor (diag_tickTime * 1000)]; };
+
+    private _store = +(missionNamespace getVariable ["COMSPEC_Comms_Messages", []]);
+    if (!(_store isEqualType [])) then { _store = []; };
+    private _dup = false;
+    {
+        if ((_x param [0, ""]) isEqualTo _id) exitWith { _dup = true; };
+    } forEach _store;
+    if (_dup) exitWith { false };
+    _store pushBack [_id, _author, _text, _timeStr, _channelKey, _isMine];
+    while { (count _store) > 120 } do { _store deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_Comms_Messages", _store, false];
+    true
+};
+
 // Injection locale dans l’historique Iceman (sans CBA global).
 private _fnPushIcemanGroup = {
     params ["_senderName", "_groupId", "_grid", "_text", "_timeStr", ["_pos", []]];
@@ -186,6 +210,7 @@ if (!_bootstrapped) exitWith {
                 if ([_fromLabel, _myGroupId, _gGrid, _gText, _timeStr] call _fnPushIcemanGroup) then {
                     _groupPanelDirty = true;
                 };
+                [_id, _fromLabel, _gText, _timeStr, if (_channelKey isEqualTo "general") then { "groupe" } else { _channelKey }, false] call _fnPushComms;
                 _added = _added + 1;
                 if (!isNil "cTab_fnc_addNotification") then {
                     ["GROUP", format ["Message de %1", _fromLabel], 6] call cTab_fnc_addNotification;
@@ -245,6 +270,7 @@ if (!_bootstrapped) exitWith {
             _groupPanelDirty = true;
         };
     };
+    [_id, _fromLabel, _detail, _timeStr, if (_isHq) then { "commandement" } else { _channelKey }, false] call _fnPushComms;
 
     _added = _added + 1;
 
@@ -268,6 +294,12 @@ if (_added > 0) then {
 
 if (_groupPanelDirty && {!isNil "Iceman_fnc_group_updatePanel"}) then {
     call Iceman_fnc_group_updatePanel;
+};
+
+if (_added > 0 && {!isNil "comspec_overwatch_atak_athena_fnc_athena_updateComms"}) then {
+    if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Comms_group", controlNull])) then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
+    };
 };
 
 if (_added > 0 && {!isNil "comspec_overwatch_connect_fnc_tabletChatPush"}) then {

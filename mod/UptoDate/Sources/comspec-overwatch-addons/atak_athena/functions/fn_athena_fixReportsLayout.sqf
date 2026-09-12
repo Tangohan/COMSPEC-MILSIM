@@ -174,17 +174,42 @@ if (_tab isEqualTo "inbox") then {
         _det ctrlSetPosition [0, 0, _fullW * 0.97, _innerH];
         _det ctrlCommit 0;
         private _list = _group controlsGroupCtrl 9610;
-        if (!isNull _list && {lbSize _list == 0}) then {
+        private _reports = missionNamespace getVariable ["Iceman_ATAK_Reports_reports", []];
+        private _selected = missionNamespace getVariable ["Iceman_ATAK_Reports_selected", -1];
+        if (!(_reports isEqualType []) || {_reports isEqualTo []} || {_selected < 0} || {_selected >= count _reports}) then {
             _det ctrlSetStructuredText parseText "<t size='0.82' color='#c8d0d8'>Aucun compte rendu pour le moment.</t>";
         } else {
-            private _txt = ctrlText _det;
-            if (_txt isEqualTo "No reports received." || {(toLower _txt) find "no reports" >= 0}) then {
-                _det ctrlSetStructuredText parseText "<t size='0.82' color='#c8d0d8'>Aucun compte rendu pour le moment.</t>";
-            };
+            (_reports select _selected) params ["_time", "_kind", "_sender", "_grid", ["_body", ""], ["_pos", []]];
+            private _text = [
+                format ["<t color='#ffd36a'>%1</t>  <t color='#ffffff'>%2</t>", _time, _kind],
+                format ["De : %1", _sender],
+                format ["Grille : %1", _grid],
+                "",
+                _body
+            ] joinString "<br/>";
+            _det ctrlSetStructuredText parseText _text;
         };
     };
 } else {
     // --- Onglet Nouveau : type + champs du formulaire actif + boutons bas ---
+    if (isNil { missionNamespace getVariable "COMSPEC_ReportsLabelFr" }) then {
+        missionNamespace setVariable ["COMSPEC_ReportsLabelFr", createHashMapFromArray [
+            ["Report", "Type"], ["DTG", "Date-heure"], ["Unit", "Unité"], ["TRN", "Réf."],
+            ["Grid", "Grille"], ["Type", "Nature"], ["Desc", "Description"],
+            ["Ordnance", "Munitions"], ["Munitions Count", "Nombre"], ["EKIA", "Pertes ennemies"], ["Platform", "Plateforme"],
+            ["Equip", "Équipement"], ["Equipment", "Équipement"], ["Rating", "Résultat"],
+            ["Reattack", "Réattaque"], ["Send To", "Destinataires"], ["Reports", "Remarques"],
+            ["Size", "Effectif"], ["Activity", "Activité"], ["Location", "Position"],
+            ["Unit/Uniform", "Tenue"], ["Time Observed", "Heure observée"],
+            ["Category", "Catégorie"], ["Callsign", "Indicatif"], ["Casualty", "Blessé"],
+            ["Status", "État"], ["Mechanism", "Mécanisme"], ["Situation", "Situation"],
+            ["Medevac", "MEDEVAC"], ["Treatment", "Soins"], ["Remarks", "Remarques"],
+            ["Reference", "Référence"], ["Mission", "Mission"], ["Execution", "Exécution"],
+            ["Service Support", "Soutien"], ["Command/Signal", "Commandement"],
+            ["Acknowledge", "Accusé"], ["CASUALTY INFORMATION", "INFORMATION BLESSÉ"],
+            ["LZ STATUS", "ÉTAT LZ"], ["REMARKS", "REMARQUES"]
+        ], false];
+    };
     private _y = _contentTop;
     private _labelW = _fullW * 0.34;
     private _inputW = _fullW - _labelW - _gap;
@@ -197,6 +222,17 @@ if (_tab isEqualTo "inbox") then {
         _ft ctrlEnable false;
     };
 
+    // BDA : masquer les champs secondaires déjà préremplis (payload IceMan inchangé).
+    if (_form isEqualTo "BDA") then {
+        {
+            private _hc = _group controlsGroupCtrl _x;
+            if (!isNull _hc) then {
+                _hc ctrlShow false;
+                _hc ctrlEnable false;
+            };
+        } forEach [9700, 9701, 9702, 9703, 9704, 9705, 9712, 9713, 9716, 9717, 9726, 9727];
+    };
+
     private _typeL = _group controlsGroupCtrl 9614;
     private _typeC = _group controlsGroupCtrl 9620;
     if (!isNull _typeL) then {
@@ -207,7 +243,53 @@ if (_tab isEqualTo "inbox") then {
     if (!isNull _typeC) then {
         _typeC ctrlSetPosition [_pad + _labelW + _gap, _y, _inputW, _rowH];
         [_typeC] call _fncOpaqueEdit;
+        // Libellés FR visibles ; lbData reste le code technique (TIC, BDA…).
+        private _formFr = createHashMapFromArray [
+            ["TIC", "Contact"], ["EAGLE_DOWN", "Opérateur à terre"], ["EAGLE DOWN", "Opérateur à terre"],
+            ["BDA", "Bilan des dégâts"], ["FRAGO", "Ordre fragmentaire"], ["SALUTE", "SALUTE"]
+        ];
+        private _lbN = lbSize _typeC;
+        for "_i" from 0 to (_lbN - 1) do {
+            private _data = _typeC lbData _i;
+            private _txt = _typeC lbText _i;
+            private _key = if (_data isNotEqualTo "") then { toUpper _data } else { toUpper _txt };
+            private _fr = _formFr getOrDefault [_key, ""];
+            if (_fr isEqualTo "") then {
+                _fr = _formFr getOrDefault [_txt, ""];
+            };
+            if (_fr isNotEqualTo "") then {
+                _typeC lbSetText [_i, _fr];
+            };
+        };
         _typeC ctrlCommit 0;
+    };
+    // Valeurs des listes BDA en français (lbData inchangé).
+    if (_form isEqualTo "BDA") then {
+        private _optFr = createHashMapFromArray [
+            ["Infantry", "Infanterie"], ["Vehicle", "Véhicule"], ["Armor", "Blindé"],
+            ["Artillery", "Artillerie"], ["Structure", "Structure"], ["Air Defense", "Défense sol-air"],
+            ["Other", "Autre"], ["Destroyed (D)", "Détruit"], ["Damaged", "Endommagé"],
+            ["Neutralized", "Neutralisé"], ["Unknown", "Inconnu"],
+            ["No Reattack Required", "Pas de nouvelle frappe"],
+            ["Reattack Required", "Nouvelle frappe requise"],
+            ["Reattack Recommended", "Nouvelle frappe recommandée"],
+            ["No vehicle ordnance", "Sans munition véhicule"],
+            ["No player-operated vehicles", "Aucun véhicule joueur"]
+        ];
+        {
+            private _combo = _group controlsGroupCtrl _x;
+            if (!isNull _combo) then {
+                private _n = lbSize _combo;
+                for "_i" from 0 to (_n - 1) do {
+                    private _data = _combo lbData _i;
+                    private _txt = _combo lbText _i;
+                    private _key = if (_data isNotEqualTo "") then { _data } else { _txt };
+                    private _fr = _optFr getOrDefault [_key, ""];
+                    if (_fr isEqualTo "") then { _fr = _optFr getOrDefault [_txt, ""]; };
+                    if (_fr isNotEqualTo "") then { _combo lbSetText [_i, _fr]; };
+                };
+            };
+        } forEach [9709, 9723, 9725, 9717];
     };
     _y = _y + _rowH + (_gap * 0.7);
 
@@ -276,10 +358,22 @@ if (_tab isEqualTo "inbox") then {
             private _rh = (_step * 0.88) max 0.011;
             if (!isNull _lab && {isNull _inp}) then {
                 _lab ctrlSetPosition [_pad, _ry, _fullW, _rh];
+                private _plainSec = trim (ctrlText _lab);
+                private _frSecMap = missionNamespace getVariable ["COMSPEC_ReportsLabelFr", createHashMap];
+                private _frSec = _frSecMap getOrDefault [_plainSec, ""];
+                if (_frSec isNotEqualTo "") then {
+                    _lab ctrlSetStructuredText parseText format ["<t align='center' size='0.72' color='#ffffff'>%1</t>", _frSec];
+                };
                 _lab ctrlCommit 0;
             } else {
                 if (!isNull _lab) then {
                     _lab ctrlSetPosition [_pad, _ry, _labelW, _rh];
+                    private _plain = trim (ctrlText _lab);
+                    private _frMap = missionNamespace getVariable ["COMSPEC_ReportsLabelFr", createHashMap];
+                    private _fr = _frMap getOrDefault [_plain, ""];
+                    if (_fr isNotEqualTo "") then {
+                        _lab ctrlSetStructuredText parseText format ["<t size='0.7'>%1</t>", _fr];
+                    };
                     _lab ctrlCommit 0;
                 };
                 if (!isNull _inp) then {

@@ -34,7 +34,7 @@ if (isNull _bat) exitWith {
 private _hdr = _disp displayCtrl 1;
 private _hx = _bx;
 private _hy = _by;
-private _hw = _bw * 12;
+private _hw = (_bw * 8) max 0.2;
 private _hh = _bh;
 if (!isNull _hdr) then {
     (ctrlPosition _hdr) params ["_x0", "_y0", "_w0", "_h0"];
@@ -44,12 +44,31 @@ if (!isNull _hdr) then {
     _hh = _h0;
 };
 
-// Plus compact que l’ancien bandeau (0.85 → ~0.62 × hauteur statut, 2 lignes serrées)
-private _sy = _hy + _hh;
-private _sh = (_hh * 1.05) max 0.022;
-private _inset = _hw * 0.012;
+// Sous la barre d’état, hauteur pour 2 lignes — ne jamais chevaucher le header carte.
+private _sy = _hy + _hh + 0.001;
+private _sh = (_hh * 1.15) max 0.022;
+private _inset = _hw * 0.02;
 _hx = _hx + _inset;
 _hw = (_hw - (_inset * 2)) max (_bw * 4);
+
+// Ne pas élargir au-delà du bord droit de la carte visible.
+private _mapCtrl = controlNull;
+if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
+    private _mapName = ["cTab_Android_dlg", "mapType"] call cTab_fnc_getSettings;
+    private _mapTypes = ["cTab_Android_dlg", "mapTypes"] call cTab_fnc_getSettings;
+    private _mapIdc = [_mapTypes, _mapName] call cTab_fnc_getFromPairs;
+    if (_mapIdc isEqualType 0) then { _mapCtrl = _disp displayCtrl _mapIdc; };
+};
+if (!isNull _mapCtrl) then {
+    (ctrlPosition _mapCtrl) params ["_mx", "", "_mw"];
+    private _maxRight = _mx + _mw - 0.004;
+    private _bgGroup = _disp displayCtrl 4660;
+    if (!isNull _bgGroup && {ctrlShown _bgGroup}) then {
+        (ctrlPosition _bgGroup) params ["_dx", "", "_dw"];
+        if (_dw > 0.02 && {_dx > _mx}) then { _maxRight = _dx - 0.004; };
+    };
+    if ((_hx + _hw) > _maxRight) then { _hw = (_maxRight - _hx) max 0.12; };
+};
 
 if (isNull _ctrl) then {
     _ctrl = _disp ctrlCreate ["RscStructuredText", _IDC];
@@ -212,7 +231,7 @@ if (_extV isEqualTo "") then { _extV = "—"; };
 
 private _sep = "<t color='#4a5a68'> · </t>";
 private _html = format [
-    "<t align='center' size='0.52' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
+    "<t align='center' size='0.45' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8' size='0.90'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
     _okColor,
     _okTxt,
     _sep,

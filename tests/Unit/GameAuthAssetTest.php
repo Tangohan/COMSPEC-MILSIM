@@ -111,6 +111,9 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('Session Athena prête', $wait);
         self::assertStringContainsString('_apiKeyValidatedByClientInit', $attach);
         self::assertStringContainsString('EnsureFreshGameAccessToken', $attach);
+        self::assertStringContainsString('EnsureFreshAtakSession', $attach);
+        self::assertStringContainsString('RememberAtakSessionToken', $attach);
+        self::assertStringContainsString('_sessionExpiresAt', $attach);
         self::assertStringContainsString('Ne jamais coller X-COMSPEC-KEY', $attach);
         self::assertStringContainsString('presentedAuthCandidates', $authPhp);
         self::assertStringContainsString('matchedUserId', $authPhp);
@@ -139,6 +142,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('logThrottled', $guard);
         self::assertStringContainsString("'steam_required'", $guard);
         self::assertStringContainsString('300,', $guard);
+        self::assertStringContainsString("'invalid_session_ignored'", $guard);
+        self::assertStringContainsString('600,', $guard);
     }
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void
@@ -146,8 +151,8 @@ final class GameAuthAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $svc = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/AthenaAccountRepository.php');
-        self::assertStringContainsString('function resolveSteamId(array $body, array $account): string', $svc);
-        self::assertStringContainsString('$steamId = $this->resolveSteamId($body, $account);', $svc);
+        self::assertStringContainsString('function resolveSteamId(array $body, array $account, ?array $membership = null): string', $svc);
+        self::assertStringContainsString('$steamId = $this->resolveSteamId($body, $account, $chosen);', $svc);
         self::assertStringContainsString('if ($this->hasSteamId($steamId)) {', $svc);
         self::assertStringNotContainsString('if ($steamId !== \'\') {', $svc);
         self::assertStringContainsString('upsertPairing((int) $account[\'id\'], $deviceId, $steamId, $pairingHash)', $svc);
@@ -229,8 +234,14 @@ final class GameAuthAssetTest extends TestCase
         $membership['user_steam_id'] = '76561198000000001';
         self::assertSame('', $method->invokeArgs($svc, [&$account, $membership, '76561198000000000']));
 
+        $account = ['id' => 10, 'steam_id' => '76561198000000000'];
+        $membership['user_steam_id'] = '76561198000000000';
+        self::assertSame('76561198000000000', $method->invokeArgs($svc, [&$account, $membership, '']));
+
         $source = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Game/GameAuthService.php');
         self::assertStringContainsString("return \$this->fail('STEAM_NOT_LINKED', 403);", $source);
         self::assertStringContainsString("\$body['_verify_restored_steam'] = true;", $source);
+        self::assertStringContainsString('membershipHasSteam', $source);
+        self::assertStringContainsString('steamNoticesForAccount', $source);
     }
 }

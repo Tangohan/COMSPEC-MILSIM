@@ -7,6 +7,24 @@ params [["_action", "ACCEPT", [""]]];
 if (!hasInterface) exitWith {};
 
 private _orderId = uiNamespace getVariable ["COMSPEC_ATAK_Task_selectedId", ""];
+if (!(_orderId isEqualType "")) then { _orderId = str _orderId; };
+_orderId = trim _orderId;
+
+// Repli : id depuis la liste si mémoire vide.
+if (_orderId isEqualTo "") then {
+    private _group = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
+    if (!isNull _group) then {
+        private _list = _group controlsGroupCtrl 9902;
+        if (!isNull _list) then {
+            private _sel = lbCurSel _list;
+            if (_sel >= 0) then {
+                _orderId = trim (str (_list lbData _sel));
+                uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", _orderId];
+            };
+        };
+    };
+};
+
 if (_orderId isEqualTo "") exitWith {
     ["Sélectionnez d’abord un ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
@@ -25,7 +43,7 @@ if (_actionKey in ["DISMISS", "DELETE", "REMOVE"]) exitWith {
     if (_orders isEqualType []) then {
         _orders = _orders select {
             !(_x isEqualType createHashMap)
-            || {(_x getOrDefault ["id", ""]) isNotEqualTo _orderId}
+            || {(str (_x getOrDefault ["id", ""])) isNotEqualTo _orderId}
         };
         missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
     };
@@ -74,12 +92,13 @@ switch (_actionKey) do {
 private _current = "PENDING";
 private _orderData = createHashMap;
 {
-    if ((_x getOrDefault ["id", ""]) isEqualTo _orderId) exitWith {
+    if (!(_x isEqualType createHashMap)) then { continue };
+    if ((str (_x getOrDefault ["id", ""])) isEqualTo _orderId) exitWith {
         _current = toUpper (trim (_x getOrDefault ["status", "PENDING"]));
         _orderData = _x;
     };
 } forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
-if (_current isEqualTo "") then { _current = "PENDING"; };
+if (_current isEqualTo "" || {_current isEqualTo "-"}) then { _current = "PENDING"; };
 
 private _blocked = false;
 if (!isNil "comspec_overwatch_connect_fnc_orderCanTransition") then {
@@ -97,7 +116,9 @@ if (!isNil "comspec_overwatch_connect_fnc_orderCanTransition") then {
         [_msg, "order", "warn"] call comspec_overwatch_connect_fnc_announce;
     };
 };
-if (_blocked) exitWith {};
+if (_blocked) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
+};
 
 private _ok = false;
 if (!isNil "comspec_overwatch_connect_fnc_updateOrderStatus") then {
@@ -111,13 +132,17 @@ if (!_ok) then {
     _ok = (_raw isEqualType "") && {((toUpper _raw) find "OK") == 0};
     if (_ok) then {
         private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
-        {
-            if ((_x getOrDefault ["id", ""]) isEqualTo _orderId) exitWith {
-                _x set ["status", _status];
-                if (_note isNotEqualTo "") then { _x set ["note", _note]; };
-            };
-        } forEach _orders;
-        missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
+        if (_orders isEqualType []) then {
+            {
+                if (!(_x isEqualType createHashMap)) then { continue };
+                if ((str (_x getOrDefault ["id", ""])) isEqualTo _orderId) exitWith {
+                    _x set ["status", _status];
+                    if (_note isNotEqualTo "") then { _x set ["note", _note]; };
+                    _x set ["updatedAt", serverTime];
+                };
+            } forEach _orders;
+            missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
+        };
     };
 };
 

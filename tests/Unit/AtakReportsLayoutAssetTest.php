@@ -43,6 +43,9 @@ final class AtakReportsLayoutAssetTest extends TestCase
         self::assertStringContainsString('Comptes-rendus', $fix);
         self::assertStringContainsString('Localiser', $fix);
         self::assertStringContainsString('Aucun compte rendu pour le moment.', $fix);
+        self::assertStringContainsString('De :', $fix);
+        self::assertStringContainsString('COMSPEC_ReportsLabelFr', $fix);
+        self::assertStringContainsString('lbSetText', $fix);
         self::assertStringContainsString('9610', $fix);
         self::assertStringContainsString('9611', $fix);
         self::assertStringContainsString('9613', $fix);
@@ -59,7 +62,7 @@ final class AtakReportsLayoutAssetTest extends TestCase
         self::assertStringContainsString('athena_installReportsLayout', $cfg);
         self::assertStringContainsString('athena_hideForeignPages', $cfg);
         self::assertStringContainsString('athena_resolveAthenaGroup', $cfg);
-        self::assertStringContainsString('1.0.90', $cfg);
+        self::assertStringContainsString('1.0.91', $cfg);
         self::assertStringContainsString('athena_installReportsLayout', $post);
         self::assertStringContainsString('athena_fixReportsLayout', $check);
         self::assertStringContainsString('athena_hideForeignPages', $check);

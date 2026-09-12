@@ -32,6 +32,10 @@ private _fnc_clearGpsNav = {
     missionNamespace setVariable ["COMSPEC_GpsNavLabel", "", false];
 };
 
+private _fnc_clearGpsDraw = {
+    missionNamespace setVariable ["COMSPEC_GpsNavDrawPoints", [], false];
+};
+
 if (!(["gps_navigation"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {
     [] call _fnc_clearGpsVisuals;
     [] call _fnc_clearGpsNav;
@@ -100,6 +104,7 @@ private _recvIdx = 0;
 if ((count _byRoute) isEqualTo 0) exitWith {
     [] call _fnc_clearGpsVisuals;
     [] call _fnc_clearGpsNav;
+    [] call _fnc_clearGpsDraw;
     false
 };
 
@@ -228,6 +233,20 @@ if (!(_prevRt isEqualType [])) then { _prevRt = []; };
 } forEach _prevRt;
 missionNamespace setVariable ["COMSPEC_GpsWpIds", _seenWp, false];
 missionNamespace setVariable ["COMSPEC_GpsRouteIds", _seenRt, false];
+
+private _drawPts = [];
+{
+    _x params ["_id", "_routeId", "_label", "_px", "_py", "_radius", "_isReached", "_seq"];
+    private _z = (getTerrainHeightASL [_px, _py]) + 1.2;
+    private _agl = ASLToAGL [_px, _py, _z];
+    private _lbl = if (_label isEqualTo "") then {
+        format ["Point %1", if (_seq > 0) then { round _seq } else { _forEachIndex + 1 }]
+    } else {
+        _label
+    };
+    _drawPts pushBack [_agl select 0, _agl select 1, _agl select 2, _isReached, _lbl];
+} forEach _activeList;
+missionNamespace setVariable ["COMSPEC_GpsNavDrawPoints", _drawPts, false];
 
 if (_next isEqualTo []) exitWith {
     [] call _fnc_clearGpsNav;

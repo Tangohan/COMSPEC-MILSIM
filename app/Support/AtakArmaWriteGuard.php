@@ -81,10 +81,16 @@ final class AtakArmaWriteGuard
         // Jeton présent mais invalide/expiré : ne pas bloquer tout le trafic jeu
         // (photos, positions…). L’extension renvoie souvent un ancien X-COMSPEC-SESSION ;
         // la clé API (+ Steam si fourni) suffit pour continuer.
+        // Journal Liaison : au plus 1× / 10 min (sinon spam toutes les ~2 s après expiration TTL).
         if ($sessionToken !== '' && $session === null) {
-            $this->log($tenantId, false, 'Session jeu ignorée — jeton invalide ou expiré (repli clé API)', [
-                'reason' => 'invalid_session_ignored',
-            ]);
+            $this->logThrottled(
+                $tenantId,
+                'invalid_session_ignored',
+                600,
+                false,
+                'Session jeu ignorée — jeton invalide ou expiré (repli clé API)',
+                ['reason' => 'invalid_session_ignored']
+            );
             $sessionToken = '';
         }
 

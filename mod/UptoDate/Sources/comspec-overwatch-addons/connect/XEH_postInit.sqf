@@ -124,14 +124,52 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             params ["_st"];
             if (!(_st in ["ready", "linked"])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            // Pendant HandshakeQuiet : reporter l’ouverture (sinon canStartSync refuse
+            // et plus personne ne relance les boucles → position « pas encore »).
             if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
-                && {!([] call comspec_overwatch_connect_fnc_canStartSync)}) exitWith {};
+                && {!([] call comspec_overwatch_connect_fnc_canStartSync)}) exitWith {
+                if (missionNamespace getVariable ["COMSPEC_LinkSyncRetryScheduled", false]) exitWith {};
+                missionNamespace setVariable ["COMSPEC_LinkSyncRetryScheduled", true, false];
+                [{
+                    missionNamespace setVariable ["COMSPEC_LinkSyncRetryScheduled", false, false];
+                    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                    if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+                    if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+                        [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                    };
+                }, [], 22] call CBA_fnc_waitAndExecute;
+            };
             missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
             [] call comspec_overwatch_connect_fnc_startSyncLoops;
             if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {
                 [] call comspec_overwatch_connect_fnc_applyCtabBftCallsign;
             };
+            // Première position dès l’ouverture du canal (ne pas attendre un déplacement).
+            if (!isNull player && {alive player}
+                && {!isNil "comspec_overwatch_connect_fnc_updatePosition"}) then {
+                [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+            };
         }] call CBA_fnc_addEventHandler;
+    };
+
+    // Filet : canal ouvert mais boucles absentes / position jamais partie.
+    if (isNil "COMSPEC_PosUplinkWatchdog") then {
+        COMSPEC_PosUplinkWatchdog = [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+            if (isNull player || {!alive player}) exitWith {};
+            if !(missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
+                if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+                    [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                };
+            };
+            private _lastPos = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+            if ((_lastPos isEqualType 0) && {_lastPos >= 0}) exitWith {};
+            if (!isNil "comspec_overwatch_connect_fnc_updatePosition") then {
+                [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+            };
+        }, 8] call CBA_fnc_addPerFrameHandler;
     };
 
     // COMSPEC Athena (connexion + téléphone) et menus ATAK (rapports, appui, réparation).
@@ -150,8 +188,16 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Affichage situation JVN (Draw3D) — désactivé si F-PANO ECOTI est chargé.
+    // Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
     [{
+        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+        if (_raw isEqualType true) then {
+            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+        };
+        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+        if (_cut isEqualType true) then {
+            [_cut, false] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+        };
         if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
             [] call comspec_overwatch_connect_fnc_ecotiInit;
         };

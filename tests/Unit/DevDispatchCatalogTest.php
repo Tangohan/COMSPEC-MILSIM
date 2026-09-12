@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(306, $byKind['update']);
-        self::assertCount(312, $all);
+        self::assertSame(309, $byKind['update']);
+        self::assertCount(315, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -1030,6 +1030,19 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($wardrobeChunk);
         self::assertSame('00500', $wardrobeChunk['number_pad']);
         self::assertStringContainsString('tenues', strtolower((string) $wardrobeChunk['title']));
+        $sessionNuit = DevDispatchCatalog::find('update', '510');
+        self::assertNotNull($sessionNuit);
+        self::assertSame('00510', $sessionNuit['number_pad']);
+        self::assertStringContainsString('nuit', strtolower((string) $sessionNuit['title']));
+        $steamAssocie = DevDispatchCatalog::find('update', '516');
+        self::assertNotNull($steamAssocie);
+        self::assertSame('00516', $steamAssocie['number_pad']);
+        self::assertStringContainsString('steam', strtolower((string) $steamAssocie['title']));
+        self::assertStringContainsString('associé', strtolower((string) $steamAssocie['title']));
+        $posUplink = DevDispatchCatalog::find('update', '517');
+        self::assertNotNull($posUplink);
+        self::assertSame('00517', $posUplink['number_pad']);
+        self::assertStringContainsString('position', strtolower((string) $posUplink['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

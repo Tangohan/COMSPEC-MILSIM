@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.543;
-        versionStr = "1.5.43";
-        versionAr[] = {1, 5, 43};
+        version = 1.556;
+        versionStr = "1.5.56";
+        versionAr[] = {1, 5, 56};
     };
 };
 
@@ -249,6 +249,7 @@ class CfgFunctions {
             class pollMissionPlan {};
             class pollTacticalAlerts {};
             class pollChatMessages {};
+            class pollChatChannels {};
             class orderInboxShow {};
             class orderInboxOnLoad {};
             class orderRespond {};
@@ -391,10 +392,18 @@ class CfgFunctions {
             class ecotiIsAvailable {};
             class ecotiIsActive {};
             class ecotiFormatDistance {};
+            class ecotiDrawBadge {};
+            class ecotiDrawOutline {};
+            class ecotiDrawRoute {};
             class ecotiDrawBuilding {};
             class ecotiDraw {};
             class ecotiInit {};
             class ecotiMarkBuilding {};
+            class ecotiCycleFloor {};
+            class ecotiIlluminateZone {};
+            class ecotiRouteEdit {};
+            class ecotiApplyHudSetting {};
+            class ecotiApplyCutawaySetting {};
             class pollModModules {};
             class pollExperience {};
             class applyTenantExperience {};

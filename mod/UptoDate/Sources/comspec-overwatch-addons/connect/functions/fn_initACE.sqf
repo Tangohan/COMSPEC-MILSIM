@@ -52,15 +52,54 @@ private _tabletAction = [
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ecotiMarkAction = [
-    "COMSPEC_EcotiMarkBuilding", "Marquer ce bâtiment (affichage situation)", "", {
+    "COMSPEC_EcotiMarkBuilding", "Désigner ce bâtiment (affichage situation)", "", {
         [] call comspec_overwatch_connect_fnc_ecotiMarkBuilding;
     }, {
-        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
-        && { missionNamespace getVariable ["comspec_overwatch_ecoti_hud", true] }
-        && { !([] call comspec_overwatch_connect_fnc_ecotiFpanoPresent) }
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_ecotiMarkAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiFloorAction = [
+    "COMSPEC_EcotiCycleFloor", "Changer d’étage (découpage situation)", "", {
+        [] call comspec_overwatch_connect_fnc_ecotiCycleFloor;
+    }, {
+        private _cut = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+        ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
+        && {_cut isEqualType true}
+        && {_cut}
+        && {!isNull (missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull])}
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiFloorAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiLightAction = [
+    "COMSPEC_EcotiIlluminate", "Éclairer / éteindre la zone (situation)", "", {
+        ["toggle"] call comspec_overwatch_connect_fnc_ecotiIlluminateZone;
+    }, {
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiLightAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiRouteAddAction = [
+    "COMSPEC_EcotiRouteAdd", "Ajouter un point d’itinéraire (situation)", "", {
+        ["add"] call comspec_overwatch_connect_fnc_ecotiRouteEdit;
+    }, {
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiRouteAddAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiRouteClearAction = [
+    "COMSPEC_EcotiRouteClear", "Effacer l’itinéraire situation", "", {
+        ["clear"] call comspec_overwatch_connect_fnc_ecotiRouteEdit;
+    }, {
+        ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
+        && {(count (missionNamespace getVariable ["COMSPEC_EcotiRoutePoints", []])) > 0}
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiRouteClearAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _resynchAction = [
     "COMSPEC_Resynch", "Resynch Athena (tout renvoyer)", "", {
@@ -316,7 +355,7 @@ private _callsignAction = [
 [_callsignAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ordersAction = [
-    "COMSPEC_OrderInbox", "Ordres C2 (TASK)", "", {
+    "COMSPEC_OrderInbox", "Ordres reçus", "", {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openTask") then {
             [] call comspec_overwatch_atak_athena_fnc_athena_openTask;
         } else {
@@ -327,8 +366,12 @@ private _ordersAction = [
 [_ordersAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _messagesAction = [
-    "COMSPEC_Messages", "Messagerie Athena", "", {
-        ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    "COMSPEC_Messages", "Messagerie", "", {
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openComms") then {
+            [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+        } else {
+            ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+        };
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_messagesAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
