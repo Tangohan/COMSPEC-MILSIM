@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.52 / Athena 1.0.97 — 2026-09-12
+
+### Correction — Position invisible au poste malgré liaison OK
+
+Dès que le canal poste est ouvert, la position part automatiquement vers le poste. Vous apparaissez dans Effectifs sans ouvrir Transmettre. Si un frein temporaire s’applique, la fiche Athena l’indique clairement.
+
+---
+
 ## Overwatch 1.5.49 / Athena 1.0.93 — 2026-09-12
 
 ### Nouveau — Messagerie ATAK avec canaux

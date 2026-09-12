@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.550;
-        versionStr = "1.5.50";
-        versionAr[] = {1, 5, 50};
+        version = 1.553;
+        versionStr = "1.5.53";
+        versionAr[] = {1, 5, 53};
     };
 };
 
@@ -392,10 +392,16 @@ class CfgFunctions {
             class ecotiIsAvailable {};
             class ecotiIsActive {};
             class ecotiFormatDistance {};
+            class ecotiDrawBadge {};
+            class ecotiDrawOutline {};
+            class ecotiDrawRoute {};
             class ecotiDrawBuilding {};
             class ecotiDraw {};
             class ecotiInit {};
             class ecotiMarkBuilding {};
+            class ecotiIlluminateZone {};
+            class ecotiRouteEdit {};
+            class ecotiApplyHudSetting {};
             class pollModModules {};
             class pollExperience {};
             class applyTenantExperience {};

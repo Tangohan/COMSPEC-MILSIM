@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.095;
-        versionStr = "1.0.95";
-        versionAr[] = {1, 0, 95};
+        version = 1.098;
+        versionStr = "1.0.98";
+        versionAr[] = {1, 0, 98};
     };
 };
 
@@ -107,6 +107,7 @@ class CfgFunctions
             class athena_connectionSave {};
             class athena_connectionToggleAdvanced {};
             class athena_phoneProximitySave {};
+            class athena_ecotiHudSave {};
             class athena_phoneProximityTick {};
             class athena_phoneProximityAlert {};
             class athena_hookPhoneGeolocMap {};
