@@ -584,6 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(523, '2026-09-12', 'Barre de liaison masquable et simulation désactivable', 'Sous la barre d’état du téléphone, la barre de liaison est plus compacte et laisse la boussole visible. Dans Paramètres, vous pouvez masquer cette barre. Une Simulation de liaison dégradée (désactivée par défaut) permet de reproduire pertes, fiabilité basse et coupures brèves ; quand elle est désactivée, l’affichage suit uniquement la vraie liaison', [
+                'Barre de liaison plus courte, à gauche, pour ne plus masquer la boussole',
+                'Paramètres : Afficher la barre de liaison (affichée par défaut)',
+                'Paramètres / Options : Simulation de liaison dégradée (désactivée par défaut)',
+            ], [
+                'Même réglages aussi dans Options → Extensions → COMSPEC Overwatch → Téléphone ATAK',
+            ], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.59 · Athena 1.0.102). Quittez Arma. Ouvrez le téléphone : vérifiez la boussole, masquez la barre, puis activez brièvement la simulation pour voir fiabilité et perte évoluer.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.102'),
             $pr(522, '2026-09-12', 'Découpage d’étage sous JVN', 'Quand un bâtiment est désigné sous jumelles de vision nocturne, vous pouvez activer le découpage d’étage (désactivé par défaut) : la silhouette est coupée au plafond choisi, la dalle est mise en évidence et les points intérieurs de cet étage apparaissent. Le menu ACE permet de changer d’étage. Les murs ne s’ouvrent pas — c’est une limite du moteur, pas un réglage reporté', [
                 'Paramètres ATAK : Découpage d’étage, OFF par défaut (nécessite Affichage situation)',
                 'Silhouette coupée à l’étage choisi + dalle mise en évidence',

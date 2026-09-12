@@ -13,7 +13,6 @@ _result set ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "l
 
 private _atak = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
 
-// Gel / redémarrage appareil (distinct déconnexion réseau)
 if (_atak getOrDefault ["device_crashed", false]) exitWith {
     _result set ["can_transmit", false];
     _result set ["mode", "none"];
@@ -22,7 +21,6 @@ if (_atak getOrDefault ["device_crashed", false]) exitWith {
     _result
 };
 
-// Appareil détruit
 if !(_atak getOrDefault ["connection_ok", true]) exitWith {
     _result set ["can_transmit", false];
     _result set ["mode", "none"];
@@ -31,7 +29,6 @@ if !(_atak getOrDefault ["connection_ok", true]) exitWith {
     _result
 };
 
-// Déconnexion réseau simulée
 if ([] call comspec_overwatch_connect_fnc_isNetworkDisconnected) exitWith {
     _result set ["can_transmit", false];
     _result set ["mode", "none"];
@@ -40,7 +37,6 @@ if ([] call comspec_overwatch_connect_fnc_isNetworkDisconnected) exitWith {
     _result
 };
 
-// Zone sans couverture / brouillage actif
 private _zoneFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
 if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
     if (_zoneFx getOrDefault ["force_disconnect", false]) then {
@@ -60,8 +56,24 @@ if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
 };
 if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
 
-// Écran endommagé : position seule (GPS / BFT) — avant le test « éteint » car l’historique
-// couplait écran cassé + powered_off=false, ce qui masquait l’opérateur du web.
+if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive"
+    && {[] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive}
+) then {
+    private _sim = missionNamespace getVariable ["COMSPEC_LinkDegradeSimState", createHashMap];
+    private _dropChance = 8;
+    if (_sim isEqualType createHashMap) then {
+        private _d = _sim getOrDefault ["tx_drop_chance", 8];
+        if (_d isEqualType 0) then { _dropChance = _d; };
+    };
+    if (_dropChance > 0 && {random 100 < _dropChance}) then {
+        _result set ["can_transmit", false];
+        _result set ["mode", "none"];
+        _result set ["reason", "sim_packet_loss"];
+        _result set ["link_state", "degraded"];
+    };
+};
+if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
+
 if (!(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connection_ok", true]}) exitWith {
     if (_requireFull) then {
         _result set ["can_transmit", false];
@@ -74,7 +86,6 @@ if (!(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connectio
     _result
 };
 
-// ATAK éteint volontairement
 if !(_atak getOrDefault ["powered_on", true]) exitWith {
     _result set ["can_transmit", false];
     _result set ["mode", "none"];

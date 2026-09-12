@@ -2003,12 +2003,7 @@ class PersonnelController
                 $actorHistoryId > 0 ? $actorHistoryId : null,
                 $assignmentReason
             );
-            $this->personnelOrgHistoryRepository->append(
-                $tenantId,
-                (int) $target['id'],
-                $actorHistoryId > 0 ? $actorHistoryId : null,
-                $historyTitle . ' — motif : ' . $assignmentReason
-            );
+            // Journal du dossier : écrit via notifyFromSnapshots (ci-dessous), comme l’e-mail.
         }
 
         $oldRoleLabel = trim((string) ($existingProfile['primary_role'] ?? ''));
@@ -2026,12 +2021,7 @@ class PersonnelController
                 $actorHistoryId > 0 ? $actorHistoryId : null,
                 $jobRoleReason
             );
-            $this->personnelOrgHistoryRepository->append(
-                $tenantId,
-                (int) $target['id'],
-                $actorHistoryId > 0 ? $actorHistoryId : null,
-                $historyTitle . ' — motif : ' . $jobRoleReason
-            );
+            // Journal du dossier : écrit via notifyFromSnapshots (ci-dessous), comme l’e-mail.
         }
 
         try {

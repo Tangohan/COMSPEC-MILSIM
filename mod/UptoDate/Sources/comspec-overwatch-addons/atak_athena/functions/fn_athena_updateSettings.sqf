@@ -239,6 +239,38 @@ if (!isNull _cbEcotiCut) then {
     missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", false, false];
 };
 
+private _cbLinkStrip = [9882] call _ctrl;
+if (!isNull _cbLinkStrip) then {
+    missionNamespace setVariable ["COMSPEC_AtakLinkStripFilling", true, false];
+    private _stripOn = missionNamespace getVariable ["comspec_overwatch_show_link_strip", true];
+    if (!(_stripOn isEqualType true)) then { _stripOn = true; };
+    private _profStrip = profileNamespace getVariable ["COMSPEC_LinkStripVisible", "UNSET"];
+    if (_profStrip isEqualType true) then { _stripOn = _profStrip; };
+    lbClear _cbLinkStrip;
+    private _iStripOff = _cbLinkStrip lbAdd "Masquée";
+    _cbLinkStrip lbSetData [_iStripOff, "0"];
+    private _iStripOn = _cbLinkStrip lbAdd "Affichée";
+    _cbLinkStrip lbSetData [_iStripOn, "1"];
+    _cbLinkStrip lbSetCurSel (if (_stripOn) then { _iStripOn } else { _iStripOff });
+    missionNamespace setVariable ["COMSPEC_AtakLinkStripFilling", false, false];
+};
+
+private _cbLinkSim = [9883] call _ctrl;
+if (!isNull _cbLinkSim) then {
+    missionNamespace setVariable ["COMSPEC_AtakLinkSimFilling", true, false];
+    private _simOn = missionNamespace getVariable ["comspec_overwatch_link_degrade_sim", false];
+    if (!(_simOn isEqualType true)) then { _simOn = false; };
+    private _profSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];
+    if (_profSim isEqualType true) then { _simOn = _profSim; };
+    lbClear _cbLinkSim;
+    private _iSimOff = _cbLinkSim lbAdd "Désactivée";
+    _cbLinkSim lbSetData [_iSimOff, "0"];
+    private _iSimOn = _cbLinkSim lbAdd "Activée";
+    _cbLinkSim lbSetData [_iSimOn, "1"];
+    _cbLinkSim lbSetCurSel (if (_simOn) then { _iSimOn } else { _iSimOff });
+    missionNamespace setVariable ["COMSPEC_AtakLinkSimFilling", false, false];
+};
+
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     private _hint = if (_cs isEqualTo "") then {
