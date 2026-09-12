@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(520, '2026-09-12', 'Les marqueurs du téléphone remontent au poste', 'Les repères posés sur la carte du téléphone (INF, Marker Widget, cTab) apparaissent désormais sur la carte du poste dès que le canal est ouvert, même si votre contact n’est pas encore visible dans Effectifs. Une liaison un peu dégradée ne fait plus perdre le marqueur : il repart dès que possible', [
+                'Pose d’un INF / repère ATAK → affichage au poste sous quelques secondes',
+                'Pas besoin d’être déjà dans Effectifs pour que le repère remonte',
+                'Rattrapage automatique si la liaison était momentanément saturée',
+            ], [], [
+                'Losange INF visible sur le téléphone mais absent de la carte Athena',
+                'Photos reçues et sync OK, marqueurs absents',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32). Quittez Arma complètement. Posez un INF sur le téléphone : il doit apparaître au poste sous ~10 s.',
+            ], 'Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32'),
             $pr(519, '2026-09-12', 'Affichage situation sous JVN enrichi et désactivé par défaut', 'Sous jumelles de vision nocturne, l’affichage situation est désormais désactivé tant que vous ne l’activez pas. Dans Paramètres du téléphone, vous pouvez l’allumer : les noms et distances sont plus lisibles, l’objet regardé est souligné, l’itinéraire du poste apparaît, et vous pouvez éclairer une zone ou désigner un bâtiment depuis le menu ACE. Le découpage réel des murs des bâtiments n’est pas encore disponible ; la silhouette (cadre et étages) reste affichée', [
                 'Réglage Paramètres ATAK : Affichage situation (JVN), désactivé par défaut',
                 'Badges plus lisibles (nom et distance)',
@@ -594,8 +604,8 @@ final class DevDispatchCatalog
             ], [], [
                 'Badges gris peu lisibles ; fonction active sans choix clair dans Paramètres',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.53 · Athena 1.0.98). Quittez Arma complètement. Ouvrez ATAK → Paramètres → Affichage situation (JVN) → Activé sous JVN. Activez les JVN en mission.',
-            ], 'Overwatch 1.5.53 · Athena 1.0.98'),
+                'Rechargez le pack (Overwatch 1.5.54 · Athena 1.0.99). Quittez Arma complètement. Ouvrez ATAK → Paramètres → Affichage situation (JVN) → Activé sous JVN. Activez les JVN en mission.',
+            ], 'Overwatch 1.5.54 · Athena 1.0.99'),
             $pr(518, '2026-09-12', 'Ordres reçus : détail et actions enfin fiables', 'Dans Ordres reçus, le détail de l’ordre sélectionné s’affiche correctement. Accepter et Refuser fonctionnent sur un ordre à traiter. Sur un ordre déjà refusé, accepté ou terminé, le bouton devient Supprimer pour le retirer de la liste. Terminer reste disponible pendant l’exécution', [
                 'Détail de l’ordre visible dès la sélection',
                 'Accepter / Refuser sur un ordre à traiter, avec mise à jour de l’état',

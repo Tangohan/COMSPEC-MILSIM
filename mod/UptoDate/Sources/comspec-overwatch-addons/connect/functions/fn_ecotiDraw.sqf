@@ -1,5 +1,5 @@
 /*
-    Draw3D — alliés, marqueurs, véhicules + wireframe bâtiment marqué.
+    Draw3D — alliés, marqueurs, véhicules, contours, itinéraires, bâtiment marqué.
 */
 if (!([] call comspec_overwatch_connect_fnc_ecotiIsActive)) exitWith {};
 
@@ -9,6 +9,8 @@ private _maxIcons = missionNamespace getVariable ["comspec_overwatch_ecoti_max_i
 private _showAllies = missionNamespace getVariable ["comspec_overwatch_ecoti_show_allies", true];
 private _showMarkers = missionNamespace getVariable ["comspec_overwatch_ecoti_show_markers", true];
 private _showVehicles = missionNamespace getVariable ["comspec_overwatch_ecoti_show_vehicles", true];
+private _showOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_outline", true];
+private _showRoute = missionNamespace getVariable ["comspec_overwatch_ecoti_show_route", true];
 private _icon = "\a3\ui_f\data\map\markers\military\dot_CA.paa";
 private _drawn = 0;
 
@@ -35,8 +37,14 @@ if (_showAllies) then {
         private _dist = _camPos distance _pos;
         private _label = name _x;
         if (_label isEqualTo "") then { _label = groupId (group _x) };
-        private _txt = format ["%1  %2", _label, [_dist] call comspec_overwatch_connect_fnc_ecotiFormatDistance];
-        drawIcon3D [_icon, [0.45, 0.95, 0.55, 0.9], _pos, 0.55, 0.55, 0, _txt, 1, 0.028, "PuristaMedium"];
+        [
+            _pos,
+            _icon,
+            [0.55, 1, 0.65, 0.95],
+            _label,
+            _dist,
+            0.7
+        ] call comspec_overwatch_connect_fnc_ecotiDrawBadge;
         _drawn = _drawn + 1;
     } forEach _units;
 };
@@ -56,12 +64,14 @@ if (_showVehicles && {_drawn < _maxIcons}) then {
         private _dist = _camPos distance _pos;
         private _dn = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
         if (_dn isEqualTo "") then { _dn = typeOf _x };
-        private _txt = format ["%1  %2", _dn, [_dist] call comspec_overwatch_connect_fnc_ecotiFormatDistance];
-        drawIcon3D [
+        [
+            _pos,
             "\a3\ui_f\data\map\markers\nato\b_armor.paa",
-            [0.4, 0.75, 1, 0.85],
-            _pos, 0.6, 0.6, 0, _txt, 1, 0.026, "PuristaMedium"
-        ];
+            [0.45, 0.8, 1, 0.95],
+            _dn,
+            _dist,
+            0.75
+        ] call comspec_overwatch_connect_fnc_ecotiDrawBadge;
         _drawn = _drawn + 1;
     } forEach _vehs;
 };
@@ -87,22 +97,71 @@ if (_showMarkers && {_drawn < _maxIcons}) then {
         private _txt = markerText _m;
         if (_txt isEqualTo "") then { _txt = markerType _m };
         private _col = getArray (configFile >> "CfgMarkerColors" >> markerColor _m >> "color");
-        if (!(_col isEqualType []) || {(count _col) < 3}) then { _col = [1, 1, 1, 0.85] };
-        if ((count _col) < 4) then { _col pushBack 0.85 } else { _col set [3, 0.85] };
+        if (!(_col isEqualType []) || {(count _col) < 3}) then { _col = [1, 1, 1, 0.95] };
+        if ((count _col) < 4) then { _col pushBack 0.95 } else { _col set [3, 0.95] };
         private _mIcon = getText (configFile >> "CfgMarkers" >> markerType _m >> "icon");
         if (_mIcon isEqualTo "") then { _mIcon = _icon };
-        drawIcon3D [
+        [
+            _pos,
             _mIcon,
             _col,
-            _pos, 0.55, 0.55, 0,
-            format ["%1  %2", _txt, [_dist] call comspec_overwatch_connect_fnc_ecotiFormatDistance],
-            1, 0.025, "PuristaMedium"
-        ];
+            _txt,
+            _dist,
+            0.68
+        ] call comspec_overwatch_connect_fnc_ecotiDrawBadge;
         _drawn = _drawn + 1;
     } forEach allMapMarkers;
+};
+
+if (_showRoute) then {
+    [] call comspec_overwatch_connect_fnc_ecotiDrawRoute;
+};
+
+if (_showOutline) then {
+    private _tgt = cursorObject;
+    if (!isNull _tgt && {_tgt != player} && {(_tgt distance _camPos) <= 90}) then {
+        private _bldgMarked = missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull];
+        if (_tgt isNotEqualTo _bldgMarked) then {
+            [_tgt, [0.95, 0.88, 0.25, 0.7]] call comspec_overwatch_connect_fnc_ecotiDrawOutline;
+        };
+    };
+};
+
+// Anneau au sol sous l’éclairage de zone (si actif).
+private _lightPos = missionNamespace getVariable ["COMSPEC_EcotiZoneLightPos", []];
+if (_lightPos isEqualType [] && {(count _lightPos) >= 3}) then {
+    private _r = 6;
+    private _ringCol = [0.2, 1, 0.4, 0.55];
+    private _prev = [];
+    for "_i" from 0 to 16 do {
+        private _a = (_i / 16) * 360;
+        private _p = [
+            (_lightPos select 0) + (_r * cos _a),
+            (_lightPos select 1) + (_r * sin _a),
+            (_lightPos select 2) + 0.15
+        ];
+        if ((count _prev) >= 3) then {
+            drawLine3D [_prev, _p, _ringCol];
+        };
+        _prev = _p;
+    };
 };
 
 private _bldg = missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull];
 if (!isNull _bldg) then {
     [_bldg] call comspec_overwatch_connect_fnc_ecotiDrawBuilding;
+    private _bPos = _bldg modelToWorldVisual [0, 0, 2];
+    private _bName = missionNamespace getVariable ["COMSPEC_EcotiMarkedBuildingName", ""];
+    if (_bName isEqualTo "") then {
+        _bName = getText (configFile >> "CfgVehicles" >> typeOf _bldg >> "displayName");
+    };
+    if (_bName isEqualTo "") then { _bName = "Bâtiment"; };
+    [
+        _bPos,
+        "\a3\ui_f\data\map\mapcontrol\Bunker_CA.paa",
+        [0.4, 1, 0.55, 0.98],
+        _bName,
+        _camPos distance _bPos,
+        0.8
+    ] call comspec_overwatch_connect_fnc_ecotiDrawBadge;
 };

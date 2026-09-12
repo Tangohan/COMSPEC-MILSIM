@@ -207,6 +207,22 @@ if (!isNull _cbProx) then {
     missionNamespace setVariable ["COMSPEC_AtakPhoneProxFilling", false, false];
 };
 
+private _cbEcoti = [9862] call _ctrl;
+if (!isNull _cbEcoti) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiHudFilling", true, false];
+    private _ecotiOn = missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false];
+    if (!(_ecotiOn isEqualType true)) then { _ecotiOn = false; };
+    private _profEcoti = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+    if (_profEcoti isEqualType true) then { _ecotiOn = _profEcoti; };
+    lbClear _cbEcoti;
+    private _iOff = _cbEcoti lbAdd "Désactivé";
+    _cbEcoti lbSetData [_iOff, "0"];
+    private _iOn = _cbEcoti lbAdd "Activé sous JVN";
+    _cbEcoti lbSetData [_iOn, "1"];
+    _cbEcoti lbSetCurSel (if (_ecotiOn) then { _iOn } else { _iOff });
+    missionNamespace setVariable ["COMSPEC_AtakEcotiHudFilling", false, false];
+};
+
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     private _hint = if (_cs isEqualTo "") then {

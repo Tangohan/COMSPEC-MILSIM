@@ -52,15 +52,41 @@ private _tabletAction = [
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ecotiMarkAction = [
-    "COMSPEC_EcotiMarkBuilding", "Marquer ce bâtiment (affichage situation)", "", {
+    "COMSPEC_EcotiMarkBuilding", "Désigner ce bâtiment (affichage situation)", "", {
         [] call comspec_overwatch_connect_fnc_ecotiMarkBuilding;
     }, {
-        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
-        && { missionNamespace getVariable ["comspec_overwatch_ecoti_hud", true] }
-        && { !([] call comspec_overwatch_connect_fnc_ecotiFpanoPresent) }
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_ecotiMarkAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiLightAction = [
+    "COMSPEC_EcotiIlluminate", "Éclairer / éteindre la zone (situation)", "", {
+        ["toggle"] call comspec_overwatch_connect_fnc_ecotiIlluminateZone;
+    }, {
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiLightAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiRouteAddAction = [
+    "COMSPEC_EcotiRouteAdd", "Ajouter un point d’itinéraire (situation)", "", {
+        ["add"] call comspec_overwatch_connect_fnc_ecotiRouteEdit;
+    }, {
+        [] call comspec_overwatch_connect_fnc_ecotiIsAvailable
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiRouteAddAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _ecotiRouteClearAction = [
+    "COMSPEC_EcotiRouteClear", "Effacer l’itinéraire situation", "", {
+        ["clear"] call comspec_overwatch_connect_fnc_ecotiRouteEdit;
+    }, {
+        ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
+        && {(count (missionNamespace getVariable ["COMSPEC_EcotiRoutePoints", []])) > 0}
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiRouteClearAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _resynchAction = [
     "COMSPEC_Resynch", "Resynch Athena (tout renvoyer)", "", {

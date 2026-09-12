@@ -128,6 +128,7 @@ if (!isNull _cbGrp) then {
 };
 
 [] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave;
+[] call comspec_overwatch_atak_athena_fnc_athena_ecotiHudSave;
 saveProfileNamespace;
 [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
 missionNamespace setVariable ["COMSPEC_lastRole", "", false];

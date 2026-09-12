@@ -368,10 +368,10 @@ private _fnc_applyNet = {
     "comspec_overwatch_ecoti_hud", "CHECKBOX",
     [
         "Affichage situation (JVN)",
-        "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne. Désactivé automatiquement si le mod F-PANO ECOTI est déjà chargé."
+        "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne. Désactivé par défaut — activez aussi depuis ATAK → Paramètres. Sans effet si le mod F-PANO ECOTI est déjà chargé."
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
-    true
+    false
 ] call CBA_fnc_addSetting;
 
 [
@@ -403,6 +403,36 @@ private _fnc_applyNet = {
     ["Véhicules dans le champ de vision", "Affiche les véhicules et aéronefs amis proches."],
     ["COMSPEC Overwatch", "Affichage situation"],
     true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_outline", "CHECKBOX",
+    [
+        "Contour de l’objet regardé",
+        "Dessine un cadre autour de l’objet sous le regard lorsque l’affichage situation est actif."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_route", "CHECKBOX",
+    [
+        "Itinéraire dans le champ de vision",
+        "Affiche l’itinéraire GPS du poste et les points tracés localement sous JVN."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_building_cutaway", "CHECKBOX",
+    [
+        "Découpage 3D des bâtiments (à venir)",
+        "Réservé : le découpage réel des murs n’est pas disponible dans cette version. La silhouette (cadre et étages) reste active quand un bâtiment est désigné."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    false
 ] call CBA_fnc_addSetting;
 
 [
