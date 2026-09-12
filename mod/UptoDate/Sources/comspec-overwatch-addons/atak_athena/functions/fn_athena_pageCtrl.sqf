@@ -11,5 +11,5 @@ private _found = controlNull;
     if (isNull _pg) then { continue };
     private _inner = _pg controlsGroupCtrl _idc;
     if (!isNull _inner) exitWith { _found = _inner };
-} forEach [9770, 9771, 9772, 9773, 9790];
+} forEach [9698, 9770, 9771, 9772, 9773, 9790];
 _found

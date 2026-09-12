@@ -66,13 +66,40 @@ if (isNull _targetMapCtrl) exitWith {};
 (ctrlPosition _targetMapCtrl) params ["_MapX", "_MapY", "_MapW", "_MapH"];
 
 // Menu width collapsed by a prior anim → rebuild from map geometry.
+// Ne jamais utiliser safeZoneW*0.55 : sur le téléphone ATAK la carte entière
+// est déjà < 0,55 safeZone → l’ancien seuil traitait une carte pleine comme
+// « déjà coupée » et poussait le panneau hors cadre à droite.
 if (_bgW < 0.02 && {_MapW > 0.05}) then {
-    // Full-bleed map → panel = 2/5. Already-split map (~3/5) → panel = map * 2/3.
-    _bgW = if (_MapW < (safeZoneW * 0.55)) then { _MapW * 2/3 } else { _MapW * 2/5 };
+    private _menuW = 0;
+    if (!isNull _bgGroup) then {
+        _menuW = (ctrlPosition _bgGroup) select 2;
+    };
+    if (_menuW > 0.04) then {
+        // Tiroir déjà dimensionné : garder sa largeur.
+        _bgW = _menuW;
+    } else {
+        // Carte pleine dans le cadre téléphone → panneau = 2/5.
+        _bgW = _MapW * 2/5;
+    };
 };
 if (_bgH < 0.02) then { _bgH = _MapH; };
 
 private _result = _bgW / 2 * ([5, 3] select _showMenu);
+// Clamp : carte + panneau ne dépassent pas le bord droit actuel de la carte pleine.
+private _contentRight = _MapX + _MapW;
+if (_showMenu) then {
+    private _panelRight = _MapX + _result + _bgW;
+    if (_panelRight > (_contentRight + 0.002) && {_MapW > 0.08}) then {
+        // Recalcule sur la largeur utile visible (carte déjà réduite ou cadre).
+        private _usable = _MapW;
+        if (!isNull _bgGroup) then {
+            private _mw = (ctrlPosition _bgGroup) select 2;
+            if (_mw > 0.04) then { _usable = _MapW + _mw; };
+        };
+        _bgW = _usable * 2/5;
+        _result = _usable * 3/5;
+    };
+};
 [
     _targetMapCtrl,
     [[], [_MapX, _MapY, _result]],

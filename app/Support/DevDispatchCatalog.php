@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(517, '2026-09-12', 'La position remonte dès que le canal poste est ouvert', 'Dès que la liaison Athena est bonne et le canal poste ouvert, votre position part automatiquement vers le poste sous quelques secondes. Vous apparaissez dans Effectifs sans devoir ouvrir Transmettre. Le téléphone précise aussi pourquoi la position n’est « pas encore » remontée si un frein temporaire s’applique', [
+                'Remontée de position automatique dès l’ouverture du canal',
+                'Reprise automatique si les boucles de sync n’avaient pas démarré',
+                'Téléphone déjà ouvert reconnu comme terminal équipé',
+                'Aide lisible sur la fiche Athena quand la position n’est pas encore partie',
+            ], [], [
+                'Liaison OK et photos reçues, mais « Position remontée : pas encore » et Effectifs vides',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.50 · Athena 1.0.95). Quittez Arma complètement. En mission, ouvrez le canal : sous ~10 s, Position remontée passe à « il y a Xs » et vous apparaissez au poste.',
+            ], 'Overwatch 1.5.50 · Athena 1.0.95'),
             $pr(516, '2026-09-12', 'Steam associé reste associé après connexion e-mail', 'Après une connexion Athena par e-mail ou code, l’identifiant Steam de la session est bien rattaché au compte quand il était libre. L’écran du téléphone affiche « associé » de façon stable, y compris après une reprise de liaison, et le bouton Steam fonctionne dès que le compte est renseigné', [
                 'Connexion e-mail / code : envoi de l’identifiant Steam de la session',
                 'Badge Steam : état réel du compte, conservé après reprise',
@@ -603,8 +613,8 @@ final class DevDispatchCatalog
                 'Entrée « Photo ATAK (sidecar) » sans grille à côté de Enhanced',
                 'Photo sync absente ou incomplète sur le PANNEAU',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.49 · liaison 2.0.30). Quittez Arma complètement. Prenez une photo Quick Picture : une seule entrée Enhanced avec grille au poste.',
-            ], 'Overwatch 1.5.49 · liaison 2.0.30'),
+                'Rechargez le pack (Overwatch 1.5.50 · liaison 2.0.30). Quittez Arma complètement. Prenez une photo Quick Picture : une seule entrée Enhanced avec grille au poste.',
+            ], 'Overwatch 1.5.50 · liaison 2.0.30'),
             $pr(515, '2026-09-12', 'Messagerie ATAK avec canaux radio', 'Le téléphone dispose désormais d’une application Messagerie COMSPEC, en français, avec les canaux déjà connus du journal radio (Groupe, Commandement, Général, JTAC, Air et canaux personnalisés). Vous choisissez un canal, lisez le fil et envoyez vers le poste. Group Messages IceMan reste disponible en miroir', [
                 'Application Messagerie dans le tiroir ATAK et sur le bureau',
                 'Sélection de canal, fil filtré, bouton Envoyer',
@@ -623,8 +633,8 @@ final class DevDispatchCatalog
             ], [], [
                 'Textes Appairer illisibles ; panneau coupé à droite ; fiche et Paramètres tronqués',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.48 · Athena 1.0.93). Quittez Arma complètement.',
-            ], 'Overwatch 1.5.48 · Athena 1.0.93'),
+                'Rechargez le pack (Overwatch 1.5.50 · Athena 1.0.95). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.50 · Athena 1.0.95'),
             $pr(506, '2026-09-11', 'Affichage situation sous toutes les JVN', 'Sous jumelles de vision nocturne, les alliés, marqueurs et véhicules proches apparaissent directement dans le champ de vision, avec la distance. Vous pouvez aussi marquer un bâtiment pour en voir la silhouette. Si le mod F-PANO ECOTI est déjà chargé, Overwatch laisse la place pour éviter le double affichage', [
                 'Projection alliés / marqueurs / véhicules sous JVN',
                 'Silhouette de bâtiment marqué depuis le menu ACE',
