@@ -37,6 +37,8 @@ final class OverwatchAthenaSteamLinkOnEmailLoginAssetTest extends TestCase
         self::assertStringContainsString('TabCell(_gameSteamLinked)', $dll);
         self::assertStringContainsString('TabCell(_gameSteamNotice)', $dll);
         self::assertStringContainsString('"steam_message"', $dll);
+        self::assertStringContainsString('TryNormalizeSteamUid(accountSteamId', $dll);
+        self::assertStringContainsString('args.Length > 4', $dll);
 
         self::assertStringContainsString('["steam_linked", [18] call _fnc_cell]', $cells);
         self::assertStringContainsString('["steam_notice", [19] call _fnc_cell]', $cells);

@@ -584,6 +584,28 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(519, '2026-09-12', 'Affichage situation sous JVN enrichi et désactivé par défaut', 'Sous jumelles de vision nocturne, l’affichage situation est désormais désactivé tant que vous ne l’activez pas. Dans Paramètres du téléphone, vous pouvez l’allumer : les noms et distances sont plus lisibles, l’objet regardé est souligné, l’itinéraire du poste apparaît, et vous pouvez éclairer une zone ou désigner un bâtiment depuis le menu ACE. Le découpage réel des murs des bâtiments n’est pas encore disponible ; la silhouette (cadre et étages) reste affichée', [
+                'Réglage Paramètres ATAK : Affichage situation (JVN), désactivé par défaut',
+                'Badges plus lisibles (nom et distance)',
+                'Contour de l’objet regardé',
+                'Itinéraire GPS du poste et points tracés localement',
+                'Éclairage de zone et désignation de bâtiment (menu ACE)',
+                'Découpage 3D des bâtiments reporté (silhouette conservée)',
+            ], [], [
+                'Badges gris peu lisibles ; fonction active sans choix clair dans Paramètres',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.53 · Athena 1.0.98). Quittez Arma complètement. Ouvrez ATAK → Paramètres → Affichage situation (JVN) → Activé sous JVN. Activez les JVN en mission.',
+            ], 'Overwatch 1.5.53 · Athena 1.0.98'),
+            $pr(518, '2026-09-12', 'Ordres reçus : détail et actions enfin fiables', 'Dans Ordres reçus, le détail de l’ordre sélectionné s’affiche correctement. Accepter et Refuser fonctionnent sur un ordre à traiter. Sur un ordre déjà refusé, accepté ou terminé, le bouton devient Supprimer pour le retirer de la liste. Terminer reste disponible pendant l’exécution', [
+                'Détail de l’ordre visible dès la sélection',
+                'Accepter / Refuser sur un ordre à traiter, avec mise à jour de l’état',
+                'Supprimer pour retirer un ordre clos de la liste',
+                'Terminer pendant l’exécution',
+            ], [], [
+                'Zone de détail vide ; Accepter / Refuser encore affichés sur un ordre déjà refusé',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.52 · Athena 1.0.97). Quittez Arma complètement. Ouvrez Ordres reçus : sélectionnez un ordre, lisez le détail, testez Accepter / Refuser puis Supprimer.',
+            ], 'Overwatch 1.5.52 · Athena 1.0.97'),
             $pr(517, '2026-09-12', 'La position remonte dès que le canal poste est ouvert', 'Dès que la liaison Athena est bonne et le canal poste ouvert, votre position part automatiquement vers le poste sous quelques secondes. Vous apparaissez dans Effectifs sans devoir ouvrir Transmettre. Le téléphone précise aussi pourquoi la position n’est « pas encore » remontée si un frein temporaire s’applique', [
                 'Remontée de position automatique dès l’ouverture du canal',
                 'Reprise automatique si les boucles de sync n’avaient pas démarré',
@@ -592,8 +614,8 @@ final class DevDispatchCatalog
             ], [], [
                 'Liaison OK et photos reçues, mais « Position remontée : pas encore » et Effectifs vides',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.50 · Athena 1.0.95). Quittez Arma complètement. En mission, ouvrez le canal : sous ~10 s, Position remontée passe à « il y a Xs » et vous apparaissez au poste.',
-            ], 'Overwatch 1.5.50 · Athena 1.0.95'),
+                'Rechargez le pack (Overwatch 1.5.52 · Athena 1.0.97). Quittez Arma complètement. En mission, ouvrez le canal : sous ~10 s, Position remontée passe à « il y a Xs » et vous apparaissez au poste.',
+            ], 'Overwatch 1.5.52 · Athena 1.0.97'),
             $pr(516, '2026-09-12', 'Steam associé reste associé après connexion e-mail', 'Après une connexion Athena par e-mail ou code, l’identifiant Steam de la session est bien rattaché au compte quand il était libre. L’écran du téléphone affiche « associé » de façon stable, y compris après une reprise de liaison, et le bouton Steam fonctionne dès que le compte est renseigné', [
                 'Connexion e-mail / code : envoi de l’identifiant Steam de la session',
                 'Badge Steam : état réel du compte, conservé après reprise',
@@ -603,8 +625,8 @@ final class DevDispatchCatalog
                 'Steam restait « non associé » alors que le compte était trouvé',
                 'Association perdue après reconnexion',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.49 · Athena 1.0.94) et déployez le portail. Quittez Arma complètement. Connectez-vous une fois par e-mail en multijoueur, vérifiez Steam associé, quittez puis rejoignez.',
-            ], 'Overwatch 1.5.49 · Athena 1.0.94'),
+                'Rechargez le pack (Overwatch 1.5.51 · Athena 1.0.95) et déployez le portail. Quittez Arma complètement. Connectez-vous une fois par e-mail en multijoueur, vérifiez Steam associé, quittez puis rejoignez.',
+            ], 'Overwatch 1.5.51 · Athena 1.0.95'),
             $pr(514, '2026-09-12', 'La photo prise au sync remonte comme Quick Picture', 'Lorsqu’un cliché est détecté sur le disque (sync automatique), il emprunte désormais le même chemin que Quick Picture : légende Enhanced avec grille, une seule entrée au poste, plus de doublon « sidecar » sans métadonnées', [
                 'Sync disque → même pont que Quick Picture (grille + légende)',
                 'Une seule remontée par cliché (plus de doublon sidecar)',
