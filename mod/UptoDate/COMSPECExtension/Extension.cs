@@ -43,7 +43,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.31";
+        private const string ExtensionVersion = "2.0.32";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -6826,10 +6826,16 @@ public static partial class Extension
 
             if (function == "SendMarker" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                var armaName = args[0] ?? "";
-                var markerDataRaw = SanitizeLooseJsonObject(args[1] ?? "{}");
-                var layerId = args.Length > 2 ? (args[2] ?? "1") : "1";
-                var deleted = args.Length > 3 && (args[3] ?? "") == "1";
+                var armaName = ArmaString(args[0] ?? "");
+                // NormalizeArmaJson d’abord : guillemets doublés SQF → sinon Sanitize
+                // renvoyait "{}" et le poste stockait un marqueur sans position (invisible).
+                var markerDataRaw = SanitizeLooseJsonObject(NormalizeArmaJson(args[1] ?? "{}"));
+                var layerId = args.Length > 2 ? ArmaString(args[2] ?? "1") : "1";
+                if (string.IsNullOrWhiteSpace(layerId)) layerId = "1";
+                var deleted = args.Length > 3 && ArmaString(args[3] ?? "") == "1";
+                // Ne jamais publier un upsert vide : ça écraserait un bon marqueur / créerait un fantôme.
+                if (!deleted && (string.IsNullOrWhiteSpace(markerDataRaw) || markerDataRaw == "{}"))
+                    return;
                 var steamJson = _steamUid.Length > 0
                     ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
                     : "";
@@ -8025,7 +8031,8 @@ public static partial class Extension
 
     private static string SanitizeLooseJsonObject(string raw)
     {
-        var trimmed = (raw ?? "").Trim();
+        // Même filet que les autres POST jeu (guillemets doublés, virgules FR).
+        var trimmed = NormalizeArmaJson(raw ?? "").Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
             return "{}";
         var sanitized = System.Text.RegularExpressions.Regex.Replace(

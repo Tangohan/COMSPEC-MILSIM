@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.54 / Athena 1.0.99 / liaison 2.0.32 — 2026-09-12
+
+### Correction — Marqueurs téléphone → carte du poste
+
+Les repères posés sur le téléphone (INF, Marker Widget, cTab) remontent sur la carte Athena dès que le canal poste est ouvert, même si Effectifs est encore vide. Une liaison momentanément dégradée ne fait plus perdre le marqueur.
+
+---
+
 ## Overwatch 1.5.52 / Athena 1.0.97 — 2026-09-12
 
 ### Correction — Position invisible au poste malgré liaison OK

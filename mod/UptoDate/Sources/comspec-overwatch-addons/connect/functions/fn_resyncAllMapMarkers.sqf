@@ -55,7 +55,9 @@ private _mirroredElsewherePrefixes = [
     _next set [_name, _sig];
     if ((_prev getOrDefault [_name, ""]) isEqualTo _sig) then { continue };
 
-    [_name, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+    // force=true : rattrapage même si la liaison est momentanément dégradée
+    // (fiab. < 100 %) — sinon les INF / Widget restent coincés côté téléphone.
+    [_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
 } forEach _markers;
 
 {
