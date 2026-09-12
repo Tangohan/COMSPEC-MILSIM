@@ -603,8 +603,8 @@ final class DevDispatchCatalog
                 'Liste compacte peu lisible',
                 'Group Messages anglais encore accessible dans le tiroir',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.55 · Athena 1.0.100). Quittez Arma complètement. Ouvrez Messagerie : créez un canal, lisez le fil, vérifiez l’absence de Groups dans le tiroir.',
-            ], 'Overwatch 1.5.55 · Athena 1.0.100'),
+                'Rechargez le pack (Overwatch 1.5.55 · Athena 1.0.101). Quittez Arma complètement. Ouvrez Messagerie : créez un canal, lisez le fil, vérifiez l’absence de Groups dans le tiroir.',
+            ], 'Overwatch 1.5.55 · Athena 1.0.101'),
             $pr(520, '2026-09-12', 'Les marqueurs du téléphone remontent au poste', 'Les repères posés sur la carte du téléphone (INF, Marker Widget, cTab) apparaissent désormais sur la carte du poste dès que le canal est ouvert, même si votre contact n’est pas encore visible dans Effectifs. Une liaison un peu dégradée ne fait plus perdre le marqueur : il repart dès que possible', [
                 'Pose d’un INF / repère ATAK → affichage au poste sous quelques secondes',
                 'Pas besoin d’être déjà dans Effectifs pour que le repère remonte',

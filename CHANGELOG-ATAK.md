@@ -19,7 +19,7 @@ Sur un bâtiment désigné, le découpage d’étage (désactivé par défaut) c
 
 ---
 
-## Overwatch 1.5.55 / Athena 1.0.100 — 2026-09-12
+## Overwatch 1.5.55 / Athena 1.0.101 — 2026-09-12
 
 ### Amélioration — Messagerie : canaux, fil et Groups IceMan
 
