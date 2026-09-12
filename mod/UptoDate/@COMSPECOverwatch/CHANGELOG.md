@@ -1,3 +1,50 @@
+﻿COMSPEC Overwatch 1.5.57 / Athena ATAK 1.0.101 / liaison 2.0.32 — 12/09/2026
+
+Vague téléphone ATAK (depuis Overwatch 1.5.43)
+
+Important : relancez Arma complètement après installation du pack.
+
+Nouveau — Affichage situation sous JVN
+
+• Sous jumelles de vision nocturne : alliés, marqueurs et véhicules proches avec distance
+• Silhouette de bâtiment désigné (menu ACE) ; compatibilité F-PANO ECOTI sans double affichage
+• Désactivé par défaut : activez Affichage situation (JVN) dans Paramètres
+• Badges plus lisibles, contour de l’objet regardé, itinéraire du poste, éclairage de zone
+
+Nouveau — Découpage d’étage sous JVN
+
+• Avec Affichage situation : Découpage d’étage (OFF par défaut)
+• Silhouette coupée au plafond choisi, dalle mise en évidence, points intérieurs de l’étage
+• Menu ACE : changer d’étage — les murs ne s’ouvrent pas (limite du moteur)
+
+Nouveau — Messagerie COMSPEC
+
+• Application Messagerie dans le tiroir et sur le bureau, en français
+• Canaux radio (Groupe, Commandement, Général, JTAC, Air et canaux personnalisés)
+• Création d’un canal depuis le téléphone ; fil lisible (Vous / De… / Du poste)
+• L’ancienne entrée Groups / Group Messages IceMan n’apparaît plus dans le tiroir
+
+Nouveau — Comptes-rendus et ordres clarifiés
+
+• Comptes-rendus : liste et formulaire espacés, libellés en français
+• Ordres reçus : détail visible, Accepter / Refuser / Terminer / Supprimer selon l’état
+• Bilan des dégâts : champs essentiels seulement ; nouvel ordre toujours signalé
+
+Amélioration — Liaison et présence au poste
+
+• Reprise de liaison après lobby / nouvelle mission sans nouveau code (sauf Déconnecter volontaire)
+• Session maintenue la nuit sans spam dans le journal de liaison
+• Position remontée automatiquement dès l’ouverture du canal poste
+• Marqueurs téléphone (INF, etc.) visibles au poste même hors Effectifs
+• Steam « associé » stable après connexion e-mail / code
+• Photos sync : une seule entrée Enhanced avec grille au poste
+
+Amélioration — Lisibilité du téléphone
+
+• Appairer, tiroir d’apps, fiche de liaison et Paramètres : textes et boutons accessibles
+• Badges hub, comptes-rendus et ordres alignés sur le langage du portail
+• Bandeau de liaison plus compact (état, sync, versions)
+
 COMSPEC Overwatch 1.5.0 / Athena ATAK 1.0.63 — 01/09/2026
 
 Correction — Identité de l’opérateur
@@ -315,3 +362,4 @@ Rappel — déjà en place (1.3.x)
 • Terminal & certificat, zones Zeus, reprise de session
 
 Après mise à jour : relancez Arma complètement. Rebuild : connect.pbo + main.pbo + mavik_compat.pbo + atak_athena.pbo + COMSPECExtension_x64.dll. Hard-refresh sur le portail Athena. Déployer aussi le PHP Athena (API chat ?after=).
+
