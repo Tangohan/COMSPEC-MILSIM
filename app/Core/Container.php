@@ -1283,6 +1283,10 @@ class Container
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(TenantRepository::class),
             ),
+            \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
+                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
+                self::get(\App\Repositories\RoleRepository::class)
+            ),
             \App\Services\Personnel\PersonnelStructureChangeNotificationService::class => new \App\Services\Personnel\PersonnelStructureChangeNotificationService(
                 self::get(\App\Services\EmailService::class),
                 self::get(UserRepository::class),
@@ -1293,11 +1297,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
-            ),
-            \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
-                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
-                self::get(\App\Repositories\RoleRepository::class),
-                self::get(\App\Repositories\GradeRepository::class)
+                null,
+                self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class),
             ),
             \App\Controllers\Admin\Organization\UserAdminController::class => new \App\Controllers\Admin\Organization\UserAdminController(
                 self::get(UserRepository::class),
