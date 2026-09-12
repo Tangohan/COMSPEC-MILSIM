@@ -93,7 +93,12 @@ public static partial class Extension
                 _baseUrl = url;
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
-            return GameAuthPassword(args[1], args.Length > 2 ? args[2] : "", modVer);
+            if (args.Length > 4)
+                ApplySteamUid(ArmaString(args[4]));
+            return GameAuthPassword(
+                ArmaString(args[1]),
+                args.Length > 2 ? ArmaString(args[2]) : "",
+                modVer);
         }
 
         if (function == "RequestOtp" && args.Length >= 2)
@@ -101,7 +106,7 @@ public static partial class Extension
             var url = NormalizeBaseUrl(args[0]);
             if (url.Length > 0)
                 _baseUrl = url;
-            return GameRequestOtp(args[1]);
+            return GameRequestOtp(ArmaString(args[1]));
         }
 
         if (function == "VerifyOtp" && args.Length >= 3)
@@ -111,7 +116,9 @@ public static partial class Extension
                 _baseUrl = url;
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
-            return GameVerifyOtp(args[1], args[2], modVer);
+            if (args.Length > 4)
+                ApplySteamUid(ArmaString(args[4]));
+            return GameVerifyOtp(ArmaString(args[1]), ArmaString(args[2]), modVer);
         }
 
         if (function == "AuthSteam" && args.Length >= 2)
@@ -121,7 +128,7 @@ public static partial class Extension
                 _baseUrl = url;
             var steamMod = args.Length > 2 ? ArmaString(args[2]) : "";
             RememberDetectedMod(steamMod);
-            return GameAuthSteam(args[1], steamMod);
+            return GameAuthSteam(ArmaString(args[1]), steamMod);
         }
 
         if (function == "GetBootstrap")
@@ -434,12 +441,17 @@ public static partial class Extension
 
     private static string GameRequestOtp(string email)
     {
-        SetGameAuth("AUTHENTICATING", 28, "");
+        // Ne pas rester en AUTHENTICATING : pollAuth masquerait alors le formulaire
+        // (code reçu / mot de passe) en croyant qu’une synchro est en cours.
         var json = GamePostJson("/api/game/v1/auth/otp/request",
             $"{{\"email\":\"{EscapeJson(email.Trim())}\"}}",
             withBearer: false);
         if (json.StartsWith("ERR|", StringComparison.Ordinal))
-            return json;
+        {
+            var detail = json.Length > 4 ? json.Substring(4) : "NETWORK_ERROR";
+            return FailGameAuth(MapGameError(detail, json));
+        }
+        SetGameAuth("AWAITING_OTP", 30, "");
         return "OK|sent";
     }
 
@@ -635,12 +647,16 @@ public static partial class Extension
                 DpapiGameStore.Save(store);
             }
             SetGameAuth("RESOLVING_TENANT", 58, "");
+            var accountSteamId = "";
             if (root.TryGetProperty("account", out var account))
             {
                 _gameAccountId = account.TryGetProperty("id", out var aid) ? (aid.GetString() ?? "") : "";
                 _gameAccountEmail = account.TryGetProperty("email", out var aem) ? (aem.GetString() ?? "") : "";
                 if (account.TryGetProperty("steam_id", out var asid))
-                    ApplySteamUid(asid.GetString());
+                {
+                    accountSteamId = asid.GetString() ?? "";
+                    ApplySteamUid(accountSteamId);
+                }
             }
             if (root.TryGetProperty("session", out var session))
             {
@@ -668,13 +684,21 @@ public static partial class Extension
                 var linked = false;
                 if (notices.TryGetProperty("steam_linked", out var slEl))
                     linked = slEl.ValueKind == JsonValueKind.True
-                        || (slEl.ValueKind == JsonValueKind.String && slEl.GetString() == "1");
+                        || (slEl.ValueKind == JsonValueKind.Number && slEl.TryGetInt32(out var n) && n != 0)
+                        || (slEl.ValueKind == JsonValueKind.String
+                            && (slEl.GetString() == "1"
+                                || string.Equals(slEl.GetString(), "true", StringComparison.OrdinalIgnoreCase)));
                 _gameSteamLinked = linked ? "1" : "0";
                 _gameSteamNotice = notices.TryGetProperty("steam_message", out var smEl)
                     ? (smEl.GetString() ?? "")
                     : "";
                 if (notices.TryGetProperty("steam_id", out var nSid))
                     ApplySteamUid(nSid.GetString());
+            }
+            else if (TryNormalizeSteamUid(accountSteamId, out _))
+            {
+                // Bootstrap / profil sans notices : le Steam du compte suffit pour l’badge.
+                _gameSteamLinked = "1";
             }
             SetGameAuth("LOADING_BRANDING", 74, "");
             if (root.TryGetProperty("branding", out var brand))

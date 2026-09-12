@@ -96,6 +96,7 @@ class COMSPEC_AthenaAuth_Dialog {
             w = 0.34 * safezoneW;
             h = 0.040 * safezoneH;
             action = "[] call comspec_overwatch_connect_fnc_submitPassword;";
+            tooltip = "Connexion avec l’adresse e-mail et le mot de passe Athena";
         };
         class Divider: RscStructuredText {
             idc = 9425;
@@ -116,12 +117,13 @@ class COMSPEC_AthenaAuth_Dialog {
         };
         class OtpSubmitBtn: COMSPEC_RscButton {
             idc = 9424;
-            text = "Valider le code";
+            text = "Valider le code reçu";
             x = 0.33 * safezoneW + safezoneX;
             y = 0.418 * safezoneH + safezoneY;
             w = 0.34 * safezoneW;
             h = 0.040 * safezoneH;
             action = "[] call comspec_overwatch_connect_fnc_submitOTP;";
+            tooltip = "Valide uniquement le code temporaire reçu par e-mail";
             show = 0;
         };
         class SteamBtn: COMSPEC_RscButton {

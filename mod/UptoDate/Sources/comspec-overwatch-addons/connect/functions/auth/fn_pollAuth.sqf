@@ -40,15 +40,25 @@ if (_state isEqualTo "READY") then {
 };
 
 private _d = uiNamespace getVariable ["COMSPEC_AthenaAuth_Display", displayNull];
-if (isNull _d) exitWith {};
+if (isNull _d) exitWith {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+    };
+};
 
 private _syncing = _state in ["AUTHENTICATING","RESOLVING_ACCOUNT","RESOLVING_TENANT","SYNCING_PROFILE","LOADING_BRANDING","LOADING_CONFIGURATION","CONNECTING_C2","RESTORING_SESSION","CONTACTING_ATHENA","EXTENSION_READY"];
 private _ready = _state isEqualTo "READY";
+private _otpMode = missionNamespace getVariable ["comspec_overwatch_auth_otp_mode", false];
+if (_state isEqualTo "AWAITING_OTP") then { _otpMode = true; missionNamespace setVariable ["comspec_overwatch_auth_otp_mode", true, false]; };
 private _login = !_syncing && {!_ready};
 
 {
     (_d displayCtrl _x) ctrlShow _login;
-} forEach [9401, 9402, 9420, 9421, 9422, 9425];
+} forEach [9401, 9421, 9422, 9425];
+(_d displayCtrl 9402) ctrlShow (_login && {!_otpMode});
+(_d displayCtrl 9420) ctrlShow (_login && {!_otpMode});
+(_d displayCtrl 9403) ctrlShow (_login && {_otpMode});
+(_d displayCtrl 9424) ctrlShow (_login && {_otpMode});
 (_d displayCtrl 9413) ctrlShow (_syncing || {_ready});
 (_d displayCtrl 9423) ctrlShow _ready;
 (_d displayCtrl 9426) ctrlShow (_login || {_ready});
