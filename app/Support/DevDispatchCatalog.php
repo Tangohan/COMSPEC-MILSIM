@@ -584,6 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(501, '2026-09-12', 'Interface ATAK V2 sur la tablette', 'Une interface tablette V2 est disponible en option : carte satellite du terrain, dock Carte / Contacts / Messages / Ordres, et les mêmes actions de liaison que la tablette actuelle. Vous basculez depuis l’écran État, et votre choix est mémorisé pour la prochaine ouverture. L’ancienne tablette reste le défaut', [
+                'Interface V2 (bêta) : carte satellite, dock et panneaux Contacts / Messages / Ordres',
+                'Bascule depuis État → Interface V2, retour via Tablette ; choix mémorisé',
+                'Même liaison Overwatch : effectifs, messagerie, ordres, marqueurs point',
+            ], [
+                'Lecture charbon / cyan alignée sur Athena, libellés métier en français',
+            ], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.58 · Athena 1.0.101). Quittez Arma. Ouvrez la tablette → État → Interface V2 (bêta). Vérifiez la carte et un contact, puis revenez à la tablette si besoin.',
+            ], 'Overwatch 1.5.58 · Athena 1.0.101'),
             $pr(522, '2026-09-12', 'Découpage d’étage sous JVN', 'Quand un bâtiment est désigné sous jumelles de vision nocturne, vous pouvez activer le découpage d’étage (désactivé par défaut) : la silhouette est coupée au plafond choisi, la dalle est mise en évidence et les points intérieurs de cet étage apparaissent. Le menu ACE permet de changer d’étage. Les murs ne s’ouvrent pas — c’est une limite du moteur, pas un réglage reporté', [
                 'Paramètres ATAK : Découpage d’étage, OFF par défaut (nécessite Affichage situation)',
                 'Silhouette coupée à l’étage choisi + dalle mise en évidence',

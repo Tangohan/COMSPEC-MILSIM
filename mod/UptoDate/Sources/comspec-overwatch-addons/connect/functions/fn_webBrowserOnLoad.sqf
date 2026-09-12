@@ -133,9 +133,21 @@ missionNamespace setVariable ["COMSPEC_WebBrowser_RefreshToken", _token];
     };
 };
 
-// Shell local : LoadFile d’abord (fiable pour les gros HTML).
+// Shell local : LoadFile d'abord (fiable pour les gros HTML).
 // Repli UTF-8 base64 si le fichier est lisible mais LoadFile ne déclenche pas PageLoaded.
-private _htmlPath = "z\comspec_overwatch\addons\connect\web\tablet.html";
+private _uiVer = missionNamespace getVariable ["COMSPEC_TabletUiVersion", ""];
+if (!(_uiVer isEqualType "") || {_uiVer isEqualTo ""}) then {
+    _uiVer = profileNamespace getVariable ["COMSPEC_TabletUiVersion", "v1"];
+};
+if (!(_uiVer isEqualType "")) then { _uiVer = "v1"; };
+_uiVer = toLower _uiVer;
+missionNamespace setVariable ["COMSPEC_TabletUiVersion", _uiVer];
+
+private _htmlPath = if (_uiVer isEqualTo "v2") then {
+    "z\comspec_overwatch\addons\connect\web\atak-v2\atak-v2.html"
+} else {
+    "z\comspec_overwatch\addons\connect\web\tablet.html"
+};
 _ctrl ctrlWebBrowserAction ["LoadFile", _htmlPath];
 
 [_display, _ctrl, _htmlPath, _token, _fncFallback] spawn {
