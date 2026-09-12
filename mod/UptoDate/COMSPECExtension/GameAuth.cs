@@ -390,7 +390,18 @@ public static partial class Extension
 
         var store = DpapiGameStore.Load();
         if (store == null || string.IsNullOrEmpty(store.RefreshToken))
+        {
+            // Access périmé sans refresh (ex. Appairer seul) : lâcher le Bearer mort
+            // pour basculer sur la clé communauté dans AttachApiKeyHeader.
+            if (_gameAccessToken.Length > 0
+                && _gameAccessExpiresAt != DateTimeOffset.MinValue
+                && DateTimeOffset.UtcNow >= _gameAccessExpiresAt.AddSeconds(-45))
+            {
+                _gameAccessToken = "";
+                _gameAccessExpiresAt = DateTimeOffset.MinValue;
+            }
             return _gameAccessToken.Length > 0;
+        }
 
         var json = RefreshGameSession(store.RefreshToken, _modVersion);
         if (IsRefreshRevoked(json))
@@ -398,6 +409,9 @@ public static partial class Extension
             DpapiGameStore.ClearTokens(keepDeviceId: true);
             _gameAccessToken = "";
             _gameAccessExpiresAt = DateTimeOffset.MinValue;
+            // Clé communauté encore valide : ne pas forcer SESSION_EXPIRED (nuit / PC allumé).
+            if (_apiKey.Length >= 16)
+                return false;
             SetGameAuth("SESSION_EXPIRED", _gameAuthProgress, "SESSION_EXPIRED");
             return false;
         }
@@ -513,6 +527,7 @@ public static partial class Extension
         // laisse le canal poste ouvert avec l’ancienne clé.
         ApplyApiKeyHeaders("");
         _sessionToken = "";
+        _sessionExpiresAt = DateTimeOffset.MinValue;
         _tenantId = "";
         var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
         store.RefreshToken = "";

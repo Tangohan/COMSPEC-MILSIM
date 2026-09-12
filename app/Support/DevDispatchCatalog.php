@@ -594,6 +594,15 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack (Overwatch 1.5.43). Quittez Arma complètement. Activez les JVN en mission.',
             ], 'Overwatch 1.5.43'),
+            $pr(510, '2026-09-12', 'Liaison jeu maintenue toute la nuit', 'Une machine laissée allumée avec Arma ouvert garde désormais la liaison au poste sans nouvel Appairage. Le jeton court se renouvelle tout seul, et le journal de session ne se remplit plus de messages « Session jeu ignorée » toutes les quelques secondes', [
+                'Renouvellement silencieux du jeton de session avant expiration',
+                'Repli automatique sur la clé communauté si le jeton d’accès Athena est périmé',
+                'Journal Liaison : au plus un avertissement « session ignorée » toutes les dix minutes',
+            ], [], [
+                'PC allumé toute la nuit : rafales d’événements ACCÈS « Session jeu ignorée » au réveil',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.46) et déployez le portail. Quittez Arma complètement. Test : laisser une mission ouverte plus de 4 h, ou réduire temporairement la durée de session en local.',
+            ], 'Overwatch 1.5.46'),
             $pr(509, '2026-09-11', 'Liaison ATAK reprise après déconnexion', 'Après un Appairage réussi, quitter la mission ou le lobby puis rejoindre ne demande plus un nouveau code. La liaison déjà enregistrée sur le profil Arma se rétablit toute seule. Une déconnexion volontaire depuis le téléphone ou le hub exige toujours un nouvel Appairage', [
                 'Retour lobby / nouvelle mission : reprise de la liaison sans code',
                 'Relance complète d’Arma : même reprise tant que le profil n’a pas été délié',

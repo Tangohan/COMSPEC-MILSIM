@@ -111,6 +111,9 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('Session Athena prête', $wait);
         self::assertStringContainsString('_apiKeyValidatedByClientInit', $attach);
         self::assertStringContainsString('EnsureFreshGameAccessToken', $attach);
+        self::assertStringContainsString('EnsureFreshAtakSession', $attach);
+        self::assertStringContainsString('RememberAtakSessionToken', $attach);
+        self::assertStringContainsString('_sessionExpiresAt', $attach);
         self::assertStringContainsString('Ne jamais coller X-COMSPEC-KEY', $attach);
         self::assertStringContainsString('presentedAuthCandidates', $authPhp);
         self::assertStringContainsString('matchedUserId', $authPhp);
@@ -139,6 +142,8 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('logThrottled', $guard);
         self::assertStringContainsString("'steam_required'", $guard);
         self::assertStringContainsString('300,', $guard);
+        self::assertStringContainsString("'invalid_session_ignored'", $guard);
+        self::assertStringContainsString('600,', $guard);
     }
 
     public function testPasswordAuthDoesNotRequireASteamIdToIssueTokens(): void

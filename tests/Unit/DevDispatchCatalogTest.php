@@ -1030,6 +1030,10 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($wardrobeChunk);
         self::assertSame('00500', $wardrobeChunk['number_pad']);
         self::assertStringContainsString('tenues', strtolower((string) $wardrobeChunk['title']));
+        $sessionNuit = DevDispatchCatalog::find('update', '510');
+        self::assertNotNull($sessionNuit);
+        self::assertSame('00510', $sessionNuit['number_pad']);
+        self::assertStringContainsString('nuit', strtolower((string) $sessionNuit['title']));
         $spot03 = DevDispatchCatalog::find('spotrep', '3');
         self::assertNotNull($spot03);
         self::assertTrue((bool) $spot03['featured']);

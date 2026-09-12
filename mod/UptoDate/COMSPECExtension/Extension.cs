@@ -43,9 +43,13 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.28";
+        private const string ExtensionVersion = "2.0.29";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
+    /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
+    private static DateTimeOffset _sessionExpiresAt = DateTimeOffset.MinValue;
+    /// <summary>Anti-rafale pour le renouvellement silencieux de session ATAK.</summary>
+    private static long _lastSessionRenewTicks;
     /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
     private static string _militaryId = "";
     /// <summary>Indicatif tactique confirmé par Athena (client-init).</summary>
@@ -458,6 +462,53 @@ public static partial class Extension
         }
     }
 
+    private static void RememberAtakSessionToken(string token, int expiresInSec = 0)
+    {
+        var t = (token ?? "").Trim();
+        if (t.Length < 32)
+            return;
+        _sessionToken = t;
+        var ttl = expiresInSec > 0 ? expiresInSec : 14400;
+        _sessionExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 60, 86400));
+    }
+
+    /// <summary>
+    /// Renouvelle le jeton opaque ATAK avant expiration (nuit / PC allumé).
+    /// Sans ça, le portail ignore le jeton mort via la clé API mais journalise en boucle.
+    /// </summary>
+    private static void EnsureFreshAtakSession()
+    {
+        if (_sessionToken.Length == 0 || string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+            return;
+
+        // Ancien jeton sans échéance : horodater 4 h à partir de maintenant (une fois).
+        if (_sessionExpiresAt == DateTimeOffset.MinValue)
+        {
+            _sessionExpiresAt = DateTimeOffset.UtcNow.AddSeconds(14400);
+            return;
+        }
+
+        if (DateTimeOffset.UtcNow < _sessionExpiresAt.AddSeconds(-120))
+            return;
+
+        var now = DateTime.UtcNow.Ticks;
+        if (now - System.Threading.Interlocked.Read(ref _lastSessionRenewTicks) <= TimeSpan.FromSeconds(45).Ticks)
+            return;
+        System.Threading.Interlocked.Exchange(ref _lastSessionRenewTicks, now);
+
+        // Ne plus envoyer le jeton mort pendant le client-init / les posts suivants.
+        _sessionToken = "";
+        _sessionExpiresAt = DateTimeOffset.MinValue;
+        try
+        {
+            VerifyClientInitSync();
+        }
+        catch
+        {
+            // La clé communauté / Bearer suffit ; le prochain cycle retentera.
+        }
+    }
+
     private static void TryRememberSessionFromInitBody(string respBody)
     {
         if (string.IsNullOrWhiteSpace(respBody) || respBody[0] != '{') return;
@@ -468,8 +519,14 @@ public static partial class Extension
             if (root.TryGetProperty("session_token", out var tok))
             {
                 var t = (tok.GetString() ?? "").Trim();
+                var exp = 0;
+                if (root.TryGetProperty("expires_in", out var expEl)
+                    && expEl.ValueKind == JsonValueKind.Number
+                    && expEl.TryGetInt32(out var expSec)
+                    && expSec > 0)
+                    exp = expSec;
                 if (t.Length >= 32)
-                    _sessionToken = t;
+                    RememberAtakSessionToken(t, exp);
             }
             if (root.TryGetProperty("steam_uid", out var su))
             {
@@ -2154,6 +2211,7 @@ public static partial class Extension
         _gameAccessToken = "";
         _gameAccessExpiresAt = DateTimeOffset.MinValue;
         _sessionToken = "";
+        _sessionExpiresAt = DateTimeOffset.MinValue;
     }
 
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
@@ -2187,6 +2245,7 @@ public static partial class Extension
                 req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
             }
         }
+        EnsureFreshAtakSession();
         var sess = _sessionToken;
         if (sess.Length > 0)
         {
@@ -2396,7 +2455,15 @@ public static partial class Extension
                 if (status is "pending" or "waiting") return "OK|pending";
                 if (status is "expired") { _pendingPairDeviceCode = ""; return "ERR|expired"; }
                 if (status is not "approved") return "ERR|" + SanitizeIdentityField(status);
-                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String)
+                {
+                    var exp = 0;
+                    if (root.TryGetProperty("expires_in", out var expEl)
+                        && expEl.ValueKind == JsonValueKind.Number
+                        && expEl.TryGetInt32(out var expSec))
+                        exp = expSec;
+                    RememberAtakSessionToken(tok.GetString() ?? "", exp);
+                }
                 if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
                 if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
                 if (root.TryGetProperty("military_id", out var mi) && mi.ValueKind == JsonValueKind.String) _militaryId = mi.GetString() ?? _militaryId;
@@ -2436,7 +2503,15 @@ public static partial class Extension
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String) _sessionToken = tok.GetString() ?? "";
+                if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String)
+                {
+                    var exp = 0;
+                    if (root.TryGetProperty("expires_in", out var expEl)
+                        && expEl.ValueKind == JsonValueKind.Number
+                        && expEl.TryGetInt32(out var expSec))
+                        exp = expSec;
+                    RememberAtakSessionToken(tok.GetString() ?? "", exp);
+                }
                 if (root.TryGetProperty("terminal_uid", out var tu) && tu.ValueKind == JsonValueKind.String) _terminalUid = tu.GetString() ?? _terminalUid;
                 if (root.TryGetProperty("call_sign", out var cs) && cs.ValueKind == JsonValueKind.String) _callSign = cs.GetString() ?? _callSign;
                 if (root.TryGetProperty("tokens", out _))
@@ -7322,7 +7397,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7652,7 +7730,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("SsePhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7796,7 +7877,10 @@ public static partial class Extension
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
             if (code == 401 && _sessionToken.Length > 0)
+            {
                 _sessionToken = "";
+                _sessionExpiresAt = DateTimeOffset.MinValue;
+            }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
             InvokeCallback("SseNoteAttachment", $"ERR|http_{code}|{fileName}{extra}");
         }
@@ -7976,7 +8060,10 @@ public static partial class Extension
                     return;
                 }
                 if (code == 401 && _sessionToken.Length > 0)
+                {
                     _sessionToken = "";
+                    _sessionExpiresAt = DateTimeOffset.MinValue;
+                }
                 NotePostError(code, url);
             }
             catch
@@ -9112,6 +9199,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.StartsWith('{')) return "{\"mapId\":1}";
         try
         {
+            EnsureFreshAtakSession();
             using var doc = JsonDocument.Parse(trimmed);
             using var stream = new MemoryStream();
             using (var writer = new Utf8JsonWriter(stream))
@@ -9120,6 +9208,9 @@ public static partial class Extension
                 var hasMapId = false;
                 foreach (var prop in doc.RootElement.EnumerateObject())
                 {
+                    // Toujours réécrire le jeton courant (évite un session_token mort collé par SQF).
+                    if (prop.NameEquals("session_token") || prop.NameEquals("game_session"))
+                        continue;
                     if (prop.NameEquals("mapId") || prop.NameEquals("map_id")) hasMapId = true;
                     prop.WriteTo(writer);
                 }
@@ -9129,7 +9220,7 @@ public static partial class Extension
                     writer.WriteString("api_key", _apiKey);
                 if (_steamUid.Length > 0 && !doc.RootElement.TryGetProperty("steam_uid", out _))
                     writer.WriteString("steam_uid", _steamUid);
-                if (_sessionToken.Length > 0 && !doc.RootElement.TryGetProperty("session_token", out _))
+                if (_sessionToken.Length > 0)
                     writer.WriteString("session_token", _sessionToken);
                 if (_modVersion.Length > 0 && !doc.RootElement.TryGetProperty("mod_version", out _))
                     writer.WriteString("mod_version", _modVersion);
