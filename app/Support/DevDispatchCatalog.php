@@ -584,6 +584,16 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(522, '2026-09-12', 'Découpage d’étage sous JVN', 'Quand un bâtiment est désigné sous jumelles de vision nocturne, vous pouvez activer le découpage d’étage (désactivé par défaut) : la silhouette est coupée au plafond choisi, la dalle est mise en évidence et les points intérieurs de cet étage apparaissent. Le menu ACE permet de changer d’étage. Les murs ne s’ouvrent pas — c’est une limite du moteur, pas un réglage reporté', [
+                'Paramètres ATAK : Découpage d’étage, OFF par défaut (nécessite Affichage situation)',
+                'Silhouette coupée à l’étage choisi + dalle mise en évidence',
+                'Points intérieurs de l’étage + ACE Changer d’étage',
+                'Plus de libellé trompeur « à venir »',
+            ], [], [
+                'Réglage « découpage 3D à venir » sans effet utile',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.56 · Athena 1.0.101). Quittez Arma. Activez Affichage situation puis Découpage d’étage. Désignez un bâtiment sous JVN, puis ACE → Changer d’étage.',
+            ], 'Overwatch 1.5.56 · Athena 1.0.101'),
             $pr(521, '2026-09-12', 'Messagerie : canaux créés depuis le téléphone', 'Dans Messagerie, vous pouvez créer un canal radio personnalisé directement depuis le téléphone. Le fil indique clairement qui a écrit (Vous, De…, Du poste) avec un meilleur contraste. L’ancienne entrée Groups / Group Messages IceMan disparaît du tiroir : vous ouvrez Messagerie COMSPEC, en français', [
                 'Création d’un canal personnalisé (nom + Créer) depuis Messagerie',
                 'Fil plus lisible : expéditeur, heure, contraste, détail au survol',

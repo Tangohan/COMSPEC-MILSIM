@@ -223,6 +223,22 @@ if (!isNull _cbEcoti) then {
     missionNamespace setVariable ["COMSPEC_AtakEcotiHudFilling", false, false];
 };
 
+private _cbEcotiCut = [9871] call _ctrl;
+if (!isNull _cbEcotiCut) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", true, false];
+    private _cutOn = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+    if (!(_cutOn isEqualType true)) then { _cutOn = false; };
+    private _profCut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+    if (_profCut isEqualType true) then { _cutOn = _profCut; };
+    lbClear _cbEcotiCut;
+    private _iCutOff = _cbEcotiCut lbAdd "Désactivé";
+    _cbEcotiCut lbSetData [_iCutOff, "0"];
+    private _iCutOn = _cbEcotiCut lbAdd "Activé (bâtiment désigné)";
+    _cbEcotiCut lbSetData [_iCutOn, "1"];
+    _cbEcotiCut lbSetCurSel (if (_cutOn) then { _iCutOn } else { _iCutOff });
+    missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", false, false];
+};
+
 private _fb = [9847] call _ctrl;
 if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     private _hint = if (_cs isEqualTo "") then {

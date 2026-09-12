@@ -194,6 +194,10 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         if (_raw isEqualType true) then {
             [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
         };
+        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+        if (_cut isEqualType true) then {
+            [_cut, false] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+        };
         if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
             [] call comspec_overwatch_connect_fnc_ecotiInit;
         };

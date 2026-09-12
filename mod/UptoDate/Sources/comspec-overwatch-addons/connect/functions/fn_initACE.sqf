@@ -60,6 +60,19 @@ private _ecotiMarkAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_ecotiMarkAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _ecotiFloorAction = [
+    "COMSPEC_EcotiCycleFloor", "Changer d’étage (découpage situation)", "", {
+        [] call comspec_overwatch_connect_fnc_ecotiCycleFloor;
+    }, {
+        private _cut = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+        ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
+        && {_cut isEqualType true}
+        && {_cut}
+        && {!isNull (missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull])}
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_ecotiFloorAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 private _ecotiLightAction = [
     "COMSPEC_EcotiIlluminate", "Éclairer / éteindre la zone (situation)", "", {
         ["toggle"] call comspec_overwatch_connect_fnc_ecotiIlluminateZone;

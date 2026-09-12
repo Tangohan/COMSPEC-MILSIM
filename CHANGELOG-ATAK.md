@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.56 / Athena 1.0.101 — 2026-09-12
+
+### Amélioration — Découpage d’étage sous JVN
+
+Sur un bâtiment désigné, le découpage d’étage (désactivé par défaut) coupe la silhouette au plafond choisi, met en évidence la dalle et marque les points intérieurs. ACE permet de changer d’étage. Les murs ne s’ouvrent pas (limite du moteur) ; ce n’est plus un réglage « à venir ».
+
+---
+
 ## Overwatch 1.5.55 / Athena 1.0.100 — 2026-09-12
 
 ### Amélioration — Messagerie : canaux, fil et Groups IceMan

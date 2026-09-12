@@ -55,8 +55,15 @@ _mk setMarkerAlphaLocal 0.9;
 missionNamespace setVariable ["COMSPEC_EcotiMarkedBuilding", _building, false];
 missionNamespace setVariable ["COMSPEC_EcotiMarkedBuildingName", _dn, false];
 missionNamespace setVariable ["COMSPEC_EcotiBuildingMarker", _mkName, false];
+missionNamespace setVariable ["COMSPEC_EcotiCutawayFloor", 0, false];
+private _cutaway = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
+private _msg = if (_cutaway isEqualType true && {_cutaway}) then {
+    format ["Bâtiment désigné : %1 (découpage étage 1 — ACE pour changer).", _dn]
+} else {
+    format ["Bâtiment désigné : %1.", _dn]
+};
 [
-    format ["Bâtiment désigné : %1.", _dn],
+    _msg,
     "system",
     "info"
 ] call comspec_overwatch_connect_fnc_announce;

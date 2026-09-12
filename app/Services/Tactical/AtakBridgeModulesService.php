@@ -106,7 +106,7 @@ final class AtakBridgeModulesService
             [
                 'id' => 'ecoti_hud',
                 'label' => 'Affichage situation (JVN)',
-                'description' => 'Autorise l’affichage situation sous jumelles de vision nocturne : alliés, marqueurs, véhicules, silhouette de bâtiment, éclairage de zone et itinéraire. Désactivé côté joueur par défaut (à activer dans ATAK → Paramètres). Sans effet si le mod F-PANO ECOTI est déjà chargé.',
+                'description' => 'Autorise l’affichage situation sous jumelles de vision nocturne : alliés, marqueurs, véhicules, silhouette de bâtiment, découpage d’étage (optionnel), éclairage de zone et itinéraire. Désactivé côté joueur par défaut (à activer dans ATAK → Paramètres). Sans effet si le mod F-PANO ECOTI est déjà chargé.',
             ],
             [
                 'id' => 'report_routing',

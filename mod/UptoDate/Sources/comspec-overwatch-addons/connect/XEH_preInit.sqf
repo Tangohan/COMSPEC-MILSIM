@@ -428,8 +428,8 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_ecoti_building_cutaway", "CHECKBOX",
     [
-        "Découpage 3D des bâtiments (à venir)",
-        "Réservé : le découpage réel des murs n’est pas disponible dans cette version. La silhouette (cadre et étages) reste active quand un bâtiment est désigné."
+        "Découpage d’étage (silhouette)",
+        "Quand un bâtiment est désigné : coupe la silhouette au plafond de l’étage choisi, met en évidence la dalle et marque les points intérieurs de cet étage. N’ouvre pas les murs (limite du moteur). Désactivé par défaut ; nécessite l’affichage situation. Menu ACE : Changer d’étage."
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
     false
