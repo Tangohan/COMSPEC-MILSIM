@@ -1,4 +1,14 @@
-﻿COMSPEC Overwatch 1.5.57 / Athena ATAK 1.0.101 / liaison 2.0.32 — 12/09/2026
+﻿COMSPEC Overwatch 1.5.58 / Athena ATAK 1.0.101 / liaison 2.0.32 — 12/09/2026
+
+Nouveau — Interface V2 de la tablette (bêta)
+
+• Depuis l’écran État : bouton Interface V2 (bêta) — carte satellite du terrain, dock Carte / Contacts / Messages / Ordres
+• Même liaison et mêmes actions que la tablette actuelle ; le choix V1 / V2 est mémorisé pour la prochaine ouverture
+• La tablette classique (V1) reste le défaut et reste disponible : retour via Tablette ou Plus → Interface tablette (V1)
+• Aperçu hors jeu possible en ouvrant atak-v2.html?preview=1 (carte et dock ; chat, ordres et marqueurs réels nécessitent Arma)
+• Important : relancez Arma complètement après installation du pack
+
+COMSPEC Overwatch 1.5.57 / Athena ATAK 1.0.101 / liaison 2.0.32 — 12/09/2026
 
 Vague téléphone ATAK (depuis Overwatch 1.5.43)
 
