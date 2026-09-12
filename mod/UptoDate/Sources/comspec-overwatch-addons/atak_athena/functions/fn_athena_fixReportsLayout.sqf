@@ -196,7 +196,7 @@ if (_tab isEqualTo "inbox") then {
         missionNamespace setVariable ["COMSPEC_ReportsLabelFr", createHashMapFromArray [
             ["Report", "Type"], ["DTG", "Date-heure"], ["Unit", "Unité"], ["TRN", "Réf."],
             ["Grid", "Grille"], ["Type", "Nature"], ["Desc", "Description"],
-            ["Ordnance", "Munitions"], ["Munitions Count", "Nombre"], ["Platform", "Plateforme"],
+            ["Ordnance", "Munitions"], ["Munitions Count", "Nombre"], ["EKIA", "Pertes ennemies"], ["Platform", "Plateforme"],
             ["Equip", "Équipement"], ["Equipment", "Équipement"], ["Rating", "Résultat"],
             ["Reattack", "Réattaque"], ["Send To", "Destinataires"], ["Reports", "Remarques"],
             ["Size", "Effectif"], ["Activity", "Activité"], ["Location", "Position"],
@@ -220,6 +220,17 @@ if (_tab isEqualTo "inbox") then {
     if (!isNull _ft) then {
         _ft ctrlShow false;
         _ft ctrlEnable false;
+    };
+
+    // BDA : masquer les champs secondaires déjà préremplis (payload IceMan inchangé).
+    if (_form isEqualTo "BDA") then {
+        {
+            private _hc = _group controlsGroupCtrl _x;
+            if (!isNull _hc) then {
+                _hc ctrlShow false;
+                _hc ctrlEnable false;
+            };
+        } forEach [9700, 9701, 9702, 9703, 9704, 9705, 9712, 9713, 9716, 9717, 9726, 9727];
     };
 
     private _typeL = _group controlsGroupCtrl 9614;
@@ -251,6 +262,34 @@ if (_tab isEqualTo "inbox") then {
             };
         };
         _typeC ctrlCommit 0;
+    };
+    // Valeurs des listes BDA en français (lbData inchangé).
+    if (_form isEqualTo "BDA") then {
+        private _optFr = createHashMapFromArray [
+            ["Infantry", "Infanterie"], ["Vehicle", "Véhicule"], ["Armor", "Blindé"],
+            ["Artillery", "Artillerie"], ["Structure", "Structure"], ["Air Defense", "Défense sol-air"],
+            ["Other", "Autre"], ["Destroyed (D)", "Détruit"], ["Damaged", "Endommagé"],
+            ["Neutralized", "Neutralisé"], ["Unknown", "Inconnu"],
+            ["No Reattack Required", "Pas de nouvelle frappe"],
+            ["Reattack Required", "Nouvelle frappe requise"],
+            ["Reattack Recommended", "Nouvelle frappe recommandée"],
+            ["No vehicle ordnance", "Sans munition véhicule"],
+            ["No player-operated vehicles", "Aucun véhicule joueur"]
+        ];
+        {
+            private _combo = _group controlsGroupCtrl _x;
+            if (!isNull _combo) then {
+                private _n = lbSize _combo;
+                for "_i" from 0 to (_n - 1) do {
+                    private _data = _combo lbData _i;
+                    private _txt = _combo lbText _i;
+                    private _key = if (_data isNotEqualTo "") then { _data } else { _txt };
+                    private _fr = _optFr getOrDefault [_key, ""];
+                    if (_fr isEqualTo "") then { _fr = _optFr getOrDefault [_txt, ""]; };
+                    if (_fr isNotEqualTo "") then { _combo lbSetText [_i, _fr]; };
+                };
+            };
+        } forEach [9709, 9723, 9725, 9717];
     };
     _y = _y + _rowH + (_gap * 0.7);
 

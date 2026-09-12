@@ -1,6 +1,7 @@
 /*
-    Nouvel ordre Athena → pastille notification cTab si disponible.
-    Miroir IceMan Reports = FRAGO destinataire (pas une tâche drone) + ATHENA_ORDER_ID pour ACK.
+    Nouvel ordre Athena → pastille + feedback visible sans spam.
+    Miroir IceMan Reports = FRAGO destinataire + ATHENA_ORDER_ID pour ACK.
+    Le bandeau BIS / son sont déjà gérés par receiveOrder (showNotification).
 */
 params [["_order", createHashMap]];
 
@@ -34,21 +35,31 @@ private _detail = format [
     _timeStr
 ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
 
-if (!isNil "comspec_overwatch_atak_athena_fnc_showNotification") then {
-    ["PRIORITY", format ["Nouvel ordre — %1", _typeLabel]] call comspec_overwatch_atak_athena_fnc_showNotification;
+// Toast cTab : forcé si alertes écran OFF (sinon le bandeau BIS de receiveOrder suffit).
+private _toastText = format ["Nouvel ordre — %1 (de %2)", _typeLabel, _issuer];
+private _screenOn = [] call comspec_overwatch_connect_fnc_shouldShowScreenNotification;
+if (!_screenOn) then {
+    ["ATHENA", _toastText, 8, true] call comspec_overwatch_connect_fnc_addScreenToast;
 };
-["ATHENA", format ["Nouvel ordre — %1 (de %2)", _typeLabel, _issuer], 8] call comspec_overwatch_connect_fnc_addScreenToast;
-if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
-    private _soundEv = if ((toUpper _prio) isEqualTo "URGENT" || {(toUpper _prio) isEqualTo "CONTACT"}) then {
-        "order_priority"
+
+// Soft open TASK si le téléphone est déjà ouvert (pas d’ouverture intrusive à froid).
+private _phoneOpen = !isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull]);
+if (!_phoneOpen) then {
+    _phoneOpen = !isNull (uiNamespace getVariable ["cTab_Android_dsp", displayNull]);
+};
+if (_phoneOpen) then {
+    private _taskGroup = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
+    if (!isNull _taskGroup && {ctrlShown _taskGroup}) then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
     } else {
-        "order"
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openAtakApp") then {
+            ["AtakTask"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+            [{ [] call comspec_overwatch_atak_athena_fnc_athena_updateTask; }, [], 0.2] call CBA_fnc_waitAndExecute;
+        };
     };
-    [_soundEv] call comspec_overwatch_connect_fnc_playAtakNotification;
 };
 
 // Miroir IceMan Reports (FRAGO destinataire) — hors signaux terminal / hors drone.
-// Appel direct à alerts_receive : le CBA localEvent + SuppressMirror annulait le miroir.
 if (
     !(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
     && {!isNil "Iceman_fnc_alerts_receive"}
@@ -82,7 +93,7 @@ if (!isNull _group && {ctrlShown _group}) then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 };
 
-private _taskGroup = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
-if (!isNull _taskGroup && {ctrlShown _taskGroup}) then {
+private _taskGroup2 = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
+if (!isNull _taskGroup2 && {ctrlShown _taskGroup2}) then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
 };

@@ -594,6 +594,16 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Rechargez le pack (Overwatch 1.5.43). Quittez Arma complètement. Activez les JVN en mission.',
             ], 'Overwatch 1.5.43'),
+            $pr(511, '2026-09-12', 'Bilan des dégâts lisible et ordres toujours signalés', 'Le formulaire de bilan des dégâts sur le téléphone ne noie plus l’opérateur sous quinze champs : seuls les essentiels restent visibles, en français. Un nouvel ordre reste annoncé même si les alertes à l’écran sont coupées, sans double bandeau, et Ordres reçus s’ouvre doucement si le téléphone est déjà en main', [
+                'Bilan des dégâts : champs secondaires masqués, listes en français, contenu envoyé inchangé',
+                'App bilan autonome : titre et boutons en français',
+                'Nouvel ordre : toast visible si alertes écran OFF ; pastille Athena conservée',
+                'Téléphone déjà ouvert : bascule douce vers Ordres reçus',
+            ], [], [
+                'Formulaire BDA illisible ; ordre reçu sans retour visible quand les alertes écran sont coupées',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.47 · Athena 1.0.92). Quittez Arma complètement.',
+            ], 'Overwatch 1.5.47 · Athena 1.0.92'),
             $pr(510, '2026-09-12', 'Liaison jeu maintenue toute la nuit', 'Une machine laissée allumée avec Arma ouvert garde désormais la liaison au poste sans nouvel Appairage. Le jeton court se renouvelle tout seul, et le journal de session ne se remplit plus de messages « Session jeu ignorée » toutes les quelques secondes', [
                 'Renouvellement silencieux du jeton de session avant expiration',
                 'Repli automatique sur la clé communauté si le jeton d’accès Athena est périmé',
