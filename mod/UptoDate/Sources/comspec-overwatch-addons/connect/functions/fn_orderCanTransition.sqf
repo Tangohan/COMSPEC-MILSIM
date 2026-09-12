@@ -21,5 +21,6 @@ switch (_new) do {
     case "DONE": { _current in ["ACK", "EXEC"] };
     case "FAILED": { _current in ["PENDING", "DELIVERED", "ACK", "EXEC"] };
     case "DELIVERED": { _current isEqualTo "PENDING" };
+    case "CLOSED": { _current in ["ACK", "EXEC", "DONE"] };
     default { false };
 };

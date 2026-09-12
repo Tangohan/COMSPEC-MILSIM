@@ -10,6 +10,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Task_group", _group];
 private _token = diag_tickTime + random 1;
 uiNamespace setVariable ["COMSPEC_ATAK_Task_token", _token];
 uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
+uiNamespace setVariable ["COMSPEC_ATAK_Task_rebuilding", false];
 
 [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
 

@@ -604,8 +604,8 @@ final class DevDispatchCatalog
             ], [], [
                 'Zone de détail vide ; Accepter / Refuser encore affichés sur un ordre déjà refusé',
             ], ['atak'], [
-                'Rechargez le pack (Overwatch 1.5.52 · Athena 1.0.97). Quittez Arma complètement. Ouvrez Ordres reçus : sélectionnez un ordre, lisez le détail, testez Accepter / Refuser puis Supprimer.',
-            ], 'Overwatch 1.5.52 · Athena 1.0.97'),
+                'Rechargez le pack (Overwatch 1.5.53 · Athena 1.0.98). Quittez Arma complètement. Ouvrez Ordres reçus : sélectionnez un ordre, lisez le détail, testez Accepter / Refuser puis Supprimer.',
+            ], 'Overwatch 1.5.53 · Athena 1.0.98'),
             $pr(517, '2026-09-12', 'La position remonte dès que le canal poste est ouvert', 'Dès que la liaison Athena est bonne et le canal poste ouvert, votre position part automatiquement vers le poste sous quelques secondes. Vous apparaissez dans Effectifs sans devoir ouvrir Transmettre. Le téléphone précise aussi pourquoi la position n’est « pas encore » remontée si un frein temporaire s’applique', [
                 'Remontée de position automatique dès l’ouverture du canal',
                 'Reprise automatique si les boucles de sync n’avaient pas démarré',
