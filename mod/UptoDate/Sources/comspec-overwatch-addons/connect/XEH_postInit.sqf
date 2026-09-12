@@ -198,6 +198,14 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         if (_cut isEqualType true) then {
             [_cut, false] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
         };
+        private _strip = profileNamespace getVariable ["COMSPEC_LinkStripVisible", "UNSET"];
+        if (_strip isEqualType true) then {
+            [_strip, false] call comspec_overwatch_connect_fnc_linkStripApplySetting;
+        };
+        private _linkSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];
+        if (_linkSim isEqualType true) then {
+            [_linkSim, false] call comspec_overwatch_connect_fnc_linkDegradeSimApplySetting;
+        };
         if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
             [] call comspec_overwatch_connect_fnc_ecotiInit;
         };

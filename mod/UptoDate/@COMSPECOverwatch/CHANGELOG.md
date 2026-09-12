@@ -1,3 +1,12 @@
+﻿COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.102 — 12/09/2026
+
+Amélioration — Barre de liaison et simulation
+
+• La barre OK/NOK sous la barre d’état est plus compacte et laisse la boussole visible
+• Paramètres du téléphone : Afficher la barre de liaison (affichée par défaut) — masquez-la si elle gêne
+• Paramètres / Options CBA : Simulation de liaison dégradée (désactivée par défaut) — pertes, fiabilité basse et coupures brèves simulées ; désactivée, l’affichage suit la vraie liaison
+• Important : relancez Arma complètement après installation du pack
+
 COMSPEC Overwatch 1.5.0 / Athena ATAK 1.0.63 — 01/09/2026
 
 Correction — Identité de l’opérateur
