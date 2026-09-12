@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.55 / Athena 1.0.100 — 2026-09-12
+
+### Amélioration — Messagerie : canaux, fil et Groups IceMan
+
+Dans Messagerie, vous créez un canal radio personnalisé depuis le téléphone. Le fil indique clairement De / Vous / Du poste avec un meilleur contraste. L’entrée IceMan Groups / Group Messages disparaît du tiroir : l’opérateur arrive sur Messagerie COMSPEC, en français.
+
+---
+
 ## Overwatch 1.5.54 / Athena 1.0.99 / liaison 2.0.32 — 2026-09-12
 
 ### Correction — Marqueurs téléphone → carte du poste
@@ -31,7 +39,7 @@ Dès que le canal poste est ouvert, la position part automatiquement vers le pos
 
 ### Nouveau — Messagerie ATAK avec canaux
 
-Application **Messagerie** COMSPEC dans le téléphone : canaux radio (Groupe, Commandement, Général, JTAC, Air + personnalisés), fil par canal, envoi vers le poste. Libellés en français. Group Messages IceMan reste en miroir.
+Application **Messagerie** COMSPEC dans le téléphone : canaux radio (Groupe, Commandement, Général, JTAC, Air + personnalisés), fil par canal, envoi vers le poste. Libellés en français. Groups / Group Messages IceMan est masqué au profit de Messagerie.
 
 ---
 

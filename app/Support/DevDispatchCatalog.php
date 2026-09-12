@@ -584,6 +584,17 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(521, '2026-09-12', 'Messagerie : canaux créés depuis le téléphone', 'Dans Messagerie, vous pouvez créer un canal radio personnalisé directement depuis le téléphone. Le fil indique clairement qui a écrit (Vous, De…, Du poste) avec un meilleur contraste. L’ancienne entrée Groups / Group Messages IceMan disparaît du tiroir : vous ouvrez Messagerie COMSPEC, en français', [
+                'Création d’un canal personnalisé (nom + Créer) depuis Messagerie',
+                'Fil plus lisible : expéditeur, heure, contraste, détail au survol',
+                'Groups / Group Messages IceMan masqué ; bascule vers Messagerie',
+            ], [], [
+                'Canal custom seulement depuis le journal web',
+                'Liste compacte peu lisible',
+                'Group Messages anglais encore accessible dans le tiroir',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.55 · Athena 1.0.100). Quittez Arma complètement. Ouvrez Messagerie : créez un canal, lisez le fil, vérifiez l’absence de Groups dans le tiroir.',
+            ], 'Overwatch 1.5.55 · Athena 1.0.100'),
             $pr(520, '2026-09-12', 'Les marqueurs du téléphone remontent au poste', 'Les repères posés sur la carte du téléphone (INF, Marker Widget, cTab) apparaissent désormais sur la carte du poste dès que le canal est ouvert, même si votre contact n’est pas encore visible dans Effectifs. Une liaison un peu dégradée ne fait plus perdre le marqueur : il repart dès que possible', [
                 'Pose d’un INF / repère ATAK → affichage au poste sous quelques secondes',
                 'Pas besoin d’être déjà dans Effectifs pour que le repère remonte',

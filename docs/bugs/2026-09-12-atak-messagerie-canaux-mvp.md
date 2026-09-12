@@ -1,7 +1,7 @@
-# Messagerie ATAK COMSPEC (canaux) — MVP
+# Messagerie ATAK COMSPEC (canaux) — MVP + suite
 
 **Date :** 2026-09-12  
-**Statut :** livré (MVP)
+**Statut :** livré
 
 ## Contexte
 
@@ -9,7 +9,7 @@ L’écran IceMan « Group Messages » est une liste plate en anglais, sans noti
 
 ## Approche retenue
 
-Messagerie **COMSPEC** native dans le téléphone ATAK (app « Messagerie »), branchée sur les canaux existants — pas de modification d’IceMan.
+Messagerie **COMSPEC** native dans le téléphone ATAK (app « Messagerie »), branchée sur les canaux existants — pas de modification du code IceMan.
 
 ## Livré
 
@@ -17,20 +17,17 @@ Messagerie **COMSPEC** native dans le téléphone ATAK (app « Messagerie »), b
 - Liste des canaux (système + custom via liaison)
 - Fil filtré par canal, envoi via le canal actif
 - Raccourci bureau, menu ACE, Ctrl+K → Messagerie
-- IceMan Group Messages reste en miroir pour compatibilité
-
-## Reporté
-
-- Création de canal custom depuis le téléphone (déjà possible depuis le journal web)
-- Bulles style IceMan (liste compacte pour le MVP)
-- Remplacement complet / masquage d’IceMan Group Messages
+- **Création de canal personnalisé** depuis le téléphone (champ + Créer)
+- **Fil plus lisible** : De / Vous / Du poste, horodatage, contrastes, info-bulle du texte complet
+- **Group Messages IceMan masqué** : retiré du tiroir ; toute ouverture résiduelle bascule vers Messagerie COMSPEC
 
 ## Versions
 
-Overwatch **1.5.49** · Athena **1.0.93**
+Overwatch **1.5.55** · Athena **1.0.100**
 
 ## Vérification
 
-1. Relancer Arma, ouvrir le téléphone → tiroir **Messagerie**
+1. Relancer Arma, ouvrir le téléphone → tiroir **Messagerie** (pas « Groups » / Group Messages)
 2. Choisir un canal, envoyer un message → visible au journal radio du poste
-3. Message poste sur le même canal → apparaît dans le fil en jeu
+3. Créer un canal (nom + Créer) → apparaît dans la liste et au poste
+4. Message poste sur le même canal → fil lisible (De / Vous / Du poste)

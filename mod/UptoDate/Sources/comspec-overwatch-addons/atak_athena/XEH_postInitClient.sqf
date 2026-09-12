@@ -85,6 +85,13 @@ private _ensureAtakApps = {
     if !(_apps isEqualType []) then { _apps = []; };
 
     private _changed = false;
+
+    // Masquer IceMan Groups (Group Messages anglais) — Messagerie COMSPEC suffit
+    if ("Group" in _apps) then {
+        _apps = _apps - ["Group"];
+        _changed = true;
+    };
+
     {
         private _app = _x;
         if (isClass (configFile >> "ATAK_APPs" >> _app) && {!(_app in _apps)}) then {
@@ -104,6 +111,22 @@ private _ensureAtakApps = {
 {
     [_ensureAtakApps, [], _x] call CBA_fnc_waitAndExecute;
 } forEach [2, 5, 10, 12];
+
+// Si IceMan ouvre encore Groups / Group Messages → bascule Messagerie COMSPEC
+if (!isNil "Iceman_fnc_group_onOpened") then {
+    Iceman_fnc_group_onOpened = {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+    };
+    missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
+};
+[{
+    if (!isNil "Iceman_fnc_group_onOpened") then {
+        Iceman_fnc_group_onOpened = {
+            [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+        };
+        missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
+    };
+}, [], 8] call CBA_fnc_waitAndExecute;
 
 // Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)
 [] call comspec_overwatch_atak_athena_fnc_athena_installDesktopShortcut;

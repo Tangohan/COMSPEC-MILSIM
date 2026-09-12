@@ -35,8 +35,23 @@ if ((count _rx) > 0) then {
 _key = toLower (trim _key);
 if (_key isEqualTo "") then { _key = "general"; };
 
+private _channels = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
+if (!(_channels isEqualType [])) then { _channels = []; };
+private _exists = false;
+{
+    if ((toLower (trim (_x param [0, ""]))) isEqualTo _key) exitWith { _exists = true; };
+} forEach _channels;
+if (!_exists) then {
+    _channels pushBack [_key, _label, "custom"];
+    missionNamespace setVariable ["COMSPEC_Comms_Channels", _channels, false];
+};
+
 missionNamespace setVariable ["COMSPEC_Comms_Channel", _key, false];
 ["INFO", "Radio", format ["Canal créé — %1 (%2)", _label, _key]] call comspec_overwatch_connect_fnc_log;
 ["COMSPEC_Info", [format ["Canal « %1 » créé.", _label]]] call comspec_overwatch_connect_fnc_showNotification;
 ["Canal radio créé.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+
+if (!isNil "comspec_overwatch_connect_fnc_pollChatChannels") then {
+    [] call comspec_overwatch_connect_fnc_pollChatChannels;
+};
 true

@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.099;
-        versionStr = "1.0.99";
-        versionAr[] = {1, 0, 99};
+        version = 1.101;
+        versionStr = "1.0.101";
+        versionAr[] = {1, 0, 101};
     };
 };
 
@@ -108,6 +108,7 @@ class CfgFunctions
             class athena_connectionToggleAdvanced {};
             class athena_phoneProximitySave {};
             class athena_ecotiHudSave {};
+            class athena_ecotiCutawaySave {};
             class athena_phoneProximityTick {};
             class athena_phoneProximityAlert {};
             class athena_hookPhoneGeolocMap {};
@@ -134,6 +135,7 @@ class CfgFunctions
             class athena_updateComms {};
             class athena_commsSelectChannel {};
             class athena_commsSend {};
+            class athena_commsCreateChannel {};
             class athena_openComms {};
             class athena_bftUnitLabel {};
             class athena_fillIdentityOverlay {};
@@ -256,6 +258,19 @@ class RscControlsGroup;
 class ATAK_APPs
 {
     class message;
+    // IceMan « Groups / Group Messages » → Messagerie COMSPEC (canaux, français)
+    class Group: message
+    {
+        text = "<t size='1'>Messagerie</t>";
+        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.11;
+            PAGE_CTRL = "COMSPEC_ATAK_Comms";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+        };
+    };
     class Athena: message
     {
         text = "<t size='1'>Athena</t>";
@@ -407,6 +422,18 @@ class RscTitles
     class ATAK_APPs
     {
         class message;
+        class Group: message
+        {
+            text = "<t size='1'>Messagerie</t>";
+            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.11;
+                PAGE_CTRL = "COMSPEC_ATAK_Comms";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+            };
+        };
         class Athena: message
         {
             text = "<t size='1'>Athena</t>";

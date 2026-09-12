@@ -65,10 +65,10 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9921;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(0.58));
+            y = QUOTE(COMSPEC_COMMS_H(0.56));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(0.36));
-            size = QUOTE(COMSPEC_COMMS_H(0.28));
+            h = QUOTE(COMSPEC_COMMS_H(0.34));
+            size = QUOTE(COMSPEC_COMMS_H(0.26));
             text = "";
             colorBackground[] = COMMS_BG_STRIP;
             class Attributes
@@ -86,33 +86,63 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9922;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(0.98));
+            y = QUOTE(COMSPEC_COMMS_H(0.94));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(1.40));
+            h = QUOTE(COMSPEC_COMMS_H(1.10));
             colorBackground[] = {0.09, 0.09, 0.09, 0.94};
             colorSelect[] = ATAK_LIST_SEL;
             colorSelect2[] = ATAK_LIST_SEL;
             colorSelectBackground[] = ATAK_LIST_SEL_BG;
             colorSelectBackground2[] = ATAK_LIST_SEL_BG;
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.34));
-            rowHeight = QUOTE(COMSPEC_COMMS_H(0.42));
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.32));
+            rowHeight = QUOTE(COMSPEC_COMMS_H(0.40));
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_commsSelectChannel";
+        };
+
+        class ChannelCreateEdit: RscEdit
+        {
+            idc = 9927;
+            x = QUOTE(COMSPEC_COMMS_W(0.08));
+            y = QUOTE(COMSPEC_COMMS_H(2.10));
+            w = QUOTE(COMSPEC_COMMS_W(2.00));
+            h = QUOTE(COMSPEC_COMMS_H(0.48));
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.28));
+            colorBackground[] = ATAK_BG_EDIT;
+            colorText[] = {0.95, 0.96, 0.97, 1};
+            text = "";
+        };
+
+        class BtnCreateChannel: COMSPEC_ATAK_Btn
+        {
+            idc = 9928;
+            x = QUOTE(COMSPEC_COMMS_W(2.14));
+            y = QUOTE(COMSPEC_COMMS_H(2.10));
+            w = QUOTE(COMSPEC_COMMS_W(0.78));
+            h = QUOTE(COMSPEC_COMMS_H(0.48));
+            size = QUOTE(COMSPEC_COMMS_H(0.28));
+            text = "Créer";
+            colorBackground[] = COMMS_BTN;
+            colorBackground2[] = COMMS_BTN;
+            colorBackgroundFocused[] = COMMS_BTN_F;
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_commsCreateChannel";
+            tooltip = "Créer un canal radio personnalisé (visible au journal du poste).";
         };
 
         class MessageList: RscListBox
         {
             idc = 9923;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(2.46));
+            y = QUOTE(COMSPEC_COMMS_H(2.66));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(3.40));
-            colorBackground[] = {0.08, 0.09, 0.10, 0.96};
-            colorSelect[] = ATAK_LIST_SEL;
-            colorSelect2[] = ATAK_LIST_SEL;
-            colorSelectBackground[] = {0.12, 0.18, 0.22, 0.90};
-            colorSelectBackground2[] = {0.12, 0.18, 0.22, 0.90};
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.30));
-            rowHeight = QUOTE(COMSPEC_COMMS_H(0.52));
+            h = QUOTE(COMSPEC_COMMS_H(3.20));
+            colorBackground[] = {0.06, 0.07, 0.08, 0.97};
+            colorText[] = {0.92, 0.94, 0.93, 1};
+            colorSelect[] = {0.95, 0.98, 1, 1};
+            colorSelect2[] = {0.95, 0.98, 1, 1};
+            colorSelectBackground[] = {0.10, 0.18, 0.24, 0.92};
+            colorSelectBackground2[] = {0.10, 0.18, 0.24, 0.92};
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.28));
+            rowHeight = QUOTE(COMSPEC_COMMS_H(0.62));
         };
 
         class Compose: RscEdit
