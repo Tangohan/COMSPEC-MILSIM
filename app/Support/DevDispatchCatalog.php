@@ -584,6 +584,11 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(524, '2026-09-13', 'Chaîne de commandement en pleine largeur', 'Sur le tableau de bord, la section Chaîne de commandement occupe désormais toute la largeur de la zone principale, collée aux bords gauche et droit, pour mieux lire l’organigramme RH', [
+                'Section Chaîne de commandement en bande dédiée, sans marge latérale',
+            ], [], [], ['personnel', 'command'], [
+                'Ouvrez le tableau de bord Athena : la chaîne de commandement s’affiche sur toute la largeur utile.',
+            ], 'Athena'),
             $pr(523, '2026-09-12', 'Barre de liaison masquable et simulation désactivable', 'Sous la barre d’état du téléphone, la barre de liaison est plus compacte et laisse la boussole visible. Dans Paramètres, vous pouvez masquer cette barre. Une Simulation de liaison dégradée (désactivée par défaut) permet de reproduire pertes, fiabilité basse et coupures brèves ; quand elle est désactivée, l’affichage suit uniquement la vraie liaison', [
                 'Barre de liaison plus courte, à gauche, pour ne plus masquer la boussole',
                 'Paramètres : Afficher la barre de liaison (affichée par défaut)',

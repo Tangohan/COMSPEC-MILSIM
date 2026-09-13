@@ -36,6 +36,7 @@ final class DashboardOrbatAssetTest extends TestCase
 
         self::assertStringContainsString('.dash-orbat__person--lead', $css);
         self::assertStringContainsString('border-radius: 999px', $css);
+        self::assertStringContainsString('max-width: none', $css);
         self::assertStringNotContainsString('purple', strtolower($css));
 
         self::assertStringContainsString('DashboardOrbatTree::buildForTenant', $home);
