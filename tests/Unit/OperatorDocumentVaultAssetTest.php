@@ -35,8 +35,11 @@ final class OperatorDocumentVaultAssetTest extends TestCase
         self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
         self::assertStringContainsString('bo-dossier-hero', $view);
         self::assertStringContainsString('bo-doc-sheet', $view);
+        self::assertStringContainsString('bo-doc-card__body--actions', $view);
         self::assertStringContainsString('Mon coffre', $view);
+        self::assertStringNotContainsString('bo-doc-card__date', $view);
         self::assertStringContainsString('bo-member-situation__list-item', $css);
+        self::assertStringContainsString('bo-doc-card__body--actions', $css);
         self::assertStringContainsString('PersonnelHrWorkspaceSettings::VISIBILITY_MEMBER', $pdf);
         self::assertStringContainsString("'default_visibility' => self::VISIBILITY_MEMBER", $settings);
     }

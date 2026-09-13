@@ -89,62 +89,33 @@ foreach ($awards as $row) {
                 $tone = (string) ($status['tone'] ?? '');
                 ?>
                 <article class="bo-doc-card">
-                    <div class="bo-doc-sheet" aria-hidden="true">
+                    <div class="bo-doc-sheet">
                         <div class="bo-doc-sheet__top">
                             <span class="bo-doc-sheet__seal">RH</span>
                             <span class="bo-doc-sheet__kind">Brevet</span>
                         </div>
-                        <p class="bo-doc-sheet__org"><?= $h($issuer !== '' ? $issuer : 'Communauté') ?></p>
-                        <p class="bo-doc-sheet__title"><?= $h($name) ?></p>
+                        <p class="bo-doc-sheet__org">
+                            <?= $h($issuer !== '' ? $issuer : 'Communauté') ?>
+                            <?php if ($category !== ''): ?>
+                                · <?= $h($category) ?>
+                            <?php endif; ?>
+                        </p>
+                        <h3 class="bo-doc-sheet__title"><?= $h($name) ?></h3>
                         <?php if ($level !== ''): ?>
                             <p class="bo-doc-sheet__level"><?= $h($level) ?></p>
                         <?php endif; ?>
                         <div class="bo-doc-sheet__meta">
                             <span><?= $obtainedTs !== false ? $h(date('d/m/Y', $obtainedTs)) : '—' ?></span>
-                            <span><?= $certNumber !== '' ? $h($certNumber) : 'Sans n°' ?></span>
+                            <span class="bo-doc-sheet__status<?= $tone !== '' ? ' is-' . $h($tone) : '' ?>"><?= $h((string) $status['label']) ?></span>
                         </div>
+                        <?php if ($certNumber !== '' || $expiresTs !== false): ?>
+                            <div class="bo-doc-sheet__meta bo-doc-sheet__meta--secondary">
+                                <span><?= $certNumber !== '' ? $h($certNumber) : 'Sans n°' ?></span>
+                                <span><?= $expiresTs !== false ? 'Jusqu’au ' . $h(date('d/m/Y', $expiresTs)) : 'Sans échéance' ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
-
-                    <div class="bo-doc-card__body">
-                        <div class="bo-doc-card__head">
-                            <?php if ($category !== ''): ?>
-                                <p class="bo-member-situation__kicker"><?= $h($category) ?></p>
-                            <?php endif; ?>
-                            <span class="bo-member-situation__badge<?= $tone !== '' ? ' is-' . $h($tone) : '' ?>"><?= $h((string) $status['label']) ?></span>
-                        </div>
-                        <h3><?= $h($name) ?></h3>
-                        <dl class="bo-doc-card__dl">
-                            <?php if ($level !== ''): ?>
-                            <div>
-                                <dt>Niveau</dt>
-                                <dd><?= $h($level) ?></dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($issuer !== ''): ?>
-                            <div>
-                                <dt>Délivré par</dt>
-                                <dd><?= $h($issuer) ?></dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($obtainedTs !== false): ?>
-                            <div>
-                                <dt>Obtenue le</dt>
-                                <dd><?= $h(date('d/m/Y', $obtainedTs)) ?></dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($expiresTs !== false): ?>
-                            <div>
-                                <dt>Valable jusqu’au</dt>
-                                <dd><?= $h(date('d/m/Y', $expiresTs)) ?></dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($certNumber !== ''): ?>
-                            <div>
-                                <dt>Référence</dt>
-                                <dd><?= $h($certNumber) ?></dd>
-                            </div>
-                            <?php endif; ?>
-                        </dl>
+                    <div class="bo-doc-card__body bo-doc-card__body--actions">
                         <div class="bo-doc-card__actions">
                             <?php if ($hasCert && $id > 0): ?>
                                 <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/qualifications/' . $id . '/brevet')) ?>">Ouvrir le brevet PDF</a>

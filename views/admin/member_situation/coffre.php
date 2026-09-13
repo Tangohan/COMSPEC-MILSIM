@@ -122,29 +122,45 @@ $sectionMeta = [
                         $downloadUrl = trim((string) ($item['download_url'] ?? ''));
                         $downloadLabel = (string) ($item['download_label'] ?? 'Ouvrir');
                         ?>
+                        <?php
+                        // Ne pas répéter une mention générique déjà portée par la section / le statut.
+                        $extraDetail = $detail;
+                        if ($extraDetail !== '') {
+                            $genericDetails = [
+                                'Attestation de formation',
+                                'Mention au dossier',
+                                (string) $meta['kind'],
+                                (string) $meta['label'],
+                                $status,
+                                $subtitle,
+                            ];
+                            foreach ($genericDetails as $generic) {
+                                if ($generic !== '' && strcasecmp($extraDetail, $generic) === 0) {
+                                    $extraDetail = '';
+                                    break;
+                                }
+                            }
+                        }
+                        ?>
                         <article class="bo-doc-card">
-                            <div class="bo-doc-sheet" aria-hidden="true">
+                            <div class="bo-doc-sheet">
                                 <div class="bo-doc-sheet__top">
                                     <span class="bo-doc-sheet__seal"><?= $h((string) $meta['kind']) ?></span>
                                     <span class="bo-doc-sheet__kind"><?= $h((string) $meta['label']) ?></span>
                                 </div>
-                                <p class="bo-doc-sheet__org"><?= $h($subtitle !== '' ? $subtitle : (string) $meta['label']) ?></p>
-                                <p class="bo-doc-sheet__title"><?= $h($title) ?></p>
+                                <?php if ($subtitle !== ''): ?>
+                                    <p class="bo-doc-sheet__org"><?= $h($subtitle) ?></p>
+                                <?php endif; ?>
+                                <h3 class="bo-doc-sheet__title"><?= $h($title) ?></h3>
+                                <?php if ($extraDetail !== ''): ?>
+                                    <p class="bo-doc-sheet__level"><?= $h($extraDetail) ?></p>
+                                <?php endif; ?>
                                 <div class="bo-doc-sheet__meta">
                                     <span><?= $h($formatDate($issued)) ?></span>
                                     <span><?= $h($status) ?></span>
                                 </div>
                             </div>
-                            <div class="bo-doc-card__body">
-                                <div class="bo-doc-card__head">
-                                    <p class="bo-member-situation__kicker"><?= $h($subtitle) ?></p>
-                                    <span class="bo-member-situation__badge"><?= $h($status) ?></span>
-                                </div>
-                                <h3><?= $h($title) ?></h3>
-                                <?php if ($detail !== ''): ?>
-                                    <p class="bo-doc-card__detail"><?= $h($detail) ?></p>
-                                <?php endif; ?>
-                                <p class="bo-doc-card__date">Date · <?= $h($formatDate($issued)) ?></p>
+                            <div class="bo-doc-card__body bo-doc-card__body--actions">
                                 <div class="bo-doc-card__actions">
                                     <?php if ($downloadUrl !== ''): ?>
                                         <a class="ath-btn ath-btn--solid" href="<?= $h($downloadUrl) ?>"><?= $h($downloadLabel) ?></a>
