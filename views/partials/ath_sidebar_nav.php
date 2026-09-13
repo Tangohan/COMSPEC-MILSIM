@@ -66,6 +66,7 @@ $navAtakDevicesActive = str_starts_with($p, 'back-office/atak/realisme');
 $navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
 $navAtakSessionsActive = $boNavAtakOperators;
 $navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
+$navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay') || str_starts_with($p, 'admin/atak/roleplay');
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
@@ -85,6 +86,18 @@ $boNavCooperationAnnouncements = !empty($boNavCooperationAnnouncements);
 $recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
     ? ($boRecN > 99 ? '99+' : (string) $boRecN)
     : null;
+
+$fmtNavBadge = static function (int $n): ?string {
+    if ($n < 1) {
+        return null;
+    }
+
+    return $n > 99 ? '99+' : (string) $n;
+};
+$opInboxBadge = $fmtNavBadge((int) ($boBadges['messages_unread'] ?? $boBadges['personal_inbox'] ?? 0));
+$opEventsBadge = $fmtNavBadge((int) ($boBadges['events_rsvp_pending'] ?? 0));
+$opQualifBadge = $fmtNavBadge((int) ($boBadges['qualifications_expiring'] ?? 0));
+$opDemarchesBadge = $fmtNavBadge((int) ($boBadges['my_enlistments_pending'] ?? 0));
 
 $membersChildren = array_values(array_filter([
     ['label' => 'Accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive],
@@ -135,6 +148,7 @@ $atakDeviceChildren = array_values(array_filter([
     ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
+    ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'active' => $navAtakRoleplayActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $jnetChildren = [
@@ -275,11 +289,12 @@ $athNavGroups = [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),
                 'icon' => 'phone',
-                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive,
+                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive,
                 'children' => $atakDeviceChildren,
             ],
             ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],
             ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'icon' => 'cert', 'active' => $navAtakCertsActive, 'warn' => true],
+            ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'icon' => 'roleplay', 'active' => $navAtakRoleplayActive],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [
@@ -303,12 +318,44 @@ if ($isOperatorBoNav) {
             ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => str_starts_with($p, 'back-office/ma-situation/ma-fiche') || $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
             ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => false],
             ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
-            ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications'), 'icon' => 'cert', 'active' => str_starts_with($p, 'back-office/ma-situation/qualifications')],
-            ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh')],
+            [
+                'label' => 'Mes qualifications',
+                'href' => url('back-office/ma-situation/qualifications'),
+                'icon' => 'cert',
+                'active' => str_starts_with($p, 'back-office/ma-situation/qualifications'),
+                'badge' => $opQualifBadge,
+                'warn' => $opQualifBadge !== null,
+                'notif' => $opQualifBadge !== null,
+            ],
+            [
+                'label' => 'Mes démarches',
+                'href' => url('back-office/ma-situation/mes-demarches'),
+                'icon' => 'path',
+                'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh'),
+                'badge' => $opDemarchesBadge,
+                'warn' => $opDemarchesBadge !== null,
+                'notif' => $opDemarchesBadge !== null,
+            ],
             ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
-            ['label' => 'Événements', 'href' => url('evenements'), 'icon' => 'cal', 'active' => $p === 'evenements' || str_starts_with($p, 'evenements/')],
+            [
+                'label' => 'Événements',
+                'href' => url('back-office/ma-situation/evenements'),
+                'icon' => 'cal',
+                'active' => $p === 'evenements' || str_starts_with($p, 'evenements/') || str_starts_with($p, 'back-office/ma-situation/evenements'),
+                'badge' => $opEventsBadge,
+                'warn' => $opEventsBadge !== null,
+                'notif' => $opEventsBadge !== null,
+            ],
             ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
-            ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'icon' => 'mail', 'active' => $p === 'boite-reception'],
+            [
+                'label' => 'Boîte de réception',
+                'href' => url('boite-reception'),
+                'icon' => 'mail',
+                'active' => $p === 'boite-reception',
+                'badge' => $opInboxBadge,
+                'warn' => $opInboxBadge !== null,
+                'notif' => $opInboxBadge !== null,
+            ],
             ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'gear', 'active' => $p === 'account' || str_starts_with($p, 'account/')],
         ],
     ]);
@@ -386,6 +433,7 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
     $showKids = $children !== [] && ($selfActive || $childActive);
     $badge = isset($item['badge']) && (string) $item['badge'] !== '' ? (string) $item['badge'] : null;
     $warn = !empty($item['warn']);
+    $notif = !empty($item['notif']);
     $iconMarkup = $athIco((string) ($item['icon'] ?? ''));
     ?>
     <div class="ath-sidebar__nav-block">
@@ -393,7 +441,7 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
             <?php if ($iconMarkup !== ''): ?><?= $iconMarkup ?><?php endif; ?>
             <span class="ath-sidebar__item-label"><?= $h((string) $item['label']) ?></span>
             <?php if ($badge !== null): ?>
-                <span class="ath-sidebar__item-badge<?= $warn ? ' ath-sidebar__item-badge--warn' : '' ?>"><?= $h($badge) ?></span>
+                <span class="ath-sidebar__item-badge<?= $warn ? ' ath-sidebar__item-badge--warn' : '' ?><?= $notif ? ' ath-sidebar__item-badge--notif' : '' ?>"><?= $h($badge) ?></span>
             <?php endif; ?>
         </a>
         <?php if ($showKids): ?>

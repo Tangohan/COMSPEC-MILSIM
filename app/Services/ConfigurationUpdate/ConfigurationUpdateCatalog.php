@@ -207,7 +207,7 @@ final class ConfigurationUpdateCatalog
                 title: 'Données chiffrées ATAK',
                 description: 'Décidez si le journal radio, les ordres et la carte masquent les informations lorsque le certificat d’un appareil est invalide, ou si un terminal est capturé. À activer dans le mode roleplay ATAK.',
                 level: ConfigurationUpdateDefinition::LEVEL_INFORMATIVE,
-                configurePath: 'admin/atak/roleplay#intel-scramble',
+                configurePath: 'back-office/atak/roleplay#intel-scramble',
                 estimateMinutes: 3,
                 dismissible: true,
                 blocking: false,

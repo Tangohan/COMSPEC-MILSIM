@@ -260,7 +260,7 @@ SQL
             'title' => 'Données chiffrées ATAK',
             'description' => 'Décidez si le journal radio, les ordres et la carte masquent les informations lorsque le certificat d’un appareil est invalide, ou si un terminal est capturé. À activer dans le mode roleplay ATAK.',
             'configuration_level' => 'informative',
-            'configure_path' => 'admin/atak/roleplay#intel-scramble',
+            'configure_path' => 'back-office/atak/roleplay#intel-scramble',
             'estimate_minutes' => 3,
             'mandatory' => 0,
             'blocking' => 0,

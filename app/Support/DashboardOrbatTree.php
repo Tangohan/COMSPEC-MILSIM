@@ -236,6 +236,9 @@ final class DashboardOrbatTree
             }
         }
 
+        $icon = trim((string) ($node['chartIconUrl'] ?? ''));
+        $image = trim((string) ($node['chartImageUrl'] ?? ''));
+
         return [
             'unit_id' => (int) ($node['unitId'] ?? 0),
             'label' => (string) ($node['label'] ?? 'Unité'),
@@ -244,6 +247,8 @@ final class DashboardOrbatTree
             'strength' => (int) ($node['strength'] ?? count($members)),
             'leader' => (string) ($node['leader'] ?? '—'),
             'mission' => (string) ($node['mission'] ?? ''),
+            'icon_url' => $icon !== '' ? $icon : null,
+            'image_url' => $image !== '' ? $image : null,
             'commander' => $commander,
             'members' => $members,
             'children' => $children,

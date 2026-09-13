@@ -34,7 +34,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
         <p class="mt-2 text-sm text-slate-600">Cycle de vie des certificats client, réseaux de chiffrement et échéances à surveiller.</p>
         <div class="mt-4 flex flex-wrap gap-2">
             <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
-            <a href="<?= $h(url('admin/atak/roleplay#intel-scramble')) ?>" class="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100">Données chiffrées</a>
+            <a href="<?= $h(url('back-office/atak/roleplay#intel-scramble')) ?>" class="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100">Données chiffrées</a>
         </div>
     </header>
 

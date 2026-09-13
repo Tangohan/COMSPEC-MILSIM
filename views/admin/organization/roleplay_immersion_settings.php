@@ -44,7 +44,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $followupUrl = url('back-office/roleplay-followup');
 $deadlinesUrl = url('back-office/roleplay-followup/echeances');
 $personnelUrl = url('personnel');
-$atakRoleplayUrl = url('admin/atak/roleplay');
+$atakRoleplayUrl = url('back-office/atak/roleplay');
 $phaseRulesUrl = url('back-office/roleplay/regles-phases');
 $sessionsUrl = url('back-office/roleplay/sessions');
 
