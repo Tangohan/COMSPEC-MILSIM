@@ -148,46 +148,75 @@ foreach ($docs as $d) {
     <section class="eff-rh-form" aria-labelledby="eff-docs-pdf-title">
         <div class="eff-rh-form__head">
             <h2 id="eff-docs-pdf-title" class="eff-rh-form__title">Établir une pièce</h2>
-            <p class="eff-rh-form__lead">La communauté produit une pièce datée (charte, certificat, décision d’affectation ou évaluation) et la range dans le coffre. Vous pouvez aussi déposer un fichier déjà signé ci-dessus.</p>
+            <p class="eff-rh-form__lead">La communauté produit une pièce A4 datée — en-tête, objet, corps de texte, visas — puis la range dans le coffre. Vous pouvez aussi déposer un fichier déjà signé ci-dessus.</p>
         </div>
-        <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh/etablir')) ?>" class="eff-rh-form__grid">
-            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-            <div class="eff-rh-field">
-                <span class="eff-rh-field__label">Membre</span>
-                <select name="user_id" required aria-label="Membre pour la pièce">
-                    <option value="">Choisir un membre…</option>
-                    <?php foreach ($users as $u): ?>
-                        <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h(trim((string) ($u['display_name'] ?? '')) ?: (string) ($u['email'] ?? '')) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="eff-rh-field">
-                <span class="eff-rh-field__label">Type de pièce</span>
-                <select name="doc_type" aria-label="Type de pièce">
-                    <?php foreach ($pdfTypes as $k => $lab): ?>
-                        <option value="<?= $h((string) $k) ?>"><?= $h((string) $lab) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="eff-rh-field">
-                <span class="eff-rh-field__label">Titre</span>
-                <input type="text" name="title" maxlength="200" placeholder="Laisser vide pour le titre du type" aria-label="Titre de la pièce">
-            </div>
-            <div class="eff-rh-field">
-                <span class="eff-rh-field__label">Visibilité</span>
-                <select name="visibility" aria-label="Visibilité de la pièce établie">
-                    <option value="STAFF" <?= $defaultVisibility === 'STAFF' ? 'selected' : '' ?>>État-major uniquement</option>
-                    <option value="MEMBER" <?= $defaultVisibility === 'MEMBER' ? 'selected' : '' ?>>Visible du membre</option>
-                </select>
-            </div>
-            <div class="eff-rh-field eff-rh-field--wide">
-                <span class="eff-rh-field__label">Mention complémentaire</span>
-                <input type="text" name="detail" maxlength="500" placeholder="Unité, période, décision…" aria-label="Mention complémentaire">
-            </div>
-            <div class="eff-rh-form__actions">
-                <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Établir et ranger</button>
-            </div>
-        </form>
+        <div class="eff-rh-issue">
+            <form method="post" action="<?= $h(effectifs_workspace_url('documents-rh/etablir')) ?>" class="eff-rh-form__grid" data-rh-issue-form>
+                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                <div class="eff-rh-field">
+                    <span class="eff-rh-field__label">Membre</span>
+                    <select name="user_id" required aria-label="Membre pour la pièce" data-rh-issue-member>
+                        <option value="">Choisir un membre…</option>
+                        <?php foreach ($users as $u): ?>
+                            <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h(trim((string) ($u['display_name'] ?? '')) ?: (string) ($u['email'] ?? '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="eff-rh-field">
+                    <span class="eff-rh-field__label">Type de pièce</span>
+                    <select name="doc_type" aria-label="Type de pièce" data-rh-issue-type>
+                        <?php foreach ($pdfTypes as $k => $lab): ?>
+                            <option value="<?= $h((string) $k) ?>"><?= $h((string) $lab) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="eff-rh-field">
+                    <span class="eff-rh-field__label">Titre</span>
+                    <input type="text" name="title" maxlength="200" placeholder="Laisser vide pour le titre du type" aria-label="Titre de la pièce" data-rh-issue-title>
+                </div>
+                <div class="eff-rh-field">
+                    <span class="eff-rh-field__label">Visibilité</span>
+                    <select name="visibility" aria-label="Visibilité de la pièce établie">
+                        <option value="STAFF" <?= $defaultVisibility === 'STAFF' ? 'selected' : '' ?>>État-major uniquement</option>
+                        <option value="MEMBER" <?= $defaultVisibility === 'MEMBER' ? 'selected' : '' ?>>Visible du membre</option>
+                    </select>
+                </div>
+                <div class="eff-rh-field eff-rh-field--wide">
+                    <span class="eff-rh-field__label">Mention complémentaire</span>
+                    <input type="text" name="detail" maxlength="500" placeholder="Unité, période, décision, objectifs…" aria-label="Mention complémentaire" data-rh-issue-detail>
+                </div>
+                <div class="eff-rh-form__actions">
+                    <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Établir et ranger</button>
+                </div>
+            </form>
+            <aside class="eff-rh-paper" aria-label="Aperçu de la pièce" data-rh-issue-preview>
+                <div class="eff-rh-paper__sheet">
+                    <header class="eff-rh-paper__brand">
+                        <span class="eff-rh-paper__mark" aria-hidden="true">RH</span>
+                        <div>
+                            <p class="eff-rh-paper__kicker">Dossier individuel · Ressources humaines</p>
+                            <p class="eff-rh-paper__org">Communauté</p>
+                        </div>
+                        <p class="eff-rh-paper__ref">Réf.<strong data-rh-prev-ref>RH-CER-…</strong></p>
+                    </header>
+                    <p class="eff-rh-paper__badge" data-rh-prev-badge>Certificat interne</p>
+                    <h3 class="eff-rh-paper__title" data-rh-prev-title>Certificat interne</h3>
+                    <p class="eff-rh-paper__object"><span>Objet</span> <em data-rh-prev-object>Attestation de parcours</em></p>
+                    <dl class="eff-rh-paper__meta">
+                        <div><dt>Intéressé(e)</dt><dd data-rh-prev-member>Membre à désigner</dd></div>
+                        <div><dt>Date</dt><dd><?= $h(date('d/m/Y')) ?></dd></div>
+                    </dl>
+                    <div class="eff-rh-paper__body" data-rh-prev-body>
+                        <p>Le PDF généré reprend un en-tête officiel, un corps de texte structuré et des zones de visa.</p>
+                    </div>
+                    <footer class="eff-rh-paper__sigs">
+                        <div><span>Visa intéressé(e)</span></div>
+                        <div><span>Autorité émettrice</span></div>
+                    </footer>
+                </div>
+                <p class="eff-rh-paper__hint">Aperçu indicatif — le PDF final contient le texte complet, la référence et les blocs de signature.</p>
+            </aside>
+        </div>
     </section>
     <?php endif; ?>
 
@@ -262,13 +291,98 @@ foreach ($docs as $d) {
 (function () {
     var input = document.querySelector('.eff-rh-deposit__input');
     var nameEl = document.querySelector('[data-deposit-name]');
-    if (!input || !nameEl) {
+    if (input && nameEl) {
+        input.addEventListener('change', function () {
+            var file = input.files && input.files[0];
+            nameEl.textContent = file ? file.name : 'Aucun fichier choisi';
+            nameEl.classList.toggle('is-set', !!file);
+        });
+    }
+
+    var form = document.querySelector('[data-rh-issue-form]');
+    var preview = document.querySelector('[data-rh-issue-preview]');
+    if (!form || !preview) {
         return;
     }
-    input.addEventListener('change', function () {
-        var file = input.files && input.files[0];
-        nameEl.textContent = file ? file.name : 'Aucun fichier choisi';
-        nameEl.classList.toggle('is-set', !!file);
+
+    var copy = {
+        charte: {
+            badge: 'Charte signée',
+            title: 'Charte signée',
+            object: 'Prise de connaissance de la charte',
+            body: 'Constate la prise de connaissance de la charte et l’engagement à en respecter les principes de conduite et de cohésion.'
+        },
+        reglement: {
+            badge: 'Règlement',
+            title: 'Règlement intérieur',
+            object: 'Prise de connaissance du règlement intérieur',
+            body: 'Atteste la communication du règlement (service, sécurité, moyens collectifs) et sa prise de connaissance à la date de la pièce.'
+        },
+        certificat: {
+            badge: 'Certificat interne',
+            title: 'Certificat interne',
+            object: 'Attestation de parcours / appartenance',
+            body: 'Certifie l’appartenance aux effectifs et le parcours du membre, pour mobilité, intégration ou dossier administratif.'
+        },
+        affectation: {
+            badge: 'Décision d’affectation',
+            title: 'Décision d’affectation',
+            object: 'Décision d’affectation',
+            body: 'Formalise l’affectation retenue, sa prise d’effet et les responsabilités attachées au poste.'
+        },
+        evaluation: {
+            badge: 'Évaluation',
+            title: 'Évaluation',
+            object: 'Évaluation portée au dossier',
+            body: 'Synthèse d’appréciation (tenue, implication, compétences) et mentions de progression éventuelles.'
+        }
+    };
+
+    var memberSel = form.querySelector('[data-rh-issue-member]');
+    var typeSel = form.querySelector('[data-rh-issue-type]');
+    var titleIn = form.querySelector('[data-rh-issue-title]');
+    var detailIn = form.querySelector('[data-rh-issue-detail]');
+    var elBadge = preview.querySelector('[data-rh-prev-badge]');
+    var elTitle = preview.querySelector('[data-rh-prev-title]');
+    var elObject = preview.querySelector('[data-rh-prev-object]');
+    var elMember = preview.querySelector('[data-rh-prev-member]');
+    var elBody = preview.querySelector('[data-rh-prev-body]');
+    var elRef = preview.querySelector('[data-rh-prev-ref]');
+
+    function selectedMember() {
+        if (!memberSel || !memberSel.selectedOptions.length) {
+            return 'Membre à désigner';
+        }
+        var opt = memberSel.selectedOptions[0];
+        var label = (opt.textContent || '').trim();
+        return opt.value && label ? label : 'Membre à désigner';
+    }
+
+    function refreshPreview() {
+        var type = typeSel ? typeSel.value : 'certificat';
+        var spec = copy[type] || copy.certificat;
+        var member = selectedMember();
+        var title = titleIn && titleIn.value.trim() ? titleIn.value.trim() : spec.title;
+        var detail = detailIn && detailIn.value.trim() ? detailIn.value.trim() : '';
+        var prefix = { charte: 'CHA', reglement: 'REG', certificat: 'CER', affectation: 'AFF', evaluation: 'EVA' }[type] || 'RH';
+
+        if (elBadge) elBadge.textContent = spec.badge;
+        if (elTitle) elTitle.textContent = title;
+        if (elObject) elObject.textContent = spec.object + ' — ' + member;
+        if (elMember) elMember.textContent = member;
+        if (elRef) elRef.textContent = 'RH-' + prefix + '-…';
+        if (elBody) {
+            var html = '<p>' + spec.body + '</p>';
+            if (detail) {
+                html += '<p><strong>Mentions :</strong> ' + detail.replace(/</g, '&lt;') + '</p>';
+            }
+            elBody.innerHTML = html;
+        }
+    }
+
+    ['change', 'input'].forEach(function (evt) {
+        form.addEventListener(evt, refreshPreview);
     });
+    refreshPreview();
 })();
 </script>

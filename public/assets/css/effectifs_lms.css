@@ -3570,6 +3570,181 @@ fieldset.eff-role-grid input { width: auto; }
     justify-content: flex-end;
     padding-top: 0.25rem;
 }
+.eff-rh-issue {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+}
+@media (min-width: 960px) {
+    .eff-rh-issue {
+        grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
+        gap: 1.25rem;
+    }
+}
+.eff-rh-paper {
+    min-width: 0;
+}
+.eff-rh-paper__sheet {
+    position: relative;
+    padding: 1rem 1.05rem 1.15rem;
+    border: 1px solid #c9d3d8;
+    background:
+        linear-gradient(180deg, #fbfcfc 0%, #f4f7f8 100%);
+    color: #14202a;
+    box-shadow: 0 10px 28px rgba(15, 26, 34, 0.08);
+}
+.eff-rh-paper__sheet::before {
+    content: "";
+    position: absolute;
+    inset: 0.45rem;
+    border: 1px solid rgba(138, 160, 171, 0.55);
+    pointer-events: none;
+}
+.eff-rh-paper__brand {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.65rem;
+    align-items: start;
+    margin-bottom: 0.85rem;
+}
+.eff-rh-paper__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 1.5px solid #1b2a33;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.eff-rh-paper__kicker {
+    margin: 0;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5b6a73;
+}
+.eff-rh-paper__org {
+    margin: 0.2rem 0 0;
+    font-size: 0.875rem;
+    font-weight: 800;
+}
+.eff-rh-paper__ref {
+    margin: 0;
+    text-align: right;
+    font-size: 0.625rem;
+    color: #5b6a73;
+    line-height: 1.35;
+}
+.eff-rh-paper__ref strong {
+    display: block;
+    margin-top: 0.15rem;
+    color: #14202a;
+    font-size: 0.6875rem;
+}
+.eff-rh-paper__badge {
+    position: relative;
+    display: inline-block;
+    margin: 0 0 0.55rem;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid #1b2a33;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.eff-rh-paper__title {
+    position: relative;
+    margin: 0 0 0.55rem;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+.eff-rh-paper__object {
+    position: relative;
+    margin: 0 0 0.75rem;
+    padding: 0.45rem 0.55rem;
+    background: rgba(20, 32, 42, 0.04);
+    border-left: 3px solid #1b2a33;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+.eff-rh-paper__object span {
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5b6a73;
+}
+.eff-rh-paper__object em {
+    font-style: normal;
+    font-weight: 600;
+}
+.eff-rh-paper__meta {
+    position: relative;
+    display: grid;
+    gap: 0.35rem;
+    margin: 0 0 0.75rem;
+    padding: 0;
+}
+.eff-rh-paper__meta > div {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: 0.4rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid #d7dee2;
+    background: #fff;
+    font-size: 0.75rem;
+}
+.eff-rh-paper__meta dt {
+    margin: 0;
+    color: #5b6a73;
+    font-weight: 700;
+}
+.eff-rh-paper__meta dd {
+    margin: 0;
+    font-weight: 700;
+}
+.eff-rh-paper__body {
+    position: relative;
+    margin: 0 0 0.9rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #24323b;
+}
+.eff-rh-paper__body p {
+    margin: 0 0 0.45rem;
+}
+.eff-rh-paper__body p:last-child {
+    margin-bottom: 0;
+}
+.eff-rh-paper__sigs {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+}
+.eff-rh-paper__sigs > div {
+    padding-top: 0.55rem;
+    border-top: 1px solid #1b2a33;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #5b6a73;
+}
+.eff-rh-paper__hint {
+    margin: 0.55rem 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: var(--eff-muted, #6d7a80);
+}
 .eff-rh-btn {
     display: inline-flex;
     align-items: center;
