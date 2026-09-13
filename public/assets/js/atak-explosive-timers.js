@@ -215,6 +215,8 @@ window.ATAKExplosiveTimers = (function () {
       var remainHtml;
       if (!armed) {
         remainHtml = '—';
+      } else if (remaining != null && remaining <= 0) {
+        remainHtml = 'Échéance dépassée';
       } else if (remaining != null) {
         remainHtml = esc(formatDuration(remaining));
       } else {
@@ -230,7 +232,8 @@ window.ATAKExplosiveTimers = (function () {
       }
       var actions = '';
       var remoteOk = item.trigger_kind === 'atak' || item.trigger_kind === 'command';
-      if (armed && canCommandDetonate && remoteOk) {
+      var expired = armed && remaining != null && remaining <= 0;
+      if (armed && canCommandDetonate && remoteOk && !expired) {
         var id = Number(item.id) || 0;
         if (item.detonate_pending || sendingIds[id]) {
           actions = '<p class="atak-charge-pending">Ordre envoyé — en attente du terrain</p>';
@@ -239,6 +242,11 @@ window.ATAKExplosiveTimers = (function () {
         } else {
           actions = '<button type="button" class="atak-charge-detonate" data-charge-id="' + esc(id) + '">Déclencher</button>';
         }
+      }
+      if (armed) {
+        actions += '<button type="button" class="atak-charge-dismiss" data-charge-dismiss-cid="' +
+          esc(item.charge_id || '') + '" data-charge-dismiss-id="' + esc(item.id || '') +
+          '">Retirer de la carte</button>';
       }
       return '<article class="' + cls + '" data-x="' + esc(x) + '" data-y="' + esc(y) + '">' +
         '<header class="atak-charge-card-head">' +
@@ -282,6 +290,19 @@ window.ATAKExplosiveTimers = (function () {
           return;
         }
         armPendingConfirm(id);
+      });
+    });
+    el.querySelectorAll('.atak-charge-dismiss').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var cid = btn.getAttribute('data-charge-dismiss-cid') || '';
+        var rid = btn.getAttribute('data-charge-dismiss-id') || '';
+        if (!cid || !window.ATAKMap || !window.ATAKMap.dismissExplosiveTimer) return;
+        if (!window.confirm('Retirer cette charge de la carte du poste ?')) return;
+        window.ATAKMap.dismissExplosiveTimer({ id: rid, charge_id: cid }).catch(function () {
+          showError('Impossible de retirer cette charge.');
+        });
       });
     });
     if (window.ATAKMap && typeof window.ATAKMap.setExplosiveTimersOnMap === 'function') {

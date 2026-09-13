@@ -1034,6 +1034,16 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($sessionNuit);
         self::assertSame('00510', $sessionNuit['number_pad']);
         self::assertStringContainsString('nuit', strtolower((string) $sessionNuit['title']));
+        $tableurAere = DevDispatchCatalog::find('update', '541');
+        self::assertNotNull($tableurAere);
+        self::assertSame('00541', $tableurAere['number_pad']);
+        self::assertStringContainsString('tableur', strtolower((string) $tableurAere['title']));
+        self::assertStringContainsString('effectifs', strtolower((string) $tableurAere['title']));
+        $memberSituation = DevDispatchCatalog::find('update', '542');
+        self::assertNotNull($memberSituation);
+        self::assertSame('00542', $memberSituation['number_pad']);
+        self::assertStringContainsString('opérateur', strtolower((string) $memberSituation['title']));
+        self::assertStringContainsString('back-office', strtolower((string) $memberSituation['activity'] . ' ' . $memberSituation['title']));
         $steamAssocie = DevDispatchCatalog::find('update', '516');
         self::assertNotNull($steamAssocie);
         self::assertSame('00516', $steamAssocie['number_pad']);

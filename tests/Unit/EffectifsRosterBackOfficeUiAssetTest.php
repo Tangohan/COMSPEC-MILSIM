@@ -46,7 +46,11 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringContainsString('$pr(450,', $dispatch);
 
         self::assertStringContainsString('eff-roster-hero', $roster);
+        self::assertStringContainsString('eff-roster-hero--compact', $roster);
+        self::assertStringContainsString('eff-roster-toolbar', $roster);
         self::assertStringContainsString('Ancienneté réelle', $roster);
+        self::assertStringContainsString('<details class="eff-roster-hero__seniority', $roster);
+        self::assertStringNotContainsString('eff-catalog-checks', $roster);
         self::assertStringContainsString('name="access_role_id"', $roster);
         self::assertStringContainsString('data-img-fallback="portrait"', $roster);
         self::assertStringContainsString('N° communauté', $roster);

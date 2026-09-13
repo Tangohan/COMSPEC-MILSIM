@@ -3881,6 +3881,21 @@ body.atak-theme-light .atak-chat-messages {
   font-size: 0.68rem;
   color: #fde68a;
 }
+.atak-charge-dismiss {
+  margin-top: 0.35rem;
+  width: 100%;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.08);
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.atak-charge-dismiss:hover {
+  background: rgba(148, 163, 184, 0.16);
+}
 
 /* JTAC 9-Line */
 .atak-jtac-form, .atak-jtac-list { padding: 0.5rem; }
@@ -6210,6 +6225,30 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   color: var(--atak-muted);
   font-style: italic;
 }
+.atak-marker-popup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+.atak-marker-popup__btn {
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.55);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.28rem 0.55rem;
+  cursor: pointer;
+}
+.atak-marker-popup__btn--danger {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+.atak-marker-popup__btn--danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
 
 .nato-sidc-icon,
 .nato-sidc-badge {
@@ -7110,6 +7149,27 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   margin-top: 0.35rem;
   font-size: 0.7rem;
   color: var(--atak-muted, #94a3b8);
+}
+.atak-marker-popup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+.atak-marker-popup__btn {
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.55);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.28rem 0.55rem;
+  cursor: pointer;
+}
+.atak-marker-popup__btn--danger {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
 }
 
 /* Liste marqueurs panneau */

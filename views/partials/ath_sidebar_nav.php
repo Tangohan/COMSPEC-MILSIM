@@ -106,6 +106,7 @@ $roleplayChildren = array_values(array_filter([
 $orbatChildren = array_values(array_filter([
     ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
+    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => str_starts_with($p, 'back-office/referentiels/qualifications')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([
@@ -299,9 +300,12 @@ if ($isOperatorBoNav) {
         'key' => 'ma-situation',
         'label' => 'MA SITUATION',
         'items' => [
-            ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'icon' => 'users', 'active' => $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
-            ['label' => 'Mon suivi', 'href' => url('personnel/me') . '?onglet=suivi', 'icon' => 'path', 'active' => false],
-            ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh'), 'icon' => 'path', 'active' => str_contains($p, 'mon-espace-rh')],
+            ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => str_starts_with($p, 'back-office/ma-situation/ma-fiche') || $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
+            ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => false],
+            ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
+            ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications'), 'icon' => 'cert', 'active' => str_starts_with($p, 'back-office/ma-situation/qualifications')],
+            ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh')],
+            ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
             ['label' => 'Événements', 'href' => url('evenements'), 'icon' => 'cal', 'active' => $p === 'evenements' || str_starts_with($p, 'evenements/')],
             ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
             ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'icon' => 'mail', 'active' => $p === 'boite-reception'],

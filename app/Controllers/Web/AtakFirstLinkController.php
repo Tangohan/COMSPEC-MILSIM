@@ -61,6 +61,11 @@ final class AtakFirstLinkController
         return Response::view('layout.main', [
             'title' => 'Première liaison ATAK',
             'content' => 'atak.first_link',
+            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
+            'boPageGroup' => 'Opérateur',
+            'boPageKicker' => 'OPÉRATEUR · LIAISON',
+            'boPageTitle' => 'Configurer ATAK',
+            'boPageSubtitle' => 'Première liaison du téléphone ou du poste de jeu à votre compte Athena.',
             'firstLink' => [
                 'display_name' => $displayName,
                 'callsign' => $callsign,

@@ -441,6 +441,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: fn (int $tenantId): bool => $p->isRoleplayFollowupEnabled($tenantId),
                 isSatisfied: fn (int $tenantId): bool => $p->hasPersonnelPhaseRulesReviewed($tenantId) || $p->hasPersonnelPhaseRuleSets($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'QUALIFICATION_REFERENTIEL_V1',
+                title: 'Référentiel de qualifications',
+                description: 'Complétez le catalogue des qualifications de votre communauté (catégories, types, niveaux, organismes émetteurs) puis attribuez-les aux dossiers. Les communautés déjà en place ne changent rien tant qu’elles n’ouvrent pas ce référentiel.',
+                level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
+                configurePath: 'back-office/referentiels/qualifications',
+                estimateMinutes: 15,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 91,
+                isApplicable: static fn (int $tenantId): bool => true,
+                isSatisfied: fn (int $tenantId): bool => $p->hasQualificationReferentielReviewed($tenantId) || $p->hasQualificationDefinitions($tenantId),
+            ),
         ];
     }
 

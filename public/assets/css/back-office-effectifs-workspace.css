@@ -706,3 +706,397 @@
 .bo-eff-workspace .eff-chain .eff-sheets {
   margin-top: 0.75rem;
 }
+
+/* —— Tableur roster : chrome compact Athena —— */
+
+.bo-eff-workspace .eff-catalog--roster {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.bo-eff-workspace .eff-roster-hero--compact {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 1rem 1.15rem 0.85rem;
+  border: 0;
+  background: #fff;
+}
+
+.bo-eff-workspace .eff-roster-hero--compact .eff-roster-hero__kicker {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-roster-hero--compact .eff-roster-hero__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-roster-hero--compact .eff-roster-hero__lead {
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-roster-hero__seniority.eff-catalog__notice {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: #f8fafa;
+}
+
+.bo-eff-workspace .eff-roster-seniority__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.85rem;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.bo-eff-workspace .eff-roster-seniority__summary::-webkit-details-marker {
+  display: none;
+}
+
+.bo-eff-workspace .eff-roster-seniority__summary .eff-catalog__kicker {
+  margin: 0;
+}
+
+.bo-eff-workspace .eff-roster-hero__seniority-date {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-roster-hero__seniority .eff-catalog__notice-lead,
+.bo-eff-workspace .eff-roster-hero__seniority .eff-catalog__notice-form {
+  padding: 0 0.85rem 0.85rem;
+}
+
+.bo-eff-workspace .eff-roster-hero__seniority .eff-catalog__notice-lead {
+  margin: 0 0 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-metrics--roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0 1.15rem 0.85rem;
+  border: 0;
+  background: #fff;
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.15rem;
+  margin: 0;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: #fff;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric__k,
+.bo-eff-workspace .eff-metrics--roster .eff-metric__v {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric__k {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric__v {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric--link:hover {
+  border-color: #c5ced3;
+  background: #f8fafa;
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric--link.is-active {
+  border-color: var(--ath-ink, #0c1116);
+  background: #f3f5f6;
+  box-shadow: inset 3px 0 0 var(--ath-accent, #0b8a5c);
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric--link.is-amber .eff-metric__v {
+  color: #7a5410;
+}
+
+.bo-eff-workspace .eff-metrics--roster .eff-metric--link.is-active.is-amber {
+  border-color: var(--ath-warn-bd, #f2ddb4);
+  background: var(--ath-warn-bg, #fdf3e2);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.bo-eff-workspace .eff-roster-toolbar {
+  margin: 0;
+  border-top: 1px solid var(--ath-line, #e3e8ea);
+}
+
+.bo-eff-workspace .eff-roster-toolbar .eff-catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem 0.75rem;
+  margin: 0;
+  padding: 0.75rem 1.15rem;
+  border: 0;
+  background: #f8fafa;
+}
+
+.bo-eff-workspace .eff-roster-toolbar__field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 8.5rem;
+  flex: 0 1 10rem;
+}
+
+.bo-eff-workspace .eff-roster-toolbar__field--grow {
+  flex: 1 1 14rem;
+  min-width: 12rem;
+}
+
+.bo-eff-workspace .eff-roster-toolbar__field label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-roster-toolbar__field input,
+.bo-eff-workspace .eff-roster-toolbar__field select {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.bo-eff-workspace .eff-roster-toolbar__field input:focus,
+.bo-eff-workspace .eff-roster-toolbar__field select:focus {
+  border-color: var(--ath-accent, #0b8a5c);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(11, 138, 92, 0.12);
+}
+
+.bo-eff-workspace .eff-roster-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.bo-eff-workspace .eff-roster-toolbar .eff-catalog__btn {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bo-eff-workspace .eff-roster-toolbar .eff-catalog__btn--primary {
+  background: var(--ath-ink, #0c1116);
+  border-color: var(--ath-ink, #0c1116);
+  color: #fff;
+}
+
+.bo-eff-workspace .eff-roster-toolbar .eff-catalog__btn--primary:hover {
+  background: var(--ath-accent, #0b8a5c);
+  border-color: var(--ath-accent, #0b8a5c);
+}
+
+.bo-eff-workspace .eff-catalog__empty-actions {
+  margin-top: 1rem;
+}
+
+.bo-eff-workspace .eff-bulkbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+  margin: 0;
+  padding: 0.65rem 1.15rem;
+  border: 0;
+  border-top: 1px solid var(--ath-line, #e3e8ea);
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: #f3f5f6;
+}
+
+.bo-eff-workspace .eff-bulkbar__count {
+  min-width: 7rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-bulkbar select,
+.bo-eff-workspace .eff-bulkbar input[type="text"] {
+  height: 2.15rem;
+  max-width: 16rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.bo-eff-workspace .eff-bulkbar input[type="text"] {
+  min-width: 11rem;
+  max-width: 18rem;
+}
+
+.bo-eff-workspace .eff-bulkbar .eff-catalog__btn {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bo-eff-workspace .eff-bulkbar .eff-catalog__btn--primary {
+  background: var(--ath-ink, #0c1116);
+  border-color: var(--ath-ink, #0c1116);
+  color: #fff;
+}
+
+.bo-eff-workspace .eff-bulkbar .eff-catalog__btn--primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bo-eff-workspace .eff-catalog--roster .eff-sheets {
+  border-top: 0;
+}
+
+.bo-eff-workspace .eff-catalog--roster .eff-sheets__table thead th {
+  padding: 0.55rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--ath-muted, #6d7a80);
+  background: #f8fafa;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+}
+
+.bo-eff-workspace .eff-catalog--roster .eff-sheets__table tbody td {
+  padding: 0.55rem 0.65rem;
+  vertical-align: top;
+  font-size: 0.8125rem;
+}
+
+.bo-eff-workspace .eff-sheets__avatar {
+  width: 2.15rem;
+  height: 2.15rem;
+  font-size: 0.7rem;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 9.5rem;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter {
+  margin: 0;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-head {
+  gap: 0.35rem;
+  margin-bottom: 0.1rem;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-head span {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-head strong {
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-bar {
+  height: 0.28rem;
+  border-radius: 0;
+  background: #e6ebed;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-bar > span {
+  background: var(--ath-accent, #0b8a5c);
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter.is-low .eff-sheets__meter-bar > span {
+  background: #d97706;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__meter-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__pop {
+  margin-top: 0.15rem;
+}
+
+.bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__chip {
+  font-size: 0.6875rem;
+}

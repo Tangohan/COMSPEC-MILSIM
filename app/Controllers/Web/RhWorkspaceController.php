@@ -139,6 +139,11 @@ final class RhWorkspaceController
         return Response::view('layout.main', [
             'title' => 'Mes démarches',
             'content' => 'personnel.rh_workspace',
+            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
+            'boPageGroup' => 'Opérateur',
+            'boPageKicker' => 'OPÉRATEUR · DÉMARCHES',
+            'boPageTitle' => 'Mes démarches',
+            'boPageSubtitle' => 'Absences, élévation, documents et demandes qui vous concernent.',
             'rhGreetingName' => $greetingName,
             'rhTrainingAllowed' => $trainingAllowed,
             'rhCharterReady' => $charterReady,

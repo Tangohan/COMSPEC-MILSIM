@@ -102,9 +102,9 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 <p class="mt-2 text-sm text-slate-600">Cet espace affiche uniquement vos données et les informations partagées par votre communauté. Il ne donne aucun droit d’administration.</p>
             </div>
             <div class="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end">
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me')) ?>">Voir ma fiche</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Mon suivi</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/mon-espace-rh')) ?>">Mes démarches</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche')) ?>">Voir ma fiche</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Mon suivi</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Mes démarches</a>
             </div>
         </div>
         <dl class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -118,7 +118,14 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             </div>
             <div>
                 <dt class="<?= $h($dtClass) ?>">Unité</dt>
-                <dd class="mt-1 font-semibold text-slate-900"><?= $unitNames !== [] ? $h(implode(' · ', $unitNames)) : 'Non affecté' ?></dd>
+                <dd class="mt-1 font-semibold text-slate-900">
+                    <?php if ($unitNames !== []): ?>
+                        <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>"><?= $h(implode(' · ', $unitNames)) ?></a>
+                    <?php else: ?>
+                        Non affecté
+                        · <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">Voir</a>
+                    <?php endif; ?>
+                </dd>
             </div>
             <div>
                 <dt class="<?= $h($dtClass) ?>">Grade</dt>
@@ -153,7 +160,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                     <?php endif; ?>
                 </p>
             </div>
-            <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
+            <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
         </div>
         <?php if ($followupDeadlines !== []): ?>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -182,7 +189,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <section class="<?= $h($cardClass) ?>">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-black text-slate-950">Ce qui vous concerne</h2>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('personnel/mon-espace-rh')) ?>">Ouvrir Mes démarches</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Ouvrir Mes démarches</a>
             </div>
             <?php if (!$hasSituation): ?>
                 <p class="mt-4 text-sm text-slate-600">Rien n’est en attente de votre côté pour le moment. Vos absences, demandes et messages apparaîtront ici.</p>
@@ -261,7 +268,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                                 <?php endforeach; ?>
                             </ul>
                             <?php endif; ?>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('personnel/me') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
                         </li>
                     <?php endif; ?>
                     <?php foreach ($alerts as $alert): ?>
@@ -325,8 +332,9 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             <h2 class="text-lg font-black text-slate-950">Ma liaison ATAK</h2>
             <div class="flex flex-wrap gap-3">
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('atak')) ?>">Ouvrir la carte</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('account/security/devices')) ?>">Gérer les appareils</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('atak/premiere-liaison')) ?>">Configurer ATAK</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/appareils')) ?>">Gérer les appareils</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/premiere-liaison')) ?>">Configurer ATAK</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/liaison-atak')) ?>">Voir la liaison</a>
             </div>
         </div>
         <?php if ($terminals === []): ?>
@@ -367,17 +375,19 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
 
     <section class="<?= $h($cardClass) ?>">
         <h2 class="text-lg font-black text-slate-950">Aller plus loin</h2>
-        <p class="mt-2 text-sm text-slate-600">Les pages du portail qui vous concernent, sans les écrans d’administration.</p>
+        <p class="mt-2 text-sm text-slate-600">Les pages de votre espace opérateur, sans les écrans d’administration.</p>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <?php
             $shortcuts = [
-                ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('personnel/me')],
-                ['label' => 'Mon suivi', 'hint' => 'Parcours, entretien, médical et bilans', 'href' => url('personnel/me') . '?onglet=suivi'],
-                ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('back-office/ma-situation/ma-fiche')],
+                ['label' => 'Mon unité', 'hint' => 'Affectation dans la communauté', 'href' => url('back-office/ma-situation/unite')],
+                ['label' => 'Mes qualifications', 'hint' => 'Brevets et qualifications du dossier', 'href' => url('back-office/ma-situation/qualifications')],
+                ['label' => 'Ma liaison ATAK', 'hint' => 'Terminaux et certificat de liaison', 'href' => url('back-office/ma-situation/liaison-atak')],
+                ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('back-office/ma-situation/mes-demarches')],
                 ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('evenements')],
                 ['label' => 'Carte ATAK', 'hint' => 'Situation tactique', 'href' => url('atak')],
                 ['label' => 'Boîte de réception', 'hint' => $inboxUnread > 0 ? ($inboxUnread === 1 ? '1 message à lire' : $inboxUnread . ' messages à lire') : 'Messages de la communauté', 'href' => url('boite-reception')],
-                ['label' => 'Mon compte', 'hint' => 'Portrait, sécurité et appareils', 'href' => url('account')],
+                ['label' => 'Mon compte', 'hint' => 'Portrait, sécurité et préférences', 'href' => url('account')],
             ];
             if ($onboardingRemaining !== []) {
                 array_unshift($shortcuts, ['label' => 'Mon intégration', 'hint' => 'Étapes d’arrivée restantes', 'href' => url('mon-integration')]);

@@ -523,7 +523,13 @@ class PersonnelController
             $personnelJobRoleAssignments = $pivotMap[$uid] ?? [];
         }
 
-        $qualifications = $this->personnelQualificationRepository->listForUser($uid);
+        $qualifications = [];
+        try {
+            $awardRepo = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class);
+            $qualifications = $awardRepo->listForUser($uid, (int) $tenantId);
+        } catch (\Throwable) {
+            $qualifications = $this->personnelQualificationRepository->listForUser($uid);
+        }
         if (!$isSelf) {
             $qualifications = $this->personnelQualificationRepository->filterForViewer($qualifications, $viewCaps);
         }
@@ -944,6 +950,11 @@ class PersonnelController
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
+            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
+            'boPageGroup' => 'Opérateur',
+            'boPageKicker' => 'OPÉRATEUR · DOSSIER',
+            'boPageTitle' => 'Ma fiche',
+            'boPageSubtitle' => 'Identité, unité, formations et suivi — votre dossier personnel.',
             'targetUser' => $target,
             'personnelExtras' => $extras,
             'personnelProfile' => $personnelProfile,

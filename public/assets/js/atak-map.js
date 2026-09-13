@@ -811,6 +811,43 @@ window.ATAKMap = (function () {
     map.setView(config.center, config.defaultZoom);
     L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
+    // Actions popup (suppression marqueur / retrait charge)
+    if (!el._atakPopupActionsBound) {
+      el._atakPopupActionsBound = true;
+      el.addEventListener('click', function (ev) {
+        var delBtn = ev.target && ev.target.closest ? ev.target.closest('[data-atak-marker-delete]') : null;
+        if (delBtn) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var mid = delBtn.getAttribute('data-atak-marker-delete');
+          if (!mid) return;
+          if (!window.confirm('Supprimer ce repère de la carte ?')) return;
+          deleteMarkerById(mid).then(function () {
+            if (map && map.closePopup) map.closePopup();
+            if (window.ATAKShowNotification) window.ATAKShowNotification('Repère supprimé.');
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer ce repère.');
+          });
+          return;
+        }
+        var chargeBtn = ev.target && ev.target.closest ? ev.target.closest('[data-atak-charge-dismiss]') : null;
+        if (chargeBtn) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var wrap = chargeBtn.closest('.atak-charge-popup');
+          var cid = wrap ? wrap.getAttribute('data-atak-charge-cid') : '';
+          var rid = wrap ? wrap.getAttribute('data-atak-charge-id') : '';
+          if (!cid) return;
+          if (!window.confirm('Retirer cette charge de la carte du poste ?')) return;
+          dismissExplosiveTimer({ id: rid, charge_id: cid }).then(function () {
+            if (map && map.closePopup) map.closePopup();
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de retirer cette charge.');
+          });
+        }
+      });
+    }
+
     var gridEl = document.getElementById('atak-map-hud');
     if (!gridEl) {
       gridEl = L.DomUtil.create('div', 'atak-map-hud');
@@ -981,12 +1018,19 @@ window.ATAKMap = (function () {
     });
   }
 
+  function markerAuthorOf(data) {
+    if (!data) return '';
+    var raw = data.author || data.createdBy || data.callsign || data.placed_by || '';
+    return String(raw || '').trim();
+  }
+
   function markerPopupHtml(data, lng, lat, markerId) {
     var arma = window.ArmaMapMarkers;
+    var fixEnc = (arma && arma.fixUtf8Mojibake) ? arma.fixUtf8Mojibake : function (s) { return String(s == null ? '' : s); };
     var label = (arma && arma.displayLabelOf)
       ? arma.displayLabelOf(data)
-      : (data.label || data.text || data.message || data.name || data.symbolName || 'Repère');
-    var author = data.author || data.createdBy || '';
+      : fixEnc(data.label || data.text || data.message || data.name || data.symbolName || 'Repère');
+    var author = markerAuthorOf(data);
     var desc = data.description || data.desc || '';
     var gx = Math.round(Number(lng));
     var gy = Math.round(Number(lat));
@@ -996,21 +1040,29 @@ window.ATAKMap = (function () {
     var typeFr = (arma && arma.typeLabelFr)
       ? arma.typeLabelFr(data)
       : '';
-    if (data.symbolName || data.affiliation || typeFr) {
+    if (data.symbolName || data.affiliation || typeFr || data.type || data.source) {
       var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
         ? window.MilstdCatalog.affiliationLabelFr(data.affiliation)
         : '';
       var symLine = [];
-      if (data.symbolName) symLine.push(escapeHtml(data.symbolName));
-      else if (typeFr && typeFr !== label) symLine.push(escapeHtml(typeFr));
-      if (affFr) symLine.push(escapeHtml(affFr));
+      // Préférer typeFr (déjà décodé) ; sinon corriger symbolName (souvent « RepÃ¨re - Ami » en base).
+      if (typeFr && typeFr !== label) symLine.push(escapeHtml(typeFr));
+      else if (data.symbolName) symLine.push(escapeHtml(fixEnc(data.symbolName)));
+      if (affFr && symLine.indexOf(escapeHtml(affFr)) < 0 && String(typeFr || '').indexOf(affFr) < 0) {
+        symLine.push(escapeHtml(affFr));
+      }
       if (symLine.length) html += '<div class="atak-marker-popup__symbol">' + symLine.join(' · ') + '</div>';
     }
     html += '<div class="atak-marker-popup__coords">Grille ' + gx + ' / ' + gy + '</div>';
     if (desc) html += '<p class="atak-marker-popup__desc">' + escapeHtml(desc) + '</p>';
-    if (author) html += '<span class="atak-marker-popup__author">' + escapeHtml(author) + '</span>';
+    if (author) html += '<span class="atak-marker-popup__author">Posé par ' + escapeHtml(author) + '</span>';
     html += '<p class="atak-marker-popup__hint">Ce point n’est pas un effectif en liaison — c’est un repère posé sur la carte.</p>';
     html += '<div class="atak-marker-popup__arrivals" data-atak-arrivals></div>';
+    if (markerId != null && String(markerId).indexOf('local_') !== 0) {
+      html += '<div class="atak-marker-popup__actions">' +
+        '<button type="button" class="atak-marker-popup__btn atak-marker-popup__btn--danger" data-atak-marker-delete="' +
+        escapeHtml(String(markerId)) + '">Supprimer</button></div>';
+    }
     html += '</div>';
     return html;
   }
@@ -1544,6 +1596,61 @@ window.ATAKMap = (function () {
     return String(s) + 's';
   }
 
+  function chargePopupHtml(item, x, y, remaining, countdown, pending) {
+    var grid = String(item.grid_ref || '').trim();
+    var author = String(item.author || '').trim();
+    var kindTitle = countdown ? 'Charge à retardement' : 'Charge';
+    var delayLine = countdown
+      ? '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
+        '<br/>Temps restant : ' + formatChargeRemain(remaining)
+      : '<br/>Déclenchement : ' + (pending ? 'ordre envoyé' : 'à la demande');
+    var idAttr = item.id != null ? String(item.id) : '';
+    var cidAttr = String(item.charge_id || '');
+    return '<div class="atak-charge-popup" data-atak-charge-id="' + escapeHtml(idAttr) +
+      '" data-atak-charge-cid="' + escapeHtml(cidAttr) + '">' +
+      '<div class="atak-marker-popup__kind">' + kindTitle + '</div><b>' +
+      escapeHtml(item.magazine_label || 'Charge') +
+      '</b><br/>Coordonnées : ' + escapeHtml(grid || (Math.round(x) + ' / ' + Math.round(y))) +
+      delayLine +
+      (author ? '<br/><span class="atak-marker-popup__author">Posée par ' + escapeHtml(author) + '</span>' : '') +
+      '<div class="atak-marker-popup__actions">' +
+      '<button type="button" class="atak-marker-popup__btn atak-marker-popup__btn--danger" data-atak-charge-dismiss="1">Retirer de la carte</button>' +
+      '</div></div>';
+  }
+
+  function dismissExplosiveTimer(item) {
+    var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+    var mapId = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
+    var chargeId = item && item.charge_id ? String(item.charge_id) : '';
+    if (!base || !chargeId) {
+      return Promise.reject(new Error('charge'));
+    }
+    return fetch(base + '/api/atak/explosive-timers', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mapId: mapId,
+        charge_id: chargeId,
+        status: 'defused'
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('dismiss');
+      return r.json();
+    }).then(function () {
+      var id = item.id != null ? String(item.id) : chargeId;
+      if (explosiveMarkersById[id] && explosiveLayer) {
+        try { explosiveLayer.removeLayer(explosiveMarkersById[id]); } catch (e) {}
+        delete explosiveMarkersById[id];
+      }
+      if (window.ATAKExplosiveTimers && typeof window.ATAKExplosiveTimers.refresh === 'function') {
+        window.ATAKExplosiveTimers.refresh();
+      }
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Charge retirée de la carte.');
+      return true;
+    });
+  }
+
   function setExplosiveTimersOnMap(rows) {
     if (!map) return;
     if (!explosiveLayer) explosiveLayer = L.layerGroup().addTo(map);
@@ -1553,19 +1660,22 @@ window.ATAKMap = (function () {
       if (!item || item.status !== 'armed') return;
       var id = item.id != null ? String(item.id) : String(item.charge_id || '');
       if (!id) return;
+      var remaining = Number(item.remaining_seconds);
+      if (isNaN(remaining)) remaining = 0;
+      var countdown = item.has_countdown !== false && item.has_countdown !== 0 && item.remaining_seconds != null;
+      // Minuterie écoulée = techniquement déclenchée : ne plus afficher le fantôme sur la carte.
+      if (countdown && remaining <= 0) return;
       var x = parseFloat(item.pos_x);
       var y = parseFloat(item.pos_y);
       if (isNaN(x) || isNaN(y)) return;
       seen[id] = true;
       var applied = applyOffset(y, x);
       var latlng = L.latLng(applied[0], applied[1]);
-      var remaining = Number(item.remaining_seconds);
-      if (isNaN(remaining)) remaining = 0;
-      var countdown = item.has_countdown !== false && item.has_countdown !== 0 && item.remaining_seconds != null;
       var pending = !!item.detonate_pending;
       var urgent = countdown && remaining <= 15;
       var color = pending ? '#facc15' : (urgent ? '#ef4444' : '#f97316');
       var grid = String(item.grid_ref || '').trim();
+      var author = String(item.author || '').trim();
       var pinLabel = countdown ? formatChargeRemain(remaining) : (pending ? 'TOC' : 'ARM');
       var S = window.ATAKMarkerSizes;
       var chargeHtml = '<span style="width:12px;height:12px;border-radius:2px;background:' + color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);display:block;"></span>';
@@ -1577,27 +1687,35 @@ window.ATAKMap = (function () {
             iconSize: [16, 16],
             iconAnchor: [8, 8]
           });
-      var kindTitle = countdown ? 'Charge à retardement' : 'Charge';
-      var delayLine = countdown
-        ? '<br/>Délai programmé : ' + formatChargeRemain(item.fuse_seconds) +
-          '<br/>Temps restant : ' + formatChargeRemain(remaining)
-        : '<br/>Déclenchement : ' + (pending ? 'ordre envoyé' : 'à la demande');
-      var popup = '<div class="atak-charge-popup"><div class="atak-marker-popup__kind">' + kindTitle + '</div><b>' +
-        String(item.magazine_label || 'Charge').replace(/</g, '&lt;') +
-        '</b><br/>Coordonnées : ' + String(grid || (Math.round(x) + ' / ' + Math.round(y))).replace(/</g, '&lt;') +
-        delayLine + '</div>';
+      var popup = chargePopupHtml(item, x, y, remaining, countdown, pending);
       if (explosiveMarkersById[id]) {
         explosiveMarkersById[id].setLatLng(latlng);
         explosiveMarkersById[id].setIcon(icon);
         explosiveMarkersById[id].setPopupContent(popup);
+        explosiveMarkersById[id]._atakCharge = item;
+        bindMarkerChrome(explosiveMarkersById[id], item.magazine_label || 'Charge', [
+          pinLabel,
+          author ? ('Par ' + author) : '',
+          grid ? 'Grille ' + grid : ''
+        ]);
         return;
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 420 });
+      marker._atakCharge = item;
       marker.bindPopup(popup);
       bindMarkerChrome(marker, item.magazine_label || 'Charge', [
         pinLabel,
+        author ? ('Par ' + author) : '',
         grid ? 'Grille ' + grid : ''
       ]);
+      marker.on('contextmenu', function (e) {
+        emitFeatureContextMenu({
+          featureType: 'charge',
+          id: id,
+          data: item,
+          label: item.magazine_label || 'Charge'
+        }, e);
+      });
       marker.addTo(explosiveLayer);
       explosiveMarkersById[id] = marker;
     });
@@ -2447,6 +2565,7 @@ window.ATAKMap = (function () {
     clearTemporaryPings: clearTemporaryPings,
     setPingsOnMap: setPingsOnMap,
     setExplosiveTimersOnMap: setExplosiveTimersOnMap,
+    dismissExplosiveTimer: dismissExplosiveTimer,
     setGpsVehiclesOnMap: setGpsVehiclesOnMap
   };
 })();

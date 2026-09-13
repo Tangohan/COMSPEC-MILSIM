@@ -526,7 +526,19 @@ class EffectifsWorkspaceController
         $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
         // La fiche Effectifs est le point d'entrée RH unique : elle charge également les
         // volets auparavant dispersés dans le dossier personnel et les listes RH.
-        $qualifications = $this->personnelQualificationRepository->listForUser($id);
+        $qualifications = [];
+        $qualificationTemporal = null;
+        $qualificationBadge = null;
+        try {
+            $awardRepo = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class);
+            $qualifications = $awardRepo->listForUser($id, $tenantId);
+            $qualificationTemporal = \App\Core\Container::get(\App\Services\Personnel\QualificationTemporalStatusService::class);
+            $qualificationBadge = \App\Core\Container::get(\App\Services\Personnel\QualificationBadgeStorageService::class);
+        } catch (\Throwable) {
+            $qualifications = $this->personnelQualificationRepository
+                ? $this->personnelQualificationRepository->listForUser($id)
+                : [];
+        }
         $absences = $this->personnelAbsenceRepository->tableExists()
             ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
             : [];
@@ -610,6 +622,8 @@ class EffectifsWorkspaceController
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
             'memberQualifications' => $qualifications,
+            'qualificationTemporal' => $qualificationTemporal,
+            'qualificationBadge' => $qualificationBadge,
             'memberAbsences' => $absences,
             'memberHrDocuments' => $hrDocuments,
             'memberMobilityRequests' => $mobilityRequests,
@@ -2611,6 +2625,7 @@ class EffectifsWorkspaceController
             ? $this->unitRepository->readinessByUsersForTenant($tenantId, $ids)
             : [];
         $seniorityByUser = $this->rosterSeniorityPacksByUser($tenantId, $ids, $richById);
+        $qualSummaryByUser = $this->rosterQualificationSummaryByUser($tenantId, $ids);
         $communityFallback = $this->communityNameForTenant($tenantId);
         $accessRoleIdsByUser = $ids !== []
             ? $this->userRepository->listOrganizationRoleIdsForUsers($tenantId, $ids)
@@ -2683,7 +2698,66 @@ class EffectifsWorkspaceController
                 'access_role_ids' => $accessRoleIds,
                 'character_portrait_path' => $portraitPath !== '' ? $portraitPath : null,
                 'extra_callsigns_json' => $extraCallsignsJson,
+                'qualifications_summary' => $qualSummaryByUser[$id]['summary'] ?? '—',
+                'qualifications_alert' => $qualSummaryByUser[$id]['alert'] ?? null,
             ]);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<int> $userIds
+     * @return array<int, array{summary: string, alert: ?string}>
+     */
+    private function rosterQualificationSummaryByUser(int $tenantId, array $userIds): array
+    {
+        $out = [];
+        if ($userIds === []) {
+            return $out;
+        }
+        try {
+            $awardRepo = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class);
+            $temporal = \App\Core\Container::get(\App\Services\Personnel\QualificationTemporalStatusService::class);
+        } catch (\Throwable) {
+            return $out;
+        }
+        foreach ($userIds as $uid) {
+            try {
+                $rows = $awardRepo->listForUser($uid, $tenantId);
+            } catch (\Throwable) {
+                continue;
+            }
+            $labels = [];
+            $alert = null;
+            foreach ($rows as $row) {
+                $admin = \App\Support\QualificationAdminStatus::normalize(
+                    (string) ($row['admin_status'] ?? $row['status'] ?? '')
+                );
+                if ($admin !== \App\Support\QualificationAdminStatus::OBTAINED) {
+                    continue;
+                }
+                $t = $temporal->resolve($row);
+                if ($t['code'] === \App\Services\Personnel\QualificationTemporalStatusService::EXPIRED) {
+                    continue;
+                }
+                $name = trim((string) ($row['definition_short_name'] ?? $row['definition_name'] ?? $row['qualification_name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $labels[] = $name;
+                if ($alert === null && in_array($t['code'], [
+                    \App\Services\Personnel\QualificationTemporalStatusService::EXPIRING_SOON,
+                    \App\Services\Personnel\QualificationTemporalStatusService::EXPIRED_GRACE,
+                ], true)) {
+                    $alert = $t['label'];
+                }
+            }
+            $labels = array_slice(array_values(array_unique($labels)), 0, 4);
+            $out[$uid] = [
+                'summary' => $labels !== [] ? implode(' · ', $labels) : '—',
+                'alert' => $alert,
+            ];
         }
 
         return $out;

@@ -164,6 +164,18 @@ $hubRows = [
         'ok' => $canGrades,
     ],
     [
+        'id' => 'qualifications',
+        'title' => 'Référentiel des qualifications',
+        'desc' => 'Définitions, insignes, niveaux, organismes émetteurs et brevets — distincts des attributions sur les dossiers.',
+        'domain' => 'Référentiels',
+        'domainKey' => 'refs',
+        'href' => url('back-office/referentiels/qualifications'),
+        'volume' => 'Référentiel et attributions',
+        'cta' => 'Ouvrir les qualifications',
+        'primary' => false,
+        'ok' => $canStructure || $canGrades,
+    ],
+    [
         'id' => 'job-roles',
         'title' => 'Emplois du dossier',
         'desc' => 'Intitulés sur les dossiers (radio, médic, logistique…), distincts des niveaux d’accès. Création, correction et attribution au même endroit.',

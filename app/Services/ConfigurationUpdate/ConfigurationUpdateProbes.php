@@ -704,4 +704,38 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasQualificationDefinitions(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM personnel_qualification_definitions WHERE tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasQualificationReferentielReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $settings = $this->tenants->getSettings($tenantId);
+            $block = is_array($settings['qualification_referentiel'] ?? null)
+                ? $settings['qualification_referentiel']
+                : [];
+
+            return !empty($block['reviewed']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

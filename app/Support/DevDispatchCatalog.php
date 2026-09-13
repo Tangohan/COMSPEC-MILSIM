@@ -584,6 +584,36 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(542, '2026-09-13', 'Espace opérateur : liaison ATAK, unité et qualifications dans le back-office', 'Depuis Mon espace opérationnel, vous ouvrez désormais vos pages personnelles dans le même back-office : liaison et appareils ATAK, certificat de terminal, mon unité, mes qualifications, ma fiche et mes démarches — sans être renvoyé vers le portail', [
+                'Pages Ma liaison ATAK, Mes appareils, Mon unité et Mes qualifications dans le back-office',
+                'Ma fiche, Mon suivi et Mes démarches accessibles sous la coque Athena',
+                'Menu MA SITUATION branché sur ces pages',
+            ], [
+                'Les raccourcis du tableau de bord restent dans l’espace opérateur',
+            ], [], ['personnel', 'atak'], [
+                'Ouvrez le back-office. Dans MA SITUATION, essayez Ma liaison ATAK, Mon unité et Mes qualifications.',
+            ], 'Athena 1.0.110'),
+            $pr(541, '2026-09-13', 'Tableur Effectifs plus aéré et plus lisible', 'Dans Ressources → Effectifs, le tableur montre d’abord la liste : en-tête court, ancienneté réelle repliable, raccourcis membres en puces, barre de recherche unique, actions de masse collées en haut pendant la sélection, et indicateurs plus compacts sur chaque ligne', [], [
+                'Moins de blocs au-dessus de la grille',
+                'Ancienneté réelle accessible sans occuper tout l’écran',
+                'Indicateurs de disponibilité, présence et dossier plus denses',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs → Tableur. La grille doit apparaître plus tôt ; ouvrez Ancienneté réelle seulement si vous devez corriger la date d’organisation.',
+            ], 'Athena 1.0.109'),
+            $pr(539, '2026-09-13', 'Référentiel de qualifications et brevets', 'Dans Organisation, vous gérez désormais un vrai catalogue de qualifications (catégories, types, niveaux, organismes émetteurs, insignes). Vous les attribuez aux dossiers, suivez les échéances dans le tableur Effectifs, et générez un brevet PDF Classique ou Moderne dès qu’une qualification est obtenue', [
+                'Catalogue de qualifications distinct des attributions individuelles',
+                'Génération de brevets PDF (unitaire ou par lot) avec présentations Classique et Moderne',
+                'Insignes visuels sur les définitions, avec image de secours si aucun fichier n’est fourni',
+                'Colonne Qualifications et pastille d’alerte dans le tableur Effectifs',
+            ], [
+                'Fiche membre Effectifs : attribution, renouvellement, suspension et retrait sans effacer l’historique',
+            ], [
+                'Les états « expiration prochaine » ou « expirée » sont calculés à partir des dates, et ne sont plus figés comme statut administratif',
+            ], ['personnel'], [
+                'Ouvrez Organisation → Qualifications pour créer le catalogue, puis attribuez depuis la fiche Effectifs d’un membre. Une qualification obtenue peut générer un brevet PDF.',
+                'Les communautés déjà en place voient une invitation de configuration ; rien ne change tant qu’elles n’ouvrent pas le référentiel.',
+                'Une qualification obtenue peut déclencher des droits métier ciblés, jamais un accès d’administration de la plateforme.',
+            ], 'Athena 1.0.113'),
             $pr(524, '2026-09-13', 'Chaîne de commandement en pleine largeur', 'Sur le tableau de bord, la section Chaîne de commandement occupe désormais toute la largeur de la zone principale, collée aux bords gauche et droit, pour mieux lire l’organigramme RH', [
                 'Section Chaîne de commandement en bande dédiée, sans marge latérale',
             ], [], [], ['personnel', 'command'], [

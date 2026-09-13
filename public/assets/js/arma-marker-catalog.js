@@ -5,59 +5,59 @@
 window.ArmaMarkerCatalog = (function () {
   'use strict';
   var ENTRIES = {
-    'mil_dot': { kind: 'handdrawn', label: 'RepÃ¨re', glyph: 'dot', source: 'vanilla' },
-    'mil_box': { kind: 'handdrawn', label: 'CarrÃ©', glyph: 'box', source: 'vanilla' },
+    'mil_dot': { kind: 'handdrawn', label: 'Repère', glyph: 'dot', source: 'vanilla' },
+    'mil_box': { kind: 'handdrawn', label: 'Carré', glyph: 'box', source: 'vanilla' },
     'mil_triangle': { kind: 'handdrawn', label: 'Triangle', glyph: 'triangle', source: 'vanilla' },
     'mil_circle': { kind: 'handdrawn', label: 'Cercle', glyph: 'circle', source: 'vanilla' },
-    'mil_marker': { kind: 'handdrawn', label: 'RepÃ¨re', glyph: 'marker', source: 'vanilla' },
+    'mil_marker': { kind: 'handdrawn', label: 'Repère', glyph: 'marker', source: 'vanilla' },
     'mil_flag': { kind: 'handdrawn', label: 'Drapeau', glyph: 'flag', source: 'vanilla' },
-    'mil_arrow': { kind: 'handdrawn', label: 'FlÃ¨che', glyph: 'arrow', source: 'vanilla' },
-    'mil_arrow2': { kind: 'handdrawn', label: 'FlÃ¨che double', glyph: 'arrow2', source: 'vanilla' },
+    'mil_arrow': { kind: 'handdrawn', label: 'Flèche', glyph: 'arrow', source: 'vanilla' },
+    'mil_arrow2': { kind: 'handdrawn', label: 'Flèche double', glyph: 'arrow2', source: 'vanilla' },
     'mil_ambush': { kind: 'handdrawn', label: 'Embuscade', glyph: 'ambush', source: 'vanilla' },
     'mil_destroy': { kind: 'handdrawn', label: 'Destruction', glyph: 'destroy', source: 'vanilla' },
     'mil_objective': { kind: 'handdrawn', label: 'Objectif', glyph: 'objective', source: 'vanilla' },
     'mil_unknown': { kind: 'handdrawn', label: 'Inconnu', glyph: 'unknown', source: 'vanilla' },
     'mil_warning': { kind: 'handdrawn', label: 'Alerte', glyph: 'warning', source: 'vanilla' },
     'mil_join': { kind: 'handdrawn', label: 'Ralliement', glyph: 'join', source: 'vanilla' },
-    'mil_pickup': { kind: 'handdrawn', label: 'RÃ©cupÃ©ration', glyph: 'pickup', source: 'vanilla' },
-    'mil_start': { kind: 'handdrawn', label: 'DÃ©part', glyph: 'start', source: 'vanilla' },
-    'mil_end': { kind: 'handdrawn', label: 'ArrivÃ©e', glyph: 'end', source: 'vanilla' },
-    'hd_dot': { kind: 'handdrawn', label: 'RepÃ¨re', glyph: 'dot', source: 'vanilla' },
-    'hd_box': { kind: 'handdrawn', label: 'CarrÃ©', glyph: 'box', source: 'vanilla' },
+    'mil_pickup': { kind: 'handdrawn', label: 'Récupération', glyph: 'pickup', source: 'vanilla' },
+    'mil_start': { kind: 'handdrawn', label: 'Départ', glyph: 'start', source: 'vanilla' },
+    'mil_end': { kind: 'handdrawn', label: 'Arrivée', glyph: 'end', source: 'vanilla' },
+    'hd_dot': { kind: 'handdrawn', label: 'Repère', glyph: 'dot', source: 'vanilla' },
+    'hd_box': { kind: 'handdrawn', label: 'Carré', glyph: 'box', source: 'vanilla' },
     'hd_triangle': { kind: 'handdrawn', label: 'Triangle', glyph: 'triangle', source: 'vanilla' },
     'hd_circle': { kind: 'handdrawn', label: 'Cercle', glyph: 'circle', source: 'vanilla' },
     'hd_flag': { kind: 'handdrawn', label: 'Drapeau', glyph: 'flag', source: 'vanilla' },
-    'hd_arrow': { kind: 'handdrawn', label: 'FlÃ¨che', glyph: 'arrow', source: 'vanilla' },
-    'hd_arrow2': { kind: 'handdrawn', label: 'FlÃ¨che double', glyph: 'arrow2', source: 'vanilla' },
+    'hd_arrow': { kind: 'handdrawn', label: 'Flèche', glyph: 'arrow', source: 'vanilla' },
+    'hd_arrow2': { kind: 'handdrawn', label: 'Flèche double', glyph: 'arrow2', source: 'vanilla' },
     'hd_ambush': { kind: 'handdrawn', label: 'Embuscade', glyph: 'ambush', source: 'vanilla' },
     'hd_destroy': { kind: 'handdrawn', label: 'Destruction', glyph: 'destroy', source: 'vanilla' },
     'hd_objective': { kind: 'handdrawn', label: 'Objectif', glyph: 'objective', source: 'vanilla' },
     'hd_unknown': { kind: 'handdrawn', label: 'Inconnu', glyph: 'unknown', source: 'vanilla' },
     'hd_warning': { kind: 'handdrawn', label: 'Alerte', glyph: 'warning', source: 'vanilla' },
     'hd_join': { kind: 'handdrawn', label: 'Ralliement', glyph: 'join', source: 'vanilla' },
-    'hd_pickup': { kind: 'handdrawn', label: 'RÃ©cupÃ©ration', glyph: 'pickup', source: 'vanilla' },
-    'hd_start': { kind: 'handdrawn', label: 'DÃ©part', glyph: 'start', source: 'vanilla' },
-    'hd_end': { kind: 'handdrawn', label: 'ArrivÃ©e', glyph: 'end', source: 'vanilla' },
-    'loc_hospital': { kind: 'handdrawn', label: 'Poste mÃ©dical', glyph: 'cross', source: 'vanilla' },
+    'hd_pickup': { kind: 'handdrawn', label: 'Récupération', glyph: 'pickup', source: 'vanilla' },
+    'hd_start': { kind: 'handdrawn', label: 'Départ', glyph: 'start', source: 'vanilla' },
+    'hd_end': { kind: 'handdrawn', label: 'Arrivée', glyph: 'end', source: 'vanilla' },
+    'loc_hospital': { kind: 'handdrawn', label: 'Poste médical', glyph: 'cross', source: 'vanilla' },
     'loc_fuelstation': { kind: 'handdrawn', label: 'Station-service', glyph: 'fuel', source: 'vanilla' },
-    'loc_church': { kind: 'handdrawn', label: 'Ã‰glise', glyph: 'church', source: 'vanilla' },
+    'loc_church': { kind: 'handdrawn', label: 'Église', glyph: 'church', source: 'vanilla' },
     'loc_transmitter': { kind: 'handdrawn', label: 'Antenne', glyph: 'tower', source: 'vanilla' },
     'loc_lighthouse': { kind: 'handdrawn', label: 'Phare', glyph: 'tower', source: 'vanilla' },
-    'loc_power': { kind: 'handdrawn', label: 'Ã‰lectricitÃ©', glyph: 'power', source: 'vanilla' },
-    'loc_stack': { kind: 'handdrawn', label: 'CheminÃ©e', glyph: 'tower', source: 'vanilla' },
+    'loc_power': { kind: 'handdrawn', label: 'Électricité', glyph: 'power', source: 'vanilla' },
+    'loc_stack': { kind: 'handdrawn', label: 'Cheminée', glyph: 'tower', source: 'vanilla' },
     'loc_bunker': { kind: 'handdrawn', label: 'Bunker', glyph: 'bunker', source: 'vanilla' },
     'loc_quay': { kind: 'handdrawn', label: 'Quai', glyph: 'port', source: 'vanilla' },
-    'loc_busstop': { kind: 'handdrawn', label: 'ArrÃªt', glyph: 'dot', source: 'vanilla' },
+    'loc_busstop': { kind: 'handdrawn', label: 'Arrêt', glyph: 'dot', source: 'vanilla' },
     'loc_tourism': { kind: 'handdrawn', label: 'Tourisme', glyph: 'flag', source: 'vanilla' },
     'loc_viewpoint': { kind: 'handdrawn', label: 'Point de vue', glyph: 'eye', source: 'vanilla' },
     'loc_rockarea': { kind: 'handdrawn', label: 'Rocher', glyph: 'mountain', source: 'vanilla' },
     'loc_fortification': { kind: 'handdrawn', label: 'Fortification', glyph: 'bunker', source: 'vanilla' },
-    'loc_crossroad': { kind: 'handdrawn', label: 'CarrÃ©four', glyph: 'dot', source: 'vanilla' },
+    'loc_crossroad': { kind: 'handdrawn', label: 'Carréfour', glyph: 'dot', source: 'vanilla' },
     'empty': { kind: 'handdrawn', label: 'Vide', glyph: 'dot', source: 'vanilla' },
     'flag': { kind: 'handdrawn', label: 'Drapeau', glyph: 'flag', source: 'vanilla' },
-    'contact_arrow1': { kind: 'handdrawn', label: 'Contact flÃ¨che', glyph: 'arrow', source: 'vanilla' },
-    'contact_arrow2': { kind: 'handdrawn', label: 'Contact flÃ¨che', glyph: 'arrow', source: 'vanilla' },
-    'contact_arrow3': { kind: 'handdrawn', label: 'Contact flÃ¨che', glyph: 'arrow', source: 'vanilla' },
+    'contact_arrow1': { kind: 'handdrawn', label: 'Contact flèche', glyph: 'arrow', source: 'vanilla' },
+    'contact_arrow2': { kind: 'handdrawn', label: 'Contact flèche', glyph: 'arrow', source: 'vanilla' },
+    'contact_arrow3': { kind: 'handdrawn', label: 'Contact flèche', glyph: 'arrow', source: 'vanilla' },
     'contact_dots1': { kind: 'handdrawn', label: 'Contact', glyph: 'dot', source: 'vanilla' },
     'contact_circle1': { kind: 'handdrawn', label: 'Contact cercle', glyph: 'circle', source: 'vanilla' },
     'contact_pencilcircle1': { kind: 'handdrawn', label: 'Contact', glyph: 'circle', source: 'vanilla' },
@@ -172,25 +172,25 @@ window.ArmaMarkerCatalog = (function () {
     'c_ship': { kind: 'nato', label: '', affiliation: 'neutral', role: 'ship', source: 'vanilla' },
     'u_ship': { kind: 'nato', label: '', affiliation: 'unknown', role: 'ship', source: 'vanilla' },
     'mplus_markers': { kind: 'mplus', label: 'MarkersPlus', glyph: 'marker', source: 'markersplus' },
-    'mplus_aapoint': { kind: 'mplus', label: 'Point gÃ©nÃ©rique', glyph: 'circle', source: 'markersplus' },
+    'mplus_aapoint': { kind: 'mplus', label: 'Point générique', glyph: 'circle', source: 'markersplus' },
     'mplus_ambush': { kind: 'mplus', label: 'Embuscade', glyph: 'ambush', source: 'markersplus' },
     'mplus_attackbyfire': { kind: 'mplus', label: 'Attaque par le feu', glyph: 'arrow', source: 'markersplus' },
-    'mplus_breach': { kind: 'mplus', label: 'BrÃ¨che', glyph: 'marker', source: 'markersplus' },
+    'mplus_breach': { kind: 'mplus', label: 'Brèche', glyph: 'marker', source: 'markersplus' },
     'mplus_bypass': { kind: 'mplus', label: 'Contourner', glyph: 'marker', source: 'markersplus' },
     'mplus_clear': { kind: 'mplus', label: 'Nettoyer', glyph: 'objective', source: 'markersplus' },
-    'mplus_disengage': { kind: 'mplus', label: 'DÃ©sengager', glyph: 'marker', source: 'markersplus' },
+    'mplus_disengage': { kind: 'mplus', label: 'Désengager', glyph: 'marker', source: 'markersplus' },
     'mplus_exfiltrate': { kind: 'mplus', label: 'Exfiltrer', glyph: 'marker', source: 'markersplus' },
     'mplus_followassume': { kind: 'mplus', label: 'Suivre et prendre le relais', glyph: 'marker', source: 'markersplus' },
     'mplus_followsupport': { kind: 'mplus', label: 'Suivre et appuyer', glyph: 'marker', source: 'markersplus' },
     'mplus_occupy': { kind: 'mplus', label: 'Occuper', glyph: 'objective', source: 'markersplus' },
     'mplus_retain': { kind: 'mplus', label: 'Conserver', glyph: 'objective', source: 'markersplus' },
-    'mplus_secure': { kind: 'mplus', label: 'SÃ©curiser', glyph: 'objective', source: 'markersplus' },
+    'mplus_secure': { kind: 'mplus', label: 'Sécuriser', glyph: 'objective', source: 'markersplus' },
     'mplus_seize': { kind: 'mplus', label: 'Saisir', glyph: 'objective', source: 'markersplus' },
     'mplus_supportbyfire': { kind: 'mplus', label: 'Appui par le feu', glyph: 'marker', source: 'markersplus' },
     'mplus_block': { kind: 'mplus', label: 'Bloquer', glyph: 'objective', source: 'markersplus' },
     'mplus_canalize': { kind: 'mplus', label: 'Canaliser', glyph: 'marker', source: 'markersplus' },
     'mplus_contain': { kind: 'mplus', label: 'Contenir', glyph: 'marker', source: 'markersplus' },
-    'mplus_destroy': { kind: 'mplus', label: 'DÃ©truire', glyph: 'destroy', source: 'markersplus' },
+    'mplus_destroy': { kind: 'mplus', label: 'Détruire', glyph: 'destroy', source: 'markersplus' },
     'mplus_disrupt': { kind: 'mplus', label: 'Perturber', glyph: 'marker', source: 'markersplus' },
     'mplus_fix': { kind: 'mplus', label: 'Fixer', glyph: 'marker', source: 'markersplus' },
     'mplus_isolate': { kind: 'mplus', label: 'Isoler', glyph: 'marker', source: 'markersplus' },
@@ -203,8 +203,8 @@ window.ArmaMarkerCatalog = (function () {
     'mplus_guard': { kind: 'mplus', label: 'Garde', glyph: 'objective', source: 'markersplus' },
     'mplus_screen': { kind: 'mplus', label: 'Ã‰cran', glyph: 'objective', source: 'markersplus' },
     'mplus_cover': { kind: 'mplus', label: 'Couverture', glyph: 'objective', source: 'markersplus' },
-    'mplus_feintattack': { kind: 'mplus', label: 'FlÃ¨che feinte', glyph: 'arrow', source: 'markersplus' },
-    'mplus_mainattack': { kind: 'mplus', label: 'FlÃ¨che d\'attaque principale', glyph: 'arrow', source: 'markersplus' },
+    'mplus_feintattack': { kind: 'mplus', label: 'Flèche feinte', glyph: 'arrow', source: 'markersplus' },
+    'mplus_mainattack': { kind: 'mplus', label: 'Flèche d\'attaque principale', glyph: 'arrow', source: 'markersplus' },
     'mplus_phaseline': { kind: 'mplus', label: 'Ligne de phase', glyph: 'arrow', source: 'markersplus' },
     'mplus_checkpoint': { kind: 'mplus', label: 'Point de contrÃ´le', glyph: 'circle', source: 'markersplus' },
     'mplus_linkuppoint': { kind: 'mplus', label: 'Point de jonction', glyph: 'circle', source: 'markersplus' },
@@ -293,7 +293,7 @@ window.ArmaMarkerCatalog = (function () {
     }
 
     if (key.indexOf('mplus_') === 0) {
-      return { kind: 'mplus', typeKey: key, label: 'RepÃ¨re MarkersPlus', glyph: 'marker', source: 'markersplus' };
+      return { kind: 'mplus', typeKey: key, label: 'Repère MarkersPlus', glyph: 'marker', source: 'markersplus' };
     }
 
     // Texture path fallbacks: .../mts_markers_blu_mod_infantry.paa
@@ -308,8 +308,20 @@ window.ArmaMarkerCatalog = (function () {
 
   function labelFr(type, fallback) {
     var e = get(type);
-    if (e && e.label) return e.label;
-    return fallback || 'RepÃ¨re';
+    if (e && e.label) return fixLabel(e.label);
+    return fixLabel(fallback || 'Repère');
+  }
+
+  function fixLabel(s) {
+    var str = String(s || '');
+    if (!/Ã.|â€|Ã‰|Ã¨|Ã©|Ã /.test(str)) return str;
+    try {
+      var bytes = new Uint8Array(str.length);
+      for (var i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i) & 0xff;
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+      return str;
+    }
   }
 
   return { ENTRIES: ENTRIES, METIS_ROLES: METIS_ROLES, get: get, labelFr: labelFr, normalize: normalize };

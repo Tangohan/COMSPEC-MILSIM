@@ -135,6 +135,7 @@ window.ATAKContextMenu = (function () {
     if (t === 'line') return 'Trait';
     if (t === 'zone') return 'Zone';
     if (t === 'ping') return 'Ping';
+    if (t === 'charge') return 'Charge';
     return 'Élément';
   }
 
@@ -187,6 +188,14 @@ window.ATAKContextMenu = (function () {
     if (feature.featureType === 'ping') {
       return header +
         '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Supprimer</button>' +
+        '<div class="atak-ctx-menu__sep" role="separator"></div>' +
+        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+    }
+    if (feature.featureType === 'charge') {
+      var author = feature.data && feature.data.author ? String(feature.data.author).trim() : '';
+      return header +
+        (author ? '<div class="atak-ctx-menu__item atak-ctx-menu__item--muted" role="presentation">Posée par ' + escapeHtml(author) + '</div>' : '') +
+        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Retirer de la carte</button>' +
         '<div class="atak-ctx-menu__sep" role="separator"></div>' +
         '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
     }
@@ -1491,7 +1500,7 @@ window.ATAKContextMenu = (function () {
       }
       if (feature.featureType === 'marker') {
         if (!window.ATAKMap || !window.ATAKMap.updateMarkerById) return;
-        window.ATAKMap.updateMarkerById(feature.id, { label: next }).then(function () {
+        window.ATAKMap.updateMarkerById(feature.id, { label: next, text: next }).then(function () {
           if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur renommé.');
         }).catch(function () {
           if (window.ATAKShowError) window.ATAKShowError('Impossible de renommer le marqueur.');
@@ -1515,8 +1524,16 @@ window.ATAKContextMenu = (function () {
       if (!ll && data.pos) {
         ll = L.latLng(data.pos[1], data.pos[0]);
       }
+      var armaHelper = window.ArmaMapMarkers;
+      var isArma = !!(armaHelper && armaHelper.isArmaStyleMarker && armaHelper.isArmaStyleMarker(data));
+      var originalLabel = '';
+      if (armaHelper && armaHelper.labelOf) originalLabel = String(armaHelper.labelOf(data) || '').trim();
+      if (!originalLabel) {
+        originalLabel = String(data.text || data.label || data.name || data.symbolName || '').trim();
+      }
+      if (armaHelper && armaHelper.fixUtf8Mojibake) originalLabel = armaHelper.fixUtf8Mojibake(originalLabel);
       openMarkerForm(ll || { lat: 0, lng: 0 }, {
-        label: data.label || data.symbolName || 'Marqueur',
+        label: originalLabel || 'Marqueur',
         description: data.description || '',
         color: data.color || '#34d399',
         icon: data.icon || 'pin',
@@ -1530,8 +1547,23 @@ window.ATAKContextMenu = (function () {
       }, 'edit').then(function (opts) {
         if (!opts) return;
         if (!window.ATAKMap || !window.ATAKMap.updateMarkerById) return;
+        var nextLabel = (opts.label || '').trim() || opts.symbolName || originalLabel || 'Marqueur';
+        // Marqueur Arma : conserver type / couleur / forme d’origine, ne mettre à jour que libellé + description.
+        if (isArma) {
+          window.ATAKMap.updateMarkerById(feature.id, {
+            text: nextLabel,
+            label: nextLabel,
+            description: (opts.description || '').trim()
+          }).then(function () {
+            if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur mis à jour.');
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de modifier le marqueur.');
+          });
+          return;
+        }
         var patch = {
-          label: (opts.label || '').trim() || opts.symbolName || 'Marqueur',
+          label: nextLabel,
+          text: nextLabel,
           description: (opts.description || '').trim(),
           color: opts.color,
           icon: opts.icon,
@@ -1653,6 +1685,7 @@ window.ATAKContextMenu = (function () {
     var t = feature && feature.featureType;
     if (t === 'marker') return 'ce marqueur';
     if (t === 'ping') return 'ce ping';
+    if (t === 'charge') return 'cette charge de la carte';
     if (t === 'comment') return 'ce commentaire';
     if (t === 'line') return 'ce trait';
     if (t === 'zone') return 'cette zone';
@@ -1722,6 +1755,15 @@ window.ATAKContextMenu = (function () {
         } else if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
           window.ATAKMap.removeTemporaryPingMarker(feature.id);
         }
+        return;
+      }
+      if (feature.featureType === 'charge') {
+        if (!window.ATAKMap || !window.ATAKMap.dismissExplosiveTimer) return;
+        window.ATAKMap.dismissExplosiveTimer(feature.data || { charge_id: feature.id }).then(function () {
+          /* notification gérée côté carte */
+        }).catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible de retirer cette charge.');
+        });
         return;
       }
       if (feature.featureType === 'marker') {

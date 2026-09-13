@@ -36,6 +36,8 @@ final class VisibilityLevel
             'anonymize' => self::ANONYMIZED,
             'restreinte' => self::RESTRICTED,
             'restreint' => self::RESTRICTED,
+            'commandement' => self::RESTRICTED,
+            'command' => self::RESTRICTED,
             'masquee' => self::HIDDEN,
             'masquée' => self::HIDDEN,
             'masque' => self::HIDDEN,
