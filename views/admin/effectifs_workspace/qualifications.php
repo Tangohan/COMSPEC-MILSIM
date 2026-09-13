@@ -55,6 +55,15 @@ $holderName = static function (array $row): string {
 $horizonUrl = static function (int $days): string {
     return effectifs_workspace_url('qualifications') . '?horizon=' . $days;
 };
+
+$gate = \App\Core\Gate::getInstance();
+$canCreateTraining = $gate->allows('admin.access')
+    || $gate->allows('training.manage')
+    || $gate->allows('training.create')
+    || $gate->allows('training.update')
+    || $gate->allows('training.publish');
+$createTrainingUrl = training_studio_url();
+$catalogTrainingUrl = url('formation');
 ?>
 <div class="eff-catalog">
     <div class="eff-catalog__head">
@@ -68,7 +77,10 @@ $horizonUrl = static function (int $days): string {
             </p>
         </div>
         <div class="eff-catalog__tools">
-            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('formation'), ENT_QUOTES, 'UTF-8') ?>">Catalogue de formation</a>
+            <a class="eff-catalog__btn" href="<?= htmlspecialchars($catalogTrainingUrl, ENT_QUOTES, 'UTF-8') ?>">Catalogue de formation</a>
+            <?php if ($canCreateTraining): ?>
+                <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars($createTrainingUrl, ENT_QUOTES, 'UTF-8') ?>">Créer une formation</a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -106,8 +118,13 @@ $horizonUrl = static function (int $days): string {
         <div class="eff-catalog__empty">
             <strong>Aucune échéance dans les <?= $horizon ?> prochains jours</strong>
             Toutes les qualifications enregistrées restent valides sur cette période. Élargissez
-            l’horizon pour anticiper davantage, ou consultez le catalogue de formation pour ouvrir
-            de nouvelles sessions certifiantes.
+            l’horizon pour anticiper davantage, ou créez une formation certifiante pour délivrer
+            de nouvelles aptitudes.
+            <?php if ($canCreateTraining): ?>
+                <p style="margin:0.85rem 0 0">
+                    <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars($createTrainingUrl, ENT_QUOTES, 'UTF-8') ?>">Créer une formation</a>
+                </p>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="eff-sheets" role="region" aria-label="Tableau des qualifications à renouveler" tabindex="0">
