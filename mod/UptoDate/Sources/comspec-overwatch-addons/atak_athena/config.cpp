@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.102;
-        versionStr = "1.0.102";
-        versionAr[] = {1, 0, 102};
+        version = 1.115;
+        versionStr = "1.0.115";
+        versionAr[] = {1, 0, 115};
     };
 };
 
@@ -138,6 +138,7 @@ class CfgFunctions
             class athena_commsSelectChannel {};
             class athena_commsSend {};
             class athena_commsCreateChannel {};
+            class athena_commsDeleteChannel {};
             class athena_openComms {};
             class athena_bftUnitLabel {};
             class athena_fillIdentityOverlay {};

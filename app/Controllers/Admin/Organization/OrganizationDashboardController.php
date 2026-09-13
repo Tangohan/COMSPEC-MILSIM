@@ -1116,7 +1116,8 @@ class OrganizationDashboardController
             return Response::redirect(url('back-office'));
         }
         $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
-            || $gate->allows('organization.orbat.manage');
+            || $gate->allows('organization.orbat.manage')
+            || $gate->allows('site.support');
         $viewerId = (int) Session::get('user_id');
         $unitRepository = new UnitRepository();
         $userRepository = new UserRepository();
@@ -1140,6 +1141,15 @@ class OrganizationDashboardController
                 }
                 $orbatCommanderOptions[] = ['id' => $id, 'label' => $label];
             }
+        }
+        $allUnitsForParent = [];
+        foreach ($unitRepository->allForTenant($tenantId) as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $uname = trim((string) ($u['name'] ?? ''));
+            if ($uid < 1 || $uname === '') {
+                continue;
+            }
+            $allUnitsForParent[] = ['id' => $uid, 'name' => $uname];
         }
         $tenantRepository = new TenantRepository();
         $settings = $tenantRepository->getSettings($tenantId);
@@ -1166,10 +1176,10 @@ class OrganizationDashboardController
             'orbatEmptyStateBackUrl' => url('back-office/organisation/structure'),
             'orbatPageEyebrow' => 'Structure',
             'orbatPageTitle' => 'Organigramme',
-            'orbatPageLead' => 'Vue hiérarchique des unités ; utilisez la barre d’actions ou le clic droit sur une carte pour créer un regroupement ou une équipe.',
+            'orbatPageLead' => 'Vue hiérarchique des unités ; clic droit sur une carte pour tout éditer, créer ou rattacher.',
             'structureHubOpen' => $structureHubOpen,
-            'groupParents' => $unitRepository->getGroups($tenantId),
-            'teamParents' => $unitRepository->getTeams($tenantId),
+            'groupParents' => $allUnitsForParent !== [] ? $allUnitsForParent : $unitRepository->getGroups($tenantId),
+            'teamParents' => $allUnitsForParent !== [] ? $allUnitsForParent : $unitRepository->getTeams($tenantId),
             'usersForCommander' => $userRepository->allForTenant($tenantId),
             'roles' => $roleRepository->forTenantOrganization($tenantId),
             'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),

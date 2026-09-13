@@ -1528,6 +1528,8 @@ class Container
                 self::get(\App\Repositories\ModerationArtifactRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Services\Notifications\PersonalMessageUnreadCounter::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
             \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),

@@ -52,7 +52,22 @@ final class PersonnelCorrectionController
         }
 
         $snapshot = $this->correctionService->currentSnapshot($targetId);
-        $pending = $this->correctionRepository->listForTarget($tenantId, $targetId, 5);
+        $pending = $this->correctionRepository->listForTarget($tenantId, $targetId, 15);
+        foreach ($pending as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+            $before = is_array($row['before'] ?? null) ? $row['before'] : [];
+            $row['diff_lines'] = $this->correctionService->diffLinesForDisplay($proposed, $before, $tenantId);
+            $reqName = trim((string) ($row['requester_display_name'] ?? ''));
+            $reqCs = trim((string) ($row['requester_callsign'] ?? ''));
+            $row['requester_label'] = $reqName !== '' ? $reqName : ($reqCs !== '' ? $reqCs : '');
+            $resName = trim((string) ($row['resolver_display_name'] ?? ''));
+            $resCs = trim((string) ($row['resolver_callsign'] ?? ''));
+            $row['resolver_label'] = $resName !== '' ? $resName : ($resCs !== '' ? $resCs : '');
+        }
+        unset($row);
         $hasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, $targetId);
         $staff = $this->canStaffManage();
 

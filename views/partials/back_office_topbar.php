@@ -32,6 +32,45 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
 } else {
     $boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
     $boModN = (int) ($boBadges['forum_moderation_total'] ?? 0);
+    $boMsgN = (int) ($boBadges['messages_unread'] ?? 0);
+    $boEvtN = (int) ($boBadges['events_rsvp_pending'] ?? 0);
+    $boQualN = (int) ($boBadges['qualifications_expiring'] ?? 0);
+    if ($boMsgN > 0) {
+        $topAlerts[] = [
+            'label' => 'MESSAGES',
+            'n' => $boMsgN,
+            'dot' => '#c72e2e',
+            'fg' => '#a32222',
+            'bg' => '#fdecec',
+            'bd' => '#f6cccc',
+            'title' => $boMsgN . ' message' . ($boMsgN > 1 ? 's' : '') . ' à lire',
+            'href' => url('boite-reception'),
+        ];
+    }
+    if ($boEvtN > 0) {
+        $topAlerts[] = [
+            'label' => 'AGENDA',
+            'n' => $boEvtN,
+            'dot' => '#c27a1a',
+            'fg' => '#8a5a06',
+            'bg' => '#fff6e8',
+            'bd' => '#f2ddb4',
+            'title' => $boEvtN . ' réponse' . ($boEvtN > 1 ? 's' : '') . ' de participation en attente',
+            'href' => url('back-office/ma-situation/evenements'),
+        ];
+    }
+    if ($boQualN > 0) {
+        $topAlerts[] = [
+            'label' => 'QUALIF.',
+            'n' => $boQualN,
+            'dot' => '#1e6fbf',
+            'fg' => '#1e4f80',
+            'bg' => '#eaf2fb',
+            'bd' => '#c9dcf0',
+            'title' => 'Qualification à renouveler bientôt',
+            'href' => url('back-office/ma-situation/qualifications'),
+        ];
+    }
     if (!empty($boBadges['show_staff_recruitment']) && $boRecN > 0) {
         $topAlerts[] = [
             'label' => 'DOSSIERS',

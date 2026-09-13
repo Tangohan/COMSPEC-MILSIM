@@ -97,11 +97,14 @@ switch (_type) do {
         ["SendChat", "attempt", format ["CHAT %1", _author], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
         private _chKey = missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"];
         if (!(_chKey isEqualType "") || {_chKey isEqualTo ""}) then { _chKey = "general"; };
-        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data, _chKey]];
+        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+        if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data, _chKey, _mapId]];
         private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
         if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
             ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
         } else {
+            ["SendChat", "ok", format ["CHAT %1", _author], if (_text isEqualType "" && {_text != ""}) then { _text } else { "queued" }, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
             // Empreinte anti-écho pour fn_pollChatMessages (évite de rejouer son propre envoi).
             private _dataStr = if (_data isEqualType "") then { _data } else { str _data };
             private _fpLen = (count _dataStr) min 80;

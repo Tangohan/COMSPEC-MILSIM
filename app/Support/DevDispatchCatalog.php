@@ -595,6 +595,27 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(545, '2026-09-13', 'Organigramme : tout éditer au clic droit', 'Sur Structure & recrutement, un clic droit sur une carte ouvre un menu complet : renommer, type, chef, créer, rattacher, statut, confidentialité, invitation et suppression', [
+                'Menu contextuel enrichi sur l’organigramme (arbre et annuaire)',
+                'Création de regroupement ou d’équipe rattachée à n’importe quelle unité',
+            ], [
+                'Le bouton ⋯ et le panneau de droite restent disponibles pour la fiche détaillée',
+            ], [
+                'Le clic droit ne proposait que des créations limitées au même type d’unité',
+            ], ['personnel'], [
+                'Ouvrez Organisation → Structure. Clic droit sur une carte : le menu doit proposer les actions de fiche et de structure. Rechargez la page si le menu n’apparaît pas.',
+            ], 'Portail · Structure ORBAT'),
+            $pr(544, '2026-09-13', 'Messagerie : supprimer un canal et envois fiables', 'Dans Messagerie, vous pouvez supprimer un canal radio personnalisé. Après connexion Athena, les messages partent correctement vers le poste', [
+                'Bouton Supprimer sur le canal personnalisé sélectionné (canaux système protégés)',
+                'Confirmation d’envoi dans le journal de liaison',
+            ], [
+                'Créer, Envoyer et Effacer l’affichage local plus fiables au clic',
+            ], [
+                'Session refusée et transmissions coupées juste après une connexion par mot de passe',
+                'Impossible de retirer un canal créé en jeu',
+            ], ['atak'], [
+                'Déployez le portail, puis rechargez le pack Overwatch 1.5.68. Quittez Arma. Reconnectez Athena, ouvrez Messagerie : créez un canal, envoyez, puis Supprimer. Les canaux Groupe / Commandement / Général / JTAC / Air restent.',
+            ], 'Portail · Overwatch 1.5.68 · Athena 1.0.115 · Extension 2.0.34'),
             $pr(543, '2026-09-13', 'Connexion Athena : Compte trouvé ouvre le canal sans panneau noir', 'Après une connexion par mot de passe, le bandeau Compte trouvé — Entrer ouvre bien le canal poste au clic. La touche Entrée fait la même chose une fois le compte trouvé, au lieu de tout recommencer. Refermer le tiroir ne laisse plus un panneau sombre sur la carte', [], [], [
                 'Clic sur Compte trouvé sans effet',
                 'Touche Entrée laissant un grand panneau sombre alors que la liaison était ouverte',

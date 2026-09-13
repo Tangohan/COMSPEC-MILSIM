@@ -53,6 +53,9 @@ final class PersonnelPublicFileHeroAssetTest extends TestCase
         self::assertStringContainsString('.personnel-file-hero__report', $css);
         self::assertStringContainsString('width: fit-content', $css);
         self::assertStringContainsString('white-space: nowrap', $css);
+        self::assertStringContainsString('.personnel-file-hero__portrait-img', $css);
+        self::assertStringContainsString('object-fit: cover', $css);
+        self::assertStringNotContainsString('object-fit: contain', $css);
 
         self::assertStringContainsString('personnel-file.css', $layout);
         self::assertStringContainsString('personnelFilePage', $layout);

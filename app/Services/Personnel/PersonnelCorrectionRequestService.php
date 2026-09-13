@@ -975,6 +975,16 @@ final class PersonnelCorrectionRequestService
      * @param array<string, mixed> $before
      * @return list<string>
      */
+    public function diffLinesForDisplay(array $proposed, array $before, ?int $tenantId = null): array
+    {
+        return $this->formatDiffLines($proposed, $before, $tenantId);
+    }
+
+    /**
+     * @param array<string, mixed> $proposed
+     * @param array<string, mixed> $before
+     * @return list<string>
+     */
     private function formatDiffLines(array $proposed, array $before, ?int $tenantId = null): array
     {
         $lines = [];

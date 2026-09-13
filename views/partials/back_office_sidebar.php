@@ -69,6 +69,10 @@ $boBadges = [
     'recruitments_submitted' => 0,
     'forum_moderation_total' => 0,
     'personal_inbox' => 0,
+    'messages_unread' => 0,
+    'events_rsvp_pending' => 0,
+    'qualifications_expiring' => 0,
+    'my_enlistments_pending' => 0,
     'show_staff_recruitment' => false,
 ];
 try {

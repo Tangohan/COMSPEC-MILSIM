@@ -625,8 +625,14 @@ public static partial class Extension
                 if (access.Length > 0)
                 {
                     _gameAccessToken = access;
-                    // Bearer jeu suffit : une ancienne clé CBA/profil ne doit plus partir en X-COMSPEC-KEY.
-                    ApplyApiKeyHeaders("");
+                    // Clé communauté fournie par le portail (comme Appairer) : la garder
+                    // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
+                    // effacer une clé déjà valide (Redeem / Connect préalable).
+                    var apiKeyFromAuth = root.TryGetProperty("api_key", out var akEl)
+                        ? (akEl.GetString() ?? "")
+                        : "";
+                    if (apiKeyFromAuth.Length > 0)
+                        ApplyApiKeyHeaders(apiKeyFromAuth);
                 }
                 if (tokens.TryGetProperty("expires_in", out var exp)
                     && exp.ValueKind == JsonValueKind.Number

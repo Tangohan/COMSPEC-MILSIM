@@ -15,6 +15,7 @@ $eventsRsvpSummaries = $eventsRsvpSummaries ?? [];
 $eventSlotsByEvent = $eventSlotsByEvent ?? [];
 $mySlotAssignmentByEvent = $mySlotAssignmentByEvent ?? [];
 $canPublishOperationalBoard = !empty($canPublishOperationalBoard);
+$eventsInBackOffice = !empty($eventsInBackOffice);
 
 $typeMeta = [
     'operation' => ['label' => 'Opération', 'badge' => 'is-rose'],
@@ -394,7 +395,8 @@ $eventCount = count($events);
     }
     .events-detail__rsvp-col .muted { color: #94a3b8; font-size: 0.75rem; }
 </style>
-<div class="bg-slate-50 pb-16 sm:pb-24">
+<div class="bg-slate-50 <?= $eventsInBackOffice ? 'pb-8 sm:pb-10' : 'pb-16 sm:pb-24' ?>">
+    <?php if (!$eventsInBackOffice): ?>
     <div class="relative overflow-hidden border-b border-slate-800/80 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white">
         <div class="relative mx-auto max-w-[1600px] px-4 pt-10 pb-12 sm:px-6 sm:pt-14 sm:pb-16 lg:px-8">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/95">Agenda</p>
@@ -411,8 +413,16 @@ $eventCount = count($events);
             <?php endif; ?>
         </div>
     </div>
+    <?php elseif (!empty($calendar_subscription_url)): ?>
+    <div class="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
+        <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <span class="block text-xs font-semibold text-slate-600">Abonnement calendrier (lecture seule, lien personnel)</span>
+            <input type="text" readonly class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800" value="<?= htmlspecialchars((string) $calendar_subscription_url, ENT_QUOTES, 'UTF-8') ?>" onclick="this.select();">
+        </div>
+    </div>
+    <?php endif; ?>
 
-    <div class="mx-auto max-w-[1600px] space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-[1600px] space-y-6 px-4 <?= $eventsInBackOffice ? 'py-6' : 'py-10' ?> sm:px-6 lg:px-8">
         <?php
         $quotaBanner = $eventsQuota ?? null;
         $quotaCanProceed = true;
@@ -666,6 +676,7 @@ $eventCount = count($events);
                                                 Vous êtes <?= (string) ($mySlotAssignment['status'] ?? '') === 'waitlisted' ? 'en liste d’attente sur un poste' : 'inscrit sur un poste' ?> pour cet événement.
                                                 <form method="post" action="<?= url('evenements/' . $eid . '/slots/desinscription') ?>" style="display:inline">
                                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                    <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="bo"><?php endif; ?>
                                                     <button type="submit" class="events-sheets__btn">Me désinscrire</button>
                                                 </form>
                                             </p>
@@ -689,6 +700,7 @@ $eventCount = count($events);
                                                         <?php if ($currentUserId && !$mySlotAssignment): ?>
                                                         <form method="post" action="<?= url('evenements/' . $eid . '/slots/' . $sid . '/inscription') ?>">
                                                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                            <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="bo"><?php endif; ?>
                                                             <button type="submit" class="events-sheets__btn"><?= $full ? 'Liste d’attente' : 'S’inscrire' ?></button>
                                                         </form>
                                                         <?php else: ?>

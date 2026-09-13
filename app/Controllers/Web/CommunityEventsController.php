@@ -30,16 +30,22 @@ final class CommunityEventsController
         private CommunityEventSlotService $slotService
     ) {}
 
-    public function index(Request $request, array $params = []): Response
+    /**
+     * Données partagées entre la page portail et le back-office (ma situation).
+     *
+     * @return array{blocked: bool, vars: array<string, mixed>}
+     */
+    public function buildIndexPayload(): array
     {
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::view('layout.main', [
-                'title' => 'Événements',
-                'content' => 'platform.upgrade',
-                'feature' => 'events',
-                'planName' => 'pro',
-            ]);
+            return [
+                'blocked' => true,
+                'vars' => [
+                    'feature' => 'events',
+                    'planName' => 'pro',
+                ],
+            ];
         }
         $user = $this->authService->user();
         $this->featureGate->maybeRecordQuotaSoftBlock(
@@ -88,31 +94,64 @@ final class CommunityEventsController
         $eventSlotsByEvent = $this->slots->listForEventsWithCounts($eventIds);
         $mySlotAssignmentByEvent = $userId ? $this->slotAssignments->listForUserAcrossEvents($userId, $eventIds) : [];
 
-        return Response::view('layout.main', [
+        return [
+            'blocked' => false,
+            'vars' => [
+                'events' => $rows,
+                'currentUserId' => $userId,
+                'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
+                'eventsCheckInFlags' => $checkInFlags,
+                'calendar_subscription_url' => $calendarSubscriptionUrl,
+                'canPublishOperationalBoard' => $canPublishOperationalBoard,
+                'eventsRsvpSummaries' => $rsvpSummaries,
+                'eventSlotsByEvent' => $eventSlotsByEvent,
+                'mySlotAssignmentByEvent' => $mySlotAssignmentByEvent,
+            ],
+        ];
+    }
+
+    public function listRedirectUrl(Request $request): string
+    {
+        $returnTo = trim((string) $request->input('return_to', ''));
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if (
+            $returnTo === 'bo'
+            || $returnTo === 'back-office/ma-situation/evenements'
+            || str_contains($referer, 'ma-situation/evenements')
+        ) {
+            return url('back-office/ma-situation/evenements');
+        }
+
+        return url('evenements');
+    }
+
+    public function index(Request $request, array $params = []): Response
+    {
+        $payload = $this->buildIndexPayload();
+        if ($payload['blocked']) {
+            return Response::view('layout.main', array_merge([
+                'title' => 'Événements',
+                'content' => 'platform.upgrade',
+            ], $payload['vars']));
+        }
+
+        return Response::view('layout.main', array_merge([
             'title' => 'Événements & opérations',
             'content' => 'community.events',
-            'events' => $rows,
-            'currentUserId' => $userId,
-            'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
-            'eventsCheckInFlags' => $checkInFlags,
-            'calendar_subscription_url' => $calendarSubscriptionUrl,
-            'canPublishOperationalBoard' => $canPublishOperationalBoard,
-            'eventsRsvpSummaries' => $rsvpSummaries,
-            'eventSlotsByEvent' => $eventSlotsByEvent,
-            'mySlotAssignmentByEvent' => $mySlotAssignmentByEvent,
-        ]);
+        ], $payload['vars']));
     }
 
     public function signUpSlot(Request $request, array $params = []): Response
     {
+        $listUrl = $this->listRedirectUrl($request);
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -124,7 +163,7 @@ final class CommunityEventsController
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Inscription impossible.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         Session::flash('success', $result['status'] === 'waitlisted' ? 'Poste complet : vous êtes en liste d’attente.' : 'Inscription au poste confirmée.');
         // Prérequis de qualification non satisfait en mode « advisory » : l'inscription passe,
@@ -133,19 +172,20 @@ final class CommunityEventsController
             Session::flash('warning', (string) $result['warning']);
         }
 
-        return Response::redirect(url('evenements'));
+        return Response::redirect($listUrl);
     }
 
     public function leaveSlot(Request $request, array $params = []): Response
     {
+        $listUrl = $this->listRedirectUrl($request);
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -156,23 +196,24 @@ final class CommunityEventsController
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Désinscription impossible.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         Session::flash('success', 'Désinscription du poste effectuée.');
 
-        return Response::redirect(url('evenements'));
+        return Response::redirect($listUrl);
     }
 
     public function rsvp(Request $request, array $params = []): Response
     {
+        $listUrl = $this->listRedirectUrl($request);
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $user = $this->authService->user();
         if (!$user) {
@@ -186,7 +227,7 @@ final class CommunityEventsController
         if (!$this->events->belongsToTenant($eventId, $tenantId)) {
             Session::flash('error', 'Événement introuvable.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         $result = $this->attendance->setRsvpWithNotifications(
             $eventId,
@@ -199,11 +240,11 @@ final class CommunityEventsController
         if (!($result['ok'] ?? false)) {
             Session::flash('error', $result['error'] ?? 'Impossible d’enregistrer.');
 
-            return Response::redirect(url('evenements'));
+            return Response::redirect($listUrl);
         }
         Session::flash('success', 'Participation enregistrée.');
 
-        return Response::redirect(url('evenements'));
+        return Response::redirect($listUrl);
     }
 
     /**
