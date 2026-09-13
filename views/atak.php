@@ -449,8 +449,8 @@ if ($atakMapConfig) {
         </div>
         <div class="atak-game-link-confirm" id="atak-game-link-confirm-wrap" style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(122,168,154,.22)">
           <h3 class="atak-account-section-title" style="margin:0 0 .4rem">Valider un terminal ATAK</h3>
-          <p class="atak-game-link-hint" style="margin-top:0">Si le téléphone affiche déjà un code (menu Associer ce terminal), recopiez-le ici pour l’autoriser. Ce n’est pas le même code que celui généré ci-dessus.</p>
-          <label class="atak-game-link-code-label" for="atak-game-link-confirm">Code affiché sur le téléphone</label>
+          <p class="atak-game-link-hint" style="margin-top:0">Uniquement le code du menu <strong>Associer ce terminal</strong> (souvent du type ABCD-EFGH). Ce n’est <strong>pas</strong> le code de « Liaison téléphone » ni celui généré ci-dessus : le code de liaison téléphone se saisit sur la page mobile Athena (adresse affichée en jeu), pas ici.</p>
+          <label class="atak-game-link-code-label" for="atak-game-link-confirm">Code « Associer ce terminal »</label>
           <div class="atak-phone-link-actions" style="margin-top:.4rem;gap:.5rem;display:flex;flex-wrap:wrap;align-items:center">
             <input type="text" id="atak-game-link-confirm" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH" style="text-transform:uppercase;letter-spacing:.12em;font-weight:700;max-width:12rem;padding:.45em .6em">
             <button type="button" class="atak-game-link-btn" id="atak-game-link-confirm-btn">Valider ce terminal</button>

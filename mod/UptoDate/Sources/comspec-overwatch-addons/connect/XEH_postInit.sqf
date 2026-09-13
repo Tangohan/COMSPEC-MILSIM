@@ -198,6 +198,14 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         if (_cut isEqualType true) then {
             [_cut, false] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
         };
+        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
+        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
+            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
+        };
+        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
+        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
+            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
+        };
         private _strip = profileNamespace getVariable ["COMSPEC_LinkStripVisible", "UNSET"];
         if (_strip isEqualType true) then {
             [_strip, false] call comspec_overwatch_connect_fnc_linkStripApplySetting;

@@ -386,6 +386,25 @@ class AtakController
         $this->pairingService ??= \App\Core\Container::get(GameAtakPairingService::class);
         $result = $this->pairingService->approveFromWeb($raw, $userId, $tenantId);
 
+        // Code « Liaison téléphone » (carte mobile /connect) ≠ code « Associer ce terminal ».
+        if (
+            !$result['ok']
+            && (($result['payload']['error'] ?? '') === 'invalid_code')
+            && trim($raw) !== ''
+        ) {
+            $phonePairing = (new TacticalPhonePairingRepository())->findValidByCode($raw);
+            if ($phonePairing !== null) {
+                $connectLabel = preg_replace('#^https?://#i', '', rtrim(url('connect'), '/')) ?: '…/connect';
+
+                return Response::json([
+                    'error' => 'phone_pairing_code',
+                    'message' => 'Ce code ouvre la carte sur un téléphone réel : saisissez-le sur '
+                        . $connectLabel
+                        . ' (navigateur du téléphone), pas ici. Pour lier Arma à votre compte, utilisez « Générer un code » ci-dessus, puis collez-le dans Athena → Lier.',
+                ], 400);
+            }
+        }
+
         return Response::json($result['payload'], $result['status']);
     }
 

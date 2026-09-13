@@ -8,12 +8,13 @@ if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (!(_order isEqualType createHashMap)) exitWith {};
 
-private _id = _order getOrDefault ["id", ""];
+private _id = trim (str (_order getOrDefault ["id", ""]));
 private _issuer = _order getOrDefault ["issuer", ""];
 private _type = _order getOrDefault ["type", "MOVE"];
 private _priority = _order getOrDefault ["priority", "IMPORTANT"];
 
 if (_id isEqualTo "") exitWith {};
+_order set ["id", _id];
 
 if (!([_order] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) exitWith {};
 
@@ -28,8 +29,10 @@ private _explicitMe = (_target != "") && {
 if (_issuer isEqualTo _myName && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
 if (_issuer isEqualTo _myCallsign && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
 
-// Éviter les doublons (remoteExec + bus local + poll)
+// Éviter les doublons (remoteExec + bus local + poll) — ids toujours en chaîne
 private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
+if (!(_seen isEqualType [])) then { _seen = []; };
+_seen = _seen apply { trim (str _x) };
 if (_id in _seen) exitWith {};
 _seen pushBack _id;
 if (count _seen > 80) then { _seen deleteRange [0, (count _seen) - 80]; };

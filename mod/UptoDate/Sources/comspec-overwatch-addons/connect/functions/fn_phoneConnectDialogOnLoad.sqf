@@ -116,7 +116,7 @@ private _fnc_setCenter = {
 
         _urlLine + _codeLine +
 
-        "<br/><br/><t align='center' size='0.45' color='#9ab0c0'>Saisissez ce code sur la page ouverte sur votre téléphone.</t>"
+        "<br/><br/><t align='center' size='0.45' color='#9ab0c0'>Saisissez ce code sur la page mobile (navigateur du téléphone), pas dans Appairer sur le poste.</t>"
 
     };
 

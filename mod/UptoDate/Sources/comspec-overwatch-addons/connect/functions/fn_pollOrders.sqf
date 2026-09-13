@@ -1,9 +1,7 @@
 /*
-
     Interroge Athena (GetOrders) et fusionne les ordres web dans COMSPEC_Orders.
-
     Notifie via receiveOrder pour les nouveaux IDs.
-
+    Les identifiants sont toujours des chaînes : évite les doublons au refresh.
 */
 
 if (!hasInterface) exitWith { false };
@@ -19,15 +17,11 @@ if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 
 private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 
-
-
 private _raw = ["COMSPECExtension" callExtension ["GetOrders", [_mapId, "40", _callsign]]] call comspec_overwatch_connect_fnc_extResult;
 
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 
 if ((_raw select [0, 3]) != "OK|") exitWith { false };
-
-
 
 private _body = _raw select [3];
 
@@ -37,21 +31,26 @@ private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 
 if (!(_orders isEqualType [])) then { _orders = []; };
 
+private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
+if (!(_dismissed isEqualType [])) then { _dismissed = []; };
+_dismissed = _dismissed apply { trim (str _x) };
+missionNamespace setVariable ["COMSPEC_OrdersDismissed", _dismissed, false];
 
-
+// Index unique par id (chaîne) — écrase d’éventuels doublons déjà présents.
 private _byId = createHashMap;
-
 {
-
     if (!(_x isEqualType createHashMap)) then { continue };
-
-    private _oid = _x getOrDefault ["id", ""];
-
-    if (_oid != "") then { _byId set [_oid, _x]; };
-
+    private _oid = trim (str (_x getOrDefault ["id", ""]));
+    if (_oid isEqualTo "") then { continue };
+    _x set ["id", _oid];
+    private _prev = _byId getOrDefault [_oid, createHashMap];
+    if (_prev isEqualType createHashMap && {count _prev > 0}) then {
+        private _prevUpd = _prev getOrDefault ["updatedAt", 0];
+        private _curUpd = _x getOrDefault ["updatedAt", 0];
+        if (_curUpd < _prevUpd) then { continue };
+    };
+    _byId set [_oid, _x];
 } forEach _orders;
-
-
 
 private _tab = toString [9];
 
@@ -59,10 +58,7 @@ private _added = 0;
 
 private _newOnes = [];
 
-
-
 {
-
     private _line = _x;
 
     if (_line isEqualTo "") then { continue };
@@ -71,19 +67,15 @@ private _newOnes = [];
 
     if ((count _cols) < 6) then { continue };
 
-
-
     private _unblank = {
         params ["_s"];
         _s = trim _s;
         if (_s isEqualTo "-") then { "" } else { _s };
     };
 
-    private _id = trim ([_cols select 0] call _unblank);
+    private _id = trim (str ([_cols select 0] call _unblank));
     if (_id isEqualTo "") then { continue };
 
-    private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
-    if (!(_dismissed isEqualType [])) then { _dismissed = []; };
     if (_id in _dismissed) then { continue };
 
     private _type = [_cols select 1] call _unblank;
@@ -102,85 +94,46 @@ private _newOnes = [];
     if (_status isEqualTo "") then { _status = "PENDING"; };
     _status = toUpper _status;
 
-
-
     private _existing = _byId getOrDefault [_id, createHashMap];
 
     if (_existing isEqualType createHashMap && {count _existing > 0}) then {
-
+        _existing set ["id", _id];
         _existing set ["type", _type];
-
         _existing set ["target", _target];
-
         _existing set ["priority", _priority];
-
         _existing set ["issuer", _issuer];
-
         _existing set ["status", _status];
-
         _existing set ["payload", _payload];
-
         _existing set ["targetType", _targetType];
-
         _existing set ["targetRef", _targetRef];
-
         _existing set ["aliases", _aliases];
-
         _existing set ["typeLabel", _typeLabel];
-
         _existing set ["source", "web"];
-
         _existing set ["updatedAt", serverTime];
-
+        _byId set [_id, _existing];
         continue;
-
     };
 
-
-
     private _order = createHashMapFromArray [
-
         ["id", _id],
-
         ["parentId", ""],
-
         ["type", _type],
-
         ["target", _target],
-
         ["payload", _payload],
-
         ["priority", _priority],
-
         ["issuer", _issuer],
-
         ["status", _status],
-
         ["targetType", _targetType],
-
         ["targetRef", _targetRef],
-
         ["aliases", _aliases],
-
         ["typeLabel", _typeLabel],
-
         ["source", "web"],
-
         ["createdAt", serverTime],
-
         ["updatedAt", serverTime]
-
     ];
 
-
-
     // Ne garder localement que ce qui nous concerne (filet si le serveur n’a pas filtré)
-
     if (!([_order] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) then { continue };
-
-
-
-    _orders pushBack _order;
 
     _byId set [_id, _order];
 
@@ -194,16 +147,12 @@ private _newOnes = [];
 
 } forEach _lines;
 
-
-
+// Liste sans doublons (valeurs de l’index par id).
+_orders = values _byId;
 missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
 
-
-
 {
-
     [_x] call comspec_overwatch_connect_fnc_receiveOrder;
-
 } forEach _newOnes;
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat") then {
@@ -211,4 +160,3 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat") the
 };
 
 _added > 0
-

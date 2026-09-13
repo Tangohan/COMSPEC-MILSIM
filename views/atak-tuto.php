@@ -37,7 +37,8 @@ $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organiz
             <ul class="list-disc pl-6 text-slate-700 space-y-2 text-sm">
                 <li><strong>Code Appairer</strong> — généré sur le portail (carte → Appairer, ou Première liaison). À coller dans le téléphone Athena en jeu. Valable environ 30 minutes, usage unique. C’est le chemin recommandé pour les membres.</li>
                 <li><strong>Clé d’accès communauté</strong> — générée une fois par un administrateur. Elle autorise la liaison jeu pour toute la communauté. Avec Appairer, elle est transmise automatiquement : les membres n’ont pas à la recopier.</li>
-                <li><strong>Code terminal / téléphone</strong> — autre code, pour autoriser un appareil (menu Associer ce terminal). Ce n’est pas le code Appairer Overwatch.</li>
+                <li><strong>Code terminal</strong> — menu <em>Associer ce terminal</em> en jeu, à coller dans Valider un terminal sur le poste (pas le code Appairer Overwatch, ni le code Liaison téléphone).</li>
+                <li><strong>Code liaison téléphone</strong> — écran Liaison téléphone en jeu : à saisir sur la page mobile Athena dans le navigateur du téléphone réel.</li>
             </ul>
         </section>
 

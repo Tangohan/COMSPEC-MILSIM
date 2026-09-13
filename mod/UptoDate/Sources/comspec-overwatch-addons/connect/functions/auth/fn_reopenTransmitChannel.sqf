@@ -24,6 +24,19 @@ if (_dllState isEqualTo "READY") then {
 
 if (!([] call comspec_overwatch_connect_fnc_canStartSync)) exitWith { false };
 
+// Si le canal est utilisable mais AthenaReady encore faux (ex. erreur C2_* obsolète), aligner.
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) then {
+    missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
+    missionNamespace setVariable ["COMSPEC_AthenaReadyAt", diag_tickTime, false];
+    if ((missionNamespace getVariable ["COMSPEC_LinkState", ""]) isNotEqualTo "linked") then {
+        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+    };
+    private _err = missionNamespace getVariable ["comspec_overwatch_auth_error", ""];
+    if ((_err isEqualType "") && {(toUpper _err) find "C2_" == 0}) then {
+        missionNamespace setVariable ["comspec_overwatch_auth_error", "", false];
+    };
+};
+
 private _fnc_forcePos = {
     if (isNull player || {!alive player}) exitWith {};
     if (isNil "comspec_overwatch_connect_fnc_updatePosition") exitWith {};

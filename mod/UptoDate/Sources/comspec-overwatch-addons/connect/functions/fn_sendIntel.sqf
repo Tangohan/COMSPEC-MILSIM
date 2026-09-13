@@ -14,10 +14,8 @@ if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
 // Canal poste réellement ouvert — pas seulement un READY trompeur pendant le handshake.
 if (!isNil "comspec_overwatch_connect_fnc_canStartSync"
     && {!([] call comspec_overwatch_connect_fnc_canStartSync)}) exitWith {};
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
-// Ne plus bloquer le chat pendant HandshakeQuiet : AuthInvalidated ignore déjà
-// les 401 pendant cette fenêtre. Couper SendChat ici coupait le journal radio
-// jeu↔web pendant ~20 s (et plus si la quiet était prolongée).
+// canStartSync fait foi (AthenaReady OU session prête + canal OK).
+// Ne plus exiger AthenaReady seul : sinon Messagerie reste muette alors que photos / sync tournent.
 
 private _validIntelTypes = ["PING", "CHAT", "PHOTO", "ENEMY_INF", "VEH", "AIR", "IED", "SIGNAL", "HUMINT"];
 if !(_type in _validIntelTypes) then { _type = "HUMINT"; };

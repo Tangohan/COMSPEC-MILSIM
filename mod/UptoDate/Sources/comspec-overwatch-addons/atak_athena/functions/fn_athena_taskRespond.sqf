@@ -1,10 +1,51 @@
 /*
     Réponse à l’ordre sélectionné dans TASK (Accepter / Refuser / En cours / Abort / Supprimer).
-    Params: [_action] ACCEPT | REFUSE | EXEC | ABORT | DONE | DISMISS
+    Params: [_action] ACCEPT | REFUSE | EXEC | ABORT | DONE | DISMISS | CLEAR_HISTORY
 */
 params [["_action", "ACCEPT", [""]]];
 
 if (!hasInterface) exitWith {};
+
+private _actionKey = toUpper (trim _action);
+
+// Vider l’historique : retire les ordres déjà clos (refusés, terminés, annulés).
+// Ils ne réapparaissent pas au prochain Actualiser pendant la session.
+if (_actionKey in ["CLEAR_HISTORY", "CLEAR_HIST", "PURGE_HISTORY", "CLEAR"]) exitWith {
+    private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
+    if (!(_dismissed isEqualType [])) then { _dismissed = []; };
+    _dismissed = _dismissed apply { trim (str _x) };
+
+    private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
+    if (!(_orders isEqualType [])) then { _orders = []; };
+
+    private _kept = [];
+    private _removed = 0;
+    {
+        if (!(_x isEqualType createHashMap)) then { continue };
+        private _oid = trim (str (_x getOrDefault ["id", ""]));
+        if (_oid isEqualTo "") then { continue };
+        _x set ["id", _oid];
+        private _st = toUpper (trim (_x getOrDefault ["status", "PENDING"]));
+        if (_st in ["FAILED", "CANCELLED", "DONE", "CLOSED"]) then {
+            if !(_oid in _dismissed) then { _dismissed pushBack _oid; };
+            _removed = _removed + 1;
+        } else {
+            _kept pushBack _x;
+        };
+    } forEach _orders;
+
+    missionNamespace setVariable ["COMSPEC_OrdersDismissed", _dismissed, false];
+    missionNamespace setVariable ["COMSPEC_Orders", _kept, false];
+    uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
+
+    private _msg = if (_removed < 1) then {
+        "Aucun ordre clos à retirer."
+    } else {
+        format ["Historique vidé : %1 ordre%2 retiré%2.", _removed, if (_removed > 1) then { "s" } else { "" }]
+    };
+    [_msg, "order", "info"] call comspec_overwatch_connect_fnc_announce;
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
+};
 
 private _orderId = uiNamespace getVariable ["COMSPEC_ATAK_Task_selectedId", ""];
 if (!(_orderId isEqualType "")) then { _orderId = str _orderId; };
@@ -28,8 +69,6 @@ if (_orderId isEqualTo "") then {
 if (_orderId isEqualTo "") exitWith {
     ["Sélectionnez d’abord un ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
-
-private _actionKey = toUpper _action;
 
 // Retrait local d’un ordre déjà traité (ne revient pas tant que la session dure).
 if (_actionKey in ["DISMISS", "DELETE", "REMOVE"]) exitWith {

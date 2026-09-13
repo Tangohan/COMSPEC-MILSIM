@@ -614,6 +614,117 @@ final class DevDispatchCatalog
                 'Les communautés déjà en place voient une invitation de configuration ; rien ne change tant qu’elles n’ouvrent pas le référentiel.',
                 'Une qualification obtenue peut déclencher des droits métier ciblés, jamais un accès d’administration de la plateforme.',
             ], 'Athena 1.0.113'),
+            $pr(538, '2026-09-13', 'Menu ACE Athena rangé par rubriques', 'Dans le menu d’interaction ACE, COMSPEC Athena n’étale plus une longue liste d’actions. Vous ouvrez d’abord une rubrique (Applications, Affichage situation, Transmission, Cartographie, Appui & mission, Tenues, Compte & liaison). Connexion et téléphone restent en tête', [
+                'Menu ACE Athena organisé en rubriques',
+            ], [
+                'Libellés raccourcis dans chaque rubrique',
+            ], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.65). Quittez Arma. Self-interact ACE → COMSPEC Athena : quelques rubriques, pas une colonne de 25 lignes.',
+            ], 'Overwatch 1.5.65 · Athena 1.0.112'),
+            $pr(537, '2026-09-13', 'Affichage situation : plus de données en double', 'Sous jumelles, un même lieu n’affiche plus plusieurs fois le même nom. Les marqueurs trop proches sont fusionnés. Un bâtiment désigné n’a qu’un libellé (avec l’étage si le découpage est actif), sans empiler marqueur, badge et étage', [], [], [
+                'Même bâtiment affiché plusieurs fois (ex. Ranger Headquarters ×2 + variante [id] + Étage)',
+                'Ombre de texte lue comme un second libellé sous JVN',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.64). Quittez Arma. Désignez un bâtiment sous JVN : un seul libellé net.',
+            ], 'Overwatch 1.5.64 · Athena 1.0.112'),
+            $pr(536, '2026-09-13', 'Affichage situation JVN : badges nettoyés', 'Sous jumelles, les pastilles alliés et marqueurs n’empilent plus texte doublé ni plaques cyan. Quand plusieurs points se croisent à l’écran, seuls les plus proches gardent le libellé ; les autres restent en pastille', [], [], [
+                'Texte doublé et plaques illisibles sous JVN',
+                'Empilement de badges quand plusieurs marqueurs sont proches',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.63). Quittez Arma. Activez Affichage situation, passez en JVN, visez une zone avec plusieurs marqueurs.',
+            ], 'Overwatch 1.5.63 · Athena 1.0.112'),
+            $pr(535, '2026-09-13', 'Ordres reçus : plus de doublons, historique vidable', 'Dans Ordres reçus, Actualiser met à jour la liste sans recréer les mêmes ordres. Un bouton Vider l’historique retire d’un coup les ordres déjà refusés, terminés ou annulés ; ils ne reviennent pas au prochain Actualiser pendant la session', [
+                'Bouton Vider l’historique à côté d’Actualiser',
+            ], [], [
+                'Actualiser qui dupliquait les ordres déjà reçus (ex. plusieurs fois le même refus)',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.62 · Athena 1.0.112). Quittez Arma. Ordres reçus → Actualiser (plus de doublons) → Vider l’historique sur les ordres clos.',
+            ], 'Overwatch 1.5.62 · Athena 1.0.112'),
+            $pr(534, '2026-09-13', 'Messagerie : envoi débloqué et textes lisibles', 'Dans Messagerie, vous pouvez envoyer dès que le canal poste est ouvert. Les libellés des canaux et du fil sont plus grands et plus contrastés', [], [
+                'Fil Messagerie plus lisible',
+            ], [
+                'Envoi refusé alors que le canal poste tournait déjà',
+                'Textes du fil trop petits et peu contrastés',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.61 · Athena 1.0.111). Quittez Arma. Messagerie → canal → saisir → Envoyer.',
+            ], 'Overwatch 1.5.61 · Athena 1.0.111'),
+            $pr(533, '2026-09-13', 'Entrer ouvre vraiment le canal poste', 'Quand le téléphone affiche Compte trouvé — Entrer, un appui sur le bandeau ou sur Entrer ouvre le canal vers le poste. L’écran passe ensuite à l’état connecté si la liaison est bonne', [], [], [
+                'Bandeau Entrer qui ne faisait que rafraîchir l’écran',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.110). Quittez Arma. Compte trouvé → Entrer : le bandeau doit passer à Connecté.',
+            ], 'Overwatch 1.5.60 · Athena 1.0.110'),
+            $pr(532, '2026-09-13', 'Barre de liaison : une ligne, un fond', 'En bas de la carte, la barre de liaison tient sur une seule ligne : état, indicatif, nom et versions. Le double bandeau opaque disparaît. Les versions Overwatch, Athena et liaison sont à la même petite taille que l’identité', [], [
+                'Barre de liaison compacte sur une ligne',
+            ], [
+                'Double zone opaque et versions trop grandes',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.109). Quittez Arma. Ouvrez le téléphone : la barre en bas est une seule ligne nette.',
+            ], 'Overwatch 1.5.60 · Athena 1.0.109'),
+            $pr(531, '2026-09-13', 'Affichage situation JVN : couleurs, contours, découpe au regard', 'Sous jumelles, les badges et textes se lisent mieux. Vous choisissez un thème de couleurs dans Paramètres. Les alliés proches ont une surbrillance. La silhouette d’un bâtiment désigné épouse mieux sa forme. Via ACE, vous pointez un bâtiment et le découpez à la hauteur regardée (sans ouvrir les murs)', [
+                'Thème de couleurs situation (JVN / lime / ambre / blanc / bleu)',
+                'Surbrillance des personnes alliées',
+                'Silhouette bâtiment plus collée à la géométrie',
+                'ACE : Découper à la hauteur regardée',
+            ], [
+                'Badges plus contrastés sous jumelles',
+            ], [
+                'Icônes et textes trop sombres sous JVN',
+                'Cadre bâtiment trop « boîte » Eden',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.60 · Athena 1.0.108). Quittez Arma. Activez Affichage situation, choisissez un thème, désignez un bâtiment, puis ACE → Découper à la hauteur regardée.',
+            ], 'Overwatch 1.5.60 · Athena 1.0.108'),
+            $pr(530, '2026-09-13', 'Paramètres : aide Liaison au poste lisible', 'Dans Paramètres du téléphone, le texte sous Liaison au poste n’est plus coupé : vous lisez clairement qu’il faut préférer Appairer sur le portail, et que les réglages avancés sont rarement nécessaires', [], [
+                'Description Liaison au poste contrastée et entièrement visible',
+            ], [
+                'Texte tronqué juste avant Afficher les réglages avancés',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.107). Quittez Arma. Ouvrez Paramètres et descendez jusqu’à Liaison au poste.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.107'),
+            $pr(529, '2026-09-13', 'Code liaison téléphone ≠ valider un terminal', 'Le code affiché sous Liaison téléphone sert à ouvrir la carte sur un téléphone réel (page mobile Athena). Si vous le collez dans Valider un terminal sur le poste, Athena le reconnaît maintenant et indique d’ouvrir la bonne page. Pour lier Arma au compte : Générer un code sous Appairer, puis le coller dans Athena → Lier', [
+                'Message clair si le code de liaison téléphone est collé au mauvais endroit',
+                'Libellés Appairer / Valider un terminal précisés',
+            ], [
+                'Aide Liaison téléphone : navigateur du téléphone, pas Appairer sur le poste',
+            ], [
+                'Code liaison téléphone refusé comme « inconnu ou expiré » sans expliquer le bon parcours',
+            ], ['atak'], [
+                'Sur le poste, Appairer : le code de Liaison téléphone n’est plus accepté à tort pour Valider un terminal. Pour lier le jeu : Générer un code, coller dans Athena. Pour la carte mobile : ouvrir l’adresse affichée en jeu sur le téléphone.',
+            ], 'Portail · Overwatch 1.5.59 · Athena 1.0.106'),
+            $pr(528, '2026-09-13', 'Connexion Athena : mot de passe ou code, plus clair', 'Sous Ou compte Athena, vous choisissez d’abord Mot de passe ou Code e-mail : seul le bon champ apparaît. En mode code, Recevoir le code et Valider le code sont séparés. La touche Entrée valide le mot de passe, le code e-mail ou le code Appairer', [
+                'Boutons Mot de passe et Code e-mail avec champ dédié',
+                'Validation par la touche Entrée',
+            ], [], [
+                'Mot de passe et code affichés en même temps, peu lisibles',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.106). Quittez Arma. Ouvrez Connexion Athena : choisissez un mode, saisissez, validez avec Entrée.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.106'),
+            $pr(527, '2026-09-13', 'En liaison ≠ compte connecté : l’écran le dit enfin', 'Le téléphone distingue clairement la liaison appareil (le poste vous voit) et le compte Athena connecté en jeu (prénom et nom chargés). Steam n’est plus obligatoire pour considérer le compte connecté. Si vous êtes en liaison sans fiche, le bandeau affiche « En liaison — compte à ouvrir » au lieu d’un faux « Compte trouvé / non connecté »', [
+                'États séparés : en liaison / compte à ouvrir / connecté',
+                'Steam facultatif pour la fiche connectée',
+            ], [
+                'Tutoriel / WIKI aligné sur cette distinction',
+            ], [
+                'Écran qui disait non connecté alors que le poste voyait déjà l’appareil',
+                'Steam non associé bloquait à tort la fiche connectée',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.105). Quittez Arma. Si le poste vous voit mais le jeu montre le pseudo : bandeau « En liaison — compte à ouvrir », puis Entrer ou Appairer / e-mail.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.105'),
+            $pr(526, '2026-09-13', 'Tutoriel liaison et textes Athena lisibles', 'Sur Connexion Athena, les aides sous Compte non connecté et Ou compte Athena se lisent clairement. Une tuile Tutoriel / WIKI explique la différence entre liaison, compte connecté et synchronisation, et le dépannage si le pseudo de jeu apparaît à la place du prénom et du nom', [
+                'Tuile Tutoriel / WIKI sur le bureau et dans le tiroir d’applications',
+                'Explication liaison / connecté / sync et dépannage identité',
+            ], [
+                'Aides de connexion Athena plus contrastées et moins coupées',
+            ], [], ['atak'], [
+                'Rechargez le pack (Athena 1.0.104). Quittez Arma. Ouvrez Connexion Athena : les textes d’aide sont lisibles. Sur le bureau, ouvrez Tutoriel / WIKI.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.104'),
+            $pr(525, '2026-09-13', 'Barre de liaison en bas, identité Athena honnête', 'Sur le téléphone, la barre de liaison (OK / NOK) est désormais collée en bas de la carte. L’indicatif et le nom du compte y sont écrits en tout petit. Un OK n’apparaît plus si seul le pseudo de jeu est connu : le prénom et le nom Athena sont exigés, sinon la barre reste en OK* ou NOK avec « compte… »', [
+                'Barre de liaison ancrée en bas de la carte',
+                'Indicatif et nom en taille très réduite',
+            ], [], [
+                'OK affiché alors que le bandeau montrait le pseudo Arma à la place du nom Athena',
+            ], ['atak'], [
+                'Rechargez le pack (Athena 1.0.103). Quittez Arma. Ouvrez le téléphone : la barre est en bas ; avec un compte lié, le nom Athena apparaît ; sans identité compte, plus de faux OK.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.103'),
             $pr(524, '2026-09-13', 'Chaîne de commandement en pleine largeur', 'Sur le tableau de bord, la section Chaîne de commandement occupe désormais toute la largeur de la zone principale, collée aux bords gauche et droit, pour mieux lire l’organigramme RH', [
                 'Section Chaîne de commandement en bande dédiée, sans marge latérale',
             ], [], [], ['personnel', 'command'], [

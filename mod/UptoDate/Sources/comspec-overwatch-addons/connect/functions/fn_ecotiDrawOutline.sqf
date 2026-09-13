@@ -1,8 +1,14 @@
 /*
-    Contour (cadre orienté) d’un objet sous le regard — approximation ECOTI.
+    Contour (cadre) d’un objet sous le regard — thème ECOTI.
 */
-params [["_obj", objNull, [objNull]], ["_col", [0.95, 0.85, 0.2, 0.75], [[]]]];
+params [["_obj", objNull, [objNull]], ["_col", [], [[]]]];
 if (isNull _obj) exitWith {};
+
+if ((count _col) < 3) then {
+    private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
+    _col = _theme getOrDefault ["outline", [0.95, 0.88, 0.25, 0.7]];
+};
+_col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
 
 private _bb = boundingBoxReal _obj;
 if (!(_bb isEqualType []) || {(count _bb) < 2}) exitWith {};

@@ -239,6 +239,56 @@ if (!isNull _cbEcotiCut) then {
     missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", false, false];
 };
 
+private _cbEcotiTheme = [9873] call _ctrl;
+if (!isNull _cbEcotiTheme) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiThemeFilling", true, false];
+    private _theme = missionNamespace getVariable ["comspec_overwatch_ecoti_theme", "nvg"];
+    if (!(_theme isEqualType "")) then { _theme = "nvg"; };
+    private _profTheme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
+    if (_profTheme isEqualType "" && {_profTheme isNotEqualTo "UNSET"}) then { _theme = _profTheme; };
+    lbClear _cbEcotiTheme;
+    private _opts = [
+        ["nvg", "JVN (cyan clair)"],
+        ["lime", "Vert lime"],
+        ["amber", "Ambre"],
+        ["white", "Blanc"],
+        ["blue", "Bleu"]
+    ];
+    private _sel = 0;
+    {
+        private _ix = _cbEcotiTheme lbAdd (_x select 1);
+        _cbEcotiTheme lbSetData [_ix, _x select 0];
+        if ((_x select 0) isEqualTo _theme) then { _sel = _ix; };
+    } forEach _opts;
+    _cbEcotiTheme lbSetCurSel _sel;
+    missionNamespace setVariable ["COMSPEC_AtakEcotiThemeFilling", false, false];
+};
+
+private _cbEcotiRender = [9875] call _ctrl;
+if (!isNull _cbEcotiRender) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiRenderFilling", true, false];
+    private _mode = missionNamespace getVariable ["comspec_overwatch_ecoti_render_mode", "world3d"];
+    if (!(_mode isEqualType "")) then { _mode = "world3d"; };
+    private _profMode = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
+    if (_profMode isEqualType "" && {_profMode isNotEqualTo "UNSET"}) then { _mode = _profMode; };
+    _mode = toLower _mode;
+    if (_mode in ["screen", "hud2d", "2d"]) then { _mode = "screen2d"; };
+    if !(_mode in ["world3d", "screen2d"]) then { _mode = "world3d"; };
+    lbClear _cbEcotiRender;
+    private _optsR = [
+        ["world3d", "3D dans le paysage"],
+        ["screen2d", "2D à l’écran (anti-chevauchement)"]
+    ];
+    private _selR = 0;
+    {
+        private _ix = _cbEcotiRender lbAdd (_x select 1);
+        _cbEcotiRender lbSetData [_ix, _x select 0];
+        if ((_x select 0) isEqualTo _mode) then { _selR = _ix; };
+    } forEach _optsR;
+    _cbEcotiRender lbSetCurSel _selR;
+    missionNamespace setVariable ["COMSPEC_AtakEcotiRenderFilling", false, false];
+};
+
 private _cbLinkStrip = [9882] call _ctrl;
 if (!isNull _cbLinkStrip) then {
     missionNamespace setVariable ["COMSPEC_AtakLinkStripFilling", true, false];
