@@ -25,37 +25,36 @@ return static function (PDO $pdo): void {
         ],
     ];
 
-    $tenants = $pdo->query('SELECT id FROM tenants WHERE id > 0')->fetchAll(PDO::FETCH_COLUMN);
-    if (!is_array($tenants) || $tenants === []) {
+    $columnExists = static function (string $column) use ($pdo): bool {
+        try {
+            $st = $pdo->query("SHOW COLUMNS FROM permissions LIKE " . $pdo->quote($column));
+
+            return $st !== false && (bool) $st->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable) {
+            return false;
+        }
+    };
+
+    $hasAction = $columnExists('action');
+    $hasCode = $columnExists('code');
+    $hasLabel = $columnExists('label');
+    $hasScope = $columnExists('scope');
+
+    $tenants = $pdo->query('SELECT id FROM tenants WHERE id > 0');
+    if (!$tenants) {
         echo "atak_sse_clearance_permissions : aucun tenant.\n";
 
         return;
     }
 
-    $hasAction = false;
-    try {
-        $col = $pdo->query("SHOW COLUMNS FROM permissions LIKE 'action'");
-        $hasAction = $col && $col->fetch(PDO::FETCH_ASSOC);
-    } catch (Throwable) {
-    }
-
     $selectPerm = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
-    $insertPerm = $hasAction
-        ? $pdo->prepare(
-            'INSERT INTO permissions (tenant_id, name, slug, module, action, scope, created_at)
-             VALUES (?, ?, ?, \'atak\', \'view\', \'community\', NOW())'
-        )
-        : $pdo->prepare(
-            'INSERT INTO permissions (tenant_id, name, slug, module, scope, created_at)
-             VALUES (?, ?, ?, \'atak\', \'community\', NOW())'
-        );
     $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
 
     $created = 0;
     $linked = 0;
 
-    foreach ($tenants as $tidRaw) {
-        $tid = (int) $tidRaw;
+    while ($trow = $tenants->fetch(PDO::FETCH_ASSOC)) {
+        $tid = (int) ($trow['id'] ?? 0);
         if ($tid < 1) {
             continue;
         }
@@ -63,16 +62,42 @@ return static function (PDO $pdo): void {
         $permIds = [];
         foreach ($defs as $def) {
             $selectPerm->execute([$tid, $def['slug']]);
-            $row = $selectPerm->fetch(PDO::FETCH_ASSOC);
-            if ($row) {
-                $permIds[$def['slug']] = (int) $row['id'];
+            $existing = $selectPerm->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
+                $permIds[$def['slug']] = (int) $existing['id'];
                 continue;
             }
-            if ($hasAction) {
-                $insertPerm->execute([$tid, $def['name'], $def['slug']]);
-            } else {
-                $insertPerm->execute([$tid, $def['name'], $def['slug']]);
+
+            $cols = ['tenant_id', 'name', 'slug', 'module'];
+            $vals = [$tid, $def['name'], $def['slug'], 'atak'];
+            $placeholders = ['?', '?', '?', '?'];
+
+            if ($hasCode) {
+                $cols[] = 'code';
+                $vals[] = $def['slug'];
+                $placeholders[] = '?';
             }
+            if ($hasLabel) {
+                $cols[] = 'label';
+                $vals[] = $def['name'];
+                $placeholders[] = '?';
+            }
+            if ($hasAction) {
+                $cols[] = 'action';
+                $vals[] = 'view';
+                $placeholders[] = '?';
+            }
+            if ($hasScope) {
+                $cols[] = 'scope';
+                $vals[] = 'community';
+                $placeholders[] = '?';
+            }
+
+            $cols[] = 'created_at';
+            $placeholders[] = 'NOW()';
+
+            $sql = 'INSERT INTO permissions (' . implode(', ', $cols) . ') VALUES (' . implode(', ', $placeholders) . ')';
+            $pdo->prepare($sql)->execute($vals);
             $permIds[$def['slug']] = (int) $pdo->lastInsertId();
             $created++;
         }

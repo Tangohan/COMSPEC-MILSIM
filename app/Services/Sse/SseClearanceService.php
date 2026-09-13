@@ -27,12 +27,15 @@ use App\Repositories\SsePortalSettingsRepository;
  *
  * ## D'où vient le plafond
  *
- * Deux sources, dans cet ordre :
+ * Trois sources, dans cet ordre :
  *
  *  1. **Habilitation explicite** — permissions `atak.sse.clearance.*`. C'est la
  *     voie propre quand la communauté veut gérer ses habilitations à la main.
  *  2. **Report des rôles existants** — si aucune habilitation explicite n'est
  *     accordée, le plafond est déduit des permissions déjà en place.
+ *  3. **Fiche opérateur** — `personnel_profiles.clearance_level` : le plus haut
+ *     entre report de rôle et fiche l'emporte lorsqu'il n'y a pas de permission
+ *     explicite.
  *
  * Ce report est délibéré. Sans lui, la mise en production de cette version
  * mettrait tout le monde au plancher tant qu'un administrateur n'a pas assigné
