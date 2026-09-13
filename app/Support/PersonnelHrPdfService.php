@@ -217,110 +217,102 @@ final class PersonnelHrPdfService
         return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>'
             . $esc($title)
             . '</title><style>
-@page { margin: 18mm 16mm 18mm 16mm; }
+@page { margin: 10mm 10mm 10mm 10mm; }
 body {
   font-family: DejaVu Sans, sans-serif;
   color: #14202a;
   margin: 0;
   padding: 0;
-  font-size: 11pt;
-  line-height: 1.55;
+  font-size: 9.5pt;
+  line-height: 1.4;
 }
-.sheet { border: 1.4pt solid #1b2a33; padding: 14mm 12mm 12mm; min-height: 240mm; position: relative; }
-.sheet:before {
-  content: "";
-  position: absolute;
-  left: 3.5mm; top: 3.5mm; right: 3.5mm; bottom: 3.5mm;
-  border: 0.5pt solid #8aa0ab;
-}
-.inner { position: relative; z-index: 1; }
-.brand-row { width: 100%; border-collapse: collapse; margin-bottom: 10mm; }
+.sheet { border: 1.1pt solid #1b2a33; padding: 7mm 7mm 6mm; }
+.brand-row { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
 .brand-row td { vertical-align: top; }
 .brand-mark {
-  width: 18mm;
-  height: 18mm;
-  border: 1.2pt solid #1b2a33;
+  width: 12mm;
+  height: 12mm;
+  border: 1pt solid #1b2a33;
   text-align: center;
-  line-height: 18mm;
-  font-size: 8pt;
+  line-height: 12mm;
+  font-size: 7pt;
   font-weight: bold;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
-.brand-text { padding-left: 5mm; }
+.brand-text { padding-left: 3mm; }
 .brand-kicker {
-  margin: 0 0 2mm;
-  font-size: 8pt;
-  letter-spacing: 0.18em;
+  margin: 0 0 0.8mm;
+  font-size: 7pt;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #5b6a73;
 }
-.brand-name { margin: 0; font-size: 14pt; font-weight: bold; color: #0f1a22; }
-.brand-sub { margin: 2mm 0 0; font-size: 9pt; color: #5b6a73; }
-.ref-block { text-align: right; font-size: 9pt; color: #3d4c55; white-space: nowrap; }
-.ref-block strong { display: block; color: #14202a; font-size: 10pt; margin-top: 1mm; }
+.brand-name { margin: 0; font-size: 11.5pt; font-weight: bold; color: #0f1a22; }
+.brand-sub { margin: 0.8mm 0 0; font-size: 8pt; color: #5b6a73; }
+.ref-block { text-align: right; font-size: 8pt; color: #3d4c55; white-space: nowrap; }
+.ref-block strong { display: block; color: #14202a; font-size: 9pt; margin-top: 0.5mm; }
 .badge {
   display: inline-block;
-  margin: 0 0 6mm;
-  padding: 2mm 4mm;
-  border: 0.8pt solid #1b2a33;
-  font-size: 8pt;
-  letter-spacing: 0.16em;
+  margin: 0 0 2mm;
+  padding: 1mm 2.2mm;
+  border: 0.65pt solid #1b2a33;
+  font-size: 7pt;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #1b2a33;
 }
 h1 {
-  margin: 0 0 3mm;
-  font-size: 16pt;
-  line-height: 1.25;
+  margin: 0 0 1.8mm;
+  font-size: 12.5pt;
+  line-height: 1.2;
   font-weight: bold;
   color: #0f1a22;
 }
 .object {
-  margin: 0 0 7mm;
-  padding: 3mm 4mm;
+  margin: 0 0 3mm;
+  padding: 1.8mm 2.2mm;
   background: #f4f7f8;
-  border-left: 2.5pt solid #1b2a33;
-  font-size: 10pt;
+  border-left: 2pt solid #1b2a33;
+  font-size: 9pt;
 }
-.object strong { display: block; font-size: 8pt; letter-spacing: 0.12em; text-transform: uppercase; color: #5b6a73; margin-bottom: 1.5mm; }
+.object strong { display: block; font-size: 7pt; letter-spacing: 0.1em; text-transform: uppercase; color: #5b6a73; margin-bottom: 0.6mm; }
 .meta {
   width: 100%;
   border-collapse: collapse;
-  margin: 0 0 8mm;
-  font-size: 10pt;
+  margin: 0 0 3mm;
+  font-size: 9pt;
 }
 .meta th, .meta td {
-  border: 0.6pt solid #c9d3d8;
-  padding: 2.4mm 3mm;
+  border: 0.5pt solid #c9d3d8;
+  padding: 1.2mm 2mm;
   text-align: left;
   vertical-align: top;
 }
 .meta th {
-  width: 32%;
+  width: 28%;
   background: #f7f9fa;
   color: #3d4c55;
   font-weight: bold;
-  letter-spacing: 0.02em;
 }
-.para { margin: 0 0 4.5mm; text-align: justify; }
-.closing { margin: 8mm 0 0; }
-.closing .place { margin: 0 0 10mm; }
+.para { margin: 0 0 2mm; text-align: justify; }
+.closing { margin: 3mm 0 0; }
+.closing .place { margin: 0 0 2.5mm; }
 .sig-table { width: 100%; border-collapse: collapse; }
 .sig-table td { width: 48%; vertical-align: top; }
 .sig-box {
-  border-top: 0.8pt solid #1b2a33;
-  padding-top: 3mm;
-  margin-top: 14mm;
-  width: 78%;
+  border-top: 0.65pt solid #1b2a33;
+  padding-top: 1.6mm;
+  margin-top: 3mm;
+  width: 90%;
 }
-.sig-role { font-size: 9pt; color: #5b6a73; margin: 0 0 1mm; }
-.sig-name { font-size: 11pt; font-weight: bold; margin: 0; }
-.sig-hint { font-size: 8pt; color: #8aa0ab; margin: 8mm 0 0; font-style: italic; }
+.sig-role { font-size: 7.5pt; color: #5b6a73; margin: 0 0 0.5mm; }
+.sig-name { font-size: 9pt; font-weight: bold; margin: 0; }
+.sig-hint { font-size: 7pt; color: #8aa0ab; margin: 2.5mm 0 0; font-style: italic; }
 .foot {
-  margin-top: 14mm;
-  padding-top: 3mm;
-  border-top: 0.6pt solid #c9d3d8;
-  font-size: 8pt;
+  margin-top: 4mm;
+  padding-top: 1.5mm;
+  border-top: 0.5pt solid #c9d3d8;
+  font-size: 7pt;
   color: #6d7a80;
   text-align: center;
 }
