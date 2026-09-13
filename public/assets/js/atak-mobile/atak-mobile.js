@@ -545,22 +545,78 @@
     var center = MAP_CFG.center || [15000, 15000];
     var lat = Number(center[1] != null ? center[1] : center.y) || 15000;
     var lng = Number(center[0] != null ? center[0] : center.x) || 15000;
+    var maxNativeZoom = Number(
+      MAP_CFG.maxNativeZoom != null ? MAP_CFG.maxNativeZoom : MAP_CFG.maxZoom
+    );
+    if (!isFinite(maxNativeZoom) || maxNativeZoom < 0) maxNativeZoom = 6;
+    var maxZoom = maxNativeZoom + 2;
     state.map = L.map(el, {
       crs: CRS,
       center: [lat, lng],
       zoom: Number(MAP_CFG.defaultZoom) || 3,
       minZoom: Number(MAP_CFG.minZoom) || 0,
-      maxZoom: Number(MAP_CFG.maxZoom) || 6,
+      maxZoom: maxZoom,
       zoomControl: false,
       attributionControl: false
     });
     var pattern = MAP_CFG.tilePattern || '';
     if (pattern) {
-      L.tileLayer(pattern, {
+      var tileLayer = L.tileLayer(pattern, {
         tileSize: Number(MAP_CFG.tileSize) || 212,
+        maxZoom: maxZoom,
+        maxNativeZoom: maxNativeZoom,
         noWrap: true,
+        crossOrigin: true,
         bounds: L.latLngBounds([0, 0], [Number(MAP_CFG.worldSize) || 30720, Number(MAP_CFG.worldSize) || 30720])
-      }).addTo(state.map);
+      });
+      tileLayer.on('tileerror', function (ev) {
+        var img = ev && ev.tile;
+        var coords = ev && ev.coords;
+        if (!img || img._amRepairing || !coords || coords.z < 1) {
+          if (img && img.style) img.style.visibility = 'hidden';
+          return;
+        }
+        img._amRepairing = true;
+        var pz = coords.z - 1;
+        var px = Math.floor(coords.x / 2);
+        var py = Math.floor(coords.y / 2);
+        var parentCoords = L.point(px, py);
+        parentCoords.z = pz;
+        var parentUrl;
+        try {
+          parentUrl = tileLayer.getTileUrl(parentCoords);
+        } catch (e) {
+          img.style.visibility = 'hidden';
+          img._amRepairing = false;
+          return;
+        }
+        var parent = new Image();
+        parent.crossOrigin = 'anonymous';
+        parent.onload = function () {
+          try {
+            var size = Number(MAP_CFG.tileSize) || 212;
+            var canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('no-ctx');
+            var sx = (coords.x % 2) * (parent.naturalWidth / 2);
+            var sy = (coords.y % 2) * (parent.naturalHeight / 2);
+            ctx.drawImage(parent, sx, sy, parent.naturalWidth / 2, parent.naturalHeight / 2, 0, 0, size, size);
+            img.style.visibility = '';
+            img.src = canvas.toDataURL('image/png');
+          } catch (err) {
+            img.style.visibility = 'hidden';
+          }
+          img._amRepairing = false;
+        };
+        parent.onerror = function () {
+          img.style.visibility = 'hidden';
+          img._amRepairing = false;
+        };
+        parent.src = parentUrl;
+      });
+      tileLayer.addTo(state.map);
     }
     state.unitLayer = L.layerGroup().addTo(state.map);
     state.markerLayer = L.layerGroup().addTo(state.map);

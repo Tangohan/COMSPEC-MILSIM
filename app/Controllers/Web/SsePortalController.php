@@ -148,20 +148,29 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/operations'));
         }
 
-        // Commandement : entrée directe sans code (pour délivrer les accès).
-        if ($this->access->canEnterAsStaff()) {
-            $this->access->establishStaffClearance((int) Session::get('tenant_id'));
+        // Commandement / membre habilité : entrée directe sans code.
+        if ($this->access->canEnterWithoutCode()) {
+            $tenantId = (int) Session::get('tenant_id');
+            if ($this->access->canEnterAsStaff()) {
+                $this->access->establishStaffClearance($tenantId);
+            } else {
+                $this->access->establishMemberClearance($tenantId);
+            }
 
             return Response::redirect(url('atak/sse/confidentialite'));
         }
 
         $operator = $this->gateOperatorContext();
+        $canEnterAsStaff = $this->access->canEnterAsStaff();
+        $canEnterWithoutCode = $this->access->canEnterWithoutCode();
 
         return Response::view('atak.sse.gate', [
             'title' => 'Accès renseignement interpersonnel',
             'error' => Session::getFlash('error'),
             'success' => Session::getFlash('success'),
             'loggedIn' => (int) Session::get('user_id') > 0,
+            'canEnterAsStaff' => $canEnterAsStaff,
+            'canEnterWithoutCode' => $canEnterWithoutCode,
             'sseTheme' => sse_ui_theme(),
             'sseThemeOptions' => sse_ui_theme_options(),
             'operatorName' => $operator['name'],
@@ -219,17 +228,23 @@ final class SsePortalController
         return Response::redirect($this->sseBackUrl((string) $request->input('back', '')));
     }
 
-    /** Entrée commandement depuis le back-office (toujours vers les codes). */
+    /** Entrée sans code depuis le back-office ou le lien commandement. */
     public function staffEnter(Request $request, array $params = []): Response
     {
-        if (!$this->access->canEnterAsStaff()) {
-            Session::flash('error', 'Seul le commandement peut ouvrir cet accès.');
+        if (!$this->access->canEnterWithoutCode()) {
+            Session::flash('error', 'Votre compte ne permet pas d’ouvrir le renseignement sans code.');
 
             return Response::redirect(url('atak/sse'));
         }
-        $this->access->establishStaffClearance((int) Session::get('tenant_id'));
-        Session::set('sse_post_ack_redirect', 'acces');
-        Session::flash('success', 'Session commandement ouverte — validez l’engagement de confidentialité.');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($this->access->canEnterAsStaff()) {
+            $this->access->establishStaffClearance($tenantId);
+            Session::set('sse_post_ack_redirect', 'acces');
+            Session::flash('success', 'Session commandement ouverte — validez l’engagement de confidentialité.');
+        } else {
+            $this->access->establishMemberClearance($tenantId);
+            Session::flash('success', 'Session ouverte — validez l’engagement de confidentialité.');
+        }
 
         return Response::redirect(url('atak/sse/confidentialite'));
     }
@@ -252,7 +267,8 @@ final class SsePortalController
         }
 
         $userId = (int) Session::get('user_id');
-        $hasPerm = $userId > 0 && function_exists('can') && can('atak.sse.access');
+        $this->access->ensureGateHydrated();
+        $hasPerm = $userId > 0 && $this->access->canEnterAsMember();
         $label = $userId > 0
             ? (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Membre')
             : trim((string) $request->input('guest_name', 'Invité'));

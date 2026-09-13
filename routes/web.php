@@ -705,8 +705,11 @@ return function (Router $router) {
     $router->post('/atak/sse/contexte/mission', [SsePortalController::class, 'setMission'], $mwSsePortal);
     $router->post('/atak/sse/contexte/classification', [SsePortalController::class, 'setClassification'], $mwSsePortal);
     // Alias back-office (commandement / admin — sans exiger un code d’accès)
+    $router->get('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'issue'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces/{id}/revoquer', [\App\Controllers\Admin\AdminSseAccessController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
-    $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/sse/commandement')), [AuthMiddleware::class]);
+    $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
     $router->get('/atak/sse/operations', [SsePortalController::class, 'operations'], $mwSsePortal);
     $router->get('/atak/sse/workspace', [SseIntelligenceWorkspaceController::class, 'show'], $mwSsePortal);
     $router->post('/atak/sse/workspace/inbox/decide', [SseIntelligenceWorkspaceController::class, 'inboxDecide'], $mwSsePortal);
@@ -2368,6 +2371,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
     $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);
     $router->post('/api/atak/geo/ingest', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'ingest']);
+    $router->post('/api/atak/geo/roads/label', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsUpdateLabel']);
     $router->post('/api/atak/route/plan', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'planRoute']);
     $router->get('/api/atak/theater/coverage', [\App\Controllers\Api\AtakSceneApiController::class, 'coverage']);
     $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);

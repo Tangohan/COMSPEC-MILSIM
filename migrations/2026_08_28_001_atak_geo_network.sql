@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS atak_geo_road_segments (
     length_m DECIMAL(10, 2) NOT NULL DEFAULT 0,
     road_class ENUM('HIGHWAY', 'PRIMARY', 'SECONDARY', 'TRACK', 'OTHER') NOT NULL DEFAULT 'OTHER',
     one_way TINYINT(1) NOT NULL DEFAULT 0,
+    operator_label VARCHAR(120) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL,
     UNIQUE KEY uk_geo_road (tenant_id, map_id, source_id),

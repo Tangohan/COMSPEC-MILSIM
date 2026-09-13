@@ -268,6 +268,27 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(547, '2026-09-13', 'Renseignement : entrée commandement et accès au poste', 'Le commandement ouvre le bureau renseignement sans code, gère les accès depuis Athena, et fixe le niveau de diffusion sur les fiches opérateurs', [
+                'Entrée sans code pour le commandement et les membres déjà habilités au renseignement',
+                'Page Accès renseignement dans le back-office : délivrance, révocation et suivi des codes temporaires',
+                'Niveau de diffusion (interne, encadrement, confidentiel, très restreint) sur la fiche opérateur',
+                'Ce niveau plafonne la lecture classifiée, en complément des habilitations de rôle',
+            ], [], [
+                'Un compte de commandement n’était plus reconnu sur le sas et devait saisir un code à tort',
+            ], ['atak', 'command', 'personnel'], [
+                'Mise à jour du portail. Lancer les migrations une fois. Depuis ATAK → Accès renseignement, délivrez les codes. Sur chaque fiche, renseignez le niveau de diffusion si besoin.',
+            ], 'Portail · Renseignement SSE'),
+            $pr(546, '2026-09-13', 'Carte du poste : zoom fin, routes et noms', 'Sur la carte tactique, le fond se lit plus près, les routes et lieux déjà relevés se distinguent mieux, et le poste peut nommer une route', [
+                'Zoom plus fin sur le fond de carte, avec comblement des cases manquantes quand une tuile parent est disponible',
+                'Bouton « Réparer le fond » pour recharger le fond de carte si des cases restent vides',
+                'Calque Routes : épaisseur selon l’importance (grand axe, secondaire, piste), info-bulle au survol',
+                'Calque Villes : noms plus lisibles, libellés permanents sur les villes et bourgs au zoom moyen',
+                'Clic sur une route pour lui donner un nom au poste ; le nom reste après un nouveau relevé depuis Arma',
+            ], [], [
+                'Les cases blanches hors zoom natif ou après un échec de chargement sont comblées autant que possible',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Activer les calques Villes et Routes sur la barre d’outils pour voir et nommer le réseau déjà relevé. Aucun nouveau pack jeu requis pour nommer les routes.',
+            ], 'Portail · Carte ATAK'),
             $pr(543, '2026-09-13', 'Publication interne des documents', 'Le commandement rédige, cible et suit les lectures obligatoires depuis Athena', [
                 'Types de documents configurables (instruction, note de service, directive, consigne…)',
                 'Assistant de publication avec ciblage ORBAT, unités et sous-unités, fonctions et personnels',

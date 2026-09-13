@@ -208,7 +208,7 @@ SQL
             'title' => 'Portail de renseignement classifié',
             'description' => 'Le commandement peut délivrer des codes d’accès temporaires au portail de renseignement interpersonnel (dossiers d’affaire, croisements, export). Vérifiez les rôles et créez un premier code si besoin.',
             'configuration_level' => 'recommended',
-            'configure_path' => 'back-office/renseignement/codes',
+            'configure_path' => 'back-office/renseignement/acces',
             'estimate_minutes' => 5,
             'mandatory' => 0,
             'blocking' => 0,

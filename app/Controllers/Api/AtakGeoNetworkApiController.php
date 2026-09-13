@@ -148,6 +148,57 @@ final class AtakGeoNetworkApiController
         ]);
     }
 
+    /** POST /api/atak/geo/roads/label — nommer une route depuis le poste (CSRF navigateur). */
+    public function roadsUpdateLabel(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        if (!$this->csrfOk($request)) {
+            return $this->writeRefused();
+        }
+
+        $body = $this->body($request);
+        $mapId = max(1, (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID));
+        $sourceId = trim((string) ($body['source_id'] ?? ''));
+        if ($sourceId === '' && isset($body['id']) && !is_numeric($body['id'])) {
+            $sourceId = trim((string) $body['id']);
+        }
+        if ($sourceId === '') {
+            return Response::json([
+                'ok' => false,
+                'error' => 'source_id_required',
+                'message' => 'Identifiant de route manquant.',
+            ], 422);
+        }
+
+        $labelRaw = $body['label'] ?? null;
+        $label = null;
+        if ($labelRaw !== null && $labelRaw !== '') {
+            $label = trim((string) $labelRaw);
+            if ($label === '') {
+                $label = null;
+            }
+        }
+
+        if (!$this->roads->updateOperatorLabel($tenantId, $mapId, $sourceId, $label)) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'road_not_found',
+                'message' => 'Cette route est introuvable.',
+            ], 404);
+        }
+
+        $road = $this->roads->findBySourceId($tenantId, $mapId, $sourceId);
+
+        return Response::json([
+            'ok' => true,
+            'road' => $road,
+            'message' => 'Nom de route enregistré.',
+        ]);
+    }
+
     /** POST /api/atak/route/plan */
     public function planRoute(Request $request, array $params = []): Response
     {

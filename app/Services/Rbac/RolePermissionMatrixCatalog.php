@@ -215,12 +215,14 @@ final class RolePermissionMatrixCatalog
                     'atak.certificates.view', 'atak.certificates.manage',
                     'atak.config.manage', 'atak.mission_cycle.manage', 'atak.aar.manage',
                     'atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'atak.sse.export',
+                    'atak.sse.clearance.encadrement', 'atak.sse.clearance.confidentiel', 'atak.sse.clearance.tres_restreint',
                     'operations.missions.view', 'operations.missions.manage',
                     'operations.aar.view', 'operations.aar.export',
                 ],
                 self::LEVEL_SA_SECTION => [
                     'atak.terminals.view', 'atak.certificates.view',
                     'atak.sse.access',
+                    'atak.sse.clearance.encadrement',
                     'operations.missions.view', 'operations.aar.view',
                 ],
                 self::LEVEL_SON_GROUPE => [
@@ -229,6 +231,7 @@ final class RolePermissionMatrixCatalog
                 self::LEVEL_LECTURE => [
                     'atak.terminals.view', 'atak.certificates.view',
                     'atak.sse.access', 'atak.sse.case.manage', 'atak.sse.export',
+                    'atak.sse.clearance.encadrement', 'atak.sse.clearance.confidentiel',
                     'operations.missions.view', 'operations.aar.view',
                 ],
                 self::LEVEL_SA_FICHE => [

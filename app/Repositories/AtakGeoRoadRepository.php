@@ -40,6 +40,7 @@ final class AtakGeoRoadRepository
             return 0;
         }
 
+        // Ne jamais écraser operator_label à l’ingest (libellé saisi au poste).
         $sql = 'INSERT INTO atak_geo_road_segments
                 (tenant_id, map_id, source_id, node_a_x, node_a_y, node_b_x, node_b_y, length_m, road_class, one_way)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -113,7 +114,7 @@ final class AtakGeoRoadRepository
         $hiY = max($minY, $maxY);
 
         $st = $this->pdo()->prepare(
-            'SELECT source_id, node_a_x, node_a_y, node_b_x, node_b_y, length_m, road_class, one_way
+            'SELECT id, source_id, node_a_x, node_a_y, node_b_x, node_b_y, length_m, road_class, one_way, operator_label
              FROM atak_geo_road_segments
              WHERE tenant_id = ? AND map_id = ?
                AND (
@@ -130,15 +131,94 @@ final class AtakGeoRoadRepository
         $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return array_map(static function (array $row): array {
+            $label = isset($row['operator_label']) && $row['operator_label'] !== ''
+                ? (string) $row['operator_label']
+                : null;
+
             return [
                 'id' => (string) ($row['source_id'] ?? ''),
+                'db_id' => (int) ($row['id'] ?? 0),
                 'a' => [(float) ($row['node_a_x'] ?? 0), (float) ($row['node_a_y'] ?? 0)],
                 'b' => [(float) ($row['node_b_x'] ?? 0), (float) ($row['node_b_y'] ?? 0)],
                 'length_m' => (float) ($row['length_m'] ?? 0),
                 'class' => (string) ($row['road_class'] ?? 'OTHER'),
                 'one_way' => (bool) ($row['one_way'] ?? false),
+                'label' => $label,
             ];
         }, $rows);
+    }
+
+    /**
+     * Met à jour le libellé opérateur d’un segment (source_id ou chaîne vide pour effacer).
+     */
+    public function updateOperatorLabel(int $tenantId, int $mapId, string $sourceId, ?string $label): bool
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return false;
+        }
+        $sourceId = substr(trim($sourceId), 0, 128);
+        if ($sourceId === '') {
+            return false;
+        }
+        $normalized = $label === null ? null : trim($label);
+        if ($normalized === '') {
+            $normalized = null;
+        } else {
+            $normalized = substr($normalized, 0, 120);
+        }
+
+        $st = $this->pdo()->prepare(
+            'UPDATE atak_geo_road_segments
+             SET operator_label = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE tenant_id = ? AND map_id = ? AND source_id = ?
+             LIMIT 1'
+        );
+        $st->execute([$normalized, $tenantId, $mapId, $sourceId]);
+        if ($st->rowCount() > 0) {
+            return true;
+        }
+
+        // MySQL peut renvoyer 0 si la valeur est inchangée.
+        return $this->findBySourceId($tenantId, $mapId, $sourceId) !== null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findBySourceId(int $tenantId, int $mapId, string $sourceId): ?array
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return null;
+        }
+        $sourceId = substr(trim($sourceId), 0, 128);
+        if ($sourceId === '') {
+            return null;
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT id, source_id, node_a_x, node_a_y, node_b_x, node_b_y, length_m, road_class, one_way, operator_label
+             FROM atak_geo_road_segments
+             WHERE tenant_id = ? AND map_id = ? AND source_id = ?
+             LIMIT 1'
+        );
+        $st->execute([$tenantId, $mapId, $sourceId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        $label = isset($row['operator_label']) && $row['operator_label'] !== ''
+            ? (string) $row['operator_label']
+            : null;
+
+        return [
+            'id' => (string) ($row['source_id'] ?? ''),
+            'db_id' => (int) ($row['id'] ?? 0),
+            'a' => [(float) ($row['node_a_x'] ?? 0), (float) ($row['node_a_y'] ?? 0)],
+            'b' => [(float) ($row['node_b_x'] ?? 0), (float) ($row['node_b_y'] ?? 0)],
+            'length_m' => (float) ($row['length_m'] ?? 0),
+            'class' => (string) ($row['road_class'] ?? 'OTHER'),
+            'one_way' => (bool) ($row['one_way'] ?? false),
+            'label' => $label,
+        ];
     }
 
     /**

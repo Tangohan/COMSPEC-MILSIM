@@ -286,6 +286,12 @@ $athNavGroups = [
                 'active' => $navAtakHubActive,
             ],
             [
+                'label' => 'Accès renseignement',
+                'href' => url('back-office/renseignement/acces'),
+                'icon' => 'cert',
+                'active' => str_starts_with($p, 'back-office/renseignement'),
+            ],
+            [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),
                 'icon' => 'phone',

@@ -12233,3 +12233,26 @@ body.atak-light .atak-sse-person-card-meta {
 .atak-terminal-card__actions .atak-ops-btn {
   margin: 0;
 }
+
+/* Réseau géographique — libellés routes / lieux */
+.leaflet-tooltip.atak-geo-road-label,
+.leaflet-tooltip.atak-geo-place-label {
+  background: rgba(12, 18, 28, 0.88);
+  border: 1px solid rgba(158, 197, 255, 0.35);
+  color: #e8eef6;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.4rem;
+  border-radius: 2px;
+  box-shadow: none;
+  white-space: nowrap;
+}
+.leaflet-tooltip.atak-geo-road-label::before,
+.leaflet-tooltip.atak-geo-place-label::before {
+  display: none;
+}
+.leaflet-tooltip.atak-geo-place-label {
+  border-color: rgba(244, 197, 66, 0.4);
+  color: #f4e4a8;
+}

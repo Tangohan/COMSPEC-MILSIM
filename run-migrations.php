@@ -3728,6 +3728,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakGeoRoadLabelMigrate = require $root . '/bootstrap/atak_geo_road_operator_label_migration.php';
+try {
+  echo "Migration atak_geo_road_operator_label (noms de routes au poste)...\n";
+  $atakGeoRoadLabelMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_geo_road_operator_label : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakMedicalTriageMigrate = require $root . '/bootstrap/atak_medical_triage_migration.php';
 try {
     echo "Migration atak_medical_alert_triage (triage alertes médicales)...\n";
@@ -3972,6 +3981,15 @@ try {
     $atakSseFieldNotesMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_field_notes : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSseClearancePermsMigrate = require $root . '/bootstrap/atak_sse_clearance_permissions_migration.php';
+try {
+    echo "Migration atak_sse_clearance_permissions (SSE — habilitations de lecture)…\n";
+    $atakSseClearancePermsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_clearance_permissions : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

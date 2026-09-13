@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Sse;
 
+use App\Core\Gate;
 use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\UserRepository;
+use App\Services\Rbac\RbacService;
 
 final class SseAccessCodeService
 {
@@ -26,6 +29,32 @@ final class SseAccessCodeService
     public function __construct(private ?SseAccessCodeRepository $repo = null)
     {
         $this->repo ??= new SseAccessCodeRepository();
+    }
+
+    /**
+     * Recharge les droits Gate depuis la session quand la route n’a pas passé AuthMiddleware
+     * (ex. sas public `/atak/sse`).
+     */
+    public function ensureGateHydrated(): void
+    {
+        $gate = Gate::getInstance();
+        if ($gate->permissionSlugs() !== [] || $gate->isPlatformAdmin()) {
+            return;
+        }
+
+        $userId = (int) Session::get('user_id');
+        if ($userId < 1) {
+            return;
+        }
+
+        $users = new UserRepository();
+        $user = $users->findById($userId);
+        if ($user === null) {
+            return;
+        }
+
+        $rbac = new RbacService();
+        $rbac->setPermissionsForGateFromUserRow($user, $users);
     }
 
     /**
@@ -184,6 +213,15 @@ final class SseAccessCodeService
         Session::set(SseClearanceService::SESSION_LEVEL, null);
     }
 
+    /**
+     * Entrée membre habilité : session SSE sans code (même clés que le staff ;
+     * SESSION_LEVEL null → plafond calculé depuis droits / fiche).
+     */
+    public function establishMemberClearance(int $tenantId, int $sessionTtlMinutes = 240): void
+    {
+        $this->establishStaffClearance($tenantId, $sessionTtlMinutes);
+    }
+
     public function hasAcceptedConfidentiality(): bool
     {
         if (!$this->hasActiveClearance()) {
@@ -240,13 +278,43 @@ final class SseAccessCodeService
      */
     public function canEnterAsStaff(): bool
     {
+        $this->ensureGateHydrated();
+
         $userId = (int) Session::get('user_id');
         $tenantId = (int) Session::get('tenant_id');
         if ($userId < 1 || $tenantId < 1) {
             return false;
         }
 
+        if (function_exists('is_platform_admin') && is_platform_admin()) {
+            return true;
+        }
+
         return function_exists('can') && (can('atak.sse.grant') || can('admin.access') || can('admin.organization'));
+    }
+
+    /**
+     * Membre connecté avec droit d’accès au portail (sans octroi de codes).
+     */
+    public function canEnterAsMember(): bool
+    {
+        $this->ensureGateHydrated();
+
+        $userId = (int) Session::get('user_id');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($userId < 1 || $tenantId < 1) {
+            return false;
+        }
+
+        return function_exists('can') && can('atak.sse.access');
+    }
+
+    /**
+     * Entrée sans code temporaire : commandement / admin, ou membre déjà habilité.
+     */
+    public function canEnterWithoutCode(): bool
+    {
+        return $this->canEnterAsStaff() || $this->canEnterAsMember();
     }
 
     public function hasActiveClearance(): bool

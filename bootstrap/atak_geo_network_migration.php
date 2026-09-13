@@ -33,6 +33,13 @@ return static function (PDO $pdo): void {
         }
     }
 
+    schema_ensure_column(
+        $pdo,
+        'atak_geo_road_segments',
+        'operator_label',
+        '`operator_label` VARCHAR(120) NULL AFTER `one_way`'
+    );
+
     if ($cli) {
         echo "  [OK] atak_geo_network (lieux + routes)\n";
     }

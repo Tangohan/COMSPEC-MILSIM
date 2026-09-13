@@ -151,7 +151,7 @@ final class ConfigurationUpdateCatalog
                 title: 'Portail de renseignement classifié',
                 description: 'Le commandement peut délivrer des codes d’accès temporaires au portail de renseignement interpersonnel (dossiers d’affaire, croisements, export). Vérifiez les rôles et créez un premier code si besoin.',
                 level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
-                configurePath: 'back-office/renseignement/codes',
+                configurePath: 'back-office/renseignement/acces',
                 estimateMinutes: 5,
                 dismissible: true,
                 blocking: false,
