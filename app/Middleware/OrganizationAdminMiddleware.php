@@ -24,7 +24,7 @@ class OrganizationAdminMiddleware
         // La racine du back-office contient aussi la synthèse personnelle en lecture seule.
         // Tous les membres authentifiés peuvent la consulter ; les sous-routes restent
         // strictement protégées par les permissions ci-dessous.
-        if ($path === '/back-office') {
+        if ($path === '/back-office' || str_starts_with($path, '/back-office/ma-situation')) {
             $scopedOrgAccess = true;
         }
         if (!$scopedOrgAccess) {

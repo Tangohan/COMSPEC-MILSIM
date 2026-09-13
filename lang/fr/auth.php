@@ -128,6 +128,7 @@ return [
     'register_check_file_mailer_hint' => 'Consultez le message généré côté serveur, ou configurez l’envoi d’e-mails pour recevoir un vrai message.',
     'password_hint' => 'Le mot de passe associé à ce compte.',
     'email_hint' => 'Celle utilisée lors de l’inscription.',
+    'otp_aside' => 'Une dernière vérification protège l’accès à votre espace avant d’ouvrir la session.',
     'otp_step_sr' => 'Progression de la connexion',
     'otp_step_title' => 'Vérification du compte',
     'otp_step_state' => 'Étape 2 sur 2',

@@ -1,0 +1,170 @@
+/* Pages personnelles opérateur sous /back-office/ma-situation */
+
+.bo-member-situation {
+  display: grid;
+  gap: 1rem;
+  padding: 0 0 1.5rem;
+  color: var(--ath-ink, #0c1116);
+  font-family: var(--ath-font, Archivo, Inter, system-ui, sans-serif);
+}
+
+.bo-member-situation__lead {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.bo-member-situation__lead a {
+  color: var(--ath-muted, #6d7a80);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.bo-member-situation__lead a:hover {
+  color: var(--ath-accent, #0b8a5c);
+}
+
+.bo-member-situation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bo-member-situation__flash {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  font-size: 0.875rem;
+}
+
+.bo-member-situation__flash--ok {
+  border-color: #b7e0cb;
+  background: #f3fbf7;
+  color: #0b5c3c;
+}
+
+.bo-member-situation__flash--err {
+  border-color: #f0c4c4;
+  background: #fdf2f2;
+  color: #9b1c1c;
+}
+
+.bo-member-situation__grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.bo-member-situation__card {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+}
+
+.bo-member-situation__card h2,
+.bo-member-situation__card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.bo-member-situation__card p {
+  margin: 0;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.bo-member-situation__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bo-member-situation__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #f6f8f9;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bo-member-situation__badge.is-ok {
+  border-color: #b7e0cb;
+  background: #f3fbf7;
+  color: #0b5c3c;
+}
+
+.bo-member-situation__kicker {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-member-situation__dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.bo-member-situation__dl dt {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-member-situation__dl dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-member-situation__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-member-situation__list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #f8fafa;
+}
+
+.bo-member-situation__list-item h3 {
+  margin: 0.15rem 0;
+  font-size: 1rem;
+}
+
+.bo-member-situation__list-item p {
+  margin: 0;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.8125rem;
+}
+
+.bo-member-situation__empty {
+  margin: 0.75rem 0 1rem !important;
+}

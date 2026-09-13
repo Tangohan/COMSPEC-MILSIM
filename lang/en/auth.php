@@ -128,6 +128,7 @@ return [
     'register_check_file_mailer_hint' => 'Check the message generated on the server, or configure email delivery to receive a real message.',
     'password_hint' => 'The password for this account.',
     'email_hint' => 'The address used when you signed up.',
+    'otp_aside' => 'One last check protects access to your workspace before the session opens.',
     'otp_step_sr' => 'Sign-in progress',
     'otp_step_title' => 'Account verification',
     'otp_step_state' => 'Step 2 of 2',

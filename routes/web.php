@@ -216,6 +216,7 @@ use App\Middleware\GuestMiddleware;
 use App\Middleware\ForumModerateMiddleware;
 use App\Middleware\SystemAdminMiddleware;
 use App\Middleware\PlatformHubMiddleware;
+use App\Controllers\Admin\Organization\MemberSituationController;
 use App\Middleware\OrganizationAdminMiddleware;
 use App\Middleware\OperationalBoardEditMiddleware;
 use App\Middleware\OperationalBoardViewMiddleware;
@@ -1017,6 +1018,15 @@ return function (Router $router) {
     $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
+    $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/mes-demarches', [MemberSituationController::class, 'mesDemarches'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/unite', [MemberSituationController::class, 'unite'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/qualifications', [MemberSituationController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

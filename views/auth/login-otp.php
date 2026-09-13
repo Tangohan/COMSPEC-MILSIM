@@ -13,6 +13,7 @@ $canFallbackEmail = !empty($canFallbackEmail ?? false);
 $canFallbackTotp = !empty($canFallbackTotp ?? false);
 $canResend = array_key_exists('canResend', get_defined_vars()) ? !empty($canResend) : !$isTotp;
 $emailSafe = htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8');
+$athena_header_current = 'login';
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>">
@@ -20,32 +21,34 @@ $emailSafe = htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> — <?= $brandText ?></title>
-    <meta name="theme-color" content="#0b3d38">
+    <meta name="theme-color" content="#050505">
     <meta name="robots" content="noindex,nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Source+Sans+3:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php $GLOBALS['__dsfr_service_css'] = true; ?>
 </head>
-<body class="ds-page">
+<body class="ds-page ds-page--split">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
+<?php require base_path('views/partials/athena_header_guest.php'); ?>
 
-<header class="ds-header">
-    <div class="ds-header__band" aria-hidden="true"></div>
-    <div class="ds-header__inner">
-        <a class="ds-header__brand" href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>">
-            <span class="ds-header__service"><?= $brandText ?></span>
-            <span class="ds-header__tagline"><?= htmlspecialchars(__('auth.kicker'), ENT_QUOTES, 'UTF-8') ?></span>
-        </a>
-        <div class="ds-header__tools">
-            <a class="ds-header__link" href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('auth.otp_other_account'), ENT_QUOTES, 'UTF-8') ?></a>
-        </div>
-    </div>
-</header>
+<div class="ds-split">
+    <aside class="ds-visual" aria-hidden="true">
+        <img class="ds-visual__img"
+             src="<?= htmlspecialchars(asset_url('assets/images/fog-team.jpg'), ENT_QUOTES, 'UTF-8') ?>"
+             alt=""
+             width="1600"
+             height="1067"
+             decoding="async">
+        <div class="ds-visual__veil"></div>
+        <p class="ds-visual__caption"><?= htmlspecialchars(__('auth.otp_aside'), ENT_QUOTES, 'UTF-8') ?></p>
+    </aside>
 
-<main class="ds-main" id="contenu">
+    <main class="ds-main" id="contenu">
+    <div class="ds-main__inner">
     <div class="ds-stepper" aria-label="<?= htmlspecialchars(__('auth.otp_step_sr'), ENT_QUOTES, 'UTF-8') ?>">
         <p class="ds-stepper__title"><?= htmlspecialchars(__('auth.otp_step_title'), ENT_QUOTES, 'UTF-8') ?></p>
         <p class="ds-stepper__state"><?= htmlspecialchars(__('auth.otp_step_state'), ENT_QUOTES, 'UTF-8') ?></p>
@@ -55,6 +58,7 @@ $emailSafe = htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8');
         </div>
     </div>
 
+    <p class="ds-kicker"><?= htmlspecialchars(__('auth.kicker'), ENT_QUOTES, 'UTF-8') ?></p>
     <h1 class="ds-title"><?= htmlspecialchars(__('auth.title_otp'), ENT_QUOTES, 'UTF-8') ?></h1>
     <p class="ds-pill"><?= htmlspecialchars($isTotp ? __('auth.otp_channel_totp') : __('auth.otp_channel_email'), ENT_QUOTES, 'UTF-8') ?></p>
     <p class="ds-lead">
@@ -93,9 +97,7 @@ $emailSafe = htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8');
             </div>
         </fieldset>
 
-        <div class="ds-btn-row">
-            <button type="submit" class="ds-btn ds-btn--primary"><?= htmlspecialchars(__('auth.otp_continue'), ENT_QUOTES, 'UTF-8') ?></button>
-        </div>
+        <button type="submit" class="ds-btn ds-btn--primary ds-btn--block"><?= htmlspecialchars(__('auth.otp_continue'), ENT_QUOTES, 'UTF-8') ?></button>
     </form>
 
     <div class="ds-btn-row" style="margin-top:0.75rem">
@@ -129,14 +131,18 @@ $emailSafe = htmlspecialchars($emailMasked, ENT_QUOTES, 'UTF-8');
         </time>
     </p>
     <?php endif; ?>
-</main>
 
-<footer class="ds-footer">
-    <div class="ds-footer__inner">
-        <p><?= htmlspecialchars(__('auth.title_otp'), ENT_QUOTES, 'UTF-8') ?></p>
-        <a class="ds-header__link" href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('auth.otp_other_account'), ENT_QUOTES, 'UTF-8') ?></a>
+    <div class="ds-alt">
+        <p>
+            <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('auth.otp_other_account'), ENT_QUOTES, 'UTF-8') ?></a>
+        </p>
     </div>
-</footer>
+    </div>
+    </main>
+</div>
+
+<?php require base_path('views/partials/cookie_banner.php'); ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 
 <script>
 (function () {

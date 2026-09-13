@@ -584,6 +584,22 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(542, '2026-09-13', 'Espace opérateur : liaison ATAK, unité et qualifications dans le back-office', 'Depuis Mon espace opérationnel, vous ouvrez désormais vos pages personnelles dans le même back-office : liaison et appareils ATAK, certificat de terminal, mon unité, mes qualifications, ma fiche et mes démarches — sans être renvoyé vers le portail', [
+                'Pages Ma liaison ATAK, Mes appareils, Mon unité et Mes qualifications dans le back-office',
+                'Ma fiche, Mon suivi et Mes démarches accessibles sous la coque Athena',
+                'Menu MA SITUATION branché sur ces pages',
+            ], [
+                'Les raccourcis du tableau de bord restent dans l’espace opérateur',
+            ], [], ['personnel', 'atak'], [
+                'Ouvrez le back-office. Dans MA SITUATION, essayez Ma liaison ATAK, Mon unité et Mes qualifications.',
+            ], 'Athena 1.0.110'),
+            $pr(541, '2026-09-13', 'Tableur Effectifs plus aéré et plus lisible', 'Dans Ressources → Effectifs, le tableur montre d’abord la liste : en-tête court, ancienneté réelle repliable, raccourcis membres en puces, barre de recherche unique, actions de masse collées en haut pendant la sélection, et indicateurs plus compacts sur chaque ligne', [], [
+                'Moins de blocs au-dessus de la grille',
+                'Ancienneté réelle accessible sans occuper tout l’écran',
+                'Indicateurs de disponibilité, présence et dossier plus denses',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs → Tableur. La grille doit apparaître plus tôt ; ouvrez Ancienneté réelle seulement si vous devez corriger la date d’organisation.',
+            ], 'Athena 1.0.109'),
             $pr(539, '2026-09-13', 'Référentiel de qualifications et brevets', 'Dans Organisation, vous gérez désormais un vrai catalogue de qualifications (catégories, types, niveaux, organismes émetteurs, insignes). Vous les attribuez aux dossiers, suivez les échéances dans le tableur Effectifs, et générez un brevet PDF Classique ou Moderne dès qu’une qualification est obtenue', [
                 'Catalogue de qualifications distinct des attributions individuelles',
                 'Génération de brevets PDF (unitaire ou par lot) avec présentations Classique et Moderne',
