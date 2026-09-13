@@ -268,15 +268,13 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(548, '2026-09-13', 'Mon coffre : toutes les pièces de l’opérateur au même endroit', 'Dans le back-office, les opérateurs ouvrent désormais Mon coffre sous MA SITUATION. La page regroupe les pièces RH partagées, les brevets de qualification et les attestations de formation qui les concernent', [
-                'Page Mon coffre dans MA SITUATION',
-                'Regroupement des fichiers RH, brevets et attestations accessibles',
-                'Les pièces auto-établies rejoignent le coffre de l’opérateur',
-            ], [
-                'Les documents réservés à l’encadrement restent hors du coffre opérateur',
-            ], [], ['personnel'], [
-                'Connectez-vous en opérateur. Ouvrez MA SITUATION → Mon coffre. Les pièces partagées avec vous doivent apparaître avec un bouton d’ouverture.',
-            ], 'Athena'),
+            $pr(550, '2026-09-13', 'SSE : fiches et documents personnalisables', 'Le bureau et la feuille en jeu reprennent vos titres, bandeau, pied de page et aspect papier (propre, taché, froissé, jauni)', [
+                'Page Présentation des documents : modèles préfaits et textes entièrement modifiables, y compris la mention « Ne constitue pas une preuve… »',
+                'Aspects de papier réalistes pour l’aperçu bureau : propre, taché, froissé, jauni',
+                'En Eden et Zeus : module Présentation des documents SSE pour imposer le même modèle en mission',
+            ], [], [], ['atak', 'command'], [
+                'Mise à jour du portail et du pack jeu. Lancer les migrations une fois. Dans le bureau SSE, ouvrez Présentation. En mission, posez le module ou utilisez Zeus Enhanced.',
+            ], 'Portail · SSE / Overwatch'),
             $pr(547, '2026-09-13', 'Renseignement : entrée commandement et accès au poste', 'Le commandement ouvre le bureau renseignement sans code, gère les accès depuis Athena, et fixe le niveau de diffusion sur les fiches opérateurs', [
                 'Entrée sans code pour le commandement et les membres déjà habilités au renseignement',
                 'Page Accès renseignement dans le back-office : délivrance, révocation et suivi des codes temporaires',
@@ -625,6 +623,19 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(549, '2026-09-13', 'Barre de liaison en bas et menu ACE rangé', 'Sur le téléphone, la barre OK / NOK revient en bas de la carte. Dans ACE, COMSPEC Athena n’étale plus l’ancienne liste à plat : les rubriques sont de nouveau le premier niveau', [], [], [
+                'Barre OK / NOK encore sous la barre d’état en haut',
+                'Menu ACE Athena encore en longue colonne d’actions',
+            ], ['atak'], [
+                'Quittez Arma complètement. Vérifiez le journal : connect v1.5.69 et arbre v4. Ouvrez ACE → COMSPEC Athena : rubriques seulement. Ouvrez le téléphone : barre en bas de la carte.',
+            ], 'Overwatch 1.5.69 · Athena 1.0.116 · Workshop + FN'),
+            $pr(548, '2026-09-13', 'Pack Overwatch 1.5.68 rechargé en jeu', 'Le pack Workshop et le pack FN contiennent maintenant Overwatch 1.5.68 et Athena 1.0.115 au complet : messagerie, suppression de canal et transmissions après connexion', [
+                'Pack jouable aligné sur la version annoncée du jour',
+            ], [], [
+                'Certaines nouveautés du jour absentes en jeu malgré le numéro de version annoncé',
+            ], ['atak'], [
+                'Quittez Arma complètement. Vérifiez le journal : connect v1.5.68. Ouvrez Messagerie : créer un canal, envoyer, puis Supprimer.',
+            ], 'Overwatch 1.5.68 · Athena 1.0.115 · Extension 2.0.34 · Workshop + FN'),
             $pr(545, '2026-09-13', 'Organigramme : tout éditer au clic droit', 'Sur Structure & recrutement, un clic droit sur une carte ouvre un menu complet : renommer, type, chef, créer, rattacher, statut, confidentialité, invitation et suppression', [
                 'Menu contextuel enrichi sur l’organigramme (arbre et annuaire)',
                 'Création de regroupement ou d’équipe rattachée à n’importe quelle unité',

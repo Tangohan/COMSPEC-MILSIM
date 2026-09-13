@@ -92,13 +92,16 @@ if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
     private _mapName = ["cTab_Android_dlg", "mapType"] call cTab_fnc_getSettings;
     private _mapTypes = ["cTab_Android_dlg", "mapTypes"] call cTab_fnc_getSettings;
     private _mapIdc = [_mapTypes, _mapName] call cTab_fnc_getFromPairs;
-    if (_mapIdc isEqualType 0) then { _mapCtrl = _disp displayCtrl _mapIdc; };
+    if (_mapIdc isEqualType 0) then {
+        _mapCtrl = _disp displayCtrl _mapIdc;
+        if (isNull _mapCtrl) then { _mapCtrl = _disp displayCtrl (17000 + _mapIdc); };
+    };
 };
 if (isNull _mapCtrl) then {
     {
         private _c = _disp displayCtrl _x;
         if (!isNull _c && {ctrlShown _c}) exitWith { _mapCtrl = _c; };
-    } forEach [1201, 1202, 16];
+    } forEach [1201, 1202, 16, 18201, 18202, 17016];
 };
 if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith { [_disp] call _fncHide; };
 

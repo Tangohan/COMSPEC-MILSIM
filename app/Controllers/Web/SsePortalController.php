@@ -22,8 +22,10 @@ use App\Repositories\SseMeshRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SsePortalSettingsRepository;
 use App\Repositories\SseSiteRepository;
+use App\Repositories\SseDocumentPrefabRepository;
 use App\Repositories\SseTextTemplateRepository;
 use App\Repositories\SseWatchlistRepository;
+use App\Support\SseDocumentChromeCatalog;
 use App\Repositories\TenantRepository;
 use App\Repositories\TheatreMissionCycleRepository;
 use App\Repositories\UserRepository;
@@ -74,6 +76,7 @@ final class SsePortalController
         private ?SseDocumentRepository $documents = null,
         private ?SseCrossDecisionRepository $crossDecisions = null,
         private ?SseTextTemplateRepository $textLibrary = null,
+        private ?SseDocumentPrefabRepository $documentPrefabs = null,
         private ?SseCaseMapRepository $caseMaps = null,
         private ?SseAnalyticalRepository $analytical = null,
         private ?SseContextualMentionService $contextualMentions = null,
@@ -119,6 +122,7 @@ final class SsePortalController
         $this->documents ??= new SseDocumentRepository();
         $this->crossDecisions ??= new SseCrossDecisionRepository();
         $this->textLibrary ??= new SseTextTemplateRepository();
+        $this->documentPrefabs ??= new SseDocumentPrefabRepository();
         $this->caseMaps ??= new SseCaseMapRepository();
         $this->analytical ??= new SseAnalyticalRepository();
         $this->contextualMentions ??= new SseContextualMentionService();
@@ -4282,6 +4286,7 @@ final class SsePortalController
             'prefillClass' => 'confidentiel',
             'prefillStatus' => 'brouillon',
             'canManage' => true,
+            'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
     }
@@ -4350,6 +4355,7 @@ final class SsePortalController
             'title' => (string) ($doc['title'] ?? 'Document'),
             'document' => $doc,
             'canManage' => $this->canManage(),
+            'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
     }
@@ -4389,6 +4395,7 @@ final class SsePortalController
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
+            'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
     }
@@ -4752,6 +4759,109 @@ final class SsePortalController
         );
 
         return Response::redirect(url('atak/sse/bibliotheque'));
+    }
+
+    // ─────────────────────────────────────────── Présentation des documents / fiches
+
+    public function documentPresentationIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $prefabs = $this->documentPrefabs->listForTenant($tenantId);
+        $activeCode = $this->documentPrefabs->activePrefabCode($tenantId);
+        $editCode = trim((string) $request->query('modifier', ''));
+        $editPrefab = $editCode !== ''
+            ? $this->documentPrefabs->findByCode($tenantId, $editCode)
+            : $this->documentPrefabs->activeChrome($tenantId);
+
+        return $this->portalView('atak.sse.document_presentation', [
+            'title' => 'Présentation des documents',
+            'prefabs' => $prefabs,
+            'activePrefabCode' => $activeCode,
+            'editPrefab' => $editPrefab,
+            'paperStyles' => SseDocumentChromeCatalog::paperStyles(),
+            'canManage' => $this->canManage(),
+            'documentChrome' => $editPrefab ?? SseDocumentChromeCatalog::defaultChrome(),
+            'activeNav' => 'presentation',
+        ]);
+    }
+
+    public function documentPresentationActivate(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/presentation'));
+        }
+
+        $code = trim((string) $request->input('prefab_code', ''));
+        $ok = $this->documentPrefabs->setActivePrefab(
+            $this->tenantId(),
+            $code,
+            (int) Session::get('user_id') ?: null
+        );
+        Session::flash(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'Ce modèle est maintenant utilisé pour les documents du bureau et l’aperçu papier.'
+                : 'Modèle introuvable.'
+        );
+
+        return Response::redirect(url('atak/sse/presentation'));
+    }
+
+    public function documentPresentationStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(url('atak/sse/presentation'));
+        }
+
+        $code = trim((string) $request->input('code', ''));
+        if ($code === '') {
+            $code = 'custom_' . substr(sha1((string) $request->input('label', '') . microtime()), 0, 8);
+        }
+
+        $saved = $this->documentPrefabs->upsert($this->tenantId(), [
+            'code' => $code,
+            'label' => (string) $request->input('label', ''),
+            'description' => (string) $request->input('description', ''),
+            'paper_style' => (string) $request->input('paper_style', 'clean'),
+            'banner' => (string) $request->input('banner', ''),
+            'title_person' => (string) $request->input('title_person', ''),
+            'title_docs' => (string) $request->input('title_docs', ''),
+            'subtitle_dossier' => (string) $request->input('subtitle_dossier', ''),
+            'subtitle_feuille' => (string) $request->input('subtitle_feuille', ''),
+            'subtitle_docs' => (string) $request->input('subtitle_docs', ''),
+            'footer' => (string) $request->input('footer', ''),
+            'quality_prefix' => (string) $request->input('quality_prefix', ''),
+            'org_line' => (string) $request->input('org_line', ''),
+            'seal_top' => (string) $request->input('seal_top', ''),
+            'seal_bottom' => (string) $request->input('seal_bottom', ''),
+            'access_note' => (string) $request->input('access_note', ''),
+            'btn_consult' => (string) $request->input('btn_consult', ''),
+            'btn_transmit' => (string) $request->input('btn_transmit', ''),
+            'btn_close' => (string) $request->input('btn_close', ''),
+            'force_builtin_edit' => true,
+        ], (int) Session::get('user_id') ?: null);
+
+        if ($saved === null) {
+            Session::flash('error', 'Présentation non enregistrée. Vérifiez le nom du modèle et les textes obligatoires.');
+
+            return Response::redirect(url('atak/sse/presentation'));
+        }
+
+        if ((string) $request->input('make_active', '') === '1') {
+            $this->documentPrefabs->setActivePrefab(
+                $this->tenantId(),
+                (string) $saved['code'],
+                (int) Session::get('user_id') ?: null
+            );
+        }
+
+        Session::flash('success', 'Présentation enregistrée. Les documents du bureau reprennent ces textes et cet aspect de papier.');
+
+        return Response::redirect(url('atak/sse/presentation?modifier=' . rawurlencode((string) $saved['code'])));
     }
 
     // ─────────────────────────────────────────── Lecture du dossier à l'écran

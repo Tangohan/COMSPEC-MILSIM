@@ -17,7 +17,9 @@ if (isNull player) exitWith {
 [] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
 
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
-private _menuVer = 3;
+// v4 : purge explicite des feuilles legacy encore collées sous COMSPEC_Main (classe ACE
+// survit d’une mission à l’autre dans la même session Arma).
+private _menuVer = 4;
 if (
     (missionNamespace getVariable ["COMSPEC_ACEMenuStructureVer", 0]) isEqualTo _menuVer
     && {missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]}
@@ -39,6 +41,32 @@ if (!(_installed isEqualType [])) then { _installed = []; };
         [player, 1, _path, _actionId] call ace_interact_menu_fnc_removeActionFromObject;
     };
 } forEach _installed;
+
+// Purge des anciennes feuilles à plat sous COMSPEC Athena (session Arma précédente).
+private _mainPath = ["ACE_SelfActions", "COMSPEC_Main"];
+private _legacyFlat = [
+    "COMSPEC_OrderInbox", "COMSPEC_Messages", "COMSPEC_Photos", "COMSPEC_Briefing",
+    "COMSPEC_EcotiMarkBuilding", "COMSPEC_EcotiCycleFloor", "COMSPEC_EcotiIlluminate",
+    "COMSPEC_EcotiRouteAdd", "COMSPEC_EcotiRouteClear",
+    "COMSPEC_Ping", "COMSPEC_Med", "COMSPEC_MedInbox", "COMSPEC_IntelNote",
+    "COMSPEC_Resynch", "COMSPEC_HelmetSnap", "COMSPEC_DroneSnap", "COMSPEC_LaserSync",
+    "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon",
+    "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
+    "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
+    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull",
+    "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
+    "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
+    "COMSPEC_DiagnosticAtak"
+];
+{
+    if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
+        ["CAManBase", 1, _mainPath, _x] call ace_interact_menu_fnc_removeActionFromClass;
+    };
+    if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
+        [player, 1, _mainPath, _x] call ace_interact_menu_fnc_removeActionFromObject;
+    };
+} forEach _legacyFlat;
+
 missionNamespace setVariable ["COMSPEC_ACESelfActions", [], false];
 missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
 missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
@@ -46,7 +74,7 @@ missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
 missionNamespace setVariable ["COMSPEC_ATAKMenuReady", false, false];
 missionNamespace setVariable ["COMSPEC_ACEAthenaReady", false, false];
 
-["INFO", "ACE", "Installation menus ACE SelfActions (arbre v3)"] call comspec_overwatch_connect_fnc_log;
+["INFO", "ACE", "Installation menus ACE SelfActions (arbre v4)"] call comspec_overwatch_connect_fnc_log;
 
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
 private _condSync = {

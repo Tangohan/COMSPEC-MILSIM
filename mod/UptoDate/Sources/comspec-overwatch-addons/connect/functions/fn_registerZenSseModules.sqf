@@ -133,5 +133,86 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
     "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
 ] call zen_custom_modules_fnc_register;
 
+// --- Présentation des documents / fiches --------------------------------
+[
+    "COMSPEC SSE",
+    "Présentation des documents",
+    {
+        private _current = missionNamespace getVariable ["COMSPEC_SSE_DocChrome", createHashMap];
+        private _prefab = if (_current isEqualType createHashMap) then {
+            _current getOrDefault ["prefab", "standard_restreint"]
+        } else {
+            "standard_restreint"
+        };
+        private _footer = if (_current isEqualType createHashMap) then {
+            _current getOrDefault ["footer", ""]
+        } else {
+            ""
+        };
+        private _banner = if (_current isEqualType createHashMap) then {
+            _current getOrDefault ["banner", ""]
+        } else {
+            ""
+        };
+        private _prefabCodes = [
+            "standard_restreint",
+            "terrain_tache",
+            "brouillon_froisse",
+            "bureau_jauni",
+            "formel_propre"
+        ];
+        private _prefabLabels = [
+            "Standard — diffusion restreinte",
+            "Terrain — feuille tachée",
+            "Brouillon — papier froissé",
+            "Archives — papier jauni",
+            "Bureau — papier impeccable"
+        ];
+        private _prefabIdx = _prefabCodes find _prefab;
+        if (_prefabIdx < 0) then { _prefabIdx = 0; };
+        private _styles = ["", "clean", "stained", "crumpled", "aged"];
+        private _styleLabels = [
+            "Selon le modèle",
+            "Papier propre (bureau)",
+            "Papier taché (terrain)",
+            "Papier froissé",
+            "Papier jauni / usé"
+        ];
+
+        [
+            "Présentation des documents SSE",
+            [
+                ["LIST", ["Modèle préfait", "Textes et aspect de base. Les champs libres remplacent le modèle."], [_prefabCodes, _prefabLabels, _prefabIdx]],
+                ["LIST", ["Aspect du papier", "Optionnel : force un aspect différent du modèle."], [_styles, _styleLabels, 0]],
+                ["EDIT", ["Bandeau", "Vide = texte du modèle."], _banner],
+                ["EDIT", ["Pied de page", "Mention du type « Ne constitue pas une preuve… ». Vide = texte du modèle."], _footer]
+            ],
+            {
+                params ["_values"];
+                _values params ["_prefab", "_style", "_banner", "_footer"];
+                if (isNil "comspec_sse_fnc_getDocumentChrome") exitWith {
+                    ["Pack SSE requis pour la présentation des documents.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+                };
+                private _chrome = ["apply_prefab", _prefab] call comspec_sse_fnc_getDocumentChrome;
+                private _ov = createHashMap;
+                if ((trim _style) isNotEqualTo "") then { _ov set ["paper_style", trim _style]; };
+                if ((trim _banner) isNotEqualTo "") then { _ov set ["banner", trim _banner]; };
+                if ((trim _footer) isNotEqualTo "") then { _ov set ["footer", trim _footer]; };
+                if ((count _ov) > 0) then {
+                    ["set", _ov] call comspec_sse_fnc_getDocumentChrome;
+                };
+                [
+                    format ["Présentation SSE appliquée (%1).", _prefab],
+                    "tactical",
+                    "info"
+                ] call comspec_overwatch_connect_fnc_announce;
+            },
+            {},
+            []
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
+] call zen_custom_modules_fnc_register;
+
 missionNamespace setVariable ["COMSPEC_ZenSseModulesRegistered", true];
 ["INFO", "SSE", "Modules SSE enregistrés dans Zeus Enhanced"] call comspec_overwatch_connect_fnc_log;

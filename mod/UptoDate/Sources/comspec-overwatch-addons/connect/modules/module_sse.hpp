@@ -229,3 +229,161 @@
             synced[] = {"AnyPerson"};
         };
     };
+
+    class COMSPEC_Module_SSE_DocChrome: COMSPEC_Module_SSE_Base
+    {
+        scope = 2;
+        scopeCurator = 0;
+        displayName = "Présentation des documents SSE";
+        function = "comspec_overwatch_connect_fnc_moduleSseDocChrome";
+        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+
+        class Attributes
+        {
+            class Prefab
+            {
+                displayName = "Modèle préfait";
+                tooltip = "Aspect et textes de base. Les champs ci-dessous remplacent le modèle s’ils sont remplis.";
+                property = "COMSPEC_SSE_DocChrome_Prefab";
+                control = "Combo";
+                expression = "_this setVariable ['Prefab',_value,true];";
+                defaultValue = "'standard_restreint'";
+                typeName = "STRING";
+                class values
+                {
+                    class Standard { name = "Standard — diffusion restreinte"; value = "standard_restreint"; default = 1; };
+                    class Terrain { name = "Terrain — feuille tachée"; value = "terrain_tache"; };
+                    class Brouillon { name = "Brouillon — papier froissé"; value = "brouillon_froisse"; };
+                    class Archives { name = "Archives — papier jauni"; value = "bureau_jauni"; };
+                    class Formel { name = "Bureau — papier impeccable"; value = "formel_propre"; };
+                };
+            };
+            class PaperStyle
+            {
+                displayName = "Aspect du papier (optionnel)";
+                tooltip = "Laisser « Selon le modèle » pour garder l’aspect du modèle choisi.";
+                property = "COMSPEC_SSE_DocChrome_PaperStyle";
+                control = "Combo";
+                expression = "_this setVariable ['PaperStyle',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+                class values
+                {
+                    class Keep { name = "Selon le modèle"; value = ""; default = 1; };
+                    class Clean { name = "Papier propre (bureau)"; value = "clean"; };
+                    class Stained { name = "Papier taché (terrain)"; value = "stained"; };
+                    class Crumpled { name = "Papier froissé"; value = "crumpled"; };
+                    class Aged { name = "Papier jauni / usé"; value = "aged"; };
+                };
+            };
+            class Banner
+            {
+                displayName = "Bandeau (optionnel)";
+                tooltip = "Texte du bandeau rouge en tête de feuille. Vide = texte du modèle.";
+                property = "COMSPEC_SSE_DocChrome_Banner";
+                control = "Edit";
+                expression = "_this setVariable ['Banner',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class TitlePerson
+            {
+                displayName = "Titre fiche personne (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_TitlePerson";
+                control = "Edit";
+                expression = "_this setVariable ['TitlePerson',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class TitleDocs
+            {
+                displayName = "Titre dossier documentaire (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_TitleDocs";
+                control = "Edit";
+                expression = "_this setVariable ['TitleDocs',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class SubtitleDossier
+            {
+                displayName = "Sous-titre compte rendu (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_SubtitleDossier";
+                control = "Edit";
+                expression = "_this setVariable ['SubtitleDossier',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class Footer
+            {
+                displayName = "Pied de page (optionnel)";
+                tooltip = "Mention du type « Ne constitue pas une preuve… ». Vide = texte du modèle.";
+                property = "COMSPEC_SSE_DocChrome_Footer";
+                control = "Edit";
+                expression = "_this setVariable ['Footer',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class BtnConsult
+            {
+                displayName = "Libellé bouton consultation (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_BtnConsult";
+                control = "Edit";
+                expression = "_this setVariable ['BtnConsult',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class BtnTransmit
+            {
+                displayName = "Libellé bouton transmettre (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_BtnTransmit";
+                control = "Edit";
+                expression = "_this setVariable ['BtnTransmit',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class BtnClose
+            {
+                displayName = "Libellé bouton fermer (optionnel)";
+                property = "COMSPEC_SSE_DocChrome_BtnClose";
+                control = "Edit";
+                expression = "_this setVariable ['BtnClose',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+        };
+
+        class Arguments
+        {
+            class Prefab
+            {
+                displayName = "Modèle préfait";
+                description = "Aspect et textes de base";
+                typeName = "STRING";
+                class values
+                {
+                    class Standard { name = "Standard — diffusion restreinte"; value = "standard_restreint"; default = 1; };
+                    class Terrain { name = "Terrain — feuille tachée"; value = "terrain_tache"; };
+                    class Brouillon { name = "Brouillon — papier froissé"; value = "brouillon_froisse"; };
+                    class Archives { name = "Archives — papier jauni"; value = "bureau_jauni"; };
+                    class Formel { name = "Bureau — papier impeccable"; value = "formel_propre"; };
+                };
+            };
+            class Footer
+            {
+                displayName = "Pied de page (optionnel)";
+                description = "Mention RP / preuve";
+                typeName = "STRING";
+                defaultValue = "";
+            };
+        };
+
+        class ModuleDescription
+        {
+            description = "Personnalise l’apparence des fiches SSE en jeu : modèle de papier, bandeau, titres et mention de pied de page. Un seul module suffit pour toute la mission.";
+            position = 0;
+            direction = 0;
+            optional = 1;
+            duplicate = 0;
+        };
+    };

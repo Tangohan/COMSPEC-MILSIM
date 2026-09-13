@@ -759,6 +759,9 @@ return function (Router $router) {
     $router->post('/atak/sse/bibliotheque/{id}', [SsePortalController::class, 'textLibraryUpdate'], $mwSsePortal);
     $router->post('/atak/sse/bibliotheque/{id}/etat', [SsePortalController::class, 'textLibraryToggle'], $mwSsePortal);
     $router->post('/atak/sse/bibliotheque/{id}/supprimer', [SsePortalController::class, 'textLibraryDelete'], $mwSsePortal);
+    $router->get('/atak/sse/presentation', [SsePortalController::class, 'documentPresentationIndex'], $mwSsePortal);
+    $router->post('/atak/sse/presentation/actif', [SsePortalController::class, 'documentPresentationActivate'], $mwSsePortal);
+    $router->post('/atak/sse/presentation', [SsePortalController::class, 'documentPresentationStore'], $mwSsePortal);
     $router->get('/atak/sse/dossiers', [SsePortalController::class, 'casesIndex'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/nouveau', [SsePortalController::class, 'caseCreateForm'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/importer', [SsePortalController::class, 'caseImportForm'], $mwSsePortal);

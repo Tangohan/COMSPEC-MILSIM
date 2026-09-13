@@ -19,6 +19,8 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\ui\functions";
             class showResult {};
             class fillResultDialog {};
+            class getDocumentChrome {};
+            class applyPaperStyle {};
             class resultConsult {};
             class resultTransmit {};
             class uiSetRecord {};
