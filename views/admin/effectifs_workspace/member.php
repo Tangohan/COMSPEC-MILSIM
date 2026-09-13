@@ -574,12 +574,72 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
     ?>
     <article class="eff-card" id="qualifications">
         <h2 class="eff-card__title">Qualifications</h2>
-        <?php $renderRhList($qualifications, static function (array $q) use ($fmtDate): string {
-            $name = trim((string) ($q['qualification_name'] ?? $q['name'] ?? $q['title'] ?? 'Qualification'));
-            $expiry = $fmtDate((string) ($q['expires_at'] ?? ''));
-            return $name . ($expiry !== '' ? ' · échéance ' . $expiry : '');
-        }); ?>
-        <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Piloter les qualifications</a>
+        <?php
+        $qualificationTemporal = $qualificationTemporal ?? null;
+        $qualificationBadge = $qualificationBadge ?? null;
+        if ($qualifications === []): ?>
+            <p class="eff-muted">Aucune qualification enregistrée.</p>
+        <?php else: ?>
+            <ul class="space-y-3 mb-4">
+                <?php foreach ($qualifications as $q):
+                    $name = trim((string) ($q['definition_name'] ?? $q['qualification_name'] ?? $q['name'] ?? 'Qualification'));
+                    $level = trim((string) ($q['level_name'] ?? $q['level'] ?? ''));
+                    $adminSt = \App\Support\QualificationAdminStatus::normalize((string) ($q['admin_status'] ?? $q['status'] ?? ''));
+                    $temporalLabel = '';
+                    if ($qualificationTemporal instanceof \App\Services\Personnel\QualificationTemporalStatusService) {
+                        $t = $qualificationTemporal->resolve($q);
+                        $temporalLabel = (string) ($t['label'] ?? '');
+                    }
+                    $badgePath = $q['level_badge_path'] ?? $q['definition_badge_path'] ?? null;
+                    $badgeUrl = $qualificationBadge instanceof \App\Services\Personnel\QualificationBadgeStorageService
+                        ? $qualificationBadge->publicUrl(is_string($badgePath) ? $badgePath : null)
+                        : url('assets/img/qualification-badge-default.svg');
+                    $isPrimary = !empty($q['is_primary']);
+                    ?>
+                <li class="flex gap-3 items-start <?= $isPrimary ? 'rounded border border-emerald-200 bg-emerald-50/50 p-2' : '' ?>">
+                    <img src="<?= htmlspecialchars($badgeUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-10 h-10 object-contain shrink-0">
+                    <div class="min-w-0 flex-1">
+                        <div class="font-semibold text-slate-900">
+                            <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>
+                            <?php if ($level !== ''): ?><span class="text-slate-500 font-normal">— <?= htmlspecialchars($level, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                            <?php if ($isPrimary): ?><span class="ml-1 text-[10px] uppercase tracking-wider text-emerald-800">Principale</span><?php endif; ?>
+                        </div>
+                        <div class="text-xs text-slate-600 mt-0.5">
+                            <?= htmlspecialchars(\App\Support\QualificationAdminStatus::label($adminSt), ENT_QUOTES, 'UTF-8') ?>
+                            <?php if ($temporalLabel !== ''): ?> · <?= htmlspecialchars($temporalLabel, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                            <a class="underline text-emerald-800" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id . '&renewal_of=' . (int) ($q['id'] ?? 0), ENT_QUOTES, 'UTF-8') ?>">Renouveler</a>
+                            <?php if ($adminSt === \App\Support\QualificationAdminStatus::OBTAINED): ?>
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/referentiels/qualifications/brevets/' . (int) ($q['id'] ?? 0) . '/generer'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit" class="underline text-emerald-800">Générer le brevet</button>
+                            </form>
+                            <?php if (!empty($q['certificate_document_path'])): ?>
+                                <a class="underline text-emerald-800" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/brevets/' . (int) ($q['id'] ?? 0) . '/telecharger'), ENT_QUOTES, 'UTF-8') ?>">Télécharger le brevet</a>
+                            <?php endif; ?>
+                            <?php endif; ?>
+                            <form method="post" action="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attributions/' . (int) ($q['id'] ?? 0) . '/statut'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1">
+                                <?= \App\Core\Csrf::field() ?>
+                                <select name="admin_status" class="border border-slate-300 rounded text-xs py-0.5">
+                                    <?php foreach (\App\Support\QualificationAdminStatus::ALL as $st): ?>
+                                        <option value="<?= htmlspecialchars($st) ?>" <?= $st === $adminSt ? 'selected' : '' ?>><?= htmlspecialchars(\App\Support\QualificationAdminStatus::label($st)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="text" name="revocation_reason" placeholder="Motif si retrait" class="border border-slate-300 rounded text-xs px-1 py-0.5 w-32">
+                                <button type="submit" class="underline text-slate-700">OK</button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <div class="flex flex-wrap gap-2">
+            <a class="eff-btn" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Attribuer une qualification</a>
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Piloter les échéances</a>
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
+        </div>
     </article>
 
     <article class="eff-card" id="absences">

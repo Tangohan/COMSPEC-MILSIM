@@ -606,6 +606,7 @@ class Container
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
@@ -992,6 +993,40 @@ class Container
             \App\Repositories\PersonnelExtrasRepository::class => new \App\Repositories\PersonnelExtrasRepository(),
             \App\Repositories\PersonnelProfileRepository::class => new \App\Repositories\PersonnelProfileRepository(),
             \App\Repositories\PersonnelQualificationRepository::class => new \App\Repositories\PersonnelQualificationRepository(),
+            \App\Repositories\QualificationDefinitionRepository::class => new \App\Repositories\QualificationDefinitionRepository(),
+            \App\Repositories\QualificationReferentielRepository::class => new \App\Repositories\QualificationReferentielRepository(),
+            \App\Repositories\QualificationAwardRepository::class => new \App\Repositories\QualificationAwardRepository(),
+            \App\Services\Personnel\QualificationTemporalStatusService::class => new \App\Services\Personnel\QualificationTemporalStatusService(),
+            \App\Services\Personnel\QualificationPermissionGrantService::class => new \App\Services\Personnel\QualificationPermissionGrantService(
+                self::get(\App\Repositories\QualificationReferentielRepository::class)
+            ),
+            \App\Services\Personnel\QualificationBadgeStorageService::class => new \App\Services\Personnel\QualificationBadgeStorageService(),
+            \App\Services\Personnel\QualificationCertificatePdfService::class => new \App\Services\Personnel\QualificationCertificatePdfService(
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Services\Personnel\QualificationStatusTransitionService::class => new \App\Services\Personnel\QualificationStatusTransitionService(
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Services\Personnel\QualificationPermissionGrantService::class)
+            ),
+            \App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class => new \App\Services\Cron\Jobs\QualificationExpiryScanCronJob(
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+            ),
             \App\Repositories\PersonnelAssignmentRepository::class => new \App\Repositories\PersonnelAssignmentRepository(),
             \App\Repositories\PersonnelServiceHistoryRepository::class => new \App\Repositories\PersonnelServiceHistoryRepository(),
             \App\Repositories\GradeRepository::class => new \App\Repositories\GradeRepository(),

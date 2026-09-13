@@ -1459,17 +1459,37 @@ if ($personnelFileIsRhFull) {
                             </div>
                             <?php endif; ?>
                             <?php foreach ($qualifications as $q):
-                                $qLevel = trim((string) ($q['level'] ?? ''));
+                                $qLevel = trim((string) ($q['level_name'] ?? $q['level'] ?? ''));
+                                $qName = trim((string) ($q['definition_name'] ?? $q['qualification_name'] ?? ''));
                                 $qIss = (int) ($q['issued_by'] ?? 0);
-                                $qIssuer = $qIss > 0 && isset($qualificationIssuerLabels[$qIss]) ? (string) $qualificationIssuerLabels[$qIss] : null;
+                                $qIssuer = !empty($q['issuer_name'])
+                                    ? (string) $q['issuer_name']
+                                    : ($qIss > 0 && isset($qualificationIssuerLabels[$qIss]) ? (string) $qualificationIssuerLabels[$qIss] : null);
                                 $qObt = !empty($q['obtained_at']) ? date('d/m/Y', strtotime((string) $q['obtained_at'])) : null;
+                                $adminLabel = class_exists(\App\Support\QualificationAdminStatus::class)
+                                    ? \App\Support\QualificationAdminStatus::label((string) ($q['admin_status'] ?? $q['status'] ?? ''))
+                                    : $qualificationStatusFr((string) ($q['status'] ?? ''));
+                                $temporalLabel = '';
+                                if (class_exists(\App\Services\Personnel\QualificationTemporalStatusService::class)) {
+                                    $temporalLabel = (string) ((new \App\Services\Personnel\QualificationTemporalStatusService())->resolve($q)['label'] ?? '');
+                                }
+                                $badgePath = $q['level_badge_path'] ?? $q['definition_badge_path'] ?? null;
+                                $badgeUrl = url('assets/img/qualification-badge-default.svg');
+                                if (is_string($badgePath) && $badgePath !== '' && class_exists(\App\Services\Personnel\QualificationBadgeStorageService::class)) {
+                                    $badgeUrl = (new \App\Services\Personnel\QualificationBadgeStorageService())->publicUrl($badgePath);
+                                }
+                                $isPrimary = !empty($q['is_primary']);
                                 ?>
-                            <div class="px-6 py-4 border border-slate-200 rounded-2xl flex flex-col gap-2">
-                                <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars((string) ($q['qualification_name'] ?? '')) ?></span>
-                                <p class="text-xs font-bold text-slate-900"><?php if ($qLevel !== ''): ?><?= htmlspecialchars($qLevel) ?> — <?php endif; ?><?= htmlspecialchars($qualificationStatusFr((string) ($q['status'] ?? ''))) ?></p>
+                            <div class="px-6 py-4 border <?= $isPrimary ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200' ?> rounded-2xl flex flex-col gap-2 min-w-[200px]">
+                                <div class="flex items-center gap-3">
+                                    <img src="<?= htmlspecialchars($badgeUrl) ?>" alt="" class="w-10 h-10 object-contain">
+                                    <span class="text-[7px] font-black tracking-widest text-slate-400 uppercase"><?= htmlspecialchars($qName) ?></span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-900"><?php if ($qLevel !== ''): ?><?= htmlspecialchars($qLevel) ?> — <?php endif; ?><?= htmlspecialchars($adminLabel) ?></p>
+                                <?php if ($temporalLabel !== ''): ?><p class="text-[10px] text-slate-600"><?= htmlspecialchars($temporalLabel) ?></p><?php endif; ?>
                                 <?php if ($qObt !== null): ?><p class="text-[10px] text-slate-600">Obtenue le <?= htmlspecialchars($qObt) ?></p><?php endif; ?>
                                 <?php if (!empty($q['expires_at'])): ?><p class="text-[10px] text-slate-500">Échéance <?= date('d/m/Y', strtotime((string) $q['expires_at'])) ?></p><?php endif; ?>
-                                <?php if ($qIssuer !== null && $qIssuer !== ''): ?><p class="text-[10px] text-slate-600">Référent enregistrement : <span class="font-semibold text-slate-800"><?= htmlspecialchars($qIssuer) ?></span></p><?php endif; ?>
+                                <?php if ($qIssuer !== null && $qIssuer !== ''): ?><p class="text-[10px] text-slate-600">Organisme : <span class="font-semibold text-slate-800"><?= htmlspecialchars($qIssuer) ?></span></p><?php endif; ?>
                             </div>
                             <?php endforeach; ?>
                         </div>

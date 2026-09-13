@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Insigne de qualification">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="url(#g)" stroke="#94a3b8" stroke-width="4"/>
+  <circle cx="60" cy="60" r="42" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+  <path d="M60 28 L72 52 L98 56 L78 74 L84 100 L60 86 L36 100 L42 74 L22 56 L48 52 Z"
+        fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="60" y="66" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+        font-size="14" font-weight="700" fill="#0f172a">QUAL</text>
+</svg>

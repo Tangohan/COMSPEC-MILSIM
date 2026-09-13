@@ -106,6 +106,7 @@ $roleplayChildren = array_values(array_filter([
 $orbatChildren = array_values(array_filter([
     ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
+    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => str_starts_with($p, 'back-office/referentiels/qualifications')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([

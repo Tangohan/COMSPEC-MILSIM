@@ -475,6 +475,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 89,
         ],
+        [
+            'code' => 'QUALIFICATION_REFERENTIEL_V1',
+            'version' => '1',
+            'title' => 'Référentiel de qualifications',
+            'description' => 'Complétez le catalogue des qualifications de votre communauté (catégories, types, niveaux, organismes émetteurs) puis attribuez-les aux dossiers.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/referentiels/qualifications',
+            'estimate_minutes' => 15,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 91,
+        ],
     ];
 
     $upsert = $pdo->prepare(

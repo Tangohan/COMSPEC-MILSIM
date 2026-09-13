@@ -157,19 +157,30 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="eff-banner__action">Ouvrir les fiches</a>
     </aside>
     <?php endif; ?>
-    <div class="eff-roster-hero">
+    <?php
+    $seniorityOpen = $canEditProfiles && $orgFoundingDate === '';
+    ?>
+    <div class="eff-roster-hero eff-roster-hero--compact">
         <div class="eff-roster-hero__copy">
             <p class="eff-roster-hero__kicker">Tableur</p>
             <p class="eff-roster-hero__title">Tous les dossiers, une seule liste</p>
             <p class="eff-roster-hero__lead">
-                Chaque ligne est un dossier. Vous y voyez le portrait de l’opérateur, son affectation,
-                son niveau d’accès et les repères utiles pour le retrouver.
-                Un responsable peut corriger l’accès, l’unité ou l’ancienneté sans ouvrir la fiche.
+                Portrait, affectation, accès et repères sur chaque ligne — correction rapide sans ouvrir la fiche.
             </p>
         </div>
         <?php if ($canEditProfiles || $orgFoundingDate !== ''): ?>
-        <aside class="eff-roster-hero__seniority eff-catalog__notice">
-            <p class="eff-catalog__kicker">Ancienneté réelle</p>
+        <details class="eff-roster-hero__seniority eff-catalog__notice"<?= $seniorityOpen ? ' open' : '' ?>>
+            <summary class="eff-roster-seniority__summary">
+                <span class="eff-catalog__kicker">Ancienneté réelle</span>
+                <?php if ($orgFoundingDate !== ''): ?>
+                    <?php $orgFoundedTs = strtotime($orgFoundingDate); ?>
+                    <?php if ($orgFoundedTs !== false): ?>
+                    <span class="eff-roster-hero__seniority-date">Organisation créée le <?= htmlspecialchars(date('d/m/Y', $orgFoundedTs), ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span class="eff-roster-hero__seniority-date">Date de création à renseigner</span>
+                <?php endif; ?>
+            </summary>
             <p class="eff-catalog__notice-lead">
                 La date de création de l’organisation compte pour tout le monde, y compris si la communauté
                 existait avant l’arrivée sur Athena. Pour un membre déjà présent à cette époque, indiquez
@@ -185,15 +196,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                 </label>
                 <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer pour tous les membres</button>
             </form>
-            <?php else: ?>
-            <?php
-            $orgFoundedTs = strtotime($orgFoundingDate);
-            if ($orgFoundedTs !== false):
-            ?>
-            <p class="eff-roster-hero__seniority-date">Organisation créée le <?= htmlspecialchars(date('d/m/Y', $orgFoundedTs), ENT_QUOTES, 'UTF-8') ?>.</p>
             <?php endif; ?>
-            <?php endif; ?>
-        </aside>
+        </details>
         <?php endif; ?>
     </div>
 
@@ -216,13 +220,19 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         </a>
     </div>
 
-    <form method="get" action="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
+    <form method="get" action="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-roster-toolbar">
+        <?php if (!empty($filters['sans_affectation'])): ?>
+            <input type="hidden" name="sans_affectation" value="1">
+        <?php endif; ?>
+        <?php if (!empty($filters['sans_role'])): ?>
+            <input type="hidden" name="sans_role" value="1">
+        <?php endif; ?>
         <div class="eff-catalog-filters">
-            <div>
+            <div class="eff-roster-toolbar__field eff-roster-toolbar__field--grow">
                 <label for="eff-q">Recherche</label>
                 <input id="eff-q" type="search" name="q" value="<?= htmlspecialchars((string) ($filters['q'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Nom, indicatif, e-mail…">
             </div>
-            <div>
+            <div class="eff-roster-toolbar__field">
                 <label for="eff-status">Statut du compte</label>
                 <select id="eff-status" name="status">
                     <option value="">Tous les statuts</option>
@@ -231,7 +241,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <option value="pending_verification" <?= (($filters['status'] ?? '') === 'pending_verification') ? 'selected' : '' ?>>E-mail à vérifier</option>
                 </select>
             </div>
-            <div>
+            <div class="eff-roster-toolbar__field">
                 <label for="eff-role">Rôle</label>
                 <select id="eff-role" name="role_id">
                     <option value="">Tous les rôles</option>
@@ -242,7 +252,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div>
+            <div class="eff-roster-toolbar__field">
                 <label for="eff-tri">Trier par</label>
                 <select id="eff-tri" name="tri">
                     <?php foreach ($sortOptions as $value => $label): ?>
@@ -252,26 +262,12 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div>
-                <label>&nbsp;</label>
-                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="width:100%;height:2.25rem">Appliquer</button>
+            <div class="eff-roster-toolbar__actions">
+                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Appliquer</button>
+                <?php if ($hasActiveFilters): ?>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Réinitialiser</a>
+                <?php endif; ?>
             </div>
-            <?php if ($hasActiveFilters): ?>
-            <div>
-                <label>&nbsp;</label>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn" style="width:100%;height:2.25rem;display:inline-flex;align-items:center;justify-content:center">Réinitialiser</a>
-            </div>
-            <?php endif; ?>
-        </div>
-        <div class="eff-catalog-checks">
-            <label class="eff-catalog-check<?= !empty($filters['sans_affectation']) ? ' is-on' : '' ?>">
-                <input type="checkbox" name="sans_affectation" value="1" <?= !empty($filters['sans_affectation']) ? 'checked' : '' ?>>
-                <span>Sans unité</span>
-            </label>
-            <label class="eff-catalog-check<?= !empty($filters['sans_role']) ? ' is-on' : '' ?>">
-                <input type="checkbox" name="sans_role" value="1" <?= !empty($filters['sans_role']) ? 'checked' : '' ?>>
-                <span>Sans rôle</span>
-            </label>
         </div>
     </form>
 
@@ -280,7 +276,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
             <strong>Aucun membre ne correspond</strong>
             Élargissez la recherche ou retirez un filtre.
             <?php if ($hasActiveFilters): ?>
-                <div style="margin-top:1rem">
+                <div class="eff-catalog__empty-actions">
                     <a class="eff-catalog__btn" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">Voir tous les effectifs</a>
                 </div>
             <?php endif; ?>
@@ -318,10 +314,11 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <col data-col="identity" style="width:14rem">
                     <col data-col="grade" style="width:6.5rem">
                     <col data-col="fonction" style="width:9rem">
+                    <col data-col="qualifications" style="width:12rem">
                     <col data-col="affectation" style="width:14rem">
                     <col data-col="roles" style="width:12rem">
                     <col data-col="reperes" style="width:14rem">
-                    <col data-col="indicateurs" style="width:16rem">
+                    <col data-col="indicateurs" style="width:11rem">
                     <col data-col="statut" style="width:7.5rem">
                     <col data-col="actions" style="width:13rem">
                 </colgroup>
@@ -333,6 +330,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <th data-col="identity">Identité<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Identité" tabindex="0"></span></th>
                         <th data-col="grade">Grade<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Grade" tabindex="0"></span></th>
                         <th data-col="fonction">Fonction<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Fonction" tabindex="0"></span></th>
+                        <th data-col="qualifications">Qualifications<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Qualifications" tabindex="0"></span></th>
                         <th data-col="affectation">Affectation<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Affectation" tabindex="0"></span></th>
                         <th data-col="roles">Rôles<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Rôles" tabindex="0"></span></th>
                         <th data-col="reperes">Repères<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Repères" tabindex="0"></span></th>
@@ -470,6 +468,16 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <?php endif; ?>
                         </td>
                         <td>
+                            <?php
+                            $qualSummary = trim((string) ($row['qualifications_summary'] ?? '—'));
+                            $qualAlert = trim((string) ($row['qualifications_alert'] ?? ''));
+                            ?>
+                            <span class="eff-sheets__cell-text"><?= htmlspecialchars($qualSummary !== '' ? $qualSummary : '—', ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if ($qualAlert !== ''): ?>
+                                <span class="eff-sheets__badge eff-sheets__badge--watch" title="<?= htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') ?>">Alerte</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <div class="eff-sheets__assign">
                                 <?php if ($assignmentPath !== ''): ?>
                                     <span class="eff-sheets__path" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">
@@ -583,38 +591,38 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </dl>
                         </td>
                         <td>
-                            <div class="eff-sheets__metrics">
-                                <div class="eff-sheets__meter" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">
+                            <div class="eff-sheets__metrics eff-sheets__metrics--compact">
+                                <div class="eff-sheets__meter eff-sheets__meter--text" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">
                                     <div class="eff-sheets__meter-head">
-                                        <span>Ancienneté</span>
+                                        <span>Anc.</span>
                                         <strong><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></strong>
                                     </div>
                                     <?php if ($prePlatformStart !== ''): ?>
-                                        <p class="eff-sheets__meter-note">Présent avant le site<?= $prePlatformLabel !== '' ? ' · ' . htmlspecialchars($prePlatformLabel, ENT_QUOTES, 'UTF-8') : '' ?></p>
+                                        <p class="eff-sheets__meter-note">Avant site<?= $prePlatformLabel !== '' ? ' · ' . htmlspecialchars($prePlatformLabel, ENT_QUOTES, 'UTF-8') : '' ?></p>
                                     <?php endif; ?>
                                 </div>
-                                <div class="eff-sheets__meter<?= $availabilityScore < 40 ? ' is-low' : '' ?>">
+                                <div class="eff-sheets__meter<?= $availabilityScore < 40 ? ' is-low' : '' ?>" title="Disponibilité <?= $availabilityScore ?> %">
                                     <div class="eff-sheets__meter-head">
-                                        <span>Disponibilité</span>
-                                        <strong><?= $availabilityScore ?> %</strong>
+                                        <span>Dispo</span>
+                                        <strong><?= $availabilityScore ?>%</strong>
                                     </div>
                                     <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $availabilityScore ?>" aria-label="Disponibilité">
                                         <span style="width:<?= max(0, min(100, $availabilityScore)) ?>%"></span>
                                     </div>
                                 </div>
-                                <div class="eff-sheets__meter<?= $presenceScore < 40 ? ' is-low' : '' ?>">
+                                <div class="eff-sheets__meter<?= $presenceScore < 40 ? ' is-low' : '' ?>" title="Présence <?= $presenceScore ?> %">
                                     <div class="eff-sheets__meter-head">
-                                        <span>Présence</span>
-                                        <strong><?= $presenceScore ?> %</strong>
+                                        <span>Prés.</span>
+                                        <strong><?= $presenceScore ?>%</strong>
                                     </div>
                                     <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $presenceScore ?>" aria-label="Présence">
                                         <span style="width:<?= max(0, min(100, $presenceScore)) ?>%"></span>
                                     </div>
                                 </div>
-                                <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>">
+                                <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>" title="Complétion du dossier <?= $completionScore ?> %">
                                     <div class="eff-sheets__meter-head">
                                         <span>Dossier</span>
-                                        <strong><?= $completionScore ?> %</strong>
+                                        <strong><?= $completionScore ?>%</strong>
                                     </div>
                                     <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $completionScore ?>" aria-label="Complétion du dossier">
                                         <span style="width:<?= max(0, min(100, $completionScore)) ?>%"></span>

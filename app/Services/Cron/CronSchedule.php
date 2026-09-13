@@ -22,6 +22,7 @@ final class CronSchedule
         'sse_sync_maintenance' => 15,
         'attendance_reminders' => 30,
         'training_expire' => 60,
+        'qualification_expiry_scan' => 60,
         'personnel_progression_evaluate' => 60,
         'personnel_capability_refresh' => 60,
         'seniority_sync_all' => 1440,
