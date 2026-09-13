@@ -83,12 +83,22 @@ final class QualificationReferentielTest extends TestCase
 
     public function testCertificateLayoutsExist(): void
     {
-        $base = dirname(__DIR__, 2) . '/views/admin/organization/qualifications/certificates/';
+        $root = dirname(__DIR__, 2);
+        $base = $root . '/views/admin/organization/qualifications/certificates/';
         self::assertFileExists($base . 'layout_classique.php');
         self::assertFileExists($base . 'layout_moderne.php');
-        self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/img/qualification-badge-default.svg');
-        self::assertFileExists(dirname(__DIR__, 2) . '/docs/technique/qualification-certificate-templates/template_classique_vierge.pdf');
-        self::assertFileExists(dirname(__DIR__, 2) . '/docs/technique/qualification-certificate-templates/template_moderne_vierge.pdf');
+        self::assertFileExists($root . '/public/assets/img/qualification-badge-default.svg');
+        self::assertFileExists($root . '/docs/technique/qualification-certificate-templates/template_classique_vierge.pdf');
+        self::assertFileExists($root . '/docs/technique/qualification-certificate-templates/template_moderne_vierge.pdf');
+        self::assertFileExists($root . '/public/assets/docs/qualification-certificate-templates/template_classique_vierge.pdf');
+        self::assertFileExists($root . '/public/assets/docs/qualification-certificate-templates/template_moderne_vierge.pdf');
+
+        $index = (string) file_get_contents($root . '/views/admin/organization/qualifications/index.php');
+        $form = (string) file_get_contents($root . '/views/admin/organization/qualifications/form.php');
+        self::assertStringContainsString('docs/qualification-certificate-templates/template_classique_vierge.pdf', $index);
+        self::assertStringContainsString('docs/qualification-certificate-templates/template_moderne_vierge.pdf', $index);
+        self::assertStringContainsString('docs/qualification-certificate-templates/template_classique_vierge.pdf', $form);
+        self::assertStringContainsString('docs/qualification-certificate-templates/template_moderne_vierge.pdf', $form);
     }
 
     public function testMigrationRegistersQualificationReferentiel(): void

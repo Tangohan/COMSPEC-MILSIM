@@ -120,6 +120,12 @@ $checked = static function (string $key) use ($definition): bool {
                         <option value="<?= (int) $tpl['id'] ?>" <?= (int) $v('certificate_template_id') === (int) $tpl['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tpl['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <p class="text-xs text-slate-500 mt-1">
+                    Modèles vierges :
+                    <a class="underline text-emerald-800" href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_classique_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Classique</a>
+                    ·
+                    <a class="underline text-emerald-800" href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_moderne_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Moderne</a>
+                </p>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Format du numéro de brevet</label>

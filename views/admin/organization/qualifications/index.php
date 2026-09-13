@@ -21,6 +21,39 @@ $flashError = \App\Core\Session::getFlash('error');
     <?php if ($flashSuccess): ?><p class="mb-4 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded"><?= htmlspecialchars($flashSuccess) ?></p><?php endif; ?>
     <?php if ($flashError): ?><p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>
 
+    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-label="Modèles de certificat et diplôme">
+        <div class="mb-4">
+            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500">Modèles certificat / diplôme</h2>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">
+                Gabarits PDF de référence pour les brevets générés depuis ce référentiel (Classique et Moderne).
+                Les fichiers ci-dessous sont les modèles vierges à consulter ; le rendu rempli est produit à l’attribution.
+            </p>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Classique</h3>
+                <p class="text-xs text-slate-600 mt-1 mb-3">Cadre ornementé, en-tête institutionnel, mentions légales.</p>
+                <a class="inline-flex text-sm font-medium text-emerald-800 underline"
+                   href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_classique_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>"
+                   target="_blank"
+                   rel="noopener noreferrer">Ouvrir le modèle PDF</a>
+            </div>
+            <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Moderne</h3>
+                <p class="text-xs text-slate-600 mt-1 mb-3">Bandeau accent, typographie épurée, code de vérification.</p>
+                <a class="inline-flex text-sm font-medium text-emerald-800 underline"
+                   href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_moderne_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>"
+                   target="_blank"
+                   rel="noopener noreferrer">Ouvrir le modèle PDF</a>
+            </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-4">
+            Distinct du
+            <a href="<?= htmlspecialchars(url('formation/certificates/gabarit'), ENT_QUOTES, 'UTF-8') ?>" class="underline text-slate-700">gabarit d’attestations de formation</a>
+            (parcours Formation).
+        </p>
+    </section>
+
     <div class="grid lg:grid-cols-3 gap-6 mb-8">
         <div class="rounded-lg border border-slate-200 p-4 bg-white">
             <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Catégories</h2>
