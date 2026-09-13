@@ -149,9 +149,7 @@ require base_path('views/partials/alert_banners.php');
     $dashboard_orbat = is_array($dashboard_orbat ?? null) ? $dashboard_orbat : null;
     ?>
     <?php if ($dashboard_orbat !== null): ?>
-    <section class="bg-[#f4f7f8] py-8">
         <?php require base_path('views/partials/dashboard_orbat.php'); ?>
-    </section>
     <?php endif; ?>
 
     <?php if ($can_view_personnel_directory && $dashboard_effectifs_rows !== []): ?>

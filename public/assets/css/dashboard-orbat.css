@@ -9,20 +9,19 @@
   --do-surface: #ffffff;
   --do-accent: #0b8a5c;
   --do-accent-soft: #e7f7f0;
+  width: 100%;
   margin: 0 0 1.25rem;
-  padding: 0 1rem;
-}
-
-@media (min-width: 768px) {
-  .dash-orbat {
-    padding: 0 1.5rem;
-  }
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .dash-orbat__frame {
-  max-width: 72rem;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   border: 1px solid var(--do-line);
+  border-left: 0;
+  border-right: 0;
   background:
     radial-gradient(circle at 8% 0%, rgba(11, 138, 92, 0.08), transparent 36%),
     linear-gradient(180deg, #fbfcfd 0%, var(--do-bg) 100%);
