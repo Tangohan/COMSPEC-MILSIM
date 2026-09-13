@@ -144,6 +144,7 @@ use App\Controllers\Admin\Organization\UserAdminController;
 use App\Controllers\Admin\Organization\RoleAdminController;
 use App\Controllers\Admin\Organization\AccessManagementController;
 use App\Controllers\Admin\Organization\OrganizationPositionsController;
+use App\Controllers\Admin\Organization\OrganizationDataQualityController;
 use App\Controllers\Admin\Organization\RolesFunctionsAdminController;
 use App\Controllers\Admin\Organization\CategoryAdminController;
 use App\Controllers\Admin\Organization\CompetencyMatrixController;
@@ -1233,6 +1234,9 @@ return function (Router $router) {
     $router->get('/back-office/positions', [OrganizationPositionsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/positions', [OrganizationPositionsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/positions/{id}/delete', [OrganizationPositionsController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/qualite-donnees', [OrganizationDataQualityController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/snapshot', [OrganizationDataQualityController::class, 'snapshot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/assign-position', [UserAdminController::class, 'assignPosition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/apply-role-set', [UserAdminController::class, 'applyRoleSet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories', [CategoryAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

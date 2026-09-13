@@ -100,6 +100,7 @@ $unitDialogs = [
     <button type="button" id="hub-btn-equipe" class="ath-btn">Nouvelle équipe</button>
     <a href="<?= $h(url('back-office/organisation-effectifs')) ?>" class="ath-btn">Structure &amp; grades</a>
     <a href="<?= $h(url('back-office/organisation/catalogue')) ?>" class="ath-btn">Catalogue</a>
+    <a href="<?= $h(url('back-office/organisation/qualite-donnees')) ?>" class="ath-btn">Qualité des données</a>
 </div>
 
 <?php require base_path('views/partials/orbat/orbat_canvas.php'); ?>
