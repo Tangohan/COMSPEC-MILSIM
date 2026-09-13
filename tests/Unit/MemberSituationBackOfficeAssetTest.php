@@ -55,7 +55,9 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         $qualifications = (string) file_get_contents($root . '/views/admin/member_situation/qualifications.php');
         self::assertStringContainsString('bo-dossier-hero', $qualifications);
         self::assertStringContainsString('bo-doc-sheet', $qualifications);
+        self::assertStringContainsString('bo-doc-card__body--actions', $qualifications);
         self::assertStringContainsString('Ouvrir mon coffre', $qualifications);
+        self::assertStringNotContainsString('bo-doc-card__dl', $qualifications);
         self::assertFileExists($root . '/views/admin/member_situation/coffre.php');
         self::assertFileExists($root . '/public/assets/css/back-office-member-situation.css');
         self::assertStringContainsString('downloadBrevet', $controller);

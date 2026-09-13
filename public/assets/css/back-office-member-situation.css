@@ -443,6 +443,11 @@
   padding: 0.95rem 1.05rem 1.05rem;
 }
 
+.bo-doc-card__body--actions {
+  gap: 0;
+  padding: 0.75rem 1.05rem 0.95rem;
+}
+
 .bo-doc-card__head {
   display: flex;
   align-items: center;
@@ -455,6 +460,29 @@
   font-size: 1.05rem;
   font-weight: 850;
   letter-spacing: -0.02em;
+}
+
+.bo-doc-sheet__meta--secondary {
+  margin-top: 0.35rem;
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.bo-doc-sheet__status.is-ok {
+  color: #0b5c3c;
+}
+
+.bo-doc-sheet__status.is-warn {
+  color: #8a5a12;
+}
+
+.bo-doc-sheet__status.is-bad {
+  color: #9b1c1c;
+}
+
+.bo-doc-sheet__status.is-info {
+  color: #1e4f80;
 }
 
 .bo-doc-card__dl {
