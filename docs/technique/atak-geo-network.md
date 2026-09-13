@@ -17,12 +17,15 @@ Catalogue : `App\Services\Tactical\AtakBridgeModulesService`.
 
 ## Base de données
 
-Migration : `migrations/2026_08_28_001_atak_geo_network.sql`
+Migration : `migrations/2026_08_28_001_atak_geo_network.sql`  
+Complément : `bootstrap/atak_geo_road_operator_label_migration.php` (colonne `operator_label`)
 
 - `atak_geo_places` — lieux nommés (type, nom, position)
-- `atak_geo_road_segments` — segments routiers (extrémités A/B, longueur, sens unique)
+- `atak_geo_road_segments` — segments routiers (extrémités A/B, longueur, sens unique, **libellé opérateur**)
 
-Filet à chaud : `App\Support\AtakGeoNetworkSchema`.
+Filet à chaud : `App\Support\AtakGeoNetworkSchema` (ajoute `operator_label` si absente).
+
+Le libellé saisi au poste **n’est jamais écrasé** lors d’un nouvel ingest Arma (`ON DUPLICATE KEY UPDATE` sans toucher `operator_label`).
 
 ## API
 
@@ -30,12 +33,49 @@ Filet à chaud : `App\Support\AtakGeoNetworkSchema`.
 |---------|-------|-------------|
 | GET | `/api/atak/geo/places?bbox=…&mapId=1` | Lieux dans une bbox |
 | GET | `/api/atak/geo/places?q=Kavala` | Recherche par nom |
-| GET | `/api/atak/geo/roads?bbox=…&mapId=1` | Segments dans une bbox |
+| GET | `/api/atak/geo/roads?bbox=…&mapId=1` | Segments dans une bbox (`db_id`, `label`, `class`…) |
+| POST | `/api/atak/geo/roads/label` | Nommer / effacer le nom d’une route (CSRF navigateur) |
 | GET | `/api/atak/geo/coverage?mapId=1` | Comptages + `geo_ready` |
 | POST | `/api/atak/geo/ingest` | Ingest mod (clé API ou CSRF) |
 | POST | `/api/atak/route/plan` | Plan A* sur graphe routier (+ repli direct) |
 
-Corps planification :
+### Nommer une route (poste de commandement)
+
+Corps JSON :
+
+```json
+{
+  "mapId": 1,
+  "source_id": "road-42",
+  "label": "Axe nord Kavala"
+}
+```
+
+- `label` vide ou `null` : efface le nom.
+- Réponse : segment mis à jour (`road` avec `db_id`, `label`, etc.) et message « Nom de route enregistré. »
+
+## Affichage carte (Lots 2 / 3)
+
+Sur le calque **Routes** :
+
+- Épaisseur et couleur selon la classe (`HIGHWAY` plus marqué, `TRACK` fin et pointillé, etc.).
+- Info-bulle au survol (« Route sans nom » si aucun libellé).
+- Clic → invite « Nom de cette route » → enregistrement immédiat au poste.
+- Libellé permanent visible à partir d’un zoom moyen lorsque un nom existe.
+
+Sur le calque **Villes** :
+
+- Villes un peu plus grandes ; info-bulle avec le nom.
+- Nom affiché en permanent (villes / bourgs) à partir du zoom 4 environ.
+
+Les cases **Villes** / **Routes** de la barre d’outils restent le seul moyen d’afficher ou masquer ces calques (`setVisible`).
+
+### Limitation restante (Lot 4 / plus tard)
+
+- Empreintes 2D des bâtiments en vue plate : non livré ici (calque scène 3D réservé à la vue inclinée).
+- Tuiles Grad / MEH supplémentaires : reportées (Lot 4).
+
+## Corps planification
 
 ```json
 {
@@ -63,7 +103,7 @@ Lancer en jeu (Zeus / debug) :
 
 Scripts :
 
-- `public/assets/js/atak-geo-network.js` — calques villes / routes
+- `public/assets/js/atak-geo-network.js` — calques villes / routes + nommage
 - `public/assets/js/atak-route-planner.js` — appel planification
 - `tacmap-route-tools.js` — double-clic → plan routier si données disponibles
 - `public/assets/js/atak-geo-live.js` — pont live sur `/public/atak` (cases Villes/Routes + `ATAKGeoLive.planRoadRoute`)

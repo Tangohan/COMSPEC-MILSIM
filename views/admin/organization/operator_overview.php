@@ -286,7 +286,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <section class="<?= $h($cardClass) ?>">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-black text-slate-950">Prochaines manœuvres</h2>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('evenements')) ?>">Voir le calendrier</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/evenements')) ?>">Voir le calendrier</a>
             </div>
             <?php if ($events === []): ?>
                 <p class="mt-4 text-sm text-slate-600">Aucune manœuvre n’est encore annoncée. Dès qu’un créneau est publié, il apparaîtra ici.</p>
@@ -384,7 +384,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 ['label' => 'Mes qualifications', 'hint' => 'Brevets et qualifications du dossier', 'href' => url('back-office/ma-situation/qualifications')],
                 ['label' => 'Ma liaison ATAK', 'hint' => 'Terminaux et certificat de liaison', 'href' => url('back-office/ma-situation/liaison-atak')],
                 ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('back-office/ma-situation/mes-demarches')],
-                ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('evenements')],
+                ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('back-office/ma-situation/evenements')],
                 ['label' => 'Carte ATAK', 'hint' => 'Situation tactique', 'href' => url('atak')],
                 ['label' => 'Boîte de réception', 'hint' => $inboxUnread > 0 ? ($inboxUnread === 1 ? '1 message à lire' : $inboxUnread . ' messages à lire') : 'Messages de la communauté', 'href' => url('boite-reception')],
                 ['label' => 'Mon compte', 'hint' => 'Portrait, sécurité et préférences', 'href' => url('account')],

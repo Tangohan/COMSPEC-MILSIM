@@ -4,6 +4,8 @@ $title = (string) ($title ?? 'Accès renseignement interpersonnel');
 $error = $error ?? \App\Core\Session::getFlash('error');
 $success = $success ?? \App\Core\Session::getFlash('success');
 $loggedIn = (bool) ($loggedIn ?? false);
+$canEnterAsStaff = (bool) ($canEnterAsStaff ?? false);
+$canEnterWithoutCode = (bool) ($canEnterWithoutCode ?? false);
 $sseTheme = sse_ui_theme_normalize((string) ($sseTheme ?? sse_ui_theme()));
 $operatorName = (string) ($operatorName ?? 'Opérateur');
 $operatorMeta = (string) ($operatorMeta ?? 'Session SSE');
@@ -38,9 +40,13 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
             <p class="sse-gate-hub__kicker">Session</p>
             <h1 class="sse-gate-hub__title">Accès SSE</h1>
             <p class="sse-gate-hub__lead">
-                <?= $loggedIn
-                    ? 'Votre profil est reconnu. Saisissez le code temporaire délivré par le commandement pour ouvrir le compartiment.'
-                    : 'Entrez le code temporaire délivré par votre commandement pour ouvrir le compartiment. Sans compte Athena, indiquez votre indicatif.' ?>
+                <?php if ($canEnterAsStaff || $canEnterWithoutCode): ?>
+                    Votre compte est reconnu pour le renseignement. Vous pouvez entrer sans code, ou saisir un code temporaire pour une session invitée.
+                <?php elseif ($loggedIn): ?>
+                    Votre profil est reconnu. Saisissez le code temporaire délivré par le commandement pour ouvrir le compartiment.
+                <?php else: ?>
+                    Entrez le code temporaire délivré par votre commandement pour ouvrir le compartiment. Sans compte Athena, indiquez votre indicatif.
+                <?php endif; ?>
             </p>
 
             <?php if ($error): ?>
@@ -50,12 +56,18 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 <div class="sse-gate-hub__alert sse-gate-hub__alert--ok" role="status"><?= $h($success) ?></div>
             <?php endif; ?>
 
+            <?php if ($canEnterAsStaff || $canEnterWithoutCode): ?>
+                <p class="sse-gate-hub__hint" style="margin-bottom:1rem">
+                    <a class="sse-gate-hub__btn" href="<?= $h(url('atak/sse/commandement')) ?>">Entrer sans code (commandement)</a>
+                </p>
+            <?php endif; ?>
+
             <form method="post" action="<?= $h(url('atak/sse/entrer')) ?>" id="sse-gate-form" class="sse-gate-hub__form">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="ui_theme" id="sse-ui-theme" value="<?= $h($sseTheme) ?>">
 
                 <label class="sse-gate-hub__label" for="access_code">Code d’accès</label>
-                <input id="access_code" name="access_code" type="text" required autocomplete="off"
+                <input id="access_code" name="access_code" type="text" <?= ($canEnterAsStaff || $canEnterWithoutCode) ? '' : 'required' ?> autocomplete="off"
                        maxlength="16" placeholder="Saisir le code reçu"
                        spellcheck="false" autocapitalize="characters"
                        class="gate-code-input sse-gate-hub__code" autofocus>
@@ -71,7 +83,9 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
             </form>
 
             <p class="sse-gate-hub__hint">
-                <?php if ($loggedIn): ?>
+                <?php if ($canEnterAsStaff || $canEnterWithoutCode): ?>
+                    Compte habilité · le code reste disponible pour invités et sessions ponctuelles.
+                <?php elseif ($loggedIn): ?>
                     Compte connecté · le code membre confirme votre habilitation.
                 <?php else: ?>
                     Sans compte Athena, un code invité suffit.

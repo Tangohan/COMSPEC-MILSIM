@@ -36,6 +36,7 @@ use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
@@ -1580,6 +1581,7 @@ class PersonnelController
             'seniorityPrePlatformDate' => Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
                 ->getPersonStartDate($tenantId, $uid),
             'canApplyOrbatImmediately' => EffectifsLmsAccess::canApplyOrbatImmediately(Gate::getInstance()),
+            'canStaffEdit' => $this->canStaffEditPersonnel(),
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
             'backOfficePageCss' => ['personnel-dossier.css'],
@@ -1937,6 +1939,15 @@ class PersonnelController
                 $data['matricule_internal'] = $matriculeIn;
             }
             /* athena_identifier volontairement ignoré — jamais modifiable via ce grant. */
+        }
+
+        if ($canStaffEdit && $request->input('clearance_level') !== null) {
+            $clearanceRaw = strtolower(trim((string) $request->input('clearance_level')));
+            if ($clearanceRaw === '') {
+                $data['clearance_level'] = null;
+            } elseif (isset(SseCaseRepository::CLASSIFICATION_LABELS[$clearanceRaw])) {
+                $data['clearance_level'] = $clearanceRaw;
+            }
         }
 
         $canApplyOrbat = EffectifsLmsAccess::canApplyOrbatImmediately(Gate::getInstance());

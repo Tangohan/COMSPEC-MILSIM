@@ -179,6 +179,21 @@
   font-size: 0.95rem;
   font-weight: 900;
   border: 1px solid #c7eadb;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dash-orbat__unit-mark--icon {
+  padding: 0;
+  background: #fff;
+  border-color: #d7dee1;
+}
+
+.dash-orbat__unit-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dash-orbat__node--alpha .dash-orbat__unit-mark,
@@ -206,11 +221,20 @@
   border-color: #f6cccc;
 }
 
+.dash-orbat__node--alpha .dash-orbat__unit-mark--icon,
+.dash-orbat__node--command .dash-orbat__unit-mark--icon,
+.dash-orbat__node--bravo .dash-orbat__unit-mark--icon,
+.dash-orbat__node--support .dash-orbat__unit-mark--icon,
+.dash-orbat__node--special .dash-orbat__unit-mark--icon {
+  background: #fff;
+  border-color: #d7dee1;
+}
+
 .dash-orbat__unit-copy {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.28rem;
 }
 
 .dash-orbat__unit-name {
@@ -223,12 +247,56 @@
 .dash-orbat__unit-sub {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.7rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--do-muted);
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.dash-orbat__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 1.45rem;
+  padding: 0.12rem 0.55rem 0.12rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dash-orbat__chip-ico {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.dash-orbat__chip--code {
+  background: #eef2f4;
+  border-color: #d7dee1;
+  color: #3c474c;
+  padding-left: 0.55rem;
+}
+
+.dash-orbat__chip--members {
+  background: #e8f1fb;
+  border-color: #c9dcf0;
+  color: #1e4f80;
+}
+
+.dash-orbat__chip--members.is-empty {
+  background: #f3f5f6;
+  border-color: #e3e8ea;
+  color: #6b757b;
+}
+
+.dash-orbat__chip--subs {
+  background: #e7f7f0;
+  border-color: #bfe9d8;
+  color: #0b6b47;
 }
 
 .dash-orbat__summary-lead {

@@ -30,7 +30,7 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
         self::assertStringContainsString('Votre parcours', $view);
         self::assertStringContainsString('Ouvrir le suivi complet', $view);
         self::assertStringContainsString('url(\'personnel/me\')', $view);
-        self::assertStringContainsString('url(\'evenements\')', $view);
+        self::assertStringContainsString('back-office/ma-situation/evenements', $view);
         self::assertStringContainsString('url(\'boite-reception\')', $view);
         self::assertStringContainsString('En service', $view);
         self::assertStringContainsString('Il ne donne aucun droit d’administration.', $view);
@@ -44,7 +44,17 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
         self::assertStringContainsString("'key' => 'ma-situation'", $nav);
         self::assertStringContainsString("'label' => 'Mes démarches'", $nav);
         self::assertStringContainsString("'label' => 'Mon suivi'", $nav);
+        self::assertStringContainsString('$opInboxBadge', $nav);
+        self::assertStringContainsString('ath-sidebar__item-badge--notif', $nav);
         self::assertStringContainsString('$isOperatorBoNav', $sidebar);
         self::assertStringContainsString('ESPACE OPÉRATEUR', $sidebar);
+        self::assertStringContainsString('messages_unread', $sidebar);
+
+        $topbar = (string) file_get_contents($root . '/views/partials/back_office_topbar.php');
+        self::assertStringContainsString('events_rsvp_pending', $topbar);
+        self::assertStringContainsString("'label' => 'MESSAGES'", $topbar);
+
+        $shellCss = (string) file_get_contents($root . '/public/assets/css/back-office-shell.css');
+        self::assertStringContainsString('.ath-sidebar__item-badge--notif', $shellCss);
     }
 }

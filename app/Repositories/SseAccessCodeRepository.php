@@ -115,8 +115,9 @@ final class SseAccessCodeRepository
                 'label' => (string) ($row['label'] ?? ''),
                 'grant_type' => (string) ($row['grant_type'] ?? 'member'),
                 'grant_type_label' => (($row['grant_type'] ?? '') === 'guest')
-                    ? 'Invité (sans compte)'
+                    ? 'Invité'
                     : 'Membre habilité',
+                'clearance_level' => (string) ($row['clearance_level'] ?? 'interne'),
                 'case_id' => isset($row['case_id']) ? (int) $row['case_id'] : null,
                 'code_hint' => (string) ($row['code_hint'] ?? ''),
                 'expires_at' => $row['expires_at'] ?? null,

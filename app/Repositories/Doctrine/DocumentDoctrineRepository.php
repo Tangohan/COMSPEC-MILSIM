@@ -32,15 +32,23 @@ final class DocumentDoctrineRepository
         if (!$this->tableExists() || $documentId < 1) {
             return null;
         }
-        $sql = 'SELECT dd.*,
+        $typeJoin = $this->typesTableExists()
+            ? 'LEFT JOIN document_types dt ON dt.id = dd.document_type_id'
+            : '';
+        $typeSelect = $this->typesTableExists()
+            ? ', dt.label AS type_label, dt.code AS type_code, dt.color AS type_color, dt.code_prefix AS type_prefix'
+            : '';
+        $sql = "SELECT dd.*,
                        drd.label AS domain_label, drd.doc_prefix AS domain_prefix,
                        drs.label AS subdomain_label, drs.code AS subdomain_code,
                        ddl.label AS diffusion_label, ddl.code AS diffusion_code
+                       {$typeSelect}
                 FROM document_doctrines dd
                 LEFT JOIN document_reference_domains drd ON drd.id = dd.domain_id
                 LEFT JOIN document_reference_subdomains drs ON drs.id = dd.subdomain_id
                 LEFT JOIN document_diffusion_levels ddl ON ddl.id = dd.diffusion_level_id
-                WHERE dd.document_id = ?';
+                {$typeJoin}
+                WHERE dd.document_id = ?";
         $params = [$documentId];
         if ($tenantId !== null) {
             $sql .= ' AND (dd.tenant_id = ? OR dd.scope = ?)';
@@ -85,12 +93,19 @@ final class DocumentDoctrineRepository
         if (!$this->tableExists() || $tenantId < 1) {
             return [];
         }
-        $sql = 'SELECT dd.*, d.title, d.slug, d.status AS document_status, d.updated_at AS document_updated_at,
+        $typeJoin = $this->typesTableExists()
+            ? 'LEFT JOIN document_types dt ON dt.id = dd.document_type_id'
+            : '';
+        $typeSelect = $this->typesTableExists()
+            ? ', dt.label AS type_label, dt.code AS type_code, dt.color AS type_color'
+            : '';
+        $sql = "SELECT dd.*, d.title, d.slug, d.status AS document_status, d.updated_at AS document_updated_at,
                        d.scope AS document_scope, dc.slug AS category_slug,
                        dv.id AS version_id, dv.version_major, dv.version_minor, dv.version_label, dv.published_at AS version_published_at,
                        drd.label AS domain_label, drd.doc_prefix AS domain_prefix,
                        drs.code AS subdomain_code, drs.label AS subdomain_label,
                        ddl.label AS diffusion_label
+                       {$typeSelect}
                 FROM document_doctrines dd
                 INNER JOIN documents d ON d.id = dd.document_id
                 LEFT JOIN document_categories dc ON dc.id = d.document_category_id
@@ -98,8 +113,9 @@ final class DocumentDoctrineRepository
                 LEFT JOIN document_reference_domains drd ON drd.id = dd.domain_id
                 LEFT JOIN document_reference_subdomains drs ON drs.id = dd.subdomain_id
                 LEFT JOIN document_diffusion_levels ddl ON ddl.id = dd.diffusion_level_id
+                {$typeJoin}
                 WHERE dd.doctrine_status = ?
-                  AND (dd.tenant_id = ? OR dd.scope = ?)';
+                  AND (dd.tenant_id = ? OR dd.scope = ?)";
         $params = ['published', $tenantId, 'platform'];
 
         if ($search !== null && trim($search) !== '') {
@@ -125,6 +141,22 @@ final class DocumentDoctrineRepository
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function typesTableExists(): bool
+    {
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+        try {
+            $this->pdo->query('SELECT 1 FROM document_types LIMIT 1');
+            $exists = true;
+        } catch (\Throwable) {
+            $exists = false;
+        }
+
+        return $exists;
     }
 
     public function referenceExists(int $tenantId, string $reference, ?int $excludeDocumentId = null): bool
@@ -183,18 +215,20 @@ final class DocumentDoctrineRepository
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO document_doctrines (
-                document_id, tenant_id, scope, reference_code, service_prefix, domain_id, subdomain_id,
-                domain_code, seq_year, seq_number, short_title, summary, doctrine_status, requirement_level,
+                document_id, tenant_id, scope, document_type_id, reference_code, service_prefix, domain_id, subdomain_id,
+                domain_code, seq_year, seq_number, short_title, summary, body_html, confirmation_text, visibility_mode,
+                is_permanent, require_validation, reminder_on_publish, doctrine_status, requirement_level,
                 diffusion_level_id, issuing_authority_type, issuing_unit_id, issuing_job_role_id,
                 issuing_user_id, issuing_label, approver_user_id, effective_at, expires_at,
                 acknowledgment_required, acknowledgment_deadline_at, reading_required, include_future_members,
-                replaced_by_document_id, replaces_document_id, keywords_json
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+                replaced_by_document_id, replaces_document_id, keywords_json, scope_of_application
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $stmt->execute([
             (int) ($data['document_id'] ?? 0),
             isset($data['tenant_id']) ? (int) $data['tenant_id'] : null,
             (string) ($data['scope'] ?? 'tenant'),
+            isset($data['document_type_id']) ? (int) $data['document_type_id'] : null,
             strtoupper(trim((string) ($data['reference_code'] ?? ''))),
             strtoupper(trim((string) ($data['service_prefix'] ?? ''))),
             isset($data['domain_id']) ? (int) $data['domain_id'] : null,
@@ -204,6 +238,12 @@ final class DocumentDoctrineRepository
             isset($data['seq_number']) ? (int) $data['seq_number'] : null,
             $data['short_title'] ?? null,
             $data['summary'] ?? null,
+            $data['body_html'] ?? null,
+            $data['confirmation_text'] ?? null,
+            (string) ($data['visibility_mode'] ?? 'library'),
+            !empty($data['is_permanent']) ? 1 : 0,
+            !empty($data['require_validation']) ? 1 : 0,
+            !isset($data['reminder_on_publish']) || !empty($data['reminder_on_publish']) ? 1 : 0,
             (string) ($data['doctrine_status'] ?? 'draft'),
             (string) ($data['requirement_level'] ?? 'informative'),
             isset($data['diffusion_level_id']) ? (int) $data['diffusion_level_id'] : null,
@@ -222,6 +262,7 @@ final class DocumentDoctrineRepository
             isset($data['replaced_by_document_id']) ? (int) $data['replaced_by_document_id'] : null,
             isset($data['replaces_document_id']) ? (int) $data['replaces_document_id'] : null,
             isset($data['keywords_json']) ? (is_string($data['keywords_json']) ? $data['keywords_json'] : json_encode($data['keywords_json'])) : null,
+            $data['scope_of_application'] ?? null,
         ]);
 
         return (int) $this->pdo->lastInsertId();
@@ -232,11 +273,12 @@ final class DocumentDoctrineRepository
     {
         $allowed = [
             'reference_code', 'service_prefix', 'domain_id', 'subdomain_id', 'domain_code', 'seq_year', 'seq_number',
-            'short_title', 'summary', 'doctrine_status', 'requirement_level', 'diffusion_level_id',
-            'issuing_authority_type', 'issuing_unit_id', 'issuing_job_role_id', 'issuing_user_id', 'issuing_label',
-            'approver_user_id', 'effective_at', 'expires_at', 'acknowledgment_required', 'acknowledgment_deadline_at',
-            'reading_required', 'include_future_members', 'replaced_by_document_id', 'replaces_document_id',
-            'keywords_json', 'published_at',
+            'document_type_id', 'short_title', 'summary', 'body_html', 'confirmation_text', 'visibility_mode',
+            'is_permanent', 'require_validation', 'reminder_on_publish', 'doctrine_status', 'requirement_level',
+            'diffusion_level_id', 'issuing_authority_type', 'issuing_unit_id', 'issuing_job_role_id', 'issuing_user_id',
+            'issuing_label', 'approver_user_id', 'effective_at', 'expires_at', 'acknowledgment_required',
+            'acknowledgment_deadline_at', 'reading_required', 'include_future_members', 'replaced_by_document_id',
+            'replaces_document_id', 'keywords_json', 'scope_of_application', 'published_at', 'published_by_user_id',
         ];
         $sets = [];
         $params = [];

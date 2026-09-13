@@ -115,8 +115,18 @@ Déploiement : `php run-migrations.php` (ou `setup-database.php`). Un rechargeme
 
 ## Évolutions prévues
 
-- Assistant création 6 étapes complet (BO) ;
-- Relances e-mail via `DoctrineNotificationService` ;
+- Relances automatiques planifiées (avant / après échéance) via cron ;
 - Admin plateforme `/admin/system/documents` ;
-- Export CSV conformité (lien préparé) ;
+- Export CSV conformité ;
+- Onglet lectures obligatoires enrichi sur la fiche personnel ;
 - Panneau latéral détail dans le registre.
+
+## Publication interne (2026-09)
+
+Le référentiel porte aussi les **notes de service**, **instructions**, **directives** et autres types configurables :
+
+- `/back-office/documents/types` — référentiel de types ;
+- `/back-office/documents/publier` — rédaction, ciblage, publication ;
+- `/documents/mes-documents` — boîte personnelle ;
+- `/back-office/documents/compliance` — suivi de diffusion + relances ;
+- Migration : `bootstrap/document_publication_system_migration.php`.

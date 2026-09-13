@@ -139,8 +139,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         pointer-events: none;
     }
     #orbat-ctx-menu {
-        position: fixed; z-index: 80; min-width: 220px; display: none;
-        background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 20px 50px rgba(15,23,42,0.15);
+        position: fixed; z-index: 10050; min-width: 248px; display: none;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 20px 50px rgba(15,23,42,0.18);
         padding: 6px 0; font-size: 13px; font-weight: 600; color: #0f172a;
     }
     #orbat-ctx-menu button {
@@ -149,8 +149,15 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     }
     #orbat-ctx-menu button:hover:not(:disabled) { background: #f1f5f9; }
     #orbat-ctx-menu button:disabled { opacity: 0.45; cursor: not-allowed; }
+    #orbat-ctx-menu .orbat-ctx-sep {
+        height: 1px; margin: 6px 12px; background: #e2e8f0; border: 0; padding: 0;
+    }
+    #orbat-ctx-menu .orbat-ctx-label {
+        display: block; padding: 6px 16px 2px; font-size: 10px; font-weight: 900;
+        letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8;
+    }
     .orbat-modal-overlay {
-        position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
+        position: fixed; inset: 0; z-index: 10060; display: none; align-items: center; justify-content: center;
         background: rgba(15,23,42,0.45); padding: 16px;
     }
     .orbat-modal-overlay[aria-hidden="false"] { display: flex; }
@@ -245,7 +252,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 <h1 class="text-3xl font-black tracking-tight uppercase leading-none"><?= htmlspecialchars((string) $orbatPageTitle, ENT_QUOTES, 'UTF-8') ?></h1>
                 <p class="text-sm text-slate-500 mt-3 font-medium"><?= htmlspecialchars((string) $orbatPageLead, ENT_QUOTES, 'UTF-8') ?></p>
                 <?php if ($showOrbatEditTools): ?>
-                <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : clic droit ou bouton « ⋯ » sur une carte pour créer, rattacher, régler la confidentialité ou supprimer une unité. Les champs à droite servent à la fiche détaillée ; l’enregistrement est automatique après une courte pause, et l’organigramme se met à jour sans recharger la page.</p>
+                <p class="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-emerald-900">Vous gérez cette communauté : clic droit ou bouton « ⋯ » sur une carte pour tout éditer (fiche, rattachement, création, confidentialité, suppression). Les champs à droite restent disponibles ; l’enregistrement est automatique après une courte pause.</p>
                 <?php endif; ?>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 min-w-[320px]">
@@ -518,17 +525,31 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
 <?php if ($rosterData !== null && ($showOrbatEditTools || $orbatRecruitmentHub)): ?>
 <div id="orbat-ctx-menu" role="menu" aria-hidden="true">
     <?php if ($showOrbatEditTools): ?>
-    <button type="button" role="menuitem" data-ctx="edit">Modifier la fiche</button>
+    <span class="orbat-ctx-label">Fiche</span>
+    <button type="button" role="menuitem" data-ctx="edit">Ouvrir la fiche à droite</button>
+    <button type="button" role="menuitem" data-ctx="rename">Renommer…</button>
+    <button type="button" role="menuitem" data-ctx="struct-type">Type de structure…</button>
+    <button type="button" role="menuitem" data-ctx="commander">Chef d’unité…</button>
+    <div class="orbat-ctx-sep" role="separator"></div>
+    <span class="orbat-ctx-label">Structure</span>
     <button type="button" role="menuitem" data-ctx="create">Créer une sous-unité…</button>
     <button type="button" role="menuitem" data-ctx="move">Rattacher à une autre unité…</button>
     <button type="button" role="menuitem" data-ctx="detach">Détacher (niveau racine)</button>
+    <div class="orbat-ctx-sep" role="separator"></div>
+    <span class="orbat-ctx-label">État</span>
     <button type="button" role="menuitem" data-ctx="status">Statut administratif…</button>
     <button type="button" role="menuitem" data-ctx="mask">Confidentialité…</button>
-    <button type="button" role="menuitem" data-ctx="delete">Supprimer cette unité…</button>
     <?php endif; ?>
     <?php if ($orbatRecruitmentHub): ?>
-    <button type="button" role="menuitem" data-ctx="hub-new-group">Nouveau regroupement rattaché ici…</button>
-    <button type="button" role="menuitem" data-ctx="hub-new-team">Nouvelle équipe rattachée ici…</button>
+    <?php if ($showOrbatEditTools): ?><div class="orbat-ctx-sep" role="separator"></div><?php endif; ?>
+    <span class="orbat-ctx-label">Recrutement</span>
+    <button type="button" role="menuitem" data-ctx="hub-invite">Inviter un membre…</button>
+    <button type="button" role="menuitem" data-ctx="hub-new-group">Nouveau regroupement ici…</button>
+    <button type="button" role="menuitem" data-ctx="hub-new-team">Nouvelle équipe ici…</button>
+    <?php endif; ?>
+    <?php if ($showOrbatEditTools): ?>
+    <div class="orbat-ctx-sep" role="separator"></div>
+    <button type="button" role="menuitem" data-ctx="delete">Supprimer cette unité…</button>
     <?php endif; ?>
 </div>
 <div id="orbat-modal-create" class="orbat-modal-overlay" aria-hidden="true">
@@ -542,6 +563,49 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         <div class="orbat-modal-actions">
             <button type="button" class="orbat-btn-secondary" data-close-modal="create">Annuler</button>
             <button type="button" class="orbat-btn-primary" id="orbat-create-submit">Créer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-rename" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-rename-title">
+        <h3 id="orbat-m-rename-title">Renommer l’unité</h3>
+        <p class="hint">Le nom affiché apparaît sur l’organigramme et dans les listes.</p>
+        <label for="orbat-rename-name">Nom affiché</label>
+        <input id="orbat-rename-name" type="text" maxlength="255" autocomplete="off">
+        <label for="orbat-rename-code">Sigle ou code court</label>
+        <input id="orbat-rename-code" type="text" maxlength="20" autocomplete="off">
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="rename">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-rename-submit">Enregistrer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-struct-type" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-struct-title">
+        <h3 id="orbat-m-struct-title">Type de structure</h3>
+        <p class="hint">Unité, équipe, regroupement… Modifiable après création.</p>
+        <label for="orbat-struct-type-select">Type</label>
+        <select id="orbat-struct-type-select"></select>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="struct-type">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-struct-type-submit">Enregistrer</button>
+        </div>
+    </div>
+</div>
+<div id="orbat-modal-commander" class="orbat-modal-overlay" aria-hidden="true">
+    <div class="orbat-modal" role="dialog" aria-modal="true" aria-labelledby="orbat-m-cmd-title">
+        <h3 id="orbat-m-cmd-title">Chef d’unité</h3>
+        <p class="hint">Responsable référent affiché sur la fiche et l’organigramme.</p>
+        <label for="orbat-commander-select">Chef d’unité référent</label>
+        <select id="orbat-commander-select">
+            <option value="">— Non renseigné —</option>
+            <?php foreach ($orbatCommanderOptions as $opt): ?>
+            <option value="<?= (int) ($opt['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($opt['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+            <?php endforeach; ?>
+        </select>
+        <div class="orbat-modal-actions">
+            <button type="button" class="orbat-btn-secondary" data-close-modal="commander">Annuler</button>
+            <button type="button" class="orbat-btn-primary" id="orbat-commander-submit">Enregistrer</button>
         </div>
     </div>
 </div>
@@ -1059,6 +1123,23 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         if (j.roster) applyRosterFromServer(j.roster);
     }
 
+    async function postUnitPatch(unitId, fields) {
+        var body = new FormData();
+        body.append("_csrf_token", orbatCsrf);
+        body.append("unit_id", String(unitId));
+        Object.keys(fields || {}).forEach(function(k) {
+            var v = fields[k];
+            if (v === undefined || v === null) return;
+            body.append(k, String(v));
+        });
+        var res = await fetch(apiUnitUrl, { method: "POST", body: body, credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } });
+        var j = await res.json().catch(function() { return {}; });
+        if (!res.ok || !j.success) {
+            throw new Error(j.message || "Enregistrement impossible.");
+        }
+        if (j.roster) applyRosterFromServer(j.roster);
+    }
+
     function collectDescendantIds(flatUnits, rootId) {
         var childrenOf = {};
         flatUnits.forEach(function(u) {
@@ -1095,32 +1176,48 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     }
 
     function openOrbatContextMenu(px, py, node) {
-        ctxTargetNode = node;
+        ctxTargetNode = node || null;
         var m = document.getElementById("orbat-ctx-menu");
         if (!m) return;
-        var uid = node.unitId || 0;
+        if (m.parentElement !== document.body) {
+            document.body.appendChild(m);
+        }
+        var uid = node && node.unitId ? (node.unitId || 0) : 0;
+        var isPh = !!(node && node.isOrbatPlaceholder);
         m.querySelectorAll("button[data-ctx]").forEach(function(btn) {
             var k = btn.getAttribute("data-ctx");
-            var dis = uid < 1 && k !== "edit";
-            if (orbatRecruitmentHub && (k === "hub-new-group" || k === "hub-new-team")) {
-                dis = uid < 1;
-                if (k === "hub-new-group") {
-                    dis = dis || String(node.structType || "") !== "group";
-                }
-                if (k === "hub-new-team") {
-                    dis = dis || String(node.structType || "") !== "team";
-                }
+            var dis = false;
+            if (!node || isPh) {
+                dis = k !== "hub-invite" && k !== "create";
+            } else if (uid < 1) {
+                // Racine visuelle sans unité réelle : création / invitation seulement.
+                dis = !(k === "create" || k === "hub-invite" || k === "hub-new-group" || k === "hub-new-team");
+            } else if (!showOrbatEditTools && (k === "hub-new-group" || k === "hub-new-team" || k === "hub-invite")) {
+                dis = false;
+            } else if (!showOrbatEditTools) {
+                dis = true;
             }
             btn.disabled = !!dis;
+            btn.hidden = false;
         });
         m.style.display = "block";
         m.setAttribute("aria-hidden", "false");
         var vw = window.innerWidth, vh = window.innerHeight;
-        var mw = m.offsetWidth, mh = m.offsetHeight;
+        var mw = m.offsetWidth || 248, mh = m.offsetHeight || 320;
         var x = Math.max(8, Math.min(px, vw - mw - 8));
         var y = Math.max(8, Math.min(py, vh - mh - 8));
         m.style.left = x + "px";
         m.style.top = y + "px";
+    }
+
+    function bindOrbatCardContext(el, node) {
+        if (!el || !node) return;
+        if (!(showOrbatEditTools || orbatRecruitmentHub) || node.isOrbatPlaceholder) return;
+        el.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openOrbatContextMenu(e.clientX, e.clientY, node);
+        });
     }
 
     function createNodeCard(node) {
@@ -1201,7 +1298,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         }
         card.addEventListener("click", function(e) { e.stopPropagation(); selectNode(node); });
         if ((showOrbatEditTools || orbatRecruitmentHub) && !isPh) {
-            card.setAttribute("title", showOrbatEditTools ? "Clic droit ou bouton ⋯ pour les actions de structure" : "Clic droit ou bouton ⋯ pour créer un regroupement ou une équipe");
+            card.setAttribute("title", showOrbatEditTools ? "Clic droit ou bouton ⋯ pour tout éditer" : "Clic droit ou bouton ⋯ pour créer un regroupement, une équipe ou inviter");
             var actBtn = document.createElement("button");
             actBtn.type = "button";
             actBtn.className = "absolute left-1 top-1 z-[3] h-6 w-6 rounded-lg border border-slate-200 bg-white/90 text-slate-600 text-sm font-black leading-none hover:bg-slate-50";
@@ -1214,11 +1311,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 openOrbatContextMenu(r.left + 4, r.bottom + 6, node);
             });
             card.appendChild(actBtn);
-            card.addEventListener("contextmenu", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openOrbatContextMenu(e.clientX, e.clientY, node);
-            });
+            bindOrbatCardContext(card, node);
         }
         wrapper.appendChild(card);
 
@@ -1614,6 +1707,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 "<p class=\"meta\">Chef : " + escapeHtml(node.leader || "—") + "</p>" +
                 (mems ? "<div class=\"orbat-dir-members\">" + mems + "</div>" : "");
             card.addEventListener("click", function() { selectNode(node); });
+            bindOrbatCardContext(card, node);
             box.appendChild(card);
         });
     }
@@ -1815,6 +1909,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     var pendingStatusUnitId = 0;
     var pendingDeleteUnitId = 0;
     var pendingCreateParentId = 0;
+    var pendingRenameUnitId = 0;
+    var pendingStructTypeUnitId = 0;
+    var pendingCommanderUnitId = 0;
 
     function bootOrbatTree() {
         readAdminStatusFilterFromDom();
@@ -1844,22 +1941,29 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         if (cm) {
             cm.addEventListener("click", function(e) {
                 var btn = e.target && e.target.closest ? e.target.closest("button[data-ctx]") : null;
-                if (!btn || !ctxTargetNode) return;
+                if (!btn || btn.disabled) return;
                 e.preventDefault();
                 var act = btn.getAttribute("data-ctx");
                 var node = ctxTargetNode;
-                var uid = node.unitId || 0;
+                var uid = node && node.unitId ? (node.unitId || 0) : 0;
+                if (act === "hub-invite") {
+                    closeCtxMenu();
+                    if (typeof window.orbatHubOpenRecruitmentModal === "function") {
+                        window.orbatHubOpenRecruitmentModal("membre", uid, node && node.label ? node.label : "");
+                    }
+                    return;
+                }
                 if (act === "hub-new-group") {
                     closeCtxMenu();
                     if (typeof window.orbatHubOpenRecruitmentModal === "function") {
-                        window.orbatHubOpenRecruitmentModal("groupe", uid);
+                        window.orbatHubOpenRecruitmentModal("groupe", uid, node && node.label ? node.label : "");
                     }
                     return;
                 }
                 if (act === "hub-new-team") {
                     closeCtxMenu();
                     if (typeof window.orbatHubOpenRecruitmentModal === "function") {
-                        window.orbatHubOpenRecruitmentModal("equipe", uid);
+                        window.orbatHubOpenRecruitmentModal("equipe", uid, node && node.label ? node.label : "");
                     }
                     return;
                 }
@@ -1868,11 +1972,60 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     return;
                 }
                 if (act === "edit") {
-                    selectNode(node);
+                    if (node) selectNode(node);
                     closeCtxMenu();
+                    var panel = document.getElementById("orbat-edit-panel");
+                    if (panel) {
+                        panel.classList.remove("hidden");
+                        panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                        var nameFocus = document.getElementById("orbat-ed-name");
+                        if (nameFocus) setTimeout(function() { nameFocus.focus(); }, 120);
+                    }
                     return;
                 }
-                if (uid < 1) { closeCtxMenu(); return; }
+                if (act === "rename") {
+                    if (uid < 1 || !node) { closeCtxMenu(); return; }
+                    closeCtxMenu();
+                    var rn = document.getElementById("orbat-rename-name");
+                    var rc = document.getElementById("orbat-rename-code");
+                    if (rn) rn.value = node.label || "";
+                    if (rc) rc.value = node.role || "";
+                    pendingRenameUnitId = uid;
+                    openModal("rename");
+                    return;
+                }
+                if (act === "struct-type") {
+                    if (uid < 1 || !node) { closeCtxMenu(); return; }
+                    pendingStructTypeUnitId = uid;
+                    closeCtxMenu();
+                    ensureStructureOptions().then(function() {
+                        var sel = document.getElementById("orbat-struct-type-select");
+                        if (!sel) return;
+                        sel.innerHTML = "";
+                        var opts = (structureOptionsCache && structureOptionsCache.structTypes) ? structureOptionsCache.structTypes : [
+                            { id: "unit", label: "Unité" }, { id: "team", label: "Équipe" }, { id: "group", label: "Regroupement" }
+                        ];
+                        opts.forEach(function(t) {
+                            var o = document.createElement("option");
+                            o.value = t.id;
+                            o.textContent = t.label || t.id;
+                            if (t.id === (node.structType || "")) o.selected = true;
+                            sel.appendChild(o);
+                        });
+                        openModal("struct-type");
+                    });
+                    return;
+                }
+                if (act === "commander") {
+                    if (uid < 1 || !node) { closeCtxMenu(); return; }
+                    pendingCommanderUnitId = uid;
+                    closeCtxMenu();
+                    var selCmd = document.getElementById("orbat-commander-select");
+                    if (selCmd) selCmd.value = node.commanderUserId ? String(node.commanderUserId) : "";
+                    openModal("commander");
+                    return;
+                }
+                if (uid < 1 && act !== "create") { closeCtxMenu(); return; }
                 if (act === "create") {
                     pendingCreateParentId = uid;
                     closeCtxMenu();
@@ -1984,6 +2137,15 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         document.addEventListener("keydown", function(e) {
             if (e.key === "Escape") closeCtxMenu();
         });
+        var treeContainer = document.getElementById("treeContainer");
+        if (treeContainer) {
+            treeContainer.addEventListener("contextmenu", function(e) {
+                if (!(showOrbatEditTools || orbatRecruitmentHub)) return;
+                if (e.target && e.target.closest && e.target.closest(".orbat-node-card, .orbat-dir-card, button, a, input, select, textarea")) return;
+                e.preventDefault();
+                openOrbatContextMenu(e.clientX, e.clientY, { unitId: 0, label: "Racine", isOrbatPlaceholder: false });
+            });
+        }
     }
 
     if (showOrbatEditTools) {
@@ -1992,7 +2154,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 closeModal(b.getAttribute("data-close-modal") || "");
             });
         });
-        ["create", "move", "mask", "status", "delete", "chart-type"].forEach(function(mid) {
+        ["create", "move", "mask", "status", "delete", "chart-type", "rename", "struct-type", "commander"].forEach(function(mid) {
             var ov = document.getElementById("orbat-modal-" + mid);
             if (ov) {
                 ov.addEventListener("click", function(e) {
@@ -2000,6 +2162,39 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 });
             }
         });
+
+        var renameSub = document.getElementById("orbat-rename-submit");
+        if (renameSub) {
+            renameSub.addEventListener("click", function() {
+                var nameIn = document.getElementById("orbat-rename-name");
+                var codeIn = document.getElementById("orbat-rename-code");
+                var nm = nameIn ? nameIn.value.trim() : "";
+                if (!nm) { alert("Indiquez un nom affiché."); return; }
+                postUnitPatch(pendingRenameUnitId, { name: nm, code: codeIn ? codeIn.value.trim() : "" })
+                    .then(function() { closeModal("rename"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+        var structSub = document.getElementById("orbat-struct-type-submit");
+        if (structSub) {
+            structSub.addEventListener("click", function() {
+                var sel = document.getElementById("orbat-struct-type-select");
+                var v = sel ? sel.value : "";
+                if (!v) { alert("Choisissez un type de structure."); return; }
+                postUnitPatch(pendingStructTypeUnitId, { struct_type: v })
+                    .then(function() { closeModal("struct-type"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
+        var cmdSub = document.getElementById("orbat-commander-submit");
+        if (cmdSub) {
+            cmdSub.addEventListener("click", function() {
+                var sel = document.getElementById("orbat-commander-select");
+                postUnitPatch(pendingCommanderUnitId, { commander_user_id: sel ? sel.value : "" })
+                    .then(function() { closeModal("commander"); })
+                    .catch(function(err) { alert(err.message || err); });
+            });
+        }
 
         var createSub = document.getElementById("orbat-create-submit");
         if (createSub) {

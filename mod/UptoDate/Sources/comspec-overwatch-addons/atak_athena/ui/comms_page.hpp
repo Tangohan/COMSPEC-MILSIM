@@ -104,7 +104,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             idc = 9927;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
             y = QUOTE(COMSPEC_COMMS_H(2.10));
-            w = QUOTE(COMSPEC_COMMS_W(2.00));
+            w = QUOTE(COMSPEC_COMMS_W(1.40));
             h = QUOTE(COMSPEC_COMMS_H(0.48));
             sizeEx = QUOTE(COMSPEC_COMMS_H(0.28));
             colorBackground[] = ATAK_BG_EDIT;
@@ -115,17 +115,35 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         class BtnCreateChannel: COMSPEC_ATAK_Btn
         {
             idc = 9928;
-            x = QUOTE(COMSPEC_COMMS_W(2.14));
+            x = QUOTE(COMSPEC_COMMS_W(1.54));
             y = QUOTE(COMSPEC_COMMS_H(2.10));
-            w = QUOTE(COMSPEC_COMMS_W(0.78));
+            w = QUOTE(COMSPEC_COMMS_W(0.64));
             h = QUOTE(COMSPEC_COMMS_H(0.48));
-            size = QUOTE(COMSPEC_COMMS_H(0.28));
+            size = QUOTE(COMSPEC_COMMS_H(0.26));
             text = "Créer";
             colorBackground[] = COMMS_BTN;
             colorBackground2[] = COMMS_BTN;
             colorBackgroundFocused[] = COMMS_BTN_F;
+            action = "[] call comspec_overwatch_atak_athena_fnc_athena_commsCreateChannel";
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_commsCreateChannel";
             tooltip = "Créer un canal radio personnalisé (visible au journal du poste).";
+        };
+
+        class BtnDeleteChannel: COMSPEC_ATAK_Btn
+        {
+            idc = 9929;
+            x = QUOTE(COMSPEC_COMMS_W(2.24));
+            y = QUOTE(COMSPEC_COMMS_H(2.10));
+            w = QUOTE(COMSPEC_COMMS_W(0.68));
+            h = QUOTE(COMSPEC_COMMS_H(0.48));
+            size = QUOTE(COMSPEC_COMMS_H(0.24));
+            text = "Supprimer";
+            colorBackground[] = COMMS_BTN;
+            colorBackground2[] = COMMS_BTN;
+            colorBackgroundFocused[] = COMMS_BTN_F;
+            action = "[] call comspec_overwatch_atak_athena_fnc_athena_commsDeleteChannel";
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_commsDeleteChannel";
+            tooltip = "Supprimer le canal personnalisé sélectionné. Les canaux système restent protégés.";
         };
 
         class MessageList: RscListBox
@@ -170,6 +188,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             colorBackground[] = COMMS_OK;
             colorBackground2[] = COMMS_OK;
             colorBackgroundFocused[] = COMMS_OK_F;
+            action = "[] call comspec_overwatch_atak_athena_fnc_athena_commsSend";
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_commsSend";
             tooltip = "Envoyer sur le canal sélectionné.";
         };
@@ -186,6 +205,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             colorBackground[] = COMMS_BTN;
             colorBackground2[] = COMMS_BTN;
             colorBackgroundFocused[] = COMMS_BTN_F;
+            action = "[] call comspec_overwatch_connect_fnc_clearLocalChatChannel; [] call comspec_overwatch_atak_athena_fnc_athena_updateComms";
             onButtonClick = "[] call comspec_overwatch_connect_fnc_clearLocalChatChannel; [] call comspec_overwatch_atak_athena_fnc_athena_updateComms";
             tooltip = "Retire les messages de cet écran uniquement. L’historique du poste reste inchangé.";
         };

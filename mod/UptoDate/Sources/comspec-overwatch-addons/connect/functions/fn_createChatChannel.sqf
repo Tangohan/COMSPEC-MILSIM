@@ -14,7 +14,10 @@ if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
 };
 if (_cs isEqualTo "") then { _cs = name player; };
 
-private _raw = ["COMSPECExtension" callExtension ["CreateChatChannel", [_label, _cs]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+
+private _raw = ["COMSPECExtension" callExtension ["CreateChatChannel", [_label, _cs, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith {
     ["WARN", "Radio", "Impossible de créer le canal", _raw] call comspec_overwatch_connect_fnc_log;

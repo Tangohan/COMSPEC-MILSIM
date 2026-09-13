@@ -1802,6 +1802,52 @@ class AtakDataRepository
     }
 
     /**
+     * Supprime un canal radio personnalisé (jamais un canal système).
+     *
+     * @return array{ok: bool, error?: string, channel_key?: string, label?: string, messages_deleted?: int}
+     */
+    public function deleteChatChannel(int $tenantId, int $mapId, string $channelKey): array
+    {
+        $key = \App\Support\AtakChatChannel::normalizeKey($channelKey);
+        if ($key === '' || \App\Support\AtakChatChannel::isSystemKey($key)) {
+            return ['ok' => false, 'error' => 'system_channel'];
+        }
+        $this->ensureSystemChatChannels($tenantId, $mapId);
+        $stmt = $this->pdo()->prepare(
+            'SELECT channel_key, label, kind
+             FROM atak_chat_channels
+             WHERE tenant_id = ? AND map_id = ? AND channel_key = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $mapId, $key]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return ['ok' => false, 'error' => 'not_found'];
+        }
+        $kind = strtolower(trim((string) ($row['kind'] ?? 'custom')));
+        if ($kind === 'system' || \App\Support\AtakChatChannel::isSystemKey((string) $row['channel_key'])) {
+            return ['ok' => false, 'error' => 'system_channel'];
+        }
+        $label = (string) ($row['label'] ?? $key);
+        $messagesDeleted = $this->purgeChatMessages($tenantId, $mapId, $key);
+        $del = $this->pdo()->prepare(
+            'DELETE FROM atak_chat_channels
+             WHERE tenant_id = ? AND map_id = ? AND channel_key = ? AND kind = \'custom\''
+        );
+        $del->execute([$tenantId, $mapId, $key]);
+        if ($del->rowCount() < 1) {
+            return ['ok' => false, 'error' => 'not_found'];
+        }
+
+        return [
+            'ok' => true,
+            'channel_key' => $key,
+            'label' => $label,
+            'messages_deleted' => $messagesDeleted,
+        ];
+    }
+
+    /**
      * @param array{center_x: float, center_y: float, radius_m?: float, polygon?: list<array{0: float, 1: float}>|null, call_sign?: string, ttl_sec?: int} $payload
      * @return array<string, mixed>|null
      */

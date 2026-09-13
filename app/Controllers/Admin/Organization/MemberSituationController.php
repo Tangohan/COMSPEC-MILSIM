@@ -17,6 +17,7 @@ use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
 use App\Controllers\Web\AtakFirstLinkController;
+use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\RhWorkspaceController;
 
@@ -161,6 +162,27 @@ final class MemberSituationController
             'user' => $user,
             'assignments' => $assignments,
         ]));
+    }
+
+    public function evenements(Request $request, array $params = []): Response
+    {
+        $payload = Container::get(CommunityEventsController::class)->buildIndexPayload();
+        if ($payload['blocked']) {
+            return Response::view('layout.main', $this->boShell(array_merge([
+                'title' => 'Événements',
+                'content' => 'platform.upgrade',
+            ], $payload['vars'])));
+        }
+
+        return Response::view('layout.main', $this->boShell(array_merge([
+            'title' => 'Événements',
+            'content' => 'community.events',
+            'boPageTitle' => 'Événements',
+            'boPageKicker' => 'OPÉRATEUR · AGENDA',
+            'boPageSubtitle' => 'Manœuvres, formations et inscriptions à venir.',
+            'eventsInBackOffice' => true,
+            'boSkipSessionFlashes' => true,
+        ], $payload['vars'])));
     }
 
     public function qualifications(Request $request, array $params = []): Response

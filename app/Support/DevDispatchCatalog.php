@@ -268,6 +268,38 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(547, '2026-09-13', 'Renseignement : entrée commandement et accès au poste', 'Le commandement ouvre le bureau renseignement sans code, gère les accès depuis Athena, et fixe le niveau de diffusion sur les fiches opérateurs', [
+                'Entrée sans code pour le commandement et les membres déjà habilités au renseignement',
+                'Page Accès renseignement dans le back-office : délivrance, révocation et suivi des codes temporaires',
+                'Niveau de diffusion (interne, encadrement, confidentiel, très restreint) sur la fiche opérateur',
+                'Ce niveau plafonne la lecture classifiée, en complément des habilitations de rôle',
+            ], [], [
+                'Un compte de commandement n’était plus reconnu sur le sas et devait saisir un code à tort',
+            ], ['atak', 'command', 'personnel'], [
+                'Mise à jour du portail. Lancer les migrations une fois. Depuis ATAK → Accès renseignement, délivrez les codes. Sur chaque fiche, renseignez le niveau de diffusion si besoin.',
+            ], 'Portail · Renseignement SSE'),
+            $pr(546, '2026-09-13', 'Carte du poste : zoom fin, routes et noms', 'Sur la carte tactique, le fond se lit plus près, les routes et lieux déjà relevés se distinguent mieux, et le poste peut nommer une route', [
+                'Zoom plus fin sur le fond de carte, avec comblement des cases manquantes quand une tuile parent est disponible',
+                'Bouton « Réparer le fond » pour recharger le fond de carte si des cases restent vides',
+                'Calque Routes : épaisseur selon l’importance (grand axe, secondaire, piste), info-bulle au survol',
+                'Calque Villes : noms plus lisibles, libellés permanents sur les villes et bourgs au zoom moyen',
+                'Clic sur une route pour lui donner un nom au poste ; le nom reste après un nouveau relevé depuis Arma',
+            ], [], [
+                'Les cases blanches hors zoom natif ou après un échec de chargement sont comblées autant que possible',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Activer les calques Villes et Routes sur la barre d’outils pour voir et nommer le réseau déjà relevé. Aucun nouveau pack jeu requis pour nommer les routes.',
+            ], 'Portail · Carte ATAK'),
+            $pr(543, '2026-09-13', 'Publication interne des documents', 'Le commandement rédige, cible et suit les lectures obligatoires depuis Athena', [
+                'Types de documents configurables (instruction, note de service, directive, consigne…)',
+                'Assistant de publication avec ciblage ORBAT, unités et sous-unités, fonctions et personnels',
+                'Éditeur de contenu riche, versionnement et choix de relecture après modification',
+                'Espace Mes documents et bloc Documents à lire sur le tableau de bord',
+                'Suivi de diffusion : ouverts, lus, en retard, relances',
+            ], [
+                'Le référentiel doctrinal existant porte désormais aussi les notes de service et documents organisationnels',
+            ], [], ['personnel', 'command', 'platform'], [
+                'Après mise à jour du portail, lancer les migrations une fois. Les types de documents sont créés automatiquement pour chaque communauté.',
+            ], 'Portail · Publication documentaire'),
             [
                 'kind' => self::KIND_SPOTREP,
                 'number' => 3,
@@ -584,6 +616,34 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(545, '2026-09-13', 'Organigramme : tout éditer au clic droit', 'Sur Structure & recrutement, un clic droit sur une carte ouvre un menu complet : renommer, type, chef, créer, rattacher, statut, confidentialité, invitation et suppression', [
+                'Menu contextuel enrichi sur l’organigramme (arbre et annuaire)',
+                'Création de regroupement ou d’équipe rattachée à n’importe quelle unité',
+            ], [
+                'Le bouton ⋯ et le panneau de droite restent disponibles pour la fiche détaillée',
+            ], [
+                'Le clic droit ne proposait que des créations limitées au même type d’unité',
+            ], ['personnel'], [
+                'Ouvrez Organisation → Structure. Clic droit sur une carte : le menu doit proposer les actions de fiche et de structure. Rechargez la page si le menu n’apparaît pas.',
+            ], 'Portail · Structure ORBAT'),
+            $pr(544, '2026-09-13', 'Messagerie : supprimer un canal et envois fiables', 'Dans Messagerie, vous pouvez supprimer un canal radio personnalisé. Après connexion Athena, les messages partent correctement vers le poste', [
+                'Bouton Supprimer sur le canal personnalisé sélectionné (canaux système protégés)',
+                'Confirmation d’envoi dans le journal de liaison',
+            ], [
+                'Créer, Envoyer et Effacer l’affichage local plus fiables au clic',
+            ], [
+                'Session refusée et transmissions coupées juste après une connexion par mot de passe',
+                'Impossible de retirer un canal créé en jeu',
+            ], ['atak'], [
+                'Déployez le portail, puis rechargez le pack Overwatch 1.5.68. Quittez Arma. Reconnectez Athena, ouvrez Messagerie : créez un canal, envoyez, puis Supprimer. Les canaux Groupe / Commandement / Général / JTAC / Air restent.',
+            ], 'Portail · Overwatch 1.5.68 · Athena 1.0.115 · Extension 2.0.34'),
+            $pr(543, '2026-09-13', 'Connexion Athena : Compte trouvé ouvre le canal sans panneau noir', 'Après une connexion par mot de passe, le bandeau Compte trouvé — Entrer ouvre bien le canal poste au clic. La touche Entrée fait la même chose une fois le compte trouvé, au lieu de tout recommencer. Refermer le tiroir ne laisse plus un panneau sombre sur la carte', [], [], [
+                'Clic sur Compte trouvé sans effet',
+                'Touche Entrée laissant un grand panneau sombre alors que la liaison était ouverte',
+                'Page Athena encore peinte quand le tiroir était refermé',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.67). Quittez Arma. Connexion par mot de passe → Compte trouvé — Entrer (clic ou Entrée) : fiche visible, pas de rectangle noir. Refermez le tiroir : carte seule.',
+            ], 'Overwatch 1.5.67 · Athena 1.0.114'),
             $pr(542, '2026-09-13', 'Espace opérateur : liaison ATAK, unité et qualifications dans le back-office', 'Depuis Mon espace opérationnel, vous ouvrez désormais vos pages personnelles dans le même back-office : liaison et appareils ATAK, certificat de terminal, mon unité, mes qualifications, ma fiche et mes démarches — sans être renvoyé vers le portail', [
                 'Pages Ma liaison ATAK, Mes appareils, Mon unité et Mes qualifications dans le back-office',
                 'Ma fiche, Mon suivi et Mes démarches accessibles sous la coque Athena',

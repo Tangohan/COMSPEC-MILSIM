@@ -655,6 +655,18 @@ window.ATAKMap = (function () {
       lossPct.addEventListener('input', onLossPct);
       lossPct.addEventListener('change', onLossPct);
     }
+
+    var repairBtn = document.getElementById('atak-repair-base-tiles');
+    if (repairBtn && !repairBtn._atakBound) {
+      repairBtn._atakBound = true;
+      repairBtn.addEventListener('click', function () {
+        if (typeof window.ATAKMap !== 'undefined' && typeof window.ATAKMap.repairBaseTiles === 'function') {
+          window.ATAKMap.repairBaseTiles();
+        } else {
+          repairBaseTiles();
+        }
+      });
+    }
   }
 
   function buildConfigFromAtakMapConfig(raw) {
@@ -664,11 +676,17 @@ window.ATAKMap = (function () {
     var factory = crsOpt.factory != null ? crsOpt.factory : 0.006836;
     var tileWidth = crsOpt.tileWidth != null ? crsOpt.tileWidth : 212;
     var CRS = typeof window.MGRS_CRS === 'function' ? window.MGRS_CRS(factorx, factory, tileWidth) : L.CRS.Simple;
+    var maxNativeZoom = raw.maxNativeZoom != null
+      ? Number(raw.maxNativeZoom)
+      : (raw.maxZoom != null ? Number(raw.maxZoom) : 6);
+    if (!isFinite(maxNativeZoom) || maxNativeZoom < 0) maxNativeZoom = 6;
+    var maxZoom = maxNativeZoom + 2;
     return {
       CRS: CRS,
       tilePattern: raw.tilePattern,
       minZoom: raw.minZoom != null ? raw.minZoom : 0,
-      maxZoom: raw.maxZoom != null ? raw.maxZoom : 6,
+      maxNativeZoom: maxNativeZoom,
+      maxZoom: maxZoom,
       defaultZoom: raw.defaultZoom != null ? raw.defaultZoom : 3,
       attribution: raw.attribution || '&copy; Bohemia Interactive',
       tileSize: raw.tileSize != null ? raw.tileSize : 212,
@@ -677,6 +695,82 @@ window.ATAKMap = (function () {
       offsetY: raw.offsetY != null ? parseFloat(raw.offsetY) : 0,
       worldSize: raw.worldSize != null ? parseFloat(raw.worldSize) : 30720
     };
+  }
+
+  /** Recadre la tuile parent (z-1) dans le quadrant manquant — évite les cases blanches hors maxNativeZoom. */
+  function fillTileFromParent(img, coords, layer) {
+    return new Promise(function (resolve, reject) {
+      if (!img || !coords || !layer || coords.z < 1) {
+        reject(new Error('no-parent'));
+        return;
+      }
+      var pz = coords.z - 1;
+      var px = Math.floor(coords.x / 2);
+      var py = Math.floor(coords.y / 2);
+      var parentCoords = L.point(px, py);
+      parentCoords.z = pz;
+      var url;
+      try {
+        url = layer.getTileUrl(parentCoords);
+      } catch (e) {
+        reject(e);
+        return;
+      }
+      var parent = new Image();
+      parent.crossOrigin = 'anonymous';
+      parent.onload = function () {
+        try {
+          var size = (layer.options && layer.options.tileSize) || 256;
+          if (typeof size !== 'number') size = size.x || 256;
+          var canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          var ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('no-ctx'));
+            return;
+          }
+          var sx = (coords.x % 2) * (parent.naturalWidth / 2);
+          var sy = (coords.y % 2) * (parent.naturalHeight / 2);
+          var sw = parent.naturalWidth / 2;
+          var sh = parent.naturalHeight / 2;
+          ctx.drawImage(parent, sx, sy, sw, sh, 0, 0, size, size);
+          img.style.visibility = '';
+          img.src = canvas.toDataURL('image/png');
+          resolve(true);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      parent.onerror = function () { reject(new Error('parent-fail')); };
+      parent.src = url;
+    });
+  }
+
+  function retryTileUrl(url) {
+    return new Promise(function (resolve, reject) {
+      if (!url) {
+        reject(new Error('no-url'));
+        return;
+      }
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('retry-fail')); };
+      window.setTimeout(function () {
+        img.src = url;
+      }, 80);
+    });
+  }
+
+  function repairBaseTiles() {
+    if (!baseTileLayer || typeof baseTileLayer.redraw !== 'function') return false;
+    try {
+      baseTileLayer.redraw();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function scheduleInvalidateSize() {
@@ -754,6 +848,10 @@ window.ATAKMap = (function () {
     var el = document.getElementById('atak-map');
     if (!el) return null;
 
+    if (config.maxNativeZoom == null && config.maxZoom != null) {
+      config.maxNativeZoom = Number(config.maxZoom) || 6;
+      config.maxZoom = config.maxNativeZoom + 2;
+    }
     map = L.map('atak-map', {
       minZoom: config.minZoom,
       maxZoom: config.maxZoom,
@@ -767,6 +865,8 @@ window.ATAKMap = (function () {
     var tileLayer = L.tileLayer(config.tilePattern, {
       attribution: config.attribution,
       tileSize: config.tileSize,
+      maxZoom: config.maxZoom,
+      maxNativeZoom: config.maxNativeZoom || config.maxZoom,
       noWrap: true,
       crossOrigin: true,
       bounds: L.latLngBounds(L.latLng(0, 0), L.latLng(worldSize, worldSize)),
@@ -784,14 +884,38 @@ window.ATAKMap = (function () {
     });
     tileLayer.on('tileerror', function (ev) {
       var img = ev && (ev.tile || (ev.el && ev.el.tagName === 'IMG' ? ev.el : null));
-      if (img && img.style) img.style.visibility = 'hidden';
-      tileFailCount += 1;
-      if (tileFailCount === 8 && !window._atakTileErrorShown) {
-        window._atakTileErrorShown = true;
-        if (window.ATAKShowError) {
-          window.ATAKShowError('Fond de carte indisponible (tuiles). Vérifiez le CDN ou basculez de théâtre.');
-        }
+      var coords = ev && ev.coords;
+      if (!img) return;
+      if (img._atakTileRepairing) return;
+      img._atakTileRepairing = true;
+      var failedUrl = '';
+      try {
+        failedUrl = coords ? tileLayer.getTileUrl(coords) : (img.getAttribute('src') || '');
+      } catch (e) {
+        failedUrl = img.getAttribute('src') || '';
       }
+      retryTileUrl(failedUrl)
+        .then(function (loaded) {
+          img.style.visibility = '';
+          img.src = loaded.src;
+          img._atakTileRepairing = false;
+        })
+        .catch(function () {
+          return fillTileFromParent(img, coords, tileLayer).then(function () {
+            img._atakTileRepairing = false;
+          });
+        })
+        .catch(function () {
+          if (img.style) img.style.visibility = 'hidden';
+          img._atakTileRepairing = false;
+          tileFailCount += 1;
+          if (tileFailCount === 8 && !window._atakTileErrorShown) {
+            window._atakTileErrorShown = true;
+            if (window.ATAKShowError) {
+              window.ATAKShowError('Fond de carte indisponible (tuiles). Vérifiez le CDN ou basculez de théâtre.');
+            }
+          }
+        });
     });
     tileLayer.on('load', function () {
       tileFailCount = 0;
@@ -2526,6 +2650,7 @@ window.ATAKMap = (function () {
     },
     getConfig: getConfig,
     getBaseTileLayer: function () { return baseTileLayer; },
+    repairBaseTiles: repairBaseTiles,
     applyOffset: applyOffset,
     latLngFromWorld: latLngFromWorld,
     worldFromLatLng: worldFromLatLng,

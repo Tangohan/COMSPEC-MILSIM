@@ -395,9 +395,8 @@ body:has(.personnel-file--gate) .portal-footer {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: bottom center;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.65));
+  object-fit: cover;
+  object-position: center top;
 }
 
 .personnel-file-hero__portrait-empty {

@@ -822,6 +822,29 @@ $editValidTabIds = implode(',', array_map(
               <?php endif; ?>
               <?php endif; ?>
             </div>
+            <?php
+            $canEditSseClearance = !empty($canStaffEdit);
+            $sseClearanceLabels = \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS;
+            $sseClearanceCurrent = trim((string) ($p['clearance_level'] ?? ''));
+            if ($sseClearanceCurrent !== '' && !isset($sseClearanceLabels[$sseClearanceCurrent])) {
+                $sseClearanceCurrent = '';
+            }
+            ?>
+            <?php if ($canEditSseClearance): ?>
+            <div class="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3">
+              <label for="clearance_level" class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Niveau de diffusion renseignement</label>
+              <select name="clearance_level" id="clearance_level" class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+                <option value="">Non défini</option>
+                <?php foreach ($sseClearanceLabels as $ck => $clabel): ?>
+                  <option value="<?= htmlspecialchars($ck, ENT_QUOTES, 'UTF-8') ?>" <?= $sseClearanceCurrent === $ck ? 'selected' : '' ?>><?= htmlspecialchars($clabel, ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+              </select>
+              <p class="mt-1.5 text-[11px] leading-relaxed text-emerald-900/80">
+                Ce niveau indique jusqu’où l’opérateur peut lire le renseignement classifié.
+                L’entrée au portail reste régie par les droits d’accès ou, pour les invités, par un code temporaire.
+              </p>
+            </div>
+            <?php endif; ?>
           </div>
         </section>
 

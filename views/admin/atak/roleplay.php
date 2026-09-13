@@ -11,6 +11,9 @@ $tenant = $tenant ?? [];
 $zoneRows = is_array($zoneRows ?? null) ? $zoneRows : [];
 $zoneEffectOptions = is_array($zoneEffectOptions ?? null) ? $zoneEffectOptions : [];
 $csrfToken = (string) ($csrfToken ?? '');
+$roleplayFormAction = (string) ($roleplayFormAction ?? url('back-office/atak/roleplay'));
+$roleplayResetUrl = (string) ($roleplayResetUrl ?? url('back-office/atak/roleplay/reset'));
+$atakHubUrl = (string) ($atakHubUrl ?? url('back-office/atak'));
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
@@ -29,8 +32,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     Les paramètres sont appliqués côté serveur et visibles dans l'interface web ATAK.
                 </p>
                 <div class="mt-5 flex flex-wrap gap-2">
-                    <a href="<?= url('admin') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
-                        Tableau de bord admin
+                    <a href="<?= $h($atakHubUrl) ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
+                        Poste de situation
                     </a>
                     <a href="<?= url('atak') ?>" class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-950 shadow-sm hover:bg-blue-50/80 transition-colors">
                         Carte tactique ATAK
@@ -39,7 +42,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
             </div>
         </header>
 
-        <form method="POST" action="<?= url('admin/atak/roleplay') ?>" class="space-y-6">
+        <form method="POST" action="<?= $h($roleplayFormAction) ?>" class="space-y-6">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
 
             <!-- Simulation réseau -->
@@ -323,11 +326,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 
             <!-- Actions -->
             <div class="flex items-center justify-between gap-4 pt-4">
-                <a href="<?= url('admin') ?>" class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+                <a href="<?= $h($atakHubUrl) ?>" class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
                     Annuler
                 </a>
                 <div class="flex gap-3">
-                    <button type="button" onclick="if(confirm('Réinitialiser toute la configuration roleplay ?')) { window.location.href='<?= url('admin/atak/roleplay/reset') ?>'; }" 
+                    <button type="button" onclick="if(confirm('Réinitialiser toute la configuration roleplay ?')) { window.location.href='<?= $h($roleplayResetUrl) ?>'; }" 
                             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
                         Réinitialiser
                     </button>
