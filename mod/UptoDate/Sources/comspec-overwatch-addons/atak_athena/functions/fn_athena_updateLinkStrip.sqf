@@ -1,5 +1,5 @@
 /*
-    Bandeau liaison compact sous la barre d’état cTab :
+    Bandeau liaison compact sous la barre d état cTab :
     OK/NOK · dernière sync · fiabilité · débit/perte
     Indicatif · nom · versions Overwatch / Athena
 
@@ -23,6 +23,19 @@ if (isNull _disp) exitWith {
 private _IDC = 99871;
 private _ctrl = _disp displayCtrl _IDC;
 
+private _showStrip = missionNamespace getVariable ["comspec_overwatch_show_link_strip", true];
+if (!(_showStrip isEqualType true)) then { _showStrip = true; };
+private _profStrip = profileNamespace getVariable ["COMSPEC_LinkStripVisible", "UNSET"];
+if (_profStrip isEqualType true) then { _showStrip = _profStrip; };
+if (!_showStrip) exitWith {
+    if (!isNull _ctrl) then {
+        _ctrl ctrlShow false;
+        _ctrl ctrlSetStructuredText parseText "";
+    };
+    missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
+    true
+};
+
 private _bat = _disp displayCtrl 2;
 if (isNull _bat) then { _bat = _disp displayCtrl 1; };
 if (isNull _bat) exitWith {
@@ -44,14 +57,12 @@ if (!isNull _hdr) then {
     _hh = _h0;
 };
 
-// Sous la barre d’état, hauteur pour 2 lignes — ne jamais chevaucher le header carte.
-private _sy = _hy + _hh + 0.001;
-private _sh = (_hh * 1.15) max 0.022;
+private _sy = _hy + _hh + 0.0005;
+private _sh = (_hh * 0.62) max 0.014;
 private _inset = _hw * 0.02;
 _hx = _hx + _inset;
-_hw = (_hw - (_inset * 2)) max (_bw * 4);
+_hw = ((_hw * 0.62) - _inset) max (_bw * 3.2);
 
-// Ne pas élargir au-delà du bord droit de la carte visible.
 private _mapCtrl = controlNull;
 if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
     private _mapName = ["cTab_Android_dlg", "mapType"] call cTab_fnc_getSettings;
@@ -79,7 +90,7 @@ if (isNull _ctrl) then {
 };
 
 _ctrl ctrlSetPosition [_hx, _sy, _hw, _sh];
-_ctrl ctrlSetBackgroundColor [0.015, 0.03, 0.04, 0.78];
+_ctrl ctrlSetBackgroundColor [0.015, 0.03, 0.04, 0.72];
 _ctrl ctrlCommit 0;
 
 private _fncShort = {
@@ -100,7 +111,6 @@ private _fncAgo = {
     format ["%1h", round (_sec / 3600)]
 };
 
-// --- État liaison ---
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 if (!(_state isEqualType "")) then { _state = "offline"; };
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
@@ -157,7 +167,6 @@ private _errColor = switch (true) do {
     default { "#a8b8c8" };
 };
 
-// Fiabilité : 100 − perte, pénalisée si hors liaison / santé ancienne / latence haute
 private _reliab = ((100 - _loss) max 0) min 100;
 if (!_ok && {!_degraded}) then { _reliab = 0; };
 if (_degraded) then { _reliab = _reliab min 72; };
@@ -182,7 +191,6 @@ if ((_ms isEqualType 0) && {_ms >= 0} && {_lastSync >= 0}) then {
     _syncTxt = format ["%1/%2ms", _syncTxt, round _ms];
 };
 
-// Identité
 private _cs = "";
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
     _cs = [true] call comspec_overwatch_connect_fnc_getCallsign;
@@ -200,7 +208,6 @@ private _who = if (_cs isNotEqualTo "" && {_name isNotEqualTo ""} && {(toLower _
     if (_cs isNotEqualTo "") then { _cs } else { if (_name isNotEqualTo "") then { _name } else { "—" } }
 };
 
-// Versions (cache liaison une fois)
 private _owV = "";
 if (!isNil "comspec_overwatch_connect_fnc_getModVersion") then {
     _owV = [] call comspec_overwatch_connect_fnc_getModVersion;
@@ -231,7 +238,7 @@ if (_extV isEqualTo "") then { _extV = "—"; };
 
 private _sep = "<t color='#4a5a68'> · </t>";
 private _html = format [
-    "<t align='center' size='0.45' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8' size='0.90'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
+    "<t align='left' size='0.34' shadow='1'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t><br/><t color='#d0dce8' size='0.88'>%10</t>%3<t color='#7a90a4'>OW %11</t>%3<t color='#7a90a4'>ATAK %12</t>%3<t color='#7a90a4'>liaison %13</t></t>",
     _okColor,
     _okTxt,
     _sep,
