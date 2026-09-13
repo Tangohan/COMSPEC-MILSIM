@@ -1,5 +1,5 @@
 /*
-    Envoie le texte composé sur le canal Messagerie actif.
+    Envoie le texte composé sur le canal Messagerie ouvert (100 caractères max).
 */
 if (!hasInterface) exitWith {};
 
@@ -13,6 +13,13 @@ private _msg = trim (ctrlText _edit);
 if (_msg isEqualTo "") exitWith {
     if (!isNil "cTab_fnc_addNotification") then {
         ["MSG", "Saisissez un message avant d’envoyer.", 3] call cTab_fnc_addNotification;
+    };
+};
+
+if ((count _msg) > 100) then {
+    _msg = _msg select [0, 100];
+    if (!isNil "cTab_fnc_addNotification") then {
+        ["MSG", "Le message est limité à 100 caractères.", 3] call cTab_fnc_addNotification;
     };
 };
 
@@ -39,4 +46,5 @@ if (isNil "comspec_overwatch_connect_fnc_tabletChatSend") exitWith {
 
 [_msg] call comspec_overwatch_connect_fnc_tabletChatSend;
 _edit ctrlSetText "";
+uiNamespace setVariable ["COMSPEC_ATAK_Comms_renderSig", ""];
 [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;

@@ -92,20 +92,25 @@ class COMSPEC_Device_Dialog {
         // basculée avec lui (fn_deviceToggleView.sqf).
         class DeviceRosterTitle: RscStructuredText {
             idc = 9315;
-            text = "<t size='0.58' color='#5a9e88'>CONNECTED UNITS</t>";
+            text = "<t size='0.58' color='#5a9e88'>CONTACTS RECENTS</t>";
             x = safezoneX + 0.247 * safezoneW;
             y = safezoneY + 0.5 * safezoneH - 0.082 * safezoneW;
             w = 0.483 * safezoneW;
             h = 0.022 * safezoneW;
         };
 
-        class DeviceRosterList: RscStructuredText {
+        class DeviceRosterList: RscListBox {
             idc = 9314;
-            text = "";
             x = safezoneX + 0.247 * safezoneW;
             y = safezoneY + 0.5 * safezoneH - 0.056 * safezoneW;
             w = 0.483 * safezoneW;
             h = 0.088 * safezoneW;
+            sizeEx = 0.026;
+            rowHeight = 0.028;
+            colorBackground[] = {0.02, 0.04, 0.06, 0.45};
+            colorSelect[] = {0.18, 0.95, 0.55, 1};
+            colorSelectBackground[] = {0.05, 0.18, 0.14, 0.85};
+            onLBSelChanged = "[(_this select 1)] call comspec_overwatch_connect_fnc_reachOverlayFromRoster;";
         };
 
         class DeviceBtnHub: RscButton {

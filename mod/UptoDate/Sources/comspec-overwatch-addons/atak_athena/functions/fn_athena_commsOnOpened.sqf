@@ -10,9 +10,14 @@ uiNamespace setVariable ["COMSPEC_ATAK_Comms_group", _group];
 
 private _token = diag_tickTime + random 1;
 uiNamespace setVariable ["COMSPEC_ATAK_Comms_token", _token];
+uiNamespace setVariable ["COMSPEC_ATAK_Comms_renderSig", ""];
+missionNamespace setVariable ["COMSPEC_Comms_View", "list", false];
 
 if (isNil { missionNamespace getVariable "COMSPEC_Comms_Channel" }) then {
     missionNamespace setVariable ["COMSPEC_Comms_Channel", "general", false];
+};
+if (isNil { missionNamespace getVariable "COMSPEC_Comms_Unread" }) then {
+    missionNamespace setVariable ["COMSPEC_Comms_Unread", createHashMap, false];
 };
 
 if (!isNil "comspec_overwatch_connect_fnc_pollChatChannels") then {

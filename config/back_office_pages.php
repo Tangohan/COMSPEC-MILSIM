@@ -71,7 +71,7 @@ return [
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés'],
-        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord par événement, transmissions terrain et jetons d’accès.'],
+        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Relais Discord : salon commun, salons à part, photos Quick Picture, transmissions et jetons d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail'],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
             ['label' => 'Vitrine', 'href' => 'back-office/dashboard-tenues'],

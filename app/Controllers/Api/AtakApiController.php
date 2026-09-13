@@ -15,6 +15,7 @@ use App\Repositories\AtakOrderRepository;
 use App\Repositories\AtakOrderTemplateRepository;
 use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
+use App\Support\AtakPlanAccess;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -1031,6 +1032,10 @@ class AtakApiController
                 'error' => 'maintenance',
                 'message' => $message,
             ], 503);
+        }
+
+        if (!AtakPlanAccess::allows($id)) {
+            return AtakPlanAccess::deniedJson();
         }
 
         return $id;
@@ -9806,6 +9811,20 @@ class AtakApiController
         return Response::json($row, 201);
     }
 
+    public function sigintIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $limit = min((int) ($request->query('limit') ?: 40), 100);
+        $rows = $this->atak->getSigintReports($tenantId, $mapId, $limit);
+
+        return Response::json($rows);
+    }
+
     public function sigintZones(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -10323,6 +10342,13 @@ class AtakApiController
             } catch (\Throwable $logErr) {
                 error_log('[atak/recon-images] activity ' . $logErr->getMessage());
             }
+            register_shutdown_function(static function () use ($tenantId, $path, $data): void {
+                try {
+                    (new \App\Services\Integrations\DiscordEventRelayService())->notifyQuickPicture($tenantId, $path, $data);
+                } catch (\Throwable $discordErr) {
+                    error_log('[atak/recon-images] discord ' . $discordErr->getMessage());
+                }
+            });
 
             return Response::json($row, 201);
         } catch (\Throwable $e) {

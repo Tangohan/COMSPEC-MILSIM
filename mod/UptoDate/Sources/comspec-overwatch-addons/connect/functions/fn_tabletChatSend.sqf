@@ -7,6 +7,7 @@ params [["_msg", "", [""]]];
 if (!hasInterface) exitWith {};
 _msg = trim _msg;
 if (_msg isEqualTo "") exitWith {};
+if ((count _msg) > 100) then { _msg = _msg select [0, 100]; };
 
 private _channel = missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"];
 private _priority = missionNamespace getVariable ["COMSPEC_Comms_Priority", "ROUTINE"];
@@ -42,7 +43,12 @@ missionNamespace setVariable ["COMSPEC_RadioReplay", _radioLog, true];
 
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_cs isEqualTo "") then { _cs = name player; };
-private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+private _st = systemTime;
+private _pad2 = {
+    params ["_n"];
+    if (_n < 10) then { "0" + str _n } else { str _n };
+};
+private _timeStr = format ["%1/%2 %3:%4", [_st select 2] call _pad2, [_st select 1] call _pad2, [_st select 3] call _pad2, [_st select 4] call _pad2];
 private _gMessages = +(missionNamespace getVariable ["Iceman_ATAK_Group_messages", []]);
 if (!(_gMessages isEqualType [])) then { _gMessages = []; };
 _gMessages pushBack [_timeStr, _cs, groupId group player, mapGridPosition player, _msg, getPosATL player, true];

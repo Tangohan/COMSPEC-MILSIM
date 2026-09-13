@@ -29,4 +29,6 @@ if (isNil "comspec_overwatch_connect_fnc_deleteChatChannel") exitWith {
 private _ok = [_channel] call comspec_overwatch_connect_fnc_deleteChatChannel;
 if (!_ok) exitWith {};
 
+missionNamespace setVariable ["COMSPEC_Comms_View", "list", false];
+uiNamespace setVariable ["COMSPEC_ATAK_Comms_renderSig", ""];
 [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;

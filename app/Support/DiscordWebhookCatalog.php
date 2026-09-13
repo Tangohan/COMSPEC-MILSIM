@@ -17,6 +17,7 @@ final class DiscordWebhookCatalog
     public const KEY_OPERATION_STATUS = 'operation_status';
     public const KEY_OVERLAY_PUBLISHED = 'overlay_published';
     public const KEY_ORDER_PUBLISHED = 'order_published';
+    public const KEY_QUICK_PICTURE = 'quick_picture';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -41,6 +42,13 @@ final class DiscordWebhookCatalog
                 'label' => 'Mises à jour du pack Overwatch',
                 'hint' => 'Nouvelle version du pack jeu, avec extrait du journal des changements.',
                 'default_mode' => self::MODE_DEFAULT,
+            ],
+            [
+                'key' => self::KEY_QUICK_PICTURE,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Photos Quick Picture',
+                'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu. L’indicatif, la grille et la vue sont publiés dans le salon choisi.',
+                'default_mode' => self::MODE_OFF,
             ],
             [
                 'key' => EmailEvents::NEW_COMMUNITY_MEMBER,

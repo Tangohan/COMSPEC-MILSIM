@@ -193,8 +193,8 @@ Order of trust applied: executed code → schema → configuration → tests →
 ### C9 — Feature gate on API vs web
 
 - **Old:** FEATURE-TIERS implies ATAK is gated everywhere.
-- **Code:** `FeatureGateService::allows($tenantId, 'atak')` is enforced on the web Tacmap controller. `AtakApiController` does not call the feature gate.
-- **Resolution:** Plan gate is web-UI oriented. API relies on tactical key / session / maintenance. SECURITY GAP noted in SEC-A3-01.
+- **Code:** `FeatureGateService::allows($tenantId, 'atak')` is enforced on the web Tacmap controller **and** on tactical API `requireTenant` (`AtakPlanAccess`, CAP-GAT-001 FIELDED). `GET /api/atak/ping` stays ungated.
+- **Resolution:** Plan gate applies to operational tactical routes. Ping remains a liveness probe.
 
 ---
 

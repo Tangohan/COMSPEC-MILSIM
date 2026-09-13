@@ -2143,3 +2143,206 @@ body.atak-page--device .atak-connection-lost__timer,
 body.atak-device-embed .atak-connection-lost__timer {
   font-size: 0.76rem;
 }
+
+/* —— Fenêtres épinglées (raccourcis à gauche de la carte) —— */
+.atak-tab-wrap {
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+}
+.atak-tab-wrap:has(.atak-tab:not(.is-section-visible)),
+.atak-tab-wrap:has(.atak-tab[hidden]) {
+  display: none !important;
+}
+.atak-tab-pin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: rgba(8, 12, 17, 0.35);
+  color: #9fb0ba;
+  cursor: pointer;
+}
+.atak-tab-wrap .atak-tab-badge,
+.atak-tab-wrap .atak-medical-tab-badge {
+  top: auto;
+  bottom: 8px;
+  transform: none;
+}
+.atak-tab-pin:hover {
+  color: #e8eef2;
+  background: rgba(53, 214, 161, 0.16);
+  border-color: rgba(53, 214, 161, 0.35);
+}
+.atak-tab-pin.is-on {
+  color: #35d6a1;
+  background: rgba(53, 214, 161, 0.18);
+  border-color: rgba(53, 214, 161, 0.45);
+}
+.atak-left-aside .atak-tab.is-pinned {
+  box-shadow: inset 0 0 0 1px rgba(53, 214, 161, 0.28);
+}
+
+.atak-pin-dock {
+  display: none;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 300px;
+  min-width: 240px;
+  max-width: 340px;
+  min-height: 0;
+  padding: 8px 6px 8px 0;
+  gap: 8px;
+  background: linear-gradient(180deg, #070b10, #080c11);
+  border-right: 1px solid var(--atak-c2-line);
+  overflow: hidden;
+  z-index: 3;
+}
+.atak-pin-dock:not([hidden]) {
+  display: flex;
+}
+body.atak-page--device .atak-pin-dock,
+body.atak-device-embed .atak-pin-dock,
+body.atak-page--device .atak-tab-pin,
+body.atak-device-embed .atak-tab-pin {
+  display: none !important;
+}
+
+.atak-pin-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 220px;
+  max-height: 48vh;
+  border: 1px solid var(--atak-c2-line2);
+  border-radius: 3px;
+  background: #0b1117;
+  box-shadow: inset 0 0 0 1px rgba(53, 214, 161, 0.06);
+  overflow: hidden;
+}
+.atak-pin-window--chat {
+  flex: 1.4 1 280px;
+  max-height: min(70vh, 640px);
+  min-height: 240px;
+}
+.atak-pin-window.is-collapsed {
+  flex: 0 0 auto;
+  max-height: none;
+  min-height: 0;
+}
+.atak-pin-window.is-collapsed .atak-tabs-content {
+  display: none !important;
+}
+.atak-pin-window.is-focus {
+  border-color: rgba(53, 214, 161, 0.7);
+  box-shadow: 0 0 0 1px rgba(53, 214, 161, 0.35);
+}
+
+.atak-pin-window__bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 4px 0 2px;
+  border-bottom: 1px solid var(--atak-c2-line);
+  background: #0e151c;
+}
+.atak-pin-window.is-collapsed .atak-pin-window__bar {
+  border-bottom: 0;
+}
+.atak-pin-window__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--atak-c2-text);
+  font: 800 11px/1.2 var(--atak-font-tactical);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atak-pin-window__badge {
+  flex: 0 0 auto;
+  min-width: 1.1rem;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(53, 214, 161, 0.2);
+  color: var(--atak-c2-green);
+  font: 700 10px/1.3 var(--atak-font-mono, ui-monospace, monospace);
+  text-align: center;
+}
+.atak-pin-window__btn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--atak-c2-muted2);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.atak-pin-window__btn:hover {
+  color: var(--atak-c2-text);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--atak-c2-line);
+}
+
+.atak-pin-dock .atak-tabs-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #080c11;
+}
+.atak-pin-dock .atak-tabs-content.active {
+  display: flex;
+  flex-direction: column;
+}
+.atak-pin-window--chat #tab-chat {
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+}
+.atak-pin-window--chat .atak-chat-messages {
+  min-height: 0;
+}
+.atak-pin-window--chat .atak-chat-input-wrap,
+.atak-pin-window--chat .atak-chat-channels,
+.atak-pin-window--chat .atak-panel-strip {
+  flex-shrink: 0;
+}
+.atak-pin-window--chat #atak-chat-purge {
+  display: none;
+}
+.atak-pin-window--chat .atak-chat-channel-create {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+@media (max-width: 1100px) {
+  .atak-pin-dock {
+    width: 250px;
+    min-width: 220px;
+  }
+}
+

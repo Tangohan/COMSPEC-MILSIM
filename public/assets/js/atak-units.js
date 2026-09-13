@@ -10,6 +10,8 @@ window.ATAKUnits = (function () {
   var lastRenderFp = '';
   /** Aligné sur AtakDataRepository::UNIT_LIVE_TTL_SECONDS (sec). */
   var LIVE_TTL_MS = 120 * 1000;
+  /** Aligné sur AtakDataRepository::UNIT_RECENT_WINDOW_SECONDS (15 min). */
+  var RECENT_WINDOW_SEC = 15 * 60;
   var ORIGIN_EPS = 0.5;
   /** Poll carte ~3 s : garder un terminal encore en liaison s’il manque à 1–3 lectures. */
   var ROSTER_GRACE_MS = 12000;
@@ -132,6 +134,72 @@ window.ATAKUnits = (function () {
     if (s !== 'linked' && s !== 'delayed') return false;
     // Contact à l’origine (0,0) = pas de vraie position reçue → hors filtre « En liaison ».
     return hasValidPosition(u);
+  }
+
+  function unitAgeSeconds(u) {
+    if (!u) return Infinity;
+    var stamped = Number(u._ageAtReceive);
+    var received = Number(u._receivedAt);
+    if (isFinite(stamped) && isFinite(received) && received > 0) {
+      var ticking = stamped + (Date.now() - received) / 1000;
+      return ticking < 0 ? 0 : ticking;
+    }
+    var apiAge = Number(u.age_seconds);
+    if (isFinite(apiAge)) return apiAge < 0 ? 0 : apiAge;
+    var raw = u.updated_at || '';
+    if (!raw) return Infinity;
+    var updated = Date.parse(String(raw).replace(' ', 'T'));
+    if (isNaN(updated)) return Infinity;
+    var age = (Date.now() - updated) / 1000;
+    return age < 0 ? 0 : age;
+  }
+
+  function formatAgeFr(sec) {
+    if (!isFinite(sec) || sec === Infinity) return '';
+    if (sec < 15) return 'À l’instant';
+    if (sec < 60) return 'Il y a ' + Math.round(sec) + ' s';
+    if (sec < 3600) {
+      var m = Math.max(1, Math.floor(sec / 60));
+      return 'Il y a ' + m + ' min';
+    }
+    var h = Math.floor(sec / 3600);
+    return 'Il y a ' + h + ' h';
+  }
+
+  function isRecentlySeen(u) {
+    var age = unitAgeSeconds(u);
+    return isFinite(age) && age <= RECENT_WINDOW_SEC;
+  }
+
+  function isRecentPresence(u) {
+    if (isInLiaison(u)) return true;
+    return isRecentlySeen(u);
+  }
+
+  function stampAgeOnUnit(u, now) {
+    if (!u) return u;
+    now = now || Date.now();
+    var next = Object.assign({}, u);
+    var apiAge = Number(u.age_seconds);
+    if (!isFinite(apiAge)) {
+      apiAge = unitAgeSeconds(u);
+    }
+    if (!isFinite(apiAge) || apiAge === Infinity) {
+      next._receivedAt = now;
+      next._ageAtReceive = NaN;
+      return next;
+    }
+    next.age_seconds = apiAge;
+    next._receivedAt = now;
+    next._ageAtReceive = apiAge;
+    return next;
+  }
+
+  function presenceRank(u) {
+    var s = resolveLiveStatus(u);
+    if (s === 'linked') return 0;
+    if (s === 'delayed') return 1;
+    return 2;
   }
 
   function formatGrid(u) {
@@ -320,7 +388,7 @@ window.ATAKUnits = (function () {
         }
       }
       if (k) delete rosterMissingSince[k];
-      merged.push(u);
+      merged.push(stampAgeOnUnit(u, now));
       if (k) kept[k] = true;
     });
 
@@ -411,11 +479,19 @@ window.ATAKUnits = (function () {
     '<div class="atak-units-empty-icon" aria-hidden="true">' +
     '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>' +
     '</div>' +
-    '<p class="atak-units-empty-title">Aucun contact en liaison</p>' +
-    '<p class="atak-units-empty-text">La liaison du compte Athena ne suffit pas : le jeu doit envoyer une position valide. En mission, déplacez-vous un peu ou utilisez le hub → Transmettre. Vérifiez aussi le journal Liaison côté Athena.</p>' +
+    '<p class="atak-units-empty-title">Aucun contact récent</p>' +
+    '<p class="atak-units-empty-text">Les opérateurs vus dans les quinze dernières minutes apparaissent ici, y compris ceux qui viennent de perdre la liaison, avec leur dernière position connue. Cliquez un contact pour voir jusqu’où il a pu se déplacer à pied ou en véhicule.</p>' +
     (window.ATAK_MULTI_COMMUNITY
       ? '<p class="atak-units-empty-text">Votre compte appartient à plusieurs communautés. Cette carte n’affiche que celle indiquée en haut. Changez-la si ce n’est pas la soirée en cours.</p>'
       : '') +
+    '</div>';
+
+  var emptyStateAllHtml = '<div class="atak-units-empty" id="atak-units-empty">' +
+    '<div class="atak-units-empty-icon" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>' +
+    '</div>' +
+    '<p class="atak-units-empty-title">Aucun contact</p>' +
+    '<p class="atak-units-empty-text">Aucun opérateur n’est encore remonté sur cette carte. En mission, déplacez-vous un peu ou utilisez le hub → Transmettre.</p>' +
     '</div>';
 
   function updateSummary() {
@@ -440,12 +516,44 @@ window.ATAKUnits = (function () {
     countEl.textContent = n === 1 ? '1 contact' : (n + ' contacts');
   }
 
+  function focusUnitFromEl(el) {
+    if (!el) return;
+    var id = el.getAttribute('data-unit-id');
+    var cs = el.getAttribute('data-callsign');
+    var unit = id ? getUnitById(id) : null;
+    if (!unit && cs) {
+      unit = unitByRosterKey('cs:' + String(cs).trim().toUpperCase());
+    }
+    if (!unit) {
+      var list = units || [];
+      for (var i = 0; i < list.length; i++) {
+        if ((id && String(list[i].id) === String(id)) || (cs && String(list[i].call_sign || '').toUpperCase() === String(cs).toUpperCase())) {
+          unit = list[i];
+          break;
+        }
+      }
+    }
+    if (unit && window.ATAKReachOverlay && typeof window.ATAKReachOverlay.toggleFromUnit === 'function') {
+      window.ATAKReachOverlay.toggleFromUnit(unit, { center: true });
+      return;
+    }
+    var x = el.getAttribute('data-x');
+    var y = el.getAttribute('data-y');
+    if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
+      window.ATAKMap.centerOn(parseFloat(y), parseFloat(x));
+    }
+  }
+
   function renderTable(list) {
     var body = document.getElementById('atak-units-table-body');
     if (!body) return;
     updateTableCount(list.length);
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="8" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" class="atak-drawer-empty">' +
+        (filterLive
+          ? 'Aucun contact vu dans les quinze dernières minutes.'
+          : 'Aucun contact pour le moment.') +
+        '</td></tr>';
       return;
     }
     body.innerHTML = list.map(function (u) {
@@ -464,6 +572,11 @@ window.ATAKUnits = (function () {
       var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
         ? window.ATAKUnitPopup.statusLabelFr(statusClass)
         : statusClass;
+      var seenLabel = formatAgeFr(unitAgeSeconds(u));
+      var liaisonHtml = '<span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span>';
+      if (statusClass !== 'linked' && seenLabel) {
+        liaisonHtml += '<span class="atak-drawer-seen">' + esc(seenLabel) + '</span>';
+      }
       var hasHeading = (!isPhone || (rev && rev.heading)) && u.heading != null && u.heading !== '';
       var heading = hasHeading ? (Math.round(u.heading) + '°') : '—';
       var gridRaw = (!isPhone || (rev && rev.grid)) ? formatGrid(u) : '';
@@ -478,7 +591,7 @@ window.ATAKUnits = (function () {
           + esc(ftLabel) + '</span>')
         : '<span class="atak-drawer-muted">—</span>';
       var toc = tocNotesFromExtra(ex);
-      return '<tr class="atak-drawer-row' + (ftColor ? ' atak-drawer-row--ft' : '') + (toc.radio || toc.vehicle || toc.note ? ' atak-drawer-row--notes' : '') + '" tabindex="0" role="button" title="' + (posOk ? 'Centrer la carte sur ce contact' : 'Position non disponible') + '"' +
+      return '<tr class="atak-drawer-row' + (ftColor ? ' atak-drawer-row--ft' : '') + (toc.radio || toc.vehicle || toc.note ? ' atak-drawer-row--notes' : '') + (statusClass === 'offline' ? ' atak-drawer-row--offline' : '') + '" tabindex="0" role="button" title="' + (posOk ? 'Afficher la zone de déplacement possible depuis la dernière position connue' : 'Position non disponible') + '"' +
         ' data-unit-id="' + esc(u.id || '') + '"' +
         ' data-callsign="' + esc(u.call_sign || '') + '"' +
         ' data-grid="' + esc(gridRaw) + '"' +
@@ -488,7 +601,7 @@ window.ATAKUnits = (function () {
         '<td class="atak-drawer-cs"><span class="atak-drawer-cs-text">' + esc(displayName) + '</span></td>' +
         '<td' + (roleRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(roleText) + '</td>' +
         '<td>' + ftCell + '</td>' +
-        '<td><span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
+        '<td class="atak-drawer-link">' + liaisonHtml + '</td>' +
         '<td class="atak-drawer-hdg' + (hasHeading ? '' : ' atak-drawer-muted') + '">' + esc(heading) + '</td>' +
         '<td class="atak-drawer-grid' + (gridRaw ? '' : ' atak-drawer-muted') + '">' + esc(grid) + '</td>' +
         '<td class="atak-drawer-notes">' + (isPhone ? '<span class="atak-drawer-muted">—</span>' : notesCellHtml(ex)) + '</td>' +
@@ -503,11 +616,7 @@ window.ATAKUnits = (function () {
 
     body.querySelectorAll('.atak-drawer-row').forEach(function (row) {
       function focusUnit() {
-        var x = row.getAttribute('data-x');
-        var y = row.getAttribute('data-y');
-        if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
-          window.ATAKMap.centerOn(parseFloat(y), parseFloat(x));
-        }
+        focusUnitFromEl(row);
       }
       row.addEventListener('click', function (ev) {
         if (ev.target.closest('a, button, [data-unit-more], [data-unit-vibrate]')) return;
@@ -523,6 +632,9 @@ window.ATAKUnits = (function () {
     bindVibrateButtons(body);
     if (window.ATAKUnitMenu && window.ATAKUnitMenu.bindListInteractions) {
       window.ATAKUnitMenu.bindListInteractions(body);
+    }
+    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.syncSelectionClass === 'function') {
+      window.ATAKReachOverlay.syncSelectionClass();
     }
   }
 
@@ -548,6 +660,7 @@ window.ATAKUnits = (function () {
         displayName,
         JSON.stringify(ex.reveal || {}),
         resolveLiveStatus(u),
+        Math.floor(unitAgeSeconds(u) / 15),
         formatGrid(u),
         heading,
         u.role || ex.role || '',
@@ -576,7 +689,7 @@ window.ATAKUnits = (function () {
     updateSummary();
     var filtered = units.filter(function (u) {
       if (shouldHideEnemyAi(u, units)) return false;
-      if (filterLive && !isInLiaison(u)) return false;
+      if (filterLive && !isRecentPresence(u)) return false;
       if (!matchesFireTeamFilter(u)) return false;
       if (filterWave) {
         var exW = parseExtra(u);
@@ -606,12 +719,21 @@ window.ATAKUnits = (function () {
       }
       return true;
     });
-    var fp = filterLive + '|' + filterWave + '|' + filterText + '|' + filterFireTeamId + '\n' + displayFingerprint(filtered);
+    filtered.sort(function (a, b) {
+      var ra = presenceRank(a);
+      var rb = presenceRank(b);
+      if (ra !== rb) return ra - rb;
+      return unitAgeSeconds(a) - unitAgeSeconds(b);
+    });
+    var selectedFp = (window.ATAKReachOverlay && window.ATAKReachOverlay.selectedKey)
+      ? window.ATAKReachOverlay.selectedKey()
+      : '';
+    var fp = filterLive + '|' + filterWave + '|' + filterText + '|' + filterFireTeamId + '|' + selectedFp + '\n' + displayFingerprint(filtered);
     if (fp === lastRenderFp) return;
     lastRenderFp = fp;
     renderTable(filtered);
     if (filtered.length === 0) {
-      listEl.innerHTML = emptyStateHtml;
+      listEl.innerHTML = filterLive ? emptyStateHtml : emptyStateAllHtml;
       return;
     }
     listEl.innerHTML = filtered.map(function (u) {
@@ -741,6 +863,14 @@ window.ATAKUnits = (function () {
         }
       }
 
+      var seenLabel = formatAgeFr(unitAgeSeconds(u));
+      if (statusClass !== 'linked' && seenLabel) {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--seen" title="Dernière liaison">' + esc(seenLabel) + '</span>');
+      }
+      if (statusClass === 'offline' && hasValidPosition(u)) {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--seen">Dernière position connue</span>');
+      }
+
       var tooltipParts = [];
       if (healthNorm !== 'ok' && healthNorm !== 'stable') tooltipParts.push('État : ' + healthLabel);
       if (fuel != null) tooltipParts.push('Carburant ' + fuel + '%');
@@ -807,16 +937,15 @@ window.ATAKUnits = (function () {
     listEl.querySelectorAll('.atak-unit-card').forEach(function (card) {
       card.addEventListener('click', function (ev) {
         if (ev.target.closest('a, button, [data-unit-more], [data-unit-vibrate]')) return;
-        var x = this.getAttribute('data-x');
-        var y = this.getAttribute('data-y');
-        if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
-          window.ATAKMap.centerOn(parseFloat(y), parseFloat(x));
-        }
+        focusUnitFromEl(this);
       });
     });
     bindVibrateButtons(listEl);
     if (window.ATAKUnitMenu && window.ATAKUnitMenu.bindListInteractions) {
       window.ATAKUnitMenu.bindListInteractions(listEl);
+    }
+    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.syncSelectionClass === 'function') {
+      window.ATAKReachOverlay.syncSelectionClass();
     }
   }
 
@@ -879,6 +1008,10 @@ window.ATAKUnits = (function () {
     return null;
   }
 
+  function getUnitByKey(key) {
+    return unitByRosterKey(key);
+  }
+
   function removeUnitLocal(id) {
     if (id == null || id === '') return;
     var sid = String(id);
@@ -932,12 +1065,16 @@ window.ATAKUnits = (function () {
     var btnAll = document.getElementById('atak-filter-all');
     var btnWave = document.getElementById('atak-filter-wave');
     if (filterEl) filterEl.addEventListener('input', function () { filterText = this.value; render(); });
-    if (btnLive) btnLive.addEventListener('click', function () {
-      filterLive = true;
-      btnLive.classList.add('active');
-      if (btnAll) btnAll.classList.remove('active');
-      render();
-    });
+    if (btnLive) {
+      btnLive.textContent = 'Récents';
+      btnLive.title = 'Contacts vus dans les quinze dernières minutes, y compris hors liaison';
+      btnLive.addEventListener('click', function () {
+        filterLive = true;
+        btnLive.classList.add('active');
+        if (btnAll) btnAll.classList.remove('active');
+        render();
+      });
+    }
     if (btnAll) btnAll.addEventListener('click', function () {
       filterLive = false;
       btnAll.classList.add('active');
@@ -989,11 +1126,18 @@ window.ATAKUnits = (function () {
     setUnits: setUnits,
     fetchUnits: fetchUnits,
     getUnitById: getUnitById,
+    getUnitByKey: getUnitByKey,
     getUnits: getUnits,
     removeUnitLocal: removeUnitLocal,
     setUnitOfflineLocal: setUnitOfflineLocal,
     forceRender: forceRender,
     hasValidPosition: hasValidPosition,
+    parseCoords: parseCoords,
+    formatGrid: formatGrid,
+    unitAgeSeconds: unitAgeSeconds,
+    formatAgeFr: formatAgeFr,
+    isRecentlySeen: isRecentlySeen,
+    isRecentPresence: isRecentPresence,
     resolveLiveStatus: resolveLiveStatus,
     setFireTeamFilter: setFireTeamFilter,
     getFireTeamFilter: function () { return filterFireTeamId; },
