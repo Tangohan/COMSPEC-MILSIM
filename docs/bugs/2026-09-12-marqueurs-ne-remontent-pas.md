@@ -44,6 +44,10 @@ Pack : Overwatch **1.5.54** · Athena **1.0.99** · liaison **2.0.32**. Relancer
 2. Sous ~5–10 s (au plus ~45 s au resync), le repère apparaît sur la carte du poste à la bonne grille — même si Effectifs est encore vide.
 3. Hub → Renvoyer les marqueurs carte : les repères déjà posés repartent.
 
+### Validation terrain — 13/09/2026
+
+Marqueurs confirmés visibles en jeu (Malden) : libellés (ex. TA1), formes colorées, icônes unitaires et zones. Voir aussi `docs/bugs/2026-09-13-ecoti-drawicon3d-chaine-nombre.md`.
+
 ## Statut
 
-corrigé (Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32)
+corrigé (Overwatch 1.5.54 · Athena 1.0.99 · liaison 2.0.32) — revalidé en jeu le 13/09/2026
