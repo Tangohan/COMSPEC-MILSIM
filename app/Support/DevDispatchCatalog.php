@@ -584,6 +584,15 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(523, '2026-09-12', 'Barre de liaison masquable et simulation désactivable', 'Sous la barre d’état du téléphone, la barre de liaison est plus compacte et laisse la boussole visible. Dans Paramètres, vous pouvez masquer cette barre. Une Simulation de liaison dégradée (désactivée par défaut) permet de reproduire pertes, fiabilité basse et coupures brèves ; quand elle est désactivée, l’affichage suit uniquement la vraie liaison', [
+                'Barre de liaison plus courte, à gauche, pour ne plus masquer la boussole',
+                'Paramètres : Afficher la barre de liaison (affichée par défaut)',
+                'Paramètres / Options : Simulation de liaison dégradée (désactivée par défaut)',
+            ], [
+                'Même réglages aussi dans Options → Extensions → COMSPEC Overwatch → Téléphone ATAK',
+            ], [], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.59 · Athena 1.0.102). Quittez Arma. Ouvrez le téléphone : vérifiez la boussole, masquez la barre, puis activez brièvement la simulation pour voir fiabilité et perte évoluer.',
+            ], 'Overwatch 1.5.59 · Athena 1.0.102'),
             $pr(501, '2026-09-12', 'Interface ATAK V2 sur la tablette', 'Une interface tablette V2 est disponible en option : carte satellite du terrain, dock Carte / Contacts / Messages / Ordres, et les mêmes actions de liaison que la tablette actuelle. Vous basculez depuis l’écran État, et votre choix est mémorisé pour la prochaine ouverture. L’ancienne tablette reste le défaut', [
                 'Interface V2 (bêta) : carte satellite, dock et panneaux Contacts / Messages / Ordres',
                 'Bascule depuis État → Interface V2, retour via Tablette ; choix mémorisé',

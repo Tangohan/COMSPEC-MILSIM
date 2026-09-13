@@ -46,6 +46,7 @@ final class PersonnelStructureChangeNotificationService
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private ?PersonnelPromotionCelebrationService $promotionCelebrationService = null,
+        private ?PersonnelOrgHistoryRecorder $orgHistoryRecorder = null,
     ) {
         $this->promotionCelebrationService ??= new PersonnelPromotionCelebrationService(
             $this->gradeRepository,
@@ -136,6 +137,20 @@ final class PersonnelStructureChangeNotificationService
         $changes = $this->diffSnapshots($before, $after);
         if ($changes === []) {
             return;
+        }
+
+        // Journal du dossier : même détection que l’e-mail (indépendant des préférences mail).
+        if ($this->orgHistoryRecorder !== null) {
+            try {
+                $this->orgHistoryRecorder->recordStructureChanges(
+                    $tenantId,
+                    $targetUserId,
+                    $actorUserId,
+                    $changes
+                );
+            } catch (\Throwable) {
+                // Ne bloque pas la notification.
+            }
         }
 
         $this->notify($tenantId, $targetUserId, $actorUserId, $changes);

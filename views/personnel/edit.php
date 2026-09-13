@@ -126,6 +126,7 @@ $editNavGroups = [
         'items' => [
             ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
             ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
+            ['id' => 'edit-visibilite', 'label' => 'Visibilité', 'show' => !empty($canManageVisibility)],
             ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
         ],
     ],
@@ -961,7 +962,7 @@ $editValidTabIds = implode(',', array_map(
         <?php endif; ?>
         </div>
 
-        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-notes'].includes(tab)">
+        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-visibilite','edit-notes'].includes(tab)">
         <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
@@ -1102,6 +1103,15 @@ $editValidTabIds = implode(',', array_map(
             </div>
           </div>
         </section>
+
+        <div x-show="tab === 'edit-visibilite'">
+        <?php
+        $visibilityTargetUserId = (int) ($targetUser['id'] ?? 0);
+        $visibilityStandaloneForm = false;
+        $visibilityPreviewBaseUrl = $visibilityPreviewBaseUrl ?? url('personnel/' . $visibilityTargetUserId);
+        require base_path('views/partials/personnel/visibility_admin_block.php');
+        ?>
+        </div>
 
         <section id="edit-notes" x-show="tab === 'edit-notes'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">

@@ -1274,6 +1274,7 @@ class Container
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
+            \App\Repositories\OrganizationVisibilityHistoryRepository::class => new \App\Repositories\OrganizationVisibilityHistoryRepository(),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
             \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),
             \App\Services\Personnel\RoleplayFollowupNotificationService::class => new \App\Services\Personnel\RoleplayFollowupNotificationService(
@@ -1282,6 +1283,10 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(TenantRepository::class),
+            ),
+            \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
+                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
+                self::get(\App\Repositories\RoleRepository::class)
             ),
             \App\Services\Personnel\PersonnelStructureChangeNotificationService::class => new \App\Services\Personnel\PersonnelStructureChangeNotificationService(
                 self::get(\App\Services\EmailService::class),
@@ -1293,11 +1298,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
-            ),
-            \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
-                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
-                self::get(\App\Repositories\RoleRepository::class),
-                self::get(\App\Repositories\GradeRepository::class)
+                null,
+                self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class),
             ),
             \App\Controllers\Admin\Organization\UserAdminController::class => new \App\Controllers\Admin\Organization\UserAdminController(
                 self::get(UserRepository::class),
@@ -2495,7 +2497,8 @@ class Container
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\OrbatChartTypeRepository::class),
-                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class)
+                self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
+                self::get(\App\Repositories\OrganizationVisibilityHistoryRepository::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),

@@ -24,7 +24,6 @@ if (_sentCount > 0) then {
     _lossPercent = (_lostCount / _sentCount) * 100;
 };
 
-// Plancher zone (intensité) — le compteur réseau réel est souvent vide
 private _zoneFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
 if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
     private _floor = _zoneFx getOrDefault ["packet_loss_floor", 0];
@@ -32,6 +31,16 @@ if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
     private _mult = _zoneFx getOrDefault ["packet_loss_multiplier", 1];
     if (!(_mult isEqualType 0) || {_mult <= 0}) then { _mult = 1; };
     _lossPercent = ((_lossPercent * _mult) max _floor) min 100;
+};
+
+if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive"
+    && {[] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive}
+) then {
+    private _sim = missionNamespace getVariable ["COMSPEC_LinkDegradeSimState", createHashMap];
+    if (!(_sim isEqualType createHashMap)) then { _sim = createHashMap; };
+    private _simFloor = _sim getOrDefault ["loss_floor", 18];
+    if (!(_simFloor isEqualType 0)) then { _simFloor = 18; };
+    _lossPercent = (_lossPercent max _simFloor) min 100;
 };
 
 private _result = createHashMap;

@@ -436,6 +436,26 @@ private _fnc_applyNet = {
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_show_link_strip", "CHECKBOX",
+    [
+        "Afficher la barre de liaison",
+        "Affiche sous la barre d’état du téléphone l’état OK/NOK, la sync, la fiabilité et la perte. Décochez pour libérer la boussole. Aussi dans ATAK → Paramètres."
+    ],
+    ["COMSPEC Overwatch", "Téléphone ATAK"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_link_degrade_sim", "CHECKBOX",
+    [
+        "Simulation de liaison dégradée",
+        "Simule pertes, fiabilité basse et coupures brèves vers le poste. Désactivé par défaut. Aussi dans ATAK → Paramètres. N’invente rien quand c’est désactivé : l’état affiché reste celui de la vraie liaison."
+    ],
+    ["COMSPEC Overwatch", "Téléphone ATAK"],
+    false
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_ecoti_max_dist", "SLIDER",
     ["Distance max. (m)", "Au-delà, les éléments ne sont plus projetés dans le champ de vision."],
     ["COMSPEC Overwatch", "Affichage situation"],
@@ -776,7 +796,7 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
 
 [
     "comspec_overwatch_roleplay_network_failures", "CHECKBOX",
-    ["Simulations réseau", "Active les délais, pertes de paquets et déconnexions temporaires. Les paramètres (latence, taux de perte) sont configurés sur le portail."],
+    ["Simulations réseau", "Active les délais, pertes de paquets et déconnexions temporaires (équivalent à Simulation de liaison dégradée dans Paramètres ATAK). Les intensités avancées restent configurables sur le portail."],
     ["COMSPEC Overwatch", "Roleplay"], false
 ] call CBA_fnc_addSetting;
 

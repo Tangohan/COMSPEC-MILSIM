@@ -139,6 +139,7 @@ $bootstrapFiles = [
     'user_ui_tours_migration.php',
     'operator_game_registry_migration.php',
     'personnel_org_history_migration.php',
+    'organization_visibility_status_migration.php',
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
     'personnel_function_kits_migration.php',
@@ -288,6 +289,7 @@ run_personnel_phase_rules_migration($pdo);
 run_user_ui_tours_migration($pdo);
 run_operator_game_registry_migration($pdo);
 run_personnel_org_history_migration($pdo);
+run_organization_visibility_status_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
 run_personnel_function_kits_migration($pdo);
