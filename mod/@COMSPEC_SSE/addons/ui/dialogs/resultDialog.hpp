@@ -1,5 +1,6 @@
 // Visionneuse de résultat SSE — présentation « dossier / feuille ».
 // RscText / RscButton / RscStructuredText : config.cpp du addon ui.
+// Chrome (bandeau, titres, pied, papier) : comspec_sse_fnc_getDocumentChrome.
 
 class COMSPEC_SSE_ResultDialog {
     idd = 93010;
@@ -9,7 +10,6 @@ class COMSPEC_SSE_ResultDialog {
     onUnload = "uiNamespace setVariable ['COMSPEC_SSE_ResultDisplay', displayNull];";
 
     class controlsBackground {
-        // Voile sombre (hors feuille)
         class Dim: RscText {
             idc = -1;
             x = safezoneXAbs;
@@ -18,7 +18,6 @@ class COMSPEC_SSE_ResultDialog {
             h = safezoneH;
             colorBackground[] = {0.02, 0.03, 0.04, 0.55};
         };
-        // Ombre de la feuille
         class PaperShadow: RscText {
             idc = -1;
             x = 0.275;
@@ -27,18 +26,44 @@ class COMSPEC_SSE_ResultDialog {
             h = 0.74;
             colorBackground[] = {0, 0, 0, 0.35};
         };
-        // Feuille
         class Paper: RscText {
-            idc = -1;
+            idc = 93019;
             x = 0.265;
             y = 0.11;
             w = 0.46;
             h = 0.74;
             colorBackground[] = {0.94, 0.91, 0.84, 0.98};
         };
-        // Bandeau classification
+        // Taches / plis (masqués par défaut — activés selon paper_style)
+        class StainA: RscText {
+            idc = 93024;
+            x = 0.29;
+            y = 0.24;
+            w = 0.09;
+            h = 0.07;
+            colorBackground[] = {0.35, 0.22, 0.1, 0.18};
+            show = 0;
+        };
+        class StainB: RscText {
+            idc = 93025;
+            x = 0.58;
+            y = 0.55;
+            w = 0.1;
+            h = 0.08;
+            colorBackground[] = {0.28, 0.18, 0.08, 0.16};
+            show = 0;
+        };
+        class FoldLine: RscText {
+            idc = 93026;
+            x = 0.34;
+            y = 0.42;
+            w = 0.32;
+            h = 0.004;
+            colorBackground[] = {0.2, 0.16, 0.1, 0.22};
+            show = 0;
+        };
         class ClassBand: RscText {
-            idc = -1;
+            idc = 93021;
             x = 0.265;
             y = 0.11;
             w = 0.46;
@@ -57,9 +82,8 @@ class COMSPEC_SSE_ResultDialog {
             sizeEx = 0.028;
             style = 2;
         };
-        // En-tête dossier
         class HeaderBar: RscText {
-            idc = -1;
+            idc = 93022;
             x = 0.265;
             y = 0.138;
             w = 0.46;
@@ -89,7 +113,6 @@ class COMSPEC_SSE_ResultDialog {
             colorText[] = {0.35, 0.3, 0.22, 1};
             sizeEx = 0.026;
         };
-        // Filet horizontal
         class Rule: RscText {
             idc = -1;
             x = 0.28;
@@ -98,9 +121,8 @@ class COMSPEC_SSE_ResultDialog {
             h = 0.002;
             colorBackground[] = {0.35, 0.28, 0.18, 0.55};
         };
-        // Pied de page
         class Footer: RscText {
-            idc = -1;
+            idc = 93023;
             x = 0.265;
             y = 0.78;
             w = 0.46;

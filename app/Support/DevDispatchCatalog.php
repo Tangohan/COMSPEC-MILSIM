@@ -268,6 +268,13 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(550, '2026-09-13', 'SSE : fiches et documents personnalisables', 'Le bureau et la feuille en jeu reprennent vos titres, bandeau, pied de page et aspect papier (propre, taché, froissé, jauni)', [
+                'Page Présentation des documents : modèles préfaits et textes entièrement modifiables, y compris la mention « Ne constitue pas une preuve… »',
+                'Aspects de papier réalistes pour l’aperçu bureau : propre, taché, froissé, jauni',
+                'En Eden et Zeus : module Présentation des documents SSE pour imposer le même modèle en mission',
+            ], [], [], ['atak', 'command'], [
+                'Mise à jour du portail et du pack jeu. Lancer les migrations une fois. Dans le bureau SSE, ouvrez Présentation. En mission, posez le module ou utilisez Zeus Enhanced.',
+            ], 'Portail · SSE / Overwatch'),
             $pr(547, '2026-09-13', 'Renseignement : entrée commandement et accès au poste', 'Le commandement ouvre le bureau renseignement sans code, gère les accès depuis Athena, et fixe le niveau de diffusion sur les fiches opérateurs', [
                 'Entrée sans code pour le commandement et les membres déjà habilités au renseignement',
                 'Page Accès renseignement dans le back-office : délivrance, révocation et suivi des codes temporaires',

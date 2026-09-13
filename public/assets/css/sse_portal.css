@@ -9152,3 +9152,146 @@ body.sse-lib-open { overflow: hidden; }
   white-space: nowrap;
   text-align: right;
 }
+
+/* Présentation documents — aspect papier */
+.sse-presentation-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(280px, 1.1fr) minmax(280px, 1.2fr);
+  align-items: start;
+}
+@media (max-width: 1200px) {
+  .sse-presentation-grid { grid-template-columns: 1fr 1fr; }
+  .sse-presentation-preview { grid-column: 1 / -1; }
+}
+@media (max-width: 800px) {
+  .sse-presentation-grid { grid-template-columns: 1fr; }
+}
+.sse-presentation-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.sse-presentation-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border, rgba(148,163,184,.25));
+  border-radius: 0.45rem;
+  background: var(--surface-2, #141a21);
+}
+.sse-presentation-item.is-active {
+  border-color: rgba(52, 211, 153, 0.45);
+  box-shadow: inset 3px 0 0 #34d399;
+}
+.sse-presentation-item__meta {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+.sse-presentation-item__actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+.sse-presentation-form .sse-form-grid-2,
+.sse-presentation-form .sse-form-grid-3 {
+  display: grid;
+  gap: 0.75rem;
+}
+.sse-presentation-form .sse-form-grid-2 { grid-template-columns: 1fr 1fr; }
+.sse-presentation-form .sse-form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 700px) {
+  .sse-presentation-form .sse-form-grid-2,
+  .sse-presentation-form .sse-form-grid-3 { grid-template-columns: 1fr; }
+}
+.sse-presentation-mission {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.35);
+}
+.sse-presentation-mission h3 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+.sse-presentation-mission p { margin: 0; font-size: 0.85rem; line-height: 1.45; }
+
+.sse-doc-paper__wear {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+}
+.sse-doc-paper__disclaimer {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 0.45rem 0.85rem 0.65rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: #57534e;
+  background: #f5f1e8;
+  border-top: 1px dashed rgba(87, 83, 78, 0.35);
+}
+.sse-doc-paper-style--clean {
+  background:
+    linear-gradient(180deg, #fffcf5 0%, #f7f1e4 100%);
+}
+.sse-doc-paper-style--stained {
+  background:
+    radial-gradient(ellipse 120px 80px at 18% 22%, rgba(120, 72, 32, 0.18), transparent 70%),
+    radial-gradient(ellipse 90px 60px at 78% 68%, rgba(90, 55, 25, 0.16), transparent 65%),
+    radial-gradient(ellipse 70px 50px at 55% 12%, rgba(140, 90, 40, 0.12), transparent 60%),
+    linear-gradient(165deg, #f3e6c8 0%, #e8d7b0 45%, #dfc9a0 100%);
+}
+.sse-doc-paper-style--stained .sse-doc-paper__wear {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 12% 80%, rgba(70, 40, 20, 0.14), transparent 40%),
+    radial-gradient(circle at 88% 18%, rgba(100, 60, 30, 0.1), transparent 35%);
+}
+.sse-doc-paper-style--crumpled {
+  background:
+    repeating-linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.08) 0 2px,
+      transparent 2px 7px
+    ),
+    repeating-linear-gradient(
+      28deg,
+      rgba(60, 45, 30, 0.05) 0 1px,
+      transparent 1px 9px
+    ),
+    linear-gradient(150deg, #efe6d2 0%, #e4d6b8 50%, #dcc9a8 100%);
+  transform: rotate(-0.35deg);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.18),
+    inset 0 0 40px rgba(80, 60, 30, 0.08);
+}
+.sse-doc-paper-style--crumpled .sse-doc-paper__wear {
+  opacity: 1;
+  background:
+    linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 48%, transparent 56%),
+    linear-gradient(40deg, transparent 30%, rgba(0,0,0,0.05) 50%, transparent 70%);
+}
+.sse-doc-paper-style--aged {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(180, 140, 70, 0.2), transparent 55%),
+    linear-gradient(180deg, #e8d9a8 0%, #d4bc82 55%, #c9ab6e 100%);
+  border-color: #b89a5c;
+}
+.sse-doc-paper-style--aged .sse-doc-paper__wear {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(90, 60, 20, 0.12), transparent 28%),
+    radial-gradient(circle at 92% 88%, rgba(70, 45, 15, 0.14), transparent 32%);
+}
+.sse-doc-paper-style--aged .sse-doc-paper__disclaimer,
+.sse-doc-paper-style--stained .sse-doc-paper__disclaimer,
+.sse-doc-paper-style--crumpled .sse-doc-paper__disclaimer {
+  background: transparent;
+}

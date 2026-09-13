@@ -314,6 +314,25 @@ final class ConfigurationUpdateProbes
     }
 
     /**
+     * Présentation documents SSE : satisfait si un modèle a été choisi / enregistré (updated_by renseigné).
+     */
+    public function hasSseDocumentChromeConfig(int $tenantId): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM sse_document_chrome_settings
+                 WHERE tenant_id = ? AND updated_by IS NOT NULL
+                 LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
+    /**
      * Décision humaine prise : roleplay sauvegardé (reviewed), scramble activé, ou domaine seedé (tenant neuf).
      */
     public function hasAtakIntelScrambleDecision(int $tenantId): bool

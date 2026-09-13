@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.568;
-        versionStr = "1.5.68";
-        versionAr[] = {1, 5, 68};
+        version = 1.569;
+        versionStr = "1.5.69";
+        versionAr[] = {1, 5, 69};
     };
 };
 
@@ -77,6 +77,7 @@ class CfgFunctions {
             class moduleSseCase {};
             class moduleSseProfile {};
             class moduleSseEquip {};
+            class moduleSseDocChrome {};
             class registerZenSseModules {};
             class giveSeekTerminal {};
             class medevacDialogShow {};

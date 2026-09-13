@@ -235,6 +235,7 @@ $navActive = static function (string $id) use ($activeNav): string {
             <?= $iwLink(url('atak/sse/validation'), $activeNav === 'validation' ? 'is-active' : '', '19', 'Files de validation', 'Décisions en attente d’arbitrage.', 'queue') ?>
             <?= $iwLink(url('atak/sse/rapports'), $activeNav === 'rapports' ? 'is-active' : '', '20', 'Rapports', 'Productions et bilans du bureau.', 'report') ?>
             <?= $iwLink(url('atak/sse/documents'), $activeNav === 'documents' ? 'is-active' : '', '21', 'Rédaction', 'Notes, flash et documents officiels.', 'write') ?>
+            <?= $iwLink(url('atak/sse/presentation'), $activeNav === 'presentation' ? 'is-active' : '', '21b', 'Présentation', 'Bandeau, pied de page et aspect papier des fiches.', 'write') ?>
             <?= $iwLink(url('atak/sse/bibliotheque'), $activeNav === 'bibliotheque' ? 'is-active' : '', '24', 'Mentions officielles', 'Bibliothèque de formulations validées.', 'library') ?>
             <?php if ($canGrant): ?>
                 <?= $iwLink(url('atak/sse/acces'), $activeNav === 'acces' ? 'is-active' : '', '22', 'Administration', 'Habilitations et codes d’accès temporaires.', 'admin') ?>

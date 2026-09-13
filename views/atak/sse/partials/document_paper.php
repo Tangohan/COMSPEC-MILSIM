@@ -35,11 +35,21 @@ $isValidated = in_array((string) ($document['status'] ?? ''), ['valide', 'archiv
 $isArchived = (string) ($document['status'] ?? '') === 'archive';
 $marks = \App\Support\SseDocumentMarkings::forDocument($document, $unitLabel);
 $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((string) ($document['classification'] ?? 'confidentiel'));
+$chrome = \App\Support\SseDocumentChromeCatalog::normalize(
+    is_array($documentChrome ?? null) ? $documentChrome : []
+);
+$paperStyle = (string) ($chrome['paper_style'] ?? 'clean');
+$orgLine = (string) ($chrome['org_line'] ?? 'ATHENA · COMPSEC');
+$accessNote = (string) ($chrome['access_note'] ?? 'L’accès est limité aux personnels habilités et inscrits au registre du bureau SSE.');
+$sealTop = (string) ($chrome['seal_top'] ?? 'BUREAU SSE');
+$sealBottom = (string) ($chrome['seal_bottom'] ?? 'RENSEIGNEMENT');
+$footerDisclaimer = (string) ($chrome['footer'] ?? 'Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement.');
 ?>
-<div class="sse-doc-paper-chrome" data-sse-doc-paper data-classification="<?= $h($classCode) ?>">
-    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
+<div class="sse-doc-paper-chrome" data-sse-doc-paper data-classification="<?= $h($classCode) ?>" data-paper-style="<?= $h($paperStyle) ?>">
+    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
+        <div class="sse-doc-paper__wear" aria-hidden="true"></div>
         <div class="sse-doc-paper__banner">
-            <span>(Classification de sécurité)</span>
+            <span><?= $h((string) ($chrome['banner'] ?? 'DIFFUSION RESTREINTE — EXPLOITATION TERRAIN')) ?></span>
             <strong><?= $h($classUpper) ?></strong>
             <span>Exemplaire <?= (int) $marks['copy_index'] ?>/<?= (int) $marks['copy_total'] ?></span>
         </div>
@@ -80,7 +90,7 @@ $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((strin
             <div class="sse-doc-paper__caveat">
                 <p class="sse-doc-paper__caveat-main"><?= $h($marks['channel']) ?></p>
                 <p class="sse-doc-paper__caveat-note">
-                    L’accès est limité aux personnels habilités et inscrits au registre du bureau SSE.
+                    <?= $h($accessNote) ?>
                 </p>
                 <ul class="sse-doc-paper__caveat-tags">
                     <?php foreach ($marks['caveats'] as $caveat): ?>
@@ -91,7 +101,7 @@ $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((strin
 
             <header class="sse-doc-paper__envelope">
                 <div class="sse-doc-paper__org">
-                    <p>ATHENA · COMPSEC</p>
+                    <p><?= $h($orgLine) ?></p>
                     <p class="sse-doc-paper__unit">UNITÉ : <?= $h($unitLabel) ?></p>
                     <p>SECTION : <?= $h($sectionLabel) ?></p>
                     <p class="sse-doc-paper__refno">N° <?= $h($ref) ?> / SSE / <?= $h(mb_strtoupper($typeLabel, 'UTF-8')) ?></p>
@@ -99,8 +109,8 @@ $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((strin
                 <div class="sse-doc-paper__seal" aria-hidden="true">
                     <span class="sse-doc-paper__seal-ring"></span>
                     <span class="sse-doc-paper__seal-core"><?= $h($marks['seal_initials']) ?></span>
-                    <span class="sse-doc-paper__seal-top">BUREAU SSE</span>
-                    <span class="sse-doc-paper__seal-bottom">RENSEIGNEMENT</span>
+                    <span class="sse-doc-paper__seal-top"><?= $h($sealTop) ?></span>
+                    <span class="sse-doc-paper__seal-bottom"><?= $h($sealBottom) ?></span>
                 </div>
                 <p class="sse-doc-paper__date">Le <?= $h($dateFr) ?></p>
             </header>
@@ -235,5 +245,6 @@ $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((strin
             <strong><?= $h($classUpper) ?></strong>
             <span>Page 1 sur <?= (int) $marks['pages'] ?></span>
         </div>
+        <p class="sse-doc-paper__disclaimer"><?= $h($footerDisclaimer) ?></p>
     </article>
 </div>

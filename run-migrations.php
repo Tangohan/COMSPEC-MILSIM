@@ -3858,6 +3858,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$sseDocumentPrefabsMigrate = require $root . '/bootstrap/sse_document_prefabs_migration.php';
+try {
+    echo "Migration sse_document_prefabs (SSE — présentation des documents)…\n";
+    $sseDocumentPrefabsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] sse_document_prefabs : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseCaseMapMigrate = require $root . '/bootstrap/atak_sse_case_map_migration.php';
 try {
     echo "Migration atak_sse_case_map (SSE — carte permanente des dossiers)…\n";
