@@ -53,9 +53,13 @@ use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrbatRosterPayload;
+use App\Support\OrgVisibilityCapabilities;
 use App\Support\Profile\PublicFlagCountryCatalog;
+use App\Support\VisibilityLevel;
 use App\Services\Admin\PlatformUserProfileService;
+use App\Services\Organization\OrgVisibilityService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
+use App\Repositories\OrganizationVisibilityHistoryRepository;
 
 class PersonnelController
 {
@@ -340,6 +344,9 @@ class PersonnelController
         $canSeeInactive = EffectifsLmsAccess::allows($gate) || EffectifsLmsAccess::canManageStatus($gate);
         $results = $this->userRepository->listPersonnelDirectoryRich($tenantId, $query, 150, $canSeeInactive);
 
+        $caps = OrgVisibilityCapabilities::fromGate($gate);
+        $results = $this->applyDirectoryVisibilityFilter($tenantId, $results, $caps);
+
         $userIds = [];
         $legacyRoleIdByUserId = [];
         foreach ($results as $row) {
@@ -403,6 +410,10 @@ class PersonnelController
         $isSelf = $currentUserId === (int) $target['id'];
         $uid = (int) $target['id'];
 
+        $realCaps = OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+        $previewAs = $this->normalizePreviewAs($request, $realCaps);
+        $viewCaps = $this->visibilityCapsForPreview($realCaps, $previewAs);
+
         if ($isSelf) {
             $this->personnelProfileRepository->ensureRecord($uid);
             $this->personnelExtrasRepository->ensureRecord($uid);
@@ -412,6 +423,29 @@ class PersonnelController
         $extras = $this->personnelExtrasRepository->getByUserId($uid, (int) $tenantId) ?? [];
         $profile = $this->personnelExtrasRepository->getProfileByUserId($uid);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid, (int) $tenantId);
+
+        $visibilityMeta = $this->personnelVisibilityMeta($personnelProfile);
+        $unitVisibility = $this->resolveUnitVisibilityForProfile((int) $tenantId, $personnelProfile);
+        if (!$isSelf) {
+            $probe = OrgVisibilityService::filterPersonnelRow([
+                'user_id' => $uid,
+                'visibility_level' => $visibilityMeta['visibility_level'],
+                'assignment_visibility' => $visibilityMeta['assignment_visibility'],
+                'anonymized_label' => $visibilityMeta['anonymized_label'],
+                'label' => (string) ($target['display_name'] ?? ''),
+                'display_name' => (string) ($target['display_name'] ?? ''),
+                'callsign' => (string) ($target['callsign'] ?? ''),
+                'unit_name' => null,
+            ], $viewCaps, $unitVisibility);
+            if ($probe === null) {
+                return $this->personnelMissingResponse(false);
+            }
+        }
+        $personnelAnonymizedForViewer = !$isSelf && $viewCaps->shouldAnonymizePersonnel($visibilityMeta['visibility_level']);
+        $assignmentRedactedForViewer = !$isSelf && (
+            ($unitVisibility === VisibilityLevel::HIDDEN && !$viewCaps->canSeeUnitLevel(VisibilityLevel::HIDDEN))
+            || $viewCaps->shouldRedactAssignment($visibilityMeta['assignment_visibility'], $unitVisibility)
+        );
         $latestEnlistment = $this->enlistmentRepository->findLatestBySubmitter((int) $tenantId, $uid);
         $civilIdentity = $this->resolveCivilIdentity($profile, $target, $latestEnlistment);
         $civilSourceLabel = match ($civilIdentity['source'] ?? null) {
@@ -431,9 +465,14 @@ class PersonnelController
 
         $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid);
         $assignments = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($assignments);
+        if ($assignmentRedactedForViewer) {
+            $assignments = $this->redactAssignmentsForViewer($assignments);
+        }
         $primaryAssignment = $assignments[0] ?? null;
         $primaryUnitFallbackName = null;
-        if ($primaryAssignment === null && !empty($personnelProfile['primary_unit_id'])) {
+        if ($assignmentRedactedForViewer) {
+            $primaryUnitFallbackName = 'Restreinte';
+        } elseif ($primaryAssignment === null && !empty($personnelProfile['primary_unit_id'])) {
             $urow = $this->unitRepository->findById((int) $personnelProfile['primary_unit_id'], (int) $tenantId);
             if ($urow) {
                 $primaryUnitFallbackName = (string) ($urow['name'] ?? '');
@@ -446,7 +485,12 @@ class PersonnelController
             $histRaw = $this->personnelAssignmentRepository->listAssignmentHistoryForTenantUser((int) $tenantId, $uid, 120);
             $histRaw = \App\Services\Personnel\PersonnelAssignmentHistoryCoalescer::coalesceForDisplay($histRaw);
             $personnelAssignmentHistory = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($histRaw);
-            $personnelAssignmentHistoryUnitTotals = $this->personnelAssignmentRepository->sumDurationDaysByUnit($personnelAssignmentHistory);
+            if ($assignmentRedactedForViewer) {
+                $personnelAssignmentHistory = $this->redactAssignmentsForViewer($personnelAssignmentHistory);
+                $personnelAssignmentHistoryUnitTotals = [];
+            } else {
+                $personnelAssignmentHistoryUnitTotals = $this->personnelAssignmentRepository->sumDurationDaysByUnit($personnelAssignmentHistory);
+            }
         }
 
         $commander = null;
@@ -480,6 +524,9 @@ class PersonnelController
         }
 
         $qualifications = $this->personnelQualificationRepository->listForUser($uid);
+        if (!$isSelf) {
+            $qualifications = $this->personnelQualificationRepository->filterForViewer($qualifications, $viewCaps);
+        }
         $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid);
         $trainingCertificates = $this->trainingCertificateRepository->listByUserId($uid, (int) $tenantId);
         $lmsEnrollmentsForPersonnel = [];
@@ -557,6 +604,7 @@ class PersonnelController
         $canStaffEdit = $this->canStaffEditPersonnel();
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
+        $canManageVisibility = $realCaps->managePersonnelVisibility || $realCaps->bypassAll;
         $rpDossierNeedsAttention = ($isSelf || $canStaffView || $canStaffEdit || $canSensitive)
             && RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
         $roleplayTimelineEvents = [];
@@ -590,6 +638,66 @@ class PersonnelController
         );
         $showEmailInContact = $canViewMemberEmail;
         $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
+
+        if ($personnelAnonymizedForViewer) {
+            $anonLabel = $visibilityMeta['anonymized_label'] !== ''
+                ? $visibilityMeta['anonymized_label']
+                : 'Personnel anonymisé';
+            $target['display_name'] = $anonLabel;
+            $target['callsign'] = null;
+            $target['avatar_url'] = null;
+            $target['athena_identifier'] = null;
+            $target['tenant_member_number'] = null;
+            $target['email'] = null;
+            $target['grade_id'] = null;
+            if (is_array($personnelProfile)) {
+                $personnelProfile['callsign'] = null;
+                $personnelProfile['character_name'] = $anonLabel;
+                $personnelProfile['character_portrait_path'] = null;
+                $personnelProfile['nickname_primary'] = null;
+                $personnelProfile['nicknames_json'] = null;
+                $personnelProfile['extra_callsigns_json'] = null;
+                $personnelProfile['matricule_internal'] = null;
+                $personnelProfile['command_notes'] = null;
+                $personnelProfile['rank_display'] = null;
+                $personnelProfile['rank_display_override'] = null;
+            }
+            $profile = is_array($profile) ? $profile : [];
+            $profile['first_name'] = '';
+            $profile['last_name'] = '';
+            $civilIdentity = ['first_name' => '', 'last_name' => '', 'source' => null];
+            $civilSourceLabel = '';
+            $grade = null;
+            $adminPanels = [];
+            $adminDataByPanel = [];
+            $serviceHistory = [];
+            $trainingCertificates = [];
+            $lmsEnrollmentsForPersonnel = [];
+            $roleplayTimelineEvents = [];
+            $personnelJobRoleAssignments = [];
+            $commander = null;
+            $commanderLabelsById = [];
+            $canStaffEdit = false;
+            $canStaffView = false;
+            $canSensitive = false;
+            $canAccessRhView = false;
+            $personnelViewMode = 'public';
+            $canEditNotes = false;
+            $canEditProfile = false;
+            $canViewCivil = false;
+            $canViewCivilSection = false;
+            $privatePersonnelIdentity = false;
+            $canViewCommandNotes = false;
+            $showMatriculePublic = false;
+            $showEmailInContact = false;
+            $redactPersonalPresentation = true;
+            $rpDossierNeedsAttention = false;
+            // Managers previewing still keep the visibility admin chrome.
+            if ($previewAs !== null) {
+                $canManageVisibility = $realCaps->managePersonnelVisibility || $realCaps->bypassAll;
+            }
+        }
+
         $memberNumberMeta = [
             'label' => TenantMemberNumberService::DEFAULT_LABEL,
             'enabled' => false,
@@ -921,6 +1029,19 @@ class PersonnelController
             'phaseTransitions' => $phaseTransitions,
             'armaSessionActivity' => $armaSessionActivity,
             'canStaffEdit' => $canStaffEdit,
+            'canManageVisibility' => $canManageVisibility,
+            'personnelVisibility' => $visibilityMeta,
+            'personnelVisibilityConsequence' => VisibilityLevel::consequence($visibilityMeta['visibility_level'], 'personnel'),
+            'personnelAssignmentVisibilityConsequence' => VisibilityLevel::consequence($visibilityMeta['assignment_visibility'], 'personnel'),
+            'personnelAnonymizedForViewer' => $personnelAnonymizedForViewer,
+            'assignmentRedactedForViewer' => $assignmentRedactedForViewer,
+            'visibilityPreviewAs' => $previewAs,
+            'visibilityLevelOptions' => [
+                VisibilityLevel::NORMAL => VisibilityLevel::label(VisibilityLevel::NORMAL),
+                VisibilityLevel::ANONYMIZED => VisibilityLevel::label(VisibilityLevel::ANONYMIZED),
+                VisibilityLevel::RESTRICTED => VisibilityLevel::label(VisibilityLevel::RESTRICTED),
+                VisibilityLevel::HIDDEN => VisibilityLevel::label(VisibilityLevel::HIDDEN),
+            ],
         ]);
     }
 
@@ -1387,6 +1508,10 @@ class PersonnelController
             }
         }
 
+        $editVisCaps = OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+        $canManageVisibility = $editVisCaps->managePersonnelVisibility || $editVisCaps->bypassAll;
+        $editVisMeta = $this->personnelVisibilityMeta(is_array($personnelProfile) ? $personnelProfile : null);
+
         return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
             'title' => 'Éditer le dossier',
@@ -1447,6 +1572,17 @@ class PersonnelController
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
             'backOfficePageCss' => ['personnel-dossier.css'],
+            'canManageVisibility' => $canManageVisibility,
+            'personnelVisibility' => $editVisMeta,
+            'personnelVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['visibility_level'], 'personnel'),
+            'personnelAssignmentVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['assignment_visibility'], 'personnel'),
+            'visibilityLevelOptions' => [
+                VisibilityLevel::NORMAL => VisibilityLevel::label(VisibilityLevel::NORMAL),
+                VisibilityLevel::ANONYMIZED => VisibilityLevel::label(VisibilityLevel::ANONYMIZED),
+                VisibilityLevel::RESTRICTED => VisibilityLevel::label(VisibilityLevel::RESTRICTED),
+                VisibilityLevel::HIDDEN => VisibilityLevel::label(VisibilityLevel::HIDDEN),
+            ],
+            'visibilityPreviewBaseUrl' => url('personnel/' . $this->personPathSegment($target)),
         ]);
     }
 
@@ -1756,6 +1892,29 @@ class PersonnelController
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
+
+        $visCaps = OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+        if ($visCaps->managePersonnelVisibility || $visCaps->bypassAll) {
+            if ($request->input('visibility_level') !== null) {
+                $data['visibility_level'] = VisibilityLevel::normalize((string) $request->input('visibility_level'));
+            }
+            if ($request->input('assignment_visibility') !== null) {
+                $data['assignment_visibility'] = VisibilityLevel::normalize((string) $request->input('assignment_visibility'));
+            }
+            if ($request->input('anonymized_label') !== null) {
+                $label = trim((string) $request->input('anonymized_label'));
+                $data['anonymized_label'] = $label !== '' ? $label : null;
+            }
+            $this->recordPersonnelVisibilityChanges(
+                $tenantId,
+                (int) $target['id'],
+                $existingProfile,
+                $data,
+                (int) $currentUser['id'],
+                trim((string) $request->input('visibility_change_reason', '')) ?: null
+            );
+        }
+
         if ($advancedEditActive) {
             $matriculeIn = trim((string) $request->input('matricule_internal'));
             if ($matriculeIn !== '') {
@@ -2184,6 +2343,72 @@ class PersonnelController
         return Response::redirect(url('account/portrait'));
     }
 
+    public function updateVisibility(Request $request, array $params = []): Response
+    {
+        $currentUser = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $wantsJson = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
+            || strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest'
+            || (string) $request->input('_ajax', '') === '1';
+
+        if (!$tenantId || !$currentUser) {
+            return $wantsJson
+                ? Response::json(['success' => false, 'message' => 'Authentification requise'], 401)
+                : Response::redirect(url('login'));
+        }
+        $caps = OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+        if (!$caps->managePersonnelVisibility && !$caps->bypassAll) {
+            return $wantsJson
+                ? Response::json(['success' => false, 'message' => 'Droits insuffisants'], 403)
+                : $this->personnelForbiddenResponse(true, url('personnel'));
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            return $wantsJson
+                ? Response::json(['success' => false, 'message' => 'Session expirée'], 403)
+                : Response::redirect(url('personnel'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
+        if (!$target) {
+            return $wantsJson
+                ? Response::json(['success' => false, 'message' => 'Fiche introuvable'], 404)
+                : $this->personnelMissingResponse(true);
+        }
+        $uid = (int) $target['id'];
+        $existing = $this->personnelProfileRepository->getByUserId($uid, $tenantId) ?? [];
+        $data = [
+            'visibility_level' => VisibilityLevel::normalize((string) $request->input('visibility_level', $existing['visibility_level'] ?? VisibilityLevel::NORMAL)),
+            'assignment_visibility' => VisibilityLevel::normalize((string) $request->input('assignment_visibility', $existing['assignment_visibility'] ?? VisibilityLevel::NORMAL)),
+            'anonymized_label' => trim((string) $request->input('anonymized_label', $existing['anonymized_label'] ?? '')),
+        ];
+        if ($data['anonymized_label'] === '') {
+            $data['anonymized_label'] = null;
+        }
+        $this->recordPersonnelVisibilityChanges(
+            $tenantId,
+            $uid,
+            $existing,
+            $data,
+            (int) $currentUser['id'],
+            trim((string) $request->input('visibility_change_reason', '')) ?: null
+        );
+        $this->personnelProfileRepository->update($uid, $data);
+        $meta = $this->personnelVisibilityMeta(array_merge($existing, $data));
+
+        if ($wantsJson) {
+            return Response::json([
+                'success' => true,
+                'message' => 'Visibilité mise à jour.',
+                'visibility' => $meta,
+                'consequence' => VisibilityLevel::consequence($meta['visibility_level'], 'personnel'),
+                'assignment_consequence' => VisibilityLevel::consequence($meta['assignment_visibility'], 'personnel'),
+            ]);
+        }
+        Session::flash('success', 'Visibilité mise à jour.');
+
+        return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+    }
+
     private function canStaffViewPersonnel(): bool
     {
         return Gate::getInstance()->allows('personnel.profile.view');
@@ -2197,6 +2422,228 @@ class PersonnelController
     private function canViewSensitivePersonnel(): bool
     {
         return Gate::getInstance()->allows('personnel.sensitive.view');
+    }
+
+    /**
+     * @param array<string, mixed>|null $profile
+     * @return array{visibility_level: string, assignment_visibility: string, anonymized_label: string}
+     */
+    private function personnelVisibilityMeta(?array $profile): array
+    {
+        $profile = is_array($profile) ? $profile : [];
+
+        return [
+            'visibility_level' => VisibilityLevel::normalize((string) ($profile['visibility_level'] ?? VisibilityLevel::NORMAL)),
+            'assignment_visibility' => VisibilityLevel::normalize((string) ($profile['assignment_visibility'] ?? VisibilityLevel::NORMAL)),
+            'anonymized_label' => trim((string) ($profile['anonymized_label'] ?? '')),
+        ];
+    }
+
+    private function resolveUnitVisibilityForProfile(int $tenantId, ?array $personnelProfile): string
+    {
+        $unitId = (int) ($personnelProfile['primary_unit_id'] ?? 0);
+        if ($unitId < 1 || $tenantId < 1) {
+            return VisibilityLevel::NORMAL;
+        }
+        $unit = $this->unitRepository->findById($unitId, $tenantId);
+        if (!$unit) {
+            return VisibilityLevel::NORMAL;
+        }
+        if (array_key_exists('visibility_level', $unit)) {
+            return VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''));
+        }
+
+        return VisibilityLevel::fromOrbatMaskMode((string) ($unit['orbat_mask_mode'] ?? ''));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param OrgVisibilityCapabilities $caps
+     * @return list<array<string, mixed>>
+     */
+    private function applyDirectoryVisibilityFilter(int $tenantId, array $rows, OrgVisibilityCapabilities $caps): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+        $userIds = [];
+        $unitIds = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['id'] ?? 0);
+            if ($uid > 0) {
+                $userIds[] = $uid;
+            }
+            $unitId = (int) ($row['primary_unit_id'] ?? 0);
+            if ($unitId > 0) {
+                $unitIds[$unitId] = true;
+            }
+        }
+        $visByUser = $this->unitRepository->personnelVisibilityByUserIdsForTenant($tenantId, $userIds);
+        $unitVisMap = [];
+        foreach (array_keys($unitIds) as $unitId) {
+            $unit = $this->unitRepository->findById((int) $unitId, $tenantId);
+            if (!$unit) {
+                $unitVisMap[(int) $unitId] = VisibilityLevel::NORMAL;
+                continue;
+            }
+            if (array_key_exists('visibility_level', $unit)) {
+                $unitVisMap[(int) $unitId] = VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''));
+            } else {
+                $unitVisMap[(int) $unitId] = VisibilityLevel::fromOrbatMaskMode((string) ($unit['orbat_mask_mode'] ?? ''));
+            }
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $uid = (int) ($row['id'] ?? 0);
+            $meta = $visByUser[$uid] ?? [
+                'visibility_level' => VisibilityLevel::NORMAL,
+                'assignment_visibility' => VisibilityLevel::NORMAL,
+                'anonymized_label' => '',
+            ];
+            $unitId = (int) ($row['primary_unit_id'] ?? 0);
+            $uVis = $unitVisMap[$unitId] ?? VisibilityLevel::NORMAL;
+            $member = [
+                'user_id' => $uid,
+                'visibility_level' => $meta['visibility_level'],
+                'assignment_visibility' => $meta['assignment_visibility'],
+                'anonymized_label' => $meta['anonymized_label'],
+                'label' => (string) ($row['display_name'] ?? ''),
+                'display_name' => (string) ($row['display_name'] ?? ''),
+                'callsign' => $row['callsign'] ?? null,
+                'character_name' => $row['character_name'] ?? null,
+                'photo' => $row['character_portrait_path'] ?? null,
+                'portrait' => $row['character_portrait_path'] ?? null,
+                'unit_name' => $row['unit_name'] ?? null,
+                'unit_path' => $row['unit_code'] ?? null,
+                'athena_identifier' => $row['athena_identifier'] ?? null,
+            ];
+            $filtered = OrgVisibilityService::filterPersonnelRow($member, $caps, $uVis);
+            if ($filtered === null) {
+                continue;
+            }
+            if (!empty($filtered['anonymized'])) {
+                $row['display_name'] = (string) ($filtered['display_name'] ?? 'Personnel anonymisé');
+                $row['callsign'] = null;
+                $row['character_name'] = $row['display_name'];
+                $row['character_portrait_path'] = null;
+                $row['avatar_url'] = null;
+                $row['athena_identifier'] = null;
+                $row['matricule_internal'] = null;
+                $row['tenant_member_number'] = null;
+                $row['anonymized'] = true;
+            }
+            if (!empty($filtered['assignment_redacted'])) {
+                $row['unit_name'] = 'Restreinte';
+                $row['unit_code'] = null;
+                $row['unit_blurb'] = null;
+                $row['assignment_redacted'] = true;
+            }
+            $row['visibility_level'] = $meta['visibility_level'];
+            $row['assignment_visibility'] = $meta['assignment_visibility'];
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $assignments
+     * @return list<array<string, mixed>>
+     */
+    private function redactAssignmentsForViewer(array $assignments): array
+    {
+        $out = [];
+        foreach ($assignments as $a) {
+            if (!is_array($a)) {
+                continue;
+            }
+            $a['unit_name'] = 'Restreinte';
+            $a['unit_code'] = null;
+            $a['role_name'] = 'Restreinte';
+            $a['assignment_redacted'] = true;
+            $a['commander_user_id'] = null;
+            $out[] = $a;
+        }
+
+        return $out;
+    }
+
+    private function normalizePreviewAs(Request $request, OrgVisibilityCapabilities $realCaps): ?string
+    {
+        if (!$realCaps->managePersonnelVisibility && !$realCaps->bypassAll) {
+            return null;
+        }
+        $preview = strtolower(trim((string) $request->query('preview_as', '')));
+
+        return in_array($preview, ['member', 'cadre', 'command'], true) ? $preview : null;
+    }
+
+    private function visibilityCapsForPreview(OrgVisibilityCapabilities $real, ?string $previewAs): OrgVisibilityCapabilities
+    {
+        if ($previewAs === null) {
+            return $real;
+        }
+        $caps = clone $real;
+        $caps->bypassAll = false;
+        $caps->managePersonnelVisibility = false;
+        $caps->viewVisibilityHistory = false;
+        if ($previewAs === 'member') {
+            $caps->viewRestrictedPersonnel = false;
+            $caps->viewHiddenPersonnel = false;
+            $caps->viewRestrictedUnits = false;
+            $caps->viewHiddenUnits = false;
+        } elseif ($previewAs === 'cadre') {
+            $caps->viewRestrictedPersonnel = true;
+            $caps->viewHiddenPersonnel = false;
+            $caps->viewRestrictedUnits = true;
+            $caps->viewHiddenUnits = false;
+        } else {
+            $caps->viewRestrictedPersonnel = true;
+            $caps->viewHiddenPersonnel = true;
+            $caps->viewRestrictedUnits = true;
+            $caps->viewHiddenUnits = true;
+        }
+
+        return $caps;
+    }
+
+    /**
+     * @param array<string, mixed> $existing
+     * @param array<string, mixed> $data
+     */
+    private function recordPersonnelVisibilityChanges(
+        int $tenantId,
+        int $subjectUserId,
+        array $existing,
+        array $data,
+        int $actorUserId,
+        ?string $reason
+    ): void {
+        try {
+            /** @var OrganizationVisibilityHistoryRepository $hist */
+            $hist = Container::get(OrganizationVisibilityHistoryRepository::class);
+        } catch (\Throwable) {
+            return;
+        }
+        foreach (['visibility_level', 'assignment_visibility', 'anonymized_label'] as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            $old = $existing[$field] ?? null;
+            $new = $data[$field];
+            if ($field === 'visibility_level' || $field === 'assignment_visibility') {
+                $old = VisibilityLevel::normalize(is_string($old) ? $old : null);
+                $new = VisibilityLevel::normalize(is_string($new) ? $new : null);
+            } else {
+                $old = $old !== null && trim((string) $old) !== '' ? trim((string) $old) : null;
+                $new = $new !== null && trim((string) $new) !== '' ? trim((string) $new) : null;
+            }
+            $hist->record($tenantId, 'personnel', $subjectUserId, $field, $old, $new, $actorUserId, $reason);
+        }
     }
 
     /**

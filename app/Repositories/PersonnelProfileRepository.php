@@ -13,9 +13,32 @@ class PersonnelProfileRepository
 {
     private PDO $pdo;
 
+    /** @var array<string, bool> */
+    private array $columnExistsCache = [];
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $this->columnExistsCache)) {
+            return $this->columnExistsCache[$key];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+            $this->columnExistsCache[$key] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->columnExistsCache[$key] = false;
+        }
+
+        return $this->columnExistsCache[$key];
     }
 
     public function getByUserId(int $userId, ?int $tenantId = null): ?array
@@ -175,12 +198,34 @@ class PersonnelProfileRepository
             'rp_arma_blood_type', 'rp_arma_blood_type_at',
             'current_phase_id',
         ];
+        if ($this->columnExists('personnel_profiles', 'visibility_level')) {
+            $allowed[] = 'visibility_level';
+        }
+        if ($this->columnExists('personnel_profiles', 'assignment_visibility')) {
+            $allowed[] = 'assignment_visibility';
+        }
+        if ($this->columnExists('personnel_profiles', 'anonymized_label')) {
+            $allowed[] = 'anonymized_label';
+        }
         $set = [];
         $params = [];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $data)) {
+                $value = $data[$key];
+                if ($key === 'visibility_level' || $key === 'assignment_visibility') {
+                    $value = \App\Support\VisibilityLevel::normalize(is_string($value) ? $value : null);
+                }
+                if ($key === 'anonymized_label') {
+                    $label = trim((string) ($value ?? ''));
+                    if (function_exists('mb_substr')) {
+                        $label = mb_substr($label, 0, 120);
+                    } else {
+                        $label = substr($label, 0, 120);
+                    }
+                    $value = $label !== '' ? $label : null;
+                }
                 $set[] = "`$key` = ?";
-                $params[] = $data[$key];
+                $params[] = $value;
             }
         }
         if (empty($set)) {

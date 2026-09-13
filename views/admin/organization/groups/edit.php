@@ -31,6 +31,16 @@ $sop = array_key_exists('show_on_public_page', $group) ? (int) $group['show_on_p
             <label for="code" class="block text-sm font-medium text-slate-700">Code</label>
             <input type="text" id="code" name="code" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="<?= htmlspecialchars($group['code'] ?? '') ?>">
         </div>
+        <?php $unitTypes = $unitTypes ?? config('units.types', []); $currentType = (string) ($group['type'] ?? 'group'); ?>
+        <div>
+            <label for="struct_type" class="block text-sm font-medium text-slate-700">Type de structure</label>
+            <select id="struct_type" name="struct_type" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
+                <?php foreach ($unitTypes as $typeId => $meta): ?>
+                <option value="<?= htmlspecialchars((string) $typeId) ?>" <?= (string) $typeId === $currentType ? 'selected' : '' ?>><?= htmlspecialchars((string) ($meta['label'] ?? $typeId)) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="mt-0.5 text-xs text-slate-500">Modifiable après création — aligné sur l’ORBAT.</p>
+        </div>
         <div>
             <label for="parent_id" class="block text-sm font-medium text-slate-700">Parent</label>
             <select id="parent_id" name="parent_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">

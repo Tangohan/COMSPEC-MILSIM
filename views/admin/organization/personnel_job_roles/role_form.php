@@ -51,7 +51,7 @@ $selectedSet = array_fill_keys($selectedPerm, true);
                 </div>
                 <div class="md:col-span-2">
                     <label class="mb-1 block text-xs font-semibold text-slate-600">Description</label>
-                    <input type="text" name="description" value="<?= htmlspecialchars((string) ($role['description'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-3 py-2 text-sm" maxlength="500">
+                    <textarea name="description" rows="5" class="w-full rounded border border-slate-200 px-3 py-2 text-sm" maxlength="100000"><?= htmlspecialchars((string) ($role['description'] ?? '')) ?></textarea>
                 </div>
                 <?php
                 $isSystemRole = !empty($role['is_system']);

@@ -219,6 +219,17 @@ $rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $pers
     </div>
     <?php endif; ?>
 
+    <?php if (!empty($canManageVisibility)): ?>
+    <div class="mt-4">
+      <?php
+        $visibilityTargetUserId = (int) ($targetUser['id'] ?? 0);
+        $visibilityStandaloneForm = true;
+        $visibilityPreviewBaseUrl = url('personnel/' . $visibilityTargetUserId) . '?view=rh';
+        require base_path('views/partials/personnel/visibility_admin_block.php');
+      ?>
+    </div>
+    <?php endif; ?>
+
     <?php
     $personnelFileNoticesIncludeRhSwitcher = false;
     $personnelFileNoticesIncludeOperatorTabs = false;
