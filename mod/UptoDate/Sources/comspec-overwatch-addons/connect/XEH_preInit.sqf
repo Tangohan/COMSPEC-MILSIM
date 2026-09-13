@@ -429,10 +429,48 @@ private _fnc_applyNet = {
     "comspec_overwatch_ecoti_building_cutaway", "CHECKBOX",
     [
         "Découpage d’étage (silhouette)",
-        "Quand un bâtiment est désigné : coupe la silhouette au plafond de l’étage choisi, met en évidence la dalle et marque les points intérieurs de cet étage. N’ouvre pas les murs (limite du moteur). Désactivé par défaut ; nécessite l’affichage situation. Menu ACE : Changer d’étage."
+        "Quand un bâtiment est désigné : coupe la silhouette au plafond de l’étage choisi, met en évidence la dalle et marque les points intérieurs de cet étage. N’ouvre pas les murs (limite du moteur). Désactivé par défaut ; nécessite l’affichage situation. Menu ACE : Changer d’étage ou Découper à la hauteur regardée."
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
     false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_theme", "LIST",
+    [
+        "Couleurs d’affichage situation",
+        "Couleur des badges, icônes, textes, contours de bâtiments et surbrillance des personnes sous JVN. « JVN (cyan clair) » reste le plus lisible de nuit."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    [
+        ["nvg", "lime", "amber", "white", "blue"],
+        ["JVN (cyan clair)", "Vert lime", "Ambre", "Blanc", "Bleu"],
+        0
+    ]
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_render_mode", "LIST",
+    [
+        "Rendu des pastilles",
+        "3D dans le paysage : pastilles collées au monde. 2D à l’écran : pastilles en calque HUD, décalées si elles se chevauchent, avec fondu selon la distance. Les silhouettes de bâtiments restent en 3D dans les deux cas."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    [
+        ["world3d", "screen2d"],
+        ["3D dans le paysage", "2D à l’écran (anti-chevauchement)"],
+        0
+    ]
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_show_unit_outline", "CHECKBOX",
+    [
+        "Surbrillance des personnes",
+        "Dessine un contour autour des alliés proches sous affichage situation, en plus du badge nom / distance."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
 ] call CBA_fnc_addSetting;
 
 [

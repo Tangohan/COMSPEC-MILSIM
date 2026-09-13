@@ -16,9 +16,18 @@ if (_msg isEqualTo "") exitWith {
     };
 };
 
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
+private _canTx = false;
+if (!isNil "comspec_overwatch_connect_fnc_canStartSync") then {
+    _canTx = [] call comspec_overwatch_connect_fnc_canStartSync;
+} else {
+    _canTx = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+};
+if (!_canTx) exitWith {
     if (!isNil "cTab_fnc_addNotification") then {
-        ["MSG", "Liaison Athena requise pour envoyer.", 4] call cTab_fnc_addNotification;
+        ["MSG", "Liaison au poste requise pour envoyer. Ouvrez Connexion Athena → Entrer.", 5] call cTab_fnc_addNotification;
+    };
+    if (!isNil "comspec_overwatch_connect_fnc_announce") then {
+        ["Liaison au poste requise pour envoyer un message.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
     };
 };
 

@@ -34,7 +34,10 @@ if (!(_orders isEqualType [])) then { _orders = []; };
 private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
 if (!(_dismissed isEqualType [])) then { _dismissed = []; };
 
+_dismissed = _dismissed apply { trim (str _x) };
+
 private _rows = [];
+private _seenIds = createHashMap;
 {
     if (!(_x isEqualType createHashMap)) then { continue };
     private _id = trim (str (_x getOrDefault ["id", ""]));
@@ -42,6 +45,9 @@ private _rows = [];
     // Normaliser l’id en chaîne (lbSetData + comparaisons).
     _x set ["id", _id];
     if (_id in _dismissed) then { continue };
+    // Filet anti-doublon si la mémoire locale contient encore deux fois le même id.
+    if (_seenIds getOrDefault [_id, false]) then { continue };
+    _seenIds set [_id, true];
     private _type = toUpper (_x getOrDefault ["type", "MOVE"]);
     if (_type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"]) then { continue };
     if (!isNil "comspec_overwatch_connect_fnc_orderConcernsPlayer") then {

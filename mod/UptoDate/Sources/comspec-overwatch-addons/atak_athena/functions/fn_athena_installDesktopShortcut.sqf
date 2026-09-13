@@ -132,6 +132,22 @@ private _shortcuts = [
 
     [
 
+        198736, 198737, 390,
+
+        "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa",
+
+        "Tutoriel / WIKI — liaison, connecté, sync et dépannage",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Tutoriel<br/>WIKI</t>",
+
+        "wiki",
+
+        155
+
+    ],
+
+    [
+
         198734, 198735, 270,
 
         "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa",
@@ -186,6 +202,10 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
 
     if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"}) exitWith {
         [] call comspec_overwatch_atak_athena_fnc_athena_openSettings;
+    };
+
+    if (_tab isEqualTo "wiki" || {_tab isEqualTo "tutoriel"} || {_tab isEqualTo "aide"} || {_tab isEqualTo "help"}) exitWith {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openWiki;
     };
 
     if (_tab isEqualTo "messages" || {_tab isEqualTo "comms"} || {_tab isEqualTo "messagerie"} || {_tab isEqualTo "radio"}) exitWith {

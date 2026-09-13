@@ -1,0 +1,5 @@
+﻿# Assets device (telephone / tablette)
+Copies depuis cTab NSWDG Edition (Fredipedia) — Workshop 2511318948.
+Licence d'origine cTab : GNU GPL v2.
+Noms fichiers prefixes comspec_* pour eviter les collisions avec le mod cTab.
+Voir CREDITS.md a la racine du mod.

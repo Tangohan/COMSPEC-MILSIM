@@ -16,6 +16,9 @@ if (_tab isEqualTo "resynch" || {_tab isEqualTo "resync"} || {_tab isEqualTo "re
 if (_tab isEqualTo "atak_settings" || {_tab isEqualTo "settings"} || {_tab isEqualTo "parametres"} || {_tab isEqualTo "paramètres"}) exitWith {
     [] call comspec_overwatch_atak_athena_fnc_athena_openSettings;
 };
+if (_tab isEqualTo "wiki" || {_tab isEqualTo "tutoriel"} || {_tab isEqualTo "aide"}) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openWiki;
+};
 
 // Formulaires dédiés (hors onglets panneau)
 if (_tab isEqualTo "briefing") exitWith {
@@ -33,7 +36,7 @@ if (_tab isEqualTo "chat" || {_tab isEqualTo "msg"}) then { _tab = "messages"; }
 if (_tab isEqualTo "phone" || {_tab isEqualTo "link"} || {_tab isEqualTo "callsign"} || {_tab isEqualTo "account"}) then { _tab = "liaison"; };
 if (_tab isEqualTo "orders") then { _tab = "order"; };
 if (_tab isEqualTo "photos") then { _tab = "photo"; };
-if (_tab isEqualTo "apps" || {_tab isEqualTo "hub"} || {_tab isEqualTo "bft"} || {_tab isEqualTo "status"} || {_tab isEqualTo "help"}) then { _tab = "all"; };
+if (_tab isEqualTo "apps" || {_tab isEqualTo "hub"} || {_tab isEqualTo "bft"} || {_tab isEqualTo "status"}) then { _tab = "all"; };
 if (_tab isEqualTo "radio" || {_tab isEqualTo "comms"} || {_tab isEqualTo "messagerie"}) then { _tab = "messages"; };
 
 // Messagerie canaux → app Messagerie COMSPEC (pas IceMan Group Messages)

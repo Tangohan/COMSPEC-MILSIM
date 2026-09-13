@@ -137,7 +137,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             colorBackground2[] = ATHENA_BTN_ACCENT;
             colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_homeAction";
-            tooltip = "Connexion, appairage ou état de la liaison.";
+            tooltip = "Si le compte est trouvé : ouvre le canal poste (Entrer). Sinon : formulaire de connexion.";
         };
 
         // Actions visibles une fois le compte lié (hors formulaire)
@@ -210,14 +210,14 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
                     y = QUOTE(COMSPEC_ATHENA_H(0.04));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(1.10));
-                    size = QUOTE(0.032);
-                    text = "<t color='#FFD27A' size='1.05'>Compte non connecté</t><br/><t color='#C0D0DC' size='0.95'>Préférez le code Appairer du portail, ou connectez-vous ci-dessous.</t>";
-                    colorBackground[] = {0.12, 0.08, 0.04, 0.94};
+                    h = QUOTE(COMSPEC_ATHENA_H(1.20));
+                    size = QUOTE(0.034);
+                    text = "<t color='#FFD27A' size='1.08'>Compte non connecté</t><br/><t color='#E8F2FA' size='1.0'>Préférez le code Appairer du portail, ou connectez-vous ci-dessous.</t>";
+                    colorBackground[] = {0.12, 0.08, 0.04, 0.96};
                     class Attributes
                     {
                         font = "RobotoCondensed";
-                        color = "#D8E0E8";
+                        color = "#E8F2FA";
                         align = "left";
                         valign = "top";
                         shadow = 1;
@@ -228,16 +228,16 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9802;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(1.22));
+                    y = QUOTE(COMSPEC_ATHENA_H(1.32));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.78));
-                    size = QUOTE(0.030);
-                    text = "<t color='#7CFF9A' size='1.05'>1 · Appairer</t><br/><t color='#C0D0DC' size='0.92'>Portail → Appairer → Générer un code. Collez-le ici, puis Lier (pas le code e-mail).</t>";
-                    colorBackground[] = {0.04, 0.10, 0.08, 0.92};
+                    size = QUOTE(0.032);
+                    text = "<t color='#7CFF9A' size='1.08'>1 · Appairer</t><br/><t color='#E8F2FA' size='0.98'>Portail → Appairer → Générer un code. Collez-le ici, puis Lier (pas le code e-mail).</t>";
+                    colorBackground[] = {0.04, 0.10, 0.08, 0.94};
                     class Attributes
                     {
                         font = "RobotoCondensed";
-                        color = "#D8E0E8";
+                        color = "#E8F2FA";
                         align = "left";
                         valign = "top";
                         shadow = 1;
@@ -295,15 +295,17 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
                     y = QUOTE(COMSPEC_ATHENA_H(3.28));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.62));
-                    size = QUOTE(0.028);
-                    text = "<t color='#C8D8E4' size='1.02'>2 · Ou compte Athena</t><br/><t color='#A8B8C4' size='0.90'>Mot de passe : Se connecter. Sans mot de passe : Code par e-mail, puis Valider le code reçu.</t>";
-                    colorBackground[] = {0, 0, 0, 0};
+                    h = QUOTE(COMSPEC_ATHENA_H(0.72));
+                    size = QUOTE(0.032);
+                    text = "<t color='#F0F6FA' size='1.08'>2 · Ou compte Athena</t><br/><t color='#E8F2FA' size='1.0'>Saisissez l’e-mail, choisissez un mode, puis validez (Entrée).</t>";
+                    colorBackground[] = {0.06, 0.08, 0.10, 0.94};
                     class Attributes
                     {
-                        font = "RobotoCondensedBold";
-                        color = "#C8D8E4";
+                        font = "RobotoCondensed";
+                        color = "#E8F2FA";
                         align = "left";
+                        valign = "top";
+                        shadow = 1;
                         size = "1";
                     };
                 };
@@ -311,7 +313,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9792;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(3.72));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.08));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
@@ -320,11 +322,41 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     autocomplete = "";
                     tooltip = "Adresse e-mail du compte Athena";
                 };
+                class BtnModePassword: COMSPEC_ATAK_Btn
+                {
+                    idc = 9810;
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.62));
+                    w = QUOTE(COMSPEC_ATHENA_W(1.40));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.26));
+                    text = "Mot de passe";
+                    tooltip = "Afficher le champ mot de passe";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "['mode_password'] call comspec_overwatch_atak_athena_fnc_athena_authAction";
+                };
+                class BtnModeOtp: COMSPEC_ATAK_Btn
+                {
+                    idc = 9811;
+                    x = QUOTE(COMSPEC_ATHENA_W(1.54));
+                    y = QUOTE(COMSPEC_ATHENA_H(4.62));
+                    w = QUOTE(COMSPEC_ATHENA_W(1.40));
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.26));
+                    text = "Code e-mail";
+                    tooltip = "Afficher le champ pour le code reçu par e-mail";
+                    colorBackground[] = ATHENA_BTN;
+                    colorBackground2[] = ATHENA_BTN;
+                    colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
+                    onButtonClick = "['mode_otp'] call comspec_overwatch_atak_athena_fnc_athena_authAction";
+                };
                 class PasswordEdit: RscEdit
                 {
                     idc = 9793;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.26));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.18));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
@@ -332,13 +364,14 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     colorText[] = {0.94, 0.95, 0.96, 1};
                     autocomplete = "";
                     password = 1;
-                    tooltip = "Mot de passe Athena";
+                    show = 0;
+                    tooltip = "Mot de passe Athena — Entrée pour se connecter";
                 };
                 class OtpEdit: RscEdit
                 {
                     idc = 9794;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.26));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.18));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     sizeEx = QUOTE(0.032);
@@ -346,17 +379,18 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                     colorText[] = {0.94, 0.95, 0.96, 1};
                     autocomplete = "";
                     show = 0;
-                    tooltip = "Code temporaire reçu par e-mail";
+                    tooltip = "Code reçu par e-mail — Entrée pour valider";
                 };
                 class BtnLogin: COMSPEC_ATAK_Btn
                 {
                     idc = 9795;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.82));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.72));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.48));
                     size = QUOTE(COMSPEC_ATHENA_H(0.30));
                     text = "Se connecter";
+                    show = 0;
                     tooltip = "Connexion avec l’adresse e-mail et le mot de passe Athena";
                     colorBackground[] = ATHENA_BTN_OK;
                     colorBackground2[] = ATHENA_BTN_OK;
@@ -368,12 +402,13 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9796;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.40));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.72));
                     w = QUOTE(COMSPEC_ATHENA_W(1.40));
-                    h = QUOTE(COMSPEC_ATHENA_H(0.46));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.28));
-                    text = "Code par e-mail";
-                    tooltip = "Recevoir un code temporaire sur votre boîte e-mail Athena";
+                    h = QUOTE(COMSPEC_ATHENA_H(0.48));
+                    size = QUOTE(COMSPEC_ATHENA_H(0.26));
+                    text = "Recevoir le code";
+                    show = 0;
+                    tooltip = "Envoie un code temporaire sur votre boîte e-mail Athena";
                     colorBackground[] = ATHENA_BTN;
                     colorBackground2[] = ATHENA_BTN;
                     colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
@@ -382,26 +417,26 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 class BtnOtpOk: COMSPEC_ATAK_Btn
                 {
                     idc = 9797;
-                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(4.82));
-                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
+                    x = QUOTE(COMSPEC_ATHENA_W(1.54));
+                    y = QUOTE(COMSPEC_ATHENA_H(5.72));
+                    w = QUOTE(COMSPEC_ATHENA_W(1.40));
                     h = QUOTE(COMSPEC_ATHENA_H(0.48));
-                    size = QUOTE(COMSPEC_ATHENA_H(0.30));
-                    text = "Valider le code reçu";
+                    size = QUOTE(COMSPEC_ATHENA_H(0.26));
+                    text = "Valider le code";
                     show = 0;
                     colorBackground[] = ATHENA_BTN_OK;
                     colorBackground2[] = ATHENA_BTN_OK;
                     colorBackgroundFocused[] = ATHENA_BTN_OK_F;
                     onButtonClick = "['otp_ok'] call comspec_overwatch_atak_athena_fnc_athena_authAction";
-                    tooltip = "Valide uniquement le code temporaire reçu par e-mail (pas le code Appairer)";
+                    tooltip = "Valide le code reçu par e-mail (pas le code Appairer)";
                     class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
                 class BtnSteam: COMSPEC_ATAK_Btn
                 {
                     idc = 9798;
-                    x = QUOTE(COMSPEC_ATHENA_W(1.54));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.40));
-                    w = QUOTE(COMSPEC_ATHENA_W(1.40));
+                    x = QUOTE(COMSPEC_ATHENA_W(0.06));
+                    y = QUOTE(COMSPEC_ATHENA_H(6.28));
+                    w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     size = QUOTE(COMSPEC_ATHENA_H(0.28));
                     text = "Steam";
@@ -415,7 +450,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
                 {
                     idc = 9803;
                     x = QUOTE(COMSPEC_ATHENA_W(0.06));
-                    y = QUOTE(COMSPEC_ATHENA_H(5.96));
+                    y = QUOTE(COMSPEC_ATHENA_H(6.82));
                     w = QUOTE(COMSPEC_ATHENA_W(2.88));
                     h = QUOTE(COMSPEC_ATHENA_H(0.46));
                     size = QUOTE(COMSPEC_ATHENA_H(0.28));

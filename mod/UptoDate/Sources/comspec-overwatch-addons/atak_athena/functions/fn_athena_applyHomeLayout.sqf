@@ -35,7 +35,14 @@ private _fncPos = {
 private _linked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 private _steamRaw = missionNamespace getVariable ["COMSPEC_SteamLinked", nil];
 private _steamOk = if (isNil "_steamRaw") then { false } else { _steamRaw isEqualTo true };
-private _allOk = _linked && {_steamOk};
+private _athenaName = trim (str (missionNamespace getVariable ["comspec_profile_name", ""]));
+if (_athenaName isEqualTo "" || {(toLower _athenaName) in ["<null>", "any", "nil"]}) then { _athenaName = ""; };
+private _armaName = if (!isNull player) then { trim (name player) } else { "" };
+if (_athenaName isNotEqualTo "" && {_armaName isNotEqualTo ""} && {(toLower _athenaName) isEqualTo (toLower _armaName)}) then {
+    _athenaName = "";
+};
+// Compte connecté = prêt + identité Athena. Steam facultatif.
+private _allOk = _linked && {_athenaName isNotEqualTo ""};
 private _authState = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
 private _ready = _authState isEqualTo "READY" || {_linked};
 
@@ -79,10 +86,12 @@ if (_allOk) then {
         private _fGap = ((_fh * 0.012) max 0.0025);
         private _fFull = (_fw - (2 * _fPad)) max 0.04;
         private _fHalf = ((_fFull - _fGap) / 2) max 0.03;
-        private _hintH = if (_ready) then { (_fh * 0.16) max 0.036 } else { (_fh * 0.11) max 0.028 };
+        // Hauteurs plus généreuses : les aides 2 lignes ne doivent plus être coupées.
+        private _hintH = if (_ready) then { (_fh * 0.17) max 0.040 } else { (_fh * 0.15) max 0.038 };
         private _pairH = (_fh * 0.12) max 0.030;
-        private _eH = (_fh * 0.055) max 0.018;
-        private _bH = (_fh * 0.052) max 0.017;
+        private _acctH = (_fh * 0.12) max 0.032;
+        private _eH = (_fh * 0.052) max 0.017;
+        private _bH = (_fh * 0.050) max 0.016;
         private _fy = _fGap;
 
         private _fncForm = {
@@ -106,40 +115,103 @@ if (_allOk) then {
         [_group, 9801, [_fPad, _fy, _fFull, _bH], _showEnter] call _fncPos;
         if (_showEnter) then { _fy = _fy + _bH + _fGap; };
 
-        [_group, 9804, [_fPad, _fy, _fFull, (_fh * 0.075) max 0.022], true] call _fncPos;
-        _fy = _fy + ((_fh * 0.075) max 0.022) + _fGap;
+        [_group, 9804, [_fPad, _fy, _fFull, _acctH], true] call _fncPos;
+        _fy = _fy + _acctH + _fGap;
         [_group, 9792, [_fPad, _fy, _fFull, _eH], true] call _fncPos;
         _fy = _fy + _eH + (_fGap * 0.8);
 
-        // Mot de passe XOR code e-mail — ne jamais forcer les deux au même endroit.
-        private _otpMode = missionNamespace getVariable ["comspec_overwatch_auth_otp_mode", false];
-        private _otpOkProbe = [_group, 9797] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
-        if (!_otpMode && {!isNull _otpOkProbe} && {ctrlShown _otpOkProbe}) then { _otpMode = true; };
-        if (_otpMode) then {
-            [_group, 9793, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
-            [_group, 9794, [_fPad, _fy, _fFull, _eH], true] call _fncPos;
-        } else {
-            [_group, 9794, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
-            [_group, 9793, [_fPad, _fy, _fFull, _eH], true] call _fncPos;
-        };
-        _fy = _fy + _eH + _fGap;
-
-        if (_otpMode) then {
-            [_group, 9795, [_fPad, _fy, _fFull, _bH], false] call _fncPos;
-            [_group, 9797, [_fPad, _fy, _fFull, _bH], true] call _fncPos;
-        } else {
-            [_group, 9797, [_fPad, _fy, _fFull, _bH], false] call _fncPos;
-            [_group, 9795, [_fPad, _fy, _fFull, _bH], true] call _fncPos;
-        };
+        // Choix du mode : Mot de passe | Code e-mail
+        [_group, 9810, [_fPad, _fy, _fHalf, _bH], true] call _fncPos;
+        [_group, 9811, [_fPad + _fHalf + _fGap, _fy, _fHalf, _bH], true] call _fncPos;
         _fy = _fy + _bH + _fGap;
-        private _otpAsk = [_group, 9796] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
-        if (!isNull _otpAsk) then {
-            _otpAsk ctrlSetText (if (_otpMode) then { "Revenir au mot de passe" } else { "Code par e-mail" });
+
+        private _loginMode = missionNamespace getVariable ["comspec_overwatch_auth_login_mode", ""];
+        if (!(_loginMode isEqualType "")) then { _loginMode = ""; };
+        _loginMode = toLower _loginMode;
+        if (!(_loginMode in ["", "password", "otp"])) then { _loginMode = ""; };
+        // Compat : ancien drapeau OTP
+        if (_loginMode isEqualTo "" && {missionNamespace getVariable ["comspec_overwatch_auth_otp_mode", false]}) then {
+            _loginMode = "otp";
+            missionNamespace setVariable ["comspec_overwatch_auth_login_mode", "otp", false];
         };
-        [_group, 9796, [_fPad, _fy, _fHalf, _bH], true] call _fncPos;
-        [_group, 9798, [_fPad + _fHalf + _fGap, _fy, _fHalf, _bH], true] call _fncPos;
+        missionNamespace setVariable ["comspec_overwatch_auth_otp_mode", _loginMode isEqualTo "otp", false];
+
+        private _modePass = _loginMode isEqualTo "password";
+        private _modeOtp = _loginMode isEqualTo "otp";
+
+        private _btnModePass = [_group, 9810] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+        private _btnModeOtp = [_group, 9811] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+        if (!isNull _btnModePass) then {
+            _btnModePass ctrlSetText "Mot de passe";
+            _btnModePass ctrlSetBackgroundColor (if (_modePass) then { [0.06, 0.28, 0.14, 1] } else { [0.16, 0.16, 0.16, 1] });
+        };
+        if (!isNull _btnModeOtp) then {
+            _btnModeOtp ctrlSetText "Code e-mail";
+            _btnModeOtp ctrlSetBackgroundColor (if (_modeOtp) then { [0.06, 0.28, 0.14, 1] } else { [0.16, 0.16, 0.16, 1] });
+        };
+
+        // Champ conditionnel + boutons d’action
+        if (_modePass) then {
+            [_group, 9793, [_fPad, _fy, _fFull, _eH], true] call _fncPos;
+            [_group, 9794, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
+            _fy = _fy + _eH + _fGap;
+            [_group, 9795, [_fPad, _fy, _fFull, _bH], true] call _fncPos;
+            [_group, 9796, [_fPad, _fy, _fHalf, _bH], false] call _fncPos;
+            [_group, 9797, [_fPad + _fHalf + _fGap, _fy, _fHalf, _bH], false] call _fncPos;
+            _fy = _fy + _bH + _fGap;
+        } else {
+            if (_modeOtp) then {
+                [_group, 9793, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
+                [_group, 9794, [_fPad, _fy, _fFull, _eH], true] call _fncPos;
+                _fy = _fy + _eH + _fGap;
+                private _otpAsk = [_group, 9796] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+                if (!isNull _otpAsk) then { _otpAsk ctrlSetText "Recevoir le code"; };
+                [_group, 9795, [_fPad, _fy, _fFull, _bH], false] call _fncPos;
+                [_group, 9796, [_fPad, _fy, _fHalf, _bH], true] call _fncPos;
+                [_group, 9797, [_fPad + _fHalf + _fGap, _fy, _fHalf, _bH], true] call _fncPos;
+                _fy = _fy + _bH + _fGap;
+            } else {
+                [_group, 9793, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
+                [_group, 9794, [_fPad, _fy, _fFull, _eH], false] call _fncPos;
+                [_group, 9795, [_fPad, _fy, _fFull, _bH], false] call _fncPos;
+                [_group, 9796, [_fPad, _fy, _fHalf, _bH], false] call _fncPos;
+                [_group, 9797, [_fPad + _fHalf + _fGap, _fy, _fHalf, _bH], false] call _fncPos;
+            };
+        };
+
+        [_group, 9798, [_fPad, _fy, _fFull, _bH], true] call _fncPos;
         _fy = _fy + _bH + _fGap;
         [_group, 9803, [_fPad, _fy, _fFull, _bH], true] call _fncPos;
+
+        // Entrée = valider le champ actif (mot de passe / code / appairage)
+        {
+            private _ed = [_group, _x] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
+            if (isNull _ed) then { continue };
+            if (!isNil {_ed getVariable "COMSPEC_AuthEnterWired"}) then { continue };
+            _ed setVariable ["COMSPEC_AuthEnterWired", true];
+            _ed ctrlAddEventHandler ["KeyDown", {
+                params ["_ctrl", "_key"];
+                if (!(_key isEqualTo 28 || {_key isEqualTo 156})) exitWith { false };
+                private _idc = ctrlIDC _ctrl;
+                switch (_idc) do {
+                    case 9799: { ["pair"] call comspec_overwatch_atak_athena_fnc_athena_authAction; };
+                    case 9793: { ["password"] call comspec_overwatch_atak_athena_fnc_athena_authAction; };
+                    case 9794: { ["otp_ok"] call comspec_overwatch_atak_athena_fnc_athena_authAction; };
+                    case 9792: {
+                        private _mode = missionNamespace getVariable ["comspec_overwatch_auth_login_mode", ""];
+                        if (_mode isEqualTo "password") then {
+                            ["password"] call comspec_overwatch_atak_athena_fnc_athena_authAction;
+                        } else {
+                            if (_mode isEqualTo "otp") then {
+                                ["otp_ok"] call comspec_overwatch_atak_athena_fnc_athena_authAction;
+                            };
+                        };
+                    };
+                    default {};
+                };
+                true
+            }];
+        } forEach [9792, 9793, 9794, 9799];
     };
 };
 
@@ -152,19 +224,24 @@ if (!isNull _linkBtn) then {
     if (_allOk) then {
         private _linkState = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
         if (_linkState isEqualTo "linked") then {
-            _linkBtn ctrlSetText "Liaison OK — canal ouvert";
+            _linkBtn ctrlSetText "Connecté — canal ouvert";
             _linkBtn ctrlSetBackgroundColor [0.06, 0.28, 0.14, 1];
         } else {
-            _linkBtn ctrlSetText "Compte lié — canal interrompu";
+            _linkBtn ctrlSetText "Compte connecté — canal interrompu";
             _linkBtn ctrlSetBackgroundColor [0.32, 0.18, 0.06, 1];
         };
     } else {
-        if (_ready) then {
-            _linkBtn ctrlSetText "Compte trouvé";
-            _linkBtn ctrlSetBackgroundColor [0.08, 0.22, 0.18, 1];
+        if (_linked) then {
+            _linkBtn ctrlSetText "En liaison — compte à ouvrir";
+            _linkBtn ctrlSetBackgroundColor [0.28, 0.18, 0.06, 1];
         } else {
-            _linkBtn ctrlSetText "Connexion Athena";
-            _linkBtn ctrlSetBackgroundColor [0.16, 0.16, 0.16, 1];
+            if (_ready) then {
+                _linkBtn ctrlSetText "Compte trouvé — Entrer";
+                _linkBtn ctrlSetBackgroundColor [0.08, 0.22, 0.18, 1];
+            } else {
+                _linkBtn ctrlSetText "Connexion Athena";
+                _linkBtn ctrlSetBackgroundColor [0.16, 0.16, 0.16, 1];
+            };
         };
     };
 };

@@ -1,0 +1,261 @@
+/*
+    Préremplit le dialog SSE (identité Eden / inventaire cible).
+*/
+if (!hasInterface) exitWith {};
+
+private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+if (isNull _disp) then { _disp = findDisplay 9991; };
+if (isNull _disp) exitWith {};
+
+private _status = _disp displayCtrl 9505;
+lbClear _status;
+{
+    _x params ["_code", "_label"];
+    private _i = _status lbAdd _label;
+    _status lbSetData [_i, _code];
+} forEach [
+    ["civil", "Civil"],
+    ["combattant", "Combattant"],
+    ["detenu", "Détenu"],
+    ["prioritaire", "Personne prioritaire"]
+];
+_status lbSetCurSel 0;
+
+private _circ = _disp displayCtrl 9506;
+lbClear _circ;
+{
+    _x params ["_code", "_label"];
+    private _i = _circ lbAdd _label;
+    _circ lbSetData [_i, _code];
+} forEach [
+    ["controle", "Contrôle"],
+    ["perquisition", "Perquisition"],
+    ["reddition", "Reddition"],
+    ["autre", "Autre"]
+];
+_circ lbSetCurSel 0;
+
+private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
+private _weaponsLines = [];
+private _equipmentLines = [];
+private _statusGuess = "civil";
+
+// Le préremplissage vaut aussi pour une personne décédée (exploitation de corps) :
+// « alive » ne sert plus qu’à choisir le libellé affiché.
+if (!isNull _target) then {
+    private _edenLast = _target getVariable ["COMSPEC_SSE_LastName", ""];
+    private _edenFirst = _target getVariable ["COMSPEC_SSE_FirstName", ""];
+    private _edenAlias = _target getVariable ["COMSPEC_SSE_Alias", ""];
+    private _nat = _target getVariable ["COMSPEC_SSE_Nationality", ""];
+    private _lang = _target getVariable ["COMSPEC_SSE_Language", ""];
+
+    // Repli : identité générée par @COMSPEC_SSE (section), si le pont Eden n’a pas encore tourné.
+    if (
+        _edenLast isEqualTo ""
+        && {_edenFirst isEqualTo ""}
+        && {_edenAlias isEqualTo ""}
+        && {!isNil "comspec_sse_fnc_getSection"}
+    ) then {
+        if (!isNil "comspec_sse_fnc_ensureGenerated") then {
+            [_target] call comspec_sse_fnc_ensureGenerated;
+        };
+        private _idSec = [_target, "identity"] call comspec_sse_fnc_getSection;
+        if (!isNil "_idSec" && {_idSec isEqualType createHashMap}) then {
+            private _full = _idSec getOrDefault ["name", ""];
+            _edenAlias = _idSec getOrDefault ["alias", ""];
+            _edenFirst = _idSec getOrDefault ["first_name", ""];
+            _edenLast = _idSec getOrDefault ["last_name", ""];
+            if (_edenFirst isEqualTo "" && {_edenLast isEqualTo ""} && {_full isNotEqualTo ""}) then {
+                private _parts = _full splitString " ";
+                if ((count _parts) > 1) then {
+                    _edenFirst = _parts select 0;
+                    _edenLast = (_parts select [1, (count _parts) - 1]) joinString " ";
+                } else {
+                    _edenFirst = _full;
+                };
+            };
+            if (_nat isEqualTo "") then { _nat = _idSec getOrDefault ["nationality", ""]; };
+            if (_lang isEqualTo "") then { _lang = _idSec getOrDefault ["language", ""]; };
+            if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
+                [_target, true] call comspec_sse_fnc_syncIdentityBridgeVars;
+            };
+        };
+    };
+
+    // Dernier filet : découper name _unit en prénom/nom (plus en alias seul).
+    if (_edenLast isEqualTo "" && {_edenFirst isEqualTo ""} && {_edenAlias isEqualTo ""}) then {
+        private _nm = name _target;
+        if (_nm isNotEqualTo "" && { _nm isNotEqualTo "Error: No unit" }) then {
+            private _parts = _nm splitString " ";
+            if ((count _parts) > 1) then {
+                _edenFirst = _parts select 0;
+                _edenLast = (_parts select [1, (count _parts) - 1]) joinString " ";
+            } else {
+                _edenAlias = _nm;
+            };
+        };
+    };
+    (_disp displayCtrl 9501) ctrlSetText _edenLast;
+    (_disp displayCtrl 9502) ctrlSetText _edenFirst;
+    (_disp displayCtrl 9503) ctrlSetText _edenAlias;
+
+    (_disp displayCtrl 9507) ctrlSetText _nat;
+    (_disp displayCtrl 9508) ctrlSetText _lang;
+
+    private _primary = primaryWeapon _target;
+    private _handgun = handgunWeapon _target;
+    private _secondary = secondaryWeapon _target;
+    if (_primary isNotEqualTo "") then {
+        _weaponsLines pushBackUnique (getText (configFile >> "CfgWeapons" >> _primary >> "displayName"));
+        _statusGuess = "combattant";
+    };
+    if (_handgun isNotEqualTo "") then {
+        _weaponsLines pushBackUnique (getText (configFile >> "CfgWeapons" >> _handgun >> "displayName"));
+        _statusGuess = "combattant";
+    };
+    if (_secondary isNotEqualTo "") then {
+        _weaponsLines pushBackUnique (getText (configFile >> "CfgWeapons" >> _secondary >> "displayName"));
+        _statusGuess = "combattant";
+    };
+
+    {
+        private _cls = _x;
+        private _dn = getText (configFile >> "CfgWeapons" >> _cls >> "displayName");
+        if (_dn isEqualTo "") then { _dn = getText (configFile >> "CfgMagazines" >> _cls >> "displayName"); };
+        if (_dn isEqualTo "") then { _dn = _cls; };
+        if (_dn isNotEqualTo "") then { _equipmentLines pushBackUnique _dn; };
+    } forEach (items _target);
+
+    // ACE restrain → détenu
+    if (!isNil "ace_captives_fnc_isHandcuffed") then {
+        if ([_target] call ace_captives_fnc_isHandcuffed) then {
+            _statusGuess = "detenu";
+        };
+    } else {
+        if (_target getVariable ["ace_captives_isHandcuffed", false]) then {
+            _statusGuess = "detenu";
+        };
+    };
+
+    private _etat = if (alive _target) then { "" } else { " — personne décédée" };
+    private _cible = trim (format ["%1 %2", _edenFirst, _edenLast]);
+    if (_cible isEqualTo "") then { _cible = _edenAlias; };
+    if (_cible isEqualTo "") then { _cible = name _target; };
+    if (_cible isEqualTo "" || {_cible find "Error:" >= 0}) then { _cible = "personne visée"; };
+    (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
+        "<t align='center' size='0.64' color='#c8eadc'>Cible : %1%2 — inventaire et statut préremplis si disponibles.</t>",
+        _cible,
+        _etat
+    ];
+};
+
+for "_i" from 0 to (lbSize _status) - 1 do {
+    if ((_status lbData _i) isEqualTo _statusGuess) exitWith {
+        _status lbSetCurSel _i;
+    };
+};
+
+private _wTxt = if ((count _weaponsLines) > 0) then {
+    format ["<t size='0.64' color='#e8f4f0'>Armes : %1</t>", _weaponsLines joinString ", "]
+} else {
+    "<t size='0.64' color='#c8eadc'>Aucune arme détectée.</t>"
+};
+private _eTxt = if ((count _equipmentLines) > 0) then {
+    private _sample = _equipmentLines select [0, (count _equipmentLines) min 8];
+    format ["<br/><t size='0.62' color='#c8eadc'>Équipement : %1</t>", _sample joinString ", "]
+} else {
+    ""
+};
+(_disp displayCtrl 9511) ctrlSetStructuredText parseText (_wTxt + _eTxt);
+
+uiNamespace setVariable ["COMSPEC_SsePerson_WeaponsCache", _weaponsLines];
+uiNamespace setVariable ["COMSPEC_SsePerson_EquipmentCache", _equipmentLines];
+
+// --- Constat de terrain (ACE Medical) ---
+private _med = createHashMap;
+if (!isNull _target) then {
+    _med = [_target] call comspec_overwatch_connect_fnc_sseCollectMedical;
+};
+uiNamespace setVariable ["COMSPEC_SsePerson_Medical", _med];
+
+private _medTxt = "<t size='0.62' color='#a8c8bc'>Aucune personne visée — constat indisponible.</t>";
+if (_med isEqualType createHashMap && {(count _med) > 0}) then {
+    private _etat = _med getOrDefault ["etat", "inconnu"];
+    private _col = switch (_etat) do {
+        case "decede": { "#c88a8a" };
+        case "cardiac_arrest";
+        case "critical": { "#e09a7e" };
+        case "unconscious";
+        case "wounded": { "#e0d27e" };
+        default { "#7ee0a0" };
+    };
+    private _rows = [format [
+        "<t size='0.62' color='#b8ddd0'>État</t>  <t size='0.62' color='%1'>%2</t>",
+        _col,
+        _med getOrDefault ["etat_label", "Inconnu"]
+    ]];
+    private _pouls = _med getOrDefault ["pouls", -1];
+    if (_pouls > 0) then {
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Pouls</t>  <t size='0.62' color='#e8fff4'>%1/min</t>", _pouls];
+    };
+    private _sang = _med getOrDefault ["sang", -1];
+    if (_sang >= 0 && {_sang < 100}) then {
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Volémie</t>  <t size='0.62' color='#e8fff4'>≈ %1%2</t>", _sang, "%"];
+    };
+    private _les = _med getOrDefault ["lesions", []];
+    if ((_les isEqualType []) && {(count _les) > 0}) then {
+        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Lésions</t>  <t size='0.62' color='#e8fff4'>%1</t>", _les joinString ", "];
+    };
+    _medTxt = _rows joinString "<br/>";
+
+    // Les localisations alimentent « signes distinctifs » si le champ est vide.
+    if ((_les isEqualType []) && {(count _les) > 0}) then {
+        private _marksCtrl = _disp displayCtrl 9509;
+        if ((trim (ctrlText _marksCtrl)) isEqualTo "") then {
+            _marksCtrl ctrlSetText format ["Blessures apparentes : %1", _les joinString ", "];
+        };
+    };
+};
+(_disp displayCtrl 9521) ctrlSetStructuredText parseText _medTxt;
+
+// Nouvelle fiche : aucun échantillon, aucune signature — sauf reprise après un relevé.
+private _resume = uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false];
+if (!_resume) then {
+    uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
+    uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+};
+// Dossier actif de l'élément : hérité sans ressaisie. À défaut, dernier code utilisé.
+private _active = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
+if (_active isEqualTo "") then {
+    _active = profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""];
+};
+(_disp displayCtrl 9518) ctrlSetText _active;
+
+// Snapshot identité dès le préremplissage (avant masquage par l’accueil).
+private _idCache = uiNamespace getVariable ["COMSPEC_SsePerson_IdentityCache", []];
+if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
+    {
+        _x params ["_idc", "_idx"];
+        private _ctrl = _disp displayCtrl _idc;
+        if (!isNull _ctrl) then { _ctrl ctrlSetText (_idCache select _idx); };
+    } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
+} else {
+    uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
+        trim (ctrlText (_disp displayCtrl 9501)),
+        trim (ctrlText (_disp displayCtrl 9502)),
+        trim (ctrlText (_disp displayCtrl 9503)),
+        trim (ctrlText (_disp displayCtrl 9504)),
+        trim (ctrlText (_disp displayCtrl 9507)),
+        trim (ctrlText (_disp displayCtrl 9508))
+    ]];
+};
+
+// Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
+if (_resume) then {
+    uiNamespace setVariable ["COMSPEC_SsePerson_ResumeCollect", false];
+    [3] call comspec_overwatch_connect_fnc_sseTerminalPage;
+} else {
+    [0] call comspec_overwatch_connect_fnc_sseTerminalPage;
+};

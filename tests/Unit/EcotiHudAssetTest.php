@@ -27,6 +27,9 @@ final class EcotiHudAssetTest extends TestCase
         $bldg = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiDrawBuilding.sqf'
         );
+        $badge = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiDrawBadge.sqf'
+        );
         $active = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiIsActive.sqf'
         );
@@ -51,52 +54,44 @@ final class EcotiHudAssetTest extends TestCase
         $cutSave = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_ecotiCutawaySave.sqf'
         );
+        $themeSave = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_ecotiThemeSave.sqf'
+        );
         $atakCfg = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/config.cpp'
         );
 
         self::assertStringContainsString('comspec_overwatch_ecoti_hud', $pre);
         self::assertStringContainsString('Affichage situation (JVN)', $pre);
-        self::assertStringContainsString('false', $pre);
-        self::assertStringContainsString('comspec_overwatch_ecoti_show_outline', $pre);
-        self::assertStringContainsString('comspec_overwatch_ecoti_show_route', $pre);
+        self::assertStringContainsString('comspec_overwatch_ecoti_theme', $pre);
+        self::assertStringContainsString('comspec_overwatch_ecoti_show_unit_outline', $pre);
         self::assertStringContainsString('Découpage d’étage (silhouette)', $pre);
-        self::assertStringNotContainsString('(à venir)', $pre);
         self::assertStringContainsString('class ecotiInit', $cfg);
-        self::assertStringContainsString('class ecotiDraw', $cfg);
         self::assertStringContainsString('class ecotiDrawBadge', $cfg);
-        self::assertStringContainsString('class ecotiIlluminateZone', $cfg);
-        self::assertStringContainsString('class ecotiApplyHudSetting', $cfg);
-        self::assertStringContainsString('class ecotiApplyCutawaySetting', $cfg);
-        self::assertStringContainsString('class ecotiCycleFloor', $cfg);
-        self::assertStringContainsString('1.5.56', $cfg);
-        self::assertStringContainsString('1.0.101', $atakCfg);
-        self::assertStringContainsString('class athena_ecotiHudSave', $atakCfg);
-        self::assertStringContainsString('class athena_ecotiCutawaySave', $atakCfg);
+        self::assertStringContainsString('class ecotiThemeColors', $cfg);
+        self::assertStringContainsString('class ecotiDrawUnitOutline', $cfg);
+        self::assertStringContainsString('class ecotiRefreshBuildingFootprint', $cfg);
+        self::assertStringContainsString('class ecotiCutAtLook', $cfg);
+        self::assertStringContainsString('class ecotiApplyThemeSetting', $cfg);
+        self::assertStringContainsString('1.5.60', $cfg);
+        self::assertStringContainsString('1.0.108', $atakCfg);
+        self::assertStringContainsString('class athena_ecotiThemeSave', $atakCfg);
         self::assertStringContainsString('ecotiInit', $post);
-        self::assertStringContainsString('COMSPEC_EcotiHudEnabled', $post);
-        self::assertStringContainsString('COMSPEC_EcotiCutawayEnabled', $post);
+        self::assertStringContainsString('COMSPEC_EcotiTheme', $post);
         self::assertStringContainsString('currentVisionMode', $active);
         self::assertStringContainsString('comspec_overwatch_ecoti_hud", false', $avail);
         self::assertStringContainsString('FPANO_ECOTI_PATCH', $fpano);
-        self::assertStringContainsString('ecotiDrawBadge', $draw);
-        self::assertStringContainsString('ecotiDrawBuilding', $draw);
-        self::assertStringContainsString('ecotiDrawRoute', $draw);
-        self::assertStringContainsString('ecotiDrawOutline', $draw);
-        self::assertStringContainsString('COMSPEC_EcotiCutawayFloor', $bldg);
-        self::assertStringContainsString('buildingPos', $bldg);
-        self::assertStringContainsString('COMSPEC_EcotiMarkBuilding', $ace);
-        self::assertStringContainsString('COMSPEC_EcotiCycleFloor', $ace);
-        self::assertStringContainsString('COMSPEC_EcotiIlluminate', $ace);
-        self::assertStringContainsString('COMSPEC_EcotiRouteAdd', $ace);
-        self::assertStringContainsString('idc = 9862', $page);
-        self::assertStringContainsString('idc = 9871', $page);
-        self::assertStringContainsString('Affichage situation (JVN)', $page);
-        self::assertStringContainsString('Découpage d’étage', $page);
-        self::assertStringContainsString('Activé sous JVN', $settings);
-        self::assertStringContainsString('Activé (bâtiment désigné)', $settings);
+        self::assertStringContainsString('ecotiDrawUnitOutline', $draw);
+        self::assertStringContainsString('ecotiThemeColors', $draw);
+        self::assertStringContainsString('ecotiRefreshBuildingFootprint', $bldg);
+        self::assertStringContainsString('PuristaSemibold', $badge);
+        self::assertStringContainsString('COMSPEC_EcotiCutAtLook', $ace);
+        self::assertStringContainsString('idc = 9873', $page);
+        self::assertStringContainsString('Couleurs situation (JVN)', $page);
+        self::assertStringContainsString('JVN (cyan clair)', $settings);
         self::assertStringContainsString('COMSPEC_EcotiHudEnabled', $save);
         self::assertStringContainsString('ecotiApplyCutawaySetting', $cutSave);
+        self::assertStringContainsString('ecotiApplyThemeSetting', $themeSave);
 
         $ids = array_column((new AtakBridgeModulesService())->catalog(), 'id');
         self::assertContains('ecoti_hud', $ids);

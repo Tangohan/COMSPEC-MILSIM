@@ -87,7 +87,7 @@ private _activeLabel = [_active] call _labelFor;
 
 if (!isNull _lblChannel) then {
     _lblChannel ctrlSetStructuredText parseText format [
-        "<t align='center' size='0.95'>Canal actif : <t color='#7fd6f0'>%1</t></t>",
+        "<t align='center' size='1.05' color='#F0F6FA'>Canal actif : <t color='#9AE8FF'>%1</t></t>",
         _activeLabel
     ];
 };
@@ -105,9 +105,9 @@ private _filtered = _all select {
 
 lbClear _lbMessages;
 if (_filtered isEqualTo []) then {
-    private _idx = _lbMessages lbAdd "Aucun message sur ce canal pour le moment.";
+    private _idx = _lbMessages lbAdd "Aucun message sur ce canal.";
     _lbMessages lbSetData [_idx, ""];
-    _lbMessages lbSetColor [_idx, [0.62, 0.68, 0.72, 1]];
+    _lbMessages lbSetColor [_idx, [0.72, 0.78, 0.82, 1]];
 } else {
     private _myCs = "";
     if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
@@ -125,25 +125,26 @@ if (_filtered isEqualTo []) then {
         if (_isMine) then { _from = "Vous"; };
 
         private _preview = _body;
-        if ((count _preview) > 72) then { _preview = (_preview select [0, 72]) + "…"; };
+        if ((count _preview) > 56) then { _preview = (_preview select [0, 56]) + "…"; };
 
         private _who = if (_isMine) then {
-            format ["Vous · %1", _timeStr]
+            format ["Vous  ·  %1", _timeStr]
         } else {
             if (_from isEqualTo "Poste" || {(toLower _from) find "poste" >= 0} || {(toLower _from) find "toc" >= 0}) then {
-                format ["Du poste · %1", _timeStr]
+                format ["Du poste  ·  %1", _timeStr]
             } else {
-                format ["De %1 · %2", _from, _timeStr]
+                format ["De %1  ·  %2", _from, _timeStr]
             };
         };
-        private _line = format ["%1  |  %2", _who, _preview];
+        // Deux lignes lisibles dans la hauteur de rangée.
+        private _line = format ["%1    %2", _who, _preview];
         private _idx = _lbMessages lbAdd _line;
         _lbMessages lbSetData [_idx, str _id];
         _lbMessages lbSetTooltip [_idx, format ["%1%2%3", _who, endl, _body]];
         if (_isMine) then {
-            _lbMessages lbSetColor [_idx, [0.55, 0.88, 0.95, 1]];
+            _lbMessages lbSetColor [_idx, [0.65, 0.92, 1, 1]];
         } else {
-            _lbMessages lbSetColor [_idx, [0.90, 0.93, 0.88, 1]];
+            _lbMessages lbSetColor [_idx, [0.95, 0.96, 0.94, 1]];
         };
     } forEach _filtered;
 

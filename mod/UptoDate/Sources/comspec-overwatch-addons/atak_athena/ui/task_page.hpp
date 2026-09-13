@@ -155,14 +155,23 @@ class COMSPEC_ATAK_Task: ATAK_Message
             idc = 9907;
             x = QUOTE(COMSPEC_TASK_W(0.08));
             y = QUOTE(COMSPEC_TASK_H(6.66));
-            w = QUOTE(COMSPEC_TASK_W(2.84));
+            w = QUOTE(COMSPEC_TASK_W(1.38));
             h = QUOTE(COMSPEC_TASK_H(0.46));
-            size = QUOTE(COMSPEC_TASK_H(0.30));
+            size = QUOTE(COMSPEC_TASK_H(0.28));
             text = "Actualiser";
+            tooltip = "Relire les ordres du poste sans créer de doublons.";
             colorBackground[] = TASK_BTN;
             colorBackground2[] = TASK_BTN;
             colorBackgroundFocused[] = TASK_BTN_F;
             onButtonClick = "if (!isNil 'comspec_overwatch_connect_fnc_pollOrders') then { [] call comspec_overwatch_connect_fnc_pollOrders; }; [] call comspec_overwatch_atak_athena_fnc_athena_updateTask";
+        };
+        class BtnClearHistory: BtnRefresh
+        {
+            idc = 9909;
+            x = QUOTE(COMSPEC_TASK_W(1.54));
+            text = "Vider l'historique";
+            tooltip = "Retirer de la liste les ordres déjà refusés, terminés ou annulés.";
+            onButtonClick = "['CLEAR_HISTORY'] call comspec_overwatch_atak_athena_fnc_athena_taskRespond";
         };
     };
 };

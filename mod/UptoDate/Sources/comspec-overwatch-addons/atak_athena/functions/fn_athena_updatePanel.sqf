@@ -124,15 +124,33 @@ if (_fn isEqualTo "") then { _fn = "—"; };
 
 if (_unit isEqualTo "") then { _unit = "—"; };
 
+if (_tenant isEqualTo "") then { _tenant = "—"; };
+
+// Identité Athena réelle (pas le pseudo Arma). Steam est facultatif.
+private _athenaName = _fullName;
+private _armaName = if (!isNull player) then { [name player] call _fncClean } else { "" };
+if (_athenaName isNotEqualTo "" && {_armaName isNotEqualTo ""} && {(toLower _athenaName) isEqualTo (toLower _armaName)}) then {
+    _athenaName = "";
+};
+private _hasAthenaIdentity = _athenaName isNotEqualTo "";
+// Compte connecté = canal prêt + identité fiche. Steam n’est plus obligatoire.
+private _allOk = _linked && {_hasAthenaIdentity};
+
+if (_first isEqualTo "" || {_last isEqualTo ""}) then {
+    if (_hasAthenaIdentity) then {
+        private _bits = _athenaName splitString " ";
+        if ((count _bits) >= 2) then {
+            if (_first isEqualTo "") then { _first = _bits select 0; };
+            if (_last isEqualTo "") then { _last = (_bits select [1, (count _bits) - 1]) joinString " "; };
+        } else {
+            if (_last isEqualTo "") then { _last = _athenaName; };
+        };
+    };
+};
+
 if (_first isEqualTo "") then { _first = "—"; };
 
 if (_last isEqualTo "") then { _last = "—"; };
-
-if (_tenant isEqualTo "") then { _tenant = "—"; };
-
-
-
-private _allOk = _linked && {_steamOk};
 
 
 
@@ -267,72 +285,86 @@ if (_allOk) then {
     if (!isNull _authHint) then {
 
         private _lines = [];
+        private _hintOkBg = false;
 
-        if (_authState isEqualTo "READY") then {
-
-            _lines pushBack "<t color='#7dffb0'>Environnement prêt</t>";
-
-            if (_fullName isNotEqualTo "") then {
-
-                _lines pushBack format ["<t color='#e8f4f0'>%1</t>", _fullName];
-
+        if (_linked) then {
+            // Canal ouvert vers le poste, mais fiche compte pas complète → à clarifier.
+            _lines pushBack "<t color='#7dffb0' size='1.05'>En liaison avec le poste</t>";
+            _lines pushBack "<t color='#FFD27A' size='1.05'>Compte Athena non connecté</t>";
+            _lines pushBack "<t color='#E8F2FA' size='1.0'>Le poste peut vous voir (indicatif), mais le prénom et le nom du compte ne sont pas chargés — d’où le pseudo de jeu.</t>";
+            if (!_steamOk) then {
+                _lines pushBack "<t color='#FFB0A8' size='0.95'>Steam non associé (facultatif) — e-mail ou Appairer suffisent.</t>";
             };
-
-            if (_cs isNotEqualTo "") then {
-
-                _lines pushBack format ["<t color='#c8e8dc'>Indicatif %1</t>", _cs];
-
-            };
-
-            _lines pushBack "<t color='#8aa0b4' size='0.92'>Appuyez sur Entrer pour ouvrir le canal poste.</t>";
-
+            _lines pushBack "<t color='#E8F2FA' size='1.0'>Appuyez sur Entrer, ou reconnectez-vous (Appairer / e-mail).</t>";
+            _hintOkBg = true;
         } else {
+            if (_authState isEqualTo "READY") then {
 
-            if (_authState in ["AUTHENTICATING","RESOLVING_ACCOUNT","RESOLVING_TENANT","SYNCING_PROFILE","LOADING_BRANDING","LOADING_CONFIGURATION","CONNECTING_C2","RESTORING_SESSION","CONTACTING_ATHENA"]) then {
+                _lines pushBack "<t color='#7dffb0'>Environnement prêt</t>";
 
-                _lines pushBack "<t color='#7aa89a'>Synchronisation en cours…</t>";
+                if (_athenaName isNotEqualTo "") then {
+
+                    _lines pushBack format ["<t color='#e8f4f0'>%1</t>", _athenaName];
+
+                };
+
+                if (_cs isNotEqualTo "") then {
+
+                    _lines pushBack format ["<t color='#c8e8dc'>Indicatif %1</t>", _cs];
+
+                };
+
+                _lines pushBack "<t color='#E8F2FA' size='1.0'>Appuyez sur Entrer pour ouvrir le canal poste.</t>";
+                _hintOkBg = true;
 
             } else {
 
-                if (_authState isEqualTo "AWAITING_OTP" || {missionNamespace getVariable ["comspec_overwatch_auth_otp_mode", false]}) then {
+                if (_authState in ["AUTHENTICATING","RESOLVING_ACCOUNT","RESOLVING_TENANT","SYNCING_PROFILE","LOADING_BRANDING","LOADING_CONFIGURATION","CONNECTING_C2","RESTORING_SESSION","CONTACTING_ATHENA"]) then {
 
-                    _lines pushBack "<t color='#7aa89a'>Code e-mail en attente</t>";
-
-                    _lines pushBack "<t color='#8aa0b4' size='0.92'>Saisissez le code reçu, puis Valider le code reçu.</t>";
+                    _lines pushBack "<t color='#9EE0C0'>Synchronisation en cours…</t>";
 
                 } else {
 
-                    if (!_steamOk) then { _lines pushBack "<t color='#FF8A80'>Steam non associé</t>"; };
+                    if (_authState isEqualTo "AWAITING_OTP" || {missionNamespace getVariable ["comspec_overwatch_auth_otp_mode", false]}) then {
 
-                    _lines pushBack "<t color='#FFD27A'>Compte non connecté</t>";
+                        _lines pushBack "<t color='#9EE0C0'>Code e-mail en attente</t>";
 
-                    _lines pushBack "<t color='#8aa0b4' size='0.92'>Appairer (Lier), e-mail (Se connecter), ou Steam.</t>";
+                        _lines pushBack "<t color='#E8F2FA' size='1.0'>Saisissez le code reçu, puis Valider le code reçu.</t>";
+
+                    } else {
+
+                        if (!_steamOk) then { _lines pushBack "<t color='#FFB0A8'>Steam non associé (facultatif)</t>"; };
+
+                        _lines pushBack "<t color='#FFD27A' size='1.05'>Compte non connecté</t>";
+
+                        _lines pushBack "<t color='#E8F2FA' size='1.0'>Appairer (Lier), e-mail (Se connecter), ou Steam.</t>";
+
+                    };
+
+                };
+
+                if (_authErr isEqualTo "STEAM_NOT_LINKED") then {
+
+                    _lines pushBack "<t color='#FFE08A' size='0.98'>Steam non lié — utilisez l’e-mail ou un code Appairer.</t>";
+
+                };
+
+                if (_authErr isEqualTo "INVALID_CREDENTIALS") then {
+
+                    _lines pushBack "<t color='#FFE08A' size='0.98'>Adresse e-mail, mot de passe ou code incorrect.</t>";
+
+                };
+
+                if (_authErr isEqualTo "OTP_EXPIRED") then {
+
+                    _lines pushBack "<t color='#FFE08A' size='0.98'>Ce code n’est plus valable. Demandez-en un nouveau.</t>";
 
                 };
 
             };
-
-            if (_authErr isEqualTo "STEAM_NOT_LINKED") then {
-
-                _lines pushBack "<t color='#e8b84a' size='0.9'>Steam non lié au profil — utilisez l’e-mail ou un code.</t>";
-
-            };
-
-            if (_authErr isEqualTo "INVALID_CREDENTIALS") then {
-
-                _lines pushBack "<t color='#e8b84a' size='0.9'>Adresse e-mail, mot de passe ou code incorrect.</t>";
-
-            };
-
-            if (_authErr isEqualTo "OTP_EXPIRED") then {
-
-                _lines pushBack "<t color='#e8b84a' size='0.9'>Ce code n’est plus valable. Demandez-en un nouveau.</t>";
-
-            };
-
         };
 
-        _authHint ctrlSetBackgroundColor (if (_authState isEqualTo "READY") then { [0.04, 0.12, 0.08, 0.94] } else { [0.12, 0.08, 0.04, 0.94] });
+        _authHint ctrlSetBackgroundColor (if (_hintOkBg) then { [0.04, 0.12, 0.08, 0.94] } else { [0.12, 0.08, 0.04, 0.94] });
 
         _authHint ctrlSetStructuredText parseText (_lines joinString "<br/>");
 

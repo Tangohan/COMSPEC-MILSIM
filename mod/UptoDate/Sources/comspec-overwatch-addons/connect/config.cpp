@@ -394,17 +394,27 @@ class CfgFunctions {
             class ecotiIsActive {};
             class ecotiFormatDistance {};
             class ecotiDrawBadge {};
+            class ecotiNormalizeColor {};
+            class ecotiThemeColors {};
             class ecotiDrawOutline {};
+            class ecotiDrawUnitOutline {};
+            class ecotiRefreshBuildingFootprint {};
             class ecotiDrawRoute {};
             class ecotiDrawBuilding {};
             class ecotiDraw {};
             class ecotiInit {};
             class ecotiMarkBuilding {};
+            class ecotiCutAtLook {};
             class ecotiCycleFloor {};
             class ecotiIlluminateZone {};
             class ecotiRouteEdit {};
             class ecotiApplyHudSetting {};
             class ecotiApplyCutawaySetting {};
+            class ecotiApplyThemeSetting {};
+            class ecotiApplyRenderModeSetting {};
+            class ecotiHudEnsure {};
+            class ecotiHudHide {};
+            class ecotiHudRender {};
             class linkStripApplySetting {};
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
@@ -778,3 +788,20 @@ class CfgVehicles
 // Attributs Eden SSE + EH
 #include "modules\eden_sse_attributes.hpp"
 #include "CfgEventHandlers.hpp"
+
+// HUD 2D pastilles situation (JVN) — calque plein écran, contrôles créés à la volée.
+class RscTitles
+{
+    class COMSPEC_EcotiScreenHud
+    {
+        idd = -1;
+        movingEnable = 0;
+        duration = 1e+011;
+        fadein = 0;
+        fadeout = 0;
+        name = "COMSPEC_EcotiScreenHud";
+        onLoad = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', _this select 0];";
+        onUnload = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', displayNull]; uiNamespace setVariable ['COMSPEC_EcotiHudSlotCount', 0];";
+        class controls {};
+    };
+};

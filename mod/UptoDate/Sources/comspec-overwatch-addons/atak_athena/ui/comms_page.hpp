@@ -67,17 +67,17 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             x = QUOTE(COMSPEC_COMMS_W(0.08));
             y = QUOTE(COMSPEC_COMMS_H(0.56));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(0.34));
-            size = QUOTE(COMSPEC_COMMS_H(0.26));
+            h = QUOTE(COMSPEC_COMMS_H(0.40));
+            size = QUOTE(COMSPEC_COMMS_H(0.28));
             text = "";
-            colorBackground[] = COMMS_BG_STRIP;
+            colorBackground[] = {0.05, 0.08, 0.10, 0.96};
             class Attributes
             {
                 font = "RobotoCondensed";
-                color = "#E6EEF0";
+                color = "#F0F6FA";
                 align = "center";
                 valign = "middle";
-                shadow = 1;
+                shadow = 0;
                 size = "1";
             };
         };
@@ -86,16 +86,18 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9922;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(0.94));
+            y = QUOTE(COMSPEC_COMMS_H(1.02));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(1.10));
-            colorBackground[] = {0.09, 0.09, 0.09, 0.94};
-            colorSelect[] = ATAK_LIST_SEL;
-            colorSelect2[] = ATAK_LIST_SEL;
-            colorSelectBackground[] = ATAK_LIST_SEL_BG;
-            colorSelectBackground2[] = ATAK_LIST_SEL_BG;
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.32));
-            rowHeight = QUOTE(COMSPEC_COMMS_H(0.40));
+            h = QUOTE(COMSPEC_COMMS_H(1.05));
+            colorBackground[] = {0.07, 0.08, 0.09, 0.98};
+            colorText[] = {0.94, 0.96, 0.97, 1};
+            colorSelect[] = {1, 1, 1, 1};
+            colorSelect2[] = {1, 1, 1, 1};
+            colorSelectBackground[] = {0.12, 0.28, 0.36, 0.95};
+            colorSelectBackground2[] = {0.12, 0.28, 0.36, 0.95};
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.36));
+            rowHeight = QUOTE(COMSPEC_COMMS_H(0.42));
+            font = "RobotoCondensed";
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_commsSelectChannel";
         };
 
@@ -106,9 +108,9 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             y = QUOTE(COMSPEC_COMMS_H(2.10));
             w = QUOTE(COMSPEC_COMMS_W(1.40));
             h = QUOTE(COMSPEC_COMMS_H(0.48));
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.28));
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.30));
             colorBackground[] = ATAK_BG_EDIT;
-            colorText[] = {0.95, 0.96, 0.97, 1};
+            colorText[] = {0.96, 0.97, 0.98, 1};
             text = "";
         };
 
@@ -150,29 +152,30 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9923;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(2.66));
+            y = QUOTE(COMSPEC_COMMS_H(2.70));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(3.20));
-            colorBackground[] = {0.06, 0.07, 0.08, 0.97};
-            colorText[] = {0.92, 0.94, 0.93, 1};
-            colorSelect[] = {0.95, 0.98, 1, 1};
-            colorSelect2[] = {0.95, 0.98, 1, 1};
-            colorSelectBackground[] = {0.10, 0.18, 0.24, 0.92};
-            colorSelectBackground2[] = {0.10, 0.18, 0.24, 0.92};
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.28));
-            rowHeight = QUOTE(COMSPEC_COMMS_H(0.62));
+            h = QUOTE(COMSPEC_COMMS_H(3.10));
+            colorBackground[] = {0.05, 0.06, 0.07, 0.98};
+            colorText[] = {0.95, 0.97, 0.96, 1};
+            colorSelect[] = {1, 1, 1, 1};
+            colorSelect2[] = {1, 1, 1, 1};
+            colorSelectBackground[] = {0.10, 0.20, 0.26, 0.95};
+            colorSelectBackground2[] = {0.10, 0.20, 0.26, 0.95};
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.34));
+            rowHeight = QUOTE(COMSPEC_COMMS_H(0.72));
+            font = "RobotoCondensed";
         };
 
         class Compose: RscEdit
         {
             idc = 9924;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(5.96));
+            y = QUOTE(COMSPEC_COMMS_H(5.90));
             w = QUOTE(COMSPEC_COMMS_W(2.00));
-            h = QUOTE(COMSPEC_COMMS_H(0.62));
-            sizeEx = QUOTE(COMSPEC_COMMS_H(0.32));
+            h = QUOTE(COMSPEC_COMMS_H(0.64));
+            sizeEx = QUOTE(COMSPEC_COMMS_H(0.34));
             colorBackground[] = ATAK_BG_EDIT;
-            colorText[] = {0.95, 0.96, 0.97, 1};
+            colorText[] = {0.97, 0.98, 0.98, 1};
             text = "";
         };
 
@@ -180,9 +183,9 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9925;
             x = QUOTE(COMSPEC_COMMS_W(2.14));
-            y = QUOTE(COMSPEC_COMMS_H(5.96));
+            y = QUOTE(COMSPEC_COMMS_H(5.90));
             w = QUOTE(COMSPEC_COMMS_W(0.78));
-            h = QUOTE(COMSPEC_COMMS_H(0.62));
+            h = QUOTE(COMSPEC_COMMS_H(0.64));
             size = QUOTE(COMSPEC_COMMS_H(0.34));
             text = "Envoyer";
             colorBackground[] = COMMS_OK;
@@ -197,7 +200,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9926;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(6.68));
+            y = QUOTE(COMSPEC_COMMS_H(6.64));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
             h = QUOTE(COMSPEC_COMMS_H(0.48));
             size = QUOTE(COMSPEC_COMMS_H(0.30));

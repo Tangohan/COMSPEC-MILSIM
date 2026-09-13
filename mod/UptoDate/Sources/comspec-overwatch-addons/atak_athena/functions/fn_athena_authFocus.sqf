@@ -12,14 +12,18 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openAtakApp") then {
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 
 private _linked = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-private _steamRaw = missionNamespace getVariable ["COMSPEC_SteamLinked", nil];
-private _steamOk = if (isNil "_steamRaw") then { false } else { _steamRaw isEqualTo true };
-if (_linked && {_steamOk}) exitWith {};
+private _athenaName = trim (str (missionNamespace getVariable ["comspec_profile_name", ""]));
+if (_athenaName isEqualTo "" || {(toLower _athenaName) in ["<null>", "any", "nil"]}) then { _athenaName = ""; };
+private _armaName = if (!isNull player) then { trim (name player) } else { "" };
+if (_athenaName isNotEqualTo "" && {_armaName isNotEqualTo ""} && {(toLower _athenaName) isEqualTo (toLower _armaName)}) then {
+    _athenaName = "";
+};
+if (_linked && {_athenaName isNotEqualTo ""}) exitWith {};
 
 private _ready = (missionNamespace getVariable ["comspec_overwatch_auth_state", ""]) isEqualTo "READY"
     || {_linked};
 
-// READY sans Steam / sans liaison complète : laisser Entrer visible, ne pas forcer.
+// READY / en liaison sans fiche complète : laisser Entrer visible, ne pas forcer le focus.
 if (_ready) exitWith {};
 
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;

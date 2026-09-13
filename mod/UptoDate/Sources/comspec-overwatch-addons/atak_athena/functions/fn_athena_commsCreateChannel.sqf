@@ -16,9 +16,15 @@ if (_label isEqualTo "") exitWith {
     };
 };
 
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
+private _canTx = false;
+if (!isNil "comspec_overwatch_connect_fnc_canStartSync") then {
+    _canTx = [] call comspec_overwatch_connect_fnc_canStartSync;
+} else {
+    _canTx = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
+};
+if (!_canTx) exitWith {
     if (!isNil "cTab_fnc_addNotification") then {
-        ["MSG", "Liaison Athena requise pour créer un canal.", 4] call cTab_fnc_addNotification;
+        ["MSG", "Liaison au poste requise pour créer un canal. Ouvrez Connexion Athena → Entrer.", 5] call cTab_fnc_addNotification;
     };
 };
 

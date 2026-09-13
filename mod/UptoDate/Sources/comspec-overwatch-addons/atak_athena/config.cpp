@@ -109,6 +109,8 @@ class CfgFunctions
             class athena_phoneProximitySave {};
             class athena_ecotiHudSave {};
             class athena_ecotiCutawaySave {};
+            class athena_ecotiThemeSave {};
+            class athena_ecotiRenderModeSave {};
             class athena_linkStripSave {};
             class athena_linkDegradeSimSave {};
             class athena_phoneProximityTick {};
@@ -118,6 +120,9 @@ class CfgFunctions
             class athena_briefingOnOpened {};
             class athena_applyBriefingSlide {};
             class athena_openBriefing {};
+            class athena_openWiki {};
+            class athena_wikiOnOpened {};
+            class athena_updateWiki {};
             class athena_bdaOnOpened {};
             class athena_biiOnOpened {};
             class athena_openBiiTab {};
@@ -257,6 +262,7 @@ class RscControlsGroup;
 #include "ui\task_page.hpp"
 #include "ui\comms_page.hpp"
 #include "ui\resynch_page.hpp"
+#include "ui\wiki_page.hpp"
 
 class ATAK_APPs
 {
@@ -369,6 +375,18 @@ class ATAK_APPs
             ORDER = 3.4;
             PAGE_CTRL = "COMSPEC_ATAK_Briefing";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
+        };
+    };
+    class AtakWiki: message
+    {
+        text = "<t size='1'>Tutoriel / WIKI</t>";
+        textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.42;
+            PAGE_CTRL = "COMSPEC_ATAK_Wiki";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_wikiOnOpened";
         };
     };
     class BII_Identifi: message
@@ -532,6 +550,18 @@ class RscTitles
                 ORDER = 3.4;
                 PAGE_CTRL = "COMSPEC_ATAK_Briefing";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
+            };
+        };
+        class AtakWiki: message
+        {
+            text = "<t size='1'>Tutoriel / WIKI</t>";
+            textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.42;
+                PAGE_CTRL = "COMSPEC_ATAK_Wiki";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_wikiOnOpened";
             };
         };
         class BII_Identifi: message
