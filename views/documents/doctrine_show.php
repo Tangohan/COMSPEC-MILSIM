@@ -30,7 +30,13 @@ $hasFile = !empty($fileAvailable);
 
 <div class="doctrine-show" data-doctrine-show data-document-id="<?= $docId ?>" data-version-id="<?= $versionId ?>">
     <div class="doctrine-show__shell">
-        <p class="doctrine-show__kicker">Référentiel doctrinal</p>
+        <p class="doctrine-show__kicker"><?= htmlspecialchars(
+            trim((string) ($doctrine['type_label'] ?? '')) !== ''
+                ? (string) $doctrine['type_label']
+                : 'Publication interne',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?></p>
         <header class="doctrine-show__header">
             <div class="doctrine-show__identity">
                 <?php if ($referenceCode !== ''): ?>
@@ -71,13 +77,33 @@ $hasFile = !empty($fileAvailable);
 
         <?php if (!empty($doctrine['summary'])): ?>
         <section class="doctrine-show__summary">
-            <h2>Résumé</h2>
+            <h2>Objet</h2>
             <p><?= nl2br(htmlspecialchars((string) $doctrine['summary'], ENT_QUOTES, 'UTF-8')) ?></p>
         </section>
         <?php endif; ?>
 
+        <?php if (!empty($doctrine['scope_of_application'])): ?>
+        <section class="doctrine-show__summary">
+            <h2>Champ d’application</h2>
+            <p><?= nl2br(htmlspecialchars((string) $doctrine['scope_of_application'], ENT_QUOTES, 'UTF-8')) ?></p>
+        </section>
+        <?php endif; ?>
+
+        <?php
+        $bodyHtml = trim((string) ($currentVersion['body_html'] ?? $doctrine['body_html'] ?? ''));
+        if ($bodyHtml !== '') {
+            $bodyHtml = \App\Support\MiniArticleHtml::sanitize($bodyHtml);
+        }
+        ?>
+        <?php if ($bodyHtml !== ''): ?>
+        <section class="doctrine-show__summary doctrine-show__body">
+            <h2>Contenu</h2>
+            <div class="prose prose-slate max-w-none"><?= $bodyHtml ?></div>
+        </section>
+        <?php endif; ?>
+
         <section class="doctrine-show__file">
-            <h2>Document</h2>
+            <h2><?= $bodyHtml !== '' ? 'Pièce jointe' : 'Document' ?></h2>
             <?php if ($hasFile): ?>
             <p class="doctrine-show__file-lead">Ouvrez le fichier pour le lire, ou téléchargez-le pour l’archiver.</p>
             <div class="doctrine-show__file-actions">
@@ -85,7 +111,7 @@ $hasFile = !empty($fileAvailable);
                 <a href="<?= url('documents/' . $docId . '/download') ?>" class="doctrine-ref__btn">Télécharger</a>
             </div>
             <?php else: ?>
-            <p class="doctrine-show__empty">Aucun fichier n’est attaché à cette version. Un responsable peut en déposer un depuis la fiche du document.</p>
+            <p class="doctrine-show__empty"><?= $bodyHtml !== '' ? 'Aucune pièce jointe pour cette version.' : 'Aucun fichier n’est attaché à cette version. Un responsable peut en déposer un depuis la fiche du document.' ?></p>
             <?php endif; ?>
         </section>
 
@@ -123,7 +149,9 @@ $hasFile = !empty($fileAvailable);
         <?php endif; ?>
 
         <p class="doctrine-show__back">
-            <a href="<?= url('documents') . '?category_slug=doctrine' ?>" class="doctrine-ref__link">Retour au référentiel</a>
+            <a href="<?= url('documents/mes-documents') ?>" class="doctrine-ref__link">Retour à Mes documents</a>
+            ·
+            <a href="<?= url('documents') . '?category_slug=doctrine' ?>" class="doctrine-ref__link">Bibliothèque</a>
         </p>
     </div>
 </div>
@@ -162,7 +190,13 @@ $hasFile = !empty($fileAvailable);
             <input type="hidden" name="version_id" value="<?= $versionId ?>">
             <label class="doctrine-ack-modal__check">
                 <input type="checkbox" name="certify" value="1" required data-doctrine-ack-certify>
-                <span>Je certifie avoir pris connaissance de ce document, dans la version indiquée ci-dessus.</span>
+                <span><?= htmlspecialchars(
+                    trim((string) ($doctrine['confirmation_text'] ?? '')) !== ''
+                        ? (string) $doctrine['confirmation_text']
+                        : 'Je certifie avoir pris connaissance de ce document, dans la version indiquée ci-dessus.',
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?></span>
             </label>
             <p class="doctrine-ack-modal__status" data-doctrine-ack-status hidden></p>
             <button type="submit" class="doctrine-ack-modal__submit" data-doctrine-ack-submit disabled>

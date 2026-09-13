@@ -2228,6 +2228,9 @@ $alertsMigrate($pdo);
 $doctrineReferentialMigrate = require $root . '/bootstrap/doctrine_referential_migration.php';
 $doctrineReferentialMigrate($pdo);
 
+$documentPublicationMigrate = require $root . '/bootstrap/document_publication_system_migration.php';
+$documentPublicationMigrate($pdo);
+
 $tenantAlertsVisualMigrate = require $root . '/bootstrap/tenant_alerts_visual_migration.php';
 try {
     $tenantAlertsVisualMigrate($pdo);

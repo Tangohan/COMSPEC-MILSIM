@@ -639,6 +639,7 @@ return function (Router $router) {
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
+    $router->get('/documents/mes-documents', [\App\Controllers\Web\DocumentInboxController::class, 'index'], $mwDocuments);
     $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
     $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
@@ -1165,7 +1166,15 @@ return function (Router $router) {
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'types'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'typesSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/publier/{id}', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/compliance', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'compliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/relances', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'sendReminders'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/rotate', [OrganizationIntegrationsController::class, 'rotate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

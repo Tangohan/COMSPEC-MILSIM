@@ -146,9 +146,12 @@ return [
                     'title' => 'Documents',
                     'slot' => 'primary',
                     'links' => [
+                        ['label' => 'Mes documents', 'path' => 'documents/mes-documents', 'any_permissions' => ['documents.view', 'doctrine.view'], 'description' => 'Lectures obligatoires et accusés'],
                         ['label' => 'Bibliothèque', 'path' => 'documents', 'permission' => 'documents.view', 'description' => 'Consulter les documents publiés'],
                         ['label' => 'Collections', 'path' => 'documents/collections', 'permission' => 'documents.view', 'description' => 'Parcourir les collections documentaires'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'permission' => 'documents.upload', 'description' => 'Ajouter, classer et suivre les versions'],
+                        ['label' => 'Publier un document', 'path' => 'back-office/documents/publier', 'any_permissions' => ['doctrine.create', 'documents.upload', 'documents.publish'], 'description' => 'Rédiger, cibler et diffuser'],
+                        ['label' => 'Suivi de diffusion', 'path' => 'back-office/documents/compliance', 'any_permissions' => ['doctrine.view_compliance', 'doctrine.edit'], 'description' => 'Lectures et accusés'],
                     ],
                 ],
                 [

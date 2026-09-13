@@ -268,6 +268,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(543, '2026-09-13', 'Publication interne des documents', 'Le commandement rédige, cible et suit les lectures obligatoires depuis Athena', [
+                'Types de documents configurables (instruction, note de service, directive, consigne…)',
+                'Assistant de publication avec ciblage ORBAT, unités et sous-unités, fonctions et personnels',
+                'Éditeur de contenu riche, versionnement et choix de relecture après modification',
+                'Espace Mes documents et bloc Documents à lire sur le tableau de bord',
+                'Suivi de diffusion : ouverts, lus, en retard, relances',
+            ], [
+                'Le référentiel doctrinal existant porte désormais aussi les notes de service et documents organisationnels',
+            ], [], ['personnel', 'command', 'platform'], [
+                'Après mise à jour du portail, lancer les migrations une fois. Les types de documents sont créés automatiquement pour chaque communauté.',
+            ], 'Portail · Publication documentaire'),
             [
                 'kind' => self::KIND_SPOTREP,
                 'number' => 3,
@@ -584,6 +595,13 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(543, '2026-09-13', 'Connexion Athena : Compte trouvé ouvre le canal sans panneau noir', 'Après une connexion par mot de passe, le bandeau Compte trouvé — Entrer ouvre bien le canal poste au clic. La touche Entrée fait la même chose une fois le compte trouvé, au lieu de tout recommencer. Refermer le tiroir ne laisse plus un panneau sombre sur la carte', [], [], [
+                'Clic sur Compte trouvé sans effet',
+                'Touche Entrée laissant un grand panneau sombre alors que la liaison était ouverte',
+                'Page Athena encore peinte quand le tiroir était refermé',
+            ], ['atak'], [
+                'Rechargez le pack (Overwatch 1.5.67). Quittez Arma. Connexion par mot de passe → Compte trouvé — Entrer (clic ou Entrée) : fiche visible, pas de rectangle noir. Refermez le tiroir : carte seule.',
+            ], 'Overwatch 1.5.67 · Athena 1.0.114'),
             $pr(542, '2026-09-13', 'Espace opérateur : liaison ATAK, unité et qualifications dans le back-office', 'Depuis Mon espace opérationnel, vous ouvrez désormais vos pages personnelles dans le même back-office : liaison et appareils ATAK, certificat de terminal, mon unité, mes qualifications, ma fiche et mes démarches — sans être renvoyé vers le portail', [
                 'Pages Ma liaison ATAK, Mes appareils, Mon unité et Mes qualifications dans le back-office',
                 'Ma fiche, Mon suivi et Mes démarches accessibles sous la coque Athena',

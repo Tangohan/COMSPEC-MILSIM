@@ -207,6 +207,7 @@ class HomeController
         $rhMobilitySchemaReady = false;
         $canPublishDashboardArticles = false;
         $doctrinePending = [];
+        $documentInboxSummary = ['mandatory' => 0, 'overdue' => 0, 'to_read' => 0, 'items' => []];
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -740,8 +741,11 @@ class HomeController
                     try {
                         $doctrinePending = \App\Core\Container::get(\App\Services\Doctrine\DocumentComplianceService::class)
                             ->listPendingActionsForUser($tid, $uid, 6);
+                        $documentInboxSummary = \App\Core\Container::get(\App\Services\Doctrine\DocumentInboxService::class)
+                            ->dashboardSummary($tid, $uid, 6);
                     } catch (\Throwable) {
                         $doctrinePending = [];
+                        $documentInboxSummary = ['mandatory' => 0, 'overdue' => 0, 'to_read' => 0, 'items' => []];
                     }
                 }
 
@@ -856,6 +860,7 @@ class HomeController
             'rh_mobility_schema_ready' => $rhMobilitySchemaReady,
             'can_publish_dashboard_articles' => $canPublishDashboardArticles,
             'doctrine_pending' => $doctrinePending,
+            'document_inbox_summary' => $documentInboxSummary,
             'dashboard_mini_articles' => $dashboardMiniArticles,
             'dashboard_ui_tour' => $this->dashboardUiTourPayload($currentUser),
         ]);
