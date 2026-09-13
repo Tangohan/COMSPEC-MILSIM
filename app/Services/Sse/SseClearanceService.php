@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Core\Session;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePortalSettingsRepository;
 
@@ -26,12 +27,15 @@ use App\Repositories\SsePortalSettingsRepository;
  *
  * ## D'où vient le plafond
  *
- * Deux sources, dans cet ordre :
+ * Trois sources, dans cet ordre :
  *
  *  1. **Habilitation explicite** — permissions `atak.sse.clearance.*`. C'est la
  *     voie propre quand la communauté veut gérer ses habilitations à la main.
  *  2. **Report des rôles existants** — si aucune habilitation explicite n'est
  *     accordée, le plafond est déduit des permissions déjà en place.
+ *  3. **Fiche opérateur** — `personnel_profiles.clearance_level` : le plus haut
+ *     entre report de rôle et fiche l'emporte lorsqu'il n'y a pas de permission
+ *     explicite.
  *
  * Ce report est délibéré. Sans lui, la mise en production de cette version
  * mettrait tout le monde au plancher tant qu'un administrateur n'a pas assigné
@@ -54,9 +58,11 @@ final class SseClearanceService
     public function __construct(
         private ?SseAccessCodeService $access = null,
         private ?SsePortalSettingsRepository $settings = null,
+        private ?PersonnelProfileRepository $profiles = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->settings ??= new SsePortalSettingsRepository();
+        $this->profiles ??= new PersonnelProfileRepository();
     }
 
     /**
@@ -163,6 +169,8 @@ final class SseClearanceService
                 : SseCaseRepository::CLASS_INTERNAL;
         }
 
+        $this->access->ensureGateHydrated();
+
         if (!function_exists('can')) {
             return SseCaseRepository::CLASS_INTERNAL;
         }
@@ -179,17 +187,24 @@ final class SseClearanceService
         }
 
         // 2. Report des rôles existants.
+        $fromRole = SseCaseRepository::CLASS_INTERNAL;
         if (can('admin.access') || can('atak.sse.grant')) {
-            return SseCaseRepository::CLASS_RESTRICTED;
-        }
-        if (can('atak.sse.case.manage')) {
-            return SseCaseRepository::CLASS_CONFIDENTIAL;
-        }
-        if (can('atak.sse.access') || can('atak.sse.cases')) {
-            return SseCaseRepository::CLASS_COMMAND;
+            $fromRole = SseCaseRepository::CLASS_RESTRICTED;
+        } elseif (can('atak.sse.case.manage')) {
+            $fromRole = SseCaseRepository::CLASS_CONFIDENTIAL;
+        } elseif (can('atak.sse.access') || can('atak.sse.cases')) {
+            $fromRole = SseCaseRepository::CLASS_COMMAND;
         }
 
-        return SseCaseRepository::CLASS_INTERNAL;
+        // 3. Habilitation inscrite sur la fiche opérateur — le plus haut l’emporte.
+        $fromProfile = $this->profileClearanceLevel();
+        if ($fromProfile !== null
+            && SseRedactionService::levelRank($fromProfile) > SseRedactionService::levelRank($fromRole)
+        ) {
+            return $fromProfile;
+        }
+
+        return $fromRole;
     }
 
     /**
@@ -232,6 +247,8 @@ final class SseClearanceService
                 : 'Accès invité sans habilitation : lecture au niveau le plus large uniquement.';
         }
 
+        $this->access->ensureGateHydrated();
+
         if (function_exists('can')) {
             foreach (array_reverse(self::PERMISSIONS, true) as $level => $permission) {
                 if (can($permission)) {
@@ -241,6 +258,28 @@ final class SseClearanceService
                     );
                 }
             }
+        }
+
+        $fromProfile = $this->profileClearanceLevel();
+        $fromRole = SseCaseRepository::CLASS_INTERNAL;
+        if (function_exists('can')) {
+            if (can('admin.access') || can('atak.sse.grant')) {
+                $fromRole = SseCaseRepository::CLASS_RESTRICTED;
+            } elseif (can('atak.sse.case.manage')) {
+                $fromRole = SseCaseRepository::CLASS_CONFIDENTIAL;
+            } elseif (can('atak.sse.access') || can('atak.sse.cases')) {
+                $fromRole = SseCaseRepository::CLASS_COMMAND;
+            }
+        }
+
+        if ($fromProfile !== null
+            && SseRedactionService::levelRank($fromProfile) >= SseRedactionService::levelRank($fromRole)
+            && $fromProfile !== SseCaseRepository::CLASS_INTERNAL
+        ) {
+            return 'Habilitation inscrite sur votre fiche opérateur.';
+        }
+
+        if (function_exists('can')) {
             if (can('admin.access') || can('atak.sse.grant')) {
                 return 'Report de vos droits d’administration du portail SSE.';
             }
@@ -252,7 +291,34 @@ final class SseClearanceService
             }
         }
 
+        if ($fromProfile !== null) {
+            return 'Habilitation inscrite sur votre fiche opérateur.';
+        }
+
         return 'Aucune habilitation reconnue.';
+    }
+
+    /**
+     * Niveau de diffusion porté par la fiche opérateur de la session, ou null.
+     */
+    private function profileClearanceLevel(): ?string
+    {
+        $userId = (int) Session::get('user_id');
+        if ($userId < 1) {
+            return null;
+        }
+
+        $profile = $this->profiles->getByUserId($userId);
+        if ($profile === null) {
+            return null;
+        }
+
+        $raw = strtolower(trim((string) ($profile['clearance_level'] ?? '')));
+        if ($raw === '' || !isset(SseCaseRepository::CLASSIFICATION_LABELS[$raw])) {
+            return null;
+        }
+
+        return isset(SseRedactionService::LEVELS[$raw]) ? $raw : null;
     }
 
     /**

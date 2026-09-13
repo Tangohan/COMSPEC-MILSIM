@@ -555,6 +555,9 @@ if ($atakMapConfig) {
       <section class="atak-account-section" id="atak-display-prefs">
         <h3 class="atak-account-section-title">Affichage</h3>
         <p class="atak-game-link-hint">Apparence des positions sur la carte et simulations de liaison. Mémorisé sur cet appareil.</p>
+        <p class="atak-game-link-hint">
+          <button type="button" id="atak-repair-base-tiles" class="atak-btn-account" title="Recharger le fond de carte">Réparer le fond</button>
+        </p>
         <label class="atak-sound-pref-label" for="atak-unit-style-mode">
           <span class="atak-sound-pref-key">Apparence des positions</span>
           <select id="atak-unit-style-mode" class="atak-header-select atak-sound-pref-select" title="Style des marqueurs d’unités sur la carte">

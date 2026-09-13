@@ -24,6 +24,26 @@ final class DoctrineDocumentAccessService
      */
     public function canMemberView(int $tenantId, int $userId, array $document, array $doctrine): bool
     {
+        $visibility = (string) ($doctrine['visibility_mode'] ?? 'library');
+        $inAudience = $this->audienceResolver->isUserInAudience(
+            $tenantId,
+            $userId,
+            (int) ($document['id'] ?? 0),
+            $doctrine
+        );
+
+        // Visible uniquement par les destinataires : pas de contournement via bibliothèque générale
+        if ($visibility === 'recipients_only') {
+            if ((string) ($doctrine['doctrine_status'] ?? '') !== DoctrineWorkflowStatus::PUBLISHED) {
+                return false;
+            }
+            if (!$inAudience) {
+                return false;
+            }
+
+            return $this->documentAccessService->passesClassification($document, $userId);
+        }
+
         if ($this->documentAccessService->canRead($document, $userId, $tenantId)) {
             return true;
         }
@@ -37,7 +57,7 @@ final class DoctrineDocumentAccessService
             return false;
         }
 
-        if (!$this->audienceResolver->isUserInAudience($tenantId, $userId, $documentId, $doctrine)) {
+        if (!$inAudience) {
             return false;
         }
 

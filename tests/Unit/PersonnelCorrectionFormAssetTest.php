@@ -27,6 +27,11 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertStringContainsString('Envoyer pour confirmation', $view);
         self::assertStringContainsString('Enregistrer tout de suite', $view);
         self::assertStringContainsString('apply_now', $view);
+        self::assertStringContainsString('diff_lines', $view);
+        self::assertStringContainsString('rh-corr-form__history-diff', $view);
+        self::assertStringContainsString('rh-corr-form__snapshot', $view);
+        self::assertStringContainsString('personnel_operator_portrait_url', $view);
+        self::assertStringNotContainsString('$staffDossier && function_exists(\'personnel_operator_portrait_url\')', $view);
         self::assertStringContainsString('unit_assignments[', $view);
         self::assertStringContainsString('from_corrections', $view);
         self::assertStringNotContainsString('text-white', $view);
@@ -45,6 +50,12 @@ final class PersonnelCorrectionFormAssetTest extends TestCase
         self::assertStringContainsString('.pd-form-grid', $css);
         self::assertStringContainsString('.pd-form-grid__full', $css);
         self::assertStringContainsString('.pd-container--narrow', $css);
+        self::assertStringContainsString('.pd-btn--primary:disabled', $css);
+        self::assertStringContainsString('color: #1e293b !important', $css);
+        self::assertStringContainsString('.rh-corr-form__history-status.is-pending', $css);
+
+        self::assertStringContainsString('diffLinesForDisplay', $controller);
+        self::assertStringContainsString('listForTarget($tenantId, $targetId, 15)', $controller);
 
         self::assertStringContainsString("'identity' => 'Personnage'", $service);
         self::assertStringContainsString('STAFF_ONLY_FIELDS', $service);

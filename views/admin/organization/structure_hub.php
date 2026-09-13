@@ -89,8 +89,9 @@ $unitDialogs = [
 <div class="ath-note">
     <p class="ath-note__title">Organigramme interactif</p>
     <p class="ath-note__text">
-        Créez un regroupement, une équipe ou invitez un membre depuis la barre d’actions,
-        ou par clic droit sur une carte du type correspondant dans l’organigramme.
+        Clic droit (ou bouton ⋯) sur une carte : renommer, changer le type, le chef, créer une sous-unité,
+        rattacher, régler le statut ou la confidentialité, inviter un membre, ou supprimer.
+        La barre d’actions reste disponible pour les créations rapides.
     </p>
 </div>
 
@@ -199,21 +200,27 @@ $unitDialogs = [
     }
   };
 
-  var presetParent = function (selectId, parentUnitId) {
+  var presetParent = function (selectId, parentUnitId, parentLabel) {
     var select = document.getElementById(selectId);
     if (!select) return;
     var value = parentUnitId > 0 ? String(parentUnitId) : '';
-    // Un parent hors de la liste (autre type d’unité) retombe sur la racine.
+    if (value && !select.querySelector('option[value="' + value + '"]')) {
+      var opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = parentLabel || ('Unité #' + parentUnitId);
+      select.appendChild(opt);
+    }
     select.value = value && select.querySelector('option[value="' + value + '"]') ? value : '';
   };
 
-  window.orbatHubOpenRecruitmentModal = function (kind, parentUnitId) {
+  window.orbatHubOpenRecruitmentModal = function (kind, parentUnitId, parentLabel) {
     parentUnitId = parentUnitId || 0;
+    parentLabel = parentLabel || '';
     if (kind === 'groupe') {
-      presetParent('hub_grp_parent_id', parentUnitId);
+      presetParent('hub_grp_parent_id', parentUnitId, parentLabel);
       showDialog('hub-dlg-groupe');
     } else if (kind === 'equipe') {
-      presetParent('hub_team_parent_id', parentUnitId);
+      presetParent('hub_team_parent_id', parentUnitId, parentLabel);
       showDialog('hub-dlg-equipe');
     } else if (kind === 'membre') {
       showDialog('hub-dlg-membre');

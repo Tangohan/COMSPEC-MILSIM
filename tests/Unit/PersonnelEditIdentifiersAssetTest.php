@@ -15,7 +15,8 @@ final class PersonnelEditIdentifiersAssetTest extends TestCase
         self::assertStringContainsString("'label' => 'Matricules'", $edit);
         self::assertStringContainsString('tenant_member_number', $edit);
         self::assertStringContainsString('matricule_internal', $edit);
-        self::assertStringNotContainsString('name="clearance_level"', $edit);
+        self::assertStringContainsString('name="clearance_level"', $edit);
+        self::assertStringContainsString('Niveau de diffusion renseignement', $edit);
         self::assertStringNotContainsString('name="enlistment_date"', $edit);
         self::assertStringNotContainsString('name="pre_platform_start_date"', $edit);
         self::assertStringNotContainsString('name="clearance_reviewed_at"', $edit);

@@ -22,6 +22,21 @@ if ($unitLabel === '') {
 }
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
+$resolveMediaUrl = static function (?string $path): string {
+    $path = trim((string) $path);
+    if ($path === '') {
+        return '';
+    }
+    if (preg_match('#^(https?:)?//#i', $path) === 1 || str_starts_with($path, 'data:')) {
+        return $path;
+    }
+    if (function_exists('asset_url')) {
+        return asset_url(ltrim($path, '/'));
+    }
+
+    return url(ltrim($path, '/'));
+};
+
 $renderPerson = static function (?array $person, string $tone = 'member') use ($h): void {
     if ($person === null) {
         return;
@@ -59,7 +74,7 @@ $renderPerson = static function (?array $person, string $tone = 'member') use ($
 };
 
 $renderNode = null;
-$renderNode = static function (array $node, int $depth = 0) use (&$renderNode, $renderPerson, $h): void {
+$renderNode = static function (array $node, int $depth = 0) use (&$renderNode, $renderPerson, $resolveMediaUrl, $h): void {
     $label = trim((string) ($node['label'] ?? 'Unité'));
     $code = trim((string) ($node['code'] ?? ''));
     $strength = (int) ($node['strength'] ?? 0);
@@ -70,23 +85,46 @@ $renderNode = static function (array $node, int $depth = 0) use (&$renderNode, $
     $commander = is_array($node['commander'] ?? null) ? $node['commander'] : null;
     $members = is_array($node['members'] ?? null) ? $node['members'] : [];
     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
+    $childCount = count($children);
+    $iconUrl = $resolveMediaUrl(
+        trim((string) ($node['icon_url'] ?? '')) !== ''
+            ? (string) $node['icon_url']
+            : (string) ($node['image_url'] ?? '')
+    );
     $open = $depth < 2;
     $hasBody = $commander !== null || $members !== [] || $children !== [] || $mission !== '';
     $type = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($node['type'] ?? 'command'))) ?: 'command';
+    $markLetter = mb_strtoupper(mb_substr($label, 0, 1));
     ?>
     <details class="dash-orbat__node dash-orbat__node--<?= $h($type) ?>" data-depth="<?= $depth ?>"<?= $open ? ' open' : '' ?><?= !$hasBody ? ' data-leaf="1"' : '' ?>>
         <summary class="dash-orbat__summary">
             <span class="dash-orbat__chevron" aria-hidden="true"></span>
-            <span class="dash-orbat__unit-mark" aria-hidden="true"><?= $h(mb_strtoupper(mb_substr($label, 0, 1))) ?></span>
+            <span class="dash-orbat__unit-mark<?= $iconUrl !== '' ? ' dash-orbat__unit-mark--icon' : '' ?>" aria-hidden="true">
+                <?php if ($iconUrl !== ''): ?>
+                    <img src="<?= $h($iconUrl) ?>" alt="" loading="lazy" decoding="async" class="dash-orbat__unit-icon">
+                <?php else: ?>
+                    <?= $h($markLetter) ?>
+                <?php endif; ?>
+            </span>
             <span class="dash-orbat__unit-copy">
                 <span class="dash-orbat__unit-name"><?= $h($label) ?></span>
-                <span class="dash-orbat__unit-sub">
+                <span class="dash-orbat__unit-sub" aria-label="Indicateurs d’unité">
                     <?php if ($code !== '' && $code !== $label): ?>
-                        <span><?= $h($code) ?></span>
+                        <span class="dash-orbat__chip dash-orbat__chip--code"><?= $h($code) ?></span>
                     <?php endif; ?>
-                    <span><?= $strength ?> membre<?= $strength > 1 ? 's' : '' ?></span>
-                    <?php if (count($children) > 0): ?>
-                        <span><?= count($children) ?> sous-unité<?= count($children) > 1 ? 's' : '' ?></span>
+                    <span class="dash-orbat__chip dash-orbat__chip--members<?= $strength === 0 ? ' is-empty' : '' ?>">
+                        <svg class="dash-orbat__chip-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                            <path fill="currentColor" d="M8 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm-5.5 6a4.5 4.5 0 0 1 9 0v.5H2.5Zm8.2-6.2a2.4 2.4 0 1 0-1.7-4.1 4.1 4.1 0 0 1 0 4.1 4 4 0 0 1 3.2 2.2h1.6V10a3.2 3.2 0 0 0-3.1-2.2Z"/>
+                        </svg>
+                        <span><?= $strength ?> membre<?= $strength > 1 ? 's' : '' ?></span>
+                    </span>
+                    <?php if ($childCount > 0): ?>
+                        <span class="dash-orbat__chip dash-orbat__chip--subs">
+                            <svg class="dash-orbat__chip-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                <path fill="currentColor" d="M7 2h2v3H7zm-4 5h2v3H3zm8 0h2v3h-2zM6.5 6.5h3v1h-3zM2 10.5h4V12H2zm8 0h4V12h-4zM7.5 8.5h1V11h-1z"/>
+                            </svg>
+                            <span><?= $childCount ?> sous-unité<?= $childCount > 1 ? 's' : '' ?></span>
+                        </span>
                     <?php endif; ?>
                 </span>
             </span>

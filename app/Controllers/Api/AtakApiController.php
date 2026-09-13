@@ -7232,6 +7232,95 @@ class AtakApiController
     }
 
     /**
+     * Suppression d’un canal radio personnalisé — jeu ou poste.
+     * Les canaux système (Groupe, Commandement, Général, JTAC, Air) sont protégés.
+     */
+    public function chatChannelsDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $gameActor = null;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $gameActor = is_array($actor) ? $actor : null;
+        } else {
+            $userId = (int) (Session::get('user_id') ?? 0);
+            if ($userId < 1) {
+                return Response::json([
+                    'error' => 'unauthorized',
+                    'message' => 'Connectez-vous au poste ou reliez Athena pour supprimer un canal.',
+                ], 401);
+            }
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $channelRaw = trim((string) ($body['channel_key'] ?? $body['channel'] ?? ''));
+        if ($channelRaw === '') {
+            return Response::json([
+                'error' => 'channel_required',
+                'message' => 'Indiquez le canal à supprimer.',
+            ], 422);
+        }
+        $result = $this->atak->deleteChatChannel($tenantId, $mapId, $channelRaw);
+        if (!($result['ok'] ?? false)) {
+            $err = (string) ($result['error'] ?? 'delete_failed');
+            if ($err === 'system_channel') {
+                return Response::json([
+                    'error' => 'system_channel',
+                    'message' => 'Les canaux système (Groupe, Commandement, Général, JTAC, Air) ne peuvent pas être supprimés.',
+                ], 403);
+            }
+            if ($err === 'not_found') {
+                return Response::json([
+                    'error' => 'not_found',
+                    'message' => 'Ce canal n’existe pas ou a déjà été retiré.',
+                ], 404);
+            }
+
+            return Response::json([
+                'error' => 'channel_delete_failed',
+                'message' => 'Impossible de supprimer ce canal pour le moment.',
+            ], 500);
+        }
+        $by = '';
+        if (is_array($gameActor)) {
+            $by = trim((string) ($gameActor['call_sign'] ?? ''));
+        }
+        if ($by === '') {
+            $by = trim((string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Poste'));
+        }
+        $label = (string) ($result['label'] ?? $channelRaw);
+        $this->activityLog?->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_CHAT,
+            'Canal radio supprimé — ' . $label,
+            $by !== '' ? $by : 'Poste',
+            [
+                'channel_key' => (string) ($result['channel_key'] ?? ''),
+                'messages_deleted' => (int) ($result['messages_deleted'] ?? 0),
+                'source' => $gameActor !== null ? 'game' : 'web',
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'channel_key' => (string) ($result['channel_key'] ?? ''),
+            'label' => $label,
+            'messages_deleted' => (int) ($result['messages_deleted'] ?? 0),
+        ]);
+    }
+
+    /**
      * Purge serveur de l’historique radio — réservée au poste (session web), pas au jeu seul.
      * Efface un canal ou tout le journal de la carte.
      */

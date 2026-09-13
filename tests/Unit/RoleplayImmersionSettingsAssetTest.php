@@ -31,7 +31,7 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         self::assertStringContainsString('Bureau de suivi', $view);
         self::assertStringContainsString('Échéances', $view);
         self::assertStringContainsString('ATAK et Overwatch', $view);
-        self::assertStringContainsString('admin/atak/roleplay', $view);
+        self::assertStringContainsString('back-office/atak/roleplay', $view);
         self::assertStringContainsString('Le suivi n’apparaît pas encore.', $view);
         self::assertStringContainsString('name="rp_followup_enabled"', $view);
         self::assertStringContainsString('name="rp_followup_optional"', $view);

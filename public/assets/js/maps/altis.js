@@ -18,7 +18,8 @@
   window.Arma3Map.Maps.altis = {
     CRS: MGRS_CRS(0.006839, 0.006836, 212),
     tilePattern: 'https://jetelain.github.io/Arma3Map/maps/altis/{z}/{x}/{y}.png',
-    maxZoom: 6,
+    maxNativeZoom: 6,
+    maxZoom: 8,
     minZoom: 0,
     defaultZoom: 3,
     attribution: '&copy; Bohemia Interactive',

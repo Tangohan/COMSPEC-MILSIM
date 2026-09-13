@@ -23,6 +23,7 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/ma-situation/premiere-liaison'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/ma-fiche'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/unite'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/evenements'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);
 
@@ -32,6 +33,7 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('back-office/ma-situation/liaison-atak', $overview);
         self::assertStringContainsString('back-office/ma-situation/appareils', $overview);
         self::assertStringContainsString('back-office/ma-situation/unite', $overview);
+        self::assertStringContainsString('back-office/ma-situation/evenements', $overview);
         self::assertStringContainsString('back-office/ma-situation/qualifications', $overview);
         self::assertStringNotContainsString("url('account/security/devices')", $overview);
         self::assertStringNotContainsString("url('atak/premiere-liaison')", $overview);
@@ -39,6 +41,7 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('Ma liaison ATAK', $nav);
         self::assertStringContainsString('Mes qualifications', $nav);
         self::assertStringContainsString('Mon unité', $nav);
+        self::assertStringContainsString('back-office/ma-situation/evenements', $nav);
         self::assertStringContainsString('back-office/ma-situation/ma-fiche', $nav);
 
         self::assertFileExists($root . '/views/admin/member_situation/liaison_atak.php');

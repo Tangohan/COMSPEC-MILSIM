@@ -1,4 +1,23 @@
-﻿COMSPEC Overwatch 1.5.66 / Athena ATAK 1.0.113 — 13/09/2026
+COMSPEC Overwatch 1.5.68 / Athena ATAK 1.0.115 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.68[/h1]
+[b]Publication : 13/09/2026[/b]
+[quote]
+[b]Important :[/b] quittez Arma complètement, rechargez le pack, puis relancez. Déployez aussi la mise à jour du portail (clé d’accès après connexion). Un simple retour au lobby ne suffit pas.
+[/quote]
+
+[h2]Nouveau — Supprimer un canal dans Messagerie[/h2]
+Dans Messagerie, le bouton Supprimer retire le canal personnalisé sélectionné. Les canaux système (Groupe, Commandement, Général, JTAC, Air) restent protégés. L’historique de ce canal disparaît aussi du journal du poste.
+
+[h2]Correction — Messagerie et transmissions après connexion[/h2]
+Après une connexion Athena par mot de passe, les messages et les autres envois vers le poste restent autorisés. Vous n’êtes plus coupé par une session refusée juste après l’ouverture du canal. L’envoi sur le canal actif est confirmé dans le journal de liaison.
+
+[h2]Amélioration — Boutons Messagerie[/h2]
+Créer, Supprimer, Envoyer et Effacer l’affichage local répondent de façon fiable au clic.
+
+---
+
+COMSPEC Overwatch 1.5.66 / Athena ATAK 1.0.113 — 13/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.66[/h1]
 [b]Publication : 13/09/2026[/b]

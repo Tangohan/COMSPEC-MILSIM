@@ -15,6 +15,7 @@ use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Support\CommunityMediaDetails;
+use App\Support\ComspecApiKeyAuth;
 use App\Support\OperatorTacticalIdentity;
 use App\Support\SilentSchemaMigration;
 use App\Support\SteamId;
@@ -527,6 +528,13 @@ final class GameAuthService
             'device_id' => $deviceId,
             'pairing_token' => $pairingPlain,
         ];
+        // Même contrat que l’appairage : clé communauté pour les envois ATAK
+        // (certains chemins / reverse-proxies ne relaient pas correctement le Bearer).
+        $apiKey = ComspecApiKeyAuth::secretForTenant($tenantId);
+        if ($apiKey !== '') {
+            $payload['api_key'] = $apiKey;
+            $payload['tenant_id'] = (string) $tenantId;
+        }
         $linked = $this->hasSteamId($steamId)
             || !empty($steamLink['linked_now'])
             || $this->membershipHasSteam($account, $chosen);

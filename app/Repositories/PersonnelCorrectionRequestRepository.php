@@ -88,9 +88,14 @@ final class PersonnelCorrectionRequestRepository
     {
         $limit = max(1, min(50, $limit));
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM personnel_correction_requests
-             WHERE tenant_id = ? AND target_user_id = ?
-             ORDER BY created_at DESC
+            "SELECT r.*,
+                    ru.display_name AS requester_display_name, ru.callsign AS requester_callsign,
+                    du.display_name AS resolver_display_name, du.callsign AS resolver_callsign
+             FROM personnel_correction_requests r
+             LEFT JOIN users ru ON ru.id = r.requested_by
+             LEFT JOIN users du ON du.id = r.resolved_by
+             WHERE r.tenant_id = ? AND r.target_user_id = ?
+             ORDER BY r.created_at DESC
              LIMIT {$limit}"
         );
         $stmt->execute([$tenantId, $targetUserId]);

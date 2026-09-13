@@ -639,6 +639,7 @@ return function (Router $router) {
     $router->post('/documents/gestion/{id}/archiver', [AdminDocumentsController::class, 'archive'], $mwDocuments);
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
+    $router->get('/documents/mes-documents', [\App\Controllers\Web\DocumentInboxController::class, 'index'], $mwDocuments);
     $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
     $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
@@ -704,8 +705,11 @@ return function (Router $router) {
     $router->post('/atak/sse/contexte/mission', [SsePortalController::class, 'setMission'], $mwSsePortal);
     $router->post('/atak/sse/contexte/classification', [SsePortalController::class, 'setClassification'], $mwSsePortal);
     // Alias back-office (commandement / admin — sans exiger un code d’accès)
+    $router->get('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'issue'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces/{id}/revoquer', [\App\Controllers\Admin\AdminSseAccessController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
-    $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/sse/commandement')), [AuthMiddleware::class]);
+    $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
     $router->get('/atak/sse/operations', [SsePortalController::class, 'operations'], $mwSsePortal);
     $router->get('/atak/sse/workspace', [SseIntelligenceWorkspaceController::class, 'show'], $mwSsePortal);
     $router->post('/atak/sse/workspace/inbox/decide', [SseIntelligenceWorkspaceController::class, 'inboxDecide'], $mwSsePortal);
@@ -1026,6 +1030,7 @@ return function (Router $router) {
     $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/mes-demarches', [MemberSituationController::class, 'mesDemarches'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/unite', [MemberSituationController::class, 'unite'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/evenements', [MemberSituationController::class, 'evenements'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications', [MemberSituationController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1165,7 +1170,15 @@ return function (Router $router) {
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'types'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'typesSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/publier/{id}', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/compliance', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'compliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/documents/relances', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'sendReminders'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/rotate', [OrganizationIntegrationsController::class, 'rotate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1553,8 +1566,12 @@ return function (Router $router) {
     $router->post('/admin/atak-config/marker-icons/delete', [AdminAtakConfigController::class, 'deleteMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/roleplay/intel-scramble', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'intelScrambleRedirect'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/roleplay/intel-scramble', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'intelScrambleRedirect'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay')), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2128,6 +2145,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);
     $router->get('/api/chat/channels', [AtakApiController::class, 'chatChannelsIndex']);
     $router->post('/api/chat/channels', [AtakApiController::class, 'chatChannelsStore']);
+    $router->post('/api/chat/channels/delete', [AtakApiController::class, 'chatChannelsDelete']);
     $router->post('/api/chat/purge', [AtakApiController::class, 'chatPurge']);
     $router->get('/api/atak/viewshed', [AtakApiController::class, 'viewshedIndex']);
     $router->post('/api/atak/viewshed', [AtakApiController::class, 'viewshedStore']);
@@ -2353,6 +2371,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
     $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);
     $router->post('/api/atak/geo/ingest', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'ingest']);
+    $router->post('/api/atak/geo/roads/label', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsUpdateLabel']);
     $router->post('/api/atak/route/plan', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'planRoute']);
     $router->get('/api/atak/theater/coverage', [\App\Controllers\Api\AtakSceneApiController::class, 'coverage']);
     $router->get('/api/atak/intel-events', [\App\Controllers\Api\AtakIntelEventApiController::class, 'index']);

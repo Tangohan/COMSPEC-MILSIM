@@ -34,6 +34,27 @@ class AdminAtakRoleplayController
     }
 
     /**
+     * URL canonique back-office (l’ancien chemin /admin/atak/roleplay redirige ici).
+     */
+    private function roleplayPath(string $suffix = ''): string
+    {
+        $base = 'back-office/atak/roleplay';
+        $suffix = ltrim($suffix, '/');
+
+        return $suffix === '' ? $base : $base . '/' . $suffix;
+    }
+
+    private function roleplayUrl(string $suffix = '', string $fragment = ''): string
+    {
+        $url = url($this->roleplayPath($suffix));
+        if ($fragment !== '') {
+            $url .= '#' . ltrim($fragment, '#');
+        }
+
+        return $url;
+    }
+
+    /**
      * Affiche le formulaire de configuration roleplay.
      */
     public function index(Request $request, array $params = []): Response
@@ -61,6 +82,9 @@ class AdminAtakRoleplayController
             'zoneRows' => $this->decodeZoneRows($config['zones_config'] ?? null),
             'zoneEffectOptions' => self::ZONE_EFFECT_LABELS,
             'csrfToken' => Csrf::token(),
+            'roleplayFormAction' => $this->roleplayUrl(),
+            'roleplayResetUrl' => $this->roleplayUrl('reset'),
+            'atakHubUrl' => url('back-office/atak'),
         ]);
     }
 
@@ -69,7 +93,7 @@ class AdminAtakRoleplayController
      */
     public function intelScrambleRedirect(Request $request, array $params = []): Response
     {
-        return Response::redirect(url('admin/atak/roleplay') . '#intel-scramble');
+        return Response::redirect($this->roleplayUrl('', 'intel-scramble'));
     }
 
     /**
@@ -85,7 +109,7 @@ class AdminAtakRoleplayController
 
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
-            return Response::redirect(url('admin/atak/roleplay'));
+            return Response::redirect($this->roleplayUrl());
         }
 
         $body = $request->all();
@@ -131,7 +155,7 @@ class AdminAtakRoleplayController
         $this->atakConfigRepo->updateRoleplayConfig($tenantId, $config);
 
         Session::flash('success', 'Configuration roleplay enregistrée');
-        return Response::redirect(url('admin/atak/roleplay'));
+        return Response::redirect($this->roleplayUrl());
     }
 
     /**
@@ -168,7 +192,7 @@ class AdminAtakRoleplayController
         $this->atakConfigRepo->updateRoleplayConfig($tenantId, $defaultConfig);
 
         Session::flash('success', 'Configuration roleplay réinitialisée');
-        return Response::redirect(url('admin/atak/roleplay'));
+        return Response::redirect($this->roleplayUrl());
     }
 
     /**

@@ -10,7 +10,7 @@ use App\Core\Session;
 use App\Services\Sse\SseAccessCodeService;
 
 /**
- * Exige une session SSE active (code redeem), ou une entrée commandement (grant / admin).
+ * Exige une session SSE active (code redeem), ou une entrée sans code (commandement / membre habilité).
  */
 final class SsePortalAccessMiddleware
 {
@@ -18,8 +18,13 @@ final class SsePortalAccessMiddleware
     {
         $svc = new SseAccessCodeService();
         if (!$svc->hasActiveClearance()) {
-            if ($svc->canEnterAsStaff()) {
-                $svc->establishStaffClearance((int) Session::get('tenant_id'));
+            if ($svc->canEnterWithoutCode()) {
+                $tenantId = (int) Session::get('tenant_id');
+                if ($svc->canEnterAsStaff()) {
+                    $svc->establishStaffClearance($tenantId);
+                } else {
+                    $svc->establishMemberClearance($tenantId);
+                }
             } else {
                 // Pas de flash « erreur » : le sas explique déjà qu’un code est requis.
                 // Un message d’échec ne s’affiche qu’après une tentative (redeem / CSRF).

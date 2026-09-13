@@ -32,9 +32,16 @@ final class DashboardOrbatAssetTest extends TestCase
         self::assertStringContainsString('Chaîne de commandement', $partial);
         self::assertStringContainsString('data-dash-orbat-expand', $partial);
         self::assertStringContainsString('dash-orbat__avatar', $partial);
+        self::assertStringContainsString('dash-orbat__chip--members', $partial);
+        self::assertStringContainsString('dash-orbat__chip--subs', $partial);
+        self::assertStringContainsString('dash-orbat__unit-icon', $partial);
+        self::assertStringContainsString('icon_url', $support);
+        self::assertStringContainsString('chartIconUrl', $support);
         self::assertStringContainsString('<details', $partial);
 
         self::assertStringContainsString('.dash-orbat__person--lead', $css);
+        self::assertStringContainsString('.dash-orbat__chip--members', $css);
+        self::assertStringContainsString('.dash-orbat__unit-mark--icon', $css);
         self::assertStringContainsString('border-radius: 999px', $css);
         self::assertStringContainsString('max-width: none', $css);
         self::assertStringNotContainsString('purple', strtolower($css));

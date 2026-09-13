@@ -137,11 +137,11 @@ foreach ($dataSummary as $k => $v) {
                 Le commandement entre <strong>sans code</strong> pour délivrer les accès aux opérateurs.
             </p>
             <div class="flex flex-wrap gap-2">
-                <a href="<?= htmlspecialchars(url('back-office/renseignement/codes'), ENT_QUOTES, 'UTF-8') ?>"
+                <a href="<?= htmlspecialchars(url('back-office/renseignement/acces'), ENT_QUOTES, 'UTF-8') ?>"
                    class="inline-flex px-4 py-2 bg-amber-800 text-white text-sm font-semibold rounded-lg hover:bg-amber-900">
-                    Délivrer des codes d’accès
+                    Gérer les codes d’accès
                 </a>
-                <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>"
+                <a href="<?= htmlspecialchars(url('atak/sse/commandement'), ENT_QUOTES, 'UTF-8') ?>"
                    class="inline-flex px-4 py-2 bg-white border border-amber-300 text-amber-950 text-sm font-semibold rounded-lg hover:bg-amber-50">
                     Ouvrir le portail
                 </a>

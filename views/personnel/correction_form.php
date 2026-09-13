@@ -66,12 +66,108 @@ foreach ($fieldGroups as $groupKey => $groupLabel) {
 $assignmentSlots = \App\Services\Personnel\PersonnelCorrectionRequestService::ASSIGNMENT_SLOT_COUNT;
 $personnelProfile = is_array($personnelProfile ?? null) ? $personnelProfile : [];
 $portraitUrl = '';
-if ($staffDossier && function_exists('personnel_operator_portrait_url')) {
+if (function_exists('personnel_operator_portrait_url')) {
     $portraitUrl = (string) (personnel_operator_portrait_url($personnelProfile) ?: '');
+}
+if ($portraitUrl === '' && function_exists('user_site_avatar_url')) {
+    $fallback = user_site_avatar_url($targetUser, $personnelProfile);
+    if (is_string($fallback) && $fallback !== '' && !str_contains($fallback, 'inconnu.svg')) {
+        $portraitUrl = $fallback;
+    }
 }
 $initials = function_exists('user_display_initials')
     ? (string) user_display_initials($displayName, 2)
     : mb_strtoupper(mb_substr($displayName, 0, 2));
+$snapshotChips = [];
+foreach ([
+    'callsign' => 'Indicatif',
+    'first_name' => 'Prénom',
+    'last_name' => 'Nom',
+    'operator_status' => 'Statut',
+] as $chipKey => $chipLabel) {
+    $chipVal = trim((string) ($snapshot[$chipKey] ?? ''));
+    if ($chipVal === '') {
+        continue;
+    }
+    if ($chipKey === 'operator_status') {
+        $chipVal = match ($chipVal) {
+            'active', 'deployable' => 'Déployable',
+            'inactive' => 'Inactif',
+            'training' => 'En formation',
+            default => $chipVal,
+        };
+    }
+    $snapshotChips[] = $chipLabel . ' · ' . $chipVal;
+}
+$gradeIdChip = trim((string) ($snapshot['grade_id'] ?? ''));
+if ($gradeIdChip !== '') {
+    foreach ($choiceCatalog['grade_id'] ?? [] as $gOpt) {
+        if (!is_array($gOpt)) {
+            continue;
+        }
+        if ((string) ($gOpt['value'] ?? '') === $gradeIdChip) {
+            $gLabel = trim((string) ($gOpt['label'] ?? ''));
+            if ($gLabel !== '') {
+                $snapshotChips[] = 'Grade · ' . $gLabel;
+            }
+            break;
+        }
+    }
+}
+$unitPreview = \App\Services\Personnel\PersonnelCorrectionRequestService::decodeAssignmentRows($snapshot['unit_assignments'] ?? []);
+$unitLabelsById = [];
+foreach ($choiceCatalog['units'] ?? [] as $uOpt) {
+    if (!is_array($uOpt)) {
+        continue;
+    }
+    $uv = (string) ($uOpt['value'] ?? '');
+    if ($uv !== '') {
+        $unitLabelsById[$uv] = trim((string) ($uOpt['label'] ?? $uv));
+    }
+}
+if ($unitPreview !== []) {
+    $unitBits = [];
+    foreach ($unitPreview as $urow) {
+        if (!is_array($urow)) {
+            continue;
+        }
+        $uid = (string) ((int) ($urow['unit_id'] ?? 0));
+        $uname = $unitLabelsById[$uid] ?? trim((string) ($urow['unit_name'] ?? $urow['name'] ?? ''));
+        $urole = trim((string) ($urow['role_name'] ?? ''));
+        if ($uname === '' && $urole === '') {
+            continue;
+        }
+        $unitBits[] = trim(($uname !== '' ? $uname : 'Unité') . ($urole !== '' ? ' — ' . $urole : ''));
+    }
+    if ($unitBits !== []) {
+        $snapshotChips[] = 'Unité · ' . implode(' · ', array_slice($unitBits, 0, 2));
+    }
+}
+$statusBadgeClass = static function (string $status): string {
+    return match ($status) {
+        'pending' => 'is-pending',
+        'approved' => 'is-approved',
+        'rejected' => 'is-rejected',
+        'cancelled' => 'is-cancelled',
+        default => '',
+    };
+};
+$formatWhen = static function (?string $when): string {
+    $when = trim((string) $when);
+    if ($when === '') {
+        return '';
+    }
+    try {
+        return (new DateTimeImmutable($when))->format('d/m/Y à H:i');
+    } catch (Throwable) {
+        return $when;
+    }
+};
+$personLabel = static function (string $label, string $fallback = ''): string {
+    $label = trim($label);
+
+    return $label !== '' ? $label : $fallback;
+};
 $padSlots = static function (array $rows, int $count): array {
     $rows = array_values($rows);
     $out = [];
@@ -103,7 +199,7 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
       <div class="rh-corr-form__identity">
         <div class="rh-corr-form__avatar" aria-hidden="true">
           <?php if ($portraitUrl !== ''): ?>
-          <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img">
+          <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img" loading="eager" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.dataset.initials||''}))" data-initials="<?= $h($initials) ?>">
           <?php else: ?>
           <span><?= $h($initials) ?></span>
           <?php endif; ?>
@@ -120,6 +216,13 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
               Chaque modification part en validation auprès d’un organisateur : un e-mail récapitulatif est envoyé aux deux parties, et la fiche n’est mise à jour qu’après confirmation.
             <?php endif; ?>
           </p>
+          <?php if ($snapshotChips !== []): ?>
+          <div class="rh-corr-form__snapshot" aria-label="Aperçu du dossier">
+            <?php foreach ($snapshotChips as $chip): ?>
+            <span class="rh-corr-form__chip"><?= $h($chip) ?></span>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
         </div>
       </div>
       <div class="pd-header__actions">
@@ -135,7 +238,7 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
     <div class="rh-corr-form__identity">
       <div class="rh-corr-form__avatar" aria-hidden="true">
         <?php if ($portraitUrl !== ''): ?>
-        <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img">
+        <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img" loading="eager" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.dataset.initials||''}))" data-initials="<?= $h($initials) ?>">
         <?php else: ?>
         <span><?= $h($initials) ?></span>
         <?php endif; ?>
@@ -195,7 +298,7 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
           <div class="rh-corr-form__portrait-row">
             <div class="rh-corr-form__avatar rh-corr-form__avatar--lg" aria-hidden="true">
               <?php if ($portraitUrl !== ''): ?>
-              <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img">
+              <img src="<?= $h($portraitUrl) ?>" alt="" class="rh-corr-form__avatar-img" loading="eager" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.dataset.initials||''}))" data-initials="<?= $h($initials) ?>">
               <?php else: ?>
               <span><?= $h($initials) ?></span>
               <?php endif; ?>
@@ -377,23 +480,56 @@ $effectifsUrl = function_exists('effectifs_workspace_url')
     <div class="pd-card rh-corr-form__history" aria-labelledby="corr-history-title">
       <div class="pd-card__body">
         <h2 id="corr-history-title" class="pd-form-section__title">Historique récent</h2>
+        <p class="pd-help">Demandes envoyées pour cette fiche, avec le détail des changements proposés.</p>
         <ul class="rh-corr-form__history-list">
           <?php foreach ($pending as $row): ?>
           <?php
-            $st = trim((string) ($row['status'] ?? ''));
-            $when = trim((string) ($row['created_at'] ?? ''));
-            $whenFr = $when;
-            try {
-                if ($when !== '') {
-                    $whenFr = (new DateTimeImmutable($when))->format('d/m/Y à H:i');
-                }
-            } catch (Throwable) {
+            if (!is_array($row)) {
+                continue;
             }
+            $st = trim((string) ($row['status'] ?? ''));
+            $whenFr = $formatWhen((string) ($row['created_at'] ?? ''));
+            $resolvedFr = $formatWhen((string) ($row['resolved_at'] ?? ''));
+            $requester = $personLabel((string) ($row['requester_label'] ?? ''), 'Membre');
+            $resolver = $personLabel((string) ($row['resolver_label'] ?? ''));
+            $note = trim((string) ($row['note'] ?? ''));
+            $resolutionNote = trim((string) ($row['resolution_note'] ?? ''));
+            $diffLines = is_array($row['diff_lines'] ?? null) ? $row['diff_lines'] : [];
+            $fieldCount = count(is_array($row['proposed'] ?? null) ? $row['proposed'] : []);
           ?>
           <li>
-            <span class="rh-corr-form__history-status"><?= $h($statusFr($st)) ?></span>
-            <?php if ($whenFr !== ''): ?>
-            <span class="rh-corr-form__history-when"><?= $h($whenFr) ?></span>
+            <div class="rh-corr-form__history-head">
+              <span class="rh-corr-form__history-status <?= $h($statusBadgeClass($st)) ?>"><?= $h($statusFr($st)) ?></span>
+              <?php if ($whenFr !== ''): ?>
+              <span class="rh-corr-form__history-when">Demandée le <?= $h($whenFr) ?></span>
+              <?php endif; ?>
+            </div>
+            <p class="rh-corr-form__history-meta">
+              Par <?= $h($requester) ?>
+              <?php if ($fieldCount > 0): ?>
+                · <?= $fieldCount === 1 ? '1 information' : $fieldCount . ' informations' ?>
+              <?php endif; ?>
+              <?php if ($resolvedFr !== ''): ?>
+                · Décision le <?= $h($resolvedFr) ?><?= $resolver !== '' ? ' · ' . $h($resolver) : '' ?>
+              <?php endif; ?>
+            </p>
+            <?php if ($diffLines !== []): ?>
+            <ul class="rh-corr-form__history-diff">
+              <?php foreach (array_slice($diffLines, 0, 8) as $line): ?>
+              <li><?= $h((string) $line) ?></li>
+              <?php endforeach; ?>
+              <?php if (count($diffLines) > 8): ?>
+              <li>… et <?= count($diffLines) - 8 ?> autre<?= count($diffLines) - 8 > 1 ? 's' : '' ?> changement<?= count($diffLines) - 8 > 1 ? 's' : '' ?></li>
+              <?php endif; ?>
+            </ul>
+            <?php elseif ($fieldCount < 1): ?>
+            <p class="rh-corr-form__history-meta">Aucun détail de modification n’a été conservé pour cette demande.</p>
+            <?php endif; ?>
+            <?php if ($note !== ''): ?>
+            <p class="rh-corr-form__history-note"><strong>Message :</strong> <?= $h($note) ?></p>
+            <?php endif; ?>
+            <?php if ($resolutionNote !== ''): ?>
+            <p class="rh-corr-form__history-note"><strong>Décision :</strong> <?= $h($resolutionNote) ?></p>
             <?php endif; ?>
           </li>
           <?php endforeach; ?>

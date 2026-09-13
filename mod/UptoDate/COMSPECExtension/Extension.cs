@@ -43,7 +43,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.32";
+        private const string ExtensionVersion = "2.0.34";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2217,8 +2217,8 @@ public static partial class Extension
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
-        // Jeton jeu : uniquement Bearer. Ne jamais coller X-COMSPEC-KEY (souvent une
-        // ancienne clé CBA) — le portail peut la lire en premier et répondre 401.
+        // Jeton jeu : Bearer prioritaire. Miroir X-ATAK-TOKEN + clé communauté si connue
+        // (certains reverse-proxies /public/ ne relaient pas Authorization).
         if (_gameAccessToken.Length > 0)
             EnsureFreshGameAccessToken();
 
@@ -2229,6 +2229,10 @@ public static partial class Extension
             try { req.Headers.Remove("X-ATAK-TOKEN"); } catch { /* ignore */ }
             req.Headers.Remove("Authorization");
             req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + gameTok);
+            req.Headers.TryAddWithoutValidation("X-ATAK-TOKEN", gameTok);
+            var communityKey = _apiKey;
+            if (communityKey.Length > 0)
+                req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", communityKey);
             req.Headers.Remove("User-Agent");
             req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
         }
@@ -3675,13 +3679,15 @@ public static partial class Extension
                 var label = (args[0] ?? "").Trim();
                 if (label.Length == 0) return "ERR|label_empty";
                 var author = args.Length > 1 ? (args[1] ?? "") : "";
+                var mapId = args.Length > 2 && !string.IsNullOrWhiteSpace(args[2]) ? args[2]!.Trim() : "1";
+                if (!int.TryParse(mapId, out var mapNum) || mapNum < 1) mapId = "1";
                 var steamJson = _steamUid.Length > 0
                     ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
                     : "";
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"mapId\":1,\"label\":\"{EscapeJson(label)}\",\"author\":\"{EscapeJson(author)}\"{steamJson}{sessJson}}}";
+                var payload = $"{{\"mapId\":{mapId},\"label\":\"{EscapeJson(label)}\",\"author\":\"{EscapeJson(author)}\"{steamJson}{sessJson}}}";
                 try
                 {
                     using var channelCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -3695,6 +3701,48 @@ public static partial class Extension
                     var code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
                         return code is 401 or 403 ? "ERR|unauthorized" : ("ERR|http_" + code);
+                    return "OK|" + TruncateForExt(respBody);
+                }
+                catch
+                {
+                    return "ERR|network";
+                }
+            }
+            if (function == "DeleteChatChannel" && args.Length >= 1)
+            {
+                if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
+                    return "ERR|no_auth";
+                var channelKey = (args[0] ?? "").Trim();
+                if (channelKey.Length == 0) return "ERR|channel_empty";
+                var mapId = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "1";
+                if (!int.TryParse(mapId, out var mapNumDel) || mapNumDel < 1) mapId = "1";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":{mapId},\"channel_key\":\"{EscapeJson(channelKey)}\"{steamJson}{sessJson}}}";
+                try
+                {
+                    using var channelCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    using var req = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/chat/channels/delete")
+                    {
+                        Content = JsonContent(payload)
+                    };
+                    AttachApiKeyHeader(req);
+                    using var resp = HttpClient.SendAsync(req, channelCts.Token).GetAwaiter().GetResult();
+                    var respBody = ReadContentUtf8(resp, channelCts.Token);
+                    var code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300)
+                    {
+                        if (respBody.Contains("system_channel", StringComparison.OrdinalIgnoreCase))
+                            return "ERR|system_channel";
+                        if (code is 401 or 403)
+                            return "ERR|unauthorized";
+                        if (code == 404) return "ERR|not_found";
+                        return "ERR|http_" + code;
+                    }
                     return "OK|" + TruncateForExt(respBody);
                 }
                 catch
@@ -6699,6 +6747,8 @@ public static partial class Extension
                 var author = args[0] ?? "Unknown";
                 var body = args[1] ?? "";
                 var channelKey = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var mapId = args.Length > 3 && !string.IsNullOrWhiteSpace(args[3]) ? args[3]!.Trim() : "1";
+                if (!int.TryParse(mapId, out var mapNumChat) || mapNumChat < 1) mapId = "1";
                 if (channelKey.Length == 0)
                 {
                     // Inférer depuis le corps (GROUPE / COMMAND / …)
@@ -6721,12 +6771,12 @@ public static partial class Extension
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
                 var channelJson = $",\"channel_key\":\"{EscapeJson(channelKey)}\",\"channel\":\"{EscapeJson(channelKey)}\"";
-                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"{steamJson}{sessJson}{channelJson}}}";
+                var payload = $"{{\"mapId\":{mapId},\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"{steamJson}{sessJson}{channelJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/chat", payload);
                 return;
             }
 
-            if (function == "CreateChatChannel" || function == "GetChatChannels")
+            if (function == "CreateChatChannel" || function == "GetChatChannels" || function == "DeleteChatChannel")
             {
                 // Géré en synchrone par TryGetSyncResponse.
                 return;
