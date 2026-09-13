@@ -55,9 +55,12 @@ window.ATAKMarkers = (function () {
         && window.ArmaMapMarkers.isLiveUnitDuplicate(d, units)) {
         return '';
       }
+      var fixEnc = (window.ArmaMapMarkers && window.ArmaMapMarkers.fixUtf8Mojibake)
+        ? window.ArmaMapMarkers.fixUtf8Mojibake
+        : function (s) { return String(s == null ? '' : s); };
       var label = (window.ArmaMapMarkers && window.ArmaMapMarkers.displayLabelOf)
         ? window.ArmaMapMarkers.displayLabelOf(d)
-        : (d.label || d.text || d.symbolName || d.name || 'Repère');
+        : fixEnc(d.label || d.text || d.symbolName || d.name || 'Repère');
       var desc = d.description || '';
       var gx = item.gridLng != null ? Math.round(Number(item.gridLng)) : '—';
       var gy = item.gridLat != null ? Math.round(Number(item.gridLat)) : '—';
@@ -74,9 +77,11 @@ window.ATAKMarkers = (function () {
           ? window.MilstdCatalog.affiliationLabelFr(d.affiliation)
           : '';
         var bits = [];
-        if (d.symbolName) bits.push(escapeHtml(d.symbolName));
-        else if (typeFr && typeFr !== label) bits.push(escapeHtml(typeFr));
-        if (affFr) bits.push(escapeHtml(affFr));
+        if (typeFr && typeFr !== label) bits.push(escapeHtml(typeFr));
+        else if (d.symbolName) bits.push(escapeHtml(fixEnc(d.symbolName)));
+        if (affFr && bits.indexOf(escapeHtml(affFr)) < 0 && String(typeFr || '').indexOf(affFr) < 0) {
+          bits.push(escapeHtml(affFr));
+        }
         if (bits.length) metaExtra = '<span class="atak-marker-item__symbol">' + bits.join(' · ') + '</span>';
       }
       var thumb = '';

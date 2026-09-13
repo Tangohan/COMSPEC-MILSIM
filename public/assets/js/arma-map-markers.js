@@ -1014,6 +1014,7 @@ window.ArmaMapMarkers = (function () {
     armaColorHex: armaColorHex,
     baseTypeKey: baseTypeKey,
     decodeType: decodeType,
+    fixUtf8Mojibake: fixUtf8Mojibake,
     isArmaStyleMarker: isArmaStyleMarker,
     isAreaShape: isAreaShape,
     buildIconSpec: buildIconSpec,
