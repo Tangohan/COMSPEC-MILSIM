@@ -18,6 +18,23 @@ $mode = (($hr['advancement_mode'] ?? 'propose') === 'apply') ? 'apply' : 'propos
         Personnalisez le coffre, les alertes, l’intégration, le roleplay et les avancements.
         Chaque communauté choisit ce qui s’applique chez elle. Rien n’est forcé.
     </p>
+    <div class="eff-rh-tiles" aria-label="Raccourcis">
+        <a class="eff-rh-tile" href="<?= $h(effectifs_workspace_url('documents-rh')) ?>">
+            <span class="eff-rh-tile__kicker">Coffre</span>
+            <strong class="eff-rh-tile__value">Documents</strong>
+            <span class="eff-rh-tile__label">Pièces du dossier individuel</span>
+        </a>
+        <a class="eff-rh-tile" href="<?= $h(effectifs_workspace_url('alertes')) ?>">
+            <span class="eff-rh-tile__kicker">Suivi</span>
+            <strong class="eff-rh-tile__value">Alertes</strong>
+            <span class="eff-rh-tile__label">Seuils configurés ci-dessous</span>
+        </a>
+        <a class="eff-rh-tile" href="<?= $h(effectifs_workspace_url('doublons')) ?>">
+            <span class="eff-rh-tile__kicker">Qualité</span>
+            <strong class="eff-rh-tile__value">Doublons</strong>
+            <span class="eff-rh-tile__label">Fiches jumelles</span>
+        </a>
+    </div>
 </section>
 
 <form method="post" action="<?= $h(effectifs_workspace_url('reglages')) ?>" class="bo-eff-settings">

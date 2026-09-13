@@ -17,7 +17,7 @@ final class EffectifsDuplicatesUiAssetTest extends TestCase
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
         $labels = PersonnelDuplicateDetectionService::FIELD_LABELS;
 
-        self::assertStringContainsString('eff-page-head', $view);
+        self::assertStringContainsString('eff-rh-hero', $view);
         self::assertStringContainsString('eff-page-title', $view);
         self::assertStringContainsString('Fiches jumelles', $view);
         self::assertStringContainsString('Pilotage RH', $view);

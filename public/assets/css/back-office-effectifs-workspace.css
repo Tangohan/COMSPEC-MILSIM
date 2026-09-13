@@ -499,11 +499,73 @@
   color: var(--ath-ink, #0c1116);
 }
 
+.bo-eff-workspace .eff-rh-pills {
+  margin: 0 0 1.15rem;
+}
+
+.bo-eff-workspace .eff-rh-pill {
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-rh-pill:hover,
+.bo-eff-workspace .eff-rh-pill.is-on {
+  border-color: var(--ath-ink, #0c1116);
+  background: var(--ath-ink, #0c1116);
+  color: #fff;
+}
+
+.bo-eff-workspace .eff-rh-pill--warn.is-on {
+  border-color: #b45309;
+  background: #b45309;
+  color: #fff;
+}
+
 .bo-eff-workspace .eff-rh-form {
   margin: 0 0 1.15rem;
   padding: 1.05rem 1.15rem 1.2rem;
   border: 1px solid var(--ath-line, #e3e8ea);
   background: #fff;
+  border-radius: 0.65rem;
+}
+
+/* Grille BO : 2 colonnes max — évite les champs trop étirés sur grand écran */
+.bo-eff-workspace .eff-rh-form__grid {
+  gap: 0.9rem 1rem;
+}
+@media (min-width: 720px) {
+  .bo-eff-workspace .eff-rh-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1100px) {
+  .bo-eff-workspace .eff-rh-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bo-eff-workspace .eff-rh-field textarea {
+  min-height: 4.5rem;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.bo-eff-workspace .eff-rh-deposit {
+  min-height: 6rem;
+  border-radius: 0.5rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.bo-eff-workspace .eff-rh-issue {
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.bo-eff-workspace .eff-rh-paper__sheet {
+  min-height: 22rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .bo-eff-workspace .eff-rh-form__title {
@@ -526,12 +588,21 @@
 .bo-eff-workspace .eff-rh-field select,
 .bo-eff-workspace .eff-rh-field textarea {
   border: 1px solid var(--ath-line, #e3e8ea);
-  background: #fff;
+  /* background-color (pas background) : ne pas écraser l’image du chevron select */
+  background-color: #fff;
   color: var(--ath-ink, #0c1116);
 }
 
 .bo-eff-workspace .eff-rh-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.1rem;
+  background-color: #fff;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%236d7a80' stroke-width='1.6' d='M1.5 1.5 6 6l4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 12px 8px;
+  cursor: pointer;
 }
 
 .bo-eff-workspace .eff-rh-field input:not([type="file"]):focus,

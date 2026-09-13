@@ -138,7 +138,7 @@ foreach ($docs as $d) {
             </div>
             <div class="eff-rh-field eff-rh-field--wide">
                 <span class="eff-rh-field__label">Description</span>
-                <input type="text" name="description" maxlength="500" placeholder="Contexte, période, décision associée…" aria-label="Description">
+                <textarea name="description" rows="2" maxlength="500" placeholder="Contexte, période, décision associée…" aria-label="Description"></textarea>
             </div>
             <div class="eff-rh-form__actions">
                 <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Ajouter au dossier</button>
@@ -183,7 +183,7 @@ foreach ($docs as $d) {
                 </div>
                 <div class="eff-rh-field eff-rh-field--wide">
                     <span class="eff-rh-field__label">Mention complémentaire</span>
-                    <input type="text" name="detail" maxlength="500" placeholder="Unité, période, décision, objectifs…" aria-label="Mention complémentaire" data-rh-issue-detail>
+                    <textarea name="detail" rows="2" maxlength="500" placeholder="Unité, période, décision, objectifs…" aria-label="Mention complémentaire" data-rh-issue-detail></textarea>
                 </div>
                 <div class="eff-rh-form__actions">
                     <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Établir et ranger</button>

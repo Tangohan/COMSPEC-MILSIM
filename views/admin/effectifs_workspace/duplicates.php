@@ -22,7 +22,7 @@ $fieldHints = [
 ];
 $iconDup = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="7" y="7" width="12" height="14" rx="1.5"/><path stroke-linecap="round" d="M5 17V5.5A1.5 1.5 0 016.5 4H16"/><path stroke-linecap="round" d="M10 12h6M10 15h4"/></svg>';
 ?>
-<section class="eff-page-head">
+<section class="eff-rh-hero">
     <p class="eff-page-kicker">Pilotage RH</p>
     <h2 class="eff-page-title">Fiches jumelles</h2>
     <p class="eff-page-lead">
