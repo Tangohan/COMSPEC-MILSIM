@@ -1275,6 +1275,12 @@ class Container
             ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\OrganizationVisibilityHistoryRepository::class => new \App\Repositories\OrganizationVisibilityHistoryRepository(),
+            \App\Repositories\OrbatBilletRepository::class => new \App\Repositories\OrbatBilletRepository(),
+            \App\Services\Organization\OrbatBilletService::class => new \App\Services\Organization\OrbatBilletService(
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\OrganizationVisibilityHistoryRepository::class)
+            ),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
             \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),
             \App\Services\Personnel\RoleplayFollowupNotificationService::class => new \App\Services\Personnel\RoleplayFollowupNotificationService(
@@ -2497,7 +2503,9 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\OrbatChartTypeRepository::class),
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
-                self::get(\App\Repositories\OrganizationVisibilityHistoryRepository::class)
+                self::get(\App\Repositories\OrganizationVisibilityHistoryRepository::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Services\Organization\OrbatBilletService::class)
             ),
             \App\Controllers\Api\ForumModerationApiController::class => new \App\Controllers\Api\ForumModerationApiController(
                 self::get(\App\Repositories\ForumTopicRepository::class),

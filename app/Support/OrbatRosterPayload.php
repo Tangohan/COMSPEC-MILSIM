@@ -271,9 +271,107 @@ final class OrbatRosterPayload
         }
         if ($root !== null) {
             [$root] = self::annotateReadinessAggregation($root);
+            $root = self::attachBilletManning($root, $tenantId);
         }
 
         return $root;
+    }
+
+    /**
+     * Attache effectif théorique / pourvu / vacant issus des postes ORBAT.
+     *
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    private static function attachBilletManning(array $node, int $tenantId): array
+    {
+        static $manningMap = null;
+        static $manningTenant = 0;
+        if ($manningMap === null || $manningTenant !== $tenantId) {
+            $manningTenant = $tenantId;
+            $manningMap = [];
+            try {
+                $repo = new \App\Repositories\OrbatBilletRepository();
+                if ($repo->schemaReady()) {
+                    $manningMap = $repo->manningByUnitForTenant($tenantId);
+                }
+            } catch (\Throwable) {
+                $manningMap = [];
+            }
+        }
+        $uid = (int) ($node['unitId'] ?? 0);
+        if ($uid > 0 && isset($manningMap[$uid])) {
+            $m = $manningMap[$uid];
+            $node['billetAuthorized'] = (int) ($m['authorized'] ?? 0);
+            $node['billetFilled'] = (int) ($m['filled'] ?? 0);
+            $node['billetVacant'] = (int) ($m['vacant'] ?? 0);
+            $node['billetManningLabel'] = sprintf(
+                '%d / %d postes (%d vacants)',
+                (int) ($m['filled'] ?? 0),
+                (int) ($m['authorized'] ?? 0),
+                (int) ($m['vacant'] ?? 0)
+            );
+            // Liste des postes (y compris vacants) pour la fiche unité
+            $node['billets'] = array_map(static function (array $b): array {
+                $occLabels = [
+                    'primary' => 'Titulaire',
+                    'acting' => 'Intérim',
+                    'deputy' => 'Adjoint',
+                    'alternate' => 'Suppléant',
+                ];
+                $holdersOut = [];
+                foreach ($b['holders'] ?? [] as $h) {
+                    if (!is_array($h)) {
+                        continue;
+                    }
+                    $occ = (string) ($h['occupancy_type'] ?? 'primary');
+                    $holdersOut[] = [
+                        'id' => (int) ($h['id'] ?? 0),
+                        'user_id' => (int) ($h['user_id'] ?? 0),
+                        'label' => (string) ($h['label'] ?? ''),
+                        'occupancy_type' => $occ,
+                        'occupancy_label' => $occLabels[$occ] ?? $occ,
+                        'starts_at' => (string) ($h['starts_at'] ?? ''),
+                        'ends_at' => $h['ends_at'] ?? null,
+                    ];
+                }
+                $vacant = (int) ($b['vacant'] ?? 0);
+                $filled = (int) ($b['filled'] ?? 0);
+                $seatStatus = $vacant > 0 && $filled === 0
+                    ? 'vacant'
+                    : ($vacant > 0 ? 'partial' : 'filled');
+
+                return [
+                    'id' => (int) ($b['id'] ?? 0),
+                    'code' => (string) ($b['code'] ?? ''),
+                    'title' => (string) ($b['title'] ?? ''),
+                    'org_callsign' => (string) ($b['org_callsign'] ?? ''),
+                    'function_label' => (string) ($b['function_label'] ?? ''),
+                    'authorized' => (int) ($b['authorized'] ?? 1),
+                    'filled' => $filled,
+                    'vacant' => $vacant,
+                    'seat_status' => $seatStatus,
+                    'is_key_post' => !empty($b['is_key_post']),
+                    'is_critical' => !empty($b['is_critical']),
+                    'holders' => $holdersOut,
+                ];
+            }, is_array($m['billets'] ?? null) ? $m['billets'] : []);
+            // Remplacer le strength « membres » par le pourvu postes si des billets existent
+            if ((int) ($m['authorized'] ?? 0) > 0) {
+                $node['strengthTheoretical'] = (int) ($m['authorized'] ?? 0);
+                $node['strengthFilled'] = (int) ($m['filled'] ?? 0);
+                $node['strengthVacant'] = (int) ($m['vacant'] ?? 0);
+            }
+        }
+        $children = [];
+        foreach ($node['children'] ?? [] as $ch) {
+            if (is_array($ch)) {
+                $children[] = self::attachBilletManning($ch, $tenantId);
+            }
+        }
+        $node['children'] = $children;
+
+        return $node;
     }
 
     /**
