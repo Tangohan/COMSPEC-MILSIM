@@ -593,6 +593,15 @@
   color: #fff;
 }
 
+.bo-eff-workspace .eff-rh-paper__hint {
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-rh-paper__sheet {
+  border-color: var(--ath-line, #e3e8ea);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fa 100%);
+}
+
 .bo-eff-workspace .eff-metric {
   border: 1px solid var(--ath-line, #e3e8ea);
   background: #fff;
