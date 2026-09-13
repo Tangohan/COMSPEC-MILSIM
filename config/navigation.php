@@ -216,6 +216,7 @@ return [
                     'links' => [
                         ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
                         ['label' => 'Mes démarches', 'path' => 'personnel/mon-espace-rh', 'description' => 'Absences, élévation, souhait d’évolution et documents'],
+                        ['label' => 'Mon coffre', 'path' => 'back-office/ma-situation/coffre', 'description' => 'Pièces RH, brevets et attestations qui vous concernent'],
                         ['label' => 'Distinctions', 'path' => 'distinctions', 'description' => 'Reconnaissances et parcours valorisés'],
                         ['label' => 'Paramètres du compte', 'path' => 'account', 'description' => 'Connexion, photo et préférences'],
                         ['label' => 'Préférences', 'path' => 'account/preferences', 'description' => 'Langue, fuseau et affichage'],

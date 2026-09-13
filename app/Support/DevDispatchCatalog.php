@@ -268,6 +268,15 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(548, '2026-09-13', 'Mon coffre : toutes les pièces de l’opérateur au même endroit', 'Dans le back-office, les opérateurs ouvrent désormais Mon coffre sous MA SITUATION. La page regroupe les pièces RH partagées, les brevets de qualification et les attestations de formation qui les concernent', [
+                'Page Mon coffre dans MA SITUATION',
+                'Regroupement des fichiers RH, brevets et attestations accessibles',
+                'Les pièces auto-établies rejoignent le coffre de l’opérateur',
+            ], [
+                'Les documents réservés à l’encadrement restent hors du coffre opérateur',
+            ], [], ['personnel'], [
+                'Connectez-vous en opérateur. Ouvrez MA SITUATION → Mon coffre. Les pièces partagées avec vous doivent apparaître avec un bouton d’ouverture.',
+            ], 'Athena'),
             $pr(547, '2026-09-13', 'Renseignement : entrée commandement et accès au poste', 'Le commandement ouvre le bureau renseignement sans code, gère les accès depuis Athena, et fixe le niveau de diffusion sur les fiches opérateurs', [
                 'Entrée sans code pour le commandement et les membres déjà habilités au renseignement',
                 'Page Accès renseignement dans le back-office : délivrance, révocation et suivi des codes temporaires',
