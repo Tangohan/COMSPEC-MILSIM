@@ -7,7 +7,39 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Overwatch 1.5.69 / Athena 1.0.116 — 2026-09-13
+
+### Correction — Barre de liaison en bas
+
+La barre OK / NOK se replace en bas de la carte du téléphone, y compris avec l’interface tablette actuelle.
+
+### Correction — Menu ACE Athena rangé
+
+Les anciennes actions à plat sous COMSPEC Athena sont retirées. Les rubriques reviennent au premier niveau.
+
+---
+
+## Overwatch 1.5.68 / Athena 1.0.115 — 2026-09-13
+
+### Correction — Pack complet rechargé
+
+Le pack Workshop / FN inclut maintenant toutes les nouveautés du jour. Rechargez le pack et quittez Arma complètement.
+
+### Nouveau — Supprimer un canal dans Messagerie
+
+Le bouton Supprimer retire le canal radio personnalisé sélectionné. Les canaux système restent protégés. L’historique disparaît aussi du journal du poste.
+
+### Correction — Messagerie et transmissions après connexion
+
+Après une connexion Athena par mot de passe, les messages et les autres envois vers le poste restent autorisés. Plus de session refusée juste après l’ouverture du canal.
+
+### Amélioration — Boutons Messagerie
+
+Créer, Supprimer, Envoyer et Effacer l’affichage local répondent de façon fiable au clic.
 
 ---
 

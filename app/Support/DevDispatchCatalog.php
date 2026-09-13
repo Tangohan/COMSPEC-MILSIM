@@ -623,6 +623,19 @@ final class DevDispatchCatalog
                 ],
             ],
         ], [
+            $pr(549, '2026-09-13', 'Barre de liaison en bas et menu ACE rangé', 'Sur le téléphone, la barre OK / NOK revient en bas de la carte. Dans ACE, COMSPEC Athena n’étale plus l’ancienne liste à plat : les rubriques sont de nouveau le premier niveau', [], [], [
+                'Barre OK / NOK encore sous la barre d’état en haut',
+                'Menu ACE Athena encore en longue colonne d’actions',
+            ], ['atak'], [
+                'Quittez Arma complètement. Vérifiez le journal : connect v1.5.69 et arbre v4. Ouvrez ACE → COMSPEC Athena : rubriques seulement. Ouvrez le téléphone : barre en bas de la carte.',
+            ], 'Overwatch 1.5.69 · Athena 1.0.116 · Workshop + FN'),
+            $pr(548, '2026-09-13', 'Pack Overwatch 1.5.68 rechargé en jeu', 'Le pack Workshop et le pack FN contiennent maintenant Overwatch 1.5.68 et Athena 1.0.115 au complet : messagerie, suppression de canal et transmissions après connexion', [
+                'Pack jouable aligné sur la version annoncée du jour',
+            ], [], [
+                'Certaines nouveautés du jour absentes en jeu malgré le numéro de version annoncé',
+            ], ['atak'], [
+                'Quittez Arma complètement. Vérifiez le journal : connect v1.5.68. Ouvrez Messagerie : créer un canal, envoyer, puis Supprimer.',
+            ], 'Overwatch 1.5.68 · Athena 1.0.115 · Extension 2.0.34 · Workshop + FN'),
             $pr(545, '2026-09-13', 'Organigramme : tout éditer au clic droit', 'Sur Structure & recrutement, un clic droit sur une carte ouvre un menu complet : renommer, type, chef, créer, rattacher, statut, confidentialité, invitation et suppression', [
                 'Menu contextuel enrichi sur l’organigramme (arbre et annuaire)',
                 'Création de regroupement ou d’équipe rattachée à n’importe quelle unité',

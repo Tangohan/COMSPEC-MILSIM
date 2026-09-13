@@ -59,32 +59,47 @@ _hw = (_hw - (_inset * 2)) max (_bw * 4);
 // Une seule ligne : bandeau bas et compact (évite le double pavé opaque).
 private _sh = (_hh * 0.62) max 0.013;
 
-// Ancre en bas de la carte visible (plus sous la barre d’état).
-private _sy = _hy + _hh + 0.001;
+// Bas du bandeau d’état (repli seulement si aucune carte trouvée).
+// Attention : ne jamais utiliser une variable _hy non définie (barre restait en haut).
+private _hdrY = _by;
+if (!isNull _hdr) then {
+    (ctrlPosition _hdr) params ["", "_hdrYTmp"];
+    _hdrY = _hdrYTmp;
+};
+// Repli : bas de la zone téléphone (sous le bandeau), pas collé sous la barre d’état.
+private _sy = _hdrY + ((_hh * 14.5) max 0.28) - _sh - 0.006;
+
 private _mapCtrl = controlNull;
 if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
     private _mapName = ["cTab_Android_dlg", "mapType"] call cTab_fnc_getSettings;
     private _mapTypes = ["cTab_Android_dlg", "mapTypes"] call cTab_fnc_getSettings;
     private _mapIdc = [_mapTypes, _mapName] call cTab_fnc_getFromPairs;
-    if (_mapIdc isEqualType 0) then { _mapCtrl = _disp displayCtrl _mapIdc; };
+    if (_mapIdc isEqualType 0) then {
+        _mapCtrl = _disp displayCtrl _mapIdc;
+        // Interface tablette V2 : IDC natifs souvent décalés de +17000.
+        if (isNull _mapCtrl) then { _mapCtrl = _disp displayCtrl (17000 + _mapIdc); };
+    };
 };
 if (isNull _mapCtrl) then {
     {
         private _c = _disp displayCtrl _x;
         if (!isNull _c && {ctrlShown _c}) exitWith { _mapCtrl = _c; };
-    } forEach [1201, 1202, 16];
+    } forEach [1201, 1202, 16, 18201, 18202, 17016];
 };
-if (!isNull _mapCtrl) then {
+if (!isNull _mapCtrl && {ctrlShown _mapCtrl}) then {
     (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
-    private _maxRight = _mx + _mw - 0.004;
-    private _bgGroup = _disp displayCtrl 4660;
-    if (!isNull _bgGroup && {ctrlShown _bgGroup}) then {
-        (ctrlPosition _bgGroup) params ["_dx", "", "_dw"];
-        if (_dw > 0.02 && {_dx > _mx}) then { _maxRight = _dx - 0.004; };
+    if (_mw > 0.08 && {_mh > 0.08}) then {
+        private _maxRight = _mx + _mw - 0.004;
+        private _bgGroup = _disp displayCtrl 4660;
+        if (isNull _bgGroup) then { _bgGroup = _disp displayCtrl (17000 + 4660); };
+        if (!isNull _bgGroup && {ctrlShown _bgGroup}) then {
+            (ctrlPosition _bgGroup) params ["_dx", "", "_dw"];
+            if (_dw > 0.02 && {_dx > _mx}) then { _maxRight = _dx - 0.004; };
+        };
+        if ((_hx + _hw) > _maxRight) then { _hw = (_maxRight - _hx) max 0.12; };
+        // Bas du rectangle carte, léger retrait pour laisser les cartouches coins.
+        _sy = _my + _mh - _sh - 0.004;
     };
-    if ((_hx + _hw) > _maxRight) then { _hw = (_maxRight - _hx) max 0.12; };
-    // Bas du rectangle carte, léger retrait pour laisser les cartouches coins.
-    _sy = _my + _mh - _sh - 0.004;
 };
 
 if (isNull _ctrl) then {

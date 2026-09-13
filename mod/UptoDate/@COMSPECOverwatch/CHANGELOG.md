@@ -1,10 +1,33 @@
+COMSPEC Overwatch 1.5.69 / Athena ATAK 1.0.116 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.69[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.69 · Athena 1.0.116 · Extension 2.0.34
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez. Sinon l’ancien menu ACE et l’ancienne barre peuvent rester en mémoire.
+[/quote]
+
+[h2]Correction — Barre de liaison en bas de la carte[/h2]
+La barre OK / NOK se replace en bas de la carte du téléphone, y compris avec l’interface tablette actuelle. Elle ne reste plus coincée sous la barre d’état en haut.
+
+[h2]Correction — Menu ACE Athena rangé[/h2]
+Sous COMSPEC Athena, les anciennes actions à plat sont retirées. Vous retrouvez les rubriques (Applications, Affichage situation, Transmission, Cartographie, Appui & mission, Tenues, Compte & liaison). Connexion et téléphone restent en tête.
+
+Après installation : journal → connect v1.5.69 et « arbre v4 » ; ACE → quelques rubriques ; téléphone → barre en bas.
+
+---
+
 COMSPEC Overwatch 1.5.68 / Athena ATAK 1.0.115 — 13/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.68[/h1]
 [b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.68 · Athena 1.0.115 · Extension 2.0.34
 [quote]
-[b]Important :[/b] quittez Arma complètement, rechargez le pack, puis relancez. Déployez aussi la mise à jour du portail (clé d’accès après connexion). Un simple retour au lobby ne suffit pas.
+[b]Important :[/b] quittez Arma 3 complètement, rechargez le pack Workshop (et le pack FN si vous jouez avec), puis relancez. Déployez aussi la mise à jour du portail (clé d’accès après connexion). Un simple retour au lobby ne suffit pas.
 [/quote]
+
+[h2]Correction — Pack complet rechargé[/h2]
+Le pack jouable inclut désormais toutes les nouveautés du jour (messagerie, connexion, liaison). Si une fonction annoncée manquait encore en jeu, rechargez ce pack puis quittez Arma complètement.
 
 [h2]Nouveau — Supprimer un canal dans Messagerie[/h2]
 Dans Messagerie, le bouton Supprimer retire le canal personnalisé sélectionné. Les canaux système (Groupe, Commandement, Général, JTAC, Air) restent protégés. L’historique de ce canal disparaît aussi du journal du poste.
@@ -14,6 +37,8 @@ Après une connexion Athena par mot de passe, les messages et les autres envois 
 
 [h2]Amélioration — Boutons Messagerie[/h2]
 Créer, Supprimer, Envoyer et Effacer l’affichage local répondent de façon fiable au clic.
+
+Après installation : journal de liaison → connect v1.5.68 ; Messagerie → créer un canal, envoyer, puis Supprimer.
 
 ---
 
