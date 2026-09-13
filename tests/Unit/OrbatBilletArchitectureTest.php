@@ -38,6 +38,18 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('function activeHolders', $src);
         self::assertStringContainsString('occupancy_type', $src);
         self::assertStringContainsString('authorized_slots', $src);
+        self::assertStringContainsString('Database::getPdo()', $src);
+        self::assertStringNotContainsString('Database::connection()', $src);
+    }
+
+    public function testOrbatPdoAccessUsesDatabaseGetPdo(): void
+    {
+        $service = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Organization/OrbatBilletService.php');
+        $history = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/OrganizationVisibilityHistoryRepository.php');
+        self::assertStringContainsString('Database::getPdo()', $service);
+        self::assertStringContainsString('Database::getPdo()', $history);
+        self::assertStringNotContainsString('Database::connection()', $service);
+        self::assertStringNotContainsString('Database::connection()', $history);
     }
 
     public function testServiceSeparatesGradeFromFunctionAndSupportsActing(): void

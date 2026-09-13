@@ -13,7 +13,7 @@ final class OrganizationVisibilityHistoryRepository
 
     private function pdo(): PDO
     {
-        return $this->pdo ??= Database::connection();
+        return $this->pdo ??= Database::getPdo();
     }
 
     public function tableExists(string $table = 'organization_visibility_history'): bool

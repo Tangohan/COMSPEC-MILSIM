@@ -819,7 +819,7 @@ final class OrbatBilletService
             return $this->pdo;
         }
         try {
-            return $this->pdo = Database::connection();
+            return $this->pdo = Database::getPdo();
         } catch (\Throwable) {
             return null;
         }
