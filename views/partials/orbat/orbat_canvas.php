@@ -1643,7 +1643,6 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             var tr = sel.closest("tr");
             var uid = tr ? parseInt(tr.dataset.unitId || "0", 10) : 0;
             if (uid < 1) return;
-            var payload = { unit_id: String(uid) };
             if (field === "admin_status") {
                 postStructure("set_status", { unit_id: String(uid), admin_status: sel.value }).catch(function(err) { alert(err.message || err); });
             } else if (field === "visibility_level") {
