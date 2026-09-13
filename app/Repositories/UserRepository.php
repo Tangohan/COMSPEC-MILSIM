@@ -2636,6 +2636,66 @@ class UserRepository
     }
 
     /**
+     * Recherche de membres pour attribution de qualifications (nom, indicatif, e-mail,
+     * identifiant Athena, matricule, ou id numérique exact).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchMembersForQualificationAward(int $tenantId, string $query, int $limit = 20): array
+    {
+        $q = trim($query);
+        $len = function_exists('mb_strlen') ? mb_strlen($q) : strlen($q);
+        if ($tenantId < 1 || $len < 1) {
+            return [];
+        }
+        // Id numérique exact : autorisé dès 1 caractère ; sinon au moins 2.
+        $isNumericId = ctype_digit($q);
+        if (!$isNumericId && $len < 2) {
+            return [];
+        }
+        $q = function_exists('mb_substr') ? mb_substr($q, 0, 120) : substr($q, 0, 120);
+        $term = '%' . $q . '%';
+        $limit = max(1, min(30, $limit));
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $hasAthena = $this->hasAthenaIdentifierColumn();
+        $hasTmn = $this->hasTenantMemberNumberColumn();
+        $athenaSelect = $hasAthena ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $tmnSelect = $hasTmn ? 'u.tenant_member_number' : 'NULL AS tenant_member_number';
+
+        $bits = [
+            'u.display_name LIKE ?',
+            'u.email LIKE ?',
+            "(u.callsign IS NOT NULL AND TRIM(u.callsign) <> '' AND u.callsign LIKE ?)",
+        ];
+        $params = array_merge($pack['params'], [$term, $term, $term]);
+        if ($hasAthena) {
+            $bits[] = "(u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)";
+            $params[] = $term;
+        }
+        if ($hasTmn) {
+            $bits[] = "(u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)";
+            $params[] = $term;
+        }
+        if ($isNumericId) {
+            $bits[] = 'u.id = ?';
+            $params[] = (int) $q;
+        }
+
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, '
+            . $athenaSelect . ', ' . $tmnSelect . '
+             FROM users u
+             WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
+             AND ' . $pack['sql'] . '
+             AND (' . implode(' OR ', $bits) . ')
+             ORDER BY u.display_name ASC
+             LIMIT ' . $limit;
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Annuaire plateforme : comptes toutes communautés.
      *
      * @return array{rows: list<array<string, mixed>>, total: int}

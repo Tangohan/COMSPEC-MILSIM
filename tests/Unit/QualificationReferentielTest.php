@@ -101,4 +101,54 @@ final class QualificationReferentielTest extends TestCase
         self::assertStringContainsString('classique', $migration);
         self::assertStringContainsString('moderne', $migration);
     }
+
+    public function testAwardFormExplainsPrincipleAndMemberSearch(): void
+    {
+        $view = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/views/admin/organization/qualifications/award_form.php'
+        );
+        $controller = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/app/Controllers/Admin/Organization/QualificationReferentielController.php'
+        );
+        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
+
+        self::assertStringContainsString('Principe', $view);
+        self::assertStringContainsString('data-qr-member-picker', $view);
+        self::assertStringContainsString('name="user_id"', $view);
+        self::assertStringContainsString('api/admin/qualifications/members', $view);
+        self::assertStringContainsString('searchMembers', $controller);
+        self::assertStringContainsString('searchMembersForQualificationAward', $controller);
+        self::assertStringContainsString("/api/admin/qualifications/members'", $routes);
+    }
+
+    public function testIssuersPageHasUsArmyExamplesAndMemberLookup(): void
+    {
+        $view = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/views/admin/organization/qualifications/issuers.php'
+        );
+        $catalog = \App\Support\QualificationUsArmyIssuerExamples::catalog();
+        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
+
+        self::assertGreaterThanOrEqual(10, count($catalog));
+        self::assertSame('U.S. Army Airborne School', $catalog[2]['name'] ?? null);
+        self::assertSame('75th Ranger Regiment', $catalog[9]['name'] ?? null);
+        self::assertStringContainsString('exemples-us-army', $view);
+        self::assertStringContainsString('data-qr-member-lookup', $view);
+        self::assertStringContainsString('Retrouver l’identifiant d’un membre', $view);
+        self::assertStringContainsString("/emetteurs/exemples-us-army'", $routes);
+        self::assertSame('École', \App\Support\QualificationUsArmyIssuerExamples::kindLabel('school'));
+    }
+
+    public function testIndexExplainsCatalogIssuerAwardFlow(): void
+    {
+        $view = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/views/admin/organization/qualifications/index.php'
+        );
+        self::assertStringContainsString('Comment ça fonctionne', $view);
+        self::assertStringContainsString('Organismes émetteurs', $view);
+        self::assertStringContainsString('Attribuer', $view);
+        self::assertFileExists(
+            dirname(__DIR__, 2) . '/public/assets/css/back-office-qualifications-referentiel.css'
+        );
+    }
 }

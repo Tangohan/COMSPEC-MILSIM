@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
 use App\Repositories\QualificationReferentielRepository;
+use App\Repositories\UserRepository;
 use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
@@ -29,6 +30,7 @@ final class QualificationReferentielController
         private QualificationTemporalStatusService $temporal,
         private QualificationBadgeStorageService $badges,
         private QualificationCertificatePdfService $certificates,
+        private UserRepository $users,
     ) {
     }
 
@@ -46,6 +48,8 @@ final class QualificationReferentielController
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),
             'temporal' => $this->temporal,
+            'issuerCount' => count($this->referentiel->listIssuers($tenantId)),
+            'backOfficePageCss' => ['back-office-qualifications-referentiel.css'],
         ]);
     }
 
@@ -246,12 +250,65 @@ final class QualificationReferentielController
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
+        $q = trim((string) $request->query('q', ''));
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.issuers',
             'title' => 'Organismes émetteurs',
-            'issuers' => $this->referentiel->listIssuers($tenantId),
+            'issuers' => $this->referentiel->listIssuers($tenantId, $q !== '' ? $q : null),
+            'searchQuery' => $q,
+            'memberSearchUrl' => url('api/admin/qualifications/members'),
+            'backOfficePageCss' => ['back-office-qualifications-referentiel.css'],
         ]);
+    }
+
+    public function seedUsArmyIssuers(Request $request, array $params = []): Response
+    {
+        return $this->withTenantPost($request, function (int $tenantId) {
+            $result = $this->referentiel->seedUsArmyExampleIssuers($tenantId);
+            $created = (int) ($result['created'] ?? 0);
+            $skipped = (int) ($result['skipped'] ?? 0);
+            if ($created === 0 && $skipped === 0) {
+                Session::flash('error', 'Impossible d’ajouter les exemples US Army.');
+            } elseif ($created === 0) {
+                Session::flash('success', 'Exemples US Army déjà présents (' . $skipped . ').');
+            } else {
+                Session::flash(
+                    'success',
+                    $created . ' organisme(s) US Army ajouté(s)'
+                    . ($skipped > 0 ? ' (' . $skipped . ' déjà présents).' : '.')
+                );
+            }
+
+            return Response::redirect(url('back-office/referentiels/qualifications/emetteurs'));
+        });
+    }
+
+    public function searchMembers(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantIdOrRedirect();
+        if ($tenantId instanceof Response) {
+            return Response::json(['users' => []], 401);
+        }
+        $rows = $this->users->searchMembersForQualificationAward(
+            $tenantId,
+            (string) $request->query('q', ''),
+            20
+        );
+        $users = [];
+        foreach ($rows as $u) {
+            $users[] = [
+                'id' => (int) ($u['id'] ?? 0),
+                'display_name' => trim((string) ($u['display_name'] ?? '')),
+                'callsign' => trim((string) ($u['callsign'] ?? '')),
+                'email' => (string) ($u['email'] ?? ''),
+                'athena_identifier' => trim((string) ($u['athena_identifier'] ?? '')),
+                'tenant_member_number' => trim((string) ($u['tenant_member_number'] ?? '')),
+                'status' => (string) ($u['status'] ?? ''),
+            ];
+        }
+
+        return Response::json(['users' => $users]);
     }
 
     public function storeLevel(Request $request, array $params = []): Response
@@ -439,6 +496,7 @@ final class QualificationReferentielController
             }
         }
         $definition = $definitionId > 0 ? $this->definitions->find($tenantId, $definitionId) : null;
+        $selectedMember = $userId > 0 ? $this->users->findById($userId, $tenantId) : null;
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.award_form',
@@ -448,12 +506,15 @@ final class QualificationReferentielController
             'levels' => $definition ? $this->referentiel->listLevels($tenantId, (int) $definition['id']) : [],
             'customFields' => $definition ? $this->referentiel->listCustomFields($tenantId, (int) $definition['id']) : [],
             'userId' => $userId,
+            'selectedMember' => $selectedMember,
             'definitionId' => $definitionId,
             'definition' => $definition,
             'renewalOf' => $renewalOf,
             'prefill' => $prefill,
             'adminStatuses' => QualificationAdminStatus::ALL,
             'visibilityLevels' => VisibilityLevel::ALL,
+            'memberSearchUrl' => url('api/admin/qualifications/members'),
+            'backOfficePageCss' => ['back-office-qualifications-referentiel.css'],
             'suggestedExpires' => $definition
                 ? $this->temporal->computeDefaultExpiresAt(
                     null,

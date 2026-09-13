@@ -91,17 +91,49 @@ final class QualificationReferentielRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listIssuers(int $tenantId): array
+    public function listIssuers(int $tenantId, ?string $search = null): array
     {
         if (!$this->tableExists('qualification_issuers')) {
             return [];
         }
-        $st = $this->pdo->prepare(
-            'SELECT * FROM qualification_issuers WHERE tenant_id = ? ORDER BY name ASC'
-        );
-        $st->execute([$tenantId]);
+        $search = $search !== null ? trim($search) : '';
+        if ($search !== '') {
+            $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
+            $st = $this->pdo->prepare(
+                'SELECT i.*, p.name AS parent_name
+                 FROM qualification_issuers i
+                 LEFT JOIN qualification_issuers p ON p.id = i.parent_issuer_id
+                 WHERE i.tenant_id = ?
+                   AND (i.name LIKE ? OR (i.short_name IS NOT NULL AND i.short_name LIKE ?) OR i.issuer_kind LIKE ?)
+                 ORDER BY i.name ASC'
+            );
+            $st->execute([$tenantId, $term, $term, $term]);
+        } else {
+            $st = $this->pdo->prepare(
+                'SELECT i.*, p.name AS parent_name
+                 FROM qualification_issuers i
+                 LEFT JOIN qualification_issuers p ON p.id = i.parent_issuer_id
+                 WHERE i.tenant_id = ?
+                 ORDER BY i.name ASC'
+            );
+            $st->execute([$tenantId]);
+        }
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function findIssuerByName(int $tenantId, string $name): ?array
+    {
+        if (!$this->tableExists('qualification_issuers') || $tenantId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM qualification_issuers WHERE tenant_id = ? AND name = ? LIMIT 1'
+        );
+        $st->execute([$tenantId, trim($name)]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function createIssuer(
@@ -125,6 +157,44 @@ final class QualificationReferentielRepository
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Insère les organismes US Army d’exemple manquants (idempotent par nom).
+     *
+     * @return array{created: int, skipped: int}
+     */
+    public function seedUsArmyExampleIssuers(int $tenantId): array
+    {
+        $created = 0;
+        $skipped = 0;
+        $byKey = [];
+        foreach (\App\Support\QualificationUsArmyIssuerExamples::catalog() as $row) {
+            $key = (string) $row['key'];
+            $name = (string) $row['name'];
+            $existing = $this->findIssuerByName($tenantId, $name);
+            if ($existing !== null) {
+                $byKey[$key] = (int) $existing['id'];
+                $skipped++;
+                continue;
+            }
+            $parentId = null;
+            $parentKey = $row['parent_key'] ?? null;
+            if (is_string($parentKey) && $parentKey !== '' && isset($byKey[$parentKey])) {
+                $parentId = $byKey[$parentKey];
+            }
+            $id = $this->createIssuer(
+                $tenantId,
+                $name,
+                isset($row['short_name']) ? (string) $row['short_name'] : null,
+                (string) ($row['issuer_kind'] ?? 'unit'),
+                $parentId
+            );
+            $byKey[$key] = $id;
+            $created++;
+        }
+
+        return ['created' => $created, 'skipped' => $skipped];
     }
 
     /** @return list<array<string, mixed>> */

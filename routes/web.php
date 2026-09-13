@@ -1283,10 +1283,12 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/store', [QualificationReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'issuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'storeIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/emetteurs/exemples-us-army', [QualificationReferentielController::class, 'seedUsArmyIssuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/categories', [QualificationReferentielController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/admin/qualifications/members', [QualificationReferentielController::class, 'searchMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/brevets/lot', [QualificationReferentielController::class, 'generateCertificateBatch'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/brevets/{awardId}/telecharger', [QualificationReferentielController::class, 'downloadCertificate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/brevets/{awardId}/generer', [QualificationReferentielController::class, 'generateCertificate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

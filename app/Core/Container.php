@@ -1025,7 +1025,8 @@ class Container
                 self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
                 self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
-                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class),
+                self::get(UserRepository::class)
             ),
             \App\Repositories\PersonnelAssignmentRepository::class => new \App\Repositories\PersonnelAssignmentRepository(),
             \App\Repositories\PersonnelServiceHistoryRepository::class => new \App\Repositories\PersonnelServiceHistoryRepository(),

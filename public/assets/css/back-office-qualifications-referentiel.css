@@ -1,0 +1,108 @@
+/* Référentiel qualifications — polish léger (Attribuer / Émetteurs / Index) */
+.qr-principle {
+  border: 1px solid #d6dde8;
+  background:
+    linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.9)),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 10px,
+      rgba(148, 163, 184, 0.05) 10px,
+      rgba(148, 163, 184, 0.05) 11px
+    );
+}
+.qr-principle h2 {
+  letter-spacing: 0.08em;
+}
+.qr-principle ol {
+  list-style: decimal;
+  padding-left: 1.15rem;
+}
+.qr-member-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+}
+.qr-member-chip strong {
+  color: #0f172a;
+}
+.qr-member-meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  color: #475569;
+}
+.qr-search-results {
+  max-height: 14rem;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+.qr-search-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+}
+.qr-search-results button:hover,
+.qr-search-results button:focus {
+  background: #f8fafc;
+  outline: none;
+}
+.qr-search-results button:last-child {
+  border-bottom: 0;
+}
+.qr-kind {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+}
+.qr-issuer-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.qr-issuer-row:last-child {
+  border-bottom: 0;
+}
+.qr-flow-steps {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .qr-flow-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.qr-flow-step {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+.qr-flow-step span {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
