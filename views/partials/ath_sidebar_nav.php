@@ -334,6 +334,12 @@ if ($isOperatorBoNav) {
                 'notif' => $opQualifBadge !== null,
             ],
             [
+                'label' => 'Mon coffre',
+                'href' => url('back-office/ma-situation/coffre'),
+                'icon' => 'cert',
+                'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
+            ],
+            [
                 'label' => 'Mes démarches',
                 'href' => url('back-office/ma-situation/mes-demarches'),
                 'icon' => 'path',

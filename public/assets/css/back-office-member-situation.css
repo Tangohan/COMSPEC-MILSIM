@@ -168,3 +168,68 @@
 .bo-member-situation__empty {
   margin: 0.75rem 0 1rem !important;
 }
+
+.bo-member-situation__grid--stats {
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+}
+
+.bo-member-situation__card h2 {
+  margin: 0.15rem 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.bo-member-situation__card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.bo-member-situation__list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.bo-member-situation__list-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #f8fafa;
+}
+
+.bo-member-situation__list-item h3 {
+  margin: 0.1rem 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.bo-member-situation__list-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.bo-member-situation__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.4rem;
+  padding: 0 0.45rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bo-member-situation__empty h2 {
+  font-size: 1.05rem;
+}

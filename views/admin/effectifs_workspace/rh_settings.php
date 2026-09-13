@@ -8,7 +8,7 @@ $rp = is_array($roleplayConfig ?? null) ? $roleplayConfig : [];
 $dup = is_array($duplicateSettings ?? null) ? $duplicateSettings : [];
 $preview = is_array($advancementPreview ?? null) ? $advancementPreview : [];
 $csrf = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
-$vis = (($hr['default_visibility'] ?? 'STAFF') === 'MEMBER') ? 'MEMBER' : 'STAFF';
+$vis = (($hr['default_visibility'] ?? 'MEMBER') === 'STAFF') ? 'STAFF' : 'MEMBER';
 $mode = (($hr['advancement_mode'] ?? 'propose') === 'apply') ? 'apply' : 'propose';
 ?>
 <section class="eff-rh-hero">
