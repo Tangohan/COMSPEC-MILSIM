@@ -1,8 +1,9 @@
-﻿/*
+/*
     Bridge JS → SQF via A3API.SendAlert / alert().
     Protocole : "COMSPEC|<commande>"
       view:<nom> — bascule d’écran DANS la tablette (plus de dialog annexe)
       open:athena | open:system — portail / navigateur OS
+      ui:v1 | ui:v2 — bascule interface tablette / ATAK V2 (persistant profil)
       chat:send|<texte>
       order:status|<id>|<ACK|EXEC|FAILED>
       callsign:set|<indicatif>|<role>
@@ -49,6 +50,38 @@ switch (true) do {
     };
     case (_cmd isEqualTo "refresh"): {
         call _fnc_refresh;
+    };
+    case (_cmd isEqualTo "ui:v2"): {
+        missionNamespace setVariable ["COMSPEC_TabletUiVersion", "v2"];
+        profileNamespace setVariable ["COMSPEC_TabletUiVersion", "v2"];
+        saveProfileNamespace;
+        private _disp = findDisplay 9974;
+        if (!isNull _disp) then { _disp closeDisplay 1; };
+        [] spawn {
+            private _n = 0;
+            while { !isNull (findDisplay 9974) && {_n < 25} } do {
+                uiSleep 0.1;
+                _n = _n + 1;
+            };
+            uiSleep 0.2;
+            [] call comspec_overwatch_connect_fnc_webBrowserShow;
+        };
+    };
+    case (_cmd isEqualTo "ui:v1"): {
+        missionNamespace setVariable ["COMSPEC_TabletUiVersion", "v1"];
+        profileNamespace setVariable ["COMSPEC_TabletUiVersion", "v1"];
+        saveProfileNamespace;
+        private _disp = findDisplay 9974;
+        if (!isNull _disp) then { _disp closeDisplay 1; };
+        [] spawn {
+            private _n = 0;
+            while { !isNull (findDisplay 9974) && {_n < 25} } do {
+                uiSleep 0.1;
+                _n = _n + 1;
+            };
+            uiSleep 0.2;
+            [] call comspec_overwatch_connect_fnc_webBrowserShow;
+        };
     };
     case (_cmd isEqualTo "toggle:quiet"): {
         private _cur = missionNamespace getVariable ["comspec_overwatch_quiet_mode", false];

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>COMSPEC ATAK — Interface V2</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell" id="shell">
+  <header class="osd" role="banner">
+    <span class="brand">COMSPEC ATAK</span>
+    <span class="tag">V2</span>
+    <span class="sep">|</span>
+    <span><span class="status-dot" id="status-dot"></span><span id="status-label" class="muted">Hors liaison</span></span>
+    <span class="sep">|</span>
+    <span id="osd-callsign" class="muted">—</span>
+    <span class="sep">|</span>
+    <span id="osd-grid" class="muted">grille —</span>
+    <div class="right">
+      <span id="osd-clock" class="muted">00:00</span>
+      <button type="button" class="osd-btn" data-cmd="refresh">Sync</button>
+      <button type="button" class="osd-btn" data-cmd="ui:v1">Tablette</button>
+      <button type="button" class="osd-btn" data-cmd="close">Fermer</button>
+    </div>
+  </header>
+  <main class="stage" id="stage">
+    <div class="map-host" id="view-map">
+      <div id="nativeMapViewport" aria-label="Carte tactique"></div>
+      <div class="map-chrome">
+        <div class="chip live"><strong>CARTE</strong> <span id="chip-world">—</span></div>
+        <div class="chip"><strong>TUILES</strong> <span id="chip-tiles">—</span></div>
+        <div class="chip"><strong>CONTACTS</strong> <span id="chip-count">0</span></div>
+      </div>
+      <div class="tool-rail" aria-label="Outils carte">
+        <button type="button" id="btn-center">Moi</button>
+        <button type="button" id="btn-zoom-in">Zoom +</button>
+        <button type="button" id="btn-zoom-out">Zoom −</button>
+        <button type="button" data-tool="point">Point</button>
+        <button type="button" data-tool="rally">Rally</button>
+        <button type="button" data-tool="measure">Mesure</button>
+        <button type="button" data-tool="none">Main</button>
+        <button type="button" id="btn-native-map">Terrain</button>
+      </div>
+      <div class="map-center-status" id="map-status">Carte tactique V2 · en attente de liaison</div>
+    </div>
+    <section class="panel" id="panel-contacts"><h2>CONTACTS</h2><p class="hint">Effectifs reçus depuis la liaison Overwatch. Touchez un contact pour le centrer.</p><div class="panel-body" id="contacts-list"><div class="empty">Aucun contact pour le moment.</div></div></section>
+    <section class="panel" id="panel-chat"><h2>MESSAGERIE</h2><p class="hint">Canal opérationnel vers le poste lorsque Athena est liée.</p><div class="panel-body"><div class="chat-log" id="chat-log"><div class="empty">Aucun message.</div></div></div><div class="chat-compose"><input type="text" id="chat-input" maxlength="200" placeholder="Message pour le canal…" autocomplete="off"><button type="button" class="btn primary" id="chat-send">Envoyer</button></div></section>
+    <section class="panel" id="panel-orders"><h2>ORDRES</h2><p class="hint">Ordres reçus du poste. Accusé, en cours ou échec mettent à jour le statut.</p><div class="panel-body" id="orders-list"><div class="empty">Aucun ordre en attente.</div></div></section>
+    <section class="panel" id="panel-more"><h2>ACTIONS</h2><p class="hint">Raccourcis opérationnels — même liaison que la tablette.</p><div class="form-stack"><div class="form-actions"><button type="button" class="btn primary" data-cmd="action:ping">Signaler ma position</button><button type="button" class="btn" data-cmd="action:forcesync">Forcer la sync</button><button type="button" class="btn" data-cmd="action:medical">Bilan médical</button><button type="button" class="btn" data-cmd="toggle:quiet">Mode discret</button></div><div class="form-actions"><button type="button" class="btn" data-cmd="open:athena">Portail Athena</button><button type="button" class="btn" data-cmd="open:system">Ouvrir sur le PC</button><button type="button" class="btn" data-cmd="ui:v1">Interface tablette (V1)</button></div><div class="form-field"><label for="callsign-input">Indicatif affiché</label><input type="text" id="callsign-input" maxlength="24" placeholder="Ex. ALPHA-1"></div><div class="form-actions"><button type="button" class="btn primary" id="callsign-save">Enregistrer l’indicatif</button></div><p class="hint" id="more-footer">Overwatch · Interface V2</p></div></section>
+  </main>
+  <nav class="dock" aria-label="Navigation">
+    <button type="button" class="active" data-panel="map"><span class="ico">▣</span>Carte</button>
+    <button type="button" data-panel="contacts"><span class="ico">◉</span>Contacts</button>
+    <button type="button" data-panel="chat"><span class="ico">☰</span>Messages</button>
+    <button type="button" data-panel="orders"><span class="ico">≡</span>Ordres</button>
+    <button type="button" data-panel="more"><span class="ico">⚙</span>Plus</button>
+  </nav>
+</div>
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="map-store.js"></script>
+<script src="map-bus.js"></script>
+<script src="map-theatres.js"></script>
+<script src="map-tiles.js"></script>
+<script src="map-symbols.js"></script>
+<script src="map-engine.js"></script>
+<script src="live-map.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -346,8 +346,14 @@ private _googleUrl = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlide
 if (!(_googleUrl isEqualType "")) then { _googleUrl = ""; };
 private _safeGoogleUrl = [_googleUrl] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
+private _worldName = toLower worldName;
+if (_worldName isEqualTo "") then { _worldName = "altis"; };
+private _safeWorld = [_worldName] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+private _worldSize = worldSize;
+if (!(_worldSize isEqualType 0) || {_worldSize < 256}) then { _worldSize = 30720; };
+
 private _js = format [
-    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]},latencyMs:%21,googleSlidesUrl:'%22'}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
+    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]},latencyMs:%21,googleSlidesUrl:'%22',world:'%23',worldSize:%24}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
     _safeCallsign,
     _safeRole,
     _state,
@@ -369,7 +375,9 @@ private _js = format [
     _radioMonCh,
     _radioProxJs joinString ",",
     _latencyMs,
-    _safeGoogleUrl
+    _safeGoogleUrl,
+    _safeWorld,
+    _worldSize
 ];
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];
