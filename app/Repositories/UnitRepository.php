@@ -103,6 +103,81 @@ class UnitRepository
     }
 
     /**
+     * Visibilité dossier / affectation pour un lot d’utilisateurs.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array{visibility_level: string, assignment_visibility: string, anonymized_label: string}>
+     */
+    public function personnelVisibilityByUserIdsForTenant(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($userIds === [] || $tenantId < 1) {
+            return [];
+        }
+        if (!$this->tableExists('personnel_profiles')) {
+            return [];
+        }
+        $hasVis = $this->columnExists('personnel_profiles', 'visibility_level');
+        $hasAssignVis = $this->columnExists('personnel_profiles', 'assignment_visibility');
+        $hasAnon = $this->columnExists('personnel_profiles', 'anonymized_label');
+        if (!$hasVis && !$hasAssignVis) {
+            $out = [];
+            foreach ($userIds as $id) {
+                $out[$id] = [
+                    'visibility_level' => 'normal',
+                    'assignment_visibility' => 'normal',
+                    'anonymized_label' => '',
+                ];
+            }
+
+            return $out;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $cols = ['user_id'];
+        if ($hasVis) {
+            $cols[] = 'visibility_level';
+        }
+        if ($hasAssignVis) {
+            $cols[] = 'assignment_visibility';
+        }
+        if ($hasAnon) {
+            $cols[] = 'anonymized_label';
+        }
+        // Joindre users pour s'assurer du tenant
+        $sql = 'SELECT pp.' . implode(', pp.', $cols)
+            . ' FROM personnel_profiles pp'
+            . ' INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?'
+            . ' WHERE pp.user_id IN (' . $placeholders . ')';
+        $params = array_merge([$tenantId], $userIds);
+        $st = $this->pdo()->prepare($sql);
+        $st->execute($params);
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $out[$uid] = [
+                'visibility_level' => \App\Support\VisibilityLevel::normalize((string) ($row['visibility_level'] ?? 'normal')),
+                'assignment_visibility' => \App\Support\VisibilityLevel::normalize((string) ($row['assignment_visibility'] ?? 'normal')),
+                'anonymized_label' => trim((string) ($row['anonymized_label'] ?? '')),
+            ];
+        }
+        foreach ($userIds as $id) {
+            if (!isset($out[$id])) {
+                $out[$id] = [
+                    'visibility_level' => 'normal',
+                    'assignment_visibility' => 'normal',
+                    'anonymized_label' => '',
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Membres affichables par unité (libellé + id), pour ORBAT / listes.
      *
      * @return array<int, list<array{user_id: int, label: string}>>
@@ -589,20 +664,43 @@ class UnitRepository
      *
      * @return list<array{id: int, name: string, parent_id: int|null}>
      */
-    public function listFlatForStructure(int $tenantId): array
+    public function listFlatForStructure(int $tenantId, bool $includeArchived = false): array
     {
-        $stmt = $this->pdo()->prepare(
-            'SELECT id, name, parent_id FROM units WHERE tenant_id = ? ORDER BY display_order ASC, name ASC'
-        );
+        $hasAdmin = $this->columnExists('units', 'admin_status');
+        $cols = 'id, name, parent_id, type';
+        if ($hasAdmin) {
+            $cols .= ', admin_status';
+        }
+        if ($this->columnExists('units', 'visibility_level')) {
+            $cols .= ', visibility_level';
+        }
+        $sql = "SELECT {$cols} FROM units WHERE tenant_id = ?";
+        if ($hasAdmin && !$includeArchived) {
+            $sql .= " AND (admin_status IS NULL OR admin_status <> 'archived')";
+        }
+        $sql .= ' ORDER BY display_order ASC, name ASC';
+        $stmt = $this->pdo()->prepare($sql);
         $stmt->execute([$tenantId]);
         $out = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $pid = $row['parent_id'];
-            $out[] = [
+            $status = $hasAdmin
+                ? \App\Support\UnitAdminStatus::normalize((string) ($row['admin_status'] ?? 'active'))
+                : 'active';
+            $item = [
                 'id' => (int) ($row['id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
                 'parent_id' => $pid !== null && $pid !== '' ? (int) $pid : null,
+                'type' => (string) ($row['type'] ?? ''),
+                'admin_status' => $status,
+                'assignable' => \App\Support\UnitAdminStatus::isAssignableByDefault($status)
+                    && !\App\Support\UnitAdminStatus::isAssignableForbidden($status),
             ];
+            if (array_key_exists('visibility_level', $row)) {
+                $item['visibility_level'] = \App\Support\VisibilityLevel::normalize((string) ($row['visibility_level'] ?? ''));
+            }
+            // Ne pas proposer par défaut les unités masquées aux sélecteurs (le front peut filtrer)
+            $out[] = $item;
         }
 
         return $out;
@@ -897,6 +995,21 @@ class UnitRepository
         if ($this->columnExists('units', 'orbat_mask_mode')) {
             $allowed[] = 'orbat_mask_mode';
         }
+        if ($this->columnExists('units', 'admin_status')) {
+            $allowed[] = 'admin_status';
+        }
+        if ($this->columnExists('units', 'admin_status_note')) {
+            $allowed[] = 'admin_status_note';
+        }
+        if ($this->columnExists('units', 'visibility_level')) {
+            $allowed[] = 'visibility_level';
+        }
+        if ($this->columnExists('units', 'visibility_propagate')) {
+            $allowed[] = 'visibility_propagate';
+        }
+        if ($this->columnExists('units', 'strength_display_mode')) {
+            $allowed[] = 'strength_display_mode';
+        }
         if ($this->columnExists('units', 'orbat_display_type')) {
             $allowed[] = 'orbat_display_type';
         }
@@ -956,6 +1069,18 @@ class UnitRepository
                 $params[] = $v === '' ? null : $v;
             } elseif ($key === 'orbat_mask_mode') {
                 $params[] = \App\Support\OrbatMaskMode::normalize((string) $data[$key]);
+            } elseif ($key === 'admin_status') {
+                $params[] = \App\Support\UnitAdminStatus::normalize((string) $data[$key]);
+            } elseif ($key === 'admin_status_note') {
+                $v = trim((string) ($data[$key] ?? ''));
+                $params[] = $v === '' ? null : mb_substr($v, 0, 500);
+            } elseif ($key === 'visibility_level') {
+                $params[] = \App\Support\VisibilityLevel::normalize((string) $data[$key]);
+            } elseif ($key === 'visibility_propagate') {
+                $params[] = !empty($data[$key]) ? 1 : 0;
+            } elseif ($key === 'strength_display_mode') {
+                $mode = strtolower(trim((string) ($data[$key] ?? 'visible_only')));
+                $params[] = in_array($mode, ['visible_only', 'generic', 'none', 'hidden'], true) ? $mode : 'visible_only';
             } elseif ($key === 'orbat_display_type') {
                 $params[] = mb_substr(trim((string) $data[$key]), 0, 64);
             } elseif ($key === 'orbat_icon_path' || $key === 'orbat_image_path') {
@@ -963,7 +1088,7 @@ class UnitRepository
                 $params[] = $v === '' ? null : mb_substr($v, 0, 512);
             } elseif ($key === 'orbat_details') {
                 $v = trim((string) $data[$key]);
-                $params[] = $v === '' ? null : mb_substr($v, 0, 16000);
+                $params[] = $v === '' ? null : mb_substr($v, 0, 100000);
             } else {
                 $params[] = $data[$key];
             }

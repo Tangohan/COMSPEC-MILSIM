@@ -7,6 +7,7 @@ namespace App\Support;
 use App\Core\Gate;
 use App\Core\Session;
 use App\Repositories\UnitRepository;
+use App\Services\Organization\OrgVisibilityService;
 
 /**
  * Arbre ORBAT (format consommé par la vue / l’API) à partir des unités en base.
@@ -71,6 +72,34 @@ final class OrbatRosterPayload
             $maskMode = OrbatMaskMode::normalize((string) ($u['orbat_mask_mode'] ?? ''));
         }
 
+        $visibilityLevel = VisibilityLevel::NORMAL;
+        if (array_key_exists('visibility_level', $u)) {
+            $visibilityLevel = VisibilityLevel::normalize((string) ($u['visibility_level'] ?? ''));
+        } else {
+            $visibilityLevel = VisibilityLevel::fromOrbatMaskMode($maskMode);
+        }
+
+        $adminStatus = UnitAdminStatus::ACTIVE;
+        if (array_key_exists('admin_status', $u)) {
+            $adminStatus = UnitAdminStatus::normalize((string) ($u['admin_status'] ?? ''));
+        }
+
+        $visibilityPropagate = true;
+        if (array_key_exists('visibility_propagate', $u)) {
+            $visibilityPropagate = (int) ($u['visibility_propagate'] ?? 1) === 1;
+        }
+
+        $strengthDisplayMode = 'visible_only';
+        if (array_key_exists('strength_display_mode', $u)) {
+            $strengthDisplayMode = strtolower(trim((string) ($u['strength_display_mode'] ?? 'visible_only')));
+            if (!in_array($strengthDisplayMode, ['visible_only', 'generic', 'none', 'hidden'], true)) {
+                $strengthDisplayMode = 'visible_only';
+            }
+        }
+
+        $rawMembers = $unitRosterByUnit[$uid] ?? [];
+        $visibleStrength = is_array($rawMembers) ? count($rawMembers) : 0;
+
         return [
             'id' => 'unit-' . $uid,
             'unitId' => $uid,
@@ -79,8 +108,20 @@ final class OrbatRosterPayload
             'type' => $displayType,
             'structType' => $structType,
             'maskMode' => $maskMode,
-            'status' => 'active',
-            'strength' => (int) ($unitMemberCounts[$uid] ?? 0),
+            'visibilityLevel' => $visibilityLevel,
+            'visibilityPropagate' => $visibilityPropagate,
+            'strengthDisplayMode' => $strengthDisplayMode,
+            'adminStatus' => $adminStatus,
+            'adminStatusNote' => trim((string) ($u['admin_status_note'] ?? '')),
+            'adminStatusLabel' => UnitAdminStatus::badgeLabel($adminStatus),
+            'status' => $adminStatus === UnitAdminStatus::ACTIVE ? 'active' : (
+                $adminStatus === UnitAdminStatus::PARTIALLY_ACTIVE ? 'partial' : (
+                    in_array($adminStatus, [UnitAdminStatus::INACTIVE, UnitAdminStatus::ARCHIVED], true) ? 'inactive' : 'active'
+                )
+            ),
+            'readinessState' => null,
+            'strength' => (int) ($unitMemberCounts[$uid] ?? $visibleStrength),
+            'visibleStrength' => $visibleStrength,
             'leader' => $unitCommanderLabels[$uid] ?? '—',
             'mission' => $mission,
             'orbatDetails' => $details,
@@ -92,7 +133,7 @@ final class OrbatRosterPayload
             'publicFoundedOn' => self::normalizePublicDate($u['public_founded_on'] ?? null),
             'publicCustomDate' => self::normalizePublicDate($u['public_custom_date'] ?? null),
             'publicCustomDateLabel' => trim((string) ($u['public_custom_date_label'] ?? '')),
-            'members' => $unitRosterByUnit[$uid] ?? [],
+            'members' => is_array($rawMembers) ? $rawMembers : [],
             'children' => $children,
         ];
     }
@@ -109,21 +150,25 @@ final class OrbatRosterPayload
 
     /**
      * @param list<int> $viewerUnitIds
+     * @param list<string>|null $adminStatusFilter
      * @return array<string, mixed>|null
      */
     public static function buildForTenant(
         UnitRepository $unitRepository,
         int $tenantId,
         ?int $viewerUserId = null,
-        ?bool $canBypassMasks = null
+        ?bool $canBypassMasks = null,
+        ?OrgVisibilityCapabilities $caps = null,
+        ?array $adminStatusFilter = null
     ): ?array {
         if ($viewerUserId === null) {
             $viewerUserId = (int) Session::get('user_id');
         }
+        $caps ??= OrgVisibilityCapabilities::fromGate();
         if ($canBypassMasks === null) {
-            $gate = Gate::getInstance();
-            $canBypassMasks = $gate->allows('admin.organization') || $gate->allows('admin.access')
-                || $gate->allows('organization.orbat.manage');
+            $canBypassMasks = $caps->bypassAll
+                || $caps->viewHiddenUnits
+                || Gate::getInstance()->allows('organization.orbat.manage');
         }
 
         $tree = $unitRepository->getTree($tenantId);
@@ -134,6 +179,11 @@ final class OrbatRosterPayload
         $memberCounts = $unitRepository->countDistinctMembersByUnitForTenant($tenantId);
         $commanderLabels = $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat);
         $rosterByUnit = $unitRepository->rosterMembersByUnitForTenant($tenantId);
+        $visibilityByUser = $unitRepository->personnelVisibilityByUserIdsForTenant(
+            $tenantId,
+            self::collectUserIdsFromRoster($rosterByUnit)
+        );
+        $rosterByUnit = self::enrichAndFilterRosterMembers($rosterByUnit, $visibilityByUser, $caps, $flat);
         $allUserIds = [];
         foreach ($rosterByUnit as $rows) {
             foreach ($rows as $mem) {
@@ -160,6 +210,12 @@ final class OrbatRosterPayload
             $rosterByUnit[(int) $unitId] = $enrichedRows;
         }
 
+        // Recalculer les effectifs visibles après filtrage confidentialité
+        $visibleCounts = [];
+        foreach ($rosterByUnit as $unitId => $rows) {
+            $visibleCounts[(int) $unitId] = count($rows);
+        }
+
         $viewerUnitIds = $viewerUserId > 0
             ? $unitRepository->unitIdsForUser($tenantId, $viewerUserId)
             : [];
@@ -180,8 +236,15 @@ final class OrbatRosterPayload
                 'type' => 'command',
                 'structType' => 'command',
                 'maskMode' => OrbatMaskMode::NONE,
+                'visibilityLevel' => VisibilityLevel::NORMAL,
+                'visibilityPropagate' => true,
+                'strengthDisplayMode' => 'visible_only',
+                'adminStatus' => UnitAdminStatus::ACTIVE,
+                'adminStatusNote' => '',
+                'adminStatusLabel' => UnitAdminStatus::badgeLabel(UnitAdminStatus::ACTIVE),
                 'status' => 'active',
                 'strength' => 0,
+                'visibleStrength' => 0,
                 'leader' => '—',
                 'mission' => 'Direction des unités et coordination.',
                 'orbatDetails' => '',
@@ -193,12 +256,154 @@ final class OrbatRosterPayload
             ];
         }
 
+        // Appliquer effectifs visibles
+        $root = self::applyVisibleStrengthCounts($root, $visibleCounts);
+
         $root = self::applyViewerPolicies($root, $viewerUnitIds, $canBypassMasks);
+        if ($root !== null) {
+            $root = OrgVisibilityService::applyEffectiveVisibility($root, $caps);
+        }
+        if ($root !== null && $adminStatusFilter !== null) {
+            $root = self::filterByAdminStatus($root, $adminStatusFilter, $canBypassMasks);
+        } elseif ($root !== null && !$canBypassMasks) {
+            // Par défaut : masquer archivés (et optionnellement inactifs) pour lecteurs non autorisés
+            $root = self::filterByAdminStatus($root, UnitAdminStatus::DEFAULT_OPERATIONAL, false);
+        }
         if ($root !== null) {
             [$root] = self::annotateReadinessAggregation($root);
         }
 
         return $root;
+    }
+
+    /**
+     * @param array<int, list<array<string, mixed>>> $rosterByUnit
+     * @return list<int>
+     */
+    private static function collectUserIdsFromRoster(array $rosterByUnit): array
+    {
+        $ids = [];
+        foreach ($rosterByUnit as $rows) {
+            foreach ($rows as $mem) {
+                $mid = (int) ($mem['user_id'] ?? 0);
+                if ($mid > 0) {
+                    $ids[$mid] = true;
+                }
+            }
+        }
+
+        return array_map('intval', array_keys($ids));
+    }
+
+    /**
+     * @param array<int, list<array<string, mixed>>> $rosterByUnit
+     * @param array<int, array<string, mixed>> $visibilityByUser
+     * @param array<int, array<string, mixed>> $flatUnits
+     * @return array<int, list<array<string, mixed>>>
+     */
+    private static function enrichAndFilterRosterMembers(
+        array $rosterByUnit,
+        array $visibilityByUser,
+        OrgVisibilityCapabilities $caps,
+        array $flatUnits
+    ): array {
+        $unitVis = [];
+        foreach ($flatUnits as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            if (array_key_exists('visibility_level', $u)) {
+                $unitVis[$id] = VisibilityLevel::normalize((string) ($u['visibility_level'] ?? ''));
+            } else {
+                $unitVis[$id] = VisibilityLevel::fromOrbatMaskMode((string) ($u['orbat_mask_mode'] ?? ''));
+            }
+        }
+
+        $out = [];
+        foreach ($rosterByUnit as $unitId => $rows) {
+            $uVis = $unitVis[(int) $unitId] ?? VisibilityLevel::NORMAL;
+            $list = [];
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $uid = (int) ($row['user_id'] ?? 0);
+                $meta = $visibilityByUser[$uid] ?? [];
+                $row['visibility_level'] = VisibilityLevel::normalize((string) ($meta['visibility_level'] ?? VisibilityLevel::NORMAL));
+                $row['assignment_visibility'] = VisibilityLevel::normalize((string) ($meta['assignment_visibility'] ?? VisibilityLevel::NORMAL));
+                $row['anonymized_label'] = trim((string) ($meta['anonymized_label'] ?? ''));
+                $filtered = OrgVisibilityService::filterPersonnelRow($row, $caps, $uVis);
+                if ($filtered !== null) {
+                    $list[] = $filtered;
+                }
+            }
+            $out[(int) $unitId] = $list;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @param array<int, int> $visibleCounts
+     * @return array<string, mixed>
+     */
+    private static function applyVisibleStrengthCounts(array $node, array $visibleCounts): array
+    {
+        $uid = (int) ($node['unitId'] ?? 0);
+        if ($uid > 0 && isset($visibleCounts[$uid])) {
+            $node['visibleStrength'] = $visibleCounts[$uid];
+            $mode = strtolower(trim((string) ($node['strengthDisplayMode'] ?? 'visible_only')));
+            if ($mode === 'visible_only') {
+                $node['strength'] = $visibleCounts[$uid];
+            } elseif ($mode === 'none' || $mode === 'hidden') {
+                $node['strength'] = 0;
+                $node['strengthHidden'] = true;
+            } elseif ($mode === 'generic') {
+                $node['strengthLabel'] = $visibleCounts[$uid] > 0 ? 'Effectif restreint' : '—';
+            }
+        }
+        $children = [];
+        foreach ($node['children'] ?? [] as $ch) {
+            if (is_array($ch)) {
+                $children[] = self::applyVisibleStrengthCounts($ch, $visibleCounts);
+            }
+        }
+        $node['children'] = $children;
+
+        return $node;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @param list<string> $allowed
+     * @return array<string, mixed>|null
+     */
+    private static function filterByAdminStatus(array $node, array $allowed, bool $keepForStaff): ?array
+    {
+        $uid = (int) ($node['unitId'] ?? 0);
+        $status = UnitAdminStatus::normalize((string) ($node['adminStatus'] ?? UnitAdminStatus::ACTIVE));
+        if ($uid > 0 && !OrgVisibilityService::shouldShowUnitByAdminStatus($status, $allowed)) {
+            if ($keepForStaff) {
+                $node['adminStatusFiltered'] = true;
+            } else {
+                return null;
+            }
+        }
+        $children = [];
+        foreach ($node['children'] ?? [] as $ch) {
+            if (!is_array($ch)) {
+                continue;
+            }
+            $applied = self::filterByAdminStatus($ch, $allowed, $keepForStaff);
+            if ($applied !== null) {
+                $children[] = $applied;
+            }
+        }
+        $node['children'] = $children;
+
+        return $node;
     }
 
     /**
@@ -241,9 +446,22 @@ final class OrbatRosterPayload
         $node['readinessScore'] = $totalCount > 0 ? (int) round($totalScore / $totalCount) : null;
         $node['readinessPopulation'] = $totalCount;
         $node['readinessState'] = self::readinessStateFromScore($node['readinessScore']);
-        if (($node['status'] ?? 'active') === 'active' && $node['readinessState'] !== null) {
-            $node['status'] = $node['readinessState'];
+        // Ne plus écraser le statut administratif par la readiness : les deux coexistent.
+        if (!isset($node['adminStatus'])) {
+            $node['adminStatus'] = UnitAdminStatus::ACTIVE;
         }
+        // Conservé pour compat UI legacy : pastille readiness si admin = actif
+        if (($node['adminStatus'] ?? UnitAdminStatus::ACTIVE) === UnitAdminStatus::ACTIVE && $node['readinessState'] !== null) {
+            $node['operationalDot'] = $node['readinessState'];
+        } else {
+            $node['operationalDot'] = match (UnitAdminStatus::normalize((string) ($node['adminStatus'] ?? ''))) {
+                UnitAdminStatus::PARTIALLY_ACTIVE => 'partial',
+                UnitAdminStatus::INACTIVE, UnitAdminStatus::ARCHIVED => 'inactive',
+                default => 'active',
+            };
+        }
+        $node['status'] = $node['operationalDot'];
+
         return [$node, $totalScore, $totalCount];
     }
 

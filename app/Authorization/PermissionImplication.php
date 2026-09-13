@@ -38,6 +38,28 @@ final class PermissionImplication
         if ($permission === 'organization.orbat.view' && in_array('organization.orbat.manage', $granted, true)) {
             return true;
         }
+        if (in_array('organization.orbat.manage', $granted, true) && in_array($permission, [
+            'organization.view_restricted_units',
+            'organization.view_hidden_units',
+            'organization.manage_unit_visibility',
+            'personnel.view_restricted',
+            'personnel.view_hidden',
+        ], true)) {
+            return true;
+        }
+        if (in_array('personnel.manage_visibility', $granted, true) && in_array($permission, [
+            'personnel.view_restricted',
+            'personnel.view_hidden',
+            'personnel.sensitive.view',
+        ], true)) {
+            return true;
+        }
+        if (in_array('organization.manage_unit_visibility', $granted, true) && in_array($permission, [
+            'organization.view_restricted_units',
+            'organization.view_hidden_units',
+        ], true)) {
+            return true;
+        }
         if ($permission === 'organization.catalog.manage' && (
             in_array('organization.orbat.manage', $granted, true)
             || in_array('admin.organization', $granted, true)
@@ -191,6 +213,13 @@ final class PermissionImplication
             return true;
         }
         if (str_starts_with($permission, 'organization.orbat.')) {
+            return true;
+        }
+        if (in_array($permission, [
+            'organization.view_restricted_units',
+            'organization.view_hidden_units',
+            'organization.manage_unit_visibility',
+        ], true)) {
             return true;
         }
         if (str_starts_with($permission, 'media.')) {

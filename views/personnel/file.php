@@ -33,6 +33,11 @@ $canEditNotes = $canEditNotes ?? false;
 $canEditProfile = $canEditProfile ?? false;
 $canViewCivil = $canViewCivil ?? false;
 $canViewCivilSection = $canViewCivilSection ?? $canViewCivil;
+$canManageVisibility = !empty($canManageVisibility ?? false);
+$personnelVisibility = is_array($personnelVisibility ?? null) ? $personnelVisibility : [];
+$visibilityPreviewAs = isset($visibilityPreviewAs) ? (string) $visibilityPreviewAs : '';
+$personnelAnonymizedForViewer = !empty($personnelAnonymizedForViewer ?? false);
+$assignmentRedactedForViewer = !empty($assignmentRedactedForViewer ?? false);
 $privatePersonnelIdentity = !empty($privatePersonnelIdentity ?? false);
 $redactPersonalPresentation = $redactPersonalPresentation ?? false;
 $canViewCommandNotes = $canViewCommandNotes ?? true;
@@ -680,6 +685,32 @@ if ($personnelFileIsRhFull) {
     $personnelFileNoticesIncludeOperatorTabs = false;
     require base_path('views/partials/personnel/file_page_notices.php');
     ?>
+
+    <?php if (!empty($visibilityPreviewAs)): ?>
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+      <p class="font-semibold">Aperçu de visibilité actif</p>
+      <p class="mt-1">
+        Affichage simulé en tant que
+        <?= htmlspecialchars(match ((string) $visibilityPreviewAs) {
+            'cadre' => 'cadre',
+            'command' => 'commandement',
+            default => 'membre standard',
+        }, ENT_QUOTES, 'UTF-8') ?>.
+        <a class="font-semibold underline" href="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>">Quitter l’aperçu</a>
+      </p>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($canManageVisibility)): ?>
+    <div class="mb-6">
+      <?php
+        $visibilityTargetUserId = (int) ($targetUser['id'] ?? 0);
+        $visibilityStandaloneForm = true;
+        $visibilityPreviewBaseUrl = url('personnel/' . $visibilityTargetUserId);
+        require base_path('views/partials/personnel/visibility_admin_block.php');
+      ?>
+    </div>
+    <?php endif; ?>
 
     <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
 

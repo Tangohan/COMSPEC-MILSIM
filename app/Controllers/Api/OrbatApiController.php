@@ -10,12 +10,17 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\OrbatChartTypeRepository;
+use App\Repositories\OrganizationVisibilityHistoryRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Support\OrbatChartDisplay;
 use App\Support\OrbatMaskMode;
 use App\Support\OrbatRosterPayload;
+use App\Support\OrgVisibilityCapabilities;
+use App\Support\UnitAdminStatus;
+use App\Support\VisibilityLevel;
+use App\Services\Organization\OrgVisibilityService;
 
 /**
  * ORBAT : lecture JSON, mise à jour unité et opérations de structure pour les gérants.
@@ -26,7 +31,8 @@ final class OrbatApiController
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
         private OrbatChartTypeRepository $orbatChartTypeRepository,
-        private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository
+        private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
+        private OrganizationVisibilityHistoryRepository $visibilityHistoryRepository
     ) {}
 
     public function roster(Request $request, array $params = []): Response
@@ -41,14 +47,38 @@ final class OrbatApiController
         if (!$gate->allows('organization.orbat.view')) {
             return Response::json(['success' => false, 'message' => 'Vous n’avez pas accès à l’organigramme.'], 403);
         }
-        $canBypass = $gate->allows('admin.organization') || $gate->allows('admin.access')
-            || $gate->allows('organization.orbat.manage');
+        $caps = OrgVisibilityCapabilities::fromGate($gate);
+        $canBypass = $caps->bypassAll || $caps->viewHiddenUnits || $gate->allows('organization.orbat.manage');
 
-        $payload = OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass);
+        $statusFilter = null;
+        $rawFilter = trim((string) $request->query('admin_status', ''));
+        if ($rawFilter !== '') {
+            $parts = array_filter(array_map('trim', explode(',', $rawFilter)));
+            $statusFilter = [];
+            foreach ($parts as $p) {
+                $statusFilter[] = UnitAdminStatus::normalize($p);
+            }
+            if ($statusFilter === []) {
+                $statusFilter = null;
+            }
+        } elseif ($request->query('include_archived') === '1' || $request->query('archives') === '1') {
+            $statusFilter = UnitAdminStatus::ALL;
+        }
+
+        $payload = OrbatRosterPayload::buildForTenant(
+            $this->unitRepository,
+            $tenantId,
+            $userId,
+            $canBypass,
+            $caps,
+            $statusFilter
+        );
 
         return Response::json([
             'success' => true,
             'roster' => $payload,
+            'adminStatuses' => UnitAdminStatus::options(),
+            'visibilityLevels' => $this->visibilityLevelOptions(),
         ]);
     }
 
@@ -67,24 +97,75 @@ final class OrbatApiController
         return Response::json([
             'success' => true,
             'units' => $this->unitRepository->listFlatForStructure($tenantId),
-            'maskModes' => [
-                ['id' => OrbatMaskMode::NONE, 'label' => 'Aucun masque'],
-                ['id' => OrbatMaskMode::HIDDEN_ALL, 'label' => 'Masquer toute la branche aux personnes extérieures'],
-                ['id' => OrbatMaskMode::SCOPE_SECTION, 'label' => 'Limiter comme une section (noms protégés hors périmètre)'],
-                ['id' => OrbatMaskMode::SCOPE_TEAM, 'label' => 'Limiter comme une équipe (noms protégés hors périmètre)'],
-                ['id' => OrbatMaskMode::SCOPE_ROLE, 'label' => 'Protéger selon les affectations (hors unité)'],
-                ['id' => OrbatMaskMode::ANONYMIZE, 'label' => 'Anonymisation simple des noms'],
-            ],
+            'maskModes' => $this->visibilityLevelOptionsAsMaskModes(),
+            'visibilityLevels' => $this->visibilityLevelOptions(),
+            'adminStatuses' => UnitAdminStatus::options(),
             'structTypes' => $this->structTypeOptions(),
             'chartDisplayTypes' => $this->mergedChartDisplayTypes($tenantId),
             'capabilities' => [
-                'mask_editing' => $this->unitRepository->hasTableColumn('units', 'orbat_mask_mode'),
+                'mask_editing' => $this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')
+                    || $this->unitRepository->hasTableColumn('units', 'visibility_level'),
+                'admin_status' => $this->unitRepository->hasTableColumn('units', 'admin_status'),
+                'visibility_level' => $this->unitRepository->hasTableColumn('units', 'visibility_level'),
+                'struct_type_edit' => true,
                 'custom_chart_types' => $this->orbatChartTypeRepository->tableExists(),
                 'chart_media_upload' => $this->unitRepository->hasTableColumn('units', 'orbat_icon_path')
                     && $this->unitRepository->hasTableColumn('units', 'orbat_image_path'),
                 'details_field' => $this->unitRepository->hasTableColumn('units', 'orbat_details'),
             ],
         ]);
+    }
+
+    /**
+     * @return list<array{id: string, label: string, consequence: string}>
+     */
+    private function visibilityLevelOptions(): array
+    {
+        $out = [];
+        foreach (VisibilityLevel::ALL as $id) {
+            $out[] = [
+                'id' => $id,
+                'label' => VisibilityLevel::label($id),
+                'consequence' => VisibilityLevel::consequence($id, 'unit'),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Options de confidentialité (compat UI maskModes) alignées sur VisibilityLevel.
+     *
+     * @return list<array{id: string, label: string, consequence?: string}>
+     */
+    private function visibilityLevelOptionsAsMaskModes(): array
+    {
+        return [
+            [
+                'id' => OrbatMaskMode::NONE,
+                'label' => 'Normale — affichage complet',
+                'consequence' => VisibilityLevel::consequence(VisibilityLevel::NORMAL),
+                'visibility' => VisibilityLevel::NORMAL,
+            ],
+            [
+                'id' => OrbatMaskMode::ANONYMIZE,
+                'label' => 'Anonymisée — libellé générique',
+                'consequence' => VisibilityLevel::consequence(VisibilityLevel::ANONYMIZED),
+                'visibility' => VisibilityLevel::ANONYMIZED,
+            ],
+            [
+                'id' => OrbatMaskMode::SCOPE_SECTION,
+                'label' => 'Restreinte — informations limitées',
+                'consequence' => VisibilityLevel::consequence(VisibilityLevel::RESTRICTED),
+                'visibility' => VisibilityLevel::RESTRICTED,
+            ],
+            [
+                'id' => OrbatMaskMode::HIDDEN_ALL,
+                'label' => 'Masquée — absente pour les non autorisés',
+                'consequence' => VisibilityLevel::consequence(VisibilityLevel::HIDDEN),
+                'visibility' => VisibilityLevel::HIDDEN,
+            ],
+        ];
     }
 
     /**
@@ -312,6 +393,9 @@ final class OrbatApiController
             'delete' => $this->structureDelete($request, $tenantId),
             'move' => $this->structureMove($request, $tenantId),
             'set_mask' => $this->structureSetMask($request, $tenantId),
+            'set_visibility' => $this->structureSetVisibility($request, $tenantId),
+            'set_status' => $this->structureSetStatus($request, $tenantId),
+            'archive' => $this->structureArchive($request, $tenantId),
             default => Response::json(['success' => false, 'message' => 'Action non reconnue'], 400),
         };
     }
@@ -371,12 +455,41 @@ final class OrbatApiController
         if ($this->unitRepository->countChildren($unitId, $tenantId) > 0) {
             return Response::json([
                 'success' => false,
-                'message' => 'Cette unité contient des sous-unités. Déplacez-les ou supprimez-les d’abord.',
+                'message' => 'Cette unité contient des sous-unités. Déplacez-les ou archivez la structure.',
+                'suggest_archive' => true,
             ], 400);
         }
 
+        // Préférer l’archivage si demandé ou si la structure a déjà des membres
+        $preferArchive = $request->input('prefer_archive') === '1'
+            || $request->input('archive_instead') === '1';
+        $memberIds = $this->unitRepository->listActiveUserIdsForUnits($tenantId, [$unitId]);
+        if (($preferArchive || $memberIds !== [])
+            && $this->unitRepository->hasTableColumn('units', 'admin_status')
+            && $request->input('force_delete') !== '1') {
+            $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
+            $this->unitRepository->update($unitId, $tenantId, [
+                'admin_status' => UnitAdminStatus::ARCHIVED,
+                'admin_status_note' => 'Archivé depuis l’ORBAT (préféré à la suppression)',
+            ]);
+            $this->visibilityHistoryRepository->recordUnitStatus(
+                $tenantId,
+                $unitId,
+                $oldStatus,
+                UnitAdminStatus::ARCHIVED,
+                (int) Session::get('user_id'),
+                'Archivage préféré à la suppression'
+            );
+
+            return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
+        }
+
         if (!$this->unitRepository->delete($unitId, $tenantId)) {
-            return Response::json(['success' => false, 'message' => 'Suppression impossible.'], 400);
+            return Response::json([
+                'success' => false,
+                'message' => 'Suppression impossible. Archivez plutôt la structure.',
+                'suggest_archive' => true,
+            ], 400);
         }
         $this->recordUnitDeletionHistory($tenantId, $unit);
 
@@ -435,20 +548,219 @@ final class OrbatApiController
         }
 
         $mode = OrbatMaskMode::normalize((string) $request->input('orbat_mask_mode', ''));
-        $this->unitRepository->update($unitId, $tenantId, ['orbat_mask_mode' => $mode]);
+        $visibility = VisibilityLevel::fromOrbatMaskMode($mode);
+        // Accepter aussi visibility_level directement
+        if ($request->input('visibility_level') !== null && trim((string) $request->input('visibility_level')) !== '') {
+            $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level'));
+            $mode = VisibilityLevel::toOrbatMaskMode($visibility);
+        }
 
-        return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
+        $oldMask = OrbatMaskMode::normalize((string) ($unit['orbat_mask_mode'] ?? ''));
+        $oldVis = array_key_exists('visibility_level', $unit)
+            ? VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''))
+            : VisibilityLevel::fromOrbatMaskMode($oldMask);
+
+        $data = ['orbat_mask_mode' => $mode];
+        if ($this->unitRepository->hasTableColumn('units', 'visibility_level')) {
+            $data['visibility_level'] = $visibility;
+        }
+        if ($request->input('visibility_propagate') !== null && $this->unitRepository->hasTableColumn('units', 'visibility_propagate')) {
+            $data['visibility_propagate'] = $request->input('visibility_propagate') ? 1 : 0;
+        }
+        $this->unitRepository->update($unitId, $tenantId, $data);
+
+        $actorId = (int) Session::get('user_id');
+        $reason = trim((string) $request->input('reason', ''));
+        $this->visibilityHistoryRepository->record(
+            $tenantId,
+            'unit',
+            $unitId,
+            'visibility_level',
+            $oldVis,
+            $visibility,
+            $actorId,
+            $reason !== '' ? $reason : null
+        );
+
+        return $this->rosterSuccess($tenantId, $actorId);
+    }
+
+    private function structureSetVisibility(Request $request, int $tenantId): Response
+    {
+        if (!$this->unitRepository->hasTableColumn('units', 'visibility_level')
+            && !$this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')) {
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'La gestion de visibilité n’est pas encore disponible sur cet environnement.',
+            ], 503);
+        }
+
+        $unitId = (int) $request->input('unit_id', 0);
+        if ($unitId < 1) {
+            return Response::json(['success' => false, 'message' => 'Unité non valide.'], 400);
+        }
+        $unit = $this->unitRepository->findById($unitId, $tenantId);
+        if (!$unit) {
+            return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
+        }
+
+        $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level', VisibilityLevel::NORMAL));
+        $mode = VisibilityLevel::toOrbatMaskMode($visibility);
+        $oldVis = array_key_exists('visibility_level', $unit)
+            ? VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''))
+            : VisibilityLevel::fromOrbatMaskMode((string) ($unit['orbat_mask_mode'] ?? ''));
+
+        $data = [];
+        if ($this->unitRepository->hasTableColumn('units', 'visibility_level')) {
+            $data['visibility_level'] = $visibility;
+        }
+        if ($this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')) {
+            $data['orbat_mask_mode'] = $mode;
+        }
+        if ($request->input('visibility_propagate') !== null && $this->unitRepository->hasTableColumn('units', 'visibility_propagate')) {
+            $data['visibility_propagate'] = $request->input('visibility_propagate') ? 1 : 0;
+        }
+        if ($request->input('strength_display_mode') !== null && $this->unitRepository->hasTableColumn('units', 'strength_display_mode')) {
+            $data['strength_display_mode'] = (string) $request->input('strength_display_mode');
+        }
+        $this->unitRepository->update($unitId, $tenantId, $data);
+
+        $actorId = (int) Session::get('user_id');
+        $reason = trim((string) $request->input('reason', ''));
+        $this->visibilityHistoryRepository->record(
+            $tenantId,
+            'unit',
+            $unitId,
+            'visibility_level',
+            $oldVis,
+            $visibility,
+            $actorId,
+            $reason !== '' ? $reason : null
+        );
+
+        return $this->rosterSuccess($tenantId, $actorId);
+    }
+
+    private function structureSetStatus(Request $request, int $tenantId): Response
+    {
+        if (!$this->unitRepository->hasTableColumn('units', 'admin_status')) {
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'Les statuts administratifs ne sont pas encore disponibles sur cet environnement.',
+            ], 503);
+        }
+
+        $unitId = (int) $request->input('unit_id', 0);
+        if ($unitId < 1) {
+            return Response::json(['success' => false, 'message' => 'Unité non valide.'], 400);
+        }
+        $unit = $this->unitRepository->findById($unitId, $tenantId);
+        if (!$unit) {
+            return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
+        }
+
+        $newStatus = UnitAdminStatus::normalize((string) $request->input('admin_status', ''));
+        $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
+        $note = trim((string) $request->input('admin_status_note', $request->input('reason', '')));
+        $comment = trim((string) $request->input('comment', ''));
+        $effectiveAt = trim((string) $request->input('effective_at', ''));
+
+        $data = ['admin_status' => $newStatus];
+        if ($this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
+            $data['admin_status_note'] = $note !== '' ? $note : null;
+        }
+        $this->unitRepository->update($unitId, $tenantId, $data);
+
+        $actorId = (int) Session::get('user_id');
+        $this->visibilityHistoryRepository->recordUnitStatus(
+            $tenantId,
+            $unitId,
+            $oldStatus,
+            $newStatus,
+            $actorId,
+            $note !== '' ? $note : null,
+            $comment !== '' ? $comment : null,
+            $effectiveAt !== '' ? $effectiveAt : null
+        );
+
+        // Signalement d'incohérence parent/enfant (sans correction auto)
+        $warnings = [];
+        $parentId = (int) ($unit['parent_id'] ?? 0);
+        if ($parentId > 0) {
+            $parent = $this->unitRepository->findById($parentId, $tenantId);
+            if ($parent) {
+                $updated = array_merge($unit, $data);
+                $warnings = OrgVisibilityService::detectStatusInconsistencies($updated, $parent);
+            }
+        }
+
+        $resp = $this->rosterSuccess($tenantId, $actorId);
+        // rosterSuccess returns Response — we need to enrich. Rebuild lightly:
+        $gate = Gate::getInstance();
+        $caps = OrgVisibilityCapabilities::fromGate($gate);
+        $canBypass = $caps->bypassAll || $gate->allows('organization.orbat.manage');
+
+        return Response::json([
+            'success' => true,
+            'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $actorId, $canBypass, $caps),
+            'warnings' => $warnings,
+        ]);
+    }
+
+    private function structureArchive(Request $request, int $tenantId): Response
+    {
+        if (!$this->unitRepository->hasTableColumn('units', 'admin_status')) {
+            return Response::json([
+                'success' => false,
+                'code' => 'orbat_schema',
+                'message' => 'L’archivage administratif n’est pas encore disponible sur cet environnement.',
+            ], 503);
+        }
+
+        $unitId = (int) $request->input('unit_id', 0);
+        if ($unitId < 1) {
+            return Response::json(['success' => false, 'message' => 'Unité non valide.'], 400);
+        }
+        $unit = $this->unitRepository->findById($unitId, $tenantId);
+        if (!$unit) {
+            return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
+        }
+
+        $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
+        $newStatus = UnitAdminStatus::ARCHIVED;
+        $reason = trim((string) $request->input('reason', 'Archivage depuis l’ORBAT'));
+
+        $data = ['admin_status' => $newStatus];
+        if ($this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
+            $data['admin_status_note'] = $reason !== '' ? $reason : null;
+        }
+        $this->unitRepository->update($unitId, $tenantId, $data);
+
+        $actorId = (int) Session::get('user_id');
+        $this->visibilityHistoryRepository->recordUnitStatus(
+            $tenantId,
+            $unitId,
+            $oldStatus,
+            $newStatus,
+            $actorId,
+            $reason !== '' ? $reason : null
+        );
+
+        return $this->rosterSuccess($tenantId, $actorId);
     }
 
     private function rosterSuccess(int $tenantId, int $userId): Response
     {
         $gate = Gate::getInstance();
-        $canBypass = $gate->allows('admin.organization') || $gate->allows('admin.access')
+        $caps = OrgVisibilityCapabilities::fromGate($gate);
+        $canBypass = $caps->bypassAll || $caps->viewHiddenUnits
             || $gate->allows('organization.orbat.manage');
 
         return Response::json([
             'success' => true,
-            'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass),
+            'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass, $caps),
         ]);
     }
 
@@ -537,7 +849,8 @@ final class OrbatApiController
 
         if ($request->input('public_blurb') !== null) {
             $blurb = trim((string) $request->input('public_blurb', ''));
-            $data['public_blurb'] = $blurb === '' ? null : mb_substr($blurb, 0, 8000);
+            // TEXT : plafond de sécurité large (plus de limite 8000 trop restrictive)
+            $data['public_blurb'] = $blurb === '' ? null : mb_substr($blurb, 0, 100000);
         }
 
         if ($request->input('public_founded_on') !== null && $this->unitRepository->hasTableColumn('units', 'public_founded_on')) {
@@ -578,9 +891,40 @@ final class OrbatApiController
             }
         }
 
+        // Type structurel (groupe, équipe, squad…) — modifiable après création
+        if ($request->input('struct_type') !== null) {
+            $structType = strtolower(trim((string) $request->input('struct_type', '')));
+            $allowedTypes = array_keys(config('units.types', []));
+            if ($allowedTypes !== [] && !in_array($structType, $allowedTypes, true)) {
+                return Response::json(['success' => false, 'message' => 'Type d’unité non reconnu.'], 400);
+            }
+            $data['type'] = $structType;
+        }
+
+        if ($request->input('admin_status') !== null && $this->unitRepository->hasTableColumn('units', 'admin_status')) {
+            $data['admin_status'] = UnitAdminStatus::normalize((string) $request->input('admin_status'));
+        }
+        if ($request->input('admin_status_note') !== null && $this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
+            $note = trim((string) $request->input('admin_status_note', ''));
+            $data['admin_status_note'] = $note === '' ? null : mb_substr($note, 0, 500);
+        }
+        if ($request->input('visibility_level') !== null) {
+            $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level'));
+            if ($this->unitRepository->hasTableColumn('units', 'visibility_level')) {
+                $data['visibility_level'] = $visibility;
+            }
+            if ($this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')) {
+                $data['orbat_mask_mode'] = VisibilityLevel::toOrbatMaskMode($visibility);
+            }
+        }
+        if ($request->input('strength_display_mode') !== null && $this->unitRepository->hasTableColumn('units', 'strength_display_mode')) {
+            $data['strength_display_mode'] = (string) $request->input('strength_display_mode');
+        }
+
         if ($request->input('orbat_details') !== null && $this->unitRepository->hasTableColumn('units', 'orbat_details')) {
             $det = trim((string) $request->input('orbat_details', ''));
-            $data['orbat_details'] = $det === '' ? null : mb_substr($det, 0, 16000);
+            // TEXT : plus de troncature agressive — plafond de sécurité très large
+            $data['orbat_details'] = $det === '' ? null : mb_substr($det, 0, 100000);
         }
 
         if ($request->input('clear_chart_icon') === '1' && $this->unitRepository->hasTableColumn('units', 'orbat_icon_path')) {
@@ -615,12 +959,40 @@ final class OrbatApiController
         $this->unitRepository->update($unitId, $tenantId, $data);
         $this->recordUnitRenameHistory($tenantId, $unit, $data);
 
+        // Historiser statut / visibilité si changés via updateUnit
+        $actorId = (int) Session::get('user_id');
+        if (isset($data['admin_status'])) {
+            $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
+            $this->visibilityHistoryRepository->recordUnitStatus(
+                $tenantId,
+                $unitId,
+                $oldStatus,
+                UnitAdminStatus::normalize((string) $data['admin_status']),
+                $actorId
+            );
+        }
+        if (isset($data['visibility_level'])) {
+            $oldVis = array_key_exists('visibility_level', $unit)
+                ? VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''))
+                : VisibilityLevel::fromOrbatMaskMode((string) ($unit['orbat_mask_mode'] ?? ''));
+            $this->visibilityHistoryRepository->record(
+                $tenantId,
+                'unit',
+                $unitId,
+                'visibility_level',
+                $oldVis,
+                VisibilityLevel::normalize((string) $data['visibility_level']),
+                $actorId
+            );
+        }
+
         $canBypass = $gate->allows('admin.organization') || $gate->allows('admin.access')
             || $gate->allows('organization.orbat.manage');
+        $caps = OrgVisibilityCapabilities::fromGate($gate);
 
         return Response::json([
             'success' => true,
-            'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass),
+            'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass, $caps),
         ]);
     }
 

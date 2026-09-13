@@ -46,6 +46,8 @@ class GroupAdminController
             'title' => 'Nouveau groupe',
             'parents' => $parents,
             'users' => $users,
+            'unitTypes' => config('units.types', []),
+            'defaultType' => self::TYPE,
         ]);
     }
 
@@ -64,7 +66,7 @@ class GroupAdminController
         $data = [
             'name' => $name,
             'slug' => $effectiveSlug,
-            'type' => self::TYPE,
+            'type' => $this->resolveStructType($request, self::TYPE),
             'code' => $request->input('code') ?: null,
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
@@ -127,11 +129,11 @@ class GroupAdminController
             return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
-        if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
+        if (!$unit) {
             Session::flash('error', 'Groupe introuvable.');
             return Response::redirect(url('back-office/groups'));
         }
-        $parents = array_filter($this->unitRepository->getGroups($tenantId), fn ($u) => (int) $u['id'] !== $id);
+        $parents = array_filter($this->unitRepository->listFlatForStructure($tenantId), fn ($u) => (int) $u['id'] !== $id);
         $users = $this->userRepository->allForTenant($tenantId);
         return Response::view('layout.main', [
             'content' => 'admin.organization.groups.edit',
@@ -139,6 +141,7 @@ class GroupAdminController
             'group' => $unit,
             'parents' => $parents,
             'users' => $users,
+            'unitTypes' => config('units.types', []),
         ]);
     }
 
@@ -150,7 +153,7 @@ class GroupAdminController
             return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
-        if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
+        if (!$unit) {
             Session::flash('error', 'Groupe introuvable.');
             return Response::redirect(url('back-office/groups'));
         }
@@ -166,7 +169,7 @@ class GroupAdminController
         $this->unitRepository->update($id, $tenantId, [
             'name' => $request->input('name'),
             'slug' => $slug ?: $unit['slug'],
-            'type' => self::TYPE,
+            'type' => $this->resolveStructType($request, (string) ($unit['type'] ?? self::TYPE)),
             'code' => $request->input('code') ?: null,
             'parent_id' => $request->input('parent_id') ?: null,
             'commander_user_id' => $request->input('commander_user_id') ?: null,
@@ -193,13 +196,34 @@ class GroupAdminController
             return Response::redirect(url('back-office/groups'));
         }
         $unit = $this->unitRepository->findById($id, $tenantId);
-        if (!$unit || ($unit['type'] ?? '') !== self::TYPE) {
+        if (!$unit) {
             Session::flash('error', 'Groupe introuvable.');
+            return Response::redirect(url('back-office/groups'));
+        }
+        // Préférer l'archivage si le schéma le permet et si la structure a déjà servi
+        if ($this->unitRepository->hasTableColumn('units', 'admin_status')
+            && $request->input('force_delete') !== '1') {
+            $this->unitRepository->update($id, $tenantId, [
+                'admin_status' => \App\Support\UnitAdminStatus::ARCHIVED,
+                'admin_status_note' => 'Archivé depuis l’administration des groupes',
+            ]);
+            Session::flash('success', 'Groupe archivé (conservé pour l’historique). Pour une suppression définitive, utilisez force_delete.');
             return Response::redirect(url('back-office/groups'));
         }
         $this->unitRepository->delete($id, $tenantId);
         Session::flash('success', 'Groupe supprimé.');
         return Response::redirect(url('back-office/groups'));
+    }
+
+    private function resolveStructType(Request $request, string $fallback): string
+    {
+        $raw = strtolower(trim((string) $request->input('struct_type', $request->input('type', $fallback))));
+        $allowed = array_keys(config('units.types', []));
+        if ($allowed !== [] && !in_array($raw, $allowed, true)) {
+            return $fallback;
+        }
+
+        return $raw !== '' ? $raw : $fallback;
     }
 
     private function slugify(string $name): string

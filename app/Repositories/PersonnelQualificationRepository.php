@@ -21,6 +21,7 @@ class PersonnelQualificationRepository
     /** Cache de présence des colonnes du chaînon formation (déploiement pas encore migré). */
     private ?bool $trainingLinkReady = null;
     private ?bool $reasonLabelColumnReady = null;
+    private ?bool $visibilityLevelColumnReady = null;
 
     public function __construct()
     {
@@ -141,6 +142,85 @@ class PersonnelQualificationRepository
         $stmt = $this->pdo->prepare('UPDATE personnel_qualifications SET status = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$status, $id]);
         return $stmt->rowCount() > 0;
+    }
+
+    public function visibilityLevelColumnReady(): bool
+    {
+        if ($this->visibilityLevelColumnReady !== null) {
+            return $this->visibilityLevelColumnReady;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_qualifications'
+                   AND COLUMN_NAME = 'visibility_level' LIMIT 1"
+            );
+            $st->execute();
+            $this->visibilityLevelColumnReady = (bool) $st->fetchColumn();
+        } catch (Throwable) {
+            $this->visibilityLevelColumnReady = false;
+        }
+
+        return $this->visibilityLevelColumnReady;
+    }
+
+    public function updateVisibilityLevel(int $id, string $level): bool
+    {
+        if ($id < 1 || !$this->visibilityLevelColumnReady()) {
+            return false;
+        }
+        $level = \App\Support\VisibilityLevel::normalize($level);
+        $stmt = $this->pdo->prepare(
+            'UPDATE personnel_qualifications SET visibility_level = ?, updated_at = NOW() WHERE id = ?'
+        );
+        $stmt->execute([$level, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Soft-filter pour dossier public : retire hidden / redige restricted selon les caps.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function filterForViewer(array $rows, \App\Support\OrgVisibilityCapabilities $caps): array
+    {
+        if (!$this->visibilityLevelColumnReady()) {
+            return $rows;
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $level = \App\Support\VisibilityLevel::normalize((string) ($row['visibility_level'] ?? 'normal'));
+            if ($caps->shouldHidePersonnelCompletely($level)
+                || ($level === \App\Support\VisibilityLevel::HIDDEN && !$caps->canSeePersonnelLevel(\App\Support\VisibilityLevel::HIDDEN))) {
+                continue;
+            }
+            if ($level === \App\Support\VisibilityLevel::RESTRICTED
+                && !$caps->viewRestrictedPersonnel
+                && !$caps->viewHiddenPersonnel
+                && !$caps->bypassAll) {
+                $row['qualification_name'] = 'Qualification restreinte';
+                $row['level'] = null;
+                $row['issued_by'] = null;
+                $row['visibility_redacted'] = true;
+            }
+            if ($level === \App\Support\VisibilityLevel::ANONYMIZED
+                && !$caps->viewRestrictedPersonnel
+                && !$caps->viewHiddenPersonnel
+                && !$caps->bypassAll) {
+                $row['qualification_name'] = 'Qualification anonymisée';
+                $row['level'] = null;
+                $row['issued_by'] = null;
+                $row['visibility_redacted'] = true;
+            }
+            $out[] = $row;
+        }
+
+        return $out;
     }
 
     /** Prochaine date d'expiration parmi les qualifications avec expires_at. */
