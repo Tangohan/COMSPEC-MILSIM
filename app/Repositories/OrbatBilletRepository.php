@@ -413,6 +413,146 @@ final class OrbatBilletRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function restore(int $tenantId, int $billetId): bool
+    {
+        $data = ['is_active' => 1];
+        if ($this->columnExists('orbat_billets', 'status')) {
+            $data['status'] = 'active';
+        }
+        if ($this->columnExists('orbat_billets', 'archived_at')) {
+            $data['archived_at'] = null;
+        }
+
+        return $this->update($tenantId, $billetId, $data);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listDeleted(int $tenantId, int $limit = 100): array
+    {
+        if (!$this->schemaReady()) {
+            return [];
+        }
+        $sql = 'SELECT b.*, u.name AS unit_name FROM orbat_billets b
+                LEFT JOIN units u ON u.id = b.unit_id
+                WHERE b.tenant_id = ?';
+        if ($this->columnExists('orbat_billets', 'status')) {
+            $sql .= " AND (b.status = 'deleted' OR b.is_active = 0)";
+        } else {
+            $sql .= ' AND b.is_active = 0';
+        }
+        $sql .= ' ORDER BY b.id DESC LIMIT ' . max(1, min(500, $limit));
+        $st = $this->pdo()->prepare($sql);
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listCareerEvents(int $tenantId, ?int $userId = null, int $limit = 100): array
+    {
+        if (!$this->tableExists('personnel_career_journal')) {
+            return [];
+        }
+        $limit = max(1, min(500, $limit));
+        if ($userId !== null && $userId > 0) {
+            $st = $this->pdo()->prepare(
+                'SELECT * FROM personnel_career_journal
+                 WHERE tenant_id = ? AND user_id = ?
+                 ORDER BY COALESCE(effective_at, created_at) DESC, id DESC
+                 LIMIT ' . $limit
+            );
+            $st->execute([$tenantId, $userId]);
+        } else {
+            $st = $this->pdo()->prepare(
+                'SELECT * FROM personnel_career_journal
+                 WHERE tenant_id = ?
+                 ORDER BY COALESCE(effective_at, created_at) DESC, id DESC
+                 LIMIT ' . $limit
+            );
+            $st->execute([$tenantId]);
+        }
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function createSnapshot(
+        int $tenantId,
+        string $label,
+        array $payload,
+        string $kind = 'manual',
+        ?string $effectiveAt = null,
+        ?int $createdBy = null,
+        ?string $notes = null
+    ): int {
+        if (!$this->tableExists('orbat_structure_snapshots')) {
+            return 0;
+        }
+        $effectiveAt = $effectiveAt !== null && preg_match('/^\d{4}-\d{2}-\d{2}/', $effectiveAt)
+            ? substr($effectiveAt, 0, 19)
+            : date('Y-m-d H:i:s');
+        $st = $this->pdo()->prepare(
+            'INSERT INTO orbat_structure_snapshots
+                (tenant_id, label, snapshot_kind, effective_at, payload_json, notes, created_by, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
+        );
+        $st->execute([
+            $tenantId,
+            mb_substr(trim($label) !== '' ? trim($label) : 'Snapshot ORBAT', 0, 200),
+            mb_substr($kind, 0, 32),
+            $effectiveAt,
+            json_encode($payload, JSON_UNESCAPED_UNICODE) ?: '{}',
+            $notes !== null && trim($notes) !== '' ? $notes : null,
+            $createdBy !== null && $createdBy > 0 ? $createdBy : null,
+        ]);
+
+        return (int) $this->pdo()->lastInsertId();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listSnapshots(int $tenantId, int $limit = 50): array
+    {
+        if (!$this->tableExists('orbat_structure_snapshots')) {
+            return [];
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT id, tenant_id, label, snapshot_kind, effective_at, notes, created_by, created_at
+             FROM orbat_structure_snapshots
+             WHERE tenant_id = ?
+             ORDER BY effective_at DESC, id DESC
+             LIMIT ' . max(1, min(200, $limit))
+        );
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listMovementReasons(int $tenantId): array
+    {
+        if (!$this->tableExists('organization_movement_reasons')) {
+            return [];
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT * FROM organization_movement_reasons
+             WHERE tenant_id = ? AND is_active = 1
+             ORDER BY sort_order ASC, label ASC'
+        );
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     private function newUuid(): string
     {
         return sprintf(

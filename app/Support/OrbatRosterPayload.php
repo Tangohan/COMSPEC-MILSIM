@@ -306,7 +306,7 @@ final class OrbatRosterPayload
             $node['billetFilled'] = (int) ($m['filled'] ?? 0);
             $node['billetVacant'] = (int) ($m['vacant'] ?? 0);
             $node['billetManningLabel'] = sprintf(
-                '%d / %d postes (%d vacants)',
+                '%d affectés — %d postes — %d vacants',
                 (int) ($m['filled'] ?? 0),
                 (int) ($m['authorized'] ?? 0),
                 (int) ($m['vacant'] ?? 0)
@@ -353,9 +353,71 @@ final class OrbatRosterPayload
                     'seat_status' => $seatStatus,
                     'is_key_post' => !empty($b['is_key_post']),
                     'is_critical' => !empty($b['is_critical']),
+                    'key_post_kind' => (string) ($b['key_post_kind'] ?? ''),
                     'holders' => $holdersOut,
                 ];
             }, is_array($m['billets'] ?? null) ? $m['billets'] : []);
+
+            $derivedCommand = [];
+            $capacitySignals = [];
+            $keyDefined = false;
+            $criticalVacant = 0;
+            foreach ($node['billets'] as $b) {
+                $isKey = !empty($b['is_key_post']) || !empty($b['is_critical']);
+                if ($isKey) {
+                    $keyDefined = true;
+                }
+                if ($isKey && (int) ($b['vacant'] ?? 0) > 0) {
+                    ++$criticalVacant;
+                }
+                foreach ($b['holders'] as $h) {
+                    if (!$isKey) {
+                        continue;
+                    }
+                    if (!in_array((string) ($h['occupancy_type'] ?? ''), ['primary', 'acting'], true)) {
+                        continue;
+                    }
+                    $derivedCommand[] = [
+                        'billet_id' => (int) ($b['id'] ?? 0),
+                        'title' => (string) ($b['title'] ?? ''),
+                        'kind' => (string) (($b['key_post_kind'] ?? '') !== ''
+                            ? $b['key_post_kind']
+                            : (!empty($b['is_critical']) ? 'critical' : 'key')),
+                        'user_id' => (int) ($h['user_id'] ?? 0),
+                        'label' => (string) ($h['label'] ?? ''),
+                        'occupancy_type' => (string) ($h['occupancy_type'] ?? 'primary'),
+                        'occupancy_label' => (string) ($h['occupancy_label'] ?? ''),
+                    ];
+                }
+            }
+            if ((int) ($m['vacant'] ?? 0) > 0) {
+                $capacitySignals[] = [
+                    'code' => 'vacant_billets',
+                    'severity' => 'medium',
+                    'message' => (int) $m['vacant'] . ' poste(s) vacant(s) sur ' . (int) $m['authorized'],
+                ];
+            }
+            if ($criticalVacant > 0) {
+                $capacitySignals[] = [
+                    'code' => 'critical_billet_vacant',
+                    'severity' => 'high',
+                    'message' => $criticalVacant . ' poste(s) clé/critique(s) vacant(s)',
+                ];
+            }
+            if ($keyDefined && $derivedCommand === []) {
+                $capacitySignals[] = [
+                    'code' => 'no_derived_command',
+                    'severity' => 'high',
+                    'message' => 'Aucun responsable dérivé des postes clés actuellement pourvus',
+                ];
+            }
+            $node['derivedCommand'] = $derivedCommand;
+            $node['capacitySignals'] = $capacitySignals;
+            if ($derivedCommand !== [] && trim((string) ($node['leader'] ?? '')) === '') {
+                $node['leader'] = (string) ($derivedCommand[0]['label'] ?? '');
+                $node['leaderFromBillet'] = true;
+            }
+
             // Remplacer le strength « membres » par le pourvu postes si des billets existent
             if ((int) ($m['authorized'] ?? 0) > 0) {
                 $node['strengthTheoretical'] = (int) ($m['authorized'] ?? 0);

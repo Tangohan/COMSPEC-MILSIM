@@ -305,6 +305,19 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 <label><input type="checkbox" name="orbat-admin-status" value="inactive"> Inactif</label>
                 <label><input type="checkbox" name="orbat-admin-status" value="archived"> Archivé</label>
             </div>
+            <?php if ($showOrbatEditTools): ?>
+            <div class="border-t border-slate-100 pt-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <label for="orbat-preview-as" class="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Voir comme</label>
+                <select id="orbat-preview-as" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium outline-none focus:border-slate-400">
+                    <option value="">Administrateur (vue réelle)</option>
+                    <option value="member">Membre standard</option>
+                    <option value="cadre">Cadre</option>
+                    <option value="command">Commandement</option>
+                </select>
+                <p class="text-[11px] text-slate-500 leading-snug">Simule exactement ce qui est exposé selon le niveau de confidentialité.</p>
+                <a href="<?= htmlspecialchars(url('back-office/organisation/qualite-donnees'), ENT_QUOTES, 'UTF-8') ?>" class="sm:ml-auto text-[11px] font-black uppercase tracking-wide text-emerald-800 hover:underline">Qualité des données</a>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
     <?php endif; ?>
@@ -377,6 +390,16 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Composition</p>
                         <div id="detail-children" class="mt-3 space-y-2 text-sm font-medium text-slate-700"></div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Commandement dérivé</p>
+                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Calculé depuis les postes clés pourvus (titulaire / intérim) — pas un champ libre.</p>
+                        <div id="detail-command" class="mt-3 space-y-1.5 text-sm"></div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Signaux de capacité</p>
+                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Faits objectifs uniquement — aucun jugement du type « non opérationnel ».</p>
+                        <div id="detail-signals" class="mt-3 space-y-1.5 text-sm"></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Postes ORBAT</p>
@@ -612,6 +635,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     let currentView = "tree";
     let selectedAdminStatuses = ["active", "partially_active", "forming", "reorganizing"];
     let rosterFetchInFlight = false;
+    let previewAs = "";
 
     var structureOptionsCache = null;
     var ctxTargetNode = null;
@@ -1374,6 +1398,45 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 });
             }
         }
+        var commandBox = document.getElementById("detail-command");
+        if (commandBox) {
+            commandBox.innerHTML = "";
+            var cmds = node.derivedCommand || [];
+            if ((node.unitId || 0) < 1) {
+                commandBox.innerHTML = "<p class=\"text-xs text-slate-500\">Sélectionnez une unité.</p>";
+            } else if (!cmds.length) {
+                commandBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun poste clé pourvu — le commandement n’est pas dérivable.</p>";
+            } else {
+                cmds.forEach(function(c) {
+                    var p = document.createElement("p");
+                    p.className = "text-[11px] font-semibold text-slate-800";
+                    p.textContent = (c.title || "Poste clé") + " — " + (c.label || "")
+                        + (c.occupancy_label ? " (" + c.occupancy_label + ")" : "");
+                    commandBox.appendChild(p);
+                });
+            }
+        }
+        var signalsBox = document.getElementById("detail-signals");
+        if (signalsBox) {
+            signalsBox.innerHTML = "";
+            var sigs = node.capacitySignals || [];
+            if ((node.unitId || 0) < 1) {
+                signalsBox.innerHTML = "<p class=\"text-xs text-slate-500\">Sélectionnez une unité.</p>";
+            } else if (!sigs.length) {
+                signalsBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun signal objectif pour cette structure.</p>";
+            } else {
+                sigs.forEach(function(s) {
+                    var sev = s.severity || "medium";
+                    var tone = sev === "high"
+                        ? "border-rose-200 bg-rose-50 text-rose-950"
+                        : (sev === "low" ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-950");
+                    var row = document.createElement("div");
+                    row.className = "rounded-xl border px-3 py-2 text-[11px] font-semibold " + tone;
+                    row.textContent = s.message || s.code || "";
+                    signalsBox.appendChild(row);
+                });
+            }
+        }
         var membersBox = document.getElementById("detail-members");
         if (membersBox) {
             membersBox.innerHTML = "";
@@ -1622,7 +1685,14 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         var statuses = includeAllStatuses
             ? ["active", "partially_active", "forming", "reorganizing", "inactive", "archived"]
             : selectedAdminStatuses;
-        var q = statuses.length ? ("?admin_status=" + encodeURIComponent(statuses.join(","))) : "";
+        var params = [];
+        if (statuses.length) {
+            params.push("admin_status=" + encodeURIComponent(statuses.join(",")));
+        }
+        if (previewAs) {
+            params.push("preview_as=" + encodeURIComponent(previewAs));
+        }
+        var q = params.length ? ("?" + params.join("&")) : "";
         return apiRosterUrl + q;
     }
 
@@ -1681,12 +1751,20 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     if (statusFilterBox) {
         statusFilterBox.addEventListener("change", function() {
             readAdminStatusFilterFromDom();
-            if (showOrbatEditTools && fullRosterData) {
+            if (showOrbatEditTools && fullRosterData && !previewAs) {
                 rosterData = filterRosterByAdminStatus(fullRosterData, selectedAdminStatuses);
                 renderAllViews(filteredTree(currentSearch));
             } else {
                 reloadRosterFromApi();
             }
+        });
+    }
+
+    var previewAsSelect = document.getElementById("orbat-preview-as");
+    if (previewAsSelect) {
+        previewAsSelect.addEventListener("change", function() {
+            previewAs = String(previewAsSelect.value || "");
+            reloadRosterFromApi();
         });
     }
 

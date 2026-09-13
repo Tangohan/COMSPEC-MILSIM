@@ -8,6 +8,9 @@ use App\Core\Database;
 use App\Repositories\OrbatBilletRepository;
 use App\Repositories\OrganizationVisibilityHistoryRepository;
 use App\Repositories\UnitRepository;
+use App\Support\BilletOccupancyType;
+use App\Support\BilletStatus;
+use App\Support\OrgDomainModel;
 use App\Support\UnitAdminStatus;
 use PDO;
 
@@ -102,26 +105,34 @@ final class OrbatBilletService
             return ['ok' => false, 'message' => 'Ce poste n’est plus actif.'];
         }
 
-        $occupancy = strtolower(trim((string) ($data['occupancy_type'] ?? 'primary')));
+        if (!BilletStatus::isOccupiable((string) ($billet['status'] ?? 'active'))) {
+            return ['ok' => false, 'message' => 'Ce poste n’est pas occupable dans son état actuel.'];
+        }
+
+        $occupancy = BilletOccupancyType::normalize((string) ($data['occupancy_type'] ?? 'primary'));
+        $data['occupancy_type'] = $occupancy;
         $warnings = [];
         $asOf = date('Y-m-d');
         $holders = $this->billets->activeHolders($tenantId, $billetId, $asOf);
         $slots = max(1, (int) ($billet['authorized_slots'] ?? 1));
 
-        if ($occupancy === 'primary') {
+        if ($occupancy === BilletOccupancyType::PRIMARY) {
             $primaryCount = 0;
             foreach ($holders as $h) {
-                $occ = strtolower((string) ($h['occupancy_type'] ?? 'primary'));
-                if ($occ === '' || $occ === 'primary') {
+                $occ = BilletOccupancyType::normalize((string) ($h['occupancy_type'] ?? 'primary'));
+                if ($occ === BilletOccupancyType::PRIMARY) {
                     ++$primaryCount;
                 }
             }
             if ($primaryCount >= $slots) {
-                $warnings[] = 'Ce poste a déjà un titulaire pour chaque slot autorisé.';
+                return [
+                    'ok' => false,
+                    'message' => 'Ce poste a déjà un titulaire pour chaque slot autorisé. Utilisez un intérim ou libérez d’abord le titulaire.',
+                ];
             }
         }
 
-        if (in_array($occupancy, ['acting', 'deputy'], true)) {
+        if (BilletOccupancyType::keepsOrganicByDefault($occupancy)) {
             $data['keeps_organic_billet'] = 1;
             if (empty($data['organic_billet_id'])) {
                 $organic = $this->billets->primaryBilletsForUser($tenantId, (int) ($data['user_id'] ?? 0), $asOf);
@@ -139,12 +150,7 @@ final class OrbatBilletService
         }
 
         $userId = (int) ($data['user_id'] ?? 0);
-        $label = match ($occupancy) {
-            'acting' => 'Intérim',
-            'deputy' => 'Suppléance / adjoint',
-            'alternate' => 'Suppléant',
-            default => 'Titulaire',
-        };
+        $label = BilletOccupancyType::label($occupancy);
         $this->appendCareer(
             $tenantId,
             $userId,
@@ -241,7 +247,19 @@ final class OrbatBilletService
                 $unavailable,
                 $base['vacant']
             ),
-            'billets' => $base['billets'],
+            'billets' => array_map(static function (array $b): array {
+                $b['seat_label'] = BilletStatus::seatLabel(
+                    (string) ($b['status'] ?? 'active'),
+                    (int) ($b['filled'] ?? 0),
+                    (int) ($b['authorized'] ?? 1)
+                );
+                foreach ($b['holders'] as &$h) {
+                    $h['occupancy_label'] = BilletOccupancyType::label((string) ($h['occupancy_type'] ?? 'primary'));
+                }
+                unset($h);
+
+                return $b;
+            }, $base['billets']),
         ];
     }
 
@@ -441,6 +459,231 @@ final class OrbatBilletService
                 'unit_id' => $unitId,
             ],
         ];
+    }
+
+    /**
+     * Fiche structure enrichie : effectifs, commandement dérivé, postes, signaux objectifs.
+     *
+     * @return array<string, mixed>
+     */
+    public function structureSheet(int $tenantId, int $unitId, ?string $asOf = null): array
+    {
+        $unit = $this->units->findById($unitId, $tenantId);
+        if ($unit === null) {
+            return ['ok' => false, 'message' => 'Structure introuvable.'];
+        }
+        $manning = $this->unitManning($tenantId, $unitId, $asOf);
+        $command = $this->derivedCommand($tenantId, $unitId, $asOf);
+        $signals = $this->capacitySignals($tenantId, $unitId, $manning, $command);
+
+        return [
+            'ok' => true,
+            'unit' => [
+                'id' => $unitId,
+                'name' => (string) ($unit['name'] ?? ''),
+                'type' => (string) ($unit['type'] ?? ''),
+                'admin_status' => UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? 'active')),
+                'parent_id' => isset($unit['parent_id']) ? (int) $unit['parent_id'] : null,
+                'visibility_level' => (string) ($unit['visibility_level'] ?? 'normal'),
+                'description' => (string) ($unit['description'] ?? $unit['orbat_details'] ?? ''),
+            ],
+            'manning' => $manning,
+            'command' => $command,
+            'capacity_signals' => $signals,
+            'domain_model' => OrgDomainModel::catalog(),
+            'occupancy_types' => BilletOccupancyType::options(),
+        ];
+    }
+
+    /**
+     * Faits objectifs (pas un jugement « non opérationnel »).
+     *
+     * @param array<string, mixed> $manning
+     * @param list<array<string, mixed>> $command
+     * @return list<array{code: string, severity: string, message: string}>
+     */
+    public function capacitySignals(int $tenantId, int $unitId, ?array $manning = null, ?array $command = null): array
+    {
+        $manning ??= $this->unitManning($tenantId, $unitId);
+        $command ??= $this->derivedCommand($tenantId, $unitId);
+        $signals = [];
+        if ((int) ($manning['vacant'] ?? 0) > 0) {
+            $signals[] = [
+                'code' => 'vacant_billets',
+                'severity' => 'medium',
+                'message' => (int) $manning['vacant'] . ' poste(s) vacant(s) sur ' . (int) $manning['authorized'],
+            ];
+        }
+        $criticalVacant = 0;
+        $missingQual = 0;
+        foreach ($manning['billets'] ?? [] as $b) {
+            if ((!empty($b['is_critical']) || !empty($b['is_key_post'])) && (int) ($b['vacant'] ?? 0) > 0) {
+                ++$criticalVacant;
+            }
+            $packId = (int) ($b['required_pack_id'] ?? 0);
+            if ($packId > 0) {
+                foreach ($b['holders'] ?? [] as $h) {
+                    if ($this->missingRequiredQualifications($tenantId, (int) ($h['user_id'] ?? 0), $packId) !== []) {
+                        ++$missingQual;
+                    }
+                }
+            }
+        }
+        if ($criticalVacant > 0) {
+            $signals[] = [
+                'code' => 'critical_billet_vacant',
+                'severity' => 'high',
+                'message' => $criticalVacant . ' poste(s) clé/critique(s) vacant(s)',
+            ];
+        }
+        if ($missingQual > 0) {
+            $signals[] = [
+                'code' => 'missing_expected_qualifications',
+                'severity' => 'medium',
+                'message' => $missingQual . ' titulaire(s) sans qualification attendue',
+            ];
+        }
+        if ($command === []) {
+            $hasKey = false;
+            foreach ($manning['billets'] ?? [] as $b) {
+                if (!empty($b['is_key_post']) || !empty($b['is_critical'])) {
+                    $hasKey = true;
+                    break;
+                }
+            }
+            if ($hasKey) {
+                $signals[] = [
+                    'code' => 'no_derived_command',
+                    'severity' => 'high',
+                    'message' => 'Aucun responsable dérivé des postes clés actuellement pourvus',
+                ];
+            }
+        }
+        if ((int) ($manning['unavailable'] ?? 0) > 0) {
+            $signals[] = [
+                'code' => 'unavailable_assignees',
+                'severity' => 'low',
+                'message' => (int) $manning['unavailable'] . ' affecté(s) en situation administrative indisponible',
+            ];
+        }
+
+        return $signals;
+    }
+
+    /**
+     * Centre « Qualité des données » — synthèse d’anomalies factuelles.
+     *
+     * @return array{
+     *   totals: array<string, int>,
+     *   anomalies: list<array{code: string, severity: string, message: string, meta?: array<string, mixed>}>,
+     *   movements: list<array<string, mixed>>,
+     *   trash: list<array<string, mixed>>,
+     *   snapshots: list<array<string, mixed>>,
+     *   domain_model: list<array{id: string, label: string, description: string}>
+     * }
+     */
+    public function dataQualitySummary(int $tenantId): array
+    {
+        $anomalies = $this->detectAnomalies($tenantId);
+        $totals = [
+            'anomalies' => count($anomalies),
+            'vacant_billet' => 0,
+            'duplicate_primary' => 0,
+            'missing_qualification' => 0,
+            'unit_without_commander' => 0,
+            'assignment_on_inactive_unit' => 0,
+            'high' => 0,
+            'medium' => 0,
+            'low' => 0,
+        ];
+        foreach ($anomalies as $a) {
+            $code = (string) ($a['code'] ?? '');
+            if (isset($totals[$code])) {
+                ++$totals[$code];
+            }
+            $sev = (string) ($a['severity'] ?? 'medium');
+            if (isset($totals[$sev])) {
+                ++$totals[$sev];
+            }
+        }
+
+        return [
+            'totals' => $totals,
+            'anomalies' => $anomalies,
+            'movements' => $this->billets->listCareerEvents($tenantId, null, 40),
+            'trash' => $this->billets->listDeleted($tenantId, 40),
+            'snapshots' => $this->billets->listSnapshots($tenantId, 20),
+            'movement_reasons' => $this->billets->listMovementReasons($tenantId),
+            'domain_model' => OrgDomainModel::catalog(),
+        ];
+    }
+
+    /**
+     * @return array{ok: bool, message?: string}
+     */
+    public function restoreBillet(int $tenantId, int $billetId, ?int $actorUserId = null): array
+    {
+        $before = $this->billets->findById($tenantId, $billetId);
+        if ($before === null) {
+            return ['ok' => false, 'message' => 'Poste introuvable.'];
+        }
+        if (!$this->billets->restore($tenantId, $billetId)) {
+            return ['ok' => false, 'message' => 'Restauration impossible.'];
+        }
+        $this->appendCareer(
+            $tenantId,
+            0,
+            'billet_restored',
+            'Restauration du poste « ' . (string) ($before['title'] ?? '') . ' »',
+            $actorUserId,
+            ['billet_id' => $billetId]
+        );
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Snapshot ORBAT (versionnement / préparation de réorganisation).
+     *
+     * @return array{ok: bool, id?: int, message?: string}
+     */
+    public function snapshotOrbat(
+        int $tenantId,
+        string $label,
+        string $kind = 'manual',
+        ?string $effectiveAt = null,
+        ?int $actorUserId = null,
+        ?string $notes = null
+    ): array {
+        $byUnit = $this->billets->manningByUnitForTenant($tenantId, $effectiveAt);
+        $payload = [
+            'captured_at' => date('c'),
+            'kind' => $kind,
+            'domain_model' => OrgDomainModel::CORE,
+            'units' => [],
+        ];
+        foreach ($byUnit as $unitId => $m) {
+            $sheet = $this->structureSheet($tenantId, (int) $unitId, $effectiveAt);
+            if (!empty($sheet['ok'])) {
+                $payload['units'][(string) $unitId] = $sheet;
+            } else {
+                $payload['units'][(string) $unitId] = ['manning' => $m];
+            }
+        }
+        $id = $this->billets->createSnapshot(
+            $tenantId,
+            $label,
+            $payload,
+            $kind,
+            $effectiveAt,
+            $actorUserId,
+            $notes
+        );
+        if ($id < 1) {
+            return ['ok' => false, 'message' => 'Création du snapshot impossible (table absente ?).'];
+        }
+
+        return ['ok' => true, 'id' => $id];
     }
 
     /**

@@ -108,4 +108,45 @@ final class OrgVisibilityCapabilities
         return in_array($eff, [VisibilityLevel::RESTRICTED, VisibilityLevel::HIDDEN, VisibilityLevel::ANONYMIZED], true)
             && !$this->canSeeUnitLevel($eff);
     }
+
+    /**
+     * Mode « Voir comme » pour un administrateur : simule le périmètre d’un lecteur.
+     * Roles : member | cadre | command.
+     */
+    public function asPreview(?string $role): self
+    {
+        if ($role === null || $role === '') {
+            return $this;
+        }
+        if (!$this->managePersonnelVisibility && !$this->bypassAll) {
+            return $this;
+        }
+        $role = strtolower(trim($role));
+        if (!in_array($role, ['member', 'cadre', 'command'], true)) {
+            return $this;
+        }
+        $caps = clone $this;
+        $caps->bypassAll = false;
+        $caps->managePersonnelVisibility = false;
+        $caps->manageUnitVisibility = false;
+        $caps->viewVisibilityHistory = false;
+        if ($role === 'member') {
+            $caps->viewRestrictedPersonnel = false;
+            $caps->viewHiddenPersonnel = false;
+            $caps->viewRestrictedUnits = false;
+            $caps->viewHiddenUnits = false;
+        } elseif ($role === 'cadre') {
+            $caps->viewRestrictedPersonnel = true;
+            $caps->viewHiddenPersonnel = false;
+            $caps->viewRestrictedUnits = true;
+            $caps->viewHiddenUnits = false;
+        } else {
+            $caps->viewRestrictedPersonnel = true;
+            $caps->viewHiddenPersonnel = true;
+            $caps->viewRestrictedUnits = true;
+            $caps->viewHiddenUnits = true;
+        }
+
+        return $caps;
+    }
 }

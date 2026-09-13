@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Support\BilletOccupancyType;
+use App\Support\BilletStatus;
+use App\Support\OrgDomainModel;
 use App\Support\UnitAdminStatus;
 use App\Support\VisibilityLevel;
 use PHPUnit\Framework\TestCase;
@@ -47,6 +50,9 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('missing_qualification', $src);
         self::assertStringContainsString('duplicate_primary', $src);
         self::assertStringContainsString('vacant_billet', $src);
+        self::assertStringContainsString('dataQualitySummary', $src);
+        self::assertStringContainsString('structureSheet', $src);
+        self::assertStringContainsString('capacitySignals', $src);
     }
 
     public function testRosterPayloadAttachesBilletManning(): void
@@ -56,6 +62,8 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('billetManningLabel', $src);
         self::assertStringContainsString('strengthTheoretical', $src);
         self::assertStringContainsString('strengthVacant', $src);
+        self::assertStringContainsString('derivedCommand', $src);
+        self::assertStringContainsString('capacitySignals', $src);
     }
 
     public function testApiExposesBilletActions(): void
@@ -65,6 +73,8 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('billet_occupy', $src);
         self::assertStringContainsString('billet_vacate', $src);
         self::assertStringContainsString('OrbatBilletService', $src);
+        self::assertStringContainsString('preview_as', $src);
+        self::assertStringContainsString('asPreview', $src);
     }
 
     public function testAdminStatusRemainsIndependentFromVisibility(): void
@@ -85,5 +95,35 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('detail-billets', $src);
         self::assertStringContainsString('ORBAT théorique', $src);
         self::assertStringContainsString('seat_status', $src);
+        self::assertStringContainsString('orbat-preview-as', $src);
+        self::assertStringContainsString('detail-command', $src);
+        self::assertStringContainsString('detail-signals', $src);
+    }
+
+    public function testOccupancyTypesAndDomainModelAreExplicit(): void
+    {
+        self::assertSame(BilletOccupancyType::PRIMARY, BilletOccupancyType::normalize('titulaire'));
+        self::assertSame(BilletOccupancyType::ACTING, BilletOccupancyType::normalize('intérim'));
+        self::assertTrue(BilletOccupancyType::fillsSeat(BilletOccupancyType::ACTING));
+        self::assertTrue(BilletOccupancyType::keepsOrganicByDefault(BilletOccupancyType::ACTING));
+        self::assertSame('Vacant', BilletStatus::seatLabel(BilletStatus::ACTIVE, 0, 1));
+        self::assertSame('Gelé', BilletStatus::seatLabel(BilletStatus::FROZEN, 0, 1));
+        $catalog = OrgDomainModel::catalog();
+        self::assertCount(6, $catalog);
+        self::assertSame(OrgDomainModel::PERSONNEL, $catalog[0]['id']);
+    }
+
+    public function testDataQualityCenterIsWired(): void
+    {
+        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
+        self::assertStringContainsString('qualite-donnees', $routes);
+        self::assertStringContainsString('OrganizationDataQualityController', $routes);
+        $caps = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/OrgVisibilityCapabilities.php');
+        self::assertStringContainsString('function asPreview', $caps);
+        $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/structure_hub.php');
+        self::assertStringContainsString('qualite-donnees', $hub);
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/data_quality.php');
+        self::assertStringContainsString('Qualité des données', $view);
+        self::assertStringContainsString('Tableau des mouvements', $view);
     }
 }

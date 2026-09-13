@@ -51,8 +51,16 @@ final class OrbatApiController
         if (!$gate->allows('organization.orbat.view')) {
             return Response::json(['success' => false, 'message' => 'Vous n’avez pas accès à l’organigramme.'], 403);
         }
-        $caps = OrgVisibilityCapabilities::fromGate($gate);
-        $canBypass = $caps->bypassAll || $caps->viewHiddenUnits || $gate->allows('organization.orbat.manage');
+        $realCaps = OrgVisibilityCapabilities::fromGate($gate);
+        $previewAs = null;
+        if ($realCaps->managePersonnelVisibility || $realCaps->bypassAll) {
+            $rawPreview = strtolower(trim((string) $request->query('preview_as', '')));
+            if (in_array($rawPreview, ['member', 'cadre', 'command'], true)) {
+                $previewAs = $rawPreview;
+            }
+        }
+        $caps = $realCaps->asPreview($previewAs);
+        $canBypass = $caps->bypassAll || $caps->viewHiddenUnits || ($previewAs === null && $gate->allows('organization.orbat.manage'));
 
         $statusFilter = null;
         $rawFilter = trim((string) $request->query('admin_status', ''));
@@ -83,6 +91,8 @@ final class OrbatApiController
             'roster' => $payload,
             'adminStatuses' => UnitAdminStatus::options(),
             'visibilityLevels' => $this->visibilityLevelOptions(),
+            'previewAs' => $previewAs,
+            'previewAvailable' => $realCaps->managePersonnelVisibility || $realCaps->bypassAll,
         ]);
     }
 
@@ -405,6 +415,10 @@ final class OrbatApiController
             'billet_delete' => $this->billetDelete($request, $tenantId),
             'billet_occupy' => $this->billetOccupy($request, $tenantId),
             'billet_vacate' => $this->billetVacate($request, $tenantId),
+            'billet_restore' => $this->billetRestore($request, $tenantId),
+            'structure_sheet' => $this->structureSheet($request, $tenantId),
+            'data_quality' => $this->dataQuality($request, $tenantId),
+            'orbat_snapshot' => $this->orbatSnapshot($request, $tenantId),
             default => Response::json(['success' => false, 'message' => 'Action non reconnue'], 400),
         };
     }
@@ -889,6 +903,63 @@ final class OrbatApiController
         }
 
         return $this->rosterSuccess($tenantId, $actorId);
+    }
+
+    private function billetRestore(Request $request, int $tenantId): Response
+    {
+        $actorId = (int) Session::get('user_id');
+        $result = $this->resolveBilletService()->restoreBillet(
+            $tenantId,
+            (int) $request->input('billet_id', 0),
+            $actorId
+        );
+        if (!$result['ok']) {
+            return Response::json(['success' => false, 'message' => $result['message'] ?? 'Erreur'], 400);
+        }
+
+        return $this->rosterSuccess($tenantId, $actorId);
+    }
+
+    private function structureSheet(Request $request, int $tenantId): Response
+    {
+        $unitId = (int) $request->input('unit_id', 0);
+        $asOf = trim((string) $request->input('as_of', ''));
+        $sheet = $this->resolveBilletService()->structureSheet(
+            $tenantId,
+            $unitId,
+            $asOf !== '' ? $asOf : null
+        );
+        if (empty($sheet['ok'])) {
+            return Response::json(['success' => false, 'message' => $sheet['message'] ?? 'Structure introuvable'], 404);
+        }
+
+        return Response::json(['success' => true, 'sheet' => $sheet]);
+    }
+
+    private function dataQuality(Request $request, int $tenantId): Response
+    {
+        return Response::json([
+            'success' => true,
+            'quality' => $this->resolveBilletService()->dataQualitySummary($tenantId),
+        ]);
+    }
+
+    private function orbatSnapshot(Request $request, int $tenantId): Response
+    {
+        $actorId = (int) Session::get('user_id');
+        $result = $this->resolveBilletService()->snapshotOrbat(
+            $tenantId,
+            (string) $request->input('label', 'Snapshot ORBAT'),
+            (string) $request->input('kind', 'manual'),
+            trim((string) $request->input('effective_at', '')) ?: null,
+            $actorId,
+            trim((string) $request->input('notes', '')) ?: null
+        );
+        if (!$result['ok']) {
+            return Response::json(['success' => false, 'message' => $result['message'] ?? 'Erreur'], 400);
+        }
+
+        return Response::json(['success' => true, 'id' => $result['id'] ?? 0]);
     }
 
     private function rosterSuccess(int $tenantId, int $userId): Response
