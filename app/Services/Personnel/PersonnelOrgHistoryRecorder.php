@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
-use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\RoleRepository;
 
@@ -16,7 +15,6 @@ final class PersonnelOrgHistoryRecorder
     public function __construct(
         private PersonnelOrgHistoryRepository $historyRepository,
         private RoleRepository $roleRepository,
-        private GradeRepository $gradeRepository,
     ) {}
 
     /**
@@ -47,14 +45,8 @@ final class PersonnelOrgHistoryRecorder
             $lines[] = 'Adresse e-mail du compte mise à jour';
         }
 
-        $gidB = isset($beforeRow['grade_id']) ? (int) $beforeRow['grade_id'] : 0;
-        $gidA = isset($afterRow['grade_id']) ? (int) $afterRow['grade_id'] : 0;
-        if ($gidB !== $gidA) {
-            $lines[] = 'Grade : '
-                . $this->gradeLabel($tenantId, $gidB)
-                . ' → '
-                . $this->gradeLabel($tenantId, $gidA);
-        }
+        // Grade / affectation / fonction : consignés via PersonnelStructureChangeNotificationService
+        // (même chemin que l’e-mail « Dossier personnel »), pour éviter les doublons.
 
         $stB = (string) ($beforeRow['status'] ?? '');
         $stA = (string) ($afterRow['status'] ?? '');
@@ -85,6 +77,47 @@ final class PersonnelOrgHistoryRecorder
         }
         $summary = implode(' · ', $lines) . ' — par ' . $actorLabel;
         $this->historyRepository->append($tenantId, $uid, $actorUserId > 0 ? $actorUserId : null, $summary);
+    }
+
+    /**
+     * Consigne grade / affectation / fonction tels qu’annoncés dans l’e-mail de structure.
+     *
+     * @param list<array{type?: string, label: string, from: string, to: string}> $changes
+     */
+    public function recordStructureChanges(
+        int $tenantId,
+        int $userId,
+        ?int $actorUserId,
+        array $changes,
+    ): void {
+        if (!$this->historyRepository->schemaReady() || $tenantId < 1 || $userId < 1 || $changes === []) {
+            return;
+        }
+        $lines = [];
+        foreach ($changes as $c) {
+            if (!is_array($c)) {
+                continue;
+            }
+            $label = trim((string) ($c['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $from = trim((string) ($c['from'] ?? ''));
+            $to = trim((string) ($c['to'] ?? ''));
+            $lines[] = $label . ' : '
+                . ($from !== '' ? $from : 'Non renseigné')
+                . ' → '
+                . ($to !== '' ? $to : 'Non renseigné');
+        }
+        if ($lines === []) {
+            return;
+        }
+        $this->historyRepository->append(
+            $tenantId,
+            $userId,
+            $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null,
+            implode(' · ', $lines)
+        );
     }
 
     /**
@@ -146,21 +179,6 @@ final class PersonnelOrgHistoryRecorder
         $n = trim((string) ($row['name'] ?? ''));
 
         return $n !== '' ? $n : 'Rôle';
-    }
-
-    private function gradeLabel(int $tenantId, int $gradeId): string
-    {
-        if ($gradeId < 1) {
-            return '—';
-        }
-        $row = $this->gradeRepository->findById($gradeId, $tenantId);
-        if (!$row) {
-            return 'Référence ' . $gradeId;
-        }
-        $short = trim((string) ($row['short_name'] ?? ''));
-        $long = trim((string) ($row['name'] ?? ''));
-
-        return $short !== '' ? $short : ($long !== '' ? $long : 'Grade');
     }
 
     private function statusLabel(string $status): string
