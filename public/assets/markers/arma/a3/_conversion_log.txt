@@ -7,3 +7,8 @@ Converter        : Pal2PacE (C:\Users\tetar\Documents\Paascripts\Pal2PacE.exe)
 
 Failures:
 
+--- 2026-09-13 mapcontrol + ui_f_orange ---
+mapcontrol PNG : 35 (from Addons\a3\ui_f\data\map\mapcontrol)
+ui_f_orange cfgmarkers PNG : 11 (from Orange\Addons\ui_f_orange.pbo via BankRev)
+Converter : Pal2PacE
+

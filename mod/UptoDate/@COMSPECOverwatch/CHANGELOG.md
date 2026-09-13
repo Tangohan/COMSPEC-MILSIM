@@ -1,4 +1,168 @@
-﻿COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.102 — 12/09/2026
+﻿COMSPEC Overwatch 1.5.66 / Athena ATAK 1.0.113 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.66[/h1]
+[b]Publication : 13/09/2026[/b]
+[quote]
+[b]Important :[/b] quittez Arma complètement, rechargez le pack, puis relancez. Un simple retour au lobby ne suffit pas.
+[/quote]
+
+[h2]Nouveau — Rendu des pastilles situation[/h2]
+Dans Paramètres du téléphone, vous choisissez comment les pastilles d’affichage situation apparaissent sous jumelles :
+[list]
+[*] 3D dans le paysage : pastilles collées au monde ;
+[*] 2D à l’écran : calque HUD, pastilles décalées si elles se chevauchent, fondu selon la distance.
+[/list]
+Les silhouettes de bâtiments restent en 3D dans les deux modes.
+
+[h2]Amélioration — Menu ACE rangé[/h2]
+Sous COMSPEC Athena, plus de liste à plat de vingt-cinq actions. Vous ouvrez d’abord une rubrique :
+[list]
+[*] Applications ;
+[*] Affichage situation ;
+[*] Transmission ;
+[*] Cartographie ;
+[*] Appui & mission ;
+[*] Tenues ;
+[*] Compte & liaison.
+[/list]
+Connexion Athena et Ouvrir téléphone ATAK restent en tête.
+
+[h2]Amélioration — Affichage situation (JVN)[/h2]
+[list]
+[*] pastilles plus nettes, sans texte doublé ni plaques empâtées ;
+[*] un même lieu n’affiche plus plusieurs fois le même nom ;
+[*] bâtiment désigné : un seul libellé (nom + étage si découpage actif) ;
+[*] thème de couleurs toujours réglable (JVN cyan, lime, ambre, blanc, bleu).
+[/list]
+
+[h2]Correction — Ordres reçus[/h2]
+[list]
+[*] Actualiser met à jour la liste sans dupliquer les ordres déjà présents ;
+[*] bouton Vider l’historique : retire d’un coup les ordres refusés, terminés ou annulés ;
+[*] ces ordres ne réapparaissent pas au prochain Actualiser pendant la session.
+[/list]
+
+[h2]Amélioration — Connexion et liaison[/h2]
+[list]
+[*] distinction claire entre appareil en liaison et compte Athena connecté ;
+[*] boutons Mot de passe / Code e-mail, Entrée pour valider ;
+[*] barre de liaison en bas : une ligne, identité Athena honnête ;
+[*] bouton Entrer ouvre vraiment le canal poste ;
+[*] Messagerie : envoi dès que le canal poste est ouvert, textes plus lisibles.
+[/list]
+
+Après installation : Paramètres → Affichage situation + Rendu des pastilles ; ACE → COMSPEC Athena pour les rubriques.
+
+---
+
+Livraisons du jour (détail) :
+
+COMSPEC Overwatch 1.5.66 / Athena ATAK 1.0.113 — 13/09/2026
+
+Nouveau — Rendu des pastilles situation
+• Paramètres : 3D paysage ou 2D écran (anti-chevauchement)
+
+COMSPEC Overwatch 1.5.65 / Athena ATAK 1.0.112 — 13/09/2026
+
+Amélioration — Menu ACE
+• Rubriques sous COMSPEC Athena (plus de liste à plat)
+
+COMSPEC Overwatch 1.5.64 / Athena ATAK 1.0.112 — 13/09/2026
+
+Correction — Affichage situation (JVN)
+• Plus de doublons au même lieu
+• Bâtiment désigné : un seul libellé (nom + étage)
+
+COMSPEC Overwatch 1.5.63 / Athena ATAK 1.0.112 — 13/09/2026
+
+Correction — Affichage situation (JVN)
+• Badges sans double texte ni plaques empâtées
+
+COMSPEC Overwatch 1.5.62 / Athena ATAK 1.0.112 — 13/09/2026
+
+Correction — Ordres reçus
+• Actualiser sans doublons
+• Bouton Vider l’historique
+
+COMSPEC Overwatch 1.5.61 / Athena ATAK 1.0.111 — 13/09/2026
+
+Correction — Messagerie
+• Envoi dès que le canal poste est ouvert
+• Textes plus lisibles
+
+COMSPEC Overwatch 1.5.60 / Athena ATAK 1.0.110 — 13/09/2026
+
+Correction — Bouton Entrer ouvre le canal poste
+
+COMSPEC Overwatch 1.5.60 / Athena ATAK 1.0.109 — 13/09/2026
+
+Correction — Barre de liaison : une ligne, un fond
+
+COMSPEC Overwatch 1.5.60 / Athena ATAK 1.0.108 — 13/09/2026
+
+Nouveau — Affichage situation JVN enrichi, connexion clarifiée, barre de liaison
+
+---
+
+Archive (notes antérieures) :
+Détail des livraisons Athena 1.0.103 → 1.0.108 ci-dessous.
+
+COMSPEC Overwatch 1.5.60 / Athena ATAK 1.0.108 — 13/09/2026
+
+Amélioration — Affichage situation (JVN) plus lisible
+• Badges, icônes et textes plus clairs sous jumelles (halo + contour), avec thème de couleurs réglable dans Paramètres
+• Surbrillance / contour des alliés proches
+• Silhouette de bâtiment plus collée à la géométrie (plus seulement le gros cadre)
+• ACE : Découper à la hauteur regardée (désigne + coupe l’étage pointé) ; aussi rappelé dans Paramètres
+
+Limite : les murs ne s’ouvrent pas réellement (limite du moteur) — la découpe reste une silhouette visuelle.
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.107 — 13/09/2026
+
+Correction — Paramètres : aide « Liaison au poste » lisible
+• Sous Liaison au poste, la description n’est plus coupée et se lit clairement au-dessus de Afficher les réglages avancés
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.106 — 13/09/2026
+
+Amélioration — Connexion Athena plus claire
+
+• Boutons Mot de passe et Code e-mail : chaque mode n’affiche que son champ
+• Recevoir le code / Valider le code séparés en mode code e-mail
+• La touche Entrée valide le mot de passe, le code e-mail ou le code Appairer
+• Relancer Arma complètement après le nouveau pack
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.105 — 13/09/2026
+
+Correction — Liaison et compte connecté
+
+• Le téléphone distingue la liaison appareil (le poste vous voit) et le compte Athena connecté en jeu
+• Si vous êtes en liaison sans fiche : bandeau « En liaison — compte à ouvrir », plus un faux « non connecté » trompeur à côté de « Compte trouvé »
+• Steam n’est plus obligatoire pour afficher la fiche connectée (e-mail ou Appairer suffisent)
+• Relancer Arma complètement après le nouveau pack
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.104 — 13/09/2026
+
+Nouveau — Tutoriel / WIKI
+
+• Une tuile Tutoriel / WIKI explique liaison, compte connecté et synchronisation
+• Elle précise pourquoi un OK de liaison n’implique pas d’être connecté au compte
+• Dépannage : si le pseudo de jeu apparaît à la place du prénom et du nom, le compte n’est pas connecté
+
+Correction — Connexion Athena lisible
+
+• Les textes d’aide sous Compte non connecté et Ou compte Athena sont contrastés et plus hauts
+• Relancer Arma complètement après le nouveau pack
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.103 — 13/09/2026
+
+Correction — Barre de liaison
+
+• La barre OK / NOK est collée en bas de la carte du téléphone
+• L’indicatif et le nom du compte y sont écrits en tout petit
+• Un OK n’apparaît plus si seul le pseudo de jeu est connu : le prénom et le nom Athena sont exigés
+• Relancer Arma complètement après le nouveau pack
+
+COMSPEC Overwatch 1.5.59 / Athena ATAK 1.0.102 — 12/09/2026
 
 Amélioration — Barre de liaison et simulation
 
