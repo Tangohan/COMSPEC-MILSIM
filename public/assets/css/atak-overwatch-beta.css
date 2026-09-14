@@ -1,0 +1,67 @@
+/* Overwatch Beta — skin map-first du client ATAK réel (aucune donnée de démonstration). */
+html.atak-overwatch-beta {
+  --atak-accent: #31e6a1;
+  --atak-bg: #060807;
+  --atak-panel: #0a0d0c;
+  color-scheme: dark;
+}
+
+html.atak-overwatch-beta body { background: var(--atak-bg); }
+html.atak-overwatch-beta .atak-header {
+  min-height: 58px;
+  background: #070908;
+  border-bottom: 1px solid #26302c;
+  box-shadow: 0 12px 34px rgba(0,0,0,.35);
+}
+html.atak-overwatch-beta .atak-logo { letter-spacing: .16em; }
+html.atak-overwatch-beta .atak-overwatch { color: var(--atak-accent); }
+html.atak-overwatch-beta .atak-beta-badge { background: #123c2d; color: var(--atak-accent); }
+html.atak-overwatch-beta .atak-version-switch { display: none; }
+html.atak-overwatch-beta .atak-header-tagline::after { content: " / OVERWATCH"; color: var(--atak-accent); }
+html.atak-overwatch-beta .atak-v2-layoutbar {
+  display: flex !important;
+  background: #080b0a;
+  border-color: #26302c;
+}
+html.atak-overwatch-beta .atak-v2-layoutbar::before {
+  content: none;
+}
+html.atak-overwatch-beta .atak-overwatch-navigation { display: flex; align-self: stretch; margin-right: auto; }
+html.atak-overwatch-beta .atak-overwatch-navigation button { padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #9eaaa4; font: 700 12px/1 "IBM Plex Mono",monospace; letter-spacing: .08em; }
+html.atak-overwatch-beta .atak-overwatch-navigation button:hover,
+html.atak-overwatch-beta .atak-overwatch-navigation button.is-active { color: #fff; border-bottom-color: var(--atak-accent); background: #101512; }
+html.atak-overwatch-beta .atak-liaison-rail { background: #080b0a; }
+html.atak-overwatch-beta .atak-panel-left,
+html.atak-overwatch-beta .atak-panel-right { background: rgba(8,11,10,.98); border-color: #26302c; }
+html.atak-overwatch-beta .atak-map-wrap { background: #071a15; }
+html.atak-overwatch-beta .tac-c2-rail { background: rgba(7,10,9,.96); border-color: #2b3631; }
+html.atak-overwatch-beta .tac-c2-rail__btn.is-active,
+html.atak-overwatch-beta .tac-c2-rail__btn:hover { color: var(--atak-accent); background: #102019; }
+html.atak-overwatch-beta .atak-tab.active,
+html.atak-overwatch-beta .atak-section-btn.active { border-color: var(--atak-accent); color: var(--atak-accent); }
+html.atak-overwatch-beta #map,
+html.atak-overwatch-beta .leaflet-container { background: #071a15; }
+html.atak-overwatch-beta .atak-map-tools { border-color: #2b3631; background: rgba(7,10,9,.94); }
+html.atak-overwatch-beta .atak-map-tools__btn[aria-pressed="true"] { color: #07110d; background: var(--atak-accent); }
+html.atak-overwatch-beta .atak-replay-panel { border-top: 1px solid var(--atak-accent); }
+html.atak-overwatch-beta .atak-panel-left,
+html.atak-overwatch-beta .atak-panel-right,
+html.atak-overwatch-beta .atak-settings-aside { font-size: 15px; }
+html.atak-overwatch-beta .atak-tab-label,
+html.atak-overwatch-beta .atak-section-btn-label { font-size: 14px; }
+html.atak-overwatch-beta .atak-tab-desc,
+html.atak-overwatch-beta .atak-panel-hint { font-size: 12px; line-height: 1.45; }
+html.atak-overwatch-beta #atak-map.atak-overwatch-map--classic .leaflet-tile-pane { filter: none; }
+html.atak-overwatch-beta #atak-map.atak-overwatch-map--aerial .leaflet-tile-pane { filter: saturate(1.65) contrast(1.16) brightness(.82); }
+html.atak-overwatch-beta #atak-map.atak-overwatch-map--mono .leaflet-tile-pane { filter: grayscale(1) contrast(1.28) brightness(.78); }
+html.atak-overwatch-beta .atak-overwatch-basemaps { margin: 0 0 18px; padding: 14px; border: 1px solid #324039; background: #0b100e; }
+html.atak-overwatch-beta .atak-overwatch-basemaps h4 { margin: 0 0 5px; color: var(--atak-accent); font: 700 12px/1.2 "IBM Plex Mono",monospace; letter-spacing: .1em; }
+html.atak-overwatch-beta .atak-overwatch-basemaps p { margin: 0 0 10px; color: #99a59f; font-size: 12px; }
+html.atak-overwatch-beta .atak-overwatch-basemaps div { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+html.atak-overwatch-beta .atak-overwatch-basemaps button { min-height: 34px; border: 1px solid #35433c; background: #101512; color: #c5cec9; font-size: 12px; }
+html.atak-overwatch-beta .atak-overwatch-basemaps button.is-active { border-color: var(--atak-accent); color: #06100c; background: var(--atak-accent); font-weight: 800; }
+
+@media (max-width: 900px) {
+  html.atak-overwatch-beta .atak-overwatch-navigation { overflow-x: auto; }
+  html.atak-overwatch-beta .atak-overwatch-navigation button { padding: 0 9px; font-size: 10px; }
+}

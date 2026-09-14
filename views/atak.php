@@ -45,6 +45,7 @@ $atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakP
 $atakPopoutTab = isset($_GET['tab']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['tab']) : '';
 $atakPopoutSection = isset($_GET['section']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['section']) : '';
 $atakDeviceEmbed = isset($_GET['embed']) && strtolower(trim((string) $_GET['embed'])) === 'device';
+$atakOverwatchBeta = !empty($atakOverwatchBeta);
 $atakPhoneBezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png?v=' . rawurlencode((string) $assetVer);
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
@@ -73,7 +74,7 @@ if ($atakMapConfig) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><?= $atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3') ?></title>
+  <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
   <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -104,6 +105,9 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php if ($atakOverwatchBeta): ?>
+  <link href="<?= $base ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php endif; ?>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -118,10 +122,12 @@ if ($atakMapConfig) {
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
     window.ATAK_TENANT_MARKER_ICONS = <?= json_encode($atakTenantMarkerIcons ?? ['assignments' => new stdClass(), 'library' => []], JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_MAP_C2_V2 = true;
+    window.ATAK_OVERWATCH_BETA = <?= $atakOverwatchBeta ? 'true' : 'false' ?>;
     window.ATAK_TERRAIN3D_PREMIUM = true;
     window.ATAK_C2_ASSET_BASE = <?= json_encode(rtrim($base, '/'), JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_THREE_BASE = <?= json_encode(rtrim($base, '/') . '/assets/vendor/three', JSON_UNESCAPED_UNICODE) ?>;
     document.documentElement.classList.add('atak-map-c2-v2');
+    <?php if ($atakOverwatchBeta): ?>document.documentElement.classList.add('atak-overwatch-beta', 'atak-v2-boot');<?php endif; ?>
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -3203,6 +3209,9 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php if ($atakOverwatchBeta): ?>
+  <script src="<?= $base ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php endif; ?>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
