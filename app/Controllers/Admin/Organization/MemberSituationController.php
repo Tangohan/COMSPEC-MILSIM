@@ -20,6 +20,7 @@ use App\Controllers\Web\AtakFirstLinkController;
 use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\RhWorkspaceController;
+use App\Services\Personnel\OperatorDocumentVaultService;
 
 /**
  * Pages personnelles sous /back-office/ma-situation/* (coque Athena, sans redirection portail).
@@ -33,6 +34,7 @@ final class MemberSituationController
         private ?AuditService $auditService = null,
         private ?QualificationAwardRepository $awards = null,
         private ?PersonnelAssignmentRepository $assignments = null,
+        private ?OperatorDocumentVaultService $vault = null,
     ) {
         $this->authService ??= Container::get(AuthService::class);
         $this->realism ??= Container::get(AtakRealismRepository::class);
@@ -40,6 +42,7 @@ final class MemberSituationController
         $this->auditService ??= Container::get(AuditService::class);
         $this->awards ??= Container::get(QualificationAwardRepository::class);
         $this->assignments ??= Container::get(PersonnelAssignmentRepository::class);
+        $this->vault ??= new OperatorDocumentVaultService();
     }
 
     public function liaisonAtak(Request $request, array $params = []): Response
@@ -183,6 +186,33 @@ final class MemberSituationController
             'eventsInBackOffice' => true,
             'boSkipSessionFlashes' => true,
         ], $payload['vars'])));
+    }
+
+
+    public function coffre(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$user, $tenantId, $userId] = $ctx;
+
+        $vault = ['items' => [], 'counts' => ['total' => 0, 'hr' => 0, 'brevet' => 0, 'training' => 0], 'sections' => ['hr' => [], 'brevet' => [], 'training' => []]];
+        try {
+            $vault = $this->vault->collect($tenantId, $userId);
+        } catch (\Throwable) {
+        }
+
+        return Response::view('layout.main', $this->boShell([
+            'title' => 'Mon coffre',
+            'content' => 'admin.member_situation.coffre',
+            'boPageTitle' => 'Mon coffre',
+            'boPageKicker' => 'OPÉRATEUR · DOCUMENTS',
+            'boPageSubtitle' => 'Toutes les pièces qui vous concernent : dossier RH, brevets et attestations de formation.',
+            'backOfficePageCss' => ['back-office-member-situation.css'],
+            'user' => $user,
+            'vault' => $vault,
+        ]));
     }
 
     public function qualifications(Request $request, array $params = []): Response

@@ -132,7 +132,8 @@ final class PersonnelHrPdfService
         if ($spec === null || empty($hr[$spec['flag']])) {
             return;
         }
-        $visibility = (string) ($hr['default_visibility'] ?? PersonnelHrWorkspaceSettings::VISIBILITY_STAFF);
+        // Les pièces auto-établies concernent le parcours de l’opérateur : elles rejoignent son coffre.
+        $visibility = PersonnelHrWorkspaceSettings::VISIBILITY_MEMBER;
         try {
             $this->issueAndStore($tenantId, $userId, $spec['kind'], $actorId, $visibility, $context);
         } catch (\Throwable) {

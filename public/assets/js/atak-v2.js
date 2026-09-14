@@ -16,6 +16,12 @@
     ['Localiser une unité', 'BFT', function () { focus('#atak-units-filter'); }],
     ['Ouvrir le renseignement SSE', 'Intel', function () { selectSection('intel'); }],
     ['Ouvrir les photos', 'Intel', function () { selectSection('intel'); click('[data-tab="photos"]'); }],
+    ['Ouvrir le tchat opérationnel', 'Comms', function () { selectSection('comms'); click('[data-tab="chat"]'); }],
+    ['Ouvrir la mission', 'Mission', function () { selectSection('c2'); click('[data-tab="mission"]'); }],
+    ['Envoyer un SITREP', 'Mission', function () { selectSection('sitac'); click('[data-tab="situation"]'); click('#atak-sitrep-pick-map'); }],
+    ['Planifier un itinéraire', 'Carte', function () { click('[data-tool="route"]'); }],
+    ['Rejouer la mission', 'AAR', function () { selectSection('journal'); click('[data-tab="replay"]'); }],
+    ['Ouvrir les paramètres', 'Système', function () { click('.js-atak-settings-toggle'); }],
     ['Mesurer une distance', 'R', function () { click('[data-tool="measure"]'); }],
     ['Afficher les couches', 'L', function () { click('[data-tool-ui="look"]'); }],
     ['Masquer les effectifs', 'Vue', function () { setPanel('right', 0); }],
@@ -85,11 +91,11 @@
 
   function createContextMenu() {
     var root = document.createElement('div'); root.className = 'atak-v2-context'; root.hidden = true;
-    root.innerHTML = '<div class="atak-v2-context__title">Ajouter</div><button data-action="marker">Marqueur / point d’intérêt</button><button data-action="zone">Zone tactique</button><div class="atak-v2-context__title">Renseignement</div><button data-action="intel">Créer une observation</button><button data-action="sse">Ajouter au dossier SSE</button><div class="atak-v2-context__title">Outils</div><button data-action="measure">Mesurer depuis ce point</button><button data-action="copy">Copier les coordonnées</button>';
+    root.innerHTML = '<div class="atak-v2-context__title">Ajouter</div><button data-action="marker">Marqueur / point d’intérêt</button><button data-action="ping">Quick ping</button><button data-action="zone">Zone tactique / AOI</button><button data-action="route">Créer une route</button><div class="atak-v2-context__title">Renseignement</div><button data-action="intel">Créer une observation</button><button data-action="sse">Ajouter au dossier SSE</button><button data-action="sitrep">SITREP ici</button><div class="atak-v2-context__title">Outils</div><button data-action="measure">Mesurer depuis ce point</button><button data-action="copy">Copier les coordonnées</button>';
     document.body.appendChild(root);
     var map = document.getElementById('atak-map');
     if (map) map.addEventListener('contextmenu', function (event) { if (!document.body.classList.contains('atak-ui-v2')) return; event.preventDefault(); root.hidden = false; root.style.left = Math.min(event.clientX, innerWidth - 266) + 'px'; root.style.top = Math.min(event.clientY, innerHeight - 330) + 'px'; });
-    root.addEventListener('click', function (event) { var action = event.target.dataset.action; root.hidden = true; if (action === 'measure') click('[data-tool="measure"]'); else if (action === 'zone') click('[data-tool="perimeter"]'); else if (action === 'marker') click('[data-tool="note"]'); else if (action === 'intel' || action === 'sse') selectSection('intel'); else if (action === 'copy') document.execCommand && document.execCommand('copy'); });
+    root.addEventListener('click', function (event) { var action = event.target.dataset.action; root.hidden = true; if (action === 'measure') click('[data-tool="measure"]'); else if (action === 'zone') click('[data-tool="aoi"], [data-tool="perimeter"]'); else if (action === 'route') click('[data-tool="route"]'); else if (action === 'marker') click('[data-tool="note"]'); else if (action === 'ping') { selectSection('sitac'); click('[data-tab="pings"]'); } else if (action === 'sitrep') { selectSection('sitac'); click('[data-tab="situation"]'); click('#atak-sitrep-pick-map'); } else if (action === 'intel' || action === 'sse') selectSection('intel'); else if (action === 'copy') document.execCommand && document.execCommand('copy'); });
     document.addEventListener('click', function (event) { if (!root.contains(event.target)) root.hidden = true; });
   }
 
@@ -118,6 +124,9 @@
       if (event.key.toLowerCase() === 'r') click('[data-tool="measure"]');
     });
     var requested = new URLSearchParams(window.location.search).get('ui');
+    // Overwatch est une composition V2 imposée : un ancien choix V1 stocké par
+    // l'ATAK historique ne doit pas désactiver son shell cartographique.
+    if (window.ATAK_OVERWATCH_BETA) requested = 'v2';
     setVersion(requested === 'v1' || requested === 'v2' ? requested : read(VERSION_KEY, document.documentElement.classList.contains('atak-v2-boot') ? 'v2' : 'v1'));
   }
 

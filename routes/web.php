@@ -16,6 +16,7 @@ use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
+use App\Controllers\Web\AtakOverwatchBetaController;
 use App\Controllers\Web\OverwatchModDocController;
 use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;
@@ -881,6 +882,11 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
+    // Workspace cartographique expérimental, volontairement isolé de l'interface ATAK historique.
+    $router->get('/-ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
+    // Alias mémorisables : l'URL beta reste accessible même si le serveur normalise la casse.
+    $router->get('/atak-overwatch-beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
+    $router->get('/ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
     $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);
     $router->get('/atak/mobile/{module}', [\App\Controllers\Web\AtakMobileController::class, 'module'], $mwAtakWeb);
     $router->get('/atak/liaison', [AtakController::class, 'liaison'], $mwAtakMemberOnly);
@@ -1035,6 +1041,7 @@ return function (Router $router) {
     $router->get('/back-office/ma-situation/unite', [MemberSituationController::class, 'unite'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/evenements', [MemberSituationController::class, 'evenements'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications', [MemberSituationController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/coffre', [MemberSituationController::class, 'coffre'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2123,6 +2130,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);
     $router->get('/api/units', [AtakApiController::class, 'unitsIndex']);
     $router->get('/api/atak/units', [AtakApiController::class, 'unitsIndex']);
+    // Push Overwatch Web (session durcie / session téléphone) avec polling en secours.
+    $router->get('/api/atak/stream', [AtakApiController::class, 'realtimeStream']);
     $router->get('/api/atak/gateways', [AtakApiController::class, 'gatewaysIndex']);
     $router->get('/api/atak/gateways/mirror/units', [AtakApiController::class, 'gatewaysMirrorUnits']);
     $router->get('/api/atak/gateways/mirror/markers', [AtakApiController::class, 'gatewaysMirrorMarkers']);

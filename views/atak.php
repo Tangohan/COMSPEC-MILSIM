@@ -45,6 +45,7 @@ $atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakP
 $atakPopoutTab = isset($_GET['tab']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['tab']) : '';
 $atakPopoutSection = isset($_GET['section']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['section']) : '';
 $atakDeviceEmbed = isset($_GET['embed']) && strtolower(trim((string) $_GET['embed'])) === 'device';
+$atakOverwatchBeta = !empty($atakOverwatchBeta);
 $atakPhoneBezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png?v=' . rawurlencode((string) $assetVer);
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
@@ -74,7 +75,7 @@ if ($atakMapConfig) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><?= $atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3') ?></title>
+  <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
   <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -105,9 +106,15 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php if ($atakOverwatchBeta): ?>
+  <link href="<?= $base ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php endif; ?>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php endif; ?>
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
@@ -119,10 +126,12 @@ if ($atakMapConfig) {
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
     window.ATAK_TENANT_MARKER_ICONS = <?= json_encode($atakTenantMarkerIcons ?? ['assignments' => new stdClass(), 'library' => []], JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_MAP_C2_V2 = true;
+    window.ATAK_OVERWATCH_BETA = <?= $atakOverwatchBeta ? 'true' : 'false' ?>;
     window.ATAK_TERRAIN3D_PREMIUM = true;
     window.ATAK_C2_ASSET_BASE = <?= json_encode(rtrim($base, '/'), JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_THREE_BASE = <?= json_encode(rtrim($base, '/') . '/assets/vendor/three', JSON_UNESCAPED_UNICODE) ?>;
     document.documentElement.classList.add('atak-map-c2-v2');
+    <?php if ($atakOverwatchBeta): ?>document.documentElement.classList.add('atak-overwatch-beta', 'atak-v2-boot');<?php endif; ?>
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -180,7 +189,60 @@ if ($atakMapConfig) {
   }
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<body class="atak-page<?= !empty($atakOverwatchBeta) ? ' atak-overwatch-beta' : '' ?> atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<?php if (!empty($atakOverwatchBeta)): ?>
+  <nav class="overwatch-commandbar" id="overwatch-commandbar" aria-label="Workspace Overwatch">
+    <a class="overwatch-commandbar__brand" href="<?= htmlspecialchars(url('-ATAK-OVERWATCH-Beta'), ENT_QUOTES, 'UTF-8') ?>"><b>A</b><span>ATHENA<small>OVERWATCH / LIVE</small></span></a>
+    <div class="overwatch-commandbar__nav">
+      <button type="button" class="is-active" data-overwatch-watchlist>OVERWATCH</button>
+      <button type="button" data-overwatch-tab="chat">COMMS</button>
+      <button type="button" data-overwatch-tab="mission">MISSION</button>
+      <button type="button" data-overwatch-settings>LAYERS</button>
+      <button type="button" data-overwatch-tab="photos">INTEL</button>
+      <button type="button" data-overwatch-tools>TOOLS</button>
+    </div>
+    <div class="overwatch-commandbar__state" role="status" aria-live="polite">
+      <span class="overwatch-commandbar__dot"></span>
+      <span id="overwatch-link-label">INITIALISATION</span>
+      <span class="overwatch-commandbar__metric" id="overwatch-link-latency">— MS</span>
+      <span class="overwatch-commandbar__metric" id="overwatch-link-age">DERNIER RX —</span>
+      <label class="overwatch-commandbar__refresh" title="Fréquence du polling tactique de secours">
+        <span>SYNC</span>
+        <select id="overwatch-refresh-rate" aria-label="Fréquence de synchronisation tactique">
+          <option value="3000">3 S</option>
+          <option value="8000">8 S</option>
+          <option value="15000">15 S</option>
+          <option value="30000">30 S</option>
+        </select>
+      </label>
+      <button type="button" data-overwatch-command>CTRL K</button>
+    </div>
+  </nav>
+  <div class="overwatch-quicktools" id="overwatch-quicktools" role="toolbar" aria-label="Outils tactiques Overwatch">
+    <button type="button" data-overwatch-tool="line">DESSIN</button>
+    <button type="button" data-overwatch-squad-lines aria-pressed="true">LIAISONS SQUAD</button>
+    <button type="button" data-overwatch-tool="view3d">3D</button>
+    <button type="button" data-overwatch-tool="route">ROUTES</button>
+    <button type="button" data-overwatch-tab="zones">AOI</button>
+    <button type="button" data-overwatch-tab="notes">OSINT / NOTES</button>
+    <button type="button" data-overwatch-tab="medical">CASEVAC</button>
+    <button type="button" data-overwatch-tab="jtac">9-LINE</button>
+    <button type="button" data-overwatch-tab="replay">REPLAY</button>
+    <button type="button" data-overwatch-tab="liaison">JOURNAL</button>
+    <button type="button" data-overwatch-export>EXPORT</button>
+    <button type="button" data-overwatch-import>IMPORT</button>
+    <button type="button" data-overwatch-print>IMPRIMER</button>
+    <input type="file" id="overwatch-mission-import" accept="application/json,.json" hidden>
+    <button type="button" data-overwatch-geo="places">VILLES</button>
+    <button type="button" data-overwatch-geo="roads">RÉSEAU ROUTIER</button>
+    <button type="button" data-overwatch-tool="note">MARKERS</button>
+  </div>
+  <aside class="overwatch-watchlist" id="overwatch-watchlist" hidden aria-labelledby="overwatch-watchlist-title">
+    <header><div><small>OPERATOR FOCUS</small><strong id="overwatch-watchlist-title">WATCHLIST</strong></div><button type="button" data-overwatch-watchlist-close aria-label="Fermer">×</button></header>
+    <p>Épinglez un contact depuis les effectifs BFT. Sa liaison et sa dernière grille restent visibles pendant la mission.</p>
+    <div id="overwatch-watchlist-items" aria-live="polite"></div>
+  </aside>
+<?php endif; ?>
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
   <?php
   $baseUrl = $base;
@@ -3288,6 +3350,11 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php if ($atakOverwatchBeta): ?>
+  <script src="<?= $base ?>/assets/js/atak-realtime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-overwatch-p2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php endif; ?>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
@@ -3907,8 +3974,38 @@ if ($atakMapConfig) {
       if (window.ATAKTransmissions && typeof window.ATAKTransmissions.refresh === 'function') {
         window.ATAKTransmissions.refresh();
       }
+      var tacticalPollTimer = null;
+      var tacticalPollIntervalMs = 3000;
+      var tacticalPollRealtime = false;
+      function setTacticalPollInterval(milliseconds) {
+        var allowed = [3000, 8000, 15000, 30000];
+        var requested = Number(milliseconds);
+        tacticalPollIntervalMs = allowed.indexOf(requested) !== -1 ? requested : 3000;
+        if (tacticalPollTimer !== null) clearInterval(tacticalPollTimer);
+        tacticalPollTimer = setInterval(atakPoll, tacticalPollRealtime ? 30000 : tacticalPollIntervalMs);
+        window.dispatchEvent(new CustomEvent('atak:poll-interval-changed', {
+          detail: { intervalMs: tacticalPollIntervalMs }
+        }));
+        return tacticalPollIntervalMs;
+      }
+      window.ATAKPolling = {
+        getInterval: function () { return tacticalPollIntervalMs; },
+        setInterval: setTacticalPollInterval,
+        refreshNow: atakPoll,
+        setRealtimeActive: function (active) {
+          tacticalPollRealtime = !!active;
+          if (tacticalPollTimer !== null) clearInterval(tacticalPollTimer);
+          // Un filet de sécurité lent reste actif pendant le SSE. En cas de coupure,
+          // l'intervalle choisi par l'opérateur est restauré sans perte d'état.
+          tacticalPollTimer = setInterval(atakPoll, tacticalPollRealtime ? 30000 : tacticalPollIntervalMs);
+          window.dispatchEvent(new CustomEvent('atak:realtime-mode-changed', {
+            detail: { active: tacticalPollRealtime, fallbackIntervalMs: tacticalPollIntervalMs }
+          }));
+        },
+        isRealtimeActive: function () { return tacticalPollRealtime; }
+      };
       atakPoll();
-      setInterval(atakPoll, 3000);
+      setTacticalPollInterval(3000);
       pollWeatherQuiet();
       setInterval(pollWeatherQuiet, 30000);
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
@@ -4744,5 +4841,10 @@ if ($atakMapConfig) {
       </footer>
     </div>
   </div>
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-realtime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-p2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php endif; ?>
 </body>
 </html>

@@ -25,6 +25,7 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/ma-situation/unite'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/evenements'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);
 
         self::assertStringContainsString("str_starts_with(\$path, '/back-office/ma-situation')", $middleware);
@@ -35,11 +36,14 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('back-office/ma-situation/unite', $overview);
         self::assertStringContainsString('back-office/ma-situation/evenements', $overview);
         self::assertStringContainsString('back-office/ma-situation/qualifications', $overview);
+        self::assertStringContainsString('back-office/ma-situation/coffre', $overview);
         self::assertStringNotContainsString("url('account/security/devices')", $overview);
         self::assertStringNotContainsString("url('atak/premiere-liaison')", $overview);
 
         self::assertStringContainsString('Ma liaison ATAK', $nav);
         self::assertStringContainsString('Mes qualifications', $nav);
+        self::assertStringContainsString('Mon coffre', $nav);
+        self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
         self::assertStringContainsString('Mon unité', $nav);
         self::assertStringContainsString('back-office/ma-situation/evenements', $nav);
         self::assertStringContainsString('back-office/ma-situation/ma-fiche', $nav);
@@ -48,8 +52,17 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertFileExists($root . '/views/admin/member_situation/appareils.php');
         self::assertFileExists($root . '/views/admin/member_situation/unite.php');
         self::assertFileExists($root . '/views/admin/member_situation/qualifications.php');
+        $qualifications = (string) file_get_contents($root . '/views/admin/member_situation/qualifications.php');
+        self::assertStringContainsString('bo-dossier-hero', $qualifications);
+        self::assertStringContainsString('bo-doc-sheet', $qualifications);
+        self::assertStringContainsString('bo-doc-card__body--actions', $qualifications);
+        self::assertStringContainsString('Ouvrir mon coffre', $qualifications);
+        self::assertStringNotContainsString('bo-doc-card__dl', $qualifications);
+        self::assertFileExists($root . '/views/admin/member_situation/coffre.php');
         self::assertFileExists($root . '/public/assets/css/back-office-member-situation.css');
         self::assertStringContainsString('downloadBrevet', $controller);
+        self::assertStringContainsString('function coffre', $controller);
+        self::assertStringContainsString('OperatorDocumentVaultService', $controller);
         self::assertStringContainsString('listPhysicalTerminalsForUser', $controller);
     }
 }

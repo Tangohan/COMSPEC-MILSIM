@@ -26,7 +26,7 @@ final class PersonnelHrWorkspaceSettings
     {
         return [
             'reviewed' => false,
-            'default_visibility' => self::VISIBILITY_STAFF,
+            'default_visibility' => self::VISIBILITY_MEMBER,
             'auto_pdf_mobility' => false,
             'auto_pdf_elevation' => false,
             'auto_pdf_integration' => false,

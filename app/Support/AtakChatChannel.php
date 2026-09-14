@@ -19,6 +19,7 @@ final class AtakChatChannel
         'general' => 'Général',
         'jtac' => 'JTAC',
         'air' => 'Air',
+        'support' => 'Support technique',
     ];
 
     /** Anciens préfixes radio → clé système */
@@ -32,6 +33,7 @@ final class AtakChatChannel
         'GROUP' => 'groupe',
         'HQ' => 'commandement',
         'C2' => 'commandement',
+        'SUPPORT' => 'support',
     ];
 
     public static function isSystemKey(string $key): bool
@@ -151,6 +153,7 @@ final class AtakChatChannel
             'general' => 'SQUAD',
             'jtac' => 'JTAC',
             'air' => 'AIR',
+            'support' => 'SUPPORT',
             default => mb_strtoupper(substr(preg_replace('/[^A-Za-z0-9_]/', '', $key) ?: 'CUSTOM', 0, 12)),
         };
     }

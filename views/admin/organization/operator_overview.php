@@ -382,6 +382,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('back-office/ma-situation/ma-fiche')],
                 ['label' => 'Mon unité', 'hint' => 'Affectation dans la communauté', 'href' => url('back-office/ma-situation/unite')],
                 ['label' => 'Mes qualifications', 'hint' => 'Brevets et qualifications du dossier', 'href' => url('back-office/ma-situation/qualifications')],
+                ['label' => 'Mon coffre', 'hint' => 'Toutes les pièces de votre dossier', 'href' => url('back-office/ma-situation/coffre')],
                 ['label' => 'Ma liaison ATAK', 'hint' => 'Terminaux et certificat de liaison', 'href' => url('back-office/ma-situation/liaison-atak')],
                 ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('back-office/ma-situation/mes-demarches')],
                 ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('back-office/ma-situation/evenements')],

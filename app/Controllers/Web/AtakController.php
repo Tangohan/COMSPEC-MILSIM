@@ -46,6 +46,17 @@ class AtakController
         $this->accessGapService ??= new AtakMapAccessGapService($this->userRepository);
     }
 
+    /**
+     * Charge Overwatch avec exactement le même contexte, les mêmes droits et les
+     * mêmes services temps réel que l'ATAK historique. Seule la composition UI change.
+     */
+    public function overwatchBeta(Request $request, array $params = []): Response
+    {
+        $params['_overwatch_beta'] = true;
+
+        return $this->index($request, $params);
+    }
+
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -288,7 +299,8 @@ class AtakController
             }
         }
 
-        return Response::view('atak', [
+        return Response::view(!empty($params['_overwatch_beta']) ? 'atak-overwatch-beta' : 'atak', [
+            'atakOverwatchBeta' => !empty($params['_overwatch_beta']),
             'atakToken' => $token,
             'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,
