@@ -32,5 +32,10 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString("new KeyboardEvent('keydown'", $script);
         self::assertStringContainsString('athena:overwatch-watchlist:', $script);
         self::assertStringContainsString('data-overwatch-watch', $script);
+        self::assertStringContainsString('data-overwatch-tool="line"', $view);
+        self::assertStringContainsString('data-overwatch-squad-lines', $view);
+        self::assertStringContainsString('atak-geo-places', $script);
+        self::assertStringContainsString('window.L.polyline([point, center]', $script);
+        self::assertStringContainsString("document.getElementById('atak-view-3d')", $script);
     }
 }

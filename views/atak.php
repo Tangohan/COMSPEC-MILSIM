@@ -196,6 +196,15 @@ if ($atakMapConfig) {
     </div>
     <div class="overwatch-commandbar__state"><span class="overwatch-commandbar__dot"></span><span id="overwatch-link-label">LINKED</span><button type="button" data-overwatch-command>CTRL K</button></div>
   </nav>
+  <div class="overwatch-quicktools" id="overwatch-quicktools" role="toolbar" aria-label="Outils tactiques Overwatch">
+    <button type="button" data-overwatch-tool="line">DESSIN</button>
+    <button type="button" data-overwatch-squad-lines aria-pressed="true">LIAISONS SQUAD</button>
+    <button type="button" data-overwatch-tool="view3d">3D</button>
+    <button type="button" data-overwatch-tool="route">ROUTES</button>
+    <button type="button" data-overwatch-geo="places">VILLES</button>
+    <button type="button" data-overwatch-geo="roads">RÉSEAU ROUTIER</button>
+    <button type="button" data-overwatch-tool="note">MARKERS</button>
+  </div>
   <aside class="overwatch-watchlist" id="overwatch-watchlist" hidden aria-labelledby="overwatch-watchlist-title">
     <header><div><small>OPERATOR FOCUS</small><strong id="overwatch-watchlist-title">WATCHLIST</strong></div><button type="button" data-overwatch-watchlist-close aria-label="Fermer">×</button></header>
     <p>Épinglez un contact depuis les effectifs BFT. Sa liaison et sa dernière grille restent visibles pendant la mission.</p>
