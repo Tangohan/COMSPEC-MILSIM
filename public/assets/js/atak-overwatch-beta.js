@@ -16,6 +16,9 @@
   var DRAW_COLOR_KEY = 'athena:overwatch-draw-color';
   var DRAW_WIDTH_KEY = 'athena:overwatch-draw-width';
   var TILE_CACHE = 'athena-overwatch-tiles-v1';
+  var LABEL_SIZE_KEY = 'athena:overwatch-label-size';
+  var ICON_SIZE_KEY = 'athena:overwatch-icon-size';
+  var SETTINGS_COLLAPSED_KEY = 'athena:overwatch-settings-collapsed';
 
   var config = window.ATAK_MAP_CONFIG || {};
   var apiBase = String(window.ATAK_API_BASE || '').replace(/\/$/, '');
@@ -985,6 +988,15 @@
     selected = unit;
     document.getElementById('ow-drawer-kicker').textContent = 'BFT / CONTACT';
     document.getElementById('ow-drawer-title').textContent = callsign(unit);
+    
+    // Utiliser le nouveau panneau détaillé si disponible
+    if (window.OverwatchV3 && window.OverwatchV3.showDetailedContactPanel) {
+      document.getElementById('ow-drawer-body').innerHTML = window.OverwatchV3.showDetailedContactPanel(unit);
+      document.getElementById('ow-drawer').hidden = false;
+      return;
+    }
+    
+    // Fallback sur l'ancien panneau
     var loc = point(unit);
     var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '—';
     var heading = unitHeading(unit);
@@ -1222,7 +1234,15 @@
       var head = '<div class="ow-squad-head">' + escapeHtml(key === 'none' ? 'Sans groupe' : group(rows[0])) + '<em>' + rows.length + '</em></div>';
       return head + rows.map(function (unit) {
         var stale = unit.status === 'delayed' || unit.status === 'offline';
-        return '<button type="button" class="ow-contact" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
+        var statusClass = '';
+        if (unit.status === 'offline') {
+          statusClass = ' is-offline';
+        } else if (unit.status === 'delayed') {
+          statusClass = ' is-delayed';
+        } else {
+          statusClass = ' is-online';
+        }
+        return '<button type="button" class="ow-contact' + statusClass + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
           initials(callsign(unit)) + '</span><span><div class="cname">' + escapeHtml(callsign(unit)) + '</div><div class="cmeta">' +
           escapeHtml(group(unit)) + (ageLabel(unit) ? ' · ' + ageLabel(unit) : '') + '</div></span><em class="online' + (stale ? ' is-stale' : '') + '">' +
           (unit.status === 'offline' ? 'OFFLINE' : (stale ? 'DELAY' : 'LIVE')) + '</em></button>';
@@ -1304,12 +1324,36 @@
     }).join('');
   }
 
+  function parseMessageBadges(body) {
+    var badges = [];
+    var text = String(body || '');
+    var bracketMatch = text.match(/^\[([\w\s\-]+)\]/);
+    if (bracketMatch) {
+      badges.push(bracketMatch[1]);
+      text = text.substring(bracketMatch[0].length).trim();
+    }
+    if (/^groupe\s*\|/i.test(text)) {
+      badges.push('GROUPE');
+    }
+    return { badges: badges, text: text };
+  }
+
   function renderChatLog(targetId, rows) {
     document.getElementById(targetId).innerHTML = rows.slice(-80).map(function (row) {
       var kind = messageKind(row);
-      return '<div class="ow-msg' + (kind === 'alert' ? ' is-alert' : '') + (kind === 'system' ? ' is-system' : '') +
+      var parsed = parseMessageBadges(row.body || '');
+      var badgeHtml = parsed.badges.map(function (badge) {
+        return '<span class="ow-msg-badge">' + escapeHtml(badge) + '</span>';
+      }).join('');
+      var isGroupe = parsed.badges.indexOf('GROUPE') >= 0 || /^groupe\s*\|/i.test(row.body || '');
+      return '<div class="ow-msg' + 
+        (kind === 'alert' ? ' is-alert' : '') + 
+        (kind === 'system' ? ' is-system' : '') +
+        (isGroupe ? ' is-groupe' : '') +
         '"><time>' + escapeHtml(clean(row.created_at || row.time, '')) + ' · ' +
-        escapeHtml(clean(row.author, 'SYSTEME')) + '</time>' + escapeHtml(row.body || '') + '</div>';
+        '<span class="ow-msg-author">' + escapeHtml(clean(row.author, 'SYSTEME')) + '</span></time>' +
+        badgeHtml + 
+        '<span class="ow-msg-text">' + escapeHtml(parsed.text || row.body || '') + '</span></div>';
     }).join('');
     var log = document.getElementById(targetId);
     log.scrollTop = log.scrollHeight;
@@ -1896,10 +1940,60 @@
     return 'aerial';
   }
 
+  function storedLabelSize() {
+    try {
+      var v = localStorage.getItem(LABEL_SIZE_KEY);
+      if (v) return Math.max(6, Math.min(18, parseFloat(v)));
+    } catch (e) {}
+    return 9;
+  }
+
+  function storedIconSize() {
+    try {
+      var v = localStorage.getItem(ICON_SIZE_KEY);
+      if (v) return Math.max(0.5, Math.min(2, parseFloat(v)));
+    } catch (e) {}
+    return 1;
+  }
+
+  function applyLabelSize(size) {
+    var s = Math.max(6, Math.min(18, parseFloat(size) || 9));
+    try { localStorage.setItem(LABEL_SIZE_KEY, String(s)); } catch (e) {}
+    document.documentElement.style.setProperty('--ow-label-size', s + 'px');
+  }
+
+  function applyIconSize(size) {
+    var s = Math.max(0.5, Math.min(2, parseFloat(size) || 1));
+    try { localStorage.setItem(ICON_SIZE_KEY, String(s)); } catch (e) {}
+    document.documentElement.style.setProperty('--ow-icon-size', String(s));
+  }
+
+  function toggleSettingsAside() {
+    var workspace = document.querySelector('.ow-workspace');
+    var collapsed = workspace.classList.contains('is-settings-collapsed');
+    workspace.classList.toggle('is-settings-collapsed', !collapsed);
+    try {
+      localStorage.setItem(SETTINGS_COLLAPSED_KEY, collapsed ? '0' : '1');
+    } catch (e) {}
+    setTimeout(function () { map.invalidateSize(); }, 50);
+  }
+
+  function restoreSettingsCollapsed() {
+    try {
+      var v = localStorage.getItem(SETTINGS_COLLAPSED_KEY);
+      if (v === '1') {
+        document.querySelector('.ow-workspace').classList.add('is-settings-collapsed');
+      }
+    } catch (e) {}
+  }
+
   document.querySelectorAll('[data-ow-look]').forEach(function (input) {
     input.addEventListener('change', function () { applyLook(input.value); });
   });
   applyLook(storedLook());
+  applyLabelSize(storedLabelSize());
+  applyIconSize(storedIconSize());
+  restoreSettingsCollapsed();
 
   document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
     input.addEventListener('change', function () {

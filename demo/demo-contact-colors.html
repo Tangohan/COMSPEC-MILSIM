@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test - Couleurs Statut Contacts BFT</title>
+  <link rel="stylesheet" href="../public/assets/css/atak-overwatch-beta.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #050505;
+      font-family: Arial, sans-serif;
+    }
+    .demo-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #0d1010;
+      border: 1px solid #27302d;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .demo-header {
+      padding: 20px;
+      background: #0e1211;
+      border-bottom: 1px solid #27302d;
+      text-align: center;
+    }
+    .demo-header h1 {
+      margin: 0 0 8px;
+      color: #00d69a;
+      font-size: 18px;
+      letter-spacing: .08em;
+    }
+    .demo-header p {
+      margin: 0;
+      color: #7d8883;
+      font-size: 12px;
+    }
+    .demo-section {
+      padding: 20px;
+      border-bottom: 1px solid #27302d;
+    }
+    .demo-section:last-child {
+      border-bottom: none;
+    }
+    .demo-section h2 {
+      margin: 0 0 12px;
+      color: #f5f7f5;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .06em;
+    }
+    .demo-legend {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: #0a0d0c;
+      border: 1px solid #1c2321;
+      border-radius: 4px;
+    }
+    .demo-legend-item {
+      text-align: center;
+    }
+    .demo-legend-color {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      border: 2px solid;
+    }
+    .demo-legend-color.online {
+      background: rgba(0, 214, 154, 0.08);
+      border-color: #00d69a;
+    }
+    .demo-legend-color.delayed {
+      background: rgba(231, 177, 77, 0.08);
+      border-color: #e7b14d;
+    }
+    .demo-legend-color.offline {
+      background: rgba(224, 91, 99, 0.08);
+      border-color: #e05b63;
+    }
+    .demo-legend-label {
+      font-size: 10px;
+      color: #7d8883;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .ow-contact-list {
+      overflow: visible;
+      max-height: none;
+    }
+    .demo-info {
+      padding: 16px;
+      background: rgba(0, 214, 154, 0.05);
+      border: 1px solid #1f6b55;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-size: 11px;
+      color: #a8b9b2;
+      line-height: 1.6;
+    }
+    .demo-info strong {
+      color: #00d69a;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+<div class="demo-container">
+  <div class="demo-header">
+    <h1>🎨 COULEURS STATUT CONTACTS</h1>
+    <p>Démonstration du système de couleurs selon le statut de connexion</p>
+  </div>
+
+  <div class="demo-section">
+    <h2>LÉGENDE DES COULEURS</h2>
+    <div class="demo-legend">
+      <div class="demo-legend-item">
+        <div class="demo-legend-color online"></div>
+        <div class="demo-legend-label">Online / Live</div>
+      </div>
+      <div class="demo-legend-item">
+        <div class="demo-legend-color delayed"></div>
+        <div class="demo-legend-label">Delayed / Warning</div>
+      </div>
+      <div class="demo-legend-item">
+        <div class="demo-legend-color offline"></div>
+        <div class="demo-legend-label">Offline / Error</div>
+      </div>
+    </div>
+
+    <div class="demo-info">
+      <strong>Système de couleurs :</strong><br>
+      • <strong style="color:#00d69a">Vert</strong> : Contact en ligne, données temps réel<br>
+      • <strong style="color:#e7b14d">Orange</strong> : Contact délayé, données en retard<br>
+      • <strong style="color:#e05b63">Rouge</strong> : Contact hors ligne, pas de données<br><br>
+      Les couleurs s'appliquent sur l'icône, le nom et le badge de statut.
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h2>ALPHA SQUAD</h2>
+    <div class="ow-contact-list">
+      <!-- Online -->
+      <button type="button" class="ow-contact is-online">
+        <span class="cicon">A1</span>
+        <span>
+          <div class="cname">Alpha-1</div>
+          <div class="cmeta">Alpha Squad · Il y a 12 s</div>
+        </span>
+        <em class="online">LIVE</em>
+      </button>
+
+      <!-- Delayed -->
+      <button type="button" class="ow-contact is-delayed">
+        <span class="cicon">A2</span>
+        <span>
+          <div class="cname">Alpha-2</div>
+          <div class="cmeta">Alpha Squad · Il y a 3 min</div>
+        </span>
+        <em class="online is-stale">DELAY</em>
+      </button>
+
+      <!-- Offline -->
+      <button type="button" class="ow-contact is-offline">
+        <span class="cicon">A3</span>
+        <span>
+          <div class="cname">Alpha-3</div>
+          <div class="cmeta">Alpha Squad · Il y a 45 min</div>
+        </span>
+        <em class="online">OFFLINE</em>
+      </button>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h2>BRAVO SQUAD</h2>
+    <div class="ow-contact-list">
+      <!-- Online -->
+      <button type="button" class="ow-contact is-online">
+        <span class="cicon">B1</span>
+        <span>
+          <div class="cname">Bravo-1</div>
+          <div class="cmeta">Bravo Squad · Il y a 5 s</div>
+        </span>
+        <em class="online">LIVE</em>
+      </button>
+
+      <!-- Online -->
+      <button type="button" class="ow-contact is-online">
+        <span class="cicon">B2</span>
+        <span>
+          <div class="cname">Bravo-2</div>
+          <div class="cmeta">Bravo Squad · Il y a 8 s</div>
+        </span>
+        <em class="online">LIVE</em>
+      </button>
+
+      <!-- Delayed -->
+      <button type="button" class="ow-contact is-delayed">
+        <span class="cicon">B3</span>
+        <span>
+          <div class="cname">Bravo-3</div>
+          <div class="cmeta">Bravo Squad · Il y a 2 min</div>
+        </span>
+        <em class="online is-stale">DELAY</em>
+      </button>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h2>CHARLIE SQUAD</h2>
+    <div class="ow-contact-list">
+      <!-- Delayed -->
+      <button type="button" class="ow-contact is-delayed">
+        <span class="cicon">C1</span>
+        <span>
+          <div class="cname">Charlie-1</div>
+          <div class="cmeta">Charlie Squad · Il y a 4 min</div>
+        </span>
+        <em class="online is-stale">DELAY</em>
+      </button>
+
+      <!-- Offline -->
+      <button type="button" class="ow-contact is-offline">
+        <span class="cicon">C2</span>
+        <span>
+          <div class="cname">Charlie-2</div>
+          <div class="cmeta">Charlie Squad · Il y a 1 h</div>
+        </span>
+        <em class="online">OFFLINE</em>
+      </button>
+
+      <!-- Offline -->
+      <button type="button" class="ow-contact is-offline">
+        <span class="cicon">C3</span>
+        <span>
+          <div class="cname">Charlie-3</div>
+          <div class="cmeta">Charlie Squad · Il y a 2 h</div>
+        </span>
+        <em class="online">OFFLINE</em>
+      </button>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h2>VÉHICULES</h2>
+    <div class="ow-contact-list">
+      <!-- Online -->
+      <button type="button" class="ow-contact is-online">
+        <span class="cicon">V1</span>
+        <span>
+          <div class="cname">Viking-1</div>
+          <div class="cmeta">Véhicules · Il y a 3 s</div>
+        </span>
+        <em class="online">LIVE</em>
+      </button>
+
+      <!-- Delayed -->
+      <button type="button" class="ow-contact is-delayed">
+        <span class="cicon">V2</span>
+        <span>
+          <div class="cname">Viking-2</div>
+          <div class="cmeta">Véhicules · Il y a 5 min</div>
+        </span>
+        <em class="online is-stale">DELAY</em>
+      </button>
+
+      <!-- Online -->
+      <button type="button" class="ow-contact is-online">
+        <span class="cicon">V3</span>
+        <span>
+          <div class="cname">Falcon-1</div>
+          <div class="cmeta">Véhicules · Il y a 1 s</div>
+        </span>
+        <em class="online">LIVE</em>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  console.log('✓ Démo couleurs statut contacts chargée');
+  console.log('• Vert : Online/Live (temps réel)');
+  console.log('• Orange : Delayed (retard)');
+  console.log('• Rouge : Offline (hors ligne)');
+  console.log('');
+  console.log('Les couleurs sont appliquées sur :');
+  console.log('  - Icône (bordure + fond)');
+  console.log('  - Nom (couleur texte)');
+  console.log('  - Badge statut (couleur texte)');
+</script>
+
+</body>
+</html>
