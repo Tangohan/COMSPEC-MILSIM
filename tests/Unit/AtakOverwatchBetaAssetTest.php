@@ -27,7 +27,10 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="overwatch-commandbar"', $view);
         self::assertStringContainsString('data-overwatch-tab="mission"', $view);
         self::assertStringContainsString('data-overwatch-settings', $view);
+        self::assertStringContainsString('id="overwatch-watchlist"', $view);
         self::assertStringContainsString('.atak-tab[data-tab="', $script);
         self::assertStringContainsString("new KeyboardEvent('keydown'", $script);
+        self::assertStringContainsString('athena:overwatch-watchlist:', $script);
+        self::assertStringContainsString('data-overwatch-watch', $script);
     }
 }

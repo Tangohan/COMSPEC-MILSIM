@@ -187,7 +187,7 @@ if ($atakMapConfig) {
   <nav class="overwatch-commandbar" id="overwatch-commandbar" aria-label="Workspace Overwatch">
     <a class="overwatch-commandbar__brand" href="<?= htmlspecialchars(url('-ATAK-OVERWATCH-Beta'), ENT_QUOTES, 'UTF-8') ?>"><b>A</b><span>ATHENA<small>OVERWATCH / LIVE</small></span></a>
     <div class="overwatch-commandbar__nav">
-      <button type="button" class="is-active" data-overwatch-home>OVERWATCH</button>
+      <button type="button" class="is-active" data-overwatch-watchlist>OVERWATCH</button>
       <button type="button" data-overwatch-tab="chat">COMMS</button>
       <button type="button" data-overwatch-tab="mission">MISSION</button>
       <button type="button" data-overwatch-settings>LAYERS</button>
@@ -196,6 +196,11 @@ if ($atakMapConfig) {
     </div>
     <div class="overwatch-commandbar__state"><span class="overwatch-commandbar__dot"></span><span id="overwatch-link-label">LINKED</span><button type="button" data-overwatch-command>CTRL K</button></div>
   </nav>
+  <aside class="overwatch-watchlist" id="overwatch-watchlist" hidden aria-labelledby="overwatch-watchlist-title">
+    <header><div><small>OPERATOR FOCUS</small><strong id="overwatch-watchlist-title">WATCHLIST</strong></div><button type="button" data-overwatch-watchlist-close aria-label="Fermer">×</button></header>
+    <p>Épinglez un contact depuis les effectifs BFT. Sa liaison et sa dernière grille restent visibles pendant la mission.</p>
+    <div id="overwatch-watchlist-items" aria-live="polite"></div>
+  </aside>
 <?php endif; ?>
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
   <?php
