@@ -16,6 +16,7 @@ use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
+use App\Controllers\Web\AtakOverwatchBetaController;
 use App\Controllers\Web\OverwatchModDocController;
 use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;
@@ -2229,6 +2230,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/designator', [AtakApiController::class, 'designatorIndex']);
     $router->post('/api/atak/designator', [AtakApiController::class, 'designatorStore']);
     $router->post('/api/atak/sigint', [AtakApiController::class, 'sigintStore']);
+    $router->get('/api/atak/sigint', [AtakApiController::class, 'sigintIndex']);
     $router->get('/api/atak/sigint/zones', [AtakApiController::class, 'sigintZones']);
     $router->get('/api/intel/photos', [AtakApiController::class, 'intelPhotosIndex']);
     $router->post('/api/intel/photos', [AtakApiController::class, 'intelPhotosStore']);

@@ -42,12 +42,17 @@ final class AtakUnitsRosterAssetTest extends TestCase
         self::assertStringContainsString('now - rosterMissingSince[k] < ROSTER_GRACE_MS', $js);
     }
 
-    public function testOfflinePlayersAreRemovedFromMapWhileTrackedAiRemainLastKnown(): void
+    public function testOfflinePlayersRemainLastKnownForFifteenMinutesThenLeaveTheMap(): void
     {
         $map = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map.js');
+        $units = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-units.js');
 
-        self::assertStringContainsString("if (live === 'offline' && !trackedAi) return", $map);
-        self::assertStringContainsString("var lastKnown = trackedAi && (live === 'offline' || live === 'delayed')", $map);
+        self::assertStringContainsString('isRecentlySeen', $map);
+        self::assertStringContainsString("if (live === 'offline' && !trackedAi && !recentLastKnown) return", $map);
+        self::assertStringContainsString("var lastKnown = live === 'offline' && (trackedAi || recentLastKnown)", $map);
+        self::assertStringContainsString('var RECENT_WINDOW_SEC = 15 * 60', $units);
+        self::assertStringContainsString('isRecentPresence', $units);
+        self::assertStringContainsString('ATAKReachOverlay.toggleFromUnit', $units);
     }
 
     public function testPositionIsNotDroppedWhileSteamIdentityIsStillLoading(): void

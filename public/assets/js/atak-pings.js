@@ -74,7 +74,10 @@ window.ATAKPings = (function () {
     var gx = p.pos_x != null ? Math.round(Number(p.pos_x)) : '—';
     var gy = p.pos_y != null ? Math.round(Number(p.pos_y)) : '—';
     var id = p.id != null ? String(p.id) : '';
-    return '<div class="atak-ping-item" data-id="' + escapeHtml(id) + '" data-x="' + (p.pos_x || '') + '" data-y="' + (p.pos_y || '') + '">' +
+    var isSuper = window.ATAKSuperPing && typeof window.ATAKSuperPing.isSuperMessage === 'function'
+      ? window.ATAKSuperPing.isSuperMessage(p.message)
+      : /\[\s*super/i.test(String(p.message || ''));
+    return '<div class="atak-ping-item' + (isSuper ? ' is-super' : '') + '" data-id="' + escapeHtml(id) + '" data-x="' + (p.pos_x || '') + '" data-y="' + (p.pos_y || '') + '"' + (isSuper ? ' data-super="1"' : '') + '>' +
       '<button type="button" class="atak-ping-item__main" data-focus-ping>' +
       '<strong>' + escapeHtml(p.author || '') + '</strong> ' + escapeHtml(p.message || '') +
       ' <span style="color:var(--atak-muted)">' + time + ' · grille ' + gx + ' / ' + gy + '</span>' +
@@ -136,6 +139,9 @@ window.ATAKPings = (function () {
         if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
           window.ATAKMap.centerOn(parseFloat(y), parseFloat(x));
         }
+        if (row.getAttribute('data-super') === '1' && window.ATAKSuperPing && typeof window.ATAKSuperPing.play === 'function') {
+          window.ATAKSuperPing.play(parseFloat(x), parseFloat(y), { sound: false, force: true });
+        }
       }
     });
   }
@@ -172,6 +178,7 @@ window.ATAKPings = (function () {
     var author = getAuthor();
     var kindKey = String(kind || 'info').toLowerCase();
     var kindLabels = {
+      super: 'Super ping',
       contact: 'Contact',
       hostile: 'Hostile',
       jackpot: 'JACKPOT',
@@ -213,7 +220,7 @@ window.ATAKPings = (function () {
         });
         fetchPings();
       }
-      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping ' + kindLabel + ' envoyé.');
+      if (window.ATAKShowNotification) window.ATAKShowNotification(kindKey === 'super' ? 'Super ping envoyé.' : 'Ping ' + kindLabel + ' envoyé.');
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le ping.');
     });

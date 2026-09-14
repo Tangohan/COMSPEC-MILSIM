@@ -1,13 +1,17 @@
 /* COMSPEC ATAK — Relecture mission (positions enregistrées + après-action) */
 window.ATAKReplay = (function () {
   var timeline = [];
+  var sourceTimeline = [];
   var events = [];
+  var sourceEvents = [];
   var index = 0;
   var timer = null;
   var active = false;
   var loaded = false;
   var bound = false;
   var eventFilter = 'all';
+  var dateFilter = 'all';
+  var operatorFilter = 'all';
   var eventWindowSeconds = 90;
 
   function apiRoot() {
@@ -170,9 +174,128 @@ window.ATAKReplay = (function () {
       .replace(/'/g, '&#039;');
   }
 
+  function dayOf(ts) {
+    var s = String(ts || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    var ms = parseTsMs(ts);
+    if (isNaN(ms)) return '';
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+
+  function formatDay(ymd) {
+    var p = String(ymd || '').split('-');
+    if (p.length !== 3) return String(ymd || '');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  function fillSelect(sel, options, current, allLabel) {
+    if (!sel) return current;
+    var keep = current === 'all';
+    sel.innerHTML = '';
+    var all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = allLabel;
+    sel.appendChild(all);
+    options.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      sel.appendChild(o);
+      if (opt.value === current) keep = true;
+    });
+    sel.value = keep ? current : 'all';
+    return sel.value;
+  }
+
+  function collectDays(frames) {
+    var days = {};
+    (frames || []).forEach(function (f) {
+      var d = dayOf(f && f.timestamp);
+      if (d) days[d] = true;
+    });
+    return Object.keys(days).sort().reverse();
+  }
+
+  function collectOperators(frames) {
+    var set = {};
+    (frames || []).forEach(function (f) {
+      ((f && f.units) || []).forEach(function (u) {
+        var kind = String(u.kind || 'player');
+        if (kind !== 'player') return;
+        var cs = String(u.callsign || '').trim();
+        if (cs) set[cs] = true;
+      });
+    });
+    return Object.keys(set).sort(function (a, b) {
+      return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+    });
+  }
+
+  function eventMatchesOperator(ev) {
+    if (operatorFilter === 'all') return true;
+    var needle = operatorFilter.toLowerCase();
+    var src = String(ev.source || '').toLowerCase();
+    if (src === needle) return true;
+    return String(ev.label || '').toLowerCase().indexOf(needle) !== -1;
+  }
+
+  function fillFilterControls() {
+    dateFilter = fillSelect(
+      el('atak-replay-date-filter'),
+      collectDays(sourceTimeline).map(function (d) {
+        return { value: d, label: formatDay(d) };
+      }),
+      dateFilter,
+      'Toute la période'
+    );
+    operatorFilter = fillSelect(
+      el('atak-replay-operator-filter'),
+      collectOperators(sourceTimeline).map(function (cs) {
+        return { value: cs, label: cs };
+      }),
+      operatorFilter,
+      'Tous les opérateurs'
+    );
+  }
+
+  function frameForOperator(frame) {
+    if (!frame) return null;
+    if (operatorFilter === 'all') return frame;
+    var units = (frame.units || []).filter(function (u) {
+      return String(u.callsign || '') === operatorFilter;
+    });
+    if (!units.length) return null;
+    return { timestamp: frame.timestamp, units: units };
+  }
+
+  function applyFilters() {
+    timeline = sourceTimeline
+      .filter(function (f) {
+        return dateFilter === 'all' || dayOf(f.timestamp) === dateFilter;
+      })
+      .map(frameForOperator)
+      .filter(Boolean);
+    index = Math.max(0, Math.min(index, Math.max(0, timeline.length - 1)));
+    var slider = el('atak-replay-slider');
+    if (slider) {
+      slider.min = '0';
+      slider.max = String(Math.max(0, timeline.length - 1));
+      slider.value = String(index);
+    }
+    if (!timeline.length) {
+      updateEmptyInfo();
+      renderEventsList(false);
+      return;
+    }
+    applyFrame(index, { previewOnly: !active });
+  }
+
   function filterEvents(list) {
-    if (eventFilter === 'all') return list;
-    return list.filter(function (ev) { return String(ev.type || 'contact') === eventFilter; });
+    return (list || []).filter(function (ev) {
+      if (eventFilter !== 'all' && String(ev.type || 'contact') !== eventFilter) return false;
+      if (dateFilter !== 'all' && dayOf(ev.timestamp) !== dateFilter) return false;
+      return eventMatchesOperator(ev);
+    });
   }
 
   function eventsNearFrame(frameTs) {
@@ -245,7 +368,13 @@ window.ATAKReplay = (function () {
 
   function updateEmptyInfo() {
     var info = el('atak-replay-info');
-    if (info) info.textContent = 'Aucun instantané enregistré pour cette mission.';
+    if (info) {
+      if (dateFilter !== 'all' || operatorFilter !== 'all') {
+        info.textContent = 'Aucun instantané pour ces filtres.';
+      } else {
+        info.textContent = 'Aucun instantané enregistré pour cette mission.';
+      }
+    }
     var slider = el('atak-replay-slider');
     if (slider) {
       slider.min = '0';
@@ -254,12 +383,19 @@ window.ATAKReplay = (function () {
     }
   }
 
-  function windowQuery() {
-    var w = window.ATAK_MISSION_CYCLE_WINDOW;
-    if (!w) return '';
+  function windowQuery(forAar) {
+    var w = window.ATAK_MISSION_CYCLE_WINDOW || {};
+    var from = w.from || '';
+    var to = w.to || '';
+    if (forAar && dateFilter && dateFilter !== 'all') {
+      var dayFrom = dateFilter + ' 00:00:00';
+      var dayTo = dateFilter + ' 23:59:59';
+      if (!from || String(from) < dayFrom) from = dayFrom;
+      if (!to || String(to) > dayTo) to = dayTo;
+    }
     var parts = [];
-    if (w.from) parts.push('from=' + encodeURIComponent(String(w.from)));
-    if (w.to) parts.push('to=' + encodeURIComponent(String(w.to)));
+    if (from) parts.push('from=' + encodeURIComponent(String(from)));
+    if (to) parts.push('to=' + encodeURIComponent(String(to)));
     return parts.length ? ('?' + parts.join('&')) : '';
   }
 
@@ -273,10 +409,12 @@ window.ATAKReplay = (function () {
         return r.json();
       })
       .then(function (data) {
-        events = Array.isArray(data && data.events) ? data.events : [];
+        sourceEvents = Array.isArray(data && data.events) ? data.events : [];
+        events = sourceEvents;
         renderEventsList(!!timeline.length);
       })
       .catch(function () {
+        sourceEvents = [];
         events = [];
       });
   }
@@ -299,26 +437,16 @@ window.ATAKReplay = (function () {
     ])
       .then(function (pair) {
         var data = pair[0];
-        timeline = Array.isArray(data && data.timeline) ? data.timeline : [];
+        sourceTimeline = Array.isArray(data && data.timeline) ? data.timeline : [];
         loaded = true;
         index = 0;
         stopTimer();
-        var slider = el('atak-replay-slider');
-        if (slider) {
-          slider.min = '0';
-          slider.max = String(Math.max(0, timeline.length - 1));
-          slider.value = '0';
-        }
-        if (!timeline.length) {
-          updateEmptyInfo();
-          renderEventsList(false);
-          return;
-        }
-        if (info) info.textContent = timeline.length + ' instantané(s) · ' + formatTs(timeline[0].timestamp);
-        applyFrame(0, { previewOnly: true });
+        fillFilterControls();
+        applyFilters();
       })
       .catch(function () {
         loaded = false;
+        sourceTimeline = [];
         timeline = [];
         if (info) info.textContent = 'Impossible de charger la relecture. Réessayez plus tard.';
       });
@@ -357,7 +485,7 @@ window.ATAKReplay = (function () {
       return;
     }
     if (box) box.innerHTML = '<p class="atak-panel-hint">Analyse en cours…</p>';
-    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + windowQuery();
+    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + windowQuery(true);
     fetch(url, { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) throw new Error('aar_http_' + r.status);
@@ -404,7 +532,7 @@ window.ATAKReplay = (function () {
       if (window.ATAKShowError) window.ATAKShowError('Connectez-vous pour exporter le bilan.');
       return;
     }
-    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + '/export.pdf' + windowQuery();
+    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + '/export.pdf' + windowQuery(true);
     var w = window.ATAK_MISSION_CYCLE_WINDOW;
     if (w && w.title) {
       url += (url.indexOf('?') >= 0 ? '&' : '?') + 'title=' + encodeURIComponent(String(w.title));
@@ -432,6 +560,8 @@ window.ATAKReplay = (function () {
     var slider = el('atak-replay-slider');
     var speed = el('atak-replay-speed');
     var filter = el('atak-replay-event-filter');
+    var dateSel = el('atak-replay-date-filter');
+    var opSel = el('atak-replay-operator-filter');
     var zoom = el('atak-replay-zoom');
 
     if (playBtn) playBtn.addEventListener('click', play);
@@ -461,6 +591,19 @@ window.ATAKReplay = (function () {
       filter.addEventListener('change', function () {
         eventFilter = String(filter.value || 'all');
         renderEventsList(!!timeline.length);
+      });
+    }
+    if (dateSel) {
+      dateSel.addEventListener('change', function () {
+        dateFilter = String(dateSel.value || 'all');
+        applyFilters();
+        loadAar();
+      });
+    }
+    if (opSel) {
+      opSel.addEventListener('change', function () {
+        operatorFilter = String(opSel.value || 'all');
+        applyFilters();
       });
     }
     if (zoom) {
@@ -499,6 +642,9 @@ window.ATAKReplay = (function () {
         if (active) exitReplay();
         loaded = false;
         timeline = [];
+        sourceTimeline = [];
+        sourceEvents = [];
+        events = [];
         var content = el('tab-replay');
         if (content && content.classList.contains('active')) {
           loadTimeline();

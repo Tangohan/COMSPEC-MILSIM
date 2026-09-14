@@ -50,7 +50,7 @@ $atakPhoneBezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
   $c = $atakMapConfig['config'] ?? [];
-  $atakMapConfigForJs = [
+  $atakMapConfigForJs = atak_with_aerial_layer([
     'slug' => $atakMapConfig['slug'] ?? 'altis',
     'tilePattern' => atak_resolve_tile_pattern(
         (string) ($atakMapConfig['tile_pattern'] ?? ''),
@@ -66,7 +66,8 @@ if ($atakMapConfig) {
     'offsetX' => isset($c['offset_x']) ? (float)$c['offset_x'] : 0,
     'offsetY' => isset($c['offset_y']) ? (float)$c['offset_y'] : 0,
     'worldSize' => isset($c['worldSize']) ? (int) $c['worldSize'] : 30720,
-  ];
+    'aerial' => isset($c['aerial']) && is_array($c['aerial']) ? $c['aerial'] : null,
+  ], (string) ($atakMapConfig['slug'] ?? 'altis'));
 }
 ?>
 <!DOCTYPE html>
@@ -111,6 +112,9 @@ if ($atakMapConfig) {
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php endif; ?>
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
@@ -185,7 +189,35 @@ if ($atakMapConfig) {
   }
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<body class="atak-page<?= !empty($atakOverwatchBeta) ? ' atak-overwatch-beta' : '' ?> atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<?php if (!empty($atakOverwatchBeta)): ?>
+  <nav class="overwatch-commandbar" id="overwatch-commandbar" aria-label="Workspace Overwatch">
+    <a class="overwatch-commandbar__brand" href="<?= htmlspecialchars(url('-ATAK-OVERWATCH-Beta'), ENT_QUOTES, 'UTF-8') ?>"><b>A</b><span>ATHENA<small>OVERWATCH / LIVE</small></span></a>
+    <div class="overwatch-commandbar__nav">
+      <button type="button" class="is-active" data-overwatch-watchlist>OVERWATCH</button>
+      <button type="button" data-overwatch-tab="chat">COMMS</button>
+      <button type="button" data-overwatch-tab="mission">MISSION</button>
+      <button type="button" data-overwatch-settings>LAYERS</button>
+      <button type="button" data-overwatch-tab="photos">INTEL</button>
+      <button type="button" data-overwatch-tools>TOOLS</button>
+    </div>
+    <div class="overwatch-commandbar__state"><span class="overwatch-commandbar__dot"></span><span id="overwatch-link-label">LINKED</span><button type="button" data-overwatch-command>CTRL K</button></div>
+  </nav>
+  <div class="overwatch-quicktools" id="overwatch-quicktools" role="toolbar" aria-label="Outils tactiques Overwatch">
+    <button type="button" data-overwatch-tool="line">DESSIN</button>
+    <button type="button" data-overwatch-squad-lines aria-pressed="true">LIAISONS SQUAD</button>
+    <button type="button" data-overwatch-tool="view3d">3D</button>
+    <button type="button" data-overwatch-tool="route">ROUTES</button>
+    <button type="button" data-overwatch-geo="places">VILLES</button>
+    <button type="button" data-overwatch-geo="roads">RÉSEAU ROUTIER</button>
+    <button type="button" data-overwatch-tool="note">MARKERS</button>
+  </div>
+  <aside class="overwatch-watchlist" id="overwatch-watchlist" hidden aria-labelledby="overwatch-watchlist-title">
+    <header><div><small>OPERATOR FOCUS</small><strong id="overwatch-watchlist-title">WATCHLIST</strong></div><button type="button" data-overwatch-watchlist-close aria-label="Fermer">×</button></header>
+    <p>Épinglez un contact depuis les effectifs BFT. Sa liaison et sa dernière grille restent visibles pendant la mission.</p>
+    <div id="overwatch-watchlist-items" aria-live="polite"></div>
+  </aside>
+<?php endif; ?>
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
   <?php
   $baseUrl = $base;
@@ -564,6 +596,15 @@ if ($atakMapConfig) {
         <p class="atak-game-link-hint">
           <button type="button" id="atak-repair-base-tiles" class="atak-btn-account" title="Recharger le fond de carte">Réparer le fond</button>
         </p>
+        <div class="atak-aerial-fond-wrap" hidden>
+          <label class="atak-sound-pref-label" for="atak-aerial-fond-account">
+            <span class="atak-sound-pref-key">Fond de carte</span>
+            <select id="atak-aerial-fond-account" class="atak-header-select atak-sound-pref-select" data-atak-aerial-fond title="Plan ou photo aérienne du théâtre">
+              <option value="aerial" selected>Photo aérienne</option>
+              <option value="plan">Plan</option>
+            </select>
+          </label>
+        </div>
         <label class="atak-sound-pref-label" for="atak-unit-style-mode">
           <span class="atak-sound-pref-key">Apparence des positions</span>
           <select id="atak-unit-style-mode" class="atak-header-select atak-sound-pref-select" title="Style des marqueurs d’unités sur la carte">
@@ -1391,7 +1432,7 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Comms</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
-        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="support" title="Appuis">
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="support" title="Appuis" onclick="if (window.ATAKPanelChrome) { window.ATAKPanelChrome.activateTab('jtac'); }">
           <span class="atak-section-btn__icon" aria-hidden="true">△</span>
           <span class="atak-section-btn__label">Appuis</span>
           <span class="atak-section-btn__badge" hidden></span>
@@ -1670,6 +1711,16 @@ if ($atakMapConfig) {
         <section class="atak-settings-block" id="atak-settings-map" aria-label="Carte, relief et calques">
           <h3 class="atak-rail-audio-title">Carte — relief et calques</h3>
           <p class="atak-settings-copy">Ombrage, courbes, vue 3D et inventaire des données terrain chargées sur ce poste. Le bouton <strong>3D</strong> sur la carte reste le raccourci rapide.</p>
+
+          <div class="atak-aerial-fond-wrap" hidden>
+            <label class="atak-map-look__row" for="atak-aerial-fond">
+              <span class="atak-map-look__key">Fond de carte</span>
+              <select id="atak-aerial-fond" class="atak-header-select atak-map-look__select" data-atak-aerial-fond title="Plan ou photo aérienne du théâtre">
+                <option value="aerial" selected>Photo aérienne</option>
+                <option value="plan">Plan</option>
+              </select>
+            </label>
+          </div>
 
           <div class="atak-map-look__terrain" id="atak-settings-relief">
             <p class="atak-map-look__key">Relief 2D</p>
@@ -2295,6 +2346,18 @@ if ($atakMapConfig) {
             </div>
           </div>
         </div>
+        <div class="atak-sigint-panel">
+          <div class="atak-panel-strip">
+            <span class="atak-panel-strip-title">Écoutes radio (SIGINT)</span>
+            <div class="atak-panel-strip-actions">
+              <button type="button" class="atak-ops-btn" id="atak-sigint-refresh" title="Actualiser">Actualiser</button>
+            </div>
+          </div>
+          <p class="atak-panel-hint">Relèvements transmis depuis le terrain : indicatif, gisement et position. La carte affiche aussi la zone d’incertitude.</p>
+          <div id="atak-sigint-list" class="atak-sigint-list">
+            <p class="atak-panel-hint">Aucun relèvement pour le moment.</p>
+          </div>
+        </div>
       </div>
       <div class="atak-tabs-content" id="tab-situation" role="tabpanel">
         <div class="atak-sitrep-panel">
@@ -2537,21 +2600,45 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-jtac">
         <div class="atak-jtac-form">
+          <p class="atak-panel-hint">Fiche 9-Line d’appui aérien (format OTAN). Les codes laser amis sont proposés automatiquement. Le terrain et le poste voient la même demande.</p>
           <button type="button" id="atak-jtac-new">Nouvelle 9-Line CAS</button>
-          <div id="atak-jtac-form-fields" style="display:none;">
-            <label>1. Type (IP/FFP/CAS/…) <input name="line1" /></label>
-            <label>2. Position <input name="line2" /></label>
-            <label>3. Élévation <input name="line3" /></label>
-            <label>4. Cible <input name="line4" /></label>
-            <label>5. Marqueur <input name="line5" /></label>
-            <label>6. Ami / ennemi <input name="line6" /></label>
-            <label>7. Retrait <input name="line7" /></label>
-            <label>8. Autres <input name="line8" /></label>
-            <label>9. Remarques <textarea name="line9"></textarea></label>
+          <div id="atak-jtac-form-fields" class="atak-jtac-nato" hidden>
+            <ol class="atak-jtac-lines">
+              <li><label>IP / point initial <input name="line1" maxlength="80" placeholder="Ex. IP ALPHA" autocomplete="off" /></label></li>
+              <li><label>Cap (IP → objectif) <input name="line2" maxlength="40" placeholder="Ex. 270°" autocomplete="off" /></label></li>
+              <li><label>Distance <input name="line3" maxlength="40" placeholder="Ex. 8 km" autocomplete="off" /></label></li>
+              <li><label>Altitude de l’objectif <input name="line4" maxlength="40" placeholder="Ex. 240 m" autocomplete="off" /></label></li>
+              <li><label>Description de l’objectif <input name="line5" maxlength="160" placeholder="Ex. véhicule, bâtiment…" autocomplete="off" /></label></li>
+              <li><label>Position (grille) <input name="line6" maxlength="80" placeholder="Grille ou coordonnées" autocomplete="off" /></label></li>
+              <li>
+                <label>Marquage
+                  <select name="line7_mark" id="atak-jtac-mark">
+                    <option value="LASER">Laser</option>
+                    <option value="SMOKE">Fumigène</option>
+                    <option value="IR">Infrarouge</option>
+                    <option value="NONE">Aucun</option>
+                  </select>
+                </label>
+                <label id="atak-jtac-laser-wrap">Code laser
+                  <select name="laser_code" id="atak-jtac-laser">
+                    <option value="">Aucun code ami</option>
+                  </select>
+                </label>
+              </li>
+              <li><label>Amis (direction et distance) <input name="line8" maxlength="120" placeholder="Ex. 300 m au nord" autocomplete="off" /></label></li>
+              <li><label>Sortie (egress) <input name="line9" maxlength="80" placeholder="Ex. ouest, bas" autocomplete="off" /></label></li>
+            </ol>
+            <label>Aéronef (facultatif) <input name="assigned_aircraft" maxlength="40" placeholder="Indicatif si déjà connu" autocomplete="off" /></label>
+            <label>Remarques <textarea name="remarks" rows="2" maxlength="400" placeholder="Menaces, restrictions, code d’annulation…"></textarea></label>
             <button type="button" id="atak-jtac-submit">Envoyer 9-Line</button>
           </div>
         </div>
-        <div class="atak-jtac-list" id="atak-jtac-list"></div>
+        <div class="atak-jtac-list" id="atak-jtac-list">
+          <div class="atak-empty-state atak-empty-state--compact" id="atak-jtac-empty">
+            <p class="atak-empty-state-title">Aucun appui en cours</p>
+            <p class="atak-empty-state-text">Les 9-Line du terrain apparaîtront ici. Vous pouvez aussi en créer une.</p>
+          </div>
+        </div>
         <div class="atak-laser-codes-wrap" id="atak-laser-codes-wrap">
           <div id="atak-laser-codes-list"></div>
         </div>
@@ -2628,6 +2715,18 @@ if ($atakMapConfig) {
             <input type="range" id="atak-replay-slider" class="atak-replay-slider" min="0" max="0" value="0" aria-describedby="atak-replay-info" />
           </label>
           <div class="atak-replay-explore" role="group" aria-label="Filtres de la chronologie">
+            <label class="atak-replay-speed-wrap">
+              <span class="atak-replay-speed-label">Date</span>
+              <select id="atak-replay-date-filter" class="atak-replay-speed" title="Journée à relire">
+                <option value="all">Toute la période</option>
+              </select>
+            </label>
+            <label class="atak-replay-speed-wrap">
+              <span class="atak-replay-speed-label">Opérateur</span>
+              <select id="atak-replay-operator-filter" class="atak-replay-speed" title="Opérateur à suivre">
+                <option value="all">Tous les opérateurs</option>
+              </select>
+            </label>
             <label class="atak-replay-speed-wrap">
               <span class="atak-replay-speed-label">Événements</span>
               <select id="atak-replay-event-filter" class="atak-replay-speed">
@@ -2711,6 +2810,8 @@ if ($atakMapConfig) {
       </div>
       </div>
       <div class="atak-resize-handle atak-resize-handle--left" data-atak-resize="left" role="separator" aria-orientation="vertical" aria-label="Élargir le panneau" title="Élargir le panneau — double-clic pour réinitialiser" tabindex="0"></div>
+    </aside>
+    <aside class="atak-pin-dock" id="atak-pin-dock" hidden aria-label="Fenêtres épinglées en raccourci">
     </aside>
 
     <div class="atak-map-wrap">
@@ -3029,7 +3130,7 @@ if ($atakMapConfig) {
               </tr>
             </thead>
             <tbody id="atak-units-table-body">
-              <tr><td colspan="8" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>
+              <tr><td colspan="8" class="atak-drawer-empty">Aucun contact vu dans les quinze dernières minutes.</td></tr>
             </tbody>
           </table>
         </div>
@@ -3065,7 +3166,7 @@ if ($atakMapConfig) {
         </div>
         <div class="atak-filter">
           <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif, rôle, notes…" />
-          <button type="button" class="btn-live active" id="atak-filter-live">En liaison</button>
+          <button type="button" class="btn-live active" id="atak-filter-live" title="Contacts vus dans les quinze dernières minutes, y compris hors liaison">Récents</button>
           <button type="button" class="btn-all" id="atak-filter-all">Tous</button>
           <button type="button" class="btn-all" id="atak-filter-wave" title="Afficher uniquement les opérateurs Wave Relay">Wave</button>
         </div>
@@ -3101,8 +3202,8 @@ if ($atakMapConfig) {
           <div class="atak-units-empty-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
           </div>
-          <p class="atak-units-empty-title">Aucun contact en liaison</p>
-          <p class="atak-units-empty-text">Les positions remontées depuis Arma s’affichent ici. Vérifiez la liaison du mod, ou générez un code via <strong>Connexion en jeu</strong>.</p>
+          <p class="atak-units-empty-title">Aucun contact récent</p>
+          <p class="atak-units-empty-text">Les opérateurs vus dans les quinze dernières minutes apparaissent ici, y compris ceux qui viennent de perdre la liaison, avec leur dernière position connue.</p>
         </div>
       </div>
     </aside>
@@ -3139,6 +3240,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-motion.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-aerial.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-terrain-3d.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script type="module" src="<?= $base ?>/assets/js/atak-terrain3d-premium.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3158,6 +3260,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-web-log.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-reach-overlay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-fire-teams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-replay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/mission-cycle-badge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3176,7 +3279,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>
   <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
-  <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-super-ping.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-pings.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-explosive-timers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-vehicles.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3184,9 +3288,10 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-assignments.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
-  <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-jtac.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-salute.js"></script>
   <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-sigint.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
@@ -3205,6 +3310,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-section-nav.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-pin-dock.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-qr-hub.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-c2-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3734,11 +3840,22 @@ if ($atakMapConfig) {
         if (tab === 'identification' && window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
           window.ATAKIFF.onTabActivated();
         }
+        if (tab === 'identification' && window.ATAKSIGINT && typeof window.ATAKSIGINT.refresh === 'function') {
+          window.ATAKSIGINT.refresh();
+        }
         if (tab === 'situation' && window.ATAKSitrep && typeof window.ATAKSitrep.onTabActivated === 'function') {
           window.ATAKSitrep.onTabActivated();
         }
         if (tab === 'frs' && window.ATAKFRS && typeof window.ATAKFRS.onTabActivated === 'function') {
           window.ATAKFRS.onTabActivated();
+        }
+        if (tab === 'jtac') {
+          if (window.ATAKJTAC && typeof window.ATAKJTAC.refresh === 'function') window.ATAKJTAC.refresh();
+          else if (window.ATAKJTAC && typeof window.ATAKJTAC.fetchCas === 'function') window.ATAKJTAC.fetchCas();
+          else if (window.ATAKJTAC && typeof window.ATAKJTAC.fetchNineLines === 'function') window.ATAKJTAC.fetchNineLines();
+          if (window.ATAKLaserCodes && typeof window.ATAKLaserCodes.fetchLaserCodes === 'function') {
+            window.ATAKLaserCodes.fetchLaserCodes();
+          }
         }
       }
 
@@ -3757,11 +3874,20 @@ if ($atakMapConfig) {
               b.classList.remove('active');
               b.setAttribute('aria-selected', 'false');
             });
-            document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
+            document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+              if (c.closest && c.closest('#atak-pin-dock')) {
+                c.classList.add('active');
+                return;
+              }
+              c.classList.remove('active');
+            });
             this.classList.add('active');
             this.setAttribute('aria-selected', 'true');
             var content = document.getElementById('tab-' + tab);
             if (content) content.classList.add('active');
+            if (window.ATAKPinDock && typeof window.ATAKPinDock.keepPinnedVisible === 'function') {
+              window.ATAKPinDock.keepPinnedVisible();
+            }
             onAtakTabSideEffects(tab);
           }
         });
@@ -4105,11 +4231,20 @@ if ($atakMapConfig) {
               b.classList.remove('active');
               b.setAttribute('aria-selected', 'false');
             });
-            document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
+            document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+              if (c.closest && c.closest('#atak-pin-dock')) {
+                c.classList.add('active');
+                return;
+              }
+              c.classList.remove('active');
+            });
             popBtn.classList.add('active');
             popBtn.setAttribute('aria-selected', 'true');
             var popContent = document.getElementById('tab-' + popTab);
             if (popContent) popContent.classList.add('active');
+            if (window.ATAKPinDock && typeof window.ATAKPinDock.keepPinnedVisible === 'function') {
+              window.ATAKPinDock.keepPinnedVisible();
+            }
             onAtakTabSideEffects(popTab);
           }
         }
@@ -4639,5 +4774,8 @@ if ($atakMapConfig) {
       </footer>
     </div>
   </div>
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php endif; ?>
 </body>
 </html>

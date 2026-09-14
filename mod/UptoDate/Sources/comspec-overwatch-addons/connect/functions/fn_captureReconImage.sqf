@@ -269,18 +269,11 @@ private _fnc_stagePath = {
 private _fnc_notifyPath = {
     params ["_uploadPath"];
     if (!(_uploadPath isEqualType "") || {_uploadPath isEqualTo ""}) exitWith { false };
-    // JPEG IceMan / BCE : chemin fantôme (srcdir_missing). On n’envoie jamais ce nom.
-    if ([_uploadPath] call _fnc_isJpegPath) then {
-        private _png = [] call _fnc_armaPngCapture;
-        if (_png isNotEqualTo "") then { _uploadPath = _png; };
+    // JPEG BCE : laisser le fichier au relais Discord. Pas de copie ni de second cliché Arma.
+    if (!([_uploadPath] call _fnc_isJpegPath)) then {
+        private _staged = [_uploadPath] call _fnc_stagePath;
+        if (_staged isNotEqualTo "") then { _uploadPath = _staged; };
     };
-    if ([_uploadPath] call _fnc_isJpegPath) exitWith {
-        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
-        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
-        false
-    };
-    private _staged = [_uploadPath] call _fnc_stagePath;
-    if (_staged isNotEqualTo "") then { _uploadPath = _staged; };
     ["NotifyNewPhoto", "attempt", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     private _raw = ["COMSPECExtension" callExtension [
         "NotifyNewPhoto",
@@ -319,19 +312,6 @@ private _fnc_notifyPath = {
         };
     };
     _ok
-};
-
-// Overlay : un JPEG fantôme peut encore nécessiter un PNG scène.
-// Un PNG déjà pris (COMSPEC_*.png) ne doit jamais reclicher.
-if (
-    !isNull _overlayCam
-    && {_skipArmaShot}
-    && {!(missionNamespace getVariable ["COMSPEC_OverlayCamPromoted", false])}
-) then {
-    private _lowGiven = toLower _path;
-    if ((_lowGiven find ".jpg") >= 0 || {(_lowGiven find ".jpeg") >= 0}) then {
-        _skipArmaShot = false;
-    };
 };
 
 if (
@@ -424,21 +404,15 @@ if (
     true
 };
 
-// Chemin fourni (IceMan / BCE / Photo Library). Un JPEG annoncé n’est pas un
-// fichier : on recliche un PNG Arma (Screenshots / AppData) et on envoie ça.
+// Chemin fourni (IceMan / BCE / Photo Library). Un JPEG BCE part tel quel
+// vers le poste : un second screenshot Arma couperait l’envoi Discord.
 if (_path isNotEqualTo "") exitWith {
     private _isJpeg = [_path] call _fnc_isJpegPath;
     private _png = _path;
-    if (!_skipArmaShot || _isJpeg) then {
+    if (!_skipArmaShot) then {
         _png = [] call _fnc_armaPngCapture;
     };
     if (!_skipArmaShot && {_png isEqualTo ""} && {!_isJpeg}) exitWith {
-        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
-        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
-        ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen (options d’affichage), puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;
-        false
-    };
-    if (_isJpeg && {(_png isEqualTo "") || {[_png] call _fnc_isJpegPath}}) exitWith {
         missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
         missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|screenshot_rejected", false];
         ["COMSPEC_Error", ["Capture refusée par le jeu — passez la qualité HDR au moins sur Moyen (options d’affichage), puis reprenez la photo."]] call comspec_overwatch_connect_fnc_showNotification;

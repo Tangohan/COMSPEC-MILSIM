@@ -88,7 +88,7 @@
     opts = opts || {};
     if (!tab) return false;
     var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
-    if (!btn || btn.hidden) return false;
+    if (!btn) return false;
 
     document.querySelectorAll('#atak-panel-left .atak-tab[data-tab]').forEach(function (b) {
       var on = b === btn;
@@ -96,8 +96,15 @@
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+      if (c.closest && c.closest('#atak-pin-dock')) {
+        c.classList.add('active');
+        return;
+      }
       c.classList.toggle('active', c.id === 'tab-' + tab);
     });
+    if (window.ATAKPinDock && typeof window.ATAKPinDock.keepPinnedVisible === 'function') {
+      window.ATAKPinDock.keepPinnedVisible();
+    }
 
     if (!opts.silent) {
       try {

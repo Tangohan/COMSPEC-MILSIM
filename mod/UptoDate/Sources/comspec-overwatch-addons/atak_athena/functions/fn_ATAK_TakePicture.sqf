@@ -1,8 +1,10 @@
 /*
     Remplace BCE_fnc_ATAK_TakePicture.
 
-    Avant le cliché : la caméra overlay / casque / tourelle devient la vue scène,
-    sinon l’image envoyée au poste est celle du soldat.
+    Le cliché reste celui de BCE (extension de capture du pack). C’est ce
+    cliché qui part aussi vers Discord. Ne pas changer la caméra ni prendre
+    un second screenshot Arma autour de cet appel : ça coupe l’envoi Discord.
+    Le dossier annoncé à Discord est le dossier Screenshot réel du pack.
 */
 private _display = uiNamespace getVariable ["BCE_PhoneCAM_View", displayNull];
 if (isNull _display) then {
@@ -11,8 +13,12 @@ if (isNull _display) then {
 if (isNull _display) exitWith {};
 
 private _grid = _display displayCtrl 55;
-_grid ctrlSetBackgroundColor [0, 0, 0, 0.3];
-_grid ctrlSetText format ["GRID :%1", [getPosVisual player, 10] call BCE_fnc_POS2Grid];
+if (!isNull _grid) then {
+    _grid ctrlSetBackgroundColor [0, 0, 0, 0.3];
+    if (!isNil "BCE_fnc_POS2Grid") then {
+        _grid ctrlSetText format ["GRID :%1", [getPosVisual player, 10] call BCE_fnc_POS2Grid];
+    };
+};
 
 private _ctrls = (allControls _display) apply {
     if (50 > ctrlIDC _x) then {
@@ -23,32 +29,28 @@ private _ctrls = (allControls _display) apply {
     };
 };
 
-if (!isNil "comspec_overwatch_connect_fnc_promoteCaptureCam") then {
-    [false] call comspec_overwatch_connect_fnc_promoteCaptureCam;
-};
-
 [{
     params ["_ctrls", "_grid"];
 
-    private _restore = [];
-    if (!isNil "comspec_overwatch_connect_fnc_promoteCaptureCam") then {
-        _restore = [true] call comspec_overwatch_connect_fnc_promoteCaptureCam;
-        if (!(_restore isEqualType [])) then { _restore = []; };
+    private _screenshot = [];
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bceScreenShot") then {
+        _screenshot = [] call comspec_overwatch_atak_athena_fnc_athena_bceScreenShot;
+    } else {
+        if (!isNil "BCE_fnc_screenShot") then {
+            _screenshot = [] call BCE_fnc_screenShot;
+        };
     };
-
-    private _screenshot = [] call BCE_fnc_screenShot;
-
-    if ((count _restore) >= 3 && {!isNil "comspec_overwatch_connect_fnc_restoreCaptureCam"}) then {
-        _restore call comspec_overwatch_connect_fnc_restoreCaptureCam;
-    };
+    if (!(_screenshot isEqualType [])) then { _screenshot = []; };
 
     {
         if (isNull _x) then { continue };
         _x ctrlShow true;
     } forEach _ctrls;
 
-    _grid ctrlSetBackgroundColor [0, 0, 0, 0];
-    _grid ctrlSetText "";
+    if (!isNull _grid) then {
+        _grid ctrlSetBackgroundColor [0, 0, 0, 0];
+        _grid ctrlSetText "";
+    };
 
     if (_screenshot isEqualTo []) exitWith {};
 

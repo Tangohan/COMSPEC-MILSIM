@@ -36,6 +36,8 @@ public static partial class Extension
     private static bool _apiKeyValidatedByClientInit;
     /// <summary>Tenant issu du redeem / Connect (requis par client-init côté portail).</summary>
     private static string _tenantId = "";
+    /// <summary>Carte Athena courante (plusieurs opérations en parallèle). Défaut 1.</summary>
+    private static int _mapId = 1;
     /// <summary>SteamID64 mémorisé (liaison / Connect / UpdatePosition) — identité côté DLL, pas seulement SQF.</summary>
     private static string _steamUid = "";
     /// <summary>Version du mod Overwatch (CfgPatches) — remontée dans les journal Activité.</summary>
@@ -43,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.34";
+        private const string ExtensionVersion = "2.0.39";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -353,7 +355,8 @@ public static partial class Extension
     /// </summary>
     private static string BuildClientInitBody()
     {
-        var sb = new StringBuilder("{\"mapId\":1");
+        var sb = new StringBuilder("{\"mapId\":");
+        sb.Append(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture));
         sb.Append(",\"client_product\":\"").Append(ClientProduct).Append('"');
         sb.Append(",\"client_name\":\"").Append(ClientDisplayName).Append('"');
         sb.Append(",\"ui_generation\":\"").Append(ClientUiGeneration).Append('"');
@@ -378,7 +381,8 @@ public static partial class Extension
     /// <summary>Corps JSON disconnect (mapId + tenant + indicatif + steam optionnels).</summary>
     private static string BuildDisconnectBody(string callSign)
     {
-        var sb = new StringBuilder("{\"mapId\":1");
+        var sb = new StringBuilder("{\"mapId\":");
+        sb.Append(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (_tenantId.Length > 0)
         {
             if (long.TryParse(_tenantId, out var tid) && tid > 0)
@@ -2175,6 +2179,17 @@ public static partial class Extension
             _tenantId = t;
     }
 
+    private static int CurrentMapId() => _mapId < 1 ? 1 : _mapId;
+
+    /// <summary>Carte Athena (7e arg Connect / SetMapId). Ignore les valeurs invalides.</summary>
+    private static void ApplyMapId(string? raw)
+    {
+        var s = SanitizeSecret(raw);
+        if (int.TryParse(s, System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out var n) && n > 0)
+            _mapId = n;
+    }
+
     /// <summary>Guillemets Arma + espaces / BOM parfois collés via profileNamespace ou CBA.</summary>
     private static string SanitizeSecret(string? raw)
     {
@@ -2383,6 +2398,12 @@ public static partial class Extension
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
 
+        if (function == "SetMapId")
+        {
+            ApplyMapId(args.Length > 0 ? args[0] : "");
+            return "OK|" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         if (function == "SetTelemetryBatch")
         {
             return ApplyTelemetryBatch(args.Length > 0 ? args[0] : "");
@@ -2400,7 +2421,7 @@ public static partial class Extension
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -2632,6 +2653,16 @@ public static partial class Extension
             return "OK|" + dirs;
         }
 
+        // Dossier Screenshot réel du pack BCE / SOAR (séparateurs Windows corrects).
+        // Discord ouvre ce chemin : un collage « Arma 3!Workshop@mod » ne trouve rien.
+        if (function == "GetBceScreenshotDir")
+        {
+            var dir = FindBceScreenshotDir();
+            return string.IsNullOrWhiteSpace(dir)
+                ? "ERR|not_found"
+                : "OK|" + SanitizeIdentityField(dir);
+        }
+
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
         if (function is "ShowAthenaLinkHelp")
         {
@@ -2753,6 +2784,9 @@ public static partial class Extension
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
             _baseUrl = normalized;
+            if (args.Length > 6)
+                ApplyMapId(args[6]);
+            LoadQueueFromDisk();
             EnsureDrainTimer();
 
             var prevKey = _apiKey;
@@ -3202,7 +3236,7 @@ public static partial class Extension
             if (function == "GetMarkers")
             {
                 var since = args.Length > 0 ? (args[0] ?? "") : "";
-                if (!TryBuildRequestUri(_baseUrl, "/api/atak/markers?mapId=1", out var markersUri, out var markersErr) || markersUri is null)
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/markers?mapId=" + CurrentMapId(), out var markersUri, out var markersErr) || markersUri is null)
                     return "ERR|" + markersErr;
                 var url = markersUri.AbsoluteUri;
                 if (since.StartsWith("world:", StringComparison.OrdinalIgnoreCase))
@@ -3217,12 +3251,22 @@ public static partial class Extension
             }
             if (function == "GetUnits")
             {
-                if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=1", out var unitsUri, out var unitsErr) || unitsUri is null)
+                if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=" + CurrentMapId(), out var unitsUri, out var unitsErr) || unitsUri is null)
                     return "ERR|" + unitsErr;
                 return ServePollGet("GetUnits", unitsUri.AbsoluteUri, (body, code) =>
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
                     return PollOkClipped(SimplifyUnitsJson(body));
+                });
+            }
+            if (function == "GetPings")
+            {
+                if (!TryBuildRequestUri(_baseUrl, "/api/pings?mapId=" + CurrentMapId() + "&limit=40", out var pingsUri, out var pingsErr) || pingsUri is null)
+                    return "ERR|" + pingsErr;
+                return ServePollGet("GetPings", pingsUri.AbsoluteUri, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return PollOkClipped(SimplifyPingsJson(body));
                 });
             }
             if (function == "GetClientIp")
@@ -3972,7 +4016,7 @@ public static partial class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":1{steamJson}{sessJson}}}";
+                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{CurrentMapId()}{steamJson}{sessJson}}}";
                 var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
@@ -4962,6 +5006,17 @@ public static partial class Extension
         catch { return "[]"; }
     }
 
+    private static double JsonDouble(JsonElement el, string name, double fallback = 0)
+    {
+        if (!el.TryGetProperty(name, out var p)) return fallback;
+        if (p.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined) return fallback;
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetDouble(out var d)) return d;
+        if (p.ValueKind == JsonValueKind.String
+            && double.TryParse(p.GetString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var s))
+            return s;
+        return fallback;
+    }
+
     private static string SimplifyUnitsJson(string json)
     {
         try
@@ -4970,14 +5025,59 @@ public static partial class Extension
             using var doc = JsonDocument.Parse(json);
             foreach (var el in doc.RootElement.EnumerateArray())
             {
-                var callSign = el.TryGetProperty("call_sign", out var cs) ? cs.GetString() ?? "" : "";
-                var gridRef = el.TryGetProperty("grid_ref", out var gr) ? gr.GetString() ?? "" : "";
+                var callSign = JsonStr(el, "call_sign");
+                if (callSign.Length == 0) callSign = JsonStr(el, "display_call_sign");
+                var gridRef = JsonStr(el, "grid_ref");
                 var parts = gridRef.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                var gx = parts.Length >= 1 && double.TryParse(parts[0], out var px) ? px : 0;
-                var gy = parts.Length >= 2 && double.TryParse(parts[1], out var py) ? py : 0;
+                var gx = parts.Length >= 1 && double.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var px) ? px : 0;
+                var gy = parts.Length >= 2 && double.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var py) ? py : 0;
+                var role = JsonStr(el, "role");
+                var posX = JsonDouble(el, "pos_x", gx);
+                var posY = JsonDouble(el, "pos_y", gy);
+                var age = JsonDouble(el, "age_seconds", -1);
+                var status = JsonStr(el, "status");
                 sb.Append("U\t").Append(callSign.Replace("\t", " ")).Append("\t")
                     .Append(gx.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
-                    .Append(gy.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\n");
+                    .Append(gy.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
+                    .Append(role.Replace("\t", " ")).Append("\t")
+                    .Append(posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
+                    .Append(posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
+                    .Append(age.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
+                    .Append(status.Replace("\t", " ")).Append("\n");
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyPingsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return "";
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var id = JsonIdCell(el);
+                if (id.Length == 0) continue;
+                var msg = JsonStr(el, "message").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                var author = JsonStr(el, "author").Replace("\t", " ").Replace("|", "-");
+                var x = JsonDouble(el, "pos_x");
+                var y = JsonDouble(el, "pos_y");
+                var age = 0d;
+                if (el.TryGetProperty("created_at", out var created))
+                {
+                    var cs = created.ValueKind == JsonValueKind.String ? created.GetString() : created.GetRawText();
+                    if (DateTimeOffset.TryParse(cs, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                        age = Math.Max(0, (DateTimeOffset.UtcNow - dt.ToUniversalTime()).TotalSeconds);
+                }
+                sb.Append("P\t").Append(id).Append('\t')
+                    .Append(x.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                    .Append(y.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                    .Append(msg).Append('\t')
+                    .Append(author).Append('\t')
+                    .Append(age.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append('\n');
             }
             return sb.ToString();
         }
@@ -6678,7 +6778,7 @@ public static partial class Extension
                         extra.Append(",\"deferred\":false");
                     }
                 }
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
                 return;
             }
@@ -6795,7 +6895,7 @@ public static partial class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"center_x\":{x},\"center_y\":{y},\"radius_m\":{radius}{steamJson}{sessJson}}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"center_x\":{x},\"center_y\":{y},\"radius_m\":{radius}{steamJson}{sessJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/viewshed", payload);
                 return;
             }
@@ -6812,7 +6912,7 @@ public static partial class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"pos_x\":{x},\"pos_y\":{y},\"message\":\"{EscapeJson(msg)}\"{steamJson}{sessJson}}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"author\":\"{EscapeJson(author)}\",\"pos_x\":{x},\"pos_y\":{y},\"message\":\"{EscapeJson(msg)}\"{steamJson}{sessJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/pings", payload);
                 return;
             }
@@ -6822,7 +6922,7 @@ public static partial class Extension
                 var type = args[0] ?? "MARKER";
                 var body = args[1] ?? "";
                 var extra = args[2] ?? "";
-                var payload = $"{{\"mapId\":1,\"type\":\"{EscapeJson(type)}\",\"body\":\"{EscapeJson(body)}\",\"data\":\"{EscapeJson(extra)}\"}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"type\":\"{EscapeJson(type)}\",\"body\":\"{EscapeJson(body)}\",\"data\":\"{EscapeJson(extra)}\"}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/intel", payload);
                 return;
             }
@@ -6832,7 +6932,7 @@ public static partial class Extension
                 var callSign = args[0] ?? "Unknown";
                 var x = args[1] ?? "0";
                 var y = args[2] ?? "0";
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/designator", payload);
                 return;
             }
@@ -6844,8 +6944,8 @@ public static partial class Extension
                 var y = args[2] ?? "0";
                 var bearing = args.Length > 3 ? (args[3] ?? "") : "";
                 var payload = !string.IsNullOrEmpty(bearing) && double.TryParse(bearing, out var b)
-                    ? $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y},\"bearing\":{b.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}}}"
-                    : $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
+                    ? $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y},\"bearing\":{b.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}}}"
+                    : $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/sigint", payload);
                 return;
             }
@@ -6894,8 +6994,8 @@ public static partial class Extension
                     : "";
                 var modJson = ModVersionJsonFragment();
                 var payload = deleted
-                    ? "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"deleted\":true}"
-                    : "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"markerData\":" + markerDataRaw + "}";
+                    ? "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + ",\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"deleted\":true}"
+                    : "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + ",\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"markerData\":" + markerDataRaw + "}";
                 EnqueueOrSend(_baseUrl + "/api/atak/marker", payload);
                 return;
             }
@@ -6968,7 +7068,7 @@ public static partial class Extension
                 var posX = args.Length > 2 ? (args[2] ?? "0") : "0";
                 var posY = args.Length > 3 ? (args[3] ?? "0") : "0";
                 var status = args.Length > 4 ? (args[4] ?? "ACTIVE") : "ACTIVE";
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"laser_code\":\"{EscapeJson(laserCode)}\",\"pos_x\":{posX},\"pos_y\":{posY},\"status\":\"{EscapeJson(status)}\"}}";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"laser_code\":\"{EscapeJson(laserCode)}\",\"pos_x\":{posX},\"pos_y\":{posY},\"status\":\"{EscapeJson(status)}\"}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/laser-codes", payload);
                 return;
             }
@@ -7026,7 +7126,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl)) return;
         try
         {
-            var payload = $"{{\"mapId\":1,\"author\":\"COMSPEC Overwatch\",\"body\":\"{EscapeJson(body)}\"}}";
+            var payload = $"{{\"mapId\":{CurrentMapId()},\"author\":\"COMSPEC Overwatch\",\"body\":\"{EscapeJson(body)}\"}}";
             EnqueueOrSend(_baseUrl + "/api/chat", payload);
         }
         catch
@@ -7086,10 +7186,15 @@ public static partial class Extension
         }
         catch { /* ignore */ }
 
-        var newestFallback = string.IsNullOrWhiteSpace(trimmedPath)
+        // Un nom de fichier précis (COMSPEC_….png, JPEG BCE) ne doit jamais
+        // être remplacé par « la photo la plus récente » — sinon Quick Picture
+        // envoie le cliché précédent et le poste voit un doublon.
+        var hasSpecificName = HasSpecificImageFileName(trimmedPath);
+        var newestFallback = !hasSpecificName && (
+            string.IsNullOrWhiteSpace(trimmedPath)
             || isNameOnly
             || parentMissing
-            || looksLikeJpeg;
+            || looksLikeJpeg);
 
         var dedupKey = NormalizePhotoDedupKey(trimmedPath.Length > 0 ? trimmedPath : ("newest|" + author));
         if (!TryClaimPhotoDedup(dedupKey))
@@ -7282,22 +7387,25 @@ public static partial class Extension
 
         EnsureScreenshotQuota();
 
-        // Attente non bloquante du flush disque (BCE / Arma_ScreenShot) — max ~12 s.
-        // Chemins Photo Library morts (srcdir_missing) : chercher par nom + captures
-        // écrites depuis l’enqueue (screenshot Arma / watcher), sans abandon immédiat.
-        for (var attempt = 0; attempt < 25; attempt++)
+        // Attente du flush disque (BCE / screenshot Arma) — max ~20 s si le nom est connu.
+        // Un nom précis n’est jamais remplacé par une autre photo récente (Quick Picture).
+        var specificName = HasSpecificImageFileName(job.RawPath);
+        var maxAttempts = specificName ? 50 : 25;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
-            if (job.NewestFallback && attempt >= 0)
+            if (job.NewestFallback && !specificName && attempt >= 0)
                 fb = TimeSpan.FromSeconds(Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30));
             resolved = ResolveLocalImagePath(
                 job.RawPath,
-                (isSseFace || isSseNote) ? null : (attempt >= 2 ? fb : newestFallback));
-            if (resolved == null && attempt >= 1)
+                (isSseFace || isSseNote || specificName) ? null : (attempt >= 2 ? fb : newestFallback));
+            if (resolved != null && specificName && !SamePhotoStem(job.RawPath, resolved))
+                resolved = null;
+            if (resolved == null)
             {
                 var leaf = Path.GetFileName((job.RawPath ?? "").Replace('/', '\\'));
                 if (!string.IsNullOrWhiteSpace(leaf))
-                    resolved = FindScreenshotByFileName(leaf);
+                    resolved = FindScreenshotByFileName(leaf, allowUnstable: specificName);
             }
             if (resolved == null && isSseFace && attempt >= 2)
                 resolved = FindNewestMatchingPrefix("COMSPEC_SSE_Face", TimeSpan.FromSeconds(
@@ -7305,8 +7413,10 @@ public static partial class Extension
             if (resolved == null && isSseNote && attempt >= 2)
                 resolved = FindNewestMatchingPrefix("COMSPEC_Fiche_", TimeSpan.FromSeconds(
                     Math.Max(180, (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds + 30)));
-            if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
+            if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote && !specificName)
                 resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
+            if (resolved != null && specificName && !SamePhotoStem(job.RawPath, resolved))
+                resolved = null;
             if (resolved != null) break;
             try
             {
@@ -7316,8 +7426,8 @@ public static partial class Extension
                 var orphan = Path.GetFileName(p);
                 if (parentMissing && !string.IsNullOrWhiteSpace(orphan))
                 {
-                    resolved = FindScreenshotByFileName(orphan);
-                    if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote)
+                    resolved = FindScreenshotByFileName(orphan, allowUnstable: specificName);
+                    if (resolved == null && attempt >= 1 && !isSseFace && !isSseNote && !specificName)
                         resolved = FindNewestScreenshotSince(job.EnqueuedUtc.AddSeconds(-180));
                     if (resolved != null)
                         break;
@@ -7329,12 +7439,12 @@ public static partial class Extension
 
         if (resolved == null)
         {
-            // Ne pas libérer le dédup : un fichier définitivement introuvable
-            // (Photo Library morte / srcdir_missing) ne doit pas être re-scanné
-            // en boucle (coût disque + risque STATUS_STACK_OVERFLOW).
+            // Nom précis (Quick Picture) : libérer le dédup pour permettre un vrai nouvel essai.
             var hint = string.IsNullOrWhiteSpace(job.RawPath)
                 ? "empty_path"
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
+            if (specificName || isSseFace || isSseNote)
+                ReleasePhotoDedup(job.DedupKey);
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
@@ -7408,7 +7518,7 @@ public static partial class Extension
             var args = job.Meta ?? Array.Empty<string?>();
             var author = !string.IsNullOrWhiteSpace(job.Author) ? job.Author : "Unknown";
             multipart = new MultipartFormDataContent();
-            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture)), "mapId");
             multipart.Add(new StringContent(author), "author");
             AddOptionalForm(multipart, "pos_x", args, 2);
             AddOptionalForm(multipart, "pos_y", args, 3);
@@ -7992,7 +8102,7 @@ public static partial class Extension
             if (!fi.Exists) return "ERR|file_not_found";
             if (fi.Length < 32) return "ERR|file_empty";
             var multipart = new MultipartFormDataContent();
-            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture)), "mapId");
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(device), "device_type");
             if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
@@ -8036,7 +8146,7 @@ public static partial class Extension
             if (!fi.Exists) return "ERR|file_not_found";
             if (fi.Length < 32) return "ERR|file_empty";
             var multipart = new MultipartFormDataContent();
-            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture)), "mapId");
             multipart.Add(new StringContent(author), "author");
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
@@ -8196,7 +8306,7 @@ public static partial class Extension
         if (path.Length == 0)
             return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
 
-        path = path.Replace('/', '\\');
+        path = RepairBrokenWorkshopScreenshotPath(path.Replace('/', '\\'));
 
         // Chemin absolu Windows dont le dossier parent n'existe pas → échec immédiat
         // (Photo Library obsolète). Évite 8× Sleep + scan Screenshots qui gèle le jeu.
@@ -8503,9 +8613,10 @@ public static partial class Extension
     /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots.
     /// Scan peu profond uniquement (racine + 1 niveau) — jamais AllDirectories sur l’install Arma
     /// (jonctions Workshop → STATUS_STACK_OVERFLOW / 0xC00000FD).
-    /// Ignore les fichiers encore à 0 octet (PNG Arma non flushé).
+    /// Ignore les fichiers encore à 0 octet (PNG Arma non flushé), sauf allowUnstable
+    /// (on attendra ensuite le flush plutôt que de prendre une autre photo).
     /// </summary>
-    private static string? FindScreenshotByFileName(string fileName)
+    private static string? FindScreenshotByFileName(string fileName, bool allowUnstable = false)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var variant in ScreenshotFileNameVariants(fileName))
@@ -8518,7 +8629,10 @@ public static partial class Extension
             {
                 try
                 {
-                    var readable = TryReadableImageFile(Path.Combine(dir, name));
+                    var candidate = Path.Combine(dir, name);
+                    var readable = allowUnstable
+                        ? TryExistingImagePath(candidate)
+                        : TryReadableImageFile(candidate);
                     if (readable != null)
                         return readable;
                 }
@@ -8534,7 +8648,9 @@ public static partial class Extension
                     try
                     {
                         if (!IsImageExtension(Path.GetExtension(f))) continue;
-                        var readable = TryReadableImageFile(f);
+                        var readable = allowUnstable
+                            ? TryExistingImagePath(f)
+                            : TryReadableImageFile(f);
                         if (readable != null)
                             return readable;
                     }
@@ -8545,6 +8661,49 @@ public static partial class Extension
         }
 
         return null;
+    }
+
+    private static bool HasSpecificImageFileName(string? rawPath)
+    {
+        var p = (rawPath ?? "").Trim().Trim('"').Trim('\'').Replace('/', '\\');
+        if (p.Length == 0) return false;
+        try
+        {
+            var leaf = Path.GetFileName(p);
+            return !string.IsNullOrWhiteSpace(leaf) && IsImageExtension(Path.GetExtension(leaf));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool SamePhotoStem(string? pathA, string? pathB)
+    {
+        try
+        {
+            var a = Path.GetFileNameWithoutExtension(pathA ?? "");
+            var b = Path.GetFileNameWithoutExtension(pathB ?? "");
+            return a.Length > 0 && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string? TryExistingImagePath(string candidate)
+    {
+        try
+        {
+            if (!File.Exists(candidate)) return null;
+            if (!IsImageExtension(Path.GetExtension(candidate))) return null;
+            return Path.GetFullPath(candidate);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -8559,6 +8718,9 @@ public static partial class Extension
         var arma = Path.Combine(local, "Arma 3");
         if (Directory.Exists(arma))
             yield return arma;
+        var armaShots = Path.Combine(arma, "Screenshots");
+        if (Directory.Exists(armaShots))
+            yield return armaShots;
         string? cwd = null;
         try { cwd = Directory.GetCurrentDirectory(); }
         catch { cwd = null; }
@@ -8699,13 +8861,25 @@ public static partial class Extension
                     // Fiche / visage : uniquement ce nom, pas une autre capture récente.
                     resolved = ResolveLocalImagePath(raw, newestFallback: null);
                 }
+                else if (HasSpecificImageFileName(raw))
+                {
+                    resolved = ResolveLocalImagePath(raw, newestFallback: null);
+                    if (resolved == null)
+                    {
+                        var leaf = Path.GetFileName(raw.Replace('/', '\\'));
+                        if (!string.IsNullOrWhiteSpace(leaf))
+                            resolved = FindScreenshotByFileName(leaf, allowUnstable: true);
+                    }
+                    if (resolved != null && !SamePhotoStem(raw, resolved))
+                        resolved = null;
+                }
                 else
                 {
                     resolved = ResolveLocalImagePath(raw, TimeSpan.FromSeconds(45));
                 }
             }
 
-            if (resolved == null && !isJpeg && !isSseNamed)
+            if (resolved == null && !isJpeg && !isSseNamed && !HasSpecificImageFileName(raw))
                 resolved = FindNewestScreenshot(TimeSpan.FromSeconds(45));
             if (resolved == null)
                 return "ERR|file_not_found";
@@ -9105,6 +9279,84 @@ public static partial class Extension
     }
 
     /// <summary>
+    /// L’extension de capture BCE colle parfois la racine Arma, <c>!Workshop</c> et
+    /// le dossier du mod sans séparateur : <c>Arma 3!Workshop@mod\Screenshot</c>.
+    /// Discord ouvre ce chemin tel quel et échoue. On réinsère les <c>\</c>.
+    /// </summary>
+    private static readonly Regex BrokenArmaWorkshopGlue = new(
+        @"(Arma 3)!Workshop",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex BrokenWorkshopModGlue = new(
+        @"!Workshop@",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static string RepairBrokenWorkshopScreenshotPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return path;
+        var p = path.Replace('/', '\\');
+        p = BrokenArmaWorkshopGlue.Replace(p, @"$1\!Workshop");
+        p = BrokenWorkshopModGlue.Replace(p, @"!Workshop\@");
+        return p;
+    }
+
+    /// <summary>
+    /// Dossier <c>Screenshot</c> réel du pack BCE / SOAR sous <c>!Workshop</c>.
+    /// </summary>
+    private static string? FindBceScreenshotDir()
+    {
+        try
+        {
+            var cwd = Directory.GetCurrentDirectory();
+            if (string.IsNullOrWhiteSpace(cwd)) return null;
+
+            string? best = null;
+            var bestScore = -1;
+            foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
+            {
+                var wr = Path.Combine(cwd, workshopRoot);
+                if (!Directory.Exists(wr)) continue;
+                string[] mods;
+                try { mods = Directory.GetDirectories(wr); }
+                catch { continue; }
+                foreach (var modDir in mods)
+                {
+                    string shot;
+                    try
+                    {
+                        shot = Path.Combine(modDir, "Screenshot");
+                        if (!Directory.Exists(shot))
+                            shot = Path.Combine(modDir, "Screenshots");
+                        if (!Directory.Exists(shot)) continue;
+                        shot = Path.GetFullPath(shot);
+                    }
+                    catch { continue; }
+
+                    var name = Path.GetFileName(modDir.TrimEnd('\\')) ?? "";
+                    var score = 0;
+                    if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0)
+                        score = 3;
+                    else if (name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0)
+                        score = 2;
+                    else if (name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0)
+                        score = 1;
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        best = shot;
+                    }
+                    else if (score == bestScore && score == 0 && best == null)
+                    {
+                        best = shot;
+                    }
+                }
+            }
+            return best;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>
     /// Cherche la capture d’écran Arma la plus récente (dossier Screenshots du profil).
     /// </summary>
     private static string? FindNewestScreenshot(TimeSpan maxAge)
@@ -9263,9 +9515,9 @@ public static partial class Extension
     /// </summary>
     private static string EnrichAtakPayload(string? jsonBody)
     {
-        if (string.IsNullOrWhiteSpace(jsonBody)) return "{\"mapId\":1}";
+        if (string.IsNullOrWhiteSpace(jsonBody)) return "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + "}";
         var trimmed = NormalizeArmaJson(jsonBody).Trim();
-        if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.StartsWith('{')) return "{\"mapId\":1}";
+        if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.StartsWith('{')) return "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + "}";
         try
         {
             EnsureFreshAtakSession();
@@ -9283,7 +9535,7 @@ public static partial class Extension
                     if (prop.NameEquals("mapId") || prop.NameEquals("map_id")) hasMapId = true;
                     prop.WriteTo(writer);
                 }
-                if (!hasMapId) writer.WriteNumber("mapId", 1);
+                if (!hasMapId) writer.WriteNumber("mapId", CurrentMapId());
                 if (_apiKey.Length > 0 && !doc.RootElement.TryGetProperty("api_key", out _)
                     && !doc.RootElement.TryGetProperty("access_key", out _))
                     writer.WriteString("api_key", _apiKey);
@@ -9760,7 +10012,9 @@ public static partial class Extension
             if (callsign.Length == 0)
                 return FormatAtakExtArray("ERROR", "vehicle_callsign required");
 
-            var upsertSb = new StringBuilder("{\"mapId\":1,\"vehicle_callsign\":\"")
+            var upsertSb = new StringBuilder("{\"mapId\":")
+                .Append(CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture))
+                .Append(",\"vehicle_callsign\":\"")
                 .Append(EscapeJson(callsign)).Append('"');
             if (root.TryGetProperty("service_pos_x", out var px) && px.ValueKind == JsonValueKind.Number)
                 upsertSb.Append(",\"pos_x\":").Append(px.GetDouble().ToString("R", System.Globalization.CultureInfo.InvariantCulture));

@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.116;
-        versionStr = "1.0.116";
-        versionAr[] = {1, 0, 116};
+        version = 1.122;
+        versionStr = "1.0.122";
+        versionAr[] = {1, 0, 122};
     };
 };
 
@@ -60,6 +60,7 @@ class CfgFunctions
             class athena_bridgeIcemanAlert {};
             class athena_bridgeIcemanBda {};
             class athena_bridgeIcemanPhoto {};
+            class athena_bceScreenShot {};
             class athena_bridgeIcemanGroup {};
             class athena_installHqContact {};
             class athena_sendHqMessage {};
@@ -117,6 +118,8 @@ class CfgFunctions
             class athena_phoneProximityAlert {};
             class athena_hookPhoneGeolocMap {};
             class athena_installPhoneGeolocMap {};
+            class athena_hookReachMap {};
+            class athena_installReachMap {};
             class athena_briefingOnOpened {};
             class athena_applyBriefingSlide {};
             class athena_openBriefing {};
@@ -141,6 +144,7 @@ class CfgFunctions
             class athena_commsOnOpened {};
             class athena_updateComms {};
             class athena_commsSelectChannel {};
+            class athena_commsBack {};
             class athena_commsSend {};
             class athena_commsCreateChannel {};
             class athena_commsDeleteChannel {};

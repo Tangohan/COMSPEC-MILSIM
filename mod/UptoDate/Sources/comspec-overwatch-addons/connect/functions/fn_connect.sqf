@@ -127,7 +127,13 @@ if ((count _steamForConnect) < 15) then {
 };
 private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
 private _bloodType = [] call comspec_overwatch_connect_fnc_getBloodType;
-private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
+if (!(_mapId isEqualType 0)) then { _mapId = 1; };
+_mapId = round _mapId;
+if (_mapId < 1) then { _mapId = 1; };
+missionNamespace setVariable ["comspec_overwatch_map_id", _mapId];
+missionNamespace setVariable ["COMSPEC_MapId", _mapId];
+private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType, str _mapId]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };

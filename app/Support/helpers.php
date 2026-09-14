@@ -54,6 +54,16 @@ if (!function_exists('asset_url')) {
     }
 }
 
+if (!function_exists('e')) {
+    /**
+     * Échappe une valeur pour l’HTML (vues).
+     */
+    function e(mixed $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!function_exists('user_media_public_url')) {
     /**
      * Résout une photo / bannière utilisateur (chemin relatif uploads/… ou URL absolue http(s)).
@@ -962,6 +972,52 @@ if (!function_exists('atak_resolve_tile_pattern')) {
         }
 
         return $base . '/' . ltrim($normalized, '/');
+    }
+}
+
+if (!function_exists('atak_aerial_layer_config')) {
+    /**
+     * Photo aérienne Atlas (mètres Arma) pour un théâtre, ou null si absente.
+     *
+     * @return array{tilePattern:string,factorX:float,factorY:float,tileSize:int,minZoom:int,maxZoom:int,attribution:string}|null
+     */
+    function atak_aerial_layer_config(?string $mapSlug): ?array
+    {
+        $slug = strtolower(trim((string) $mapSlug));
+        $layers = [
+            'altis' => [
+                'tilePattern' => 'https://atlas.plan-ops.fr/data/1/maps/3/295/{z}/{x}/{y}.webp',
+                'factorX' => 0.012375,
+                'factorY' => 0.012375,
+                'tileSize' => 381,
+                'minZoom' => 0,
+                'maxZoom' => 7,
+                'attribution' => '&copy; Bohemia Interactive',
+            ],
+        ];
+
+        return $layers[$slug] ?? null;
+    }
+}
+
+if (!function_exists('atak_with_aerial_layer')) {
+    /**
+     * Ajoute la photo aérienne au config JS d’un théâtre si elle existe.
+     *
+     * @param array<string, mixed> $config
+     * @return array<string, mixed>
+     */
+    function atak_with_aerial_layer(array $config, ?string $mapSlug): array
+    {
+        $fromCfg = isset($config['aerial']) && is_array($config['aerial']) ? $config['aerial'] : null;
+        if (!is_array($fromCfg) || trim((string) ($fromCfg['tilePattern'] ?? '')) === '') {
+            $fromCfg = atak_aerial_layer_config($mapSlug);
+        }
+        if (is_array($fromCfg) && trim((string) ($fromCfg['tilePattern'] ?? '')) !== '') {
+            $config['aerial'] = $fromCfg;
+        }
+
+        return $config;
     }
 }
 

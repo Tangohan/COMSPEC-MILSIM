@@ -336,6 +336,7 @@
         }
         return { kind: 'drone', label: dLabel, color: dColor, rest: rest };
       }
+      if (raw.indexOf('super') >= 0) return { kind: 'super', label: 'Super ping', color: '#22d3ee', rest: rest };
       if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('medecin') >= 0 || raw.indexOf('médecin') >= 0 || raw.indexOf('bless') >= 0) {
         return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
@@ -1465,6 +1466,9 @@
       var isImage = kind === 'image';
 
       if (map) {
+        if (window.ATAKAerial && typeof window.ATAKAerial.detach === 'function') {
+          try { window.ATAKAerial.detach(map); } catch (e) {}
+        }
         if (currentBaseLayer) {
           map.removeLayer(currentBaseLayer);
           currentBaseLayer = null;
@@ -1546,6 +1550,9 @@
         if (!cfgM) return;
         currentBaseLayer = L.tileLayer(cfgM.tilePattern, { attribution: cfgM.attribution, tileSize: cfgM.tileSize });
         currentBaseLayer.addTo(map);
+        if (window.ATAKAerial && typeof window.ATAKAerial.attach === 'function') {
+          try { window.ATAKAerial.attach(map, mapsConfigs[slug] || {}); } catch (e) {}
+        }
         map.setView(cfgM.center, cfgM.defaultZoom);
         if (cfgM.bounds && cfgM.bounds.length === 2) {
           map.setMaxBounds(L.latLngBounds(L.latLng(cfgM.bounds[0][0], cfgM.bounds[0][1]), L.latLng(cfgM.bounds[1][0], cfgM.bounds[1][1])));

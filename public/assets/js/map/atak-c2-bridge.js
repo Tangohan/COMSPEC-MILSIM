@@ -143,8 +143,7 @@
     var entities = state.lastUnits.map(normalizeUnit).filter(function (e) {
       if (!e || e.id == null || (e.x == null && e.lat == null)) return false;
       // Aligné sur le rendu legacy (atak-map.js) : un joueur hors liaison quitte
-      // la carte. Seules les IA suivies (keepLastKnown) gardent la dernière position.
-      // Avant : LOST restait visible pour les joueurs → fantômes « encore connectés ».
+      // la carte au-delà de quinze minutes. keepLastKnown = IA suivie ou présence récente.
       if (e.status === 'LOST' && !e.keepLastKnown) return false;
       if (e.status === 'STALE' && prefs.showDelayedUnits === false && !e.keepLastKnown) return false;
       return true;
@@ -200,6 +199,9 @@
     }
 
     var keepLastKnown = isAi;
+    if (!keepLastKnown && window.ATAKUnits && typeof window.ATAKUnits.isRecentlySeen === 'function') {
+      keepLastKnown = window.ATAKUnits.isRecentlySeen(u);
+    }
 
     var ORIGIN_EPS = 0.5;
     var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : (u.x != null && u.x !== '' ? parseFloat(u.x) : NaN);

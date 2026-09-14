@@ -1018,7 +1018,7 @@
       '<h3 style="margin:0 0 .65rem">Nouveau ping</h3>' +
       '<label class="am-muted" style="font-size:.7rem">Type</label>' +
       '<select id="am-ping-type" style="width:100%;min-height:42px;margin:.25rem 0 .55rem;background:#0a1016;color:inherit;border:1px solid var(--am-line);border-radius:.4rem">' +
-      '<option>CONTACT</option><option>HOSTILE</option><option>MEDICAL</option><option>OBJECTIF</option><option>ALERTE</option></select>' +
+      '<option>SUPER PING</option><option>CONTACT</option><option>HOSTILE</option><option>MEDICAL</option><option>OBJECTIF</option><option>ALERTE</option></select>' +
       '<label class="am-muted" style="font-size:.7rem">Message</label>' +
       '<input id="am-ping-msg" style="width:100%;min-height:42px;margin:.25rem 0 .55rem;background:#0a1016;color:inherit;border:1px solid var(--am-line);border-radius:.4rem;padding:0 .65rem" placeholder="Description">' +
       '<label class="am-muted" style="font-size:.7rem">Position (X Y monde)</label>' +

@@ -27,3 +27,8 @@
 .dock button .ico{font-size:14px;color:var(--accent-dim);line-height:1}.dock button.active,.dock button:hover{color:var(--accent);border-color:var(--line);background:var(--panel2)}.dock button.active .ico{color:var(--accent)}
 .toast-host{position:fixed;left:12px;bottom:68px;z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none}.toast{padding:8px 12px;border:1px solid var(--line2);background:rgba(10,20,28,.94);border-radius:4px;font-size:12px;max-width:320px}.toast.ok{border-color:var(--accent-dim);color:var(--good)}
 .leaflet-container{background:#0b141b!important;font:inherit}.leaflet-control-attribution{display:none!important}.comspec-2525 svg{width:28px;height:28px;display:block}
+.atak-live-ping{background:transparent!important;border:none!important}
+.atak-live-ping .ping-core{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#e0f2fe;border:2px solid #22d3ee;box-shadow:0 0 10px #22d3ee;z-index:2}
+.atak-live-ping .ping-ring{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid rgba(56,189,248,.95);animation:atak-live-ping-expand 2s ease-out infinite}
+.atak-live-ping .ping-ring.r2{animation-delay:.45s;border-color:rgba(250,204,21,.9)}
+@keyframes atak-live-ping-expand{0%{transform:scale(.4);opacity:.95}100%{transform:scale(6.5);opacity:0}}

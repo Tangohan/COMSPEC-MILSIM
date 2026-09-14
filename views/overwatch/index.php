@@ -52,6 +52,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-medical-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/atak-aerial.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars(asset_url('assets/css/atak-map-popups.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars(asset_url('assets/css/tactical-marker-chip.css'), ENT_QUOTES, 'UTF-8') ?>?v=202609011215" rel="stylesheet" />
   <style>
@@ -308,6 +309,13 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               <?php foreach ($overwatchMapsList as $m): ?>
               <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" data-type="<?= htmlspecialchars($m['type'] ?? 'arma') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'world') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
               <?php endforeach; ?>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5 atak-aerial-fond-wrap" hidden>
+            <span class="text-xs font-bold uppercase tracking-wide text-slate-200">Vue du terrain</span>
+            <select id="overwatch-aerial-fond" class="overwatch-header-select rounded-xl border px-3 py-2 text-sm font-semibold min-w-[180px] shadow-sm" data-atak-aerial-fond title="Plan ou photo aérienne">
+              <option value="aerial" selected>Photo aérienne</option>
+              <option value="plan">Plan</option>
             </select>
           </label>
           <?php if (!empty($overwatchCanCreateCustomMaps)): ?>
@@ -728,6 +736,9 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           }
 
           if (map) {
+            if (window.ATAKAerial && typeof window.ATAKAerial.detach === 'function') {
+              try { window.ATAKAerial.detach(map); } catch (e) {}
+            }
             if (currentBaseLayer) {
               try { map.removeLayer(currentBaseLayer); } catch (e) {}
               currentBaseLayer = null;
@@ -853,6 +864,9 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               tileErrors = 0;
             });
             currentBaseLayer.addTo(map);
+            if (window.ATAKAerial && typeof window.ATAKAerial.attach === 'function') {
+              try { window.ATAKAerial.attach(map, overwatchMapsConfigs[requested] || {}); } catch (e) {}
+            }
             map.setView(cfg2.center, cfg2.defaultZoom);
             if (cfg2.bounds && cfg2.bounds.length === 2) {
               map.setMaxBounds(L.latLngBounds(L.latLng(cfg2.bounds[0][0], cfg2.bounds[0][1]), L.latLng(cfg2.bounds[1][0], cfg2.bounds[1][1])));

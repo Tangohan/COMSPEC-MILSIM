@@ -1289,6 +1289,15 @@ $atakMapsSeed = [
         'defaultZoom' => 3,
         'maxZoom' => 6,
         'attribution' => '&copy; Bohemia Interactive',
+        'aerial' => [
+            'tilePattern' => 'https://atlas.plan-ops.fr/data/1/maps/3/295/{z}/{x}/{y}.webp',
+            'factorX' => 0.012375,
+            'factorY' => 0.012375,
+            'tileSize' => 381,
+            'minZoom' => 0,
+            'maxZoom' => 7,
+            'attribution' => '&copy; Bohemia Interactive',
+        ],
     ],
     [
         'slug' => 'stratis',
@@ -1423,6 +1432,9 @@ try {
             'attribution' => (string) $row['attribution'],
             'title' => (string) $row['label'],
         ];
+        if (!empty($row['aerial']) && is_array($row['aerial'])) {
+            $configPayload['aerial'] = $row['aerial'];
+        }
         $configJson = json_encode($configPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $chkMap->execute([$slug]);
         $existing = $chkMap->fetch(PDO::FETCH_ASSOC);

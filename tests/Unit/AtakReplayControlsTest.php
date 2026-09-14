@@ -16,8 +16,15 @@ final class AtakReplayControlsTest extends TestCase
         self::assertIsString($view);
         self::assertIsString($script);
         self::assertStringContainsString('id="atak-replay-event-filter"', $view);
+        self::assertStringContainsString('id="atak-replay-date-filter"', $view);
+        self::assertStringContainsString('id="atak-replay-operator-filter"', $view);
         self::assertStringContainsString('id="atak-replay-zoom"', $view);
         self::assertStringContainsString("eventFilter = String(filter.value || 'all')", $script);
+        self::assertStringContainsString("dateFilter = String(dateSel.value || 'all')", $script);
+        self::assertStringContainsString("operatorFilter = String(opSel.value || 'all')", $script);
+        self::assertStringContainsString('function applyFilters()', $script);
+        self::assertStringContainsString('Tous les opérateurs', $view);
+        self::assertStringContainsString('Toute la période', $view);
         self::assertStringContainsString('eventWindowSeconds * 1000', $script);
         self::assertStringContainsString('function escapeHtml(value)', $script);
         self::assertStringContainsString('class="atak-replay-event-target"', $script);

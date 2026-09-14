@@ -37,11 +37,16 @@ private _forceCamCapture = {
             uiNamespace setVariable ["BCE_fnc_ATAK_TakePicture", _code];
         };
     };
+    if (isNil "COMSPEC_BCE_screenShotOrig" && {!isNil "BCE_fnc_screenShot"}) then {
+        missionNamespace setVariable ["COMSPEC_BCE_screenShotOrig", BCE_fnc_screenShot];
+    };
 };
 call _forceCamCapture;
 { [_forceCamCapture, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
 
 [] call comspec_overwatch_atak_athena_fnc_athena_installPhoneGeolocMap;
+[] call comspec_overwatch_atak_athena_fnc_athena_installReachMap;
+[] call comspec_overwatch_connect_fnc_superPingInstall;
 [] call comspec_overwatch_atak_athena_fnc_athena_installMapHud;
 [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 1] call CBA_fnc_waitAndExecute;

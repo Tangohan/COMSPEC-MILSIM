@@ -39,6 +39,8 @@ if (!_ok) exitWith {};
 
 _edit ctrlSetText "";
 
+missionNamespace setVariable ["COMSPEC_Comms_View", "list", false];
+
 if (!isNil "comspec_overwatch_connect_fnc_pollChatChannels") then {
     [] call comspec_overwatch_connect_fnc_pollChatChannels;
 };
