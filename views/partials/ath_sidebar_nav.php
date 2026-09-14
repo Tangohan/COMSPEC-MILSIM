@@ -359,6 +359,7 @@ if ($isOperatorBoNav) {
                 'notif' => $opEventsBadge !== null,
             ],
             ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
+            ['label' => 'Overwatch Beta', 'href' => url('-ATAK-OVERWATCH-Beta'), 'icon' => 'ops', 'active' => in_array($p, ['-ATAK-OVERWATCH-Beta', 'atak-overwatch-beta', 'ATAK-OVERWATCH-Beta'], true), 'badge' => 'BETA'],
             [
                 'label' => 'Boîte de réception',
                 'href' => url('boite-reception'),
