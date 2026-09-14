@@ -37,6 +37,7 @@ if (_custom isNotEqualTo "") then {
         ["CUSTOM", "Ordre personnalisé"],
         ["VIBRATE", "Faire vibrer le terminal"],
         ["NOTIFY", "Notification terminal"],
+        ["NOTIFY_FULL", "Alerte plein écran"],
         ["HELMET_SNAP", "Photo casque"],
         ["HELMET_SNAP_HD", "Photo casque HD"],
         ["HELMET_STREAM", "Flux casque"],

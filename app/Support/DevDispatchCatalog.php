@@ -268,6 +268,86 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(582, '2026-09-14', 'Marqueurs en jeu : règles de détection pour chaque communauté', 'Les gestionnaires de la communauté décrivent désormais quels marqueurs posés dans Arma 3 doivent être suivis. Dès qu’un opérateur pose un point correspondant, il apparaît au poste. Si la règle le demande, le point est confirmé lorsqu’un téléphone ATAK entre dans le rayon, et les opérateurs sont prévenus sur leur écran. Les points d’objectif libellés PO restent suivis comme avant.', [
+                'Page Détection des marqueurs : libellé, symbole, rayon, confirmation et alerte sur les téléphones',
+                'Les marqueurs reconnus apparaissent au poste avec l’anneau du rayon choisi',
+                'Confirmation à l’arrivée d’un téléphone ATAK, visible au poste et en jeu',
+                'Alerte optionnelle sur les téléphones dès qu’un nouveau point suivi est posé',
+            ], [], [], ['atak'], [
+                'Ouvrez Terminaux, puis Détection des marqueurs. Créez une règle, par exemple « le libellé commence par EXFIL », rayon 50 m. Posez le marqueur en jeu. Il apparaît au poste. Approchez un téléphone ATAK pour confirmer si la règle le demande. Relancez Arma complètement après la mise à jour du pack jeu.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(581, '2026-09-14', 'Overwatch Beta : alerte plein écran sur les téléphones ATAK', 'Le commandement envoie désormais une alerte qui recouvre tout l’écran du téléphone ATAK. Le message s’affiche aussi lorsque le téléphone est en position mini dans le coin de l’écran. L’opérateur le lit, puis le ferme, ou il disparaît après quelques secondes.', [
+                'Alerte plein écran depuis Overwatch Beta : tous les opérateurs, un groupe, ou un contact',
+                'Le message recouvre l’écran du téléphone ouvert',
+                'Le message recouvre aussi le téléphone lorsqu’il est en position mini',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack jeu, puis relancez Arma complètement. Ouvrez Overwatch Beta. Dans GROUPES, rédigez l’alerte, choisissez les destinataires, puis envoyez. Sur le téléphone ATAK, ouvert ou mini, le message recouvre l’écran.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(580, '2026-09-14', 'Overwatch Beta : poser des points de ralliement', 'Le commandement pose désormais un point de ralliement depuis Overwatch Beta. Un clic place un lieu de regroupement avec un anneau de 50 mètres, visible au poste et en jeu. Les opérateurs réellement présents dans le rayon sont indiqués. Ce n’est pas un point à atteindre : c’est un lieu où se rassembler.', [
+                'Outil Point de ralliement : un clic pose Ralliement 1, Ralliement 2, puis la suite',
+                'Anneau de 50 m visible au poste et sur la carte des opérateurs en jeu',
+                'Indication des opérateurs réellement présents dans le rayon, sans rien inventer',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Choisissez l’outil Point de ralliement (ou touche R). Cliquez le lieu de regroupement. L’anneau vert apparaît au poste et en jeu.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(579, '2026-09-14', 'Overwatch Beta : transmettre une tâche à un groupe', 'Le commandement transmet désormais une tâche à un groupe depuis Overwatch Beta. Le groupe, le type d’action, l’urgence et éventuellement un point à atteindre se choisissent dans des listes. La tâche arrive sur les téléphones ATAK des opérateurs concernés, avec le statut au poste.', [
+                'Tâche de groupe depuis l’onglet GROUPES ou le panneau MISSION',
+                'Choix du groupe, du type (se déplacer, tenir, reconnaissance, force de réaction) et de l’urgence',
+                'Point à atteindre optionnel, consignes libres, suivi et annulation au poste',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans GROUPES, choisissez un groupe, une tâche, éventuellement un point à atteindre, puis transmettez. Les opérateurs du groupe reçoivent la tâche sur le téléphone ATAK.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(578, '2026-09-14', 'Overwatch Beta : poser des points à atteindre avec détection 20 m', 'Le commandement pose désormais une suite de points à atteindre directement depuis Overwatch Beta. Chaque point est numéroté, un anneau de 20 mètres s’affiche, et le point est confirmé dès qu’un téléphone ATAK y entre. La suite est aussi transmise aux opérateurs en jeu pour le guidage.', [
+                'Outil Point à atteindre : un clic pose PO 1, PO 2, puis la suite',
+                'Détection 20 m identique aux marqueurs PO déjà présents sur la carte',
+                'Les opérateurs reçoivent la suite de points pour le guidage en jeu',
+            ], [], [], ['atak'], [
+                'Sur Overwatch Beta, choisissez l’outil Point à atteindre (ou touche P). Cliquez les points dans l’ordre, double-clic pour terminer. Approchez un téléphone ATAK à moins de 20 m pour confirmer.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(577, '2026-09-14', 'Overwatch Beta : confirmation des points d’objectif PO à 20 m', 'Les marqueurs libellés PO sont désormais des points d’objectif. Dès qu’un opérateur ATAK entre dans un rayon de 20 mètres, le point est confirmé atteint. Le poste affiche l’anneau, les opérateurs présents dans le rayon, et l’indicatif de celui qui a confirmé. Rien n’est inventé : seules les positions réellement transmises depuis Arma comptent.', [
+                'Détection des marqueurs PO, PO 1, PO-2 et équivalents sur la carte',
+                'Rayon de confirmation de 20 m autour de chaque point d’objectif',
+                'Confirmation dès qu’un téléphone ATAK entre dans le rayon, visible au poste et en jeu',
+            ], [], [], ['atak'], [
+                'Placez un marqueur libellé PO en jeu. Approchez-vous à moins de 20 m avec un téléphone ATAK. Le poste confirme le point atteint et l’anneau passe au gris.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(576, '2026-09-14', 'Overwatch Beta : visée, anneaux de portée et suivi d’un contact', 'Sur Overwatch Beta, vous vérifiez si le relief masque une visée, posez des anneaux de portée autour d’un contact, et suivez un opérateur sur la carte. Les tracés se retirent un par un. La grille se copie vers le canal. Les contacts se filtrent par ami, hostile ou inconnu.', [
+                'Visée et masque du relief entre deux points',
+                'Anneaux de portée autour du contact ouvert, suivi de sa position',
+                'Retrait d’un tracé, envoi de la grille au canal, filtre ami / hostile',
+            ], [
+                'Mesure en direct sous le curseur pendant un tracé',
+                'Carte seule pour agrandir le théâtre, raccourcis clavier du poste',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Cliquez un contact, activez un anneau de 250 m, puis Suivre. Pour la visée : observateur puis cible. Touche V.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(575, '2026-09-14', 'Overwatch Beta : groupes reliés, mesures et dessins sur le poste', 'Sur Overwatch Beta, les opérateurs d’un même groupe sont reliés sur la carte. Un clic sur un contact montre les distances vers ses coéquipiers, le cap et la vitesse s’ils sont transmis. Vous mesurez cap, distance et surface, et vous dessinez cercle, rectangle, croquis ou texte avec la couleur choisie.', [
+                'Liens et enveloppe entre membres d’un même groupe, avec dispersion',
+                'Fiche contact enrichie : cap, vitesse, altitude, distances vers le groupe',
+                'Mesures de cap, distance et surface, plus cercle, rectangle, croquis et texte',
+                'Indicatifs, couleurs de dessin et liens de groupe mémorisés sur l’ordinateur',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans CONTACTS, les groupes sont regroupés. Cliquez un opérateur : ses coéquipiers apparaissent avec la distance. Tracez un cercle ou un cap depuis le rail gauche.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(574, '2026-09-14', 'Overwatch Beta : appui, renseignement, ETA et journal sur le poste dédié', 'Sur Overwatch Beta, le commandement prépare désormais une 9-Line complète, ouvre une évacuation avec le triage, consulte les fiches de renseignement, calcule un temps de parcours à pied ou en véhicule, et relit le journal de mission. L’alerte d’entrée et de sortie de zone, la météo transmise et le replay des trajectoires restent sur cet écran, sans reprendre la carte habituelle.', [
+                '9-Line complète et CASEVAC avec triage depuis le poste Beta',
+                'Fiches de renseignement, journal de mission et catalogue satellites',
+                'ETA à pied ou en véhicule, profil de relief, alerte d’AOI et météo transmise',
+                'Symboles, couleurs et largeurs de colonnes mémorisés sur l’ordinateur',
+            ], [
+                'Replay des trajectoires sur la frise, dès que les traces sont activées',
+                'Découpe d’une zone en deux sous-zones si la ligne traverse vraiment l’AOI',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans MISSION, préparez une 9-Line. Dans INTEL, filtrez une photo. Sur la carte, tracez un ETA puis un profil.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(573, '2026-09-14', 'Overwatch Beta : carte, tchat et fonds Altis sur le poste dédié', 'Le poste Overwatch Beta affiche désormais la vraie carte de l’opération, le tchat de mission à droite et les réglages à gauche. Sur Altis, trois lectures de fond restent mémorisées : classique, photo aérienne renforcée, et noir et blanc. Les contacts et les symboles ne changent pas.', [
+                'Carte de l’opération visible, avec tchat à droite et réglages à gauche',
+                'Trois lectures de fond Altis mémorisées localement',
+            ], [], [
+                'La carte du poste Beta n’était plus visible',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta. Acceptez l’avertissement. Vérifiez la carte, le tchat, puis les trois fonds dans les réglages.',
+            ], 'Portail · Overwatch Beta'),
             $pr(572, '2026-09-14', 'Messagerie : on revient bien à la liste des canaux', 'Dans Messagerie, après avoir ouvert un canal, Retour aux canaux ramène à la liste. Le bandeau du bas n’est plus recouvert. Relancez Arma complètement après la mise à jour.', [], [], [
                 'Depuis un canal, on retrouve la liste sans rester bloqué sur le fil',
                 'Le bouton Retour du téléphone redevient utilisable sur cet écran',

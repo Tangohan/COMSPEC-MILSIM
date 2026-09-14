@@ -206,6 +206,7 @@ use App\Controllers\Admin\Organization\OrganizationMemberNumberController;
 use App\Controllers\Admin\Organization\OrganizationProgressionHubController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\PersonnelPhaseAdminController;
+use App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController;
 use App\Controllers\Admin\Organization\RoleplayGameSessionAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
 use App\Controllers\Admin\Organization\MissionPlanningController;
@@ -1380,6 +1381,8 @@ return function (Router $router) {
     $router->post('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay/regles-phases', [PersonnelPhaseAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/regles-phases', [PersonnelPhaseAdminController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/atak/detection-marqueurs', [AtakMarkerDetectionAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/atak/detection-marqueurs', [AtakMarkerDetectionAdminController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay/sessions', [RoleplayGameSessionAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/reglages', [RoleplayGameSessionAdminController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/nouvelle', [RoleplayGameSessionAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2125,8 +2128,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);
+    $router->post('/api/atak/markers/{id}/reached', [AtakApiController::class, 'markersPoReached']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
+    $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);
     $router->get('/api/units', [AtakApiController::class, 'unitsIndex']);
     $router->get('/api/atak/units', [AtakApiController::class, 'unitsIndex']);
@@ -2392,6 +2397,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
     $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
     $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);
+    $router->delete('/api/atak/zones/{id}', [AtakApiController::class, 'tacticalZonesDestroy']);
+    $router->post('/api/atak/zones/{id}/delete', [AtakApiController::class, 'tacticalZonesDestroy']);
     $router->post('/api/atak/zones/check-position', [AtakApiController::class, 'tacticalZonesCheckPosition']);
     $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
 

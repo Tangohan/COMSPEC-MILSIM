@@ -707,6 +707,40 @@ final class ConfigurationUpdateProbes
         }
     }
 
+    public function hasAtakMarkerDetectionReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $settings = $this->tenants->getSettings($tenantId);
+            $block = is_array($settings['atak_marker_detection'] ?? null)
+                ? $settings['atak_marker_detection']
+                : [];
+
+            return !empty($block['reviewed']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasAtakMarkerDetectionRule(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM atak_marker_detection_rules WHERE tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function hasPersonnelPhaseRulesReviewed(int $tenantId): bool
     {
         if ($tenantId < 1) {

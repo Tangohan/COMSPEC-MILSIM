@@ -82,3 +82,4 @@ php setup-database.php
 - `DUTY_POSITION_V1` — fondateur passé en service actif **avant** `markSatisfiedForNewTenant`
 - `PERSONNEL_COMMAND_CHAIN_V1` — fondateur chef des unités racines si la case est cochée ; postes vacants acceptés ; revue posée à la création (probe : revue **ou** tous les chefs renseignés)
 - `PERSONNEL_HR_DESK_V1` — réglages de départ du bureau effectifs, marqués revus
+- `ATAK_MARKER_DETECTION_V1` — règles de détection des marqueurs posés en jeu ; configure via `back-office/atak/detection-marqueurs` ; sans règle, les points d’objectif PO restent suivis ; revue posée dès l’ouverture de la page

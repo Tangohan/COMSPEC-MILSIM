@@ -1,0 +1,452 @@
+/* Overwatch Beta — outils poste (OSINT, ETA, relief, météo, geofence, journal, satellites). */
+(function () {
+  'use strict';
+  if (!window.ATAK_OVERWATCH_BETA || window.__OVERWATCH_GOTAK__) return;
+  if (!document.getElementById('ow-map')) return;
+  window.__OVERWATCH_GOTAK__ = true;
+
+  var FENCE_KEY = 'athena:overwatch-geofence';
+  var WX_KEY = 'athena:overwatch-weather-layer';
+  var WALK_MS = 1.4;
+  var VEHICLE_MS = 11;
+  var insideMap = {};
+  var replayGhosts = {};
+
+  function ow() { return window.OverwatchBeta || null; }
+  function toast(text) { var api = ow(); if (api) api.toast(text); }
+  function esc(value) { var api = ow(); return api ? api.escapeHtml(value) : String(value == null ? '' : value); }
+  function clean(value, fallback) { var api = ow(); return api ? api.clean(value, fallback) : (value || fallback || ''); }
+
+  function pointInRing(ll, ring) {
+    var x = ll.lng;
+    var y = ll.lat;
+    var inside = false;
+    var i;
+    var j = ring.length - 1;
+    for (i = 0; i < ring.length; i += 1) {
+      var xi = ring[i].lng;
+      var yi = ring[i].lat;
+      var xj = ring[j].lng;
+      var yj = ring[j].lat;
+      var intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi);
+      if (intersect) inside = !inside;
+      j = i;
+    }
+    return inside;
+  }
+
+  function aoiRings() {
+    var api = ow();
+    if (!api) return [];
+    var out = [];
+    var shapes = api.getShapes();
+    var layers = api.getShapeLayers();
+    shapes.forEach(function (shape) {
+      var type = String(shape.type || '').toUpperCase();
+      if (type !== 'AOI' && type !== 'POLYGON') return;
+      var layer = layers[String(shape.id || shape.shape_uid || '')];
+      if (!layer || typeof layer.getLatLngs !== 'function') return;
+      var latlngs = layer.getLatLngs();
+      var ring = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
+      if (ring && ring.length >= 3) out.push({ id: String(shape.id || shape.label || ''), label: shape.label || 'AOI', ring: ring });
+    });
+    return out;
+  }
+
+  function geofenceEnabled() {
+    var box = document.getElementById('ow-geofence');
+    return !box || box.checked;
+  }
+
+  function checkGeofence() {
+    if (!geofenceEnabled()) return;
+    var api = ow();
+    if (!api) return;
+    var aois = aoiRings();
+    if (!aois.length) return;
+    api.getUnits().forEach(function (unit) {
+      var loc = api.point(unit);
+      if (!loc) return;
+      var uid = api.unitId(unit);
+      if (!insideMap[uid]) insideMap[uid] = {};
+      aois.forEach(function (aoi) {
+        var now = pointInRing(loc, aoi.ring);
+        var was = !!insideMap[uid][aoi.id];
+        if (now && !was) toast(api.callsign(unit) + ' entre dans ' + (aoi.label || 'la zone'));
+        if (!now && was) toast(api.callsign(unit) + ' sort de ' + (aoi.label || 'la zone'));
+        insideMap[uid][aoi.id] = now;
+      });
+    });
+  }
+
+  function formatEta(meters, speed) {
+    var seconds = meters / speed;
+    if (seconds < 60) return Math.max(1, Math.round(seconds)) + ' s';
+    var minutes = seconds / 60;
+    if (minutes < 90) return Math.round(minutes) + ' min';
+    return (Math.round(minutes / 6) / 10) + ' h';
+  }
+
+  function showEta(points) {
+    var api = ow();
+    if (!api || points.length < 2) return;
+    var meters = 0;
+    var i;
+    for (i = 1; i < points.length; i += 1) meters += api.map.distance(points[i - 1], points[i]);
+    var html = '<p class="ow-help">Distance relevée sur la carte. Vitesses indicatives : marche 5 km/h, véhicule 40 km/h.</p>' +
+      '<div class="ow-event"><span>Distance</span><strong>' + Math.round(meters) + ' m</strong></div>' +
+      '<div class="ow-event"><span>À pied</span><strong>' + formatEta(meters, WALK_MS) + '</strong></div>' +
+      '<div class="ow-event"><span>Véhicule</span><strong>' + formatEta(meters, VEHICLE_MS) + '</strong></div>';
+    api.openDrawer('MOUVEMENT', 'ETA', html);
+    toast('ETA calculé : pied ' + formatEta(meters, WALK_MS) + ' · véhicule ' + formatEta(meters, VEHICLE_MS));
+  }
+
+  function sparkline(samples) {
+    var zs = samples.map(function (s) { return Number(s.z != null ? s.z : s.elevation); }).filter(function (z) { return !isNaN(z); });
+    if (!zs.length) return '<p class="ow-help">Relief non relevé sur ce tronçon.</p>';
+    var min = Math.min.apply(null, zs);
+    var max = Math.max.apply(null, zs);
+    var span = Math.max(1, max - min);
+    var w = 280;
+    var h = 72;
+    var pts = zs.map(function (z, i) {
+      var x = (i / Math.max(1, zs.length - 1)) * w;
+      var y = h - ((z - min) / span) * (h - 8) - 4;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    return '<svg class="ow-spark" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><polyline fill="none" stroke="#00d69a" stroke-width="2" points="' + pts + '"/></svg>' +
+      '<div class="ow-event"><span>Plus bas</span><strong>' + Math.round(min) + ' m</strong></div>' +
+      '<div class="ow-event"><span>Plus haut</span><strong>' + Math.round(max) + ' m</strong></div>';
+  }
+
+  function showProfile(points) {
+    var api = ow();
+    if (!api || points.length < 2) return;
+    var world = points.map(function (ll) { return api.latLngToWorld(ll); });
+    api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', '<p class="ow-help">Calcul du profil sur le théâtre…</p>');
+    api.api('/api/atak/terrain/profile', { method: 'POST', body: { mapId: api.mapId, points: world } }).then(function (payload) {
+      if (!payload || payload.ready === false) {
+        api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', '<p class="ow-help">' + esc(payload && (payload.gap_message || payload.message) || 'Relief non relevé.') + '</p>');
+        return;
+      }
+      var samples = payload.samples || [];
+      api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', sparkline(samples));
+    }).catch(function () {
+      api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', '<p class="ow-help">Relief non relevé.</p>');
+    });
+  }
+
+  function segIntersect(p, q, r, s) {
+    var d = (q.lng - p.lng) * (s.lat - r.lat) - (q.lat - p.lat) * (s.lng - r.lng);
+    if (Math.abs(d) < 1e-12) return null;
+    var t = ((r.lng - p.lng) * (s.lat - r.lat) - (r.lat - p.lat) * (s.lng - r.lng)) / d;
+    var u = ((r.lng - p.lng) * (q.lat - p.lat) - (r.lat - p.lat) * (q.lng - p.lng)) / d;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return L.latLng(p.lat + t * (q.lat - p.lat), p.lng + t * (q.lng - p.lng));
+  }
+
+  function splitAoi(parent, cut) {
+    var api = ow();
+    if (!api || !parent || cut.length < 2) return;
+    var layers = api.getShapeLayers();
+    var layer = layers[String(parent.id || parent.shape_uid || '')];
+    if (!layer || typeof layer.getLatLngs !== 'function') {
+      toast('Zone introuvable pour la coupe.');
+      return;
+    }
+    var latlngs = layer.getLatLngs();
+    var ring = (Array.isArray(latlngs[0]) ? latlngs[0] : latlngs).slice();
+    if (ring.length > 1 && ring[0].equals && ring[0].equals(ring[ring.length - 1])) ring.pop();
+    var a = cut[0];
+    var b = cut[cut.length - 1];
+    var hits = [];
+    var i;
+    for (i = 0; i < ring.length; i += 1) {
+      var hit = segIntersect(ring[i], ring[(i + 1) % ring.length], a, b);
+      if (hit) hits.push({ i: i, ll: hit });
+    }
+    if (hits.length < 2) {
+      toast('La ligne de coupe doit traverser la zone.');
+      return;
+    }
+    var h0 = hits[0];
+    var h1 = hits[hits.length - 1];
+    var left = [h0.ll];
+    for (i = h0.i + 1; i <= h1.i; i += 1) left.push(ring[i]);
+    left.push(h1.ll);
+    var right = [h1.ll];
+    for (i = h1.i + 1; i < ring.length; i += 1) right.push(ring[i]);
+    for (i = 0; i <= h0.i; i += 1) right.push(ring[i]);
+    right.push(h0.ll);
+    var label = parent.label || 'AOI';
+    api.saveShape('AOI', left, label + ' / A');
+    api.saveShape('AOI', right, label + ' / B');
+    toast('Zone découpée en deux sous-zones.');
+  }
+
+  function applyWeatherOverlay(weather) {
+    var box = document.getElementById('ow-wx');
+    var enabled = document.getElementById('ow-weather-layer');
+    if (!box) return;
+    if (enabled && !enabled.checked) { box.hidden = true; return; }
+    if (!weather || (!weather.condition && weather.temperature_c == null && weather.wind_kph == null)) {
+      box.hidden = true;
+      return;
+    }
+    var bits = [];
+    if (weather.condition) bits.push(weather.condition);
+    if (weather.temperature_c != null && weather.temperature_c !== '') bits.push(weather.temperature_c + ' °C');
+    if (weather.wind_kph != null && weather.wind_kph !== '') {
+      bits.push('vent ' + weather.wind_kph + ' km/h' + (weather.wind_dir ? ' ' + weather.wind_dir : ''));
+    }
+    box.textContent = bits.join(' · ');
+    box.hidden = bits.length === 0;
+  }
+
+  function openOsint() {
+    var api = ow();
+    if (!api) return;
+    Promise.all([
+      api.api('/api/sse/notes?limit=25').catch(function () { return { notes: [] }; }),
+      api.api('/api/intel/fused').catch(function () { return []; })
+    ]).then(function (rows) {
+      var notes = api.asList(rows[0], 'notes');
+      var fused = api.asList(rows[1], 'reports');
+      var list = notes.map(function (note) {
+        return '<div class="ow-card"><div class="ow-card-head"><span>' + esc(clean(note.title || note.reference_code, 'FICHE')) +
+          '</span><span class="ow-tag">' + esc(clean(note.note_kind, 'SSE')) + '</span></div><div class="ow-card-body">' +
+          esc(clean(note.body, '')) + '</div></div>';
+      }).join('') + fused.slice(0, 8).map(function (row) {
+        return '<div class="ow-event"><span>' + esc(clean(row.target_type || row.report_type, 'SIGNALEMENT')) +
+          '</span><span class="ow-tag">' + esc(clean(row.status, '')) + '</span></div>';
+      }).join('');
+      var html = '<label class="ow-search"><span>⌕</span><input id="ow-osint-q" placeholder="Filtrer une fiche, un thème…"></label>' +
+        (list || '<p class="ow-help">Aucune fiche de renseignement pour cette mission.</p>') +
+        '<p class="ow-kicker">NOUVELLE FICHE</p>' +
+        '<form class="ow-form-grid" id="ow-osint-form">' +
+        '<label>Objet<input name="title" maxlength="120" placeholder="Titre court"></label>' +
+        '<label>Thème<select name="theme"><option value="GENERAL">Général</option>' +
+        '<option value="PERSON">Personnes / cibles</option><option value="INFRA">Infrastructures</option>' +
+        '<option value="COMMS">Communications</option><option value="MOUV">Mouvements</option></select></label>' +
+        '<label>Observation<textarea name="body" required placeholder="Ce qui a été vu, entendu ou recoupé…"></textarea></label>' +
+        '<button class="ow-primary" type="submit">TRANSMETTRE AU BUREAU</button></form>';
+      api.openDrawer('RENSEIGNEMENT', 'OSINT / SSE', html);
+      var q = document.getElementById('ow-osint-q');
+      if (q) q.addEventListener('input', function () {
+        var needle = q.value.toLowerCase();
+        document.querySelectorAll('#ow-drawer-body .ow-card').forEach(function (card) {
+          card.hidden = needle !== '' && card.textContent.toLowerCase().indexOf(needle) === -1;
+        });
+      });
+      var form = document.getElementById('ow-osint-form');
+      if (form) form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        api.api('/api/sse/notes/web?mapId=' + encodeURIComponent(api.mapId), {
+          method: 'POST',
+          body: {
+            mapId: api.mapId,
+            title: data.get('title'),
+            body: data.get('body'),
+            themes: [data.get('theme')],
+            intel_source: 'OSINT',
+            note_kind: 'FRM',
+            author_label: api.authorName
+          }
+        }).then(function () {
+          toast('Fiche transmise au bureau.');
+          openOsint();
+        }).catch(function () {
+          toast('Fiche refusée. Vérifiez le thème et le texte.');
+        });
+      });
+    });
+  }
+
+  var SAT_CATALOG = [
+    { group: 'Communications', name: 'Relais tactique' },
+    { group: 'Navigation', name: 'Constellation GNSS' },
+    { group: 'Observation', name: 'Imageur optique' },
+    { group: 'Météo', name: 'Météo théâtre' }
+  ];
+
+  function openSats() {
+    var api = ow();
+    if (!api) return;
+    var html = '<label class="ow-search"><span>⌕</span><input id="ow-sat-q" placeholder="Rechercher un groupe…"></label>' +
+      SAT_CATALOG.map(function (row) {
+        return '<div class="ow-event ow-sat-row" data-sat="' + esc(row.name.toLowerCase() + ' ' + row.group.toLowerCase()) + '"><span>' +
+          esc(row.name) + '</span><span class="ow-tag">' + esc(row.group) + '</span></div>';
+      }).join('') +
+      '<p class="ow-help" id="ow-sat-pass">Recherche d’une source de passages…</p>';
+    api.openDrawer('ESPACE', 'SATELLITES', html);
+    var q = document.getElementById('ow-sat-q');
+    if (q) q.addEventListener('input', function () {
+      var needle = q.value.toLowerCase();
+      document.querySelectorAll('.ow-sat-row').forEach(function (row) {
+        row.hidden = needle !== '' && String(row.getAttribute('data-sat') || '').indexOf(needle) === -1;
+      });
+    });
+    var status = document.getElementById('ow-sat-pass');
+    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json', { mode: 'cors' }).then(function (response) {
+      if (!response.ok) throw new Error('no');
+      return response.json();
+    }).then(function (payload) {
+      if (!Array.isArray(payload) || !payload.length) throw new Error('empty');
+      status.textContent = 'Source orbitale joignable. Les passages restent indicatifs, aucun horaire n’est inventé.';
+    }).catch(function () {
+      status.textContent = 'Source orbitale indisponible. Aucun passage n’est affiché.';
+    });
+  }
+
+  function openLogs() {
+    var api = ow();
+    if (!api) return;
+    api.api('/api/atak/activity?mapId=' + encodeURIComponent(api.mapId) + '&limit=40').then(function (payload) {
+      var events = api.asList(payload, 'events');
+      var html = events.map(function (row) {
+        return '<div class="ow-event"><span>' + esc(clean(row.label || row.message || row.type, 'ÉVÉNEMENT')) +
+          '</span><small>' + esc(clean(row.at || row.created_at, '')) + '</small></div>';
+      }).join('') || '<p class="ow-help">Aucun événement de mission pour le moment.</p>';
+      api.openDrawer('MISSION', 'JOURNAL', html);
+    }).catch(function () {
+      api.openDrawer('MISSION', 'JOURNAL', '<p class="ow-help">Journal indisponible pour le moment.</p>');
+    });
+  }
+
+  function openCalcs() {
+    var api = ow();
+    if (!api) return;
+    var rows = api.getUnits();
+    var groups = {};
+    rows.forEach(function (unit) {
+      var key = api.squadKey ? api.squadKey(unit) : '';
+      var loc = api.point(unit);
+      if (!key || !loc) return;
+      if (!groups[key]) groups[key] = { label: api.clean(unit.fire_team_label || unit.group_name || unit.group, 'GROUPE'), pts: [] };
+      groups[key].pts.push(loc);
+    });
+    var html = '<p class="ow-help">Distances et dispersion calculées à partir des positions transmises. Rien n’est inventé si le cap ou la vitesse manque.</p>';
+    var keys = Object.keys(groups);
+    if (!keys.length) html += '<p class="ow-help">Aucun groupe localisé pour le moment.</p>';
+    keys.forEach(function (key) {
+      var pack = groups[key];
+      var span = 0;
+      pack.pts.forEach(function (a) {
+        pack.pts.forEach(function (b) { span = Math.max(span, api.map.distance(a, b)); });
+      });
+      html += '<div class="ow-event"><span>' + esc(pack.label) + ' · ' + pack.pts.length + '</span><strong>disp. ' +
+        (api.formatMeters ? api.formatMeters(span) : Math.round(span) + ' m') + '</strong></div>';
+    });
+    html += '<p class="ow-kicker">OUTILS</p>' +
+      '<div class="ow-event"><span>Cap / distance</span><button type="button" class="ow-tag" data-tool-goto="bearing">TRACER</button></div>' +
+      '<div class="ow-event"><span>Cercle</span><button type="button" class="ow-tag" data-tool-goto="circle">TRACER</button></div>' +
+      '<div class="ow-event"><span>Rectangle</span><button type="button" class="ow-tag" data-tool-goto="rect">TRACER</button></div>';
+    api.openDrawer('CALCUL', 'MESURES LIVE', html);
+    document.querySelectorAll('#ow-drawer-body [data-tool-goto]').forEach(function (button) {
+      button.addEventListener('click', function () { api.setTool(button.getAttribute('data-tool-goto')); });
+    });
+  }
+
+  function openPanel(name) {
+    if (name === 'osint') openOsint();
+    if (name === 'sats') openSats();
+    if (name === 'logs') openLogs();
+    if (name === 'calcs') openCalcs();
+  }
+
+  function clearReplayGhosts() {
+    var api = ow();
+    Object.keys(replayGhosts).forEach(function (id) {
+      if (api && replayGhosts[id]) api.map.removeLayer(replayGhosts[id]);
+      delete replayGhosts[id];
+    });
+  }
+
+  function applyReplay(pct) {
+    var api = ow();
+    if (!api) return;
+    var live = document.getElementById('ow-replay-live');
+    var samples = api.getTrackSamples();
+    var ids = Object.keys(samples);
+    if (pct >= 99) {
+      if (live) live.textContent = 'LIVE';
+      clearReplayGhosts();
+      api.renderMap();
+      return;
+    }
+    if (!ids.length) {
+      toast('Aucune trajectoire enregistrée. Activez Trajectoires dans les couches.');
+      return;
+    }
+    if (live) live.textContent = 'REPLAY';
+    var minT = Infinity;
+    var maxT = 0;
+    ids.forEach(function (id) {
+      samples[id].forEach(function (row) {
+        if (row.t < minT) minT = row.t;
+        if (row.t > maxT) maxT = row.t;
+      });
+    });
+    var target = minT + ((maxT - minT) * pct / 100);
+    var markers = api.getMarkers();
+    ids.forEach(function (id) {
+      var rows = samples[id];
+      var chosen = rows[0];
+      rows.forEach(function (row) { if (row.t <= target) chosen = row; });
+      if (markers[id]) markers[id].setLatLng(chosen.ll);
+    });
+  }
+
+  function bindPrefs() {
+    var fence = document.getElementById('ow-geofence');
+    var wx = document.getElementById('ow-weather-layer');
+    try {
+      if (fence && localStorage.getItem(FENCE_KEY) === '0') fence.checked = false;
+      if (wx && localStorage.getItem(WX_KEY) === '0') wx.checked = false;
+    } catch (e) {}
+    if (fence) fence.addEventListener('change', function () {
+      try { localStorage.setItem(FENCE_KEY, fence.checked ? '1' : '0'); } catch (e2) {}
+    });
+    if (wx) wx.addEventListener('change', function () {
+      try { localStorage.setItem(WX_KEY, wx.checked ? '1' : '0'); } catch (e2) {}
+      var box = document.getElementById('ow-wx');
+      if (box && !wx.checked) box.hidden = true;
+    });
+  }
+
+  function ready() {
+    if (!ow()) {
+      window.setTimeout(ready, 40);
+      return;
+    }
+    bindPrefs();
+    window.addEventListener('overwatch:units-updated', checkGeofence);
+    window.addEventListener('overwatch:weather', function (event) { applyWeatherOverlay(event.detail); });
+    window.addEventListener('overwatch:panel', function (event) { openPanel(event.detail && event.detail.panel); });
+    window.addEventListener('overwatch:draft-finish', function (event) {
+      var detail = event.detail || {};
+      if (detail.tool === 'eta') showEta(detail.points || []);
+      if (detail.tool === 'profile') showProfile(detail.points || []);
+      if (detail.tool === 'split') splitAoi(detail.parent, detail.points || []);
+    });
+    document.addEventListener('click', function (event) {
+      var panel = event.target.closest('[data-ow-panel]');
+      if (panel) openPanel(panel.getAttribute('data-ow-panel'));
+    });
+    var scrub = document.getElementById('ow-replay-scrub');
+    if (scrub) {
+      scrub.addEventListener('input', function () { applyReplay(Number(scrub.value) || 0); });
+    }
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest('[data-ow-replay]')) return;
+      window.setTimeout(function () {
+        var bar = document.getElementById('ow-timeline');
+        if (bar && !bar.hidden && scrub) applyReplay(Number(scrub.value) || 100);
+      }, 0);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
+}());

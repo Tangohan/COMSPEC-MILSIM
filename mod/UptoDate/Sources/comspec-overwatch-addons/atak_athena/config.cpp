@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.124;
-        versionStr = "1.0.124";
-        versionAr[] = {1, 0, 124};
+        version = 1.125;
+        versionStr = "1.0.125";
+        versionAr[] = {1, 0, 125};
     };
 };
 
@@ -93,6 +93,8 @@ class CfgFunctions
             class athena_onVibrate {};
             class athena_onHelmetMediaRequest {};
             class athena_onNotify {};
+            class athena_showFullscreenAlert {};
+            class athena_paintFullscreenAlert {};
             class athena_statusOnOpened {};
             class athena_updateStatus {};
             class athena_updateLinkStrip {};

@@ -244,6 +244,8 @@ class CfgFunctions {
             class orderTypeLabel {};
             class pollOrders {};
             class pollGpsNavigation {};
+            class pollPoMarkers {};
+            class pollMarkerDetectionRules {};
             class pollAiOrders {};
             class findAllyTrackUnit {};
             class applyAiMoveOrder {};

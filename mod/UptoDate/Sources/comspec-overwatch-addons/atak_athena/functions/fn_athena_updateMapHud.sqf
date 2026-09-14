@@ -199,6 +199,9 @@ if (isNull _heading || {isNull _cursorBox} || {isNull _unitBox}) exitWith {
     // Repli : triplet IceMan Indicatif / Nom / Rôle toujours visible.
     { _x ctrlShow true; } forEach _nativeIdentity;
     [_disp] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
 };
 
 // Ne plus masquer le triplet IceMan : c’est la superposition Indicatif / Nom / Rôle.
@@ -405,4 +408,8 @@ _zoomOut ctrlCommit 0;
 if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIUpdate") then {
     // Chrome 88500+ : mapUIDestroy depuis mapUIUpdate (pas de rail ni menu clic droit).
     [_disp, _mapCtrl, [_visX, _visY, _visW, _visH]] call comspec_overwatch_atak_athena_fnc_mapUIUpdate;
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
 };
