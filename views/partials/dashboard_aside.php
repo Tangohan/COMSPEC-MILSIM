@@ -292,6 +292,7 @@ if ($canDocs) {
 
 $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Carte', 'href' => url('atak'), 'hint' => 'Situation tactique'],
+    ['label' => 'Overwatch Beta', 'href' => url('-ATAK-OVERWATCH-Beta'), 'hint' => 'Nouveau workspace cartographique'],
     (function_exists('can') && (can('admin.access') || can('admin.organization') || can('admin.system')))
         ? ['label' => 'Data Inspector', 'href' => url('athena/data-inspector'), 'hint' => 'Ingestion et synchronisation']
         : null,
@@ -302,6 +303,21 @@ $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperato
     ['label' => 'Configuration', 'href' => url('atak/setup'), 'hint' => 'Paramètres'],
     ['label' => 'Tutoriel', 'href' => url('atak/tuto'), 'hint' => 'Prise en main'],
 ]), 'atak');
+
+// Accès direct volontairement visible dans l’aside : la beta ne doit pas être cachée
+// derrière la fiche de l’ancien ATAK pendant sa phase d’évaluation.
+$espaceTiles[] = $tile(
+    'atak-overwatch-beta',
+    'Overwatch Beta',
+    'Nouveau poste de commandement',
+    'accent',
+    'BETA',
+    $links([
+        ['label' => 'Ouvrir Overwatch', 'href' => url('-ATAK-OVERWATCH-Beta'), 'hint' => 'Carte, BFT, mission et renseignement'],
+        ['label' => 'ATAK historique', 'href' => url('atak'), 'hint' => 'Revenir à l’interface actuelle'],
+    ]),
+    'atak'
+);
 
 if ($canRecruit) {
     $espaceTiles[] = $tile(
