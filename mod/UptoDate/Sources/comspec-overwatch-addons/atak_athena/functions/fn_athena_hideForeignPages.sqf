@@ -26,6 +26,7 @@ if (_keep isEqualTo "") then {
             case "ataknote": { "note" };
             case "ataktask": { "task" };
             case "atakcomms": { "comms" };
+            case "group": { "comms" };
             case "atakbriefing": { "briefing" };
             case "atakwiki": { "wiki" };
             case "ataksettings": { "settings" };
@@ -79,6 +80,14 @@ if (isNull _apps) exitWith {};
         if (_ours) then {
             private _show = (_keepNeedle isNotEqualTo "") && {(_cls find _keepNeedle) >= 0};
             _x ctrlShow _show;
+        } else {
+            if (
+                (_keep isEqualTo "comms")
+                && {(_cls isEqualTo "atak_message") || {(_cls find "iceman") >= 0 && {(_cls find "group") >= 0}}}
+            ) then {
+                _x ctrlShow false;
+                _x ctrlEnable false;
+            };
         };
     };
 } forEach (allControls _apps);

@@ -12,4 +12,4 @@ overview = "Addon autonome SSE pour Arma 3 : Zeus, Eden, ACE Interaction, géné
 author = "COMSPEC";
 overviewPicture = "logo.paa";
 overviewText = "Surveillance / Sensitive Site Exploitation";
-overviewFootnote = "Compatible CBA_A3 + ACE3 — V0.7.15";
+overviewFootnote = "Compatible CBA_A3 + ACE3 — V0.7.21";

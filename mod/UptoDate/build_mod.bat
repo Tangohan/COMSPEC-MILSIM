@@ -9,6 +9,14 @@ set "SOURCES_DIR=%PROJECT_DIR%Sources\comspec-overwatch-addons"
 set "BUILD_LOG=%PROJECT_DIR%build_log.txt"
 set "TMP_OUT=%PROJECT_DIR%build_tmp_out.txt"
 
+:: Native AOT : ILCompiler 8 cherche vswhere via ProgramFiles(x86).
+:: Cursor / certains shells n'exportent pas cette variable ; VS 2026 (18) n'est
+:: pas toujours detecte. On retablit l'environnement linker avant publish.
+if "%ProgramFiles(x86)%"=="" set "ProgramFiles(x86)=C:\Program Files (x86)"
+if defined VCINSTALLDIR goto :vc_ok
+if exist "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" call "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
+:vc_ok
+
 :: --- CONFIGURATION .NET ---
 set "CS_PROJ_PATH=%PROJECT_DIR%COMSPECExtension\COMSPECExtension.csproj"
 set "DOTNET_PUBLISH_DIR=%PROJECT_DIR%COMSPECExtension\bin\publish"
@@ -28,7 +36,7 @@ echo.
 :: 1. Compilation de l'extension C# (NativeAOT)
 echo [DOTNET] Compilation de COMSPECExtension (Release x64)...
 echo [DOTNET] Compilation de COMSPECExtension (Release x64)... >> "%BUILD_LOG%"
-dotnet publish "%CS_PROJ_PATH%" -c Release -r win-x64 /p:NativeLib=Shared /p:SelfContained=true --nologo > "%TMP_OUT%" 2>&1
+dotnet publish "%CS_PROJ_PATH%" -c Release -r win-x64 /p:NativeLib=Shared /p:SelfContained=true /p:IlcUseEnvironmentalTools=true --nologo > "%TMP_OUT%" 2>&1
 set "DOTNET_ERR=%ERRORLEVEL%"
 type "%TMP_OUT%" >> "%BUILD_LOG%"
 type "%TMP_OUT%"

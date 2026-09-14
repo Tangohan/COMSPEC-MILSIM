@@ -268,6 +268,29 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(572, '2026-09-14', 'Messagerie : on revient bien à la liste des canaux', 'Dans Messagerie, après avoir ouvert un canal, Retour aux canaux ramène à la liste. Le bandeau du bas n’est plus recouvert. Relancez Arma complètement après la mise à jour.', [], [], [
+                'Depuis un canal, on retrouve la liste sans rester bloqué sur le fil',
+                'Le bouton Retour du téléphone redevient utilisable sur cet écran',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rouvrez Messagerie, ouvrez un canal, puis Retour aux canaux.',
+            ], 'Athena 1.0.124'),
+            $pr(571, '2026-09-14', 'Réglages du poste : plan, carte du jeu ou photo aérienne', 'Dans Réglages du poste, vous choisissez le fond de la carte : le plan habituel, la carte du jeu, ou la photo aérienne. Les positions et les tracés restent en place.', [
+                'Trois fonds proposés dans Réglages : Plan, Carte du jeu, Photo aérienne',
+            ], [], [], ['atak'], [
+                'Ouvrez la carte du poste, puis Réglages. Dans Fond de carte, choisissez le calque à afficher.',
+            ], 'Portail · Carte ATAK'),
+            $pr(570, '2026-09-14', 'Pack SSE 0.7.21 : apparence des fiches depuis l’éditeur et Zeus', 'Le chef de mission choisit l’apparence des fiches (papier, en-tête) depuis l’éditeur ou Zeus. Relancez Arma complètement après la mise à jour.', [
+                'Apparence des fiches réglable depuis l’éditeur ou Zeus',
+            ], [], [], ['atak', 'command'], [
+                'Quittez Arma complètement. Rechargez le pack SSE 0.7.21.',
+            ], 'SSE 0.7.21'),
+            $pr(569, '2026-09-14', 'Pack Overwatch 1.5.77 : tout est à jour ensemble', 'Le pack Overwatch, le téléphone Athena et la liaison sont livrés ensemble. En jeu : le numéro de carte de l’opération, la reprise des envois après un plantage, le Super ping. Sur le poste, la photo aérienne d’Altis reste disponible.', [
+                'Pack Overwatch 1.5.77, téléphone Athena 1.0.123 et liaison 2.0.40',
+            ], [
+                'Numéro de carte, envois repris après un plantage, Super ping et correctifs Quick Picture dans ce pack',
+            ], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack. Dans le journal : connect 1.5.77 et Extension 2.0.40.',
+            ], 'Overwatch 1.5.77 · Athena 1.0.123 · Liaison 2.0.40'),
             $pr(568, '2026-09-14', 'Altis : la photo aérienne se pose sur la carte du poste', 'Sur Altis, le poste affiche la photo aérienne du terrain à la place du plan. Vous revenez au plan depuis les réglages de la carte. Les positions et les calques restent à la même place.', [
                 'Photo aérienne d’Altis comme fond de carte, commutable avec le plan',
             ], [], [], ['atak'], [

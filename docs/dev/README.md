@@ -25,6 +25,8 @@ Numérotation à cinq chiffres, comme Bohemia (`SPOTREP #00002`, `UPDATE #00198`
 
 ## Changelogs Steam (copier-coller Workshop)
 
+- [Overwatch 1.5.77 — 14/09/2026](STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md)
+- [SSE 0.7.21 — 14/09/2026](STEAM-CHANGELOG-2026-09-14-sse-0.7.21.md)
 - [Overwatch 1.5.76 — 13/09/2026](STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md)
 - [Overwatch 1.5.75 — 13/09/2026](STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md)
 - [Overwatch 1.5.74 — 13/09/2026](STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md)

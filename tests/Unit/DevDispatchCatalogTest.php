@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(330, $byKind['update']);
-        self::assertCount(336, $all);
+        self::assertSame(334, $byKind['update']);
+        self::assertCount(340, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -111,6 +111,28 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($tacticalMapE);
         self::assertSame('00563', $tacticalMapE['number_pad']);
         self::assertStringContainsString('carte tactique', strtolower((string) $tacticalMapE['title']));
+        $owPack = DevDispatchCatalog::find('update', '569');
+        self::assertNotNull($owPack);
+        self::assertSame('00569', $owPack['number_pad']);
+        self::assertStringContainsString('1.5.77', (string) $owPack['title']);
+        $ssePack = DevDispatchCatalog::find('update', '570');
+        self::assertNotNull($ssePack);
+        self::assertSame('00570', $ssePack['number_pad']);
+        self::assertStringContainsString('0.7.21', (string) $ssePack['title']);
+        $aerial = DevDispatchCatalog::find('update', '568');
+        self::assertNotNull($aerial);
+        self::assertSame('00568', $aerial['number_pad']);
+        self::assertStringContainsString('photo aérienne', strtolower((string) $aerial['title']));
+        $fondCalques = DevDispatchCatalog::find('update', '571');
+        self::assertNotNull($fondCalques);
+        self::assertSame('00571', $fondCalques['number_pad']);
+        self::assertStringContainsString('réglages', strtolower((string) $fondCalques['title']));
+        self::assertStringContainsString('photo aérienne', strtolower((string) $fondCalques['title']));
+        $commsBack = DevDispatchCatalog::find('update', '572');
+        self::assertNotNull($commsBack);
+        self::assertSame('00572', $commsBack['number_pad']);
+        self::assertStringContainsString('messagerie', strtolower((string) $commsBack['title']));
+        self::assertStringContainsString('canaux', strtolower((string) $commsBack['title']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);

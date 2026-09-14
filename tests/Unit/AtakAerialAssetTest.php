@@ -27,14 +27,22 @@ final class AtakAerialAssetTest extends TestCase
 
         self::assertStringContainsString('function atak_aerial_layer_config', $helpers);
         self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $helpers);
-        self::assertStringContainsString('function atak_with_aerial_layer', $helpers);
+        self::assertStringContainsString('function atak_map_fond_layers', $helpers);
+        self::assertStringContainsString('maps/3/3/{z}/{x}/{y}.webp', $helpers);
+        self::assertStringContainsString('Carte du jeu', $helpers);
 
         self::assertStringContainsString('window.ATAKAerial', $js);
         self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $js);
+        self::assertStringContainsString('id="atak-settings-fond"', $atakView);
+        self::assertStringContainsString('name="atak-fond-calque"', $atakView);
+        self::assertStringContainsString('Carte du jeu', $atakView);
+        self::assertStringContainsString('Photo aérienne', $atakView);
         self::assertStringContainsString("STORAGE_KEY = 'athena:atak-fond'", $js);
+        self::assertStringContainsString('fondLayers', $js);
+        self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $js);
+        self::assertStringContainsString('maps/3/3/{z}/{x}/{y}.webp', $js);
         self::assertStringContainsString("tileSize: 381", $js);
         self::assertStringNotContainsString('crossOrigin', $js);
-        self::assertStringContainsString('Photo aérienne', $atakView);
 
         self::assertStringContainsString('ATAKAerial.attach', $map);
         self::assertStringContainsString('ATAKAerial.detach', $map);
@@ -54,6 +62,7 @@ final class AtakAerialAssetTest extends TestCase
     public function testAerialBulletinDescribesOperatorFacingBehaviour(): void
     {
         $catalog = (string) file_get_contents($this->root() . '/app/Support/DevDispatchCatalog.php');
+        self::assertStringContainsString("\$pr(571, '2026-09-14'", $catalog);
         self::assertStringContainsString("\$pr(568, '2026-09-14'", $catalog);
         self::assertStringContainsString('photo aérienne', strtolower($catalog));
         self::assertStringNotContainsString('webp', strtolower(explode('$pr(567,', $catalog)[0]));

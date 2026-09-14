@@ -6,11 +6,7 @@ if (!hasInterface) exitWith {};
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Comms_group", controlNull];
 if (isNull _group) exitWith {};
 
-private _page = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
-if (
-    (_page isNotEqualTo "")
-    && {!(_page in ["atakcomms", "comspec_atak_comms", "atak_comms", "comms", "messagerie"])}
-) exitWith {};
+if (!([] call comspec_overwatch_atak_athena_fnc_athena_commsIsOpen)) exitWith {};
 
 private _view = missionNamespace getVariable ["COMSPEC_Comms_View", "list"];
 if !(_view in ["list", "thread"]) then { _view = "list"; };
@@ -195,6 +191,15 @@ private _activeLabel = [_active] call _labelFor;
 private _isCustom = !(_activeKind isEqualTo "system") && {!(_active in ["groupe", "commandement", "general", "jtac", "air"])};
 [_btnDelete, (!_isList) && {_isCustom}] call _showCtrl;
 
+private _title = _group controlsGroupCtrl 9920;
+if (!isNull _title) then {
+    if (_isList) then {
+        _title ctrlSetTooltip "Revenir au tiroir des applications.";
+    } else {
+        _title ctrlSetTooltip "Revenir à la liste des canaux.";
+    };
+};
+
 if (!isNull _lblList) then {
     _lblList ctrlSetStructuredText parseText "<t align='center' size='1.02' color='#F0F6FA'>Canaux radio</t>";
 };
@@ -210,30 +215,54 @@ private _unread = missionNamespace getVariable ["COMSPEC_Comms_Unread", createHa
 if (!(_unread isEqualType createHashMap)) then { _unread = createHashMap; };
 
 if (!isNull _lbChannels && {_isList}) then {
-    uiNamespace setVariable ["COMSPEC_ATAK_Comms_rebuilding", true];
-    lbClear _lbChannels;
+    private _listSig = "";
     {
         _x params ["_key", "_label", ["_kind", "custom"]];
         _key = toLower (trim _key);
-        if (_label isEqualTo "") then { _label = [_key] call _labelFor; };
         private _n = _unread getOrDefault [_key, 0];
         if (!(_n isEqualType 0)) then { _n = 0; };
-        private _idx = _lbChannels lbAdd _label;
-        _lbChannels lbSetData [_idx, _key];
-        _lbChannels lbSetColor [_idx, [_key] call _channelColorRgb];
-        if (_n > 0) then {
-            _lbChannels lbSetTextRight [_idx, format ["[%1]", _n]];
-            _lbChannels lbSetColorRight [_idx, [1, 0.86, 0.28, 1]];
-            _lbChannels lbSetTooltip [_idx, format ["%1 — %2 message%3 non lu%3", _label, _n, if (_n > 1) then { "s" } else { "" }]];
-        } else {
-            _lbChannels lbSetTextRight [_idx, ""];
-            _lbChannels lbSetTooltip [_idx, format ["Ouvrir le canal %1", _label]];
-        };
+        _listSig = _listSig + _key + ":" + str _n + ";";
     } forEach _channels;
-    uiNamespace setVariable ["COMSPEC_ATAK_Comms_rebuilding", false];
+
+    if (_listSig isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_Comms_listSig", ""])) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_Comms_listSig", _listSig];
+        uiNamespace setVariable ["COMSPEC_ATAK_Comms_rebuilding", true];
+        uiNamespace setVariable ["COMSPEC_ATAK_Comms_ignoreSelUntil", diag_tickTime + 0.4];
+        lbClear _lbChannels;
+        {
+            _x params ["_key", "_label", ["_kind", "custom"]];
+            _key = toLower (trim _key);
+            if (_label isEqualTo "") then { _label = [_key] call _labelFor; };
+            private _n = _unread getOrDefault [_key, 0];
+            if (!(_n isEqualType 0)) then { _n = 0; };
+            private _idx = _lbChannels lbAdd _label;
+            _lbChannels lbSetData [_idx, _key];
+            _lbChannels lbSetColor [_idx, [_key] call _channelColorRgb];
+            if (_n > 0) then {
+                _lbChannels lbSetTextRight [_idx, format ["[%1]", _n]];
+                _lbChannels lbSetColorRight [_idx, [1, 0.86, 0.28, 1]];
+                _lbChannels lbSetTooltip [_idx, format ["%1 — %2 message%3 non lu%3", _label, _n, if (_n > 1) then { "s" } else { "" }]];
+            } else {
+                _lbChannels lbSetTextRight [_idx, ""];
+                _lbChannels lbSetTooltip [_idx, format ["Ouvrir le canal %1", _label]];
+            };
+        } forEach _channels;
+        _lbChannels lbSetCurSel -1;
+        private _rebuildToken = diag_tickTime;
+        uiNamespace setVariable ["COMSPEC_ATAK_Comms_rebuildToken", _rebuildToken];
+        [_rebuildToken] spawn {
+            params ["_rebuildToken"];
+            uiSleep 0.25;
+            if ((uiNamespace getVariable ["COMSPEC_ATAK_Comms_rebuildToken", -1]) isEqualTo _rebuildToken) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Comms_rebuilding", false];
+            };
+        };
+    };
 };
 
-if (_isList) exitWith {};
+if (_isList) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
+};
 
 private _all = missionNamespace getVariable ["COMSPEC_Comms_Messages", []];
 if (!(_all isEqualType [])) then { _all = []; };
@@ -310,7 +339,7 @@ try {
 private _h = ctrlTextHeight _msgBody;
 private _phoneW = safezoneW * 0.8;
 private _phoneH = _phoneW * 4 / 3;
-private _minH = ((4.52 * 60) / 2048) * _phoneH;
+private _minH = ((4.06 * 60) / 2048) * _phoneH;
 if (_h < _minH) then { _h = _minH; };
 _h = _h + ((18 / 2048) * _phoneH);
 private _pos = ctrlPosition _msgBody;
@@ -319,3 +348,5 @@ _msgBody ctrlCommit 0;
 if (!isNull _msgView) then {
     _msgView ctrlSetScrollValues [1, 0];
 };
+
+[] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;

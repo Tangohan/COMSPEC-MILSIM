@@ -7,7 +7,15 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Athena 1.0.124 — 2026-09-14
+
+### Correction — Messagerie : retour à la liste des canaux
+
+Après avoir ouvert un canal, **Retour aux canaux** ramène à la liste. Le bandeau du bas n’est plus recouvert par Live Feed. Relancez Arma complètement.
 
 ---
 
@@ -24,6 +32,26 @@ Opérations → Carte tactique s’affiche de nouveau. Un incident empêchait l�
 ### Nouveau — Photos Quick Picture vers Discord
 
 Sur Intégrations, vous pouvez envoyer les photos Quick Picture (téléphone en jeu) vers un salon Discord de la communauté. Chaque événement a trois choix clairs : ne pas publier, salon commun, ou un autre salon.
+
+---
+
+## Overwatch 1.5.77 / Athena 1.0.123 — 2026-09-14
+
+### Amélioration — Pack Overwatch, Athena et liaison à jour
+
+Tout le pack Overwatch, le téléphone Athena et la liaison sont livrés ensemble. En jeu : le numéro de carte de l’opération, la reprise des envois après un plantage, le Super ping, et les correctifs Quick Picture déjà décrits.
+
+---
+
+## Portail · Carte ATAK — 2026-09-14
+
+### Nouveau — Photo aérienne d’Altis
+
+Sur Altis, le poste peut afficher la photo aérienne à la place du plan. Le calque s’aligne sur la carte de l’opération. Le téléphone en jeu continue d’utiliser le plan Overwatch.
+
+### Nouveau — Calques de fond dans les réglages
+
+Dans Réglages du poste, vous choisissez le fond de la carte : Plan, Carte du jeu, ou Photo aérienne. Les positions et les tracés restent en place.
 
 ---
 
