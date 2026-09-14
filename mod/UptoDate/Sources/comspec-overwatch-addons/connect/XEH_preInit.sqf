@@ -60,6 +60,22 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_map_id", "SLIDER",
+    ["Numéro de carte (opération)", "Identifiant de la carte Athena pour cette mission. Changez-le si plusieurs opérations tournent en même temps, pour ne pas mélanger les positions."],
+    "COMSPEC Overwatch", [1, 99, 1, 0],
+    1,
+    {
+        private _id = round (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+        if (_id < 1) then { _id = 1; };
+        missionNamespace setVariable ["COMSPEC_MapId", _id];
+        missionNamespace setVariable ["comspec_overwatch_map_id", _id];
+        if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
+            ["COMSPECExtension" callExtension ["SetMapId", [str _id]]] call comspec_overwatch_connect_fnc_extResult;
+        };
+    }
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_update_interval", "SLIDER",
     ["Frequency (sec)", "Delay between general synchronization cycles (longer = less load)"],
     "COMSPEC Overwatch", [1, 600, 10, 0]
@@ -791,6 +807,9 @@ if (hasInterface) then {
     missionNamespace setVariable ["COMSPEC_RadioReplay", [], false];
     missionNamespace setVariable ["COMSPEC_Comms_Channel", "general", false];
     missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", false];
+    missionNamespace setVariable ["COMSPEC_Comms_View", "list", false];
+    missionNamespace setVariable ["COMSPEC_Comms_Unread", createHashMap, false];
+    missionNamespace setVariable ["COMSPEC_Comms_Messages", [], false];
     missionNamespace setVariable ["COMSPEC_OrdersSeen", [], false];
 };
 

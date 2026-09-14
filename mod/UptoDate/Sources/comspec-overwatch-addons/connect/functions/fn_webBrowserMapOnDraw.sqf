@@ -64,3 +64,6 @@ private _units = missionNamespace getVariable ["COMSPEC_WebBrowser_MapUnits", []
         };
     };
 } forEach _units;
+
+[_ctrl] call comspec_overwatch_connect_fnc_reachOverlayDraw;
+[_ctrl] call comspec_overwatch_connect_fnc_superPingDraw;

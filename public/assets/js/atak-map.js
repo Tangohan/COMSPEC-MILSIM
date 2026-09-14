@@ -693,7 +693,9 @@ window.ATAKMap = (function () {
       center: Array.isArray(raw.center) ? raw.center : [15000, 15000],
       offsetX: raw.offsetX != null ? parseFloat(raw.offsetX) : 0,
       offsetY: raw.offsetY != null ? parseFloat(raw.offsetY) : 0,
-      worldSize: raw.worldSize != null ? parseFloat(raw.worldSize) : 30720
+      worldSize: raw.worldSize != null ? parseFloat(raw.worldSize) : 30720,
+      slug: raw.slug || '',
+      aerial: raw.aerial || null
     };
   }
 
@@ -795,6 +797,9 @@ window.ATAKMap = (function () {
       window._atakMapResizeHandler = null;
     }
     if (!map) return;
+    if (window.ATAKAerial && typeof window.ATAKAerial.detach === 'function') {
+      try { window.ATAKAerial.detach(map); } catch (e) {}
+    }
     map.remove();
     map = null;
     config = null;
@@ -922,6 +927,9 @@ window.ATAKMap = (function () {
     });
     tileLayer.addTo(map);
     baseTileLayer = tileLayer;
+    if (window.ATAKAerial && typeof window.ATAKAerial.attach === 'function') {
+      try { window.ATAKAerial.attach(map, window.ATAK_MAP_CONFIG || config); } catch (e) {}
+    }
 
     intelLayer = L.layerGroup().addTo(map);
     intelMarkersById = {};
@@ -1618,6 +1626,7 @@ window.ATAKMap = (function () {
         }
         return { kind: 'drone', label: dLabel, color: dColor, rest: rest };
       }
+      if (raw.indexOf('super') >= 0) return { kind: 'super', label: 'Super ping', color: '#22d3ee', rest: rest };
       if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
       if (raw.indexOf('jackpot') >= 0 || raw.indexOf('hvt') >= 0) return { kind: 'jackpot', label: 'JACKPOT', color: '#f59e0b', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('médical') >= 0) return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
@@ -1663,7 +1672,9 @@ window.ATAKMap = (function () {
       // Ne jamais afficher l’indicatif seul sous le point (confusion avec un effectif).
       var pinLabel = kind.label || 'Ping';
       var S = window.ATAKMarkerSizes;
-      var pingHtml = '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);display:block;"></span>';
+      var pingHtml = kind.kind === 'super'
+        ? '<span class="atak-ping-dot atak-ping-dot--super" style="width:16px;height:16px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 8px 2px rgba(34,211,238,.8);display:block;"></span>'
+        : '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);display:block;"></span>';
       var icon = S && S.divIcon
         ? S.divIcon(L, pingHtml, 'small', { className: 'atak-ping-map-icon atak-compact-marker' })
         : L.divIcon({
@@ -1710,6 +1721,9 @@ window.ATAKMap = (function () {
         delete pingMarkersById[k];
       }
     });
+    if (window.ATAKSuperPing && typeof window.ATAKSuperPing.ingest === 'function') {
+      window.ATAKSuperPing.ingest(list);
+    }
   }
 
   function formatChargeRemain(sec) {
@@ -2020,6 +2034,9 @@ window.ATAKMap = (function () {
     }
     marker.addTo(pingLayer);
     pingMarkersById[id] = marker;
+    if (window.ATAKSuperPing && typeof window.ATAKSuperPing.fromPing === 'function') {
+      window.ATAKSuperPing.fromPing({ id: id, pos_x: posX, pos_y: posY, message: message || '' });
+    }
     // Les pings API restent via setPingsOnMap ; l’éphémère live disparaît après sync.
     if (String(id).indexOf('live_') === 0) {
       setTimeout(function () {
@@ -2318,9 +2335,10 @@ window.ATAKMap = (function () {
       var extra = extraOf(u);
       var trackedAi = isTrackedAi(u, extra);
       var live = unitLive(u);
-      // Un joueur hors liaison ne doit plus rester sur la carte à sa dernière
-      // position connue. Seules les IA suivies conservent ce comportement COP.
-      if (live === 'offline' && !trackedAi) return;
+      // Joueur hors liaison : on garde la dernière position seulement s’il a été vu
+      // dans les quinze dernières minutes. Au-delà, il quitte la carte (les IA suivies restent).
+      var recentLastKnown = !!(window.ATAKUnits && window.ATAKUnits.isRecentlySeen && window.ATAKUnits.isRecentlySeen(u));
+      if (live === 'offline' && !trackedAi && !recentLastKnown) return;
       var id = (u.id != null && String(u.id) !== '')
         ? ('unit_' + String(u.id))
         : (String(u.call_sign || u.callsign || '').trim()
@@ -2375,7 +2393,7 @@ window.ATAKMap = (function () {
       if (onMonNet) {
         healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--radio-listen';
       }
-      var lastKnown = trackedAi && (live === 'offline' || live === 'delayed');
+      var lastKnown = live === 'offline' && (trackedAi || recentLastKnown);
       if (lastKnown) {
         healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--last-known';
       }

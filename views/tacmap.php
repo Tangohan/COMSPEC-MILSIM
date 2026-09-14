@@ -57,6 +57,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js?v=202607282040"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-aerial.js?v=202609140010"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
@@ -95,6 +96,13 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <?php foreach ($overwatchMapsList as $m): ?>
             <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'altis') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
             <?php endforeach; ?>
+          </select>
+        </label>
+        <label class="atak-aerial-fond-wrap" hidden>
+          Vue
+          <select id="tacmap-aerial-fond" data-atak-aerial-fond title="Plan ou photo aérienne">
+            <option value="aerial" selected>Photo aérienne</option>
+            <option value="plan">Plan</option>
           </select>
         </label>
         <span class="tacmap-kpi" id="tacmap-zulu" title="Heure Zulu">—:—:— Z</span>

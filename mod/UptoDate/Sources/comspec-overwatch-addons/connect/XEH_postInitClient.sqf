@@ -3,6 +3,9 @@
 
 if (!hasInterface) exitWith {};
 
+[] call comspec_overwatch_connect_fnc_superPingInstall;
+[{ [] call comspec_overwatch_connect_fnc_superPingInstall; }, [], 3] call CBA_fnc_waitAndExecute;
+
 // Différer ATAK / tracking : laisse MRH JIP + REAPP + ACE (~3k delayed) respirer
 [{
     if (isNull player || {isNull findDisplay 46}) exitWith {

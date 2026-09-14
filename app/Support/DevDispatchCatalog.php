@@ -268,6 +268,126 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(568, '2026-09-14', 'Altis : la photo aérienne se pose sur la carte du poste', 'Sur Altis, le poste affiche la photo aérienne du terrain à la place du plan. Vous revenez au plan depuis les réglages de la carte. Les positions et les calques restent à la même place.', [
+                'Photo aérienne d’Altis comme fond de carte, commutable avec le plan',
+            ], [], [], ['atak'], [
+                'Ouvrez la carte du poste sur Altis : la vue photo est proposée d’emblée. Le plan reste disponible dans Réglages → Carte.',
+            ], 'Vague 2026.08c'),
+            $pr(567, '2026-09-13', 'Plusieurs opérations en parallèle, et la file d’attente survit à un redémarrage', 'Chaque mission peut indiquer son numéro de carte Athena, pour ne plus mélanger les positions de deux opérations. Les messages en attente d’envoi sont conservés si Arma se ferme ou plante, puis repartent à la reprise.', [
+                'Réglage du numéro de carte dans Overwatch, transmis à la liaison',
+                'Les envois non transmis sont repris après un redémarrage d’Arma',
+            ], [], [], ['atak'], [
+                'Rechargez le pack Overwatch 1.5.76. Quittez Arma complètement. Dans les réglages Overwatch, choisissez le numéro de carte de l’opération. Après un plantage, les messages en attente doivent repartir tout seuls.',
+            ], 'Overwatch 1.5.76 · Athena 1.0.122 · Liaison 2.0.39'),
+            $pr(566, '2026-09-13', 'Identification ami / ennemi et écoutes radio, prêtes pour le poste', 'Le défi d’identification reste dans votre communauté. Les relèvements radio du terrain s’affichent dans Identification, avec gisement et position, en plus de la zone déjà dessinée sur la carte.', [
+                'Liste des relèvements radio dans Identification, clic pour centrer la carte',
+                'Le défi d’identification ne se mélange plus avec une autre communauté',
+            ], [], [
+                'Sans communauté identifiée, l’identification pouvait viser la mauvaise opération',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez Sitac → Identification : publiez un défi, puis consultez les écoutes radio sous le même onglet.',
+            ], 'Portail · Carte ATAK'),
+            $pr(565, '2026-09-13', 'Appuis : vraie 9-Line OTAN, avec codes laser amis', 'Le JTAC remplit les neuf lignes d’appui aérien au format OTAN (point initial, cap, distance, altitude, objectif, grille, marquage, amis, sortie). Les codes laser amis déjà connus sont proposés dans la fiche. Le terrain et le poste voient la même demande.', [
+                'Fiche 9-Line OTAN depuis Appuis, pas seulement un message libre',
+                'Choix du marquage (laser, fumigène, infrarouge) et du code laser ami',
+            ], [], [], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez Appuis → Nouvelle 9-Line CAS : les neuf lignes OTAN s’affichent. Choisissez un code laser ami s’il y en a un, puis envoyez.',
+            ], 'Portail · Carte ATAK'),
+            $pr(564, '2026-09-13', 'Carte et liaisons : l’offre est aussi respectée depuis le jeu', 'Si votre communauté n’a pas la carte et les liaisons dans son offre, le jeu ne peut plus les utiliser non plus. Le poste web refusait déjà l’accès ; la liaison en jeu suit désormais la même règle. Un message l’explique clairement.', [], [], [
+                'La liaison en jeu passait encore alors que le poste web affichait déjà l’écran d’offre',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Les communautés dont l’offre inclut la carte ne voient aucun changement. Les autres reçoivent un refus explicite depuis le jeu comme depuis le poste.',
+            ], 'Portail · Carte ATAK'),
+            $pr(563, '2026-09-13', 'Carte tactique : la page s’ouvre à nouveau', 'La carte tactique du poste s’affiche de nouveau. Un incident empêchait l’ouverture de la page Opérations → Carte tactique.', [], [], [
+                'La page Carte tactique tombait en erreur dès l’ouverture',
+            ], ['atak', 'command'], [
+                'Rechargez le portail. Ouvrez Opérations → Carte tactique : la carte doit s’afficher.',
+            ], 'Portail · Carte tactique'),
+            $pr(562, '2026-09-13', 'Intégrations : salon commun, salon à part, photos Quick Picture', 'Sur la page Intégrations, chaque événement Discord s’explique clairement : ne pas publier, envoyer dans le salon commun, ou dans un salon à part. Les photos prises depuis Quick Picture en jeu peuvent aussi être publiées dans le salon Discord de votre choix', [
+                'Le salon commun et le salon à part sont expliqués en haut de page',
+                'Les photos Quick Picture (téléphone en jeu) peuvent partir vers Discord',
+                'Un message d’essai pour n’importe quel type d’événement',
+            ], [], [], ['atak', 'command'], [
+                'Ouvrez Intégrations. Collez le lien du salon commun. Pour Quick Picture, choisissez Salon commun ou Autre salon, enregistrez, puis envoyez un message d’essai.',
+            ], 'Portail · Intégrations'),
+            $pr(561, '2026-09-13', 'Quick Picture : Discord retrouve la photo', 'Discord reçoit de nouveau la photo prise depuis Quick Picture. Le dossier indiqué pour l’envoi n’existait pas, le fichier n’était donc pas trouvé. Le poste continue de recevoir la vue.', [], [], [
+                'Discord cherchait la photo dans un dossier qui n’existait pas, alors que le cliché était bien enregistré',
+            ], ['atak'], [
+                'Rechargez le pack Overwatch 1.5.75. Quittez Arma complètement. Prenez une photo Quick Picture : elle doit arriver sur Discord et au poste.',
+            ], 'Overwatch 1.5.75 · Athena 1.0.121 · Liaison 2.0.38'),
+            $pr(560, '2026-09-13', 'Quick Picture : la vue part encore vers Discord', 'Une photo prise depuis Quick Picture continue d’être transmise vers Discord, comme avant. Overwatch n’interrompt plus cet envoi. Le poste reçoit toujours la vue.', [], [], [
+                'Le pack coupait aussi l’envoi vers Discord en prenant une seconde photo au moment du cliché',
+            ], ['atak'], [
+                'Rechargez le pack Overwatch 1.5.74. Quittez Arma complètement. Prenez une photo Quick Picture : elle doit arriver sur Discord et au poste.',
+            ], 'Overwatch 1.5.74 · Athena 1.0.120 · Liaison 2.0.37'),
+            $pr(559, '2026-09-13', 'Appuis : le panneau 9-Line s’ouvre à nouveau', 'Un clic sur Appuis affiche de nouveau le module d’appui aérien, avec les 9-Line en cours ou un état vide pour en créer une. Le poste ouvre ce module pour tout le monde, pas seulement pour la spécialité JTAC', [], [], [
+                'Le bouton Appuis changeait de domaine sans afficher la fenêtre 9-Line, surtout sans la spécialité JTAC',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Rechargez le poste, cliquez Appuis : le titre Appuis apparaît, avec la 9-Line ou le message « Aucun appui en cours ».',
+            ], 'Portail · Carte ATAK'),
+            $pr(558, '2026-09-13', 'Relecture : choisir la journée et l’opérateur', 'Dans le journal de relecture, vous pouvez maintenant filtrer la chronologie par date et par opérateur, en plus du type d’événement. La carte et les événements clés suivent le filtre choisi', [
+                'Liste des journées présentes dans la mission',
+                'Liste des opérateurs vus sur la période',
+                'Le bilan après-action se recale sur la journée sélectionnée',
+            ], [], [], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez Journal → Relecture : choisissez une date, puis un opérateur. La chronologie et la carte ne montrent plus que ce qui correspond.',
+            ], 'Portail · Carte ATAK'),
+            $pr(557, '2026-09-13', 'Fiches de renseignement : types et urgence enfin lisibles', 'Dans la rédaction d’une fiche, le type (FRM, FRO…) et l’urgence s’affichent en lignes lisibles, avec le nom complet dans la case. Les grandes barres vides qui coupaient le texte ont disparu', [], [], [
+                'Les choix de type et d’urgence pouvaient apparaître comme de grandes cases vides, le libellé collé et coupé sur le bord',
+            ], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez Intel → Fiches → Nouvelle fiche : chaque type montre son intitulé dans la case, l’urgence aussi.',
+            ], 'Portail · Carte ATAK'),
+            $pr(556, '2026-09-13', 'Poste : épingler le tchat et d’autres modules à gauche de la carte', 'Au poste, vous pouvez épingler le tchat, la radio, la liaison, les ordres, le médical ou les pings. Le module reste affiché en raccourci à gauche de la carte, même lorsque vous changez de domaine', [
+                'Une punaise sur les modules concernés pour les garder sous les yeux pendant le travail carte',
+                'Le tchat épinglé reste compact : derniers messages et champ d’émission',
+                'Jusqu’à trois raccourcis, mémorisés sur ce poste',
+            ], [
+                'Réduire un raccourci à sa barre de titre, ou le renvoyer dans le panneau d’un clic',
+            ], [], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez Communications, cliquez la punaise du tchat, puis passez à Sitac ou Intel : le tchat reste à gauche de la carte. Cliquez de nouveau la punaise pour le ranger.',
+            ], 'Portail · Carte ATAK'),
+            $pr(555, '2026-09-13', 'Super ping : un pulse visible sur toutes les cartes', 'Un Super ping place un pulse animé à l’endroit indiqué. Il apparaît au poste et sur le téléphone en jeu, avec des cercles qui s’agrandissent quelques secondes', [
+                'Au poste : clic droit sur la carte → Super ping, sans formulaire',
+                'Sur le téléphone : Maj + clic gauche sur la carte envoie le même pulse',
+                'Les opérateurs et le poste voient le pulse en même temps, pendant quelques secondes',
+            ], [
+                'Un Super ping déjà reçu peut être rejoué en cliquant la ligne dans la liste des pings',
+            ], [], ['atak', 'command'], [
+                'Rechargez le pack Overwatch 1.5.73. Quittez Arma complètement. Au poste, clic droit → Super ping. Dans le téléphone, Maj + clic sur la carte : les cercles doivent apparaître des deux côtés.',
+            ], 'Overwatch 1.5.73 · Athena 1.0.119 · Liaison 2.0.37'),
+            $pr(554, '2026-09-13', 'Téléphone ATAK : zone de déplacement depuis la dernière position', 'Sur le téléphone, un opérateur vu dans les quinze dernières minutes reste indiqué à sa dernière position connue s’il vient de perdre la liaison. Un clic dessine jusqu’où il a pu aller à pied ou en véhicule. Au poste, le même dessin s’ouvre depuis le tableau des effectifs', [
+                'Dernière position connue des contacts récents sur la carte du téléphone',
+                'Deux cercles qui s’agrandissent : à pied et en véhicule, jusqu’à quinze minutes',
+                'Clic sur le contact ou dans la liste des effectifs du téléphone pour afficher la zone',
+            ], [
+                'Au poste, un clic sur l’indicatif recadre la carte pour voir toute la zone possible',
+            ], [], ['atak', 'command'], [
+                'Rechargez le pack Overwatch 1.5.72. Quittez Arma complètement. Ouvrez le téléphone : un contact qui vient de perdre la liaison reste à sa dernière position. Cliquez-le pour voir les deux cercles. Au poste, cliquez le même indicatif dans le tableau des effectifs.',
+            ], 'Overwatch 1.5.72 · Athena 1.0.118 · Liaison 2.0.36'),
+            $pr(553, '2026-09-13', 'Effectifs : qui vient de perdre la liaison, et jusqu’où il a pu aller', 'Le tableau des effectifs et le panneau latéral gardent les opérateurs vus dans les quinze dernières minutes, même hors liaison, avec leur dernière position connue. Un clic dessine la zone qu’ils ont pu parcourir à pied ou en véhicule, qui s’agrandit avec le temps', [
+                'Liste des opérateurs encore en liaison et de ceux qui viennent de se déconnecter, sur quinze minutes',
+                'Dernière position connue affichée dans le tableau et le panneau latéral',
+                'Au clic, surbrillance de la zone possible à pied et en véhicule depuis cette position, actualisée tant que le contact n’a pas repris la liaison',
+            ], [], [], ['atak', 'command'], [
+                'Mise à jour du portail. Ouvrez la carte du poste : le filtre Récents montre les quinze dernières minutes. Cliquez un indicatif pour voir la zone de déplacement possible.',
+            ], 'Portail · Carte ATAK'),
+            $pr(552, '2026-09-13', 'Quick Picture : chaque vue part bien au poste', 'Une photo prise depuis Quick Picture n’est plus remplacée par le cliché précédent. Le poste reçoit la vue que vous venez de prendre', [], [], [
+                'Après une première photo, les suivantes pouvaient partir comme doublon de l’ancienne vue, ou ne pas arriver du tout',
+            ], ['atak'], [
+                'Rechargez le pack Overwatch 1.5.71. Quittez Arma complètement. Ouvrez le téléphone, prenez une photo Quick Picture, puis une seconde : les deux doivent arriver au poste, distinctes.',
+            ], 'Overwatch 1.5.71 · Liaison 2.0.35'),
+            $pr(551, '2026-09-13', 'Messagerie ATAK : canaux, non-lus et messages lisibles', 'Dans Messagerie, les canaux s’affichent d’abord avec le nombre de messages non lus. Un clic ouvre le fil complet. Les messages passent à la ligne, portent la date, et une couleur distingue l’auteur et le canal', [
+                'Liste des canaux à l’ouverture, avec le nombre de messages non lus à côté de chaque canal',
+                'Section Création pour ouvrir un nouveau canal radio depuis le téléphone',
+                'Fil du canal en plein écran, avec retour à la liste',
+                'Date sur chaque message, couleur selon l’auteur et le canal',
+            ], [
+                'Un message tapé dans le téléphone est limité à 100 caractères et passe à la ligne à l’écran',
+            ], [
+                'Un message très long restait sur une seule ligne et pouvait figer le téléphone',
+            ], ['atak'], [
+                'Rechargez le pack Overwatch 1.5.70. Quittez Arma complètement. Ouvrez le téléphone → Messagerie : la liste des canaux apparaît d’abord, avec le nombre de messages non lus. Créez un canal en bas, puis ouvrez un fil.',
+            ], 'Overwatch 1.5.70 · Athena 1.0.117'),
             $pr(550, '2026-09-13', 'SSE : fiches et documents personnalisables', 'Le bureau et la feuille en jeu reprennent vos titres, bandeau, pied de page et aspect papier (propre, taché, froissé, jauni)', [
                 'Page Présentation des documents : modèles préfaits et textes entièrement modifiables, y compris la mention « Ne constitue pas une preuve… »',
                 'Aspects de papier réalistes pour l’aperçu bureau : propre, taché, froissé, jauni',

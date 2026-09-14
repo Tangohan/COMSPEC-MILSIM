@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.569;
-        versionStr = "1.5.69";
-        versionAr[] = {1, 5, 69};
+        version = 1.576;
+        versionStr = "1.5.76";
+        versionAr[] = {1, 5, 76};
     };
 };
 
@@ -434,6 +434,15 @@ class CfgFunctions {
             class deviceToggleView {};
             class getUnitsList {};
             class showDeviceRoster {};
+            class reachOverlayDraw {};
+            class reachOverlaySelect {};
+            class reachOverlayClick {};
+            class reachOverlayFromRoster {};
+            class reachOverlayUpdateMarkers {};
+            class superPingDraw {};
+            class superPingSend {};
+            class superPingPoll {};
+            class superPingInstall {};
             class openClassicTablet {};
             class webBrowserAvailable {};
             class webBrowserShow {};

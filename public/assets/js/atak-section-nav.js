@@ -81,9 +81,14 @@
   function visibleTabsInSection(sectionId) {
     var conf = SECTIONS[sectionId];
     if (!conf) return [];
-    return conf.tabs.filter(function (tab) {
+    var shown = conf.tabs.filter(function (tab) {
       var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
       return btn && !btn.hidden;
+    });
+    if (shown.length) return shown;
+    // Domaine à un seul module (Appuis, QR…) : l’ouvrir même si l’onglet a été masqué.
+    return conf.tabs.filter(function (tab) {
+      return !!document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
     });
   }
 
@@ -95,15 +100,22 @@
       return window.ATAKSessionProfile.activateTab(tab);
     }
     var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
-    if (!btn || btn.hidden) return false;
+    if (!btn) return false;
     document.querySelectorAll('#atak-panel-left .atak-tab[data-tab]').forEach(function (b) {
       var on = b === btn;
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+      if (c.closest && c.closest('#atak-pin-dock')) {
+        c.classList.add('active');
+        return;
+      }
       c.classList.toggle('active', c.id === 'tab-' + tab);
     });
+    if (window.ATAKPinDock && typeof window.ATAKPinDock.keepPinnedVisible === 'function') {
+      window.ATAKPinDock.keepPinnedVisible();
+    }
     return true;
   }
 
@@ -171,6 +183,9 @@
       var belongs = TAB_TO_SECTION[tab] === sectionId;
       tabBtn.classList.toggle('is-section-visible', belongs);
       tabBtn.setAttribute('data-atak-section', TAB_TO_SECTION[tab] || '');
+      if (belongs && (sectionId === 'support' || sectionId === 'qr')) {
+        tabBtn.hidden = false;
+      }
     });
 
     updateSideMeta(sectionId);
@@ -190,15 +205,27 @@
 
     if (opts.skipActivate) return;
 
+    var preferred = opts.tab || ((SECTIONS[sectionId] && SECTIONS[sectionId].tabs[0]) || '');
     var active = document.querySelector('#atak-panel-left .atak-tab.active[data-tab]');
     var activeTab = active ? active.getAttribute('data-tab') : '';
     var visible = visibleTabsInSection(sectionId);
-    if (activeTab && visible.indexOf(activeTab) !== -1) {
-      return;
+    var panelOf = function (id) { return id ? document.getElementById('tab-' + id) : null; };
+    if (!opts.tab && activeTab && visible.indexOf(activeTab) !== -1) {
+      var already = panelOf(activeTab);
+      if (already && already.classList.contains('active')) {
+        if (!(window.ATAKPinDock && typeof window.ATAKPinDock.isPinned === 'function' && window.ATAKPinDock.isPinned(activeTab))) {
+          return;
+        }
+      }
     }
-    if (visible.length) {
-      activateTab(visible[0]);
+    var pick = preferred;
+    if (visible.indexOf(pick) === -1) {
+      pick = visible[0] || preferred || '';
     }
+    if (!opts.tab && window.ATAKPinDock && typeof window.ATAKPinDock.firstUnpinnedIn === 'function' && visible.length) {
+      pick = window.ATAKPinDock.firstUnpinnedIn(visible) || pick;
+    }
+    if (pick) activateTab(pick);
   }
 
   function sectionForTab(tab) {
@@ -294,7 +321,11 @@
         if (panel && panel.classList.contains('collapsed')) {
           setLeftCollapsed(false);
         }
-        setSection(section);
+        var extra = {};
+        if (section === 'support' || section === 'qr') {
+          extra.tab = (SECTIONS[section] && SECTIONS[section].tabs[0]) || '';
+        }
+        setSection(section, extra);
       });
     });
   }

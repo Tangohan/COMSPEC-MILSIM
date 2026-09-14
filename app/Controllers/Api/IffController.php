@@ -10,6 +10,8 @@ use App\Core\Session;
 use App\Repositories\IffAssetStatusRepository;
 use App\Services\Iff\IffChallengeService;
 use App\Services\Iff\IffValidationService;
+use App\Support\AtakPlanAccess;
+use App\Support\ComspecApiKeyAuth;
 
 class IffController
 {
@@ -22,17 +24,42 @@ class IffController
     ) {
     }
 
-    private function missionId(Request $request, array $body = []): string
+    private function requireTenant(Request $request): int|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionId !== null && $missionId !== '') {
-            return (string) $missionId;
+        $matched = ComspecApiKeyAuth::matchedTenantId();
+        if ($matched !== null && $matched > 0) {
+            $id = $matched;
+        } else {
+            $sid = Session::get('tenant_id');
+            $id = ($sid !== null && $sid !== '') ? (int) $sid : 0;
         }
-        $tenantId = Session::get('tenant_id');
-        $tid = $tenantId !== null && $tenantId !== '' ? (int) $tenantId : 1;
+        if ($id < 1) {
+            return Response::json([
+                'error' => 'tenant_context_required',
+                'message' => 'Communauté non identifiée. Reliez le compte Athena en jeu, ou ouvrez le poste depuis votre communauté.',
+            ], 403);
+        }
+        if (!AtakPlanAccess::allows($id)) {
+            return AtakPlanAccess::deniedJson();
+        }
+
+        return $id;
+    }
+
+    private function missionId(Request $request, array $body, int $tenantId): string
+    {
+        $expectedPrefix = 'mission_' . $tenantId . '_map_';
+        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
+        if (is_string($missionId) && $missionId !== '' && str_starts_with($missionId, $expectedPrefix)) {
+            return $missionId;
+        }
         $mapId = $body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? $request->query('map_id');
         $mid = $mapId !== null && $mapId !== '' ? (int) $mapId : self::DEFAULT_MAP_ID;
-        return 'mission_' . $tid . '_map_' . $mid;
+        if ($mid < 1) {
+            $mid = self::DEFAULT_MAP_ID;
+        }
+
+        return 'mission_' . $tenantId . '_map_' . $mid;
     }
 
     private function jsonBody(Request $request): array
@@ -57,8 +84,12 @@ class IffController
 
     public function current(Request $request, array $params = []): Response
     {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
         $body = $this->jsonBody($request);
-        $missionId = $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body, $r);
         $challenge = $this->challengeService->getCurrent($missionId);
         return Response::json($challenge ?? ['code' => null, 'valid_until' => null]);
     }
@@ -69,8 +100,12 @@ class IffController
      */
     public function challenge(Request $request, array $params = []): Response
     {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
         $body = $this->jsonBody($request);
-        $missionId = $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body, $r);
         $code = strtoupper(trim((string) ($body['code'] ?? '')));
         if ($code === '') {
             $code = $this->generateCode();
@@ -122,8 +157,12 @@ class IffController
      */
     public function syncAssets(Request $request, array $params = []): Response
     {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
         $body = $this->jsonBody($request);
-        $missionId = $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body, $r);
         $challenge = $this->challengeService->getCurrent($missionId);
         $challengeId = $challenge ? (int) $challenge['id'] : null;
         $assets = $body['assets'] ?? [];
@@ -167,8 +206,12 @@ class IffController
 
     public function respond(Request $request, array $params = []): Response
     {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
         $body = $this->jsonBody($request);
-        $missionId = $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body, $r);
         $assetId = trim((string) ($body['assetId'] ?? $body['asset_id'] ?? ''));
         $responseCode = trim((string) ($body['responseCode'] ?? $body['response_code'] ?? ''));
         if ($assetId === '' || $responseCode === '') {
@@ -196,8 +239,12 @@ class IffController
 
     public function assets(Request $request, array $params = []): Response
     {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
         $body = $this->jsonBody($request);
-        $missionId = $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body, $r);
         $list = $this->validationService->listAssets($missionId);
         return Response::json($list);
     }

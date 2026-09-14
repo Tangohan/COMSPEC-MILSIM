@@ -20,7 +20,7 @@ window.ATAKIFF = (function () {
     }
     var u = window.ATAK_USER || {};
     var t = parseInt(u.tenantId, 10);
-    return !isNaN(t) && t > 0 ? t : 1;
+    return !isNaN(t) && t > 0 ? t : 0;
   }
 
   function missionId() {
@@ -85,8 +85,12 @@ window.ATAKIFF = (function () {
 
   function qs(path) {
     var sep = path.indexOf('?') >= 0 ? '&' : '?';
-    return apiBase() + path + sep + 'missionId=' + encodeURIComponent(missionId()) +
-      '&mapId=' + encodeURIComponent(mapId());
+    var url = apiBase() + path + sep + 'mapId=' + encodeURIComponent(mapId());
+    var tid = tenantId();
+    if (tid > 0) {
+      url += '&missionId=' + encodeURIComponent(missionId());
+    }
+    return url;
   }
 
   function renderAlerts(assets) {

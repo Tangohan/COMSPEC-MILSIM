@@ -125,15 +125,10 @@ if (_overlayKind in ["phone", "hcam", "hcam_pip", "tgp", "uav_pip"]) then {
 
 private _skipShot = true;
 private _lowPath = toLower _filePath;
-// JPEG BCE / Photo Library : le dossier annoncé est souvent inexistant
-// (srcdir_missing). Un seul PNG Arma, jamais un second cliché pour le PNG.
+// JPEG BCE : Discord s’en sert encore. Ne pas reclicher un PNG Arma.
 if ((_lowPath find ".jpg") >= 0 || {(_lowPath find ".jpeg") >= 0}) exitWith {
-    [_filePath, _caption, _device, _feedId] spawn {
-        params ["_path", "_caption", "_device", "_feedId"];
-        uiSleep 0.45;
-        [_path, _caption, _device, _feedId, false, true, false] call comspec_overwatch_connect_fnc_captureReconImage;
-    };
-    [format ["Photo en file (%1) — copie dans Documents\\Arma 3 - COMSPEC\\Captures", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [_filePath, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+    [format ["Photo en file (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
     true
 };
 if ((_lowPath find ".png") >= 0 || {(_lowPath find ".webp") >= 0}) then {

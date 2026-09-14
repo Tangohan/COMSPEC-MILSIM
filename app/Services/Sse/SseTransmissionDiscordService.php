@@ -129,7 +129,7 @@ final class SseTransmissionDiscordService
         if ($enabled && !$this->communityRelayReady($tenantId)) {
             return [
                 'ok' => false,
-                'message' => 'Aucun salon Discord n’est encore configuré pour la communauté. Renseignez-le dans Intégrations, ou ajoutez un relais ci-dessous.',
+                'message' => 'Aucun salon commun n’est encore renseigné. Collez son lien en haut de la page Intégrations, enregistrez, puis revenez ici.',
             ];
         }
         $cfg = $this->config($tenantId);
@@ -139,8 +139,8 @@ final class SseTransmissionDiscordService
         return [
             'ok' => true,
             'message' => $enabled
-                ? 'Les transmissions terrain seront aussi publiées sur le salon Discord de la communauté.'
-                : 'Le salon Discord de la communauté n’est plus utilisé pour ce journal.',
+                ? 'Les transmissions terrain seront aussi publiées sur le salon commun.'
+                : 'Le salon commun n’est plus utilisé pour ce journal.',
         ];
     }
 

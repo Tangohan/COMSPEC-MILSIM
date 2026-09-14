@@ -6,13 +6,13 @@
   var layouts = {
     command: { left: 280, right: 340, section: 'c2' },
     intel: { left: 420, right: 0, section: 'intel' },
-    jtac: { left: 300, right: 380, section: 'jtac' },
+    jtac: { left: 300, right: 380, section: 'support' },
     bft: { left: 300, right: 360, section: 'forces' },
     map: { left: 0, right: 0, section: null }
   };
   var commands = [
     ['Créer un marqueur', 'M', function () { click('[data-tool="note"]'); }],
-    ['Créer une 9-Line', 'JTAC', function () { selectSection('jtac'); }],
+    ['Créer une 9-Line', 'JTAC', function () { selectSection('support'); }],
     ['Localiser une unité', 'BFT', function () { focus('#atak-units-filter'); }],
     ['Ouvrir le renseignement SSE', 'Intel', function () { selectSection('intel'); }],
     ['Ouvrir les photos', 'Intel', function () { selectSection('intel'); click('[data-tab="photos"]'); }],
@@ -114,7 +114,7 @@
       if (!document.body.classList.contains('atak-ui-v2') || editable) return;
       if (event.key.toLowerCase() === 'l') click('[data-tool-ui="look"]');
       if (event.key.toLowerCase() === 'i') selectSection('intel');
-      if (event.key.toLowerCase() === 'j') selectSection('jtac');
+      if (event.key.toLowerCase() === 'j') selectSection('support');
       if (event.key.toLowerCase() === 'r') click('[data-tool="measure"]');
     });
     var requested = new URLSearchParams(window.location.search).get('ui');

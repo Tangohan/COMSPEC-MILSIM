@@ -150,7 +150,7 @@ CBA `comspec_overwatch_tenant_id` is not authority. Bootstrap clears it as autho
 | Community | `OrganizationAdminMiddleware` / `admin.organization` … |
 | Intra | `RbacService` + `Gate` permission slugs |
 | ATAK web | `FeatureGateService::allows($tenantId, 'atak')` |
-| ATAK API | Tactical key/session — **not** the plan feature gate (**SECURITY GAP** if billing is assumed to lock the API) |
+| ATAK API | Tactical key/session **and** plan feature `atak` (`AtakPlanAccess` in `requireTenant`). Ping remains ungated. |
 | Sanctions | `AtakModuleSanctionMiddleware` restriction `atak` |
 
 Platform-reserved slugs cannot be granted on tenant roles.
@@ -215,7 +215,7 @@ System admin: `/admin/system/*` including deployment campaigns. Community admin:
 | Replay | Partial | Game tokens hashed; HMAC token has `exp`; no jti store |
 | Payload tampering | Partial | HTTPS expected; extra JSON merged |
 | Secret exposure | Operational | Keys in CBA screenshots; Steam UID in payloads |
-| Feature-gate bypass | **SECURITY GAP** | API without `allows('atak')` |
+| Feature-gate bypass | Controlled | `AtakPlanAccess::allows` on tactical `requireTenant` (IFF included). Ping ungated. |
 | Open tactical API in non-prod | **SECURITY GAP** unless `TACTICAL_API_STRICT` |
 
 ---

@@ -1415,7 +1415,7 @@ class HomeController
                 continue;
             }
             $resolved = atak_resolve_tile_pattern($pattern, $slug !== '' ? $slug : 'altis');
-            $overwatchMapsConfigs[$slug !== '' ? $slug : 'altis'] = [
+            $overwatchMapsConfigs[$slug !== '' ? $slug : 'altis'] = atak_with_aerial_layer([
                 'mapId' => (int) $m['id'],
                 'slug' => $slug !== '' ? $slug : 'altis',
                 'label' => $m['label'] ?? $slug,
@@ -1428,7 +1428,8 @@ class HomeController
                 'bounds' => $c['bounds'] ?? null,
                 'crs' => $c['crs'] ?? null,
                 'config' => $c,
-            ];
+                'aerial' => isset($c['aerial']) && is_array($c['aerial']) ? $c['aerial'] : null,
+            ], $slug !== '' ? $slug : 'altis');
         }
 
         $userId = (int) Session::get('user_id');

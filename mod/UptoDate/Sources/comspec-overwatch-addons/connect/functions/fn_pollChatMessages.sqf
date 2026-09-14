@@ -86,6 +86,23 @@ private _fnPushComms = {
     _store pushBack [_id, _author, _text, _timeStr, _channelKey, _isMine];
     while { (count _store) > 120 } do { _store deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_Comms_Messages", _store, false];
+
+    if (!_isMine) then {
+        private _view = missionNamespace getVariable ["COMSPEC_Comms_View", "list"];
+        private _active = toLower (trim (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"]));
+        if (_active in ["squad", "global", ""]) then { _active = "general"; };
+        if (_active in ["hq", "c2", "command"]) then { _active = "commandement"; };
+        if (_active in ["group"]) then { _active = "groupe"; };
+        private _open = (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Comms_group", controlNull]))
+            && {_view isEqualTo "thread"}
+            && {_channelKey isEqualTo _active};
+        if (!_open) then {
+            private _unread = missionNamespace getVariable ["COMSPEC_Comms_Unread", createHashMap];
+            if (!(_unread isEqualType createHashMap)) then { _unread = createHashMap; };
+            _unread set [_channelKey, (_unread getOrDefault [_channelKey, 0]) + 1];
+            missionNamespace setVariable ["COMSPEC_Comms_Unread", _unread, false];
+        };
+    };
     true
 };
 
@@ -167,12 +184,19 @@ if (!_bootstrapped) exitWith {
 
     private _plainU = toUpper _plain;
 
-    private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+    private _st = systemTime;
+    private _pad2 = {
+        params ["_n"];
+        if (_n < 10) then { "0" + str _n } else { str _n };
+    };
+    private _timeStr = format ["%1/%2 %3", [_st select 2] call _pad2, [_st select 1] call _pad2, [daytime, "HH:MM"] call BIS_fnc_timeToString];
     if ((count _created) >= 16) then {
+        private _mo = _created select [5, 2];
+        private _d = _created select [8, 2];
         private _tPos = _created find "T";
         if (_tPos < 0) then { _tPos = _created find " "; };
-        if (_tPos >= 0 && {(count _created) >= (_tPos + 6)}) then {
-            _timeStr = _created select [_tPos + 1, 5];
+        if (_tPos >= 0 && {(count _created) >= (_tPos + 6)} && {_mo isNotEqualTo ""} && {_d isNotEqualTo ""}) then {
+            _timeStr = format ["%1/%2 %3", _d, _mo, _created select [_tPos + 1, 5]];
         };
     };
 
