@@ -3,6 +3,7 @@
   --athena-text:#f5f7f5;--athena-muted:#7d8883;--athena-green:#00d69a;--athena-green-2:#00b884;--athena-amber:#e7b14d;
   --athena-red:#e05b63;--ow-map:#08231f;--shadow:0 18px 54px rgba(0,0,0,.5);
   --ow-aside-left:330px;--ow-aside-right:330px;
+  --ow-label-size:9px;--ow-icon-size:1;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--athena-black);color:var(--athena-text);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
@@ -36,11 +37,15 @@ button{cursor:pointer}
 .ow-workspace.is-tools{grid-template-columns:52px minmax(0,1fr) 0}
 .ow-workspace.is-tools .ow-settings{width:52px;overflow:hidden}
 .ow-workspace.is-tools .ow-settings-body,.ow-workspace.is-tools .ow-chat{display:none}
+.ow-workspace.is-settings-collapsed{grid-template-columns:0 minmax(0,1fr) var(--ow-aside-right)}
+.ow-workspace.is-settings-collapsed .ow-settings{display:none}
 .ow-settings,.ow-chat{background:#080a0a;border-color:var(--athena-line);display:flex;flex-direction:column;min-width:0}
 .ow-settings{border-right:1px solid var(--athena-line)}
 .ow-chat{border-left:1px solid var(--athena-line)}
 .ow-settings>header,.ow-chat>header{height:44px;border-bottom:1px solid var(--athena-line);display:flex;align-items:center;padding:0 12px;font-size:10px;font-weight:900;flex:0 0 auto}
 .ow-settings>header span,.ow-chat>header span{color:var(--athena-green);margin-right:6px}
+.ow-settings>header button,.ow-chat>header button{margin-left:auto;padding:4px 8px;border:1px solid var(--athena-line-2);background:transparent;color:var(--athena-muted);font-size:9px;border-radius:3px}
+.ow-settings>header button:hover,.ow-chat>header button:hover{background:#111514;color:#fff}
 .ow-settings-body{padding:10px 12px 18px;overflow:auto}
 .ow-kicker{font-size:7px;color:var(--athena-green);font-weight:900;letter-spacing:.17em;margin:14px 0 8px}
 .ow-help{font-size:8px;color:#6f7975;line-height:1.45;margin:0 0 10px}
@@ -98,13 +103,18 @@ button{cursor:pointer}
 .ow-channel,.ow-contact{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 2px;border:0;border-top:1px solid #171d1b;background:transparent;text-align:left}
 .ow-channel.is-active,.ow-contact:hover,.ow-channel:hover{background:#101513}
 .cicon{width:24px;height:24px;border:1px solid #2b3531;display:grid;place-items:center;color:#8b9691;font-size:8px}
-.cname{font-size:9px;font-weight:900}
-.cmeta{font-size:8px;color:#727d78;margin-top:2px}
+.cname{font-size:11px;font-weight:900}
+.cmeta{font-size:9px;color:#727d78;margin-top:2px}
 .online{font-size:7px;color:var(--athena-green);font-weight:900}
-.ow-msg{padding:8px 2px;border-bottom:1px solid #151b19;font-size:8px;line-height:1.4}
-.ow-msg time{display:block;color:#68736e;font-size:7px;margin-bottom:3px}
-.ow-msg.is-alert{border-left:2px solid var(--athena-red);padding-left:8px}
+.ow-msg{padding:10px 8px;border-bottom:1px solid #151b19;font-size:10px;line-height:1.5}
+.ow-msg time{display:block;color:#68736e;font-size:8px;margin-bottom:4px}
+.ow-msg.is-alert{border-left:3px solid var(--athena-red);padding-left:10px;background:#1a0e0f}
 .ow-msg.is-system{color:#9ea8a3;font-style:italic}
+.ow-msg.is-groupe{border-left:3px solid #1f6b55;background:#0a1714;padding-left:10px}
+.ow-msg-author{font-weight:800;color:var(--athena-green);margin-right:6px}
+.ow-msg-badge{display:inline-block;padding:2px 6px;background:#1a2824;border:1px solid #27302d;font-size:7px;font-weight:900;letter-spacing:.08em;margin-right:4px;border-radius:2px}
+.ow-msg-text{color:#d8ddda}
+.ow-msg-text .ow-mention{background:#1a2521;color:var(--athena-green);padding:1px 4px;border-radius:2px;font-weight:700}
 .ow-chat-compose{display:flex;gap:6px;padding:8px;border-top:1px solid var(--athena-line);flex:0 0 auto}
 .ow-chat-compose button,.ow-primary{height:30px;padding:0 12px;border:0;background:var(--athena-green-2);color:#05120e;font-size:8px;font-weight:900;letter-spacing:.08em}
 .ow-drawer{position:absolute;z-index:8;right:var(--ow-aside-right);top:0;bottom:0;width:min(330px,var(--ow-aside-right));background:#0a0d0c;border-left:1px solid var(--athena-line);box-shadow:-18px 0 50px rgba(0,0,0,.35);display:flex;flex-direction:column;padding:0}
@@ -114,15 +124,15 @@ button{cursor:pointer}
 .ow-drawer header h2{margin:4px 0 0;font-size:13px}
 .ow-drawer header button{float:right;border:0;background:transparent;color:#6f7a75;font-size:18px}
 .ow-drawer-body,.ow-drawer #ow-drawer-body{padding:10px 12px 16px;overflow:auto;font-size:9px}
-.ow-kv{display:grid;grid-template-columns:88px 1fr;gap:6px 8px;font-size:8px;margin-bottom:12px}
+.ow-kv{display:grid;grid-template-columns:88px 1fr;gap:6px 8px;font-size:10px;margin-bottom:12px}
 .ow-kv span:nth-child(odd){color:#6c7772}
 .ow-kv span:nth-child(even){font-weight:800}
 .ow-card{border:1px solid #222a27;background:#0d1110;margin-bottom:10px}
-.ow-card-head{height:34px;border-bottom:1px solid #1c2321;display:flex;align-items:center;padding:0 9px;font-size:8px;font-weight:900}
+.ow-card-head{height:34px;border-bottom:1px solid #1c2321;display:flex;align-items:center;padding:0 9px;font-size:10px;font-weight:900}
 .ow-card-head span:last-child{margin-left:auto}
-.ow-card-body{padding:9px}
+.ow-card-body{padding:9px;font-size:10px}
 .ow-thumb{height:98px;background:#1a1f1d center/cover no-repeat;position:relative}
-.ow-event{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid #171c1a;font-size:8px}
+.ow-event{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid #171c1a;font-size:10px}
 .ow-tag{font-size:7px;padding:2px 5px;border:1px solid #214d3e;color:var(--athena-green);background:#0a211a;font-weight:900}
 .ow-tag.amber{border-color:#57441e;color:#e5b654;background:#221b0d}
 .ow-tag.red{border-color:#5b2b30;color:#ee777f;background:#211013}
@@ -155,8 +165,8 @@ button{cursor:pointer}
 .ow-live-measure{position:absolute;left:60px;bottom:48px;z-index:6;background:#080b0acc;border:1px solid #27302d;padding:6px 10px;font-size:8px;font-weight:800;color:#dff9ef}
 .ow-live-measure[hidden]{display:none}
 .ow-po-label{background:transparent;border:0}
-.ow-po-label span{display:grid;gap:2px;padding:3px 6px;background:#080b0acc;border:1px solid #27302d;color:#dff9ef;font:800 8px Arial,sans-serif;letter-spacing:.04em}
-.ow-po-label small{display:block;color:#c7ceca;font:700 7px Arial,sans-serif}
+.ow-po-label span{display:grid;gap:2px;padding:3px 6px;background:#080b0acc;border:1px solid #27302d;color:#dff9ef;font:800 calc(8px * var(--ow-icon-size,1)) Arial,sans-serif;letter-spacing:.04em}
+.ow-po-label small{display:block;color:#c7ceca;font:700 calc(7px * var(--ow-icon-size,1)) Arial,sans-serif}
 .ow-rally-label span{border-color:#1f6b55;color:#c8ffe8}
 .ow-ring-label span{padding:1px 4px;background:#080b0acc;border:1px solid #27302d;color:#c7ceca;font:800 7px Arial,sans-serif}
 .ow-squad-head{display:flex;justify-content:space-between;align-items:center;padding:8px 2px 4px;font-size:7px;letter-spacing:.14em;color:var(--athena-green);font-weight:900}
@@ -173,7 +183,12 @@ button{cursor:pointer}
 [data-chat-panel="squads"] .ow-form-grid{padding-bottom:8px}
 .ow-group-task-form [type="submit"]:disabled,
 .ow-fs-alert-form [type="submit"]:disabled{opacity:.45;cursor:not-allowed}
-.ow-marker span{padding:4px 7px;border:1px solid #236a56;background:rgba(6,14,12,.88);color:#dce8e2;font:800 var(--ow-label-size,9px) Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.ow-marker span{padding:4px 7px;border:1px solid #236a56;background:rgba(6,14,12,.88);color:#dce8e2;font:800 calc(var(--ow-label-size,9px) * var(--ow-icon-size,1)) Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.ow-marker i{transform:scale(var(--ow-icon-size,1));transform-origin:center}
+.ow-marker.is-hostile i{transform:scale(var(--ow-icon-size,1))}
+.ow-marker.is-unknown i{transform:scale(var(--ow-icon-size,1))}
+.ow-marker.ow-mark-dot i{transform:scale(var(--ow-icon-size,1))}
+.ow-marker.ow-mark-nato i{transform:scale(var(--ow-icon-size,1))}
 .ow-palette{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:30}
 .ow-palette[hidden]{display:none}
 .ow-palette>div{width:520px;max-width:calc(100vw - 40px);margin:84px auto 0;background:#090c0b;border:1px solid #27302d;box-shadow:0 32px 100px rgba(0,0,0,.65)}
