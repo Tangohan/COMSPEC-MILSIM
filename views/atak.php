@@ -107,6 +107,9 @@ if ($atakMapConfig) {
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <?php endif; ?>
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
@@ -179,7 +182,21 @@ if ($atakMapConfig) {
   }
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<body class="atak-page<?= !empty($atakOverwatchBeta) ? ' atak-overwatch-beta' : '' ?> atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= !empty($phoneOperatorSession) ? ' atak-phone-session' : '' ?><?= !empty($atakDeviceEmbed) ? ' atak-device-embed atak-page--device' : '' ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
+<?php if (!empty($atakOverwatchBeta)): ?>
+  <nav class="overwatch-commandbar" id="overwatch-commandbar" aria-label="Workspace Overwatch">
+    <a class="overwatch-commandbar__brand" href="<?= htmlspecialchars(url('-ATAK-OVERWATCH-Beta'), ENT_QUOTES, 'UTF-8') ?>"><b>A</b><span>ATHENA<small>OVERWATCH / LIVE</small></span></a>
+    <div class="overwatch-commandbar__nav">
+      <button type="button" class="is-active" data-overwatch-home>OVERWATCH</button>
+      <button type="button" data-overwatch-tab="chat">COMMS</button>
+      <button type="button" data-overwatch-tab="mission">MISSION</button>
+      <button type="button" data-overwatch-settings>LAYERS</button>
+      <button type="button" data-overwatch-tab="photos">INTEL</button>
+      <button type="button" data-overwatch-tools>TOOLS</button>
+    </div>
+    <div class="overwatch-commandbar__state"><span class="overwatch-commandbar__dot"></span><span id="overwatch-link-label">LINKED</span><button type="button" data-overwatch-command>CTRL K</button></div>
+  </nav>
+<?php endif; ?>
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
   <?php
   $baseUrl = $base;
@@ -4630,5 +4647,8 @@ if ($atakMapConfig) {
       </footer>
     </div>
   </div>
+  <?php if (!empty($atakOverwatchBeta)): ?>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <?php endif; ?>
 </body>
 </html>
