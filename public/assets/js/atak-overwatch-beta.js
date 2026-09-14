@@ -2,7 +2,43 @@
   'use strict';
 
   var commandbar = document.getElementById('overwatch-commandbar');
-  if (!commandbar) return;
+  if (!window.ATAK_OVERWATCH_BETA || !commandbar || window.__ATAK_OVERWATCH_BOOTSTRAPPED__) return;
+  window.__ATAK_OVERWATCH_BOOTSTRAPPED__ = true;
+
+  var BASEMAP_KEY = 'athena:overwatch-basemap';
+
+  function readBasemap() {
+    try { return localStorage.getItem(BASEMAP_KEY) || 'classic'; } catch (ignore) { return 'classic'; }
+  }
+
+  function setBasemap(value) {
+    if (['classic', 'aerial', 'mono'].indexOf(value) === -1) value = 'classic';
+    var mapElement = document.getElementById('atak-map');
+    if (!mapElement) return;
+    ['classic', 'aerial', 'mono'].forEach(function (name) {
+      mapElement.classList.toggle('atak-overwatch-map--' + name, name === value);
+    });
+    try { localStorage.setItem(BASEMAP_KEY, value); } catch (ignore) {}
+    document.querySelectorAll('[data-overwatch-basemap]').forEach(function (button) {
+      var active = button.dataset.overwatchBasemap === value;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function injectBasemaps() {
+    var aside = document.getElementById('atak-settings-aside');
+    if (!aside || document.getElementById('atak-overwatch-basemaps')) return;
+    var box = document.createElement('section');
+    box.id = 'atak-overwatch-basemaps'; box.className = 'atak-overwatch-basemaps';
+    box.innerHTML = '<h4>FOND DE CARTE</h4><p>Le rendu ne modifie ni les symboles BFT ni les droits serveur.</p><div role="group" aria-label="Fond de carte"><button type="button" data-overwatch-basemap="classic">Classique</button><button type="button" data-overwatch-basemap="aerial">Aérien</button><button type="button" data-overwatch-basemap="mono">Monochrome</button></div>';
+    (aside.querySelector('.atak-settings-aside__body') || aside).prepend(box);
+    box.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-overwatch-basemap]');
+      if (button) setBasemap(button.dataset.overwatchBasemap);
+    });
+    setBasemap(readBasemap());
+  }
 
   // The Overwatch chrome depends on the production V2 layout/palette runtime.
   // Activating it through the existing switch keeps one source of truth.
@@ -24,7 +60,7 @@
     setActive(source);
   }
 
-  commandbar.querySelectorAll('[data-overwatch-tab]').forEach(function (button) {
+  document.querySelectorAll('[data-overwatch-tab]').forEach(function (button) {
     button.addEventListener('click', function () { openTab(button.dataset.overwatchTab, button); });
   });
 
@@ -167,6 +203,7 @@
   commandbar.querySelector('[data-overwatch-settings]').addEventListener('click', function () {
     var settings = document.querySelector('.js-atak-settings-toggle');
     if (settings) settings.click();
+    window.setTimeout(injectBasemaps, 30);
     setActive(this);
   });
 
@@ -185,12 +222,91 @@
 
   var source = document.getElementById('atak-status');
   var label = document.getElementById('overwatch-link-label');
+  var latency = document.getElementById('overwatch-link-latency');
+  var age = document.getElementById('overwatch-link-age');
+  var latencySource = document.getElementById('atak-metric-latency-value');
+  var theatreSource = document.getElementById('atak-metric-theatre-value');
+  var refreshRate = document.getElementById('overwatch-refresh-rate');
+  var realtimeState = 'connecting';
+  var lastUnitsAt = null;
+  var staleAfterMs = 15000;
+  var refreshKey = 'athena:overwatch-refresh-ms:' + String(window.ATAK_TENANT_ID || 'guest');
+
+  function savedRefreshInterval() {
+    try { return Number(localStorage.getItem(refreshKey)) || 3000; } catch (ignore) { return 3000; }
+  }
+
+  function applyRefreshInterval(milliseconds) {
+    var allowed = [3000, 8000, 15000, 30000];
+    var requested = Number(milliseconds);
+    if (allowed.indexOf(requested) === -1) requested = 3000;
+    staleAfterMs = Math.max(15000, Math.ceil(requested * 2.5));
+    if (refreshRate) refreshRate.value = String(requested);
+    if (window.ATAKPolling && typeof window.ATAKPolling.setInterval === 'function') {
+      window.ATAKPolling.setInterval(requested);
+    }
+    return requested;
+  }
+
+  if (refreshRate) refreshRate.addEventListener('change', function () {
+    var value = applyRefreshInterval(refreshRate.value);
+    try { localStorage.setItem(refreshKey, String(value)); } catch (ignore) {}
+    if (window.ATAKPolling && typeof window.ATAKPolling.refreshNow === 'function') {
+      window.ATAKPolling.refreshNow();
+    }
+  });
+
+  window.addEventListener('atak:poll-interval-changed', function (event) {
+    var wanted = savedRefreshInterval();
+    var current = event.detail && Number(event.detail.intervalMs);
+    if (current !== wanted) applyRefreshInterval(wanted);
+  });
+  window.addEventListener('atak:realtime-state', function (event) {
+    realtimeState = String((event.detail && event.detail.state) || 'fallback');
+    syncLinkState();
+  });
+
+  // COMSPEC alimente /api/units via les routes d'ingestion existantes. Le client
+  // ATAK publie cet événement après application de la réponse filtrée par le
+  // serveur. Aucune unité ni permission n'est reconstruite dans Overwatch.
+  window.addEventListener('atak:units-updated', function () {
+    lastUnitsAt = Date.now();
+    syncLinkState();
+  });
+
+  function sourceText(element, fallback) {
+    var value = element ? element.textContent.trim() : '';
+    return value && value !== '—' ? value : fallback;
+  }
+
+  function formatAge(milliseconds) {
+    if (milliseconds == null) return 'DERNIER RX —';
+    var seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    if (seconds < 60) return 'DERNIER RX ' + seconds + ' S';
+    return 'DERNIER RX ' + Math.floor(seconds / 60) + ' MIN';
+  }
+
   function syncLinkState() {
     if (!source || !label) return;
-    var online = source.classList.contains('atak-chip--live') || source.textContent.toLowerCase().indexOf('actif') !== -1;
-    label.textContent = online ? 'LINKED' : 'DEGRADED';
-    commandbar.classList.toggle('is-degraded', !online);
+    var text = source.textContent.toLowerCase();
+    var offline = source.classList.contains('offline') || source.classList.contains('atak-chip--off') || text.indexOf('hors ligne') !== -1;
+    var deferred = source.classList.contains('atak-chip--warn') || text.indexOf('différ') !== -1;
+    var stale = lastUnitsAt !== null && Date.now() - lastUnitsAt > staleAfterMs;
+    label.textContent = offline ? 'RECONNEXION' : (realtimeState === 'fallback' ? 'POLLING' : ((deferred || stale) ? 'DÉGRADÉ' : 'LINKED'));
+    if (latency) latency.textContent = sourceText(latencySource, '— MS').toUpperCase();
+    if (age) {
+      age.textContent = lastUnitsAt === null ? sourceText(theatreSource, 'DERNIER RX —').toUpperCase() : formatAge(Date.now() - lastUnitsAt);
+    }
+    commandbar.classList.toggle('is-reconnecting', offline);
+    commandbar.classList.toggle('is-degraded', !offline && (deferred || stale));
+    commandbar.title = 'État COMSPEC/ATAK : ' + label.textContent + ' · ' + (latency ? latency.textContent : 'latence inconnue') + ' · ' + (age ? age.textContent : 'dernier message inconnu');
   }
   syncLinkState();
   if (source && window.MutationObserver) new MutationObserver(syncLinkState).observe(source, { attributes: true, childList: true, subtree: true });
+  if (latencySource && window.MutationObserver) new MutationObserver(syncLinkState).observe(latencySource, { childList: true, characterData: true, subtree: true });
+  if (theatreSource && window.MutationObserver) new MutationObserver(syncLinkState).observe(theatreSource, { childList: true, characterData: true, subtree: true });
+  window.setInterval(syncLinkState, 1000);
+  applyRefreshInterval(savedRefreshInterval());
+  injectBasemaps();
+  setBasemap(readBasemap());
 })();

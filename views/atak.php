@@ -201,13 +201,38 @@ if ($atakMapConfig) {
       <button type="button" data-overwatch-tab="photos">INTEL</button>
       <button type="button" data-overwatch-tools>TOOLS</button>
     </div>
-    <div class="overwatch-commandbar__state"><span class="overwatch-commandbar__dot"></span><span id="overwatch-link-label">LINKED</span><button type="button" data-overwatch-command>CTRL K</button></div>
+    <div class="overwatch-commandbar__state" role="status" aria-live="polite">
+      <span class="overwatch-commandbar__dot"></span>
+      <span id="overwatch-link-label">INITIALISATION</span>
+      <span class="overwatch-commandbar__metric" id="overwatch-link-latency">— MS</span>
+      <span class="overwatch-commandbar__metric" id="overwatch-link-age">DERNIER RX —</span>
+      <label class="overwatch-commandbar__refresh" title="Fréquence du polling tactique de secours">
+        <span>SYNC</span>
+        <select id="overwatch-refresh-rate" aria-label="Fréquence de synchronisation tactique">
+          <option value="3000">3 S</option>
+          <option value="8000">8 S</option>
+          <option value="15000">15 S</option>
+          <option value="30000">30 S</option>
+        </select>
+      </label>
+      <button type="button" data-overwatch-command>CTRL K</button>
+    </div>
   </nav>
   <div class="overwatch-quicktools" id="overwatch-quicktools" role="toolbar" aria-label="Outils tactiques Overwatch">
     <button type="button" data-overwatch-tool="line">DESSIN</button>
     <button type="button" data-overwatch-squad-lines aria-pressed="true">LIAISONS SQUAD</button>
     <button type="button" data-overwatch-tool="view3d">3D</button>
     <button type="button" data-overwatch-tool="route">ROUTES</button>
+    <button type="button" data-overwatch-tab="zones">AOI</button>
+    <button type="button" data-overwatch-tab="notes">OSINT / NOTES</button>
+    <button type="button" data-overwatch-tab="medical">CASEVAC</button>
+    <button type="button" data-overwatch-tab="jtac">9-LINE</button>
+    <button type="button" data-overwatch-tab="replay">REPLAY</button>
+    <button type="button" data-overwatch-tab="liaison">JOURNAL</button>
+    <button type="button" data-overwatch-export>EXPORT</button>
+    <button type="button" data-overwatch-import>IMPORT</button>
+    <button type="button" data-overwatch-print>IMPRIMER</button>
+    <input type="file" id="overwatch-mission-import" accept="application/json,.json" hidden>
     <button type="button" data-overwatch-geo="places">VILLES</button>
     <button type="button" data-overwatch-geo="roads">RÉSEAU ROUTIER</button>
     <button type="button" data-overwatch-tool="note">MARKERS</button>
@@ -3316,6 +3341,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/map/atak-c2-bridge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-v2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <?php if ($atakOverwatchBeta): ?>
+  <script src="<?= $base ?>/assets/js/atak-realtime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-overwatch-p2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <?php endif; ?>
   <script src="<?= $base ?>/assets/js/atak-terminals.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3937,8 +3964,38 @@ if ($atakMapConfig) {
       if (window.ATAKTransmissions && typeof window.ATAKTransmissions.refresh === 'function') {
         window.ATAKTransmissions.refresh();
       }
+      var tacticalPollTimer = null;
+      var tacticalPollIntervalMs = 3000;
+      var tacticalPollRealtime = false;
+      function setTacticalPollInterval(milliseconds) {
+        var allowed = [3000, 8000, 15000, 30000];
+        var requested = Number(milliseconds);
+        tacticalPollIntervalMs = allowed.indexOf(requested) !== -1 ? requested : 3000;
+        if (tacticalPollTimer !== null) clearInterval(tacticalPollTimer);
+        tacticalPollTimer = setInterval(atakPoll, tacticalPollRealtime ? 30000 : tacticalPollIntervalMs);
+        window.dispatchEvent(new CustomEvent('atak:poll-interval-changed', {
+          detail: { intervalMs: tacticalPollIntervalMs }
+        }));
+        return tacticalPollIntervalMs;
+      }
+      window.ATAKPolling = {
+        getInterval: function () { return tacticalPollIntervalMs; },
+        setInterval: setTacticalPollInterval,
+        refreshNow: atakPoll,
+        setRealtimeActive: function (active) {
+          tacticalPollRealtime = !!active;
+          if (tacticalPollTimer !== null) clearInterval(tacticalPollTimer);
+          // Un filet de sécurité lent reste actif pendant le SSE. En cas de coupure,
+          // l'intervalle choisi par l'opérateur est restauré sans perte d'état.
+          tacticalPollTimer = setInterval(atakPoll, tacticalPollRealtime ? 30000 : tacticalPollIntervalMs);
+          window.dispatchEvent(new CustomEvent('atak:realtime-mode-changed', {
+            detail: { active: tacticalPollRealtime, fallbackIntervalMs: tacticalPollIntervalMs }
+          }));
+        },
+        isRealtimeActive: function () { return tacticalPollRealtime; }
+      };
       atakPoll();
-      setInterval(atakPoll, 3000);
+      setTacticalPollInterval(3000);
       pollWeatherQuiet();
       setInterval(pollWeatherQuiet, 30000);
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
@@ -4775,6 +4832,8 @@ if ($atakMapConfig) {
     </div>
   </div>
   <?php if (!empty($atakOverwatchBeta)): ?>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-realtime.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-p2.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/js/atak-overwatch-beta.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <?php endif; ?>
 </body>
