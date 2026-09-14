@@ -569,6 +569,295 @@
   }
 
   // ============================================================================
+  // PANNEAU DÉTAILLÉ CONTACT/BFT avec toutes les données ATAK
+  // ============================================================================
+
+  function showDetailedContactPanel(unit) {
+    if (!unit) return;
+
+    // Toutes les données brutes ATAK
+    var rawData = {
+      // Identification
+      id: unit.id || unit.uid || null,
+      callsign: unit.callsign || unit.call_sign || null,
+      name: unit.name || null,
+      type: unit.type || null,
+      role: unit.role || null,
+      team: unit.team || unit.squad || unit.group || null,
+      
+      // Position
+      lat: unit.lat || unit.latitude || null,
+      lng: unit.lng || unit.longitude || null,
+      alt: unit.alt || unit.altitude || unit.hae || null,
+      grid: unit.grid || unit.mgrs || null,
+      ce: unit.ce || null, // Circular error
+      le: unit.le || null, // Linear error
+      
+      // Mouvement
+      heading: unit.heading || unit.course || null,
+      speed: unit.speed || null,
+      track: unit.track || null,
+      
+      // Status
+      status: unit.status || null,
+      battery: unit.battery || null,
+      health: unit.health || null,
+      
+      // Timestamps
+      timestamp: unit.timestamp || unit.time || unit.updated_at || null,
+      stale: unit.stale || null,
+      created_at: unit.created_at || null,
+      
+      // Metadata
+      source: unit.source || null,
+      uid: unit.uid || null,
+      device: unit.device || null,
+      version: unit.version || null,
+      
+      // Communication
+      radio_freq: unit.radio_freq || unit.freq || null,
+      radio_channel: unit.radio_channel || unit.channel || null,
+      
+      // Mission
+      task: unit.task || null,
+      objective: unit.objective || null,
+      remarks: unit.remarks || unit.notes || null,
+      
+      // Données brutes supplémentaires
+      raw: unit
+    };
+
+    var html = '<div class="ow-contact-detail-panel">';
+    
+    // En-tête avec indicatif
+    html += '<div class="ow-contact-detail-header">' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">' +
+      '<circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M4 20C4 16 7 14 12 14C17 14 20 16 20 20" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '</svg>' +
+      '<div>' +
+      '<h3>' + escapeHtml(rawData.callsign || 'CONTACT') + '</h3>' +
+      '<p>' + escapeHtml(rawData.team || 'Sans groupe') + '</p>' +
+      '</div>' +
+      '</div>';
+
+    // Données organisées par sections
+    html += '<div class="ow-contact-sections">';
+
+    // Section IDENTIFICATION
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M8 6L8 10M6 8L10 8" stroke="currentColor" stroke-width="2"/>' +
+      '</svg>IDENTIFICATION</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('ID', rawData.id);
+    html += formatDataRow('UID', rawData.uid);
+    html += formatDataRow('Indicatif', rawData.callsign);
+    html += formatDataRow('Nom', rawData.name);
+    html += formatDataRow('Type', rawData.type);
+    html += formatDataRow('Rôle', rawData.role);
+    html += formatDataRow('Équipe/Groupe', rawData.team);
+    
+    html += '</div></div>';
+
+    // Section POSITION
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<path d="M8 2C5 2 3 4 3 7C3 10 8 14 8 14C8 14 13 10 13 7C13 4 11 2 8 2Z" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<circle cx="8" cy="7" r="2" fill="currentColor"/>' +
+      '</svg>POSITION & NAVIGATION</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('Latitude', rawData.lat ? rawData.lat.toFixed(6) : null);
+    html += formatDataRow('Longitude', rawData.lng ? rawData.lng.toFixed(6) : null);
+    html += formatDataRow('Altitude', rawData.alt ? Math.round(rawData.alt) + ' m' : null);
+    html += formatDataRow('Grille MGRS', rawData.grid);
+    html += formatDataRow('CE (erreur circulaire)', rawData.ce ? rawData.ce.toFixed(1) + ' m' : null);
+    html += formatDataRow('LE (erreur linéaire)', rawData.le ? rawData.le.toFixed(1) + ' m' : null);
+    html += formatDataRow('Cap', rawData.heading ? Math.round(rawData.heading) + '°' : null);
+    html += formatDataRow('Vitesse', rawData.speed ? Math.round(rawData.speed * 3.6) + ' km/h' : null);
+    html += formatDataRow('Track', rawData.track ? Math.round(rawData.track) + '°' : null);
+    
+    html += '</div></div>';
+
+    // Section STATUS
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M8 5L8 8L10 10" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '</svg>STATUT</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    var statusText = rawData.status || 'inconnu';
+    var statusColor = getStatusColor(statusText);
+    html += '<div class="ow-data-row">' +
+      '<span class="ow-data-label">Statut</span>' +
+      '<span class="ow-data-value"><span class="ow-status-badge" style="background:' + statusColor + '">' + 
+      escapeHtml(statusText.toUpperCase()) + '</span></span>' +
+      '</div>';
+    
+    html += formatDataRow('Batterie', rawData.battery ? rawData.battery + '%' : null);
+    html += formatDataRow('Santé', rawData.health);
+    
+    html += '</div></div>';
+
+    // Section TEMPS
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M8 4L8 8L11 11" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '</svg>TEMPORALITÉ</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('Dernière mise à jour', formatTimestamp(rawData.timestamp));
+    html += formatDataRow('Péremption', formatTimestamp(rawData.stale));
+    html += formatDataRow('Créé le', formatTimestamp(rawData.created_at));
+    
+    html += '</div></div>';
+
+    // Section COMMUNICATION
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<rect x="3" y="5" width="10" height="6" rx="1" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M5 8L7 8M9 8L11 8" stroke="currentColor" stroke-width="2"/>' +
+      '</svg>COMMUNICATION</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('Fréquence radio', rawData.radio_freq ? rawData.radio_freq + ' MHz' : null);
+    html += formatDataRow('Canal', rawData.radio_channel);
+    
+    html += '</div></div>';
+
+    // Section MISSION
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<path d="M2 2L14 8L2 14L5 8L2 2Z" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '</svg>MISSION</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('Tâche', rawData.task);
+    html += formatDataRow('Objectif', rawData.objective);
+    html += formatDataRow('Remarques', rawData.remarks);
+    
+    html += '</div></div>';
+
+    // Section SYSTÈME
+    html += '<div class="ow-contact-section">' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M8 2L8 5M8 11L8 14M2 8L5 8M11 8L14 8" stroke="currentColor" stroke-width="2"/>' +
+      '</svg>SYSTÈME & SOURCE</h4>' +
+      '<div class="ow-contact-grid">';
+    
+    html += formatDataRow('Source', rawData.source);
+    html += formatDataRow('Device', rawData.device);
+    html += formatDataRow('Version', rawData.version);
+    
+    html += '</div></div>';
+
+    // Section DONNÉES BRUTES (collapsible)
+    html += '<div class="ow-contact-section">' +
+      '<div class="ow-contact-section-header" data-toggle-raw-data>' +
+      '<h4><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" rx="1"/>' +
+      '<path d="M5 6L11 6M5 8L11 8M5 10L9 10" stroke="currentColor" stroke-width="2"/>' +
+      '</svg>DONNÉES BRUTES (JSON)</h4>' +
+      '<svg class="ow-chevron" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '</svg>' +
+      '</div>' +
+      '<div class="ow-contact-raw-data" hidden>' +
+      '<pre>' + escapeHtml(JSON.stringify(rawData.raw, null, 2)) + '</pre>' +
+      '</div>' +
+      '</div>';
+
+    html += '</div>'; // Close sections
+
+    // Actions
+    html += '<div class="ow-contact-actions">' +
+      '<button type="button" class="ow-contact-action-btn ow-primary" onclick="window.OverwatchV3.centerOnContact(\'' + escapeHtml(rawData.id) + '\')">' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M8 2L8 5M8 11L8 14M2 8L5 8M11 8L14 8" stroke="currentColor" stroke-width="2"/>' +
+      '</svg>' +
+      'Centrer sur carte' +
+      '</button>' +
+      '<button type="button" class="ow-contact-action-btn" onclick="window.OverwatchV3.copyCoordinates(\'' + rawData.lat + '\', \'' + rawData.lng + '\')">' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">' +
+      '<rect x="4" y="4" width="8" height="8" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '<path d="M6 4L6 2L14 2L14 10L12 10" stroke="currentColor" stroke-width="2" fill="none"/>' +
+      '</svg>' +
+      'Copier coordonnées' +
+      '</button>' +
+      '</div>';
+
+    html += '</div>'; // Close panel
+
+    return html;
+  }
+
+  function formatDataRow(label, value) {
+    if (value === null || value === undefined || value === '') {
+      return '<div class="ow-data-row ow-data-row-empty">' +
+        '<span class="ow-data-label">' + escapeHtml(label) + '</span>' +
+        '<span class="ow-data-value ow-data-empty">non transmis</span>' +
+        '</div>';
+    }
+    return '<div class="ow-data-row">' +
+      '<span class="ow-data-label">' + escapeHtml(label) + '</span>' +
+      '<span class="ow-data-value">' + escapeHtml(String(value)) + '</span>' +
+      '</div>';
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return null;
+    try {
+      var date = new Date(ts);
+      return date.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (e) {
+      return String(ts);
+    }
+  }
+
+  function getStatusColor(status) {
+    var s = String(status).toLowerCase();
+    if (s === 'online' || s === 'active' || s === 'live') return 'var(--athena-green)';
+    if (s === 'delayed' || s === 'warning') return 'var(--athena-amber)';
+    if (s === 'offline' || s === 'error') return 'var(--athena-red)';
+    return '#7d8883';
+  }
+
+  function centerOnContact(contactId) {
+    console.log('Center on contact', contactId);
+    // TODO: Implement with map reference
+  }
+
+  function copyCoordinates(lat, lng) {
+    var text = lat + ', ' + lng;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        if (window.OverwatchV3) {
+          window.OverwatchV3.showAlertBanner({
+            severity: 'normal',
+            title: 'Coordonnées copiées',
+            message: text,
+            duration: 3000
+          });
+        }
+      });
+    }
+  }
+
+  // ============================================================================
   // UTILITAIRES
   // ============================================================================
 
@@ -618,7 +907,12 @@
       // Audio
       initAudio: initAudio,
       playPingSound: playPingSound,
-      playAlertSound: playAlertSound
+      playAlertSound: playAlertSound,
+
+      // Contact Detail Panel
+      showDetailedContactPanel: showDetailedContactPanel,
+      centerOnContact: centerOnContact,
+      copyCoordinates: copyCoordinates
     };
 
     // Auto-init
@@ -636,6 +930,23 @@
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
           hideContextMenu();
+        }
+      });
+
+      // Bind toggle raw data
+      document.addEventListener('click', function (e) {
+        var toggle = e.target.closest('[data-toggle-raw-data]');
+        if (!toggle) return;
+        
+        var section = toggle.closest('.ow-contact-section');
+        var rawData = section.querySelector('.ow-contact-raw-data');
+        var chevron = toggle.querySelector('.ow-chevron');
+        
+        if (rawData) {
+          rawData.hidden = !rawData.hidden;
+          if (chevron) {
+            chevron.style.transform = rawData.hidden ? 'rotate(0deg)' : 'rotate(180deg)';
+          }
         }
       });
     });

@@ -988,6 +988,15 @@
     selected = unit;
     document.getElementById('ow-drawer-kicker').textContent = 'BFT / CONTACT';
     document.getElementById('ow-drawer-title').textContent = callsign(unit);
+    
+    // Utiliser le nouveau panneau détaillé si disponible
+    if (window.OverwatchV3 && window.OverwatchV3.showDetailedContactPanel) {
+      document.getElementById('ow-drawer-body').innerHTML = window.OverwatchV3.showDetailedContactPanel(unit);
+      document.getElementById('ow-drawer').hidden = false;
+      return;
+    }
+    
+    // Fallback sur l'ancien panneau
     var loc = point(unit);
     var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '—';
     var heading = unitHeading(unit);
