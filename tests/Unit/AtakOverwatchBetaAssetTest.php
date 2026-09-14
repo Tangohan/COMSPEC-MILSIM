@@ -23,11 +23,25 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString("'/atak-overwatch-beta'", $routes);
         self::assertStringContainsString("url('-ATAK-OVERWATCH-Beta')", $dashboardAside);
         self::assertStringContainsString("'Overwatch Beta'", $sidebar);
-        self::assertStringContainsString('data-panel="mission"', $view);
-        self::assertStringContainsString('data-panel="layers"', $view);
-        self::assertStringContainsString('id="command-palette"', $view);
-        self::assertStringContainsString('id="map-context-menu"', $view);
-        self::assertStringContainsString('id="mission-timeline"', $view);
-        self::assertStringContainsString('event.ctrlKey || event.metaKey', $view);
+        self::assertStringContainsString("require base_path('views/atak.php')", $view);
+        self::assertStringContainsString("[AtakController::class, 'overwatchBeta']", $routes);
+
+        $atakController = file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/AtakController.php');
+        $atakView = file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
+        $atakV2 = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-v2.js');
+        $overwatchJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-beta.js');
+        self::assertIsString($atakController);
+        self::assertIsString($atakView);
+        self::assertIsString($atakV2);
+        self::assertIsString($overwatchJs);
+        self::assertStringContainsString("\$params['_overwatch_beta'] = true", $atakController);
+        self::assertStringContainsString('window.ATAK_OVERWATCH_BETA', $atakView);
+        self::assertStringContainsString('atak-overwatch-beta.css', $atakView);
+        self::assertStringContainsString("if (window.ATAK_OVERWATCH_BETA) requested = 'v2'", $atakV2);
+        self::assertStringContainsString("select('comms', 'chat')", $overwatchJs);
+        self::assertStringContainsString("select('c2', 'mission')", $overwatchJs);
+        self::assertStringContainsString('data-overwatch-basemap="classic"', $overwatchJs);
+        self::assertStringContainsString('data-overwatch-basemap="aerial"', $overwatchJs);
+        self::assertStringContainsString('data-overwatch-basemap="mono"', $overwatchJs);
     }
 }
