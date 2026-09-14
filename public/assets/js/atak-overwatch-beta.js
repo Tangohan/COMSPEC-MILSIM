@@ -2784,6 +2784,61 @@
     window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 80);
   });
 
+  // Bouton repli des réglages
+  var toggleSettingsBtn = document.getElementById('ow-toggle-settings');
+  if (toggleSettingsBtn) {
+    toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
+  }
+
+  // Appliquer l'état sauvegardé du repli au chargement
+  restoreSettingsCollapsed();
+
+  // Gestion des calques (layers)
+  document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {
+    // Restaurer l'état sauvegardé
+    var layer = checkbox.getAttribute('data-ow-layer');
+    try {
+      var saved = localStorage.getItem('athena:ow-layer-' + layer);
+      if (saved !== null) {
+        checkbox.checked = saved === '1';
+      }
+    } catch(e) {}
+    
+    // Event listener pour changements
+    checkbox.addEventListener('change', function() {
+      var visible = checkbox.checked;
+      
+      switch(layer) {
+        case 'units':
+          hiddenLayers.units = !visible;
+          renderMap();
+          break;
+        case 'labels':
+          document.body.classList.toggle('ow-labels-hidden', !visible);
+          break;
+        case 'shapes':
+          hiddenLayers.shapes = !visible;
+          Object.keys(shapeLayers).forEach(function(id) {
+            var shapeLayer = shapeLayers[id];
+            if (visible) {
+              if (!map.hasLayer(shapeLayer)) map.addLayer(shapeLayer);
+            } else {
+              if (map.hasLayer(shapeLayer)) map.removeLayer(shapeLayer);
+            }
+          });
+          break;
+        case 'aerial-view':
+          applyLook(visible ? 'aerial' : 'classic');
+          break;
+      }
+      
+      // Sauvegarder la préférence
+      try {
+        localStorage.setItem('athena:ow-layer-' + layer, visible ? '1' : '0');
+      } catch(e) {}
+    });
+  });
+
   window.addEventListener('resize', function () { map.invalidateSize({ animate: false }); });
   window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 120);
 
