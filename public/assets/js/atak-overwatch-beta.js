@@ -1382,11 +1382,22 @@
 
   function sendChat(channel, body) {
     var text = String(body || '').trim();
-    if (!text) return Promise.resolve();
+    console.log('[DEBUG sendChat] channel:', channel, 'body:', body, 'text:', text);
+    if (!text) {
+      console.warn('[DEBUG sendChat] Texte vide, abandon');
+      return Promise.resolve();
+    }
+    console.log('[DEBUG sendChat] Envoi API:', { mapId: mapId, author: authorName, body: text, channel: channel });
     return api('/api/chat', {
       method: 'POST',
       body: { mapId: mapId, author: authorName, body: text, channel: channel }
-    }).then(function () { return loadChat(channel); });
+    }).then(function (response) {
+      console.log('[DEBUG sendChat] Succès, rechargement chat');
+      return loadChat(channel);
+    }).catch(function (error) {
+      console.error('[DEBUG sendChat] Erreur:', error);
+      throw error;
+    });
   }
 
   function appendChatMessage(row) {
@@ -2567,8 +2578,19 @@
   });
   document.getElementById('ow-chat-form').addEventListener('submit', function (event) {
     event.preventDefault();
+    console.log('[DEBUG ow-chat-form] Submit déclenché');
     var input = document.getElementById('ow-chat-input');
-    sendChat(activeChannel, input.value).then(function () { input.value = ''; });
+    console.log('[DEBUG ow-chat-form] Input:', input, 'Value:', input ? input.value : 'N/A', 'activeChannel:', activeChannel);
+    if (!input) {
+      console.error('[DEBUG ow-chat-form] Input #ow-chat-input introuvable !');
+      return;
+    }
+    sendChat(activeChannel, input.value).then(function () {
+      console.log('[DEBUG ow-chat-form] Message envoyé, nettoyage input');
+      input.value = '';
+    }).catch(function (err) {
+      console.error('[DEBUG ow-chat-form] Erreur envoi:', err);
+    });
   });
   document.getElementById('ow-support-form').addEventListener('submit', function (event) {
     event.preventDefault();
@@ -2782,6 +2804,68 @@
     }
     disclaimer.hidden = true;
     window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 80);
+  });
+
+  // Bouton repli des réglages
+  var toggleSettingsBtn = document.getElementById('ow-toggle-settings');
+  if (toggleSettingsBtn) {
+    toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
+  }
+
+  // Appliquer l'état sauvegardé du repli au chargement
+  restoreSettingsCollapsed();
+
+  // Debug: vérifier que les éléments du chat sont présents
+  console.log('[DEBUG INIT] Vérification éléments chat:');
+  console.log('  - #ow-chat-form:', document.getElementById('ow-chat-form'));
+  console.log('  - #ow-chat-input:', document.getElementById('ow-chat-input'));
+  console.log('  - activeChannel:', activeChannel);
+  console.log('  - authorName:', authorName);
+
+  // Gestion des calques (layers)
+  document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {
+    // Restaurer l'état sauvegardé
+    var layer = checkbox.getAttribute('data-ow-layer');
+    try {
+      var saved = localStorage.getItem('athena:ow-layer-' + layer);
+      if (saved !== null) {
+        checkbox.checked = saved === '1';
+      }
+    } catch(e) {}
+    
+    // Event listener pour changements
+    checkbox.addEventListener('change', function() {
+      var visible = checkbox.checked;
+      
+      switch(layer) {
+        case 'units':
+          hiddenLayers.units = !visible;
+          renderMap();
+          break;
+        case 'labels':
+          document.body.classList.toggle('ow-labels-hidden', !visible);
+          break;
+        case 'shapes':
+          hiddenLayers.shapes = !visible;
+          Object.keys(shapeLayers).forEach(function(id) {
+            var shapeLayer = shapeLayers[id];
+            if (visible) {
+              if (!map.hasLayer(shapeLayer)) map.addLayer(shapeLayer);
+            } else {
+              if (map.hasLayer(shapeLayer)) map.removeLayer(shapeLayer);
+            }
+          });
+          break;
+        case 'aerial-view':
+          applyLook(visible ? 'aerial' : 'classic');
+          break;
+      }
+      
+      // Sauvegarder la préférence
+      try {
+        localStorage.setItem('athena:ow-layer-' + layer, visible ? '1' : '0');
+      } catch(e) {}
+    });
   });
 
   window.addEventListener('resize', function () { map.invalidateSize({ animate: false }); });

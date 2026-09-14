@@ -2,7 +2,7 @@
   --athena-black:#050505;--athena-panel:#0d1010;--athena-panel-2:#111515;--athena-line:#1c2321;--athena-line-2:#27302d;
   --athena-text:#f5f7f5;--athena-muted:#7d8883;--athena-green:#00d69a;--athena-green-2:#00b884;--athena-amber:#e7b14d;
   --athena-red:#e05b63;--ow-map:#08231f;--shadow:0 18px 54px rgba(0,0,0,.5);
-  --ow-aside-left:330px;--ow-aside-right:330px;
+  --ow-aside-left:290px;--ow-aside-right:290px;
   --ow-label-size:9px;--ow-icon-size:1;
 }
 *{box-sizing:border-box}
@@ -77,14 +77,11 @@ button{cursor:pointer}
 .ow-map-stage .leaflet-control{filter:none!important}
 .ow-map-stage .leaflet-control-zoom{display:none}
 .ow-map-stage .leaflet-control-attribution{background:#070909cc!important;color:#818c87}
-.ow-rail{position:absolute;left:10px;top:10px;width:38px;background:#090b0b;border:1px solid var(--athena-line-2);z-index:5;display:flex;flex-direction:column}
-.ow-rail button{width:100%;height:38px;border:0;border-bottom:1px solid var(--athena-line);background:transparent;color:#7f8a85;font-size:14px}
-.ow-rail button:last-of-type{border-bottom:0}
-.ow-rail span{height:10px;border-bottom:1px solid var(--athena-line)}
+.ow-rail{position:absolute;left:10px;top:10px;width:34px;background:#090b0b;border:1px solid var(--athena-line-2);z-index:5;display:flex;flex-direction:column;gap:2px;padding:2px 0}
+.ow-rail button{width:100%;height:34px;border:0;background:transparent;color:#7f8a85;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s ease}
+.ow-rail button svg{width:16px;height:16px}
+.ow-rail span{height:1px;background:var(--athena-line);margin:4px 0}
 .ow-rail button:hover,.ow-rail button.is-active{background:#111514;color:#fff}
-.ow-map-tools{position:absolute;top:10px;left:62px;right:14px;display:flex;gap:6px;z-index:5;flex-wrap:wrap}
-.ow-map-tools button{height:27px;padding:0 10px;border:1px solid var(--athena-line-2);background:rgba(7,9,9,.94);color:#98a39e;border-radius:3px;font-size:8px;font-weight:900;letter-spacing:.08em}
-.ow-map-tools button:hover,.ow-map-tools button.is-active{color:#fff;border-color:#395047;background:#0e1211}
 .ow-coordinate{position:absolute;left:10px;bottom:12px;z-index:5;background:#070909;border:1px solid var(--athena-line-2);padding:7px 9px;color:#818c87;font-size:8px;font-weight:700}
 .ow-empty{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);padding:18px 24px;border:1px solid var(--athena-line-2);background:#080b0add;text-align:center}
 .ow-empty[hidden]{display:none}
@@ -388,6 +385,10 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-timeline-slider{flex:1;accent-color:var(--athena-green);height:4px}
 .ow-timeline-time{font-size:11px;color:var(--athena-text);font-weight:800;min-width:80px;text-align:center}
 .ow-timeline-speed{padding:4px 10px;background:#1a2824;border:1px solid var(--athena-line-2);border-radius:3px;font-size:9px;color:var(--athena-green);font-weight:900}
+
+/* Masquer les labels quand le calque est désactivé */
+.ow-labels-hidden .ow-marker span{display:none}
+.ow-labels-hidden .ow-po-label,.ow-labels-hidden .ow-rally-label{opacity:0;pointer-events:none}
 
 /* Boutons dans réglages V3 */
 .ow-btn-full{width:100%;padding:10px 14px;margin-bottom:8px;border:1px solid var(--athena-line-2);background:#0a0d0c;color:var(--athena-text);font-size:10px;font-weight:800;border-radius:4px;cursor:pointer;transition:all .2s;text-align:left}
