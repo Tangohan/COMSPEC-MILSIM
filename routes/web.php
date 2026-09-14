@@ -16,6 +16,7 @@ use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
+use App\Controllers\Web\AtakOverwatchBetaController;
 use App\Controllers\Web\OverwatchModDocController;
 use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;
@@ -881,6 +882,8 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
+    // Workspace cartographique expérimental, volontairement isolé de l'interface ATAK historique.
+    $router->get('/-ATAK-OVERWATCH-Beta', [AtakOverwatchBetaController::class, 'index'], $mwAtakWeb);
     $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);
     $router->get('/atak/mobile/{module}', [\App\Controllers\Web\AtakMobileController::class, 'module'], $mwAtakWeb);
     $router->get('/atak/liaison', [AtakController::class, 'liaison'], $mwAtakMemberOnly);
