@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.39";
+        private const string ExtensionVersion = "2.0.40";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3425,6 +3425,19 @@ public static partial class Extension
                     return PollOkClipped(SimplifyRoleplayConfigJson(body));
                 });
             }
+            if (function == "GetMarkerDetectionRules")
+            {
+                return ServePollGet("GetMarkerDetectionRules", _baseUrl + "/api/atak/marker-detection-rules", (body, code) =>
+                {
+                    if (code < 200 || code >= 300)
+                    {
+                        if (code == 401) return "ERR|unauthorized";
+                        if (code == 403) return "ERR|forbidden";
+                        return "ERR|http_" + code;
+                    }
+                    return PollOkClipped(SimplifyMarkerDetectionRulesJson(body));
+                });
+            }
             if (function == "GetSessionRestore")
             {
                 var steamUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
@@ -5266,6 +5279,62 @@ public static partial class Extension
             if (doc.RootElement.TryGetProperty("session_ttl_sec", out var ttl) && ttl.ValueKind == JsonValueKind.Number)
                 AppendLine(sb, "session_ttl_sec", ttl.GetInt32().ToString());
 
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/marker-detection-rules pour SQF.
+    /// Lignes : id\tlabel\tmatch_mode\tmatch_value\tradius\tconfirm(0|1)
+    /// </summary>
+    private static string SimplifyMarkerDetectionRulesJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+
+            JsonElement rulesEl;
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                rulesEl = doc.RootElement;
+            else if (doc.RootElement.TryGetProperty("rules", out var nested) && nested.ValueKind == JsonValueKind.Array)
+                rulesEl = nested;
+            else
+                return "";
+
+            var sb = new StringBuilder();
+            foreach (var rule in rulesEl.EnumerateArray())
+            {
+                if (rule.ValueKind != JsonValueKind.Object) continue;
+                var id = "0";
+                if (rule.TryGetProperty("id", out var idEl))
+                {
+                    if (idEl.ValueKind == JsonValueKind.Number) id = idEl.GetInt32().ToString();
+                    else if (idEl.ValueKind == JsonValueKind.String) id = Clean(idEl.GetString() ?? "0");
+                }
+                var label = rule.TryGetProperty("label", out var lb) && lb.ValueKind == JsonValueKind.String
+                    ? Clean(lb.GetString() ?? "") : "";
+                var mode = rule.TryGetProperty("match_mode", out var md) && md.ValueKind == JsonValueKind.String
+                    ? Clean(md.GetString() ?? "label_prefix") : "label_prefix";
+                var value = rule.TryGetProperty("match_value", out var mv) && mv.ValueKind == JsonValueKind.String
+                    ? Clean(mv.GetString() ?? "") : "";
+                var radius = "20";
+                if (rule.TryGetProperty("radius_m", out var rd) && rd.ValueKind == JsonValueKind.Number)
+                    radius = rd.GetInt32().ToString();
+                var confirm = "0";
+                if (rule.TryGetProperty("confirm_arrival", out var cf))
+                {
+                    if (cf.ValueKind == JsonValueKind.True) confirm = "1";
+                    else if (cf.ValueKind == JsonValueKind.Number && cf.GetInt32() != 0) confirm = "1";
+                    else if (cf.ValueKind == JsonValueKind.String && (cf.GetString() == "1" || string.Equals(cf.GetString(), "true", StringComparison.OrdinalIgnoreCase)))
+                        confirm = "1";
+                }
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(id).Append('\t').Append(label).Append('\t').Append(mode).Append('\t')
+                    .Append(value).Append('\t').Append(radius).Append('\t').Append(confirm);
+            }
             return sb.ToString();
         }
         catch { return ""; }

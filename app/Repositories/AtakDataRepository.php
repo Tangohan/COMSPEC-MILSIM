@@ -380,6 +380,15 @@ class AtakDataRepository
                 return $this->getMarkerById($tenantId, (int) $existing['id'])
                     ?? ['id' => (int) $existing['id'], 'layerId' => $layerId, 'markerData' => (string) $existing['marker_data'], 'updated_at' => null];
             }
+            $incoming = json_decode($markerData, true);
+            $previous = json_decode((string) ($existing['marker_data'] ?? ''), true);
+            if (is_array($incoming) && is_array($previous)) {
+                $merged = \App\Support\AtakPoMarker::preserveReached($incoming, $previous);
+                $encoded = json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (is_string($encoded) && $encoded !== '') {
+                    $markerData = $encoded;
+                }
+            }
             $this->pdo()->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
             return $this->getMarkerById($tenantId, (int) $existing['id']);
         }

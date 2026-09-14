@@ -16,9 +16,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.576;
-        versionStr = "1.5.76";
-        versionAr[] = {1, 5, 76};
+        version = 1.577;
+        versionStr = "1.5.77";
+        versionAr[] = {1, 5, 77};
     };
 };
 
@@ -244,6 +244,8 @@ class CfgFunctions {
             class orderTypeLabel {};
             class pollOrders {};
             class pollGpsNavigation {};
+            class pollPoMarkers {};
+            class pollMarkerDetectionRules {};
             class pollAiOrders {};
             class findAllyTrackUnit {};
             class applyAiMoveOrder {};

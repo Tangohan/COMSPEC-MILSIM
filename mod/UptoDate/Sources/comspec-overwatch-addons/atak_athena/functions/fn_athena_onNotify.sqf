@@ -1,6 +1,6 @@
 /*
     Notification TOC sur le terminal ATAK — cliquable dans le fil Athena.
-    Déclenchée par un signal web de type NOTIFY (pas un ordre C2).
+    Déclenchée par un signal web NOTIFY ou NOTIFY_FULL (pas un ordre C2).
 */
 params [["_order", createHashMap]];
 
@@ -9,11 +9,13 @@ if (!hasInterface) exitWith {};
 private _issuer = "Athena";
 private _payload = "";
 private _orderId = format ["ntf_%1", diag_tickTime];
+private _fullscreen = false;
 if (_order isEqualType createHashMap) then {
     _issuer = _order getOrDefault ["issuer", "Athena"];
     _payload = trim (_order getOrDefault ["payload", ""]);
     private _oid = trim (_order getOrDefault ["id", ""]);
     if (_oid isNotEqualTo "") then { _orderId = _oid; };
+    _fullscreen = (toUpper (_order getOrDefault ["type", "NOTIFY"])) isEqualTo "NOTIFY_FULL";
 };
 
 if (_payload isEqualTo "") then {
@@ -33,8 +35,10 @@ private _brief = if ((count _safePayload) > 48) then {
     _safePayload
 };
 
+private _kindLabel = if (_fullscreen) then { "Alerte plein écran" } else { "Notification" };
 private _detail = format [
-    "<t color='#7dffb0'>Notification</t><br/><t color='#8aa0b4'>Émetteur</t>  %1<br/><t color='#8aa0b4'>Heure</t>  %2<br/><br/><t color='#e8f4f0'>%3</t>",
+    "<t color='#7dffb0'>%1</t><br/><t color='#8aa0b4'>Émetteur</t>  %2<br/><t color='#8aa0b4'>Heure</t>  %3<br/><br/><t color='#e8f4f0'>%4</t>",
+    _kindLabel,
     _issuer,
     _timeStr,
     _safePayload
@@ -42,7 +46,7 @@ private _detail = format [
 
 [
     "notify",
-    "Notification",
+    _kindLabel,
     format ["%1 — %2", _issuer, _brief],
     _detail,
     _orderId,
@@ -52,17 +56,20 @@ private _detail = format [
 // Entrée journal pour sélection / détail (clic sur la notif)
 private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
 if (!(_inbox isEqualType [])) then { _inbox = []; };
-_inbox pushBack ["NOTIFY", "Notification", _safePayload, "", _timeStr, _issuer, _orderId];
+_inbox pushBack ["NOTIFY", _kindLabel, _safePayload, "", _timeStr, _issuer, _orderId];
 while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
 missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
 
-["ATHENA", format ["Notification — %1", _issuer], 7] call comspec_overwatch_connect_fnc_addScreenToast;
-["COMSPEC_Warning", [format ["Notification Athena — de %1", _issuer]]] call comspec_overwatch_connect_fnc_showNotification;
+["ATHENA", format ["%1 — %2", _kindLabel, _issuer], 7] call comspec_overwatch_connect_fnc_addScreenToast;
+["COMSPEC_Warning", [format ["%1 — de %2", _kindLabel, _issuer]]] call comspec_overwatch_connect_fnc_showNotification;
 if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
     ["urgent"] call comspec_overwatch_connect_fnc_playAtakNotification;
 };
 if (!isNil "cTab_phoneVibrate") then {
     playSound "cTab_phoneVibrate";
+};
+if (_fullscreen && {!isNil "comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert"}) then {
+    [_issuer, _safePayload] call comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert;
 };
 
 ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;

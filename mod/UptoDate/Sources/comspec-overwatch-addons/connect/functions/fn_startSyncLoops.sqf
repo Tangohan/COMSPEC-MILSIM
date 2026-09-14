@@ -205,6 +205,21 @@ private _fnc_addPoll = {
 [{
         [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollPoMarkers;
+        }, [], "pollPoMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 2, 0.4] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollMarkerDetectionRules;
+        }, [], "pollMarkerDetectionRules"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 30, 2.6] call _fnc_addPoll;
+
+[{
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollTacticalZones;
         }, [], "pollTacticalZones"] call comspec_overwatch_connect_fnc_profileWrap;

@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.122;
-        versionStr = "1.0.122";
-        versionAr[] = {1, 0, 122};
+        version = 1.125;
+        versionStr = "1.0.125";
+        versionAr[] = {1, 0, 125};
     };
 };
 
@@ -93,6 +93,8 @@ class CfgFunctions
             class athena_onVibrate {};
             class athena_onHelmetMediaRequest {};
             class athena_onNotify {};
+            class athena_showFullscreenAlert {};
+            class athena_paintFullscreenAlert {};
             class athena_statusOnOpened {};
             class athena_updateStatus {};
             class athena_updateLinkStrip {};
@@ -148,6 +150,10 @@ class CfgFunctions
             class athena_commsSend {};
             class athena_commsCreateChannel {};
             class athena_commsDeleteChannel {};
+            class athena_commsFooter {};
+            class athena_commsApplyChrome {};
+            class athena_commsTitleClick {};
+            class athena_commsIsOpen {};
             class athena_openComms {};
             class athena_bftUnitLabel {};
             class athena_fillIdentityOverlay {};
@@ -282,6 +288,7 @@ class ATAK_APPs
             ORDER = 1.11;
             PAGE_CTRL = "COMSPEC_ATAK_Comms";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+            ATAK_Buttons = "COMSPEC_Comms_Menu";
         };
     };
     class Athena: message
@@ -331,6 +338,7 @@ class ATAK_APPs
             ORDER = 1.12;
             PAGE_CTRL = "COMSPEC_ATAK_Comms";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+            ATAK_Buttons = "COMSPEC_Comms_Menu";
         };
     };
     class AtakStatus: message
@@ -440,6 +448,11 @@ class ATAK_Buttons
         onLoad = "comspec_overwatch_atak_athena_fnc_athena_taskFooter";
         clickEvents[] = {};
     };
+    class COMSPEC_Comms_Menu
+    {
+        onLoad = "comspec_overwatch_atak_athena_fnc_athena_commsFooter";
+        clickEvents[] = {};
+    };
 };
 
 class RscTitles
@@ -457,6 +470,7 @@ class RscTitles
                 ORDER = 1.11;
                 PAGE_CTRL = "COMSPEC_ATAK_Comms";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+                ATAK_Buttons = "COMSPEC_Comms_Menu";
             };
         };
         class Athena: message
@@ -506,6 +520,7 @@ class RscTitles
                 ORDER = 1.12;
                 PAGE_CTRL = "COMSPEC_ATAK_Comms";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
+                ATAK_Buttons = "COMSPEC_Comms_Menu";
             };
         };
         class AtakStatus: message

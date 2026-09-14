@@ -118,19 +118,56 @@ private _ensureAtakApps = {
 } forEach [2, 5, 10, 12];
 
 // Si IceMan ouvre encore Groups / Group Messages → bascule Messagerie COMSPEC
-if (!isNil "Iceman_fnc_group_onOpened") then {
-    Iceman_fnc_group_onOpened = {
-        [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+// sans relancer toute l’ouverture du téléphone (évite double écran et plantage).
+private _redirectIcemanGroup = {
+    params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
+    if (missionNamespace getVariable ["COMSPEC_ATAK_Comms_iceRedirect", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", true, false];
+    if (!isNull _group) then {
+        {
+            _x ctrlShow false;
+            _x ctrlEnable false;
+        } forEach (allControls _group);
+        _group ctrlShow false;
+        _group ctrlEnable false;
     };
+    ["AtakComms"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+    [] spawn {
+        uiSleep 0.2;
+        ["comms"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+        [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
+        [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
+        missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", false, false];
+    };
+};
+if (!isNil "Iceman_fnc_group_onOpened") then {
+    Iceman_fnc_group_onOpened = _redirectIcemanGroup;
     missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
 };
 [{
-    if (!isNil "Iceman_fnc_group_onOpened") then {
-        Iceman_fnc_group_onOpened = {
-            [] call comspec_overwatch_atak_athena_fnc_athena_openComms;
+    if (isNil "Iceman_fnc_group_onOpened") exitWith {};
+    Iceman_fnc_group_onOpened = {
+        params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
+        if (missionNamespace getVariable ["COMSPEC_ATAK_Comms_iceRedirect", false]) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", true, false];
+        if (!isNull _group) then {
+            {
+                _x ctrlShow false;
+                _x ctrlEnable false;
+            } forEach (allControls _group);
+            _group ctrlShow false;
+            _group ctrlEnable false;
         };
-        missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
+        ["AtakComms"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+        [] spawn {
+            uiSleep 0.2;
+            ["comms"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+            [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
+            [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
+            missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", false, false];
+        };
     };
+    missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
 }, [], 8] call CBA_fnc_waitAndExecute;
 
 // Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)

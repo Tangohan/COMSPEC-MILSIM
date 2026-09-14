@@ -149,6 +149,7 @@ $atakDeviceChildren = array_values(array_filter([
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
     ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'active' => $navAtakRoleplayActive],
+    ['label' => 'Détection des marqueurs', 'href' => url('back-office/atak/detection-marqueurs'), 'active' => str_starts_with($p, 'back-office/atak/detection-marqueurs')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $jnetChildren = [
@@ -295,12 +296,13 @@ $athNavGroups = [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),
                 'icon' => 'phone',
-                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive,
+                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive || str_starts_with($p, 'back-office/atak/detection-marqueurs'),
                 'children' => $atakDeviceChildren,
             ],
             ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],
             ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'icon' => 'cert', 'active' => $navAtakCertsActive, 'warn' => true],
             ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'icon' => 'roleplay', 'active' => $navAtakRoleplayActive],
+            ['label' => 'Détection des marqueurs', 'href' => url('back-office/atak/detection-marqueurs'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/atak/detection-marqueurs')],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [

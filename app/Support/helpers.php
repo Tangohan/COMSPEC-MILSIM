@@ -975,6 +975,28 @@ if (!function_exists('atak_resolve_tile_pattern')) {
     }
 }
 
+if (!function_exists('atak_atlas_overlay_spec')) {
+    /**
+     * Calque Atlas (mètres Arma) : même pyramide que la photo aérienne d’Altis.
+     *
+     * @return array{tilePattern:string,factorX:float,factorY:float,tileSize:int,minZoom:int,maxZoom:int,attribution:string}
+     */
+    function atak_atlas_overlay_spec(string $layerId, int $maxZoom = 7): array
+    {
+        $id = preg_replace('/[^0-9]/', '', $layerId) ?: '295';
+
+        return [
+            'tilePattern' => 'https://atlas.plan-ops.fr/data/1/maps/3/' . $id . '/{z}/{x}/{y}.webp',
+            'factorX' => 0.012375,
+            'factorY' => 0.012375,
+            'tileSize' => 381,
+            'minZoom' => 0,
+            'maxZoom' => $maxZoom,
+            'attribution' => '&copy; Bohemia Interactive',
+        ];
+    }
+}
+
 if (!function_exists('atak_aerial_layer_config')) {
     /**
      * Photo aérienne Atlas (mètres Arma) pour un théâtre, ou null si absente.
@@ -984,25 +1006,58 @@ if (!function_exists('atak_aerial_layer_config')) {
     function atak_aerial_layer_config(?string $mapSlug): ?array
     {
         $slug = strtolower(trim((string) $mapSlug));
+        if ($slug !== 'altis') {
+            return null;
+        }
+
+        return atak_atlas_overlay_spec('295', 7);
+    }
+}
+
+if (!function_exists('atak_map_fond_layers')) {
+    /**
+     * Calques de fond proposés dans les réglages du poste.
+     *
+     * @return list<array{id:string,label:string,help:string,kind:string,spec?:array<string,mixed>}>
+     */
+    function atak_map_fond_layers(?string $mapSlug): array
+    {
+        $slug = strtolower(trim((string) $mapSlug));
         $layers = [
-            'altis' => [
-                'tilePattern' => 'https://atlas.plan-ops.fr/data/1/maps/3/295/{z}/{x}/{y}.webp',
-                'factorX' => 0.012375,
-                'factorY' => 0.012375,
-                'tileSize' => 381,
-                'minZoom' => 0,
-                'maxZoom' => 7,
-                'attribution' => '&copy; Bohemia Interactive',
+            [
+                'id' => 'plan',
+                'label' => 'Plan',
+                'help' => 'Carte topographique du poste',
+                'kind' => 'base',
             ],
         ];
+        if ($slug === 'altis') {
+            $layers[] = [
+                'id' => 'topo',
+                'label' => 'Carte du jeu',
+                'help' => 'Plan du théâtre',
+                'kind' => 'overlay',
+                'spec' => atak_atlas_overlay_spec('3', 6),
+            ];
+            $aerial = atak_aerial_layer_config($slug);
+            if (is_array($aerial)) {
+                $layers[] = [
+                    'id' => 'aerial',
+                    'label' => 'Photo aérienne',
+                    'help' => 'Vue photo du terrain',
+                    'kind' => 'overlay',
+                    'spec' => $aerial,
+                ];
+            }
+        }
 
-        return $layers[$slug] ?? null;
+        return $layers;
     }
 }
 
 if (!function_exists('atak_with_aerial_layer')) {
     /**
-     * Ajoute la photo aérienne au config JS d’un théâtre si elle existe.
+     * Ajoute la photo aérienne et la liste des calques de fond au config JS d’un théâtre.
      *
      * @param array<string, mixed> $config
      * @return array<string, mixed>
@@ -1016,6 +1071,27 @@ if (!function_exists('atak_with_aerial_layer')) {
         if (is_array($fromCfg) && trim((string) ($fromCfg['tilePattern'] ?? '')) !== '') {
             $config['aerial'] = $fromCfg;
         }
+
+        $layers = atak_map_fond_layers($mapSlug);
+        if (is_array($fromCfg) && trim((string) ($fromCfg['tilePattern'] ?? '')) !== '') {
+            $hasAerial = false;
+            foreach ($layers as $i => $layer) {
+                if (($layer['id'] ?? '') === 'aerial') {
+                    $layers[$i]['spec'] = $fromCfg;
+                    $hasAerial = true;
+                }
+            }
+            if (!$hasAerial) {
+                $layers[] = [
+                    'id' => 'aerial',
+                    'label' => 'Photo aérienne',
+                    'help' => 'Vue photo du terrain',
+                    'kind' => 'overlay',
+                    'spec' => $fromCfg,
+                ];
+            }
+        }
+        $config['fondLayers'] = $layers;
 
         return $config;
     }

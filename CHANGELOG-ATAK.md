@@ -7,7 +7,67 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Portail · Overwatch Beta — 2026-09-14
+
+### Nouveau — Détection des marqueurs posés en jeu
+
+Les gestionnaires de la communauté décrivent quels marqueurs posés dans Arma 3 doivent être suivis : un libellé, un symbole, un rayon. Dès qu’un opérateur pose un point correspondant, il apparaît au poste. Si la règle le demande, le point est confirmé lorsqu’un téléphone ATAK entre dans le rayon, et les opérateurs sont prévenus sur leur écran. Les points d’objectif libellés PO restent suivis comme avant. Relancez Arma complètement après la mise à jour du pack jeu.
+
+### Nouveau — Alerte plein écran sur les téléphones ATAK
+
+Le commandement envoie une alerte qui recouvre tout l’écran du téléphone ATAK. Le message s’affiche aussi lorsque le téléphone est en position mini dans le coin de l’écran. L’opérateur le lit, puis appuie sur Fermer, ou l’alerte disparaît après quelques secondes. Relancez Arma complètement après la mise à jour du pack jeu.
+
+### Nouveau — Points de ralliement
+
+Le commandement pose un point de ralliement depuis Overwatch Beta. Un clic place un lieu de regroupement avec un anneau de 50 mètres, visible au poste et en jeu. Les opérateurs réellement présents dans le rayon sont indiqués. Ce n’est pas un point à atteindre : c’est un lieu où se rassembler.
+
+### Nouveau — Tâches de groupe
+
+Le commandement transmet une tâche à un groupe depuis Overwatch Beta. Le groupe, le type d’action, l’urgence et éventuellement un point à atteindre se choisissent dans des listes. La tâche arrive sur les téléphones ATAK des opérateurs concernés. Le poste suit le statut et peut annuler.
+
+### Nouveau — Poser des points à atteindre
+
+Le commandement pose une suite de points à atteindre depuis Overwatch Beta. Chaque point est numéroté, un anneau de 20 mètres s’affiche, et le point est confirmé dès qu’un téléphone ATAK y entre. La suite est transmise aux opérateurs pour le guidage en jeu.
+
+### Nouveau — Points d’objectif PO confirmés à 20 m
+
+Les marqueurs libellés PO deviennent des points d’objectif. Dès qu’un opérateur ATAK entre dans un rayon de 20 mètres, le point est confirmé atteint. Le poste affiche l’anneau et l’indicatif. En jeu, l’anneau passe au gris.
+
+### Nouveau — Visée, anneaux de portée et suivi
+
+Vous vérifiez si le relief masque une visée. Des anneaux de portée s’affichent autour du contact ouvert. Le poste peut suivre un opérateur. Un tracé se retire. La grille part sur le canal. Les contacts se filtrent par ami, hostile ou inconnu.
+
+### Nouveau — Groupes reliés, mesures et dessins
+
+Les opérateurs d’un même groupe sont reliés sur la carte. Un clic sur un contact affiche les distances vers ses coéquipiers, ainsi que le cap et la vitesse s’ils sont transmis. Vous mesurez cap, distance et surface. Vous dessinez un cercle, un rectangle, un croquis ou un texte, avec la couleur choisie dans les réglages.
+
+### Nouveau — Appui, renseignement et outils de poste
+
+Sur Overwatch Beta, le commandement prépare une 9-Line complète, ouvre une évacuation avec le triage, consulte les fiches de renseignement et le journal de mission. Un temps de parcours à pied ou en véhicule se calcule sur la carte. Le profil de relief s’affiche si le théâtre a déjà été relevé.
+
+### Amélioration — Zones, météo, replay et personnalisation
+
+Une alerte signale l’entrée ou la sortie d’une zone. La météo transmise par la mission apparaît en overlay. Le replay parcourt les trajectoires déjà enregistrées. Les symboles, couleurs et largeurs de colonnes restent mémorisés sur cet ordinateur.
+
+### Correction — La carte du poste Beta s’affiche
+
+Overwatch Beta a son propre écran, distinct de la carte ATAK habituelle. La carte de l’opération est visible. Les réglages sont à gauche, le tchat de mission à droite. Un avertissement s’affiche à la première ouverture.
+
+### Nouveau — Trois lectures de fond Altis
+
+Dans les réglages du poste Beta : Classique, Aerial avec relief renforcé, et Noir et blanc. Le choix est mémorisé sur cet ordinateur. Les contacts et les symboles ne changent pas.
+
+---
+
+## Athena 1.0.124 — 2026-09-14
+
+### Correction — Messagerie : retour à la liste des canaux
+
+Après avoir ouvert un canal, **Retour aux canaux** ramène à la liste. Le bandeau du bas n’est plus recouvert par Live Feed. Relancez Arma complètement.
 
 ---
 
@@ -24,6 +84,26 @@ Opérations → Carte tactique s’affiche de nouveau. Un incident empêchait l�
 ### Nouveau — Photos Quick Picture vers Discord
 
 Sur Intégrations, vous pouvez envoyer les photos Quick Picture (téléphone en jeu) vers un salon Discord de la communauté. Chaque événement a trois choix clairs : ne pas publier, salon commun, ou un autre salon.
+
+---
+
+## Overwatch 1.5.77 / Athena 1.0.123 — 2026-09-14
+
+### Amélioration — Pack Overwatch, Athena et liaison à jour
+
+Tout le pack Overwatch, le téléphone Athena et la liaison sont livrés ensemble. En jeu : le numéro de carte de l’opération, la reprise des envois après un plantage, le Super ping, et les correctifs Quick Picture déjà décrits.
+
+---
+
+## Portail · Carte ATAK — 2026-09-14
+
+### Nouveau — Photo aérienne d’Altis
+
+Sur Altis, le poste peut afficher la photo aérienne à la place du plan. Le calque s’aligne sur la carte de l’opération. Le téléphone en jeu continue d’utiliser le plan Overwatch.
+
+### Nouveau — Calques de fond dans les réglages
+
+Dans Réglages du poste, vous choisissez le fond de la carte : Plan, Carte du jeu, ou Photo aérienne. Les positions et les tracés restent en place.
 
 ---
 

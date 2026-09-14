@@ -14,6 +14,11 @@ final class AtakMapSettingsAsideAssetTest extends TestCase
 
         self::assertStringContainsString('id="atak-settings-map"', $view);
         self::assertStringContainsString('Carte — relief et calques', $view);
+        self::assertStringContainsString('id="atak-settings-fond"', $view);
+        self::assertStringContainsString('Fond de carte', $view);
+        self::assertStringContainsString('name="atak-fond-calque"', $view);
+        self::assertStringContainsString('Carte du jeu', $view);
+        self::assertStringContainsString('Photo aérienne', $view);
         self::assertStringContainsString('id="atak-terrain-hillshade"', $view);
         self::assertStringContainsString('Ombrage', $view);
         self::assertStringContainsString('id="atak-terrain-3d-settings"', $view);

@@ -2,11 +2,11 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
-[h1]COMSPEC SSE 0.7.19[/h1]
-[b]01/09/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+[h1]COMSPEC SSE 0.7.21[/h1]
+[b]14/09/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
 [list]
-[*] Zeus : Poser un point carte ouvre le formulaire, sans message d’erreur
+[*] Le chef de mission choisit l’apparence des fiches (papier, en-tête) depuis l’éditeur ou Zeus
 [/list]
 
 Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
@@ -14,6 +14,11 @@ Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
 ================================================================================
 HISTORIQUE
 ================================================================================
+
+COMSPEC SSE 0.7.21 — 14/09/2026
+
+• Le chef de mission choisit l’apparence des fiches (papier, en-tête) depuis l’éditeur ou Zeus
+• Relancer Arma complètement après la mise à jour
 
 COMSPEC SSE 0.7.19 — 01/09/2026
 

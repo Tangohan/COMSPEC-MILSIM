@@ -36,8 +36,11 @@ use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakIntelViewService;
 use App\Services\Tactical\AtakTenantDataService;
 use App\Services\Tactical\AtakUnitMotionService;
+use App\Services\Tactical\AtakPoArrivalService;
+use App\Services\Tactical\AtakMarkerDetectionService;
 use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\ArmaMarkerLabel;
+use App\Support\AtakPoMarker;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakOrderWaypoint;
 use App\Support\AtakPlayNight;
@@ -70,6 +73,8 @@ class AtakApiController
     private RoleplaySimulationService $roleplaySim;
     private AtakIntelViewService $intelView;
     private ?AtakUnitMotionService $unitMotion = null;
+    private ?AtakPoArrivalService $poArrival = null;
+    private ?AtakMarkerDetectionService $markerDetection = null;
 
     public function __construct(
         private AtakDataRepository $atak,
@@ -1059,6 +1064,21 @@ class AtakApiController
     private function motionService(): AtakUnitMotionService
     {
         return $this->unitMotion ??= new AtakUnitMotionService();
+    }
+
+    private function poArrivalService(): AtakPoArrivalService
+    {
+        return $this->poArrival ??= new AtakPoArrivalService($this->atak, $this->activityLog ?? new AtakActivityLogService());
+    }
+
+    private function markerDetectionService(): AtakMarkerDetectionService
+    {
+        return $this->markerDetection ??= new AtakMarkerDetectionService(
+            $this->atak,
+            new \App\Repositories\AtakMarkerDetectionRuleRepository(),
+            $this->activityLog ?? new AtakActivityLogService(),
+            $this->orderRepository
+        );
     }
 
     private function mapId(Request $request, bool $fromBody = false): int
@@ -3806,6 +3826,16 @@ class AtakApiController
             ], 503);
         }
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
+        try {
+            $detectRules = $this->markerDetectionService()->enabledRules($tenantId);
+            if ($detectRules !== []) {
+                $out = array_map(
+                    fn (array $row): array => $this->markerDetectionService()->decorateRow($row, $detectRules),
+                    $out
+                );
+            }
+        } catch (\Throwable) {
+        }
         // Compatibility bridge: published authoritative graphics also flow through the
         // historical GetMarkers channel used by deployed NativeAOT/SQF clients.
         $world = preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('world_name', ''));
@@ -3838,6 +3868,35 @@ class AtakApiController
         return Response::json($out);
     }
 
+    /**
+     * Règles communautaires de détection des marqueurs (jeu + poste).
+     */
+    public function markerDetectionRulesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        try {
+            $rules = $this->markerDetectionService()->enabledRules($r);
+        } catch (\Throwable) {
+            $rules = [];
+        }
+        $out = [];
+        foreach ($rules as $rule) {
+            $out[] = [
+                'id' => (int) ($rule['id'] ?? 0),
+                'label' => (string) ($rule['label'] ?? ''),
+                'match_mode' => (string) ($rule['match_mode'] ?? ''),
+                'match_value' => (string) ($rule['match_value'] ?? ''),
+                'radius_m' => (int) ($rule['radius_m'] ?? 20),
+                'confirm_arrival' => !empty($rule['confirm_arrival']),
+            ];
+        }
+
+        return Response::json(['ok' => true, 'rules' => $out]);
+    }
+
     public function markersStore(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -3861,6 +3920,10 @@ class AtakApiController
         }
         if (empty($decoded['type'])) {
             $decoded['type'] = 'manual';
+        }
+        $labelForPo = trim((string) ($decoded['label'] ?? $decoded['text'] ?? ''));
+        if (AtakPoMarker::isPoLabel($labelForPo) || !empty($decoded['po'])) {
+            $decoded = AtakPoMarker::annotate($decoded);
         }
         $markerData = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
         $row = $this->atak->addMarker($tenantId, $mapId, $layerId, $markerData);
@@ -3908,6 +3971,69 @@ class AtakApiController
             return Response::json(['error' => 'Not found'], 404);
         }
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']]);
+    }
+
+    /**
+     * POST /api/atak/markers/{id}/reached
+     *
+     * Confirmation depuis le poste lorsqu’un contact ATAK est déjà dans le rayon du PO.
+     */
+    public function markersPoReached(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::json(['ok' => false, 'error' => 'Point introuvable.'], 404);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
+        $callSign = trim((string) ($body['reached_by_callsign'] ?? $body['callsign'] ?? $body['call_sign'] ?? ''));
+        if ($callSign === '') {
+            $sessionUser = $this->sessionUserBrief();
+            $callSign = is_array($sessionUser)
+                ? trim((string) ($sessionUser['callsign'] ?? $sessionUser['displayName'] ?? ''))
+                : '';
+        }
+        if ($callSign === '') {
+            $callSign = 'Opérateur';
+        }
+        $posX = AtakDataRepository::coerceFloat($body['pos_x'] ?? $body['x'] ?? null);
+        $posY = AtakDataRepository::coerceFloat($body['pos_y'] ?? $body['y'] ?? null);
+        if ($posX === null || $posY === null) {
+            $unitCall = trim((string) ($body['unit_callsign'] ?? $callSign));
+            $unit = $unitCall !== '' ? $this->atak->getUnitByCallSign($tenantId, $mapId, $unitCall) : null;
+            if (!is_array($unit)) {
+                return Response::json([
+                    'ok' => false,
+                    'error' => 'Position de l’opérateur absente.',
+                ], 422);
+            }
+            $posX = AtakDataRepository::coerceFloat($unit['pos_x'] ?? null);
+            $posY = AtakDataRepository::coerceFloat($unit['pos_y'] ?? null);
+        }
+        if ($posX === null || $posY === null) {
+            return Response::json(['ok' => false, 'error' => 'Position de l’opérateur absente.'], 422);
+        }
+        $hit = $this->poArrivalService()->confirmMarker($tenantId, $mapId, $id, $callSign, $posX, $posY);
+        if ($hit === null) {
+            try {
+                $hit = $this->markerDetectionService()->confirmMarker($tenantId, $mapId, $id, $callSign, $posX, $posY);
+            } catch (\Throwable) {
+                $hit = null;
+            }
+        }
+        if ($hit === null) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Aucun téléphone ATAK dans le rayon, ou ce point n’est pas suivi.',
+            ], 422);
+        }
+
+        return Response::json(['ok' => true, 'point' => $hit]);
     }
 
     public function markersDelete(Request $request, array $params = []): Response
@@ -3967,6 +4093,10 @@ class AtakApiController
         }
         $existingRow = $this->atak->findMarkerByArmaName($tenantId, $mapId, (string) $armaName);
         $markerData = $this->normalizeArmaMarkerData($body['markerData'] ?? '{}', (string) $armaName);
+        try {
+            $markerData = $this->markerDetectionService()->applyToJson($tenantId, $markerData, (string) $armaName);
+        } catch (\Throwable) {
+        }
         $decodedCheck = json_decode($markerData, true);
         $decodedCheck = is_array($decodedCheck) ? $decodedCheck : [];
         $posCheck = $decodedCheck['pos'] ?? null;
@@ -4002,6 +4132,10 @@ class AtakApiController
                 'Marqueur placé — ' . $label,
                 $logActor
             );
+        }
+        try {
+            $this->markerDetectionService()->onMarkerSaved($tenantId, $mapId, $existingRow, $row);
+        } catch (\Throwable) {
         }
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']], 201);
     }
@@ -4050,6 +4184,11 @@ class AtakApiController
         if (empty($decoded['text']) && !empty($decoded['label'])) {
             $decoded['text'] = (string) $decoded['label'];
         }
+        $poLabel = trim((string) ($decoded['text'] ?? $decoded['label'] ?? $resolvedText ?? ''));
+        if (AtakPoMarker::isPoLabel($poLabel) || !empty($decoded['po'])) {
+            $decoded = AtakPoMarker::annotate($decoded);
+        }
+
         if (isset($decoded['pos']) && is_array($decoded['pos'])) {
             $decoded['pos'] = array_map(static function ($v) {
                 if (is_string($v)) {
@@ -5629,6 +5768,30 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
+        if (!$isProxyTerrain) {
+            try {
+                $this->poArrivalService()->confirmFromOperatorPosition(
+                    $tenantId,
+                    $mapId,
+                    $callSign,
+                    $posX,
+                    $posY,
+                    is_array($extra) ? $extra : []
+                );
+                try {
+                    $this->markerDetectionService()->confirmFromOperatorPosition(
+                        $tenantId,
+                        $mapId,
+                        $callSign,
+                        $posX,
+                        $posY,
+                        is_array($extra) ? $extra : []
+                    );
+                } catch (\Throwable) {
+                }
+            } catch (\Throwable) {
+            }
+        }
         try {
             $this->motionService()->ingestGround(
                 $tenantId,
@@ -9003,6 +9166,7 @@ class AtakApiController
             'FRAGO' => 'Ordre fragmentaire',
             'VIBRATE' => 'Faire vibrer le terminal',
             'NOTIFY' => 'Notification terminal',
+            'NOTIFY_FULL' => 'Alerte plein écran',
             'HELMET_SNAP' => 'Photo casque',
             'HELMET_SNAP_HD' => 'Photo casque HD',
             'HELMET_STREAM' => 'Flux casque',
@@ -11564,6 +11728,48 @@ class AtakApiController
         $zone = $repo->findById($zoneId);
         
         return Response::json($zone, 201);
+    }
+
+    /**
+     * Retire une zone tactique (suppression logique).
+     * DELETE /api/atak/zones/{id}
+     */
+    public function tacticalZonesDestroy(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Zone introuvable.'], 404);
+        }
+
+        $repo = new \App\Repositories\AtakTacticalZoneRepository();
+        $zone = $repo->findById($id);
+        if (!$zone || (int) ($zone['tenant_id'] ?? 0) !== (int) $r) {
+            return Response::json(['error' => 'not_found', 'message' => 'Zone introuvable.'], 404);
+        }
+
+        if (!$repo->softDelete($id)) {
+            return Response::json(['error' => 'delete_failed', 'message' => 'Impossible de retirer cette zone.'], 500);
+        }
+
+        $mapId = (int) ($zone['context_id'] ?? $this->mapId($request));
+        $this->activityLog?->record(
+            $r,
+            $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+            'ZONE_DELETED',
+            'Zone retirée : ' . (string) ($zone['zone_name'] ?? 'Zone'),
+            $actor['callsign'] ?? 'Unknown'
+        );
+
+        return Response::json(['ok' => true]);
     }
 
     /**

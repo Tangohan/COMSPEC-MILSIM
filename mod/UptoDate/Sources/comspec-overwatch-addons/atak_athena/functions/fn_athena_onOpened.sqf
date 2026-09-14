@@ -33,6 +33,20 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
 {
     [_paint, [], _x] call CBA_fnc_waitAndExecute;
 } forEach [0.08, 0.25, 0.7, 1.4];
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    {
+        [
+            {
+                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+                };
+            },
+            [],
+            _x
+        ] call CBA_fnc_waitAndExecute;
+    } forEach [0.2, 0.8];
+};
 {
     [
         {

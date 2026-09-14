@@ -47,8 +47,8 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             h = QUOTE(COMSPEC_COMMS_H(0.48));
             size = QUOTE(COMSPEC_COMMS_H(0.32));
             text = "  Messagerie";
-            onButtonClick = "call BCE_fnc_ATAK_toggleSubListMenu";
-            tooltip = "Revenir au tiroir des applications.";
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_commsTitleClick";
+            tooltip = "Revenir au tiroir des applications, ou à la liste des canaux si un fil est ouvert.";
         };
 
         class AccentBar: RscText
@@ -163,10 +163,10 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             show = 0;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
             y = QUOTE(COMSPEC_COMMS_H(0.56));
-            w = QUOTE(COMSPEC_COMMS_W(0.92));
-            h = QUOTE(COMSPEC_COMMS_H(0.46));
-            size = QUOTE(COMSPEC_COMMS_H(0.26));
-            text = "Canaux";
+            w = QUOTE(COMSPEC_COMMS_W(2.84));
+            h = QUOTE(COMSPEC_COMMS_H(0.50));
+            size = QUOTE(COMSPEC_COMMS_H(0.28));
+            text = "Retour aux canaux";
             colorBackground[] = COMMS_BTN;
             colorBackground2[] = COMMS_BTN;
             colorBackgroundFocused[] = COMMS_BTN_F;
@@ -179,10 +179,10 @@ class COMSPEC_ATAK_Comms: ATAK_Message
         {
             idc = 9934;
             show = 0;
-            x = QUOTE(COMSPEC_COMMS_W(1.08));
-            y = QUOTE(COMSPEC_COMMS_H(0.56));
-            w = QUOTE(COMSPEC_COMMS_W(1.84));
-            h = QUOTE(COMSPEC_COMMS_H(0.46));
+            x = QUOTE(COMSPEC_COMMS_W(0.08));
+            y = QUOTE(COMSPEC_COMMS_H(1.10));
+            w = QUOTE(COMSPEC_COMMS_W(2.84));
+            h = QUOTE(COMSPEC_COMMS_H(0.42));
             size = QUOTE(COMSPEC_COMMS_H(0.26));
             text = "";
             colorBackground[] = {0.05, 0.08, 0.10, 0.96};
@@ -202,9 +202,9 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             idc = 9923;
             show = 0;
             x = QUOTE(COMSPEC_COMMS_W(0.08));
-            y = QUOTE(COMSPEC_COMMS_H(1.10));
+            y = QUOTE(COMSPEC_COMMS_H(1.56));
             w = QUOTE(COMSPEC_COMMS_W(2.84));
-            h = QUOTE(COMSPEC_COMMS_H(4.52));
+            h = QUOTE(COMSPEC_COMMS_H(4.06));
             colorBackground[] = {0.05, 0.06, 0.07, 0.98};
             class VScrollbar
             {
@@ -240,7 +240,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
                     x = 0;
                     y = 0;
                     w = QUOTE(COMSPEC_COMMS_W(2.68));
-                    h = QUOTE(COMSPEC_COMMS_H(4.52));
+                    h = QUOTE(COMSPEC_COMMS_H(4.06));
                     text = "";
                     colorBackground[] = {0, 0, 0, 0};
                     class Attributes

@@ -964,6 +964,10 @@ class Container
                 self::get(\App\Services\Personnel\PhaseRules\PhaseTransitionService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
+            \App\Repositories\AtakMarkerDetectionRuleRepository::class => new \App\Repositories\AtakMarkerDetectionRuleRepository(),
+            \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController::class => new \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController(
+                self::get(\App\Repositories\AtakMarkerDetectionRuleRepository::class),
+            ),
             \App\Controllers\Admin\Organization\RoleplayGameSessionAdminController::class => new \App\Controllers\Admin\Organization\RoleplayGameSessionAdminController(
                 self::get(\App\Repositories\RoleplayGameSessionRepository::class),
                 self::get(\App\Services\Personnel\RoleplayGameSessionService::class),

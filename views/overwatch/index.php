@@ -313,9 +313,10 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           </label>
           <label class="flex flex-col gap-1.5 atak-aerial-fond-wrap" hidden>
             <span class="text-xs font-bold uppercase tracking-wide text-slate-200">Vue du terrain</span>
-            <select id="overwatch-aerial-fond" class="overwatch-header-select rounded-xl border px-3 py-2 text-sm font-semibold min-w-[180px] shadow-sm" data-atak-aerial-fond title="Plan ou photo aérienne">
-              <option value="aerial" selected>Photo aérienne</option>
+            <select id="overwatch-aerial-fond" class="overwatch-header-select rounded-xl border px-3 py-2 text-sm font-semibold min-w-[180px] shadow-sm" data-atak-aerial-fond title="Calque de fond du théâtre">
               <option value="plan">Plan</option>
+              <option value="topo">Carte du jeu</option>
+              <option value="aerial" selected>Photo aérienne</option>
             </select>
           </label>
           <?php if (!empty($overwatchCanCreateCustomMaps)): ?>

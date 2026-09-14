@@ -25,10 +25,10 @@ class AtakOrderRepository
 {
     use LazyDatabaseConnection;
 
-    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
+    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'NOTIFY_FULL', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
 
     /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
-    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
+    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'NOTIFY_FULL', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
     public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
     public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo', 'ally'];
@@ -149,7 +149,7 @@ class AtakOrderRepository
         }
 
         $hasDeadline = $this->hasColumn('ack_deadline_at');
-        $signalExclude = "UPPER(COALESCE(order_type,'')) NOT IN ('VIBRATE','NOTIFY','HELMET_SNAP','HELMET_SNAP_HD','HELMET_STREAM')";
+        $signalExclude = "UPPER(COALESCE(order_type,'')) NOT IN ('VIBRATE','NOTIFY','NOTIFY_FULL','HELMET_SNAP','HELMET_SNAP_HD','HELMET_STREAM')";
         $overdueExpr = $hasDeadline
             ? "SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
                     AND {$signalExclude}

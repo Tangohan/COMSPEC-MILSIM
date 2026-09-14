@@ -3495,6 +3495,14 @@ try {
     echo '  [ATTENTION] atak_device_logs : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/atak_marker_detection_rules_migration.php';
+try {
+    echo "Migration atak_marker_detection_rules (détection des marqueurs en jeu)...\n";
+    run_atak_marker_detection_rules_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_marker_detection_rules : ' . $e->getMessage() . "\n";
+}
+
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
 try {
     echo "Migration tenant_atak_access_key (clé d’accès Overwatch par communauté)...\n";

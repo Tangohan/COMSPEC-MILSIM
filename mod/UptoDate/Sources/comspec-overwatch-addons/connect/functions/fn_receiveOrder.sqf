@@ -26,8 +26,8 @@ private _explicitMe = (_target != "") && {
     (toLower _target) isEqualTo (toLower _myCallsign)
     || {(toLower _target) isEqualTo (toLower _myName)}
 };
-if (_issuer isEqualTo _myName && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
-if (_issuer isEqualTo _myCallsign && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}) exitWith {};
+if (_issuer isEqualTo _myName && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF", "NOTIFY_FULL"])}) exitWith {};
+if (_issuer isEqualTo _myCallsign && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF", "NOTIFY_FULL"])}) exitWith {};
 
 // Éviter les doublons (remoteExec + bus local + poll) — ids toujours en chaîne
 private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
@@ -74,21 +74,25 @@ if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
 };
 
 // Notification TOC : entrée cliquable dans Athena — pas un ordre C2
-if ((toUpper _type) isEqualTo "NOTIFY") exitWith {
+if ((toUpper _type) in ["NOTIFY", "NOTIFY_FULL"]) exitWith {
     if (_alreadyConsumed) exitWith {};
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onNotify;
     } else {
         private _payload = trim (_order getOrDefault ["payload", ""]);
+        private _isFull = (toUpper _type) isEqualTo "NOTIFY_FULL";
         private _msg = if (_payload isEqualTo "") then {
-            format ["Notification Athena — de %1", _issuer]
+            format ["%1 — de %2", if (_isFull) then { "Alerte plein écran" } else { "Notification Athena" }, _issuer]
         } else {
             format ["%1 — %2", _issuer, _payload]
         };
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
         ["ATHENA", _msg, 7] call comspec_overwatch_connect_fnc_addScreenToast;
+        if (_isFull && {!isNil "comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert"}) then {
+            [_issuer, _payload] call comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert;
+        };
     };
-    [_id, "Notification reçue"] call _ackTerminalSignal;
+    [_id, if ((toUpper _type) isEqualTo "NOTIFY_FULL") then { "Alerte plein écran reçue" } else { "Notification reçue" }] call _ackTerminalSignal;
 };
 
 // Demande caméra casque TOC (photo / HD / flux aperçus)

@@ -494,6 +494,7 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
   border-radius: 4px;
   background: rgba(8, 14, 20, 0.7);
 }
+.atak-settings-aside .atak-fond-calques,
 .atak-settings-aside .atak-map-look__terrain,
 .atak-settings-aside .atak-terrain-3d-settings,
 .atak-settings-aside .atak-settings-map-data {
@@ -527,6 +528,44 @@ body.atak-section-c2 .atak-left-aside .atak-tab {
 .atak-settings-copy--muted {
   color: #8a9aa3;
   font-size: 11px;
+}
+.atak-fond-calques {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.15rem 0 0.35rem;
+  padding: 0.55rem 0.6rem 0.45rem;
+  border: 1px solid var(--atak-c2-line, #2b3952);
+  border-radius: 4px;
+  min-width: 0;
+}
+.atak-fond-calques[hidden] {
+  display: none;
+}
+.atak-fond-calques legend {
+  padding: 0;
+  float: none;
+  width: 100%;
+}
+.atak-fond-calque {
+  align-items: flex-start;
+}
+.atak-fond-calque span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+.atak-fond-calque strong {
+  color: #e8eef2;
+  font-weight: 650;
+}
+.atak-fond-calque small {
+  color: #8a9aa3;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.35;
+}
 }
 .atak-settings-icons__list {
   display: flex;
@@ -1478,6 +1517,16 @@ body.atak-theme-light .atak-settings-block,
 body.atak-theme-light .atak-settings-aside .atak-rail-audio {
   background: #ffffff;
   border-color: #d0d7de;
+}
+body.atak-theme-light .atak-fond-calques {
+  background: #ffffff;
+  border-color: #d0d7de;
+}
+body.atak-theme-light .atak-fond-calque strong {
+  color: #0f172a;
+}
+body.atak-theme-light .atak-fond-calque small {
+  color: #64748b;
 }
 body.atak-theme-light .atak-settings-icons__kind {
   color: #334155;

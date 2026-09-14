@@ -624,9 +624,10 @@ if ($atakMapConfig) {
         <div class="atak-aerial-fond-wrap" hidden>
           <label class="atak-sound-pref-label" for="atak-aerial-fond-account">
             <span class="atak-sound-pref-key">Fond de carte</span>
-            <select id="atak-aerial-fond-account" class="atak-header-select atak-sound-pref-select" data-atak-aerial-fond title="Plan ou photo aérienne du théâtre">
-              <option value="aerial" selected>Photo aérienne</option>
+            <select id="atak-aerial-fond-account" class="atak-header-select atak-sound-pref-select" data-atak-aerial-fond title="Calque de fond du théâtre">
               <option value="plan">Plan</option>
+              <option value="topo">Carte du jeu</option>
+              <option value="aerial" selected>Photo aérienne</option>
             </select>
           </label>
         </div>
@@ -1735,17 +1736,26 @@ if ($atakMapConfig) {
 
         <section class="atak-settings-block" id="atak-settings-map" aria-label="Carte, relief et calques">
           <h3 class="atak-rail-audio-title">Carte — relief et calques</h3>
-          <p class="atak-settings-copy">Ombrage, courbes, vue 3D et inventaire des données terrain chargées sur ce poste. Le bouton <strong>3D</strong> sur la carte reste le raccourci rapide.</p>
+          <p class="atak-settings-copy">Fond de carte, ombrage, courbes, vue 3D et inventaire des données terrain. Le bouton <strong>3D</strong> sur la carte reste le raccourci rapide.</p>
 
-          <div class="atak-aerial-fond-wrap" hidden>
-            <label class="atak-map-look__row" for="atak-aerial-fond">
-              <span class="atak-map-look__key">Fond de carte</span>
-              <select id="atak-aerial-fond" class="atak-header-select atak-map-look__select" data-atak-aerial-fond title="Plan ou photo aérienne du théâtre">
-                <option value="aerial" selected>Photo aérienne</option>
-                <option value="plan">Plan</option>
-              </select>
-            </label>
-          </div>
+          <fieldset class="atak-fond-calques" id="atak-settings-fond" hidden>
+            <legend class="atak-map-look__key">Fond de carte</legend>
+            <p class="atak-settings-copy">Choisissez le calque de fond. Les positions, les tracés et les autres calques restent en place.</p>
+            <div id="atak-fond-calques-list">
+              <label class="atak-map-look__check atak-fond-calque">
+                <input type="radio" name="atak-fond-calque" value="plan" data-atak-aerial-fond-radio />
+                <span><strong>Plan</strong><small>Carte topographique du poste</small></span>
+              </label>
+              <label class="atak-map-look__check atak-fond-calque">
+                <input type="radio" name="atak-fond-calque" value="topo" data-atak-aerial-fond-radio />
+                <span><strong>Carte du jeu</strong><small>Plan du théâtre</small></span>
+              </label>
+              <label class="atak-map-look__check atak-fond-calque">
+                <input type="radio" name="atak-fond-calque" value="aerial" data-atak-aerial-fond-radio checked />
+                <span><strong>Photo aérienne</strong><small>Vue photo du terrain</small></span>
+              </label>
+            </div>
+          </fieldset>
 
           <div class="atak-map-look__terrain" id="atak-settings-relief">
             <p class="atak-map-look__key">Relief 2D</p>

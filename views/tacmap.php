@@ -100,9 +100,10 @@ $pageTitle = $title ?? 'TACMAP — Athena';
         </label>
         <label class="atak-aerial-fond-wrap" hidden>
           Vue
-          <select id="tacmap-aerial-fond" data-atak-aerial-fond title="Plan ou photo aérienne">
-            <option value="aerial" selected>Photo aérienne</option>
+          <select id="tacmap-aerial-fond" data-atak-aerial-fond title="Calque de fond du théâtre">
             <option value="plan">Plan</option>
+            <option value="topo">Carte du jeu</option>
+            <option value="aerial" selected>Photo aérienne</option>
           </select>
         </label>
         <span class="tacmap-kpi" id="tacmap-zulu" title="Heure Zulu">—:—:— Z</span>
