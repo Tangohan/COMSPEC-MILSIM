@@ -1234,7 +1234,15 @@
       var head = '<div class="ow-squad-head">' + escapeHtml(key === 'none' ? 'Sans groupe' : group(rows[0])) + '<em>' + rows.length + '</em></div>';
       return head + rows.map(function (unit) {
         var stale = unit.status === 'delayed' || unit.status === 'offline';
-        return '<button type="button" class="ow-contact" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
+        var statusClass = '';
+        if (unit.status === 'offline') {
+          statusClass = ' is-offline';
+        } else if (unit.status === 'delayed') {
+          statusClass = ' is-delayed';
+        } else {
+          statusClass = ' is-online';
+        }
+        return '<button type="button" class="ow-contact' + statusClass + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
           initials(callsign(unit)) + '</span><span><div class="cname">' + escapeHtml(callsign(unit)) + '</div><div class="cmeta">' +
           escapeHtml(group(unit)) + (ageLabel(unit) ? ' · ' + ageLabel(unit) : '') + '</div></span><em class="online' + (stale ? ' is-stale' : '') + '">' +
           (unit.status === 'offline' ? 'OFFLINE' : (stale ? 'DELAY' : 'LIVE')) + '</em></button>';

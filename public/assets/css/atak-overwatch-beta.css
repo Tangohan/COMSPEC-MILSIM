@@ -102,10 +102,24 @@ button{cursor:pointer}
 .ow-chat-log{flex:1;min-height:80px}
 .ow-channel,.ow-contact{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 2px;border:0;border-top:1px solid #171d1b;background:transparent;text-align:left}
 .ow-channel.is-active,.ow-contact:hover,.ow-channel:hover{background:#101513}
-.cicon{width:24px;height:24px;border:1px solid #2b3531;display:grid;place-items:center;color:#8b9691;font-size:8px}
-.cname{font-size:11px;font-weight:900}
+.cicon{width:24px;height:24px;border:1px solid #2b3531;display:grid;place-items:center;color:#8b9691;font-size:8px;transition:all .2s}
+.cname{font-size:11px;font-weight:900;transition:color .2s}
 .cmeta{font-size:9px;color:#727d78;margin-top:2px}
-.online{font-size:7px;color:var(--athena-green);font-weight:900}
+.online{font-size:7px;color:var(--athena-green);font-weight:900;transition:color .2s}
+.online.is-stale{color:var(--athena-amber)}
+
+/* Couleurs selon statut du contact */
+.ow-contact.is-online .cicon{border-color:var(--athena-green);background:rgba(0,214,154,.08)}
+.ow-contact.is-online .cname{color:var(--athena-green)}
+.ow-contact.is-online .online{color:var(--athena-green)}
+
+.ow-contact.is-delayed .cicon{border-color:var(--athena-amber);background:rgba(231,177,77,.08)}
+.ow-contact.is-delayed .cname{color:var(--athena-amber)}
+.ow-contact.is-delayed .online{color:var(--athena-amber)}
+
+.ow-contact.is-offline .cicon{border-color:var(--athena-red);background:rgba(224,91,99,.08)}
+.ow-contact.is-offline .cname{color:var(--athena-red)}
+.ow-contact.is-offline .online{color:var(--athena-red)}
 .ow-msg{padding:10px 8px;border-bottom:1px solid #151b19;font-size:10px;line-height:1.5}
 .ow-msg time{display:block;color:#68736e;font-size:8px;margin-bottom:4px}
 .ow-msg.is-alert{border-left:3px solid var(--athena-red);padding-left:10px;background:#1a0e0f}
