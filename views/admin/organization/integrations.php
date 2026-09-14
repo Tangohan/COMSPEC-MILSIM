@@ -107,9 +107,9 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 <div class="ath-note">
     <p class="ath-note__title">Fonctionnement</p>
     <p class="ath-note__text">
-        Reliez vos salons Discord ci-dessous : un salon par défaut, puis un relais pour chaque type d’événement
-        (candidatures, effectifs, opérations, formation, modération, renseignement). Les transmissions terrain
-        peuvent viser des salons supplémentaires. Les jetons d’accès servent aux outils qui viennent lire le calendrier.
+        Reliez Discord à votre communauté : un salon commun pour ce qui n’a pas de salon à part,
+        puis un choix pour chaque type d’événement (candidatures, effectifs, opérations, photos Quick Picture…).
+        Les transmissions terrain peuvent viser des salons supplémentaires. Les jetons d’accès servent aux outils qui viennent lire le calendrier.
     </p>
 </div>
 
@@ -124,16 +124,21 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 
 <section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
     <h2 class="ath-section-title" style="margin-top:0;">Relais Discord</h2>
-    <p class="ath-item__meta" style="margin:0 0 14px;">
-        Dans Discord : paramètres du salon → Intégrations → créer un relais, puis collez le lien ici.
-        Le salon par défaut reçoit les annonces et les mises à jour du pack, sauf si vous choisissez un salon dédié ou que vous les désactivez.
-    </p>
-    <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>">
+    <div class="ath-discord-howto">
+        <p class="ath-discord-howto__title">Comment choisir le salon</p>
+        <ol class="ath-discord-howto__list">
+            <li>Dans Discord, ouvrez les paramètres du salon → Intégrations → créez un relais, puis copiez le lien.</li>
+            <li>Collez ce lien dans <strong>Salon commun</strong> : c’est le salon utilisé dès qu’un événement est réglé sur « Salon commun ».</li>
+            <li>Pour un type d’événement, trois choix : <strong>Ne pas publier</strong>, <strong>Salon commun</strong>, ou <strong>Autre salon</strong> (un salon différent, avec son propre lien).</li>
+        </ol>
+        <p class="ath-discord-howto__note">Si vous choisissez « Autre salon », le message n’ira plus dans le salon commun : uniquement dans celui-là.</p>
+    </div>
+    <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord">
         <?= \App\Core\Csrf::field() ?>
         <label class="ath-field">
-            <span class="ath-field__label">Salon par défaut</span>
-            <input type="url" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
-            <span class="ath-field__help">Utilisé dès qu’un événement est réglé sur « Salon par défaut ».</span>
+            <span class="ath-field__label">Salon commun</span>
+            <input type="url" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="Collez le lien copié depuis Discord">
+            <span class="ath-field__help">Tous les événements réglés sur « Salon commun » partent ici. Laissez vide si vous n’utilisez que des salons à part.</span>
         </label>
         <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
             <h3 class="ath-form__title" style="margin:18px 0 8px;"><?= $h((string) $groupLabel) ?></h3>
@@ -144,22 +149,29 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                     $st = is_array($discordEventState[$ek] ?? null) ? $discordEventState[$ek] : [];
                     $mode = (string) ($st['mode'] ?? ($ev['default_mode'] ?? 'off'));
                     $dedicatedUrl = (string) ($st['url'] ?? '');
+                    $destHint = match ($mode) {
+                        'custom' => 'Publié dans un salon à part.',
+                        'default' => 'Publié dans le salon commun.',
+                        default => 'Rien n’est envoyé sur Discord.',
+                    };
                     ?>
-                    <article class="ath-item">
+                    <article class="ath-item ath-discord-event" data-discord-event>
                         <p class="ath-item__name"><?= $h((string) ($ev['label'] ?? '')) ?></p>
                         <p class="ath-item__meta"><?= $h((string) ($ev['hint'] ?? '')) ?></p>
+                        <p class="ath-discord-event__status" data-discord-status><?= $h($destHint) ?></p>
                         <div class="ath-form__grid" style="margin-top:10px;">
                             <label class="ath-field">
-                                <span class="ath-field__label">Destination</span>
-                                <select name="discord_event[<?= $h($ek) ?>][mode]" class="ath-field__input">
-                                    <option value="off" <?= $mode === 'off' ? 'selected' : '' ?>>Désactivé</option>
-                                    <option value="default" <?= $mode === 'default' ? 'selected' : '' ?>>Salon par défaut</option>
-                                    <option value="custom" <?= $mode === 'custom' ? 'selected' : '' ?>>Salon dédié</option>
+                                <span class="ath-field__label">Où publier</span>
+                                <select name="discord_event[<?= $h($ek) ?>][mode]" class="ath-field__input js-discord-mode">
+                                    <option value="off" <?= $mode === 'off' ? 'selected' : '' ?>>Ne pas publier</option>
+                                    <option value="default" <?= $mode === 'default' ? 'selected' : '' ?>>Salon commun</option>
+                                    <option value="custom" <?= $mode === 'custom' ? 'selected' : '' ?>>Autre salon</option>
                                 </select>
                             </label>
-                            <label class="ath-field">
-                                <span class="ath-field__label">Lien du salon dédié</span>
-                                <input type="url" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
+                            <label class="ath-field ath-discord-custom js-discord-custom"<?= $mode === 'custom' ? '' : ' hidden' ?>>
+                                <span class="ath-field__label">Lien de cet autre salon</span>
+                                <input type="url" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="Collez le lien copié depuis Discord">
+                                <span class="ath-field__help">Uniquement si vous avez choisi « Autre salon ».</span>
                             </label>
                         </div>
                     </article>
@@ -170,10 +182,21 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les relais</button>
         </div>
     </form>
-    <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" style="margin-top:10px;">
+    <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" class="ath-discord-test" style="margin-top:14px;">
         <?= \App\Core\Csrf::field() ?>
-        <input type="hidden" name="event_key" value="announcements">
-        <button type="submit" class="ath-btn">Envoyer un essai sur le salon des annonces</button>
+        <label class="ath-field">
+            <span class="ath-field__label">Vérifier un salon</span>
+            <select name="event_key" class="ath-field__input">
+                <?php foreach ($discordEvents as $ev): ?>
+                    <?php $ek = (string) ($ev['key'] ?? ''); ?>
+                    <option value="<?= $h($ek) ?>" <?= $ek === 'announcements' ? 'selected' : '' ?>><?= $h((string) ($ev['label'] ?? '')) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span class="ath-field__help">Un court message part dans le salon actuellement choisi pour cet événement (pensez à enregistrer d’abord).</span>
+        </label>
+        <div class="ath-form__actions" style="margin-top:10px;">
+            <button type="submit" class="ath-btn">Envoyer un message d’essai</button>
+        </div>
     </form>
 </section>
 
@@ -188,9 +211,9 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             <input type="hidden" name="use_community_relay" value="0">
             <input type="checkbox" name="use_community_relay" value="1" <?= $useCommunityRelay ? 'checked' : '' ?> <?= $communityRelayReady ? '' : 'disabled' ?>>
             <span>
-                Publier aussi sur le salon par défaut
+                Publier aussi sur le salon commun
                 <?php if (!$communityRelayReady): ?>
-                    <small> — renseignez d’abord le salon par défaut ci-dessus, puis enregistrez.</small>
+                    <small> — renseignez d’abord le salon commun ci-dessus, puis enregistrez.</small>
                 <?php endif; ?>
             </span>
         </label>
@@ -226,8 +249,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <input type="text" name="label" maxlength="80" class="ath-field__input" placeholder="Renseignement, TOC…">
             </label>
             <label class="ath-field">
-                <span class="ath-field__label">Lien du relais Discord</span>
-                <input type="url" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="https://discord.com/api/webhooks/…">
+            <span class="ath-field__label">Lien du salon Discord</span>
+            <input type="url" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="Collez le lien copié depuis Discord">
             </label>
         </div>
         <div class="ath-form__actions">
@@ -410,3 +433,29 @@ require base_path('views/partials/ath_kpis.php');
     </p>
 </div>
 <?php endif; ?>
+<script>
+(function () {
+    var hints = {
+        off: 'Rien n’est envoyé sur Discord.',
+        default: 'Publié dans le salon commun.',
+        custom: 'Publié dans un salon à part.'
+    };
+    function syncCard(select) {
+        var card = select.closest('[data-discord-event]');
+        if (!card) return;
+        var custom = card.querySelector('.js-discord-custom');
+        var status = card.querySelector('[data-discord-status]');
+        var mode = select.value;
+        if (custom) {
+            custom.hidden = mode !== 'custom';
+        }
+        if (status && hints[mode]) {
+            status.textContent = hints[mode];
+        }
+    }
+    document.querySelectorAll('.js-discord-mode').forEach(function (select) {
+        syncCard(select);
+        select.addEventListener('change', function () { syncCard(select); });
+    });
+})();
+</script>

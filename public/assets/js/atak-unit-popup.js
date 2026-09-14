@@ -544,6 +544,9 @@ window.ATAKUnitPopup = (function () {
           try { window.L.DomEvent.stopPropagation(e); } catch (err) {}
         }
         if (window.ATAKUnitDossier) window.ATAKUnitDossier.open(marker._atakUnit || u);
+        if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.select === 'function') {
+          window.ATAKReachOverlay.select(marker._atakUnit || u, { center: false });
+        }
       });
     }
     if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindHoverTip) {

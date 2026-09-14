@@ -1,3 +1,130 @@
+COMSPEC Overwatch 1.5.76 / Athena ATAK 1.0.122 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.76[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.76 · Athena 1.0.122 · Extension 2.0.39
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Nouveau — Plusieurs opérations sans mélange des positions[/h2]
+Chaque mission peut indiquer son numéro de carte Athena. Deux opérations en parallèle ne mélangent plus leurs positions, messages et pings.
+
+Dans les réglages Overwatch : Numéro de carte (opération).
+
+[h2]Amélioration — Les envois en attente survivent à un redémarrage[/h2]
+Si Arma se ferme ou plante alors que des messages n’ont pas encore atteint le poste, ils sont conservés et repartent à la reprise de la liaison.
+
+Après installation : journal → connect v1.5.76 et Extension 2.0.39.
+
+---
+
+COMSPEC Overwatch 1.5.75 / Athena ATAK 1.0.121 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.75[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.75 · Athena 1.0.121 · Extension 2.0.38
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Quick Picture : Discord retrouve la photo[/h2]
+Discord reçoit de nouveau la photo prise depuis Quick Picture. Le dossier indiqué pour l’envoi n’existait pas, alors que le cliché était bien enregistré. Le poste continue de recevoir la vue.
+
+Après installation : journal → connect v1.5.75 et Extension 2.0.38.
+
+---
+
+COMSPEC Overwatch 1.5.74 / Athena ATAK 1.0.120 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.74[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.74 · Athena 1.0.120 · Extension 2.0.37
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Quick Picture : la vue part encore vers Discord[/h2]
+Une photo prise depuis Quick Picture continue d’être transmise vers Discord, comme avant Overwatch. Le poste reçoit toujours la vue. Overwatch n’interrompt plus cet envoi.
+
+Après installation : journal → connect v1.5.74 et Extension 2.0.37.
+
+---
+
+COMSPEC Overwatch 1.5.73 / Athena ATAK 1.0.119 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.73[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.73 · Athena 1.0.119 · Extension 2.0.37
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Nouveau — Super ping[/h2]
+Un Super ping place un pulse animé à l’endroit indiqué. Il apparaît au poste et sur le téléphone, avec des cercles qui s’agrandissent quelques secondes.
+
+Au poste : clic droit sur la carte → Super ping. Sur le téléphone : Maj + clic gauche sur la carte.
+
+Après installation : journal → connect v1.5.73 et Extension 2.0.37.
+
+---
+
+COMSPEC Overwatch 1.5.72 / Athena ATAK 1.0.118 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.72[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.72 · Athena 1.0.118 · Extension 2.0.36
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Nouveau — Zone de déplacement depuis la dernière position[/h2]
+Sur le téléphone ATAK, un opérateur vu dans les quinze dernières minutes reste indiqué à sa dernière position connue s’il vient de perdre la liaison. Un clic sur ce contact, ou dans la liste des effectifs, dessine deux cercles qui s’agrandissent avec le temps : à pied et en véhicule.
+
+Au poste de commandement, le même dessin s’ouvre en cliquant l’indicatif dans le tableau ou le panneau latéral.
+
+Après installation : journal → connect v1.5.72 et Extension 2.0.36.
+
+---
+
+COMSPEC Overwatch 1.5.71 / Athena ATAK 1.0.117 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.71[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.71 · Athena 1.0.117 · Extension 2.0.35
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Quick Picture : chaque vue part au poste[/h2]
+Une photo prise depuis Quick Picture n’est plus remplacée par le cliché précédent. Le poste reçoit bien la vue que vous venez de prendre, y compris la deuxième et les suivantes.
+
+Après installation : journal → connect v1.5.71 et Extension 2.0.35.
+
+---
+
+COMSPEC Overwatch 1.5.70 / Athena ATAK 1.0.117 — 13/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.70[/h1]
+[b]Publication : 13/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.70 · Athena 1.0.117 · Extension 2.0.34
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Nouveau — Messagerie : d’abord les canaux[/h2]
+En ouvrant Messagerie, vous voyez la liste des canaux. Une case à droite indique le nombre de messages non lus. En bas, la section Création permet d’ouvrir un nouveau canal radio.
+
+[h2]Nouveau — Fil complet d’un canal[/h2]
+Un clic sur un canal ouvre tout le fil de ce canal. Le bouton Canaux ramène à la liste. Chaque message affiche la date, passe à la ligne, et une couleur distingue l’auteur et le canal.
+
+[h2]Amélioration — Messages plus courts et lisibles[/h2]
+Un message tapé dans le téléphone est limité à 100 caractères. Le texte long passe à la ligne au lieu de rester coupé sur une seule rangée.
+
+Après installation : journal → connect v1.5.70 ; téléphone → Messagerie : liste des canaux d’abord.
+
+---
+
 COMSPEC Overwatch 1.5.69 / Athena ATAK 1.0.116 — 13/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.69[/h1]

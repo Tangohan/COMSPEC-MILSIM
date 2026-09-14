@@ -19,6 +19,12 @@ class AtakDataRepository
      */
     public const UNIT_LIVE_TTL_SECONDS = 120;
 
+    /**
+     * Fenêtre de présence récente au poste : effectifs + dernière position connue.
+     * Aligné sur public/assets/js/atak-units.js (RECENT_WINDOW_SEC).
+     */
+    public const UNIT_RECENT_WINDOW_SECONDS = 900;
+
     /** Origine (0,0) = position non reçue / parse raté — jamais une vraie case jouable. */
     private const POS_ORIGIN_EPS = 0.5;
 
@@ -841,6 +847,9 @@ class AtakDataRepository
         $row['extra'] = $extra;
         $shown = self::displayCallSign((string) ($row['call_sign'] ?? ''), $extra);
         $row['display_call_sign'] = $shown;
+        if ($ageSeconds !== null) {
+            $row['age_seconds'] = $ageSeconds;
+        }
 
         return $row;
     }
@@ -2300,6 +2309,23 @@ class AtakDataRepository
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_sigint_reports WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getSigintReports(int $tenantId, int $mapId, int $limit = 40): array
+    {
+        $limit = max(1, min($limit, 100));
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, call_sign, pos_x, pos_y, bearing, created_at
+             FROM atak_sigint_reports
+             WHERE tenant_id = ? AND map_id = ?
+             ORDER BY created_at DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $mapId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
     }
 
     public function getSigintZones(int $tenantId, int $mapId, int $limit = 50): array

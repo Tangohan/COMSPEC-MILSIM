@@ -124,7 +124,7 @@ class AtakController
             $c = $m['config'] ?? [];
             $slug = (string) ($m['slug'] ?? 'altis');
             $tp = (string) ($m['tile_pattern'] ?? '');
-            $atakMapsConfigs[$slug] = [
+            $atakMapsConfigs[$slug] = atak_with_aerial_layer([
                 'slug' => $slug,
                 'tilePattern' => atak_resolve_tile_pattern($tp, $slug),
                 'center' => $c['center'] ?? [15000, 15000],
@@ -137,7 +137,8 @@ class AtakController
                 'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
                 'offsetX' => isset($c['offset_x']) ? (float) $c['offset_x'] : 0,
                 'offsetY' => isset($c['offset_y']) ? (float) $c['offset_y'] : 0,
-            ];
+                'aerial' => isset($c['aerial']) && is_array($c['aerial']) ? $c['aerial'] : null,
+            ], $slug);
         }
 
         $currentUser = $this->authService->user();

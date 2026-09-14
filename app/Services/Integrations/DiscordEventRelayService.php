@@ -66,7 +66,7 @@ final class DiscordEventRelayService
         if ($defaultUrl !== '' && !$this->discord->isValidWebhookUrl($defaultUrl)) {
             return [
                 'ok' => false,
-                'message' => 'Le lien du salon par défaut n’est pas reconnu. Dans Discord, ouvrez Intégrations du salon, créez un relais, puis collez ici l’adresse complète.',
+                'message' => 'Le lien du salon commun n’est pas reconnu. Dans Discord, ouvrez les paramètres du salon → Intégrations, créez un relais, puis collez ici le lien copié.',
             ];
         }
 
@@ -83,7 +83,7 @@ final class DiscordEventRelayService
                 if ($url === '' || !$this->discord->isValidWebhookUrl($url)) {
                     return [
                         'ok' => false,
-                        'message' => 'Le lien dédié pour « ' . $meta['label'] . ' » n’est pas reconnu.',
+                        'message' => 'Le lien de l’autre salon pour « ' . $meta['label'] . ' » n’est pas reconnu. Collez le lien copié depuis Discord.',
                     ];
                 }
             } else {
@@ -150,6 +150,53 @@ final class DiscordEventRelayService
         return ['ok' => false, 'skipped' => false, 'error' => (string) ($result['error'] ?? '')];
     }
 
+    /**
+     * Photo Quick Picture (téléphone / tablette) vers le salon Discord de la communauté.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function notifyQuickPicture(int $tenantId, string $filePath, array $meta): void
+    {
+        $device = strtoupper(trim((string) ($meta['device_type'] ?? '')));
+        if ($device !== '' && !in_array($device, ['CTAB', 'TABLET', 'PHONE', 'ATAK'], true)) {
+            return;
+        }
+        $url = $this->resolveUrl($tenantId, DiscordWebhookCatalog::KEY_QUICK_PICTURE);
+        if ($url === null) {
+            return;
+        }
+        $author = trim((string) ($meta['author_callsign'] ?? ''));
+        $grid = trim((string) ($meta['grid_ref'] ?? ''));
+        $caption = trim((string) ($meta['caption'] ?? ''));
+        $unit = trim((string) ($meta['unit_name'] ?? ''));
+        $lines = ['**Quick Picture**'];
+        if ($author !== '') {
+            $lines[] = 'Opérateur : ' . $author;
+        }
+        if ($unit !== '' && strcasecmp($unit, $author) !== 0) {
+            $lines[] = 'Unité : ' . $unit;
+        }
+        if ($grid !== '') {
+            $lines[] = 'Grille : ' . $grid;
+        }
+        if ($caption !== '') {
+            $lines[] = $caption;
+        }
+        $content = implode("\n", $lines);
+        $fingerprint = $tenantId . '|quick_picture|' . hash('sha256', $filePath . '|' . $content);
+        if (isset(self::$sentThisRequest[$fingerprint])) {
+            return;
+        }
+        try {
+            $result = $this->discord->sendWithFile($url, $content, $filePath, basename($filePath), 'Athena');
+        } catch (\Throwable) {
+            return;
+        }
+        if (!empty($result['ok'])) {
+            self::$sentThisRequest[$fingerprint] = true;
+        }
+    }
+
     public static function relayFromEmail(int $tenantId, string $eventCode, string $subject, string $textBody): void
     {
         if ($tenantId < 2 || !DiscordWebhookCatalog::isKnown($eventCode)) {
@@ -181,7 +228,7 @@ final class DiscordEventRelayService
             : DiscordWebhookCatalog::KEY_ANNOUNCEMENTS;
         $url = $this->resolveUrl($tenantId, $key);
         if ($url === null) {
-            return ['ok' => false, 'message' => 'Aucun salon n’est configuré pour cet événement. Choisissez le salon par défaut ou un salon dédié, puis enregistrez.'];
+            return ['ok' => false, 'message' => 'Aucun salon n’est configuré pour cet événement. Choisissez le salon commun ou un autre salon, puis enregistrez.'];
         }
         $label = DiscordWebhookCatalog::byKey()[$key]['label'] ?? 'essai';
         $result = $this->discord->send($url, 'Essai Athena : relais « ' . $label . ' » opérationnel.');

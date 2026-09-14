@@ -387,6 +387,11 @@ if (_useSteam) then {
 // DLL 1.14+ a déjà validé client-init pendant Redeem/Steam et détient la bonne clé.
 // Connect avec clé vide : ne pas réécrire la clé DLL avec une valeur SQF/CBA potentiellement tronquée.
 private _connectRaw = ["COMSPECExtension" callExtension ["Connect", [_apiUrl, "", _tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapIdLink = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
+if (!(_mapIdLink isEqualType 0)) then { _mapIdLink = 1; };
+_mapIdLink = round _mapIdLink;
+if (_mapIdLink < 1) then { _mapIdLink = 1; };
+["COMSPECExtension" callExtension ["SetMapId", [str _mapIdLink]]] call comspec_overwatch_connect_fnc_extResult;
 private _connectParts = _connectRaw splitString "|";
 private _connectOk = ((count _connectParts >= 1) && {(_connectParts select 0) isEqualTo "OK"});
 

@@ -759,10 +759,10 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
                 <div class="bo-setting-row bo-setting-row--stack">
                     <div class="bo-setting-row__copy">
                         <div class="bo-setting-row__label">Relais Discord (annonces)</div>
-                        <div class="bo-setting-row__help">Les annonces portail et les mises à jour du pack Overwatch peuvent être relayées vers un salon Discord. Tous les relais (candidatures, effectifs, opérations, formation…) se règlent dans <a href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>.</div>
+                        <div class="bo-setting-row__help">Les annonces du portail et les mises à jour du pack peuvent partir vers un salon Discord. Le salon commun, les salons à part et les photos Quick Picture se règlent dans <a href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>.</div>
                     </div>
                     <div class="bo-setting-row__control">
-                        <input type="url" id="discord_webhook_url" name="discord_webhook_url" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…">
+                        <input type="url" id="discord_webhook_url" name="discord_webhook_url" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="Collez le lien copié depuis Discord">
                     </div>
                 </div>
             </div>

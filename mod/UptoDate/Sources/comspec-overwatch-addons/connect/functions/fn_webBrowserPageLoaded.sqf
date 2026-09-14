@@ -99,6 +99,7 @@ private _timeStr = format ["%1:%2:%3",
 
 private _units = [] call comspec_overwatch_connect_fnc_getUnitsList;
 missionNamespace setVariable ["COMSPEC_WebBrowser_MapUnits", _units];
+missionNamespace setVariable ["COMSPEC_ReachCache", _units, false];
 
 // Scan radio à jour pour pastilles tablette
 if (missionNamespace getVariable ["comspec_overwatch_radio_proximity_enabled", true]) then {

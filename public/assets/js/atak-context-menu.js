@@ -164,6 +164,7 @@ window.ATAKContextMenu = (function () {
   function renderCreateItems() {
     return '' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--jackpot" data-action="jackpot" role="menuitem">JACKPOT — HVT</button>' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--superping" data-action="superping" role="menuitem">Super ping</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--mission" data-action="waypoint" role="menuitem">Point de mission</button>' +
       allyMoveHereHtml() +
@@ -343,6 +344,7 @@ window.ATAKContextMenu = (function () {
   var pingFormEl = null;
   var pingFormResolve = null;
   var PING_KINDS = [
+    { value: 'super', label: 'Super ping' },
     { value: 'contact', label: 'Contact' },
     { value: 'hostile', label: 'Hostile' },
     { value: 'jackpot', label: 'JACKPOT (HVT)' },
@@ -363,7 +365,7 @@ window.ATAKContextMenu = (function () {
       '<div class="atak-input-modal__backdrop" data-atak-ping-cancel></div>' +
       '<div class="atak-input-modal__box atak-marker-form" role="dialog" aria-modal="true" aria-labelledby="atak-ping-modal-title">' +
       '<h3 class="atak-input-modal__title" id="atak-ping-modal-title">Envoyer un ping</h3>' +
-      '<p class="atak-input-modal__hint">Choisissez le type de repère, puis un message optionnel.</p>' +
+      '<p class="atak-input-modal__hint">Choisissez le type de repère, puis un message optionnel. Le Super ping dessine un pulse visible sur toutes les cartes.</p>' +
       '<fieldset class="atak-marker-form__fieldset"><legend>Type de ping</legend>' +
       '<div class="atak-marker-form__choices" id="atak-ping-kinds"></div></fieldset>' +
       '<label class="atak-marker-form__label">Message' +
@@ -1871,6 +1873,12 @@ window.ATAKContextMenu = (function () {
         });
       } else if (window.ATAKShowNotification) {
         window.ATAKShowNotification(text);
+      }
+      return;
+    }
+    if (action === 'superping') {
+      if (window.ATAKPings && window.ATAKPings.createPingAt) {
+        window.ATAKPings.createPingAt(ll.lng, ll.lat, '', 'super');
       }
       return;
     }

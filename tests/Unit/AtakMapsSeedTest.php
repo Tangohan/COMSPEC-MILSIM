@@ -25,6 +25,8 @@ final class AtakMapsSeedTest extends TestCase
         self::assertStringContainsString("'tile_cdn' => 'https://atlas.plan-ops.fr/data/1'", $block);
         self::assertStringContainsString("'tile_path' => 'maps/107/107/{z}/{x}/{y}.png'", $block);
         self::assertStringContainsString("'center' => [10240, 10240]", $block);
+        self::assertStringContainsString("'slug' => 'altis'", $block);
+        self::assertStringContainsString("maps/3/295/{z}/{x}/{y}.webp", $block);
     }
 
     public function testAtakMapSelectorUsesHumanLabelsNotTechnicalSlugsAlone(): void

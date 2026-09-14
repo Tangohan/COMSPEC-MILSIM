@@ -152,6 +152,83 @@ final class DiscordWebhookService
     }
 
     /**
+     * Relais Discord avec une photo jointe (Quick Picture).
+     *
+     * @return array{ok:bool, error?:string}
+     */
+    public function sendWithFile(
+        string $webhookUrl,
+        string $content,
+        string $filePath,
+        ?string $filename = null,
+        ?string $username = null,
+        int $timeoutSeconds = 10
+    ): array {
+        if (!$this->isValidWebhookUrl($webhookUrl)) {
+            return ['ok' => false, 'error' => 'Lien Discord invalide. Vérifiez le relais configuré dans les réglages de la communauté.'];
+        }
+        $content = trim($content);
+        $readable = is_file($filePath) && is_readable($filePath);
+        if ($content === '' && !$readable) {
+            return ['ok' => false, 'error' => 'Message vide.'];
+        }
+        $size = $readable ? (int) filesize($filePath) : 0;
+        $canAttach = $readable && $size >= 32 && $size <= 8 * 1024 * 1024;
+        if (!$canAttach) {
+            return $this->send($webhookUrl, $content, $username, $timeoutSeconds);
+        }
+
+        $payload = [];
+        if ($content !== '') {
+            $payload['content'] = mb_substr($content, 0, 2000);
+        }
+        $username = trim((string) $username);
+        if ($username !== '') {
+            $payload['username'] = mb_substr($username, 0, 80);
+        }
+        $leaf = trim((string) $filename);
+        if ($leaf === '') {
+            $leaf = basename($filePath);
+        }
+        $leaf = preg_replace('/[^a-zA-Z0-9._-]/', '_', $leaf) ?: 'photo.jpg';
+        $mime = 'image/jpeg';
+        $ext = strtolower((string) pathinfo($leaf, PATHINFO_EXTENSION));
+        if ($ext === 'png') {
+            $mime = 'image/png';
+        } elseif ($ext === 'webp') {
+            $mime = 'image/webp';
+        } elseif ($ext === 'gif') {
+            $mime = 'image/gif';
+        }
+
+        $timeout = max(4, min(12, $timeoutSeconds));
+        $ch = curl_init($webhookUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => [
+                'payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'files[0]' => new \CURLFile($filePath, $mime, $leaf),
+            ],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min(4, $timeout),
+        ]);
+        curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($errno !== 0) {
+            return ['ok' => false, 'error' => 'Discord injoignable pour le moment.'];
+        }
+        if ($status < 200 || $status >= 300) {
+            return $this->send($webhookUrl, $content, $username, min(8, $timeout));
+        }
+
+        return ['ok' => true];
+    }
+
+    /**
      * @param array<string, mixed> $payload
      * @return array{ok:bool, error?:string}
      */

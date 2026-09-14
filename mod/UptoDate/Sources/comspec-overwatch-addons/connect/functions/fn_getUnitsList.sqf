@@ -1,6 +1,6 @@
 /*
     Effectifs pour tablette / roster : fusion joueurs locaux (SQF) + Athena (GetUnits).
-    Retourne : [[callsign, gx, gy, isSelf, worldX, worldY, role], ...] trié par callsign.
+    Retourne : [[callsign, gx, gy, isSelf, worldX, worldY, role, ageSec, status, stamp], ...] trié par callsign.
     - Toujours au moins le joueur local s’il a une interface.
     - Ignore les fantômes Athena en (0,0) sauf s’ils correspondent au joueur local.
 */
@@ -60,11 +60,11 @@ if ((count _pool) == 0) then { _pool = [player]; };
     private _pos = getPosWorld _u;
     private _isSelf = _u isEqualTo player;
     private _role = [_u] call comspec_overwatch_connect_fnc_getUnitRole;
-    _byCs set [toLower _cs, [_cs, _grid select 0, _grid select 1, _isSelf, _pos select 0, _pos select 1, _role]];
+    _byCs set [toLower _cs, [_cs, _grid select 0, _grid select 1, _isSelf, _pos select 0, _pos select 1, _role, 0, "linked", diag_tickTime]];
 } forEach _pool;
 
 // Garantie joueur local (indicatif Athena)
-_byCs set [toLower _myCs, [_myCs, _myGrid select 0, _myGrid select 1, true, _myPos select 0, _myPos select 1, _myRole]];
+_byCs set [toLower _myCs, [_myCs, _myGrid select 0, _myGrid select 1, true, _myPos select 0, _myPos select 1, _myRole, 0, "linked", diag_tickTime]];
 
 // 2) Athena via extension (complète / met à jour les absents locaux)
 private _raw = ["COMSPECExtension" callExtension "GetUnits"] call comspec_overwatch_connect_fnc_extResult;
@@ -84,19 +84,28 @@ if (_prefix isEqualTo "OK") then {
             // Fantôme (0,0) : ignorer sauf soi-même
             if (!_isSelf && {_gx == 0} && {_gy == 0}) then { continue };
             private _roleAthena = if ((count _cols) >= 5) then { trim (_cols select 4) } else { "" };
+            private _wxAthena = if ((count _cols) >= 7) then { parseNumber (_cols select 5) } else { 0 };
+            private _wyAthena = if ((count _cols) >= 7) then { parseNumber (_cols select 6) } else { 0 };
+            private _ageAthena = if ((count _cols) >= 8) then { parseNumber (_cols select 7) } else { 0 };
+            private _statusAthena = if ((count _cols) >= 9) then { trim (_cols select 8) } else { "linked" };
+            if (_ageAthena < 0) then { _ageAthena = 0; };
             private _existing = _byCs getOrDefault [_key, []];
             if ((count _existing) >= 7) then {
                 private _roleKeep = _existing select 6;
                 if (_roleKeep isEqualTo "" || {_roleKeep isEqualTo "Operator"}) then {
                     if (!(_roleAthena isEqualTo "")) then { _roleKeep = _roleAthena; };
                 };
-                _byCs set [_key, [_cs, _gx, _gy, _isSelf || (_existing select 3), _existing select 4, _existing select 5, _roleKeep]];
+                _byCs set [_key, [_cs, _gx, _gy, _isSelf || (_existing select 3), _existing select 4, _existing select 5, _roleKeep, 0, "linked", diag_tickTime]];
             } else {
-                private _wx = (_myPos select 0) + (_gx - (_myGrid select 0)) * 10;
-                private _wy = (_myPos select 1) + (_gy - (_myGrid select 1)) * 10;
+                private _wx = _wxAthena;
+                private _wy = _wyAthena;
+                if ((abs _wx) < 1 && {(abs _wy) < 1}) then {
+                    _wx = (_myPos select 0) + (_gx - (_myGrid select 0)) * 10;
+                    _wy = (_myPos select 1) + (_gy - (_myGrid select 1)) * 10;
+                };
                 private _roleUse = if (!(_roleAthena isEqualTo "")) then { _roleAthena } else { "Operator" };
                 if (_isSelf) then { _roleUse = _myRole; };
-                _byCs set [_key, [_cs, _gx, _gy, _isSelf, _wx, _wy, _roleUse]];
+                _byCs set [_key, [_cs, _gx, _gy, _isSelf, _wx, _wy, _roleUse, _ageAthena, _statusAthena, diag_tickTime]];
             };
         };
     } forEach (_payload splitString toString [10]);

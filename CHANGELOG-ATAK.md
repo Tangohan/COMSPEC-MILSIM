@@ -7,7 +7,111 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Portail · Carte tactique — 2026-09-13
+
+### Correction — La page s’ouvre à nouveau
+
+Opérations → Carte tactique s’affiche de nouveau. Un incident empêchait l’ouverture de la page.
+
+---
+
+## Portail · Intégrations — 2026-09-13
+
+### Nouveau — Photos Quick Picture vers Discord
+
+Sur Intégrations, vous pouvez envoyer les photos Quick Picture (téléphone en jeu) vers un salon Discord de la communauté. Chaque événement a trois choix clairs : ne pas publier, salon commun, ou un autre salon.
+
+---
+
+## Portail · Carte ATAK — 2026-09-13
+
+### Correction — Appuis ouvre la 9-Line
+
+Un clic sur Appuis affiche de nouveau le module d’appui aérien. La 9-Line et les demandes en cours apparaissent, ou un état vide pour en créer une. Le poste ouvre ce module pour tout le monde.
+
+### Nouveau — Relecture par date et par opérateur
+
+Dans Journal → Relecture, vous pouvez choisir la journée et l’opérateur à suivre. La chronologie, la carte et les événements clés se limitent à ce filtre. Le type d’événement (contacts, ordres…) reste disponible.
+
+### Correction — Fiches de renseignement lisibles
+
+Le type de fiche et l’urgence s’affichent de nouveau en toutes lettres dans leur case, au lieu de grandes barres vides qui poussaient le texte hors du panneau.
+
+### Nouveau — Fenêtres épinglées à gauche
+
+Le tchat, la radio, la liaison, les ordres, le médical et les pings peuvent être épinglés. Ils restent visibles en raccourci à gauche de la carte lorsque vous changez de domaine. Le tchat épinglé garde les derniers messages et le champ d’émission. Jusqu’à trois raccourcis, mémorisés sur le poste.
+
+---
+
+## Overwatch 1.5.76 / Athena 1.0.122 — 2026-09-13
+
+### Nouveau — Plusieurs opérations en parallèle
+
+Chaque mission indique son numéro de carte Athena. Deux opérations ne mélangent plus leurs positions.
+
+### Amélioration — File d’attente conservée après un redémarrage
+
+Les envois qui n’avaient pas encore atteint le poste sont repris après un plantage ou un redémarrage d’Arma.
+
+---
+
+## Overwatch 1.5.75 / Athena 1.0.121 — 2026-09-13
+
+### Correction — Quick Picture : Discord retrouve la photo
+
+Discord reçoit de nouveau la photo prise depuis Quick Picture. Le dossier indiqué pour l’envoi n’existait pas, alors que le cliché était bien enregistré. Le poste continue de recevoir la vue.
+
+---
+
+## Overwatch 1.5.74 / Athena 1.0.120 — 2026-09-13
+
+### Correction — Quick Picture vers Discord
+
+Une photo prise depuis Quick Picture continue d’être transmise vers Discord. Overwatch n’interrompt plus cet envoi. Le poste reçoit toujours la vue.
+
+---
+
+## Overwatch 1.5.73 / Athena 1.0.119 — 2026-09-13
+
+### Nouveau — Super ping
+
+Un Super ping place un pulse animé sur la carte : au poste et sur le téléphone. Clic droit → Super ping au poste. Maj + clic gauche sur la carte du téléphone. Les cercles s’agrandissent quelques secondes, visibles de tous.
+
+---
+
+## Overwatch 1.5.72 / Athena 1.0.118 — 2026-09-13
+
+### Nouveau — Zone de déplacement depuis la dernière position
+
+Sur le téléphone ATAK, un contact vu dans les quinze dernières minutes reste visible à sa dernière position connue s’il vient de perdre la liaison. Un clic sur ce contact, ou dans la liste des effectifs, dessine deux cercles qui s’agrandissent : à pied et en véhicule. Au poste, le même dessin s’ouvre en cliquant l’indicatif.
+
+---
+
+## Overwatch 1.5.71 / Athena 1.0.117 — 2026-09-13
+
+### Correction — Quick Picture
+
+Chaque photo prise depuis Quick Picture part au poste. La suivante n’est plus traitée comme un doublon de la vue précédente.
+
+---
+
+## Overwatch 1.5.70 / Athena 1.0.117 — 2026-09-13
+
+### Nouveau — Messagerie : d’abord les canaux
+
+En ouvrant Messagerie, la liste des canaux s’affiche avec le nombre de messages non lus. La section Création en bas permet d’ouvrir un nouveau canal.
+
+### Nouveau — Fil complet d’un canal
+
+Un clic ouvre tout le fil. Retour à la liste par Canaux. Date, retour à la ligne, couleurs selon l’auteur et le canal.
+
+### Amélioration — Messages limités et lisibles
+
+Un message tapé dans le téléphone est limité à 100 caractères et passe à la ligne.
 
 ---
 

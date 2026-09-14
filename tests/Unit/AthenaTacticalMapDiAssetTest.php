@@ -55,4 +55,17 @@ final class AthenaTacticalMapDiAssetTest extends TestCase
         self::assertStringContainsString('rm -rf public/atak', $yml);
         self::assertStringContainsString('conflicts with /atak route', $yml);
     }
+
+    public function testTacticalMapViewEscapesWithDefinedHelper(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $helpers = (string) file_get_contents($root . '/app/Support/helpers.php');
+        $view = (string) file_get_contents($root . '/views/admin/athena_tactical_map/index.php');
+        self::assertStringContainsString('function e(mixed $value): string', $helpers);
+        self::assertStringContainsString("htmlspecialchars((string) \$value, ENT_QUOTES, 'UTF-8')", $helpers);
+        self::assertStringContainsString("e(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css'))", $view);
+        require_once $root . '/app/Support/helpers.php';
+        self::assertTrue(function_exists('e'));
+        self::assertSame('&lt;b&gt;', e('<b>'));
+    }
 }

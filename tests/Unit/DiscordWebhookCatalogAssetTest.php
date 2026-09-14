@@ -17,7 +17,8 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
         self::assertContains(DiscordWebhookCatalog::KEY_OPERATION_STATUS, $keys);
         self::assertContains(DiscordWebhookCatalog::KEY_OVERLAY_PUBLISHED, $keys);
         self::assertContains(DiscordWebhookCatalog::KEY_ORDER_PUBLISHED, $keys);
-        self::assertContains(DiscordWebhookCatalog::KEY_OVERWATCH_PACK, $keys);
+        self::assertContains(DiscordWebhookCatalog::KEY_QUICK_PICTURE, $keys);
+        self::assertSame('off', DiscordWebhookCatalog::defaultMode(DiscordWebhookCatalog::KEY_QUICK_PICTURE));
         self::assertContains(EmailEvents::NEW_COMMUNITY_MEMBER, $keys);
         self::assertContains(EmailEvents::ENLISTMENT_SUBMITTED_STAFF, $keys);
         self::assertContains(EmailEvents::ENLISTMENT_ACCEPTED_STAFF, $keys);
@@ -28,6 +29,7 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
         self::assertSame('default', DiscordWebhookCatalog::defaultMode(DiscordWebhookCatalog::KEY_ANNOUNCEMENTS));
         self::assertSame('off', DiscordWebhookCatalog::defaultMode(EmailEvents::NEW_COMMUNITY_MEMBER));
         self::assertGreaterThanOrEqual(20, count($keys));
+        self::assertSame(count($keys), count(array_unique($keys)));
     }
 
     public function testIntegrationsPageListsEveryCatalogEventAndSavesRelays(): void
@@ -40,13 +42,19 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
 
         self::assertStringContainsString('relais-discord', $view);
         self::assertStringContainsString('discord_event[', $view);
-        self::assertStringContainsString('Salon par défaut', $view);
+        self::assertStringContainsString('Salon commun', $view);
+        self::assertStringContainsString('Autre salon', $view);
+        self::assertStringContainsString('Photos Quick Picture', $view);
+        self::assertStringContainsString('js-discord-mode', $view);
         self::assertStringContainsString('Transmissions terrain', $view);
         self::assertStringContainsString('discord_events', $view);
         self::assertStringContainsString('DiscordWebhookCatalog::events()', $controller);
         self::assertStringContainsString("'/back-office/integrations/discord'", $routes);
         self::assertStringContainsString('saveDiscord', $controller);
         self::assertStringContainsString('DiscordEventRelayService::relayFromEmail', $email);
+        self::assertStringContainsString('sendWithFile', (string) file_get_contents($root . '/app/Services/Integrations/DiscordWebhookService.php'));
+        self::assertStringContainsString('notifyQuickPicture', (string) file_get_contents($root . '/app/Services/Integrations/DiscordEventRelayService.php'));
+        self::assertStringContainsString('notifyQuickPicture', (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php'));
     }
 
     public function testDiscordUrlAcceptsWwwAndRejectsForeignHosts(): void
@@ -56,5 +64,7 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
         self::assertTrue($svc->isValidWebhookUrl('https://discord.com/api/webhooks/1/abc'));
         self::assertFalse($svc->isValidWebhookUrl('https://discord.com/api/v10/users/@me'));
         self::assertFalse($svc->isValidWebhookUrl('https://evil.example/api/webhooks/1/abc'));
+        $badFile = $svc->sendWithFile('https://evil.example/api/webhooks/1/abc', 'essai', __FILE__);
+        self::assertFalse($badFile['ok'] ?? true);
     }
 }
