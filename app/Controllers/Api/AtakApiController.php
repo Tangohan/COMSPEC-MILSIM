@@ -4180,6 +4180,80 @@ class AtakApiController
         return $colorName !== '' ? $colorName : '#ef4444';
     }
 
+    /**
+     * Flux SSE court pour Overwatch Web. COMSPEC continue d'écrire via les routes
+     * d'ingestion existantes ; ce flux ne fait que republier les réponses déjà
+     * filtrées par tenant/intel de unitsIndex() et chatIndex(). La connexion est
+     * volontairement renouvelée après ~25 s pour rester compatible PHP-FPM/proxy.
+     */
+    public function realtimeStream(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0);
+        $phoneToken = trim((string) Session::get('atak_phone_pairing_token', ''));
+        $phoneAllowed = false;
+        if ($userId < 1 && $phoneToken !== '') {
+            try {
+                $pairing = $this->phonePairingRepository->findValidByToken($phoneToken);
+                $phoneAllowed = is_array($pairing) && (int) ($pairing['tenant_id'] ?? 0) === $tenantId;
+            } catch (\Throwable) {
+                $phoneAllowed = false;
+            }
+        }
+        if ($userId < 1 && !$phoneAllowed) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+
+        $response = (new Response())
+            ->header('Content-Type', 'text/event-stream; charset=utf-8')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('X-Accel-Buffering', 'no')
+            ->header('Connection', 'keep-alive');
+
+        return $response->setBodyStream(function () use ($request): void {
+            @set_time_limit(30);
+            ignore_user_abort(true);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+            echo "retry: 3000\n\n";
+            $startedAt = microtime(true);
+            $lastHashes = ['units' => '', 'chat' => '', 'alerts' => ''];
+            $sequence = 0;
+            do {
+                $payloads = [
+                    'units' => $this->unitsIndex($request)->body(),
+                    'chat' => $this->chatIndex($request)->body(),
+                    'alerts' => $this->tacticalAlertsIndex($request)->body(),
+                ];
+                foreach ($payloads as $event => $json) {
+                    $hash = hash('sha256', $json);
+                    if ($hash === $lastHashes[$event]) {
+                        continue;
+                    }
+                    $lastHashes[$event] = $hash;
+                    $sequence++;
+                    echo 'id: ' . ((int) (microtime(true) * 1000)) . '-' . $sequence . "\n";
+                    echo 'event: ' . $event . "\n";
+                    echo 'data: ' . str_replace(["\r", "\n"], '', $json) . "\n\n";
+                }
+                echo ': heartbeat ' . gmdate('c') . "\n\n";
+                if (function_exists('ob_flush')) {
+                    @ob_flush();
+                }
+                flush();
+                if (connection_aborted()) {
+                    break;
+                }
+                usleep(2_000_000);
+            } while ((microtime(true) - $startedAt) < 24.0);
+        });
+    }
+
     public function unitsIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

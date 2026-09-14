@@ -300,6 +300,7 @@ class AtakController
         }
 
         return Response::view(!empty($params['_overwatch_beta']) ? 'atak-overwatch-beta' : 'atak', [
+            'atakOverwatchBeta' => !empty($params['_overwatch_beta']),
             'atakToken' => $token,
             'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,

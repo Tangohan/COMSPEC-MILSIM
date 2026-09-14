@@ -2130,6 +2130,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);
     $router->get('/api/units', [AtakApiController::class, 'unitsIndex']);
     $router->get('/api/atak/units', [AtakApiController::class, 'unitsIndex']);
+    // Push Overwatch Web (session durcie / session téléphone) avec polling en secours.
+    $router->get('/api/atak/stream', [AtakApiController::class, 'realtimeStream']);
     $router->get('/api/atak/gateways', [AtakApiController::class, 'gatewaysIndex']);
     $router->get('/api/atak/gateways/mirror/units', [AtakApiController::class, 'gatewaysMirrorUnits']);
     $router->get('/api/atak/gateways/mirror/markers', [AtakApiController::class, 'gatewaysMirrorMarkers']);

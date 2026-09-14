@@ -7,6 +7,160 @@ html.atak-overwatch-beta {
 }
 
 html.atak-overwatch-beta body { background: var(--atak-bg); }
+html.atak-overwatch-beta .overwatch-commandbar {
+  position: relative;
+  z-index: 1200;
+  min-height: 52px;
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  padding: 0 14px;
+  border-bottom: 1px solid #26302c;
+  background: #070908;
+  font-family: "IBM Plex Mono", monospace;
+}
+html.atak-overwatch-beta .overwatch-commandbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #eef7f2;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+html.atak-overwatch-beta .overwatch-commandbar__brand > b {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: #eaf3ee;
+  color: #07110d;
+  font-size: 17px;
+}
+html.atak-overwatch-beta .overwatch-commandbar__brand small {
+  display: block;
+  margin-top: 3px;
+  color: #7f9087;
+  font-size: 8px;
+}
+html.atak-overwatch-beta .overwatch-commandbar__nav { display: flex; min-width: 0; }
+html.atak-overwatch-beta .overwatch-commandbar__nav button {
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #91a098;
+  font: 700 10px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .08em;
+}
+html.atak-overwatch-beta .overwatch-commandbar__nav button:hover,
+html.atak-overwatch-beta .overwatch-commandbar__nav button.is-active {
+  border-bottom-color: var(--atak-accent);
+  background: #101512;
+  color: #fff;
+}
+html.atak-overwatch-beta .overwatch-commandbar__state {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--atak-accent);
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+html.atak-overwatch-beta .overwatch-commandbar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--atak-accent);
+  box-shadow: 0 0 10px var(--atak-accent);
+}
+html.atak-overwatch-beta .overwatch-commandbar__metric {
+  padding-left: 8px;
+  border-left: 1px solid #26302c;
+  color: #94a39b;
+  font-weight: 500;
+}
+html.atak-overwatch-beta .overwatch-commandbar__refresh {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 8px;
+  border-left: 1px solid #26302c;
+  color: #94a39b;
+  font-weight: 500;
+}
+html.atak-overwatch-beta .overwatch-commandbar__refresh select {
+  min-height: 26px;
+  border: 1px solid #35433c;
+  background: #0b100e;
+  color: #dbe7e0;
+  font: inherit;
+}
+html.atak-overwatch-beta .overwatch-commandbar__state button {
+  min-height: 28px;
+  border: 1px solid #35433c;
+  background: #101512;
+  color: #c8d2cc;
+  font: inherit;
+}
+html.atak-overwatch-beta .overwatch-commandbar.is-degraded .overwatch-commandbar__state { color: #e7b85c; }
+html.atak-overwatch-beta .overwatch-commandbar.is-degraded .overwatch-commandbar__dot { background: #e7b85c; box-shadow: 0 0 10px #e7b85c; }
+html.atak-overwatch-beta .overwatch-commandbar.is-reconnecting .overwatch-commandbar__state { color: #ef6670; }
+html.atak-overwatch-beta .overwatch-commandbar.is-reconnecting .overwatch-commandbar__dot { background: #ef6670; box-shadow: 0 0 10px #ef6670; animation: overwatch-pulse 1s steps(2,end) infinite; }
+@keyframes overwatch-pulse { 50% { opacity: .25; } }
+html.atak-overwatch-beta .overwatch-quicktools {
+  position: fixed;
+  z-index: 1100;
+  top: 60px;
+  left: 64px;
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid #2a3630;
+  background: rgba(7,10,9,.92);
+}
+html.atak-overwatch-beta .overwatch-quicktools button {
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid #35433c;
+  background: #0d1210;
+  color: #aab7b0;
+  font: 700 9px/1 "IBM Plex Mono", monospace;
+}
+html.atak-overwatch-beta .overwatch-quicktools button:hover,
+html.atak-overwatch-beta .overwatch-quicktools button.is-active,
+html.atak-overwatch-beta .overwatch-quicktools button[aria-pressed="true"] { border-color: var(--atak-accent); color: var(--atak-accent); }
+html.atak-overwatch-beta .overwatch-watchlist {
+  position: fixed;
+  z-index: 1190;
+  top: 60px;
+  right: 12px;
+  width: min(340px, calc(100vw - 24px));
+  max-height: calc(100vh - 74px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #35433c;
+  background: #090d0b;
+  color: #cbd6d0;
+  box-shadow: 0 18px 50px rgba(0,0,0,.55);
+}
+html.atak-overwatch-beta .overwatch-watchlist header,
+html.atak-overwatch-beta .overwatch-watchlist__item { display: flex; align-items: center; gap: 8px; }
+html.atak-overwatch-beta .overwatch-watchlist header button { margin-left: auto; }
+html.atak-overwatch-beta .overwatch-watchlist__item {
+  width: 100%;
+  padding: 9px;
+  border: 0;
+  border-top: 1px solid #24302a;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+html.atak-overwatch-beta .overwatch-watchlist__item small { flex: 1; color: #829188; }
+html.atak-overwatch-beta .overwatch-watchlist__state { color: var(--atak-accent); }
+html.atak-overwatch-beta .overwatch-watchlist__state.is-offline { color: #ef6670; }
 html.atak-overwatch-beta .atak-header {
   min-height: 58px;
   background: #070908;
@@ -62,6 +216,33 @@ html.atak-overwatch-beta .atak-overwatch-basemaps button { min-height: 34px; bor
 html.atak-overwatch-beta .atak-overwatch-basemaps button.is-active { border-color: var(--atak-accent); color: #06100c; background: var(--atak-accent); font-weight: 800; }
 
 @media (max-width: 900px) {
+  html.atak-overwatch-beta .overwatch-commandbar { gap: 6px; padding: 0 7px; }
+  html.atak-overwatch-beta .overwatch-commandbar__brand span,
+  html.atak-overwatch-beta .overwatch-commandbar__metric,
+  html.atak-overwatch-beta .overwatch-commandbar__refresh > span { display: none; }
+  html.atak-overwatch-beta .overwatch-commandbar__nav { overflow-x: auto; }
+  html.atak-overwatch-beta .overwatch-commandbar__nav button { padding: 0 8px; }
+  html.atak-overwatch-beta .overwatch-quicktools { left: 8px; right: 8px; overflow-x: auto; }
   html.atak-overwatch-beta .atak-overwatch-navigation { overflow-x: auto; }
   html.atak-overwatch-beta .atak-overwatch-navigation button { padding: 0 9px; font-size: 10px; }
+}
+
+@media print {
+  html.atak-overwatch-beta body { overflow: visible !important; background: #fff !important; }
+  html.atak-overwatch-beta .overwatch-commandbar,
+  html.atak-overwatch-beta .overwatch-quicktools,
+  html.atak-overwatch-beta .atak-header,
+  html.atak-overwatch-beta .atak-panel-left,
+  html.atak-overwatch-beta .atak-panel-right,
+  html.atak-overwatch-beta .atak-map-tools,
+  html.atak-overwatch-beta .atak-liaison-rail { display: none !important; }
+  html.atak-overwatch-beta .atak-map-wrap,
+  html.atak-overwatch-beta #atak-map {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: 180mm !important;
+    break-inside: avoid;
+  }
+  html.atak-overwatch-beta .leaflet-control-attribution { display: block !important; }
 }
