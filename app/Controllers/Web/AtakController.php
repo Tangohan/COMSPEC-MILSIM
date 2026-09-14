@@ -288,7 +288,9 @@ class AtakController
             }
         }
 
-        return Response::view('atak', [
+        $view = $request->path() === '/-ATAK-OVERWATCH-Beta' ? 'atak-overwatch-beta' : 'atak';
+
+        return Response::view($view, [
             'atakToken' => $token,
             'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,

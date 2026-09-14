@@ -881,6 +881,8 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
+    // Workspace cartographique expérimental, volontairement isolé de l'interface ATAK historique.
+    $router->get('/-ATAK-OVERWATCH-Beta', [AtakController::class, 'index'], $mwAtakWeb);
     $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);
     $router->get('/atak/mobile/{module}', [\App\Controllers\Web\AtakMobileController::class, 'module'], $mwAtakWeb);
     $router->get('/atak/liaison', [AtakController::class, 'liaison'], $mwAtakMemberOnly);
