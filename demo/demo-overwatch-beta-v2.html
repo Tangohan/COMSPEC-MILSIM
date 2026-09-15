@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATHENA ATAK — Overwatch Beta V2</title>
+  <link rel="stylesheet" href="../public/assets/vendor/leaflet-1.9.4/leaflet.css">
+  <link rel="stylesheet" href="../public/assets/css/atak-overwatch-beta.css">
+  <style>
+    /* Styles supplémentaires pour la démo */
+    .demo-badge {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 10000;
+      padding: 8px 12px;
+      background: #00d69a;
+      color: #050505;
+      font-size: 10px;
+      font-weight: 900;
+      border-radius: 4px;
+      letter-spacing: .08em;
+    }
+  </style>
+</head>
+<body>
+<div class="demo-badge">DÉMO V2</div>
+
+<div class="ow-shell">
+  <header class="ow-topbar">
+    <a href="#" class="ow-brand">
+      <b>Ω</b>
+      <span>OVERWATCH<small>BÊTA C2 POSTE V2</small></span>
+    </a>
+    <nav class="ow-nav">
+      <button type="button" class="is-active" data-view="overwatch">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 6L8 2L14 4L18 2L18 16L14 18L8 16L2 18L2 4Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        CARTE
+      </button>
+      <button type="button" data-view="comms">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="10" stroke="currentColor" stroke-width="2" fill="none" rx="1"/><path d="M2 6L14 6" stroke="currentColor" stroke-width="2"/></svg>
+        COMMS
+      </button>
+      <button type="button" data-view="mission">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 4L8 8L11 11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        MISSION
+      </button>
+      <button type="button" data-view="intel">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="10" height="12" stroke="currentColor" stroke-width="2" fill="none" rx="1"/><path d="M6 6L10 6M6 9L10 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        INTEL
+      </button>
+      <button type="button" data-view="tools">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 2L8 5M8 11L8 14M2 8L5 8M11 8L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        TOOLS
+      </button>
+    </nav>
+    <button type="button" class="ow-command" data-command>⌘ Commandes</button>
+    <div class="ow-session is-live">
+      <i></i>
+      <div><strong>MISSION FALCON</strong><small>Altis — Liaison Active</small></div>
+    </div>
+  </header>
+
+  <div class="ow-statusbar">
+    <span id="ow-status-text">Synchronisation en temps réel <b class="ow-green">• LIVE</b></span>
+    <div class="ow-statusbar-right">
+      <span id="ow-weather-chip" class="ow-wx" hidden>MÉTÉO —</span>
+      <button type="button" class="ow-mini" onclick="window.OverwatchEnhancements.loadAllData()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 2L7 7L10 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        RECHARGER
+      </button>
+      <button type="button" class="ow-mini" onclick="toggleMapOnly()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="2" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        CARTE SEULE
+      </button>
+    </div>
+  </div>
+
+  <div class="ow-workspace">
+    <aside class="ow-settings">
+      <header>
+        <span>⚙</span>RÉGLAGES
+        <button type="button" id="ow-toggle-settings" title="Replier/Déplier">◀</button>
+      </header>
+      <div class="ow-settings-body">
+        <p class="ow-kicker">ASPECT DE LA CARTE</p>
+        <fieldset class="ow-looks">
+          <legend>Fond</legend>
+          <label>
+            <input type="radio" name="look" value="classic" data-ow-look>
+            <div><strong>Plan</strong><small>Carte topographique</small></div>
+          </label>
+          <label>
+            <input type="radio" name="look" value="aerial" data-ow-look checked>
+            <div><strong>Vue aérienne</strong><small>Photo satellite</small></div>
+          </label>
+          <label>
+            <input type="radio" name="look" value="bw" data-ow-look>
+            <div><strong>Noir & Blanc</strong><small>Mode nuit/discret</small></div>
+          </label>
+        </fieldset>
+
+        <p class="ow-kicker">TAILLE DES ÉLÉMENTS</p>
+        <div class="ow-row">
+          <label for="ow-label-size">Taille des libellés</label>
+          <input type="range" id="ow-label-size" min="6" max="18" step="1" value="9">
+          <span id="ow-label-size-value">9px</span>
+        </div>
+        <div class="ow-row">
+          <label for="ow-icon-size">Taille des icônes</label>
+          <input type="range" id="ow-icon-size" min="0.5" max="2" step="0.1" value="1">
+          <span id="ow-icon-size-value">×1</span>
+        </div>
+
+        <p class="ow-kicker">CALQUES</p>
+        <fieldset class="ow-looks">
+          <legend>Éléments visibles</legend>
+          <label>
+            <input type="checkbox" data-ow-layer="units" checked>
+            <div><strong>Unités</strong><small>Effectifs en temps réel</small></div>
+          </label>
+          <label>
+            <input type="checkbox" data-ow-layer="labels" id="ow-show-labels" checked>
+            <div><strong>Étiquettes</strong><small>Noms et indicatifs</small></div>
+          </label>
+          <label>
+            <input type="checkbox" data-ow-layer="shapes" checked>
+            <div><strong>Tracés carte</strong><small>Zones, routes, marqueurs</small></div>
+          </label>
+        </fieldset>
+      </div>
+    </aside>
+
+    <div class="ow-map-stage" id="ow-map-stage" data-look="aerial">
+      <div id="ow-map"></div>
+      <div class="ow-empty" id="ow-empty-state">
+        <b>CARTE TACTIQUE V2</b>
+        <span>Chargez vos données avec le bouton RECHARGER</span>
+      </div>
+      <div class="ow-rail">
+        <button type="button" data-tool="cursor" title="Sélection">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3L17 10L10 12L8 17L3 3Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button type="button" data-tool="measure" title="Mesurer">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 17L17 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="3" cy="17" r="2" fill="currentColor"/><circle cx="17" cy="3" r="2" fill="currentColor"/></svg>
+        </button>
+        <button type="button" data-tool="draw" title="Tracer">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M14 2L18 6L8 16L2 18L4 12L14 2Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button type="button" data-tool="marker" title="Marqueur">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2C6 2 3 5 3 9C3 13 10 18 10 18C10 18 17 13 17 9C17 5 14 2 10 2Z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="9" r="2" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="ow-coordinate">GRILLE <span id="ow-grid-display">— —</span></div>
+      <div class="ow-north">N</div>
+    </div>
+
+    <aside class="ow-chat">
+      <div class="ow-tabs">
+        <button type="button" class="is-active" data-chat-tab="contacts">CONTACTS</button>
+        <button type="button" data-chat-tab="channels">CANAUX</button>
+        <button type="button" data-chat-tab="bft">BFT</button>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="contacts">
+        <div class="ow-search">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M11 11L15 15" stroke="currentColor" stroke-width="2"/></svg>
+          <input type="text" id="ow-search" placeholder="Rechercher un opérateur…">
+        </div>
+        <p class="ow-section-label">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M2 14C2 11 4 9 8 9C12 9 14 11 14 14" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          EFFECTIFS
+        </p>
+        <div class="ow-contact-list" id="ow-contact-list">
+          <p class="ow-help">Cliquez sur RECHARGER pour charger les unités</p>
+        </div>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="bft" hidden>
+        <p class="ow-section-label">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4L8 2L14 4L18 2L18 16L14 18L8 16L2 18L2 4Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          BLUE FORCE TRACKING
+        </p>
+        <div style="padding:10px">
+          <table class="ow-bft-table">
+            <thead>
+              <tr>
+                <th>Statut</th>
+                <th>Indicatif</th>
+                <th>Groupe</th>
+                <th>Position</th>
+                <th>Maj</th>
+              </tr>
+            </thead>
+            <tbody id="ow-bft-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center;padding:24px;color:var(--athena-muted)">
+                  Aucune unité chargée
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="ow-footer">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+    <span>ATHENA OVERWATCH</span>
+    <b>BÊTA V2 2026</b>
+    <span class="ow-footer-end">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><circle cx="7" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M2 12C2 9 4 7 7 7C10 7 12 9 12 12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span id="ow-unit-count">0</span> unités ·
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M2 4L7 2L12 4L16 2L16 14L12 16L7 14L2 16L2 4Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span id="ow-shape-count">0</span> tracés
+    </span>
+  </footer>
+</div>
+
+<div class="ow-drawer" id="ow-drawer" hidden>
+  <header>
+    <button type="button" data-close-drawer>×</button>
+    <small id="ow-drawer-kicker">—</small>
+    <h2 id="ow-drawer-title">—</h2>
+  </header>
+  <div id="ow-drawer-body" class="ow-drawer-body"></div>
+</div>
+
+<script>window.ATAK_OVERWATCH_BETA = true;</script>
+<script src="../public/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
+<script src="../public/assets/js/atak-overwatch-enhancements.js"></script>
+<script src="../public/assets/js/atak-overwatch-beta.js"></script>
+<script>
+  // Initialisation
+  if (window.OverwatchEnhancements) {
+    window.OverwatchEnhancements.initAccordions();
+  }
+
+  // Toggle carte seule
+  function toggleMapOnly() {
+    var workspace = document.querySelector('.ow-workspace');
+    workspace.classList.toggle('is-map-only');
+    setTimeout(function () {
+      if (window.ATAKMap && window.ATAKMap.invalidateSize) {
+        window.ATAKMap.invalidateSize();
+      }
+    }, 50);
+  }
+
+  // Gestion du bouton de repli des réglages
+  var toggleBtn = document.getElementById('ow-toggle-settings');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      var workspace = document.querySelector('.ow-workspace');
+      var collapsed = workspace.classList.contains('is-settings-collapsed');
+      workspace.classList.toggle('is-settings-collapsed', !collapsed);
+      this.textContent = collapsed ? '◀' : '▶';
+      setTimeout(function () {
+        if (window.ATAKMap && window.ATAKMap.invalidateSize) {
+          window.ATAKMap.invalidateSize();
+        }
+      }, 50);
+    });
+  }
+
+  // Gestion taille libellés
+  var labelSizeInput = document.getElementById('ow-label-size');
+  var labelSizeValue = document.getElementById('ow-label-size-value');
+  if (labelSizeInput && labelSizeValue) {
+    labelSizeInput.addEventListener('input', function () {
+      var size = this.value;
+      labelSizeValue.textContent = size + 'px';
+      document.documentElement.style.setProperty('--ow-label-size', size + 'px');
+      try { localStorage.setItem('athena:overwatch-label-size', size); } catch (e) {}
+    });
+  }
+
+  // Gestion taille icônes
+  var iconSizeInput = document.getElementById('ow-icon-size');
+  var iconSizeValue = document.getElementById('ow-icon-size-value');
+  if (iconSizeInput && iconSizeValue) {
+    iconSizeInput.addEventListener('input', function () {
+      var size = this.value;
+      iconSizeValue.textContent = '×' + size;
+      document.documentElement.style.setProperty('--ow-icon-size', size);
+      try { localStorage.setItem('athena:overwatch-icon-size', size); } catch (e) {}
+    });
+  }
+
+  // Restore saved values
+  try {
+    var savedLabelSize = localStorage.getItem('athena:overwatch-label-size');
+    if (savedLabelSize && labelSizeInput && labelSizeValue) {
+      labelSizeInput.value = savedLabelSize;
+      labelSizeValue.textContent = savedLabelSize + 'px';
+      document.documentElement.style.setProperty('--ow-label-size', savedLabelSize + 'px');
+    }
+    var savedIconSize = localStorage.getItem('athena:overwatch-icon-size');
+    if (savedIconSize && iconSizeInput && iconSizeValue) {
+      iconSizeInput.value = savedIconSize;
+      iconSizeValue.textContent = '×' + savedIconSize;
+      document.documentElement.style.setProperty('--ow-icon-size', savedIconSize);
+    }
+  } catch (e) {}
+
+  console.log('✓ Overwatch Beta V2 loaded!');
+  console.log('• Accordéons dans Mission');
+  console.log('• Loader global');
+  console.log('• SVG et couleurs');
+  console.log('• Mode carte seule');
+  console.log('• BFT amélioré');
+</script>
+</body>
+</html>

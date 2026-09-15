@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test - Panneau détaillé Contact BFT</title>
+  <link rel="stylesheet" href="../public/assets/css/atak-overwatch-beta.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #050505;
+      font-family: Arial, sans-serif;
+    }
+    .demo-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #0d1010;
+      border: 1px solid #27302d;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .demo-header {
+      padding: 20px;
+      background: #0e1211;
+      border-bottom: 1px solid #27302d;
+      text-align: center;
+    }
+    .demo-header h1 {
+      margin: 0 0 8px;
+      color: #00d69a;
+      font-size: 18px;
+      letter-spacing: .08em;
+    }
+    .demo-header p {
+      margin: 0;
+      color: #7d8883;
+      font-size: 12px;
+    }
+    .demo-buttons {
+      padding: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .demo-btn {
+      flex: 1;
+      min-width: 180px;
+      padding: 12px 16px;
+      border: 1px solid #27302d;
+      background: #0a0d0c;
+      color: #f5f7f5;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .demo-btn:hover {
+      background: #111514;
+      border-color: #00d69a;
+      color: #00d69a;
+    }
+    .ow-drawer {
+      position: relative !important;
+      height: auto !important;
+      width: 100% !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    .ow-drawer header {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="demo-container">
+  <div class="demo-header">
+    <h1>🎯 PANNEAU DÉTAILLÉ CONTACT BFT</h1>
+    <p>Démonstration du nouveau système d'affichage complet des données ATAK</p>
+  </div>
+
+  <div class="demo-buttons">
+    <button class="demo-btn" onclick="showContact('basic')">Contact basique</button>
+    <button class="demo-btn" onclick="showContact('full')">Contact complet</button>
+    <button class="demo-btn" onclick="showContact('minimal')">Contact minimal</button>
+    <button class="demo-btn" onclick="showContact('vehicle')">Véhicule</button>
+  </div>
+
+  <div class="ow-drawer" id="demo-panel">
+    <div id="ow-drawer-body" class="ow-drawer-body"></div>
+  </div>
+</div>
+
+<script src="../public/assets/js/atak-overwatch-v3.js"></script>
+<script>
+  // Données de test
+  var testContacts = {
+    basic: {
+      id: 'unit-001',
+      uid: 'ATAK-12345678',
+      callsign: 'Alpha-1',
+      name: 'Jean Dupont',
+      type: 'Infantry',
+      role: 'Team Leader',
+      team: 'Alpha',
+      lat: 48.8566,
+      lng: 2.3522,
+      alt: 50,
+      grid: '31U DQ 48234 65732',
+      heading: 270,
+      speed: 5,
+      status: 'online',
+      battery: 87,
+      timestamp: Date.now() - 30000,
+      source: 'ATAK Mobile',
+      device: 'Android TAK'
+    },
+
+    full: {
+      id: 'unit-002',
+      uid: 'ATAK-87654321',
+      callsign: 'Bravo-2',
+      name: 'Marie Martin',
+      type: 'Infantry',
+      role: 'Medic',
+      team: 'Bravo Squad',
+      lat: 48.8606,
+      lng: 2.3376,
+      alt: 42,
+      grid: '31U DQ 47123 66821',
+      ce: 5.2,
+      le: 3.8,
+      heading: 135,
+      speed: 3.5,
+      track: 140,
+      status: 'active',
+      battery: 92,
+      health: 'Good',
+      timestamp: Date.now() - 15000,
+      stale: Date.now() + 300000,
+      created_at: Date.now() - 7200000,
+      source: 'ATAK Mobile',
+      device: 'Samsung Galaxy TAB',
+      version: 'ATAK 4.8.1',
+      radio_freq: 142.500,
+      radio_channel: 'ALPHA-NET',
+      task: 'Patrol sector Charlie',
+      objective: 'Reconnaissance',
+      remarks: 'All systems nominal. Ready for tasking.'
+    },
+
+    minimal: {
+      id: 'unit-003',
+      callsign: 'Charlie-3',
+      team: 'Charlie',
+      lat: 48.8520,
+      lng: 2.3500,
+      status: 'delayed'
+    },
+
+    vehicle: {
+      id: 'veh-001',
+      uid: 'ATAK-VEH-001',
+      callsign: 'Viking-1',
+      name: 'VBCI #412',
+      type: 'Armored Vehicle',
+      role: 'IFV',
+      team: 'Viking Platoon',
+      lat: 48.8650,
+      lng: 2.3400,
+      alt: 38,
+      grid: '31U DQ 46890 67234',
+      ce: 2.1,
+      le: 1.5,
+      heading: 90,
+      speed: 45,
+      track: 92,
+      status: 'online',
+      battery: 100,
+      health: 'Operational',
+      timestamp: Date.now() - 5000,
+      stale: Date.now() + 600000,
+      created_at: Date.now() - 14400000,
+      source: 'VBCI Onboard System',
+      device: 'Tactical Vehicle Terminal',
+      version: 'TVT 2.1',
+      radio_freq: 148.750,
+      radio_channel: 'VIKING-NET',
+      task: 'Mobile checkpoint',
+      objective: 'Area security',
+      remarks: 'Fuel: 75%. All systems operational.'
+    }
+  };
+
+  function showContact(type) {
+    var contact = testContacts[type];
+    if (!contact) return;
+
+    var html = window.OverwatchV3.showDetailedContactPanel(contact);
+    document.getElementById('ow-drawer-body').innerHTML = html;
+  }
+
+  // Afficher contact basique par défaut
+  showContact('basic');
+
+  console.log('✓ Démo panneau détaillé contact chargée');
+  console.log('• Contact basique: données essentielles');
+  console.log('• Contact complet: toutes les données ATAK');
+  console.log('• Contact minimal: données limitées');
+  console.log('• Véhicule: exemple véhicule blindé');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATHENA ATAK — Overwatch Beta</title>
+  <link rel="stylesheet" href="../public/assets/vendor/leaflet-1.9.4/leaflet.css">
+  <link rel="stylesheet" href="../public/assets/css/atak-overwatch-beta.css">
+</head>
+<body>
+<div class="ow-shell">
+  <header class="ow-topbar">
+    <a href="#" class="ow-brand"><b>Ω</b><span>OVERWATCH<small>BÊTA C2 POSTE</small></span></a>
+    <nav class="ow-nav">
+      <button type="button" class="is-active" data-view="overwatch">CARTE</button>
+      <button type="button" data-view="comms">COMMS</button>
+      <button type="button" data-view="mission">MISSION</button>
+      <button type="button" data-view="intel">INTEL</button>
+      <button type="button" data-view="tools">TOOLS</button>
+    </nav>
+    <button type="button" class="ow-command" data-command>⌘ Commandes</button>
+    <div class="ow-session is-live">
+      <i></i>
+      <div><strong>MISSION FALCON</strong><small>Altis — Liaison Active</small></div>
+    </div>
+  </header>
+
+  <div class="ow-statusbar">
+    <span id="ow-status-text">Synchronisation en temps réel <b class="ow-green">• LIVE</b></span>
+    <div class="ow-statusbar-right">
+      <span id="ow-weather-chip" class="ow-wx" hidden>MÉTÉO —</span>
+      <span class="ow-sync-rate">
+        <span>↻</span>
+        <select id="ow-poll-rate">
+          <option value="3000">3s</option>
+          <option value="5000" selected>5s</option>
+          <option value="10000">10s</option>
+          <option value="30000">30s</option>
+        </select>
+      </span>
+    </div>
+  </div>
+
+  <div class="ow-workspace">
+    <aside class="ow-settings">
+      <header>
+        <span>⚙</span>RÉGLAGES
+        <button type="button" id="ow-toggle-settings" title="Replier/Déplier">◀</button>
+      </header>
+      <div class="ow-settings-body">
+        <p class="ow-kicker">ASPECT DE LA CARTE</p>
+        <fieldset class="ow-looks">
+          <legend>Fond</legend>
+          <label><input type="radio" name="look" value="classic" data-ow-look><div><strong>Plan</strong><small>Carte topographique</small></div></label>
+          <label><input type="radio" name="look" value="aerial" data-ow-look checked><div><strong>Vue aérienne</strong><small>Photo satellite</small></div></label>
+          <label><input type="radio" name="look" value="bw" data-ow-look><div><strong>Noir & Blanc</strong><small>Mode nuit/discret</small></div></label>
+        </fieldset>
+
+        <p class="ow-kicker">CALQUES</p>
+        <fieldset class="ow-looks">
+          <legend>Éléments visibles</legend>
+          <label><input type="checkbox" data-ow-layer="units" checked><div><strong>Unités</strong><small>Effectifs en temps réel</small></div></label>
+          <label><input type="checkbox" data-ow-layer="labels" id="ow-show-labels" checked><div><strong>Étiquettes</strong><small>Noms et indicatifs</small></div></label>
+          <label><input type="checkbox" data-ow-layer="tracks"><div><strong>Trajectoires</strong><small>Historique déplacement</small></div></label>
+          <label><input type="checkbox" data-ow-layer="shapes" checked><div><strong>Tracés carte</strong><small>Zones, routes, marqueurs</small></div></label>
+          <label><input type="checkbox" id="ow-rally-markers" checked><div><strong>Points de ralliement</strong><small>Objectifs 50 m</small></div></label>
+          <label><input type="checkbox" id="ow-po-markers" checked><div><strong>Points à atteindre</strong><small>Objectifs 20 m</small></div></label>
+          <label><input type="checkbox" data-ow-layer="aerial-view"><div><strong>Vue aérienne (LAYERS)</strong><small>Photo satellite dans réglages</small></div></label>
+        </fieldset>
+
+        <p class="ow-kicker">TAILLE DES ÉLÉMENTS</p>
+        <div class="ow-row">
+          <label for="ow-label-size">Taille des libellés</label>
+          <input type="range" id="ow-label-size" min="6" max="18" step="1" value="9">
+          <span id="ow-label-size-value">9px</span>
+        </div>
+        <div class="ow-row">
+          <label for="ow-icon-size">Taille des icônes</label>
+          <input type="range" id="ow-icon-size" min="0.5" max="2" step="0.1" value="1">
+          <span id="ow-icon-size-value">×1</span>
+        </div>
+
+        <p class="ow-kicker">MARQUEURS</p>
+        <fieldset class="ow-looks">
+          <legend>Style</legend>
+          <label><input type="radio" name="marker-style" value="dot" data-ow-marker-style><div><strong>Point</strong></div></label>
+          <label><input type="radio" name="marker-style" value="diamond" data-ow-marker-style checked><div><strong>Losange</strong></div></label>
+          <label><input type="radio" name="marker-style" value="nato" data-ow-marker-style><div><strong>Symbole OTAN</strong></div></label>
+        </fieldset>
+
+        <p class="ow-kicker">COULEURS</p>
+        <div class="ow-row">
+          <label for="ow-color-friend">Amis / Alliés</label>
+          <input type="color" id="ow-color-friend" value="#00d69a">
+        </div>
+        <div class="ow-row">
+          <label for="ow-color-hostile">Adversaire / Hostile</label>
+          <input type="color" id="ow-color-hostile" value="#e05b63">
+        </div>
+
+        <p class="ow-kicker">TRACÉS</p>
+        <div class="ow-row">
+          <label for="ow-draw-color">Couleur dessin</label>
+          <input type="color" id="ow-draw-color" value="#00d69a">
+        </div>
+        <div class="ow-row">
+          <label for="ow-draw-width">Épaisseur ligne</label>
+          <input type="range" id="ow-draw-width" min="1" max="8" value="3">
+        </div>
+
+        <p class="ow-kicker">ANNEAUX DE PORTÉE</p>
+        <label class="ow-toggle">
+          <input type="checkbox" data-ow-ring="100">
+          <div><strong>100 m</strong></div>
+        </label>
+        <label class="ow-toggle">
+          <input type="checkbox" data-ow-ring="250">
+          <div><strong>250 m</strong></div>
+        </label>
+        <label class="ow-toggle">
+          <input type="checkbox" data-ow-ring="500">
+          <div><strong>500 m</strong></div>
+        </label>
+        <label class="ow-toggle">
+          <input type="checkbox" data-ow-ring="1000">
+          <div><strong>1000 m</strong></div>
+        </label>
+
+        <p class="ow-kicker">APPARENCE</p>
+        <fieldset class="ow-looks">
+          <legend>Thème</legend>
+          <label><input type="radio" name="theme" value="dark" data-ow-theme checked><div><strong>Sombre</strong></div></label>
+          <label><input type="radio" name="theme" value="day" data-ow-theme><div><strong>Clair</strong></div></label>
+        </fieldset>
+      </div>
+    </aside>
+
+    <div class="ow-map-stage" id="ow-map-stage" data-look="aerial">
+      <div id="ow-map"></div>
+      <div class="ow-empty" id="ow-empty-state">
+        <b>CARTE TACTIQUE</b>
+        <span>En attente de synchronisation…</span>
+      </div>
+      <div class="ow-rail">
+        <button type="button" data-tool="cursor">⊹</button>
+        <button type="button" data-tool="po">①</button>
+        <button type="button" data-tool="rally">⚑</button>
+        <button type="button" data-tool="measure">↔</button>
+        <button type="button" data-tool="bearing">∠</button>
+        <span></span>
+        <button type="button" data-tool="route">⤳</button>
+        <button type="button" data-tool="circle">◯</button>
+        <button type="button" data-tool="rect">▭</button>
+        <button type="button" data-tool="aoi">▱</button>
+        <button type="button" data-tool="freehand">✎</button>
+        <button type="button" data-tool="text">T</button>
+      </div>
+      <div class="ow-coordinate">GRILLE <span id="ow-grid-display">— —</span></div>
+      <div class="ow-north">N</div>
+      <div class="ow-live-measure" id="ow-live-measure" hidden></div>
+    </div>
+
+    <aside class="ow-chat">
+      <div class="ow-tabs">
+        <button type="button" class="is-active" data-chat-tab="channels">CANAUX</button>
+        <button type="button" data-chat-tab="contacts">CONTACTS</button>
+        <button type="button" data-chat-tab="squads">GROUPES</button>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="channels">
+        <div class="ow-search"><span>⌕</span><input type="text" id="ow-channel-filter" placeholder="Rechercher un canal…"></div>
+        <p class="ow-section-label">CANAUX RADIO</p>
+        <div class="ow-channel-list" id="ow-channel-list"></div>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="contacts" hidden>
+        <div class="ow-search"><span>⌕</span><input type="text" id="ow-search" placeholder="Rechercher un opérateur…"></div>
+        <p class="ow-section-label">EFFECTIFS</p>
+        <div class="ow-contact-list" id="ow-contact-list"></div>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="squads" hidden>
+        <p class="ow-kicker">GROUPES VISIBLES</p>
+        <div id="ow-squad-list"></div>
+      </div>
+
+      <div class="ow-chat-main" data-chat-panel="chat">
+        <header style="padding:10px 12px;border-bottom:1px solid var(--athena-line);">
+          <span style="color:var(--athena-green);font-size:9px;font-weight:900;">📻 CANAL</span>
+          <strong id="ow-channel-badge" style="font-size:11px;margin-left:6px;">GÉNÉRAL</strong>
+        </header>
+        <div class="ow-chat-log" id="ow-chat-log"></div>
+        <form class="ow-chat-compose" id="ow-chat-form">
+          <input type="text" id="ow-chat-input" placeholder="Message radio…" maxlength="500" autocomplete="off">
+          <button type="submit" class="ow-primary">ENVOYER</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="ow-footer">
+    <span>ATHENA OVERWATCH</span>
+    <b>BÊTA 2026</b>
+    <span class="ow-footer-end"><span id="ow-unit-count">0</span> unités · <span id="ow-shape-count">0</span> tracés</span>
+  </footer>
+</div>
+
+<div class="ow-drawer" id="ow-drawer" hidden>
+  <header>
+    <button type="button" data-close-drawer>×</button>
+    <small id="ow-drawer-kicker">—</small>
+    <h2 id="ow-drawer-title">—</h2>
+  </header>
+  <div id="ow-drawer-body" class="ow-drawer-body"></div>
+</div>
+
+<div class="ow-palette" id="ow-palette" hidden>
+  <div>
+    <input type="text" id="ow-command-input" placeholder="Commande ou recherche…" autocomplete="off">
+    <p>Commandes disponibles — choisissez ou tapez pour filtrer</p>
+    <div id="ow-palette-list"></div>
+  </div>
+</div>
+
+<div class="ow-context" id="ow-context" hidden></div>
+<div class="ow-timeline" id="ow-timeline" hidden>
+  <span>REPLAY</span>
+  <input type="range" min="0" max="100" value="0" id="ow-timeline-slider">
+  <button type="button">▶</button>
+  <button type="button">⏸</button>
+</div>
+<div class="ow-toast" id="ow-toast" hidden></div>
+
+<script>window.ATAK_OVERWATCH_BETA = true;</script>
+<script src="../public/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
+<script>
+  window.ATAK_MAP_CONFIG = {
+    tilePattern: 'https://atlas.plan-ops.fr/data/1/maps/3/1/{z}/{x}/{y}.webp',
+    tileSize: 212,
+    worldSize: 30720,
+    minZoom: 0,
+    maxZoom: 6,
+    defaultZoom: 3,
+    center: [15000, 15000],
+    offsetX: 0,
+    offsetY: 0,
+    attribution: '&copy; Bohemia Interactive',
+    crs: { factorx: 0.006839, factory: 0.006836, tileWidth: 212 },
+    aerial: {
+      tilePattern: 'https://atlas.plan-ops.fr/data/1/maps/3/295/{z}/{x}/{y}.webp',
+      factorX: 0.012375,
+      factorY: 0.012375,
+      tileSize: 381,
+      minZoom: 0,
+      maxZoom: 7
+    }
+  };
+  window.ATAK_API_BASE = '';
+  window.ATAK_DEFAULT_MAP_ID = 1;
+  window.ATAK_USER = { callsign: 'TOC', displayName: 'Poste' };
+</script>
+<script src="../public/assets/js/atak-aerial.js"></script>
+<script src="../public/assets/js/atak-markers.js"></script>
+<script src="../public/assets/js/atak-overwatch-beta.js"></script>
+<script>
+  // Gestion du bouton de repli des réglages
+  document.getElementById('ow-toggle-settings').addEventListener('click', function () {
+    var workspace = document.querySelector('.ow-workspace');
+    var collapsed = workspace.classList.contains('is-settings-collapsed');
+    workspace.classList.toggle('is-settings-collapsed', !collapsed);
+    this.textContent = collapsed ? '◀' : '▶';
+    setTimeout(function () {
+      if (window.ATAKMap && window.ATAKMap.invalidateSize) {
+        window.ATAKMap.invalidateSize();
+      }
+    }, 50);
+  });
+
+  // Gestion de la taille des libellés
+  var labelSizeInput = document.getElementById('ow-label-size');
+  var labelSizeValue = document.getElementById('ow-label-size-value');
+  labelSizeInput.addEventListener('input', function () {
+    var size = this.value;
+    labelSizeValue.textContent = size + 'px';
+    document.documentElement.style.setProperty('--ow-label-size', size + 'px');
+    try { localStorage.setItem('athena:overwatch-label-size', size); } catch (e) {}
+  });
+
+  // Gestion de la taille des icônes
+  var iconSizeInput = document.getElementById('ow-icon-size');
+  var iconSizeValue = document.getElementById('ow-icon-size-value');
+  iconSizeInput.addEventListener('input', function () {
+    var size = this.value;
+    iconSizeValue.textContent = '×' + size;
+    document.documentElement.style.setProperty('--ow-icon-size', size);
+    try { localStorage.setItem('athena:overwatch-icon-size', size); } catch (e) {}
+  });
+
+  // Restore saved values
+  try {
+    var savedLabelSize = localStorage.getItem('athena:overwatch-label-size');
+    if (savedLabelSize) {
+      labelSizeInput.value = savedLabelSize;
+      labelSizeValue.textContent = savedLabelSize + 'px';
+      document.documentElement.style.setProperty('--ow-label-size', savedLabelSize + 'px');
+    }
+    var savedIconSize = localStorage.getItem('athena:overwatch-icon-size');
+    if (savedIconSize) {
+      iconSizeInput.value = savedIconSize;
+      iconSizeValue.textContent = '×' + savedIconSize;
+      document.documentElement.style.setProperty('--ow-icon-size', savedIconSize);
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>
