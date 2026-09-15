@@ -11,6 +11,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Athena 1.0.127 — 2026-09-15
+
+### Correction — Écran d’accueil et cartouches carte
+
+Les boutons masqués de l’écran d’accueil ne se calent plus à une taille nulle. Les cartouches de la carte n’interprètent plus un nom d’opérateur comme du texte enrichi. Relancez Arma complètement après la mise à jour.
+
+### Amélioration — Overwatch Beta : cap, vitesse et liaison du terrain
+
+Le poste Overwatch Beta affiche désormais le cap, la vitesse, l’altitude, l’état de liaison et le mode de transmission réellement remontés depuis Arma. Ce sont les mêmes données que celles déjà envoyées par le téléphone.
+
+---
+
+## Athena 1.0.126 — 2026-09-15
+
+### Correction — Fermeture brutale du jeu avec le téléphone ouvert
+
+Avec le téléphone ATAK ouvert et la liaison active, le jeu pouvait se fermer tout seul, sans message. Le cadre de l’écran est désormais figé : la carte et le tiroir d’applications ne se calent plus hors limites. Relancez Arma complètement après la mise à jour.
+
+---
+
 ## Portail · Overwatch Beta — 2026-09-14
 
 ### Nouveau — Détection des marqueurs posés en jeu

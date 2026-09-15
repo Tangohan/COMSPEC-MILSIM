@@ -173,7 +173,7 @@ window.ATAKTerrain3D = (function () {
   function initRenderer() {
     if (terrainGl) return true;
     var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
-    var mapEl = document.getElementById('atak-map');
+    var mapEl = document.getElementById('atak-map') || document.getElementById('ow-map');
     if (!mapEl || !map) return false;
     terrainCanvas = document.createElement('canvas');
     terrainCanvas.className = 'atak-terrain-mesh';

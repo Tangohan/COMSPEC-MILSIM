@@ -16,9 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.125;
-        versionStr = "1.0.125";
-        versionAr[] = {1, 0, 125};
+        version = 1.127;
+        versionStr = "1.0.127";
+        versionAr[] = {1, 0, 127};
+        // Historique : 1.0.84 HUD carte, 1.0.124 messagerie canaux, 1.0.126 calage carte.
     };
 };
 

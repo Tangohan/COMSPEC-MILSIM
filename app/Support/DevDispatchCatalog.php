@@ -268,6 +268,18 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(584, '2026-09-15', 'Overwatch Beta : cap, vitesse et liaison issus du terrain', 'Le poste Overwatch Beta affiche désormais le cap, la vitesse, l’altitude et l’état de liaison réellement transmis depuis Arma. Sur le téléphone, les boutons masqués de l’écran d’accueil ne se calent plus hors limites. Relancez Arma complètement après la mise à jour du pack jeu. Rechargez Overwatch Beta pour le poste.', [
+                'Fiche contact Overwatch Beta : cap, vitesse, altitude, liaison et transmission du terrain',
+                'Écran d’accueil du téléphone : plus de taille nulle sur un bouton masqué',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta, cliquez un opérateur en liaison. Vérifiez cap, vitesse et liaison. En jeu : quittez Arma, rechargez le pack (Athena 1.0.127), ouvrez le téléphone puis l’écran d’accueil.',
+            ], 'Athena 1.0.127 · Overwatch Beta'),
+            $pr(583, '2026-09-15', 'Téléphone ATAK : plus de fermeture brutale pendant la synchro', 'Avec le téléphone ouvert et la liaison active, le jeu pouvait se fermer tout seul, sans message. Le cadre de l’écran est désormais figé : la carte et le tiroir d’applications ne se calent plus hors limites. Relancez Arma complètement après la mise à jour.', [], [], [
+                'Le jeu ne se ferme plus tout seul lorsque le téléphone reste ouvert avec la synchro',
+                'Ouvrir, fermer ou changer d’application sur le téléphone ne réduit plus l’écran à chaque fois',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.126). Ouvrez le téléphone, laissez la synchro tourner, ouvrez et fermez la carte.',
+            ], 'Athena 1.0.126'),
             $pr(582, '2026-09-14', 'Marqueurs en jeu : règles de détection pour chaque communauté', 'Les gestionnaires de la communauté décrivent désormais quels marqueurs posés dans Arma 3 doivent être suivis. Dès qu’un opérateur pose un point correspondant, il apparaît au poste. Si la règle le demande, le point est confirmé lorsqu’un téléphone ATAK entre dans le rayon, et les opérateurs sont prévenus sur leur écran. Les points d’objectif libellés PO restent suivis comme avant.', [
                 'Page Détection des marqueurs : libellé, symbole, rayon, confirmation et alerte sur les téléphones',
                 'Les marqueurs reconnus apparaissent au poste avec l’anneau du rayon choisi',

@@ -25,7 +25,11 @@ private _fncPos = {
     params ["_grp", "_idc", "_rect", "_show"];
     private _c = [_grp, _idc] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
     if (isNull _c) exitWith { controlNull };
-    _c ctrlSetPosition _rect;
+    if (!(_rect isEqualType []) || {(count _rect) < 4}) exitWith { _c };
+    _rect params ["_rx", "_ry", "_rw", "_rh"];
+    if (!(_rw isEqualType 0) || {_rw != _rw} || {_rw < 0.001}) then { _rw = 0.001; };
+    if (!(_rh isEqualType 0) || {_rh != _rh} || {_rh < 0.001}) then { _rh = 0.001; };
+    _c ctrlSetPosition [_rx, _ry, _rw, _rh];
     _c ctrlShow _show;
     _c ctrlEnable _show;
     _c ctrlCommit 0;

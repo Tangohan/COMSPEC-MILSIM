@@ -378,9 +378,10 @@ window.ATAKAerial = (function () {
     var hasExtras = layers.some(function (layer) { return layer.kind === 'overlay'; });
     var mode = storedMode(layers);
     var fieldset = document.getElementById('atak-settings-fond');
-    if (fieldset) fieldset.hidden = !hasExtras;
+    var alwaysShow = !!(document.querySelector('.ow-shell') || document.documentElement.classList.contains('ow-root'));
+    if (fieldset) fieldset.hidden = !hasExtras && !alwaysShow;
     var radioHost = document.getElementById('atak-fond-calques-list');
-    if (radioHost && hasExtras) fillRadios(radioHost, layers, mode);
+    if (radioHost && (hasExtras || alwaysShow)) fillRadios(radioHost, layers, mode);
     document.querySelectorAll('[data-atak-aerial-fond]').forEach(function (el) {
       var wrap = el.closest('.atak-aerial-fond-wrap') || el.parentElement;
       if (wrap) wrap.hidden = !hasExtras;

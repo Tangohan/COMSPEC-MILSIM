@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(344, $byKind['update']);
-        self::assertCount(350, $all);
+        self::assertSame(346, $byKind['update']);
+        self::assertCount(352, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -176,6 +176,16 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('00582', $markerDetect['number_pad']);
         self::assertStringContainsString('marqueurs', strtolower((string) $markerDetect['title']));
         self::assertStringContainsString('détection', strtolower((string) $markerDetect['title']));
+        $atakCtd = DevDispatchCatalog::find('update', '583');
+        self::assertNotNull($atakCtd);
+        self::assertSame('00583', $atakCtd['number_pad']);
+        self::assertStringContainsString('téléphone', strtolower((string) $atakCtd['title']));
+        self::assertStringContainsString('fermeture', strtolower((string) $atakCtd['activity']));
+        $owBetaLink = DevDispatchCatalog::find('update', '584');
+        self::assertNotNull($owBetaLink);
+        self::assertSame('00584', $owBetaLink['number_pad']);
+        self::assertStringContainsString('overwatch', strtolower((string) $owBetaLink['title']));
+        self::assertStringContainsString('liaison', strtolower((string) $owBetaLink['activity']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);
