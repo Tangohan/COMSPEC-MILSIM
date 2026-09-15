@@ -47,6 +47,7 @@ private _fncHide = {
 
 if (isNull _disp) exitWith {
     uiNamespace setVariable ["COMSPEC_MapUI_MouseWired", nil];
+    uiNamespace setVariable ["COMSPEC_ATAK_FullMapRect", nil];
     missionNamespace setVariable ["COMSPEC_MapUI_ChromeCleared", false, false];
     if (missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false]) then {
         missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", false, false];
@@ -72,6 +73,11 @@ if (_hydratedDisplay isNotEqualTo _disp) then {
             private _cur = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
             if (isNull _cur) then { _cur = uiNamespace getVariable ["cTab_Android_dsp", displayNull]; };
             if (isNull _cur || {_cur isNotEqualTo _d}) exitWith {};
+            private _menu = _cur displayCtrl 4660;
+            if (!isNull _menu) then {
+                private _q = _menu getVariable ["Animation_Queue", []];
+                if ((_q findIf {true}) > -1) exitWith {};
+            };
             if (!isNil "BCE_fnc_ATAK_getAPPs") then {
                 [true, true] call BCE_fnc_ATAK_getAPPs;
                 diag_log "[COMSPEC][MAP] ATAK application menu hydrated (deferred)";
@@ -111,7 +117,8 @@ if (!(missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false])) then {
 };
 
 (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
-if (_mw < 0.08 || {_mh < 0.08}) exitWith { [_disp] call _fncHide; };
+if (!(_mw isEqualType 0) || {_mw != _mw} || {_mw < 0.08}) exitWith { [_disp] call _fncHide; };
+if (!(_mh isEqualType 0) || {_mh != _mh} || {_mh < 0.08}) exitWith { [_disp] call _fncHide; };
 
 // Carte visible : le tiroir d'apps (4660) recouvre le bord droit si on
 // s'aligne sur ctrlPosition brute. Les cartouches restent à gauche du tiroir.
@@ -223,6 +230,7 @@ if (_boxW < 0.10) then { _boxW = (_visW * 0.46) max 0.09; };
 private _boxH = (_visH * 0.22) max 0.078;
 private _cursorX = _visX + _visW - _pad - _boxW;
 private _cursorY = _visY + _visH - _boxH - _pad;
+if (_boxW < 0.04 || {_boxH < 0.04}) exitWith { [_disp] call _fncHide; };
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
 _cursorBox ctrlEnable false;
@@ -263,6 +271,7 @@ if (_idY < (_visY + _pad)) then { _idY = _visY + _pad; };
 if ((_idX + _idW) > (_cursorX - 0.008)) then {
     _idW = ((_cursorX - _idX - 0.008) max 0.10);
 };
+if (_idW < 0.04 || {_idH < 0.04}) exitWith { [_disp] call _fncHide; };
 _unitBox ctrlSetPosition [_idX, _idY, _idW, _idH];
 _unitBox ctrlSetBackgroundColor _bgPanel;
 _unitBox ctrlSetFade 0;
@@ -345,7 +354,11 @@ private _fncCleanTxt = {
     params ["_v"];
     if (!(_v isEqualType "")) then { _v = str _v; };
     _v = trim _v;
-    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else { _v }
+    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) exitWith { "" };
+    _v = (_v splitString "&" joinString "&amp;");
+    _v = (_v splitString "<" joinString "&lt;");
+    _v = (_v splitString ">" joinString "&gt;");
+    _v
 };
 
 private _opName = [missionNamespace getVariable ["comspec_profile_name", ""]] call _fncCleanTxt;

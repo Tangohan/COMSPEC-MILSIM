@@ -22,9 +22,12 @@ $mapConfig = is_array($processed) ? $processed : atak_with_aerial_layer([
     'offsetX' => (float) ($config['offset_x'] ?? 0),
     'offsetY' => (float) ($config['offset_y'] ?? 0),
 ], $slug);
-$operator = trim((string) ($atakUserForJs['callsign'] ?? $atakUserForJs['displayName'] ?? 'OPÉRATEUR'));
+$operator = trim((string) ($atakUserForJs['callsign'] ?? $atakUserForJs['displayName'] ?? 'Opérateur'));
 $community = trim((string) ($atakTenantLabel ?? ''));
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$icon = static function (string $path): string {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="' . $path . '"/></svg>';
+};
 ?>
 <!doctype html>
 <html lang="fr" class="ow-root">
@@ -32,8 +35,11 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#050505">
-  <title>ATHENA // Overwatch Beta</title>
+  <title>Athena — Overwatch Beta</title>
   <link rel="icon" href="<?= $h($base) ?>/assets/icons/athena-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($assetVer) ?>">
   <script>
@@ -54,28 +60,31 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 <body>
 <div class="ow-shell">
   <header class="ow-topbar">
-    <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span>ATHENA.<small>COMSPEC / OVERWATCH BETA</small></span></a>
+    <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span>Athena<small>Comspec / Overwatch Beta</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
-      <button type="button" class="is-active" data-view="overwatch">OVERWATCH</button>
-      <button type="button" data-view="comms">COMMS</button>
-      <button type="button" data-view="mission">MISSION</button>
-      <button type="button" data-view="layers">LAYERS</button>
-      <button type="button" data-view="intel">INTEL</button>
-      <button type="button" data-view="tools">TOOLS</button>
+      <button type="button" class="is-active" data-view="overwatch">Overwatch</button>
+      <button type="button" data-view="comms">Comms</button>
+      <button type="button" data-view="mission">Mission</button>
+      <button type="button" data-view="layers">Calques</button>
+      <button type="button" data-view="intel">Renseignement</button>
+      <button type="button" data-view="tools">Outils</button>
     </nav>
+    <button type="button" class="ow-help-btn" data-ow-help title="Aide du poste">?</button>
     <button type="button" class="ow-command" data-command>⌘ K</button>
-    <div class="ow-session"><i></i><span><strong><?= $h($operator) ?></strong><small id="ow-link-label">CONNEXION…</small></span></div>
+    <div class="ow-session"><i></i><span><strong><?= $h($operator) ?></strong><small id="ow-link-label">Connexion…</small></span></div>
   </header>
 
   <div class="ow-statusbar">
-    <span>COMMUNAUTÉ &nbsp;<b id="ow-community"><?= $h($community !== '' ? $community : 'ATHENA') ?></b>&nbsp;&nbsp; / &nbsp;&nbsp;INDICATIF &nbsp;<b><?= $h($operator) ?></b>&nbsp;&nbsp; / &nbsp;&nbsp;STATUT &nbsp;<span class="ow-green" id="ow-status-word">SYNCHRONISATION</span></span>
+    <span>Communauté <b id="ow-community"><?= $h($community !== '' ? $community : 'Athena') ?></b>
+      · Indicatif <b class="ow-mono"><?= $h($operator) ?></b>
+      · Statut <span class="ow-green" id="ow-status-word">Synchronisation</span></span>
     <div class="ow-statusbar-right">
-      <label class="ow-mini ow-sync-rate">SYNC
+      <label class="ow-mini ow-sync-rate ow-select">Sync
         <select id="ow-refresh-rate" aria-label="Fréquence de synchronisation">
-          <option value="3000">3 S</option>
-          <option value="8000">8 S</option>
-          <option value="15000">15 S</option>
-          <option value="30000">30 S</option>
+          <option value="3000">3 s</option>
+          <option value="8000">8 s</option>
+          <option value="15000">15 s</option>
+          <option value="30000">30 s</option>
         </select>
       </label>
     </div>
@@ -83,27 +92,83 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
   <main class="ow-workspace">
     <aside class="ow-settings" id="ow-settings" aria-label="Réglages du poste">
-      <header><span>●</span> RÉGLAGES DU POSTE</header>
+      <header>
+        <span>●</span>
+        <span class="ow-aside-title">Réglages du poste</span>
+        <button type="button" class="ow-collapse" data-ow-collapse-settings title="Rabattre les réglages" aria-expanded="true">‹</button>
+      </header>
       <div class="ow-settings-body">
-        <p class="ow-kicker">CARTOGRAPHIE ALTIS</p>
-        <fieldset class="ow-looks" id="ow-altis-looks">
-          <legend>Fond de carte</legend>
-          <p class="ow-help">Trois lectures persistantes. Les contacts et les symboles ne changent pas.</p>
-          <label><input type="radio" name="ow-map-look" value="classic" data-ow-look> <span><strong>Classique</strong><small>Plan du théâtre</small></span></label>
-          <label><input type="radio" name="ow-map-look" value="aerial" data-ow-look checked> <span><strong>Aerial</strong><small>Photo aérienne, relief renforcé</small></span></label>
-          <label><input type="radio" name="ow-map-look" value="bw" data-ow-look> <span><strong>Noir et blanc</strong><small>Lecture tactique</small></span></label>
-        </fieldset>
+        <p class="ow-kicker">Situation</p>
+        <div class="ow-stats" id="ow-stats">
+          <div class="ow-stat"><b id="ow-stat-contacts">0</b><span>Contacts</span></div>
+          <div class="ow-stat"><b id="ow-stat-shapes">0</b><span>Tracés</span></div>
+          <div class="ow-stat"><b id="ow-stat-photos">0</b><span>Photos</span></div>
+        </div>
+
+        <p class="ow-kicker">Fond de carte</p>
         <fieldset class="ow-looks" id="atak-settings-fond">
           <legend>Calques Atlas</legend>
+          <p class="ow-help">Carte du jeu (topographique) ou photo aérienne. Les contacts restent en place.</p>
           <div id="atak-fond-calques-list"></div>
         </fieldset>
-        <p class="ow-kicker">COUCHES</p>
+        <fieldset class="ow-looks" id="ow-altis-looks">
+          <legend>Lecture</legend>
+          <label><input type="radio" name="ow-map-look" value="color" data-ow-look checked> <span><strong>Couleur</strong><small>Teintes naturelles</small></span></label>
+          <label><input type="radio" name="ow-map-look" value="bw" data-ow-look> <span><strong>Noir et blanc</strong><small>Lecture contrastée</small></span></label>
+        </fieldset>
+
+        <p class="ow-kicker">Relief et scène</p>
+        <div class="ow-looks" id="atak-settings-relief">
+          <label class="ow-toggle" for="atak-terrain-hillshade"><input type="checkbox" id="atak-terrain-hillshade" checked> Ombrage</label>
+          <label class="ow-toggle" for="atak-terrain-contours10"><input type="checkbox" id="atak-terrain-contours10" checked> Courbes 10 m</label>
+          <label class="ow-toggle" for="atak-terrain-contours50"><input type="checkbox" id="atak-terrain-contours50"> Courbes 50 m</label>
+          <label class="ow-toggle" for="atak-terrain-altitudes"><input type="checkbox" id="atak-terrain-altitudes"> Altitudes</label>
+          <label class="ow-toggle" for="atak-terrain-slope"><input type="checkbox" id="atak-terrain-slope"> Pentes</label>
+          <label class="ow-toggle" for="ow-presence-heat"><input type="checkbox" id="ow-presence-heat"> Chaleur de présence</label>
+          <label class="ow-row" for="atak-terrain-opacity">Opacité
+            <input type="range" id="atak-terrain-opacity" min="10" max="100" step="5" value="32">
+          </label>
+          <span class="atak-sound-pref-val" id="atak-terrain-opacity-val">32 %</span>
+        </div>
+        <div class="ow-looks" id="atak-terrain-3d-settings">
+          <label class="ow-row" for="atak-terrain-3d-mode">Vue de la carte
+            <select id="atak-terrain-3d-mode">
+              <option value="flat" selected>À plat (2D)</option>
+              <option value="inclined">Relief 3D</option>
+            </select>
+          </label>
+          <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments et forêts du jeu</label>
+          <label class="ow-row" for="atak-terrain-exaggeration">Exagération Z
+            <input type="range" id="atak-terrain-exaggeration" min="1" max="4" step="0.1" value="2.5">
+          </label>
+          <span id="atak-terrain-exaggeration-val">2.5×</span>
+          <label class="ow-row" for="atak-terrain-pitch">Inclinaison
+            <input type="range" id="atak-terrain-pitch" min="25" max="65" step="1" value="48">
+          </label>
+          <span id="atak-terrain-pitch-val">48°</span>
+        </div>
+        <div id="atak-settings-map-data">
+          <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
+          <div class="atak-terrain-inventory" id="atak-terrain-inventory">
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Ombrage</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-hillshade">Pas encore sur le poste</span></div>
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Relevé divers</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-survey">Pas encore sur le poste</span></div>
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Bâtiments</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-buildings">Pas encore sur le poste</span></div>
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Forêts</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-forests">Pas encore sur le poste</span></div>
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Dernier relevé</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-last">Aucun relevé reçu</span></div>
+          </div>
+        </div>
+
+        <p class="ow-kicker">Couches</p>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="units" checked> Unités</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="vehicles" checked> Véhicules</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="air" checked> Aérien / drones</label>
-        <label class="ow-toggle"><input type="checkbox" data-ow-layer="shapes" checked> Tracés et AOI</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="shapes" checked> Tracés et zones</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tracks"> Trajectoires</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="arma-markers" id="ow-arma-markers" checked> Marqueurs du théâtre</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-links" checked> Relier les membres d’un même groupe</label>
+        <label class="ow-row">Épaisseur des liens
+          <input type="range" id="ow-squad-width" min="0.5" max="2.5" step="0.25" value="0.75">
+        </label>
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-hull" checked> Enveloppe de groupe</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-dist"> Distances sur les liens de groupe</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-follow"> Suivre le contact sélectionné</label>
@@ -111,26 +176,19 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         <p class="ow-help">Un marqueur nommé PO, PO 1 ou PO-2 devient un point d’objectif. Dès qu’un téléphone ATAK entre dans les 20 mètres, le point est confirmé atteint.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-rally-markers" checked> Points de ralliement — rayon 50 m</label>
         <p class="ow-help">Un point de ralliement est un lieu de regroupement. L’anneau vert de 50 mètres apparaît au poste et en jeu. Les opérateurs présents dans le rayon sont indiqués, sans rien inventer.</p>
-        <p class="ow-kicker">ANNEAUX DE PORTÉE</p>
+        <p class="ow-kicker">Anneaux de portée</p>
         <p class="ow-help">Cercles autour du contact ouvert. Distances en mètres sur le théâtre.</p>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="100"> 100 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="250" checked> 250 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="500" checked> 500 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="1000"> 1 000 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="2000"> 2 000 m</label>
-        <p class="ow-kicker">PERSONNALISATION</p>
+        <p class="ow-kicker">Personnalisation</p>
         <label class="ow-row">Thème
-          <select id="ow-theme">
-            <option value="night">Nuit</option>
-            <option value="day">Jour</option>
-          </select>
+          <span class="ow-select"><select id="ow-theme"><option value="night">Nuit</option><option value="day">Jour</option></select></span>
         </label>
         <label class="ow-row">Symboles
-          <select id="ow-marker-style">
-            <option value="diamond">Losange</option>
-            <option value="dot">Point</option>
-            <option value="nato">Cadre</option>
-          </select>
+          <span class="ow-select"><select id="ow-marker-style"><option value="diamond">Losange</option><option value="dot">Point</option><option value="nato">Cadre</option></select></span>
         </label>
         <label class="ow-row">Couleur amie
           <input type="color" id="ow-color-friend" value="#00d69a">
@@ -139,7 +197,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
           <input type="color" id="ow-color-hostile" value="#e05b63">
         </label>
         <label class="ow-row">Taille des indicatifs
-          <input type="range" id="ow-label-size" min="7" max="14" value="9">
+          <input type="range" id="ow-label-size" min="9" max="16" value="12">
         </label>
         <label class="ow-row">Couleur de dessin
           <input type="color" id="ow-draw-color" value="#00d69a">
@@ -147,7 +205,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         <label class="ow-row">Épaisseur de trait
           <input type="range" id="ow-draw-width" min="1" max="8" value="2">
         </label>
-        <label class="ow-toggle"><input type="checkbox" id="ow-geofence" checked> Alerte entrée / sortie d’AOI</label>
+        <label class="ow-toggle"><input type="checkbox" id="ow-geofence" checked> Alerte entrée / sortie de zone</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-weather-layer" checked> Overlay météo mission</label>
         <label class="ow-row">Largeur réglages
           <input type="range" id="ow-aside-left" min="240" max="420" value="330">
@@ -155,151 +213,171 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         <label class="ow-row">Largeur tchat
           <input type="range" id="ow-aside-right" min="240" max="420" value="330">
         </label>
-        <p class="ow-kicker">MISSION</p>
-        <button type="button" class="ow-primary" data-overwatch-export>EXPORTER</button>
-        <button type="button" class="ow-primary" data-overwatch-import style="margin-top:8px;background:#101413;color:#c7ceca;border:1px solid #2b3531">IMPORTER</button>
-        <button type="button" class="ow-primary" data-overwatch-print style="margin-top:8px;background:#101413;color:#c7ceca;border:1px solid #2b3531">IMPRIMER</button>
+        <p class="ow-kicker">Mission</p>
+        <button type="button" class="ow-primary" data-overwatch-export>Exporter</button>
+        <button type="button" class="ow-secondary" data-overwatch-import>Importer</button>
+        <button type="button" class="ow-secondary" data-overwatch-print>Imprimer</button>
         <input type="file" id="overwatch-mission-import" accept="application/json,.json" hidden>
       </div>
     </aside>
 
-    <section class="ow-map-stage" id="ow-map-stage" data-look="aerial">
+    <section class="ow-map-stage" id="ow-map-stage" data-look="color">
       <div class="ow-rail" aria-label="Outils cartographiques">
-        <button type="button" class="is-active" data-tool="cursor" title="Sélection">⌖</button>
-        <button type="button" data-tool="center" title="Recentrer">◎</button>
-        <button type="button" data-tool="locate" title="Ma position">⊕</button>
-        <button type="button" data-tool="marker" title="Marqueur">✚</button>
-        <button type="button" data-tool="line" title="Ligne">╱</button>
-        <button type="button" data-tool="polygon" title="Polygone">⬡</button>
-        <button type="button" data-tool="measure" title="Mesure">⌁</button>
-        <button type="button" data-tool="aoi" title="Zone tactique">▣</button>
-        <button type="button" data-tool="route" title="Route">↗</button>
-        <button type="button" data-tool="split" title="Découper une zone">✂</button>
-        <button type="button" data-tool="eta" title="ETA pied / véhicule">⏱</button>
-        <button type="button" data-tool="profile" title="Profil d’élévation">⛰</button>
-        <button type="button" data-tool="circle" title="Cercle">○</button>
-        <button type="button" data-tool="rect" title="Rectangle">▭</button>
-        <button type="button" data-tool="freehand" title="Croquis à main levée">✎</button>
-        <button type="button" data-tool="text" title="Texte">T</button>
-        <button type="button" data-tool="bearing" title="Cap et distance">⊕</button>
-        <button type="button" data-tool="los" title="Visée / masque du relief">◉</button>
-        <button type="button" data-tool="po" title="Point à atteindre (20 m)">①</button>
-        <button type="button" data-tool="rally" title="Point de ralliement (50 m)">⚑</button>
-        <span></span>
-        <button type="button" data-tool="undo" title="Annuler le dernier tracé">↩</button>
-        <button type="button" data-tool="refresh" title="Actualiser">↻</button>
+        <button type="button" class="is-active" data-tool="cursor" data-tip="Sélection" data-help="Cliquez un contact ou un tracé. Échap quitte l’outil en cours."><?= $icon('M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM15 15l4 4') ?></button>
+        <button type="button" data-tool="center" data-tip="Recentrer" data-help="Recadre le théâtre entier."><?= $icon('M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z') ?></button>
+        <button type="button" data-tool="locate" data-tip="Ma position" data-help="Recentre sur le théâtre, pas sur un GPS personnel."><?= $icon('M12 21s7-4.5 7-10a7 7 0 1 0-14 0c0 5.5 7 10 7 10zM12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z') ?></button>
+        <span class="ow-rail-gap"></span>
+        <button type="button" data-tool="marker" data-tip="Marqueur" data-help="Un clic pose un repère. L’outil reste actif pour en poser d’autres."><?= $icon('M12 21s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z') ?></button>
+        <button type="button" data-tool="line" data-tip="Ligne" data-help="Maintenez et glissez, ou cliquez des sommets puis double-clic."><?= $icon('M4 18L20 6') ?></button>
+        <button type="button" data-tool="polygon" data-tip="Zone" data-help="Maintenez pour tracer un lasso. Relâchez pour fermer la zone."><?= $icon('M12 3l8 6-3 10H7L4 9z') ?></button>
+        <button type="button" data-tool="aoi" data-tip="Zone tactique" data-help="Même geste que la zone : lasso au maintien, ou sommets au clic."><?= $icon('M4 6h16v12H4zM8 10h8') ?></button>
+        <button type="button" data-tool="circle" data-tip="Cercle" data-help="Appuyez au centre, glissez le rayon, relâchez pour poser."><?= $icon('M12 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14z') ?></button>
+        <button type="button" data-tool="rect" data-tip="Rectangle" data-help="Appuyez un coin, glissez l’opposé, relâchez."><?= $icon('M5 6h14v12H5z') ?></button>
+        <button type="button" data-tool="freehand" data-tip="Croquis" data-help="Maintenez le clic et dessinez. Relâchez pour enregistrer."><?= $icon('M4 20l4-1 11-11-3-3L5 16z') ?></button>
+        <button type="button" data-tool="text" data-tip="Texte" data-help="Cliquez l’emplacement, puis saisissez le libellé."><?= $icon('M5 6h14M12 6v12') ?></button>
+        <span class="ow-rail-gap"></span>
+        <button type="button" data-tool="measure" data-tip="Mesure" data-help="Maintenez du départ à l’arrivée. Distance et cap s’affichent."><?= $icon('M4 12h16M8 8v8M16 8v8') ?></button>
+        <button type="button" data-tool="bearing" data-tip="Cap et distance" data-help="Glissez du premier point au second."><?= $icon('M12 3v18M5 12h14') ?></button>
+        <button type="button" data-tool="route" data-tip="Route" data-help="Glissez une étape, ou cliquez plusieurs points puis double-clic."><?= $icon('M4 18c4-8 12-8 16 0') ?></button>
+        <button type="button" data-tool="split" data-tip="Découper une zone" data-help="Cliquez une zone, puis tracez la coupe."><?= $icon('M6 6l12 12M9 4h6M9 20h6') ?></button>
+        <button type="button" data-tool="eta" data-tip="Temps de parcours" data-help="Glissez le trajet. Temps pied et véhicule à titre indicatif."><?= $icon('M12 6a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM12 9v4l3 2') ?></button>
+        <button type="button" data-tool="profile" data-tip="Profil d’élévation" data-help="Glissez une coupe. Le relief s’affiche s’il a été relevé."><?= $icon('M3 18l6-8 4 4 8-10') ?></button>
+        <button type="button" data-tool="los" data-tip="Visée / masque" data-help="Glissez de l’observateur à la cible. Le relief indique si la visée est masquée."><?= $icon('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z') ?></button>
+        <span class="ow-rail-gap"></span>
+        <button type="button" data-tool="po" data-tip="Point à atteindre" data-help="Cliquez pour poser un point (rayon 20 m). Double-clic termine la série."><?= $icon('M12 3v18M8 8h8') ?></button>
+        <button type="button" data-tool="rally" data-tip="Point de ralliement" data-help="Cliquez un lieu de regroupement. Anneau de 50 m au poste et en jeu."><?= $icon('M6 21V4l12 5-12 5') ?></button>
+        <span class="ow-rail-gap"></span>
+        <button type="button" data-tool="undo" data-tip="Annuler le dernier tracé" data-help="Retire le dernier tracé posé depuis le poste."><?= $icon('M9 10H4V5M4 10c3-6 13-6 16 0') ?></button>
+        <button type="button" data-tool="refresh" data-tip="Actualiser" data-help="Relance la synchronisation des contacts et des canaux."><?= $icon('M20 12a8 8 0 1 1-2-5.3M20 4v6h-6') ?></button>
       </div>
       <div id="ow-map" aria-label="Carte tactique temps réel"></div>
       <div class="ow-map-tools">
-        <button type="button" class="is-active" data-view="overwatch">AO LIVE</button>
-        <button type="button" data-view="comms">COMMS</button>
-        <button type="button" data-view="mission">MISSION</button>
-        <button type="button" data-view="layers">LAYERS</button>
-        <button type="button" data-view="intel">INTEL</button>
-        <button type="button" data-ow-replay>REPLAY</button>
-        <button type="button" data-ow-panel="calcs">CALCULS</button>
-        <button type="button" data-ow-panel="osint">OSINT</button>
-        <button type="button" data-ow-panel="sats">SAT</button>
-        <button type="button" data-ow-panel="logs">JOURNAL</button>
-        <button type="button" data-ow-compact>CARTE SEULE</button>
-        <button type="button" data-command>⌘ K</button>
+        <button type="button" class="is-active" data-view="overwatch">Carte</button>
+        <button type="button" data-view="comms">Comms</button>
+        <button type="button" data-view="layers">Calques</button>
+        <button type="button" data-ow-replay>Replay</button>
+        <div class="ow-more">
+          <button type="button" data-ow-more>Plus</button>
+          <div class="ow-more-menu" id="ow-more-menu" hidden>
+            <button type="button" data-view="mission">Mission</button>
+            <button type="button" data-view="intel">Renseignement</button>
+            <button type="button" data-view="tools">Outils</button>
+            <button type="button" data-ow-panel="calcs">Calculs</button>
+            <button type="button" data-ow-panel="osint">Notes de terrain</button>
+            <button type="button" data-ow-panel="sats">Catalogue satellitaire</button>
+            <button type="button" data-ow-panel="logs">Journal</button>
+            <button type="button" data-ow-compact>Carte seule</button>
+            <button type="button" data-command>Palette de commandes</button>
+          </div>
+        </div>
       </div>
-      <div class="ow-coordinate" id="ow-coordinate">GRID — · LIVE</div>
-      <div class="ow-empty" id="ow-empty" hidden><b>AUCUNE TÉLÉMÉTRIE</b><span>En attente des contacts autorisés pour cette communauté.</span></div>
+      <div class="ow-coordinate" id="ow-coordinate">Grille — · Direct</div>
+      <div class="ow-empty" id="ow-empty" hidden><b>Aucune télémétrie</b><span>En attente des contacts autorisés pour cette communauté.</span></div>
       <div class="ow-context" id="ow-context" hidden>
-        <div class="ow-context-head" id="ow-ctx-head">GRILLE</div>
-        <button type="button" data-ctx="marker">Marqueur <span>✚</span></button>
-        <button type="button" data-ctx="ping">Quick Ping <span>•</span></button>
-        <button type="button" data-ctx="aoi">Zone tactique / AOI <span>⬡</span></button>
-        <button type="button" data-ctx="route">Route <span>↗</span></button>
-        <button type="button" data-ctx="intel">Observation Intel / SSE <span>▣</span></button>
-        <button type="button" data-ctx="sitrep">SITREP géolocalisé <span>→</span></button>
-        <button type="button" data-ctx="circle">Cercle <span>○</span></button>
-        <button type="button" data-ctx="rect">Rectangle <span>▭</span></button>
-        <button type="button" data-ctx="bearing">Cap / distance <span>⊕</span></button>
-        <button type="button" data-ctx="measure">Mesurer <span>⌁</span></button>
-        <button type="button" data-ctx="po">Point à atteindre (20 m) <span>①</span></button>
-        <button type="button" data-ctx="rally">Point de ralliement (50 m) <span>⚑</span></button>
-        <button type="button" data-ctx="los">Visée / masque <span>◉</span></button>
-        <button type="button" data-ctx="ring">Anneau 250 m <span>○</span></button>
-        <button type="button" data-ctx="chatgrid">Envoyer la grille au canal <span>→</span></button>
-        <button type="button" data-ctx="copy">Copier les coordonnées <span>⧉</span></button>
+        <div class="ow-context-head" id="ow-ctx-head">Grille</div>
+        <div class="ow-context-group">Poser</div>
+        <button type="button" data-ctx="marker">Marqueur <span>M</span></button>
+        <button type="button" data-ctx="ping">Repère rapide <span>•</span></button>
+        <button type="button" data-ctx="po">Point à atteindre (20 m) <span>P</span></button>
+        <button type="button" data-ctx="rally">Point de ralliement (50 m) <span>R</span></button>
+        <button type="button" data-ctx="aoi">Zone tactique <span>Z</span></button>
+        <button type="button" data-ctx="circle">Cercle <span>C</span></button>
+        <button type="button" data-ctx="rect">Rectangle <span></span></button>
+        <button type="button" data-ctx="route">Route <span></span></button>
+        <div class="ow-context-group">Mesurer</div>
+        <button type="button" data-ctx="measure">Distance <span></span></button>
+        <button type="button" data-ctx="bearing">Cap <span></span></button>
+        <button type="button" data-ctx="los">Visée / masque <span>V</span></button>
+        <button type="button" data-ctx="ring">Anneau 250 m <span></span></button>
+        <div class="ow-context-group">Transmettre</div>
+        <button type="button" data-ctx="intel">Observation de terrain <span></span></button>
+        <button type="button" data-ctx="sitrep">Compte rendu géolocalisé <span></span></button>
+        <button type="button" data-ctx="chatgrid">Envoyer la grille au canal <span></span></button>
+        <button type="button" data-ctx="copy">Copier les coordonnées <span></span></button>
       </div>
       <div class="ow-timeline" id="ow-timeline" hidden>
-        <span class="ow-green" id="ow-replay-live">LIVE</span>
+        <span class="ow-green" id="ow-replay-live">Direct</span>
         <input type="range" id="ow-replay-scrub" min="0" max="100" value="100" aria-label="Rejouer les trajectoires">
-        <span id="ow-replay-now">NOW</span>
+        <span id="ow-replay-now">Maintenant</span>
       </div>
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
-      <div class="ow-data-hud" id="ow-data-hud">GROUPES — · AMI 0 · HOSTILE 0</div>
+      <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
       <div class="ow-wx" id="ow-wx" hidden></div>
-      <div class="ow-toast" id="ow-toast" hidden><small>ATHENA</small><p id="ow-toast-text"></p></div>
+      <div class="ow-toast" id="ow-toast" hidden><small>Athena</small><p id="ow-toast-text"></p></div>
     </section>
 
     <aside class="ow-chat" id="ow-chat" aria-label="Tchat opérationnel">
-      <header><span>●</span> COMMS</header>
+      <header><span>●</span> Comms</header>
       <div class="ow-tabs" role="tablist">
-        <button type="button" class="is-active" data-chat-tab="channels">CANAUX</button>
-        <button type="button" data-chat-tab="contacts">CONTACTS</button>
-        <button type="button" data-chat-tab="squads">GROUPES</button>
-        <button type="button" data-chat-tab="support">SUPPORT</button>
+        <button type="button" class="is-active" data-chat-tab="channels">Canaux</button>
+        <button type="button" data-chat-tab="contacts">Contacts</button>
+        <button type="button" data-chat-tab="squads">Groupes</button>
+        <button type="button" data-chat-tab="support">Support</button>
       </div>
       <div class="ow-chat-main" data-chat-panel="channels">
         <label class="ow-search"><span>⌕</span><input id="ow-channel-filter" type="search" placeholder="Canal ou indicatif…"></label>
-        <div class="ow-section-label">CANAUX</div>
+        <div class="ow-section-label">Canaux</div>
         <div id="ow-channel-list" class="ow-channel-list"></div>
-        <div class="ow-section-label">FIL</div>
-        <div id="ow-chat-log" class="ow-chat-log" aria-live="polite"></div>
+        <div class="ow-fil-head">
+          <div class="ow-fil-title"><span class="dot"></span> Fil — Comms</div>
+          <label class="ow-fil-toggle"><input type="checkbox" id="ow-chat-raw"> Brut (vérif. parsing)</label>
+        </div>
+        <div id="ow-chat-log" class="ow-fil" aria-live="polite"></div>
+        <div class="ow-fil-legend">
+          <span><i style="background:var(--prio-routine)"></i>Routine</span>
+          <span><i style="background:var(--prio-priority)"></i>Priority</span>
+          <span><i style="background:var(--prio-flash)"></i>Urgent / Flash</span>
+        </div>
         <form class="ow-chat-compose" id="ow-chat-form">
           <input id="ow-chat-input" maxlength="500" placeholder="Message sur le canal actif…" autocomplete="off">
-          <button type="submit">ENVOYER</button>
+          <button type="submit">Envoyer</button>
         </form>
       </div>
       <div class="ow-chat-main" data-chat-panel="contacts" hidden>
-        <label class="ow-search"><span>⌕</span><input id="ow-search" type="search" placeholder="Filtrer callsign, groupe, rôle…"></label>
+        <label class="ow-search"><span>⌕</span><input id="ow-search" type="search" placeholder="Filtrer indicatif, groupe, rôle…"></label>
         <label class="ow-row" style="margin:0 10px 8px">Afficher
-          <select id="ow-side-filter">
+          <span class="ow-select"><select id="ow-side-filter">
             <option value="all">Tous</option>
             <option value="friendly">Amis</option>
             <option value="hostile">Hostiles</option>
             <option value="unknown">Inconnus</option>
-          </select>
+          </select></span>
         </label>
-        <div class="ow-section-label">LIVE / CONTACTS AUTORISÉS</div>
+        <div class="ow-section-label">Contacts autorisés</div>
         <div id="ow-contact-list" class="ow-contact-list" aria-live="polite"></div>
       </div>
       <div class="ow-chat-main" data-chat-panel="squads" hidden>
         <p class="ow-help">Les opérateurs d’un même groupe sont reliés sur la carte. Cliquez un groupe pour le cadrer. Transmettez une tâche au groupe, ou envoyez une alerte qui recouvre l’écran des téléphones ATAK, y compris en position mini.</p>
         <div id="ow-group-task-host"></div>
         <div id="ow-fs-alert-host"></div>
-        <div class="ow-section-label">GROUPES SUR LA CARTE</div>
+        <div class="ow-section-label">Groupes sur la carte</div>
         <div id="ow-squad-list" class="ow-contact-list" aria-live="polite"></div>
       </div>
       <div class="ow-chat-main" data-chat-panel="support" hidden>
         <p class="ow-help">File séparée du tchat tactique, pour un problème technique ou une assistance.</p>
-        <div id="ow-support-log" class="ow-chat-log"></div>
+        <div id="ow-support-log" class="ow-fil"></div>
         <form class="ow-chat-compose" id="ow-support-form">
           <input id="ow-support-input" maxlength="500" placeholder="Décrire le problème…" autocomplete="off">
-          <button type="submit">SIGNALER</button>
+          <button type="submit">Signaler</button>
         </form>
       </div>
     </aside>
 
     <aside class="ow-drawer" id="ow-drawer" hidden>
-      <header><small id="ow-drawer-kicker">PANNEAU</small><button type="button" data-close-drawer>×</button><h2 id="ow-drawer-title">CONTACT</h2></header>
+      <header><small id="ow-drawer-kicker">Panneau</small><button type="button" data-close-drawer>×</button><h2 id="ow-drawer-title">Contact</h2></header>
       <div id="ow-drawer-body"></div>
     </aside>
   </main>
 
   <footer class="ow-footer">
-    <b id="ow-footer-link">ATHENA ● SYNCHRONISATION</b>
-    <span id="ow-latency">RX —</span>
+    <b id="ow-footer-link">Athena · Synchronisation</b>
+    <span id="ow-latency">Rx —</span>
     <span id="ow-bft-count">BFT 0</span>
-    <span id="ow-map-name"><?= $h(strtoupper($slug)) ?></span>
-    <span id="ow-weather-chip">MÉTÉO —</span>
-    <span id="ow-cache-label">CACHE TUILES</span>
-    <span class="ow-footer-end">OVERWATCH // BETA</span>
+    <span id="ow-map-name"><?= $h(ucfirst($slug)) ?></span>
+    <span id="ow-weather-chip">Météo —</span>
+    <span id="ow-cache-label">Cache tuiles</span>
+    <span class="ow-footer-end">Overwatch · Beta</span>
   </footer>
 </div>
 
@@ -307,25 +385,49 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
   <div>
     <input id="ow-command-input" placeholder="Rechercher une unité, une commande, un outil…">
     <div id="ow-palette-results"></div>
-    <p>↑↓ NAVIGUER &nbsp; ENTER EXÉCUTER &nbsp; ESC FERMER</p>
+    <p>↑↓ naviguer · Entrée exécuter · Échap fermer</p>
+  </div>
+</div>
+
+<div class="ow-guide" id="ow-guide" hidden>
+  <div class="ow-guide-card" role="dialog" aria-labelledby="ow-guide-title">
+    <p class="ow-kicker">Aide du poste</p>
+    <h1 id="ow-guide-title">Overwatch Beta</h1>
+    <h2>Asides</h2>
+    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil. Les largeurs se règlent en bas des réglages.</p>
+    <h2>Fonds</h2>
+    <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
+    <h2>Calques</h2>
+    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Bâtiments et forêts n’apparaissent que si un relevé a été reçu pour ce théâtre.</p>
+    <h2>Dessin</h2>
+    <p>Maintenez le clic pour tracer une zone, un cercle ou une ligne. Relâchez pour poser. L’outil reste actif. Échap ou Sélection pour quitter. Un clic court pose encore un sommet précis.</p>
+    <h2>Fil</h2>
+    <p>Les messages radio sont groupés par auteur. La barre colorée indique l’urgence. Cochez Brut seulement pour vérifier le format reçu.</p>
+    <button type="button" class="ow-primary" id="ow-guide-ok">Fermer l’aide</button>
   </div>
 </div>
 
 <div class="ow-disclaimer" id="ow-disclaimer" hidden>
   <div class="ow-disclaimer-card" role="dialog" aria-modal="true" aria-labelledby="ow-disclaimer-title">
-    <p class="ow-kicker">ATHENA / OVERWATCH</p>
+    <p class="ow-kicker">Athena / Overwatch</p>
     <h1 id="ow-disclaimer-title">Espace de travail en accès anticipé</h1>
     <p>Cette carte de poste affiche uniquement la situation autorisée pour votre compte, transmise par la liaison de la communauté. Ce n’est pas le téléphone emporté en jeu.</p>
     <p>Les positions, messages et photos viennent de la mission en cours. Un rôle plus restreint ne verra pas davantage ici qu’au poste habituel.</p>
     <label class="ow-toggle"><input type="checkbox" id="ow-disclaimer-hide"> Ne plus afficher cet avertissement</label>
-    <button type="button" class="ow-primary" id="ow-disclaimer-ok">ENTRER DANS OVERWATCH</button>
+    <button type="button" class="ow-primary" id="ow-disclaimer-ok">Entrer dans Overwatch</button>
   </div>
 </div>
 
 <script src="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-map-crs.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/nato-sidc-icons.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/arma-marker-catalog.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/arma-map-markers.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-terrain-3d.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-scene-3d.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-gotak.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-p2.js?v=<?= $h($assetVer) ?>"></script>

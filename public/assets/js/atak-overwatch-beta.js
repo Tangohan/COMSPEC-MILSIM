@@ -72,6 +72,14 @@
   var canIssueGroupTasks = true;
   var lastTaskSelectSig = '';
   var lastFsSelectSig = '';
+  var terminals = [];
+  var armaMarkerLayers = {};
+  var armaMarkerRows = [];
+  var presenceLayer = null;
+  var dragDrawOn = false;
+  var dragMoved = false;
+  var dragStartPt = null;
+  var COLLAPSE_KEY = 'athena:overwatch-settings-collapsed';
   var GROUP_TASK_TYPES = {
     MOVE: 'Se déplacer',
     HOLD: 'Tenir la position',
@@ -179,11 +187,76 @@
     return /vehicle|car|tank|armor|truck|boat/.test(raw) && !isAir(unit);
   }
   function extraOf(unit) {
-    var extra = unit.extra || unit.meta || unit.motion || {};
+    var extra = unit.extra || unit.meta || {};
     if (typeof extra === 'string') {
       try { extra = JSON.parse(extra); } catch (e) { extra = {}; }
     }
     return extra && typeof extra === 'object' ? extra : {};
+  }
+  function firstNumber() {
+    var i;
+    for (i = 0; i < arguments.length; i += 1) {
+      if (arguments[i] == null || arguments[i] === '') continue;
+      var n = Number(arguments[i]);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  }
+  function armaOf(unit) {
+    var extra = extraOf(unit);
+    var arma = unit.source_arma || extra.source_arma || {};
+    return arma && typeof arma === 'object' ? arma : {};
+  }
+  function linkLabel(unit) {
+    var extra = extraOf(unit);
+    var raw = String(unit.link_state || extra.link_state || extra.linkState || '').toLowerCase();
+    if (raw === 'linked') return 'ouverte';
+    if (raw === 'degraded') return 'dégradée';
+    if (raw === 'connecting') return 'en cours';
+    if (raw === 'offline' || raw === 'disconnected' || raw === 'lost') return 'perdue';
+    return raw ? raw : 'non transmise';
+  }
+  function txLabel(unit) {
+    var extra = extraOf(unit);
+    var raw = String(extra.transmit_mode || extra.transmitMode || unit.transmit_mode || '').toLowerCase();
+    if (raw === 'full') return 'complète';
+    if (raw === 'position') return 'position seule';
+    if (raw === 'blocked') return 'bloquée';
+    var speaking = extra.radio_speaking || extra.radio_tx;
+    if (speaking) return 'radio en cours';
+    return raw ? raw : 'non transmise';
+  }
+  function kv(label, value, mono) {
+    var shown = value == null || String(value).trim() === '' ? 'non transmis' : String(value);
+    return '<span>' + escapeHtml(label) + '</span><span' + (mono ? ' class="ow-mono"' : '') + '>' + escapeHtml(shown) + '</span>';
+  }
+  function terminalFor(unit) {
+    var cs = callsign(unit).toLowerCase();
+    var extra = extraOf(unit);
+    var uid = String(unit.terminal_uid || extra.terminal_uid || '').trim();
+    var found = null;
+    terminals.forEach(function (t) {
+      var tcs = String(t.operator_callsign || t.callsign || '').trim().toLowerCase();
+      var tuid = String(t.terminal_uid || '').trim();
+      if ((tcs && tcs === cs) || (uid && tuid && tuid === uid)) found = t;
+    });
+    return found;
+  }
+  function formatSeen(iso) {
+    if (!iso) return '';
+    var raw = String(iso);
+    var t = Date.parse(raw.indexOf('T') >= 0 ? raw : raw.replace(' ', 'T'));
+    if (isNaN(t)) return raw;
+    var diff = Date.now() - t;
+    if (Math.abs(diff) < 60000) return 'à l’instant';
+    if (diff > 0 && diff < 3600000) return 'il y a ' + Math.round(diff / 60000) + ' min';
+    if (diff > 0 && diff < 86400000) return 'il y a ' + Math.round(diff / 3600000) + ' h';
+    try { return new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return raw; }
+  }
+  function loadTerminals() {
+    return api('/api/atak/terminals').then(function (payload) {
+      terminals = asList(payload, 'terminals');
+    }).catch(function () { terminals = []; });
   }
   function squadKey(unit) {
     var id = String(unit.fire_team_id || '').trim();
@@ -225,16 +298,16 @@
       '<option value="RECON">Reconnaissance</option>' +
       '<option value="QRF">Force de réaction</option>' +
       '</select></label>' +
-      '<label>Urgence<select name="priority">' +
+      '<label>Urgence<span class="ow-select ow-select--prio"><i class="ow-prio-dot" data-prio-dot></i><select name="priority">' +
       '<option value="ROUTINE">Sans urgence</option>' +
       '<option value="IMPORTANT" selected>Normale</option>' +
       '<option value="URGENT">Urgente</option>' +
       '<option value="CONTACT">Contact</option>' +
-      '</select></label>' +
+      '</select></span></label>' +
       '<label>Point à atteindre<select name="po"><option value="">Aucun</option></select></label>' +
       '<label>Consignes<textarea name="payload" maxlength="800" placeholder="Ce que le groupe doit faire…"></textarea></label>' +
-      '<button class="ow-primary" type="submit">TRANSMETTRE LA TÂCHE</button></form>' +
-      '<p class="ow-kicker">TÂCHES TRANSMISES</p>' +
+      '<button class="ow-primary" type="submit">Transmettre la tâche</button></form>' +
+      '<p class="ow-kicker">Tâches transmises</p>' +
       '<div class="ow-group-task-list"></div>';
   }
   function fullscreenAlertFormHtml(preset) {
@@ -243,7 +316,7 @@
       '<label>Destinataire<select name="dest" required><option value="all">Tous les opérateurs</option></select></label>';
     return '<form class="ow-form-grid ow-fs-alert-form">' + locked + destField +
       '<label>Message<textarea name="message" required maxlength="280" placeholder="Ce que les opérateurs doivent voir sur l’écran…"></textarea></label>' +
-      '<button class="ow-primary" type="submit">ENVOYER L’ALERTE PLEIN ÉCRAN</button></form>' +
+      '<button class="ow-primary" type="submit">Envoyer l’alerte plein écran</button></form>' +
       '<p class="ow-help">Le message recouvre tout l’écran du téléphone, ouvert ou en position mini. Il disparaît après quelques secondes, ou dès que l’opérateur appuie sur Fermer.</p>';
   }
   function fillFsAlertSelects(force) {
@@ -298,7 +371,7 @@
   function mountFsAlertPanel() {
     var host = document.getElementById('ow-fs-alert-host');
     if (!host || host.dataset.ready === '1') return;
-    host.innerHTML = '<p class="ow-kicker">ALERTE PLEIN ÉCRAN</p>' + fullscreenAlertFormHtml();
+    host.innerHTML = '<p class="ow-kicker ow-fs-kicker">Alerte plein écran</p>' + fullscreenAlertFormHtml();
     host.dataset.ready = '1';
     bindFsAlertForms(host);
     fillFsAlertSelects(true);
@@ -435,7 +508,7 @@
         (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') +
         '</strong>' +
         (open && canIssueGroupTasks ? '<button type="button" class="ow-tag" data-cancel-task="' +
-          escapeHtml(String(row.id || '')) + '">ANNULER</button>' : '') +
+          escapeHtml(String(row.id || '')) + '">Annuler</button>' : '') +
         '</div>' + (text ? '<p class="ow-help">' + escapeHtml(text) + '</p>' : '');
     }).join('') || '<p class="ow-help">Aucune tâche de groupe transmise pour cette mission.</p>';
     document.querySelectorAll('.ow-group-task-list').forEach(function (host) {
@@ -549,22 +622,49 @@
   }
   function unitHeading(unit) {
     var extra = extraOf(unit);
-    var value = unit.heading != null ? unit.heading : (unit.heading_object != null ? unit.heading_object : extra.heading);
-    var n = Number(value);
-    return Number.isFinite(n) ? ((n % 360) + 360) % 360 : null;
+    var arma = armaOf(unit);
+    var motion = unit.motion || extra.motion || {};
+    var n = firstNumber(
+      extra.movement_heading,
+      unit.movement_heading,
+      arma.movement_heading_deg,
+      extra.heading_object,
+      unit.heading_object,
+      arma.heading_deg,
+      extra.heading,
+      unit.heading,
+      motion.heading
+    );
+    return n != null ? ((n % 360) + 360) % 360 : null;
   }
   function unitSpeed(unit) {
     var extra = extraOf(unit);
-    var motion = extra.motion || extra;
-    var value = unit.speed_ms != null ? unit.speed_ms : (unit.speed != null ? unit.speed : (motion.speed_ms != null ? motion.speed_ms : motion.speed));
-    var n = Number(value);
-    return Number.isFinite(n) && n >= 0 ? n : null;
+    var arma = armaOf(unit);
+    var motion = unit.motion || extra.motion || {};
+    var n = firstNumber(
+      extra.speed,
+      extra.speed_ms,
+      unit.speed_ms,
+      unit.speed,
+      arma.speed_ms,
+      motion.speed_ms,
+      motion.speed_current,
+      motion.speed
+    );
+    return n != null && n >= 0 ? n : null;
   }
   function unitAlt(unit) {
     var extra = extraOf(unit);
-    var value = unit.pos_z != null ? unit.pos_z : (unit.altitude != null ? unit.altitude : extra.pos_z);
-    var n = Number(value);
-    return Number.isFinite(n) ? n : null;
+    var arma = armaOf(unit);
+    var n = firstNumber(
+      extra.asl_z,
+      extra.pos_z,
+      extra.altitude,
+      unit.pos_z,
+      unit.altitude,
+      arma.altitude_m
+    );
+    return n;
   }
   function drawStyle() {
     return {
@@ -700,6 +800,84 @@
     var x = Number(data.pos_x != null ? data.pos_x : data.x);
     var y = Number(data.pos_y != null ? data.pos_y : data.y);
     return Number.isFinite(x) && Number.isFinite(y) && (Math.abs(x) > 0.5 || Math.abs(y) > 0.5) ? { x: x, y: y } : null;
+  }
+  function armaMarkersOn() {
+    var box = document.getElementById('ow-arma-markers');
+    return !box || box.checked;
+  }
+  function clearArmaMarkers() {
+    Object.keys(armaMarkerLayers).forEach(function (id) {
+      map.removeLayer(armaMarkerLayers[id]);
+      delete armaMarkerLayers[id];
+    });
+  }
+  function renderArmaMarkers() {
+    var helper = window.ArmaMapMarkers;
+    if (!helper) return;
+    var seen = {};
+    if (!armaMarkersOn()) { clearArmaMarkers(); return; }
+    armaMarkerRows.forEach(function (row) {
+      var id = String(row.id || '');
+      if (!id) return;
+      var data = parseMarkerData(row);
+      if (data.suppressed) return;
+      if (isPoLabel(String(data.text || data.label || '')) || data.po) return;
+      var world = markerWorld(data) || helper.parsePos(data);
+      if (!world) return;
+      seen[id] = true;
+      var latlng = worldToLatLng(world.x, world.y);
+      if (armaMarkerLayers[id]) {
+        if (armaMarkerLayers[id].setLatLng) armaMarkerLayers[id].setLatLng(latlng);
+        return;
+      }
+      var layer = null;
+      if (helper.isAreaShape && helper.isAreaShape(data) && helper.leafletShapeLayer) {
+        layer = helper.leafletShapeLayer(L, data, latlng);
+      } else if (helper.leafletDivIcon) {
+        layer = L.marker(latlng, { icon: helper.leafletDivIcon(L, data), keyboard: false });
+      }
+      if (!layer) return;
+      var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
+      if (layer.bindTooltip) layer.bindTooltip(String(title), { permanent: false, direction: 'top' });
+      layer.addTo(map);
+      armaMarkerLayers[id] = layer;
+    });
+    Object.keys(armaMarkerLayers).forEach(function (id) {
+      if (!seen[id]) { map.removeLayer(armaMarkerLayers[id]); delete armaMarkerLayers[id]; }
+    });
+  }
+  function loadArmaMarkers() {
+    return api('/api/atak/markers?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      armaMarkerRows = Array.isArray(payload) ? payload : asList(payload, 'markers');
+      renderArmaMarkers();
+    }).catch(function () {});
+  }
+  function renderPresenceHeat() {
+    if (presenceLayer) { map.removeLayer(presenceLayer); presenceLayer = null; }
+    var box = document.getElementById('ow-presence-heat');
+    if (!box || !box.checked) return;
+    presenceLayer = L.layerGroup();
+    units.forEach(function (unit) {
+      var loc = point(unit);
+      if (!loc) return;
+      L.circle(loc, {
+        radius: 160,
+        color: '#e05b63',
+        weight: 0,
+        fillColor: '#e7b14d',
+        fillOpacity: 0.16,
+        interactive: false
+      }).addTo(presenceLayer);
+    });
+    presenceLayer.addTo(map);
+  }
+  function updateStatsBanner() {
+    var c = document.getElementById('ow-stat-contacts');
+    var s = document.getElementById('ow-stat-shapes');
+    var p = document.getElementById('ow-stat-photos');
+    if (c) c.textContent = String(units.length);
+    if (s) s.textContent = String(shapes.length + poRows.length + rallyRows.length + armaMarkerRows.length);
+    if (p) p.textContent = String(photos.length);
   }
   function poEnabled() {
     var box = document.getElementById('ow-po-markers');
@@ -986,7 +1164,7 @@
 
   function selectUnit(unit) {
     selected = unit;
-    document.getElementById('ow-drawer-kicker').textContent = 'BFT / CONTACT';
+    document.getElementById('ow-drawer-kicker').textContent = 'BFT / Contact';
     document.getElementById('ow-drawer-title').textContent = callsign(unit);
     
     // Utiliser le nouveau panneau détaillé si disponible
@@ -1002,6 +1180,8 @@
     var heading = unitHeading(unit);
     var speed = unitSpeed(unit);
     var alt = unitAlt(unit);
+    var extra = extraOf(unit);
+    var term = terminalFor(unit);
     var mates = loc ? units.filter(function (row) { return squadKey(row) && squadKey(row) === squadKey(unit) && unitId(row) !== unitId(unit) && point(row); }) : [];
     var mateHtml = mates.map(function (row) {
       var other = point(row);
@@ -1018,25 +1198,66 @@
         if (a && b) span = Math.max(span, map.distance(a, b));
       });
     });
+    var certLabel = 'non transmis';
+    var certRef = '';
+    var certExp = '';
+    if (term) {
+      var csSt = String(term.certificate_status || '').toLowerCase();
+      if (csSt === 'revoked') certLabel = 'Révoqué';
+      else if (csSt === 'expired') certLabel = 'Expiré';
+      else if (csSt === 'active' || csSt === 'issued') certLabel = 'Actif';
+      else if (String(term.certificate_ref || '').trim()) certLabel = 'Émis';
+      else certLabel = 'Aucun';
+      certRef = String(term.certificate_ref || '').trim();
+      certExp = String(term.certificate_expires_at || '').trim();
+      if (certExp) {
+        var expMs = Date.parse(certExp);
+        if (!isNaN(expMs)) certExp = new Date(expMs).toLocaleDateString('fr-FR');
+      }
+    }
+    var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || (term && term.last_client_ip) || '';
+    var battery = extra.battery != null ? extra.battery : unit.battery;
+    var health = extra.health != null ? extra.health : unit.health;
+    var radio = extra.toc_radio || extra.radio_freq || extra.radio || '';
+    var compromise = term && term.compromise_state ? String(term.compromise_state) : '';
+    var phone = !!(extra.phone_geoloc || extra.source === 'phone');
+    var geoloc = phone ? 'Géolocalisation téléphone' : (loc ? 'Liaison Arma' : '');
+    var lastTerm = term && term.last_seen_at ? formatSeen(term.last_seen_at) : '';
+    var statusRaw = String(unit.status || '').toLowerCase();
+    var liaison = statusRaw === 'offline' ? 'Hors liaison' : (statusRaw === 'delayed' ? 'Différé' : linkLabel(unit));
     document.getElementById('ow-drawer-body').innerHTML =
-      '<div class="ow-kv"><span>TYPE</span><span>' + escapeHtml(clean(unit.type || unit.role, 'BFT')) +
-      '</span><span>GROUPE</span><span>' + escapeHtml(group(unit)) +
-      '</span><span>RÔLE</span><span>' + escapeHtml(clean(unit.role, '—')) +
-      '</span><span>STATUT</span><span>' + escapeHtml(unit.status === 'delayed' ? 'DIFFÉRÉ' : clean(unit.status, 'ACTIF').toUpperCase()) +
-      '</span><span>CAP</span><span>' + (heading != null ? Math.round(heading) + '°' : 'non transmis') +
-      '</span><span>VITESSE</span><span>' + (speed != null ? Math.round(speed * 3.6) + ' km/h' : 'non transmise') +
-      '</span><span>ALTITUDE</span><span>' + (alt != null ? Math.round(alt) + ' m' : 'non transmise') +
-      '</span><span>DERNIÈRE POS.</span><span>' + escapeHtml(ageLabel(unit) || 'non transmise') +
-      '</span><span>GRILLE</span><span>' + escapeHtml(clean(unit.grid || unit.mgrs, grid)) +
-      '</span><span>SOURCE</span><span>' + escapeHtml(clean(unit.source, 'ATHENA LINK')) +
-      '</span></div>' +
-      (mates.length ? '<p class="ow-kicker">MÊME GROUPE · ' + mates.length + ' AUTRE' + (mates.length > 1 ? 'S' : '') + (span ? ' · DISPERSION ' + formatMeters(span) : '') + '</p>' + mateHtml : '<p class="ow-help">Aucun autre membre de groupe localisé.</p>') +
-      '<button type="button" class="ow-primary" data-center-selected>CENTRER SUR LA CARTE</button>' +
-      '<button type="button" class="ow-primary" data-follow-selected style="margin-top:8px;background:#101413;color:#c7ceca;border:1px solid #2b3531">' +
-      (followOn ? 'ARRÊTER LE SUIVI' : 'SUIVRE CE CONTACT') + '</button>' +
-      (mates.length ? '<button type="button" class="ow-primary" data-fit-squad style="margin-top:8px;background:#101413;color:#c7ceca;border:1px solid #2b3531">CADRER LE GROUPE</button>' : '') +
-      (squadKey(unit) ? '<button type="button" class="ow-primary" data-squad-task-from-unit style="margin-top:8px;background:#101413;color:#c7ceca;border:1px solid #2b3531">TÂCHE AU GROUPE</button>' : '') +
-      '<p class="ow-kicker">ALERTE PLEIN ÉCRAN</p>' +
+      '<div class="ow-kv">' +
+      kv('Type', clean(unit.type || unit.role, 'BFT')) +
+      kv('Groupe', group(unit)) +
+      kv('Rôle', clean(unit.role, '')) +
+      kv('Liaison', liaison) +
+      kv('Transmission', txLabel(unit)) +
+      kv('État', health != null && health !== '' ? String(health) : '') +
+      kv('Cap', heading != null ? Math.round(heading) + '°' : '') +
+      kv('Vitesse', speed != null ? Math.round(speed * 3.6) + ' km/h' : '') +
+      kv('Altitude', alt != null ? Math.round(alt) + ' m' : '') +
+      kv('Dernière pos.', ageLabel(unit) || '') +
+      kv('Grille', clean(unit.grid || unit.mgrs, grid), true) +
+      kv('Source', clean(unit.source, phone ? 'Téléphone ATAK' : 'Athena')) +
+      kv('Géoloc', geoloc) +
+      '</div>' +
+      '<p class="ow-kicker">Téléphone ATAK</p><div class="ow-kv">' +
+      kv('Certificat', certLabel) +
+      kv('Référence', certRef, true) +
+      kv('Échéance', certExp) +
+      kv('Dernière activité', lastTerm) +
+      kv('Adresse réseau', ip, true) +
+      kv('Intégrité', compromise) +
+      kv('Batterie', battery != null && battery !== '' ? String(battery) + (String(battery).indexOf('%') >= 0 ? '' : ' %') : '') +
+      kv('Radio', radio) +
+      '</div>' +
+      (mates.length ? '<p class="ow-kicker">Même groupe · ' + mates.length + ' autre' + (mates.length > 1 ? 's' : '') + (span ? ' · dispersion ' + formatMeters(span) : '') + '</p>' + mateHtml : '<p class="ow-help">Aucun autre membre de groupe localisé.</p>') +
+      '<button type="button" class="ow-primary" data-center-selected>Centrer sur la carte</button>' +
+      '<button type="button" class="ow-secondary" data-follow-selected>' +
+      (followOn ? 'Arrêter le suivi' : 'Suivre ce contact') + '</button>' +
+      (mates.length ? '<button type="button" class="ow-secondary" data-fit-squad>Cadrer le groupe</button>' : '') +
+      (squadKey(unit) ? '<button type="button" class="ow-secondary" data-squad-task-from-unit>Tâche au groupe</button>' : '') +
+      '<p class="ow-kicker ow-fs-kicker">Alerte plein écran</p>' +
       fullscreenAlertFormHtml({ dest: 'unit:' + callsign(unit) });
     document.getElementById('ow-drawer').hidden = false;
     bindFsAlertForms(document.getElementById('ow-drawer'));
@@ -1077,6 +1298,8 @@
     renderRangeRings();
     renderPoMarkers();
     renderRallyPoints();
+    renderPresenceHeat();
+    updateStatsBanner();
     if (followOn && selected) {
       var loc = point(selected);
       if (loc) map.panTo(loc);
@@ -1106,8 +1329,9 @@
       var pack = groups[key];
       if (pack.pts.length < 2) return;
       var highlighted = selected && squadKey(selected) === key;
-      var weight = highlighted ? 3 : 2;
-      var opacity = highlighted ? 0.85 : 0.45;
+      var baseW = Number((document.getElementById('ow-squad-width') || {}).value || 0.75);
+      var weight = highlighted ? Math.max(1.25, baseW + 0.5) : baseW;
+      var opacity = highlighted ? 0.7 : 0.32;
       if (!linksOn || linksOn.checked) {
         var i;
         var j;
@@ -1115,7 +1339,7 @@
           for (i = 0; i < pack.pts.length; i += 1) {
             for (j = i + 1; j < pack.pts.length; j += 1) {
               var line = L.polyline([pack.pts[i], pack.pts[j]], {
-                color: pack.color, weight: weight, opacity: opacity, dashArray: '4 6', interactive: false
+                color: pack.color, weight: weight, opacity: opacity, dashArray: '2 8', interactive: false
               }).addTo(map);
               squadLinkLayers.push(line);
               var distOn = document.getElementById('ow-squad-dist');
@@ -1135,7 +1359,7 @@
           var mid = L.latLng(cx / pack.pts.length, cy / pack.pts.length);
           pack.pts.forEach(function (p) {
             squadLinkLayers.push(L.polyline([mid, p], {
-              color: pack.color, weight: weight, opacity: opacity, dashArray: '4 6', interactive: false
+              color: pack.color, weight: weight, opacity: opacity, dashArray: '2 8', interactive: false
             }).addTo(map));
           });
         }
@@ -1190,7 +1414,7 @@
         locates.forEach(function (b) { span = Math.max(span, map.distance(a, b)); });
       });
       var label = key === 'none' ? 'Sans groupe' : group(rows[0]);
-      var taskBtn = key === 'none' ? '' : '<button type="button" class="ow-tag" data-squad-task="' + escapeHtml(key) + '">TÂCHE</button>';
+      var taskBtn = key === 'none' ? '' : '<button type="button" class="ow-tag" data-squad-task="' + escapeHtml(key) + '">Tâche</button>';
       return '<div class="ow-squad-row">' +
         '<button type="button" class="ow-contact" data-squad-key="' + escapeHtml(key) + '"><span class="cicon" style="border-color:' +
         escapeHtml(key === 'none' ? '#2b3531' : squadColor(rows[0])) + '"></span><span><div class="cname">' +
@@ -1234,18 +1458,10 @@
       var head = '<div class="ow-squad-head">' + escapeHtml(key === 'none' ? 'Sans groupe' : group(rows[0])) + '<em>' + rows.length + '</em></div>';
       return head + rows.map(function (unit) {
         var stale = unit.status === 'delayed' || unit.status === 'offline';
-        var statusClass = '';
-        if (unit.status === 'offline') {
-          statusClass = ' is-offline';
-        } else if (unit.status === 'delayed') {
-          statusClass = ' is-delayed';
-        } else {
-          statusClass = ' is-online';
-        }
-        return '<button type="button" class="ow-contact' + statusClass + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
-          initials(callsign(unit)) + '</span><span><div class="cname">' + escapeHtml(callsign(unit)) + '</div><div class="cmeta">' +
-          escapeHtml(group(unit)) + (ageLabel(unit) ? ' · ' + ageLabel(unit) : '') + '</div></span><em class="online' + (stale ? ' is-stale' : '') + '">' +
-          (unit.status === 'offline' ? 'OFFLINE' : (stale ? 'DELAY' : 'LIVE')) + '</em></button>';
+        return '<button type="button" class="ow-contact" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon">' +
+          initials(callsign(unit)) + '</span><span><div class="cname ow-mono">' + escapeHtml(callsign(unit)) + '</div><div class="cmeta">' +
+          escapeHtml(group(unit)) + (ageLabel(unit) ? ' · ' + ageLabel(unit) : '') + '</div></span><em class="online' + (stale ? ' is-stale' : ' is-live') + '">' +
+          (unit.status === 'offline' ? 'Hors ligne' : (stale ? 'Différé' : 'Direct')) + '</em></button>';
       }).join('');
     }).join('');
     document.getElementById('ow-bft-count').textContent = 'BFT ' + units.length;
@@ -1275,9 +1491,9 @@
     var session = document.querySelector('.ow-session');
     session.classList.toggle('is-live', ok);
     session.classList.toggle('is-offline', !ok);
-    var word = ok ? (realtimeOn ? 'OPÉRATIONNEL' : 'POLLING') : 'RECONNEXION';
-    document.getElementById('ow-link-label').textContent = ok ? (realtimeOn ? 'ATHENA LINKED' : 'POLLING') : 'RECONNEXION';
-    document.getElementById('ow-footer-link').textContent = ok ? 'ATHENA ● LINKED' : 'ATHENA ● DÉGRADÉ';
+    var word = ok ? (realtimeOn ? 'Opérationnel' : 'Synchronisation') : 'Reconnexion';
+    document.getElementById('ow-link-label').textContent = ok ? (realtimeOn ? 'Liaison Athena' : 'Synchronisation') : 'Reconnexion';
+    document.getElementById('ow-footer-link').textContent = ok ? 'Athena · En liaison' : 'Athena · Dégradé';
     document.getElementById('ow-status-word').textContent = word;
     if (requestStarted) document.getElementById('ow-latency').textContent = 'RX ' + Math.max(0, Date.now() - requestStarted) + ' MS';
   }
@@ -1287,6 +1503,8 @@
     return api('/api/units?mapId=' + encodeURIComponent(mapId) + '&include_gateway=1')
       .then(applyPayload)
       .then(function () { return loadPoMarkers(); })
+      .then(function () { return loadArmaMarkers(); })
+      .then(function () { return loadTerminals(); })
       .catch(function () { syncStatus(false); });
   }
 
@@ -1301,6 +1519,48 @@
     if (src === 'system' || /^\[sys\]/i.test(body)) return 'system';
     if (/alerte|alert|ko\b|casvac|medevac|contact/i.test(body) || src === 'alert') return 'alert';
     return 'normal';
+  }
+
+  function channelIcon(key) {
+    var k = String(key || 'general');
+    var paths = {
+      general: 'M4 6h16v10H7l-3 3z',
+      groupe: 'M8 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 19c0-3 2-5 4-5s4 2 4 5M12 19c0-3 2-5 4-5s4 2 4 5',
+      commandement: 'M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z',
+      jtac: 'M4 18l8-12 8 12H4z',
+      air: 'M12 4l8 7H4zM6 14h12v3H6z',
+      support: 'M12 3v4M12 17v4M4.5 7.5l3 3M16.5 13.5l3 3M3 12h4M17 12h4M4.5 16.5l3-3M16.5 10.5l3-3'
+    };
+    var d = paths[k] || paths.general;
+    return '<span class="cicon is-ch-' + escapeHtml(k) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="' + d + '"/></svg></span>';
+  }
+
+  function parseCommsBody(body) {
+    var raw = String(body || '').trim();
+    if (raw.indexOf('GROUPE|') === 0) {
+      var p = raw.split('|');
+      return { type: 'system', groupId: p[1] || '', author: p[2] || '', code: p[3] || '', text: p.slice(4).join('|') };
+    }
+    var m = raw.match(/^\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)\]\s*([\s\S]*)$/);
+    if (m) {
+      return { type: 'radio', gameTime: m[1], net: String(m[2] || '').toUpperCase(), prio: String(m[3] || '').toUpperCase(), crypto: String(m[4] || '').toUpperCase(), text: m[5] || '' };
+    }
+    return { type: 'unknown', text: raw };
+  }
+  function prioClass(p) {
+    if (p === 'ROUTINE') return 'routine';
+    if (p === 'PRIORITY' || p === 'IMMEDIATE' || p === 'IMPORTANT') return 'priority';
+    return 'flash';
+  }
+  function fmtDay(dateStr) {
+    var d = new Date(String(dateStr).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return String(dateStr || '');
+    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function fmtClock(dateStr) {
+    var s = String(dateStr || '');
+    var part = s.indexOf(' ') >= 0 ? s.split(' ')[1] : s.split('T')[1];
+    return part ? part.slice(0, 5) : '';
   }
 
   function renderChannels() {
@@ -1318,9 +1578,9 @@
     document.getElementById('ow-channel-list').innerHTML = rows.map(function (ch) {
       var key = String(ch.channel_key || ch.key || 'general');
       return '<button type="button" class="ow-channel' + (key === activeChannel ? ' is-active' : '') + '" data-channel="' +
-        escapeHtml(key) + '"><span class="cicon">' + escapeHtml(initials(channelLabel(key))) +
-        '</span><span><div class="cname">' + escapeHtml(ch.label || channelLabel(key)) +
-        '</div><div class="cmeta">CANAL MISSION</div></span><em class="online">LIVE</em></button>';
+        escapeHtml(key) + '">' + channelIcon(key) +
+        '<span><div class="cname">' + escapeHtml(ch.label || channelLabel(key)) +
+        '</div><div class="cmeta">Canal mission</div></span><em class="online is-live">Direct</em></button>';
     }).join('');
   }
 
@@ -1339,24 +1599,52 @@
   }
 
   function renderChatLog(targetId, rows) {
-    document.getElementById(targetId).innerHTML = rows.slice(-80).map(function (row) {
-      var kind = messageKind(row);
-      var parsed = parseMessageBadges(row.body || '');
-      var badgeHtml = parsed.badges.map(function (badge) {
-        return '<span class="ow-msg-badge">' + escapeHtml(badge) + '</span>';
-      }).join('');
-      var isGroupe = parsed.badges.indexOf('GROUPE') >= 0 || /^groupe\s*\|/i.test(row.body || '');
-      return '<div class="ow-msg' + 
-        (kind === 'alert' ? ' is-alert' : '') + 
-        (kind === 'system' ? ' is-system' : '') +
-        (isGroupe ? ' is-groupe' : '') +
-        '"><time>' + escapeHtml(clean(row.created_at || row.time, '')) + ' · ' +
-        '<span class="ow-msg-author">' + escapeHtml(clean(row.author, 'SYSTEME')) + '</span></time>' +
-        badgeHtml + 
-        '<span class="ow-msg-text">' + escapeHtml(parsed.text || row.body || '') + '</span></div>';
-    }).join('');
-    var log = document.getElementById(targetId);
-    log.scrollTop = log.scrollHeight;
+    var host = document.getElementById(targetId);
+    if (!host) return;
+    var lastDay = null;
+    var lastGroupKey = null;
+    var html = '';
+    rows.slice(-80).forEach(function (row) {
+      var raw = String(row.body || '');
+      var parsed = parseCommsBody(raw);
+      var real = String(row.created_at || row.time || '');
+      var day = real.slice(0, 10);
+      if (day && day !== lastDay) {
+        html += '<div class="ow-day-sep">' + escapeHtml(fmtDay(real)) + '</div>';
+        lastDay = day;
+        lastGroupKey = null;
+      }
+      if (parsed.type === 'system') {
+        html += '<div class="ow-sys"><span>◇</span> ' + escapeHtml(parsed.author || clean(row.author, 'Système')) +
+          ' a rejoint le groupe ' + escapeHtml(parsed.groupId) +
+          ' <span class="code">#' + escapeHtml(parsed.code) + '</span>' +
+          (parsed.text ? ' — ' + escapeHtml(parsed.text) : '') + '</div>';
+        lastGroupKey = null;
+        return;
+      }
+      var author = clean(row.author, parsed.author || 'Système');
+      var net = parsed.net || '';
+      var groupKey = author + '|' + net;
+      if (groupKey !== lastGroupKey) {
+        html += (lastGroupKey ? '</div></div>' : '') +
+          '<div class="ow-msg-group"><div class="ow-group-head"><span class="ow-author">' + escapeHtml(author) +
+          '</span>' + (net ? '<span class="ow-net-tag ' + (net === 'GROUPE' ? 'groupe' : 'squad') + '">' + escapeHtml(net) + '</span>' : '') +
+          '<span class="ow-group-time">' + escapeHtml(fmtClock(real)) + '</span></div><div class="ow-rows">';
+        lastGroupKey = groupKey;
+      }
+      var bar = parsed.prio ? '<span class="bar ' + prioClass(parsed.prio) + '"></span>' : (messageKind(row) === 'alert' ? '<span class="bar flash"></span>' : '');
+      html += '<div class="ow-row-msg">' + bar + '<div class="ow-row-main"><div class="ow-row-text">' +
+        escapeHtml(parsed.text || raw) + '</div>' +
+        (parsed.prio ? '<div class="ow-row-meta"><span>' + escapeHtml(parsed.prio.toLowerCase()) +
+          '</span><span>·</span><span class="' + (parsed.crypto === 'FREE' ? 'crypto-free' : 'crypto-enc') + '">' +
+          escapeHtml(parsed.crypto || '') + '</span>' +
+          (parsed.gameTime ? '<span>·</span><span>jeu ' + escapeHtml(parsed.gameTime) + '</span>' : '') +
+          '</div>' : '') +
+        '</div></div><div class="ow-raw-preview">' + escapeHtml(raw) + '</div>';
+    });
+    if (lastGroupKey) html += '</div></div>';
+    host.innerHTML = html || '<p class="ow-help">Aucun message sur ce canal pour l’instant.</p>';
+    host.scrollTop = host.scrollHeight;
   }
 
   function loadChannels() {
@@ -1455,6 +1743,7 @@
       shapes = asList(payload, 'shapes');
       Object.keys(shapeLayers).forEach(function (id) { map.removeLayer(shapeLayers[id]); delete shapeLayers[id]; });
       shapes.forEach(drawShape);
+      updateStatsBanner();
     }).catch(function () {});
   }
 
@@ -1674,7 +1963,6 @@
 
   function finishDraft() {
     if (activeTool === 'po') {
-      setTool('cursor');
       return;
     }
     if ((activeTool === 'measure' || activeTool === 'bearing') && draftPoints.length >= 2) {
@@ -1691,7 +1979,6 @@
       saveShape('AOI', ring, 'Cercle ' + formatMeters(radius));
       toast('Cercle · rayon ' + formatMeters(radius) + ' · surface ' + Math.round(Math.PI * radius * radius) + ' m²');
       clearDraft();
-      setTool('cursor');
       return;
     }
     if (activeTool === 'rect' && draftPoints.length >= 2) {
@@ -1699,20 +1986,17 @@
       saveShape('AOI', rect, 'Rectangle');
       toast('Rectangle · ' + Math.round(polygonAreaM2(rect)) + ' m²');
       clearDraft();
-      setTool('cursor');
       return;
     }
     if (activeTool === 'freehand' && draftPoints.length >= 2) {
       saveShape('LINE', draftPoints, 'Croquis');
       toast('Croquis · ' + formatMeters(pathLength(draftPoints)));
       clearDraft();
-      setTool('cursor');
       return;
     }
     if (activeTool === 'los' && draftPoints.length >= 2) {
       requestLos(draftPoints[0], draftPoints[1]);
       clearDraft();
-      setTool('cursor');
       return;
     }
     if ((activeTool === 'eta' || activeTool === 'profile') && draftPoints.length >= 2) {
@@ -1720,7 +2004,6 @@
         detail: { tool: activeTool, points: draftPoints.slice() }
       }));
       clearDraft();
-      setTool('cursor');
       return;
     }
     if (activeTool === 'split' && splitTarget && draftPoints.length >= 2) {
@@ -1729,7 +2012,6 @@
       }));
       splitTarget = null;
       clearDraft();
-      setTool('cursor');
       return;
     }
     if ((activeTool === 'line' || activeTool === 'route') && draftPoints.length >= 2) {
@@ -1738,7 +2020,7 @@
       return;
     }
     if ((activeTool === 'polygon' || activeTool === 'aoi') && draftPoints.length >= 3) {
-      saveShape(activeTool === 'aoi' ? 'AOI' : 'POLYGON', draftPoints, activeTool === 'aoi' ? 'AOI' : 'Zone');
+      saveShape(activeTool === 'aoi' ? 'AOI' : 'POLYGON', draftPoints, activeTool === 'aoi' ? 'Zone tactique' : 'Zone');
       toast('Zone · ' + Math.round(polygonAreaM2(draftPoints)) + ' m²');
       clearDraft();
     }
@@ -1777,14 +2059,17 @@
     if (tool === 'locate' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function () { map.setView(center, Math.max(map.getZoom(), 4)); toast('Recentrage théâtre.'); });
     }
-    if (tool === 'eta') toast('Cliquez le départ puis l’arrivée, double-clic pour calculer l’ETA.');
-    if (tool === 'profile') toast('Tracez le profil, double-clic pour relever le relief.');
-    if (tool === 'circle') toast('Cliquez le centre, puis un point du rayon.');
-    if (tool === 'rect') toast('Cliquez deux coins opposés.');
+    if (tool === 'eta') toast('Maintenez du départ à l’arrivée, ou cliquez les points puis double-clic.');
+    if (tool === 'profile') toast('Maintenez pour tracer le profil, relâchez pour relever le relief.');
+    if (tool === 'circle') toast('Maintenez au centre et glissez le rayon.');
+    if (tool === 'rect') toast('Maintenez un coin et glissez l’opposé.');
     if (tool === 'freehand') toast('Maintenez le clic pour croquer, relâchez pour enregistrer.');
     if (tool === 'text') toast('Cliquez l’emplacement du texte.');
-    if (tool === 'bearing') toast('Cliquez le départ puis l’arrivée.');
-    if (tool === 'los') toast('Cliquez l’observateur, puis la cible.');
+    if (tool === 'bearing') toast('Maintenez du départ à l’arrivée.');
+    if (tool === 'los') toast('Maintenez de l’observateur à la cible.');
+    if (tool === 'polygon' || tool === 'aoi') toast('Maintenez pour tracer le contour. Relâchez pour fermer la zone.');
+    if (tool === 'line' || tool === 'route') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
+    if (tool === 'measure') toast('Maintenez du premier point au second.');
     if (tool === 'po') {
       if (previous !== 'po') poPlaceSession = [];
       try { map.doubleClickZoom.disable(); } catch (e2) {}
@@ -1805,10 +2090,9 @@
     if (activeTool === 'text') {
       var label = window.prompt('Texte à poser sur la carte', '');
       if (label && label.trim()) saveShape('POINT', [event.latlng], label.trim());
-      setTool('cursor');
       return;
     }
-    if (activeTool === 'marker') { saveMarker(event.latlng, 'Marqueur'); setTool('cursor'); return; }
+    if (activeTool === 'marker') { saveMarker(event.latlng, 'Marqueur'); return; }
     if (activeTool === 'po') { placeReachPoint(event.latlng); return; }
     if (activeTool === 'rally') { placeRallyPoint(event.latlng); return; }
     if (activeTool === 'split') {
@@ -1846,49 +2130,98 @@
     }
   }
 
+  function isDragTool(tool) {
+    return /^(circle|rect|freehand|line|route|polygon|aoi|measure|bearing|los|eta|profile)$/.test(tool);
+  }
+  function liveMeasureHud() {
+    var el = document.getElementById('ow-live-measure');
+    if (!el || draftPoints.length < 2) { if (el) el.hidden = true; return; }
+    var meters = pathLength(draftPoints);
+    var bits = [formatMeters(meters)];
+    if (activeTool === 'circle') bits.push('rayon ' + formatMeters(map.distance(draftPoints[0], draftPoints[draftPoints.length - 1])));
+    if (activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'rect') bits.push(Math.round(polygonAreaM2(draftPoints)) + ' m²');
+    el.textContent = bits.join(' · ');
+    el.hidden = false;
+  }
+
   map.on('dblclick', function (event) {
     L.DomEvent.stop(event);
     if (activeTool === 'rally') { setTool('cursor'); return; }
     finishDraft();
   });
-  map.on('click', onMapClick);
+  map.on('click', function (event) {
+    if (dragMoved) { dragMoved = false; return; }
+    onMapClick(event);
+  });
   map.on('mousedown', function (event) {
-    if (activeTool !== 'freehand') return;
+    if (event.originalEvent && event.originalEvent.button !== 0) return;
+    if (!isDragTool(activeTool)) return;
     L.DomEvent.stop(event);
-    freehandOn = true;
+    dragDrawOn = true;
+    dragMoved = false;
+    dragStartPt = map.latLngToContainerPoint(event.latlng);
+    freehandOn = activeTool === 'freehand' || activeTool === 'polygon' || activeTool === 'aoi';
     draftPoints = [event.latlng];
     map.dragging.disable();
     updateDraft();
   });
   map.on('mousemove', function (event) {
-    if (!freehandOn) return;
-    draftPoints.push(event.latlng);
-    if (draftPoints.length > 200) draftPoints = draftPoints.slice(-200);
+    if (!dragDrawOn) return;
+    var now = map.latLngToContainerPoint(event.latlng);
+    if (dragStartPt && now.distanceTo(dragStartPt) > 8) dragMoved = true;
+    if (freehandOn) {
+      draftPoints.push(event.latlng);
+      if (draftPoints.length > 220) draftPoints = draftPoints.slice(-220);
+    } else {
+      draftPoints = [draftPoints[0], event.latlng];
+    }
     updateDraft();
+    liveMeasureHud();
   });
   map.on('mouseup', function () {
-    if (!freehandOn) return;
+    if (!dragDrawOn) return;
+    dragDrawOn = false;
     freehandOn = false;
     try { map.dragging.enable(); } catch (e) {}
-    finishDraft();
+    var hud = document.getElementById('ow-live-measure');
+    if (hud) hud.hidden = true;
+    if (dragMoved) finishDraft();
+    else if (draftPoints.length === 1) {
+      /* clic court : laisser onMapClick poser un sommet */
+    }
   });
 
   function gridLabel(ll) {
     var w = latLngToWorld(ll);
-    return 'GRID ' + String(Math.round(w.x)).padStart(4, '0') + ' ' + String(Math.round(w.y)).padStart(4, '0');
+    return 'Grille ' + String(Math.round(w.x)).padStart(4, '0') + ' ' + String(Math.round(w.y)).padStart(4, '0');
   }
 
   function hideContext() { document.getElementById('ow-context').hidden = true; }
 
+  function placeContextMenu(clientX, clientY) {
+    var ctx = document.getElementById('ow-context');
+    var stage = document.getElementById('ow-map-stage').getBoundingClientRect();
+    ctx.hidden = false;
+    var w = ctx.offsetWidth || 240;
+    var h = ctx.offsetHeight || 320;
+    var maxH = Math.max(160, stage.height - 16);
+    ctx.style.maxHeight = maxH + 'px';
+    h = Math.min(ctx.offsetHeight || h, maxH);
+    var left = clientX - stage.left + 8;
+    var top = clientY - stage.top + 8;
+    if (left + w > stage.width - 8) left = clientX - stage.left - w - 8;
+    if (top + h > stage.height - 8) top = clientY - stage.top - h - 8;
+    if (left < 8) left = 8;
+    if (top < 8) top = 8;
+    ctx.style.left = left + 'px';
+    ctx.style.top = top + 'px';
+  }
+
   map.on('contextmenu', function (event) {
     L.DomEvent.preventDefault(event);
     ctxLatLng = event.latlng;
-    var ctx = document.getElementById('ow-context');
-    var stage = document.getElementById('ow-map-stage').getBoundingClientRect();
-    ctx.style.left = Math.min(event.originalEvent.clientX - stage.left, stage.width - 230) + 'px';
-    ctx.style.top = Math.min(event.originalEvent.clientY - stage.top, stage.height - 280) + 'px';
     document.getElementById('ow-ctx-head').textContent = gridLabel(event.latlng);
-    ctx.hidden = false;
+    placeContextMenu(event.originalEvent.clientX, event.originalEvent.clientY);
   });
   document.addEventListener('click', function (event) {
     if (!document.getElementById('ow-context').contains(event.target)) hideContext();
@@ -1922,21 +2255,17 @@
   });
 
   function applyLook(look) {
-    var allowed = { classic: 1, aerial: 1, bw: 1 };
-    if (!allowed[look]) look = 'aerial';
+    if (look === 'classic' || look === 'aerial') look = 'color';
+    var allowed = { color: 1, bw: 1 };
+    if (!allowed[look]) look = 'color';
     try { localStorage.setItem(LOOK_KEY, look); } catch (e) {}
     document.getElementById('ow-map-stage').dataset.look = look;
     document.querySelectorAll('[data-ow-look]').forEach(function (input) { input.checked = input.value === look; });
-    if (window.ATAKAerial && typeof window.ATAKAerial.setMode === 'function') {
-      window.ATAKAerial.setMode(look === 'classic' ? 'plan' : 'aerial');
-    }
     var tilePane = map.getPane('tilePane');
     var aerialPane = map.getPane('atakAerialPane');
-    var filter = look === 'bw'
-      ? 'grayscale(1) contrast(1.18) brightness(1.02)'
-      : (look === 'aerial' ? 'contrast(1.22) saturate(1.2) brightness(.96)' : 'none');
-    if (tilePane) tilePane.style.filter = look === 'classic' ? 'none' : filter;
-    if (aerialPane) aerialPane.style.filter = look === 'classic' ? 'none' : filter;
+    var filter = look === 'bw' ? 'grayscale(1) contrast(1.18) brightness(1.02)' : 'none';
+    if (tilePane) tilePane.style.filter = filter;
+    if (aerialPane) aerialPane.style.filter = filter;
     var markerPane = map.getPane('markerPane');
     if (markerPane) markerPane.style.filter = 'none';
     var overlayPane = map.getPane('overlayPane');
@@ -1946,9 +2275,10 @@
   function storedLook() {
     try {
       var v = localStorage.getItem(LOOK_KEY);
-      if (v === 'classic' || v === 'aerial' || v === 'bw') return v;
+      if (v === 'classic' || v === 'aerial') return 'color';
+      if (v === 'color' || v === 'bw') return v;
     } catch (e) {}
-    return 'aerial';
+    return 'color';
   }
 
   function storedLabelSize() {
@@ -2035,6 +2365,7 @@
   function loadPhotos() {
     return api('/api/recon/images?limit=30').then(function (payload) {
       photos = asList(payload, 'images');
+      updateStatsBanner();
     }).catch(function () { photos = []; });
   }
 
@@ -2064,17 +2395,17 @@
   }
 
   function missionHtml() {
-    return card('OPÉRATION', 'ACTIVE',
-      '<div class="ow-event"><span>CONTACTS</span><strong>' + units.length + '</strong></div>' +
-      '<div class="ow-event"><span>TRACÉS</span><strong>' + shapes.length + '</strong></div>' +
-      '<div class="ow-event"><span>PHOTOS</span><strong>' + photos.length + '</strong></div>') +
-      '<p class="ow-kicker">TÂCHES DE GROUPE</p>' +
+    return card('Opération', 'Actif',
+      '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
+      '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
+      '<div class="ow-event"><span>Photos</span><strong>' + photos.length + '</strong></div>') +
+      '<p class="ow-kicker">Tâches de groupe</p>' +
       '<p class="ow-help">Transmettez une tâche à un groupe visible sur la carte. Elle arrive sur les téléphones ATAK des opérateurs concernés.</p>' +
       groupTaskFormHtml() +
-      '<p class="ow-kicker">ALERTE PLEIN ÉCRAN</p>' +
+      '<p class="ow-kicker">Alerte plein écran</p>' +
       '<p class="ow-help">Le message recouvre tout l’écran du téléphone, ouvert ou en position mini.</p>' +
       fullscreenAlertFormHtml() +
-      '<p class="ow-kicker">9-LINE / APPUI AÉRIEN</p>' +
+      '<p class="ow-kicker">9-line / appui aérien</p>' +
       (nineLines.slice(0, 5).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.author, 'JTAC')) + '</span><span class="ow-tag">' + escapeHtml(clean(row.status, 'ACTIVE')) + '</span></div>';
       }).join('') || '<p class="ow-help">Aucune demande d’appui pour le moment.</p>') +
@@ -2088,7 +2419,7 @@
       '<label>Type de mission<input name="line7" value="CAS"></label>' +
       '<label>Amis à proximité<input name="line8" placeholder="Position des amis"></label>' +
       '<label>Sortie<input name="line9" placeholder="Itinéraire de sortie"></label>' +
-      '<button class="ow-primary" type="submit">ENVOYER 9-LINE</button></form>' +
+      '<button class="ow-primary" type="submit">Envoyer 9-line</button></form>' +
       '<p class="ow-kicker">CASEVAC</p>' +
       (medevacs.slice(0, 5).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(clean(row.status, 'OPEN')) + '</span></div>';
@@ -2101,70 +2432,81 @@
       '<label>Blessés T3<input name="patients_t3_delayed" type="number" min="0" value="0"></label>' +
       '<label>Blessés T4<input name="patients_t4_expectant" type="number" min="0" value="0"></label>' +
       '<label>Observations<textarea name="remarks" placeholder="État, sécurité LZ, fréquence…"></textarea></label>' +
-      '<button class="ow-primary" type="submit">OUVRIR CASEVAC</button></form>';
+      '<button class="ow-primary" type="submit">Ouvrir CASEVAC</button></form>';
   }
 
   function intelHtml() {
     return '<label class="ow-search"><span>⌕</span><input id="ow-intel-q" placeholder="Rechercher une photo, une note…"></label>' +
       '<form class="ow-form-grid" id="ow-photo-form">' +
       '<label>Photo liée à la carte<input type="file" name="photo" accept="image/*"></label>' +
-      '<button class="ow-primary" type="submit">DÉPOSER LA PHOTO</button></form>' +
+      '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
       photos.slice(0, 12).map(function (row) {
         var url = String(row.url || '');
         return '<div class="ow-card"><div class="ow-card-head"><span>' + escapeHtml(clean(row.author || row.device_label, 'CAPTURE')) +
           '</span><span class="ow-tag">' + escapeHtml(clean(row.device_label, 'PHOTO')) + '</span></div>' +
           (url ? '<div class="ow-thumb" style="background-image:url(\'' + escapeHtml(url) + '\')"></div>' : '') +
           '<div class="ow-card-body"><div class="ow-event"><span>' + escapeHtml(clean(row.captured_at || row.created_at, '')) +
-          '</span><button type="button" class="ow-tag" data-send-photo="' + escapeHtml(String(row.id || '')) + '">ENVOYER</button></div></div></div>';
+          '</span><button type="button" class="ow-tag" data-send-photo="' + escapeHtml(String(row.id || '')) + '">Envoyer</button></div></div></div>';
       }).join('') || '<p class="ow-help">Aucune image reçue pour cette mission.</p>';
   }
 
   function toolsHtml() {
-    return '<p class="ow-kicker">CARTE</p>' +
-      '<div class="ow-event"><span>Cercle / rectangle / croquis / texte</span><span class="ow-tag">RAIL GAUCHE</span></div>' +
-      '<div class="ow-event"><span>Point à atteindre (20 m)</span><button type="button" class="ow-tag" data-tool-goto="po">POSER</button></div>' +
-      '<div class="ow-event"><span>Point de ralliement (50 m)</span><button type="button" class="ow-tag" data-tool-goto="rally">POSER</button></div>' +
-      '<div class="ow-event"><span>Tâche de groupe</span><button type="button" class="ow-tag" data-ow-group-task>OUVRIR</button></div>' +
-      '<div class="ow-event"><span>Alerte plein écran</span><button type="button" class="ow-tag" data-ow-fs-alert>OUVRIR</button></div>' +
-      '<div class="ow-event"><span>Visée / masque du relief</span><button type="button" class="ow-tag" data-tool-goto="los">TRACER</button></div>' +
-      '<div class="ow-event"><span>Annuler le dernier tracé</span><button type="button" class="ow-tag" data-tool-goto="undo">RETIRER</button></div>' +
-      '<div class="ow-event"><span>Liens de groupe</span><span class="ow-tag">RÉGLAGES</span></div>' +
-      '<div class="ow-event"><span>ETA pied / véhicule</span><button type="button" class="ow-tag" data-tool-goto="eta">TRACER</button></div>' +
-      '<div class="ow-event"><span>Profil d’élévation</span><button type="button" class="ow-tag" data-tool-goto="profile">TRACER</button></div>' +
-      '<div class="ow-event"><span>Replay des trajectoires</span><button type="button" class="ow-tag" data-ow-replay>OUVRIR</button></div>' +
-      '<div class="ow-event"><span>Export / import / impression</span><span class="ow-tag">RÉGLAGES</span></div>' +
-      '<p class="ow-kicker">RENSEIGNEMENT</p>' +
-      '<div class="ow-event"><span>Notes OSINT / SSE</span><button type="button" class="ow-tag" data-ow-panel="osint">OUVRIR</button></div>' +
-      '<div class="ow-event"><span>Journal de mission</span><button type="button" class="ow-tag" data-ow-panel="logs">OUVRIR</button></div>' +
-      '<p class="ow-kicker">SATELLITES</p>' +
+    function card(title, text, action) {
+      return '<div class="ow-tool-card"><h3>' + title + '</h3><p>' + text + '</p>' + (action || '') + '</div>';
+    }
+    return '<p class="ow-help">Les outils restent actifs après une pose. Échap ou Sélection pour quitter. Maintenez le clic pour tracer une zone, un cercle ou une ligne.</p>' +
+      '<p class="ow-kicker">Carte</p>' +
+      card('Zone et lasso', 'Choisissez Zone ou Zone tactique. Maintenez, dessinez le contour, relâchez pour fermer.', '<button type="button" class="ow-tag" data-tool-goto="aoi">Tracer</button>') +
+      card('Cercle et rectangle', 'Appuyez au premier point, glissez, relâchez pour poser. L’outil reste prêt pour un autre tracé.', '<button type="button" class="ow-tag" data-tool-goto="circle">Cercle</button>') +
+      card('Point à atteindre', 'Un clic pose un point avec un anneau de 20 m. Dès qu’un téléphone ATAK y entre, le point est confirmé.', '<button type="button" class="ow-tag" data-tool-goto="po">Poser</button>') +
+      card('Point de ralliement', 'Un clic pose un lieu de regroupement avec un anneau de 50 m, visible au poste et en jeu.', '<button type="button" class="ow-tag" data-tool-goto="rally">Poser</button>') +
+      card('Visée / masque', 'Glissez de l’observateur à la cible. Le poste indique si le relief masque la visée.', '<button type="button" class="ow-tag" data-tool-goto="los">Tracer</button>') +
+      card('Temps de parcours', 'Glissez un trajet. Les temps à pied et en véhicule restent indicatifs.', '<button type="button" class="ow-tag" data-tool-goto="eta">Tracer</button>') +
+      card('Profil d’élévation', 'Glissez une coupe. Le relief s’affiche seulement s’il a été relevé.', '<button type="button" class="ow-tag" data-tool-goto="profile">Tracer</button>') +
+      card('Tâche de groupe', 'Choisissez un groupe, une action et l’urgence. La tâche arrive sur les téléphones concernés.', '<button type="button" class="ow-tag" data-ow-group-task>Ouvrir</button>') +
+      card('Alerte plein écran', 'Le message recouvre tout l’écran du téléphone, ouvert ou en position mini.', '<button type="button" class="ow-tag" data-ow-fs-alert>Ouvrir</button>') +
+      card('Replay', 'Faites glisser la frise pour revoir les trajectoires déjà reçues.', '<button type="button" class="ow-tag" data-ow-replay>Ouvrir</button>') +
+      '<p class="ow-kicker">Renseignement</p>' +
+      card('Notes de terrain', 'Déposez une observation liée à la carte.', '<button type="button" class="ow-tag" data-ow-panel="osint">Ouvrir</button>') +
+      card('Journal', 'Parcourt l’activité déjà transmise pour cette mission.', '<button type="button" class="ow-tag" data-ow-panel="logs">Ouvrir</button>') +
+      '<p class="ow-kicker">Satellites</p>' +
       '<p class="ow-help">Catalogue local. Les passages ne s’affichent que si une source orbitale répond.</p>' +
-      '<button type="button" class="ow-primary" data-ow-panel="sats">OUVRIR LE CATALOGUE</button>' +
-      '<div id="ow-sat-status" class="ow-help">Recherche d’une source de passages…</div>';
+      '<button type="button" class="ow-primary" data-ow-panel="sats">Ouvrir le catalogue</button>' +
+      '<div id="ow-sat-status" class="ow-help">Recherche d’une source de passages…</div>' +
+      '<p class="ow-kicker">Aide</p>' +
+      '<button type="button" class="ow-secondary" data-ow-help>Ouvrir l’aide du poste</button>';
   }
 
   function layersHtml() {
     var list = shapes.slice().reverse().slice(0, 24).map(function (row) {
       return '<div class="ow-event"><span>' + escapeHtml(clean(row.label || row.type, 'TRACÉ')) +
-        '</span><button type="button" class="ow-tag" data-del-shape="' + escapeHtml(String(row.id || '')) + '">RETIRER</button></div>';
+        '</span><button type="button" class="ow-tag" data-del-shape="' + escapeHtml(String(row.id || '')) + '">Retirer</button></div>';
     }).join('') || '<p class="ow-help">Aucun tracé sur cette carte.</p>';
     var poList = poRows.map(function (row) {
       return '<div class="ow-event"><span>' + escapeHtml(row.label) +
         '</span><strong>' + escapeHtml(row.reached ? ('Atteint' + (row.reached_by ? ' · ' + row.reached_by : '')) : 'En attente · 20 m') +
-        '</strong><button type="button" class="ow-tag" data-del-po="' + escapeHtml(String(row.id || '')) + '">RETIRER</button></div>';
+        '</strong><button type="button" class="ow-tag" data-del-po="' + escapeHtml(String(row.id || '')) + '">Retirer</button></div>';
     }).join('') || '<p class="ow-help">Aucun point à atteindre. Rail gauche : outil ①, ou clic droit → Point à atteindre.</p>';
     var rallyList = rallyRows.map(function (row) {
       return '<div class="ow-event"><span>' + escapeHtml(row.label) +
-        '</span><strong>50 m</strong><button type="button" class="ow-tag" data-del-rally="' + escapeHtml(String(row.id || '')) + '">RETIRER</button></div>';
+        '</span><strong>50 m</strong><button type="button" class="ow-tag" data-del-rally="' + escapeHtml(String(row.id || '')) + '">Retirer</button></div>';
     }).join('') || '<p class="ow-help">Aucun point de ralliement. Rail gauche : outil ⚑, ou clic droit → Point de ralliement.</p>';
-    return '<p class="ow-help">Les fonds Altis et les couches se règlent à gauche. Ici : état live, points d’objectif, points de ralliement et tracés posés depuis le poste.</p>' +
-      '<div class="ow-event"><span>Unités</span><strong>' + units.length + '</strong></div>' +
+    var armaList = armaMarkerRows.slice(0, 24).map(function (row) {
+      var data = parseMarkerData(row);
+      var helper = window.ArmaMapMarkers;
+      var label = helper && helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
+      return '<div class="ow-event"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(helper && helper.typeLabelFr ? helper.typeLabelFr(data) : '') + '</strong></div>';
+    }).join('') || '<p class="ow-help">Aucun marqueur du théâtre pour l’instant. Ils apparaissent dès qu’ils sont posés en jeu.</p>';
+    return '<p class="ow-help">Les fonds et le relief se règlent à gauche. Ici : état live, marqueurs, points d’objectif, ralliements et tracés.</p>' +
+      '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
+      '<div class="ow-event"><span>Marqueurs</span><strong>' + armaMarkerRows.length + '</strong></div>' +
       '<div class="ow-event"><span>Points d’objectif</span><strong>' + poRows.length + '</strong></div>' +
       '<div class="ow-event"><span>Points de ralliement</span><strong>' + rallyRows.length + '</strong></div>' +
       '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
-      '<div class="ow-event"><span>Alertes de zone</span><strong>' + zoneAlerts.length + '</strong></div>' +
-      '<p class="ow-kicker">POINTS D’OBJECTIF</p>' + poList +
-      '<p class="ow-kicker">POINTS DE RALLIEMENT</p>' + rallyList +
-      '<p class="ow-kicker">TRACÉS</p>' + list;
+      '<p class="ow-kicker">Marqueurs du théâtre</p>' + armaList +
+      '<p class="ow-kicker">Points d’objectif</p>' + poList +
+      '<p class="ow-kicker">Points de ralliement</p>' + rallyList +
+      '<p class="ow-kicker">Tracés</p>' + list;
   }
 
   function bindDrawerForms() {
@@ -2305,6 +2647,12 @@
     document.querySelectorAll('[data-ow-fs-alert]').forEach(function (button) {
       button.addEventListener('click', function () { openFullscreenAlertForm(''); });
     });
+    document.querySelectorAll('#ow-drawer [data-ow-help]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var g = document.getElementById('ow-guide');
+        if (g) g.hidden = false;
+      });
+    });
     var sat = document.getElementById('ow-sat-status');
     if (sat) {
       fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json', { mode: 'cors' }).then(function (r) {
@@ -2317,29 +2665,28 @@
   }
 
   function openView(name) {
-    document.querySelectorAll('.ow-nav button, .ow-map-tools button[data-view]').forEach(function (button) {
+    document.querySelectorAll('.ow-nav button, .ow-map-tools button[data-view], .ow-more-menu button[data-view]').forEach(function (button) {
       button.classList.toggle('is-active', button.dataset.view === name);
     });
     var workspace = document.querySelector('.ow-workspace');
-    workspace.classList.toggle('is-tools', name === 'tools');
     workspace.classList.toggle('is-comms', name === 'comms');
     workspace.classList.toggle('is-settings', name === 'layers');
     if (name === 'overwatch') { document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
-    if (name === 'layers') { openDrawer('CARTOGRAPHIE', 'LAYERS', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
+    if (name === 'layers') { openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
       Promise.all([loadNine(), loadMedevac(), loadGroupTasks()]).then(function () {
-        openDrawer('OPÉRATIONS', 'MISSION', missionHtml());
+        openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
       });
       return;
     }
     if (name === 'intel') {
-      loadPhotos().then(function () { openDrawer('RENSEIGNEMENT', 'INTEL', intelHtml()); bindDrawerForms(); });
+      loadPhotos().then(function () { openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
       return;
     }
     if (name === 'tools') {
-      openDrawer('SYSTÈME', 'TOOLS', toolsHtml());
+      openDrawer('Système', 'Outils', toolsHtml());
       bindDrawerForms();
       map.invalidateSize();
     }
@@ -2432,6 +2779,7 @@
     latLngFromWorld: function (x, y) { return worldToLatLng(x, y); },
     invalidateSize: function () { try { map.invalidateSize({ animate: false }); } catch (e) {} }
   };
+  window.dispatchEvent(new CustomEvent('atak:mapready'));
   window.ATAKUnits = {
     getUnits: function () { return units; },
     setUnits: function (rows) { applyPayload(rows); wrapCot('a-f-G-U-C', { count: (rows || []).length }); }
@@ -2484,14 +2832,14 @@
       var chip = document.getElementById('ow-weather-chip');
       if (!chip) return;
       if (!w || (!w.condition && w.temperature_c == null && w.wind_kph == null)) {
-        chip.textContent = 'MÉTÉO — non transmise';
+        chip.textContent = 'Météo — non transmise';
         return;
       }
       var bits = [];
       if (w.condition) bits.push(w.condition);
       if (w.temperature_c != null && w.temperature_c !== '') bits.push(w.temperature_c + ' °C');
       if (w.wind_kph != null && w.wind_kph !== '') bits.push('vent ' + w.wind_kph + ' km/h');
-      chip.textContent = 'MÉTÉO ' + bits.join(' · ');
+      chip.textContent = 'Météo ' + bits.join(' · ');
       window.dispatchEvent(new CustomEvent('overwatch:weather', { detail: w }));
     });
   }
@@ -2759,6 +3107,77 @@
     });
   });
 
+  function applySettingsCollapsed(on) {
+    var workspace = document.querySelector('.ow-workspace');
+    workspace.classList.toggle('is-settings-collapsed', !!on);
+    var btn = document.querySelector('[data-ow-collapse-settings]');
+    if (btn) {
+      btn.textContent = on ? '›' : '‹';
+      btn.setAttribute('aria-expanded', on ? 'false' : 'true');
+      btn.title = on ? 'Ouvrir les réglages' : 'Rabattre les réglages';
+    }
+    try { localStorage.setItem(COLLAPSE_KEY, on ? '1' : '0'); } catch (e) {}
+    map.invalidateSize({ animate: false });
+  }
+  try { if (localStorage.getItem(COLLAPSE_KEY) === '1') applySettingsCollapsed(true); } catch (e) {}
+  var collapseBtn = document.querySelector('[data-ow-collapse-settings]');
+  if (collapseBtn) collapseBtn.addEventListener('click', function () {
+    applySettingsCollapsed(!document.querySelector('.ow-workspace').classList.contains('is-settings-collapsed'));
+  });
+
+  var moreBtn = document.querySelector('[data-ow-more]');
+  var moreMenu = document.getElementById('ow-more-menu');
+  if (moreBtn && moreMenu) {
+    moreBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      moreMenu.hidden = !moreMenu.hidden;
+    });
+    document.addEventListener('click', function () { moreMenu.hidden = true; });
+  }
+
+  function openGuide(on) {
+    var g = document.getElementById('ow-guide');
+    if (g) g.hidden = !on;
+  }
+  document.querySelectorAll('[data-ow-help]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openGuide(true); });
+  });
+  var guideOk = document.getElementById('ow-guide-ok');
+  if (guideOk) guideOk.addEventListener('click', function () { openGuide(false); });
+  var guide = document.getElementById('ow-guide');
+  if (guide) guide.addEventListener('click', function (event) { if (event.target === guide) openGuide(false); });
+
+  var rawToggle = document.getElementById('ow-chat-raw');
+  if (rawToggle) rawToggle.addEventListener('change', function () {
+    var fil = document.getElementById('ow-chat-log');
+    if (fil) fil.classList.toggle('is-raw', rawToggle.checked);
+  });
+
+  var heatBox = document.getElementById('ow-presence-heat');
+  if (heatBox) heatBox.addEventListener('change', renderPresenceHeat);
+  var armaBox = document.getElementById('ow-arma-markers');
+  if (armaBox) armaBox.addEventListener('change', renderArmaMarkers);
+  var squadW = document.getElementById('ow-squad-width');
+  if (squadW) squadW.addEventListener('input', renderSquadLinks);
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      if (!document.getElementById('ow-guide').hidden) { openGuide(false); return; }
+      if (!document.getElementById('ow-context').hidden) { hideContext(); return; }
+      if (activeTool !== 'cursor') setTool('cursor');
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    var sel = event.target && event.target.matches && event.target.matches('select[name="priority"]') ? event.target : null;
+    if (!sel) return;
+    var wrap = sel.closest('.ow-select--prio');
+    var dot = wrap && wrap.querySelector('[data-prio-dot]');
+    if (!dot) return;
+    var v = sel.value;
+    dot.style.background = v === 'ROUTINE' ? 'var(--prio-routine)' : (v === 'URGENT' || v === 'CONTACT' ? 'var(--prio-flash)' : 'var(--prio-priority)');
+  });
+
   window.OverwatchBeta = {
     api: api,
     map: map,
@@ -2872,9 +3291,9 @@
   window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 120);
 
   caches.open(TILE_CACHE).then(function () {
-    document.getElementById('ow-cache-label').textContent = 'MAP CACHE READY';
+    document.getElementById('ow-cache-label').textContent = 'Cache tuiles prêt';
   }).catch(function () {
-    document.getElementById('ow-cache-label').textContent = 'CACHE INDISPONIBLE';
+    document.getElementById('ow-cache-label').textContent = 'Cache indisponible';
   });
 
   mountSquadTaskPanel();

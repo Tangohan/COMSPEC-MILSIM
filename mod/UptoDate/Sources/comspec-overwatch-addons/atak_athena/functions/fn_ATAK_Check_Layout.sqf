@@ -6,6 +6,10 @@
   `_curLine` so the app panel + map still animate. The previous gate that
   skipped the app-group anim when `_line` was missing left Desktop blue on
   the left half and Athena floating without the menu background.
+
+  CTD (RPT AutoArray negative size / ACCESS_VIOLATION) : le ressort BCE
+  interpolait une largeur nulle ou déjà réduite. On fige le cadre téléphone
+  une fois, on refuse toute largeur <= 0, et on n’empile pas les ressorts.
 */
 
 // --- Capture caller scope (do NOT `private` these names — they come from Compat) ---
@@ -64,46 +68,60 @@ private _targetMapCtrl = _disp displayCtrl _targetMapIDC;
 if (isNull _targetMapCtrl) exitWith {};
 
 (ctrlPosition _targetMapCtrl) params ["_MapX", "_MapY", "_MapW", "_MapH"];
+if (!(_MapW isEqualType 0) || {_MapW != _MapW}) then { _MapW = 0; };
+if (!(_MapH isEqualType 0) || {_MapH != _MapH}) then { _MapH = 0; };
+if (_MapW < 0.04 || {_MapH < 0.04}) exitWith {};
 
-// Menu width collapsed by a prior anim → rebuild from map geometry.
-// Ne jamais utiliser safeZoneW*0.55 : sur le téléphone ATAK la carte entière
-// est déjà < 0,55 safeZone → l’ancien seuil traitait une carte pleine comme
-// « déjà coupée » et poussait le panneau hors cadre à droite.
-if (_bgW < 0.02 && {_MapW > 0.05}) then {
-    private _menuW = 0;
-    if (!isNull _bgGroup) then {
-        _menuW = (ctrlPosition _bgGroup) select 2;
-    };
-    if (_menuW > 0.04) then {
-        // Tiroir déjà dimensionné : garder sa largeur.
-        _bgW = _menuW;
-    } else {
-        // Carte pleine dans le cadre téléphone → panneau = 2/5.
-        _bgW = _MapW * 2/5;
+// Cadre téléphone figé : carte actuelle + tiroir, ou dernier cadre valide.
+private _phoneW = _MapW;
+private _phoneX = _MapX;
+if (!isNull _bgGroup && {ctrlShown _bgGroup}) then {
+    private _mw = (ctrlPosition _bgGroup) param [2, 0];
+    if ((_mw isEqualType 0) && {_mw > 0.04}) then {
+        _phoneW = _MapW + _mw;
     };
 };
-if (_bgH < 0.02) then { _bgH = _MapH; };
-
-private _result = _bgW / 2 * ([5, 3] select _showMenu);
-// Clamp : carte + panneau ne dépassent pas le bord droit actuel de la carte pleine.
-private _contentRight = _MapX + _MapW;
-if (_showMenu) then {
-    private _panelRight = _MapX + _result + _bgW;
-    if (_panelRight > (_contentRight + 0.002) && {_MapW > 0.08}) then {
-        // Recalcule sur la largeur utile visible (carte déjà réduite ou cadre).
-        private _usable = _MapW;
-        if (!isNull _bgGroup) then {
-            private _mw = (ctrlPosition _bgGroup) select 2;
-            if (_mw > 0.04) then { _usable = _MapW + _mw; };
-        };
-        _bgW = _usable * 2/5;
-        _result = _usable * 3/5;
+private _stored = uiNamespace getVariable ["COMSPEC_ATAK_FullMapRect", []];
+_stored params [["_storedDisp", displayNull], ["_rect", []]];
+if (_storedDisp isEqualTo _disp && {(count _rect) >= 4}) then {
+    private _sW = _rect param [2, 0];
+    if ((_sW isEqualType 0) && {_sW > _phoneW}) then {
+        _phoneX = _rect param [0, _MapX];
+        _phoneW = _sW;
+        if (((_rect param [3, 0]) > 0.04)) then { _MapH = _rect param [3, _MapH]; };
     };
 };
+if (_phoneW > 0.12) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_FullMapRect", [_disp, [_phoneX, _MapY, _phoneW, _MapH]]];
+};
+
+_MapX = _phoneX;
+_bgW = (_phoneW * 2/5) max 0.04;
+_bgH = _MapH max 0.04;
+private _result = if (_showMenu) then { (_phoneW * 3/5) max 0.08 } else { _phoneW max 0.08 };
+if (_result != _result) then { _result = 0.2; };
+if (_bgW != _bgW) then { _bgW = 0.08; };
+
+private _busy = false;
+{
+    if (!isNull _x) then {
+        private _q = _x getVariable ["Animation_Queue", []];
+        if ((_q findIf {true}) > -1) then { _busy = true; };
+    };
+} forEach [_targetMapCtrl, _bgGroup];
+
+private _curMapW = (ctrlPosition _targetMapCtrl) param [2, 0];
+private _useInstant = _ifaceInit || _busy;
+if (!_useInstant && {_onToggle || _onSwitch}) then {
+    if (_curMapW < 0.08 || {_result < 0.08}) then { _useInstant = true; };
+} else {
+    if ((abs (_curMapW - _result)) < 0.012) then { _useInstant = true; };
+};
+
 [
     _targetMapCtrl,
     [[], [_MapX, _MapY, _result]],
-    ["ATAK_Toggle_Spring", _ifaceInit, 1200, [3]]
+    ["ATAK_Toggle_Spring", _useInstant, 1200, [3]]
 ] call BCE_fnc_Anim_CustomOffset;
 _targetMapCtrl ctrlMapSetPosition [];
 
@@ -113,13 +131,14 @@ private _batX = if (isNull _bat) then { _MapX } else { (ctrlPosition _bat) selec
 {
     private _ctrl = _disp displayCtrl (17000 + _x);
     if (!isNull _ctrl) then {
+        private _cw = ((ctrlPosition _ctrl) param [2, 0]) max 0.01;
         [
             _ctrl,
             [[], [
-                (_MapX + _result - (ctrlPosition _ctrl select 2) + (_MapX - _batX)),
+                (_MapX + _result - _cw + (_MapX - _batX)),
                 (ctrlPosition _ctrl) select 1
             ]],
-            ["ATAK_Toggle_Spring", _ifaceInit, 1200, [2, 3]]
+            ["ATAK_Toggle_Spring", _useInstant, 1200, [2, 3]]
         ] call BCE_fnc_Anim_CustomOffset;
     };
 } forEach [2620, 2621, 2622];
@@ -134,11 +153,11 @@ private _POSW = 0;
 if (!isNull _tool) then {
     (ctrlPosition _tool) params ["", "_ty", "_tw"];
     _POSY = _ty;
-    _POSW = _tw;
+    _POSW = _tw max 0;
     [
         _tool,
         [[], [_MapX + _result - _POSW, _POSY]],
-        ["ATAK_Toggle_Spring", _ifaceInit, 1200, [2]]
+        ["ATAK_Toggle_Spring", _useInstant, 1200, [2]]
     ] call BCE_fnc_Anim_CustomOffset;
 };
 
@@ -150,7 +169,8 @@ if (!isNull _tool) then {
     _x params ["_c", ["_ignoreFade", true], ["_skip", false]];
     if (isNull _c || {_skip}) then { continue };
 
-    private _endW = [0, _bgW] select _showMenu;
+    private _endW = [0.001, _bgW] select _showMenu;
+    if (_endW < 0.001) then { _endW = 0.001; };
     private _endPos = [_MapX + _result, _POSY, _endW, _bgH];
     if (!_ignoreFade) then {
         // 5e canal = opacité cible (1 menu ouvert, 0 menu fermé)
@@ -160,7 +180,7 @@ if (!isNull _tool) then {
     [
         _c,
         [[], _endPos],
-        ["ATAK_Toggle_Spring", _ifaceInit, 1200, [3]]
+        ["ATAK_Toggle_Spring", _useInstant, 1200, [3]]
     ] call BCE_fnc_Anim_CustomOffset;
 } forEach [
     [_bgGroup, true, false],

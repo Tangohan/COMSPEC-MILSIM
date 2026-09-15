@@ -9,8 +9,9 @@ private _slot = 0;
 if ((_ctrlPOS isEqualType []) && {(count _ctrlPOS) > 2}) then {
     _slot = _ctrlPOS select 2;
 };
-if (!(_slot isEqualType 0) || {_slot <= 0}) then { _slot = 0.04; };
-private _full = 4 * _slot;
+if (!(_slot isEqualType 0) || {_slot <= 0} || {_slot != _slot}) then { _slot = 0.04; };
+private _full = (4 * _slot) max 0.04;
+if (_full > 2) then { _full = 0.16; };
 
 {
     if (!isNull _x) then {

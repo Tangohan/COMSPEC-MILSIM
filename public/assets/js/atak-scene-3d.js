@@ -122,7 +122,7 @@ window.ATAKScene3D = (function () {
   }
   function queueLoad() { window.clearTimeout(fetchTimer); fetchTimer = window.setTimeout(loadVisible, 180); schedule(); }
   function init() {
-    var mapEl = document.getElementById('atak-map'), toggle = document.getElementById('atak-scene-buildings');
+    var mapEl = document.getElementById('atak-map') || document.getElementById('ow-map'), toggle = document.getElementById('atak-scene-buildings');
     boundMap = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
     if (!mapEl || !boundMap) return;
     if (!canvas) {

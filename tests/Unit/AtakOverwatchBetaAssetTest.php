@@ -47,6 +47,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('window.ATAK_OVERWATCH_BETA = true', $view);
         self::assertStringContainsString('atak-overwatch-beta.css', $view);
         self::assertStringContainsString("'/api/units?mapId='", $overwatchJs);
+        self::assertStringContainsString('extra.movement_heading', $overwatchJs);
+        self::assertStringContainsString('extra.speed_ms', $overwatchJs);
+        self::assertStringContainsString('extra.asl_z', $overwatchJs);
+        self::assertStringContainsString('extra.link_state', $overwatchJs);
+        self::assertStringContainsString('extra.transmit_mode', $overwatchJs);
+        self::assertStringContainsString('source_arma', $overwatchJs);
+        self::assertStringContainsString("kv('Liaison'", $overwatchJs);
+        self::assertStringContainsString("kv('Transmission'", $overwatchJs);
         self::assertStringContainsString('L.map(\'ow-map\'', $overwatchJs);
         self::assertStringContainsString('window.MGRS_CRS', $overwatchJs);
         self::assertStringContainsString('athena:atak-fond-look', $overwatchJs);
