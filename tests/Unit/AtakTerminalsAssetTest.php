@@ -66,6 +66,7 @@ final class AtakTerminalsAssetTest extends TestCase
         self::assertStringContainsString('Renouveler le certificat', $js);
         self::assertStringContainsString('/certificate/regenerate', $js);
         self::assertStringContainsString('t.last_client_ip', $js);
+        self::assertStringContainsString('maskIpForDisplay', $js);
         self::assertStringNotContainsString(
             "t.terminal_type === 'phone' ? 'Téléphone' : (t.platform_label || t.terminal_type || 'Poste')",
             $js

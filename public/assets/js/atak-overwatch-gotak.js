@@ -338,13 +338,92 @@
       html += '<div class="ow-event"><span>' + esc(pack.label) + ' · ' + pack.pts.length + '</span><strong>disp. ' +
         (api.formatMeters ? api.formatMeters(span) : Math.round(span) + ' m') + '</strong></div>';
     });
-    html += '<p class="ow-kicker">OUTILS</p>' +
-      '<div class="ow-event"><span>Cap / distance</span><button type="button" class="ow-tag" data-tool-goto="bearing">TRACER</button></div>' +
-      '<div class="ow-event"><span>Cercle</span><button type="button" class="ow-tag" data-tool-goto="circle">TRACER</button></div>' +
-      '<div class="ow-event"><span>Rectangle</span><button type="button" class="ow-tag" data-tool-goto="rect">TRACER</button></div>';
-    api.openDrawer('CALCUL', 'MESURES LIVE', html);
+    html += '<p class="ow-kicker">Outils</p>' +
+      '<div class="ow-event"><span>Cap / distance</span><button type="button" class="ow-tag" data-tool-goto="bearing">Tracer</button></div>' +
+      '<div class="ow-event"><span>Cercle</span><button type="button" class="ow-tag" data-tool-goto="circle">Tracer</button></div>' +
+      '<div class="ow-event"><span>Rectangle</span><button type="button" class="ow-tag" data-tool-goto="rect">Tracer</button></div>' +
+      '<div class="ow-event"><span>Aller à une grille</span><button type="button" class="ow-tag" data-tool-goto="goto">Ouvrir</button></div>' +
+      '<div class="ow-event"><span>Anneaux de portée</span><button type="button" class="ow-tag" data-tool-goto="range">Poser</button></div>' +
+      '<div class="ow-event"><span>Visée / masque</span><button type="button" class="ow-tag" data-tool-goto="los">Tracer</button></div>' +
+      '<div class="ow-event"><span>Temps de parcours</span><button type="button" class="ow-tag" data-tool-goto="eta">Tracer</button></div>';
+    api.openDrawer('Calcul', 'Mesures live', html);
     document.querySelectorAll('#ow-drawer-body [data-tool-goto]').forEach(function (button) {
       button.addEventListener('click', function () { api.setTool(button.getAttribute('data-tool-goto')); });
+    });
+  }
+
+  function openIntercept() {
+    var api = ow();
+    if (!api) return;
+    var rows = api.getUnits().filter(function (unit) { return api.point(unit); });
+    if (rows.length < 2) {
+      api.openDrawer('Mouvement', 'Interception', '<p class="ow-help">Il faut au moins deux contacts localisés.</p>');
+      return;
+    }
+    var opts = rows.map(function (unit) {
+      return '<option value="' + esc(api.unitId(unit)) + '">' + esc(api.callsign(unit)) + '</option>';
+    }).join('');
+    var html = '<p class="ow-help">Cap et distance entre deux contacts déjà en liaison. La vitesse n’apparaît que si elle a été transmise.</p>' +
+      '<form class="ow-form-grid" id="ow-intercept-form">' +
+      '<label>Premier contact<span class="ow-select"><select name="a">' + opts + '</select></span></label>' +
+      '<label>Second contact<span class="ow-select"><select name="b">' + opts + '</select></span></label>' +
+      '<button class="ow-primary" type="submit">Relever</button></form><div id="ow-intercept-out"></div>';
+    api.openDrawer('Mouvement', 'Interception', html);
+    var form = document.getElementById('ow-intercept-form');
+    if (!form) return;
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var aId = form.querySelector('[name="a"]').value;
+      var bId = form.querySelector('[name="b"]').value;
+      var a = rows.filter(function (u) { return api.unitId(u) === aId; })[0];
+      var b = rows.filter(function (u) { return api.unitId(u) === bId; })[0];
+      var out = document.getElementById('ow-intercept-out');
+      if (!a || !b || aId === bId) {
+        if (out) out.innerHTML = '<p class="ow-help">Choisissez deux contacts distincts.</p>';
+        return;
+      }
+      var la = api.point(a);
+      var lb = api.point(b);
+      var meters = api.map.distance(la, lb);
+      var cap = Math.round((function () {
+        var wa = api.latLngToWorld(la);
+        var wb = api.latLngToWorld(lb);
+        var deg = Math.atan2(wb.x - wa.x, wb.y - wa.y) * 180 / Math.PI;
+        return (deg + 360) % 360;
+      })());
+      var extraA = (function () {
+        var raw = a.extra;
+        if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e3) { raw = {}; } }
+        return raw && typeof raw === 'object' ? raw : {};
+      })();
+      var spd = Number(extraA.speed_ms);
+      var eta = isFinite(spd) && spd > 0.2 ? Math.round(meters / spd) + ' s à la vitesse actuelle du premier' : 'Vitesse du premier inconnue';
+      if (out) {
+        out.innerHTML = '<div class="ow-event"><span>Distance</span><strong>' + (api.formatMeters ? api.formatMeters(meters) : Math.round(meters) + ' m') + '</strong></div>' +
+          '<div class="ow-event"><span>Cap</span><strong>' + cap + '°</strong></div>' +
+          '<div class="ow-event"><span>Temps</span><strong>' + esc(eta) + '</strong></div>';
+      }
+    });
+  }
+
+  function openQrf() {
+    var api = ow();
+    if (!api) return;
+    var html = '<p class="ow-help">Posez un anneau de rassemblement de 500 m autour du contact ouvert, ou cliquez la carte avec l’outil Anneaux.</p>' +
+      '<button type="button" class="ow-primary" id="ow-qrf-go">Anneau 500 m sur le contact</button>';
+    api.openDrawer('Mouvement', 'Rassemblement', html);
+    var btn = document.getElementById('ow-qrf-go');
+    if (btn) btn.addEventListener('click', function () {
+      var units = api.getUnits();
+      var selectedId = document.querySelector('#ow-contact-list [data-unit-id].is-active, #ow-drawer-body [data-unit-id]');
+      var unit = units[0];
+      if (selectedId) {
+        var id = selectedId.getAttribute('data-unit-id');
+        unit = units.filter(function (row) { return api.unitId(row) === id; })[0] || unit;
+      }
+    var loc = (typeof api.getSelected === 'function' && api.getSelected() && api.point(api.getSelected())) || (unit && api.point(unit));
+      if (!loc) { toast('Aucun contact localisé.'); return; }
+      if (window.OverwatchTools) window.OverwatchTools.placeRange(loc, [250, 500, 1000]);
     });
   }
 
@@ -353,6 +432,10 @@
     if (name === 'sats') openSats();
     if (name === 'logs') openLogs();
     if (name === 'calcs') openCalcs();
+    if (name === 'intercept') openIntercept();
+    if (name === 'qrf') openQrf();
+    if (name === 'notes' && window.OverwatchTools) window.OverwatchTools.openNotes();
+    if (name === 'goto' && window.OverwatchTools) window.OverwatchTools.openGoto();
   }
 
   function clearReplayGhosts() {

@@ -31,20 +31,20 @@ final class AtakLayoutClampAssetTest extends TestCase
         );
 
         self::assertStringContainsString('COMSPEC_ATAK_FullMapRect', $layout);
-        self::assertStringContainsString('_useInstant', $layout);
-        self::assertStringContainsString('0.001', $layout);
-        self::assertStringContainsString('Animation_Queue', $layout);
+        self::assertStringContainsString('_useInstant = true', $layout);
+        self::assertStringContainsString('_bgW max 0.04', $layout);
         self::assertStringContainsString('athena_updateMapHud', $layout);
-        self::assertStringNotContainsString('displayCtrl 46600', $layout);
+        self::assertStringContainsString('displayCtrl 46600', $layout);
+        self::assertStringContainsString('COMSPEC_Athena_FsAlert', $layout);
+        self::assertStringNotContainsString('[0.001, _bgW]', $layout);
 
         self::assertStringContainsString('COMSPEC_ATAK_FullMapRect', $hud);
         self::assertStringContainsString('Animation_Queue', $hud);
         self::assertStringContainsString('_mw != _mw', $hud);
 
         self::assertStringContainsString('_full > 2', $footer);
-        self::assertStringContainsString('_rw < 0.001', $home);
-        self::assertStringContainsString('_rh < 0.001', $home);
-        self::assertStringContainsString('1.0.127', $cfg);
+        self::assertStringContainsString('_rw <= 0', $home);
+        self::assertStringContainsString('1.0.131', $cfg);
         self::assertStringContainsString('&lt;', $hud);
 
         self::assertStringContainsString('Arrêt anormal', $bug);

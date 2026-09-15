@@ -170,7 +170,7 @@ if (!isNil "Iceman_fnc_group_onOpened") then {
     missionNamespace setVariable ["Iceman_fnc_group_onOpened", Iceman_fnc_group_onOpened];
 }, [], 8] call CBA_fnc_waitAndExecute;
 
-// Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)
+// Bureau ATAK : plus de raccourcis COMSPEC (menu d’applications + ACE).
 [] call comspec_overwatch_atak_athena_fnc_athena_installDesktopShortcut;
 [] call comspec_overwatch_atak_athena_fnc_athena_installPhotoLibraryAthena;
 

@@ -7,7 +7,55 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Athena 1.0.131 — 2026-09-15
+
+### Correction — Menu d’applications
+
+Le menu d’applications se déroule de nouveau : retour et défilement sont utilisables. Les boutons du bas restent sous le menu. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.130 — 2026-09-15
+
+### Changement — Écran d’accueil
+
+L’écran d’accueil du téléphone n’affiche plus les raccourcis Connexion Athena, messagerie, Resynch et les autres icônes COMSPEC. Ces fonctions restent dans le menu d’applications et dans le menu ACE. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.129 — 2026-09-15
+
+### Correction — Alerte plein écran
+
+Une alerte envoyée depuis le poste recouvre tout l’écran du téléphone, y compris le menu d’applications s’il était ouvert. Le titre et le texte restent lisibles. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.128 — 2026-09-15
+
+### Correction — Boutons du tiroir d’applications
+
+À l’ouverture du menu d’applications, les boutons du bas (photos, recherche, radio) restent collés sous le tiroir. Ils ne recouvrent plus la carte.
+
+---
+
+## Overwatch 1.5.78 / Athena 1.0.127 — 2026-09-15
+
+### Correction — Fermeture brutale avec le téléphone ouvert
+
+Avec le téléphone ATAK ouvert et la liaison active, le jeu pouvait se fermer tout seul. Le cadre de l’écran est figé. Relancez Arma complètement après la mise à jour.
+
+### Correction — Messagerie
+
+Depuis un canal, le retour ramène à la liste des canaux.
+
+### Nouveau — Overwatch Beta et téléphone
+
+Le poste envoie une alerte plein écran, une tâche de groupe, des points à atteindre et un ralliement. Cap, vitesse, altitude et liaison du terrain s’affichent sur la fiche contact.
 
 ---
 
