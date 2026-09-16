@@ -314,7 +314,7 @@ button.ow-mate strong{flex:0 0 auto;font-family:var(--ow-mono);font-size:11px;fo
 .ow-card{border:1px solid #222a27;background:#0d1110;margin-bottom:10px;border-radius:6px}
 .ow-card-head{height:34px;border-bottom:1px solid #1c2321;display:flex;align-items:center;padding:0 9px;font-size:12px;font-weight:600}
 .ow-card-head span:last-child{margin-left:auto}
-.ow-card-body{padding:9px}
+.ow-card-body{padding:9px;font-size:10px}
 .ow-thumb{height:98px;background:#1a1f1d center/cover no-repeat;position:relative}
 .ow-event{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid #171c1a;font-size:12px;align-items:center}
 .ow-tag{font-family:var(--ow-mono);font-size:10px;padding:2px 6px;border:1px solid #214d3e;color:var(--athena-text);background:#0a211a;font-weight:600;border-radius:3px}

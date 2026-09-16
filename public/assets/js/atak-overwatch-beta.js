@@ -16,6 +16,9 @@
   var DRAW_COLOR_KEY = 'athena:overwatch-draw-color';
   var DRAW_WIDTH_KEY = 'athena:overwatch-draw-width';
   var TILE_CACHE = 'athena-overwatch-tiles-v1';
+  var LABEL_SIZE_KEY = 'athena:overwatch-label-size';
+  var ICON_SIZE_KEY = 'athena:overwatch-icon-size';
+  var SETTINGS_COLLAPSED_KEY = 'athena:overwatch-settings-collapsed';
 
   var config = window.ATAK_MAP_CONFIG || {};
   var apiBase = String(window.ATAK_API_BASE || '').replace(/\/$/, '');
@@ -1298,6 +1301,15 @@
     selected = unit;
     document.getElementById('ow-drawer-kicker').textContent = 'BFT / Contact';
     document.getElementById('ow-drawer-title').textContent = callsign(unit);
+    
+    // Utiliser le nouveau panneau détaillé si disponible
+    if (window.OverwatchV3 && window.OverwatchV3.showDetailedContactPanel) {
+      document.getElementById('ow-drawer-body').innerHTML = window.OverwatchV3.showDetailedContactPanel(unit);
+      document.getElementById('ow-drawer').hidden = false;
+      return;
+    }
+    
+    // Fallback sur l'ancien panneau
     var loc = point(unit);
     var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '—';
     var heading = unitHeading(unit);
@@ -1782,6 +1794,20 @@
     }).join('');
   }
 
+  function parseMessageBadges(body) {
+    var badges = [];
+    var text = String(body || '');
+    var bracketMatch = text.match(/^\[([\w\s\-]+)\]/);
+    if (bracketMatch) {
+      badges.push(bracketMatch[1]);
+      text = text.substring(bracketMatch[0].length).trim();
+    }
+    if (/^groupe\s*\|/i.test(text)) {
+      badges.push('GROUPE');
+    }
+    return { badges: badges, text: text };
+  }
+
   function renderChatLog(targetId, rows) {
     var host = document.getElementById(targetId);
     if (!host) return;
@@ -1854,11 +1880,22 @@
 
   function sendChat(channel, body) {
     var text = String(body || '').trim();
-    if (!text) return Promise.resolve();
+    console.log('[DEBUG sendChat] channel:', channel, 'body:', body, 'text:', text);
+    if (!text) {
+      console.warn('[DEBUG sendChat] Texte vide, abandon');
+      return Promise.resolve();
+    }
+    console.log('[DEBUG sendChat] Envoi API:', { mapId: mapId, author: authorName, body: text, channel: channel });
     return api('/api/chat', {
       method: 'POST',
       body: { mapId: mapId, author: authorName, body: text, channel: channel }
-    }).then(function () { return loadChat(channel); });
+    }).then(function (response) {
+      console.log('[DEBUG sendChat] Succès, rechargement chat');
+      return loadChat(channel);
+    }).catch(function (error) {
+      console.error('[DEBUG sendChat] Erreur:', error);
+      throw error;
+    });
   }
 
   function appendChatMessage(row) {
@@ -2750,10 +2787,60 @@
     return 'color';
   }
 
+  function storedLabelSize() {
+    try {
+      var v = localStorage.getItem(LABEL_SIZE_KEY);
+      if (v) return Math.max(6, Math.min(18, parseFloat(v)));
+    } catch (e) {}
+    return 9;
+  }
+
+  function storedIconSize() {
+    try {
+      var v = localStorage.getItem(ICON_SIZE_KEY);
+      if (v) return Math.max(0.5, Math.min(2, parseFloat(v)));
+    } catch (e) {}
+    return 1;
+  }
+
+  function applyLabelSize(size) {
+    var s = Math.max(6, Math.min(18, parseFloat(size) || 9));
+    try { localStorage.setItem(LABEL_SIZE_KEY, String(s)); } catch (e) {}
+    document.documentElement.style.setProperty('--ow-label-size', s + 'px');
+  }
+
+  function applyIconSize(size) {
+    var s = Math.max(0.5, Math.min(2, parseFloat(size) || 1));
+    try { localStorage.setItem(ICON_SIZE_KEY, String(s)); } catch (e) {}
+    document.documentElement.style.setProperty('--ow-icon-size', String(s));
+  }
+
+  function toggleSettingsAside() {
+    var workspace = document.querySelector('.ow-workspace');
+    var collapsed = workspace.classList.contains('is-settings-collapsed');
+    workspace.classList.toggle('is-settings-collapsed', !collapsed);
+    try {
+      localStorage.setItem(SETTINGS_COLLAPSED_KEY, collapsed ? '0' : '1');
+    } catch (e) {}
+    setTimeout(function () { map.invalidateSize(); }, 50);
+  }
+
+  function restoreSettingsCollapsed() {
+    try {
+      var v = localStorage.getItem(SETTINGS_COLLAPSED_KEY);
+      if (v === '1') {
+        document.querySelector('.ow-workspace').classList.add('is-settings-collapsed');
+      }
+    } catch (e) {}
+  }
+
   document.querySelectorAll('[data-ow-look]').forEach(function (input) {
     input.addEventListener('change', function () { applyLook(input.value); });
   });
   applyLook(storedLook());
+  applyLabelSize(storedLabelSize());
+  applyIconSize(storedIconSize());
+  restoreSettingsCollapsed();
 
   document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
     input.addEventListener('change', function () {
@@ -3427,8 +3514,19 @@
   });
   document.getElementById('ow-chat-form').addEventListener('submit', function (event) {
     event.preventDefault();
+    console.log('[DEBUG ow-chat-form] Submit déclenché');
     var input = document.getElementById('ow-chat-input');
-    sendChat(activeChannel, input.value).then(function () { input.value = ''; });
+    console.log('[DEBUG ow-chat-form] Input:', input, 'Value:', input ? input.value : 'N/A', 'activeChannel:', activeChannel);
+    if (!input) {
+      console.error('[DEBUG ow-chat-form] Input #ow-chat-input introuvable !');
+      return;
+    }
+    sendChat(activeChannel, input.value).then(function () {
+      console.log('[DEBUG ow-chat-form] Message envoyé, nettoyage input');
+      input.value = '';
+    }).catch(function (err) {
+      console.error('[DEBUG ow-chat-form] Erreur envoi:', err);
+    });
   });
   document.getElementById('ow-support-form').addEventListener('submit', function (event) {
     event.preventDefault();
@@ -3747,6 +3845,68 @@
     }
     disclaimer.hidden = true;
     window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 80);
+  });
+
+  // Bouton repli des réglages
+  var toggleSettingsBtn = document.getElementById('ow-toggle-settings');
+  if (toggleSettingsBtn) {
+    toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
+  }
+
+  // Appliquer l'état sauvegardé du repli au chargement
+  restoreSettingsCollapsed();
+
+  // Debug: vérifier que les éléments du chat sont présents
+  console.log('[DEBUG INIT] Vérification éléments chat:');
+  console.log('  - #ow-chat-form:', document.getElementById('ow-chat-form'));
+  console.log('  - #ow-chat-input:', document.getElementById('ow-chat-input'));
+  console.log('  - activeChannel:', activeChannel);
+  console.log('  - authorName:', authorName);
+
+  // Gestion des calques (layers)
+  document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {
+    // Restaurer l'état sauvegardé
+    var layer = checkbox.getAttribute('data-ow-layer');
+    try {
+      var saved = localStorage.getItem('athena:ow-layer-' + layer);
+      if (saved !== null) {
+        checkbox.checked = saved === '1';
+      }
+    } catch(e) {}
+    
+    // Event listener pour changements
+    checkbox.addEventListener('change', function() {
+      var visible = checkbox.checked;
+      
+      switch(layer) {
+        case 'units':
+          hiddenLayers.units = !visible;
+          renderMap();
+          break;
+        case 'labels':
+          document.body.classList.toggle('ow-labels-hidden', !visible);
+          break;
+        case 'shapes':
+          hiddenLayers.shapes = !visible;
+          Object.keys(shapeLayers).forEach(function(id) {
+            var shapeLayer = shapeLayers[id];
+            if (visible) {
+              if (!map.hasLayer(shapeLayer)) map.addLayer(shapeLayer);
+            } else {
+              if (map.hasLayer(shapeLayer)) map.removeLayer(shapeLayer);
+            }
+          });
+          break;
+        case 'aerial-view':
+          applyLook(visible ? 'aerial' : 'classic');
+          break;
+      }
+      
+      // Sauvegarder la préférence
+      try {
+        localStorage.setItem('athena:ow-layer-' + layer, visible ? '1' : '0');
+      } catch(e) {}
+    });
   });
 
   window.addEventListener('resize', function () { map.invalidateSize({ animate: false }); });
