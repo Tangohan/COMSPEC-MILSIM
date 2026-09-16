@@ -53,7 +53,7 @@ if (!isNull _createEdit && {(ctrlText _createEdit) isEqualTo ""}) then {
 };
 
 if (!isNull _createTitle) then {
-    _createTitle ctrlSetStructuredText parseText "<t align='left'>  Création</t>";
+    [_createTitle, "<t align='left'>  Création</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _labelFor = {
@@ -201,14 +201,14 @@ if (!isNull _title) then {
 };
 
 if (!isNull _lblList) then {
-    _lblList ctrlSetStructuredText parseText "<t align='center' size='1.02' color='#F0F6FA'>Canaux radio</t>";
+    [_lblList, "<t align='center' size='1.02' color='#F0F6FA'>Canaux radio</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 if (!isNull _lblThread) then {
-    _lblThread ctrlSetStructuredText parseText format [
+    [_lblThread, format [
         "<t align='center' size='1.02' color='%1'>%2</t>",
         [_active] call _channelColorHex,
         [_activeLabel] call _escHtml
-    ];
+    ]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _unread = missionNamespace getVariable ["COMSPEC_Comms_Unread", createHashMap];
@@ -331,9 +331,9 @@ if (_filtered isEqualTo []) then {
 };
 
 try {
-    _msgBody ctrlSetStructuredText parseText _html;
+    [_msgBody, _html] call comspec_overwatch_connect_fnc_setPlainText;
 } catch {
-    _msgBody ctrlSetStructuredText parseText "<t color='#ff8a7a'>Impossible d’afficher ce fil.</t>";
+    [_msgBody, "<t color='#ff8a7a'>Impossible d’afficher ce fil.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _h = ctrlTextHeight _msgBody;

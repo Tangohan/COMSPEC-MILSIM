@@ -153,6 +153,10 @@ if (_displays isEqualTo []) exitWith {};
     private _txt = _disp displayCtrl _IDC_TXT;
     private _btn = _disp displayCtrl _IDC_BTN;
     private _needCreate = isNull _bg || {ctrlParent _bg isNotEqualTo _disp} || {isNull _txt} || {isNull _btn};
+    if (!isNull _txt) then {
+        private _haveTxt = toLower (ctrlClassName _txt);
+        if ((_haveTxt find "structured") < 0 && {(_haveTxt find "html") < 0}) then { _needCreate = true; };
+    };
     private _menu = _disp displayCtrl 4660;
     private _menuShown = !isNull _menu && {ctrlShown _menu};
     if (_menuShown && {!(uiNamespace getVariable ["COMSPEC_Athena_FsAlertMenuLayer", false])}) then {
@@ -163,7 +167,10 @@ if (_displays isEqualTo []) exitWith {};
     if (_needCreate) then {
         [_disp] call _fncHideOn;
         _bg = _disp ctrlCreate ["RscText", _IDC_BG];
-        _txt = _disp ctrlCreate ["RscStructuredText", _IDC_TXT];
+        private _txtClass = "RscStructuredText";
+        if (isClass (configFile >> "Iceman_ReportsDetailText")) then { _txtClass = "Iceman_ReportsDetailText"; };
+        _txt = _disp ctrlCreate [_txtClass, _IDC_TXT];
+        if (isNull _txt) then { _txt = _disp ctrlCreate ["RscStructuredText", _IDC_TXT]; };
         _btn = _disp ctrlCreate ["RscButton", _IDC_BTN];
         private _fncDismiss = {
             missionNamespace setVariable ["COMSPEC_Athena_FsAlert", nil];
@@ -192,10 +199,15 @@ if (_displays isEqualTo []) exitWith {};
     private _txtY = _py + ((_ph * 0.08) max 0.01);
     _txt ctrlSetPosition [_txtX, _txtY, _txtW, _txtH];
     _txt ctrlSetBackgroundColor [0, 0, 0, 0];
-    private _titleSize = if (_ph < 0.22) then { "0.85" } else { "1.15" };
-    private _bodySize = if (_ph < 0.22) then { "0.70" } else { "0.92" };
-    private _html = "<t align='center' size='" + _titleSize + "' color='#7dffb0'>ALERTE POSTE</t><br/><t align='center' size='0.70' color='#8aa0b4'>" + _safeIssuer + "</t><br/><br/><t align='center' size='" + _bodySize + "' color='#e8f4f0'>" + _safeText + "</t>";
-    _txt ctrlSetStructuredText parseText _html;
+    _txt ctrlCommit 0;
+    private _alertHtml = format [
+        "<t align='center' size='1.15' color='#E8F5F0'>ALERTE POSTE</t><br/><br/>" +
+        "<t align='center' size='0.92' color='#9ee0c0'>%1</t><br/><br/>" +
+        "<t align='center' size='0.98' color='#F0F6FA'>%2</t>",
+        _safeIssuer,
+        _safeText
+    ];
+    [_txt, _alertHtml] call comspec_overwatch_connect_fnc_setPlainText;
     _txt ctrlEnable true;
     _txt ctrlSetFade 0;
     _txt ctrlShow true;

@@ -2344,19 +2344,112 @@ class AtakDataRepository
             'SELECT * FROM atak_sigint_reports WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
         );
         $stmt->execute([$tenantId, $mapId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $zones = [];
-        if (count($rows) >= 2) {
-            $cx = array_sum(array_column($rows, 'pos_x')) / count($rows);
-            $cy = array_sum(array_column($rows, 'pos_y')) / count($rows);
-            $radius = 100;
-            foreach ($rows as $r) {
-                $radius = max($radius, hypot((float) $r['pos_x'] - $cx, (float) $r['pos_y'] - $cy));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $byCall = [];
+        foreach ($rows as $row) {
+            $cs = trim((string) ($row['call_sign'] ?? 'Unknown'));
+            if ($cs === '') {
+                $cs = 'Unknown';
             }
-            $radius = max(100, $radius * 1.5);
-            $zones[] = ['pos_x' => $cx, 'pos_y' => $cy, 'radius' => $radius, 'reports' => count($rows)];
+            $byCall[$cs][] = $row;
         }
+        $zones = [];
+        foreach ($byCall as $callSign => $group) {
+            $withBearing = [];
+            foreach ($group as $row) {
+                if ($row['bearing'] === null || $row['bearing'] === '') {
+                    continue;
+                }
+                $withBearing[] = $row;
+            }
+            if (count($withBearing) >= 2) {
+                $hits = [];
+                $n = count($withBearing);
+                for ($i = 0; $i < $n; $i++) {
+                    for ($j = $i + 1; $j < $n; $j++) {
+                        $pt = self::intersectBearings(
+                            (float) $withBearing[$i]['pos_x'],
+                            (float) $withBearing[$i]['pos_y'],
+                            (float) $withBearing[$i]['bearing'],
+                            (float) $withBearing[$j]['pos_x'],
+                            (float) $withBearing[$j]['pos_y'],
+                            (float) $withBearing[$j]['bearing']
+                        );
+                        if ($pt !== null) {
+                            $hits[] = $pt;
+                        }
+                    }
+                }
+                if ($hits !== []) {
+                    $cx = array_sum(array_column($hits, 0)) / count($hits);
+                    $cy = array_sum(array_column($hits, 1)) / count($hits);
+                    $spread = 80.0;
+                    foreach ($hits as $hit) {
+                        $spread = max($spread, hypot($hit[0] - $cx, $hit[1] - $cy));
+                    }
+                    $zones[] = [
+                        'call_sign' => $callSign,
+                        'kind' => 'ellipse',
+                        'pos_x' => $cx,
+                        'pos_y' => $cy,
+                        'radius' => max(80, $spread * 1.6),
+                        'reports' => count($withBearing),
+                        'last_at' => $group[0]['created_at'] ?? null,
+                    ];
+                    continue;
+                }
+            }
+            if (count($withBearing) === 1) {
+                $row = $withBearing[0];
+                $zones[] = [
+                    'call_sign' => $callSign,
+                    'kind' => 'azimuth',
+                    'pos_x' => (float) $row['pos_x'],
+                    'pos_y' => (float) $row['pos_y'],
+                    'bearing' => (float) $row['bearing'],
+                    'radius' => 0,
+                    'reports' => 1,
+                    'last_at' => $row['created_at'] ?? null,
+                ];
+            }
+        }
+
         return $zones;
+    }
+
+    /**
+     * Intersection de deux gisements Arma (degrés depuis le nord, sens horaire).
+     *
+     * @return array{0:float,1:float}|null
+     */
+    private static function intersectBearings(
+        float $x1,
+        float $y1,
+        float $b1,
+        float $x2,
+        float $y2,
+        float $b2,
+    ): ?array {
+        $r1 = deg2rad($b1);
+        $r2 = deg2rad($b2);
+        $dx1 = sin($r1);
+        $dy1 = cos($r1);
+        $dx2 = sin($r2);
+        $dy2 = cos($r2);
+        $den = ($dx1 * $dy2) - ($dy1 * $dx2);
+        if (abs($den) < 0.0001) {
+            return null;
+        }
+        $t = (($x2 - $x1) * $dy2 - ($y2 - $y1) * $dx2) / $den;
+        if ($t < 20 || $t > 12000) {
+            return null;
+        }
+        $u = (($x2 - $x1) * $dy1 - ($y2 - $y1) * $dx1) / $den;
+        if ($u < 20 || $u > 12000) {
+            return null;
+        }
+
+        return [$x1 + $dx1 * $t, $y1 + $dy1 * $t];
     }
 
     public function getIntelPhotos(int $tenantId, int $mapId): array

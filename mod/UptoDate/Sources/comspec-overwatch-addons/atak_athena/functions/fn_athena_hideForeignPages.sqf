@@ -63,6 +63,21 @@ private _keepNeedle = "";
     if ((_x select 0) isEqualTo _keep) then { _keepNeedle = _x select 1; };
 } forEach _needles;
 
+private _modeNow = "";
+if (!isNil "cTab_fnc_getSettings") then {
+    _modeNow = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;
+};
+if (_modeNow isEqualTo "DESKTOP") then {
+    {
+        private _c = _display displayCtrl _x;
+        if (!isNull _c) then {
+            _c ctrlShow false;
+            _c ctrlEnable false;
+            _c ctrlCommit 0;
+        };
+    } forEach [4660, 46600, 17000 + 2620, 17000 + 2621, 17000 + 2622];
+};
+
 if (_keep isEqualTo "") exitWith {};
 
 private _apps = _display displayCtrl (17000 + 4650);

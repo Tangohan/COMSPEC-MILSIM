@@ -41,7 +41,7 @@ private _x0 = _vx + (_vw * 0.012);
 private _y0 = _vy + (_vh * 0.36);
 _box ctrlSetPosition [_x0, _y0, _w, _h];
 _box ctrlSetBackgroundColor [0.07, 0.07, 0.07, 0.86];
-_box ctrlSetStructuredText parseText _html;
+[_box, _html] call comspec_overwatch_connect_fnc_setPlainText;
 _box ctrlEnable false;
 _box ctrlShow true;
 _box ctrlCommit 0;

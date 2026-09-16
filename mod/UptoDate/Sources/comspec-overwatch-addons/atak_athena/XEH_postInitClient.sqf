@@ -48,6 +48,42 @@ call _forceCamCapture;
 [] call comspec_overwatch_atak_athena_fnc_athena_installReachMap;
 [] call comspec_overwatch_connect_fnc_superPingInstall;
 [] call comspec_overwatch_atak_athena_fnc_athena_installMapHud;
+
+private _wrapToggle = {
+    if (isNil "cTab_fnc_showMenu_toggle") exitWith {};
+    private _cur = cTab_fnc_showMenu_toggle;
+    private _ours = missionNamespace getVariable ["COMSPEC_ATAK_ToggleFn", {}];
+    if (_cur isEqualTo _ours) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_ToggleOrig", _cur];
+    private _wrap = {
+        private _last = missionNamespace getVariable ["COMSPEC_ATAK_ToggleAt", -99];
+        if ((diag_tickTime - _last) < 0.25) exitWith { false };
+        missionNamespace setVariable ["COMSPEC_ATAK_ToggleAt", diag_tickTime, false];
+        private _open = missionNamespace getVariable ["COMSPEC_ATAK_DrawerWantOpen", false];
+        if !(_open isEqualType true) then { _open = false; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DrawerWantOpen", !_open, false];
+        uiNamespace setVariable ["COMSPEC_ATAK_DrawerOpen", !_open];
+        private _origFn = missionNamespace getVariable ["COMSPEC_ATAK_ToggleOrig", {}];
+        private _ret = _this call _origFn;
+        private _disp = displayNull;
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+            _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+        };
+        if (isNull _disp) then { _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull]; };
+        if (!isNull _disp && {!isNil "comspec_overwatch_atak_athena_fnc_athena_enforceDrawer"}) then {
+            [_disp] call comspec_overwatch_atak_athena_fnc_athena_enforceDrawer;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_log") then {
+            ["INFO", "Menu", ["fermé", "ouvert"] select (!_open)] call comspec_overwatch_connect_fnc_log;
+        };
+        _ret
+    };
+    cTab_fnc_showMenu_toggle = _wrap;
+    missionNamespace setVariable ["cTab_fnc_showMenu_toggle", _wrap];
+    missionNamespace setVariable ["COMSPEC_ATAK_ToggleFn", _wrap];
+};
+call _wrapToggle;
+{ [_wrapToggle, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];
 [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 1] call CBA_fnc_waitAndExecute;
 [{ [] call comspec_overwatch_atak_athena_fnc_athena_installBftLabels; }, [], 3] call CBA_fnc_waitAndExecute;

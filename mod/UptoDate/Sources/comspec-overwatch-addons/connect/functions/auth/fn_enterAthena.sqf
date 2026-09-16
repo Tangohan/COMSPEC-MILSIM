@@ -6,7 +6,7 @@ if (!hasInterface) exitWith {};
 
 private _d = uiNamespace getVariable ["COMSPEC_AthenaAuth_Display", displayNull];
 if (!isNull _d) then {
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#7aa89a'>Ouverture du canal poste…</t>";
+    [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7aa89a'>Ouverture du canal poste…</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _steam = if (!isNull player) then { getPlayerUID player } else { "" };
@@ -30,7 +30,7 @@ if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
 };
 
 if (!_opened && {!isNull _d}) then {
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#e8b84a'>Canal poste encore refusé — reconnectez-vous ou utilisez un nouveau code Appairer.</t>";
+    [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#e8b84a'>Canal poste encore refusé — reconnectez-vous ou utilisez un nouveau code Appairer.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 closeDialog 1;

@@ -53,9 +53,11 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
         self::assertStringContainsString('uiSleep 2.2;', $submit);
         self::assertStringContainsString('UploadSseNoteAttachment', $submit);
         self::assertStringContainsString('StageCapture', $submit);
+        self::assertStringContainsString('WaitUntilImageFileStable', $cs);
         self::assertStringContainsString('ReadStableImageBytes', $cs);
-        self::assertStringContainsString('new ByteArrayContent(bytes)', $cs);
+        self::assertStringContainsString('new StreamContent(fileStream)', $cs);
         self::assertStringContainsString('multipart.Add(fileContent, "piece", fileName)', $cs);
+        self::assertStringNotContainsString('new ByteArrayContent(bytes)', $cs);
         self::assertStringContainsString('UploadKind = "sse_note"', $cs);
         self::assertStringContainsString('ProcessSseNoteAttachmentUploadAsync', $cs);
         self::assertStringContainsString('IsSseNoteCaptureName', $cs);

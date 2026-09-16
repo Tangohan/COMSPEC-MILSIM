@@ -138,6 +138,8 @@ class AdminAtakRoleplayController
 
             'intel_scramble_enabled' => isset($body['intel_scramble_enabled']),
             'intel_scramble_reviewed' => true,
+            'link_via_relays' => isset($body['link_via_relays']),
+            'link_via_relays_reviewed' => true,
         ];
 
         if ($config['latency_max_ms'] < $config['latency_min_ms']) {
@@ -153,6 +155,11 @@ class AdminAtakRoleplayController
         }
 
         $this->atakConfigRepo->updateRoleplayConfig($tenantId, $config);
+        try {
+            \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+                ->markCompleted($tenantId, 'ATAK_LINK_VIA_RELAYS_V1', (int) (Session::get('user_id') ?? 0) ?: null);
+        } catch (\Throwable) {
+        }
 
         Session::flash('success', 'Configuration roleplay enregistrée');
         return Response::redirect($this->roleplayUrl());
@@ -187,6 +194,8 @@ class AdminAtakRoleplayController
             'zones_config' => null,
             'intel_scramble_enabled' => false,
             'intel_scramble_reviewed' => true,
+            'link_via_relays' => false,
+            'link_via_relays_reviewed' => true,
         ];
 
         $this->atakConfigRepo->updateRoleplayConfig($tenantId, $defaultConfig);

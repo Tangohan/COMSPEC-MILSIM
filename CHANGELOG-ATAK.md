@@ -11,6 +11,86 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Athena 1.0.140 — 2026-09-16
+
+### Correction — Plus de recadrage de la carte
+
+Athena ne déplace plus et ne redimensionne plus la carte ni le menu d’applications. Le menu s’affiche ou se masque seulement, à la demande du chevron. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.139 — 2026-09-16
+
+### Correction — Menu qui reste ouvert
+
+Le menu d’applications s’ouvre et reste ouvert jusqu’au chevron. Il ne clignote plus. Sortir le curseur du cadre du téléphone n’immobilise plus l’écran. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Liaison 2.0.42 — 2026-09-16
+
+### Correction — Photographies sans surcharge
+
+L’envoi d’une photographie volumineuse depuis le téléphone n’encombre plus la mémoire du jeu. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.138 — 2026-09-16
+
+### Correction — Menu qui ne revient plus tout seul
+
+Le menu d’applications ne s’ouvre plus tout seul juste après l’écran. Il reste fermé jusqu’au chevron. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.137 — 2026-09-16
+
+### Correction — Menu vraiment fermé à l’ouverture
+
+Le menu d’applications reste fermé à chaque ouverture du téléphone, même si la session précédente l’avait laissé ouvert. Seul le chevron l’ouvre et le referme. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.136 — 2026-09-16
+
+### Correction — Menu fermé à l’ouverture
+
+Le menu d’applications n’est plus déployé dès l’ouverture du téléphone. Le chevron l’ouvre et le referme. La carte ne se rétrécit plus à chaque ouverture. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.135 — 2026-09-16
+
+### Amélioration — Affichage IceMan
+
+Les pages du téléphone, les cartouches de la carte, la barre de liaison et l’alerte du poste reprennent l’affichage IceMan : couleurs, alignement et sauts de ligne. L’identité Indicatif / Nom / Rôle reste celle du téléphone. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.134 — 2026-09-16
+
+### Correction — Pages du téléphone en texte simple
+
+Messagerie, connexion, comptes-rendus, réglages, wiki et retours d’écran s’affichent en texte simple. Plus de mise en forme fragile à l’ouverture d’une page.
+
+---
+
+## Athena 1.0.133 — 2026-09-16
+
+### Correction — Textes de la carte
+
+Les cartouches grille / identité, la barre de liaison et l’alerte du poste s’affichent en texte simple. Plus de mise en forme fragile qui fermait le jeu à l’ouverture du téléphone.
+
+---
+
+## Athena 1.0.132 — 2026-09-16
+
+### Correction — Menu dans l’écran du téléphone
+
+Le menu d’applications reste dans l’écran, à droite de la carte. Il ne flotte plus à côté du boîtier. Refermé, il disparaît et la carte reprend toute la largeur. Sur l’accueil, l’encart d’identité ne recouvre plus le bureau. Relancez Arma complètement après la mise à jour.
+
+---
+
 ## Athena 1.0.131 — 2026-09-15
 
 ### Correction — Menu d’applications

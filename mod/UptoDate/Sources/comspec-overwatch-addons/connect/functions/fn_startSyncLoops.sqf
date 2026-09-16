@@ -343,6 +343,14 @@ private _fnc_addPoll = {
 }, 90, []] call CBA_fnc_addPerFrameHandler;
 
 [{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_syncAtakRelays;
+    }, [], "syncAtakRelays"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 12, []] call CBA_fnc_addPerFrameHandler;
+
+[{
     private _ctab = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
     private _hub = uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull];
     private _web = uiNamespace getVariable ["COMSPEC_WebBrowser_Display", displayNull];

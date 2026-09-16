@@ -25,7 +25,9 @@ private _fncClean = {
     params ["_v"];
     if (!(_v isEqualType "")) then { _v = str _v; };
     _v = trim _v;
-    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else { _v }
+    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else {
+        (_v splitString "<>&%") joinString ""
+    }
 };
 
 private _cs = "";

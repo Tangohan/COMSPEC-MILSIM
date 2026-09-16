@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -85,7 +85,7 @@ final class AtakCommsBackToChannelsAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_Comms_Menu', $cfg);
         self::assertStringContainsString('athena_commsFooter', $cfg);
-        self::assertStringContainsString('1.0.131', $cfg);
+        self::assertStringContainsString('1.0.140', $cfg);
 
         self::assertStringContainsString('liste des canaux', strtolower($bug));
         self::assertStringContainsString('Live Feed', $bug);

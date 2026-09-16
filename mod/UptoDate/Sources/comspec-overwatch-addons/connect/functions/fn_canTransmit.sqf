@@ -74,6 +74,16 @@ if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive"
 };
 if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
 
+if (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) then {
+    if !([] call comspec_overwatch_connect_fnc_isNearLiveRelay) then {
+        _result set ["can_transmit", false];
+        _result set ["mode", "none"];
+        _result set ["reason", "no_relay"];
+        _result set ["link_state", "offline"];
+    };
+};
+if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
+
 if (!(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connection_ok", true]}) exitWith {
     if (_requireFull) then {
         _result set ["can_transmit", false];

@@ -23,7 +23,7 @@ _box ctrlSetBackgroundColor [0.06, 0.06, 0.06, 0.94];
 if (_show) then {
     [_sel, _mk] call comspec_overwatch_atak_athena_fnc_setInspector;
     private _html = missionNamespace getVariable ["COMSPEC_MapInspectorHtml", ""];
-    _box ctrlSetStructuredText parseText _html;
+    [_box, _html] call comspec_overwatch_connect_fnc_setPlainText;
 };
 _box ctrlEnable false;
 _box ctrlShow _show;

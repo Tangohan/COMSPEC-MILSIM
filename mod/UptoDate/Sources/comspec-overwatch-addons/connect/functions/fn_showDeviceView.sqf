@@ -22,11 +22,11 @@ private _syncColor = switch (_state) do {
 
 private _statusCtrl = _display displayCtrl 9312;
 if (!isNull _statusCtrl) then {
-    _statusCtrl ctrlSetStructuredText parseText format [
+    [_statusCtrl, format [
         "<t align='right' size='0.6'><t color='%1'>●</t>  <t color='#d0dce8'>%2</t></t>",
         _syncColor,
         _syncLabel
-    ];
+    ]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 [_display, "profile"] call comspec_overwatch_connect_fnc_deviceToggleView;

@@ -38,7 +38,7 @@ if (!isNull _status) then {
     } else {
         "Préférez le code du portail. Sinon, validez avec Steam déjà lié au profil."
     };
-    _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#6a7c90'>%1</t>", _hint];
+    [_status, format ["<t align='center' size='0.55' color='#6a7c90'>%1</t>", _hint]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 [] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;

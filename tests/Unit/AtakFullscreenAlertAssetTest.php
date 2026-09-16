@@ -40,13 +40,17 @@ final class AtakFullscreenAlertAssetTest extends TestCase
         self::assertStringContainsString('cTab_Android_dlg', $paint);
         self::assertStringContainsString('cTab_Android_dsp', $paint);
         self::assertStringContainsString('ALERTE POSTE', $paint);
+        self::assertStringContainsString('setPlainText', $paint);
+        self::assertStringContainsString('RscStructuredText', $paint);
+        self::assertStringContainsString('Iceman_ReportsDetailText', $paint);
+        self::assertStringNotContainsString('ctrlSetStructuredText parseText', $paint);
         self::assertStringContainsString('COMSPEC_ATAK_FullMapRect', $paint);
         self::assertStringContainsString('4660', $paint);
         self::assertStringContainsString('splitString "%"', $paint);
         self::assertStringContainsString('ctrlSetZOrder', $paint);
         self::assertStringContainsString('COMSPEC_Athena_FsAlert', $show);
         self::assertStringContainsString('COMSPEC_Athena_FsAlert', $layout);
-        self::assertStringContainsString('1.0.131', $cfg);
+        self::assertStringContainsString('1.0.140', $cfg);
         self::assertStringContainsString('NOTIFY_FULL', $notify);
         self::assertStringContainsString('athena_showFullscreenAlert', $notify);
         self::assertStringContainsString('NOTIFY_FULL', $receive);

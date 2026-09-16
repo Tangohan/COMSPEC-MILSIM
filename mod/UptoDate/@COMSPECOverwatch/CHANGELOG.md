@@ -1,11 +1,35 @@
-COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.131 — 15/09/2026
+﻿COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.140 / Extension 2.0.43 — 16/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
-[b]Publication : 15/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.131 · Extension 2.0.41
+[b]Publication : 16/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.140 · Extension 2.0.43
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
 [/quote]
+
+[h2]Correction — Plus de recadrage de la carte[/h2]
+Athena ne déplace plus et ne redimensionne plus la carte ni le menu d’applications. Le menu s’affiche ou se masque seulement, à la demande du chevron.
+
+[h2]Correction — Menu qui reste ouvert[/h2]
+Le menu d'applications s'ouvre et reste ouvert jusqu'au chevron. Sortir le curseur du cadre n'immobilise plus l'écran.
+
+[h2]Correction — Photographies sans surcharge[/h2]
+L’envoi d’une photographie volumineuse depuis le téléphone n’encombre plus la mémoire du jeu.
+
+[h2]Correction — Menu qui ne revient plus tout seul[/h2]
+Le menu d’applications ne s’ouvre plus tout seul juste après l’écran. Il reste fermé jusqu’au chevron.
+
+[h2]Amélioration — Affichage IceMan[/h2]
+Les pages du téléphone, les cartouches de la carte, la barre de liaison et l’alerte du poste reprennent l’affichage IceMan : couleurs, alignement et sauts de ligne. L’identité Indicatif / Nom / Rôle reste celle du téléphone.
+
+[h2]Correction — Pages du téléphone en texte simple[/h2]
+Messagerie, connexion, comptes-rendus, réglages et wiki s’affichent en texte simple. Le jeu ne se ferme plus à l’ouverture d’une page.
+
+[h2]Correction — Textes de la carte[/h2]
+Les cartouches de la carte, la barre de liaison et l’alerte du poste s’affichent en texte simple. Le jeu ne se ferme plus à cause de cet affichage.
+
+[h2]Correction — Menu dans l’écran du téléphone[/h2]
+Le menu d’applications reste dans l’écran, à droite de la carte. Il ne flotte plus à côté du boîtier. Refermé, la carte reprend toute la largeur.
 
 [h2]Correction — Menu d’applications[/h2]
 Le menu d’applications se déroule de nouveau : retour et défilement sont utilisables. Les boutons du bas restent sous le menu, pas sur la carte.
@@ -28,7 +52,7 @@ Depuis un canal, le retour ramène à la liste des canaux.
 [h2]Nouveau — Overwatch Beta et téléphone[/h2]
 Alerte plein écran, tâche de groupe, points à atteindre et ralliement depuis le poste. Cap, vitesse, altitude et liaison du terrain s’affichent sur la fiche contact.
 
-Après installation : journal → connect v1.5.78 et Extension 2.0.41.
+Après installation : journal → connect v1.5.78 et Extension 2.0.43.
 
 ---
 

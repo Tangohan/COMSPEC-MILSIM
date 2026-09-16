@@ -36,7 +36,7 @@ private _html = "<t font='RobotoCondensedBold' size='0.58' color='#5EC7F2'>Couch
         _lab
     ];
 } forEach _labels;
-_panel ctrlSetStructuredText parseText _html;
+[_panel, _html] call comspec_overwatch_connect_fnc_setPlainText;
 _panel ctrlEnable false;
 _panel ctrlShow _show;
 _panel ctrlCommit 0;

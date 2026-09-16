@@ -68,6 +68,40 @@ final class AtakTerrainSightTest extends TestCase
         self::assertSame(AtakTerrainSight::GAP_MESSAGE, $out['gap_message']);
     }
 
+    public function testLineOfSightIsMaskedByBuildingNotRelief(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::lineOfSight($grid, 50, 50, 400, 50, 1.6, 0.0, [
+            ['x' => 200, 'y' => 50, 'height' => 20, 'width' => 12, 'z' => 80, 'kind' => 'building'],
+        ]);
+        self::assertTrue($out['ok']);
+        self::assertSame(AtakTerrainSight::VERDICT_MASKED, $out['verdict']);
+        self::assertSame('Masqué par un bâtiment', $out['verdict_label']);
+        self::assertSame('Masqué par un bâtiment', $out['cause_label']);
+        self::assertNotNull($out['obstruction']);
+        $false = array_values(array_filter($out['samples'], static fn ($s) => empty($s['clear'])));
+        self::assertNotSame([], $false);
+    }
+
+    public function testLineOfSightIsMaskedByCover(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::lineOfSight($grid, 50, 50, 400, 50, 1.6, 0.0, [
+            ['x' => 220, 'y' => 50, 'height' => 16, 'width' => 10, 'z' => 80, 'kind' => 'forest'],
+        ]);
+        self::assertSame('Masqué par un couvert', $out['verdict_label']);
+        self::assertSame('Masqué par un couvert', $out['cause_label']);
+    }
+
+    public function testLineOfSightNotesUnsurveyedCoverWhenSceneEmpty(): void
+    {
+        $grid = $this->ridgeGrid();
+        $out = AtakTerrainSight::lineOfSight($grid, 0, 250, 500, 250, 1.6, 0.0, []);
+        self::assertSame('Masqué par le relief', $out['verdict_label']);
+        self::assertStringContainsString('Couverts non relevés', (string) $out['detail']);
+        self::assertFalse($out['scene_ready']);
+    }
+
     public function testPolylineNeedsTwoPoints(): void
     {
         $grid = $this->flatGrid(80);

@@ -41,4 +41,4 @@ private _lines = [
     "<t size='0.72' color='#A0A0A0'>Choisissez un outil ci-dessous. L’écran s’ouvre dans le même téléphone.</t>"
 ];
 
-_body ctrlSetStructuredText parseText (_lines joinString "<br/>");
+[_body, (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;

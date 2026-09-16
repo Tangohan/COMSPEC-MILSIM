@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakSceneObjectRepository;
 use App\Repositories\AtakTerrainRepository;
 use App\Services\Tactical\AtakTerrainCartography;
 use App\Services\Tactical\AtakTerrainMath;
@@ -25,9 +26,11 @@ final class AtakTerrainApiController
     public function __construct(
         private ?AtakTerrainRepository $terrain = null,
         private ?AtakTerrainCartography $cartography = null,
+        private ?AtakSceneObjectRepository $scene = null,
     ) {
         $this->terrain ??= new AtakTerrainRepository();
         $this->cartography ??= new AtakTerrainCartography($this->terrain);
+        $this->scene ??= new AtakSceneObjectRepository();
     }
 
     public function show(Request $request, array $params = []): Response
@@ -241,8 +244,34 @@ final class AtakTerrainApiController
         }
         $obsEye = $this->num($body['observer_eye_m'] ?? $obs['eye_m'] ?? 1.6) ?? 1.6;
         $tgtEye = $this->num($body['target_eye_m'] ?? $tgt['eye_m'] ?? 0) ?? 0.0;
+        $pad = 80.0;
+        $minX = min($x0, $x1) - $pad;
+        $maxX = max($x0, $x1) + $pad;
+        $minY = min($y0, $y1) - $pad;
+        $maxY = max($y0, $y1) + $pad;
+        $mapId = $this->mapId($request);
+        $scene = [];
+        try {
+            $scene = $this->scene->visible($tenantId, $mapId, $minX, $minY, $maxX, $maxY, 400);
+        } catch (\Throwable) {
+            $scene = [];
+        }
 
-        return Response::json(AtakTerrainSight::lineOfSight($grid, $x0, $y0, $x1, $y1, $obsEye, $tgtEye));
+        $out = AtakTerrainSight::lineOfSight($grid, $x0, $y0, $x1, $y1, $obsEye, $tgtEye, $scene);
+        try {
+            $counts = $this->scene->countByKind($tenantId, $mapId);
+            $surveyed = ((int) ($counts['building'] ?? 0) + (int) ($counts['forest'] ?? 0)) > 0;
+            $out['scene_ready'] = $surveyed;
+            if (!$surveyed) {
+                $detail = trim((string) ($out['detail'] ?? ''));
+                if ($detail !== '' && !str_contains($detail, 'Couverts')) {
+                    $out['detail'] = $detail . ' Couverts non relevés sur ce tronçon.';
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return Response::json($out);
     }
 
     /**

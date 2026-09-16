@@ -26,6 +26,6 @@ final class AtakMultiMapQueueAssetTest extends TestCase
         self::assertStringContainsString('str _mapId', $connect);
         self::assertStringContainsString('comspec_overwatch_map_id', $pre);
         self::assertStringContainsString('versionStr = "1.5.78"', $cfgC);
-        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.41"/', $dll);
+        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.43"/', $dll);
     }
 }

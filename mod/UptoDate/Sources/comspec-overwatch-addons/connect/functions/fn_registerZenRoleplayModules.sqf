@@ -81,4 +81,31 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
     _icon
 ] call zen_custom_modules_fnc_register;
 
+[
+    "COMSPEC Roleplay",
+    "Relais ATAK (mât)",
+    {
+        params ["_pos", "_obj"];
+        if (!(_pos isEqualType []) || {count _pos < 2}) then { _pos = [0, 0, 0]; };
+        if (!isNull _obj) then { _pos = getPosATL _obj; };
+        [
+            "Relais ATAK",
+            [
+                ["EDIT", ["Nom", "Libellé visible au poste."], ["Relais ATAK"]],
+                ["SLIDER", ["Portée (m)", "Rayon dans lequel un téléphone peut s’appuyer sur ce mât."], [50, 8000, 2000, 0]]
+            ],
+            {
+                params ["_values", "_args"];
+                _values params ["_name", "_range"];
+                _args params ["_pos"];
+                if (!(_name isEqualType "") || {_name isEqualTo ""}) then { _name = "Relais ATAK"; };
+                [_pos, _range, _name] call comspec_overwatch_connect_fnc_placeAtakRelay;
+            },
+            {},
+            [_pos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\map\markers\military\flag_CA.paa"
+] call zen_custom_modules_fnc_register;
+
 missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesRegistered", true];

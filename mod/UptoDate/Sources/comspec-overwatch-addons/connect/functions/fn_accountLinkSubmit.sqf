@@ -71,7 +71,7 @@ private _steamManual = if ((trim _steamIn) isNotEqualTo "") then {
 private _setStatus = {
     params ["_text", ["_color", "#8aa0b4"]];
     if (!isNull _status) then {
-        _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='%1'>%2</t>", _color, _text];
+        [_status, format ["<t align='center' size='0.55' color='%1'>%2</t>", _color, _text]] call comspec_overwatch_connect_fnc_setPlainText;
     } else {
         ["COMSPEC_Info", [_text]] call comspec_overwatch_connect_fnc_showNotification;
     };

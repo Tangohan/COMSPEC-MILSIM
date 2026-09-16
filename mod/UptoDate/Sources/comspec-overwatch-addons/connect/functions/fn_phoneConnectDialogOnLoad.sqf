@@ -34,7 +34,7 @@ private _fnc_setCenter = {
 
         _c ctrlShow true;
 
-        _c ctrlSetStructuredText parseText _html;
+        [_c, _html] call comspec_overwatch_connect_fnc_setPlainText;
 
     };
 
@@ -174,25 +174,25 @@ private _fnc_setCenter = {
 
     if (!isNull _codeCtrl) then {
 
-        _codeCtrl ctrlSetStructuredText parseText format [
+        [_codeCtrl, format [
 
             "<t align='center' size='0.95' font='RobotoCondensedBold' color='#ffffff'>%1</t>",
 
             _code
 
-        ];
+        ]] call comspec_overwatch_connect_fnc_setPlainText;
 
     };
 
     if (!isNull _urlCtrl) then {
 
-        _urlCtrl ctrlSetStructuredText parseText format [
+        [_urlCtrl, format [
 
             "<t align='center' size='0.48' color='#c8e8ff'>%1</t>",
 
             _connectUrl
 
-        ];
+        ]] call comspec_overwatch_connect_fnc_setPlainText;
 
     };
 

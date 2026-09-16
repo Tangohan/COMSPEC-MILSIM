@@ -268,7 +268,7 @@ if (!isNull _overlay) then {
     if (_captionPlace isEqualTo "center" || {_tex isEqualTo "" && {_title isNotEqualTo "" || {_detail isNotEqualTo ""}}}) then {
         _overlay ctrlSetPosition _pos;
         _overlay ctrlSetBackgroundColor [0.027, 0.039, 0.055, 0.72];
-        _overlay ctrlSetStructuredText parseText "";
+        [_overlay, ""] call comspec_overwatch_connect_fnc_setPlainText;
         _overlay ctrlEnable false;
         _overlay ctrlShow true;
         _overlay ctrlCommit 0;
@@ -306,7 +306,7 @@ if (!isNull _caption) then {
             _caption ctrlSetPosition [_px, _cy, _pw, _ch];
             _caption ctrlSetBackgroundColor [0.027, 0.039, 0.055, 0.82];
         };
-        _caption ctrlSetStructuredText parseText _line;
+        [_caption, _line] call comspec_overwatch_connect_fnc_setPlainText;
         _caption ctrlEnable false;
         _caption ctrlShow true;
         _caption ctrlCommit 0;

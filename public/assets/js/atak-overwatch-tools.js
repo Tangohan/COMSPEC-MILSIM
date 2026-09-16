@@ -12,7 +12,7 @@
   var photoLayers = [];
   var scaleCtl = null;
   var chrome = {
-    uiFont: 'plex',
+    uiFont: 'inter',
     labelFont: 'mono',
     uiSize: '13',
     grid: false,
@@ -30,6 +30,7 @@
   function esc(value) { var api = ow(); return api ? api.escapeHtml(value) : String(value == null ? '' : value); }
 
   var FONTS = {
+    inter: 'Inter, "IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
     plex: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
     grotesk: '"Space Grotesk", "IBM Plex Sans", sans-serif',
     noto: '"Noto Sans", "IBM Plex Sans", sans-serif',
@@ -51,11 +52,11 @@
 
   function applyFonts() {
     var root = document.documentElement;
-    var ui = FONTS[chrome.uiFont] || FONTS.plex;
+    var ui = FONTS[chrome.uiFont] || FONTS.inter;
     var labels = FONTS[chrome.labelFont] || FONTS.mono;
     root.style.setProperty('--ow-sans', ui);
     if (chrome.uiFont === 'grotesk') root.style.setProperty('--ow-display', FONTS.grotesk);
-    else root.style.setProperty('--ow-display', chrome.uiFont === 'mono' ? FONTS.mono : '"Space Grotesk", "IBM Plex Sans", sans-serif');
+    else root.style.setProperty('--ow-display', ui);
     root.style.setProperty('--ow-label-font', labels);
     root.style.fontSize = (Number(chrome.uiSize) || 13) + 'px';
     root.setAttribute('data-ow-ui-font', chrome.uiFont);
@@ -165,11 +166,18 @@
     clearRange();
     var group = L.layerGroup();
     (radii || [100, 250, 500]).forEach(function (m) {
-      L.circle(ll, { radius: m, color: '#e7b14d', weight: 1, dashArray: '4 4', fillOpacity: 0.03, interactive: false }).addTo(group);
-      var edge = api.worldToLatLng(api.latLngToWorld(ll).x + m, api.latLngToWorld(ll).y);
+      var w = api.latLngToWorld(ll);
+      var pts = [];
+      var i;
+      for (i = 0; i < 36; i += 1) {
+        var ang = (i / 36) * Math.PI * 2;
+        pts.push(api.worldToLatLng(w.x + Math.sin(ang) * m, w.y + Math.cos(ang) * m));
+      }
+      L.polygon(pts, { color: '#e7b14d', weight: 1, dashArray: '4 4', fillOpacity: 0.03, interactive: false }).addTo(group);
+      var edge = api.worldToLatLng(w.x + m, w.y);
       L.marker(edge, {
         interactive: false,
-        icon: L.divIcon({ className: 'ow-ring-label', html: '<span>' + m + ' m</span>' })
+        icon: L.divIcon({ className: 'ow-ring-label', html: '<span>' + m + ' m</span>', iconSize: [64, 18], iconAnchor: [32, 9] })
       }).addTo(group);
     });
     group.addTo(api.map);

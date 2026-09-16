@@ -45,4 +45,4 @@ if (_draftBody isNotEqualTo "") then {
 _lines pushBack "";
 _lines pushBack "<t size='0.62' color='#8A90A8'>Une fiche n’identifie personne et ne vaut pas preuve : elle consigne un constat daté et situé, que l’analyste exploite ensuite.</t>";
 
-_body ctrlSetStructuredText parseText (_lines joinString "<br/>");
+[_body, (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;

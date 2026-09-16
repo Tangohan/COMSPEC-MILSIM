@@ -46,11 +46,11 @@ if (!isNull _legacy) then { _legacy closeDisplay 1; };
                 if (!isNull _group) then {
                     private _cap = _group controlsGroupCtrl 9853;
                     if (!isNull _cap) then {
-                        _cap ctrlSetStructuredText parseText "<t align='center'>Aucune diapositive disponible.</t>";
+                        [_cap, "<t align='center'>Aucune diapositive disponible.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
                     };
                     private _idx = _group controlsGroupCtrl 9851;
                     if (!isNull _idx) then {
-                        _idx ctrlSetStructuredText parseText "<t align='center'>— / —</t>";
+                        [_idx, "<t align='center'>— / —</t>"] call comspec_overwatch_connect_fnc_setPlainText;
                     };
                 };
             };

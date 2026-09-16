@@ -76,11 +76,11 @@ if (!isNull _brandCtrl) then {
     } else {
         if (_syncing) then { "Synchronisation en cours" } else { "Connexion et appairage — interface native" };
     };
-    _brandCtrl ctrlSetStructuredText parseText format [
+    [_brandCtrl, format [
         "<t align='center' size='0.78' color='#e8f4f0'>%1</t><br/><t align='center' size='0.55' color='#7aa89a'>%2</t>",
         _brandTitle,
         _brandSub
-    ];
+    ]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 // URL de branding HTML du portail ignorée volontairement (_brand) — pas de navigateur embarqué.
 
@@ -187,7 +187,7 @@ private _errTxt = switch (_err) do {
 };
 
 if (_ready) then {
-    (_d displayCtrl 9416) ctrlSetStructuredText parseText "<t align='center' font='RobotoCondensedBold' size='1.05' color='#7dffb0'>ENVIRONNEMENT PRÊT</t>";
+    [(_d displayCtrl 9416), "<t align='center' font='RobotoCondensedBold' size='1.05' color='#7dffb0'>ENVIRONNEMENT PRÊT</t>"] call comspec_overwatch_connect_fnc_setPlainText;
     private _lines = [];
     if (!(_name isEqualTo "")) then {
         _lines pushBack format ["<t align='center' size='0.95' color='#e8f4f0'>%1</t>", _name];
@@ -213,11 +213,11 @@ if (_ready) then {
     if (!(_steamNotice isEqualTo "")) then {
         _lines pushBack format ["<t align='center' size='0.62' color='#e8d48a'>%1</t>", _steamNotice];
     };
-    (_d displayCtrl 9413) ctrlSetStructuredText parseText (_lines joinString "<br/>");
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#7dffb0'>● Environnement opérationnel prêt</t>";
+    [(_d displayCtrl 9413), (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;
+    [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7dffb0'>● Environnement opérationnel prêt</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 } else {
     if (_syncing) then {
-        (_d displayCtrl 9416) ctrlSetStructuredText parseText "<t align='center' font='RobotoCondensedBold' size='1.0' color='#e8f4f0'>AUTHENTIFICATION RÉUSSIE</t>";
+        [(_d displayCtrl 9416), "<t align='center' font='RobotoCondensedBold' size='1.0' color='#e8f4f0'>AUTHENTIFICATION RÉUSSIE</t>"] call comspec_overwatch_connect_fnc_setPlainText;
         private _line = {
             params ["_done", "_label"];
             if (_done) then { format ["<t color='#7dffb0'>✓ %1</t>", _label] } else { format ["<t color='#5a7080'>○ %1</t>", _label] };
@@ -250,13 +250,13 @@ if (_ready) then {
             _tenant,
             if (_cs isEqualTo "") then { "Opérateur" } else { format ["Opérateur • %1", _cs] }
         ];
-        (_d displayCtrl 9413) ctrlSetStructuredText parseText _txt;
-        (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#7aa89a'>● Synchronisation en cours</t>";
+        [(_d displayCtrl 9413), _txt] call comspec_overwatch_connect_fnc_setPlainText;
+        [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7aa89a'>● Synchronisation en cours</t>"] call comspec_overwatch_connect_fnc_setPlainText;
     };
 };
 
 if (!(_errTxt isEqualTo "")) then {
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText format ["<t align='center' size='0.52' color='#e8b84a'>%1</t>", _errTxt];
+    [(_d displayCtrl 9410), format ["<t align='center' size='0.52' color='#e8b84a'>%1</t>", _errTxt]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _foot = if (_modMin isEqualTo "") then {
@@ -269,7 +269,7 @@ private _foot = if (_modMin isEqualTo "") then {
         _modMin
     ]
 };
-(_d displayCtrl 9430) ctrlSetStructuredText parseText _foot;
+[(_d displayCtrl 9430), _foot] call comspec_overwatch_connect_fnc_setPlainText;
 
 if (_syncing && {!_ready}) then {
     [{ [] call comspec_overwatch_connect_fnc_pollAuth; }, [], 0.35] call CBA_fnc_waitAndExecute;

@@ -36,7 +36,7 @@ private _html = format [
 ];
 _c ctrlSetPosition [_vx + (_vw * 0.012), _vy + _vh - (_vh * 0.045), (_vw * 0.5) min 0.32, (_vh * 0.04) max 0.018];
 _c ctrlSetBackgroundColor [0, 0, 0, 0.55];
-_c ctrlSetStructuredText parseText _html;
+[_c, _html] call comspec_overwatch_connect_fnc_setPlainText;
 _c ctrlEnable false;
 _c ctrlShow true;
 _c ctrlCommit 0;

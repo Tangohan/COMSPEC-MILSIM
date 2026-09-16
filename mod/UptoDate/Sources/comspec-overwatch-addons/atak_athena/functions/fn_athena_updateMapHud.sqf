@@ -9,7 +9,13 @@
 */
 if (!hasInterface) exitWith {};
 
-private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+private _disp = displayNull;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+    _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+};
+if (isNull _disp) then {
+    _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+};
 if (isNull _disp) then {
     _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
 };
@@ -48,10 +54,26 @@ private _fncHide = {
 if (isNull _disp) exitWith {
     uiNamespace setVariable ["COMSPEC_MapUI_MouseWired", nil];
     uiNamespace setVariable ["COMSPEC_ATAK_FullMapRect", nil];
-    missionNamespace setVariable ["COMSPEC_MapUI_ChromeCleared", false, false];
-    if (missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false]) then {
-        missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", false, false];
-        diag_log "[COMSPEC][MAP] Map display closed";
+    if (isNil "cTabIfOpen") then {
+        private _missSince = missionNamespace getVariable ["COMSPEC_ATAK_IfaceMissSince", -1];
+        if (_missSince < 0) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_IfaceMissSince", diag_tickTime, false];
+            _missSince = diag_tickTime;
+        };
+        if ((diag_tickTime - _missSince) > 1.5) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DrawerWantOpen", false, false];
+            missionNamespace setVariable ["COMSPEC_ATAK_IfaceTok", "", false];
+            uiNamespace setVariable ["COMSPEC_ATAK_DrawerOpen", false];
+            uiNamespace setVariable ["COMSPEC_ATAK_DrawerSession", nil];
+            missionNamespace setVariable ["COMSPEC_MapUI_ChromeCleared", false, false];
+            if (missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false]) then {
+                missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", false, false];
+                diag_log "[COMSPEC][MAP] Map display closed";
+                if (!isNil "comspec_overwatch_connect_fnc_log") then {
+                    ["INFO", "MAP", "Téléphone refermé"] call comspec_overwatch_connect_fnc_log;
+                };
+            };
+        };
     };
 };
 
@@ -64,34 +86,6 @@ if (_overlayOn) exitWith {
     };
 };
 
-// BCE construit le fond du tiroir avant ses boutons. Sur certaines reprises de
-// mission / mises a jour du PBO, le display existe donc avec un grand panneau
-// noir mais aucun menu. Rehydrater une fois par instance de display, et non a
-// chaque tick du HUD (ATAK_getAPPs recree les controles du tiroir).
-// Différé hors du 1er frame d’ouverture : évite un hitch / voile laiteux.
-private _hydratedDisplay = uiNamespace getVariable ["COMSPEC_ATAK_MenuHydratedDisplay", displayNull];
-if (_hydratedDisplay isNotEqualTo _disp) then {
-    uiNamespace setVariable ["COMSPEC_ATAK_MenuHydratedDisplay", _disp];
-    if (!isNil "BCE_fnc_ATAK_getAPPs") then {
-        [{
-            params ["_d"];
-            private _cur = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-            if (isNull _cur) then { _cur = uiNamespace getVariable ["cTab_Android_dsp", displayNull]; };
-            if (isNull _cur || {_cur isNotEqualTo _d}) exitWith {};
-            private _menu = _cur displayCtrl 4660;
-            if (!isNull _menu) then {
-                private _q = _menu getVariable ["Animation_Queue", []];
-                if ((_q findIf {true}) > -1) exitWith {};
-                if ((count (allControls _menu)) > 8) exitWith {};
-            };
-            if (!isNil "BCE_fnc_ATAK_getAPPs") then {
-                [true, true] call BCE_fnc_ATAK_getAPPs;
-                diag_log "[COMSPEC][MAP] ATAK application menu hydrated (deferred)";
-            };
-        }, [_disp], 0.85] call CBA_fnc_waitAndExecute;
-    };
-};
-
 private _mode = "";
 if (!isNil "cTab_fnc_getSettings") then {
     _mode = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;
@@ -99,6 +93,14 @@ if (!isNil "cTab_fnc_getSettings") then {
 };
 if (_mode isNotEqualTo "BFT" && {_mode isNotEqualTo ""}) exitWith {
     [_disp] call _fncHide;
+    {
+        private _c = _disp displayCtrl _x;
+        if (!isNull _c) then {
+            _c ctrlShow false;
+            _c ctrlEnable false;
+            _c ctrlCommit 0;
+        };
+    } forEach [4660, 46600, 17000 + 2620, 17000 + 2621, 17000 + 2622];
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
         [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
     };
@@ -129,7 +131,15 @@ if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith {
 
 if (!(missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false])) then {
     missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", true, false];
+    missionNamespace setVariable ["COMSPEC_ATAK_IfaceMissSince", -1, false];
     diag_log "[COMSPEC][MAP] Map display detected";
+    if (!isNil "comspec_overwatch_connect_fnc_log") then {
+        ["INFO", "MAP", "Téléphone ouvert"] call comspec_overwatch_connect_fnc_log;
+    };
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_enforceDrawer") then {
+    [_disp] call comspec_overwatch_atak_athena_fnc_athena_enforceDrawer;
 };
 
 (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
@@ -205,9 +215,19 @@ private _nativeIdentity = [];
 private _fncEnsure = {
     params ["_d", "_idc", "_class"];
     private _c = _d displayCtrl _idc;
-    if (isNull _c || {ctrlParent _c isNotEqualTo _d}) then {
-        if (!isNull _c) then { ctrlDelete _c; };
+    private _wantSt = ((_class find "Structured") >= 0) || {_class isEqualTo "Iceman_ReportsDetailText"} || {_class isEqualTo "COMSPEC_ATAK_StructuredText"};
+    if (!isNull _c) then {
+        private _have = toLower (ctrlClassName _c);
+        if (ctrlParent _c isNotEqualTo _d || {_wantSt && {(_have find "structured") < 0}}) then {
+            ctrlDelete _c;
+            _c = controlNull;
+        };
+    };
+    if (isNull _c) then {
         _c = _d ctrlCreate [_class, _idc];
+        if (isNull _c && {_wantSt}) then {
+            _c = _d ctrlCreate ["RscStructuredText", _idc];
+        };
         if (isNil {missionNamespace getVariable "COMSPEC_MAP_OverlayCreatedLogged"}) then {
             missionNamespace setVariable ["COMSPEC_MAP_OverlayCreatedLogged", true, false];
             diag_log "[COMSPEC][MAP] Creating operator overlay";
@@ -221,10 +241,12 @@ private _fncEnsure = {
     _c
 };
 
-private _heading = [_disp, _idcHeading, "RscStructuredText"] call _fncEnsure;
-private _cursorBox = [_disp, _idcCursor, "RscStructuredText"] call _fncEnsure;
-private _unitBox = [_disp, _idcUnit, "RscStructuredText"] call _fncEnsure;
-private _acctBanner = [_disp, _idcAcct, "RscStructuredText"] call _fncEnsure;
+private _stClass = "RscStructuredText";
+if (isClass (configFile >> "Iceman_ReportsDetailText")) then { _stClass = "Iceman_ReportsDetailText"; };
+private _heading = [_disp, _idcHeading, _stClass] call _fncEnsure;
+private _cursorBox = [_disp, _idcCursor, _stClass] call _fncEnsure;
+private _unitBox = [_disp, _idcUnit, _stClass] call _fncEnsure;
+private _acctBanner = [_disp, _idcAcct, _stClass] call _fncEnsure;
 private _zoomIn = [_disp, _idcZoomIn, "RscButton"] call _fncEnsure;
 private _zoomOut = [_disp, _idcZoomOut, "RscButton"] call _fncEnsure;
 
@@ -259,6 +281,7 @@ private _cursorY = _visY + _visH - _boxH - _pad;
 if (_boxW < 0.04 || {_boxH < 0.04}) exitWith { [_disp] call _fncHide; };
 _cursorBox ctrlSetPosition [_cursorX, _cursorY, _boxW, _boxH];
 _cursorBox ctrlSetBackgroundColor _bgPanel;
+_cursorBox ctrlSetTextColor _cyan;
 _cursorBox ctrlEnable false;
 _cursorBox ctrlSetFade 0;
 
@@ -300,6 +323,7 @@ if ((_idX + _idW) > (_cursorX - 0.008)) then {
 if (_idW < 0.04 || {_idH < 0.04}) exitWith { [_disp] call _fncHide; };
 _unitBox ctrlSetPosition [_idX, _idY, _idW, _idH];
 _unitBox ctrlSetBackgroundColor _bgPanel;
+_unitBox ctrlSetTextColor _cyan;
 _unitBox ctrlSetFade 0;
 _unitBox ctrlEnable false;
 
@@ -336,11 +360,22 @@ private _veh = vehicle _player;
 private _playerPos = getPosASLVisual _veh;
 
 private _cursorPos = [];
-if (!isNil "cTabMapCursorPos" && {cTabMapCursorPos isEqualType []} && {(count cTabMapCursorPos) >= 2}) then {
-    _cursorPos = +cTabMapCursorPos;
+private _mp = getMousePosition;
+private _mouseInMap = false;
+if ((_mp isEqualType []) && {(count _mp) >= 2}) then {
+    _mouseInMap = ((_mp select 0) >= _mx) && {(_mp select 0) <= (_mx + _mw)} && {(_mp select 1) >= _my} && {(_mp select 1) <= (_my + _mh)};
 };
-if (_cursorPos isEqualTo []) then {
-    _cursorPos = _mapCtrl ctrlMapScreenToWorld getMousePosition;
+if (!_mouseInMap) then {
+    if (!isNil "cTabMapCursorPos" && {cTabMapCursorPos isEqualType []} && {(count cTabMapCursorPos) >= 2}) then {
+        _cursorPos = +cTabMapCursorPos;
+    };
+} else {
+    if (!isNil "cTabMapCursorPos" && {cTabMapCursorPos isEqualType []} && {(count cTabMapCursorPos) >= 2}) then {
+        _cursorPos = +cTabMapCursorPos;
+    };
+    if (_cursorPos isEqualTo []) then {
+        _cursorPos = _mapCtrl ctrlMapScreenToWorld _mp;
+    };
 };
 if (!(_cursorPos isEqualType []) || {(count _cursorPos) < 2}) then {
     _cursorPos = +_playerPos;
@@ -381,9 +416,7 @@ private _fncCleanTxt = {
     if (!(_v isEqualType "")) then { _v = str _v; };
     _v = trim _v;
     if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) exitWith { "" };
-    _v = (_v splitString "&" joinString "&amp;");
-    _v = (_v splitString "<" joinString "&lt;");
-    _v = (_v splitString ">" joinString "&gt;");
+    _v = (_v splitString "<>&%") joinString "";
     _v
 };
 
@@ -416,8 +449,11 @@ if (_fnTxt isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_getUnitRole"})
 };
 if (_fnTxt isEqualTo "" || {(toLower _fnTxt) in ["operator", "operateur"]}) then { _fnTxt = "—"; };
 
+_cs = [_cs] call _fncCleanTxt;
+if (_cs isEqualTo "") then { _cs = "—"; };
+
 private _unitHtml = format [
-    "<t font='EtelkaMonospacePro' size='0.58' color='#5EC7F2' align='left'>" +
+    "<t font='EtelkaMonospacePro' size='0.64' color='#5EC7F2' align='left'>" +
     "INDICATIF  %1<br/>" +
     "NOM       %2<br/>" +
     "GROUPE    %3<br/>" +
@@ -430,8 +466,10 @@ private _unitHtml = format [
     [_playerPos] call _fncGrid
 ];
 
-_cursorBox ctrlSetStructuredText parseText _cursorHtml;
-_unitBox ctrlSetStructuredText parseText _unitHtml;
+_cursorBox ctrlCommit 0;
+_unitBox ctrlCommit 0;
+[_cursorBox, _cursorHtml] call comspec_overwatch_connect_fnc_setPlainText;
+[_unitBox, _unitHtml] call comspec_overwatch_connect_fnc_setPlainText;
 
 {
     _x ctrlShow true;

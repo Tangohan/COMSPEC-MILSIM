@@ -2385,6 +2385,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/scene/ingest', [\App\Controllers\Api\AtakSceneApiController::class, 'ingest']);
     $router->post('/api/atak/sync/snapshot', [\App\Controllers\Api\AtakSyncApiController::class, 'snapshot']);
     $router->get('/api/atak/sync/roster', [\App\Controllers\Api\AtakSyncApiController::class, 'roster']);
+    $router->get('/api/atak/ingest-traffic', [AtakApiController::class, 'ingestTraffic']);
+    $router->get('/api/atak/relays', [AtakApiController::class, 'relaysIndex']);
+    $router->post('/api/atak/relays', [AtakApiController::class, 'relaysStore']);
     $router->get('/api/atak/geo/places', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'placesIndex']);
     $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
     $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);

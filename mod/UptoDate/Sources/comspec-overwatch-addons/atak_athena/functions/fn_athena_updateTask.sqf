@@ -108,7 +108,7 @@ if (!isNull _sum) then {
             _pending
         ]
     };
-    _sum ctrlSetStructuredText parseText _txt;
+    [_sum, _txt] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 if (_selKeep >= 0) then {
@@ -118,7 +118,7 @@ if (_selKeep >= 0) then {
         _list lbSetCurSel 0;
     } else {
         if (!isNull _detail) then {
-            _detail ctrlSetStructuredText parseText "<t color='#8aa0b4'>Les ordres du commandement apparaîtront ici dès leur réception.</t>";
+            [_detail, "<t color='#8aa0b4'>Les ordres du commandement apparaîtront ici dès leur réception.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
             _detail ctrlCommit 0;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];

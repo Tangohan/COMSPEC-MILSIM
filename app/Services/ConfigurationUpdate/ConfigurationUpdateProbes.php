@@ -707,6 +707,27 @@ final class ConfigurationUpdateProbes
         }
     }
 
+    public function hasAtakLinkViaRelaysReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT atak_link_via_relays_reviewed FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+            $v = $st->fetchColumn();
+            if ($v === false) {
+                return false;
+            }
+
+            return (int) $v === 1;
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
     public function hasAtakMarkerDetectionReviewed(int $tenantId): bool
     {
         if ($tenantId < 1) {

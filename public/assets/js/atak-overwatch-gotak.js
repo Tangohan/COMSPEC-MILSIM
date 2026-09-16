@@ -263,42 +263,6 @@
     });
   }
 
-  var SAT_CATALOG = [
-    { group: 'Communications', name: 'Relais tactique' },
-    { group: 'Navigation', name: 'Constellation GNSS' },
-    { group: 'Observation', name: 'Imageur optique' },
-    { group: 'Météo', name: 'Météo théâtre' }
-  ];
-
-  function openSats() {
-    var api = ow();
-    if (!api) return;
-    var html = '<label class="ow-search"><span>⌕</span><input id="ow-sat-q" placeholder="Rechercher un groupe…"></label>' +
-      SAT_CATALOG.map(function (row) {
-        return '<div class="ow-event ow-sat-row" data-sat="' + esc(row.name.toLowerCase() + ' ' + row.group.toLowerCase()) + '"><span>' +
-          esc(row.name) + '</span><span class="ow-tag">' + esc(row.group) + '</span></div>';
-      }).join('') +
-      '<p class="ow-help" id="ow-sat-pass">Recherche d’une source de passages…</p>';
-    api.openDrawer('ESPACE', 'SATELLITES', html);
-    var q = document.getElementById('ow-sat-q');
-    if (q) q.addEventListener('input', function () {
-      var needle = q.value.toLowerCase();
-      document.querySelectorAll('.ow-sat-row').forEach(function (row) {
-        row.hidden = needle !== '' && String(row.getAttribute('data-sat') || '').indexOf(needle) === -1;
-      });
-    });
-    var status = document.getElementById('ow-sat-pass');
-    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json', { mode: 'cors' }).then(function (response) {
-      if (!response.ok) throw new Error('no');
-      return response.json();
-    }).then(function (payload) {
-      if (!Array.isArray(payload) || !payload.length) throw new Error('empty');
-      status.textContent = 'Source orbitale joignable. Les passages restent indicatifs, aucun horaire n’est inventé.';
-    }).catch(function () {
-      status.textContent = 'Source orbitale indisponible. Aucun passage n’est affiché.';
-    });
-  }
-
   function openLogs() {
     var api = ow();
     if (!api) return;
@@ -403,6 +367,10 @@
           '<div class="ow-event"><span>Cap</span><strong>' + cap + '°</strong></div>' +
           '<div class="ow-event"><span>Temps</span><strong>' + esc(eta) + '</strong></div>';
       }
+      if (window.__owInterceptLine) {
+        try { api.map.removeLayer(window.__owInterceptLine); } catch (e4) {}
+      }
+      window.__owInterceptLine = L.polyline([la, lb], { color: '#5b8def', weight: 2, dashArray: '6 4' }).addTo(api.map);
     });
   }
 
@@ -429,7 +397,10 @@
 
   function openPanel(name) {
     if (name === 'osint') openOsint();
-    if (name === 'sats') openSats();
+    if (name === 'sats') {
+      toast('Aucun catalogue satellitaire n’est fourni. Rien n’est inventé.');
+      return;
+    }
     if (name === 'logs') openLogs();
     if (name === 'calcs') openCalcs();
     if (name === 'intercept') openIntercept();
@@ -447,6 +418,8 @@
   }
 
   function applyReplay(pct) {
+    var source = document.getElementById('ow-replay-source');
+    if (source && source.value === 'mission') return;
     var api = ow();
     if (!api) return;
     var live = document.getElementById('ow-replay-live');

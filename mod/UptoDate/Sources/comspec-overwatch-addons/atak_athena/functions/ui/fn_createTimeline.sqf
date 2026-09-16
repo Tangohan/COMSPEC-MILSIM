@@ -29,7 +29,7 @@ private _bits = [];
     };
     _bits pushBack format ["<t size='0.52' color='%1'>%2</t>", _col, _txt];
 } forEach (_ev select [(count _ev) - 4, 4]);
-_box ctrlSetStructuredText parseText (_bits joinString "   ·   ");
+[_box, (_bits joinString "   ·   ")] call comspec_overwatch_connect_fnc_setPlainText;
 _box ctrlEnable false;
 _box ctrlShow _show;
 _box ctrlCommit 0;

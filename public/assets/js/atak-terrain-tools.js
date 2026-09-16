@@ -171,19 +171,40 @@ window.ATAKTerrainTools = (function () {
       markers.push(mk);
     });
     if (vertices.length >= 2) {
+      var cut = lastResult && lastResult.obstruction && lastResult.obstruction.x != null
+        ? latLngFromWorld(lastResult.obstruction.x, lastResult.obstruction.y)
+        : null;
       lineUnder = window.L.polyline(vertices, {
         color: '#0f172a',
         weight: 6,
         opacity: 0.8,
         interactive: false
       }).addTo(lyr);
-      line = window.L.polyline(vertices, {
-        color: mode === 'los' ? '#38bdf8' : '#34d399',
-        weight: 3,
-        dashArray: mode === 'los' ? '7 5' : null,
-        opacity: 1,
-        interactive: false
-      }).addTo(lyr);
+      if (mode === 'los' && cut) {
+        line = window.L.layerGroup([
+          window.L.polyline([vertices[0], cut], {
+            color: '#38bdf8',
+            weight: 3,
+            opacity: 1,
+            interactive: false
+          }),
+          window.L.polyline([cut, vertices[vertices.length - 1]], {
+            color: lastResult && lastResult.verdict === 'masked' ? '#f87171' : '#38bdf8',
+            weight: 3,
+            dashArray: '6 6',
+            opacity: 1,
+            interactive: false
+          })
+        ]).addTo(lyr);
+      } else {
+        line = window.L.polyline(vertices, {
+          color: mode === 'los' ? '#38bdf8' : '#34d399',
+          weight: 3,
+          dashArray: mode === 'los' ? '7 5' : null,
+          opacity: 1,
+          interactive: false
+        }).addTo(lyr);
+      }
     }
     if (lastResult && lastResult.obstruction && lastResult.obstruction.x != null) {
       var ll = latLngFromWorld(lastResult.obstruction.x, lastResult.obstruction.y);
