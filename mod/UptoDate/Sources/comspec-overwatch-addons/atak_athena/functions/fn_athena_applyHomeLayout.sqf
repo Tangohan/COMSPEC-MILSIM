@@ -27,12 +27,18 @@ private _fncPos = {
     if (isNull _c) exitWith { controlNull };
     if (!(_rect isEqualType []) || {(count _rect) < 4}) exitWith { _c };
     _rect params ["_rx", "_ry", "_rw", "_rh"];
-    if (!(_rw isEqualType 0) || {_rw != _rw} || {_rw < 0.001}) then { _rw = 0.001; };
-    if (!(_rh isEqualType 0) || {_rh != _rh} || {_rh < 0.001}) then { _rh = 0.001; };
-    _c ctrlSetPosition [_rx, _ry, _rw, _rh];
-    _c ctrlShow _show;
-    _c ctrlEnable _show;
-    _c ctrlCommit 0;
+    if (!_show) then {
+        _c ctrlShow false;
+        _c ctrlEnable false;
+        _c ctrlCommit 0;
+    } else {
+        if (!(_rw isEqualType 0) || {_rw != _rw} || {_rw <= 0}) then { _rw = 0.04; };
+        if (!(_rh isEqualType 0) || {_rh != _rh} || {_rh <= 0}) then { _rh = 0.04; };
+        _c ctrlSetPosition [_rx, _ry, _rw, _rh];
+        _c ctrlShow true;
+        _c ctrlEnable true;
+        _c ctrlCommit 0;
+    };
     _c
 };
 

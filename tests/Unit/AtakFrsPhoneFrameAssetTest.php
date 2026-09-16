@@ -20,9 +20,6 @@ final class AtakFrsPhoneFrameAssetTest extends TestCase
         $show = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_intelNoteShow.sqf'
         );
-        $desk = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_installDesktopShortcut.sqf'
-        );
         $cfg = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/config.cpp'
         );
@@ -47,8 +44,6 @@ final class AtakFrsPhoneFrameAssetTest extends TestCase
         self::assertStringContainsString('createDisplay "COMSPEC_IntelNote_Dialog"', $show);
         self::assertStringContainsString('intelNoteApplyGeometry', $show);
 
-        self::assertStringContainsString('FRS/FRM', $desk);
-        self::assertStringContainsString('atak_note', $desk);
         self::assertStringContainsString('FRS/FRM', $cfg);
         self::assertStringContainsString('Rédiger une fiche', $note);
         self::assertStringContainsString('AtakNote', $post);

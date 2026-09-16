@@ -1,6 +1,6 @@
 /*
     BOOT → restaure la session jeu, sinon Steam, sinon clé Appairer (profil Arma).
-    Pas de fenêtre de connexion ici (tuile Connexion Athena en secours).
+    Pas de fenêtre de connexion ici (menu Connexion Athena en secours).
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AuthInitStarted", false]) exitWith {};

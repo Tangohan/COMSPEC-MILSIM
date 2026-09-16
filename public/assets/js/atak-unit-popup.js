@@ -21,6 +21,27 @@ window.ATAKUnitPopup = (function () {
       .replace(/"/g, '&quot;');
   }
 
+  function maskIpForDisplay(raw) {
+    var ip = String(raw || '').trim();
+    if (!ip) return '';
+    var v4 = ip.match(/(\d{1,3}(?:\.\d{1,3}){3})/);
+    if (v4) {
+      var octets = v4[1].split('.');
+      return octets[0] + '.' + octets[1] + '.' + octets[2] + '.·';
+    }
+    if (ip.indexOf(':') >= 0) {
+      var cleaned = ip.replace(/^::ffff:/i, '');
+      var v4mapped = cleaned.match(/(\d{1,3}(?:\.\d{1,3}){3})/);
+      if (v4mapped) {
+        var mapped = v4mapped[1].split('.');
+        return mapped[0] + '.' + mapped[1] + '.' + mapped[2] + '.·';
+      }
+      var groups = ip.split(':').filter(function (part) { return part !== ''; });
+      if (groups.length >= 2) return groups.slice(0, 2).join(':') + ':·';
+    }
+    return ip.length > 10 ? ip.slice(0, 8) + '·' : ip;
+  }
+
   function parseExtra(u) {
     if (!u) return {};
     try {
@@ -421,7 +442,7 @@ window.ATAKUnitPopup = (function () {
       (bftId ? row('Identifiant de suivi', bftId) : '') +
       (function () {
         var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || '';
-        return ip ? row('Adresse réseau', String(ip)) : '';
+        return ip ? row('Adresse réseau', maskIpForDisplay(ip)) : '';
       }()) +
       row('Affiliation', affLabel) +
       (side && !affLabel ? row('Camp', String(side)) : '') +

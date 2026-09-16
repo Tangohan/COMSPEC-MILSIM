@@ -42,6 +42,10 @@ final class AtakAerialAssetTest extends TestCase
         self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $js);
         self::assertStringContainsString('maps/3/3/{z}/{x}/{y}.webp', $js);
         self::assertStringContainsString("tileSize: 381", $js);
+        self::assertStringContainsString('Math.floor((1 - (south + 1e-6) / W) * nn) + 1', $js);
+        self::assertStringContainsString('Math.floor((1 - (south + 1e-6) / W) * n) + 1', $js);
+        self::assertStringNotContainsString('/ W * nn) + 1;', $js);
+        self::assertStringNotContainsString('/ W * n) + 1);', $js);
         self::assertStringNotContainsString('crossOrigin', $js);
 
         self::assertStringContainsString('ATAKAerial.attach', $map);

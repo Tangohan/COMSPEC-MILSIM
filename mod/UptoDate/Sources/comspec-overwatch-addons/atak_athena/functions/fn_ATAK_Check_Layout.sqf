@@ -51,6 +51,14 @@ if (!isNil "_group" && {_group isEqualType controlNull}) then { _appGroup = _gro
 
 if (isNull _disp || {isNull _bgGroup}) exitWith {};
 
+// Pendant une alerte plein écran : ne pas animer carte / tiroir (largeur négative).
+private _fsAlert = missionNamespace getVariable ["COMSPEC_Athena_FsAlert", []];
+if ((_fsAlert isEqualType []) && {(count _fsAlert) >= 3} && {diag_tickTime <= (_fsAlert select 2)}) exitWith {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
+
 private _onSwitch = _bgGroup getVariable ["Anim_SwitchTool", false];
 private _onToggle = _bgGroup getVariable ["Anim_ToggleMenu", _ifaceInit];
 private _fadeIgnore = _bgGroup getVariable ["Anim_fadeIgnore", _ifaceInit];
@@ -59,6 +67,15 @@ if (_onToggle) then { _bgGroup setVariable ["Anim_ToggleMenu", false]; };
 if (_fadeIgnore) then { _bgGroup setVariable ["Anim_fadeIgnore", false]; };
 
 (ctrlPosition _bg) params ["", "", "_bgW", "_bgH"];
+if (!(_bgW isEqualType 0) || {_bgW != _bgW} || {_bgW < 0.04}) then { _bgW = 0; };
+if (!(_bgH isEqualType 0) || {_bgH != _bgH} || {_bgH < 0.04}) then { _bgH = 0; };
+private _storedMenu = uiNamespace getVariable ["COMSPEC_ATAK_MenuSize", []];
+_storedMenu params [["_smW", 0], ["_smH", 0]];
+if (_bgW < 0.04) then { _bgW = _smW; };
+if (_bgH < 0.04) then { _bgH = _smH; };
+if (_bgW < 0.04) then { _bgW = 0.16; };
+if (_bgH < 0.04) then { _bgH = 0.36; };
+uiNamespace setVariable ["COMSPEC_ATAK_MenuSize", [_bgW, _bgH]];
 
 private _targetMapName = [_dispName, "mapType"] call cTab_fnc_getSettings;
 private _mapTypes = [_dispName, "mapTypes"] call cTab_fnc_getSettings;
@@ -68,55 +85,37 @@ private _targetMapCtrl = _disp displayCtrl _targetMapIDC;
 if (isNull _targetMapCtrl) exitWith {};
 
 (ctrlPosition _targetMapCtrl) params ["_MapX", "_MapY", "_MapW", "_MapH"];
+if (!(_MapX isEqualType 0) || {_MapX != _MapX}) then { _MapX = 0; };
+if (!(_MapY isEqualType 0) || {_MapY != _MapY}) then { _MapY = 0; };
 if (!(_MapW isEqualType 0) || {_MapW != _MapW}) then { _MapW = 0; };
 if (!(_MapH isEqualType 0) || {_MapH != _MapH}) then { _MapH = 0; };
 if (_MapW < 0.04 || {_MapH < 0.04}) exitWith {};
 
-// Cadre téléphone figé : carte actuelle + tiroir, ou dernier cadre valide.
-private _phoneW = _MapW;
-private _phoneX = _MapX;
-if (!isNull _bgGroup && {ctrlShown _bgGroup}) then {
-    private _mw = (ctrlPosition _bgGroup) param [2, 0];
-    if ((_mw isEqualType 0) && {_mw > 0.04}) then {
-        _phoneW = _MapW + _mw;
-    };
+// Cadre téléphone = largeur carte menu fermé. Jamais carte + tiroir (ils se recouvrent).
+if (!_showMenu && {_MapW > 0.12}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_FullMapRect", [_disp, [_MapX, _MapY, _MapW, _MapH]]];
 };
 private _stored = uiNamespace getVariable ["COMSPEC_ATAK_FullMapRect", []];
 _stored params [["_storedDisp", displayNull], ["_rect", []]];
-if (_storedDisp isEqualTo _disp && {(count _rect) >= 4}) then {
+if (_showMenu && {_storedDisp isEqualTo _disp} && {(count _rect) >= 4}) then {
     private _sW = _rect param [2, 0];
-    if ((_sW isEqualType 0) && {_sW > _phoneW}) then {
-        _phoneX = _rect param [0, _MapX];
-        _phoneW = _sW;
-        if (((_rect param [3, 0]) > 0.04)) then { _MapH = _rect param [3, _MapH]; };
+    if ((_sW isEqualType 0) && {_sW > 0.12}) then {
+        _MapX = _rect param [0, _MapX];
+        _MapY = _rect param [1, _MapY];
+        _MapW = _sW;
+        private _sH = _rect param [3, 0];
+        if ((_sH isEqualType 0) && {_sH > 0.04}) then { _MapH = _sH; };
     };
 };
-if (_phoneW > 0.12) then {
-    uiNamespace setVariable ["COMSPEC_ATAK_FullMapRect", [_disp, [_phoneX, _MapY, _phoneW, _MapH]]];
+
+// Comme BCE : 3/5 carte ouverte, 5/5 fermée, à partir de la largeur du fond de menu.
+private _result = (_bgW / 2) * ([5, 3] select _showMenu);
+if (!(_result isEqualType 0) || {_result != _result} || {_result < 0.08}) then {
+    _result = ([_MapW, (_MapW * 0.6) max 0.08] select _showMenu) max 0.08;
 };
 
-_MapX = _phoneX;
-_bgW = (_phoneW * 2/5) max 0.04;
-_bgH = _MapH max 0.04;
-private _result = if (_showMenu) then { (_phoneW * 3/5) max 0.08 } else { _phoneW max 0.08 };
-if (_result != _result) then { _result = 0.2; };
-if (_bgW != _bgW) then { _bgW = 0.08; };
-
-private _busy = false;
-{
-    if (!isNull _x) then {
-        private _q = _x getVariable ["Animation_Queue", []];
-        if ((_q findIf {true}) > -1) then { _busy = true; };
-    };
-} forEach [_targetMapCtrl, _bgGroup];
-
-private _curMapW = (ctrlPosition _targetMapCtrl) param [2, 0];
-private _useInstant = _ifaceInit || _busy;
-if (!_useInstant && {_onToggle || _onSwitch}) then {
-    if (_curMapW < 0.08 || {_result < 0.08}) then { _useInstant = true; };
-} else {
-    if ((abs (_curMapW - _result)) < 0.012) then { _useInstant = true; };
-};
+// Jamais de ressort : largeur interpolée vers 0 = plantage moteur.
+private _useInstant = true;
 
 [
     _targetMapCtrl,
@@ -169,13 +168,9 @@ if (!isNull _tool) then {
     _x params ["_c", ["_ignoreFade", true], ["_skip", false]];
     if (isNull _c || {_skip}) then { continue };
 
-    private _endW = [0.001, _bgW] select _showMenu;
-    if (_endW < 0.001) then { _endW = 0.001; };
-    private _endPos = [_MapX + _result, _POSY, _endW, _bgH];
-    if (!_ignoreFade) then {
-        // 5e canal = opacité cible (1 menu ouvert, 0 menu fermé)
-        _endPos pushBack ([1, 0] select _showMenu);
-    };
+    // Largeur toujours celle du menu (jamais 0). Hauteur non touchée (scroll + retour).
+    private _endW = _bgW max 0.04;
+    private _endPos = [_MapX + _result, _POSY, _endW];
 
     [
         _c,
@@ -190,6 +185,19 @@ if (!isNull _tool) then {
         !_onToggle && {!(_lineNum < 0)} && {!_onSwitch}
     ]
 ];
+
+// Pied photos / recherche / radio : collé sous le tiroir, même largeur, jamais nulle.
+private _toolBnt = _disp displayCtrl 46600;
+if (!isNull _toolBnt) then {
+    private _dockH = (ctrlPosition _toolBnt) param [3, 0];
+    if (!(_dockH isEqualType 0) || {_dockH != _dockH} || {_dockH < 0.02}) then { _dockH = 0.02; };
+    private _dockY = _POSY + _bgH - _dockH;
+    [
+        _toolBnt,
+        [[], [_MapX + _result, _dockY, _bgW max 0.04]],
+        ["ATAK_Toggle_Spring", _useInstant, 1200, [3]]
+    ] call BCE_fnc_Anim_CustomOffset;
+};
 
 [_disp] spawn {
     uiSleep 0.05;

@@ -45,6 +45,8 @@ Hors cause retenue pour ces plantages du 15 septembre :
   empiler un second ressort.
 - Les cartouches carte et le bandeau Messagerie refusent une taille invalide.
 - L’écran d’accueil refuse aussi une taille nulle lorsqu’un bouton est masqué.
+- Pendant une alerte plein écran, le calage carte / tiroir n’anime plus
+  (voir `2026-09-15-atak-alerte-plein-ecran.md` et `2026-09-15-atak-tiroir-scroll-crash.md`).
 
 ## Fichiers touchés
 
@@ -53,11 +55,11 @@ Hors cause retenue pour ces plantages du 15 septembre :
 - `atak_athena/functions/fn_athena_commsFooter.sqf`
 - `atak_athena/functions/fn_athena_taskFooter.sqf`
 - `atak_athena/functions/fn_athena_applyHomeLayout.sqf`
-- `atak_athena/config.cpp` (Athena 1.0.127)
+- `atak_athena/config.cpp` (Athena 1.0.129)
 
 ## Vérification
 
-1. Quitter Arma complètement, recharger le pack (Athena 1.0.127).
+1. Quitter Arma complètement, recharger le pack (Athena 1.0.129).
 2. Ouvrir le téléphone, laisser la synchro tourner plusieurs minutes.
 3. Ouvrir et fermer la carte, changer d’application, ouvrir Messagerie,
    passer par l’écran d’accueil.

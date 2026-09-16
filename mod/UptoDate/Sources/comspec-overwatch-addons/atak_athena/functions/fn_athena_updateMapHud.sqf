@@ -57,7 +57,12 @@ if (isNull _disp) exitWith {
 
 private _overlay = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Ctrl", controlNull];
 private _overlayOn = !isNull _overlay && {ctrlShown _overlay} && {ctrlParent _overlay isEqualTo _disp};
-if (_overlayOn) exitWith { [_disp] call _fncHide; };
+if (_overlayOn) exitWith {
+    [_disp] call _fncHide;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
 
 // BCE construit le fond du tiroir avant ses boutons. Sur certaines reprises de
 // mission / mises a jour du PBO, le display existe donc avec un grand panneau
@@ -77,6 +82,7 @@ if (_hydratedDisplay isNotEqualTo _disp) then {
             if (!isNull _menu) then {
                 private _q = _menu getVariable ["Animation_Queue", []];
                 if ((_q findIf {true}) > -1) exitWith {};
+                if ((count (allControls _menu)) > 8) exitWith {};
             };
             if (!isNil "BCE_fnc_ATAK_getAPPs") then {
                 [true, true] call BCE_fnc_ATAK_getAPPs;
@@ -91,7 +97,12 @@ if (!isNil "cTab_fnc_getSettings") then {
     _mode = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;
     if (!(_mode isEqualType "")) then { _mode = ""; };
 };
-if (_mode isNotEqualTo "BFT" && {_mode isNotEqualTo ""}) exitWith { [_disp] call _fncHide; };
+if (_mode isNotEqualTo "BFT" && {_mode isNotEqualTo ""}) exitWith {
+    [_disp] call _fncHide;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
 
 private _mapCtrl = controlNull;
 if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
@@ -109,7 +120,12 @@ if (isNull _mapCtrl) then {
         if (!isNull _c && {ctrlShown _c}) exitWith { _mapCtrl = _c; };
     } forEach [1201, 1202, 16, 18201, 18202, 17016];
 };
-if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith { [_disp] call _fncHide; };
+if (isNull _mapCtrl || {!ctrlShown _mapCtrl}) exitWith {
+    [_disp] call _fncHide;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
 
 if (!(missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false])) then {
     missionNamespace setVariable ["COMSPEC_MAP_HudOpenLogged", true, false];
@@ -117,8 +133,18 @@ if (!(missionNamespace getVariable ["COMSPEC_MAP_HudOpenLogged", false])) then {
 };
 
 (ctrlPosition _mapCtrl) params ["_mx", "_my", "_mw", "_mh"];
-if (!(_mw isEqualType 0) || {_mw != _mw} || {_mw < 0.08}) exitWith { [_disp] call _fncHide; };
-if (!(_mh isEqualType 0) || {_mh != _mh} || {_mh < 0.08}) exitWith { [_disp] call _fncHide; };
+if (!(_mw isEqualType 0) || {_mw != _mw} || {_mw < 0.08}) exitWith {
+    [_disp] call _fncHide;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
+if (!(_mh isEqualType 0) || {_mh != _mh} || {_mh < 0.08}) exitWith {
+    [_disp] call _fncHide;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
+    };
+};
 
 // Carte visible : le tiroir d'apps (4660) recouvre le bord droit si on
 // s'aligne sur ctrlPosition brute. Les cartouches restent à gauche du tiroir.
@@ -417,6 +443,15 @@ _zoomIn ctrlShow false;
 _zoomOut ctrlShow false;
 _zoomIn ctrlCommit 0;
 _zoomOut ctrlCommit 0;
+
+private _fsHud = missionNamespace getVariable ["COMSPEC_Athena_FsAlert", []];
+if ((_fsHud isEqualType []) && {(count _fsHud) >= 3} && {diag_tickTime <= (_fsHud select 2)}) then {
+    {
+        _x ctrlShow false;
+        _x ctrlEnable false;
+        _x ctrlCommit 0;
+    } forEach (_nativeIdentity + [_heading, _cursorBox, _unitBox, _acctBanner, _zoomIn, _zoomOut]);
+};
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIUpdate") then {
     // Chrome 88500+ : mapUIDestroy depuis mapUIUpdate (pas de rail ni menu clic droit).

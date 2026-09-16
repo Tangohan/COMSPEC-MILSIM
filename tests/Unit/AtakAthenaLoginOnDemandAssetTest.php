@@ -46,14 +46,14 @@ final class AtakAthenaLoginOnDemandAssetTest extends TestCase
         self::assertStringNotContainsString('openLogin', $logout);
         self::assertStringContainsString('createDisplay "COMSPEC_AthenaAuth_Dialog"', $open);
         self::assertStringContainsString('jamais au démarrage', $open);
-        self::assertStringContainsString('Connexion<br/>Athena', $desk);
-        self::assertStringContainsString('"login"', $desk);
-        self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $desk);
+        self::assertStringContainsString('ctrlDelete', $desk);
+        self::assertStringContainsString('desktopShortcutsDef', $desk);
+        self::assertStringNotContainsString('Connexion<br/>Athena', $desk);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $ace);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $page);
         self::assertStringNotContainsString('accountLinkShow', $ace);
         self::assertStringNotContainsString('athena_showLinkDialog', $page);
-        self::assertStringContainsString('tuile Connexion Athena', $wait);
+        self::assertStringContainsString('menu d’applications, Connexion Athena', $wait);
         self::assertStringContainsString('diag_tickTime + 20', $wait);
         self::assertStringContainsString('loginSteam', $wait);
         self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_loginSteam', $init);

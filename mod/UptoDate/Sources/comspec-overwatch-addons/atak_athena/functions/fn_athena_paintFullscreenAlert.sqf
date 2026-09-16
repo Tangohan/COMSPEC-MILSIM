@@ -1,6 +1,7 @@
 /*
     Peint ou retire l’alerte plein écran sur le téléphone ATAK.
-    Couvre le rectangle écran du terminal — dialog ouvert ET overlay mini (dsp).
+    Couvre le cadre complet du terminal (carte + tiroir), pas seulement la carte.
+    Jamais de largeur nulle : même famille que le plantage AutoArray.
 */
 if (!hasInterface) exitWith {};
 
@@ -24,44 +25,77 @@ private _fncHideOn = {
         private _c = _d displayCtrl _x;
         if (!isNull _c) then { ctrlDelete _c; };
     } forEach [_IDC_BG, _IDC_TXT, _IDC_BTN];
+    uiNamespace setVariable ["COMSPEC_Athena_FsAlertMenuLayer", false];
 };
 
-private _fncIsPhoneRect = {
+private _fncClampRect = {
     params ["_p"];
-    if (!(_p isEqualType []) || {(count _p) < 4}) exitWith { false };
-    _p params ["", "", "_w", "_h"];
-    if (_w < (0.04 * safezoneW) || {_h < (0.04 * safezoneH)}) exitWith { false };
-    if (_w > (0.78 * safezoneW) && {_h > (0.82 * safezoneH)}) exitWith { false };
-    true
+    if (!(_p isEqualType []) || {(count _p) < 4}) exitWith { [] };
+    _p params ["_rx", "_ry", "_rw", "_rh"];
+    if (!(_rx isEqualType 0) || {_rx != _rx}) then { _rx = 0; };
+    if (!(_ry isEqualType 0) || {_ry != _ry}) then { _ry = 0; };
+    if (!(_rw isEqualType 0) || {_rw != _rw} || {_rw < 0.04}) then { _rw = 0.04; };
+    if (!(_rh isEqualType 0) || {_rh != _rh} || {_rh < 0.04}) then { _rh = 0.04; };
+    [_rx, _ry, _rw, _rh]
+};
+
+private _fncUnion = {
+    params ["_a", "_b"];
+    if (_a isEqualTo []) exitWith { _b };
+    if (_b isEqualTo []) exitWith { _a };
+    _a params ["_ax", "_ay", "_aw", "_ah"];
+    _b params ["_bx", "_by", "_bw", "_bh"];
+    private _x1 = _ax min _bx;
+    private _y1 = _ay min _by;
+    private _x2 = (_ax + _aw) max (_bx + _bw);
+    private _y2 = (_ay + _ah) max (_by + _bh);
+    private _uw = (_x2 - _x1) max 0.04;
+    private _uh = (_y2 - _y1) max 0.04;
+    [_x1, _y1, _uw, _uh]
 };
 
 private _fncScreenPos = {
     params ["_disp"];
     private _pos = [];
+
+    private _stored = uiNamespace getVariable ["COMSPEC_ATAK_FullMapRect", []];
+    _stored params [["_storedDisp", displayNull], ["_rect", []]];
+    if (_storedDisp isEqualTo _disp) then {
+        _pos = [_rect] call _fncClampRect;
+    };
+
+    private _union = [];
     private _dispName = "cTab_Android_dlg";
     if (_disp isEqualTo (uiNamespace getVariable ["cTab_Android_dsp", displayNull])) then {
         _dispName = "cTab_Android_dsp";
     };
-
-    {
-        _x params ["_idc"];
-        private _c = _disp displayCtrl _idc;
-        if (isNull _c) then { continue };
-        if (!ctrlShown _c) then { continue };
-        private _p = ctrlPosition _c;
-        if ([_p] call _fncIsPhoneRect) exitWith { _pos = _p; };
-    } forEach [[9401], [9410], [1201], [1202], [1200], [16], [18201]];
-
-    if (_pos isEqualTo [] && {!isNil "cTab_fnc_getSettings"} && {!isNil "cTab_fnc_getFromPairs"}) then {
+    if (!isNil "cTab_fnc_getSettings" && {!isNil "cTab_fnc_getFromPairs"}) then {
         private _mapName = [_dispName, "mapType"] call cTab_fnc_getSettings;
         private _mapTypes = [_dispName, "mapTypes"] call cTab_fnc_getSettings;
         private _mapIdc = [_mapTypes, _mapName] call cTab_fnc_getFromPairs;
         if (_mapIdc isEqualType 0) then {
             private _mapCtrl = _disp displayCtrl _mapIdc;
             if (!isNull _mapCtrl) then {
-                private _p = ctrlPosition _mapCtrl;
-                if ([_p] call _fncIsPhoneRect) then { _pos = _p; };
+                _union = [ctrlPosition _mapCtrl] call _fncClampRect;
             };
+        };
+    };
+    {
+        private _c = _disp displayCtrl _x;
+        if (isNull _c) then { continue };
+        if (!ctrlShown _c) then { continue };
+        private _p = [ctrlPosition _c] call _fncClampRect;
+        if (_p isEqualTo []) then { continue };
+        _union = [_union, _p] call _fncUnion;
+    } forEach [4660, 46600, 9401, 9410];
+
+    if (!(_union isEqualTo [])) then {
+        if (_pos isEqualTo []) then {
+            _pos = _union;
+        } else {
+            private _uw = _union param [2, 0];
+            private _pw = _pos param [2, 0];
+            if (_uw > (_pw + 0.01)) then { _pos = _union; };
         };
     };
 
@@ -69,12 +103,12 @@ private _fncScreenPos = {
         {
             private _c = _disp displayCtrl _x;
             if (isNull _c) then { continue };
-            private _p = ctrlPosition _c;
-            if ((_p select 2) > 0.05 && {(_p select 3) > 0.05}) exitWith { _pos = _p; };
-        } forEach [1201, 1202, 1200, 16, 18201, 9410, 4660];
+            private _p = [ctrlPosition _c] call _fncClampRect;
+            if (_p isNotEqualTo []) exitWith { _pos = _p; };
+        } forEach [1201, 1202, 1200, 16, 18201];
     };
 
-    _pos
+    [_pos] call _fncClampRect
 };
 
 private _state = missionNamespace getVariable ["COMSPEC_Athena_FsAlert", []];
@@ -90,22 +124,17 @@ private _dev = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Ctrl", controlNul
 if (!isNull _dev && {ctrlShown _dev}) exitWith {};
 
 _state params ["_issuer", "_text"];
-private _safeIssuer = [_issuer] call {
+private _fncSafe = {
     params ["_s"];
     _s = str _s;
     _s = (_s splitString "<") joinString "‹";
     _s = (_s splitString ">") joinString "›";
     _s = (_s splitString "&") joinString " et ";
+    _s = (_s splitString "%") joinString "pct";
     _s
 };
-private _safeText = [_text] call {
-    params ["_s"];
-    _s = str _s;
-    _s = (_s splitString "<") joinString "‹";
-    _s = (_s splitString ">") joinString "›";
-    _s = (_s splitString "&") joinString " et ";
-    _s
-};
+private _safeIssuer = [_issuer] call _fncSafe;
+private _safeText = [_text] call _fncSafe;
 if (_safeIssuer isEqualTo "") then { _safeIssuer = "Poste"; };
 if (_safeText isEqualTo "") then { _safeText = "Message du poste de commandement"; };
 
@@ -124,6 +153,12 @@ if (_displays isEqualTo []) exitWith {};
     private _txt = _disp displayCtrl _IDC_TXT;
     private _btn = _disp displayCtrl _IDC_BTN;
     private _needCreate = isNull _bg || {ctrlParent _bg isNotEqualTo _disp} || {isNull _txt} || {isNull _btn};
+    private _menu = _disp displayCtrl 4660;
+    private _menuShown = !isNull _menu && {ctrlShown _menu};
+    if (_menuShown && {!(uiNamespace getVariable ["COMSPEC_Athena_FsAlertMenuLayer", false])}) then {
+        _needCreate = true;
+    };
+    if (!_menuShown) then { uiNamespace setVariable ["COMSPEC_Athena_FsAlertMenuLayer", false]; };
 
     if (_needCreate) then {
         [_disp] call _fncHideOn;
@@ -140,6 +175,7 @@ if (_displays isEqualTo []) exitWith {};
         _txt ctrlAddEventHandler ["MouseButtonDown", _fncDismiss];
         _btn ctrlAddEventHandler ["ButtonClick", _fncDismiss];
         _btn ctrlSetText "FERMER";
+        if (_menuShown) then { uiNamespace setVariable ["COMSPEC_Athena_FsAlertMenuLayer", true]; };
     };
 
     _bg ctrlSetPosition _pos;
@@ -148,26 +184,31 @@ if (_displays isEqualTo []) exitWith {};
     _bg ctrlSetFade 0;
     _bg ctrlShow true;
     _bg ctrlCommit 0;
+    _bg ctrlSetZOrder 900;
 
-    private _txtH = _ph * 0.72;
-    _txt ctrlSetPosition [_px + (_pw * 0.06), _py + (_ph * 0.08), _pw * 0.88, _txtH];
-    private _titleSize = if (_ph < 0.22) then { "0.72" } else { "0.95" };
-    private _bodySize = if (_ph < 0.22) then { "0.62" } else { "0.82" };
-    _txt ctrlSetStructuredText parseText format [
-        "<t align='center' size='%1' color='#7dffb0'>ALERTE POSTE</t><br/><t align='center' size='0.62' color='#8aa0b4'>%2</t><br/><br/><t align='center' size='%3' color='#e8f4f0'>%4</t>",
-        _titleSize,
-        _safeIssuer,
-        _bodySize,
-        _safeText
-    ];
+    private _txtH = (_ph * 0.72) max 0.05;
+    private _txtW = (_pw * 0.88) max 0.04;
+    private _txtX = _px + ((_pw - _txtW) / 2);
+    private _txtY = _py + ((_ph * 0.08) max 0.01);
+    _txt ctrlSetPosition [_txtX, _txtY, _txtW, _txtH];
+    _txt ctrlSetBackgroundColor [0, 0, 0, 0];
+    private _titleSize = if (_ph < 0.22) then { "0.85" } else { "1.15" };
+    private _bodySize = if (_ph < 0.22) then { "0.70" } else { "0.92" };
+    private _html = "<t align='center' size='" + _titleSize + "' color='#7dffb0'>ALERTE POSTE</t><br/><t align='center' size='0.70' color='#8aa0b4'>" + _safeIssuer + "</t><br/><br/><t align='center' size='" + _bodySize + "' color='#e8f4f0'>" + _safeText + "</t>";
+    _txt ctrlSetStructuredText parseText _html;
     _txt ctrlEnable true;
     _txt ctrlSetFade 0;
     _txt ctrlShow true;
     _txt ctrlCommit 0;
+    _txt ctrlSetZOrder 901;
 
-    private _btnH = (_ph * 0.14) min 0.045;
-    private _btnY = _py + _ph - _btnH - (_ph * 0.05);
-    _btn ctrlSetPosition [_px + (_pw * 0.18), _btnY, _pw * 0.64, _btnH max 0.022];
+    private _btnH = ((_ph * 0.14) min 0.05) max 0.028;
+    private _btnW = (_pw * 0.64) max 0.08;
+    private _btnX = _px + ((_pw - _btnW) / 2);
+    private _btnY = _py + _ph - _btnH - ((_ph * 0.05) max 0.008);
+    _btn ctrlSetPosition [_btnX, _btnY, _btnW, _btnH];
     _btn ctrlShow true;
+    _btn ctrlEnable true;
     _btn ctrlCommit 0;
+    _btn ctrlSetZOrder 902;
 } forEach _displays;

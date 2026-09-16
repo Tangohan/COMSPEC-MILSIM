@@ -66,7 +66,8 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('[COMSPEC][MAP]', $upd);
         self::assertStringContainsString('[COMSPEC][MAP]', $install);
         self::assertStringNotContainsString('forEach [46600', $upd);
-        self::assertStringNotContainsString('46600', $layout);
+        self::assertStringContainsString('displayCtrl 46600', $layout);
+        self::assertStringContainsString('_bgW max 0.04', $layout);
         self::assertStringContainsString('_visW', $upd);
         self::assertStringContainsString('_heading ctrlShow false', $upd);
         self::assertStringContainsString('ctrlSetBackgroundColor [0, 0, 0, 0]', $upd);

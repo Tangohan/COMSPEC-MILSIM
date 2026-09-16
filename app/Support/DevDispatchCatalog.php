@@ -268,6 +268,124 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(596, '2026-09-15', 'Téléphone ATAK : menu d’applications utilisable', 'Le menu d’applications se déroule de nouveau, avec retour et défilement. Les boutons du bas restent sous le menu, pas sur la carte. Relancez Arma complètement après la mise à jour (Athena 1.0.131).', [
+                'Retour et défilement du menu d’applications rétablis',
+                'Photos, recherche et radio collés sous le menu',
+            ], [], [
+                'Le jeu ne se ferme plus en ouvrant ou en refermant le menu d’applications',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.131). Ouvrez le téléphone, déployez le menu : vous pouvez faire défiler, revenir en arrière, et les trois boutons du bas restent sous le menu.',
+            ], 'Athena 1.0.131'),
+            $pr(598, '2026-09-15', 'Overwatch Beta : fiche contact lisible', 'La fiche d’un contact reste sombre : un autre membre du groupe se lit en entier, sans rectangle clair. Les mentions vides ou sans objet disparaissent. L’adresse réseau masque toujours le dernier groupe. Centrer, suivre et cadrer occupent toute la largeur. Rechargez Overwatch Beta.', [
+                'Membres du même groupe présentés comme des lignes sombres, indicatif et distance lisibles',
+                'Champs vides ou sans objet retirés de la fiche',
+            ], [
+                'Boutons de la fiche alignés sur toute la largeur',
+            ], [
+                'Adresse réseau masquée, y compris lorsqu’un complément suit les nombres',
+                'Intégrité et radio affichées en français, ou absentes si rien n’est transmis',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta, cliquez un contact. La fiche reste sombre. Un autre membre du groupe se lit en entier. L’adresse réseau se termine par un point. Batterie et radio n’apparaissent que si elles ont été transmises.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(597, '2026-09-15', 'Overwatch Beta : réglages, polices, grille et outils', 'Le poste gagne des réglages de police et de superposition, une grille du théâtre, une lecture nocturne, des photos posées sur la carte, un aller à la grille, des anneaux de portée, un bloc-notes et un relevé d’interception entre deux contacts. L’ombrage et les pentes répondent de nouveau aux cases. Rechargez Overwatch Beta.', [
+                'Police de l’interface et des indicatifs, taille du texte et des icônes',
+                'Grille du théâtre, lecture nocturne, croix centrale, barre d’échelle',
+                'Photos de renseignement posables sur la carte',
+                'Aller à une grille, anneaux de portée, bloc-notes, interception',
+            ], [
+                'Ombrage, courbes et pentes suivent de nouveau les cases du panneau',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans les réglages : changez la police, cochez Grille du théâtre, puis Aller à une grille depuis Plus. Clic droit → Anneaux de portée. L’ombrage se coche et se décoche réellement.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(594, '2026-09-15', 'Téléphone ATAK : accueil sans raccourcis COMSPEC', 'L’écran d’accueil du téléphone n’affiche plus la rangée d’icônes Connexion Athena, Messagerie, Resynch et les autres raccourcis. Ces fonctions restent dans le menu d’applications et dans le menu ACE. Relancez Arma complètement après la mise à jour (Athena 1.0.130).', [
+                'Écran d’accueil du téléphone allégé, sans raccourcis COMSPEC',
+            ], [], [
+                'Les icônes Connexion, messagerie, ordres et Resynch ne recouvrent plus le bureau',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.130). Ouvrez le téléphone : le bureau ne montre plus la grille d’icônes COMSPEC. Ouvrez le menu d’applications pour retrouver Connexion Athena, la messagerie et le reste.',
+            ], 'Athena 1.0.130'),
+            $pr(595, '2026-09-15', 'Overwatch Beta : fond aérien et envoi de photo', 'Le calque photo aérienne se charge de nouveau sur la carte. Envoyer une photo depuis Renseignement la pose sur le canal actif, avec le lien de l’image. Rechargez Overwatch Beta.', [
+                'Photo aérienne de nouveau affichable sur la carte',
+                'Envoyer depuis Renseignement transmet la photo sur le canal ouvert',
+            ], [], [
+                'Le fond aérien ne bloquait plus l’ouverture de la carte',
+                'Envoyer une photo n’échoue plus sans rien afficher sur le canal',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta et rechargez la page. Passez sur Photo aérienne : le terrain photo apparaît. Dans Renseignement, Envoyer sur une photo l’écrit sur le canal actif.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(593, '2026-09-15', 'Overwatch Beta : supprimer depuis le clic droit', 'Sur la carte, un clic droit sur un tracé, un point à atteindre, un ralliement, un repère ou une visée propose désormais Supprimer. Les contacts en liaison restent en place. Rechargez Overwatch Beta.', [
+                'Clic droit puis Supprimer pour retirer un élément posé sur la carte',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Posez un marqueur ou un tracé, clic droit dessus, puis Supprimer : l’élément disparaît. Un contact en liaison n’est pas retiré.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(592, '2026-09-15', 'Overwatch Beta : adresse réseau partiellement masquée', 'Dans la fiche d’un contact, l’adresse réseau n’affiche plus le dernier groupe. Rechargez Overwatch Beta.', [
+                'Dernier groupe de l’adresse réseau masqué dans la fiche contact',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta, cliquez un contact en liaison : l’adresse réseau se lit avec le dernier groupe remplacé par un point.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(591, '2026-09-15', 'Téléphone ATAK : alerte plein écran lisible', 'Une alerte envoyée depuis le poste recouvre tout l’écran du téléphone, y compris le menu d’applications s’il était ouvert. Le titre et le texte restent lisibles. Relancez Arma complètement après la mise à jour (Athena 1.0.129).', [
+                'Voile d’alerte sur tout l’écran du téléphone, pas seulement la carte',
+                'Titre et message du poste visibles au-dessus du menu',
+            ], [], [
+                'Le menu d’applications ne reste plus visible pendant une alerte',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.129). Ouvrez le téléphone, éventuellement le menu, puis envoyez une alerte plein écran depuis Overwatch Beta : le voile recouvre tout l’écran, le titre s’affiche, Fermer reste utilisable.',
+            ], 'Athena 1.0.129'),
+            $pr(589, '2026-09-15', 'Overwatch Beta : poste plus compact', 'Les espaces Carte, Comms, Calques et Replay ne sont plus répétés sur la carte : ils restent dans la barre du haut, Replay se trouve dans Plus. Le rail d’outils est plus court : les tracés du quotidien restent visibles, les autres s’ouvrent à la flèche. Les canaux et le fil occupent la même largeur, sans décalage. Rechargez Overwatch Beta.', [
+                'Carte, Comms et Calques uniquement dans la barre du haut',
+                'Replay, calculs et carte seule regroupés dans Plus',
+                'Rail d’outils raccourci, autres tracés derrière la flèche',
+            ], [
+                'Canaux plus denses, fil et saisie alignés sur le même retrait',
+                'Textes raccourcis, bandeau et pied de carte allégés, saisie du tchat recadrée',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta. La carte n’affiche plus une seconde rangée Carte / Comms / Calques. Les tracés secondaires s’ouvrent avec la flèche du rail. Le fil des messages commence au même bord que la liste des canaux.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(590, '2026-09-15', 'Téléphone ATAK : boutons du menu d’applications recalés', 'À l’ouverture du menu d’applications, les boutons du bas (photos, recherche, radio) restent sous le tiroir. Ils ne recouvrent plus la carte. Relancez Arma complètement après la mise à jour (Athena 1.0.128).', [
+                'Photos, recherche et radio collés sous le menu d’applications',
+            ], [], [
+                'Les boutons du bas ne flottent plus sur la carte lorsque le menu est ouvert',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.128). Ouvrez le téléphone, puis le menu d’applications : les trois boutons du bas restent dans le tiroir.',
+            ], 'Athena 1.0.128'),
+            $pr(588, '2026-09-15', 'Overwatch Beta : hors liaison et couleur de groupe', 'Un opérateur hors liaison disparaît de la carte au bout de quinze minutes. Avant cela, le cadre de son indicatif passe en gris pointillé. Vous pouvez afficher la couleur du groupe : le cadre alterne alors entre la couleur du groupe et l’état de liaison. Rechargez Overwatch Beta.', [
+                'Contacts hors liaison depuis plus de quinze minutes masqués',
+                'Cadre d’indicatif gris pointillé tant que la dernière position reste affichée',
+                'Option Couleur de groupe : le cadre alterne groupe, puis état, puis groupe, puis état',
+            ], [], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Un contact hors liaison reste visible un moment, cadre gris. Au-delà de quinze minutes, il quitte la carte. Cochez Couleur de groupe : le cadre clignote entre la couleur du groupe et l’état de liaison.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(587, '2026-09-15', 'Overwatch Beta : plusieurs contacts au même point', 'Quand plusieurs opérateurs occupent le même lieu, leurs indicatifs ne se superposent plus. Chaque contact est écarté autour du point réel, l’indicatif se lit en une ligne, et un marqueur du théâtre qui reprend le même nom n’est plus doublé. Rechargez Overwatch Beta.', [
+                'Contacts au même point écartés autour de la position réelle',
+                'Indicatifs lisibles, en une ligne, sur la carte',
+            ], [], [
+                'Deux opérateurs au même endroit n’empilent plus leurs noms',
+                'Un repère du théâtre n’écrase plus l’indicatif d’un contact déjà affiché',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta. Placez ou observez deux contacts au même lieu : chaque indicatif reste lisible. Cliquez l’un d’eux : les autres au même point apparaissent dans la fiche.',
+            ], 'Portail · Overwatch Beta'),
+            $pr(586, '2026-09-15', 'Pack Overwatch 1.5.78 : téléphone stable et poste Beta aligné', 'Le pack Overwatch, le téléphone Athena et la liaison sont livrés ensemble. Le téléphone ne se ferme plus tout seul pendant la synchro. Messagerie revient à la liste des canaux. Les alertes plein écran, les points à atteindre et le ralliement partent du poste et reviennent en jeu. Relancez Arma complètement après la mise à jour.', [
+                'Pack Overwatch 1.5.78, téléphone Athena 1.0.127 et liaison 2.0.41',
+                'Plus de fermeture brutale du jeu avec le téléphone ouvert',
+                'Retour à la liste des canaux dans Messagerie',
+                'Alerte plein écran, points à atteindre et ralliement depuis Overwatch Beta',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack. Dans le journal : connect 1.5.78 et Extension 2.0.41. Ouvrez le téléphone, puis Overwatch Beta.',
+            ], 'Overwatch 1.5.78 · Athena 1.0.127 · Liaison 2.0.41'),
+            $pr(585, '2026-09-15', 'Overwatch Beta : lecture, fonds et contacts au niveau du poste', 'Overwatch Beta se lit désormais comme le poste habituel : textes en casse normale, colonnes qui défilent, fil radio groupé, fonds carte du jeu et photo aérienne stables. Les marqueurs du théâtre et la fiche d’un contact (liaison, certificat, batterie, adresse réseau) s’affichent lorsqu’ils sont transmis. Maintenez le clic pour tracer une zone ; le menu du clic droit reste dans l’écran. Rechargez Overwatch Beta pour prendre la mise à jour.', [
+                'Réglages rabattables, bandeau Contacts / Tracés / Photos, et colonne Comms qui reste ouverte pendant les outils',
+                'Fil radio groupé par auteur, barre d’urgence, canaux avec icônes, et vue brute en option',
+                'Carte du jeu et photo aérienne au choix, ombrage, pentes, chaleur de présence, bâtiments et forêts si un relevé existe',
+                'Marqueurs du théâtre sur la carte ; fiche contact enrichie (liaison, certificat, batterie, adresse réseau, géoloc)',
+                'Dessin au maintien (zone, cercle, rectangle, ligne) : l’outil reste actif pour en poser un autre',
+            ], [
+                'Liens de groupe plus fins, menu contextuel recalé dans la carte, barre d’outils compacte avec menu Plus',
+            ], [
+                'Les colonnes Réglages et Comms défilent sans pousser la carte',
+                'Le fond topographique n’est plus remplacé par la photo aérienne au rechargement',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta. Rabattez les réglages, faites défiler Comms. Choisissez Carte du jeu puis Photo aérienne. Posez une zone en maintenant le clic. Clic droit près du bord : le menu reste visible. Ouvrez un contact en liaison : certificat et batterie n’apparaissent que s’ils ont été transmis.',
+            ], 'Portail · Overwatch Beta'),
             $pr(584, '2026-09-15', 'Overwatch Beta : cap, vitesse et liaison issus du terrain', 'Le poste Overwatch Beta affiche désormais le cap, la vitesse, l’altitude et l’état de liaison réellement transmis depuis Arma. Sur le téléphone, les boutons masqués de l’écran d’accueil ne se calent plus hors limites. Relancez Arma complètement après la mise à jour du pack jeu. Rechargez Overwatch Beta pour le poste.', [
                 'Fiche contact Overwatch Beta : cap, vitesse, altitude, liaison et transmission du terrain',
                 'Écran d’accueil du téléphone : plus de taille nulle sur un bouton masqué',

@@ -249,7 +249,7 @@ window.ATAKAerial = (function () {
       var x0 = Math.floor(west / W * nn) - 1;
       var x1 = Math.floor((east - 1e-6) / W * nn) + 1;
       var y0 = Math.floor((1 - north / W) * nn) - 1;
-      var y1 = Math.floor((1 - (south + 1e-6) / W * nn) + 1;
+      var y1 = Math.floor((1 - (south + 1e-6) / W) * nn) + 1;
       x0 = Math.max(0, x0);
       x1 = Math.min(nn - 1, x1);
       y0 = Math.max(0, y0);
@@ -275,7 +275,7 @@ window.ATAKAerial = (function () {
     var x0 = Math.max(0, Math.floor(west / W * n) - 1);
     var x1 = Math.min(n - 1, Math.floor((east - 1e-6) / W * n) + 1);
     var y0 = Math.max(0, Math.floor((1 - north / W) * n) - 1);
-    var y1 = Math.min(n - 1, Math.floor((1 - (south + 1e-6) / W * n) + 1);
+    var y1 = Math.min(n - 1, Math.floor((1 - (south + 1e-6) / W) * n) + 1);
     var keep = {};
     if (x1 >= x0 && y1 >= y0) {
       for (var x = x0; x <= x1; x++) {
