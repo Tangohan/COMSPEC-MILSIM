@@ -173,7 +173,7 @@
         var ang = (i / 36) * Math.PI * 2;
         pts.push(api.worldToLatLng(w.x + Math.sin(ang) * m, w.y + Math.cos(ang) * m));
       }
-      L.polygon(pts, { color: '#e7b14d', weight: 1, dashArray: '4 4', fillOpacity: 0.03, interactive: false }).addTo(group);
+      L.polygon(pts, { color: '#e7b14d', weight: 2, dashArray: '4 4', fill: false, interactive: true }).addTo(group);
       var edge = api.worldToLatLng(w.x + m, w.y);
       L.marker(edge, {
         interactive: false,
@@ -182,6 +182,11 @@
     });
     group.addTo(api.map);
     rangeLayer = group;
+    if (api.registerScratch) api.registerScratch(group, 'range', 'range', 'Anneaux de portée');
+    else if (api.bindLayerContext) {
+      api.bindLayerContext(group, 'range', 'range', 'Anneaux de portée');
+      group.eachLayer(function (child) { api.bindLayerContext(child, 'range', 'range', 'Anneaux de portée'); });
+    }
     toast('Anneaux posés autour du point.');
   }
 
@@ -422,6 +427,7 @@
       gotoGrid: gotoGrid,
       placeRange: placeRange,
       clearRange: clearRange,
+      getRangeLayer: function () { return rangeLayer; },
       openGoto: openGoto,
       openNotes: openNotes,
       drawPhotos: drawPhotos,

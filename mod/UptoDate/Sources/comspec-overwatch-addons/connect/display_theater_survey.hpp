@@ -13,7 +13,7 @@ class COMSPEC_TheaterSurvey_Dialog {
             x = 0.705 * safezoneW + safezoneX;
             y = 0.18 * safezoneH + safezoneY;
             w = 0.275 * safezoneW;
-            h = 0.62 * safezoneH;
+            h = 0.66 * safezoneH;
             colorBackground[] = {0.015, 0.04, 0.08, 0.96};
         };
         class AccentBar: RscText {
@@ -35,7 +35,7 @@ class COMSPEC_TheaterSurvey_Dialog {
         };
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.52' color='#8aa0b4'>Bâtiments, forêts et relief de tout le théâtre. Athena doit être liée. Zeus reste utilisable pendant le parcours.</t>";
+            text = "<t align='center' size='0.52' color='#8aa0b4'>Bâtiments, forêts, relief, villes et routes. Athena doit être liée. Zeus reste utilisable pendant le parcours.</t>";
             x = 0.715 * safezoneW + safezoneX;
             y = 0.228 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
@@ -69,11 +69,11 @@ class COMSPEC_TheaterSurvey_Dialog {
         };
         class ValueCount: RscStructuredText {
             idc = 1102;
-            text = "<t size='0.72' color='#e8f4f0'>Bâtiments 0 · Forêts 0 · Relief 0</t>";
+            text = "<t size='0.68' color='#e8f4f0'>Bâtiments 0 · Forêts 0 · Relief 0<br/>Villes 0 · Routes 0</t>";
             x = 0.715 * safezoneW + safezoneX;
             y = 0.352 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
-            h = 0.042 * safezoneH;
+            h = 0.046 * safezoneH;
         };
 
         class LabelCurrent: RscStructuredText {
@@ -145,7 +145,7 @@ class COMSPEC_TheaterSurvey_Dialog {
         };
         class ValueTx: RscStructuredText {
             idc = 1108;
-            text = "<t size='0.58' color='#c8ddd6'>Pas encore vérifié. Compare le relevé local avec ce qui est arrivé au poste.</t>";
+            text = "<t size='0.58' color='#c8ddd6'>Pas encore vérifié. La comparaison avec le poste se lance à la fin du relevé.</t>";
             x = 0.715 * safezoneW + safezoneX;
             y = 0.596 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
@@ -154,34 +154,47 @@ class COMSPEC_TheaterSurvey_Dialog {
 
         class BtnVerify: RscButton {
             idc = 1111;
-            text = "Vérifier et renvoyer";
+            text = "Vérifier l’intégrité";
             x = 0.715 * safezoneW + safezoneX;
-            y = 0.644 * safezoneH + safezoneY;
+            y = 0.640 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
-            h = 0.032 * safezoneH;
+            h = 0.030 * safezoneH;
             colorBackground[] = {0.10, 0.22, 0.32, 0.95};
             colorBackgroundActive[] = {0.14, 0.30, 0.42, 1};
             sizeEx = 0.028;
-            tooltip = "Vérifie si tout est bien arrivé au poste. Ce qui manque est renvoyé.";
+            tooltip = "Compare le relevé local avec ce qui est arrivé au poste, sans rien renvoyer.";
             action = "[] call comspec_overwatch_connect_fnc_theaterSurveyVerify;";
+        };
+        class BtnResend: RscButton {
+            idc = 1112;
+            text = "Renvoyer les données manquantes";
+            x = 0.715 * safezoneW + safezoneX;
+            y = 0.674 * safezoneH + safezoneY;
+            w = 0.255 * safezoneW;
+            h = 0.030 * safezoneH;
+            colorBackground[] = {0.22, 0.16, 0.08, 0.95};
+            colorBackgroundActive[] = {0.32, 0.24, 0.10, 1};
+            sizeEx = 0.026;
+            tooltip = "Renvoie uniquement ce que la vérification a trouvé manquant au poste.";
+            action = "[] call comspec_overwatch_connect_fnc_theaterSurveyResend;";
         };
         class BtnStart: RscButton {
             idc = 1106;
             text = "Lancer le relevé";
             x = 0.715 * safezoneW + safezoneX;
-            y = 0.682 * safezoneH + safezoneY;
+            y = 0.708 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
-            h = 0.032 * safezoneH;
+            h = 0.030 * safezoneH;
             colorBackground[] = {0.08, 0.32, 0.28, 0.95};
             colorBackgroundActive[] = {0.12, 0.42, 0.36, 1};
-            sizeEx = 0.030;
+            sizeEx = 0.028;
             action = "[] call comspec_overwatch_connect_fnc_theaterSurveyToggle;";
         };
         class BtnClose: RscButton {
             idc = 1107;
             text = "Fermer";
             x = 0.715 * safezoneW + safezoneX;
-            y = 0.720 * safezoneH + safezoneY;
+            y = 0.742 * safezoneH + safezoneY;
             w = 0.255 * safezoneW;
             h = 0.030 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};

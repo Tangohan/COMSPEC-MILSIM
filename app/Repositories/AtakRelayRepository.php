@@ -86,4 +86,22 @@ final class AtakRelayRepository
 
         return is_array($row) ? $row : null;
     }
+
+    public function delete(int $tenantId, int $mapId, string $uid): bool
+    {
+        $uid = trim($uid);
+        if ($tenantId < 1 || $uid === '') {
+            return false;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'DELETE FROM atak_relays WHERE tenant_id = ? AND map_id = ? AND relay_uid = ?'
+            );
+            $st->execute([$tenantId, max(1, $mapId), $uid]);
+
+            return $st->rowCount() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

@@ -114,6 +114,7 @@ private _fnPushIcemanGroup = {
     if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
     if (_timeStr isEqualTo "") then { _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString; };
     if ((count _pos) < 2) then { _pos = getPosATL player; };
+    if ((count _text) > 160) then { _text = (_text select [0, 160]) + "…"; };
 
     private _messages = +(missionNamespace getVariable ["Iceman_ATAK_Group_messages", []]);
     if (!(_messages isEqualType [])) then { _messages = []; };
@@ -184,6 +185,14 @@ if (!_bootstrapped) exitWith {
 
     private _plainU = toUpper _plain;
 
+    private _inFp = toUpper (_author + "|" + (_plain select [0, 80]));
+    private _inSeen = missionNamespace getVariable ["COMSPEC_ChatInFingerprints", []];
+    if (!(_inSeen isEqualType [])) then { _inSeen = []; };
+    if (_inFp in _inSeen) then { continue };
+    _inSeen pushBack _inFp;
+    while { (count _inSeen) > 80 } do { _inSeen deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ChatInFingerprints", _inSeen, false];
+
     private _st = systemTime;
     private _pad2 = {
         params ["_n"];
@@ -230,15 +239,13 @@ if (!_bootstrapped) exitWith {
                 if ((toUpper _fromLabel) isEqualTo _myCsU) then {
                     _fromLabel = format ["%1 (TOC)", _fromLabel];
                 };
+                if ((count _gText) > 160) then { _gText = (_gText select [0, 160]) + "…"; };
                 _inbox pushBack ["GROUP", "Message de groupe", _gText, _gGrid, _timeStr, _fromLabel];
                 if ([_fromLabel, _myGroupId, _gGrid, _gText, _timeStr] call _fnPushIcemanGroup) then {
                     _groupPanelDirty = true;
                 };
                 [_id, _fromLabel, _gText, _timeStr, if (_channelKey isEqualTo "general") then { "groupe" } else { _channelKey }, false] call _fnPushComms;
                 _added = _added + 1;
-                if (!isNil "cTab_fnc_addNotification") then {
-                    ["GROUP", format ["Message de %1", _fromLabel], 6] call cTab_fnc_addNotification;
-                };
                 if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
                     ["chat"] call comspec_overwatch_connect_fnc_playAtakNotification;
                 };
@@ -294,14 +301,11 @@ if (!_bootstrapped) exitWith {
             _groupPanelDirty = true;
         };
     };
+    if ((count _detail) > 160) then { _detail = (_detail select [0, 160]) + "…"; };
     [_id, _fromLabel, _detail, _timeStr, if (_isHq) then { "commandement" } else { _channelKey }, false] call _fnPushComms;
 
     _added = _added + 1;
 
-    if (!isNil "cTab_fnc_addNotification") then {
-        private _preview = if ((count _detail) > 40) then { _detail select [0, 40] } else { _detail };
-        ["MSG", format ["%1 — %2", _fromLabel, _preview], 5] call cTab_fnc_addNotification;
-    };
     if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
         ["chat"] call comspec_overwatch_connect_fnc_playAtakNotification;
     };

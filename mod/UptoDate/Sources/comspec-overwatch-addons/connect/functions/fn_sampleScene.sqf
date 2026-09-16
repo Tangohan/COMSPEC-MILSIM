@@ -1,7 +1,9 @@
 /*
     Remonte bâtiments et couverts forestiers vers Athena (vue 3D web).
     Autour du joueur, du centre de carte ouverte, et de la caméra Zeus.
-    Params: [_force] — true = ignore le délai de déplacement (menu ACE).
+    Params: [_force] — true = ignore le délai / carte déjà complète (menu ACE).
+    Un secteur déjà transmis n’est pas renvoyé. Après un relevé théâtre réussi,
+    plus aucun envoi automatique pour cette carte.
 */
 params [["_force", false, [true]]];
 if (!hasInterface) exitWith {};
@@ -16,16 +18,33 @@ if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo
     };
 };
 
-private _now = diag_tickTime;
-private _lastAt = missionNamespace getVariable ["COMSPEC_SceneLastAt", -1e9];
-private _lastPos = missionNamespace getVariable ["COMSPEC_SceneLastPos", [0, 0, 0]];
-private _origin = if (!isNull player) then { getPosWorld player } else { [0, 0, 0] };
-private _moved = _origin distance2D _lastPos;
-if (!_force && {(_now - _lastAt) < 22} && {_moved < 80}) exitWith {};
-
 private _mapId = missionNamespace getVariable ["COMSPEC_MapId", 1];
 if (!(_mapId isEqualType 0)) then { _mapId = 1; };
 if (_mapId < 1) then { _mapId = 1; };
+
+if (!(missionNamespace getVariable ["COMSPEC_SceneWorldDone", false])) then {
+    private _wdKey = format ["COMSPEC_SceneWorldDone_%1_%2", worldName, _mapId];
+    if ((profileNamespace getVariable [_wdKey, false]) isEqualTo true) then {
+        missionNamespace setVariable ["COMSPEC_SceneWorldDone", true, false];
+    } else {
+        private _countKey = format ["COMSPEC_TheaterSurveyCounts_%1", worldName];
+        private _counts = profileNamespace getVariable [_countKey, []];
+        if (_counts isEqualType [] && {(count _counts) >= 2}) then {
+            private _b = _counts select 0;
+            private _f = _counts select 1;
+            if ((_b isEqualType 0) && {_f isEqualType 0} && {(_b + _f) > 0}) then {
+                missionNamespace setVariable ["COMSPEC_SceneWorldDone", true, false];
+                profileNamespace setVariable [_wdKey, true];
+            };
+        };
+    };
+};
+if (!_force && {missionNamespace getVariable ["COMSPEC_SceneWorldDone", false]}) exitWith {};
+
+private _now = diag_tickTime;
+private _lastAt = missionNamespace getVariable ["COMSPEC_SceneLastAt", -1e9];
+private _origin = if (!isNull player) then { getPosWorld player } else { [0, 0, 0] };
+if (!_force && {(_now - _lastAt) < 40}) exitWith {};
 
 private _centers = [];
 if (!isNull player && {alive player}) then {
@@ -60,6 +79,42 @@ if (!isNull curatorCamera) then {
 
 if (_centers isEqualTo []) exitWith {};
 
+private _tileSize = 400;
+private _storeKey = format ["COMSPEC_SceneTiles_%1_%2", worldName, _mapId];
+private _cacheKey = missionNamespace getVariable ["COMSPEC_SceneTilesCacheKey", ""];
+private _sentTiles = missionNamespace getVariable ["COMSPEC_SceneTilesMap", createHashMap];
+if (_cacheKey isNotEqualTo _storeKey || {!(_sentTiles isEqualType createHashMap)}) then {
+    _sentTiles = createHashMap;
+    private _arr = profileNamespace getVariable [_storeKey, []];
+    if (_arr isEqualType []) then {
+        { if (_x isEqualType "") then { _sentTiles set [_x, true]; }; } forEach _arr;
+    };
+    missionNamespace setVariable ["COMSPEC_SceneTilesMap", _sentTiles, false];
+    missionNamespace setVariable ["COMSPEC_SceneTilesCacheKey", _storeKey, false];
+};
+
+if (!_force) then {
+    private _fresh = [];
+    {
+        _x params ["_center", "_radius"];
+        if (!(_center isEqualType []) || {(count _center) < 2}) then { continue };
+        private _need = false;
+        private _minTx = floor (((_center select 0) - _radius) / _tileSize);
+        private _maxTx = floor (((_center select 0) + _radius) / _tileSize);
+        private _minTy = floor (((_center select 1) - _radius) / _tileSize);
+        private _maxTy = floor (((_center select 1) + _radius) / _tileSize);
+        for "_tx" from _minTx to _maxTx do {
+            for "_ty" from _minTy to _maxTy do {
+                if (!(_sentTiles getOrDefault [format ["%1:%2", _tx, _ty], false])) then { _need = true; };
+            };
+        };
+        if (_need) then { _fresh pushBack _x; };
+    } forEach _centers;
+    _centers = _fresh;
+};
+
+if (_centers isEqualTo []) exitWith {};
+
 missionNamespace setVariable ["COMSPEC_SceneSampling", true, false];
 missionNamespace setVariable ["COMSPEC_SceneLastAt", _now, false];
 missionNamespace setVariable ["COMSPEC_SceneLastPos", _origin, false];
@@ -73,8 +128,8 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
     };
 }, [_token], 90] call CBA_fnc_waitAndExecute;
 
-[_centers, _mapId, _force] spawn {
-    params ["_centers", "_mapId", "_force"];
+[_centers, _mapId, _force, _storeKey, _tileSize] spawn {
+    params ["_centers", "_mapId", "_force", "_storeKey", "_tileSize"];
     private _fnc_num = {
         params ["_n", ["_digits", 1]];
         if (!(_n isEqualType 0)) then { _n = parseNumber (str _n); };
@@ -90,6 +145,8 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
     private _byId = createHashMap;
     private _forestAcc = createHashMap;
     private _cell = 32;
+    private _sentIds = missionNamespace getVariable ["COMSPEC_SceneSentIds", createHashMap];
+    if (!(_sentIds isEqualType createHashMap)) then { _sentIds = createHashMap; };
 
     {
         _x params ["_center", "_radius"];
@@ -128,6 +185,7 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
             } else {
                 _nid = "b:" + _nid;
             };
+            if (_sentIds getOrDefault [_nid, false]) then { continue };
             private _model = [typeOf _x] call _fnc_esc;
             _byId set [_nid, [
                 _nid, "building", _model,
@@ -171,6 +229,7 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
         _acc params ["_n", "_sx", "_sy", "_sz", "_sh", "_cx", "_cy"];
         if (_n < 2) then { continue };
         private _id = format ["f:%1:%2:%3", _world, _cx, _cy];
+        if (_sentIds getOrDefault [_id, false]) then { continue };
         private _den = (_n / 10) min 1;
         if (_den < 0.08) then { _den = 0.08; };
         private _fh = (_sh / _n) max 4;
@@ -186,10 +245,8 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
     { _rows pushBack _y; } forEach _byId;
     if ((count _rows) > 160) then { _rows = _rows select [0, 160]; };
 
-    if (_rows isEqualTo []) then {
-        missionNamespace setVariable ["COMSPEC_SceneSampling", false, false];
-    } else {
-        private _sent = 0;
+    private _sent = 0;
+    if (!(_rows isEqualTo [])) then {
         private _batch = [];
         private _flush = {
             if (_batch isEqualTo []) exitWith {};
@@ -236,14 +293,51 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
         } forEach _rows;
         call _flush;
 
-        missionNamespace setVariable ["COMSPEC_SceneSampling", false, false];
-        if (_force) then {
+        {
+            _sentIds set [_x select 0, true];
+        } forEach _rows;
+        missionNamespace setVariable ["COMSPEC_SceneSentIds", _sentIds, false];
+    };
+
+    if (!(missionNamespace getVariable ["COMSPEC_SceneAbort", false])) then {
+        private _tilesMap = missionNamespace getVariable ["COMSPEC_SceneTilesMap", createHashMap];
+        if (!(_tilesMap isEqualType createHashMap)) then { _tilesMap = createHashMap; };
+        {
+            _x params ["_center", "_radius"];
+            if (!(_center isEqualType []) || {(count _center) < 2}) then { continue };
+            private _minTx = floor (((_center select 0) - _radius) / _tileSize);
+            private _maxTx = floor (((_center select 0) + _radius) / _tileSize);
+            private _minTy = floor (((_center select 1) - _radius) / _tileSize);
+            private _maxTy = floor (((_center select 1) + _radius) / _tileSize);
+            for "_tx" from _minTx to _maxTx do {
+                for "_ty" from _minTy to _maxTy do {
+                    _tilesMap set [format ["%1:%2", _tx, _ty], true];
+                };
+            };
+        } forEach _centers;
+        missionNamespace setVariable ["COMSPEC_SceneTilesMap", _tilesMap, false];
+        private _tileArr = [];
+        { _tileArr pushBack _x; } forEach _tilesMap;
+        if ((count _tileArr) > 8000) then { _tileArr = _tileArr select [0, 8000]; };
+        profileNamespace setVariable [_storeKey, _tileArr];
+        private _lastSave = missionNamespace getVariable ["COMSPEC_SceneTilesSavedAt", -1e9];
+        if ((diag_tickTime - _lastSave) > 20) then {
+            saveProfileNamespace;
+            missionNamespace setVariable ["COMSPEC_SceneTilesSavedAt", diag_tickTime, false];
+        };
+    };
+
+    missionNamespace setVariable ["COMSPEC_SceneSampling", false, false];
+    if (_force) then {
+        if (_sent > 0) then {
             [format ["Volumes du théâtre transmis (%1 éléments).", _sent], "system", "info"] call comspec_overwatch_connect_fnc_announce;
         } else {
-            if (!(missionNamespace getVariable ["COMSPEC_SceneAnnounced", false])) then {
-                missionNamespace setVariable ["COMSPEC_SceneAnnounced", true, false];
-                ["[Athena] Bâtiments et couverts transmis au poste.", "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-            };
+            ["Aucun nouveau bâtiment ou couvert dans ce secteur (déjà transmis).", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+        };
+    } else {
+        if (_sent > 0 && {!(missionNamespace getVariable ["COMSPEC_SceneAnnounced", false])}) then {
+            missionNamespace setVariable ["COMSPEC_SceneAnnounced", true, false];
+            ["[Athena] Bâtiments et couverts transmis au poste.", "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
     };
 };

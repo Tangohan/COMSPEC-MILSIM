@@ -26,9 +26,17 @@ final class AtakModGeoNetworkAlignAssetTest extends TestCase
             dirname(__DIR__, 2) . '/docs/archive/legacy-atak/technique-atak-mod-align-prompt.md'
         );
 
-        self::assertStringContainsString('sampleGeoNetwork', $ace);
+        $resend = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_theaterSurveyResend.sqf'
+        );
+
+        self::assertStringContainsString('theaterSurveyShow', $ace);
+        self::assertStringContainsString('Relevé de la carte', $ace);
         self::assertStringContainsString('COMSPEC_GeoNetwork', $ace);
+        self::assertStringContainsString('[0, true] call comspec_overwatch_connect_fnc_sampleGeoNetwork', $resend);
         self::assertStringContainsString('sampleGeoNetwork', $theater);
+        self::assertStringContainsString('COMSPEC_GeoDone_', $geo);
+        self::assertStringContainsString('_force', $geo);
         self::assertStringContainsString('_roadClass', $geo);
         self::assertStringContainsString('HIGHWAY', $geo);
         self::assertStringContainsString('APC', $bridge);

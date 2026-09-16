@@ -244,6 +244,8 @@ final class AtakTerrainApiController
         }
         $obsEye = $this->num($body['observer_eye_m'] ?? $obs['eye_m'] ?? 1.6) ?? 1.6;
         $tgtEye = $this->num($body['target_eye_m'] ?? $tgt['eye_m'] ?? 0) ?? 0.0;
+        $obsAbs = $this->num($obs['z'] ?? $body['observer_z'] ?? null);
+        $tgtAbs = $this->num($tgt['z'] ?? $body['target_z'] ?? null);
         $pad = 80.0;
         $minX = min($x0, $x1) - $pad;
         $maxX = max($x0, $x1) + $pad;
@@ -257,7 +259,7 @@ final class AtakTerrainApiController
             $scene = [];
         }
 
-        $out = AtakTerrainSight::lineOfSight($grid, $x0, $y0, $x1, $y1, $obsEye, $tgtEye, $scene);
+        $out = AtakTerrainSight::lineOfSight($grid, $x0, $y0, $x1, $y1, $obsEye, $tgtEye, $scene, $obsAbs, $tgtAbs);
         try {
             $counts = $this->scene->countByKind($tenantId, $mapId);
             $surveyed = ((int) ($counts['building'] ?? 0) + (int) ($counts['forest'] ?? 0)) > 0;

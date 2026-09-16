@@ -11,6 +11,22 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Athena 1.0.142 — 2026-09-16
+
+### Correction — Menu qui reste ouvert, messages dans la messagerie
+
+Le menu d’applications s’ouvre au chevron et y reste jusqu’à ce qu’on le referme. Les messages du poste restent dans la messagerie : ils ne s’empilent plus en bandeau en bas de la carte. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.141 — 2026-09-16
+
+### Correction — Plus de fermeture sans ouvrir le téléphone
+
+Le jeu ne se ferme plus tout seul si l’opérateur n’a pas le téléphone en main et ne l’a pas ouvert. Relancez Arma complètement après la mise à jour.
+
+---
+
 ## Athena 1.0.140 — 2026-09-16
 
 ### Correction — Plus de recadrage de la carte

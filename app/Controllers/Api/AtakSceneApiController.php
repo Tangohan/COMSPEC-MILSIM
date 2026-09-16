@@ -8,6 +8,8 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakGeoPlaceRepository;
+use App\Repositories\AtakGeoRoadRepository;
 use App\Repositories\AtakSceneObjectRepository;
 use App\Repositories\AtakTerrainRepository;
 use App\Repositories\MapShapeRepository;
@@ -112,10 +114,24 @@ final class AtakSceneApiController
             'terrain_chunks' => (int) ($terrain['terrain_chunks'] ?? 0),
             'terrain_coverage_pct' => (int) ($terrain['terrain_coverage_pct'] ?? 0),
             'last_survey_at' => $lastSurvey,
+            'places' => 0,
+            'roads' => 0,
         ];
         if (is_array($counts)) {
             $payload['buildings'] = (int) ($counts['building'] ?? 0);
             $payload['forests'] = (int) ($counts['forest'] ?? 0);
+        }
+        try {
+            $placeSummary = (new AtakGeoPlaceRepository())->summary($tenantId, $mapId);
+            $payload['places'] = (int) ($placeSummary['places'] ?? 0);
+        } catch (\Throwable) {
+            $payload['places'] = 0;
+        }
+        try {
+            $roadSummary = (new AtakGeoRoadRepository())->summary($tenantId, $mapId);
+            $payload['roads'] = (int) ($roadSummary['roads'] ?? 0);
+        } catch (\Throwable) {
+            $payload['roads'] = 0;
         }
 
         return Response::json($payload);

@@ -156,8 +156,10 @@ if (!isNil "cTabBFTvehicles" && {cTabBFTvehicles isEqualType []}) then {
 
 private _headerUnit = player;
 if (!isNil "cTab_player" && {!isNull cTab_player}) then { _headerUnit = cTab_player; };
-{
-    private _disp = uiNamespace getVariable [_x, displayNull];
-    if (isNull _disp) then { continue };
-    [_disp, _headerUnit] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
-} forEach ["cTab_Android_dlg", "cTab_Android_dsp", "cTab_Tablet_dlg"];
+private _openDisp = displayNull;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+    _openDisp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+};
+if (!isNull _openDisp) then {
+    [_openDisp, _headerUnit] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
+};

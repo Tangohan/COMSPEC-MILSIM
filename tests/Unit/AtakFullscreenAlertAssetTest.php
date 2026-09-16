@@ -50,7 +50,7 @@ final class AtakFullscreenAlertAssetTest extends TestCase
         self::assertStringContainsString('ctrlSetZOrder', $paint);
         self::assertStringContainsString('COMSPEC_Athena_FsAlert', $show);
         self::assertStringContainsString('COMSPEC_Athena_FsAlert', $layout);
-        self::assertStringContainsString('1.0.140', $cfg);
+        self::assertStringContainsString('1.0.142', $cfg);
         self::assertStringContainsString('NOTIFY_FULL', $notify);
         self::assertStringContainsString('athena_showFullscreenAlert', $notify);
         self::assertStringContainsString('NOTIFY_FULL', $receive);

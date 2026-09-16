@@ -302,7 +302,7 @@ class AtakDataRepository
     public function getMarkers(int $tenantId, int $mapId, ?string $since = null): array
     {
         try {
-            $sql = 'SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
+            $sql = 'SELECT id, layer_id, marker_data, created_at, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
             $params = [$tenantId, $mapId];
             if ($since !== null && $since !== '') {
                 $sql .= ' AND (updated_at >= ? OR created_at >= ?)';
@@ -324,6 +324,7 @@ class AtakDataRepository
                     'id' => (int) $r['id'],
                     'layerId' => (int) $r['layer_id'],
                     'markerData' => $r['marker_data'],
+                    'created_at' => $r['created_at'] ?? null,
                     'updated_at' => $r['updated_at'],
                 ];
             }
@@ -355,7 +356,7 @@ class AtakDataRepository
 
     public function getMarkerById(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo()->prepare('SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, layer_id, marker_data, created_at, updated_at FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$r) {
@@ -365,6 +366,7 @@ class AtakDataRepository
             'id' => (int) $r['id'],
             'layerId' => (int) $r['layer_id'],
             'markerData' => $r['marker_data'],
+            'created_at' => $r['created_at'] ?? null,
             'updated_at' => $r['updated_at'],
         ];
     }
@@ -1699,6 +1701,17 @@ class AtakDataRepository
         $stmt->execute([$tenantId, $mapId]);
 
         return (int) $stmt->rowCount();
+    }
+
+    public function deleteChatMessageById(int $tenantId, int $id): bool
+    {
+        if ($id < 1) {
+            return false;
+        }
+        $stmt = $this->pdo()->prepare('DELETE FROM atak_chat_messages WHERE tenant_id = ? AND id = ?');
+        $stmt->execute([$tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
     }
 
     public function ensureSystemChatChannels(int $tenantId, int $mapId): void

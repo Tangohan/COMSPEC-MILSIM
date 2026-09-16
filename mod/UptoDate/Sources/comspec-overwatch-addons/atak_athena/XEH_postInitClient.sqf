@@ -6,6 +6,7 @@ if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith
 // Forcer notre Check_Layout (sans `_fade` / nil) — BCE et le cache CfgFunctions
 // peuvent sinon garder l’ancienne version jusqu’à un redémarrage Arma incomplet.
 private _forceCheckLayout = {
+    if (!isNil "BCE_fnc_ATAK_Check_Layout" && {isFinal BCE_fnc_ATAK_Check_Layout}) exitWith {};
     private _path = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
     if !(fileExists _path) exitWith {};
     private _code = compile preprocessFileLineNumbers _path;
@@ -17,10 +18,23 @@ private _forceCheckLayout = {
 call _forceCheckLayout;
 { [_forceCheckLayout, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15, 25];
 
+private _forceAnimType = {
+    if (!isNil "BCE_fnc_Anim_Type" && {isFinal BCE_fnc_Anim_Type}) exitWith {};
+    private _path = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Anim_Type.sqf";
+    if !(fileExists _path) exitWith {};
+    private _code = compile preprocessFileLineNumbers _path;
+    if (!(_code isEqualType {})) exitWith {};
+    BCE_fnc_Anim_Type = _code;
+    missionNamespace setVariable ["BCE_fnc_Anim_Type", _code];
+    uiNamespace setVariable ["BCE_fnc_Anim_Type", _code];
+};
+call _forceAnimType;
+{ [_forceAnimType, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15, 25];
+
 // Caméra overlay : téléphone = rttN (l’opérateur marche) ; cliché = vue scène puis restauration.
 private _forceCamCapture = {
     private _fs = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_FullScreenCamera.sqf";
-    if (fileExists _fs) then {
+    if (fileExists _fs && {isNil "BCE_fnc_ATAK_FullScreenCamera" || {!(isFinal BCE_fnc_ATAK_FullScreenCamera)}}) then {
         private _code = compile preprocessFileLineNumbers _fs;
         if (_code isEqualType {}) then {
             BCE_fnc_ATAK_FullScreenCamera = _code;
@@ -29,7 +43,7 @@ private _forceCamCapture = {
         };
     };
     private _tp = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_TakePicture.sqf";
-    if (fileExists _tp) then {
+    if (fileExists _tp && {isNil "BCE_fnc_ATAK_TakePicture" || {!(isFinal BCE_fnc_ATAK_TakePicture)}}) then {
         private _code = compile preprocessFileLineNumbers _tp;
         if (_code isEqualType {}) then {
             BCE_fnc_ATAK_TakePicture = _code;
@@ -51,32 +65,12 @@ call _forceCamCapture;
 
 private _wrapToggle = {
     if (isNil "cTab_fnc_showMenu_toggle") exitWith {};
+    if (isFinal cTab_fnc_showMenu_toggle) exitWith {};
     private _cur = cTab_fnc_showMenu_toggle;
     private _ours = missionNamespace getVariable ["COMSPEC_ATAK_ToggleFn", {}];
     if (_cur isEqualTo _ours) exitWith {};
-    missionNamespace setVariable ["COMSPEC_ATAK_ToggleOrig", _cur];
     private _wrap = {
-        private _last = missionNamespace getVariable ["COMSPEC_ATAK_ToggleAt", -99];
-        if ((diag_tickTime - _last) < 0.25) exitWith { false };
-        missionNamespace setVariable ["COMSPEC_ATAK_ToggleAt", diag_tickTime, false];
-        private _open = missionNamespace getVariable ["COMSPEC_ATAK_DrawerWantOpen", false];
-        if !(_open isEqualType true) then { _open = false; };
-        missionNamespace setVariable ["COMSPEC_ATAK_DrawerWantOpen", !_open, false];
-        uiNamespace setVariable ["COMSPEC_ATAK_DrawerOpen", !_open];
-        private _origFn = missionNamespace getVariable ["COMSPEC_ATAK_ToggleOrig", {}];
-        private _ret = _this call _origFn;
-        private _disp = displayNull;
-        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
-            _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
-        };
-        if (isNull _disp) then { _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull]; };
-        if (!isNull _disp && {!isNil "comspec_overwatch_atak_athena_fnc_athena_enforceDrawer"}) then {
-            [_disp] call comspec_overwatch_atak_athena_fnc_athena_enforceDrawer;
-        };
-        if (!isNil "comspec_overwatch_connect_fnc_log") then {
-            ["INFO", "Menu", ["fermé", "ouvert"] select (!_open)] call comspec_overwatch_connect_fnc_log;
-        };
-        _ret
+        [] call comspec_overwatch_atak_athena_fnc_athena_toggleDrawer
     };
     cTab_fnc_showMenu_toggle = _wrap;
     missionNamespace setVariable ["cTab_fnc_showMenu_toggle", _wrap];
@@ -332,7 +326,7 @@ if (isNil "COMSPEC_ViewshedBridgeEH") then {
     params [["_state", ""]];
     if (_state in ["ready", "linked"]) then {
         private _path = "\z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
-        if (fileExists _path) then {
+        if (fileExists _path && {isNil "BCE_fnc_ATAK_Check_Layout" || {!(isFinal BCE_fnc_ATAK_Check_Layout)}}) then {
             private _code = compile preprocessFileLineNumbers _path;
             if (_code isEqualType {}) then {
                 BCE_fnc_ATAK_Check_Layout = _code;
@@ -588,9 +582,9 @@ missionNamespace setVariable ["COMSPEC_AtakPhoneProxInside", createHashMap, fals
 
 // Bandeau OK/NOK · débit · err sur le téléphone ATAK (quand ouvert)
 [{
-    private _d = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-    if (isNull _d) then {
-        _d = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+    private _d = displayNull;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+        _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
     };
     if (isNull _d) exitWith {};
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {

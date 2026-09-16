@@ -127,6 +127,8 @@ private _fnc_getCtrls = {
     private _bgCol = [0.04, 0.07, 0.08, 0.72 * _alpha];
     private _edgeCol = [_iconCol select 0, _iconCol select 1, _iconCol select 2, 0.85 * _alpha];
 
+    if (_iconW < 0.001 || {_bhDot < 0.001} || {_bw < 0.001} || {_bh < 0.001}) then { continue };
+
     if (_compact) then {
         _bg ctrlShow false;
         _edge ctrlShow false;

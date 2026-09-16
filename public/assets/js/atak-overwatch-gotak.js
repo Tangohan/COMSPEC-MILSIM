@@ -371,6 +371,8 @@
         try { api.map.removeLayer(window.__owInterceptLine); } catch (e4) {}
       }
       window.__owInterceptLine = L.polyline([la, lb], { color: '#5b8def', weight: 2, dashArray: '6 4' }).addTo(api.map);
+      if (api.registerScratch) api.registerScratch(window.__owInterceptLine, 'intercept', 'intercept', 'Interception');
+      else if (api.bindLayerContext) api.bindLayerContext(window.__owInterceptLine, 'intercept', 'intercept', 'Interception');
     });
   }
 

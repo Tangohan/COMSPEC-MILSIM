@@ -4,11 +4,17 @@ Copier-coller Workshop :
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
 [b]Publication : 16/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.140 · Extension 2.0.43
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.142 · Extension 2.0.43
 
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
 [/quote]
+
+[h2]Correction — Menu d’applications et messages du poste[/h2]
+Le menu d’applications s’ouvre au chevron et reste ouvert jusqu’à ce qu’on le referme. Les messages du poste restent dans la messagerie : ils ne s’empilent plus en bandeau en bas de la carte.
+
+[h2]Correction — Plus de fermeture sans ouvrir le téléphone[/h2]
+Le jeu ne se ferme plus tout seul si l’opérateur n’a pas le téléphone en main et ne l’a pas ouvert.
 
 [h2]Correction — Plus de recadrage de la carte[/h2]
 Athena ne déplace plus et ne redimensionne plus la carte ni le menu d’applications. Le menu s’affiche ou se masque seulement, à la demande du chevron.
@@ -61,4 +67,4 @@ Le poste Overwatch Beta envoie désormais une alerte plein écran, une tâche de
 [*] Fiche contact : cap, vitesse, altitude, liaison et transmission réellement transmis
 [/list]
 
-[b]Versions à vérifier en jeu :[/b] Overwatch 1.5.78 · Athena 1.0.140 · journal « Extension 2.0.43 »
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.5.78 · Athena 1.0.142 · journal « Extension 2.0.43 »

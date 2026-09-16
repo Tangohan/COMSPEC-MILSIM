@@ -1,7 +1,10 @@
 /*
     Interrompt le relevé du théâtre. Le drapeau occupé est relâché par le spawn en cours.
 */
-if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) exitWith {};
+if (
+    !(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])
+    && {!(missionNamespace getVariable ["COMSPEC_GeoSampling", false])}
+) exitWith {};
 missionNamespace setVariable ["COMSPEC_TheaterAbort", true, false];
 missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
 missionNamespace setVariable ["COMSPEC_TheaterPhase", "abort", false];

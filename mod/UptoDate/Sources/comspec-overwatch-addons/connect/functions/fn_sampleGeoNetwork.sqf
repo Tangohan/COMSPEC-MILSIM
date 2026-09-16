@@ -1,8 +1,15 @@
 /*
     Relevé réseau géographique : localités Arma + segments routiers (Geo.Ingest).
-    Params: [_mapId] — 0 = COMSPEC_MapId courant.
+    Params: [_mapId, _force]
+    _mapId = 0 → carte courante.
+    _force = true → renvoyer même si déjà transmis (menu ACE).
+    Sinon : une seule fois par carte (session + profil).
 */
-params [["_mapId", 0]];
+params [["_mapId", 0], ["_force", false, [true]]];
+if (_mapId isEqualType true) then {
+    _force = _mapId;
+    _mapId = 0;
+};
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "linked") exitWith {
@@ -23,6 +30,28 @@ if (!(_mapId isEqualType 0) || {_mapId < 1}) then {
     _mapId = missionNamespace getVariable ["COMSPEC_MapId", 1];
 };
 if (_mapId < 1) then { _mapId = 1; };
+
+private _geoKey = format ["COMSPEC_GeoDone_%1_%2", worldName, _mapId];
+if (!_force) then {
+    if (!(missionNamespace getVariable ["COMSPEC_GeoSessionDone", false])) then {
+        private _stored = profileNamespace getVariable [_geoKey, []];
+        if (_stored isEqualType [] && {(count _stored) >= 2}) then {
+            missionNamespace setVariable ["COMSPEC_GeoSessionDone", true, false];
+        };
+    };
+};
+if (!_force && {missionNamespace getVariable ["COMSPEC_GeoSessionDone", false]}) exitWith {
+    private _stored = profileNamespace getVariable [_geoKey, []];
+    if ((_stored isEqualType []) && {(count _stored) >= 2}) then {
+        missionNamespace setVariable ["COMSPEC_TheaterPlaces", _stored select 0, false];
+        missionNamespace setVariable ["COMSPEC_TheaterRoads", _stored select 1, false];
+    };
+    if (!(missionNamespace getVariable ["COMSPEC_GeoSkipLogged", false])) then {
+        missionNamespace setVariable ["COMSPEC_GeoSkipLogged", true, false];
+        ["[Athena] Villes et routes déjà transmises — pas de nouvel envoi.", "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+    };
+    [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
+};
 
 private _world = worldSize;
 if (!(_world isEqualType 0) || {_world < 1024}) then { _world = 30720; };
@@ -61,10 +90,22 @@ private _roadClass = {
 };
 
 missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
+private _ownsBusy = false;
+if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
+    _ownsBusy = true;
+    missionNamespace setVariable ["COMSPEC_TheaterGeoOwnsBusy", true, false];
+    missionNamespace setVariable ["COMSPEC_TheaterSampling", true, false];
+    missionNamespace setVariable ["COMSPEC_TheaterPhase", "geo", false];
+    missionNamespace setVariable ["COMSPEC_TheaterCurrent", "Villes et routes…", false];
+    if ((missionNamespace getVariable ["COMSPEC_TheaterStartedAt", -1]) < 0) then {
+        missionNamespace setVariable ["COMSPEC_TheaterStartedAt", diag_tickTime, false];
+    };
+};
 ["Relevé géographique (villes + routes) en cours…", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+[] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
 
-[_mapId, _world, _doPlaces, _doRoads, _fncEsc, _placeType, _roadClass] spawn {
-    params ["_mapId", "_world", "_doPlaces", "_doRoads", "_fncEsc", "_placeType", "_roadClass"];
+[_mapId, _world, _doPlaces, _doRoads, _fncEsc, _placeType, _roadClass, _ownsBusy] spawn {
+    params ["_mapId", "_world", "_doPlaces", "_doRoads", "_fncEsc", "_placeType", "_roadClass", "_ownsBusy"];
 
     private _places = [];
     private _roads = [];
@@ -88,13 +129,19 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
                 _pos select 0, _pos select 1, _z
             ];
         } forEach _locs;
+        missionNamespace setVariable ["COMSPEC_TheaterPlaces", count _places, false];
+        missionNamespace setVariable ["COMSPEC_TheaterCurrent", format ["Villes — %1 lieux", count _places], false];
+        [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
     };
 
     if (_doRoads) then {
         private _tile = 512;
         private _tiles = ceil (_world / _tile);
         for "_ty" from 0 to (_tiles - 1) do {
-            for "_tx" from 0 to (_tiles - 1) do {
+            if (missionNamespace getVariable ["COMSPEC_TheaterAbort", false]) then {
+                _ty = _tiles;
+            } else {
+                for "_tx" from 0 to (_tiles - 1) do {
                 private _cx = (_tx + 0.5) * _tile;
                 private _cy = (_ty + 0.5) * _tile;
                 private _roadsHere = [_cx, _cy, 0] nearRoads (_tile * 0.75);
@@ -123,6 +170,10 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
                     } forEach _neighbors;
                 } forEach _roadsHere;
                 sleep 0.01;
+            };
+                missionNamespace setVariable ["COMSPEC_TheaterRoads", count _roads, false];
+                missionNamespace setVariable ["COMSPEC_TheaterCurrent", format ["Routes — bande %1 / %2 · %3 segments", _ty + 1, _tiles, count _roads], false];
+                [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
             };
         };
     };
@@ -163,11 +214,45 @@ missionNamespace setVariable ["COMSPEC_GeoSampling", true, false];
         [_batchPlaces, _batchRoads] call _flushGeo;
     };
 
+    private _abortedGeo = missionNamespace getVariable ["COMSPEC_TheaterAbort", false];
     missionNamespace setVariable ["COMSPEC_GeoSampling", false, false];
-    [format [
-        "Relevé géographique terminé — %1 lieu(x), %2 segment(s) routier(s).",
-        count _places, count _roads
-    ], "system", "info"] call comspec_overwatch_connect_fnc_announce;
+    missionNamespace setVariable ["COMSPEC_TheaterPlaces", count _places, false];
+    missionNamespace setVariable ["COMSPEC_TheaterRoads", count _roads, false];
+    if (!_abortedGeo) then {
+        missionNamespace setVariable ["COMSPEC_GeoSessionDone", true, false];
+    };
+    private _doneKey = format ["COMSPEC_GeoDone_%1_%2", worldName, _mapId];
+    profileNamespace setVariable [_doneKey, [count _places, count _roads]];
+    private _countKey = format ["COMSPEC_TheaterSurveyCounts_%1", worldName];
+    private _saved = profileNamespace getVariable [_countKey, []];
+    if (!(_saved isEqualType []) || {(count _saved) < 3}) then { _saved = [0, 0, 0, 0, 0]; };
+    while {(count _saved) < 5} do { _saved pushBack 0; };
+    _saved set [3, count _places];
+    _saved set [4, count _roads];
+    profileNamespace setVariable [_countKey, _saved];
+    saveProfileNamespace;
+    if (_ownsBusy || {missionNamespace getVariable ["COMSPEC_TheaterGeoOwnsBusy", false]}) then {
+        missionNamespace setVariable ["COMSPEC_TheaterSampling", false, false];
+        missionNamespace setVariable ["COMSPEC_TheaterGeoOwnsBusy", false, false];
+        missionNamespace setVariable ["COMSPEC_TheaterEndedAt", diag_tickTime, false];
+        if (_abortedGeo) then {
+            missionNamespace setVariable ["COMSPEC_TheaterPhase", "abort", false];
+            missionNamespace setVariable ["COMSPEC_TheaterCurrent", "Relevé interrompu", false];
+        } else {
+            missionNamespace setVariable ["COMSPEC_TheaterPhase", "done", false];
+            missionNamespace setVariable ["COMSPEC_TheaterCurrent", "Villes et routes transmises — vérification…", false];
+        };
+    };
+    private _geoMsg = if (_abortedGeo) then {
+        format ["Relevé géographique interrompu — %1 lieu(x), %2 segment(s) routier(s) déjà transmis.", count _places, count _roads]
+    } else {
+        format ["Relevé géographique terminé — %1 lieu(x), %2 segment(s) routier(s).", count _places, count _roads]
+    };
+    [_geoMsg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
+    [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
+    if (_ownsBusy && {!_abortedGeo}) then {
+        [] call comspec_overwatch_connect_fnc_theaterSurveyVerify;
+    };
 };
 
 true
