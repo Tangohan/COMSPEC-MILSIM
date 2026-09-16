@@ -58,6 +58,7 @@ class TenantAtakConfigRepository
 
             // Données chiffrées (certificat / compromission)
             'intel_scramble_enabled' => false,
+            'link_via_relays' => false,
         ];
 
         if (!$row || !$this->hasRoleplayColumns()) {
@@ -85,6 +86,12 @@ class TenantAtakConfigRepository
                 : false,
             'intel_scramble_reviewed' => $this->hasTenantAtakConfigColumn('roleplay_intel_scramble_reviewed')
                 ? (bool) ($row['roleplay_intel_scramble_reviewed'] ?? false)
+                : false,
+            'link_via_relays' => $this->hasTenantAtakConfigColumn('atak_link_via_relays')
+                ? (bool) ($row['atak_link_via_relays'] ?? false)
+                : false,
+            'link_via_relays_reviewed' => $this->hasTenantAtakConfigColumn('atak_link_via_relays_reviewed')
+                ? (bool) ($row['atak_link_via_relays_reviewed'] ?? false)
                 : false,
         ];
     }
@@ -164,6 +171,14 @@ class TenantAtakConfigRepository
                 $sql .= ', roleplay_intel_scramble_reviewed = ?';
                 $params[] = $fields['roleplay_intel_scramble_reviewed'];
             }
+            if ($this->hasTenantAtakConfigColumn('atak_link_via_relays')) {
+                $sql .= ', atak_link_via_relays = ?';
+                $params[] = isset($config['link_via_relays']) ? (int) $config['link_via_relays'] : 0;
+            }
+            if ($this->hasTenantAtakConfigColumn('atak_link_via_relays_reviewed')) {
+                $sql .= ', atak_link_via_relays_reviewed = ?';
+                $params[] = isset($config['link_via_relays_reviewed']) ? (int) $config['link_via_relays_reviewed'] : 1;
+            }
             $sql .= ', updated_at = NOW() WHERE tenant_id = ?';
             $params[] = $tenantId;
             $this->pdo()->prepare($sql)->execute($params);
@@ -203,6 +218,14 @@ class TenantAtakConfigRepository
             if ($reviewedCol) {
                 $cols[] = 'roleplay_intel_scramble_reviewed';
                 $vals[] = $fields['roleplay_intel_scramble_reviewed'];
+            }
+            if ($this->hasTenantAtakConfigColumn('atak_link_via_relays')) {
+                $cols[] = 'atak_link_via_relays';
+                $vals[] = isset($config['link_via_relays']) ? (int) $config['link_via_relays'] : 0;
+            }
+            if ($this->hasTenantAtakConfigColumn('atak_link_via_relays_reviewed')) {
+                $cols[] = 'atak_link_via_relays_reviewed';
+                $vals[] = isset($config['link_via_relays_reviewed']) ? (int) $config['link_via_relays_reviewed'] : 1;
             }
             $cols[] = 'default_map_slug';
             $cols[] = 'created_at';

@@ -107,6 +107,7 @@ final class AtakTerrainSight
         float $y1,
         float $observerEyeM = 1.6,
         float $targetEyeM = 0.0,
+        array $sceneObjects = [],
     ): array {
         $dist = hypot($x1 - $x0, $y1 - $y0);
         $cell = max(25.0, (float) ($grid['cell_m'] ?? 50));
@@ -205,7 +206,7 @@ final class AtakTerrainSight
                 : 'Le relief ne masque pas la cible.';
         }
 
-        return [
+        $out = [
             'ok' => true,
             'ready' => $verdict !== self::VERDICT_UNKNOWN,
             'mode' => 'los',
@@ -225,7 +226,112 @@ final class AtakTerrainSight
             'gap_message' => $gaps ? self::GAP_MESSAGE : null,
             'obstruction' => $obstruction,
             'samples' => self::downsample($wire, self::WIRE_SAMPLES),
+            'scene_ready' => $sceneObjects !== [],
+            'cause_label' => $verdict === self::VERDICT_MASKED ? 'Masqué par le relief' : null,
         ];
+        if ($sceneObjects === [] && $verdict === self::VERDICT_MASKED) {
+            $out['detail'] = rtrim((string) $out['detail']) . ' Couverts non relevés sur ce tronçon.';
+        } elseif ($sceneObjects === [] && $verdict === self::VERDICT_CLEAR) {
+            $out['detail'] = rtrim((string) $out['detail']) . ' Couverts et bâtiments n’ont pas encore été relevés sur ce tronçon.';
+        }
+
+        return self::applySceneHits($out, $sceneObjects, $x0, $y0, $x1, $y1, $zObs, $zTgt, $dist);
+    }
+
+    /**
+     * @param array<string, mixed> $out
+     * @param list<array<string, mixed>> $sceneObjects
+     * @return array<string, mixed>
+     */
+    private static function applySceneHits(
+        array $out,
+        array $sceneObjects,
+        float $x0,
+        float $y0,
+        float $x1,
+        float $y1,
+        float $zObs,
+        float $zTgt,
+        float $dist,
+    ): array {
+        if ($sceneObjects === [] || $dist < 1) {
+            return $out;
+        }
+        $dx = $x1 - $x0;
+        $dy = $y1 - $y0;
+        $len2 = ($dx * $dx) + ($dy * $dy);
+        if ($len2 <= 0) {
+            return $out;
+        }
+        $hit = null;
+        foreach ($sceneObjects as $obj) {
+            $ox = self::num($obj['x'] ?? $obj['world_x'] ?? null);
+            $oy = self::num($obj['y'] ?? $obj['world_y'] ?? null);
+            $kind = strtolower((string) ($obj['kind'] ?? ''));
+            $h = self::num($obj['height'] ?? $obj['height_m'] ?? null);
+            if ($h === null) {
+                $h = str_contains($kind, 'forest') ? 12.0 : 8.0;
+            }
+            if ($ox === null || $oy === null || $h < 1.0) {
+                continue;
+            }
+            $half = max(2.0, (float) ($obj['width'] ?? $obj['width_m'] ?? 6)) / 2.0;
+            $t = (($ox - $x0) * $dx + ($oy - $y0) * $dy) / $len2;
+            if ($t <= 0.02 || $t >= 0.98) {
+                continue;
+            }
+            $px = $x0 + $t * $dx;
+            $py = $y0 + $t * $dy;
+            $off = hypot($ox - $px, $oy - $py);
+            if ($off > $half + 2) {
+                continue;
+            }
+            $gnd = self::num($obj['z'] ?? $obj['world_z'] ?? null) ?? 0.0;
+            $top = $gnd + $h;
+            $ray = $zObs + ($zTgt - $zObs) * $t;
+            if ($top < $ray + self::LOS_EPSILON_M) {
+                continue;
+            }
+            $cause = (str_contains($kind, 'forest') || str_contains($kind, 'tree') || str_contains($kind, 'wood'))
+                ? 'Masqué par un couvert'
+                : 'Masqué par un bâtiment';
+            $d = $t * $dist;
+            $excess = $top - $ray;
+            if ($hit === null || $d < (float) $hit['d']) {
+                $hit = ['d' => $d, 'x' => $px, 'y' => $py, 'z' => $top, 'excess' => $excess, 'cause' => $cause, 'kind' => $kind];
+            }
+        }
+        if ($hit === null) {
+            return $out;
+        }
+        $existingD = is_array($out['obstruction'] ?? null) ? (float) ($out['obstruction']['d'] ?? 1e9) : 1e9;
+        if ((float) $hit['d'] >= $existingD - 0.5) {
+            return $out;
+        }
+        $samples = is_array($out['samples'] ?? null) ? $out['samples'] : [];
+        foreach ($samples as $i => $s) {
+            $sd = (float) ($s['d'] ?? 0);
+            if ($sd >= $hit['d'] - 8 && $sd <= $dist) {
+                $samples[$i]['clear'] = false;
+            }
+        }
+        $out['samples'] = $samples;
+        $out['verdict'] = self::VERDICT_MASKED;
+        $out['verdict_label'] = $hit['cause'];
+        $out['cause_label'] = $hit['cause'];
+        $out['detail'] = $hit['cause'] . ' à ' . self::formatMeters((float) $hit['d'])
+            . ', dépasse la visée de ' . self::formatMeters((float) $hit['excess']) . '.';
+        $out['obstruction'] = [
+            'd' => round((float) $hit['d'], 1),
+            'x' => $hit['x'],
+            'y' => $hit['y'],
+            'z' => round((float) $hit['z'], 1),
+            'excess_m' => round((float) $hit['excess'], 1),
+            'cause' => $hit['cause'],
+        ];
+        $out['ready'] = true;
+
+        return $out;
     }
 
     /**

@@ -102,8 +102,18 @@ if (!isNull _mapCtrl && {ctrlShown _mapCtrl}) then {
     };
 };
 
+if (!isNull _ctrl) then {
+    private _have = toLower (ctrlClassName _ctrl);
+    if ((_have find "structured") < 0 && {(_have find "html") < 0}) then {
+        ctrlDelete _ctrl;
+        _ctrl = controlNull;
+    };
+};
 if (isNull _ctrl) then {
-    _ctrl = _disp ctrlCreate ["RscStructuredText", _IDC];
+    private _stClass = "RscStructuredText";
+    if (isClass (configFile >> "Iceman_ReportsDetailText")) then { _stClass = "Iceman_ReportsDetailText"; };
+    _ctrl = _disp ctrlCreate [_stClass, _IDC];
+    if (isNull _ctrl) then { _ctrl = _disp ctrlCreate ["RscStructuredText", _IDC]; };
     if (isNull _ctrl) exitWith {
         missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
         false
@@ -127,7 +137,9 @@ private _fncClean = {
     params ["_v"];
     if (!(_v isEqualType "")) then { _v = str _v; };
     _v = trim _v;
-    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else { _v };
+    if (_v isEqualTo "" || {(toLower _v) in ["<null>", "any", "nil", "-", "none", "n/a"]}) then { "" } else {
+        (_v splitString "<>&%") joinString ""
+    };
 };
 
 private _fncAgo = {
@@ -188,9 +200,9 @@ if (_bitrateKbps < 0.05 && {_ok || _degraded}) then {
 
 private _okTxt = if (_ok) then { "OK" } else { if (_degraded) then { "OK*" } else { "NOK" } };
 private _okColor = if (_ok) then {
-    if (_loss > 12) then { "#ffd27a" } else { "#7dffb0" }
+    if (_loss > 12) then { [1, 0.82, 0.48, 1] } else { [0.49, 1, 0.69, 1] }
 } else {
-    if (_degraded) then { "#ffd27a" } else { "#ff8a7a" }
+    if (_degraded) then { [1, 0.82, 0.48, 1] } else { [1, 0.54, 0.48, 1] }
 };
 
 private _rateTxt = if (!_ok && {!_degraded}) then {
@@ -208,11 +220,6 @@ private _rateTxt = if (!_ok && {!_degraded}) then {
 };
 
 private _errTxt = format ["%1%%", round _loss];
-private _errColor = switch (true) do {
-    case (_loss >= 25): { "#ff8a7a" };
-    case (_loss >= 10): { "#ffd27a" };
-    default { "#a8b8c8" };
-};
 
 // Fiabilité : 100 − perte, pénalisée si hors liaison / santé ancienne / latence haute
 private _reliab = ((100 - _loss) max 0) min 100;
@@ -227,11 +234,6 @@ if ((_ms isEqualType 0) && {_ms >= 0}) then {
     if (_ms >= 800) then { _reliab = _reliab min 30; };
 };
 _reliab = round _reliab;
-private _reliabColor = switch (true) do {
-    case (_reliab >= 85): { "#7dffb0" };
-    case (_reliab >= 60): { "#ffd27a" };
-    default { "#ff8a7a" };
-};
 
 private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
 private _syncTxt = [_lastSync] call _fncAgo;
@@ -277,25 +279,23 @@ if (_extV isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_extResult"}) th
 };
 if (_extV isEqualTo "") then { _extV = "—"; };
 
-private _sep = "<t color='#4a5a68'> · </t>";
-// Tout sur une ligne : métriques + identité + versions (même petite taille).
+private _hex = if (_ok) then { "#8FE6B8" } else { if (_degraded) then { "#FFD080" } else { "#FF8A7A" } };
 private _html = format [
-    "<t align='center' valign='middle' size='0.48' shadow='0'><t color='%1'>%2</t>%3<t color='#9eb0c0'>sync %4</t>%3<t color='%5'>fiab. %6%%</t>%3<t color='#b8d4e8'>%7</t>%3<t color='%8'>perte %9</t>%3<t color='#b8c4d0'>%10</t>%3<t color='#7a8e9e'>OW %11</t>%3<t color='#7a8e9e'>ATAK %12</t>%3<t color='#7a8e9e'>liaison %13</t></t>",
-    _okColor,
+    "<t font='RobotoCondensed' size='0.72' align='left' color='%1'>%2 · sync %3 · fiab. %4%% · %5 · perte %6 · %7 · OW %8 · ATAK %9 · liaison %10</t>",
+    _hex,
     _okTxt,
-    _sep,
     _syncTxt,
-    _reliabColor,
     _reliab,
     _rateTxt,
-    _errColor,
     _errTxt,
     _who,
     _owV,
     _atakV,
     _extV
 ];
-_ctrl ctrlSetStructuredText parseText _html;
+_ctrl ctrlCommit 0;
+[_ctrl, _html] call comspec_overwatch_connect_fnc_setPlainText;
+_ctrl ctrlSetTextColor _okColor;
 _ctrl ctrlShow true;
 
 private _sig = _disp displayCtrl 3;

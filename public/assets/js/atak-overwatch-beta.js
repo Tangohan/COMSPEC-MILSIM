@@ -852,7 +852,12 @@
       }).addTo(map));
       rangeRingLayers.push(L.marker(edge, {
         interactive: false,
-        icon: L.divIcon({ className: 'ow-ring-label', html: '<span>' + formatMeters(radius) + '</span>' })
+        icon: L.divIcon({
+          className: 'ow-ring-label',
+          html: '<span>' + formatMeters(radius) + '</span>',
+          iconSize: [64, 18],
+          iconAnchor: [32, 9]
+        })
       }).addTo(map));
     });
   }
@@ -946,6 +951,7 @@
   function loadArmaMarkers() {
     return api('/api/atak/markers?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       armaMarkerRows = Array.isArray(payload) ? payload : asList(payload, 'markers');
+      if (window.OverwatchOps && window.OverwatchOps.setArmaRows) window.OverwatchOps.setArmaRows(armaMarkerRows);
       renderArmaMarkers();
     }).catch(function () {});
   }
@@ -957,13 +963,14 @@
     units.forEach(function (unit) {
       var loc = point(unit);
       if (!loc || tooOldToShow(unit)) return;
-      L.circle(loc, {
-        radius: 160,
+      var edge = worldToLatLng(latLngToWorld(loc).x + 160, latLngToWorld(loc).y);
+      L.polygon(circleLatLngs(loc, edge, 24), {
         color: '#e05b63',
         weight: 0,
         fillColor: '#e7b14d',
         fillOpacity: Number(getComputedStyle(document.documentElement).getPropertyValue('--ow-heat-opacity')) || 0.16,
-        interactive: false
+        interactive: false,
+        className: 'ow-heat-dot'
       }).addTo(presenceLayer);
     });
     presenceLayer.addTo(map);
@@ -1286,6 +1293,7 @@
     var squad = hasSquadColor(unit) ? squadColor(unit) : stateColor;
     var pulse = squadColorOn() && hasSquadColor(unit);
     extra += disc ? ' is-offline' : '';
+    extra += (!disc && String(unit.status || '').toLowerCase() === 'delayed') ? ' is-delayed' : '';
     extra += pulse ? ' is-squad-pulse' : '';
     var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + '</span>' : '';
     var badge = (opts.forceLabel && stackCount > 1) ? '<b class="ow-stack-n">+' + (stackCount - 1) + '</b>' : '';
@@ -1647,12 +1655,17 @@
         var pulse = squadColorOn() && hasSquadColor(unit);
         var stateColor = disc ? DISC_COLOR : (side(unit) === 'hostile' ? markerPrefs().hostile : (side(unit) === 'unknown' ? markerPrefs().unknown : markerPrefs().friend));
         var squad = hasSquadColor(unit) ? squadColor(unit) : stateColor;
-        return '<button type="button" class="ow-contact' + (disc ? ' is-offline' : '') + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon' + (disc ? ' is-offline' : '') + (pulse ? ' is-squad-pulse' : '') + '" style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '">' +
-          initials(callsign(unit)) + '</span><span><div class="cname ow-mono">' + escapeHtml(callsign(unit)) + '</div><div class="cmeta">' +
-          escapeHtml(group(unit)) + (ageLabel(unit) ? ' · ' + ageLabel(unit) : '') + '</div></span><em class="online' + (disc ? ' is-stale' : (stale ? ' is-stale' : ' is-live')) + '">' +
+        var role = clean(unit.role, '');
+        var age = ageLabel(unit);
+        var sub = [role, age].filter(Boolean).join(' · ');
+        var selectedId = selected ? unitId(selected) : '';
+        return '<button type="button" class="ow-contact' + (disc ? ' is-offline' : '') + (selectedId === unitId(unit) ? ' is-active' : '') + (stale && !disc ? ' is-delayed' : '') + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon' + (disc ? ' is-offline' : '') + (pulse ? ' is-squad-pulse' : '') + '" style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '">' +
+          initials(callsign(unit)) + '</span><span><div class="cname ow-mono">' + escapeHtml(callsign(unit)) +
+          (role ? '<small>' + escapeHtml(role) + '</small>' : '') + '</div><div class="cmeta">' +
+          escapeHtml(sub) + '</div></span><em class="online' + (disc ? ' is-stale' : (stale ? ' is-stale' : ' is-live')) + '">' +
           (disc ? 'Hors liaison' : (stale ? 'Différé' : 'Direct')) + '</em></button>';
       }).join('');
-    }).join('');
+    }).join('') || '<p class="ow-fil-empty">Aucun contact en liaison pour le moment.</p>';
     document.getElementById('ow-bft-count').textContent = 'BFT ' + visibleUnits().length;
     document.getElementById('ow-empty').hidden = visibleUnits().some(point) || !config.tilePattern;
     renderHud();
@@ -1820,11 +1833,13 @@
       var real = String(row.created_at || row.time || '');
       var day = real.slice(0, 10);
       if (day && day !== lastDay) {
+        if (lastGroupKey) html += '</div></div>';
         html += '<div class="ow-day-sep">' + escapeHtml(fmtDay(real)) + '</div>';
         lastDay = day;
         lastGroupKey = null;
       }
       if (parsed.type === 'system') {
+        if (lastGroupKey) html += '</div></div>';
         html += '<div class="ow-sys"><span>◇</span> ' + escapeHtml(parsed.author || clean(row.author, 'Système')) +
           ' a rejoint le groupe ' + escapeHtml(parsed.groupId) +
           ' <span class="code">#' + escapeHtml(parsed.code) + '</span>' +
@@ -1850,7 +1865,7 @@
           escapeHtml(cryptoLabel(parsed.crypto)) + '</span>' +
           (parsed.gameTime ? '<span>·</span><span>en jeu ' + escapeHtml(parsed.gameTime) + '</span>' : '') +
           '</div>' : '') +
-        '</div></div><div class="ow-raw-preview">' + escapeHtml(raw) + '</div>';
+        '</div><div class="ow-raw-preview">' + escapeHtml(raw) + '</div></div>';
     });
     if (lastGroupKey) html += '</div></div>';
     host.innerHTML = html || '<p class="ow-fil-empty">Aucun message pour le moment.</p>';
@@ -1939,9 +1954,23 @@
       layer = L.polyline(geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); }), { color: color, weight: Number(shape.stroke || 2) });
     } else if ((type === 'POLYGON' || type === 'AOI') && Array.isArray(geo.coordinates)) {
       var ring = geo.coordinates[0] && Array.isArray(geo.coordinates[0][0]) ? geo.coordinates[0] : geo.coordinates;
+      var meta = shape.meta;
+      if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch (eMeta) { meta = {}; }
+      }
+      meta = meta && typeof meta === 'object' ? meta : {};
+      var fillStyle = String(meta.fill_style || (meta.hatch ? 'hatch-d' : 'solid'));
+      var hatchClass = fillStyle === 'hatch-h' ? 'ow-hatch-h' : (fillStyle === 'hatch-d' || meta.hatch ? 'ow-hatch-diag' : '');
+      var fillOp = fillStyle === 'none' ? 0 : Number(shape.fillOpacity || shape.fill_opacity || meta.fill_opacity || 0.15);
       layer = L.polygon(ring.map(function (p) { return worldToLatLng(p[0], p[1]); }), {
-        color: color, fillOpacity: Number(shape.fillOpacity || shape.fill_opacity || 0.15)
+        color: color,
+        fillColor: meta.fill_color || color,
+        fillOpacity: fillOp,
+        className: hatchClass
       });
+      if (meta.interior && layer.bindTooltip) {
+        layer.bindTooltip(String(meta.interior), { permanent: true, direction: 'center', className: 'ow-geo-label' });
+      }
     }
     if (!layer) return;
     layer.addTo(map);
@@ -1958,7 +1987,11 @@
     }).catch(function () {});
   }
 
-  function saveShape(type, latlngs, label) {
+  function saveShape(type, latlngs, label, opts) {
+    opts = opts || {};
+    if (!opts.confirmed && window.OverwatchOps && typeof window.OverwatchOps.promptShape === 'function') {
+      return window.OverwatchOps.promptShape(type, latlngs, label);
+    }
     var style = drawStyle();
     var coords = latlngs.map(function (ll) {
       var w = latLngToWorld(ll);
@@ -1971,7 +2004,17 @@
         : { type: 'LineString', coordinates: coords });
     return api('/api/map-shapes', {
       method: 'POST',
-      body: { mapId: mapId, type: type, label: label || type, color: style.color, stroke: style.stroke, geometry: geometry, createdBy: authorName }
+      body: {
+        mapId: mapId,
+        type: type,
+        label: label || type,
+        color: style.color,
+        stroke: style.stroke,
+        fillOpacity: opts.fillOpacity != null ? opts.fillOpacity : 0.15,
+        geometry: geometry,
+        createdBy: authorName,
+        meta: opts.meta || {}
+      }
     }).then(function (row) {
       if (row) {
         shapes.push(row);
@@ -1984,6 +2027,9 @@
   }
 
   function saveMarker(ll, label) {
+    if (window.OverwatchOps && typeof window.OverwatchOps.promptMarker === 'function' && !isPoLabel(label)) {
+      return window.OverwatchOps.promptMarker(ll);
+    }
     var w = latLngToWorld(ll);
     var text = label || 'Marqueur';
     return api('/api/markers', {
@@ -1991,7 +2037,7 @@
       body: {
         mapId: mapId,
         markerData: {
-          type: 'manual',
+          type: isPoLabel(text) ? 'mil_objective' : 'mil_dot',
           label: text,
           text: text,
           author: authorName,
@@ -2089,23 +2135,17 @@
   }
 
   function saveSitrep(ll) {
-    var w = latLngToWorld(ll);
-    var missionId = 'mission_' + Number(window.ATAK_TENANT_ID || 0) + '_map_' + mapId;
-    return api('/api/intel/report', {
-      method: 'POST',
-      body: { missionId: missionId, mapId: mapId, target_type: 'UNKNOWN', pos_x: w.x, pos_y: w.y, source_callsign: authorName, report_type: 'SITREP' }
-    }).then(function () {
-      toast('SITREP géolocalisé transmis.');
-    }).catch(function () {
-      return sendChat('commandement', 'SITREP ' + Math.round(w.x) + '/' + Math.round(w.y) + ' — observation depuis le poste.');
-    });
+    if (window.OverwatchOps && typeof window.OverwatchOps.openSitrep === 'function') {
+      return window.OverwatchOps.openSitrep(ll);
+    }
+    toast('Ouvrez le compte rendu depuis le menu contextuel.');
   }
 
   function saveIntelNote(ll) {
-    var w = latLngToWorld(ll);
-    return saveShape('POINT', [ll], 'Observation Intel').then(function () {
-      return sendChat('general', 'OBS INTEL ' + Math.round(w.x) + '/' + Math.round(w.y));
-    });
+    if (window.OverwatchOps && typeof window.OverwatchOps.openIntel === 'function') {
+      return window.OverwatchOps.openIntel(ll);
+    }
+    toast('Ouvrez l’observation depuis le menu contextuel.');
   }
 
   function copyCoords(ll) {
@@ -2152,9 +2192,14 @@
         return;
       }
       var color = payload.verdict === 'clear' ? '#00d69a' : (payload.verdict === 'masked' ? '#e05b63' : '#e7b14d');
-      losLayer = L.polyline([fromLl, toLl], { color: color, weight: 3 }).addTo(map);
-      bindLayerContext(losLayer);
-      var html = '<p class="ow-help">' + escapeHtml(payload.detail || payload.verdict_label || '') + '</p>' +
+      var extraCause = '';
+      if (window.OverwatchOps && typeof window.OverwatchOps.drawLos === 'function') {
+        extraCause = window.OverwatchOps.drawLos(fromLl, toLl, payload) || '';
+      } else {
+        losLayer = L.polyline([fromLl, toLl], { color: color, weight: 3 }).addTo(map);
+        bindLayerContext(losLayer);
+      }
+      var html = '<p class="ow-help">' + escapeHtml(payload.detail || payload.verdict_label || '') + '</p>' + extraCause +
         '<div class="ow-event"><span>Résultat</span><strong>' + escapeHtml(payload.verdict_label || '') + '</strong></div>' +
         '<div class="ow-event"><span>Distance</span><strong>' + formatMeters(Number(payload.distance_m || 0)) + '</strong></div>';
       if (payload.observer_z != null) html += '<div class="ow-event"><span>Observateur</span><strong>' + Math.round(payload.observer_z) + ' m</strong></div>';
@@ -2734,27 +2779,22 @@
     hideContext();
     if (act === 'delete') { deleteMapTarget(target); return; }
     if (act === 'marker') saveMarker(ll, 'Marqueur');
-    if (act === 'ping') savePing(ll);
+    if (act === 'ping') {
+      if (window.OverwatchOps && window.OverwatchOps.openPing) window.OverwatchOps.openPing(ll);
+      else savePing(ll);
+    }
     if (act === 'aoi') { setTool('aoi'); draftPoints = [ll]; updateDraft(); toast('Cliquez les sommets, double-clic pour fermer.'); }
-    if (act === 'route') { setTool('route'); draftPoints = [ll]; updateDraft(); toast('Cliquez les points de route, double-clic pour terminer.'); }
     if (act === 'intel') saveIntelNote(ll);
     if (act === 'sitrep') saveSitrep(ll);
-    if (act === 'circle') { setTool('circle'); draftPoints = [ll]; updateDraft(); }
-    if (act === 'rect') { setTool('rect'); draftPoints = [ll]; updateDraft(); }
-    if (act === 'bearing') { setTool('bearing'); draftPoints = [ll]; toast('Cliquez le second point.'); }
     if (act === 'po') { placeReachPoint(ll); finishPoSession(); }
     if (act === 'rally') { placeRallyPoint(ll); }
     if (act === 'los') { setTool('los'); draftPoints = [ll]; toast('Cliquez la cible.'); }
-    if (act === 'ring') {
-      var style = drawStyle();
-      var edge = worldToLatLng(latLngToWorld(ll).x + 250, latLngToWorld(ll).y);
-      saveShape('AOI', circleLatLngs(ll, edge, 48), 'Anneau 250 m');
+    if (act === 'chatgrid') {
+      if (window.OverwatchOps && window.OverwatchOps.openChatGrid) window.OverwatchOps.openChatGrid(ll);
+      else sendChat(activeChannel, 'GRILLE ' + gridLabel(ll).replace('GRID ', ''));
     }
-    if (act === 'chatgrid') sendChat(activeChannel, 'GRILLE ' + gridLabel(ll).replace('GRID ', ''));
     if (act === 'measure') { setTool('measure'); measureFrom = ll; draftPoints = [ll]; toast('Cliquez le second point.'); }
     if (act === 'copy') copyCoords(ll);
-    if (act === 'rings' && window.OverwatchTools) window.OverwatchTools.placeRange(ll, [100, 250, 500, 1000]);
-    if (act === 'centerhere') map.setView(ll, Math.max(map.getZoom(), 4));
   });
 
   function applyLook(look) {
@@ -2980,15 +3020,14 @@
       '<p class="ow-kicker">Renseignement</p>' +
       card('Notes de terrain', 'Déposez une observation liée à la carte.', '<button type="button" class="ow-tag" data-ow-panel="osint">Ouvrir</button>') +
       card('Journal', 'Parcourt l’activité déjà transmise pour cette mission.', '<button type="button" class="ow-tag" data-ow-panel="logs">Ouvrir</button>') +
-      '<p class="ow-kicker">Satellites</p>' +
-      '<p class="ow-help">Catalogue local. Les passages ne s’affichent que si une source orbitale répond.</p>' +
-      '<button type="button" class="ow-primary" data-ow-panel="sats">Ouvrir le catalogue</button>' +
-      '<div id="ow-sat-status" class="ow-help">Recherche d’une source de passages…</div>' +
       '<p class="ow-kicker">Aide</p>' +
       '<button type="button" class="ow-secondary" data-ow-help>Ouvrir l’aide du poste</button>';
   }
 
   function layersHtml() {
+    if (window.OverwatchOps && typeof window.OverwatchOps.layersHtml === 'function') {
+      return window.OverwatchOps.layersHtml();
+    }
     var list = shapes.slice().reverse().slice(0, 24).map(function (row) {
       return '<div class="ow-event"><span>' + escapeHtml(clean(row.label || row.type, 'TRACÉ')) +
         '</span><button type="button" class="ow-tag" data-del-shape="' + escapeHtml(String(row.id || '')) + '">Retirer</button></div>';
@@ -3165,14 +3204,8 @@
         if (g) g.hidden = false;
       });
     });
-    var sat = document.getElementById('ow-sat-status');
-    if (sat) {
-      fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json', { mode: 'cors' }).then(function (r) {
-        if (!r.ok) throw new Error('no');
-        sat.textContent = 'Source orbitale joignable. Les passages restent indicatifs.';
-      }).catch(function () {
-        sat.textContent = 'Source orbitale indisponible. Aucun passage n’est inventé.';
-      });
+    if (window.OverwatchOps && typeof window.OverwatchOps.bindLayers === 'function') {
+      window.OverwatchOps.bindLayers();
     }
   }
 
@@ -3240,7 +3273,6 @@
     ['Profil d’élévation', 'Carte', function () { setTool('profile'); }],
     ['Ouvrir les notes de terrain', 'Renseignement', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'osint' } })); }],
     ['Ouvrir le journal', 'Mission', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'logs' } })); }],
-    ['Catalogue satellites', 'Outils', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'sats' } })); }],
     ['Visée / masque du relief', 'Carte', function () { setTool('los'); }],
     ['Poser un point à atteindre', 'Carte', function () { setTool('po'); }],
     ['Poser un point de ralliement', 'Carte', function () { setTool('rally'); }],
@@ -3432,7 +3464,14 @@
   document.getElementById('ow-contact-list').addEventListener('click', function (event) {
     var row = event.target.closest('[data-unit-id]'); if (!row) return;
     var unit = units.find(function (item) { return unitId(item) === row.dataset.unitId; });
-    if (unit) { selectUnit(unit); var location = point(unit); if (location) map.panTo(location); }
+    if (unit) {
+      selectUnit(unit);
+      var location = point(unit);
+      if (location) map.panTo(location);
+      followOn = true;
+      var box = document.getElementById('ow-follow');
+      if (box) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    }
   });
   document.getElementById('ow-search').addEventListener('input', renderList);
   var sideFilter = document.getElementById('ow-side-filter');
@@ -3689,6 +3728,7 @@
       followOn = followBox.checked;
       try { localStorage.setItem('athena:overwatch-ow-follow', followOn ? '1' : '0'); } catch (e2) {}
       toast(followOn ? 'Suivi du contact activé.' : 'Suivi arrêté.');
+      if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap();
     });
   }
   document.querySelectorAll('[data-ow-ring]').forEach(function (input) {
@@ -3822,6 +3862,7 @@
     point: point,
     unitId: unitId,
     callsign: callsign,
+    group: group,
     squadKey: squadKey,
     fitSquad: fitSquad,
     renderMap: renderMap,
@@ -3831,7 +3872,11 @@
     renderPresenceHeat: renderPresenceHeat,
     getPhotos: function () { return photos; },
     applyLook: applyLook,
-    formatMeters: formatMeters
+    formatMeters: formatMeters,
+    loadShapes: loadShapes,
+    loadArmaMarkers: loadArmaMarkers,
+    unitHeading: unitHeading,
+    unitSpeed: unitSpeed
   };
   applyDisplayPrefsToOw();
 

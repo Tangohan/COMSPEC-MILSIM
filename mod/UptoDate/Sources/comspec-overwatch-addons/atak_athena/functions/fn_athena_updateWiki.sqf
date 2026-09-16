@@ -23,6 +23,6 @@ private _html = [
     "<t color='#E8F2FA'>Si vous voyez le pseudo de jeu (ex. NewPI) au lieu du prénom et du nom Athena : compte non connecté en jeu. Appuyez sur Entrer, ou Appairer / e-mail / Steam. Steam n’est pas obligatoire. Quand c’est bon, le vrai nom apparaît et le bandeau passe à Connecté.</t>"
 ] joinString "";
 
-_body ctrlSetStructuredText parseText _html;
+[_body, _html] call comspec_overwatch_connect_fnc_setPlainText;
 _body ctrlShow true;
 _body ctrlCommit 0;

@@ -24,7 +24,7 @@ private _fb = [9847] call _ctrl;
 
 if (_cs isEqualTo "") exitWith {
     if (!isNull _fb) then {
-        _fb ctrlSetStructuredText parseText "<t color='#ff8a7a'>Indiquez un indicatif (ex. N-10).</t>";
+        [_fb, "<t color='#ff8a7a'>Indiquez un indicatif (ex. N-10).</t>"] call comspec_overwatch_connect_fnc_setPlainText;
     };
 };
 
@@ -152,7 +152,7 @@ if (_ftNote isNotEqualTo "") then { _msg = _msg + format [" · %1", _ftNote]; };
 if (_grpNote isNotEqualTo "") then { _msg = _msg + format [" · %1", _grpNote]; };
 
 if (!isNull _fb) then {
-    _fb ctrlSetStructuredText parseText format ["<t color='#9ee0c0'>%1</t>", _msg];
+    [_fb, format ["<t color='#9ee0c0'>%1</t>", _msg]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 ["COMSPEC_Info", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 [] call comspec_overwatch_atak_athena_fnc_athena_updateSettings;

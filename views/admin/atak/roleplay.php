@@ -151,6 +151,24 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                 </div>
             </section>
 
+            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden" id="liaison-relais">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h2 class="text-sm font-black text-slate-900 tracking-tight">Liaison ATAK par relais</h2>
+                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+                                Par défaut, le téléphone transmet sans relais. Si vous l’activez, la liaison de données du téléphone (pas la voix) exige un relais posé en jeu, encore intact et à portée.
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="link_via_relays" class="sr-only peer" <?= ($config['link_via_relays'] ?? false) ? 'checked' : '' ?>>
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-slate-900">Via relais</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
             <!-- Défauts capteurs -->
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">

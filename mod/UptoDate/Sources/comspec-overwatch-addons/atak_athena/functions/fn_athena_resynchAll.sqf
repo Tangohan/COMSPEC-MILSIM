@@ -14,7 +14,7 @@ private _fnc_paint = {
     if (!(_lines isEqualType []) || {_lines isEqualTo []}) then {
         _lines = ["<t size='0.78'>Renvoi des données en cours…</t>"];
     };
-    _body ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    [_body, (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 missionNamespace setVariable [
@@ -43,7 +43,7 @@ if (isNil "comspec_overwatch_connect_fnc_forceSyncData") exitWith {
     if (!(_lines isEqualType []) || {_lines isEqualTo []}) then {
         _lines = ["<t size='0.78'>Resynch terminé.</t>"];
     };
-    _body ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    [_body, (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 true

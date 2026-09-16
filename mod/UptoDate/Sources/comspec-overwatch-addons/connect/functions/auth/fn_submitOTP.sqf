@@ -3,7 +3,7 @@ if (isNull _d) exitWith {};
 private _email = trim (ctrlText (_d displayCtrl 9401));
 private _code = trim (ctrlText (_d displayCtrl 9403));
 if ((count _code) < 4) exitWith {
-    (_d displayCtrl 9410) ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#e8b84a'>Saisissez le code reçu par e-mail.</t>";
+    [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#e8b84a'>Saisissez le code reçu par e-mail.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 private _pack = [] call comspec_overwatch_connect_fnc_packVersion;

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.41";
+        private const string ExtensionVersion = "2.0.43";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -155,23 +155,82 @@ public static partial class Extension
         };
     }
 
-    /// <summary>
-    /// Sérialise le multipart en un seul bloc avec Content-Length.
-    /// Sans ça, HttpClient part en chunked / HTTP/2 et PHP ne remplit pas $_FILES.
-    /// </summary>
-    private static async Task<ByteArrayContent> ToKnownLengthMultipartAsync(MultipartFormDataContent multipart)
+    private static string FormatMemSnapshot()
+    {
+        var ws = Environment.WorkingSet / (1024d * 1024d);
+        var gc = GC.GetTotalMemory(false) / (1024d * 1024d);
+        var info = GC.GetGCMemoryInfo();
+        var heap = info.HeapSizeBytes / (1024d * 1024d);
+        var commit = info.TotalCommittedBytes / (1024d * 1024d);
+        return string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            "ws_mb={0:F0}|gc_mb={1:F0}|heap_mb={2:F0}|commit_mb={3:F0}",
+            ws, gc, heap, commit);
+    }
+
+    private static void NoteMem(string reason)
     {
         try
         {
-            await using var buffer = new MemoryStream();
-            await multipart.CopyToAsync(buffer).ConfigureAwait(false);
-            var bytes = buffer.ToArray();
-            var content = new ByteArrayContent(bytes);
+            EnqueueDeviceLogFromWrite(
+                "",
+                "INFO",
+                "Mem",
+                reason + " · " + FormatMemSnapshot(),
+                "",
+                "");
+        }
+        catch { /* journal best-effort */ }
+    }
+
+    /// <summary>
+    /// Sérialise le multipart dans un fichier temporaire, puis l’envoie en flux
+    /// avec Content-Length. Sans Content-Length, HttpClient part en chunked / HTTP/2
+    /// et PHP ne remplit pas $_FILES. Le spool disque évite de dupliquer tout le
+    /// corps (image + tampon + ToArray) sur le tas managé.
+    /// </summary>
+    private static async Task<HttpContent> ToKnownLengthMultipartAsync(MultipartFormDataContent multipart)
+    {
+        NoteMem("envoi photo — début");
+        var tmp = Path.Combine(Path.GetTempPath(), "comspec-mp-" + Guid.NewGuid().ToString("N") + ".bin");
+        FileStream? read = null;
+        try
+        {
+            long length;
+            await using (var write = new FileStream(
+                tmp,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                64 * 1024,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                await multipart.CopyToAsync(write).ConfigureAwait(false);
+                await write.FlushAsync().ConfigureAwait(false);
+                length = write.Length;
+            }
+            NoteMem("envoi photo — corps " + length + " o");
+
+            read = new FileStream(
+                tmp,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                64 * 1024,
+                FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
+            var content = new StreamContent(read);
+            read = null;
             var ct = multipart.Headers.ContentType?.ToString();
             if (!string.IsNullOrEmpty(ct))
                 content.Headers.TryAddWithoutValidation("Content-Type", ct);
-            content.Headers.ContentLength = bytes.Length;
+            content.Headers.ContentLength = length;
             return content;
+        }
+        catch
+        {
+            try { read?.Dispose(); } catch { /* ignore */ }
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* ignore */ }
+            throw;
         }
         finally
         {
@@ -2398,6 +2457,11 @@ public static partial class Extension
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
 
+        if (function == "MemStats")
+        {
+            return "OK|" + FormatMemSnapshot();
+        }
+
         if (function == "SetMapId")
         {
             ApplyMapId(args.Length > 0 ? args[0] : "");
@@ -2421,7 +2485,7 @@ public static partial class Extension
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -5276,6 +5340,13 @@ public static partial class Extension
                 AppendLine(sb, "intel_scramble_enabled", on ? "1" : "0");
             }
 
+            if (doc.RootElement.TryGetProperty("link_via_relays", out var lvr))
+            {
+                var on = lvr.ValueKind == JsonValueKind.True
+                    || (lvr.ValueKind == JsonValueKind.Number && lvr.GetInt32() != 0);
+                AppendLine(sb, "link_via_relays", on ? "1" : "0");
+            }
+
             if (doc.RootElement.TryGetProperty("session_ttl_sec", out var ttl) && ttl.ValueKind == JsonValueKind.Number)
                 AppendLine(sb, "session_ttl_sec", ttl.GetInt32().ToString());
 
@@ -7019,6 +7090,19 @@ public static partial class Extension
                 return;
             }
 
+            if (function == "UpdateRelay" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 6)
+            {
+                var uid = EscapeJson(args[0] ?? "");
+                var rx = args[1] ?? "0";
+                var ry = args[2] ?? "0";
+                var rz = args[3] ?? "0";
+                var range = args[4] ?? "2000";
+                var alive = (args[5] ?? "1") == "1" || string.Equals(args[5], "true", StringComparison.OrdinalIgnoreCase);
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"relay_uid\":\"{uid}\",\"pos_x\":{rx},\"pos_y\":{ry},\"pos_z\":{rz},\"range_m\":{range},\"alive\":{(alive ? "true" : "false")}}}";
+                EnqueueOrSend(_baseUrl + "/api/atak/relays", payload);
+                return;
+            }
+
             if (function == "Logistics.Update" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
                 var json = args[0] ?? "{}";
@@ -7607,22 +7691,14 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
-            byte[] imageBytes;
-            await using (var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
-            await using (var ms = new MemoryStream())
+            if (!WaitUntilImageFileStable(resolved, TimeSpan.FromSeconds(4), 24))
             {
-                await fileStream.CopyToAsync(ms).ConfigureAwait(false);
-                imageBytes = ms.ToArray();
-            }
-            if (imageBytes.Length < 24)
-            {
-                ReleasePhotoDedup(job.DedupKey);
-                ReleasePhotoDedup(identityKey);
                 try { multipart.Dispose(); } catch { /* ignore */ }
-                InvokeCallback("PhotoUpload", "ERR|empty_image|" + fileName);
+                RequeuePhotoWaitingForFlush(job, "PhotoUpload", fileName);
                 return;
             }
-            var fileContent = new ByteArrayContent(imageBytes);
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
 
@@ -7814,7 +7890,7 @@ public static partial class Extension
     /// Copie le fichier une fois sa taille stable — le POST async ne lit plus
     /// un flux encore vide (pièce de fiche → 400 missing_file).
     /// </summary>
-    private static byte[]? ReadStableImageBytes(string path, TimeSpan timeout)
+    private static bool WaitUntilImageFileStable(string path, TimeSpan timeout, long minSize = 32)
     {
         var deadline = DateTime.UtcNow + timeout;
         long lastSize = -1;
@@ -7824,13 +7900,13 @@ public static partial class Extension
             try
             {
                 var fi = new FileInfo(path);
-                if (fi.Exists && fi.Length >= 32)
+                if (fi.Exists && fi.Length >= minSize)
                 {
                     if (fi.Length == lastSize)
                     {
                         stableHits++;
                         if (stableHits >= 2)
-                            return File.ReadAllBytes(path);
+                            return true;
                     }
                     else
                     {
@@ -7844,11 +7920,17 @@ public static partial class Extension
         }
         try
         {
-            if (File.Exists(path) && new FileInfo(path).Length >= 32)
-                return File.ReadAllBytes(path);
+            return File.Exists(path) && new FileInfo(path).Length >= minSize;
         }
-        catch { /* ignore */ }
-        return null;
+        catch { return false; }
+    }
+
+    private static byte[]? ReadStableImageBytes(string path, TimeSpan timeout)
+    {
+        if (!WaitUntilImageFileStable(path, timeout))
+            return null;
+        try { return File.ReadAllBytes(path); }
+        catch { return null; }
     }
 
     /// <summary>
@@ -7933,14 +8015,14 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
-            var imageBytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
-            if (imageBytes == null || imageBytes.Length < 24)
+            if (!WaitUntilImageFileStable(resolved, TimeSpan.FromSeconds(4), 24))
             {
                 RequeuePhotoWaitingForFlush(job, "SsePhotoUpload", fileName);
                 return;
             }
-            var fileContent = new ByteArrayContent(imageBytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, imageBytes));
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
 
             var apiPath = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
@@ -8065,8 +8147,7 @@ public static partial class Extension
         HttpRequestMessage? req = null;
         try
         {
-            var bytes = ReadStableImageBytes(resolved, TimeSpan.FromSeconds(4));
-            if (bytes == null || bytes.Length < 32)
+            if (!WaitUntilImageFileStable(resolved, TimeSpan.FromSeconds(4), 32))
             {
                 RequeuePhotoWaitingForFlush(job, "SseNoteAttachment", Path.GetFileName(resolved) ?? "");
                 return;
@@ -8086,8 +8167,9 @@ public static partial class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "fiche_piece.png";
-            var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "piece", fileName);
 
             var apiPath = "/api/sse/notes/" + Uri.EscapeDataString(noteId) + "/pieces";
@@ -8237,18 +8319,6 @@ public static partial class Extension
         var v = args[index] ?? "";
         if (string.IsNullOrEmpty(v)) return;
         multipart.Add(new StringContent(v), name);
-    }
-
-    private static string GuessImageMediaType(string path, byte[] bytes)
-    {
-        if (bytes.Length >= 8
-            && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G')
-            return "image/png";
-        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
-            return "image/jpeg";
-        var ext = Path.GetExtension(path);
-        if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) return "image/png";
-        return "image/jpeg";
     }
 
     private static string GuessImageMediaType(string path)

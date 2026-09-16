@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(397, $byKind['update']);
-        self::assertCount(403, $all);
+        self::assertSame(409, $byKind['update']);
+        self::assertCount(415, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -245,6 +245,51 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($atakMenu);
         self::assertSame('00596', $atakMenu['number_pad']);
         self::assertStringContainsString('applications', strtolower((string) $atakMenu['title']));
+        $atakInPhone = DevDispatchCatalog::find('update', '599');
+        self::assertNotNull($atakInPhone);
+        self::assertSame('00599', $atakInPhone['number_pad']);
+        self::assertStringContainsString('dans l’écran', strtolower((string) $atakInPhone['title']));
+        $atakPlain = DevDispatchCatalog::find('update', '600');
+        self::assertNotNull($atakPlain);
+        self::assertSame('00600', $atakPlain['number_pad']);
+        self::assertStringContainsString('textes stables', strtolower((string) $atakPlain['title']));
+        $atakPages = DevDispatchCatalog::find('update', '601');
+        self::assertNotNull($atakPages);
+        self::assertSame('00601', $atakPages['number_pad']);
+        self::assertStringContainsString('pages en texte simple', strtolower((string) $atakPages['title']));
+        $atakIceman = DevDispatchCatalog::find('update', '602');
+        self::assertNotNull($atakIceman);
+        self::assertSame('00602', $atakIceman['number_pad']);
+        self::assertStringContainsString('iceman', strtolower((string) $atakIceman['title']));
+        $atakDrawer = DevDispatchCatalog::find('update', '603');
+        self::assertNotNull($atakDrawer);
+        self::assertSame('00603', $atakDrawer['number_pad']);
+        self::assertStringContainsString('menu', strtolower((string) $atakDrawer['title']));
+        $atakDrawerClosed = DevDispatchCatalog::find('update', '604');
+        self::assertNotNull($atakDrawerClosed);
+        self::assertSame('00604', $atakDrawerClosed['number_pad']);
+        self::assertStringContainsString('menu', strtolower((string) $atakDrawerClosed['title']));
+        $atakDrawerPop = DevDispatchCatalog::find('update', '605');
+        self::assertNotNull($atakDrawerPop);
+        self::assertSame('00605', $atakDrawerPop['number_pad']);
+        self::assertStringContainsString('menu', strtolower((string) $atakDrawerPop['title']));
+        $atakPhotoMem = DevDispatchCatalog::find('update', '606');
+        self::assertNotNull($atakPhotoMem);
+        self::assertSame('00606', $atakPhotoMem['number_pad']);
+        self::assertStringContainsString('photo', strtolower((string) $atakPhotoMem['title']));
+        $atakMenuStay = DevDispatchCatalog::find('update', '607');
+        self::assertNotNull($atakMenuStay);
+        self::assertSame('00607', $atakMenuStay['number_pad']);
+        self::assertStringContainsString('menu', strtolower((string) $atakMenuStay['title']));
+        $atakNoResize = DevDispatchCatalog::find('update', '608');
+        self::assertNotNull($atakNoResize);
+        self::assertSame('00608', $atakNoResize['number_pad']);
+        self::assertStringContainsString('recadrage', strtolower((string) $atakNoResize['title']));
+        $overwatchOps = DevDispatchCatalog::find('update', '609');
+        self::assertNotNull($overwatchOps);
+        self::assertSame('00609', $overwatchOps['number_pad']);
+        self::assertStringContainsString('comptes rendus', strtolower((string) $overwatchOps['title']));
+        self::assertStringContainsString('relais', strtolower((string) $overwatchOps['activity']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);

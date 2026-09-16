@@ -14,13 +14,13 @@ private _applyBdaFr = {
     if (isNull _g) exitWith {};
     private _title = _g controlsGroupCtrl 9700;
     if (!isNull _title) then {
-        _title ctrlSetStructuredText parseText "<t align='center' size='1.05'>Bilan des dégâts</t>";
+        [_title, "<t align='center' size='1.05'>Bilan des dégâts</t>"] call comspec_overwatch_connect_fnc_setPlainText;
     };
     {
         _x params ["_idc", "_txt"];
         private _c = _g controlsGroupCtrl _idc;
         if (!isNull _c) then {
-            _c ctrlSetStructuredText parseText format ["<t size='0.82'>%1</t>", _txt];
+            [_c, format ["<t size='0.82'>%1</t>", _txt]] call comspec_overwatch_connect_fnc_setPlainText;
         };
     } forEach [
         [9710, "Cible"],
@@ -46,13 +46,13 @@ if (!isNil "Iceman_fnc_bda_onOpened") exitWith {
             if (isNull _g) exitWith {};
             private _title = _g controlsGroupCtrl 9700;
             if (!isNull _title) then {
-                _title ctrlSetStructuredText parseText "<t align='center' size='1.05'>Bilan des dégâts</t>";
+                [_title, "<t align='center' size='1.05'>Bilan des dégâts</t>"] call comspec_overwatch_connect_fnc_setPlainText;
             };
             {
                 _x params ["_idc", "_txt"];
                 private _c = _g controlsGroupCtrl _idc;
                 if (!isNull _c) then {
-                    _c ctrlSetStructuredText parseText format ["<t size='0.82'>%1</t>", _txt];
+                    [_c, format ["<t size='0.82'>%1</t>", _txt]] call comspec_overwatch_connect_fnc_setPlainText;
                 };
             } forEach [
                 [9710, "Cible"],
@@ -74,10 +74,10 @@ if (!isNil "Iceman_fnc_bda_onOpened") exitWith {
 // Repli COMSPEC : pas de module Iceman BDA
 private _ph = _group controlsGroupCtrl 9860;
 if (!isNull _ph) then {
-    _ph ctrlSetStructuredText parseText (
+    [_ph, (
         "<t align='center'>Module BDA ATAK indisponible.</t><br/>" +
         "<t align='center' color='#8aa0b4'>Ouverture d’Athena (onglet BDA)…</t>"
-    );
+    )] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 [{

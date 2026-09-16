@@ -7,6 +7,8 @@ namespace App\Controllers\Api;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakIngestTrafficRepository;
+use App\Repositories\AtakRelayRepository;
 use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakExplosiveTimerRepository;
 use App\Repositories\AtakMedicalTriageRepository;
@@ -132,6 +134,40 @@ class AtakApiController
     private function reconImages(): ReconImageRepository
     {
         return $this->reconRepo ??= new ReconImageRepository();
+    }
+
+    private function ingestTrafficRepo(): AtakIngestTrafficRepository
+    {
+        return $this->ingestTrafficRepo ??= new AtakIngestTrafficRepository();
+    }
+
+    private function relays(): AtakRelayRepository
+    {
+        return $this->relayRepo ??= new AtakRelayRepository();
+    }
+
+    private ?AtakIngestTrafficRepository $ingestTrafficRepo = null;
+    private ?AtakRelayRepository $relayRepo = null;
+    private bool $ingestRecorded = false;
+
+    private function recordGameIngest(int $tenantId, int $mapId, bool $isPhoto = false): void
+    {
+        if ($this->ingestRecorded || $tenantId < 1) {
+            return;
+        }
+        if (ComspecApiKeyAuth::extractPresentedKey() === '') {
+            return;
+        }
+        $len = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($len < 1) {
+            $raw = (string) (\App\Support\HttpJsonBody::rawJson() ?? '');
+            $len = strlen($raw);
+        }
+        if ($len < 1) {
+            return;
+        }
+        $this->ingestRecorded = true;
+        $this->ingestTrafficRepo()->record($tenantId, $mapId, $len, $isPhoto);
     }
 
     private ?AtakDeviceLogRepository $deviceLogRepository = null;
@@ -1803,6 +1839,7 @@ class AtakApiController
             'zones_enabled' => false,
             'zones_json' => '',
             'intel_scramble_enabled' => false,
+            'link_via_relays' => false,
             'session_ttl_sec' => 86400,
         ];
 
@@ -1839,11 +1876,58 @@ class AtakApiController
                 'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
                 'zones_json' => $zonesArray ?? $zonesJson,
                 'intel_scramble_enabled' => (bool) ($roleplayCfg['intel_scramble_enabled'] ?? false),
+                'link_via_relays' => (bool) ($roleplayCfg['link_via_relays'] ?? false),
                 'session_ttl_sec' => 86400,
             ]);
         } catch (\Throwable) {
             return Response::json($fallback);
         }
+    }
+
+    public function ingestTraffic(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $summary = $this->ingestTrafficRepo()->summary((int) $r, $this->mapId($request));
+
+        return Response::json($summary);
+    }
+
+    public function relaysIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = (int) $r;
+        $mapId = $this->mapId($request);
+        $cfg = ($this->tenantAtakConfigRepository ?? new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
+
+        return Response::json([
+            'relays' => $this->relays()->listForMap($tenantId, $mapId),
+            'link_via_relays' => (bool) ($cfg['link_via_relays'] ?? false),
+        ]);
+    }
+
+    public function relaysStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $row = $this->relays()->upsert((int) $r, $mapId, $body);
+        if ($row === []) {
+            return Response::json(['error' => 'relay_uid required'], 422);
+        }
+
+        return Response::json(['ok' => true, 'relay' => $row], 201);
     }
 
     /**
@@ -3918,8 +4002,8 @@ class AtakApiController
         if (empty($decoded['source'])) {
             $decoded['source'] = 'web';
         }
-        if (empty($decoded['type'])) {
-            $decoded['type'] = 'manual';
+        if (empty($decoded['type']) || $decoded['type'] === 'manual') {
+            $decoded['type'] = 'mil_dot';
         }
         $labelForPo = trim((string) ($decoded['label'] ?? $decoded['text'] ?? ''));
         if (AtakPoMarker::isPoLabel($labelForPo) || !empty($decoded['po'])) {
@@ -5620,6 +5704,7 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $this->recordGameIngest($tenantId, $mapId, false);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
         $steamNorm = $actor['steam_uid'] ?? null;
         $rawExtra = $body['extra'] ?? null;
@@ -10452,6 +10537,7 @@ class AtakApiController
                 return $r;
             }
             $tenantId = $r;
+            $this->recordGameIngest($tenantId, $this->mapId($request), true);
             $file = TerrainUploadedImage::fromGlobals();
             $actor = $this->guardArmaWrite($request, $tenantId, false);
             if ($actor instanceof Response) {

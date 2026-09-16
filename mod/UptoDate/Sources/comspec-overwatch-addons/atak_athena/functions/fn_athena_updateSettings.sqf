@@ -66,13 +66,13 @@ private _teamFr = switch (toUpper _teamColor) do {
 
 private _sum = [9841] call _ctrl;
 if (!isNull _sum) then {
-    _sum ctrlSetStructuredText parseText format [
+    [_sum, format [
         "<t size='0.92'><t color='#8FBEA8'>Identifiant ATAK</t>  %1<br/><t color='#8FBEA8'>Terminal</t>  %2<br/><t color='#8FBEA8'>Groupe actuel</t>  %3 · équipe %4</t>",
         _idLine,
         _termLine,
         _gid,
         _teamFr
-    ];
+    ]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _edit = [9842] call _ctrl;
@@ -328,7 +328,7 @@ if (!isNull _fb && {ctrlText _fb isEqualTo ""}) then {
     } else {
         "Indicatif, rôle (texte libre), affichage sur la carte, équipe de feu et groupe. Enregistrez pour appliquer."
     };
-    _fb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>", _hint];
+    [_fb, format ["<t size='0.9'>%1</t>", _hint]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _cleanSecret = {
@@ -383,12 +383,12 @@ if (!isNull _linkFb) then {
     } else {
         if (_tenant isNotEqualTo "") then { format ["Identifiant saisi : %1", _tenant] } else { "Identifiant de communauté non renseigné" };
     };
-    _linkFb ctrlSetStructuredText parseText format [
+    [_linkFb, format [
         "<t size='1.05'>%1<br/>%2 · %3</t>",
         _statusLine,
         _keyNote,
         _commNote
-    ];
+    ]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _advOpen = _group getVariable ["COMSPEC_AtakLinkAdvanced", false];

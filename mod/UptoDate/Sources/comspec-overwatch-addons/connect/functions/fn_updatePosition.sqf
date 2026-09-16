@@ -549,6 +549,9 @@ _unit setVariable ["COMSPEC_PliAt", time, true];
     _modVersion,
     _grid
 ]];
+if (_radioTxFlag) then {
+    [_unit, _callSign] call comspec_overwatch_connect_fnc_reportRelaySigint;
+};
 
 private _trail = missionNamespace getVariable ["COMSPEC_PositionTrail", []];
 _trail pushBack [_now, _callSign, [_pos select 0, _pos select 1, _aslZ], _speed, _heading, _future];

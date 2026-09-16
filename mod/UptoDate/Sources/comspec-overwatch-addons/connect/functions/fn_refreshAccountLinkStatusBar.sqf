@@ -65,11 +65,11 @@ if (_lastSync >= 0) then {
     _ago = if (_detail isNotEqualTo "") then { _detail } else { "Aucune position envoyée pour l’instant" };
 };
 
-_bar ctrlSetStructuredText parseText format [
+[_bar, format [
     "<t align='left' size='0.58'><t color='%1'>●</t> <t color='#e8f4f0'>%2</t>  ·  <t color='%3'>%4</t></t><br/><t align='left' size='0.48' color='#7a8c9e'>%5</t>",
     _txColor,
     _txLabel,
     _msColor,
     _msLabel,
     _ago
-];
+]] call comspec_overwatch_connect_fnc_setPlainText;

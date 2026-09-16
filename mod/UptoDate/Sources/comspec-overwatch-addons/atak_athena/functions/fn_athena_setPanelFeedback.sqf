@@ -43,7 +43,7 @@ if (!isNull _group) then {
     if (!isNull _fb) then {
         _fb ctrlShow true;
         _fb ctrlSetBackgroundColor _bg;
-        _fb ctrlSetStructuredText parseText _html;
+        [_fb, _html] call comspec_overwatch_connect_fnc_setPlainText;
         _fb ctrlSetFade 0;
         _fb ctrlCommit 0;
     };
@@ -66,6 +66,6 @@ if (_duration <= 0) exitWith {};
     if (isNull _group) exitWith {};
     private _fb = [_group, 9712] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
     if (isNull _fb) exitWith {};
-    _fb ctrlSetStructuredText parseText "";
+    [_fb, ""] call comspec_overwatch_connect_fnc_setPlainText;
     _fb ctrlShow false;
 };

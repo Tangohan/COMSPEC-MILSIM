@@ -68,9 +68,9 @@ if (!isNull _hub) then {
     private _vCtrl = _hub displayCtrl 9110;
     private _sCtrl = _hub displayCtrl 9111;
     private _dCtrl = _hub displayCtrl 9112;
-    if (!isNull _vCtrl) then { _vCtrl ctrlSetStructuredText parseText _versionHtml; };
-    if (!isNull _sCtrl) then { _sCtrl ctrlSetStructuredText parseText _syncHtml; };
-    if (!isNull _dCtrl) then { _dCtrl ctrlSetStructuredText parseText _detailHtml; };
+    if (!isNull _vCtrl) then { [_vCtrl, _versionHtml] call comspec_overwatch_connect_fnc_setPlainText; };
+    if (!isNull _sCtrl) then { [_sCtrl, _syncHtml] call comspec_overwatch_connect_fnc_setPlainText; };
+    if (!isNull _dCtrl) then { [_dCtrl, _detailHtml] call comspec_overwatch_connect_fnc_setPlainText; };
 };
 
 private _chat = uiNamespace getVariable ["COMSPEC_Chat_Display", displayNull];
@@ -79,9 +79,9 @@ if (!isNull _chat) then {
     private _vCtrl = _chat displayCtrl 1397;
     private _sCtrl = _chat displayCtrl 1396;
     private _dCtrl = _chat displayCtrl 1395;
-    if (!isNull _vCtrl) then { _vCtrl ctrlSetStructuredText parseText _versionHtml; };
-    if (!isNull _sCtrl) then { _sCtrl ctrlSetStructuredText parseText _syncHtml; };
-    if (!isNull _dCtrl) then { _dCtrl ctrlSetStructuredText parseText _detailHtml; };
+    if (!isNull _vCtrl) then { [_vCtrl, _versionHtml] call comspec_overwatch_connect_fnc_setPlainText; };
+    if (!isNull _sCtrl) then { [_sCtrl, _syncHtml] call comspec_overwatch_connect_fnc_setPlainText; };
+    if (!isNull _dCtrl) then { [_dCtrl, _detailHtml] call comspec_overwatch_connect_fnc_setPlainText; };
 };
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {

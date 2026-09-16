@@ -50,7 +50,7 @@ private _setFb = {
     params ["_text", ["_warn", false]];
     if (isNull _fb) exitWith {};
     private _col = if (_warn) then { "#ff8a7a" } else { "#9ee0c0" };
-    _fb ctrlSetStructuredText parseText format ["<t color='%1'>%2</t>", _col, _text];
+    [_fb, format ["<t color='%1'>%2</t>", _col, _text]] call comspec_overwatch_connect_fnc_setPlainText;
 };
 
 private _urlCtrl = [9851] call _ctrl;

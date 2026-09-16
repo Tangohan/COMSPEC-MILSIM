@@ -6,6 +6,7 @@ class CfgPatches {
             "COMSPEC_Module_Interference",
             "COMSPEC_Module_Degraded",
             "COMSPEC_Module_Jammer",
+            "COMSPEC_Module_AtakRelay",
             "COMSPEC_Module_SSE_Case",
             "COMSPEC_Module_SSE_Profile",
             "COMSPEC_Module_SSE_Equip",
@@ -30,6 +31,7 @@ class CfgFunctions {
             file = "z\comspec_overwatch\addons\connect\functions";
             class connect {};
             class waitAthenaReady {};
+            class setPlainText {};
             class startSyncLoops {};
             class sendFactionSettings {};
             class sendTacticalAlert {};
@@ -514,6 +516,12 @@ class CfgFunctions {
             class moduleInterference {};
             class moduleDegraded {};
             class moduleJammer {};
+            class moduleAtakRelay {};
+            class placeAtakRelay {};
+            class syncAtakRelay {};
+            class syncAtakRelays {};
+            class isNearLiveRelay {};
+            class reportRelaySigint {};
             class moduleApplyRoleplayZone {};
             class createRoleplayZoneFromZeus {};
             class registerZenRoleplayModules {};
@@ -795,6 +803,9 @@ class CfgVehicles
 
     // Contacts ennemis sur le poste ATAK (Eden)
     #include "modules\module_atak_show_enemy_ai.hpp"
+
+    // Relais ATAK (mât détruisible)
+    #include "modules\module_atak_relay.hpp"
 };
 
 // Attributs Eden SSE + EH

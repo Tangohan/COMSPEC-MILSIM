@@ -268,6 +268,100 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(609, '2026-09-16', 'Poste Overwatch : comptes rendus, relais et carte', 'Le poste enregistre les comptes rendus, les tracés et les relais posés en jeu. La veille radio croise les gisements réels. Les villes et routes viennent du relevé du théâtre.', [
+                'Compte rendu géolocalisé avec type, urgence et texte, posé sur la carte et dans le renseignement',
+                'Relais ATAK posés en jeu : calque au poste, liaison optionnelle via relais encore intact',
+                'Veille radio : ellipse quand deux relais entendent un émetteur, gisement seul sinon',
+                'Replay de session et de mission, villes et réseau routier du théâtre, flèche d’orientation',
+            ], [
+                'En-tête ATHENA, rail avec libellés, contacts plus lisibles, chaleur de présence et anneaux de portée',
+                'Calques recherchables, originés Arma ou Poste, suppression après confirmation',
+            ], [
+                'Les messages du tchat ne se décalent plus à chaque changement de jour',
+                'La chaleur de présence et les libellés d’anneaux restent lisibles sur la carte du théâtre',
+                'La visée indique si le masque vient du relief, d’un bâtiment ou d’un couvert, et coupe le trait',
+            ], ['atak'], [
+                'Les relais ne coupent la liaison que si vous activez « Via relais » dans le mode roleplay ATAK. Par défaut, rien ne change pour les missions en cours.',
+            ], 'Overwatch Beta · liaison jeu'),
+            $pr(608, '2026-09-16', 'Téléphone ATAK : plus de recadrage de la carte', 'La carte et le menu d’applications ne sont plus déplacés ni redimensionnés par Athena. Le menu s’affiche ou se masque seulement, à la demande du chevron. Relancez Arma complètement après la mise à jour (Athena 1.0.140).', [
+                'Carte et menu laissés à leur place dans l’écran du téléphone',
+                'Menu masqué tant que le chevron ne l’a pas ouvert',
+            ], [], [
+                'Le jeu ne se ferme plus quelques secondes après l’ouverture du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.140). Ouvrez le téléphone, laissez-le ouvert une minute, déployez et refermez le menu. Le jeu reste ouvert.',
+            ], 'Athena 1.0.140 · Liaison 2.0.43'),
+            $pr(607, '2026-09-16', 'Téléphone ATAK : menu qui reste ouvert', 'Le menu d’applications s’ouvre et reste ouvert jusqu’au chevron. Il ne se referme plus tout seul. Relancez Arma complètement après la mise à jour (Athena 1.0.139).', [
+                'Le chevron ouvre le menu et le menu reste à l’écran',
+                'Le curseur hors du téléphone n’immobilise plus l’écran',
+            ], [], [
+                'Le jeu reste ouvert plus longtemps avec le téléphone déplié',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.139, journal Extension 2.0.43). Ouvrez le téléphone, déployez le menu : il reste ouvert. Sortez le curseur du cadre puis revenez : l’écran répond. Le jeu reste ouvert.',
+            ], 'Athena 1.0.139 · Liaison 2.0.43'),
+            $pr(606, '2026-09-16', 'Téléphone ATAK : photographies sans surcharge', 'L’envoi d’une photographie volumineuse depuis le téléphone n’encombre plus la mémoire du jeu. Relancez Arma complètement après la mise à jour (liaison 2.0.42).', [
+                'Envoi des photographies sans pic mémoire sur les gros clichés',
+            ], [], [
+                'Le jeu reste ouvert après l’envoi d’une photographie haute définition',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (journal : Extension 2.0.42). Prenez une photographie depuis le téléphone et envoyez-la. Le jeu reste ouvert.',
+            ], 'Liaison 2.0.42'),
+            $pr(605, '2026-09-16', 'Téléphone ATAK : menu qui ne revient plus tout seul', 'Le menu d’applications ne s’ouvre plus tout seul une fraction de seconde après l’écran. Il reste fermé jusqu’au chevron. Relancez Arma complètement après la mise à jour (Athena 1.0.138).', [
+                'Menu d’applications fermé à l’ouverture, sans réapparition',
+                'Le chevron ouvre et referme le menu dans l’écran',
+            ], [], [
+                'Le jeu ne se ferme plus quelques secondes après l’ouverture du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.138). Ouvrez le téléphone : le menu reste fermé. Déployez-le, refermez-le, refermez le téléphone et rouvrez-le : toujours fermé. Le jeu reste ouvert.',
+            ], 'Athena 1.0.138'),
+            $pr(604, '2026-09-16', 'Téléphone ATAK : menu vraiment fermé', 'Le menu d’applications reste fermé à chaque ouverture du téléphone, même si la session précédente l’avait laissé ouvert. Seul le chevron l’ouvre. Relancez Arma complètement après la mise à jour (Athena 1.0.137).', [
+                'Menu d’applications fermé dès l’ouverture, à chaque fois',
+                'Le chevron ouvre et referme le menu dans l’écran',
+            ], [], [
+                'Le jeu ne se ferme plus quelques secondes après l’ouverture du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.137). Ouvrez le téléphone : le menu est fermé. Déployez-le, refermez-le. Le jeu reste ouvert.',
+            ], 'Athena 1.0.137'),
+            $pr(603, '2026-09-16', 'Téléphone ATAK : menu fermé à l’ouverture', 'Le menu d’applications n’est plus déployé dès l’ouverture du téléphone. Le chevron le referme. La carte ne se rétrécit plus à chaque ouverture. Relancez Arma complètement après la mise à jour (Athena 1.0.136).', [
+                'Menu d’applications fermé à l’ouverture du téléphone',
+                'Le chevron ouvre et referme le menu dans l’écran',
+            ], [], [
+                'Le jeu ne se ferme plus quelques secondes après l’ouverture du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.136). Ouvrez le téléphone : le menu est fermé. Déployez-le, refermez-le. Le jeu reste ouvert.',
+            ], 'Athena 1.0.136'),
+            $pr(602, '2026-09-16', 'Téléphone ATAK : affichage IceMan', 'Les pages du téléphone, les cartouches de la carte, la barre de liaison et l’alerte du poste reprennent l’affichage IceMan : couleurs, alignement et sauts de ligne. L’identité Indicatif / Nom / Rôle reste celle du téléphone. Relancez Arma complètement après la mise à jour (Athena 1.0.135).', [
+                'Pages du téléphone avec couleurs et alignement IceMan',
+                'Cartouches grille / identité et alerte du poste au même rendu',
+            ], [], [
+                'L’affichage ne ferme plus le jeu : le cadre de l’écran reste dans des dimensions valides',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.135). Ouvrez le téléphone, le menu, la messagerie et Connexion Athena : couleurs et alignement sont de retour. Déployez et refermez le menu : le jeu reste ouvert.',
+            ], 'Athena 1.0.135'),
+            $pr(601, '2026-09-16', 'Téléphone ATAK : pages en texte simple', 'Les pages du téléphone (messagerie, connexion, comptes-rendus, réglages, alerte, barre de liaison) s’affichent en texte simple. Plus de mise en forme fragile qui fermait le jeu. Relancez Arma complètement après la mise à jour (Athena 1.0.134).', [
+                'Pages du téléphone et écran de connexion en texte simple',
+                'Comptes-rendus et messagerie sans mise en forme fragile',
+            ], [], [
+                'Le jeu ne se ferme plus en ouvrant une page du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.134). Ouvrez le téléphone, le menu, la messagerie, Connexion Athena et les comptes-rendus. Le jeu reste ouvert.',
+            ], 'Athena 1.0.134'),
+            $pr(600, '2026-09-16', 'Téléphone ATAK : textes stables sur la carte', 'Les cartouches de la carte, la barre de liaison et l’alerte plein écran s’affichent en texte simple. Plus de mise en forme fragile qui fermait le jeu en ouvrant le téléphone. Relancez Arma complètement après la mise à jour (Athena 1.0.133).', [
+                'Cartouches grille / identité en texte simple sur la carte',
+                'Barre de liaison et alerte poste en texte simple',
+            ], [], [
+                'Le jeu ne se ferme plus à cause de l’affichage des cartouches',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.133). Ouvrez le téléphone sur la carte : grille et identité restent lisibles. Déployez et refermez le menu plusieurs fois : le jeu reste ouvert.',
+            ], 'Athena 1.0.133'),
+            $pr(599, '2026-09-16', 'Téléphone ATAK : menu dans l’écran', 'Le menu d’applications reste dans l’écran du téléphone, à droite de la carte. Il ne flotte plus à côté du boîtier. Sur l’accueil, l’encart d’identité ne recouvre plus le bureau. Relancez Arma complètement après la mise à jour (Athena 1.0.132).', [
+                'Menu d’applications calé dans l’écran, à droite de la carte',
+                'Menu masqué une fois refermé, sans panneau hors du téléphone',
+            ], [], [
+                'Le jeu ne se ferme plus en ouvrant ou en refermant le menu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.132). Ouvrez le téléphone, déployez le menu : il reste dans l’écran. Refermez-le : la carte reprend toute la largeur. Passez sur l’accueil : le bureau n’affiche plus l’encart d’identité.',
+            ], 'Athena 1.0.132'),
             $pr(596, '2026-09-15', 'Téléphone ATAK : menu d’applications utilisable', 'Le menu d’applications se déroule de nouveau, avec retour et défilement. Les boutons du bas restent sous le menu, pas sur la carte. Relancez Arma complètement après la mise à jour (Athena 1.0.131).', [
                 'Retour et défilement du menu d’applications rétablis',
                 'Photos, recherche et radio collés sous le menu',

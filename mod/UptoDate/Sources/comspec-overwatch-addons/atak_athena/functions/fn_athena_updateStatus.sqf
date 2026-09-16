@@ -326,12 +326,12 @@ _body = _body + (["Zone radio", _zoneTxt, if (_zoneTxt isEqualTo "Aucune") then 
 
 private _sumCtrl = _group controlsGroupCtrl 9801;
 if (!isNull _sumCtrl) then {
-    _sumCtrl ctrlSetStructuredText parseText _summary;
+    [_sumCtrl, _summary] call comspec_overwatch_connect_fnc_setPlainText;
 };
 private _bodyViewport = _group controlsGroupCtrl 9806;
 private _bodyCtrl = if (!isNull _bodyViewport) then { _bodyViewport controlsGroupCtrl 9802 } else { controlNull };
 if (!isNull _bodyCtrl) then {
-    _bodyCtrl ctrlSetStructuredText parseText _body;
+    [_bodyCtrl, _body] call comspec_overwatch_connect_fnc_setPlainText;
     private _h = ctrlTextHeight _bodyCtrl;
     private _phoneW = safezoneW * 0.8;
     private _phoneH = _phoneW * 4 / 3;

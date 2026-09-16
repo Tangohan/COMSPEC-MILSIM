@@ -3739,6 +3739,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakOverwatchOpsMigrate = require $root . '/bootstrap/atak_overwatch_ops_migration.php';
+try {
+  echo "Migration atak_overwatch_ops (relais ATAK et débit de remontée)...\n";
+  $atakOverwatchOpsMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_overwatch_ops : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakGeoNetworkMigrate = require $root . '/bootstrap/atak_geo_network_migration.php';
 try {
   echo "Migration atak_geo_network (lieux nommés et segments routiers)...\n";

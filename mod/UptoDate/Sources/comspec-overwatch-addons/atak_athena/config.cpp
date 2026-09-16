@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.131;
-        versionStr = "1.0.131";
-        versionAr[] = {1, 0, 131};
-        // Historique : 1.0.129 alerte, 1.0.130 bureau, 1.0.131 tiroir sans ressort.
+        version = 1.140;
+        versionStr = "1.0.140";
+        versionAr[] = {1, 0, 140};
+        // Historique : 1.0.80 sons, 1.0.84 HUD, 1.0.130 bureau, 1.0.132 menu, 1.0.140 masque sans recadrer.
     };
 };
 
@@ -88,6 +88,8 @@ class CfgFunctions
             class athena_openAtakApp {};
             class athena_installMapHud {};
             class athena_updateMapHud {};
+            class athena_enforceDrawer {};
+            class athena_phoneDisplay {};
             class athena_mapHudZoom {};
             class athena_openFeature {};
             class athena_pollIcemanPhotos {};
