@@ -1930,6 +1930,24 @@ class AtakApiController
         return Response::json(['ok' => true, 'relay' => $row], 201);
     }
 
+    public function relaysDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $uid = trim((string) ($params['uid'] ?? $request->query('uid') ?? ''));
+        if ($uid === '') {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+        $mapId = $this->mapId($request);
+        if (!$this->relays()->delete((int) $r, $mapId, $uid)) {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+
+        return Response::json(['ok' => true]);
+    }
+
     /**
      * Reprise session ATAK post-CTD (TTL court, identité Steam).
      */
@@ -7722,6 +7740,51 @@ class AtakApiController
         ]);
     }
 
+    public function chatDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Message introuvable.'], 404);
+        }
+
+        $gameActor = null;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $gameActor = is_array($actor) ? $actor : null;
+        } elseif ((int) (Session::get('user_id') ?? 0) < 1) {
+            return Response::json([
+                'error' => 'unauthorized',
+                'message' => 'Connectez-vous au poste pour retirer un message.',
+            ], 401);
+        }
+
+        $row = $this->atak->getChatMessageById($tenantId, $id);
+        if (!$row) {
+            return Response::json(['error' => 'not_found', 'message' => 'Message introuvable.'], 404);
+        }
+        $author = mb_strtolower(trim((string) ($row['author'] ?? '')));
+        $aliases = $this->chatAuthorAliases($gameActor);
+        if ($author === '' || $aliases === [] || !in_array($author, $aliases, true)) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Vous ne pouvez retirer que vos propres messages.',
+            ], 403);
+        }
+        if (!$this->atak->deleteChatMessageById($tenantId, $id)) {
+            return Response::json(['error' => 'not_found', 'message' => 'Message introuvable.'], 404);
+        }
+
+        return Response::json(['ok' => true, 'id' => $id]);
+    }
+
     /**
      * Calques de vue terrain (viewshed) publiés depuis le jeu.
      */
@@ -9590,6 +9653,33 @@ class AtakApiController
             'callsign' => $callsign,
             'userId' => $userId,
         ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $gameActor
+     * @return list<string>
+     */
+    private function chatAuthorAliases(?array $gameActor = null): array
+    {
+        $out = [];
+        $brief = $this->sessionUserBrief();
+        if (is_array($brief)) {
+            $out[] = (string) ($brief['callsign'] ?? '');
+            $out[] = (string) ($brief['displayName'] ?? '');
+        }
+        $out[] = trim((string) (Session::get('arma_callsign') ?? ''));
+        if (is_array($gameActor)) {
+            $out[] = trim((string) ($gameActor['callsign'] ?? $gameActor['label'] ?? ''));
+        }
+        $norm = [];
+        foreach ($out as $alias) {
+            $alias = mb_strtolower(trim($alias));
+            if ($alias !== '') {
+                $norm[$alias] = $alias;
+            }
+        }
+
+        return array_values($norm);
     }
 
     /**

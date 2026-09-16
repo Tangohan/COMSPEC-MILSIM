@@ -12,6 +12,11 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_mapUIInit") then {
 };
 
 COMSPEC_ATAK_MapHud_PFH = [{
+    private _d = displayNull;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+        _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+    };
+    if (isNull _d) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
 }, 0.5, []] call CBA_fnc_addPerFrameHandler;
 
@@ -21,7 +26,6 @@ if (isNil "COMSPEC_ATAK_Drawer_PFH") then {
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
             _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
         };
-        if (isNull _d) then { _d = uiNamespace getVariable ["cTab_Android_dlg", displayNull]; };
         if (isNull _d) exitWith {};
         if (!isNil "comspec_overwatch_atak_athena_fnc_athena_enforceDrawer") then {
             [_d] call comspec_overwatch_atak_athena_fnc_athena_enforceDrawer;
@@ -53,8 +57,18 @@ if (isNil "COMSPEC_ATAK_Mem_PFH") then {
 diag_log "[COMSPEC][MAP] pollMarkersAndUnits n'est pas utilisé — HUD ATAK + mapUI";
 
 [{
+    private _d = displayNull;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+        _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+    };
+    if (isNull _d) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
 }, [], 0.4] call CBA_fnc_waitAndExecute;
 [{
+    private _d = displayNull;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+        _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+    };
+    if (isNull _d) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_updateMapHud;
 }, [], 1.6] call CBA_fnc_waitAndExecute;

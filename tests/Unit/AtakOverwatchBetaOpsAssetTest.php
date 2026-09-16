@@ -20,6 +20,7 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         $terrain = (string) file_get_contents($root . '/public/assets/js/atak-terrain-tools.js');
 
         self::assertStringContainsString('family=Inter', $view);
+        self::assertStringContainsString('ATAK_MARKER_ICONS_CDN', $view);
         self::assertStringContainsString('ow-brand-word">ATHENA', $view);
         self::assertStringContainsString('id="ow-stat-traffic"', $view);
         self::assertStringContainsString('id="ow-follow-chip"', $view);
@@ -36,9 +37,20 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('promptShape', $ops);
         self::assertStringContainsString('fill_style', $ops);
         self::assertStringContainsString('ColorGreen', $ops);
+        self::assertStringContainsString('name="description"', $ops);
+        self::assertStringContainsString('ow-marker-list', $ops);
+        self::assertStringContainsString('Peut-être plus là', $ops);
+        self::assertStringContainsString('Allers-retours', $ops);
+        self::assertStringContainsString('n’est peut-être plus présente', $ops);
+        self::assertStringContainsString('renderMarkerIntel', $ops);
         self::assertStringContainsString('dashArray: \'6 6\'', $ops);
         self::assertStringContainsString('/api/atak/ingest-traffic', $ops);
-        self::assertStringContainsString('/api/atak/relays', $ops);
+        self::assertStringContainsString('Relais ATAK', $ops);
+        self::assertStringContainsString('registerScratch', $ops);
+        self::assertStringContainsString("api.registerScratch(group, 'los'", $ops);
+        self::assertStringContainsString('var group = L.layerGroup()', $ops);
+        self::assertStringContainsString('/api/atak/relays/', $ops);
+        self::assertStringContainsString('Clic droit pour le retirer', $ops);
         self::assertStringContainsString('/api/atak/sigint/zones', $ops);
         self::assertStringContainsString('/api/replay/mission/', $ops);
         self::assertStringContainsString('circleByRadius', $ops);
@@ -49,18 +61,35 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('circleLatLngs', $beta);
         self::assertStringContainsString('L.polygon(circleLatLngs', $beta);
         self::assertStringNotContainsString('Catalogue satellites', $beta);
-        self::assertStringContainsString('Aucun contact en liaison', $beta);
+        self::assertStringContainsString('registerScratch: registerScratch', $beta);
+        self::assertStringContainsString("removeScratch('los'", $beta);
+        self::assertStringContainsString("toast('Visée retirée.')", $beta);
+        self::assertStringContainsString("toast('Anneaux retirés.')", $beta);
+        self::assertStringContainsString('getRangeLayer', $beta);
+        self::assertStringContainsString('losGroups.forEach', $beta);
+        self::assertStringContainsString('HIT_POINT', $beta);
+        self::assertStringContainsString('dropMarkerLocal', $beta);
+        self::assertStringContainsString('Ce repère n’est plus au poste.', $beta);
+        self::assertStringNotContainsString('[DEBUG INIT]', $beta);
+        self::assertStringNotContainsString('[DEBUG sendChat]', $beta);
 
         self::assertStringNotContainsString('celestrak', strtolower($gotak));
         self::assertStringContainsString('__owInterceptLine', $gotak);
+        self::assertStringContainsString("registerScratch(window.__owInterceptLine, 'intercept'", $gotak);
 
         self::assertStringContainsString('white-space:nowrap', $css);
         self::assertStringContainsString('owDelayed', $css);
         self::assertStringContainsString('.ow-rail-extra{position:absolute', $css);
+        self::assertStringContainsString('.ow-rail-extra[hidden]{display:none!important}', $css);
+        self::assertStringContainsString('overflow:visible', $css);
         self::assertStringContainsString('ow-hatch-diag', $css);
+        self::assertStringContainsString('ow-marker-list-row', $css);
+        self::assertStringContainsString('ow-marker-age-chip', $css);
 
         self::assertStringContainsString('dashArray: \'6 6\'', $terrain);
         self::assertStringContainsString('iconSize', $tools);
+        self::assertStringContainsString('getRangeLayer', $tools);
+        self::assertStringContainsString("registerScratch(group, 'range'", $tools);
     }
 
     public function testIngestTrafficShowsZeroWhenEmpty(): void
@@ -88,6 +117,7 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_LinkViaRelays', $can);
         self::assertStringContainsString('no_relay', $can);
         self::assertStringContainsString('link_via_relays', $ext);
+        self::assertStringContainsString('function relaysDelete', file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php'));
         self::assertStringContainsString('UpdateRelay', $ext);
         self::assertStringContainsString('ATAK_LINK_VIA_RELAYS_V1', $catalog);
         self::assertStringContainsString('ATAK_LINK_VIA_RELAYS_V1', $seed);

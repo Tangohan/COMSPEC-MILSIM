@@ -268,6 +268,88 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(620, '2026-09-16', 'Poste Overwatch : masquer l’avis sans télémétrie', 'Lorsque aucun contact autorisé n’est encore en liaison, l’avis au centre de la carte se masque. La carte reste utilisable. L’avis ne revient pas tant que vous restez sur ce poste.', [], [], [
+                'L’avis Aucune télémétrie restait collé au centre de la carte, même pour travailler sur le théâtre',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. S’il n’y a pas encore de contact, utilisez Masquer ou la croix. L’avis disparaît pour cette session.',
+            ], 'Overwatch Beta · carte'),
+            $pr(619, '2026-09-16', 'Pack Overwatch : relevé de carte sur commande', 'Le terrain, les bâtiments, les forêts, les villes et les routes ne partent plus tout seuls vers le poste. L’opérateur ouvre Relevé de la carte depuis le menu, suit la barre de progression, voit les volumes collectés, puis une vérification d’intégrité. S’il manque des données, un bouton renvoie uniquement ce qui n’est pas arrivé.', [
+                'Fenêtre unique de relevé depuis le menu Cartographie, avec barre de progression et totaux visibles',
+                'Vérification d’intégrité automatique à la fin du parcours',
+                'Renvoi séparé des données manquantes, sans relancer tout le théâtre si seul un volume manque',
+            ], [], [
+                'Plus aucun envoi automatique des volumes de carte tant qu’un opérateur n’a pas lancé le relevé',
+            ], ['atak'], [
+                'Relancez Arma après le nouveau pack. Menu COMSPEC, Cartographie, Relevé de la carte, puis Lancer le relevé. À la fin, lisez le résultat de la vérification. S’il manque des données, utilisez Renvoyer les données manquantes. Overwatch affiche la couverture une fois le relevé reçu.',
+            ], 'Overwatch · Cartographie'),
+            $pr(618, '2026-09-16', 'Poste Overwatch : messages non lus, fil videable', 'Une pastille indique les messages non lus sur chaque canal. Vous retirez vos propres messages. Vous pouvez vider le fil d’un canal, ou tout l’historique radio de la carte, pour tout le poste. Rechargez Overwatch Beta.', [
+                'Pastille de messages non lus sur les canaux, Canaux et Support',
+                'Retrait de ses propres messages depuis le fil',
+                'Vidage du fil en cours, ou de tous les canaux, après confirmation',
+            ], [], [], ['atak'], [
+                'Rechargez Overwatch Beta. Un nouveau message sur un autre canal affiche une pastille. Survolez un de vos messages, puis Retirer. Vider le fil demande confirmation : ce canal, ou tous les canaux.',
+            ], 'Overwatch Beta · Comms'),
+            $pr(617, '2026-09-16', 'Poste Overwatch : clic sur une visée, pas le marqueur à côté', 'Un clic droit sur une visée retire la visée. Un marqueur proche n’est plus pris à la place. Le menu indique ce qui va disparaître. Si le repère n’est déjà plus au poste, il quitte la carte sans bloquer. Rechargez Overwatch Beta.', [], [
+                'Le menu précise Visée, anneaux ou nom du repère avant Supprimer',
+            ], [
+                'Un clic sur le trait d’une visée ne tente plus de retirer un marqueur voisin déjà absent',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. Clic droit sur une visée : le menu affiche Visée, puis Supprimer. Le trait disparaît. Un clic sur le symbole d’un marqueur continue de viser ce marqueur.',
+            ], 'Overwatch Beta · carte'),
+            $pr(616, '2026-09-16', 'Poste Overwatch : retirer visées et anneaux', 'Les visées, les anneaux de portée et le relevé d’interception se retirent au clic droit, comme les autres tracés. Un clic n’importe où sur le trait suffit, pas seulement sur un bout. Rechargez Overwatch Beta.', [], [], [
+                'Une visée restait collée à la carte : le menu ne proposait pas de la retirer',
+                'Les anneaux de portée et le trait d’interception se retirent aussi depuis le clic droit',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. Clic droit sur une visée, des anneaux ou un relevé d’interception, puis Supprimer : l’élément disparaît.',
+            ], 'Overwatch Beta · carte'),
+            $pr(615, '2026-09-16', 'Visée : plus de masque fantôme en descente', 'Quand l’observateur est plus haut que la cible — appareil en l’air ou crête — la visée n’est plus coupée par le sol juste sous ses pieds. Le poste prend l’altitude réelle de l’appareil s’il est tout près du trait, et indique si le sol monte ou descend.', [
+                'Altitude de l’appareil utilisée dès que la visée part d’un contact proche',
+                'Indication de pente du sol (descente, montée ou quasi plat)',
+            ], [], [
+                'Une visée en descente n’est plus déclarée masquée à cause de la première case de relief sous l’observateur',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. Tracez de l’observateur vers la cible : si un aéronef est sous le premier point, c’est son altitude qui compte, pas seulement le sol.',
+            ], 'Overwatch Beta · visée'),
+            $pr(614, '2026-09-16', 'Poste Overwatch : barre d’outils supplémentaire', 'Les outils moins fréquents s’ouvrent en une seconde colonne, à droite du rail. Le nom de l’outil s’affiche au survol, à côté, sans recouvrir la barre ni faire défiler un panneau vide.', [
+                'Ouverture des autres outils en colonne, à droite du chevron',
+            ], [], [
+                'Le panneau supplémentaire ne recouvre plus la carte d’un rectangle vide avec ascenseurs',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. Le chevron à droite du rail ouvre la seconde colonne d’outils.',
+            ], 'Overwatch Beta · outils carte'),
+            $pr(613, '2026-09-16', 'Carte du théâtre : plus de renvoi des bâtiments déjà transmis', 'Les bâtiments, forêts et routes déjà envoyés au poste ne sont plus renvoyés en boucle. Seul un secteur encore inconnu, ou un relevé lancé à la main, part vers le poste.', [
+                'Après un relevé complet de la carte, plus aucun envoi automatique des volumes déjà connus',
+                'En déplacement, seuls les nouveaux secteurs (bâtiments et couverts) sont transmis',
+                'Villes et routes : un seul envoi par carte, sauf si vous relancez le relevé depuis le menu',
+            ], [], [
+                'Le poste n’est plus saturé par le même quartier renvoyé toutes les quelques secondes',
+            ], ['atak'], [
+                'Rechargez le pack jeu, puis relancez Arma complètement. Un relevé théâtre déjà fait pour cette carte n’est pas à refaire.',
+            ], 'Overwatch · relevé de carte'),
+            $pr(612, '2026-09-16', 'Téléphone ATAK : menu qui reste, messages sans empilement', 'Le menu d’applications s’ouvre et reste ouvert jusqu’au chevron. Les messages du poste restent dans la messagerie : ils ne s’empilent plus en bandeau sur la carte. Relancez Arma complètement après la mise à jour (Athena 1.0.142).', [
+                'Le chevron ouvre et ferme le menu ; il ne disparaît plus tout seul',
+                'Les messages du poste s’affichent dans la messagerie, pas en revue empilée sur la carte',
+            ], [], [
+                'Le téléphone ouvert ne ferme plus le jeu en refermant le menu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.142). Ouvrez le téléphone, déployez le menu au chevron : il reste. Envoyez un message depuis le poste : il arrive dans la messagerie, sans bandeau répété sur la carte.',
+            ], 'Athena 1.0.142'),
+            $pr(611, '2026-09-16', 'Poste Overwatch : symboles, fraîcheur et déplacement des marqueurs', 'Les marqueurs du théâtre se choisissent désormais par leur symbole réel, avec une liste et une description. Passé un délai, le poste prévient que l’unité n’est peut-être plus là. Si l’opérateur note un déplacement ou des allers-retours, la carte estime la position depuis l’heure de pose.', [
+                'Choix visuel des symboles du théâtre, liste avec description, et texte libre sur ce qui a été vu',
+                'Avertissement à côté d’un marqueur trop ancien, surtout pour l’infanterie et les engins mobiles',
+                'Estimation de position quand l’unité est notée en déplacement ou en allers-retours, avec cap et vitesse',
+            ], [
+                'Couleur du symbole selon le camp (ami, hostile, inconnu)',
+            ], [], ['atak'], [
+                'Les marqueurs déjà posés sans indication de déplacement restent à l’arrêt. Ajoutez cap et mouvement seulement pour les nouveaux contacts.',
+            ], 'Overwatch Beta · marqueurs du théâtre'),
+            $pr(610, '2026-09-16', 'Téléphone ATAK : plus de fermeture sans l’ouvrir', 'Le jeu ne se ferme plus tout seul si l’opérateur n’a pas le téléphone en main et ne l’a pas ouvert. Relancez Arma complètement après la mise à jour (Athena 1.0.141).', [
+                'Aucun calage d’écran tant que le téléphone n’est pas réellement ouvert',
+            ], [], [
+                'Le jeu reste ouvert après une minute sans téléphone ATAK',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.141). Entrez en mission sans téléphone, sans ouvrir l’ATAK, et restez au moins deux minutes. Le jeu reste ouvert.',
+            ], 'Athena 1.0.141'),
             $pr(609, '2026-09-16', 'Poste Overwatch : comptes rendus, relais et carte', 'Le poste enregistre les comptes rendus, les tracés et les relais posés en jeu. La veille radio croise les gisements réels. Les villes et routes viennent du relevé du théâtre.', [
                 'Compte rendu géolocalisé avec type, urgence et texte, posé sur la carte et dans le renseignement',
                 'Relais ATAK posés en jeu : calque au poste, liaison optionnelle via relais encore intact',

@@ -18,6 +18,30 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('params ["_s"]', $sqf);
         self::assertStringContainsString('visibleMap', $sqf);
         self::assertStringContainsString('curatorCamera', $sqf);
+        self::assertStringContainsString('COMSPEC_SceneWorldDone', $sqf);
+        self::assertStringContainsString('COMSPEC_SceneTiles_', $sqf);
+        self::assertStringContainsString('COMSPEC_SceneSentIds', $sqf);
+        self::assertStringContainsString('_sentIds getOrDefault', $sqf);
+        self::assertStringContainsString('COMSPEC_TheaterSurveyCounts_', $sqf);
+        self::assertStringContainsString('déjà transmis', $sqf);
+    }
+
+    public function testSceneLoopDoesNotAutoUploadMapData(): void
+    {
+        $loops = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_startSyncLoops.sqf');
+        self::assertStringNotContainsString('comspec_overwatch_connect_fnc_sampleScene', $loops);
+        self::assertStringNotContainsString('uiSleep 45', $loops);
+        self::assertStringNotContainsString('uiSleep 24', $loops);
+        $theater = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleTheater.sqf');
+        self::assertStringContainsString('COMSPEC_SceneWorldDone_', $theater);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_sampleGeoNetwork', $theater);
+        self::assertStringContainsString('theaterSurveyVerify', $theater);
+        $ace = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_initACE.sqf');
+        self::assertStringContainsString('Relevé de la carte', $ace);
+        self::assertStringContainsString('theaterSurveyShow', $ace);
+        self::assertStringNotContainsString('fnc_sampleTerrain', $ace);
+        self::assertStringNotContainsString('fnc_sampleScene', $ace);
+        self::assertStringNotContainsString('fnc_sampleGeoNetwork', $ace);
     }
 
     public function testExtensionQueuesSceneIngest(): void
@@ -42,21 +66,36 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringNotContainsString('github.io', $live);
     }
 
-    public function testTheaterSurveyVerifyComparesPostedCountsAndResends(): void
+    public function testTheaterSurveyVerifyComparesPostedCountsWithoutAutoResend(): void
     {
         $root = dirname(__DIR__, 2);
         $verify = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_theaterSurveyVerify.sqf');
         self::assertStringContainsString('Theater.Coverage', $verify);
         self::assertStringContainsString('Vérification auprès du poste', $verify);
-        self::assertStringContainsString('sampleTheater', $verify);
+        self::assertStringContainsString('COMSPEC_TheaterResendMode', $verify);
         self::assertStringContainsString('_sceneGap', $verify);
         self::assertStringContainsString('_terrainGap', $verify);
+        self::assertStringContainsString('_geoGap', $verify);
+        self::assertStringContainsString('Renvoyer les données manquantes', $verify);
+        self::assertStringNotContainsString('sampleTheater', $verify);
         self::assertStringNotContainsString('/api/', $verify);
+
+        $resend = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_theaterSurveyResend.sqf');
+        self::assertStringContainsString('sampleTheater', $resend);
+        self::assertStringContainsString('sampleGeoNetwork', $resend);
+        self::assertStringContainsString('[0, true]', $resend);
 
         $sample = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleTheater.sqf');
         self::assertStringContainsString('_doScene', $sample);
         self::assertStringContainsString('_doTerrain', $sample);
         self::assertStringContainsString('COMSPEC_TheaterSurveyCounts_', $sample);
+
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/AtakSceneApiController.php');
+        self::assertStringContainsString("'places'", $ctrl);
+        self::assertStringContainsString("'roads'", $ctrl);
+
+        $cs = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('pl:{6};rd:{7}', $cs);
 
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString("/api/atak/theater/coverage", $routes);
@@ -77,7 +116,8 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
-        self::assertStringContainsString('1.5.17', $cfg);
+        self::assertStringContainsString('class theaterSurveyResend {};', $cfg);
+        self::assertStringContainsString('1.5.78', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -98,7 +138,9 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('SECTEUR EN COURS', $dlg);
         self::assertStringContainsString('DERNIER RELEVÉ', $dlg);
         self::assertStringContainsString('TRANSMISSION AU POSTE', $dlg);
-        self::assertStringContainsString('Vérifier et renvoyer', $dlg);
+        self::assertStringContainsString('Vérifier l’intégrité', $dlg);
+        self::assertStringContainsString('Renvoyer les données manquantes', $dlg);
+        self::assertStringContainsString('Villes 0', $dlg);
         self::assertStringContainsString('idd = 9994', $dlg);
         self::assertStringNotContainsString('sqf', strtolower($dlg));
         self::assertStringNotContainsString('json', strtolower($dlg));

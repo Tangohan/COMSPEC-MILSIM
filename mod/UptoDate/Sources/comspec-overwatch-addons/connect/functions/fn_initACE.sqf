@@ -17,9 +17,8 @@ if (isNull player) exitWith {
 [] call comspec_overwatch_connect_fnc_aceSweepPlayerSelfActions;
 
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
-// v4 : purge explicite des feuilles legacy encore collées sous COMSPEC_Main (classe ACE
-// survit d’une mission à l’autre dans la même session Arma).
-private _menuVer = 4;
+// v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
+private _menuVer = 5;
 if (
     (missionNamespace getVariable ["COMSPEC_ACEMenuStructureVer", 0]) isEqualTo _menuVer
     && {missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]}
@@ -67,6 +66,16 @@ private _legacyFlat = [
     };
 } forEach _legacyFlat;
 
+private _mapLegacyPath = ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_MapSurvey"];
+{
+    if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
+        ["CAManBase", 1, _mapLegacyPath, _x] call ace_interact_menu_fnc_removeActionFromClass;
+    };
+    if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
+        [player, 1, _mapLegacyPath, _x] call ace_interact_menu_fnc_removeActionFromObject;
+    };
+} forEach ["COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork"];
+
 missionNamespace setVariable ["COMSPEC_ACESelfActions", [], false];
 missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
 missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
@@ -74,7 +83,7 @@ missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
 missionNamespace setVariable ["COMSPEC_ATAKMenuReady", false, false];
 missionNamespace setVariable ["COMSPEC_ACEAthenaReady", false, false];
 
-["INFO", "ACE", "Installation menus ACE SelfActions (arbre v4)"] call comspec_overwatch_connect_fnc_log;
+["INFO", "ACE", "Installation menus ACE SelfActions (arbre v5)"] call comspec_overwatch_connect_fnc_log;
 
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
 private _condSync = {
@@ -273,16 +282,8 @@ private _link = _root + ["COMSPEC_Link"];
     ["Code laser synchronisé.", "laser", "info"] call comspec_overwatch_connect_fnc_announce;
 }, _tx] call _fnc_leaf;
 
-["COMSPEC_Terrain", "Relever le relief", {
-    [] call comspec_overwatch_connect_fnc_sampleTerrain;
-}, _map] call _fnc_leaf;
-
-["COMSPEC_Scene", "Relever bâtiments et forêts", {
-    [true] call comspec_overwatch_connect_fnc_sampleScene;
-}, _map] call _fnc_leaf;
-
-["COMSPEC_GeoNetwork", "Relever villes et routes", {
-    [] call comspec_overwatch_connect_fnc_sampleGeoNetwork;
+["COMSPEC_TheaterSurvey", "Relevé de la carte", {
+    [false] call comspec_overwatch_connect_fnc_theaterSurveyShow;
 }, _map] call _fnc_leaf;
 
 ["COMSPEC_CAS", "Appui aérien", {

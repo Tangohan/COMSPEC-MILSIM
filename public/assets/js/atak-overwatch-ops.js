@@ -21,6 +21,38 @@
   var pendingShape = null;
   var pendingMarker = null;
   var recents = [];
+  var markerIntelLayers = [];
+  var MARKER_SYMBOLS = [
+    { key: 'mil_dot', group: 'Repères', short: 'Repère', label: 'Repère', hint: 'Point simple, vu à cet endroit.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_triangle', group: 'Repères', short: 'Triangle', label: 'Triangle', hint: 'Repère triangulaire, souvent un contact ou un axe.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_box', group: 'Repères', short: 'Carré', label: 'Carré', hint: 'Zone ou bâtiment signalé.', noun: 'Ce carré', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_circle', group: 'Repères', short: 'Cercle', label: 'Cercle', hint: 'Point d’intérêt ou rassemblement.', noun: 'Ce cercle', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_flag', group: 'Repères', short: 'Drapeau', label: 'Drapeau', hint: 'Position tenue ou à marquer.', noun: 'Ce drapeau', kind: 'static', warnMin: 50, staleMin: 180 },
+    { key: 'mil_objective', group: 'Repères', short: 'Objectif', label: 'Objectif', hint: 'But de manœuvre encore pertinent plus longtemps.', noun: 'Cet objectif', kind: 'static', warnMin: 60, staleMin: 240 },
+    { key: 'mil_warning', group: 'Repères', short: 'Alerte', label: 'Alerte', hint: 'Danger signalé : mines, embuscade, zone interdite.', noun: 'Cette alerte', kind: 'static', warnMin: 15, staleMin: 45 },
+    { key: 'mil_destroy', group: 'Repères', short: 'Destruction', label: 'Destruction', hint: 'Cible à détruire ou déjà détruite.', noun: 'Cette destruction', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'mil_ambush', group: 'Repères', short: 'Embuscade', label: 'Embuscade', hint: 'Dispositif d’embuscade vu ou prévu.', noun: 'Cette embuscade', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 4 },
+    { key: 'mil_join', group: 'Repères', short: 'Ralliement', label: 'Ralliement', hint: 'Point de regroupement.', noun: 'Ce ralliement', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'mil_start', group: 'Repères', short: 'Départ', label: 'Départ', hint: 'Point de départ d’un mouvement.', noun: 'Ce départ', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_end', group: 'Repères', short: 'Arrivée', label: 'Arrivée', hint: 'Point d’arrivée prévu.', noun: 'Cette arrivée', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'hd_dot', group: 'Repères', short: 'Croquis', label: 'Repère au crayon', hint: 'Annotation à la main, moins formelle.', noun: 'Ce croquis', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'b_inf', group: 'Unités amies', short: 'Infanterie', label: 'Infanterie amie', hint: 'Groupe à pied ami vu ici.', noun: 'Cette infanterie amie', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 5 },
+    { key: 'b_motor_inf', group: 'Unités amies', short: 'Motorisée', label: 'Infanterie motorisée amie', hint: 'Infanterie amie montée sur véhicules légers.', noun: 'Cette infanterie motorisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 40 },
+    { key: 'b_mech_inf', group: 'Unités amies', short: 'Mécanisée', label: 'Infanterie mécanisée amie', hint: 'Infanterie amie sous blindés de transport.', noun: 'Cette infanterie mécanisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 30 },
+    { key: 'b_armor', group: 'Unités amies', short: 'Blindé', label: 'Blindé ami', hint: 'Char ou engin blindé ami.', noun: 'Ce blindé ami', kind: 'vehicle', warnMin: 12, staleMin: 35, speedKmh: 25 },
+    { key: 'b_recon', group: 'Unités amies', short: 'Recon', label: 'Reconnaissance amie', hint: 'Élément de reconnaissance ami, souvent mobile.', noun: 'Cette reconnaissance amie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 15 },
+    { key: 'b_air', group: 'Unités amies', short: 'Hélico', label: 'Hélicoptère ami', hint: 'Voilure tournante amie vue au-dessus de ce point.', noun: 'Cet hélicoptère ami', kind: 'air', warnMin: 4, staleMin: 12, speedKmh: 120 },
+    { key: 'o_inf', group: 'Unités hostiles', short: 'Infanterie', label: 'Infanterie hostile', hint: 'Groupe à pied adverse vu ici. Il peut déjà avoir bougé.', noun: 'Cette infanterie hostile', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
+    { key: 'o_motor_inf', group: 'Unités hostiles', short: 'Motorisée', label: 'Infanterie motorisée hostile', hint: 'Infanterie adverse montée, capable de quitter vite la zone.', noun: 'Cette infanterie motorisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 40 },
+    { key: 'o_mech_inf', group: 'Unités hostiles', short: 'Mécanisée', label: 'Infanterie mécanisée hostile', hint: 'Infanterie adverse sous VCI.', noun: 'Cette infanterie mécanisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 30 },
+    { key: 'o_armor', group: 'Unités hostiles', short: 'Blindé', label: 'Blindé hostile', hint: 'Char ou engin blindé adverse.', noun: 'Ce blindé hostile', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
+    { key: 'o_recon', group: 'Unités hostiles', short: 'Recon', label: 'Reconnaissance hostile', hint: 'Éclaireurs adverses, rarement immobiles longtemps.', noun: 'Cette reconnaissance hostile', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
+    { key: 'o_air', group: 'Unités hostiles', short: 'Hélico', label: 'Hélicoptère hostile', hint: 'Voilure tournante adverse. Le point vieillit très vite.', noun: 'Cet hélicoptère hostile', kind: 'air', warnMin: 3, staleMin: 8, speedKmh: 140 },
+    { key: 'n_inf', group: 'Unités inconnues', short: 'Infanterie', label: 'Infanterie inconnue', hint: 'Groupe à pied dont le camp n’est pas tranché.', noun: 'Cette infanterie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
+    { key: 'n_armor', group: 'Unités inconnues', short: 'Blindé', label: 'Blindé inconnu', hint: 'Engin blindé d’appartenance incertaine.', noun: 'Ce blindé', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
+    { key: 'n_recon', group: 'Unités inconnues', short: 'Recon', label: 'Reconnaissance inconnue', hint: 'Élément mobile non identifié.', noun: 'Cette reconnaissance', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
+    { key: 'loc_hospital', group: 'Lieux', short: 'Médical', label: 'Poste médical', hint: 'Point santé, en principe fixe.', noun: 'Ce poste médical', kind: 'static', warnMin: 90, staleMin: 360 }
+  ];
 
   function ow() { return window.OverwatchBeta || null; }
   function esc(v) { var api = ow(); return api ? api.escapeHtml(v) : String(v == null ? '' : v); }
@@ -78,6 +110,7 @@
     renderFollowChip();
     renderRelays();
     renderDf();
+    renderMarkerIntel();
     injectHatch();
   }
 
@@ -133,16 +166,82 @@
     }
   }
 
-  function markerPickerHtml(selected) {
-    var cat = window.ArmaMarkerCatalog;
-    var keys = ['mil_dot', 'mil_triangle', 'mil_box', 'mil_circle', 'mil_flag', 'mil_objective', 'mil_warning', 'mil_destroy', 'mil_ambush', 'mil_join', 'mil_start', 'mil_end', 'hd_dot', 'loc_hospital', 'b_inf', 'o_inf', 'n_inf'];
-    var html = '<div class="ow-marker-picker">';
-    keys.forEach(function (key) {
-      var e = cat && cat.get ? cat.get(key) : null;
-      var lab = e && e.label ? e.label : key;
-      html += '<button type="button" class="ow-marker-pick' + (selected === key ? ' is-on' : '') + '" data-ow-mtype="' + esc(key) + '">' + esc(lab) + '</button>';
+  function markerSymbol(key) {
+    var i;
+    for (i = 0; i < MARKER_SYMBOLS.length; i += 1) {
+      if (MARKER_SYMBOLS[i].key === key) return MARKER_SYMBOLS[i];
+    }
+    return MARKER_SYMBOLS[0];
+  }
+
+  function markerColor(key) {
+    if (String(key).indexOf('o_') === 0) return 'ColorEAST';
+    if (String(key).indexOf('n_') === 0) return 'ColorGUER';
+    if (String(key).indexOf('b_') === 0) return 'ColorWEST';
+    return 'ColorGreen';
+  }
+
+  function markerThumb(key) {
+    var helper = window.ArmaMapMarkers;
+    if (helper && helper.buildIconSpec) {
+      var spec = helper.buildIconSpec({ type: key, color: markerColor(key), label: '', text: '' });
+      if (spec && spec.html) return '<span class="ow-marker-thumb">' + spec.html + '</span>';
+    }
+    return '<span class="ow-marker-thumb ow-marker-thumb-empty">●</span>';
+  }
+
+  function markerGroups() {
+    var groups = [];
+    var seen = {};
+    MARKER_SYMBOLS.forEach(function (item) {
+      if (!seen[item.group]) {
+        seen[item.group] = true;
+        groups.push(item.group);
+      }
     });
-    return html + '</div>';
+    return groups;
+  }
+
+  function markerPickerHtml(selected) {
+    var html = '<div class="ow-marker-board">';
+    markerGroups().forEach(function (group) {
+      html += '<p class="ow-marker-group">' + esc(group) + '</p><div class="ow-marker-picker">';
+      MARKER_SYMBOLS.filter(function (item) { return item.group === group; }).forEach(function (item) {
+        html += '<button type="button" class="ow-marker-pick' + (selected === item.key ? ' is-on' : '') + '" data-ow-mtype="' + esc(item.key) + '" title="' + esc(item.label) + '">' +
+          markerThumb(item.key) + '<span>' + esc(item.short) + '</span></button>';
+      });
+      html += '</div>';
+    });
+    html += '<p class="ow-marker-group">Liste</p><div class="ow-marker-list" role="list">';
+    MARKER_SYMBOLS.forEach(function (item) {
+      html += '<button type="button" class="ow-marker-list-row' + (selected === item.key ? ' is-on' : '') + '" data-ow-mtype="' + esc(item.key) + '" role="listitem">' +
+        markerThumb(item.key) +
+        '<span><strong>' + esc(item.label) + '</strong><small>' + esc(item.hint) + '</small></span></button>';
+    });
+    html += '</div>';
+    var cur = markerSymbol(selected);
+    html += '<p class="ow-marker-hint" id="ow-marker-hint">' + esc(cur.hint) + '</p></div>';
+    return html;
+  }
+
+  function syncMarkerPick(key) {
+    pendingMarker.type = key || 'mil_dot';
+    var cur = markerSymbol(pendingMarker.type);
+    document.querySelectorAll('[data-ow-mtype]').forEach(function (btn) {
+      btn.classList.toggle('is-on', btn.getAttribute('data-ow-mtype') === pendingMarker.type);
+    });
+    var hint = document.getElementById('ow-marker-hint');
+    if (hint) hint.textContent = cur.hint;
+    var speed = document.querySelector('#ow-marker-form [name="speed_kmh"]');
+    if (speed && !speed.dataset.touched) speed.value = cur.speedKmh || '';
+  }
+
+  function toggleMarkerMoveFields(form) {
+    var movement = String(new FormData(form).get('movement') || 'still');
+    var move = form.querySelector('#ow-marker-move-fields');
+    var shuttle = form.querySelector('#ow-marker-shuttle-fields');
+    if (move) move.hidden = movement === 'still';
+    if (shuttle) shuttle.hidden = movement !== 'shuttle';
   }
 
   function promptMarker(ll) {
@@ -150,55 +249,230 @@
     if (!api) return Promise.resolve();
     pendingMarker = { ll: ll, type: 'mil_dot' };
     var w = api.latLngToWorld(ll);
+    var first = markerSymbol('mil_dot');
     api.openDrawer('Repère', 'Marqueur du théâtre',
-      '<p class="ow-help">Le symbole choisi apparaît au poste et en jeu, comme un marqueur posé sur la carte Arma.</p>' +
+      '<p class="ow-help">Le symbole choisi apparaît au poste et en jeu, comme un marqueur posé sur la carte du théâtre.</p>' +
       '<form class="ow-form-grid" id="ow-marker-form">' +
       '<label>Libellé<input name="label" required maxlength="80" placeholder="Nom du repère"></label>' +
+      '<label>Description<textarea name="description" maxlength="400" placeholder="Effectif vu, armement, attitude, ce qui s’est passé."></textarea></label>' +
       '<label>Symbole</label>' + markerPickerHtml('mil_dot') +
+      '<label>Déplacement<select name="movement">' +
+      '<option value="still" selected>À l’arrêt</option>' +
+      '<option value="moving">En déplacement</option>' +
+      '<option value="shuttle">Allers-retours</option>' +
+      '</select></label>' +
+      '<div id="ow-marker-move-fields" hidden>' +
+      '<label>Cap (0 = nord)<input name="heading" type="number" min="0" max="359" step="1" placeholder="Ex. 45"></label>' +
+      '<label>Vitesse estimée (km/h)<input name="speed_kmh" type="number" min="0" max="400" step="1" value="' + (first.speedKmh || '') + '"></label>' +
+      '<p class="ow-help">Le poste estime alors où l’unité peut se trouver depuis l’heure de pose.</p>' +
+      '</div>' +
+      '<div id="ow-marker-shuttle-fields" hidden>' +
+      '<label>Longueur du parcours (m)<input name="patrol_m" type="number" min="30" max="4000" step="10" value="250"></label>' +
+      '<p class="ow-help">L’unité fait des allers-retours sur cet axe, autour du point posé.</p>' +
+      '</div>' +
       '<p class="ow-help">Grille ' + Math.round(w.x) + ' / ' + Math.round(w.y) + '</p>' +
       '<div class="ow-form-actions"><button class="ow-primary" type="submit">Poser</button></div></form>'
     );
-    document.querySelectorAll('[data-ow-mtype]').forEach(function (btn) {
+    document.querySelectorAll('#ow-marker-form [data-ow-mtype]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        pendingMarker.type = btn.getAttribute('data-ow-mtype') || 'mil_dot';
-        document.querySelectorAll('[data-ow-mtype]').forEach(function (b) { b.classList.toggle('is-on', b === btn); });
+        syncMarkerPick(btn.getAttribute('data-ow-mtype') || 'mil_dot');
       });
     });
     var form = document.getElementById('ow-marker-form');
-    if (form) form.addEventListener('submit', function (event) {
-      event.preventDefault();
-      var label = String(new FormData(form).get('label') || '').trim() || 'Repère';
-      commitMarker(ll, label, pendingMarker.type);
-    });
+    if (form) {
+      var speed = form.querySelector('[name="speed_kmh"]');
+      if (speed) speed.addEventListener('input', function () { speed.dataset.touched = '1'; });
+      var moveSel = form.querySelector('[name="movement"]');
+      if (moveSel) moveSel.addEventListener('change', function () { toggleMarkerMoveFields(form); });
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        commitMarker(ll, {
+          label: String(data.get('label') || '').trim() || 'Repère',
+          description: String(data.get('description') || '').trim(),
+          type: pendingMarker.type,
+          movement: String(data.get('movement') || 'still'),
+          heading: data.get('heading'),
+          speed_kmh: data.get('speed_kmh'),
+          patrol_m: data.get('patrol_m')
+        });
+      });
+    }
     return Promise.resolve();
   }
 
-  function commitMarker(ll, label, type) {
+  function commitMarker(ll, opts) {
     var api = ow();
     if (!api) return Promise.resolve();
+    opts = opts || {};
+    var type = opts.type || 'mil_dot';
+    var spec = markerSymbol(type);
     var w = api.latLngToWorld(ll);
+    var heading = Number(opts.heading);
+    var speed = Number(opts.speed_kmh);
+    var patrol = Number(opts.patrol_m);
+    var movement = opts.movement === 'moving' || opts.movement === 'shuttle' ? opts.movement : 'still';
     return api.api('/api/markers', {
       method: 'POST',
       body: {
         mapId: api.mapId,
         markerData: {
-          type: type || 'mil_dot',
-          color: 'ColorGreen',
-          label: label,
-          text: label,
+          type: type,
+          color: markerColor(type),
+          label: opts.label,
+          text: opts.label,
+          description: opts.description || '',
           author: api.authorName,
           pos: [w.x, w.y],
           pos_x: w.x,
           pos_y: w.y,
-          source: 'web'
+          source: 'web',
+          placed_at: new Date().toISOString(),
+          movement: movement,
+          heading: Number.isFinite(heading) ? heading : null,
+          speed_kmh: Number.isFinite(speed) && speed > 0 ? speed : (spec.speedKmh || null),
+          patrol_m: Number.isFinite(patrol) && patrol > 0 ? patrol : 250,
+          presence_noun: spec.noun,
+          warn_min: spec.warnMin,
+          stale_min: spec.staleMin
         }
       }
     }).then(function () {
       toast('Marqueur posé — visible au poste et en jeu.');
-      remember('marker', label);
+      remember('marker', opts.label);
       if (api.loadArmaMarkers) api.loadArmaMarkers();
       document.getElementById('ow-drawer').hidden = true;
     }).catch(function () { toast('Marqueur refusé.'); });
+  }
+
+  function parseMarkerAgeMs(data, row) {
+    var raw = (data && (data.placed_at || data.placedAt)) || (row && (row.created_at || row.createdAt || row.updated_at));
+    var t = raw ? Date.parse(raw) : NaN;
+    return Number.isFinite(t) ? Math.max(0, Date.now() - t) : 0;
+  }
+
+  function formatMarkerAge(ms) {
+    var min = Math.max(1, Math.round(ms / 60000));
+    if (min < 60) return min + ' min';
+    var h = Math.floor(min / 60);
+    var r = min % 60;
+    return r ? (h + ' h ' + r) : (h + ' h');
+  }
+
+  function markerAgeLevel(data, ageMs) {
+    var spec = markerSymbol(data && data.type);
+    var warn = Number(data && data.warn_min != null ? data.warn_min : spec.warnMin) * 60000;
+    var stale = Number(data && data.stale_min != null ? data.stale_min : spec.staleMin) * 60000;
+    if (ageMs >= stale) return 'stale';
+    if (ageMs >= warn) return 'warn';
+    return '';
+  }
+
+  function markerStaleText(data, ageMs, level) {
+    var spec = markerSymbol(data && data.type);
+    var noun = (data && data.presence_noun) || spec.noun;
+    var age = formatMarkerAge(ageMs);
+    var text = level === 'stale'
+      ? (noun + ' n’est probablement plus à cet endroit — posée il y a ' + age + '.')
+      : (noun + ' n’est peut-être plus présente ici — posée il y a ' + age + '.');
+    var extra = String((data && data.description) || '').trim();
+    return extra ? (text + ' ' + extra) : text;
+  }
+
+  function shuttleOffsetM(elapsedSec, speedMps, patrolM) {
+    var span = Math.max(30, patrolM);
+    var period = (2 * span) / Math.max(0.3, speedMps);
+    var t = (elapsedSec % period) / period;
+    var u = t < 0.5 ? t * 2 : (1 - t) * 2;
+    return (u * 2 - 1) * span;
+  }
+
+  function renderMarkerIntel() {
+    var api = ow();
+    if (!api) return;
+    clearGroup(markerIntelLayers);
+    var rows = window.__owArmaRows || [];
+    rows.forEach(function (row) {
+      var data = {};
+      var raw = row && (row.markerData || row.marker_data);
+      if (typeof raw === 'string') {
+        try { data = JSON.parse(raw) || {}; } catch (e) { data = {}; }
+      } else if (raw && typeof raw === 'object') data = raw;
+      if (data.suppressed || data.po) return;
+      var world = null;
+      if (Array.isArray(data.pos) && data.pos.length >= 2) world = { x: Number(data.pos[0]), y: Number(data.pos[1]) };
+      else world = { x: Number(data.pos_x), y: Number(data.pos_y) };
+      if (!world || !Number.isFinite(world.x) || !Number.isFinite(world.y)) return;
+      var loc = api.worldToLatLng(world.x, world.y);
+      if (!loc) return;
+      var ageMs = parseMarkerAgeMs(data, row);
+      var level = markerAgeLevel(data, ageMs);
+      if (level) {
+        var full = markerStaleText(data, ageMs, level);
+        var short = (level === 'stale' ? 'Probablement parti · ' : 'Peut-être plus là · ') + formatMarkerAge(ageMs);
+        var chip = L.marker(loc, {
+          interactive: true,
+          keyboard: false,
+          zIndexOffset: 80,
+          icon: L.divIcon({
+            className: 'ow-marker-age',
+            html: '<span class="ow-marker-age-chip is-' + level + '">' + esc(short) + '</span>',
+            iconSize: [168, 20],
+            iconAnchor: [-12, 10]
+          })
+        });
+        if (chip.bindTooltip) chip.bindTooltip(full, { direction: 'right', opacity: 0.95 });
+        markerIntelLayers.push(chip.addTo(api.map));
+      }
+      var movement = String(data.movement || '').toLowerCase();
+      var heading = Number(data.heading);
+      if ((movement === 'moving' || movement === 'shuttle') && Number.isFinite(heading)) {
+        var spec = markerSymbol(data.type);
+        var kmh = Number(data.speed_kmh);
+        if (!Number.isFinite(kmh) || kmh <= 0) kmh = spec.speedKmh || 4;
+        var mps = kmh / 3.6;
+        var elapsed = ageMs / 1000;
+        var dist;
+        if (movement === 'shuttle') {
+          dist = shuttleOffsetM(elapsed, mps, Number(data.patrol_m) || 250);
+        } else {
+          dist = Math.min(1800, Math.max(20, mps * elapsed));
+        }
+        var end = headingPoint(loc, heading, dist);
+        if (end) {
+          markerIntelLayers.push(L.polyline([loc, end], {
+            color: level === 'stale' ? '#c9784a' : '#5b8def',
+            weight: 2,
+            dashArray: '5 6',
+            opacity: 0.8,
+            className: 'ow-marker-predict',
+            interactive: false
+          }).addTo(api.map));
+          markerIntelLayers.push(L.circleMarker(end, {
+            radius: 5,
+            color: '#dff9ef',
+            weight: 1,
+            fillColor: '#5b8def',
+            fillOpacity: 0.35,
+            className: 'ow-marker-ghost',
+            interactive: false
+          }).addTo(api.map));
+        }
+        if (movement === 'shuttle') {
+          var a = headingPoint(loc, heading, Number(data.patrol_m) || 250);
+          var b = headingPoint(loc, heading, -(Number(data.patrol_m) || 250));
+          if (a && b) {
+            markerIntelLayers.push(L.polyline([a, b], {
+              color: '#7d8681',
+              weight: 1,
+              dashArray: '2 8',
+              opacity: 0.55,
+              interactive: false
+            }).addTo(api.map));
+          }
+        }
+      }
+    });
   }
 
   function promptShape(type, latlngs, label) {
@@ -526,11 +800,15 @@
       api.api('/api/pings', {
         method: 'POST',
         body: { mapId: api.mapId, author: api.authorName, pos_x: w.x, pos_y: w.y, message: msg, ttl_sec: ttl }
-      }).then(function () {
-        var pin = L.circleMarker(ll, { radius: 7, color: '#e7b14d', weight: 2 }).addTo(api.map);
-        if (pin.bindTooltip) pin.bindTooltip(msg, { direction: 'top' });
-        if (ttl > 0) window.setTimeout(function () { try { api.map.removeLayer(pin); } catch (e) {} }, ttl * 1000);
-        toast(ttl > 0 ? ('Repère visible ' + ttl + ' s.') : 'Repère transmis.');
+      }).then(function (row) {
+        var id = String((row && row.id) || Date.now());
+        if (api.registerPing) api.registerPing(id, ll, msg, ttl);
+        else {
+          var pin = L.circleMarker(ll, { radius: 7, color: '#e7b14d', weight: 2 }).addTo(api.map);
+          if (pin.bindTooltip) pin.bindTooltip(msg, { direction: 'top' });
+          if (ttl > 0) window.setTimeout(function () { try { api.map.removeLayer(pin); } catch (e) {} }, ttl * 1000);
+        }
+        toast(ttl > 0 ? ('Repère visible ' + ttl + ' s.') : 'Repère transmis. Clic droit pour le retirer.');
         document.getElementById('ow-drawer').hidden = true;
       }).catch(function () { toast('Repère refusé.'); });
     });
@@ -579,7 +857,11 @@
       var y = Number(row.pos_y);
       if (!isFinite(x) || !isFinite(y)) return;
       var ll = api.worldToLatLng(x, y);
-      sitrepPins.push(L.circleMarker(ll, { radius: 6, color: '#e7b14d', weight: 2, fillOpacity: 0.4 }).addTo(api.map));
+      var pin = L.circleMarker(ll, { radius: 7, color: '#e7b14d', weight: 2, fillOpacity: 0.45 }).addTo(api.map);
+      if (api.bindLayerContext) {
+        api.bindLayerContext(pin, 'sitrep', String(row.id || ''), String(row.title || row.report_type || 'Compte rendu'));
+      }
+      sitrepPins.push(pin);
     });
   }
 
@@ -628,6 +910,11 @@
       return card('marker', row.id, title, tag + (data.type ? ' · ' + data.type : ''), 'data-del-marker="' + esc(String(row.id || '')) + '"');
     }).join('');
     html += armaCards || '<p class="ow-help">Aucun marqueur du théâtre.</p></div>';
+    html += '<p class="ow-kicker">Relais ATAK</p><div class="ow-layers-list">';
+    var relayCards = relays.filter(function (row) { return match(row.relay_uid || 'Relais'); }).map(function (row) {
+      return card('relay', row.relay_uid, 'Relais ATAK', row.alive === 0 || row.alive === false ? 'Détruit' : 'En service', 'data-del-relay="' + esc(String(row.relay_uid || '')) + '"');
+    }).join('');
+    html += relayCards || '<p class="ow-help">Aucun relais posé en jeu.</p></div>';
     html += '<div id="ow-layer-confirm" hidden></div>';
     return html;
   }
@@ -657,6 +944,11 @@
         confirmDelete('shape', btn.getAttribute('data-del-shape'), title ? title.textContent : 'ce tracé');
       });
     });
+    document.querySelectorAll('[data-del-relay]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        confirmDelete('relay', btn.getAttribute('data-del-relay'), 'ce relais');
+      });
+    });
   }
 
   function confirmDelete(kind, id, label) {
@@ -666,19 +958,33 @@
     host.className = 'ow-confirm';
     host.innerHTML = '<p>Retirer ' + esc(label || 'cet élément') + ' de la carte du poste ?</p>' +
       (kind === 'marker' ? '<p class="ow-help">S’il vient d’Arma, il peut réapparaître tant qu’il existe encore en jeu.</p>' : '') +
+      (kind === 'relay' ? '<p class="ow-help">Le relais disparaît du poste. S’il existe encore en jeu, il peut réapparaître.</p>' : '') +
       '<div class="ow-form-actions"><button type="button" class="ow-primary" id="ow-del-yes">Retirer</button>' +
       '<button type="button" class="ow-secondary" id="ow-del-no">Annuler</button></div>';
     document.getElementById('ow-del-no').addEventListener('click', function () { host.hidden = true; });
     document.getElementById('ow-del-yes').addEventListener('click', function () {
       var api = ow();
       if (!api) return;
-      var url = kind === 'shape' ? '/api/map-shapes/' + encodeURIComponent(id) : '/api/markers/' + encodeURIComponent(id);
+      var url = kind === 'shape'
+        ? '/api/map-shapes/' + encodeURIComponent(id)
+        : (kind === 'relay' ? '/api/atak/relays/' + encodeURIComponent(id) + '?mapId=' + encodeURIComponent(api.mapId) : '/api/markers/' + encodeURIComponent(id));
       api.api(url, { method: 'DELETE' }).then(function () {
         toast('Élément retiré.');
         if (kind === 'shape' && api.loadShapes) api.loadShapes();
         if (kind === 'marker' && api.loadArmaMarkers) api.loadArmaMarkers();
+        if (kind === 'relay') loadRelays();
         api.openView('layers');
-      }).catch(function () { toast('Retrait impossible.'); });
+      }).catch(function (err) {
+        if (String(err && err.message) === '404') {
+          toast('Cet élément n’est plus au poste.');
+          if (kind === 'marker' && api.loadArmaMarkers) api.loadArmaMarkers();
+          if (kind === 'shape' && api.loadShapes) api.loadShapes();
+          if (kind === 'relay') loadRelays();
+          api.openView('layers');
+          return;
+        }
+        toast('Retrait impossible.');
+      });
     });
   }
 
@@ -707,6 +1013,7 @@
     var api = ow();
     if (!api || !payload) return '';
     injectHatch();
+    var group = L.layerGroup();
     var samples = Array.isArray(payload.samples) ? payload.samples : [];
     var color = payload.verdict === 'clear' ? '#00d69a' : (payload.verdict === 'masked' ? '#e05b63' : '#e7b14d');
     var cut = null;
@@ -722,11 +1029,17 @@
       });
     }
     if (cut) {
-      L.polyline([fromLl, cut], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(api.map);
-      L.polyline([cut, toLl], { color: color, weight: 3, dashArray: '6 6', className: 'ow-los-masked' }).addTo(api.map);
-      L.circleMarker(cut, { radius: 6, color: color, weight: 2, fillOpacity: 0.8 }).addTo(api.map);
+      L.polyline([fromLl, cut], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(group);
+      L.polyline([cut, toLl], { color: color, weight: 3, dashArray: '6 6', className: 'ow-los-masked' }).addTo(group);
+      L.circleMarker(cut, { radius: 6, color: color, weight: 2, fillOpacity: 0.8 }).addTo(group);
     } else {
-      L.polyline([fromLl, toLl], { color: color, weight: 3 }).addTo(api.map);
+      L.polyline([fromLl, toLl], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(group);
+    }
+    group.addTo(api.map);
+    if (api.registerScratch) api.registerScratch(group, 'los', 'los-' + Date.now(), 'Visée');
+    else if (api.bindLayerContext) {
+      api.bindLayerContext(group, 'los', 'los', 'Visée');
+      group.eachLayer(function (child) { api.bindLayerContext(child, 'los', 'los', 'Visée'); });
     }
     var cause = payload.cause_label || (payload.obstruction && payload.obstruction.cause) || '';
     if (payload.verdict === 'masked') {
@@ -872,14 +1185,19 @@
     relays.forEach(function (row) {
       var ll = api.worldToLatLng(Number(row.pos_x), Number(row.pos_y));
       var alive = row.alive !== false && row.alive !== 0;
+      var uid = String(row.relay_uid || row.uid || '');
       var icon = L.divIcon({
         className: 'ow-relay-dot' + (alive ? '' : ' is-down'),
-        html: '<span></span>',
-        iconSize: [16, 16],
+        html: '<span></span><em>Relais</em>',
+        iconSize: [64, 16],
         iconAnchor: [8, 8]
       });
-      var m = L.marker(ll, { icon: icon, interactive: true }).addTo(api.map);
-      if (m.bindTooltip) m.bindTooltip(alive ? 'Relais ATAK' : 'Relais détruit', { direction: 'top' });
+      var m = L.marker(ll, { icon: icon, interactive: true, keyboard: false }).addTo(api.map);
+      if (api.bindLayerContext) {
+        api.bindLayerContext(m, 'relay', uid, alive ? 'Relais ATAK' : 'Relais détruit');
+      } else if (m.bindTooltip) {
+        m.bindTooltip(alive ? 'Relais ATAK' : 'Relais détruit', { direction: 'top' });
+      }
       relayLayers.push(m);
       var range = Number(row.range_m || 2000);
       relayLayers.push(L.polygon(circleByRadius(ll, range, 48), {
@@ -1039,6 +1357,7 @@
     loadSitreps();
     window.setInterval(loadTraffic, 10000);
     window.setInterval(loadRelays, 15000);
+    window.setInterval(renderMarkerIntel, 15000);
     window.addEventListener('overwatch:units-updated', afterRenderMap);
     var origRender = ow().renderMap;
     if (typeof origRender === 'function') {
@@ -1060,7 +1379,18 @@
     bindLayers: bindLayers,
     drawLos: drawLos,
     afterRenderMap: afterRenderMap,
-    setArmaRows: function (rows) { window.__owArmaRows = rows || []; }
+    loadRelays: loadRelays,
+    dropSitrepPin: function (id) {
+      sitrepPins = sitrepPins.filter(function (layer) {
+        if (layer && layer._owPin && String(layer._owPin.id) === String(id)) {
+          var api = ow();
+          if (api) try { api.map.removeLayer(layer); } catch (e) {}
+          return false;
+        }
+        return true;
+      });
+    },
+    setArmaRows: function (rows) { window.__owArmaRows = rows || []; renderMarkerIntel(); }
   };
   ready();
 })();

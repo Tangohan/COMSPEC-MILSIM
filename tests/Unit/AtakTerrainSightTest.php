@@ -47,6 +47,24 @@ final class AtakTerrainSightTest extends TestCase
         self::assertGreaterThan(150, (float) $out['obstruction']['z']);
     }
 
+    public function testLineOfSightIgnoresTheCellUnderTheObserverOnADownhill(): void
+    {
+        $grid = $this->downhillLipGrid();
+        $out = AtakTerrainSight::lineOfSight($grid, 10, 250, 480, 250, 1.6, 0.0);
+        self::assertTrue($out['ok']);
+        self::assertSame(AtakTerrainSight::VERDICT_CLEAR, $out['verdict']);
+        self::assertNull($out['obstruction']);
+        self::assertStringContainsString('descente', (string) $out['detail']);
+    }
+
+    public function testLineOfSightUsesAircraftAltitudeOverARidge(): void
+    {
+        $grid = $this->ridgeGrid();
+        $out = AtakTerrainSight::lineOfSight($grid, 0, 250, 500, 250, 1.6, 0.0, [], 350.0, 100.0);
+        self::assertSame(AtakTerrainSight::VERDICT_CLEAR, $out['verdict']);
+        self::assertTrue($out['observer_from_unit']);
+        self::assertSame(350.0, $out['observer_z']);
+    }
     public function testLineOfSightIsClearOnFlatGround(): void
     {
         $grid = $this->flatGrid(80);
@@ -121,6 +139,39 @@ final class AtakTerrainSightTest extends TestCase
         for ($r = 0; $r < $rows; $r++) {
             for ($c = 0; $c < $cols; $c++) {
                 $vals[] = ($c === 5) ? 200 : 100;
+            }
+        }
+
+        return [
+            'heights' => AtakTerrainMath::packInt16Le($vals),
+            'cols' => $cols,
+            'rows' => $rows,
+            'cell_m' => 50,
+            'origin_x' => 0,
+            'origin_y' => 0,
+            'filled_cells' => $cols * $rows,
+        ];
+    }
+
+    /**
+     * Première case un peu plus haute, puis descente : le sol sous l’observateur ne doit pas masquer.
+     *
+     * @return array<string, mixed>
+     */
+    private function downhillLipGrid(): array
+    {
+        $cols = 11;
+        $rows = 11;
+        $vals = [];
+        for ($r = 0; $r < $rows; $r++) {
+            for ($c = 0; $c < $cols; $c++) {
+                if ($c === 0) {
+                    $vals[] = 165;
+                } elseif ($c === 1) {
+                    $vals[] = 178;
+                } else {
+                    $vals[] = 110;
+                }
             }
         }
 

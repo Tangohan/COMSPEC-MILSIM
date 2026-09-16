@@ -6,11 +6,11 @@
 
 private _disp = displayNull;
 if (!isNil "_display" && {_display isEqualType displayNull}) then { _disp = _display; };
-if (isNull _disp) then { _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull]; };
 if (isNull _disp && {!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay"}) then {
     _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
 };
 if (isNull _disp) exitWith {};
+if (isNil "cTabIfOpen") exitWith {};
 
 private _fsAlert = missionNamespace getVariable ["COMSPEC_Athena_FsAlert", []];
 if ((_fsAlert isEqualType []) && {(count _fsAlert) >= 3} && {diag_tickTime <= (_fsAlert select 2)}) exitWith {

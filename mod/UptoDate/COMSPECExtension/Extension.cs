@@ -1748,13 +1748,15 @@ public static partial class Extension
             }
             var detail = string.Format(
                 System.Globalization.CultureInfo.InvariantCulture,
-                "b:{0};f:{1};tf:{2};tt:{3};c:{4};p:{5}",
+                "b:{0};f:{1};tf:{2};tt:{3};c:{4};p:{5};pl:{6};rd:{7}",
                 Pick("buildings"),
                 Pick("forests"),
                 Pick("terrain_filled"),
                 Pick("terrain_total"),
                 Pick("terrain_chunks"),
-                Pick("terrain_coverage_pct"));
+                Pick("terrain_coverage_pct"),
+                Pick("places"),
+                Pick("roads"));
             return FormatAtakExtArray("OK", detail);
         }
         catch (Exception)

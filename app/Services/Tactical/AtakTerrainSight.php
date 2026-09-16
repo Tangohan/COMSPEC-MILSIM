@@ -108,6 +108,8 @@ final class AtakTerrainSight
         float $observerEyeM = 1.6,
         float $targetEyeM = 0.0,
         array $sceneObjects = [],
+        ?float $observerAbsZ = null,
+        ?float $targetAbsZ = null,
     ): array {
         $dist = hypot($x1 - $x0, $y1 - $y0);
         $cell = max(25.0, (float) ($grid['cell_m'] ?? 50));
@@ -126,8 +128,8 @@ final class AtakTerrainSight
             ];
         }
 
-        $obsEye = max(0.0, min(50.0, $observerEyeM));
-        $tgtEye = max(0.0, min(50.0, $targetEyeM));
+        $obsEye = max(0.0, min(400.0, $observerEyeM));
+        $tgtEye = max(0.0, min(400.0, $targetEyeM));
         $samples = self::walk($grid, [[$x0, $y0], [$x1, $y1]], $cell, self::MAX_SAMPLES);
         $zObsGnd = AtakTerrainMath::heightAt($grid, $x0, $y0);
         $zTgtGnd = AtakTerrainMath::heightAt($grid, $x1, $y1);
@@ -150,12 +152,13 @@ final class AtakTerrainSight
             ];
         }
 
-        $zObs = $zObsGnd + $obsEye;
-        $zTgt = $zTgtGnd + $tgtEye;
+        $zObs = $observerAbsZ !== null ? $observerAbsZ : ($zObsGnd + $obsEye);
+        $zTgt = $targetAbsZ !== null ? $targetAbsZ : ($zTgtGnd + $tgtEye);
         $known = 0;
         $obstruction = null;
         $wire = [];
         $last = count($samples) - 1;
+        $near = $cell;
         foreach ($samples as $i => $s) {
             $d = (float) $s['d'];
             $t = $dist > 0 ? min(1.0, $d / $dist) : 0.0;
@@ -165,7 +168,8 @@ final class AtakTerrainSight
             if ($z !== null) {
                 $known++;
                 $zf = (float) $z;
-                $blocked = $i > 0 && $i < $last && ($zf > $ray + self::LOS_EPSILON_M);
+                $inOwnCell = $d <= $near || ($dist - $d) <= $near;
+                $blocked = $i > 0 && $i < $last && !$inOwnCell && ($zf > $ray + self::LOS_EPSILON_M);
                 $clear = !$blocked;
                 if ($blocked && $obstruction === null) {
                     $obstruction = [
@@ -201,9 +205,20 @@ final class AtakTerrainSight
         } else {
             $verdict = self::VERDICT_CLEAR;
             $label = 'Visée dégagée';
-            $detail = $gaps
-                ? 'Le relief relevé ne masque pas la cible. Un tronçon n’est pas encore relevé.'
-                : 'Le relief ne masque pas la cible.';
+            $groundDelta = $zTgtGnd - $zObsGnd;
+            if ($zObs > $zTgt + 2) {
+                $detail = $gaps
+                    ? 'Visée en descente : le relief relevé ne masque pas. Un tronçon n’est pas encore relevé.'
+                    : 'Visée en descente : le relief ne masque pas la cible.';
+            } elseif ($groundDelta > 5) {
+                $detail = $gaps
+                    ? 'Le relief relevé ne masque pas la cible, malgré la montée. Un tronçon n’est pas encore relevé.'
+                    : 'Le relief ne masque pas la cible.';
+            } else {
+                $detail = $gaps
+                    ? 'Le relief relevé ne masque pas la cible. Un tronçon n’est pas encore relevé.'
+                    : 'Le relief ne masque pas la cible.';
+            }
         }
 
         $out = [
@@ -220,6 +235,8 @@ final class AtakTerrainSight
             'target_ground_z' => round($zTgtGnd, 1),
             'observer_eye_m' => round($obsEye, 1),
             'target_eye_m' => round($tgtEye, 1),
+            'observer_from_unit' => $observerAbsZ !== null,
+            'target_from_unit' => $targetAbsZ !== null,
             'coverage_pct' => (int) round(100 * $coverage),
             'cell_m' => (int) $cell,
             'gaps' => $gaps,
@@ -277,6 +294,10 @@ final class AtakTerrainSight
             }
             $half = max(2.0, (float) ($obj['width'] ?? $obj['width_m'] ?? 6)) / 2.0;
             $t = (($ox - $x0) * $dx + ($oy - $y0) * $dy) / $len2;
+            $cellSkip = 50.0;
+            if ($t * $dist <= $cellSkip || ($dist - $t * $dist) <= $cellSkip) {
+                continue;
+            }
             if ($t <= 0.02 || $t >= 0.98) {
                 continue;
             }

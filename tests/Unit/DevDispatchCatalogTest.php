@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(409, $byKind['update']);
-        self::assertCount(415, $all);
+        self::assertSame(414, $byKind['update']);
+        self::assertCount(420, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -290,6 +290,57 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('00609', $overwatchOps['number_pad']);
         self::assertStringContainsString('comptes rendus', strtolower((string) $overwatchOps['title']));
         self::assertStringContainsString('relais', strtolower((string) $overwatchOps['activity']));
+        $atakNoPhoneCrash = DevDispatchCatalog::find('update', '610');
+        self::assertNotNull($atakNoPhoneCrash);
+        self::assertSame('00610', $atakNoPhoneCrash['number_pad']);
+        self::assertStringContainsString('fermeture', strtolower((string) $atakNoPhoneCrash['title']));
+        $overwatchMarkers = DevDispatchCatalog::find('update', '611');
+        self::assertNotNull($overwatchMarkers);
+        self::assertSame('00611', $overwatchMarkers['number_pad']);
+        self::assertStringContainsString('symboles', strtolower((string) $overwatchMarkers['title']));
+        self::assertStringContainsString('allers-retours', strtolower((string) $overwatchMarkers['activity']));
+        $atakMenuMsgs = DevDispatchCatalog::find('update', '612');
+        self::assertNotNull($atakMenuMsgs);
+        self::assertSame('00612', $atakMenuMsgs['number_pad']);
+        self::assertStringContainsString('menu', strtolower((string) $atakMenuMsgs['title']));
+        self::assertStringContainsString('messagerie', strtolower((string) $atakMenuMsgs['activity']));
+        $overwatchMapIngest = DevDispatchCatalog::find('update', '613');
+        self::assertNotNull($overwatchMapIngest);
+        self::assertSame('00613', $overwatchMapIngest['number_pad']);
+        self::assertStringContainsString('bâtiments', strtolower((string) $overwatchMapIngest['activity']));
+        $overwatchToolbar = DevDispatchCatalog::find('update', '614');
+        self::assertNotNull($overwatchToolbar);
+        self::assertSame('00614', $overwatchToolbar['number_pad']);
+        self::assertStringContainsString('outils', strtolower((string) $overwatchToolbar['title']));
+        $overwatchLosSlope = DevDispatchCatalog::find('update', '615');
+        self::assertNotNull($overwatchLosSlope);
+        self::assertSame('00615', $overwatchLosSlope['number_pad']);
+        self::assertStringContainsString('visée', strtolower((string) $overwatchLosSlope['title']));
+        $overwatchLosDelete = DevDispatchCatalog::find('update', '616');
+        self::assertNotNull($overwatchLosDelete);
+        self::assertSame('00616', $overwatchLosDelete['number_pad']);
+        self::assertStringContainsString('visées', strtolower((string) $overwatchLosDelete['title']));
+        self::assertStringContainsString('clic droit', strtolower((string) $overwatchLosDelete['activity']));
+        $overwatchLosHit = DevDispatchCatalog::find('update', '617');
+        self::assertNotNull($overwatchLosHit);
+        self::assertSame('00617', $overwatchLosHit['number_pad']);
+        self::assertStringContainsString('visée', strtolower((string) $overwatchLosHit['title']));
+        self::assertStringContainsString('marqueur', strtolower((string) $overwatchLosHit['activity']));
+        $overwatchChatUnread = DevDispatchCatalog::find('update', '618');
+        self::assertNotNull($overwatchChatUnread);
+        self::assertSame('00618', $overwatchChatUnread['number_pad']);
+        self::assertStringContainsString('non lus', strtolower((string) $overwatchChatUnread['title']));
+        self::assertStringContainsString('fil', strtolower((string) $overwatchChatUnread['activity']));
+        $overwatchMapSurvey = DevDispatchCatalog::find('update', '619');
+        self::assertNotNull($overwatchMapSurvey);
+        self::assertSame('00619', $overwatchMapSurvey['number_pad']);
+        self::assertStringContainsString('relevé', strtolower((string) $overwatchMapSurvey['title']));
+        self::assertStringContainsString('intégrité', strtolower((string) $overwatchMapSurvey['activity']));
+        $overwatchEmptyDismiss = DevDispatchCatalog::find('update', '620');
+        self::assertNotNull($overwatchEmptyDismiss);
+        self::assertSame('00620', $overwatchEmptyDismiss['number_pad']);
+        self::assertStringContainsString('télémétrie', strtolower((string) $overwatchEmptyDismiss['title']));
+        self::assertStringContainsString('masque', strtolower((string) $overwatchEmptyDismiss['activity']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);

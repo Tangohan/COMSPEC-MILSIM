@@ -1,5 +1,5 @@
 /*
-    Relevé complet du théâtre : bâtiments, forêts (Scene.Ingest) et relief (Terrain.Chunk).
+    Relevé complet du théâtre : bâtiments, forêts, relief, puis villes et routes.
     Découpé par secteurs avec pause entre chaque, pour ne pas figer Zeus.
     Params: [_mode] "full" | "scene" | "terrain"
 */
@@ -426,6 +426,24 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
         };
     };
 
+    if (!_aborted && {!(missionNamespace getVariable ["COMSPEC_TheaterAbort", false])}) then {
+        missionNamespace setVariable ["COMSPEC_TheaterPhase", "geo", false];
+        missionNamespace setVariable ["COMSPEC_TheaterCurrent", "Villes et routes…", false];
+        [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
+        private _forceGeo = missionNamespace getVariable ["COMSPEC_TheaterForceGeo", false];
+        missionNamespace setVariable ["COMSPEC_TheaterForceGeo", false, false];
+        [0, _forceGeo] call comspec_overwatch_connect_fnc_sampleGeoNetwork;
+        private _geoWait = 0;
+        waitUntil {
+            [] call _armWatchdog;
+            uiSleep 0.4;
+            _geoWait = _geoWait + 0.4;
+            !(missionNamespace getVariable ["COMSPEC_GeoSampling", false])
+            || {missionNamespace getVariable ["COMSPEC_TheaterAbort", false]}
+            || {_geoWait > 240}
+        };
+    };
+
     missionNamespace setVariable ["COMSPEC_TheaterSampling", false, false];
     missionNamespace setVariable ["COMSPEC_SceneSampling", false, false];
     missionNamespace setVariable ["COMSPEC_TerrainSampling", false, false];
@@ -433,13 +451,17 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
     missionNamespace setVariable ["COMSPEC_TheaterEndedAt", diag_tickTime, false];
     missionNamespace setVariable ["COMSPEC_TheaterDone", _grandTotal min _done, false];
 
+    private _places = missionNamespace getVariable ["COMSPEC_TheaterPlaces", 0];
+    private _roads = missionNamespace getVariable ["COMSPEC_TheaterRoads", 0];
     private _phase = "done";
-    private _current = "Relevé terminé";
+    private _current = "Relevé terminé — vérification d’intégrité…";
     private _msg = format [
-        "Relevé de la carte terminé : %1 bâtiments, %2 forêts, %3 portions de relief.",
+        "Relevé de la carte terminé : %1 bâtiments, %2 forêts, %3 portions de relief, %4 villes, %5 routes.",
         _buildings,
         _forests,
-        _terrainOk
+        _terrainOk,
+        _places,
+        _roads
     ];
     if (_aborted || {missionNamespace getVariable ["COMSPEC_TheaterAbort", false]}) then {
         _phase = "abort";
@@ -471,16 +493,23 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
             [_minute] call _pad
         ];
         private _lastTxt = format [
-            "%1 — bâtiments %2, forêts %3, relief %4",
+            "%1 — bâtiments %2, forêts %3, relief %4, villes %5, routes %6",
             _human,
             _buildings,
             _forests,
-            _terrainOk
+            _terrainOk,
+            _places,
+            _roads
         ];
         private _lastKey = format ["COMSPEC_TheaterSurveyLast_%1", worldName];
         profileNamespace setVariable [_lastKey, _lastTxt];
         private _countKey = format ["COMSPEC_TheaterSurveyCounts_%1", worldName];
-        profileNamespace setVariable [_countKey, [_buildings, _forests, _terrainOk]];
+        profileNamespace setVariable [_countKey, [_buildings, _forests, _terrainOk, _places, _roads]];
+        if (_phase isEqualTo "done" && {_doScene}) then {
+            private _wdKey = format ["COMSPEC_SceneWorldDone_%1_%2", worldName, _mapId];
+            profileNamespace setVariable [_wdKey, true];
+            missionNamespace setVariable ["COMSPEC_SceneWorldDone", true, false];
+        };
         saveProfileNamespace;
         missionNamespace setVariable ["COMSPEC_TheaterLastText", _lastTxt, false];
     };
@@ -488,9 +517,7 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
     [_msg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
     [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
 
-    /* Après scène+relief : peupler le graphe villes/routes pour l’itinéraire A* Athena. */
-    /* Geo network indépendant du mode scène/relief : après un relevé théâtre réussi. */
-    if (!_aborted) then {
-        [] call comspec_overwatch_connect_fnc_sampleGeoNetwork;
+    if (_phase isEqualTo "done") then {
+        [] call comspec_overwatch_connect_fnc_theaterSurveyVerify;
     };
 };

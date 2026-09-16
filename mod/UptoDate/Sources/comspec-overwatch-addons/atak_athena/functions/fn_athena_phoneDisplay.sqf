@@ -1,7 +1,8 @@
 /*
-  Display téléphone IceMan en cours : d’abord l’interface ouverte (cTabIfOpen),
-  puis le dialogue, puis l’overlay 3D. Évite de croire le téléphone fermé
-  entre deux recréations d’écran.
+  Display téléphone réellement ouvert (cTabIfOpen).
+  Pas de repli sur le mini-overlay 3D ni sur un dialogue laissé en mémoire :
+  les traiter comme « ouverts » relançait le calage IceMan sans que
+  l’opérateur ait le téléphone en main — même famille d’arrêt brutal.
 */
 private _d = displayNull;
 if (!isNil "cTabIfOpen" && {cTabIfOpen isEqualType []} && {(count cTabIfOpen) > 1}) then {
@@ -9,11 +10,5 @@ if (!isNil "cTabIfOpen" && {cTabIfOpen isEqualType []} && {(count cTabIfOpen) > 
     if (_name isEqualType "" && {_name isNotEqualTo ""}) then {
         _d = uiNamespace getVariable [_name, displayNull];
     };
-};
-if (isNull _d) then {
-    _d = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-};
-if (isNull _d) then {
-    _d = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
 };
 _d

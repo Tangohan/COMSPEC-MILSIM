@@ -11,9 +11,9 @@ if (!hasInterface) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_LinkStripUpdating", false]) exitWith { false };
 missionNamespace setVariable ["COMSPEC_LinkStripUpdating", true, false];
 
-private _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-if (isNull _disp) then {
-    _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+private _disp = displayNull;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+    _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
 };
 if (isNull _disp) exitWith {
     missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];

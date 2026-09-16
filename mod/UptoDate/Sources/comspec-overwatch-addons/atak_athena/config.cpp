@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.140;
-        versionStr = "1.0.140";
-        versionAr[] = {1, 0, 140};
-        // Historique : 1.0.80 sons, 1.0.84 HUD, 1.0.130 bureau, 1.0.132 menu, 1.0.140 masque sans recadrer.
+        version = 1.142;
+        versionStr = "1.0.142";
+        versionAr[] = {1, 0, 142};
+        // Historique : 1.0.80 sons, 1.0.84 HUD, 1.0.130 bureau, 1.0.132 menu, 1.0.140 masque sans recadrer, 1.0.141 hors téléphone, 1.0.142 menu / messages.
     };
 };
 
@@ -89,6 +89,7 @@ class CfgFunctions
             class athena_installMapHud {};
             class athena_updateMapHud {};
             class athena_enforceDrawer {};
+            class athena_toggleDrawer {};
             class athena_phoneDisplay {};
             class athena_mapHudZoom {};
             class athena_openFeature {};
@@ -209,6 +210,14 @@ class CfgFunctions
             class ATAK_Check_Layout
             {
                 file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
+                recompile = 1;
+            };
+        };
+        class UI
+        {
+            class Anim_Type
+            {
+                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Anim_Type.sqf";
                 recompile = 1;
             };
         };

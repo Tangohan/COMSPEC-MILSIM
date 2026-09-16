@@ -8,11 +8,8 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
-if (isNull _disp) then {
-    _disp = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-};
-if (isNull _disp) then {
-    _disp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+if (isNull _disp && {!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay"}) then {
+    _disp = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
 };
 if (isNull _disp) exitWith { false };
 

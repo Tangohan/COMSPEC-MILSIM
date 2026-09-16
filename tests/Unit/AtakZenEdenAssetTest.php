@@ -96,7 +96,8 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('enableSimulation = 1', $dlg);
         self::assertStringContainsString('idd = 9994', $dlg);
         self::assertStringContainsString('Relevé de la carte', $dlg);
-        self::assertStringContainsString('Vérifier et renvoyer', $dlg);
+        self::assertStringContainsString('Vérifier l’intégrité', $dlg);
+        self::assertStringContainsString('Renvoyer les données manquantes', $dlg);
 
         $mod = (string) file_get_contents($this->connectRoot() . '/functions/fn_moduleTheaterSurvey.sqf');
         self::assertStringContainsString('_mode isEqualType 0', $mod);

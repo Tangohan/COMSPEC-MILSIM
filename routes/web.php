@@ -2164,6 +2164,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/chat/channels', [AtakApiController::class, 'chatChannelsStore']);
     $router->post('/api/chat/channels/delete', [AtakApiController::class, 'chatChannelsDelete']);
     $router->post('/api/chat/purge', [AtakApiController::class, 'chatPurge']);
+    $router->delete('/api/chat/{id}', [AtakApiController::class, 'chatDelete']);
+    $router->post('/api/chat/{id}/delete', [AtakApiController::class, 'chatDelete']);
     $router->get('/api/atak/viewshed', [AtakApiController::class, 'viewshedIndex']);
     $router->post('/api/atak/viewshed', [AtakApiController::class, 'viewshedStore']);
     $router->get('/api/atak/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
@@ -2388,6 +2390,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/ingest-traffic', [AtakApiController::class, 'ingestTraffic']);
     $router->get('/api/atak/relays', [AtakApiController::class, 'relaysIndex']);
     $router->post('/api/atak/relays', [AtakApiController::class, 'relaysStore']);
+    $router->delete('/api/atak/relays/{uid}', [AtakApiController::class, 'relaysDelete']);
     $router->get('/api/atak/geo/places', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'placesIndex']);
     $router->get('/api/atak/geo/roads', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'roadsIndex']);
     $router->get('/api/atak/geo/coverage', [\App\Controllers\Api\AtakGeoNetworkApiController::class, 'coverage']);

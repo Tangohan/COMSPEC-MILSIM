@@ -1,5 +1,5 @@
 /*
-    Compare le relevé local avec ce que le poste a reçu, puis renvoie ce qui manque.
+    Compare le relevé local avec ce que le poste a reçu. Ne renvoie rien : le bouton dédié s’en charge.
 */
 if (!hasInterface) exitWith {};
 
@@ -60,16 +60,30 @@ missionNamespace setVariable ["COMSPEC_TheaterVerifyText", "Vérification auprè
         private _tt = [_detail, "tt"] call _fnc_pick;
         private _postedChunks = [_detail, "c"] call _fnc_pick;
         private _pct = [_detail, "p"] call _fnc_pick;
+        private _postedPl = [_detail, "pl"] call _fnc_pick;
+        private _postedRd = [_detail, "rd"] call _fnc_pick;
 
         private _localB = missionNamespace getVariable ["COMSPEC_TheaterBuildings", 0];
         private _localF = missionNamespace getVariable ["COMSPEC_TheaterForests", 0];
         private _localT = missionNamespace getVariable ["COMSPEC_TheaterTerrain", 0];
+        private _localPl = missionNamespace getVariable ["COMSPEC_TheaterPlaces", 0];
+        private _localRd = missionNamespace getVariable ["COMSPEC_TheaterRoads", 0];
         private _countKey = format ["COMSPEC_TheaterSurveyCounts_%1", worldName];
         private _saved = profileNamespace getVariable [_countKey, []];
         if ((_saved isEqualType []) && {(count _saved) >= 3}) then {
             if (_localB < 1) then { _localB = _saved select 0; };
             if (_localF < 1) then { _localF = _saved select 1; };
             if (_localT < 1) then { _localT = _saved select 2; };
+        };
+        if ((_saved isEqualType []) && {(count _saved) >= 5}) then {
+            if (_localPl < 1) then { _localPl = _saved select 3; };
+            if (_localRd < 1) then { _localRd = _saved select 4; };
+        };
+        private _geoKey = format ["COMSPEC_GeoDone_%1_%2", worldName, _mapId];
+        private _geoSaved = profileNamespace getVariable [_geoKey, []];
+        if ((_geoSaved isEqualType []) && {(count _geoSaved) >= 2}) then {
+            if (_localPl < 1) then { _localPl = _geoSaved select 0; };
+            if (_localRd < 1) then { _localRd = _geoSaved select 1; };
         };
 
         private _world = worldSize;
@@ -91,18 +105,31 @@ missionNamespace setVariable ["COMSPEC_TheaterVerifyText", "Vérification auprè
         if (_pct > 0 && {_pct < 98}) then { _terrainGap = true; };
         if (_localT > 4 && {_postedChunks < floor (_localT * 0.98)}) then { _terrainGap = true; };
 
+        private _geoGap = false;
+        private _doPlaces = ["geo_places"] call comspec_overwatch_connect_fnc_isModModuleEnabled;
+        private _doRoads = ["geo_roads"] call comspec_overwatch_connect_fnc_isModModuleEnabled;
+        if (_doPlaces && {_localPl > 3} && {_postedPl < floor (_localPl * 0.98)}) then { _geoGap = true; };
+        if (_doRoads && {_localRd > 8} && {_postedRd < floor (_localRd * 0.98)}) then { _geoGap = true; };
+
+        private _reliefPct = if (_pct > 0) then { _pct } else {
+            if (_expectedChunks > 0) then { round (100 * (_postedChunks / _expectedChunks)) } else { 0 }
+        };
         private _summary = format [
-            "Poste : bâtiments %1 / %2 · forêts %3 / %4 · relief %5 %",
+            "Poste : bâtiments %1 / %2 · forêts %3 / %4 · relief %5 % · villes %6 / %7 · routes %8 / %9",
             _postedB,
             _localB max _postedB,
             _postedF,
             _localF max _postedF,
-            if (_pct > 0) then { _pct } else {
-                if (_expectedChunks > 0) then { round (100 * (_postedChunks / _expectedChunks)) } else { 0 }
-            }
+            _reliefPct,
+            _postedPl,
+            _localPl max _postedPl,
+            _postedRd,
+            _localRd max _postedRd
         ];
 
-        if (!_sceneGap && {!_terrainGap}) then {
+        if (!_sceneGap && {!_terrainGap} && {!_geoGap}) then {
+            missionNamespace setVariable ["COMSPEC_TheaterResendMode", "", false];
+            missionNamespace setVariable ["COMSPEC_TheaterResendGeo", false, false];
             missionNamespace setVariable ["COMSPEC_TheaterVerifyText", _summary + " — tout est bien arrivé.", false];
             missionNamespace setVariable ["COMSPEC_TheaterVerifyBusy", false, false];
             ["Tout le relevé est bien arrivé au poste.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
@@ -111,24 +138,30 @@ missionNamespace setVariable ["COMSPEC_TheaterVerifyText", "Vérification auprè
             private _mode = "full";
             if (_sceneGap && {!_terrainGap}) then { _mode = "scene"; };
             if (!_sceneGap && {_terrainGap}) then { _mode = "terrain"; };
+            if (!_sceneGap && {!_terrainGap} && {_geoGap}) then { _mode = "geo"; };
             private _what = switch (_mode) do {
                 case "scene": { "bâtiments et forêts" };
                 case "terrain": { "relief" };
+                case "geo": { "villes et routes" };
                 default { "bâtiments, forêts et relief" };
             };
+            if (_geoGap && {_mode isNotEqualTo "geo"}) then {
+                _what = _what + ", villes et routes";
+            };
+            missionNamespace setVariable ["COMSPEC_TheaterResendMode", _mode, false];
+            missionNamespace setVariable ["COMSPEC_TheaterResendGeo", _geoGap, false];
             missionNamespace setVariable [
                 "COMSPEC_TheaterVerifyText",
-                format ["%1 — renvoi de %2…", _summary, _what],
+                format ["%1 — données manquantes : %2. Utilisez Renvoyer les données manquantes.", _summary, _what],
                 false
             ];
             missionNamespace setVariable ["COMSPEC_TheaterVerifyBusy", false, false];
             [
-                format ["Des données n’ont pas atteint le poste. Renvoi de %1.", _what],
+                format ["Des données n’ont pas atteint le poste (%1). Utilisez Renvoyer les données manquantes.", _what],
                 "system",
                 "info"
             ] call comspec_overwatch_connect_fnc_announce;
             [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
-            [_mode] call comspec_overwatch_connect_fnc_sampleTheater;
         };
     };
 };

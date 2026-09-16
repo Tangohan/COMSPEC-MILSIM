@@ -66,6 +66,7 @@ $icon = static function (string $path): string {
     window.ATAK_TENANT_LABEL = <?= json_encode($community) ?>;
     window.ATAK_CSRF = <?= json_encode(\App\Core\Csrf::token()) ?>;
     window.ATAK_CSRF_TOKEN = window.ATAK_CSRF;
+    window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
   </script>
 </head>
 <body>
@@ -343,7 +344,7 @@ $icon = static function (string $path): string {
         <button type="button" data-tool="po" data-tip="Point à atteindre" data-help="Cliquez pour poser un point (rayon 20 m). Double-clic termine la série."><?= $icon('M12 3v18M8 8h8') ?></button>
         <button type="button" data-tool="rally" data-tip="Point de ralliement" data-help="Cliquez un lieu de regroupement. Anneau de 50 m au poste et en jeu."><?= $icon('M6 21V4l12 5-12 5') ?></button>
         <button type="button" data-tool="undo" data-tip="Annuler le dernier tracé" data-help="Retire le dernier tracé posé depuis le poste."><?= $icon('M9 10H4V5M4 10c3-6 13-6 16 0') ?></button>
-        <button type="button" class="ow-rail-more" data-ow-rail-more data-tip="Autres outils" aria-expanded="false">▾</button>
+        <button type="button" class="ow-rail-more" data-ow-rail-more data-tip="Autres outils" aria-expanded="false" aria-controls="ow-rail-extra">›</button>
         <div class="ow-rail-extra" id="ow-rail-extra" hidden>
           <button type="button" data-tool="goto" data-tip="Aller à une grille" data-help="Saisissez est / nord ou cliquez un point de la carte."><?= $icon('M12 3l7 7-7 7-7-7z') ?><span>Grille</span></button>
           <button type="button" data-tool="range" data-tip="Anneaux de portée" data-help="Cliquez un centre. Anneaux 100, 250, 500 et 1 000 m."><?= $icon('M12 5a7 7 0 1 1 0 14 7 7 0 1 1 0-14zM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z') ?><span>Anneaux</span></button>
@@ -364,7 +365,12 @@ $icon = static function (string $path): string {
       </div>
       <div id="ow-map" aria-label="Carte tactique temps réel"></div>
       <div class="ow-coordinate" id="ow-coordinate">Grille · Direct</div>
-      <div class="ow-empty" id="ow-empty" hidden><b>Aucune télémétrie</b><span>En attente des contacts autorisés pour cette communauté.</span></div>
+      <div class="ow-empty" id="ow-empty" hidden role="status">
+        <button type="button" class="ow-empty-close" id="ow-empty-close" aria-label="Masquer l’avis" title="Masquer">×</button>
+        <b>Aucune télémétrie</b>
+        <span>En attente des contacts autorisés pour cette communauté.</span>
+        <button type="button" class="ow-empty-dismiss" id="ow-empty-dismiss">Masquer</button>
+      </div>
       <div class="ow-context" id="ow-context" hidden>
         <div class="ow-context-head" id="ow-ctx-head">Grille</div>
         <div class="ow-context-group" id="ow-ctx-delete-group" hidden>Élément</div>
@@ -411,20 +417,24 @@ $icon = static function (string $path): string {
     </section>
 
     <aside class="ow-chat" id="ow-chat" aria-label="Tchat opérationnel">
-      <header><span>●</span> Comms</header>
+      <header><span>●</span> Comms <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
       <div class="ow-tabs" role="tablist">
-        <button type="button" class="is-active" data-chat-tab="channels">Canaux</button>
+        <button type="button" class="is-active" data-chat-tab="channels">Canaux <span class="ow-unread" data-unread-tab="channels" hidden></span></button>
         <button type="button" data-chat-tab="contacts">Contacts</button>
         <button type="button" data-chat-tab="squads">Groupes</button>
-        <button type="button" data-chat-tab="support">Support</button>
+        <button type="button" data-chat-tab="support">Support <span class="ow-unread" data-unread-tab="support" hidden></span></button>
       </div>
       <div class="ow-chat-main" data-chat-panel="channels">
         <label class="ow-search"><span>⌕</span><input id="ow-channel-filter" type="search" placeholder="Canal ou indicatif…"></label>
         <div id="ow-channel-list" class="ow-channel-list"></div>
         <div class="ow-fil-head">
           <div class="ow-fil-title"><span class="dot"></span> Fil</div>
-          <label class="ow-fil-toggle" title="Afficher le texte tel qu’il a été reçu"><input type="checkbox" id="ow-chat-raw"> Source</label>
+          <div class="ow-fil-actions">
+            <button type="button" class="ow-fil-action" id="ow-chat-purge">Vider le fil</button>
+            <label class="ow-fil-toggle" title="Afficher le texte tel qu’il a été reçu"><input type="checkbox" id="ow-chat-raw"> Source</label>
+          </div>
         </div>
+        <div id="ow-chat-purge-box" class="ow-confirm" hidden></div>
         <div id="ow-chat-log" class="ow-fil" aria-live="polite"></div>
         <div class="ow-fil-legend">
           <span><i style="background:var(--prio-routine)"></i>Routine</span>
@@ -512,7 +522,7 @@ $icon = static function (string $path): string {
     <h2>Réglages</h2>
     <p>Police, taille, grille, lecture nocturne et photos sur la carte se règlent à gauche. Chaque choix reste sur ce poste.</p>
     <h2>Fil</h2>
-    <p>Les messages sont groupés par auteur. La barre colorée indique l’urgence.</p>
+    <p>Les messages sont groupés par auteur. La barre colorée indique l’urgence. Une pastille signale les messages non lus. Vous pouvez retirer les vôtres, ou vider le fil pour tout le poste.</p>
     <button type="button" class="ow-primary" id="ow-guide-ok">Fermer l’aide</button>
   </div>
 </div>

@@ -19,6 +19,8 @@
   var LABEL_SIZE_KEY = 'athena:overwatch-label-size';
   var ICON_SIZE_KEY = 'athena:overwatch-icon-size';
   var SETTINGS_COLLAPSED_KEY = 'athena:overwatch-settings-collapsed';
+  var CHAT_READ_KEY = 'athena:ow-chat-read-v1';
+  var EMPTY_DISMISS_KEY = 'athena:overwatch-empty-dismissed';
 
   var config = window.ATAK_MAP_CONFIG || {};
   var apiBase = String(window.ATAK_API_BASE || '').replace(/\/$/, '');
@@ -35,6 +37,7 @@
   var channels = [];
   var chatMessages = [];
   var supportMessages = [];
+  var unreadByChannel = {};
   var photos = [];
   var nineLines = [];
   var medevacs = [];
@@ -62,6 +65,7 @@
   var followOn = false;
   var rangeRingLayers = [];
   var losLayer = null;
+  var losGroups = [];
   var lastShapeId = 0;
   var poRows = [];
   var poLayers = [];
@@ -927,8 +931,12 @@
         return;
       }
       seen[id] = true;
+      var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
+      var desc = String(data.description || '').trim();
+      var tip = desc ? (String(title) + ' — ' + desc) : String(title);
       if (armaMarkerLayers[id]) {
         if (armaMarkerLayers[id].setLatLng) armaMarkerLayers[id].setLatLng(latlng);
+        if (armaMarkerLayers[id].setTooltipContent) armaMarkerLayers[id].setTooltipContent(tip);
         return;
       }
       var layer = null;
@@ -938,11 +946,10 @@
         layer = L.marker(latlng, { icon: helper.leafletDivIcon(L, data), keyboard: false });
       }
       if (!layer) return;
-      var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
-      if (layer.bindTooltip) layer.bindTooltip(String(title), { permanent: false, direction: 'top' });
+      if (layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
-      bindLayerContext(layer);
+      bindLayerContext(layer, 'arma', id, title);
     });
     Object.keys(armaMarkerLayers).forEach(function (id) {
       if (!seen[id]) { map.removeLayer(armaMarkerLayers[id]); delete armaMarkerLayers[id]; }
@@ -1060,7 +1067,7 @@
           html: '<span>' + escapeHtml(row.label) + '<small>' + escapeHtml(status) + '</small></span>'
         })
       }).addTo(map);
-      bindLayerContext(pin);
+      bindLayerContext(pin, 'po', row.id, row.label);
       poLayers.push(ring, pin);
     });
     if (ordered.length >= 2) {
@@ -1156,7 +1163,7 @@
           html: '<span>' + escapeHtml(row.label) + '<small>' + escapeHtml(status) + '</small></span>'
         })
       }).addTo(map);
-      bindLayerContext(pin);
+      bindLayerContext(pin, 'rally', row.id, row.label);
       rallyLayers.push(ring, pin);
     });
   }
@@ -1667,9 +1674,34 @@
       }).join('');
     }).join('') || '<p class="ow-fil-empty">Aucun contact en liaison pour le moment.</p>';
     document.getElementById('ow-bft-count').textContent = 'BFT ' + visibleUnits().length;
-    document.getElementById('ow-empty').hidden = visibleUnits().some(point) || !config.tilePattern;
+    syncEmptyNotice();
     renderHud();
     renderSquadList();
+  }
+
+  function emptyNoticeStorageKey() {
+    return EMPTY_DISMISS_KEY + '-' + mapId;
+  }
+
+  function emptyNoticeDismissed() {
+    try {
+      return sessionStorage.getItem(emptyNoticeStorageKey()) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function dismissEmptyNotice() {
+    try { sessionStorage.setItem(emptyNoticeStorageKey(), '1'); } catch (e) {}
+    var el = document.getElementById('ow-empty');
+    if (el) el.hidden = true;
+  }
+
+  function syncEmptyNotice() {
+    var el = document.getElementById('ow-empty');
+    if (!el) return;
+    var hasContacts = visibleUnits().some(point);
+    el.hidden = hasContacts || !config.tilePattern || emptyNoticeDismissed();
   }
 
   function asList(payload, key) {
@@ -1782,6 +1814,121 @@
     return part ? part.slice(0, 5) : '';
   }
 
+  function myChatAliases() {
+    var u = window.ATAK_USER || {};
+    var out = [];
+    [authorName, u.callsign, u.displayName, u.armaCallsign].forEach(function (v) {
+      var s = String(v || '').trim().toLowerCase();
+      if (s && out.indexOf(s) < 0) out.push(s);
+    });
+    return out;
+  }
+  function isOwnChatRow(row) {
+    var a = String((row && row.author) || '').trim().toLowerCase();
+    return a !== '' && myChatAliases().indexOf(a) >= 0;
+  }
+  function chatRowChannel(row) {
+    return String((row && (row.channel_key || row.channel)) || 'general').toLowerCase() || 'general';
+  }
+  function chatReadStore() {
+    try {
+      return JSON.parse(localStorage.getItem(CHAT_READ_KEY + '-' + mapId) || '{}') || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function saveChatReadStore(store) {
+    try { localStorage.setItem(CHAT_READ_KEY + '-' + mapId, JSON.stringify(store || {})); } catch (e) {}
+  }
+  function visibleChatChannel() {
+    var support = document.querySelector('[data-chat-panel="support"]');
+    if (support && !support.hidden) return 'support';
+    return String(activeChannel || 'general');
+  }
+  function lastReadId(channel) {
+    return Number(chatReadStore()[String(channel || '')] || 0) || 0;
+  }
+  function markChannelRead(channel, rows) {
+    var key = String(channel || activeChannel || 'general');
+    var maxId = lastReadId(key);
+    (rows || []).forEach(function (row) {
+      var id = Number(row && row.id);
+      if (id > maxId) maxId = id;
+    });
+    if (maxId < 1) return;
+    var store = chatReadStore();
+    store[key] = Math.max(Number(store[key] || 0), maxId);
+    saveChatReadStore(store);
+    unreadByChannel[key] = 0;
+    paintUnreadBadges();
+  }
+  function seedChatRead(rows) {
+    var store = chatReadStore();
+    var maxBy = {};
+    (rows || []).forEach(function (row) {
+      var ck = chatRowChannel(row);
+      var id = Number(row && row.id) || 0;
+      if (id > (maxBy[ck] || 0)) maxBy[ck] = id;
+    });
+    var changed = false;
+    Object.keys(maxBy).forEach(function (ck) {
+      if (store[ck] == null) {
+        store[ck] = maxBy[ck];
+        changed = true;
+      }
+    });
+    if (changed) saveChatReadStore(store);
+  }
+  function recountUnread(rows) {
+    var map = {};
+    seedChatRead(rows);
+    (rows || []).forEach(function (row) {
+      if (isOwnChatRow(row)) return;
+      var ck = chatRowChannel(row);
+      var id = Number(row && row.id) || 0;
+      if (id > 0 && id <= lastReadId(ck)) return;
+      if (ck === String(visibleChatChannel() || '')) return;
+      map[ck] = (map[ck] || 0) + 1;
+    });
+    unreadByChannel = map;
+    paintUnreadBadges();
+  }
+  function unreadLabel(n) {
+    var c = Math.max(0, Number(n) || 0);
+    if (c < 1) return '';
+    return c > 99 ? '99+' : String(c);
+  }
+  function paintUnreadBadges() {
+    renderChannels();
+    var channelTotal = 0;
+    Object.keys(unreadByChannel).forEach(function (k) {
+      if (k === 'support') return;
+      channelTotal += Number(unreadByChannel[k] || 0);
+    });
+    var supportN = Number(unreadByChannel.support || 0);
+    var tabCh = document.querySelector('[data-unread-tab="channels"]');
+    var tabSu = document.querySelector('[data-unread-tab="support"]');
+    if (tabCh) {
+      tabCh.hidden = channelTotal < 1;
+      tabCh.textContent = unreadLabel(channelTotal);
+    }
+    if (tabSu) {
+      tabSu.hidden = supportN < 1;
+      tabSu.textContent = unreadLabel(supportN);
+    }
+    var head = document.getElementById('ow-comms-unread');
+    var all = channelTotal + supportN;
+    if (head) {
+      head.hidden = all < 1;
+      head.textContent = unreadLabel(all);
+    }
+  }
+  function loadChatInbox() {
+    return api('/api/chat?mapId=' + encodeURIComponent(mapId) + '&limit=200').then(function (payload) {
+      recountUnread(asList(payload, 'messages'));
+    }).catch(function () {});
+  }
+
   function renderChannels() {
     var filter = (document.getElementById('ow-channel-filter').value || '').toLowerCase();
     var rows = channels.filter(function (ch) {
@@ -1796,14 +1943,17 @@
     }
     document.getElementById('ow-channel-list').innerHTML = rows.map(function (ch) {
       var key = String(ch.channel_key || ch.key || 'general');
+      var unread = key === activeChannel ? 0 : Number(unreadByChannel[key] || 0);
+      var right = unread > 0
+        ? '<em class="ow-unread" aria-label="' + unread + ' messages non lus">' + escapeHtml(unreadLabel(unread)) + '</em>'
+        : '<em class="online is-live">Direct</em>';
       return '<button type="button" class="ow-channel' + (key === activeChannel ? ' is-active' : '') + '" data-channel="' +
         escapeHtml(key) + '">' + channelIcon(key) +
         '<span><div class="cname">' + escapeHtml(ch.label || channelLabel(key)) +
         '</div><div class="cmeta">' + escapeHtml(key === activeChannel && chatMessages.length
           ? (parseCommsBody(chatMessages[chatMessages.length - 1].body).text || String(chatMessages[chatMessages.length - 1].body || '')).slice(0, 42)
           : 'Canal mission') +
-        '</div></span><em class="online is-live">' +
-        (key === activeChannel && chatMessages.length ? String(chatMessages.length) : 'Direct') + '</em></button>';
+        '</div></span>' + right + '</button>';
     }).join('');
   }
 
@@ -1858,6 +2008,9 @@
         lastGroupKey = groupKey;
       }
       var bar = parsed.prio ? '<span class="bar ' + prioClass(parsed.prio) + '"></span>' : (messageKind(row) === 'alert' ? '<span class="bar flash"></span>' : '');
+      var ownDel = (row.id && isOwnChatRow(row))
+        ? '<button type="button" class="ow-msg-del" data-del-chat="' + escapeHtml(String(row.id)) + '" title="Retirer ce message">Retirer</button>'
+        : '';
       html += '<div class="ow-row-msg">' + bar + '<div class="ow-row-main"><div class="ow-row-text">' +
         escapeHtml(parsed.text || raw) + '</div>' +
         (parsed.prio ? '<div class="ow-row-meta"><span>' + escapeHtml(prioLabel(parsed.prio)) +
@@ -1865,7 +2018,7 @@
           escapeHtml(cryptoLabel(parsed.crypto)) + '</span>' +
           (parsed.gameTime ? '<span>·</span><span>en jeu ' + escapeHtml(parsed.gameTime) + '</span>' : '') +
           '</div>' : '') +
-        '</div><div class="ow-raw-preview">' + escapeHtml(raw) + '</div></div>';
+        '</div>' + ownDel + '<div class="ow-raw-preview">' + escapeHtml(raw) + '</div></div>';
     });
     if (lastGroupKey) html += '</div></div>';
     host.innerHTML = html || '<p class="ow-fil-empty">Aucun message pour le moment.</p>';
@@ -1890,40 +2043,110 @@
           chatMessages = rows;
           renderChatLog('ow-chat-log', rows);
         }
+        markChannelRead(channel, rows);
+        return rows;
       }).catch(function () {});
+  }
+
+  function dropChatLocal(id) {
+    var sid = String(id);
+    chatMessages = chatMessages.filter(function (row) { return String(row.id) !== sid; });
+    supportMessages = supportMessages.filter(function (row) { return String(row.id) !== sid; });
+    renderChatLog('ow-chat-log', chatMessages);
+    renderChatLog('ow-support-log', supportMessages);
+  }
+
+  function deleteOwnChat(id) {
+    if (!id) return;
+    api('/api/chat/' + encodeURIComponent(id), { method: 'DELETE' }).then(function () {
+      dropChatLocal(id);
+      toast('Message retiré.');
+    }).catch(function (err) {
+      var code = String(err && err.message || '');
+      if (code === '404') {
+        dropChatLocal(id);
+        toast('Message déjà retiré.');
+        return;
+      }
+      toast(code === '403' ? 'Vous ne pouvez retirer que vos propres messages.' : 'Impossible de retirer ce message.');
+    });
+  }
+
+  function showChatPurgeConfirm() {
+    var host = document.getElementById('ow-chat-purge-box');
+    if (!host) return;
+    var label = channelLabel(activeChannel);
+    host.hidden = false;
+    host.innerHTML = '<p>Effacer l’historique de <strong>' + escapeHtml(label) + '</strong> pour tout le poste et les opérateurs ?</p>' +
+      '<p class="ow-help">Cette action est définitive.</p>' +
+      '<div class="ow-form-actions">' +
+      '<button type="button" class="ow-primary" id="ow-purge-channel">Vider ce canal</button>' +
+      '<button type="button" class="ow-fil-action" id="ow-purge-all">Tous les canaux</button>' +
+      '<button type="button" class="ow-fil-action" id="ow-purge-no">Annuler</button></div>';
+    document.getElementById('ow-purge-no').addEventListener('click', function () { host.hidden = true; host.innerHTML = ''; });
+    document.getElementById('ow-purge-channel').addEventListener('click', function () { runChatPurge('EFFACER_CANAL'); });
+    document.getElementById('ow-purge-all').addEventListener('click', function () { runChatPurge('EFFACER_TOUT'); });
+  }
+
+  function runChatPurge(confirmToken) {
+    var host = document.getElementById('ow-chat-purge-box');
+    var body = { mapId: mapId, confirm: confirmToken };
+    if (confirmToken === 'EFFACER_CANAL') body.channel = activeChannel;
+    api('/api/chat/purge', { method: 'POST', body: body }).then(function (payload) {
+      if (host) { host.hidden = true; host.innerHTML = ''; }
+      if (confirmToken === 'EFFACER_TOUT') {
+        chatMessages = [];
+        supportMessages = [];
+        unreadByChannel = {};
+        saveChatReadStore({});
+      } else {
+        chatMessages = [];
+        unreadByChannel[activeChannel] = 0;
+      }
+      renderChatLog('ow-chat-log', chatMessages);
+      renderChatLog('ow-support-log', supportMessages);
+      paintUnreadBadges();
+      toast((payload && payload.message) || 'Historique effacé.');
+    }).catch(function (err) {
+      var code = String(err && err.message || '');
+      toast(code === '403' || code === '401' ? 'Seul le poste peut vider l’historique.' : 'Impossible de vider l’historique.');
+    });
   }
 
   function sendChat(channel, body) {
     var text = String(body || '').trim();
-    console.log('[DEBUG sendChat] channel:', channel, 'body:', body, 'text:', text);
-    if (!text) {
-      console.warn('[DEBUG sendChat] Texte vide, abandon');
-      return Promise.resolve();
-    }
-    console.log('[DEBUG sendChat] Envoi API:', { mapId: mapId, author: authorName, body: text, channel: channel });
+    if (!text) return Promise.resolve();
     return api('/api/chat', {
       method: 'POST',
       body: { mapId: mapId, author: authorName, body: text, channel: channel }
-    }).then(function (response) {
-      console.log('[DEBUG sendChat] Succès, rechargement chat');
+    }).then(function () {
       return loadChat(channel);
-    }).catch(function (error) {
-      console.error('[DEBUG sendChat] Erreur:', error);
-      throw error;
     });
   }
 
   function appendChatMessage(row) {
     if (!row) return;
-    var key = String(row.channel_key || row.channel || 'general');
+    var key = chatRowChannel(row);
     if (key === 'support') {
       supportMessages.push(row);
       renderChatLog('ow-support-log', supportMessages);
+      if (isOwnChatRow(row)) markChannelRead('support', supportMessages);
+      else if (document.querySelector('[data-chat-panel="support"]:not([hidden])')) markChannelRead('support', supportMessages);
+      else {
+        unreadByChannel.support = (unreadByChannel.support || 0) + 1;
+        paintUnreadBadges();
+      }
       return;
     }
     if (key === activeChannel || !row.channel_key) {
       chatMessages.push(row);
       renderChatLog('ow-chat-log', chatMessages);
+      markChannelRead(activeChannel, chatMessages);
+      return;
+    }
+    if (!isOwnChatRow(row)) {
+      unreadByChannel[key] = (unreadByChannel[key] || 0) + 1;
+      paintUnreadBadges();
     }
   }
 
@@ -1949,7 +2172,9 @@
     var layer = null;
     var type = String(shape.type || '').toUpperCase();
     if (type === 'POINT' && geo.coordinates) {
-      layer = L.circleMarker(worldToLatLng(geo.coordinates[0], geo.coordinates[1]), { radius: 6, color: color });
+      layer = L.circleMarker(worldToLatLng(geo.coordinates[0], geo.coordinates[1]), {
+        radius: 8, color: color, weight: 2, fillOpacity: 0.5
+      });
     } else if ((type === 'LINE' || type === 'ROUTE' || type === 'POLYLINE') && Array.isArray(geo.coordinates)) {
       layer = L.polyline(geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); }), { color: color, weight: Number(shape.stroke || 2) });
     } else if ((type === 'POLYGON' || type === 'AOI') && Array.isArray(geo.coordinates)) {
@@ -1975,7 +2200,10 @@
     if (!layer) return;
     layer.addTo(map);
     shapeLayers[id] = layer;
-    bindLayerContext(layer);
+    bindLayerContext(layer, 'shape', id, shape.label || shape.type || 'Tracé');
+    if (type === 'POINT' && layer.bindTooltip) {
+      layer.bindTooltip(String(shape.label || 'Point'), { direction: 'top', sticky: true });
+    }
   }
 
   function loadShapes() {
@@ -2051,7 +2279,7 @@
     }).then(function (row) {
       var id = row && row.id != null ? String(row.id) : '';
       var layer = L.circleMarker(ll, { radius: 6, color: '#e7b14d' }).addTo(map);
-      bindLayerContext(layer);
+      bindLayerContext(layer, 'marker', id, text);
       if (id) postedMarkers[id] = layer;
       toast(isPoLabel(text) ? ('Point d’objectif posé — ' + text + ' · rayon 20 m') : 'Marqueur posé.');
       if (isPoLabel(text)) loadPoMarkers();
@@ -2129,7 +2357,7 @@
       wrapCot('a-h-G-U-C', { x: w.x, y: w.y, author: authorName });
       var id = String((row && row.id) || Date.now());
       pingMarkers[id] = L.circleMarker(ll, { radius: 8, color: '#00d69a' }).addTo(map);
-      bindLayerContext(pingMarkers[id]);
+      bindLayerContext(pingMarkers[id], 'ping', id, 'Repère rapide');
       toast('Quick Ping transmis.');
     }).catch(function () { toast('Ping refusé.'); });
   }
@@ -2179,13 +2407,38 @@
     }
   }
 
+  function nearestUnitAt(world, maxM) {
+    var best = null;
+    var bestD = maxM;
+    (units || []).forEach(function (u) {
+      var w = unitWorld(u);
+      if (!w) return;
+      var d = Math.hypot(w.x - world.x, w.y - world.y);
+      if (d <= bestD) {
+        best = u;
+        bestD = d;
+      }
+    });
+    return best;
+  }
+  function altitudeAtPoint(world) {
+    var u = nearestUnitAt(world, 80);
+    if (!u) return null;
+    var alt = unitAlt(u);
+    return alt != null && isFinite(alt) ? alt : null;
+  }
   function requestLos(fromLl, toLl) {
     var a = latLngToWorld(fromLl);
     var b = latLngToWorld(toLl);
-    if (losLayer) { map.removeLayer(losLayer); losLayer = null; }
+    var oz = altitudeAtPoint(a);
+    var tz = altitudeAtPoint(b);
+    var observer = { x: a.x, y: a.y };
+    var target = { x: b.x, y: b.y };
+    if (oz != null) observer.z = oz;
+    if (tz != null) target.z = tz;
     api('/api/atak/terrain/los', {
       method: 'POST',
-      body: { mapId: mapId, observer: { x: a.x, y: a.y }, target: { x: b.x, y: b.y } }
+      body: { mapId: mapId, observer: observer, target: target }
     }).then(function (payload) {
       if (!payload || payload.ready === false) {
         openDrawer('Visée', 'Masque du relief', '<p class="ow-help">' + escapeHtml((payload && (payload.gap_message || payload.message || payload.verdict_label)) || 'Relief non relevé.') + '</p>');
@@ -2196,14 +2449,23 @@
       if (window.OverwatchOps && typeof window.OverwatchOps.drawLos === 'function') {
         extraCause = window.OverwatchOps.drawLos(fromLl, toLl, payload) || '';
       } else {
-        losLayer = L.polyline([fromLl, toLl], { color: color, weight: 3 }).addTo(map);
-        bindLayerContext(losLayer);
+        var line = L.polyline([fromLl, toLl], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(map);
+        registerScratch(line, 'los', 'los-' + Date.now(), 'Visée');
       }
       var html = '<p class="ow-help">' + escapeHtml(payload.detail || payload.verdict_label || '') + '</p>' + extraCause +
         '<div class="ow-event"><span>Résultat</span><strong>' + escapeHtml(payload.verdict_label || '') + '</strong></div>' +
         '<div class="ow-event"><span>Distance</span><strong>' + formatMeters(Number(payload.distance_m || 0)) + '</strong></div>';
-      if (payload.observer_z != null) html += '<div class="ow-event"><span>Observateur</span><strong>' + Math.round(payload.observer_z) + ' m</strong></div>';
-      if (payload.target_z != null) html += '<div class="ow-event"><span>Cible</span><strong>' + Math.round(payload.target_z) + ' m</strong></div>';
+      if (payload.observer_ground_z != null && payload.target_ground_z != null) {
+        var dg = Number(payload.target_ground_z) - Number(payload.observer_ground_z);
+        var slope = Math.abs(dg) < 4 ? 'quasi plat' : (dg < 0 ? 'en descente' : 'en montée');
+        html += '<div class="ow-event"><span>Pente du sol</span><strong>' + slope + ' · ' + Math.round(Math.abs(dg)) + ' m</strong></div>';
+      }
+      if (payload.observer_z != null) {
+        html += '<div class="ow-event"><span>' + (payload.observer_from_unit ? 'Observateur (appareil)' : 'Observateur') + '</span><strong>' + Math.round(payload.observer_z) + ' m</strong></div>';
+      }
+      if (payload.target_z != null) {
+        html += '<div class="ow-event"><span>' + (payload.target_from_unit ? 'Cible (appareil)' : 'Cible') + '</span><strong>' + Math.round(payload.target_z) + ' m</strong></div>';
+      }
       openDrawer('Visée', 'Masque du relief', html);
       toast(payload.verdict_label || 'Visée calculée.');
     }).catch(function () {
@@ -2315,10 +2577,12 @@
     });
     var extra = document.getElementById('ow-rail-extra');
     var more = document.querySelector('[data-ow-rail-more]');
-    if (extra && more && extra.querySelector('[data-tool="' + tool + '"]')) {
-      extra.hidden = false;
-      more.setAttribute('aria-expanded', 'true');
-      more.classList.add('is-open');
+    if (extra && more) {
+      var inExtra = !!(tool && extra.querySelector('[data-tool="' + tool + '"]'));
+      extra.hidden = !inExtra;
+      more.setAttribute('aria-expanded', inExtra ? 'true' : 'false');
+      more.classList.toggle('is-open', inExtra);
+      more.textContent = inExtra ? '‹' : '›';
     }
     if (tool === 'cursor') clearDraft();
     map.getContainer().style.cursor = tool === 'cursor' ? '' : 'crosshair';
@@ -2478,14 +2742,34 @@
     ctxTarget = null;
   }
 
-  function bindLayerContext(layer) {
-    if (!layer || layer._owCtxBound) return;
+  function bindLayerContext(layer, kind, id, label) {
+    if (!layer) return layer;
+    if (kind) {
+      layer._owPin = { kind: kind, id: String(id || ''), label: label || '' };
+    }
+    if (label && layer.bindTooltip && !layer.getTooltip()) {
+      layer.bindTooltip(label, { direction: 'top', sticky: true });
+    }
+    if (layer._owCtxBound) return layer;
     layer._owCtxBound = true;
     layer.on('contextmenu', function (event) {
       L.DomEvent.stop(event);
       var orig = event.originalEvent || event;
       openContextAt(event.latlng || (layer.getLatLng && layer.getLatLng()), orig, layer);
     });
+    return layer;
+  }
+
+  function registerPing(id, ll, label, ttlSec) {
+    var key = String(id || Date.now());
+    var pin = L.circleMarker(ll, { radius: 7, color: '#e7b14d', weight: 2, fillOpacity: 0.45 });
+    pin.addTo(map);
+    bindLayerContext(pin, 'ping', key, label || 'Repère rapide');
+    pingMarkers[key] = pin;
+    if (ttlSec > 0) {
+      window.setTimeout(function () { dropLocalId(pingMarkers, key); }, ttlSec * 1000);
+    }
+    return pin;
   }
 
   function pxDist(a, b) {
@@ -2506,14 +2790,98 @@
   function nearestPxOnLatLngs(lls, ll) {
     var pts = flattenLatLngs(lls);
     var best = 9999;
+    var p = map.latLngToContainerPoint(ll);
+    function segDist(a, b) {
+      var pa = map.latLngToContainerPoint(a);
+      var pb = map.latLngToContainerPoint(b);
+      var dx = pb.x - pa.x;
+      var dy = pb.y - pa.y;
+      var len2 = dx * dx + dy * dy;
+      if (len2 < 1) return p.distanceTo(pa);
+      var t = Math.max(0, Math.min(1, ((p.x - pa.x) * dx + (p.y - pa.y) * dy) / len2));
+      return p.distanceTo(L.point(pa.x + t * dx, pa.y + t * dy));
+    }
     for (var i = 0; i < pts.length; i++) {
       best = Math.min(best, pxDist(ll, pts[i]));
-      if (i > 0) {
-        var mid = L.latLng((pts[i - 1].lat + pts[i].lat) / 2, (pts[i - 1].lng + pts[i].lng) / 2);
-        best = Math.min(best, pxDist(ll, mid));
-      }
+      if (i > 0) best = Math.min(best, segDist(pts[i - 1], pts[i]));
+    }
+    if (pts.length > 2) {
+      var first = pts[0];
+      var last = pts[pts.length - 1];
+      if (first.lat !== last.lat || first.lng !== last.lng) best = Math.min(best, segDist(last, first));
     }
     return best;
+  }
+
+  function layerHitDist(layer, ll) {
+    if (!layer || !ll) return 9999;
+    if (layer.getLatLng) return pxDist(ll, layer.getLatLng());
+    if (layer.getLatLngs) return nearestPxOnLatLngs(layer.getLatLngs(), ll);
+    var best = 9999;
+    if (layer.eachLayer) {
+      layer.eachLayer(function (child) {
+        best = Math.min(best, layerHitDist(child, ll));
+      });
+    }
+    return best;
+  }
+
+  function registerScratch(layer, kind, id, label) {
+    if (!layer) return layer;
+    bindLayerContext(layer, kind, id, label);
+    if (layer.eachLayer) {
+      layer.eachLayer(function (child) { bindLayerContext(child, kind, id, label); });
+    }
+    if (kind === 'los') {
+      losGroups.push(layer);
+      losLayer = layer;
+    }
+    return layer;
+  }
+
+  function removeScratch(kind, id) {
+    function drop(layer) {
+      if (!layer) return;
+      try { map.removeLayer(layer); } catch (e) {}
+    }
+    if (kind === 'los') {
+      if (id === 'los-orphan') {
+        map.eachLayer(function (layer) {
+          var cls = String((layer.options && layer.options.className) || '');
+          if (cls.indexOf('ow-los') < 0) return;
+          if (layer._owPin && layer._owPin.id && layer._owPin.id !== 'los-orphan') return;
+          drop(layer);
+        });
+        return;
+      }
+      if (!id || id === 'los') {
+        losGroups.forEach(drop);
+        losGroups = [];
+        losLayer = null;
+        map.eachLayer(function (layer) {
+          var cls = String((layer.options && layer.options.className) || '');
+          if (cls.indexOf('ow-los') >= 0) drop(layer);
+        });
+        return;
+      }
+      losGroups = losGroups.filter(function (layer) {
+        if (layer._owPin && String(layer._owPin.id) === String(id)) {
+          drop(layer);
+          return false;
+        }
+        return true;
+      });
+      losLayer = losGroups[losGroups.length - 1] || null;
+      return;
+    }
+    if (kind === 'range' && window.OverwatchTools && window.OverwatchTools.clearRange) {
+      window.OverwatchTools.clearRange();
+      return;
+    }
+    if (kind === 'intercept' && window.__owInterceptLine) {
+      drop(window.__owInterceptLine);
+      window.__owInterceptLine = null;
+    }
   }
 
   function latlngsContains(lls, ll) {
@@ -2534,6 +2902,9 @@
 
   function targetFromLayer(layer) {
     if (!layer) return null;
+    if (layer._owPin && layer._owPin.kind) {
+      return { kind: layer._owPin.kind, id: layer._owPin.id, rank: 0, dist: 0, label: layer._owPin.label || 'Élément' };
+    }
     var id;
     for (id in pingMarkers) {
       if (pingMarkers[id] === layer) return { kind: 'ping', id: id, rank: 0, dist: 0, label: 'Repère rapide' };
@@ -2554,7 +2925,15 @@
         return { kind: 'shape', id: id, rank: 1, dist: 0, label: (shape && (shape.label || shape.type)) || 'Tracé' };
       }
     }
-    if (losLayer === layer) return { kind: 'los', id: 'los', rank: 1, dist: 0, label: 'Visée' };
+    if (losLayer === layer || losGroups.indexOf(layer) >= 0) {
+      return { kind: 'los', id: (layer._owPin && layer._owPin.id) || 'los', rank: 1, dist: 0, label: (layer._owPin && layer._owPin.label) || 'Visée' };
+    }
+    if (window.OverwatchTools && typeof window.OverwatchTools.getRangeLayer === 'function' && window.OverwatchTools.getRangeLayer() === layer) {
+      return { kind: 'range', id: 'range', rank: 1, dist: 0, label: 'Anneaux de portée' };
+    }
+    if (window.__owInterceptLine === layer) {
+      return { kind: 'intercept', id: 'intercept', rank: 1, dist: 0, label: 'Interception' };
+    }
     var loc;
     var i;
     for (i = 0; i < poRows.length; i++) {
@@ -2584,29 +2963,31 @@
       if (!exists) hits.push(hit);
     }
 
+    var HIT_POINT = 18;
+    var HIT = 40;
     Object.keys(pingMarkers).forEach(function (id) {
       var layer = pingMarkers[id];
       if (!layer || !layer.getLatLng) return;
       var d = pxDist(ll, layer.getLatLng());
-      if (d <= 28) pushHit({ kind: 'ping', id: id, rank: 0, dist: d, label: 'Repère rapide' });
+      if (d <= HIT_POINT) pushHit({ kind: 'ping', id: id, rank: 0, dist: d, label: (layer._owPin && layer._owPin.label) || 'Repère rapide' });
     });
     poRows.forEach(function (row) {
       var loc = worldToLatLng(row.x, row.y);
       var d = pxDist(ll, loc);
       var inside = map.distance(ll, loc) <= row.radius;
-      if (inside || d <= 28) pushHit({ kind: 'po', id: row.id, rank: 0, dist: d, label: row.label });
+      if (inside || d <= HIT_POINT) pushHit({ kind: 'po', id: row.id, rank: 0, dist: d, label: row.label });
     });
     rallyRows.forEach(function (row) {
       var loc = worldToLatLng(row.x, row.y);
       var d = pxDist(ll, loc);
       var inside = map.distance(ll, loc) <= row.radius;
-      if (inside || d <= 28) pushHit({ kind: 'rally', id: row.id, rank: 0, dist: d, label: row.label });
+      if (inside || d <= HIT_POINT) pushHit({ kind: 'rally', id: row.id, rank: 0, dist: d, label: row.label });
     });
     Object.keys(postedMarkers).forEach(function (id) {
       var layer = postedMarkers[id];
       if (!layer || !layer.getLatLng) return;
       var d = pxDist(ll, layer.getLatLng());
-      if (d > 28) return;
+      if (d > HIT_POINT) return;
       if (poRows.some(function (row) { return String(row.id) === String(id); })) return;
       pushHit({ kind: 'marker', id: id, rank: 0, dist: d, label: 'Marqueur' });
     });
@@ -2622,9 +3003,9 @@
         else d = nearestPxOnLatLngs(lls, ll);
         if (!(layer instanceof L.Polygon)) rank = 1;
       }
-      if (d <= 28 || rank === 2) {
+      if ((rank === 0 && d <= HIT_POINT) || (rank !== 0 && (d <= HIT || rank === 2))) {
         if (poRows.some(function (row) { return String(row.id) === String(id); })) return;
-        pushHit({ kind: 'arma', id: id, rank: rank, dist: d, label: 'Repère' });
+        pushHit({ kind: 'arma', id: id, rank: rank, dist: d, label: (layer._owPin && layer._owPin.label) || 'Repère' });
       }
     });
     Object.keys(shapeLayers).forEach(function (id) {
@@ -2641,18 +3022,68 @@
           rank = 1;
         }
       }
-      if (d <= 28 || rank === 2) {
+      if (d <= HIT || rank === 2) {
         var shape = shapes.filter(function (row) { return String(row.id) === String(id); })[0];
         pushHit({ kind: 'shape', id: id, rank: rank, dist: d, label: (shape && (shape.label || shape.type)) || 'Tracé' });
       }
     });
-    if (losLayer && losLayer.getLatLngs) {
-      var losDist = nearestPxOnLatLngs(losLayer.getLatLngs(), ll);
-      if (losDist <= 28) pushHit({ kind: 'los', id: 'los', rank: 1, dist: losDist, label: 'Visée' });
+    losGroups.forEach(function (group) {
+      var dLos = layerHitDist(group, ll);
+      if (dLos <= HIT) {
+        var losPin = group._owPin || {};
+        pushHit({ kind: 'los', id: losPin.id || 'los', rank: 1, dist: dLos, label: losPin.label || 'Visée' });
+      }
+    });
+    if (window.OverwatchTools && typeof window.OverwatchTools.getRangeLayer === 'function') {
+      var rangeLayer = window.OverwatchTools.getRangeLayer();
+      var dRange = layerHitDist(rangeLayer, ll);
+      if (dRange <= HIT) pushHit({ kind: 'range', id: 'range', rank: 1, dist: dRange, label: 'Anneaux de portée' });
     }
+    if (window.__owInterceptLine) {
+      var dInt = layerHitDist(window.__owInterceptLine, ll);
+      if (dInt <= HIT) pushHit({ kind: 'intercept', id: 'intercept', rank: 1, dist: dInt, label: 'Interception' });
+    }
+    if (draftLayer) {
+      var draftDist = layerHitDist(draftLayer, ll);
+      if (draftDist <= HIT) pushHit({ kind: 'draft', id: 'draft', rank: 0, dist: draftDist, label: 'Croquis en cours' });
+    }
+    map.eachLayer(function (layer) {
+      if (!layer) return;
+      var pin = layer._owPin;
+      if (pin && pin.kind) {
+        var dPin = layerHitDist(layer, ll);
+        if (dPin <= HIT) {
+          pushHit({
+            kind: pin.kind,
+            id: pin.id,
+            rank: (pin.kind === 'los' || pin.kind === 'range') ? 1 : 0,
+            dist: dPin,
+            label: pin.label || 'Élément'
+          });
+        }
+        return;
+      }
+      var cls = String((layer.options && layer.options.className) || '');
+      if (cls.indexOf('ow-los') >= 0) {
+        var dOrphan = layerHitDist(layer, ll);
+        if (dOrphan <= HIT) pushHit({ kind: 'los', id: 'los-orphan', rank: 1, dist: dOrphan, label: 'Visée' });
+      }
+    });
 
-    hits.sort(function (a, b) { return a.rank - b.rank || a.dist - b.dist; });
-    return hits[0] || null;
+    hits.sort(function (a, b) {
+      if (Math.abs((a.dist || 0) - (b.dist || 0)) > 12) return a.dist - b.dist;
+      return a.rank - b.rank || a.dist - b.dist;
+    });
+    var best = hits[0] || null;
+    if (fromLayer && fromLayer.kind) {
+      var overlay = fromLayer.kind === 'los' || fromLayer.kind === 'range' || fromLayer.kind === 'intercept' || fromLayer.kind === 'shape';
+      if (overlay) {
+        if (!best || (best.kind === fromLayer.kind && String(best.id) === String(fromLayer.id))) return fromLayer;
+        if (best.rank === 0 && best.dist <= 14) return best;
+        return fromLayer;
+      }
+    }
+    return best;
   }
 
   function dropLocalId(store, id) {
@@ -2663,13 +3094,63 @@
     }
   }
 
+  function dropMarkerLocal(id) {
+    dropLocalId(postedMarkers, id);
+    dropLocalId(armaMarkerLayers, id);
+    armaMarkerRows = armaMarkerRows.filter(function (row) { return String(row.id) !== String(id); });
+    poRows = poRows.filter(function (row) { return String(row.id) !== String(id); });
+    renderPoMarkers();
+    renderArmaMarkers();
+  }
+
   function deleteMapTarget(target) {
     if (!target) return;
     var id = String(target.id || '');
     var kind = target.kind;
     if (kind === 'los') {
-      if (losLayer) { map.removeLayer(losLayer); losLayer = null; }
+      removeScratch('los', id);
       toast('Visée retirée.');
+      return;
+    }
+    if (kind === 'range') {
+      removeScratch('range', id);
+      toast('Anneaux retirés.');
+      return;
+    }
+    if (kind === 'intercept') {
+      removeScratch('intercept', id);
+      toast('Relevé d’interception retiré.');
+      return;
+    }
+    if (kind === 'draft') {
+      clearDraft();
+      toast('Croquis annulé.');
+      return;
+    }
+    if (kind === 'relay') {
+      api('/api/atak/relays/' + encodeURIComponent(id) + '?mapId=' + encodeURIComponent(mapId), { method: 'DELETE' }).then(function () {
+        if (window.OverwatchOps && window.OverwatchOps.loadRelays) window.OverwatchOps.loadRelays();
+        toast('Relais retiré du poste. S’il existe encore en jeu, il peut réapparaître.');
+      }).catch(function () { toast('Impossible de retirer ce relais.'); });
+      return;
+    }
+    if (kind === 'sitrep') {
+      if (window.OverwatchOps && window.OverwatchOps.dropSitrepPin) window.OverwatchOps.dropSitrepPin(id);
+      var twin = shapes.filter(function (row) {
+        var meta = row.meta;
+        if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+        return meta && String(meta.report_id || '') === id;
+      })[0];
+      if (twin && twin.id) {
+        api('/api/map-shapes/' + encodeURIComponent(twin.id), { method: 'DELETE' }).then(function () {
+          dropLocalId(shapeLayers, twin.id);
+          shapes = shapes.filter(function (row) { return String(row.id) !== String(twin.id); });
+          toast('Compte rendu retiré de la carte.');
+          updateStatsBanner();
+        }).catch(function () { toast('Pastille retirée.'); });
+        return;
+      }
+      toast('Pastille retirée.');
       return;
     }
     if (kind === 'shape') {
@@ -2683,16 +3164,16 @@
       return;
     }
     if (kind === 'po' || kind === 'marker' || kind === 'arma') {
+      var goneLabel = kind === 'po' ? 'Point à atteindre retiré.' : 'Repère retiré.';
       api('/api/markers/' + encodeURIComponent(id), { method: 'DELETE' }).then(function () {
-        dropLocalId(postedMarkers, id);
-        dropLocalId(armaMarkerLayers, id);
-        armaMarkerRows = armaMarkerRows.filter(function (row) { return String(row.id) !== id; });
-        poRows = poRows.filter(function (row) { return String(row.id) !== id; });
-        renderPoMarkers();
-        renderArmaMarkers();
-        toast(kind === 'po' ? 'Point à atteindre retiré.' : 'Repère retiré.');
+        dropMarkerLocal(id);
+        toast(goneLabel);
         updateStatsBanner();
-      }).catch(function () { toast('Impossible de retirer ce repère.'); });
+      }).catch(function (err) {
+        dropMarkerLocal(id);
+        toast(String(err && err.message) === '404' ? 'Ce repère n’est plus au poste.' : 'Impossible de retirer ce repère.');
+        updateStatsBanner();
+      });
       return;
     }
     if (kind === 'rally') {
@@ -2720,7 +3201,10 @@
     var group = document.getElementById('ow-ctx-delete-group');
     var btn = document.getElementById('ow-ctx-delete');
     var show = !!target;
-    if (group) group.hidden = !show;
+    if (group) {
+      group.hidden = !show;
+      group.textContent = (target && target.label) ? String(target.label) : 'Élément';
+    }
     if (btn) btn.hidden = !show;
   }
 
@@ -3425,6 +3909,7 @@
     if (pollTimer) window.clearInterval(pollTimer);
     pollTimer = window.setInterval(function () {
       refreshUnits();
+      loadChatInbox();
       var squadsPanel = document.querySelector('[data-chat-panel="squads"]');
       var drawerTitle = document.getElementById('ow-drawer-title');
       var drawer = document.getElementById('ow-drawer');
@@ -3438,6 +3923,7 @@
     refreshUnits();
     loadChannels();
     loadChat(activeChannel);
+    loadChatInbox();
     loadShapes();
     loadPoMarkers();
     loadRallyPoints();
@@ -3480,7 +3966,8 @@
   document.getElementById('ow-channel-list').addEventListener('click', function (event) {
     var row = event.target.closest('[data-channel]'); if (!row) return;
     activeChannel = row.dataset.channel;
-    renderChannels();
+    unreadByChannel[activeChannel] = 0;
+    paintUnreadBadges();
     loadChat(activeChannel);
   });
   document.querySelector('[data-close-drawer]').addEventListener('click', function () {
@@ -3542,6 +4029,14 @@
     }).catch(function () { toast('Impossible d’annuler cette tâche.'); });
   }
   document.getElementById('ow-chat').addEventListener('click', handleGroupTaskClick);
+  document.getElementById('ow-chat').addEventListener('click', function (event) {
+    var del = event.target.closest('[data-del-chat]');
+    if (!del) return;
+    event.preventDefault();
+    deleteOwnChat(del.getAttribute('data-del-chat'));
+  });
+  var purgeBtn = document.getElementById('ow-chat-purge');
+  if (purgeBtn) purgeBtn.addEventListener('click', showChatPurgeConfirm);
   document.querySelectorAll('[data-tool]').forEach(function (button) {
     button.addEventListener('click', function () { setTool(button.dataset.tool); });
   });
@@ -3553,18 +4048,12 @@
   });
   document.getElementById('ow-chat-form').addEventListener('submit', function (event) {
     event.preventDefault();
-    console.log('[DEBUG ow-chat-form] Submit déclenché');
     var input = document.getElementById('ow-chat-input');
-    console.log('[DEBUG ow-chat-form] Input:', input, 'Value:', input ? input.value : 'N/A', 'activeChannel:', activeChannel);
-    if (!input) {
-      console.error('[DEBUG ow-chat-form] Input #ow-chat-input introuvable !');
-      return;
-    }
+    if (!input) return;
     sendChat(activeChannel, input.value).then(function () {
-      console.log('[DEBUG ow-chat-form] Message envoyé, nettoyage input');
       input.value = '';
-    }).catch(function (err) {
-      console.error('[DEBUG ow-chat-form] Erreur envoi:', err);
+    }).catch(function () {
+      toast('Message non envoyé.');
     });
   });
   document.getElementById('ow-support-form').addEventListener('submit', function (event) {
@@ -3779,6 +4268,7 @@
       railExtra.hidden = !open;
       railMore.setAttribute('aria-expanded', open ? 'true' : 'false');
       railMore.classList.toggle('is-open', open);
+      railMore.textContent = open ? '‹' : '›';
     });
   }
   document.addEventListener('click', function (event) {
@@ -3788,6 +4278,7 @@
         railExtra.hidden = true;
         railMore.setAttribute('aria-expanded', 'false');
         railMore.classList.remove('is-open');
+        railMore.textContent = '›';
       }
     }
   });
@@ -3875,6 +4366,11 @@
     formatMeters: formatMeters,
     loadShapes: loadShapes,
     loadArmaMarkers: loadArmaMarkers,
+    bindLayerContext: bindLayerContext,
+    registerScratch: registerScratch,
+    registerPing: registerPing,
+    getShapes: function () { return shapes; },
+    getShapeLayers: function () { return shapeLayers; },
     unitHeading: unitHeading,
     unitSpeed: unitSpeed
   };
@@ -3892,21 +4388,18 @@
     window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 80);
   });
 
+  ['ow-empty-close', 'ow-empty-dismiss'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', dismissEmptyNotice);
+  });
+
   // Bouton repli des réglages
   var toggleSettingsBtn = document.getElementById('ow-toggle-settings');
   if (toggleSettingsBtn) {
     toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
   }
 
-  // Appliquer l'état sauvegardé du repli au chargement
   restoreSettingsCollapsed();
-
-  // Debug: vérifier que les éléments du chat sont présents
-  console.log('[DEBUG INIT] Vérification éléments chat:');
-  console.log('  - #ow-chat-form:', document.getElementById('ow-chat-form'));
-  console.log('  - #ow-chat-input:', document.getElementById('ow-chat-input'));
-  console.log('  - activeChannel:', activeChannel);
-  console.log('  - authorName:', authorName);
 
   // Gestion des calques (layers)
   document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {

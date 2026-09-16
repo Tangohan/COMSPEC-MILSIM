@@ -108,6 +108,7 @@ class CfgFunctions {
             class theaterSurveyCancel {};
             class theaterSurveyToggle {};
             class theaterSurveyVerify {};
+            class theaterSurveyResend {};
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
             class forceSyncData {};
