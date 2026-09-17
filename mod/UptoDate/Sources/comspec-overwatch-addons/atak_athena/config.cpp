@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.142;
-        versionStr = "1.0.142";
-        versionAr[] = {1, 0, 142};
-        // Historique : 1.0.80 sons, 1.0.84 HUD, 1.0.130 bureau, 1.0.132 menu, 1.0.140 masque sans recadrer, 1.0.141 hors téléphone, 1.0.142 menu / messages.
+        version = 1.144;
+        versionStr = "1.0.144";
+        versionAr[] = {1, 0, 144};
+        // Historique : 1.0.143 sans barre de données, 1.0.144 plus de calque IceMan / alerte mini.
     };
 };
 

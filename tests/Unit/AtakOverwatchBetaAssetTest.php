@@ -186,6 +186,7 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('ow-map-tools{display:none', $view);
         self::assertStringContainsString('Assistance technique', $view);
         self::assertStringContainsString('ow-fil-empty', $overwatchJs);
+        self::assertStringContainsString('id="ow-chat-purge-box"', $view);
         self::assertStringContainsString('prioLabel', $overwatchJs);
         self::assertStringNotContainsString('Fil — Comms', $view);
         $css = file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css');

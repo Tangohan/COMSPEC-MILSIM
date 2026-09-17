@@ -85,6 +85,11 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('ow-hatch-diag', $css);
         self::assertStringContainsString('ow-marker-list-row', $css);
         self::assertStringContainsString('ow-marker-age-chip', $css);
+        self::assertStringContainsString('isHostileMarker', $ops);
+        self::assertStringContainsString('Unités hostiles', $ops);
+        self::assertStringContainsString('.ow-confirm[hidden]{display:none!important}', $css);
+        self::assertStringContainsString('#ow-chat-log', $css);
+        self::assertStringNotContainsString('grid-template-rows:auto auto auto minmax(0,1fr) auto auto', $css);
 
         self::assertStringContainsString('dashArray: \'6 6\'', $terrain);
         self::assertStringContainsString('iconSize', $tools);

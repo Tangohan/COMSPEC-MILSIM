@@ -2,9 +2,9 @@
     Applique Afficher la barre de liaison : mission + CBA + profil.
     Params: [_enabled, _persist]
 */
-params [["_enabled", true, [true]], ["_persist", true, [true]]];
+params [["_enabled", false, [true]], ["_persist", true, [true]]];
 
-if (!(_enabled isEqualType true)) then { _enabled = true; };
+if (!(_enabled isEqualType true)) then { _enabled = false; };
 
 missionNamespace setVariable ["comspec_overwatch_show_link_strip", _enabled, false];
 

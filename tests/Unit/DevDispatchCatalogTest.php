@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(414, $byKind['update']);
-        self::assertCount(420, $all);
+        self::assertSame(417, $byKind['update']);
+        self::assertCount(423, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -341,6 +341,21 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('00620', $overwatchEmptyDismiss['number_pad']);
         self::assertStringContainsString('télémétrie', strtolower((string) $overwatchEmptyDismiss['title']));
         self::assertStringContainsString('masque', strtolower((string) $overwatchEmptyDismiss['activity']));
+        $atakStripGone = DevDispatchCatalog::find('update', '621');
+        self::assertNotNull($atakStripGone);
+        self::assertSame('00621', $atakStripGone['number_pad']);
+        self::assertStringContainsString('barre de données', strtolower((string) $atakStripGone['title']));
+        self::assertStringContainsString('carte', strtolower((string) $atakStripGone['activity']));
+        $overwatchHostileAge = DevDispatchCatalog::find('update', '622');
+        self::assertNotNull($overwatchHostileAge);
+        self::assertSame('00622', $overwatchHostileAge['number_pad']);
+        self::assertStringContainsString('ennemis', strtolower((string) $overwatchHostileAge['title']));
+        self::assertStringContainsString('fil', strtolower((string) $overwatchHostileAge['activity']));
+        $atakNativeAlert = DevDispatchCatalog::find('update', '623');
+        self::assertNotNull($atakNativeAlert);
+        self::assertSame('00623', $atakNativeAlert['number_pad']);
+        self::assertStringContainsString('alertes', strtolower((string) $atakNativeAlert['title']));
+        self::assertStringContainsString('calque', strtolower((string) $atakNativeAlert['activity']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);
