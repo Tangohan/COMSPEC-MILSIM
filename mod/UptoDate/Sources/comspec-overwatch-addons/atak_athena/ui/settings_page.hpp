@@ -260,13 +260,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9880;
                     y = QUOTE(COMSPEC_SET_H(11.34));
-                    text = "Afficher la barre de liaison";
+                    text = "Barre de données";
                 };
                 class ComboLinkStrip: ComboMapLabel
                 {
                     idc = 9882;
                     y = QUOTE(COMSPEC_SET_H(11.76));
-                    tooltip = "Affiche sous la barre d’état l’état OK/NOK, la sync, la fiabilité et la perte. Désactivez pour libérer la boussole.";
+                    tooltip = "La barre de données en bas de la carte n’est plus affichée.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_linkStripSave";
                 };
 
@@ -291,7 +291,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                     y = QUOTE(COMSPEC_SET_H(13.36));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.46));
-                    text = "Indicatif, rôle, carte, équipe, groupe, barre de liaison et simulation. Enregistrez pour appliquer.";
+                    text = "Indicatif, rôle, carte, équipe, groupe et simulation. Enregistrez pour appliquer.";
                     colorBackground[] = SET_BG_BODY;
                     class Attributes
                     {

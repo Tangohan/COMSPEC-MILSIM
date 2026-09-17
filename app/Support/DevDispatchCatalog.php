@@ -268,6 +268,27 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(623, '2026-09-16', 'Téléphone ATAK : alertes sans calque cassant', 'Une alerte du poste n’ajoute plus un voile sur le téléphone en miniature, ni des cartouches supplémentaires par-dessus l’écran IceMan. L’alerte plein écran reste sur le téléphone ouvert. Relancez Arma complètement après la mise à jour (Athena 1.0.144).', [
+                'Alerte plein écran uniquement si le téléphone est vraiment ouvert',
+                'Cartouches de carte inchangés, sans cadre ajouté par-dessus',
+            ], [], [
+                'Le voile d’alerte et des cartouches ajoutés par-dessus l’écran fermaient le jeu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.144). Ouvrez le téléphone : la carte reste celle du téléphone. Une alerte du poste recouvre l’écran ouvert, pas le téléphone en miniature.',
+            ], 'Athena 1.0.144'),
+            $pr(622, '2026-09-16', 'Poste Overwatch : alerte départ sur les ennemis, fil lisible', 'L’étiquette Probablement parti n’apparaît plus que sur les marqueurs hostiles. Le fil de discussion n’affiche plus un grand cadre vide au-dessus des messages.', [], [], [
+                'L’alerte de départ recouvrait tous les repères, y compris les amis et les points fixes',
+                'Le fil de discussion laissait un grand cadre vide au-dessus du texte Aucun message',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta. Un marqueur ami ne montre plus Probablement parti. Un marqueur hostile trop ancien le montre encore. Ouvrez Comms : le fil n’a plus de cadre rouge vide.',
+            ], 'Overwatch Beta · carte'),
+            $pr(621, '2026-09-16', 'Téléphone ATAK : plus de barre de données en bas', 'La ligne verte en bas de la carte disparaît : plus de sync, de fiabilité ni de versions sur l’écran. La carte reprend toute la hauteur. Relancez Arma complètement après la mise à jour (Athena 1.0.143).', [
+                'Carte sans bandeau de données en bas',
+            ], [], [
+                'La barre de données restait affichée par défaut et masquait le bas de la carte',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.143). Ouvrez le téléphone : le bas de la carte est libre.',
+            ], 'Athena 1.0.143'),
             $pr(620, '2026-09-16', 'Poste Overwatch : masquer l’avis sans télémétrie', 'Lorsque aucun contact autorisé n’est encore en liaison, l’avis au centre de la carte se masque. La carte reste utilisable. L’avis ne revient pas tant que vous restez sur ce poste.', [], [], [
                 'L’avis Aucune télémétrie restait collé au centre de la carte, même pour travailler sur le théâtre',
             ], ['atak'], [

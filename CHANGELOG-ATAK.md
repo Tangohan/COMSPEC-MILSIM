@@ -11,6 +11,22 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Athena 1.0.144 — 2026-09-16
+
+### Correction — Alertes et écran du téléphone
+
+Une alerte du poste n’ajoute plus un voile sur le téléphone en miniature. Les cartouches de la carte restent ceux du téléphone, sans cadre collé par-dessus. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.143 — 2026-09-16
+
+### Changement — Plus de barre de données en bas de carte
+
+La ligne verte en bas de la carte (sync, fiabilité, versions) n’apparaît plus. La carte reprend toute la hauteur. Relancez Arma complètement après la mise à jour.
+
+---
+
 ## Athena 1.0.142 — 2026-09-16
 
 ### Correction — Menu qui reste ouvert, messages dans la messagerie

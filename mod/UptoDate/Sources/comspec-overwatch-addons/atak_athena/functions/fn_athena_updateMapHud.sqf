@@ -209,7 +209,7 @@ private _nativeIdentity = [];
 private _fncEnsure = {
     params ["_d", "_idc", "_class"];
     private _c = _d displayCtrl _idc;
-    private _wantSt = ((_class find "Structured") >= 0) || {_class isEqualTo "Iceman_ReportsDetailText"} || {_class isEqualTo "COMSPEC_ATAK_StructuredText"};
+    private _wantSt = ((_class find "Structured") >= 0) || {_class isEqualTo "COMSPEC_ATAK_StructuredText"};
     if (!isNull _c) then {
         private _have = toLower (ctrlClassName _c);
         if (ctrlParent _c isNotEqualTo _d || {_wantSt && {(_have find "structured") < 0}}) then {
@@ -236,7 +236,6 @@ private _fncEnsure = {
 };
 
 private _stClass = "RscStructuredText";
-if (isClass (configFile >> "Iceman_ReportsDetailText")) then { _stClass = "Iceman_ReportsDetailText"; };
 private _heading = [_disp, _idcHeading, _stClass] call _fncEnsure;
 private _cursorBox = [_disp, _idcCursor, _stClass] call _fncEnsure;
 private _unitBox = [_disp, _idcUnit, _stClass] call _fncEnsure;

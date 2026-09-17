@@ -78,7 +78,7 @@ final class AtakLayoutClampAssetTest extends TestCase
 
         self::assertStringContainsString('_full > 2', $footer);
         self::assertStringContainsString('_rw <= 0', $home);
-        self::assertStringContainsString('1.0.142', $cfg);
+        self::assertStringContainsString('1.0.144', $cfg);
         self::assertStringContainsString('COMSPEC_ATAK_DrawerWantOpen', $enforce);
         self::assertStringContainsString('cTabIfOpen', $enforce);
         self::assertStringContainsString('cTabIfOpen', $phone);
@@ -88,7 +88,7 @@ final class AtakLayoutClampAssetTest extends TestCase
         self::assertStringNotContainsString('from 1 to 4000', $geoloc);
         self::assertStringContainsString('sans ouvrir', strtolower($noPhone));
         self::assertStringContainsString('RscStructuredText', $hud);
-        self::assertStringContainsString('Iceman_ReportsDetailText', $hud);
+        self::assertStringNotContainsString('Iceman_ReportsDetailText', $hud);
         self::assertStringContainsString('setPlainText', $hud);
         self::assertStringContainsString('_cursorHtml', $hud);
         self::assertStringNotContainsString('ctrlSetText _cursorTxt', $hud);

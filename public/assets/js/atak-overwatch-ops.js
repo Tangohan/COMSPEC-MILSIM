@@ -181,6 +181,22 @@
     return 'ColorGreen';
   }
 
+  function isHostileMarker(data, spec) {
+    var aff = String((data && (data.affiliation || data.side)) || '').toLowerCase();
+    if (aff === 'hostile' || aff === 'enemy' || aff === 'opfor' || aff === 'east') return true;
+    var color = String((data && data.color) || '').toLowerCase();
+    if (color === 'coloreast' || color === 'colorred' || color.indexOf('east') >= 0) return true;
+    var type = String((data && data.type) || (spec && spec.key) || '').toLowerCase();
+    if (type.indexOf('o_') === 0) return true;
+    if (spec && spec.group === 'Unités hostiles') return true;
+    var helper = window.ArmaMapMarkers;
+    if (helper && typeof helper.decodeType === 'function') {
+      var decoded = helper.decodeType(data || { type: type });
+      if (decoded && decoded.affiliation === 'hostile') return true;
+    }
+    return false;
+  }
+
   function markerThumb(key) {
     var helper = window.ArmaMapMarkers;
     if (helper && helper.buildIconSpec) {
@@ -319,6 +335,7 @@
         markerData: {
           type: type,
           color: markerColor(type),
+          affiliation: String(type).indexOf('o_') === 0 ? 'hostile' : (String(type).indexOf('b_') === 0 ? 'friend' : (String(type).indexOf('n_') === 0 ? 'unknown' : '')),
           label: opts.label,
           text: opts.label,
           description: opts.description || '',
@@ -405,8 +422,9 @@
       if (!world || !Number.isFinite(world.x) || !Number.isFinite(world.y)) return;
       var loc = api.worldToLatLng(world.x, world.y);
       if (!loc) return;
+      var spec = markerSymbol(data && data.type);
       var ageMs = parseMarkerAgeMs(data, row);
-      var level = markerAgeLevel(data, ageMs);
+      var level = isHostileMarker(data, spec) ? markerAgeLevel(data, ageMs) : '';
       if (level) {
         var full = markerStaleText(data, ageMs, level);
         var short = (level === 'stale' ? 'Probablement parti · ' : 'Peut-être plus là · ') + formatMarkerAge(ageMs);
@@ -427,7 +445,6 @@
       var movement = String(data.movement || '').toLowerCase();
       var heading = Number(data.heading);
       if ((movement === 'moving' || movement === 'shuttle') && Number.isFinite(heading)) {
-        var spec = markerSymbol(data.type);
         var kmh = Number(data.speed_kmh);
         if (!Number.isFinite(kmh) || kmh <= 0) kmh = spec.speedKmh || 4;
         var mps = kmh / 3.6;

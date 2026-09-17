@@ -1,6 +1,7 @@
 /*
-    Peint ou retire l’alerte plein écran sur le téléphone ATAK.
-    Couvre le cadre complet du terminal (carte + tiroir), pas seulement la carte.
+    Peint ou retire l’alerte plein écran sur le téléphone ATAK vraiment ouvert.
+    Jamais sur le mini-overlay 3D, jamais de cadre IceMan créé à la volée
+    (pack 14-09 stable : toast seulement, pas de calque).
     Jamais de largeur nulle : même famille que le plantage AutoArray.
 */
 if (!hasInterface) exitWith {};
@@ -9,8 +10,21 @@ private _IDC_BG = 99888100;
 private _IDC_TXT = 99888101;
 private _IDC_BTN = 99888102;
 
-private _fncDisplays = {
+private _fncOpenPhone = {
+    private _d = displayNull;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+        _d = [] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay;
+    };
+    if (isNull _d) exitWith { displayNull };
+    private _dsp = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
+    if (!isNull _dsp && {_d isEqualTo _dsp}) exitWith { displayNull };
+    _d
+};
+
+private _fncKnownDisplays = {
     private _out = [];
+    private _open = call _fncOpenPhone;
+    if (!isNull _open) then { _out pushBack _open; };
     {
         private _d = uiNamespace getVariable [_x, displayNull];
         if (!isNull _d) then { _out pushBackUnique _d; };
@@ -115,7 +129,7 @@ private _state = missionNamespace getVariable ["COMSPEC_Athena_FsAlert", []];
 private _alive = (_state isEqualType []) && {(count _state) >= 3} && {diag_tickTime <= (_state select 2)};
 if (!_alive) then {
     missionNamespace setVariable ["COMSPEC_Athena_FsAlert", nil];
-    { [_x] call _fncHideOn; } forEach (call _fncDisplays);
+    { [_x] call _fncHideOn; } forEach (call _fncKnownDisplays);
 };
 
 if (!_alive) exitWith {};
@@ -138,8 +152,15 @@ private _safeText = [_text] call _fncSafe;
 if (_safeIssuer isEqualTo "") then { _safeIssuer = "Poste"; };
 if (_safeText isEqualTo "") then { _safeText = "Message du poste de commandement"; };
 
-private _displays = call _fncDisplays;
-if (_displays isEqualTo []) exitWith {};
+private _open = call _fncOpenPhone;
+if (isNull _open) exitWith {
+    { [_x] call _fncHideOn; } forEach (call _fncKnownDisplays);
+};
+{
+    private _d = uiNamespace getVariable [_x, displayNull];
+    if (!isNull _d && {_d isNotEqualTo _open}) then { [_d] call _fncHideOn; };
+} forEach ["cTab_Android_dsp"];
+private _displays = [_open];
 
 {
     private _disp = _x;
@@ -167,10 +188,7 @@ if (_displays isEqualTo []) exitWith {};
     if (_needCreate) then {
         [_disp] call _fncHideOn;
         _bg = _disp ctrlCreate ["RscText", _IDC_BG];
-        private _txtClass = "RscStructuredText";
-        if (isClass (configFile >> "Iceman_ReportsDetailText")) then { _txtClass = "Iceman_ReportsDetailText"; };
-        _txt = _disp ctrlCreate [_txtClass, _IDC_TXT];
-        if (isNull _txt) then { _txt = _disp ctrlCreate ["RscStructuredText", _IDC_TXT]; };
+        _txt = _disp ctrlCreate ["RscStructuredText", _IDC_TXT];
         _btn = _disp ctrlCreate ["RscButton", _IDC_BTN];
         private _fncDismiss = {
             missionNamespace setVariable ["COMSPEC_Athena_FsAlert", nil];

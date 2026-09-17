@@ -492,11 +492,11 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_show_link_strip", "CHECKBOX",
     [
-        "Afficher la barre de liaison",
-        "Affiche sous la barre d’état du téléphone l’état OK/NOK, la sync, la fiabilité et la perte. Décochez pour libérer la boussole. Aussi dans ATAK → Paramètres."
+        "Barre de données sous la carte",
+        "La barre de données en bas de la carte n’est plus affichée. Le réglage reste masqué."
     ],
     ["COMSPEC Overwatch", "Téléphone ATAK"],
-    true
+    false
 ] call CBA_fnc_addSetting;
 
 [

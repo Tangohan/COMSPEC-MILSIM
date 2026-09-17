@@ -292,7 +292,7 @@ if (!isNull _cbEcotiRender) then {
 private _cbLinkStrip = [9882] call _ctrl;
 if (!isNull _cbLinkStrip) then {
     missionNamespace setVariable ["COMSPEC_AtakLinkStripFilling", true, false];
-    private _stripOn = missionNamespace getVariable ["comspec_overwatch_show_link_strip", true];
+    private _stripOn = missionNamespace getVariable ["comspec_overwatch_show_link_strip", false];
     if (!(_stripOn isEqualType true)) then { _stripOn = true; };
     private _profStrip = profileNamespace getVariable ["COMSPEC_LinkStripVisible", "UNSET"];
     if (_profStrip isEqualType true) then { _stripOn = _profStrip; };

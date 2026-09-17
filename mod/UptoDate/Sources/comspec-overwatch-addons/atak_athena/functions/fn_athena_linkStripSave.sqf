@@ -4,8 +4,8 @@
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AtakLinkStripFilling", false]) exitWith { true };
 
-private _enabled = missionNamespace getVariable ["comspec_overwatch_show_link_strip", true];
-if (!(_enabled isEqualType true)) then { _enabled = true; };
+private _enabled = missionNamespace getVariable ["comspec_overwatch_show_link_strip", false];
+if (!(_enabled isEqualType true)) then { _enabled = false; };
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Settings_group", controlNull];
 if (!isNull _group) then {
