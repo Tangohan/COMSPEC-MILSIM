@@ -29,6 +29,10 @@ _stats set ["total_received", _totalReceived + 1];
 // Ajouter à la fenêtre glissante
 private _windowReceived = _stats getOrDefault ["window_received", []];
 _windowReceived pushBack [_requestId, time];
+if ((count _windowReceived) > 100) then {
+    _windowReceived = _windowReceived select [((count _windowReceived) - 100) max 0, 100];
+};
 _stats set ["window_received", _windowReceived];
+missionNamespace setVariable ["COMSPEC_PacketStats", _stats, false];
 
 true

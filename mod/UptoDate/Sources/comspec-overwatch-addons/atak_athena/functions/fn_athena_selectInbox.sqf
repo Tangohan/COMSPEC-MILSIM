@@ -15,5 +15,5 @@ private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNu
 if (isNull _group) exitWith {};
 private _detailCtrl = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _detailCtrl) then {
-    [_detailCtrl, _detail] call comspec_overwatch_connect_fnc_setPlainText;
+    _detailCtrl ctrlSetStructuredText parseText _detail;
 };

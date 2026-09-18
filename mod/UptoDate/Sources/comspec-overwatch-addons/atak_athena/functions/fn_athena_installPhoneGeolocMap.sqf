@@ -27,6 +27,4 @@ private _attach = {
 
 [] call _attach;
 missionNamespace setVariable ["COMSPEC_PhoneGeolocMapAttach", _attach, false];
-[{
-    [] call (missionNamespace getVariable ["COMSPEC_PhoneGeolocMapAttach", {}]);
-}, 2, []] call CBA_fnc_addPerFrameHandler;
+// Accroche reprise par le PFH unique de installMapHud (pas de second handler).

@@ -1,3 +1,12 @@
+// Une seule PreInit par mission. Recocher Overwatch / relire l’addon
+// ne doit pas ré-enregistrer réglages, raccourcis et événements CBA.
+if (!isNil "COMSPEC_Overwatch_PreInitDone") exitWith {
+    if (!isNil "comspec_overwatch_connect_fnc_log") then {
+        ["WARN", "Boot", "PreInit ignoré — déjà exécuté cette mission"] call comspec_overwatch_connect_fnc_log;
+    };
+};
+COMSPEC_Overwatch_PreInitDone = true;
+
 // Compat modpack : si Mavic/mavik lit ses settings CBA avant enregistrement
 // (ou si l'enregistrement a echoue), eviter le spam variable indefinie.
 private _comspecCompatMavic = {
@@ -37,7 +46,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_enabled", "CHECKBOX",
-    ["Activer Overwatch", "Active la liaison Athena / poste de commandement."],
+    ["Activer Overwatch", "Active la liaison avec le poste. Décochez pour couper les échanges en fond (le téléphone reste utilisable). Une session déjà ouverte reste affichée jusqu’à la sortie d’Arma."],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 

@@ -6,6 +6,7 @@
 
   var lookLayers = [];
   var predictLayers = [];
+  var progressLayers = [];
   var relayLayers = [];
   var dfLayers = [];
   var sitrepPins = [];
@@ -107,11 +108,42 @@
     var api = ow();
     if (!api) return;
     renderLookAndPredict();
+    renderProgressTrail();
     renderFollowChip();
     renderRelays();
     renderDf();
     renderMarkerIntel();
     injectHatch();
+  }
+
+  function headingArrowShape(api, loc, heading, shaftPx) {
+    if (!api || !api.map || heading == null || !isFinite(Number(heading))) return null;
+    var probe = headingPoint(loc, heading, 80);
+    if (!probe) return null;
+    var origin = api.map.latLngToLayerPoint(loc);
+    var p1 = api.map.latLngToLayerPoint(probe);
+    var dx = p1.x - origin.x;
+    var dy = p1.y - origin.y;
+    var hyp = Math.sqrt(dx * dx + dy * dy);
+    if (hyp < 0.8) return null;
+    var ux = dx / hyp;
+    var uy = dy / hyp;
+    var start = L.point(origin.x + ux * 10, origin.y + uy * 10);
+    var tip = L.point(origin.x + ux * shaftPx, origin.y + uy * shaftPx);
+    var left = L.point(tip.x - ux * 10 + uy * 5.5, tip.y - uy * 10 - ux * 5.5);
+    var right = L.point(tip.x - ux * 10 - uy * 5.5, tip.y - uy * 10 + ux * 5.5);
+    return {
+      shaft: [api.map.layerPointToLatLng(start), api.map.layerPointToLatLng(tip)],
+      head: [api.map.layerPointToLatLng(left), api.map.layerPointToLatLng(tip), api.map.layerPointToLatLng(right)],
+      tip: api.map.layerPointToLatLng(tip)
+    };
+  }
+
+  function motionSpeedMs(speed) {
+    if (speed == null || !isFinite(Number(speed)) || speed < 0.2) return null;
+    var n = Number(speed);
+    if (n > 90 && n < 420) n = n / 3.6;
+    return n;
   }
 
   function renderLookAndPredict() {
@@ -121,31 +153,66 @@
     clearGroup(predictLayers);
     var lookOn = document.getElementById('ow-look-arrow');
     var predOn = document.getElementById('ow-predict');
-    var units = api.getUnits() || [];
-    units.forEach(function (unit) {
-      var loc = api.point(unit);
-      if (!loc) return;
-      var heading = api.unitHeading ? api.unitHeading(unit) : null;
-      var speed = api.unitSpeed ? api.unitSpeed(unit) : null;
-      if (lookOn && lookOn.checked && heading != null) {
-        var tip = headingPoint(loc, heading, 28);
-        if (tip) {
-          lookLayers.push(L.polyline([loc, tip], {
-            color: '#dff9ef', weight: 2, opacity: 0.85, className: 'ow-look-arrow', interactive: false
-          }).addTo(api.map));
-        }
+    if ((!lookOn || !lookOn.checked) && (!predOn || !predOn.checked)) return;
+    var unit = api.getSelected && api.getSelected();
+    if (!unit) return;
+    var loc = api.point(unit);
+    if (!loc) return;
+    var heading = api.unitHeading ? api.unitHeading(unit) : null;
+    if (heading == null || !isFinite(Number(heading))) return;
+    var lookStart = loc;
+    if (lookOn && lookOn.checked) {
+      var shape = headingArrowShape(api, loc, heading, 34);
+      if (shape) {
+        lookStart = shape.tip;
+        lookLayers.push(L.polyline(shape.shaft, {
+          color: '#e8fff4', weight: 3, opacity: 0.95, lineCap: 'round',
+          className: 'ow-look-arrow', pane: 'markerPane', interactive: false
+        }).addTo(api.map));
+        lookLayers.push(L.polygon(shape.head, {
+          color: '#e8fff4', fillColor: '#e8fff4', fillOpacity: 0.95, weight: 1,
+          className: 'ow-look-head', pane: 'markerPane', interactive: false
+        }).addTo(api.map));
       }
-      if (predOn && predOn.checked && heading != null && speed != null && speed > 0.4) {
+    }
+    if (predOn && predOn.checked) {
+      var speed = motionSpeedMs(api.unitSpeed ? api.unitSpeed(unit) : null);
+      if (speed != null) {
         var delayed = String(unit.status || '').toLowerCase() === 'delayed';
-        var dist = Math.min(delayed ? 160 : 400, speed * (delayed ? 12 : 30));
-        var end = headingPoint(loc, heading, dist);
-        if (end) {
-          predictLayers.push(L.polyline([loc, end], {
-            color: '#5b8def', weight: 2, dashArray: '4 6', opacity: 0.7, className: 'ow-predict-line', interactive: false
-          }).addTo(api.map));
+        var dist = Math.min(delayed ? 140 : 280, speed * (delayed ? 8 : 18));
+        if (dist >= 14) {
+          var end = headingPoint(loc, heading, dist);
+          if (end) {
+            predictLayers.push(L.polyline([lookStart, end], {
+              color: '#7eb0ff', weight: 2, dashArray: '5 7', opacity: 0.8, lineCap: 'round',
+              className: 'ow-predict-line', pane: 'markerPane', interactive: false
+            }).addTo(api.map));
+            predictLayers.push(L.circleMarker(end, {
+              radius: 4, color: '#7eb0ff', fillColor: '#0b1a2c', fillOpacity: 0.7, weight: 1.5,
+              className: 'ow-predict-dot', pane: 'markerPane', interactive: false
+            }).addTo(api.map));
+          }
         }
       }
-    });
+    }
+  }
+
+  function renderProgressTrail() {
+    var api = ow();
+    if (!api) return;
+    clearGroup(progressLayers);
+    var box = document.getElementById('ow-progress-trail');
+    if (!box || !box.checked) return;
+    var unit = api.getSelected && api.getSelected();
+    if (!unit || !api.unitId) return;
+    var samples = ((api.getTrackSamples && api.getTrackSamples()) || {})[api.unitId(unit)] || [];
+    if (samples.length < 2) return;
+    var pts = samples.map(function (row) { return row.ll; }).filter(Boolean);
+    if (pts.length < 2) return;
+    progressLayers.push(L.polyline(pts, {
+      color: '#9dffc8', weight: 3, opacity: 0.82, lineCap: 'round', lineJoin: 'round',
+      className: 'ow-progress-trail', pane: 'overlayPane', interactive: false
+    }).addTo(api.map));
   }
 
   function renderFollowChip() {
@@ -1046,9 +1113,20 @@
       });
     }
     if (cut) {
-      L.polyline([fromLl, cut], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(group);
-      L.polyline([cut, toLl], { color: color, weight: 3, dashArray: '6 6', className: 'ow-los-masked' }).addTo(group);
-      L.circleMarker(cut, { radius: 6, color: color, weight: 2, fillOpacity: 0.8 }).addTo(group);
+      L.polyline([fromLl, cut], { color: '#00d69a', weight: 3, className: 'ow-los-clear' }).addTo(group);
+      L.polyline([cut, toLl], { color: '#e05b63', weight: 3, dashArray: '5 6', className: 'ow-los-masked' }).addTo(group);
+      var a = api.latLngToWorld(fromLl);
+      var c = api.latLngToWorld(cut);
+      var vx = c.x - a.x;
+      var vy = c.y - a.y;
+      var hyp = Math.hypot(vx, vy) || 1;
+      var px = -vy / hyp * 7;
+      var py = vx / hyp * 7;
+      L.polyline([
+        api.worldToLatLng(c.x + px, c.y + py),
+        api.worldToLatLng(c.x - px, c.y - py)
+      ], { color: '#e05b63', weight: 5, className: 'ow-los-block' }).addTo(group);
+      L.circleMarker(cut, { radius: 6, color: '#e05b63', fillColor: '#e05b63', weight: 2, fillOpacity: 0.9, className: 'ow-los-block' }).addTo(group);
     } else {
       L.polyline([fromLl, toLl], { color: color, weight: 3, className: 'ow-los-clear' }).addTo(group);
     }
@@ -1058,7 +1136,7 @@
       api.bindLayerContext(group, 'los', 'los', 'Visée');
       group.eachLayer(function (child) { api.bindLayerContext(child, 'los', 'los', 'Visée'); });
     }
-    var cause = payload.cause_label || (payload.obstruction && payload.obstruction.cause) || '';
+    var cause = payload.cause_label || (payload.obstruction && (payload.obstruction.kind_label || payload.obstruction.cause)) || '';
     if (payload.verdict === 'masked') {
       var extra = '';
       if (payload.obstruction && payload.obstruction.excess_m != null) {
@@ -1284,7 +1362,7 @@
       var box = document.getElementById('ow-follow');
       if (box) { box.checked = false; box.dispatchEvent(new Event('change')); }
     });
-    ['ow-look-arrow', 'ow-predict', 'ow-relays-layer'].forEach(function (id) {
+    ['ow-look-arrow', 'ow-predict', 'ow-progress-trail', 'ow-relays-layer'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { afterRenderMap(); });
     });
@@ -1375,14 +1453,6 @@
     window.setInterval(loadTraffic, 10000);
     window.setInterval(loadRelays, 15000);
     window.setInterval(renderMarkerIntel, 15000);
-    window.addEventListener('overwatch:units-updated', afterRenderMap);
-    var origRender = ow().renderMap;
-    if (typeof origRender === 'function') {
-      ow().renderMap = function () {
-        origRender();
-        afterRenderMap();
-      };
-    }
   }
 
   window.OverwatchOps = {

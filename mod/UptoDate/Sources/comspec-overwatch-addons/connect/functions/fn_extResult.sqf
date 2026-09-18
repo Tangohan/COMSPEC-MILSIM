@@ -23,7 +23,15 @@ if (_raw isEqualType []) then {
         };
     };
     private _v = _raw select 0;
-    if (_v isEqualType "") then { _v } else { format ["%1", _v] }
+    if (!(_v isEqualType "")) then { _v = format ["%1", _v]; };
+    if (!isNil "comspec_overwatch_connect_fnc_noteLinkTraffic") then {
+        [_v] call comspec_overwatch_connect_fnc_noteLinkTraffic;
+    };
+    _v
 } else {
-    if (_raw isEqualType "") then { _raw } else { format ["%1", _raw] }
+    private _s = if (_raw isEqualType "") then { _raw } else { format ["%1", _raw] };
+    if (!isNil "comspec_overwatch_connect_fnc_noteLinkTraffic") then {
+        [_s] call comspec_overwatch_connect_fnc_noteLinkTraffic;
+    };
+    _s
 }

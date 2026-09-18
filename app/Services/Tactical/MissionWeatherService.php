@@ -23,6 +23,7 @@ final class MissionWeatherService
             'fog_pct' => null,
             'rain_pct' => null,
             'humidity_pct' => null,
+            'daytime' => null,
             'call_sign' => '',
             'updated_at' => '',
         ];
@@ -57,6 +58,7 @@ final class MissionWeatherService
             'fog_pct' => isset($payload['fog_pct']) ? (int) $payload['fog_pct'] : null,
             'rain_pct' => isset($payload['rain_pct']) ? (int) $payload['rain_pct'] : null,
             'humidity_pct' => isset($payload['humidity_pct']) ? (int) $payload['humidity_pct'] : null,
+            'daytime' => self::daytimeHours($payload['daytime'] ?? null),
             'call_sign' => trim((string) ($payload['call_sign'] ?? '')),
             'updated_at' => gmdate('c'),
         ];
@@ -71,6 +73,19 @@ final class MissionWeatherService
         );
 
         return $merged;
+    }
+
+    private static function daytimeHours(mixed $raw): ?float
+    {
+        if ($raw === null || $raw === '' || !is_numeric($raw)) {
+            return null;
+        }
+        $hour = fmod((float) $raw + 24.0, 24.0);
+        if (!is_finite($hour)) {
+            return null;
+        }
+
+        return round($hour, 4);
     }
 
     private function path(int $tenantId, int $mapId): string

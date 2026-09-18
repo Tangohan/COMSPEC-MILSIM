@@ -18,7 +18,14 @@ if (isNull player) exitWith {
 
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
 // v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
-private _menuVer = 5;
+private _menuVer = 7;
+if ((uiNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
+    missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
+    missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
+    missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+    missionNamespace setVariable ["COMSPEC_ACEAthenaReady", true, false];
+};
+
 if (
     (missionNamespace getVariable ["COMSPEC_ACEMenuStructureVer", 0]) isEqualTo _menuVer
     && {missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]}
@@ -34,10 +41,13 @@ if (!(_installed isEqualType [])) then { _installed = []; };
     _x params ["_path", "_actionId"];
     if (!(_path isEqualType []) || {!(_actionId isEqualType "")}) then { continue };
     if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
-        ["CAManBase", 1, _path, _actionId] call ace_interact_menu_fnc_removeActionFromClass;
+        ["CAManBase", 1, _path + [_actionId], true] call ace_interact_menu_fnc_removeActionFromClass;
+        if (!isNull player) then {
+            [typeOf player, 1, _path + [_actionId], true] call ace_interact_menu_fnc_removeActionFromClass;
+        };
     };
     if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-        [player, 1, _path, _actionId] call ace_interact_menu_fnc_removeActionFromObject;
+        [player, 1, _path + [_actionId]] call ace_interact_menu_fnc_removeActionFromObject;
     };
 } forEach _installed;
 
@@ -59,20 +69,26 @@ private _legacyFlat = [
 ];
 {
     if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
-        ["CAManBase", 1, _mainPath, _x] call ace_interact_menu_fnc_removeActionFromClass;
+        ["CAManBase", 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+        if (!isNull player) then {
+            [typeOf player, 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+        };
     };
     if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-        [player, 1, _mainPath, _x] call ace_interact_menu_fnc_removeActionFromObject;
+        [player, 1, _mainPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
     };
 } forEach _legacyFlat;
 
 private _mapLegacyPath = ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_MapSurvey"];
 {
     if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
-        ["CAManBase", 1, _mapLegacyPath, _x] call ace_interact_menu_fnc_removeActionFromClass;
+        ["CAManBase", 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+        if (!isNull player) then {
+            [typeOf player, 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+        };
     };
     if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-        [player, 1, _mapLegacyPath, _x] call ace_interact_menu_fnc_removeActionFromObject;
+        [player, 1, _mapLegacyPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
     };
 } forEach ["COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork"];
 
@@ -383,6 +399,10 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
     [] call comspec_overwatch_connect_fnc_bugReportShow;
 }, _link, _condEnabled] call _fnc_leaf;
 
+["COMSPEC_DiagIsolate", "Dépannage liaison…", {
+    [] call comspec_overwatch_connect_fnc_diagIsolateLaunch;
+}, _link, { true }] call _fnc_leaf;
+
 private _captureAtakAction = [
     "COMSPEC_CaptureAtak",
     "Saisir l’ATAK (capturer)",
@@ -461,6 +481,7 @@ if (
 [] call comspec_overwatch_connect_fnc_initChargeAceActions;
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+uiNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer];
 
 if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;

@@ -177,7 +177,7 @@ if (_tab isEqualTo "inbox") then {
         private _reports = missionNamespace getVariable ["Iceman_ATAK_Reports_reports", []];
         private _selected = missionNamespace getVariable ["Iceman_ATAK_Reports_selected", -1];
         if (!(_reports isEqualType []) || {_reports isEqualTo []} || {_selected < 0} || {_selected >= count _reports}) then {
-            [_det, "<t size='0.82' color='#c8d0d8'>Aucun compte rendu pour le moment.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
+            _det ctrlSetStructuredText parseText "<t size='0.82' color='#c8d0d8'>Aucun compte rendu pour le moment.</t>";
         } else {
             (_reports select _selected) params ["_time", "_kind", "_sender", "_grid", ["_body", ""], ["_pos", []]];
             private _text = [
@@ -187,7 +187,7 @@ if (_tab isEqualTo "inbox") then {
                 "",
                 _body
             ] joinString "<br/>";
-            [_det, _text] call comspec_overwatch_connect_fnc_setPlainText;
+            _det ctrlSetStructuredText parseText _text;
         };
     };
 } else {
@@ -237,7 +237,7 @@ if (_tab isEqualTo "inbox") then {
     private _typeC = _group controlsGroupCtrl 9620;
     if (!isNull _typeL) then {
         _typeL ctrlSetPosition [_pad, _y, _labelW, _rowH];
-        [_typeL, "<t size='0.7'>Type</t>"] call comspec_overwatch_connect_fnc_setPlainText;
+        _typeL ctrlSetStructuredText parseText "<t size='0.7'>Type</t>";
         _typeL ctrlCommit 0;
     };
     if (!isNull _typeC) then {
@@ -362,7 +362,7 @@ if (_tab isEqualTo "inbox") then {
                 private _frSecMap = missionNamespace getVariable ["COMSPEC_ReportsLabelFr", createHashMap];
                 private _frSec = _frSecMap getOrDefault [_plainSec, ""];
                 if (_frSec isNotEqualTo "") then {
-                    [_lab, format ["<t align='center' size='0.72' color='#ffffff'>%1</t>", _frSec]] call comspec_overwatch_connect_fnc_setPlainText;
+                    _lab ctrlSetStructuredText parseText format ["<t align='center' size='0.72' color='#ffffff'>%1</t>", _frSec];
                 };
                 _lab ctrlCommit 0;
             } else {
@@ -372,7 +372,7 @@ if (_tab isEqualTo "inbox") then {
                     private _frMap = missionNamespace getVariable ["COMSPEC_ReportsLabelFr", createHashMap];
                     private _fr = _frMap getOrDefault [_plain, ""];
                     if (_fr isNotEqualTo "") then {
-                        [_lab, format ["<t size='0.7'>%1</t>", _fr]] call comspec_overwatch_connect_fnc_setPlainText;
+                        _lab ctrlSetStructuredText parseText format ["<t size='0.7'>%1</t>", _fr];
                     };
                     _lab ctrlCommit 0;
                 };
@@ -390,7 +390,7 @@ if (_tab isEqualTo "inbox") then {
 
 private _title = _group controlsGroupCtrl 9600;
 if (!isNull _title) then {
-    [_title, "<t align='center' size='0.95'>Comptes-rendus</t>"] call comspec_overwatch_connect_fnc_setPlainText;
+    _title ctrlSetStructuredText parseText "<t align='center' size='0.95'>Comptes-rendus</t>";
 };
 
 private _fncLabel = {

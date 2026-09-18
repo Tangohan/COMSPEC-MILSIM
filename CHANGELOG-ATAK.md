@@ -11,6 +11,142 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Portail · Overwatch Beta — 2026-09-18
+
+### Nouveau — Visibilité, coupe et lecture 3D
+
+Un clic sur un observateur affiche les portions de terrain visibles et masquées. L’horizon dessine la silhouette du relief. Une coupe de A vers B montre le sol et les constructions. La comparaison 2D / 3D aligne les deux lectures. Les symboles restent lisibles derrière un obstacle (réaliste, silhouette ou toujours visibles). Une pile remplace les icônes empilées. Une note, une photo ou une tâche peut s’ancrer à une façade, un étage ou un toit. Un volume a une altitude basse et haute. Le replay peut suivre l’action, avec traces de déplacement et densité de passages. Les vues de caméra s’enregistrent. Rechargez Overwatch Beta.
+
+### Nouveau — Lecture 3D du théâtre
+
+En vue Tactique 3D, les murs, clôtures, ponts et pylônes se dressent avec les bâtiments. Un clic sur une construction ouvre sa fiche (grille, orientation, niveaux, hauteur) avec les actions déjà connues : marquer, objectif, entrée, photo, tâche. Double-clic pour incliner la caméra, Nord pour revenir à plat, Unité pour suivre le groupe, Sol pour descendre près du terrain. La visée nomme l’obstacle. Un tracé affiche montée, descente et pente. Rechargez Overwatch Beta. Relancez le relevé de carte si les obstacles manquent.
+
+### Amélioration — Relief 3D : clic, masses et lumière
+
+En vue Relief 3D, cliquer un bâtiment ouvre le même menu que sur la carte à plat (marqueurs, ralliement, tâches). Les petites constructions lointaines se regroupent ; le détail revient en se rapprochant. Les ombres suivent l’heure et la météo du bandeau. Rechargez Overwatch Beta.
+
+---
+
+## Overwatch 1.5.84 — 2026-09-18
+
+### Correction — Dépannage : étape Ordres
+
+Le dépannage liaison ne livre plus les ordres sur le téléphone en même temps qu’il les reçoit. D’abord la réception, ensuite l’affichage. Le bandeau affiche le débit, le volume transmis, le poste, les versions, le compte identifié et le taux d’erreur. Le journal indique le nombre de messages, de repères et d’ordres reçus.
+
+---
+
+## Athena 1.0.137 — 2026-09-18
+
+### Correction — Ordres pendant le dépannage
+
+Pendant le dépannage, les ordres ne sont plus collés dans le fil du téléphone avant l’étape d’affichage.
+
+---
+
+## Overwatch 1.5.83 — 2026-09-18
+
+### Nouveau — Contrôle de mission
+
+Le commandement dispose d’un écran unique pour imposer le réalisme, voir les fonctions actives, consulter les relais et activer ou couper ce que la mission utilise. Les opérateurs en liaison reçoivent les règles sous environ une minute. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.136 — 2026-09-18
+
+### Nouveau — Message : P2P ou Via Athena
+
+En ouvrant Message, vous choisissez d’abord le canal. **P2P — Réseau local** : messages entre téléphones à proximité, comme d’habitude. **Via Athena** : messagerie de compte à compte, comme au poste.
+
+---
+
+## Overwatch 1.5.82 — 2026-09-18
+
+### Correction — Plus de double démarrage en mission
+
+Recocher Overwatch dans les paramètres d’addons ne relance plus tout le mod par-dessus une session déjà ouverte. Les menus, la liaison et les alertes restent un seul jeu. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Overwatch 1.5.81 — 2026-09-18
+
+### Correction — Dépannage liaison visible sur Échap
+
+Le dépannage se lance depuis le bouton orange en haut à gauche du menu Échap. Plus besoin de chercher dans le panneau, plus de seconde fenêtre par-dessus la pause. Un bandeau reste à l’écran : Overwatch est coupé, puis chaque fonction est rallumée une par une. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Overwatch 1.5.80 — 2026-09-18
+
+### Nouveau — Dépannage liaison
+
+Un outil coupe Overwatch, puis rallume chaque fonction de la liaison une par une, avec 55 secondes d’écart. Un bandeau reste à l’écran : si le jeu s’arrête, c’est la fonction affichée. Échap → COMSPEC Overwatch → Dépannage liaison. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.135 / Overwatch 1.5.79 — 2026-09-17
+
+### Correction — Plus d’arrêt avec Overwatch actif
+
+Le jeu ne se ferme plus tout seul une fois Overwatch coché, téléphone ouvert ou non. Les repères déjà affichés depuis le poste ne relancent plus une avalanche d’envois. Décochez Overwatch : la position et les messages s’arrêtent aussi. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.134 — 2026-09-17
+
+### Correction — Messagerie lisible, plus d’arrêt sans téléphone
+
+La liste des canaux n’est plus recouverte par Envoyer / Effacer. Sans téléphone en poche, le jeu ne se ferme plus tout seul : la liaison avec le poste n’attend plus que l’objet soit porté. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.133 — 2026-09-17
+
+### Correction — Plus d’arrêt pendant la carte et les repères
+
+Le jeu ne se ferme plus tout seul pendant l’affichage de la carte, la pose d’un repère ou le rafraîchissement des indicatifs. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.132 — 2026-09-17
+
+### Correction — Menu d’applications avec les icônes
+
+Le chevron ouvre le menu d’applications avec les icônes. Ce n’est plus un panneau gris vide. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.131 — 2026-09-17
+
+### Correction — Plus d’arrêt après quelques dizaines de secondes
+
+Le jeu ne se ferme plus tout seul une fois le téléphone ouvert sur la carte, ni après une pause sans activité visible. La page d’état de liaison affiche l’état déjà calculé, sans relancer le calcul à chaque rafraîchissement. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.130 — 2026-09-17
+
+### Correction — Menu d’applications qui se referme
+
+Le menu d’applications s’ouvre et se referme de nouveau avec le chevron et Retour. La carte reste dans le cadre du téléphone. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.129 — 2026-09-17
+
+### Correction — Carte dans l’écran et menu du téléphone
+
+La carte reste dans le cadre du téléphone. Le menu d’applications reprend celui du téléphone : les icônes s’affichent, Retour referme le menu. Relancez Arma complètement après la mise à jour.
+
+---
+
+## Athena 1.0.128 — 2026-09-17
+
+### Correction — Arrêt brutal au bout de quelques secondes
+
+Le jeu ne se ferme plus tout seul après quelques secondes, même sans ouvrir le téléphone. Le menu ACE ne se réempile plus à chaque mission de la même session. Relancez Arma complètement après la mise à jour.
+
+---
+
 ## Athena 1.0.144 — 2026-09-16
 
 ### Correction — Alertes et écran du téléphone

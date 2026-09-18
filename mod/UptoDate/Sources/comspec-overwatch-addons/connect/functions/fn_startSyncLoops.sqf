@@ -7,6 +7,25 @@
 if (!hasInterface) exitWith {};
 if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
+
+// Sans téléphone : handshake OK mais pas de boucles. C’est ça qui fermait
+// le jeu ~40 s après « Boucles de sync démarrées », même sans objet ATAK.
+if (isNil "COMSPEC_UplinkTerminalWatch") then {
+    COMSPEC_UplinkTerminalWatch = [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+        if (isNull player || {!alive player}) exitWith {};
+        if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
+        if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
+        [] call comspec_overwatch_connect_fnc_startSyncLoops;
+    }, 2] call CBA_fnc_addPerFrameHandler;
+};
+
+if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith {
+    ["INFO", "Boot", "Pas de terminal ATAK — boucles de sync en attente"] call comspec_overwatch_connect_fnc_log;
+};
+
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
 // Faction settings / fiche : différés — HTTP sync au même frame que l’open ATAK = gel.
@@ -58,7 +77,9 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
     [player, true] call comspec_overwatch_connect_fnc_updatePosition;
 };
 [{
+    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!(["position"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, [], "updatePosition"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 1] call CBA_fnc_addPerFrameHandler;
 
@@ -72,22 +93,20 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
 if (isNil "COMSPEC_MapMarkerEHs") then {
     private _resyncSoon = {
         params ["_marker"];
+        if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+        if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
         [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         [{
             params ["_m"];
-            if (_m in allMapMarkers) then {
-                [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-            };
-        }, [_marker], 0.1] call CBA_fnc_waitAndExecute;
-        [{
-            params ["_m"];
-            if (_m in allMapMarkers) then {
-                [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-            };
-            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
-                [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
-            };
-        }, [_marker], 0.45] call CBA_fnc_waitAndExecute;
+            if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+            if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+            if (!(_m in allMapMarkers)) exitWith {};
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+            [_m, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+        }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
     };
     missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
     COMSPEC_MapMarkerEHs = [
@@ -97,10 +116,18 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
         }],
         addMissionEventHandler ["MarkerUpdated", {
             params ["_marker"];
+            if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+            if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
             [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
             params ["_marker"];
+            if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+            if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
             [_marker, true, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
     ];
@@ -117,21 +144,35 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
 };
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_queueMapMarker;
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 // Resync complet : les EH MarkerCreated/Updated/Deleted couvrent le temps réel.
 // Un passage toutes les 5 s sur allMapMarkers provoquait un hitch SQF régulier.
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
 }, 45, []] call CBA_fnc_addPerFrameHandler;
 
 private _fnc_addPoll = {
-    params ["_code", "_interval", "_delay"];
+    params ["_code", "_interval", "_delay", ["_id", "", [""]]];
     [{
-        params ["_code", "_interval"];
-        [_code, _interval, []] call CBA_fnc_addPerFrameHandler;
-    }, [_code, _interval], _delay] call CBA_fnc_waitAndExecute;
+        params ["_code", "_interval", "_id"];
+        [
+            {
+                params ["_args", "_pfhId"];
+                _args params ["_inner", "_id"];
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                if (isNull player || {!alive player}) exitWith {};
+                if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
+                if (!([_id] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+                [] call _inner;
+            },
+            _interval,
+            [_code, _id]
+        ] call CBA_fnc_addPerFrameHandler;
+    }, [_code, _interval, _id], _delay] call CBA_fnc_waitAndExecute;
 };
 
 [{
@@ -176,7 +217,7 @@ private _fnc_addPoll = {
                 };
             };
         }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, 0.3] call _fnc_addPoll;
+}, 10, 0.3, "cas"] call _fnc_addPoll;
 
 [{
         [{
@@ -184,7 +225,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
         }, [], "pollMedicalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 0.9] call _fnc_addPoll;
+}, 8, 0.9, "medical"] call _fnc_addPoll;
 
 [{
         [{
@@ -192,7 +233,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollOrders;
         }, [], "pollOrders"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 1.5] call _fnc_addPoll;
+}, 8, 1.5, "orders"] call _fnc_addPoll;
 
 [{
         [{
@@ -200,14 +241,14 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollGpsNavigation;
         }, [], "pollGpsNavigation"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 5, 1.1] call _fnc_addPoll;
+}, 5, 1.1, "gps"] call _fnc_addPoll;
 
 [{
         [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollPoMarkers;
         }, [], "pollPoMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 2, 0.4] call _fnc_addPoll;
+}, 2, 0.4, "po"] call _fnc_addPoll;
 
 [{
         [{
@@ -215,7 +256,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMarkerDetectionRules;
         }, [], "pollMarkerDetectionRules"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 30, 2.6] call _fnc_addPoll;
+}, 30, 2.6, "detect"] call _fnc_addPoll;
 
 [{
         [{
@@ -223,7 +264,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollTacticalZones;
         }, [], "pollTacticalZones"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 1.8] call _fnc_addPoll;
+}, 8, 1.8, "zones"] call _fnc_addPoll;
 
 [{
         [{
@@ -231,7 +272,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMissionPlan;
         }, [], "pollMissionPlan"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 30, 2.4] call _fnc_addPoll;
+}, 30, 2.4, "plan"] call _fnc_addPoll;
 
 [{
         [{
@@ -239,7 +280,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollExplosiveCommands;
         }, [], "pollExplosiveCommands"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 4, 0.2] call _fnc_addPoll;
+}, 4, 0.2, "explosives"] call _fnc_addPoll;
 
 [{
         [{
@@ -247,7 +288,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollAiOrders;
         }, [], "pollAiOrders"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 5, 0.7] call _fnc_addPoll;
+}, 5, 0.7, "ai"] call _fnc_addPoll;
 
 [{
         [{
@@ -255,7 +296,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
         }, [], "pollTacticalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, 2.1] call _fnc_addPoll;
+}, 10, 2.1, "alerts"] call _fnc_addPoll;
 
 [{
         [{
@@ -263,7 +304,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollChatMessages;
         }, [], "pollChatMessages"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 6, 1.2] call _fnc_addPoll;
+}, 6, 1.2, "chat"] call _fnc_addPoll;
 
 [{
         [{
@@ -271,7 +312,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMapShapes;
         }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, 2.7] call _fnc_addPoll;
+}, 10, 2.7, "shapes"] call _fnc_addPoll;
 
 [{
         [{
@@ -279,7 +320,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollAthenaMarkers;
         }, [], "pollAthenaMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 1.8] call _fnc_addPoll;
+}, 8, 1.8, "webmk"] call _fnc_addPoll;
 
 [{
         [{
@@ -287,7 +328,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollModModules;
         }, [], "pollModModules"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 45, 3.3] call _fnc_addPoll;
+}, 45, 3.3, "modules"] call _fnc_addPoll;
 
 ["OnOrderIssued", {
     params ["_order"];
@@ -316,6 +357,7 @@ private _fnc_addPoll = {
 
 [{
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+    if (!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
     private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
     {
@@ -329,6 +371,7 @@ private _fnc_addPoll = {
 [{
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false]) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollExperience;
     }, [], "pollExperience"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -337,6 +380,7 @@ private _fnc_addPoll = {
 [{
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false]) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
     }, [], "pollRoleplayConfig"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -346,6 +390,7 @@ private _fnc_addPoll = {
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        if (!(["relays"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
         [] call comspec_overwatch_connect_fnc_syncAtakRelays;
     }, [], "syncAtakRelays"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 12, []] call CBA_fnc_addPerFrameHandler;
@@ -356,6 +401,7 @@ private _fnc_addPoll = {
     private _web = uiNamespace getVariable ["COMSPEC_WebBrowser_Display", displayNull];
     if (isNull _web) then { _web = findDisplay 9974; };
     if (isNull _ctab && {isNull _hub} && {isNull _web}) exitWith {};
+    if (!(["overlay"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 }, 1, []] call CBA_fnc_addPerFrameHandler;
 

@@ -3,6 +3,8 @@ if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith
     missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
     diag_log "[COMSPEC ATAK NATIVE][WARN][BOOT] Legacy ATAK bootstrap suppressed";
 };
+if (!isNil "COMSPEC_Athena_PreInitDone") exitWith {};
+COMSPEC_Athena_PreInitDone = true;
 if (!isServer && !hasInterface) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];

@@ -24,7 +24,10 @@ if ((_color select [0, 1]) isEqualTo "#" || {(_color find "Color") < 0}) then {
 };
 
 private _existing = missionNamespace getVariable ["COMSPEC_MapShapeMarkers", createHashMap];
+if (!(_existing isEqualType createHashMap)) then { _existing = createHashMap; };
 private _markerName = "COMSPEC_shape_" + _shapeId;
+private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
+missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
 if (_markerName in _existing) then {
     deleteMarkerLocal (_existing get _markerName);
     _existing deleteAt _markerName;
@@ -42,6 +45,10 @@ if (_points isEqualType [] && {(count _points) > 0}) then {
     } else {
         _flat = _points;
     };
+};
+
+if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
+    _flat deleteAt ((count _flat) - 1);
 };
 
 private _isLine = (_type in ["LINE", "POLYLINE", "PATH"]) || {(count _flat) >= 4};
@@ -64,3 +71,6 @@ _mrk setMarkerColorLocal _color;
 _mrk setMarkerTextLocal _label;
 _existing set [_markerName, _markerName];
 missionNamespace setVariable ["COMSPEC_MapShapeMarkers", _existing];
+private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
+if (_unmute < 0) then { _unmute = 0; };
+missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];

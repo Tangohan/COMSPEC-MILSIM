@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.578;
-        versionStr = "1.5.78";
-        versionAr[] = {1, 5, 78};
+        version = 1.584;
+        versionStr = "1.5.84";
+        versionAr[] = {1, 5, 84};
     };
 };
 
@@ -91,6 +91,15 @@ class CfgFunctions {
             class reportDiag {};
             class bugReportShow {};
             class bugReportSubmit {};
+            class diagIsolateAllows {};
+            class diagIsolateCatalog {};
+            class diagIsolateHud {};
+            class diagStatusSnapshot {};
+            class diagIsolateLaunch {};
+            class diagIsolateStart {};
+            class diagIsolateStop {};
+            class diagIsolateShow {};
+            class diagIsolateOnLoad {};
             class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
@@ -157,6 +166,8 @@ class CfgFunctions {
             class logAtakEvent {};
             class logAtakStateChange {};
             class logDump {};
+            class noteUplinkReturn {};
+            class noteLinkTraffic {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};
@@ -783,6 +794,7 @@ class CfgFactionClasses
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
 #include "display_pause_manager.hpp"
+#include "display_diag_isolate.hpp"
 #include "display_theater_survey.hpp"
 
 // Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
@@ -827,5 +839,46 @@ class RscTitles
         onLoad = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', _this select 0];";
         onUnload = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', displayNull]; uiNamespace setVariable ['COMSPEC_EcotiHudSlotCount', 0];";
         class controls {};
+    };
+    class COMSPEC_DiagIsolateHud
+    {
+        idd = -1;
+        movingEnable = 0;
+        duration = 1e+011;
+        fadein = 0;
+        fadeout = 0;
+        name = "COMSPEC_DiagIsolateHud";
+        onLoad = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', _this select 0];";
+        onUnload = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', displayNull];";
+        class controls
+        {
+            class Bg: RscText
+            {
+                idc = -1;
+                x = 0.28 * safezoneW + safezoneX;
+                y = 0.03 * safezoneH + safezoneY;
+                w = 0.44 * safezoneW;
+                h = 0.36 * safezoneH;
+                colorBackground[] = {0.02, 0.06, 0.08, 0.92};
+            };
+            class Title: RscStructuredText
+            {
+                idc = 10;
+                x = 0.29 * safezoneW + safezoneX;
+                y = 0.035 * safezoneH + safezoneY;
+                w = 0.42 * safezoneW;
+                h = 0.028 * safezoneH;
+                text = "";
+            };
+            class Body: RscStructuredText
+            {
+                idc = 11;
+                x = 0.29 * safezoneW + safezoneX;
+                y = 0.062 * safezoneH + safezoneY;
+                w = 0.42 * safezoneW;
+                h = 0.318 * safezoneH;
+                text = "";
+            };
+        };
     };
 };

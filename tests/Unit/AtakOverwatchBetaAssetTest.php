@@ -141,7 +141,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="atak-terrain-slope"', $view);
         self::assertStringContainsString('id="atak-scene-buildings"', $view);
         self::assertStringContainsString('atak-terrain.js', $view);
-        self::assertStringContainsString('atak-scene-3d.js', $view);
+        self::assertStringContainsString('overwatch-gl/OverwatchGlMap.js', $view);
+        self::assertStringNotContainsString('atak-scene-3d.js', $view);
+        self::assertStringNotContainsString('atak-terrain-3d.js', $view);
         self::assertStringContainsString('arma-map-markers.js', $view);
         self::assertStringContainsString('id="ow-chat-raw"', $view);
         self::assertStringContainsString('is-settings-collapsed', $overwatchJs);

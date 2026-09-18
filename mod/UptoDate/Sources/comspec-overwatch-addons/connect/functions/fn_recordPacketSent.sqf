@@ -24,11 +24,21 @@ _stats set ["total_sent", _totalSent + 1];
 // Ajouter à la fenêtre glissante
 private _windowSent = _stats getOrDefault ["window_sent", []];
 _windowSent pushBack [_requestId, time];
+if ((count _windowSent) > 100) then {
+    _windowSent = _windowSent select [((count _windowSent) - 100) max 0, 100];
+};
 _stats set ["window_sent", _windowSent];
 
 // Enregistrer l'ID dans une hashmap pour vérification rapide
 private _pending = _stats getOrDefault ["pending_requests", createHashMap];
 _pending set [_requestId, time];
+if ((count _pending) > 100) then {
+    private _cutoff = time - 60;
+    {
+        if (_y < _cutoff) then { _pending deleteAt _x; };
+    } forEach _pending;
+};
 _stats set ["pending_requests", _pending];
+missionNamespace setVariable ["COMSPEC_PacketStats", _stats, false];
 
 _requestId

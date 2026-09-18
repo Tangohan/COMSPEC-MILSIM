@@ -15,7 +15,7 @@ private _bestD = 40;
 private _mk = "";
 {
     if ((markerPos _x) distance2D _world < 25) exitWith { _mk = _x };
-} forEach allMapMarkers;
+} forEach (+allMapMarkers);
 missionNamespace setVariable ["COMSPEC_MapSelected", _best, false];
 missionNamespace setVariable ["COMSPEC_MapSelectedMarker", _mk, false];
 [_best, _mk] call comspec_overwatch_atak_athena_fnc_setInspector;

@@ -68,11 +68,16 @@ private _fnc_clearRings = {
     params ["_keep"];
     private _prev = missionNamespace getVariable ["COMSPEC_PoRingIds", []];
     if (!(_prev isEqualType [])) then { _prev = []; };
+    private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
+    missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
     {
         if (!(_x in _keep)) then {
             if (_x in allMapMarkers) then { deleteMarkerLocal _x; };
         };
     } forEach _prev;
+    private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
+    if (_unmute < 0) then { _unmute = 0; };
+    missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
 };
 
 private _unit = player;
@@ -124,6 +129,8 @@ if (!(_announced isEqualType [])) then { _announced = []; };
     private _color = if (_wasReached) then { "ColorGrey" } else { if (_inside) then { "ColorGreen" } else { "ColorYellow" } };
     private _alpha = if (_wasReached) then { 0.35 } else { 0.7 };
 
+    private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
+    missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
     if (_ring in allMapMarkers) then {
         _ring setMarkerPosLocal _mkPos;
         _ring setMarkerColorLocal _color;
@@ -137,6 +144,9 @@ if (!(_announced isEqualType [])) then { _announced = []; };
         _el setMarkerColorLocal _color;
         _el setMarkerAlphaLocal _alpha;
     };
+    private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
+    if (_unmute < 0) then { _unmute = 0; };
+    missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
 
     private _lastSync = _synced getOrDefault [_name, -1e9];
     if ((diag_tickTime - _lastSync) > 45 && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}) then {
@@ -157,7 +167,7 @@ if (!(_announced isEqualType [])) then { _announced = []; };
             _name setMarkerColorLocal "ColorGrey";
         };
     };
-} forEach allMapMarkers;
+} forEach (+allMapMarkers);
 
 [_seen] call _fnc_clearRings;
 missionNamespace setVariable ["COMSPEC_PoRingIds", _seen, false];

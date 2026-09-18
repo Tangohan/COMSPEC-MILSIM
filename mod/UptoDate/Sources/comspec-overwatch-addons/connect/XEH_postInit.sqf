@@ -1,3 +1,10 @@
+if (!isNil "COMSPEC_Overwatch_PostInitDone") exitWith {
+    if (!isNil "comspec_overwatch_connect_fnc_log") then {
+        ["WARN", "Boot", "PostInit ignoré — déjà exécuté cette mission"] call comspec_overwatch_connect_fnc_log;
+    };
+};
+COMSPEC_Overwatch_PostInitDone = true;
+
 if (isServer) then {
     [] call comspec_overwatch_connect_fnc_initProxyTrackServer;
 };
@@ -24,37 +31,43 @@ if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
     };
 };
 
-// EH marqueurs dès le PostInit (avant handshake) — file d’attente si Athena pas prêt
+// Repères déjà nôtres (poste → jeu) : ne pas les renvoyer, ni relancer le pont cTab.
+missionNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
+    params ["_n"];
+    if (!(_n isEqualType "") || {_n isEqualTo ""}) exitWith { false };
+    private _ul = toLower _n;
+    (
+        (_ul find "comspec_webmk_") == 0
+        || {(_ul find "comspec_shape_") == 0}
+        || {(_ul find "comspec_tabletmk_") == 0}
+        || {(_ul find "_comspec_po_ring_") == 0}
+        || {(_ul find "_comspec_det_ring_") == 0}
+        || {(_ul find "comspec_gps_") == 0}
+    )
+}, false];
+
+// EH marqueurs dès le PostInit (avant handshake) — file d’attente si Athena pas prêt.
+// Un seul rattrapage différé. Jamais de forçage sans téléphone : ça relançait
+// quatre envois + le pont cTab à chaque anneau / forme / repère web.
 if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     COMSPEC_MapMarkerEHsEarly = true;
     if (isNil "COMSPEC_MapMarkerEHs") then {
         private _resyncSoon = {
             params ["_marker"];
-            [_marker, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+            if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+            [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
             [{
                 params ["_m"];
-                if (_m in allMapMarkers) then {
-                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-                };
-            }, [_marker], 0.15] call CBA_fnc_waitAndExecute;
-            [{
-                params ["_m"];
-                if (_m in allMapMarkers) then {
-                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-                };
-                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
-                    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
-                };
-            }, [_marker], 0.5] call CBA_fnc_waitAndExecute;
-            [{
-                params ["_m"];
-                if (_m in allMapMarkers) then {
-                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-                };
-                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
-                    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
-                };
-            }, [_marker], 1.0] call CBA_fnc_waitAndExecute;
+                if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+                if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if (!(_m in allMapMarkers)) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+                [_m, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
         };
         missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [
@@ -64,11 +77,19 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             }],
             addMissionEventHandler ["MarkerUpdated", {
                 params ["_marker"];
-                [_marker, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+                if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+                if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+                [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
             }],
             addMissionEventHandler ["MarkerDeleted", {
                 params ["_marker"];
-                [_marker, true, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+                if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+                if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+                [_marker, true, false] call comspec_overwatch_connect_fnc_syncMapMarker;
             }]
         ];
         ["INFO", "Markers", "EH MarkerCreated/Updated/Deleted enregistrés (early)"] call comspec_overwatch_connect_fnc_log;
@@ -78,7 +99,8 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
 // Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot).
 // CBA_settingsInitialized peut se rejouer (briefing MP, overlay mission, synchro serveur) :
 // sans garde, dump + handshake + PFH s'empilent toutes les secondes.
-["CBA_settingsInitialized", {
+if (isNil "COMSPEC_CbaSettingsEhDump") then {
+COMSPEC_CbaSettingsEhDump = ["CBA_settingsInitialized", {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootDone", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootDone", true, false];
 
@@ -101,6 +123,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     ]] call comspec_overwatch_connect_fnc_log;
     ["boot"] call comspec_overwatch_connect_fnc_logDump;
 }] call CBA_fnc_addEventHandler;
+};
 
 // Callbacks async extension → SQF (inspiré cTab IRL)
 if (isNil "COMSPEC_ExtensionCallbackEH") then {
@@ -110,7 +133,8 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
 };
 
-["CBA_settingsInitialized", {
+if (isNil "COMSPEC_CbaSettingsEhArmed") then {
+COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
 
@@ -160,6 +184,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
             if (isNull player || {!alive player}) exitWith {};
             if !(missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
+                if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith {};
                 if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
                     [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
                 };
@@ -226,7 +251,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     // Handshake Athena puis attendre stabilisation spawn/JIP avant sync lourde + alertes médicales.
     // CTD observé (RPT 15-22-54) : Handshake OK puis crash avant « Boucles de sync » sur __cur_mp JIP
     // (ACE/ACM init + MessageBox + sync extension dans la même fenêtre).
-    0 spawn {
+    if (isNil "COMSPEC_BootHandshakeSpawn") then {
+        COMSPEC_BootHandshakeSpawn = true;
+        0 spawn {
         ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
@@ -285,7 +312,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         ["INFO", "Boot", "Spawn stabilisé — armement alertes médicales"] call comspec_overwatch_connect_fnc_log;
 
         [] call comspec_overwatch_connect_fnc_startSyncLoops;
-        ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
+        if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) then {
+            ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
+        } else {
+            ["INFO", "Boot", "Boucles de sync encore en attente"] call comspec_overwatch_connect_fnc_log;
+        };
+        };
     };
 
     // Alerte Windows « lier Athena » : plus d’affichage automatique en mission
@@ -420,10 +452,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     [{
         [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
     }, [], 5] call CBA_fnc_waitAndExecute;
-    [{
-        if (!hasInterface || {isNull player}) exitWith {};
-        [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
-    }, 60, []] call CBA_fnc_addPerFrameHandler;
+    if (isNil "COMSPEC_AtakPublicVarsPFH") then {
+        COMSPEC_AtakPublicVarsPFH = [{
+            if (!hasInterface || {isNull player}) exitWith {};
+            [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
+        }, 60, []] call CBA_fnc_addPerFrameHandler;
+    };
     
     // Réalisme ATAK : Hit + Explosion sur l’unité (rebranchés au Respawn)
     [] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
@@ -477,6 +511,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         };
     };
 }] call CBA_fnc_addEventHandler;
+};
 
 // Sync multi-clients du briefing Google Slides (URL + index).
 if (isNil "COMSPEC_GoogleBriefingStateEH") then {

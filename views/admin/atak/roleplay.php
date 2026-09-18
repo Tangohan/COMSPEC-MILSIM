@@ -32,6 +32,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     Les paramètres sont appliqués côté serveur et visibles dans l'interface web ATAK.
                 </p>
                 <div class="mt-5 flex flex-wrap gap-2">
+                    <a href="<?= $h(url('back-office/atak/controle-serveur')) ?>" class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-950 shadow-sm hover:bg-emerald-100 transition-colors">
+                        Contrôle de mission
+                    </a>
                     <a href="<?= $h($atakHubUrl) ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
                         Poste de situation
                     </a>

@@ -29,17 +29,19 @@ private _condition = call {
     "Dégagé"
 };
 
+private _hour = daytime;
+
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_cs isEqualTo "") then { _cs = name player; };
 _cs = (_cs splitString """" joinString "");
 
-private _sig = format ["%1|%2|%3|%4|%5|%6", _condition, _temp, _windKph, round (_cloud * 100), round (_fog * 100), round (_rain * 100)];
+private _sig = format ["%1|%2|%3|%4|%5|%6|%7", _condition, _temp, _windKph, round (_cloud * 100), round (_fog * 100), round (_rain * 100), round (_hour * 10)];
 private _last = missionNamespace getVariable ["COMSPEC_Athena_LastWeatherSig", ""];
 if (_sig isEqualTo _last) exitWith {};
 missionNamespace setVariable ["COMSPEC_Athena_PendingWeatherSig", _sig, false];
 
-private _json = format [
-    "{""condition"":""%1"",""temperature_c"":%2,""wind_kph"":%3,""wind_dir"":%4,""cloud_pct"":%5,""fog_pct"":%6,""rain_pct"":%7,""humidity_pct"":%8,""call_sign"":""%9"",""mapId"":1}",
+private _head = format [
+    "{""condition"":""%1"",""temperature_c"":%2,""wind_kph"":%3,""wind_dir"":%4,""cloud_pct"":%5,""fog_pct"":%6,""rain_pct"":%7,""humidity_pct"":%8,""daytime"":%9",
     _condition,
     _temp,
     _windKph,
@@ -48,8 +50,9 @@ private _json = format [
     round (_fog * 100),
     round (_rain * 100),
     round (_humidity * 100),
-    _cs
+    (round (_hour * 1000)) / 1000
 ];
+private _json = _head + format [",""call_sign"":""%1"",""mapId"":1}", _cs];
 
 "COMSPECExtension" callExtension ["SendWeather", [_json]];
 [format ["Météo · %1 · %2 °C", _condition, _temp]] call comspec_overwatch_connect_fnc_appendModuleLog;

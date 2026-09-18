@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.144;
-        versionStr = "1.0.144";
-        versionAr[] = {1, 0, 144};
-        // Historique : 1.0.143 sans barre de données, 1.0.144 plus de calque IceMan / alerte mini.
+        version = 1.137;
+        versionStr = "1.0.137";
+        versionAr[] = {1, 0, 137};
+        // Historique : 1.0.136 choix Message, 1.0.137 dépannage ordres sans affichage téléphone.
     };
 };
 
@@ -159,6 +159,9 @@ class CfgFunctions
             class athena_commsTitleClick {};
             class athena_commsIsOpen {};
             class athena_openComms {};
+            class athena_messageHubOnOpened {};
+            class athena_messageHubOpenP2P {};
+            class athena_messageHubOpenAthena {};
             class athena_bftUnitLabel {};
             class athena_fillIdentityOverlay {};
             class athena_relabelBft {};
@@ -210,14 +213,6 @@ class CfgFunctions
             class ATAK_Check_Layout
             {
                 file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
-                recompile = 1;
-            };
-        };
-        class UI
-        {
-            class Anim_Type
-            {
-                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Anim_Type.sqf";
                 recompile = 1;
             };
         };
@@ -283,24 +278,48 @@ class RscControlsGroup;
 #include "ui\note_page.hpp"
 #include "ui\task_page.hpp"
 #include "ui\comms_page.hpp"
+#include "ui\message_hub_page.hpp"
 #include "ui\resynch_page.hpp"
 #include "ui\wiki_page.hpp"
 
 class ATAK_APPs
 {
-    class message;
-    // IceMan « Groups / Group Messages » → Messagerie COMSPEC (canaux, français)
+    class message
+    {
+        text = "<t size='1'>Message</t>";
+        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 0;
+            PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
+        };
+    };
+    class AtakP2P: message
+    {
+        text = "<t size='1'>P2P — Réseau local</t>";
+        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 0.05;
+            PAGE_CTRL = "ATAK_Message";
+            Opened = "BCE_fnc_ATAK_message_Init";
+            ATAK_Buttons = "Message_Menu";
+        };
+    };
+    // IceMan Groups → même choix Message (P2P ou Athena)
     class Group: message
     {
-        text = "<t size='1'>Messagerie</t>";
+        text = "<t size='1'>Message</t>";
         textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
             ORDER = 1.11;
-            PAGE_CTRL = "COMSPEC_ATAK_Comms";
-            Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
-            ATAK_Buttons = "COMSPEC_Comms_Menu";
+            PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
         };
     };
     class Athena: message
@@ -471,18 +490,41 @@ class RscTitles
 {
     class ATAK_APPs
     {
-        class message;
+        class message
+        {
+            text = "<t size='1'>Message</t>";
+            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 0;
+                PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
+            };
+        };
+        class AtakP2P: message
+        {
+            text = "<t size='1'>P2P — Réseau local</t>";
+            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 0.05;
+                PAGE_CTRL = "ATAK_Message";
+                Opened = "BCE_fnc_ATAK_message_Init";
+                ATAK_Buttons = "Message_Menu";
+            };
+        };
         class Group: message
         {
-            text = "<t size='1'>Messagerie</t>";
+            text = "<t size='1'>Message</t>";
             textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
                 ORDER = 1.11;
-                PAGE_CTRL = "COMSPEC_ATAK_Comms";
-                Opened = "comspec_overwatch_atak_athena_fnc_athena_commsOnOpened";
-                ATAK_Buttons = "COMSPEC_Comms_Menu";
+                PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
             };
         };
         class Athena: message

@@ -1,5 +1,7 @@
 # Terrain 3D — intégration Athena / ATAK
 
+La **vue Relief 3D d’Overwatch Beta** n’utilise pas ce module Three.js : voir [overwatch-vue-3d-maplibre.md](overwatch-vue-3d-maplibre.md). Ce document décrit le maillage Three.js de la carte ATAK classique (`/atak`).
+
 Module **Terrain3DRenderer** : remplace la surface plate de la carte par un relief Three.js géométrique, tout en conservant l’interface tactique (panneaux, journal, overlays).
 
 ## Fichiers

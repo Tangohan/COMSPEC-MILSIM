@@ -812,4 +812,21 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasOverwatchServerControlReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $raw = (new \App\Repositories\TenantAtakConfigRepository())->getExperienceConfigRaw($tenantId);
+            if (!is_array($raw)) {
+                return false;
+            }
+
+            return !empty($raw['server_control_reviewed']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

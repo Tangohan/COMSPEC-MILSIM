@@ -527,6 +527,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 91,
         ],
+        [
+            'code' => 'OVERWATCH_SERVER_CONTROL_V1',
+            'version' => '1',
+            'title' => 'Contrôle de mission Overwatch',
+            'description' => 'Un écran unique permet d’imposer le réalisme, de voir les fonctions actives et les relais, et d’activer ou de couper ce que la mission utilise. Les communautés déjà en place ne changent rien tant qu’elles n’enregistrent pas.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/atak/controle-serveur',
+            'estimate_minutes' => 6,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 93,
+        ],
     ];
 
     $upsert = $pdo->prepare(

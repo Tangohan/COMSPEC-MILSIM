@@ -24,13 +24,22 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('ow-brand-word">ATHENA', $view);
         self::assertStringContainsString('id="ow-stat-traffic"', $view);
         self::assertStringContainsString('id="ow-follow-chip"', $view);
+        self::assertStringContainsString('id="ow-map-tl"', $view);
         self::assertStringContainsString('id="ow-look-arrow"', $view);
         self::assertStringContainsString('id="ow-predict"', $view);
+        self::assertStringContainsString('id="ow-progress-trail"', $view);
         self::assertStringContainsString('id="ow-geo-places"', $view);
         self::assertStringContainsString('id="ow-df-list"', $view);
         self::assertStringNotContainsString('Catalogue satellites', $view);
         self::assertStringNotContainsString('data-ctx="ring250"', $view);
 
+        self::assertStringContainsString('headingArrowShape', $ops);
+        self::assertStringContainsString('renderProgressTrail', $ops);
+        self::assertStringContainsString('motionSpeedMs', $ops);
+        self::assertStringContainsString('ow-look-head', $ops);
+        self::assertStringContainsString('ow-progress-trail', $ops);
+        self::assertStringContainsString("shaftPx", $ops);
+        self::assertStringNotContainsString('headingPoint(loc, heading, 28)', $ops);
         self::assertStringContainsString('openSitrep', $ops);
         self::assertStringContainsString('name="urgency"', $ops);
         self::assertStringContainsString('Envoyer aussi sur le canal Commandement', $ops);
@@ -43,7 +52,9 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('Allers-retours', $ops);
         self::assertStringContainsString('n’est peut-être plus présente', $ops);
         self::assertStringContainsString('renderMarkerIntel', $ops);
-        self::assertStringContainsString('dashArray: \'6 6\'', $ops);
+        self::assertStringContainsString('dashArray: \'5 6\'', $ops);
+        self::assertStringContainsString('ow-los-block', $ops);
+        self::assertStringContainsString("color: '#00d69a'", $ops);
         self::assertStringContainsString('/api/atak/ingest-traffic', $ops);
         self::assertStringContainsString('Relais ATAK', $ops);
         self::assertStringContainsString('registerScratch', $ops);
@@ -55,6 +66,9 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('/api/replay/mission/', $ops);
         self::assertStringContainsString('circleByRadius', $ops);
 
+        self::assertStringContainsString('appendTrack(id, trueLoc)', $beta);
+        self::assertStringNotContainsString('if (tracksOn) appendTrack(id, trueLoc)', $beta);
+        self::assertStringContainsString("if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap()", $beta);
         self::assertStringContainsString('if (lastGroupKey) html += \'</div></div>\'', $beta);
         self::assertStringContainsString('ow-raw-preview', $beta);
         self::assertStringContainsString('is-delayed', $beta);
@@ -77,7 +91,11 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('__owInterceptLine', $gotak);
         self::assertStringContainsString("registerScratch(window.__owInterceptLine, 'intercept'", $gotak);
 
-        self::assertStringContainsString('white-space:nowrap', $css);
+        self::assertStringContainsString('.ow-map-tl{position:absolute', $css);
+        self::assertStringContainsString('.ow-follow-chip[hidden]{display:none!important}', $css);
+        self::assertStringContainsString('.ow-wx[hidden]{display:none!important}', $css);
+        self::assertStringNotContainsString('.ow-wx{position:absolute;left:52px;top:10px', $css);
+        self::assertStringNotContainsString('.ow-follow-chip{position:absolute;left:52px;top:10px', $css);
         self::assertStringContainsString('owDelayed', $css);
         self::assertStringContainsString('.ow-rail-extra{position:absolute', $css);
         self::assertStringContainsString('.ow-rail-extra[hidden]{display:none!important}', $css);
@@ -127,5 +145,7 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('ATAK_LINK_VIA_RELAYS_V1', $catalog);
         self::assertStringContainsString('ATAK_LINK_VIA_RELAYS_V1', $seed);
         self::assertStringContainsString('back-office/atak/roleplay#liaison-relais', $catalog);
+        self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $catalog);
+        self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $seed);
     }
 }

@@ -31,13 +31,13 @@ private _roleplay = missionNamespace getVariable ["comspec_overwatch_roleplay_vi
 
 private _summary = _group controlsGroupCtrl 9821;
 if (!isNull _summary) then {
-    [_summary, format [
+    _summary ctrlSetStructuredText parseText format [
         "<t align='center' size='0.95'>%1</t><br/><t align='center' color='#8ec9a0' size='0.82'>Général %2 · Alertes %3 · Vibration %4</t>",
         _styleLabel,
         [_master] call _pct,
         [_notif] call _pct,
         [_vib] call _pct
-    ]] call comspec_overwatch_connect_fnc_setPlainText;
+    ];
 };
 
 private _btnStyle = _group controlsGroupCtrl 9822;
@@ -49,11 +49,11 @@ if (!isNull _btnStyle) then {
     _x params ["_idc", "_label", "_val"];
     private _c = _group controlsGroupCtrl _idc;
     if (!isNull _c) then {
-        [_c, format [
+        _c ctrlSetStructuredText parseText format [
             "<t align='left' valign='middle'>  %1  <t color='#8ec9a0'>%2</t></t>",
             _label,
             [_val] call _pct
-        ]] call comspec_overwatch_connect_fnc_setPlainText;
+        ];
     };
 } forEach [
     [9823, "Volume général", _master],
@@ -79,9 +79,9 @@ if (!isNull _btnRp) then {
 
 private _help = _group controlsGroupCtrl 9840;
 if (!isNull _help) then {
-    [_help, (
+    _help ctrlSetStructuredText parseText (
         "<t>Le volume général multiplie tous les sons du terminal.</t><br/>" +
         "<t>Style d’alerte : cycle entre vibration seule, tension, signal médical, ou silence total.</t><br/>" +
         "<t>Les urgences médicales restent prioritaires sauf silence total ou volume à 0.</t>"
-    )] call comspec_overwatch_connect_fnc_setPlainText;
+    );
 };

@@ -45,12 +45,4 @@ private _refreshCache = {
 { [_attach, [], _x] call CBA_fnc_waitAndExecute; } forEach [0.2, 0.8, 1.5, 3];
 missionNamespace setVariable ["COMSPEC_ReachMapAttach", _attach, false];
 missionNamespace setVariable ["COMSPEC_ReachCacheRefresh", _refreshCache, false];
-[{
-    [] call (missionNamespace getVariable ["COMSPEC_ReachMapAttach", {}]);
-    private _open = !(isNil "cTabIfOpen")
-        || {!isNull (findDisplay 9973)}
-        || {!isNull (findDisplay 9974)}
-        || {!((missionNamespace getVariable ["COMSPEC_ReachSelectedCs", ""]) isEqualTo "")};
-    if (!_open) exitWith {};
-    [] call (missionNamespace getVariable ["COMSPEC_ReachCacheRefresh", {}]);
-}, 2, []] call CBA_fnc_addPerFrameHandler;
+// Accroche reprise par le PFH unique de installMapHud (pas de second handler).

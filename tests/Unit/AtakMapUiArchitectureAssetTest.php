@@ -70,7 +70,7 @@ final class AtakMapUiArchitectureAssetTest extends TestCase
         self::assertStringContainsString('88550', $updUi);
         self::assertStringContainsString('ctrlShow false', $updUi);
         self::assertStringContainsString('_idH', $hud);
-        self::assertStringContainsString('displayCtrl 46600', $layout);
+        self::assertStringNotContainsString('displayCtrl 46600', $layout);
         self::assertStringNotContainsString('forEach [46600', $hud);
         $page = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/athena_page.hpp'

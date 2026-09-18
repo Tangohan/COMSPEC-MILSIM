@@ -60,6 +60,15 @@ private _lines = [
     format ["[Debug] Dernier échec d'envoi (position/tchat/marqueurs…) : %1", _lastPostErrLabel]
 ];
 
+if (!isNil "comspec_overwatch_connect_fnc_diagStatusSnapshot") then {
+    private _status = [] call comspec_overwatch_connect_fnc_diagStatusSnapshot;
+    if ((_status isEqualType createHashMap)) then {
+        {
+            _lines pushBack (format ["[Debug] %1", _x]);
+        } forEach (_status getOrDefault ["lines", []]);
+    };
+};
+
 private _profileLines = [] call comspec_overwatch_connect_fnc_profileReport;
 _lines append _profileLines;
 

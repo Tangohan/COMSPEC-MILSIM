@@ -46,6 +46,7 @@ final class AtakTerrainSight
         $known = 0;
         $prevZ = null;
         $prevD = null;
+        $maxSlope = 0.0;
         foreach ($samples as $s) {
             $z = $s['z'];
             if ($z === null) {
@@ -59,10 +60,14 @@ final class AtakTerrainSight
             $maxZ = $maxZ === null ? $zf : max($maxZ, $zf);
             if ($prevZ !== null && $prevD !== null) {
                 $dz = $zf - $prevZ;
+                $dd = (float) $s['d'] - (float) $prevD;
                 if ($dz > 0) {
                     $climb += $dz;
                 } else {
                     $descent += -$dz;
+                }
+                if ($dd > 0.5) {
+                    $maxSlope = max($maxSlope, abs($dz) / $dd);
                 }
             }
             $prevZ = $zf;
@@ -86,6 +91,7 @@ final class AtakTerrainSight
             'delta_m' => ($zStart !== null && $zEnd !== null) ? round((float) $zEnd - (float) $zStart, 1) : null,
             'min_z' => $minZ !== null ? round($minZ, 1) : null,
             'max_z' => $maxZ !== null ? round($maxZ, 1) : null,
+            'max_slope_pct' => round($maxSlope * 100, 1),
             'coverage_pct' => (int) round(100 * $coverage),
             'cell_m' => (int) $cell,
             'samples_n' => $known,
@@ -256,6 +262,92 @@ final class AtakTerrainSight
     }
 
     /**
+     * Première entrée du segment dans le volume (0..1), ou null.
+     * Cap 0 = nord (+Y), 90 = est (+X), comme en jeu.
+     */
+    private static function rayBoxEntry(
+        float $x0,
+        float $y0,
+        float $dx,
+        float $dy,
+        float $cx,
+        float $cy,
+        float $halfW,
+        float $halfD,
+        float $bearingDeg,
+    ): ?float {
+        $rad = deg2rad($bearingDeg);
+        $fx = sin($rad);
+        $fy = cos($rad);
+        $rx = $fy;
+        $ry = -$fx;
+        $wx = $x0 - $cx;
+        $wy = $y0 - $cy;
+        $ox = ($wx * $rx) + ($wy * $ry);
+        $oy = ($wx * $fx) + ($wy * $fy);
+        $ldx = ($dx * $rx) + ($dy * $ry);
+        $ldy = ($dx * $fx) + ($dy * $fy);
+        $tmin = 0.0;
+        $tmax = 1.0;
+        foreach ([[$ox, $ldx, $halfW], [$oy, $ldy, $halfD]] as [$o, $d, $e]) {
+            if (abs($d) < 1e-9) {
+                if ($o < -$e || $o > $e) {
+                    return null;
+                }
+                continue;
+            }
+            $inv = 1.0 / $d;
+            $t1 = (-$e - $o) * $inv;
+            $t2 = ($e - $o) * $inv;
+            if ($t1 > $t2) {
+                $tmp = $t1;
+                $t1 = $t2;
+                $t2 = $tmp;
+            }
+            $tmin = max($tmin, $t1);
+            $tmax = min($tmax, $t2);
+            if ($tmax < $tmin) {
+                return null;
+            }
+        }
+        if ($tmin <= 0.0 || $tmin > 1.0) {
+            return null;
+        }
+
+        return $tmin;
+    }
+
+    private static function rayCircleEntry(
+        float $x0,
+        float $y0,
+        float $dx,
+        float $dy,
+        float $cx,
+        float $cy,
+        float $radius,
+    ): ?float {
+        $fx = $x0 - $cx;
+        $fy = $y0 - $cy;
+        $a = ($dx * $dx) + ($dy * $dy);
+        if ($a < 1e-9) {
+            return null;
+        }
+        $b = 2.0 * (($fx * $dx) + ($fy * $dy));
+        $c = ($fx * $fx) + ($fy * $fy) - ($radius * $radius);
+        $disc = ($b * $b) - (4.0 * $a * $c);
+        if ($disc < 0) {
+            return null;
+        }
+        $sqrt = sqrt($disc);
+        $tNear = (-$b - $sqrt) / (2.0 * $a);
+        if ($tNear > 0.0 && $tNear <= 1.0) {
+            return $tNear;
+        }
+
+        return null;
+    }
+
+    /**
      * @param array<string, mixed> $out
      * @param list<array<string, mixed>> $sceneObjects
      * @return array<string, mixed>
@@ -292,34 +384,32 @@ final class AtakTerrainSight
             if ($ox === null || $oy === null || $h < 1.0) {
                 continue;
             }
-            $half = max(2.0, (float) ($obj['width'] ?? $obj['width_m'] ?? 6)) / 2.0;
-            $t = (($ox - $x0) * $dx + ($oy - $y0) * $dy) / $len2;
-            $cellSkip = 50.0;
-            if ($t * $dist <= $cellSkip || ($dist - $t * $dist) <= $cellSkip) {
+            $cover = str_contains($kind, 'forest') || str_contains($kind, 'tree') || str_contains($kind, 'wood');
+            $width = max(2.0, (float) ($obj['width'] ?? $obj['width_m'] ?? 6));
+            $depth = max(2.0, (float) ($obj['depth'] ?? $obj['depth_m'] ?? $width));
+            $bearing = self::num($obj['bearing'] ?? $obj['dir'] ?? 0) ?? 0.0;
+            $t = $cover
+                ? self::rayCircleEntry($x0, $y0, $dx, $dy, $ox, $oy, max($width, $depth) / 2.0 + 1.0)
+                : self::rayBoxEntry($x0, $y0, $dx, $dy, $ox, $oy, $width / 2.0 + 0.6, $depth / 2.0 + 0.6, $bearing);
+            if ($t === null) {
                 continue;
             }
-            if ($t <= 0.02 || $t >= 0.98) {
+            $entryD = $t * $dist;
+            if ($entryD < 2.0 || ($dist - $entryD) < 2.0) {
                 continue;
             }
             $px = $x0 + $t * $dx;
             $py = $y0 + $t * $dy;
-            $off = hypot($ox - $px, $oy - $py);
-            if ($off > $half + 2) {
-                continue;
-            }
             $gnd = self::num($obj['z'] ?? $obj['world_z'] ?? null) ?? 0.0;
             $top = $gnd + $h;
             $ray = $zObs + ($zTgt - $zObs) * $t;
             if ($top < $ray + self::LOS_EPSILON_M) {
                 continue;
             }
-            $cause = (str_contains($kind, 'forest') || str_contains($kind, 'tree') || str_contains($kind, 'wood'))
-                ? 'Masqué par un couvert'
-                : 'Masqué par un bâtiment';
-            $d = $t * $dist;
+            $cause = AtakSceneKind::losCause($kind);
             $excess = $top - $ray;
-            if ($hit === null || $d < (float) $hit['d']) {
-                $hit = ['d' => $d, 'x' => $px, 'y' => $py, 'z' => $top, 'excess' => $excess, 'cause' => $cause, 'kind' => $kind];
+            if ($hit === null || $entryD < (float) $hit['d']) {
+                $hit = ['d' => $entryD, 'x' => $px, 'y' => $py, 'z' => $top, 'excess' => $excess, 'cause' => $cause, 'kind' => $kind];
             }
         }
         if ($hit === null) {
@@ -349,6 +439,8 @@ final class AtakTerrainSight
             'z' => round((float) $hit['z'], 1),
             'excess_m' => round((float) $hit['excess'], 1),
             'cause' => $hit['cause'],
+            'kind' => (string) ($hit['kind'] ?? ''),
+            'kind_label' => AtakSceneKind::label((string) ($hit['kind'] ?? 'building')),
         ];
         $out['ready'] = true;
 
@@ -473,6 +565,276 @@ final class AtakTerrainSight
             }
             $seen[$idx] = true;
             $out[] = $samples[$idx];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Masque de visibilité radial (relief + volumes).
+     *
+     * @param array<string, mixed> $grid
+     * @param list<array<string, mixed>> $sceneObjects
+     * @return array<string, mixed>
+     */
+    public static function viewshed(
+        array $grid,
+        float $x,
+        float $y,
+        float $radiusM = 800.0,
+        float $eyeM = 1.6,
+        array $sceneObjects = [],
+        ?float $observerAbsZ = null,
+    ): array {
+        $radiusM = max(80.0, min(2000.0, $radiusM));
+        $zGnd = AtakTerrainMath::heightAt($grid, $x, $y);
+        if ($zGnd === null && $observerAbsZ === null) {
+            return [
+                'ok' => true,
+                'ready' => false,
+                'mode' => 'viewshed',
+                'gap_message' => self::GAP_MESSAGE,
+                'sectors' => [],
+            ];
+        }
+        $zEye = $observerAbsZ !== null ? $observerAbsZ : ((float) $zGnd + max(0.4, min(40.0, $eyeM)));
+        $rays = 36;
+        $sectors = [];
+        $visibleM2 = 0.0;
+        $maskedM2 = 0.0;
+        for ($i = 0; $i < $rays; $i++) {
+            $az = $i * (360.0 / $rays);
+            $rad = deg2rad($az);
+            $x1 = $x + sin($rad) * $radiusM;
+            $y1 = $y + cos($rad) * $radiusM;
+            $los = self::lineOfSight($grid, $x, $y, $x1, $y1, $eyeM, 0.0, $sceneObjects, $zEye, null);
+            $clear = ($los['verdict'] ?? '') === self::VERDICT_CLEAR;
+            $range = $clear ? $radiusM : (float) (($los['obstruction']['d'] ?? null) ?: $radiusM);
+            $range = max(8.0, min($radiusM, $range));
+            $wedge = (M_PI * $radiusM * $radiusM) / $rays;
+            $frac = $range / $radiusM;
+            $visibleM2 += $wedge * ($frac * $frac);
+            $maskedM2 += $wedge * (1.0 - ($frac * $frac));
+            $sectors[] = [
+                'az' => round($az, 1),
+                'range_m' => round($range, 1),
+                'clear' => $clear,
+                'cause' => (string) ($los['cause_label'] ?? $los['verdict_label'] ?? ''),
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'ready' => true,
+            'mode' => 'viewshed',
+            'x' => round($x, 1),
+            'y' => round($y, 1),
+            'observer_z' => round($zEye, 1),
+            'radius_m' => round($radiusM, 1),
+            'visible_pct' => (int) round(100 * $visibleM2 / max(1.0, $visibleM2 + $maskedM2)),
+            'sectors' => $sectors,
+        ];
+    }
+
+    /**
+     * Silhouette d’horizon : angle d’élévation dominant par azimut.
+     *
+     * @param array<string, mixed> $grid
+     * @param list<array<string, mixed>> $sceneObjects
+     * @return array<string, mixed>
+     */
+    public static function horizon(
+        array $grid,
+        float $x,
+        float $y,
+        float $radiusM = 2500.0,
+        float $eyeM = 1.6,
+        array $sceneObjects = [],
+        ?float $observerAbsZ = null,
+    ): array {
+        $radiusM = max(200.0, min(6000.0, $radiusM));
+        $zGnd = AtakTerrainMath::heightAt($grid, $x, $y);
+        if ($zGnd === null && $observerAbsZ === null) {
+            return [
+                'ok' => true,
+                'ready' => false,
+                'mode' => 'horizon',
+                'gap_message' => self::GAP_MESSAGE,
+                'samples' => [],
+            ];
+        }
+        $zEye = $observerAbsZ !== null ? $observerAbsZ : ((float) $zGnd + max(0.4, min(40.0, $eyeM)));
+        $rays = 72;
+        $samples = [];
+        $peak = null;
+        for ($i = 0; $i < $rays; $i++) {
+            $az = $i * (360.0 / $rays);
+            $rad = deg2rad($az);
+            $x1 = $x + sin($rad) * $radiusM;
+            $y1 = $y + cos($rad) * $radiusM;
+            $los = self::lineOfSight($grid, $x, $y, $x1, $y1, $eyeM, 0.0, $sceneObjects, $zEye, null);
+            $obs = is_array($los['obstruction'] ?? null) ? $los['obstruction'] : null;
+            $d = $obs !== null ? (float) ($obs['d'] ?? $radiusM) : $radiusM;
+            $zTop = $obs !== null ? (float) ($obs['z'] ?? $zEye) : (AtakTerrainMath::heightAt($grid, $x1, $y1) ?? $zEye);
+            $angle = atan2($zTop - $zEye, max(8.0, $d)) * 180.0 / M_PI;
+            $row = [
+                'az' => round($az, 1),
+                'angle_deg' => round($angle, 1),
+                'd' => round($d, 1),
+                'z' => round($zTop, 1),
+                'kind_label' => (string) ($obs['kind_label'] ?? ($obs ? 'Relief' : 'Horizon dégagé')),
+            ];
+            $samples[] = $row;
+            if ($peak === null || $angle > (float) $peak['angle_deg']) {
+                $peak = $row;
+            }
+        }
+
+        return [
+            'ok' => true,
+            'ready' => true,
+            'mode' => 'horizon',
+            'x' => round($x, 1),
+            'y' => round($y, 1),
+            'observer_z' => round($zEye, 1),
+            'peak' => $peak,
+            'samples' => $samples,
+        ];
+    }
+
+    /**
+     * Coupe verticale : sol + volumes croisés.
+     *
+     * @param array<string, mixed> $grid
+     * @param list<mixed> $rawPoints
+     * @param list<array<string, mixed>> $sceneObjects
+     * @return array<string, mixed>
+     */
+    public static function slice(array $grid, array $rawPoints, array $sceneObjects = []): array
+    {
+        $profile = self::profile($grid, $rawPoints);
+        $points = self::normalizePoints($rawPoints);
+        if (count($points) < 2) {
+            $profile['mode'] = 'slice';
+
+            return $profile;
+        }
+        $x0 = $points[0][0];
+        $y0 = $points[0][1];
+        $x1 = $points[count($points) - 1][0];
+        $y1 = $points[count($points) - 1][1];
+        $dist = hypot($x1 - $x0, $y1 - $y0);
+        $dx = $x1 - $x0;
+        $dy = $y1 - $y0;
+        $volumes = [];
+        foreach ($sceneObjects as $obj) {
+            if (!is_array($obj)) {
+                continue;
+            }
+            $ox = self::num($obj['x'] ?? $obj['world_x'] ?? null);
+            $oy = self::num($obj['y'] ?? $obj['world_y'] ?? null);
+            if ($ox === null || $oy === null) {
+                continue;
+            }
+            $kind = strtolower((string) ($obj['kind'] ?? 'building'));
+            $cover = $kind === 'forest' || $kind === 'forests';
+            $width = max(2.0, (float) ($obj['width'] ?? 6));
+            $depth = max(2.0, (float) ($obj['depth'] ?? $width));
+            $h = max(1.0, (float) ($obj['height'] ?? 4));
+            $bearing = self::num($obj['bearing'] ?? $obj['dir'] ?? 0) ?? 0.0;
+            $t = $cover
+                ? self::rayCircleEntry($x0, $y0, $dx, $dy, $ox, $oy, max($width, $depth) / 2.0 + 1.0)
+                : self::rayBoxEntry($x0, $y0, $dx, $dy, $ox, $oy, $width / 2.0 + 0.6, $depth / 2.0 + 0.6, $bearing);
+            if ($t === null) {
+                continue;
+            }
+            $gnd = self::num($obj['z'] ?? $obj['base_z'] ?? $obj['world_z'] ?? null) ?? 0.0;
+            $volumes[] = [
+                'd' => round($t * $dist, 1),
+                'kind' => AtakSceneKind::normalize($kind),
+                'kind_label' => AtakSceneKind::label($kind),
+                'z_base' => round($gnd, 1),
+                'z_top' => round($gnd + $h, 1),
+                'height' => round($h, 1),
+            ];
+            if (count($volumes) >= 40) {
+                break;
+            }
+        }
+        $profile['mode'] = 'slice';
+        $profile['volumes'] = $volumes;
+
+        return $profile;
+    }
+
+    /**
+     * Mesure 3D entre deux points (horizontale, spatiale, dénivelé, cap, pente).
+     *
+     * @param array<string, mixed> $grid
+     * @return array<string, mixed>
+     */
+    public static function measure3d(array $grid, float $x0, float $y0, float $x1, float $y1): array
+    {
+        $horiz = hypot($x1 - $x0, $y1 - $y0);
+        $z0 = AtakTerrainMath::heightAt($grid, $x0, $y0);
+        $z1 = AtakTerrainMath::heightAt($grid, $x1, $y1);
+        $dz = ($z0 !== null && $z1 !== null) ? ($z1 - $z0) : null;
+        $spatial = $dz !== null ? hypot($horiz, $dz) : $horiz;
+        $az = fmod((atan2($x1 - $x0, $y1 - $y0) * 180.0 / M_PI) + 360.0, 360.0);
+        $slope = ($dz !== null && $horiz > 0.5) ? ($dz / $horiz) * 100.0 : null;
+        $ready = $z0 !== null && $z1 !== null;
+
+        return [
+            'ok' => true,
+            'ready' => $ready,
+            'mode' => 'measure3d',
+            'distance_m' => round($horiz, 1),
+            'spatial_m' => round($spatial, 1),
+            'delta_m' => $dz !== null ? round($dz, 1) : null,
+            'observer_z' => $z0 !== null ? round($z0, 1) : null,
+            'target_z' => $z1 !== null ? round($z1, 1) : null,
+            'azimuth_deg' => round($az, 1),
+            'slope_pct' => $slope !== null ? round($slope, 1) : null,
+            'gap_message' => $ready ? null : self::GAP_MESSAGE,
+        ];
+    }
+
+    /**
+     * Tuiles de relief non renseignées (diagnostic de couverture).
+     *
+     * @param array<string, mixed> $grid
+     * @return list<array{x:float,y:float,size:float}>
+     */
+    public static function coverageGaps(array $grid, int $stride = 16, int $limit = 240): array
+    {
+        $blob = $grid['heights'] ?? null;
+        if (!is_string($blob) || $blob === '') {
+            return [];
+        }
+        $cols = (int) ($grid['cols'] ?? 0);
+        $rows = (int) ($grid['rows'] ?? 0);
+        $cell = (float) ($grid['cell_m'] ?? 50);
+        $ox = (float) ($grid['origin_x'] ?? 0);
+        $oy = (float) ($grid['origin_y'] ?? 0);
+        if ($cols < 4 || $rows < 4 || $cell < 1) {
+            return [];
+        }
+        $stride = max(8, min(32, $stride));
+        $out = [];
+        for ($r = 0; $r < $rows; $r += $stride) {
+            for ($c = 0; $c < $cols; $c += $stride) {
+                if (AtakTerrainMath::cellZ($blob, $cols, $c, $r) !== null) {
+                    continue;
+                }
+                $out[] = [
+                    'x' => round($ox + ($c + $stride / 2) * $cell, 1),
+                    'y' => round($oy + ($r + $stride / 2) * $cell, 1),
+                    'size' => round($stride * $cell, 1),
+                ];
+                if (count($out) >= $limit) {
+                    return $out;
+                }
+            }
         }
 
         return $out;

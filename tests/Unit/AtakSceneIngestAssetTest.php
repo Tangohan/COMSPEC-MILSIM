@@ -14,6 +14,10 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('nearestTerrainObjects', $sqf);
         self::assertStringContainsString('"HOUSE"', $sqf);
         self::assertStringContainsString('"TREE"', $sqf);
+        self::assertStringContainsString('"WALL"', $sqf);
+        self::assertStringContainsString('"FENCE"', $sqf);
+        self::assertStringContainsString('buildingExit', $sqf);
+        self::assertStringContainsString('""doors""', $sqf);
         self::assertStringContainsString('Scene.Ingest', $sqf);
         self::assertStringContainsString('params ["_s"]', $sqf);
         self::assertStringContainsString('visibleMap', $sqf);
@@ -23,7 +27,10 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_SceneSentIds', $sqf);
         self::assertStringContainsString('_sentIds getOrDefault', $sqf);
         self::assertStringContainsString('COMSPEC_TheaterSurveyCounts_', $sqf);
-        self::assertStringContainsString('déjà transmis', $sqf);
+        self::assertStringContainsString('"WALL"', $sqf);
+        self::assertStringContainsString('"FENCE"', $sqf);
+        self::assertStringContainsString('buildingExit', $sqf);
+        self::assertStringContainsString('"doors"', $sqf);
     }
 
     public function testSceneLoopDoesNotAutoUploadMapData(): void
@@ -117,7 +124,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
         self::assertStringContainsString('class theaterSurveyResend {};', $cfg);
-        self::assertStringContainsString('1.5.78', $cfg);
+        self::assertStringContainsString('1.5.84', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void

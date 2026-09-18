@@ -24,7 +24,7 @@ private _setHint = {
     params ["_text", ["_warn", false]];
     if (isNull _hint) exitWith {};
     private _col = if (_warn) then { "#e8b84a" } else { "#7aa89a" };
-    [_hint, format ["<t color='%1'>%2</t>", _col, _text]] call comspec_overwatch_connect_fnc_setPlainText;
+    _hint ctrlSetStructuredText parseText format ["<t color='%1'>%2</t>", _col, _text];
 };
 
 private _setLoginMode = {

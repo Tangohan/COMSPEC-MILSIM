@@ -50,7 +50,7 @@ private _buf = missionNamespace getVariable ["COMSPEC_DiagLog", []];
 if (!(_buf isEqualType [])) then { _buf = []; };
 _buf pushBack format ["%1 %2", diag_tickTime toFixed 1, _line];
 if (count _buf > 200) then {
-    _buf = _buf select [(count _buf) - 200, 200];
+    _buf = _buf select [0 max ((count _buf) - 200), 200];
 };
 missionNamespace setVariable ["COMSPEC_DiagLog", _buf, false];
 

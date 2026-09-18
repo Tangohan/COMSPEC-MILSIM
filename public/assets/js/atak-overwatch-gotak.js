@@ -101,7 +101,7 @@
     toast('ETA calculé : pied ' + formatEta(meters, WALK_MS) + ' · véhicule ' + formatEta(meters, VEHICLE_MS));
   }
 
-  function sparkline(samples) {
+  function sparkline(samples, payload) {
     var zs = samples.map(function (s) { return Number(s.z != null ? s.z : s.elevation); }).filter(function (z) { return !isNaN(z); });
     if (!zs.length) return '<p class="ow-help">Relief non relevé sur ce tronçon.</p>';
     var min = Math.min.apply(null, zs);
@@ -115,8 +115,42 @@
       return x.toFixed(1) + ',' + y.toFixed(1);
     }).join(' ');
     return '<svg class="ow-spark" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><polyline fill="none" stroke="#00d69a" stroke-width="2" points="' + pts + '"/></svg>' +
-      '<div class="ow-event"><span>Plus bas</span><strong>' + Math.round(min) + ' m</strong></div>' +
-      '<div class="ow-event"><span>Plus haut</span><strong>' + Math.round(max) + ' m</strong></div>';
+      (payload && payload.distance_m != null ? '<div class="ow-event"><span>Distance</span><strong>' + (Number(payload.distance_m) >= 1000 ? (Number(payload.distance_m) / 1000).toFixed(2).replace('.', ',') + ' km' : Math.round(Number(payload.distance_m)) + ' m') + '</strong></div>' : '') +
+      (payload && payload.climb_m != null ? '<div class="ow-event"><span>D+</span><strong>' + Math.round(Number(payload.climb_m)) + ' m</strong></div>' : '') +
+      (payload && payload.descent_m != null ? '<div class="ow-event"><span>D−</span><strong>' + Math.round(Number(payload.descent_m)) + ' m</strong></div>' : '') +
+      (payload && payload.max_slope_pct != null ? '<div class="ow-event"><span>Pente max</span><strong>' + String(payload.max_slope_pct).replace('.', ',') + ' %</strong></div>' : '') +
+      '<div class="ow-event"><span>Altitude min</span><strong>' + Math.round(min) + ' m</strong></div>' +
+      '<div class="ow-event"><span>Altitude max</span><strong>' + Math.round(max) + ' m</strong></div>';
+  }
+
+  function slopeColor(pct) {
+    pct = Math.abs(Number(pct) || 0);
+    if (pct >= 20) return '#e05b63';
+    if (pct >= 10) return '#e7b14d';
+    return '#00d69a';
+  }
+
+  function colorRouteBySlope(points, payload) {
+    var api = ow();
+    if (!api || !payload || !Array.isArray(payload.samples) || payload.samples.length < 2) return;
+    var samples = payload.samples;
+    var group = L.layerGroup();
+    var i;
+    for (i = 1; i < samples.length; i += 1) {
+      var a = samples[i - 1];
+      var b = samples[i];
+      if (a.x == null || b.x == null) continue;
+      var dz = (Number(b.z) || 0) - (Number(a.z) || 0);
+      var dd = Math.max(1, (Number(b.d) || 0) - (Number(a.d) || 0));
+      var pct = Math.abs(dz / dd) * 100;
+      var line = L.polyline([
+        api.worldToLatLng(Number(a.x), Number(a.y)),
+        api.worldToLatLng(Number(b.x), Number(b.y))
+      ], { color: slopeColor(pct), weight: 4, className: 'ow-profile-slope' });
+      line.addTo(group);
+    }
+    group.addTo(api.map);
+    if (api.registerScratch) api.registerScratch(group, 'shape', 'profile-' + Date.now(), 'Profil');
   }
 
   function showProfile(points) {
@@ -130,7 +164,8 @@
         return;
       }
       var samples = payload.samples || [];
-      api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', sparkline(samples));
+      api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', sparkline(samples, payload));
+      colorRouteBySlope(points, payload);
     }).catch(function () {
       api.openDrawer('RELIEF', 'PROFIL D’ÉLÉVATION', '<p class="ow-help">Relief non relevé.</p>');
     });
@@ -431,10 +466,11 @@
       if (live) live.textContent = 'LIVE';
       clearReplayGhosts();
       api.renderMap();
+      try { window.dispatchEvent(new CustomEvent('overwatch:replay', { detail: { live: true, pct: pct } })); } catch (e0) {}
       return;
     }
     if (!ids.length) {
-      toast('Aucune trajectoire enregistrée. Activez Trajectoires dans les couches.');
+      toast('Aucun déplacement enregistré pour le moment.');
       return;
     }
     if (live) live.textContent = 'REPLAY';
@@ -454,6 +490,12 @@
       rows.forEach(function (row) { if (row.t <= target) chosen = row; });
       if (markers[id]) markers[id].setLatLng(chosen.ll);
     });
+    var nowEl = document.getElementById('ow-replay-now');
+    if (nowEl && isFinite(target)) {
+      var d = new Date(target);
+      nowEl.textContent = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    try { window.dispatchEvent(new CustomEvent('overwatch:replay', { detail: { live: false, pct: pct, t: target } })); } catch (e1) {}
   }
 
   function bindPrefs() {

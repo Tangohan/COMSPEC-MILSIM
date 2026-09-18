@@ -11,6 +11,9 @@ if (isNull player) exitWith {
     [{ [] call comspec_overwatch_connect_fnc_initACEAthena }, [], 2] call CBA_fnc_waitAndExecute;
 };
 
+if (uiNamespace getVariable ["COMSPEC_ACEAthenaClassReady", false]) exitWith {
+    missionNamespace setVariable ["COMSPEC_ACEAthenaReady", true, false];
+};
 if (missionNamespace getVariable ["COMSPEC_ACEAthenaReady", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_ACEAthenaReady", true, false];
 
@@ -40,5 +43,6 @@ private _tabletAction = [
 ] call ace_interact_menu_fnc_createAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+uiNamespace setVariable ["COMSPEC_ACEAthenaClassReady", true];
 ["INFO", "ACE", "Menu ACE COMSPEC Athena installé"] call comspec_overwatch_connect_fnc_log;
 true

@@ -187,10 +187,19 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
             };
             if (_sentIds getOrDefault [_nid, false]) then { continue };
             private _model = [typeOf _x] call _fnc_esc;
+            private _doors = 0;
+            if (_x isKindOf "House") then {
+                for "_ei" from 0 to 7 do {
+                    private _ex = _x buildingExit _ei;
+                    if (!(_ex isEqualType []) || {(count _ex) < 2}) then { break };
+                    if (((abs (_ex select 0)) + (abs (_ex select 1))) < 0.5) then { break };
+                    _doors = _doors + 1;
+                };
+            };
             _byId set [_nid, [
                 _nid, "building", _model,
                 _pos select 0, _pos select 1, _pos select 2,
-                getDir _x, _w, _d, _h, 1
+                getDir _x, _w, _d, _h, 1, _doors
             ]];
         } forEach _houses;
 
@@ -220,6 +229,47 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
             _forestAcc set [_key, _acc];
         } forEach _trees;
 
+        private _linears = nearestTerrainObjects [_c2, ["WALL", "FENCE", "POWER LINES", "ROCK", "ROCKS", "TRANSMITTER", "STACK"], _radius, false];
+        {
+            if (!(_x isEqualType objNull) || {isNull _x}) then { continue };
+            private _pos = getPosWorld _x;
+            if ((abs (_pos select 0) < 1) && {abs (_pos select 1) < 1}) then { continue };
+            private _bb = boundingBoxReal _x;
+            if (!(_bb isEqualType []) || {(count _bb) < 2}) then { continue };
+            private _min = _bb select 0;
+            private _max = _bb select 1;
+            if (!(_min isEqualType []) || {!(_max isEqualType [])} || {(count _min) < 3} || {(count _max) < 3}) then { continue };
+            private _w = abs ((_max select 0) - (_min select 0));
+            private _d = abs ((_max select 1) - (_min select 1));
+            private _h = abs ((_max select 2) - (_min select 2));
+            if (_h < 0.7) then { continue };
+            if ((_w max _d) < 2.5) then { continue };
+            if (_w > 220) then { _w = 220; };
+            if (_d > 12) then { _d = 12; };
+            if (_h > 28) then { _h = 28; };
+            private _cls = toLower (typeOf _x);
+            private _kind = "wall";
+            if ((_cls find "fence") >= 0 || {(_cls find "wire") >= 0}) then { _kind = "fence"; };
+            if ((_cls find "power") >= 0 || {(_cls find "line") >= 0}) then { _kind = "power"; };
+            if ((_cls find "bridge") >= 0) then { _kind = "bridge"; };
+            if ((_cls find "rock") >= 0 || {(_cls find "stone") >= 0} || {(_cls find "boulder") >= 0}) then { _kind = "rock"; };
+            if ((_cls find "transmitter") >= 0 || {(_cls find "tower") >= 0} || {(_cls find "pylon") >= 0} || {(_cls find "stack") >= 0}) then { _kind = "pylon"; };
+            private _nid = netId _x;
+            if (_nid isEqualTo "") then {
+                _nid = format ["o:%1:%2:%3", typeOf _x, round (_pos select 0), round (_pos select 1)];
+            } else {
+                _nid = "o:" + _nid;
+            };
+            if (_sentIds getOrDefault [_nid, false]) then { continue };
+            if (_byId getOrDefault [_nid, []] isNotEqualTo []) then { continue };
+            private _model = [typeOf _x] call _fnc_esc;
+            _byId set [_nid, [
+                _nid, _kind, _model,
+                _pos select 0, _pos select 1, _pos select 2,
+                getDir _x, _w, _d, _h, 1, 0
+            ]];
+        } forEach _linears;
+
         sleep 0.02;
     } forEach _centers;
 
@@ -237,13 +287,13 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
         _byId set [_id, [
             _id, "forest", "forest",
             _sx / _n, _sy / _n, _sz / _n,
-            0, _cell * 0.92, _cell * 0.92, _fh, _den
+            0, _cell * 0.92, _cell * 0.92, _fh, _den, 0
         ]];
     } forEach _forestAcc;
 
     private _rows = [];
     { _rows pushBack _y; } forEach _byId;
-    if ((count _rows) > 160) then { _rows = _rows select [0, 160]; };
+    if ((count _rows) > 220) then { _rows = _rows select [0, 220]; };
 
     private _sent = 0;
     if (!(_rows isEqualTo [])) then {
@@ -270,9 +320,9 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
         };
 
         {
-            _x params ["_id", "_kind", "_model", "_px", "_py", "_pz", "_brg", "_w", "_d", "_h", "_den"];
-            _batch pushBack format [
-                "{""id"":""%1"",""kind"":""%2"",""model"":""%3"",""x"":%4,""y"":%5,""z"":%6,""bearing"":%7,""width"":%8,""depth"":%9,""height"":%10,""density"":%11}",
+            _x params ["_id", "_kind", "_model", "_px", "_py", "_pz", "_brg", "_w", "_d", "_h", "_den", ["_doors", 0]];
+            private _obj = format [
+                "{""id"":""%1"",""kind"":""%2"",""model"":""%3"",""x"":%4,""y"":%5,""z"":%6,""bearing"":%7,""width"":%8,""depth"":%9,""height"":%10,""density"":%11",
                 [_id] call _fnc_esc,
                 _kind,
                 _model,
@@ -285,6 +335,10 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
                 [_h, 1] call _fnc_num,
                 [_den, 2] call _fnc_num
             ];
+            if (_doors > 0) then {
+                _obj = _obj + format [",""doors"":%1", _doors];
+            };
+            _batch pushBack (_obj + "}");
             if ((count _batch) >= 36) then {
                 call _flush;
                 sleep 0.05;

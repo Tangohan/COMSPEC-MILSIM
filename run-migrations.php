@@ -3503,6 +3503,14 @@ try {
     echo '  [ATTENTION] atak_marker_detection_rules : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/atak_scene_layers_migration.php';
+try {
+    echo "Migration atak_scene_layers (obstacles linéaires du théâtre)...\n";
+    run_atak_scene_layers_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_scene_layers : ' . $e->getMessage() . "\n";
+}
+
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
 try {
     echo "Migration tenant_atak_access_key (clé d’accès Overwatch par communauté)...\n";

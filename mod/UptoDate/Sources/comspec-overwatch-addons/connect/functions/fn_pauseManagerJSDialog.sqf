@@ -110,6 +110,10 @@ switch (true) do {
     case (_cmd isEqualTo "tool:bugreport"): {
         [] call comspec_overwatch_connect_fnc_bugReportShow;
     };
+    case (_cmd isEqualTo "tool:diagisolate"): {
+        ["INFO", "Pause", "Dépannage liaison depuis le panneau"] call comspec_overwatch_connect_fnc_log;
+        [] call comspec_overwatch_connect_fnc_diagIsolateLaunch;
+    };
     case (_cmd isEqualTo "tool:forcesync"): {
         if (!(call _fnc_linkOk)) then {
             ["COMSPEC_Warning", ["Liaison hors ligne — utilisez d’abord « Reconnecter Athena »."]] call comspec_overwatch_connect_fnc_showNotification;

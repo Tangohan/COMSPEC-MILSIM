@@ -3,6 +3,9 @@
 */
 if (!hasInterface) exitWith {};
 
+if (missionNamespace getVariable ["COMSPEC_StatusBadgesUpdating", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_StatusBadgesUpdating", true, false];
+
 private _version = [] call comspec_overwatch_connect_fnc_getModVersion;
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
@@ -87,3 +90,5 @@ if (!isNull _chat) then {
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip") then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
 };
+
+missionNamespace setVariable ["COMSPEC_StatusBadgesUpdating", false, false];

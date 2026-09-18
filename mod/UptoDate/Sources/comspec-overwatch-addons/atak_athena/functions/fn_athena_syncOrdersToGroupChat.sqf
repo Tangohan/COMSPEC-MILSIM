@@ -4,6 +4,11 @@
     Retourne le nombre d’entrées ajoutées.
 */
 if (!hasInterface) exitWith { 0 };
+if (
+    (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false])
+    && {!isNil "comspec_overwatch_connect_fnc_diagIsolateAllows"}
+    && {!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)}
+) exitWith { 0 };
 
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 if (!(_orders isEqualType [])) exitWith { 0 };

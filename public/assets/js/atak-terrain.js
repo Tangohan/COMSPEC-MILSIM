@@ -210,12 +210,18 @@ window.ATAKTerrain = (function () {
     if (countStatus === 'missing') {
       setInventoryValue('atak-terrain-inv-buildings', countUnavailable('missing'));
       setInventoryValue('atak-terrain-inv-forests', countUnavailable('missing'));
+      if (document.getElementById('atak-terrain-inv-obstacles')) setInventoryValue('atak-terrain-inv-obstacles', countUnavailable('missing'));
     } else if (countStatus === 'retry' || !knownCount(cov, 'buildings') || !knownCount(cov, 'forests')) {
       setInventoryValue('atak-terrain-inv-buildings', countUnavailable('retry'));
       setInventoryValue('atak-terrain-inv-forests', countUnavailable('retry'));
+      if (document.getElementById('atak-terrain-inv-obstacles')) setInventoryValue('atak-terrain-inv-obstacles', countUnavailable('retry'));
     } else {
       setInventoryValue('atak-terrain-inv-buildings', countPresence(cov.buildings, 'bâtiment', 'bâtiments'));
       setInventoryValue('atak-terrain-inv-forests', countPresence(cov.forests, 'forêt', 'forêts'));
+      if (document.getElementById('atak-terrain-inv-obstacles')) {
+        if (!knownCount(cov, 'obstacles')) setInventoryValue('atak-terrain-inv-obstacles', countUnavailable('retry'));
+        else setInventoryValue('atak-terrain-inv-obstacles', countPresence(cov.obstacles, 'obstacle', 'obstacles'));
+      }
     }
     var last = cov.last_survey_at || (meta && meta.sampled_at) || null;
     setInventoryValue('atak-terrain-inv-last', lastSurveyLabel(last));

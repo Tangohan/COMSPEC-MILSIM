@@ -12,6 +12,7 @@ use App\Repositories\AtakSceneObjectRepository;
 use App\Repositories\AtakTerrainRepository;
 use App\Services\Tactical\AtakTerrainCartography;
 use App\Services\Tactical\AtakTerrainMath;
+use App\Services\Tactical\AtakTerrainRgb;
 use App\Services\Tactical\AtakTerrainSight;
 use App\Support\ComspecApiKeyAuth;
 use Throwable;
@@ -27,10 +28,12 @@ final class AtakTerrainApiController
         private ?AtakTerrainRepository $terrain = null,
         private ?AtakTerrainCartography $cartography = null,
         private ?AtakSceneObjectRepository $scene = null,
+        private ?AtakTerrainRgb $rgb = null,
     ) {
         $this->terrain ??= new AtakTerrainRepository();
         $this->cartography ??= new AtakTerrainCartography($this->terrain);
         $this->scene ??= new AtakSceneObjectRepository();
+        $this->rgb ??= new AtakTerrainRgb($this->terrain);
     }
 
     public function show(Request $request, array $params = []): Response
@@ -150,6 +153,61 @@ final class AtakTerrainApiController
         return Response::json($result);
     }
 
+    public function rgbTile(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        $mapId = $this->mapId($request);
+        $z = max(0, min(16, (int) ($params['z'] ?? $request->query('z') ?? 0)));
+        $x = max(0, (int) ($params['x'] ?? $request->query('x') ?? 0));
+        $rawY = (string) ($params['y'] ?? $request->query('y') ?? '0');
+        if (preg_match('/^(\d+)/', $rawY, $m) === 1) {
+            $y = max(0, (int) $m[1]);
+        } else {
+            $y = 0;
+        }
+        $ox = $this->num($request->query('ox') ?? $request->query('offsetX')) ?? 0.0;
+        $oy = $this->num($request->query('oy') ?? $request->query('offsetY')) ?? 0.0;
+        if (abs($ox) > 200000 || abs($oy) > 200000) {
+            $ox = 0.0;
+            $oy = 0.0;
+        }
+        try {
+            $path = $this->rgb->tilePath($tenantId, $mapId, $z, $x, $y, $ox, $oy);
+        } catch (Throwable) {
+            $path = null;
+        }
+        if ($path === null || !is_file($path)) {
+            return Response::json(['ok' => false, 'error' => 'Relief du théâtre non encore relevé.'], 404);
+        }
+        $mtime = (string) filemtime($path);
+        $etag = '"rgb-' . $tenantId . '-' . $mapId . '-' . $z . '-' . $x . '-' . $y . '-' . $mtime . '"';
+        $ifNone = (string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
+        if ($ifNone !== '' && trim($ifNone) === $etag) {
+            $r = new Response();
+            $r->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'private, max-age=120');
+
+            return $r;
+        }
+        $r = new Response();
+        $r->setStatusCode(200)
+            ->header('Content-Type', 'image/png')
+            ->header('Cache-Control', 'private, max-age=120')
+            ->header('ETag', $etag)
+            ->setBodyStream(static function () use ($path): void {
+                $handle = @fopen($path, 'rb');
+                if ($handle === false) {
+                    return;
+                }
+                fpassthru($handle);
+                fclose($handle);
+            });
+
+        return $r;
+    }
+
     public function hillshade(Request $request, array $params = []): Response
     {
         return $this->pngOverlay($request, 'hillshade');
@@ -254,7 +312,7 @@ final class AtakTerrainApiController
         $mapId = $this->mapId($request);
         $scene = [];
         try {
-            $scene = $this->scene->visible($tenantId, $mapId, $minX, $minY, $maxX, $maxY, 400);
+            $scene = $this->scene->visible($tenantId, $mapId, $minX, $minY, $maxX, $maxY, 3000);
         } catch (\Throwable) {
             $scene = [];
         }
@@ -274,6 +332,134 @@ final class AtakTerrainApiController
         }
 
         return Response::json($out);
+    }
+
+    public function viewshed(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        $grid = $this->loadGrid($request);
+        if ($grid === null) {
+            return $this->reliefNotReady();
+        }
+        $body = $this->body($request);
+        $obs = is_array($body['observer'] ?? null) ? $body['observer'] : [];
+        $x = $this->num($obs['x'] ?? $body['x'] ?? null);
+        $y = $this->num($obs['y'] ?? $body['y'] ?? null);
+        if ($x === null || $y === null) {
+            return Response::json(['ok' => false, 'error' => 'Cliquez un observateur sur la carte.'], 422);
+        }
+        $radius = $this->num($body['radius_m'] ?? $obs['radius_m'] ?? 800) ?? 800.0;
+        $eye = $this->num($body['observer_eye_m'] ?? $obs['eye_m'] ?? 1.6) ?? 1.6;
+        $obsAbs = $this->num($obs['z'] ?? $body['observer_z'] ?? null);
+        $scene = $this->sceneAround($request, $x - $radius - 80, $y - $radius - 80, $x + $radius + 80, $y + $radius + 80, 1800);
+
+        return Response::json(AtakTerrainSight::viewshed($grid, $x, $y, $radius, $eye, $scene, $obsAbs));
+    }
+
+    public function horizon(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        $grid = $this->loadGrid($request);
+        if ($grid === null) {
+            return $this->reliefNotReady();
+        }
+        $body = $this->body($request);
+        $obs = is_array($body['observer'] ?? null) ? $body['observer'] : [];
+        $x = $this->num($obs['x'] ?? $body['x'] ?? null);
+        $y = $this->num($obs['y'] ?? $body['y'] ?? null);
+        if ($x === null || $y === null) {
+            return Response::json(['ok' => false, 'error' => 'Cliquez un point d’observation.'], 422);
+        }
+        $radius = $this->num($body['radius_m'] ?? 2500) ?? 2500.0;
+        $eye = $this->num($body['observer_eye_m'] ?? $obs['eye_m'] ?? 1.6) ?? 1.6;
+        $obsAbs = $this->num($obs['z'] ?? $body['observer_z'] ?? null);
+        $scene = $this->sceneAround($request, $x - $radius - 80, $y - $radius - 80, $x + $radius + 80, $y + $radius + 80, 1800);
+
+        return Response::json(AtakTerrainSight::horizon($grid, $x, $y, $radius, $eye, $scene, $obsAbs));
+    }
+
+    public function slice(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        $grid = $this->loadGrid($request);
+        if ($grid === null) {
+            return $this->reliefNotReady();
+        }
+        $body = $this->body($request);
+        $points = $body['points'] ?? [];
+        if (!is_array($points) || count($points) < 2) {
+            return Response::json(['ok' => false, 'error' => 'Tracez une coupe de A vers B.'], 422);
+        }
+        $first = is_array($points[0]) ? $points[0] : [];
+        $last = is_array($points[count($points) - 1]) ? $points[count($points) - 1] : [];
+        $x0 = $this->num($first['x'] ?? $first[0] ?? null) ?? 0.0;
+        $y0 = $this->num($first['y'] ?? $first[1] ?? null) ?? 0.0;
+        $x1 = $this->num($last['x'] ?? $last[0] ?? null) ?? 0.0;
+        $y1 = $this->num($last['y'] ?? $last[1] ?? null) ?? 0.0;
+        $pad = 80.0;
+        $scene = $this->sceneAround(
+            $request,
+            min($x0, $x1) - $pad,
+            min($y0, $y1) - $pad,
+            max($x0, $x1) + $pad,
+            max($y0, $y1) + $pad,
+            2000
+        );
+
+        return Response::json(AtakTerrainSight::slice($grid, array_values($points), $scene));
+    }
+
+    public function measure(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return $this->tenantRequired();
+        }
+        $grid = $this->loadGrid($request);
+        if ($grid === null) {
+            return $this->reliefNotReady();
+        }
+        $body = $this->body($request);
+        $a = is_array($body['from'] ?? null) ? $body['from'] : [];
+        $b = is_array($body['to'] ?? null) ? $body['to'] : [];
+        $x0 = $this->num($a['x'] ?? $body['x0'] ?? null);
+        $y0 = $this->num($a['y'] ?? $body['y0'] ?? null);
+        $x1 = $this->num($b['x'] ?? $body['x1'] ?? null);
+        $y1 = $this->num($b['y'] ?? $body['y1'] ?? null);
+        if ($x0 === null || $y0 === null || $x1 === null || $y1 === null) {
+            return Response::json(['ok' => false, 'error' => 'Tracez deux points pour mesurer.'], 422);
+        }
+
+        return Response::json(AtakTerrainSight::measure3d($grid, $x0, $y0, $x1, $y1));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function sceneAround(Request $request, float $minX, float $minY, float $maxX, float $maxY, int $limit = 2000): array
+    {
+        try {
+            return $this->scene->visible(
+                $this->resolveTenantId($request),
+                $this->mapId($request),
+                $minX,
+                $minY,
+                $maxX,
+                $maxY,
+                $limit
+            );
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

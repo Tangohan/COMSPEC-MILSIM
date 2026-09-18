@@ -3,12 +3,36 @@
 Copier-coller Workshop :
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
-[b]Publication : 16/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.144 · Extension 2.0.43
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.134 · Extension 2.0.44
 
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
 [/quote]
+
+[h2]Correction — Messagerie sans écran superposé[/h2]
+La liste des canaux n’est plus recouverte par le champ d’envoi ni par Effacer / Supprimer.
+
+[h2]Correction — Plus d’arrêt sans téléphone[/h2]
+Sans téléphone ATAK en poche, le jeu ne se ferme plus tout seul. La liaison avec le poste démarre lorsque l’opérateur a le téléphone.
+
+[h2]Correction — Plus d’arrêt pendant la carte et les repères[/h2]
+Le jeu ne se ferme plus tout seul pendant l’affichage de la carte, la pose d’un repère ou le rafraîchissement des indicatifs.
+
+[h2]Correction — Menu d’applications avec les icônes[/h2]
+Le chevron ouvre le menu d’applications avec les icônes. Ce n’est plus un panneau gris vide.
+
+[h2]Correction — Plus d’arrêt après quelques dizaines de secondes[/h2]
+Le jeu ne se ferme plus tout seul une fois le téléphone ouvert sur la carte, ni après une pause sans activité visible. La page d’état de liaison affiche l’état déjà calculé, sans relancer le calcul à chaque rafraîchissement.
+
+[h2]Correction — Menu d’applications qui se referme[/h2]
+Le menu d’applications s’ouvre et se referme de nouveau avec le chevron et Retour. La carte reste dans le cadre du téléphone.
+
+[h2]Correction — Carte dans l’écran et menu du téléphone[/h2]
+La carte reste dans le cadre du téléphone. Le menu d’applications reprend celui du téléphone : les icônes s’affichent, Retour referme le menu.
+
+[h2]Correction — Arrêt brutal au bout de quelques secondes[/h2]
+Le jeu ne se ferme plus tout seul après quelques secondes, même sans ouvrir le téléphone. Le menu ACE ne se réempile plus à chaque mission de la même session.
 
 [h2]Correction — Alertes et écran du téléphone[/h2]
 Une alerte du poste n’ajoute plus un voile sur le téléphone en miniature. Les cartouches de la carte restent ceux du téléphone, sans cadre collé par-dessus.
