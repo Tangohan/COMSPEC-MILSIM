@@ -11,7 +11,11 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-aerial.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
-    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js')
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/TheaterProjection.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlMap.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlLayers.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlTactics.js')
 );
 $owAsset = $assetVer . '.' . $owStamp;
 $map = $atakMapConfig ?? null;
@@ -51,10 +55,12 @@ $icon = static function (string $path): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
+    window.ATAK_OVERWATCH_GL = true;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
     window.ATAK_TOKEN = <?= json_encode($atakToken ?? '') ?>;
     window.ATAK_TENANT_ID = <?= (int) ($atakTenantId ?? 0) ?>;
@@ -171,10 +177,29 @@ $icon = static function (string $path): string {
           <label class="ow-row" for="atak-terrain-3d-mode">Vue de la carte
             <select id="atak-terrain-3d-mode">
               <option value="flat" selected>À plat (2D)</option>
-              <option value="inclined">Relief 3D</option>
+              <option value="volume">Relief 3D</option>
+              <option value="tactical">Tactique 3D</option>
             </select>
           </label>
-          <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments et forêts du jeu</label>
+          <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments, forêts et obstacles</label>
+          <label class="ow-toggle" for="atak-scene-quality"><input type="checkbox" id="atak-scene-quality"> Qualité du relevé (cartographie)</label>
+          <p class="ow-help">Éteint par défaut. Vert : données complètes. Orange : dimensions approximées. Gris : position seulement. Rouge : géométrie à vérifier.</p>
+          <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
+            <select id="atak-symbol-occlusion">
+              <option value="realistic">Réaliste</option>
+              <option value="silhouette">Silhouette</option>
+              <option value="always" selected>Toujours visibles</option>
+            </select>
+          </label>
+          <label class="ow-toggle" for="atak-ghost-trails"><input type="checkbox" id="atak-ghost-trails"> Traces de déplacement</label>
+          <label class="ow-toggle" for="atak-time-heat"><input type="checkbox" id="atak-time-heat"> Densité de passages</label>
+          <label class="ow-toggle" for="atak-focus-mission"><input type="checkbox" id="atak-focus-mission"> Concentrer sur la mission</label>
+          <label class="ow-toggle" for="atak-cinematic-aar"><input type="checkbox" id="atak-cinematic-aar"> Caméra qui suit le replay</label>
+          <label class="ow-toggle" for="atak-scene-inspector"><input type="checkbox" id="atak-scene-inspector"> Inspection des constructions (cartographie)</label>
+          <label class="ow-toggle" for="atak-coverage-diag"><input type="checkbox" id="atak-coverage-diag"> Manques de relief sur la carte</label>
+          <p class="ow-kicker">Vues enregistrées</p>
+          <button type="button" class="ow-secondary" id="ow-bookmark-save">Enregistrer la vue actuelle</button>
+          <div id="ow-bookmark-list"></div>
           <label class="ow-row" for="atak-terrain-exaggeration">Exagération Z
             <input type="range" id="atak-terrain-exaggeration" min="1" max="4" step="0.1" value="2.5">
           </label>
@@ -191,6 +216,7 @@ $icon = static function (string $path): string {
             <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Relevé divers</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-survey">Pas encore sur le poste</span></div>
             <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Bâtiments</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-buildings">Pas encore sur le poste</span></div>
             <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Forêts</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-forests">Pas encore sur le poste</span></div>
+            <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Obstacles</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-obstacles">Pas encore sur le poste</span></div>
             <div class="atak-terrain-inventory__row"><span class="atak-terrain-inventory__label">Dernier relevé</span><span class="atak-terrain-inventory__value" id="atak-terrain-inv-last">Aucun relevé reçu</span></div>
           </div>
         </div>
@@ -219,9 +245,11 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-dist"> Distances sur les liens de groupe</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-follow"> Suivre le contact sélectionné</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-look-arrow"> Flèche d’orientation</label>
-        <p class="ow-help">Orientation du personnage en jeu, pas la caméra.</p>
+        <p class="ow-help">Pointe du contact ouvert : orientation du personnage en jeu, pas la caméra. La longueur reste lisible quel que soit le zoom.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-predict"> Anticiper la position</label>
-        <p class="ow-help">Trait indicatif sur ~30 s à partir du cap et de la vitesse transmis. Rien n’est inventé si ces données manquent.</p>
+        <p class="ow-help">Pointillés vers la position estimée dans les prochaines secondes, à partir du cap et de la vitesse transmis. Uniquement le contact ouvert. Rien n’est inventé si ces données manquent.</p>
+        <label class="ow-toggle"><input type="checkbox" id="ow-progress-trail"> Tracé de progression</label>
+        <p class="ow-help">Chemin déjà parcouru par le contact ouvert, d’après les positions reçues sur ce poste. Le tracé s’allonge au fur et à mesure.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-label-grid"> Grille sous l’indicatif</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-po-markers" checked> Points d’objectif (libellé PO) — rayon 20 m</label>
         <p class="ow-help">Un marqueur nommé PO, PO 1 ou PO-2 devient un point d’objectif. Dès qu’un téléphone ATAK entre dans les 20 mètres, le point est confirmé atteint.</p>
@@ -360,10 +388,18 @@ $icon = static function (string $path): string {
           <button type="button" data-tool="eta" data-tip="Temps de parcours" data-help="Glissez le trajet. Temps pied et véhicule à titre indicatif."><?= $icon('M12 6a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM12 9v4l3 2') ?><span>Temps</span></button>
           <button type="button" data-tool="profile" data-tip="Profil d’élévation" data-help="Glissez une coupe. Le relief s’affiche s’il a été relevé."><?= $icon('M3 18l6-8 4 4 8-10') ?><span>Relief</span></button>
           <button type="button" data-tool="los" data-tip="Visée / masque" data-help="Glissez de l’observateur à la cible. Le relief indique si la visée est masquée."><?= $icon('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z') ?><span>Visée</span></button>
+          <button type="button" data-tool="viewshed" data-tip="Masque de visibilité" data-help="Cliquez un observateur. Les portions visibles et masquées s’affichent."><?= $icon('M12 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM4 12h16') ?><span>Masque</span></button>
+          <button type="button" data-tool="horizon" data-tip="Horizon" data-help="Cliquez un point. La silhouette du relief s’affiche."><?= $icon('M3 16l5-6 4 3 9-9') ?><span>Horizon</span></button>
+          <button type="button" data-tool="slice" data-tip="Coupe verticale" data-help="Glissez de A vers B. Sol et constructions apparaissent en tranche."><?= $icon('M4 20V4l16 16H4z') ?><span>Coupe</span></button>
+          <button type="button" data-tool="measure3d" data-tip="Mesure 3D" data-help="Deux points : distance au sol, spatiale, dénivelé, cap et pente."><?= $icon('M4 12h16M8 8v8M16 8v8M12 4v16') ?><span>Mesure 3D</span></button>
+          <button type="button" data-tool="volume" data-tip="Volume" data-help="Tracez une zone puis indiquez l’altitude basse et haute."><?= $icon('M4 8l8-4 8 4v8l-8 4-8-4z') ?><span>Volume</span></button>
+          <button type="button" data-tool="compare" data-tip="Comparer 2D et 3D" data-help="Carte à plat et vue en relief côte à côte, même centre et même zoom."><?= $icon('M4 5h7v14H4zM13 5h7v14h-7z') ?><span>2D / 3D</span></button>
+          <button type="button" data-tool="bookmark" data-tip="Enregistrer la vue" data-help="Mémorise le cadrage, l’inclinaison et le cap."><?= $icon('M7 4h10v16l-5-3-5 3z') ?><span>Vue</span></button>
           <button type="button" data-tool="refresh" data-tip="Actualiser" data-help="Relance la synchronisation des contacts et des canaux."><?= $icon('M20 12a8 8 0 1 1-2-5.3M20 4v6h-6') ?><span>Sync</span></button>
         </div>
       </div>
       <div id="ow-map" aria-label="Carte tactique temps réel"></div>
+      <div id="ow-gl-map" class="ow-gl-map" hidden aria-label="Carte en relief"></div>
       <div class="ow-coordinate" id="ow-coordinate">Grille · Direct</div>
       <div class="ow-empty" id="ow-empty" hidden role="status">
         <button type="button" class="ow-empty-close" id="ow-empty-close" aria-label="Masquer l’avis" title="Masquer">×</button>
@@ -390,9 +426,17 @@ $icon = static function (string $path): string {
         <button type="button" data-ctx="chatgrid">Envoyer la grille au canal <span></span></button>
         <button type="button" data-ctx="copy">Copier les coordonnées <span></span></button>
       </div>
-      <div class="ow-follow-chip" id="ow-follow-chip" hidden>
-        <span id="ow-follow-label">Suivi</span>
-        <button type="button" id="ow-follow-stop">Arrêter</button>
+      <div class="ow-map-tl" id="ow-map-tl">
+        <div class="ow-follow-chip" id="ow-follow-chip" hidden>
+          <span id="ow-follow-label">Suivi</span>
+          <button type="button" id="ow-follow-stop">Arrêter</button>
+        </div>
+        <div class="ow-cam-bar" id="ow-cam-bar" hidden>
+          <button type="button" data-ow-cam="north">Nord</button>
+          <button type="button" data-ow-cam="follow">Unité</button>
+          <button type="button" data-ow-cam="ground">Sol</button>
+        </div>
+        <div class="ow-wx" id="ow-wx" hidden></div>
       </div>
       <div class="ow-timeline" id="ow-timeline" hidden>
         <button type="button" class="ow-replay-play" id="ow-replay-play" aria-label="Lecture">Lecture</button>
@@ -412,7 +456,6 @@ $icon = static function (string $path): string {
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
       <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
-      <div class="ow-wx" id="ow-wx" hidden></div>
       <div class="ow-toast" id="ow-toast" hidden><small>Athena</small><p id="ow-toast-text"></p></div>
     </section>
 
@@ -516,7 +559,7 @@ $icon = static function (string $path): string {
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
-    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Bâtiments et forêts n’apparaissent que si un relevé a été reçu pour ce théâtre.</p>
+    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Bâtiments et forêts n’apparaissent que si un relevé a été reçu pour ce théâtre. En Relief 3D, le sol se relève et les bâtiments du jeu se dressent au-dessus. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
     <h2>Dessin</h2>
     <p>Maintenez le clic pour tracer une zone, un cercle ou une ligne. Relâchez pour poser. L’outil reste actif. Échap ou Sélection pour quitter. Un clic court pose encore un sommet précis. Clic droit sur un tracé, un point ou un repère, puis Supprimer pour le retirer.</p>
     <h2>Réglages</h2>
@@ -547,8 +590,12 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tools.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>
-<script src="<?= $h($base) ?>/assets/js/atak-terrain-3d.js?v=<?= $h($assetVer) ?>"></script>
-<script src="<?= $h($base) ?>/assets/js/atak-scene-3d.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.js"></script>
+<script src="<?= $h($base) ?>/assets/vendor/deck.gl/deck.min.js"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/TheaterProjection.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlMap.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlLayers.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlTactics.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-geo-network.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-gotak.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-ops.js?v=<?= $h($owAsset) ?>"></script>

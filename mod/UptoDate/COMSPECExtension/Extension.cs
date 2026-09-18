@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.43";
+        private const string ExtensionVersion = "2.0.45";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2065,11 +2065,33 @@ public static partial class Extension
 
     private static void Output(nint output, int outputSize, string data)
     {
-        if (outputSize <= 0) return;
+        if (outputSize <= 1) return;
+        // Le moteur passe parfois un outputSize plus grand que le tampon réel (~10 240).
+        // On copie en octets UTF-8, jamais en s.Length, et jamais au-delà de MaxOutputBytes.
+        var cap = Math.Min(outputSize - 1, MaxOutputBytes);
         var bytes = Encoding.UTF8.GetBytes(data ?? "");
-        var n = Math.Min(bytes.Length, outputSize - 1);
+        var n = Utf8Fit(bytes, cap);
         if (n > 0) Marshal.Copy(bytes, 0, output, n);
         Marshal.WriteByte(output, n, 0); // C-string NUL — requis par callExtension Arma
+    }
+
+    /// <summary>Longueur d'un préfixe UTF-8 complet ne dépassant pas max octets.</summary>
+    private static int Utf8Fit(byte[] bytes, int max)
+    {
+        if (max <= 0) return 0;
+        if (bytes.Length <= max) return bytes.Length;
+        var n = max;
+        while (n > 0 && (bytes[n - 1] & 0xC0) == 0x80)
+            n--;
+        if (n == 0) return 0;
+        var lead = bytes[n - 1];
+        var need = lead < 0x80 ? 1
+            : (lead & 0xE0) == 0xC0 ? 2
+            : (lead & 0xF0) == 0xE0 ? 3
+            : (lead & 0xF8) == 0xF0 ? 4
+            : 1;
+        if (n - 1 + need > max) return n - 1;
+        return n - 1 + need;
     }
 
     [UnmanagedCallersOnly(EntryPoint = "RVExtension")]
@@ -2121,9 +2143,6 @@ public static partial class Extension
 
         if (syncResult != null)
         {
-            var maxLen = Math.Min(syncResult.Length, Math.Min(outputSize - 1, MaxOutputBytes));
-            if (maxLen < syncResult.Length)
-                syncResult = syncResult.Substring(0, maxLen);
             Output(output, outputSize, syncResult);
             return 0;
         }
@@ -2783,12 +2802,12 @@ public static partial class Extension
             return $"OK|{path}";
         }
 
-        // Dernières lignes du journal de la session en cours. args[0] = octets max (défaut 14000).
+        // Dernières lignes du journal de la session en cours. args[0] = octets max (défaut 8000).
         if (function == "GetLogTail")
         {
-            var maxBytes = 14000;
+            var maxBytes = MaxOutputBytes;
             if (args.Length >= 1 && int.TryParse((args[0] ?? "").Trim(), out var parsed) && parsed > 0)
-                maxBytes = Math.Min(parsed, 32000);
+                maxBytes = Math.Min(parsed, MaxOutputBytes);
 
             var path = ResolveLogFilePath();
             if (path == null || !File.Exists(path)) return "OK|";
@@ -2797,8 +2816,6 @@ public static partial class Extension
             if (string.IsNullOrWhiteSpace(main)) return "OK|";
 
             var combined = SanitizeLogForReport(main);
-            if (combined.Length > maxBytes)
-                combined = combined[^maxBytes..];
             var payload = combined.Replace("\r", "").Replace('\n', '\t');
             return "OK|" + payload;
         }
@@ -5224,7 +5241,12 @@ public static partial class Extension
                 AppendLine(sb, "realism", realism.ValueKind == JsonValueKind.True || (realism.ValueKind == JsonValueKind.Number && realism.GetInt32() != 0) ? "1" : "0");
             if (doc.RootElement.TryGetProperty("troll", out var troll))
                 AppendLine(sb, "troll", troll.ValueKind == JsonValueKind.True || (troll.ValueKind == JsonValueKind.Number && troll.GetInt32() != 0) ? "1" : "0");
-            foreach (var key in new[] { "screen_notifications", "vehicle_detail", "require_equipment", "show_opfor" })
+            foreach (var key in new[] {
+                "screen_notifications", "vehicle_detail", "require_equipment", "show_opfor",
+                "show_independent", "show_civilian", "sync_map_markers", "atak_realism",
+                "radio_proximity", "ace_menus", "order_compose", "sse_require_item",
+                "playtime", "athena_feed"
+            })
             {
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
                     AppendLine(sb, key, el.GetString() ?? "player");

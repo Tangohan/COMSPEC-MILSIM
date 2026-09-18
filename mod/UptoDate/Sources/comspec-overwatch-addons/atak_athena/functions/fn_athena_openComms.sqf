@@ -19,6 +19,8 @@ if (!isNil "BCE_fnc_ATAK_setAPPs_props") then {
     [_apps] call BCE_fnc_ATAK_setAPPs_props;
 };
 
+missionNamespace setVariable ["COMSPEC_MessageHubOrigin", false, false];
+
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _parent) then {
     [] call comspec_overwatch_connect_fnc_openAtakEnhanced;

@@ -268,6 +268,196 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(644, '2026-09-18', 'Poste Overwatch : visibilité, coupe et lecture 3D', 'Sur Overwatch Beta, un clic donne le masque de visibilité autour d’un observateur. L’horizon dessine la silhouette du relief. Une coupe A vers B montre le sol et les constructions. La comparaison 2D / 3D aligne les deux lectures. Les symboles restent lisibles derrière un obstacle. Une pile remplace les icônes empilées. Une note, une photo ou une tâche peut s’ancrer à une façade ou un étage. Un volume a une altitude basse et haute. Le replay peut suivre l’action. Rechargez Overwatch Beta.', [
+                'Masque de visibilité : portions de terrain visibles ou masquées depuis un opérateur, un point ou une caméra',
+                'Horizon : silhouette du relief et obstacle dominant autour d’un point',
+                'Coupe verticale A vers B : sol et constructions sur la même tranche',
+                'Comparaison 2D / 3D : même centre et même zoom dans les deux lectures',
+                'Symboles : réaliste, silhouette derrière l’obstacle, ou toujours visibles',
+                'Pile d’éléments au même endroit, ouverte par catégorie',
+                'Ancrage d’une donnée à une construction, une façade, un étage ou un toit',
+                'Volume persistent avec altitude basse et haute',
+                'Mesure 3D : distance au sol, spatiale, dénivelé, cap et pente',
+                'Étages RDC / N+1 / toit et toits sélectionnables',
+                'Replay : caméra qui suit l’action, traces de déplacement, densité de passages',
+                'Vues enregistrées avec cadrage et inclinaison',
+                'Concentration visuelle sur la mission en cours',
+                'Inspection des constructions et manques de relief affichés sur la carte',
+            ], [
+                'Les bâtiments voisins se préchargent dans le sens du déplacement de la caméra',
+                'Le théâtre déjà relevé n’est pas retéléchargé en entier à chaque déplacement',
+            ], [], ['atak'], [
+                'Overwatch Beta, flèche des outils : Masque, Horizon, Coupe, Mesure 3D, Volume, 2D / 3D. Vue Tactique 3D. Cochez Traces de déplacement ou Densité de passages. Ouvrez Replay. Enregistrez une vue. Cochez Inspection des constructions pour la cartographie.',
+            ]),
+            $pr(643, '2026-09-18', 'Poste Overwatch : lecture 3D du théâtre', 'En vue Tactique 3D, les murs, clôtures, ponts et pylônes apparaissent avec les bâtiments. Un clic sur une construction ouvre sa fiche : grille, orientation, niveaux, hauteur. Vous pouvez la marquer, en faire un objectif ou lui rattacher une tâche. La visée indique l’obstacle. Un tracé donne la montée, la descente et la pente. Rechargez Overwatch Beta. Relancez le relevé de carte si les obstacles manquent.', [
+                'Obstacles linéaires visibles en vue 3D : murs, clôtures, lignes électriques, ponts, rochers et pylônes',
+                'Fiche d’une construction : grille, orientation, niveaux, hauteur, actions Marquer, Objectif, Entrée, Photo et TASK',
+                'Caméra tactique : double-clic pour viser un point, Nord pour revenir à plat, Unité pour suivre le groupe, Sol pour descendre près du terrain',
+                'Visée : distance et nature de l’obstacle (bâtiment, mur, couvert)',
+                'Profil d’un tracé : distance, montée, descente, pente maximale et coloration selon la pente',
+            ], [
+                'En reculant, le poste n’envoie plus le détail des rues : agglomérations d’abord, puis empreintes, puis volumes',
+                'Une construction sélectionnée reste nette, les autres s’estompent',
+                'Le curseur de replay déplace aussi les contacts sur le relief',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta, Vue de la carte, Tactique 3D. Approchez un village. Cliquez une maison : la fiche s’ouvre. Double-cliquez un carrefour : la caméra s’incline. Tracez une visée : le tiroir indique si un bâtiment masque. Ouvrez Replay : les trajectoires se rejouent sur le relief.',
+            ]),
+            $pr(641, '2026-09-18', 'Poste Overwatch : clic 3D, masses et lumière', 'En vue Relief 3D, un clic sur un bâtiment ouvre le même menu que sur la carte à plat : marqueurs, points de ralliement, tâches de groupe. Les petites constructions lointaines se regroupent ; le détail revient en se rapprochant. Les ombres suivent l’heure et la météo déjà affichées. Rechargez Overwatch Beta.', [
+                'Clic sur un volume du théâtre : mêmes actions que sur un point de la carte à plat',
+                'Ombres portées d’après l’heure et la météo de mission',
+            ], [
+                'À distance, les petites constructions proches se fusionnent ; elles se séparent en se rapprochant',
+                'Les volumes aberrants du relevé sont limités, plus de tours démesurées au milieu du théâtre',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta, Relief 3D. Cliquez un bâtiment déjà marqué : le menu du point s’ouvre. Reculez : les maisons se regroupent. Avancez : elles se séparent. Les ombres tournent avec l’heure affichée dans le bandeau météo.',
+            ]),
+            $pr(639, '2026-09-18', 'Poste Overwatch : relief 3D du théâtre', 'Sur Overwatch Beta, la vue Relief 3D relève le sol du théâtre et dresse les bâtiments déjà relevés. Les forêts apparaissent en masses, pas arbre par arbre. Les contacts restent visibles au-dessus du terrain. Les tracés, la visée et les anneaux se font toujours en vue à plat. Rechargez Overwatch Beta. Le relief du théâtre doit avoir été relevé.', [
+                'Vue Relief 3D avec le sol relevé et les bâtiments du jeu dressés au-dessus',
+                'Forêts affichées en masses sur le relief, sans un volume par arbre',
+                'Contacts du fil de situation posés sur le terrain en vue 3D',
+            ], [
+                'Les curseurs d’exagération et d’inclinaison commandent cette vue en relief',
+                'La case Bâtiments et forêts du jeu allume ou éteint ces volumes',
+            ], [], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans Vue de la carte, choisissez Relief 3D. Le sol se relève. Reculez : les bâtiments du relevé se dressent. Cochez et décochez Bâtiments et forêts du jeu. Repassez À plat pour tracer ou viser.',
+            ]),
+            $pr(642, '2026-09-18', 'Dépannage : les ordres ne ferment plus le jeu', 'Le dépannage liaison isole maintenant la réception des ordres et leur affichage sur le téléphone. Le bandeau montre le débit, le poste, les versions, le compte identifié et le taux d’erreur. Le journal indique combien de messages, de repères et d’ordres reviennent. Relancez Arma complètement (Overwatch 1.5.84).', [
+                'Étape Ordres (réception) : lecture seule, sans alerte ni fil téléphone',
+                'Étape Ordres (affichage) : livraison et affichage, pour voir si c’est l’écran qui arrête le jeu',
+                'Bandeau de dépannage : débit, volume transmis, poste, versions, compte, erreurs et derniers retours',
+            ], [], [
+                'Le dépannage s’arrêtait à l’étape Ordres, souvent avec le téléphone ouvert',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.84). Menu Échap, Dépannage liaison. Laissez tourner jusqu’à Ordres (réception), puis Ordres (affichage). Notez à quelle étape le jeu s’arrête, s’il s’arrête.',
+            ], 'Overwatch 1.5.84'),
+            $pr(640, '2026-09-18', 'Poste : contrôle de mission Overwatch', 'Le commandement dispose d’un écran unique pour imposer le réalisme, voir ce qui est actif, consulter les relais, et activer ou couper les fonctions de mission. Les opérateurs en liaison reçoivent les règles sous environ une minute. Les réglages du téléphone (sons, indicatif, affichage situation) restent sur l’ATAK. Rechargez le pack jeu (Overwatch 1.5.83).', [
+                'Écran Contrôle de mission : réalisme, fonctions actives et relais au même endroit',
+                'Le poste peut imposer un comportement à toute la communauté, ou laisser le choix à chaque opérateur',
+                'Les relais posés en jeu apparaissent avec leur état, intact ou hors service',
+            ], [], [
+                'Les règles de mission étaient dispersées entre plusieurs pages et les options d’addons',
+            ], ['atak'], [
+                'Back-office ATAK, Contrôle de mission. Enregistrez. Les communautés déjà en place ne changent rien tant qu’elles n’enregistrent pas. Relancez Arma complètement après le pack 1.5.83.',
+            ], 'Overwatch 1.5.83'),
+            $pr(638, '2026-09-18', 'Message : P2P local ou Via Athena', 'En ouvrant Message sur le téléphone, vous choisissez d’abord le canal. P2P — Réseau local : les messages entre téléphones à proximité, comme d’habitude. Via Athena : la messagerie de compte à compte, comme au poste. Relancez Arma complètement (Athena 1.0.136).', [
+                'Écran de choix à l’ouverture de Message',
+                'P2P — Réseau local : téléphone à téléphone autour de vous',
+                'Via Athena : de compte à compte, même hors proximité',
+            ], [], [
+                'Message ouvrait seulement un des deux modes, sans choix',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.136). Ouvrez le téléphone, Message : deux boutons. P2P ouvre l’écran habituel. Via Athena ouvre la messagerie de comptes.',
+            ], 'Athena 1.0.136'),
+            $pr(637, '2026-09-18', 'Overwatch : plus de double démarrage en mission', 'Recocher Overwatch dans les paramètres d’addons ne relance plus tout le mod par-dessus une session déjà ouverte. Les menus, la liaison et les alertes restent un seul jeu. Décochez Overwatch pour couper les échanges ; une session déjà ouverte reste affichée jusqu’à la sortie d’Arma. Relancez Arma complètement (Overwatch 1.5.82).', [
+                'Un seul démarrage par mission, même si les paramètres d’addons sont rouverts',
+            ], [], [
+                'Recocher Overwatch en mission relançait plusieurs fois les menus et la liaison, et le jeu pouvait s’arrêter ensuite',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.82). En mission, le journal ne doit montrer qu’une fois PreInit et PostInit. Recocher Overwatch ne doit pas réécrire toute la chaîne.',
+            ], 'Overwatch 1.5.82'),
+            $pr(636, '2026-09-18', 'Dépannage liaison : bouton visible sur la pause', 'Le dépannage liaison se lance depuis le bouton orange en haut à gauche du menu Échap, sans ouvrir une seconde fenêtre. Un bandeau reste à l’écran : Overwatch est coupé, puis chaque fonction de la liaison est rallumée une par une, 55 secondes d’écart. Si le jeu s’arrête, la fonction affichée est en cause. Relancez Arma complètement (Overwatch 1.5.81).', [
+                'Bouton Dépannage liaison directement sur le menu Échap',
+                'Lancement immédiat, sans fenêtre superposée au panneau de gestion',
+            ], [], [
+                'Le bouton était trop bas dans le panneau, et une seconde fenêtre par-dessus la pause pouvait fermer le jeu avant le premier essai',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.81). En mission : Échap, bouton orange Dépannage liaison. Laissez le bandeau visible. Si le jeu s’arrête, relancez : la dernière fonction testée s’affiche.',
+            ], 'Overwatch 1.5.81'),
+            $pr(635, '2026-09-18', 'Dépannage liaison : une fonction toutes les 55 secondes', 'Un outil de dépannage coupe Overwatch, puis rallume chaque fonction de la liaison une par une, avec 55 secondes d’écart. Un bandeau reste à l’écran. Si le jeu s’arrête, la fonction affichée est en cause ; au relancement, le dernier essai est mémorisé. Échap, bouton COMSPEC Overwatch, puis Dépannage liaison. Relancez Arma complètement (Overwatch 1.5.80).', [
+                'Dépannage liaison dans le menu Overwatch de la pause, et dans ACE',
+            ], [], [
+                'Impossible de savoir quelle fonction de la liaison fermait le jeu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.80). En mission avec le téléphone : Échap, COMSPEC Overwatch, Dépannage liaison, Lancer. Laissez le bandeau visible. Si le jeu s’arrête, relancez : la dernière fonction testée s’affiche.',
+            ], 'Overwatch 1.5.80'),
+            $pr(634, '2026-09-17', 'Liaison poste : plus d’arrêt avec Overwatch actif', 'Avec Overwatch coché, le jeu ne se ferme plus tout seul, téléphone ouvert ou non. Les repères déjà affichés depuis le poste ne relancent plus une avalanche d’envois. Décochez Overwatch : position et messages s’arrêtent aussi. Pour recocher la case, quittez Arma complètement puis relancez (Athena 1.0.135).', [], [
+                'Décochez Overwatch : la position et les messages s’arrêtent aussi, pas seulement les ordres',
+            ], [
+                'Le jeu se fermait encore avec Overwatch actif, surtout après avoir recouché la case dans les paramètres d’addon',
+                'La position et le chat continuaient alors qu’Overwatch était décoché',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.135). Recochez Overwatch. Entrez en mission avec le téléphone : restez une à deux minutes, ouvrez la pause, revenez. Le jeu reste ouvert.',
+            ], 'Athena 1.0.135'),
+            $pr(633, '2026-09-17', 'Poste Overwatch : visée coupée au premier bâtiment', 'La visée s’arrête au premier mur ou couvert vraiment devant l’observateur, plus loin derrière un hangar. Jusqu’à l’obstacle le trait reste dégagé ; au-delà, il passe en masqué. Rechargez Overwatch Beta. Les bâtiments du théâtre doivent avoir été relevés.', [], [
+                'Trait dégagé jusqu’au masque, puis masqué jusqu’à la cible',
+            ], [
+                'Un bâtiment juste devant n’était pas pris en compte, le point de masque tombait trop loin',
+            ], ['atak'], [
+                'Ouvrez Visée / masque. Glissez d’un opérateur vers un hangar tout près : le point de masque se pose sur le bâtiment, pas plus loin sur la route.',
+            ]),
+            $pr(632, '2026-09-17', 'Poste Overwatch : flèche, anticipation et tracé du contact', 'La flèche d’orientation et l’anticipation ne concernent plus que le contact ouvert : une vraie pointe, lisible à tous les zooms, et des pointillés jusqu’à la position estimée. Une option affiche le chemin déjà parcouru par cette personne. En haut à gauche, le bandeau de suivi et la météo ne se recouvrent plus. Rechargez Overwatch Beta.', [
+                'Tracé de progression du contact ouvert, d’après les positions déjà reçues',
+            ], [
+                'Flèche d’orientation avec pointe, taille stable à l’écran',
+                'Anticipation en pointillés uniquement si cap et vitesse sont transmis',
+            ], [
+                'Le bandeau Suivi recouvrait la météo au même coin de la carte',
+                'La flèche n’était qu’un trait trop court, dessiné sur tous les contacts',
+            ], ['atak'], [
+                'Ouvrez un contact. Cochez Flèche d’orientation, Anticiper la position et Tracé de progression. Le suivi et la météo apparaissent l’un sous l’autre, sans se superposer.',
+            ]),
+            $pr(631, '2026-09-17', 'Liaison poste : plus d’arrêt sans téléphone', 'Sans téléphone ATAK en poche, le jeu ne se ferme plus tout seul. La liaison avec le poste ne démarre que lorsque l’opérateur a le téléphone. Décochez Overwatch dans les paramètres d’addon coupe les échanges en fond, mais une session déjà ouverte reste affichée jusqu’à la sortie d’Arma. Relancez Arma complètement après la mise à jour (Athena 1.0.134).', [
+                'Liaison avec le poste seulement si le téléphone est porté',
+            ], [], [
+                'Le jeu se fermait environ quarante secondes après l’arrivée en mission, même sans téléphone et sans ouvrir l’écran',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.134). Recochez Overwatch. Entrez en mission sans téléphone : le jeu reste ouvert. Équipez le téléphone : la liaison reprend. Ouvrez Messagerie : la liste des canaux n’est plus recouverte.',
+            ], 'Athena 1.0.134'),
+            $pr(630, '2026-09-17', 'Téléphone ATAK : messagerie sans écran superposé', 'La liste des canaux n’est plus recouverte par le champ d’envoi ni par Effacer / Supprimer. Relancez Arma complètement après la mise à jour (Athena 1.0.134).', [
+                'Liste des canaux ou fil ouvert, plus les deux en même temps',
+            ], [], [
+                'Un rectangle sombre et les boutons Envoyer / Effacer recouvraient la création de canal',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.134). Ouvrez Messagerie : canaux lisibles, Création et Créer en bas, pas de bandeau Envoyer par-dessus.',
+            ], 'Athena 1.0.134'),
+            $pr(629, '2026-09-17', 'Téléphone ATAK : plus d’arrêt pendant la carte et les repères', 'Le jeu ne se ferme plus tout seul pendant l’affichage de la carte, la pose d’un repère ou le rafraîchissement des indicatifs. Relancez Arma complètement après la mise à jour (Athena 1.0.133).', [
+                'Carte, repères et indicatifs lus sur une liste figée',
+            ], [], [
+                'Le jeu se fermait encore quelques dizaines de secondes après l’ouverture du téléphone, surtout avec des repères ou la carte affichée',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.133). Ouvrez le téléphone sur la carte, posez un repère, laissez ouvert une à deux minutes. Le jeu reste ouvert. Le chevron affiche toujours les applications.',
+            ], 'Athena 1.0.133'),
+            $pr(628, '2026-09-17', 'Téléphone ATAK : le menu d’applications affiche les icônes', 'Le chevron ouvre le menu d’applications avec les icônes. Ce n’est plus un panneau gris vide. Relancez Arma complètement après la mise à jour (Athena 1.0.132).', [
+                'Menu d’applications avec les icônes du téléphone',
+            ], [], [
+                'Le menu s’ouvrait en gris, sans applications',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.132). Ouvrez le téléphone, chevron : les applications apparaissent. Retour referme le menu. Laissez ouvert une à deux minutes : le jeu reste ouvert.',
+            ], 'Athena 1.0.132'),
+            $pr(627, '2026-09-17', 'Téléphone ATAK : plus d’arrêt après quelques dizaines de secondes', 'Le jeu ne se ferme plus tout seul une fois le téléphone ouvert sur la carte, ni après une pause sans activité visible. La page d’état de liaison affiche l’état déjà calculé, sans relancer le calcul à chaque rafraîchissement. Relancez Arma complètement après la mise à jour (Athena 1.0.131).', [
+                'Page d’état en lecture seule : plus de recalcul de liaison en boucle',
+            ], [], [
+                'Le jeu se fermait encore 30 à 50 secondes après la dernière activité visible, téléphone ouvert sur la carte',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.131). Ouvrez le téléphone sur la carte, laissez ouvert une à deux minutes sans toucher. Le jeu reste ouvert. La page État affiche toujours la liaison.',
+            ], 'Athena 1.0.131'),
+            $pr(626, '2026-09-17', 'Téléphone ATAK : le menu d’applications se referme', 'Le menu d’applications s’ouvre et se referme de nouveau avec le chevron et Retour. La carte reste dans l’écran. Relancez Arma complètement après la mise à jour (Athena 1.0.130).', [
+                'Chevron et Retour referment le menu',
+                'Carte limitée au cadre du téléphone',
+            ], [], [
+                'Le menu restait ouvert en permanence',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.130). Ouvrez le téléphone, chevron : le menu s’ouvre. Chevron ou Retour : il se referme. La carte ne déborde pas.',
+            ], 'Athena 1.0.130'),
+            $pr(625, '2026-09-17', 'Téléphone ATAK : carte dans l’écran, menu du téléphone', 'La carte reste dans le cadre du téléphone. Le menu d’applications reprend celui du téléphone : les icônes s’affichent, Retour referme le menu. Relancez Arma complètement après la mise à jour (Athena 1.0.129).', [
+                'Carte calée dans l’écran, sans débord à droite',
+                'Menu d’applications laissé au téléphone, sans recale Athena',
+                'Plus de cartouches recréés en boucle sur l’écran ouvert',
+            ], [], [
+                'La carte débordait du cadre et le menu pouvait rester vide',
+                'Le jeu se fermait encore après quelques secondes, même sans activité visible',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.129). Ouvrez le téléphone : la carte reste dans l’écran. Le chevron ouvre le menu avec les applications, Retour le referme. Laissez ouvert une minute : le jeu reste ouvert.',
+            ], 'Athena 1.0.129'),
+            $pr(624, '2026-09-17', 'Téléphone ATAK : plus d’arrêt brutal au bout de quelques secondes', 'Le jeu ne se ferme plus tout seul après quelques secondes, même sans ouvrir le téléphone. Le menu ACE ne se réempile plus à chaque mission de la même session. Relancez Arma complètement après la mise à jour (Athena 1.0.128).', [
+                'Lecture du journal de session limitée pour rester dans le tampon du jeu',
+                'Frise d’événements : les dernières lignes s’affichent même s’il y en a moins de quatre',
+                'Menus ACE nettoyés correctement avant réinstallation',
+            ], [], [
+                'Le jeu se fermait tout seul au bout de quelques secondes, même sans ouvrir le téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.128). Restez une à deux minutes sans ouvrir le téléphone : le jeu reste ouvert. Le menu ACE n’affiche plus des doublons d’une mission à l’autre.',
+            ], 'Athena 1.0.128'),
             $pr(623, '2026-09-16', 'Téléphone ATAK : alertes sans calque cassant', 'Une alerte du poste n’ajoute plus un voile sur le téléphone en miniature, ni des cartouches supplémentaires par-dessus l’écran IceMan. L’alerte plein écran reste sur le téléphone ouvert. Relancez Arma complètement après la mise à jour (Athena 1.0.144).', [
                 'Alerte plein écran uniquement si le téléphone est vraiment ouvert',
                 'Cartouches de carte inchangés, sans cadre ajouté par-dessus',

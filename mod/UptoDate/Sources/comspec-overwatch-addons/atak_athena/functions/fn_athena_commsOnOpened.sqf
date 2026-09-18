@@ -30,7 +30,11 @@ if (isNil { missionNamespace getVariable "COMSPEC_Comms_Unread" }) then {
 
 if (!isNil "comspec_overwatch_connect_fnc_pollChatChannels") then {
     [] spawn {
-        [] call comspec_overwatch_connect_fnc_pollChatChannels;
+        if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
+            [] call comspec_overwatch_connect_fnc_pollChatChannels;
+        };
+        private _group = uiNamespace getVariable ["COMSPEC_ATAK_Comms_group", controlNull];
+        if (isNull _group || {!ctrlShown _group}) exitWith {};
         [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
         [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
     };
@@ -38,13 +42,26 @@ if (!isNil "comspec_overwatch_connect_fnc_pollChatChannels") then {
 
 if (!isNil "comspec_overwatch_connect_fnc_pollChatMessages") then {
     [] spawn {
-        [] call comspec_overwatch_connect_fnc_pollChatMessages;
+        if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
+            [] call comspec_overwatch_connect_fnc_pollChatMessages;
+        };
+        private _group = uiNamespace getVariable ["COMSPEC_ATAK_Comms_group", controlNull];
+        if (isNull _group || {!ctrlShown _group}) exitWith {};
         [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
         [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
     };
 };
 
 [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
+[] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
+
+// Le calage IceMan réaffiche tous les enfants : recoller liste vs fil après l’anim.
+{
+    [{
+        if !([] call comspec_overwatch_atak_athena_fnc_athena_commsIsOpen) exitWith {};
+        [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
+    }, [], _x] call CBA_fnc_waitAndExecute;
+} forEach [0.2, 0.55, 1.1];
 
 [_token] spawn {
     params ["_token"];
@@ -78,8 +95,12 @@ if (!isNil "comspec_overwatch_connect_fnc_pollChatMessages") then {
         };
 
         if (!isNil "comspec_overwatch_connect_fnc_pollChatMessages") then {
-            [] call comspec_overwatch_connect_fnc_pollChatMessages;
+            if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
+                [] call comspec_overwatch_connect_fnc_pollChatMessages;
+            };
         };
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_Comms_token", -1]) isNotEqualTo _token) exitWith {};
+        if (isNull _group || {!ctrlShown _group}) exitWith {};
         [] call comspec_overwatch_atak_athena_fnc_athena_updateComms;
         [] call comspec_overwatch_atak_athena_fnc_athena_commsApplyChrome;
     };

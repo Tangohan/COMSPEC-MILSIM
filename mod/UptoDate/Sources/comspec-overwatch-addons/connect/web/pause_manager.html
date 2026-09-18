@@ -83,6 +83,12 @@
 <div class="wrap">
 
   <section>
+    <h2>Dépannage</h2>
+    <div class="btn" style="border-color:#ffd27a;color:#ffd27a;" onclick="pmSend('tool:diagisolate')">Dépannage liaison — lancer maintenant</div>
+    <div class="footer-msg">Coupe Overwatch, puis rallume chaque fonction une par une, 55 secondes d’écart. Un bandeau reste à l’écran. Si le jeu s’arrête, la fonction affichée est en cause.</div>
+  </section>
+
+  <section>
     <h2>Statut</h2>
     <div class="grid">
       <div class="card">
@@ -144,8 +150,9 @@
     <div class="btn" onclick="pmSend('tool:syncmarkers')">Renvoyer les marqueurs carte</div>
     <div class="btn" onclick="pmSend('tool:reinitace')">Réinitialiser les menus ACE</div>
     <div class="btn" onclick="pmSend('tool:bugreport')">Signaler un problème</div>
+    <div class="btn" onclick="pmSend('tool:diagisolate')">Dépannage liaison (55 s)</div>
     <div class="btn" onclick="pmSend('tool:replaynda')">Relire les conditions d’utilisation</div>
-    <div class="footer-msg">Si la liaison est hors ligne, commencez par « Reconnecter Athena ». « Signaler un problème » envoie un rapport à l’équipe qui suit le pack (pas sur Discord). « Réinitialiser les menus ACE » n’a d’effet que si « Menus ACE Overwatch » est activé.</div>
+    <div class="footer-msg">Si la liaison est hors ligne, commencez par « Reconnecter Athena ». « Dépannage liaison » coupe Overwatch puis rallume chaque fonction une par une, avec 55 secondes d’écart : si le jeu s’arrête, la fonction affichée à l’écran est en cause. « Signaler un problème » envoie un rapport à l’équipe qui suit le pack (pas sur Discord). « Réinitialiser les menus ACE » n’a d’effet que si « Menus ACE Overwatch » est activé.</div>
   </section>
 
   <div class="btn wide" style="margin-top:6px;" onclick="pmSend('close')">Fermer</div>

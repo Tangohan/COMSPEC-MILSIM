@@ -7,6 +7,11 @@ if (isNull player) exitWith {};
 waitUntil {!isNull player && {!isNull (findDisplay 46)}};
 waitUntil {CBA_missionTime > 1};
 
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
+    diag_log "[COMSPEC ATAK] Overwatch désactivé — tracking reporté";
+    true
+};
+
 diag_log "[COMSPEC ATAK] Initialisation système ATAK...";
 
 private _restoreTeam = toUpper (trim (missionNamespace getVariable ["COMSPEC_AssignedTeam", ""]));

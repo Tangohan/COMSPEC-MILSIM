@@ -60,6 +60,19 @@ class COMSPEC_PauseManager_Dialog {
             text = "";
         };
 
+        class BtnIsolate: RscButton {
+            idc = 9606;
+            text = "Dépannage liaison";
+            x = safezoneX + 0.52 * safezoneW;
+            y = safezoneY + 0.855 * safezoneH;
+            w = 0.20 * safezoneW;
+            h = 0.028 * safezoneH;
+            sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.85)";
+            colorBackground[] = {0.22, 0.14, 0.04, 0.95};
+            colorText[] = {1, 0.9, 0.65, 1};
+            action = "[] call comspec_overwatch_connect_fnc_diagIsolateLaunch;";
+        };
+
         class BtnClose: RscButton {
             idc = 9604;
             text = "Fermer";

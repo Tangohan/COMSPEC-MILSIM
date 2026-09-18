@@ -149,19 +149,16 @@ if (!(_pos isEqualType []) || {(count _pos) < 4} || {(_pos select 2) < 0.08} || 
     call _fncHide;
 };
 
-if (isNull _fx || {ctrlParent _fx isNotEqualTo _display}) then {
-    ctrlDelete _fx;
+if (isNull _fx) then {
     _fx = _display ctrlCreate ["RscPicture", 99887700];
     uiNamespace setVariable ["COMSPEC_DeviceOverlay_Fx", _fx];
 };
-if (isNull _overlay || {ctrlParent _overlay isNotEqualTo _display}) then {
-    ctrlDelete _overlay;
+if (isNull _overlay) then {
     _overlay = _display ctrlCreate ["RscStructuredText", 99887701];
     uiNamespace setVariable ["COMSPEC_DeviceOverlay_Ctrl", _overlay];
 };
 private _caption = uiNamespace getVariable ["COMSPEC_DeviceOverlay_Caption", controlNull];
-if (isNull _caption || {ctrlParent _caption isNotEqualTo _display}) then {
-    ctrlDelete _caption;
+if (isNull _caption) then {
     _caption = _display ctrlCreate ["RscStructuredText", 99887702];
     uiNamespace setVariable ["COMSPEC_DeviceOverlay_Caption", _caption];
 };

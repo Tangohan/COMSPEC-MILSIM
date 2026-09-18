@@ -328,6 +328,9 @@ window.ATAKAerial = (function () {
       setBaseVisible(st.map, false);
       refresh(st);
     }
+    try {
+      window.dispatchEvent(new CustomEvent('atak:fond-changed', { detail: { id: layer.id, kind: layer.kind, spec: layer.spec || null } }));
+    } catch (e) {}
     syncSelects();
   }
 

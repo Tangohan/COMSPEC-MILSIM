@@ -2,6 +2,8 @@
 // Lancé automatiquement après chargement mission côté client
 
 if (!hasInterface) exitWith {};
+if (!isNil "COMSPEC_Overwatch_PostInitClientDone") exitWith {};
+COMSPEC_Overwatch_PostInitClientDone = true;
 
 [] call comspec_overwatch_connect_fnc_superPingInstall;
 [{ [] call comspec_overwatch_connect_fnc_superPingInstall; }, [], 3] call CBA_fnc_waitAndExecute;

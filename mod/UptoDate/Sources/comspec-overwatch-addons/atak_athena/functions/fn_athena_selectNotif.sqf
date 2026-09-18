@@ -31,14 +31,14 @@ if (isNull _group) exitWith {};
 private _detailCtrl = [_group, 9711] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
 if (!isNull _detailCtrl) then {
     if (_detail isNotEqualTo "") then {
-        [_detailCtrl, _detail] call comspec_overwatch_connect_fnc_setPlainText;
+        _detailCtrl ctrlSetStructuredText parseText _detail;
     } else {
-        [_detailCtrl, format [
+        _detailCtrl ctrlSetStructuredText parseText format [
             "<t color='#e8f4f0'>%1</t><br/><t color='#8aa0b4'>Heure</t>  %2<br/><br/>%3",
             _typeLabel,
             _time,
             _brief
-        ]] call comspec_overwatch_connect_fnc_setPlainText;
+        ];
     };
 };
 

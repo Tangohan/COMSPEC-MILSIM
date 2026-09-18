@@ -6372,6 +6372,7 @@ class AtakApiController
                     'fog_pct' => null,
                     'rain_pct' => null,
                     'humidity_pct' => null,
+                    'daytime' => null,
                     'call_sign' => '',
                     'updated_at' => '',
                 ],

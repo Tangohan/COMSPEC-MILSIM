@@ -1484,7 +1484,7 @@
         }
         markers[id].setZIndexOffset(isSel ? 800 : 400 - index);
         markers[id].off('click').on('click', function () { selectUnit(unit); });
-        if (tracksOn) appendTrack(id, trueLoc);
+        appendTrack(id, trueLoc);
       });
     });
     Object.keys(markers).forEach(function (id) {
@@ -1501,6 +1501,7 @@
       var loc = point(selected);
       if (loc) map.panTo(loc);
     }
+    if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap();
   }
 
   function clearSquadLinks() {
@@ -1626,17 +1627,25 @@
 
   function appendTrack(id, location) {
     if (!trackSamples[id]) trackSamples[id] = [];
+    var prev = trackSamples[id][trackSamples[id].length - 1];
+    if (prev && map.distance(prev.ll, location) < 2.5) return;
     trackSamples[id].push({ ll: location, t: Date.now() });
-    if (trackSamples[id].length > 80) trackSamples[id].shift();
+    if (trackSamples[id].length > 240) trackSamples[id].shift();
+    var progress = document.getElementById('ow-progress-trail');
+    var skipLine = !!(progress && progress.checked && selected && unitId(selected) === id);
     if (!trackLines[id]) {
-      trackLines[id] = L.polyline([location], { color: '#00d69a', weight: 2, opacity: 0.55 });
-      if (tracksOn && !hiddenLayers.tracks) trackLines[id].addTo(map);
+      trackLines[id] = L.polyline(trackSamples[id].map(function (row) { return row.ll; }), {
+        color: '#00d69a', weight: 2, opacity: 0.55, interactive: false, className: 'ow-track-line'
+      });
+      if (tracksOn && !hiddenLayers.tracks && !skipLine) trackLines[id].addTo(map);
       return;
     }
-    var latlngs = trackLines[id].getLatLngs();
-    latlngs.push(location);
-    if (latlngs.length > 80) latlngs.shift();
-    trackLines[id].setLatLngs(latlngs);
+    trackLines[id].setLatLngs(trackSamples[id].map(function (row) { return row.ll; }));
+    if (tracksOn && !hiddenLayers.tracks && !skipLine) {
+      if (!map.hasLayer(trackLines[id])) trackLines[id].addTo(map);
+    } else if (map.hasLayer(trackLines[id])) {
+      map.removeLayer(trackLines[id]);
+    }
   }
 
   function renderList() {
@@ -2466,6 +2475,12 @@
       if (payload.target_z != null) {
         html += '<div class="ow-event"><span>' + (payload.target_from_unit ? 'Cible (appareil)' : 'Cible') + '</span><strong>' + Math.round(payload.target_z) + ' m</strong></div>';
       }
+      html += '<div class="ow-event"><span>Visibilité</span><strong>' + formatMeters(Number(payload.distance_m || 0)) + '</strong></div>';
+      if (payload.obstruction) {
+        var obs = payload.obstruction;
+        html += '<div class="ow-event"><span>Obstruction</span><strong>' + escapeHtml(obs.kind_label || obs.cause || 'Obstacle') + '</strong></div>';
+        if (obs.z != null) html += '<div class="ow-event"><span>Altitude obstacle</span><strong>' + Math.round(Number(obs.z)) + ' m</strong></div>';
+      }
       openDrawer('Visée', 'Masque du relief', html);
       toast(payload.verdict_label || 'Visée calculée.');
     }).catch(function () {
@@ -2493,6 +2508,21 @@
       var cap = Math.round(bearingWorld(draftPoints[0], draftPoints[draftPoints.length - 1]));
       toast('Distance : ' + formatMeters(meters) + ' · Cap ' + cap + '°');
       showCalcDrawer(draftPoints, meters, cap);
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'measure3d' && draftPoints.length >= 2) {
+      if (window.OverwatchGlTactics) window.OverwatchGlTactics.requestMeasure3d(draftPoints.slice());
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'slice' && draftPoints.length >= 2) {
+      if (window.OverwatchGlTactics) window.OverwatchGlTactics.requestSlice(draftPoints.slice());
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'volume' && draftPoints.length >= 3) {
+      if (window.OverwatchGlTactics) window.OverwatchGlTactics.saveVolume(draftPoints.slice());
       clearDraft();
       return;
     }
@@ -2575,6 +2605,10 @@
     document.querySelectorAll('[data-tool]').forEach(function (button) {
       button.classList.toggle('is-active', button.dataset.tool === tool);
     });
+    if (window.OverwatchGlTactics && window.OverwatchGlTactics.isSplit()) {
+      var cmp = document.querySelector('[data-tool="compare"]');
+      if (cmp) cmp.classList.add('is-active');
+    }
     var extra = document.getElementById('ow-rail-extra');
     var more = document.querySelector('[data-ow-rail-more]');
     if (extra && more) {
@@ -2602,6 +2636,23 @@
     if (tool === 'polygon' || tool === 'aoi') toast('Maintenez pour tracer le contour. Relâchez pour fermer la zone.');
     if (tool === 'line' || tool === 'route') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
     if (tool === 'measure') toast('Maintenez du premier point au second.');
+    if (tool === 'viewshed') toast('Cliquez un opérateur, une caméra ou un point d’observation.');
+    if (tool === 'horizon') toast('Cliquez le point depuis lequel lire l’horizon.');
+    if (tool === 'slice') toast('Glissez de A vers B pour la coupe verticale.');
+    if (tool === 'measure3d') toast('Glissez deux points : distance au sol, spatiale, dénivelé, cap et pente.');
+    if (tool === 'volume') toast('Tracez le polygone du volume, double-clic pour poser les altitudes.');
+    if (tool === 'compare') {
+      var tac = window.OverwatchGlTactics;
+      if (tac && typeof tac.setSplit === 'function') tac.setSplit(!tac.isSplit());
+      setTool('cursor');
+      return;
+    }
+    if (tool === 'bookmark') {
+      var t2 = window.OverwatchGlTactics;
+      if (t2 && typeof t2.captureBookmark === 'function') t2.captureBookmark();
+      setTool('cursor');
+      return;
+    }
     if (tool === 'po') {
       if (previous !== 'po') poPlaceSession = [];
       try { map.doubleClickZoom.disable(); } catch (e2) {}
@@ -2627,6 +2678,14 @@
       return;
     }
     if (activeTool === 'marker') { saveMarker(event.latlng, 'Marqueur'); return; }
+    if (activeTool === 'viewshed') {
+      if (window.OverwatchGlTactics) window.OverwatchGlTactics.requestViewshed(event.latlng);
+      return;
+    }
+    if (activeTool === 'horizon') {
+      if (window.OverwatchGlTactics) window.OverwatchGlTactics.requestHorizon(event.latlng);
+      return;
+    }
     if (activeTool === 'po') { placeReachPoint(event.latlng); return; }
     if (activeTool === 'rally') { placeRallyPoint(event.latlng); return; }
     if (activeTool === 'split') {
@@ -2654,17 +2713,17 @@
       return;
     }
     if (activeTool === 'measure' && !measureFrom) measureFrom = event.latlng;
-    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los') && draftPoints.length >= 2) {
+    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los' || activeTool === 'slice' || activeTool === 'measure3d') && draftPoints.length >= 2) {
       finishDraft();
       return;
     }
-    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' ? 3 : 2)) {
+    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' || activeTool === 'volume' ? 3 : 2)) {
       /* keep collecting until double-click */
     }
   }
 
   function isDragTool(tool) {
-    return /^(circle|rect|freehand|line|route|polygon|aoi|measure|bearing|los|eta|profile)$/.test(tool);
+    return /^(circle|rect|freehand|line|route|polygon|aoi|volume|measure|measure3d|bearing|los|eta|profile|slice)$/.test(tool);
   }
   function liveMeasureHud() {
     var el = document.getElementById('ow-live-measure');
@@ -2716,7 +2775,7 @@
     if (!dragDrawOn) {
       dragDrawOn = true;
       dragMoved = true;
-      freehandOn = activeTool === 'freehand' || activeTool === 'polygon' || activeTool === 'aoi';
+      freehandOn = activeTool === 'freehand' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume';
       draftPoints = [dragStartLl];
     }
     if (freehandOn) {
@@ -3086,6 +3145,164 @@
     return best;
   }
 
+  function pickUnitAt(ll) {
+    if (!ll) return null;
+    var best = null;
+    var bestD = 22;
+    units.forEach(function (unit) {
+      var loc = point(unit);
+      if (!loc) return;
+      var d = pxDist(ll, loc);
+      if (d <= bestD) {
+        bestD = d;
+        best = unit;
+      }
+    });
+    return best;
+  }
+
+  function asMapLatLng(ll) {
+    if (!ll) return null;
+    if (typeof ll.distanceTo === 'function') return ll;
+    if (ll.lat == null || ll.lng == null) return null;
+    return L.latLng(ll.lat, ll.lng);
+  }
+
+  function inspectSceneObject(id, ll, hint) {
+    id = String(id || '');
+    if (!id || id.indexOf('cluster') >= 0) {
+      if (ll) inspectWorld(ll);
+      return;
+    }
+    var fallbackLl = ll;
+    api('/api/atak/scene/object?mapId=' + encodeURIComponent(mapId) + '&id=' + encodeURIComponent(id)).then(function (payload) {
+      var obj = payload && payload.object ? payload.object : null;
+      if (!obj) {
+        if (fallbackLl) inspectWorld(fallbackLl);
+        return;
+      }
+      var x = Number(obj.x);
+      var y = Number(obj.y);
+      var loc = (isFinite(x) && isFinite(y)) ? worldToLatLng(x, y) : fallbackLl;
+      lastSceneObject = { id: id, ll: loc, object: obj };
+      if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.setFocus === 'function') {
+        window.OverwatchGlLayers.setFocus(id);
+      }
+      openDrawer('Construction', obj.name || obj.kind_label || 'Volume', sceneObjectHtml(obj, loc));
+      bindDrawerForms();
+    }).catch(function () {
+      if (fallbackLl) inspectWorld(fallbackLl);
+    });
+  }
+
+  var lastSceneObject = null;
+
+  function sceneQualityLabel(q) {
+    if (q === 'complete') return 'Données complètes';
+    if (q === 'approx') return 'Dimensions approximées';
+    if (q === 'position') return 'Position seulement';
+    if (q === 'suspect') return 'Géométrie suspecte';
+    return '';
+  }
+
+  function sceneObjectHtml(obj, loc) {
+    var grid = loc ? gridLabel(loc).replace(/^GRID\s+/i, '') : (Math.round(obj.x) + ' ' + Math.round(obj.y));
+    var bearing = Math.round(((Number(obj.bearing) % 360) + 360) % 360);
+    var floors = Number(obj.floors) || 1;
+    var height = Number(obj.height);
+    var alt = obj.z != null && isFinite(Number(obj.z)) ? Number(obj.z) : null;
+    var doors = Number(obj.doors) || 0;
+    var q = String(obj.quality || '');
+    var qLabel = sceneQualityLabel(q);
+    var photos = Array.isArray(obj.photos) ? obj.photos : [];
+    var html = '<div class="ow-event"><span>Grille</span><strong>' + escapeHtml(grid) + '</strong></div>' +
+      '<div class="ow-event"><span>Orientation</span><strong>' + bearing + '°</strong></div>' +
+      '<div class="ow-event"><span>Niveaux</span><strong>' + floors + '</strong></div>';
+    if (isFinite(height)) html += '<div class="ow-event"><span>Hauteur</span><strong>' + height.toFixed(1).replace('.', ',') + ' m</strong></div>';
+    if (alt != null) html += '<div class="ow-event"><span>Altitude</span><strong>' + Math.round(alt) + ' m</strong></div>';
+    html += '<div class="ow-event"><span>Emprise</span><strong>' + Math.round(Number(obj.width) || 0) + ' × ' + Math.round(Number(obj.depth) || 0) + ' m</strong></div>';
+    if (doors > 0) html += '<div class="ow-event"><span>Entrées détectées</span><strong>' + doors + '</strong></div>';
+    if (qLabel) {
+      html += '<div class="ow-event"><span>Qualité</span><strong><i class="ow-quality-dot is-' + escapeHtml(q) + '"></i>' + escapeHtml(qLabel) + '</strong></div>';
+    }
+    html += '<div class="ow-scene-actions">' +
+      '<button type="button" class="ow-primary" data-scene-act="marker">Marquer</button>' +
+      '<button type="button" class="ow-secondary" data-scene-act="po">Définir comme objectif</button>' +
+      '<button type="button" class="ow-secondary" data-scene-act="entry">Ajouter une entrée</button>' +
+      '<button type="button" class="ow-secondary" data-scene-act="photo">Attacher une photo</button>' +
+      '<button type="button" class="ow-secondary" data-scene-act="task">Créer une TASK</button>' +
+      '</div>';
+    if (photos.length) {
+      html += '<p class="ow-kicker">Photos à proximité</p>' + photos.map(function (p) {
+        return '<div class="ow-event"><span>' + escapeHtml(p.author || 'Photo') + '</span><strong>' + escapeHtml(String(p.created_at || '').slice(11, 19)) + '</strong></div>';
+      }).join('');
+    }
+    var labels = Array.isArray(obj.floor_labels) ? obj.floor_labels : [];
+    if (labels.length) {
+      html += '<p class="ow-kicker">Étage</p><div class="ow-floor-row">';
+      labels.forEach(function (fl) {
+        var on = Number(obj.floor_focus) === Number(fl.value);
+        html += '<button type="button" class="ow-secondary' + (on ? ' is-active' : '') + '" data-scene-act="floor" data-floor="' + Number(fl.value) + '">' + escapeHtml(fl.label) + '</button>';
+      });
+        html += '</div>';
+    }
+    if (obj.roof && obj.roof.area_m2) {
+      html += '<div class="ow-event"><span>Toit</span><strong>' + Math.round(obj.roof.area_m2) + ' m² · ' + (Number(obj.roof.height) || 0).toFixed(1).replace('.', ',') + ' m</strong></div>';
+    }
+    var anchors = Array.isArray(obj.anchors) ? obj.anchors : [];
+    if (anchors.length) {
+      html += '<p class="ow-kicker">Ancrages</p>' + anchors.slice(-8).map(function (a) {
+        return '<div class="ow-event"><span>' + escapeHtml(a.label || a.kind || 'Note') + '</span><strong>' + escapeHtml((a.face ? 'Façade ' + a.face : '') + (a.floor != null ? ' niv. ' + a.floor : '')) + '</strong></div>';
+      }).join('');
+    }
+    html += '<button type="button" class="ow-secondary" data-scene-act="anchor">Ancrer une note</button>';
+    var insp = document.getElementById('atak-scene-inspector');
+    if (insp && insp.checked) {
+      html += '<p class="ow-kicker">Inspection</p>' +
+        '<div class="ow-event"><span>Identifiant</span><strong>' + escapeHtml(String(obj.id || '')) + '</strong></div>' +
+        '<div class="ow-event"><span>Modèle</span><strong>' + escapeHtml(String(obj.model || '—')) + '</strong></div>' +
+        '<div class="ow-event"><span>XYZ</span><strong>' + Math.round(obj.x) + ' / ' + Math.round(obj.y) + ' / ' + (obj.z != null ? Math.round(obj.z) : '—') + '</strong></div>' +
+        '<div class="ow-event"><span>Direction</span><strong>' + bearing + '°</strong></div>' +
+        '<div class="ow-event"><span>Boîte</span><strong>' + Math.round(Number(obj.width) || 0) + ' × ' + Math.round(Number(obj.depth) || 0) + ' × ' + (isFinite(height) ? height.toFixed(1) : '—') + '</strong></div>' +
+        '<div class="ow-event"><span>Bloc</span><strong>' + escapeHtml(String(obj.chunk || '—')) + '</strong></div>' +
+        '<div class="ow-event"><span>Source</span><strong>' + escapeHtml(String(obj.source || 'relevé jeu')) + '</strong></div>' +
+        '<div class="ow-event"><span>Confiance</span><strong>' + escapeHtml(sceneQualityLabel(obj.confidence || obj.quality) || String(obj.confidence || '—')) + '</strong></div>';
+    }
+    return html;
+  }
+
+  function inspectWorld(ll, originalEvent, layer) {
+    ll = asMapLatLng(ll);
+    if (!ll) return false;
+    var right = !!(originalEvent && (originalEvent.button === 2 || originalEvent.which === 3 || originalEvent.ctrlKey));
+    var unit = pickUnitAt(ll);
+    if (unit && !right) {
+      selectUnit(unit);
+      hideContext();
+      return true;
+    }
+    openContextAt(ll, originalEvent, layer);
+    return true;
+  }
+
+  function handleWorldClick(ll, originalEvent, layer) {
+    ll = asMapLatLng(ll);
+    if (!ll) return false;
+    var fake = { latlng: ll, originalEvent: originalEvent || null };
+    if (activeTool && activeTool !== 'cursor' && activeTool !== 'freehand' && activeTool !== 'goto' && activeTool !== 'range') {
+      onMapClick(fake);
+      return true;
+    }
+    return inspectWorld(ll, originalEvent, layer);
+  }
+
+  function handleWorldContext(ll, originalEvent, layer) {
+    ll = asMapLatLng(ll);
+    if (!ll) return false;
+    openContextAt(ll, originalEvent, layer);
+    return true;
+  }
+
   function dropLocalId(store, id) {
     var key = String(id);
     if (store[key]) {
@@ -3372,7 +3589,9 @@
       if (input.dataset.owLayer === 'tracks') {
         tracksOn = input.checked;
         Object.keys(trackLines).forEach(function (id) {
-          if (tracksOn) trackLines[id].addTo(map); else map.removeLayer(trackLines[id]);
+          var progress = document.getElementById('ow-progress-trail');
+          var skipLine = !!(progress && progress.checked && selected && unitId(selected) === id);
+          if (tracksOn && !skipLine) trackLines[id].addTo(map); else map.removeLayer(trackLines[id]);
         });
       }
       if (input.dataset.owLayer === 'shapes') loadShapes();
@@ -3758,6 +3977,13 @@
     ['Ouvrir les notes de terrain', 'Renseignement', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'osint' } })); }],
     ['Ouvrir le journal', 'Mission', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'logs' } })); }],
     ['Visée / masque du relief', 'Carte', function () { setTool('los'); }],
+    ['Masque de visibilité', 'Carte', function () { setTool('viewshed'); }],
+    ['Horizon du relief', 'Carte', function () { setTool('horizon'); }],
+    ['Coupe verticale', 'Carte', function () { setTool('slice'); }],
+    ['Mesure 3D', 'Carte', function () { setTool('measure3d'); }],
+    ['Volume 3D', 'Carte', function () { setTool('volume'); }],
+    ['Comparer 2D et 3D', 'Carte', function () { setTool('compare'); }],
+    ['Enregistrer une vue caméra', 'Carte', function () { setTool('bookmark'); }],
     ['Poser un point à atteindre', 'Carte', function () { setTool('po'); }],
     ['Poser un point de ralliement', 'Carte', function () { setTool('rally'); }],
     ['Transmettre une tâche de groupe', 'Mission', function () { openSquadTaskForm(''); }],
@@ -3972,9 +4198,57 @@
   });
   document.querySelector('[data-close-drawer]').addEventListener('click', function () {
     document.getElementById('ow-drawer').hidden = true;
+    lastSceneObject = null;
+    if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.setFocus === 'function') {
+      window.OverwatchGlLayers.setFocus('');
+    }
     openView('overwatch');
   });
   document.getElementById('ow-drawer').addEventListener('click', function (event) {
+    var sceneBtn = event.target.closest('[data-scene-act]');
+    if (sceneBtn && lastSceneObject && lastSceneObject.ll) {
+      var act = sceneBtn.getAttribute('data-scene-act');
+      var loc = lastSceneObject.ll;
+      var obj = lastSceneObject.object || {};
+      if (act === 'marker') saveMarker(loc, obj.name || 'Marqueur');
+      if (act === 'po') { placeReachPoint(loc); finishPoSession(); }
+      if (act === 'entry') saveMarker(loc, 'Entrée');
+      if (act === 'photo') {
+        if (window.OverwatchOps && typeof window.OverwatchOps.openIntel === 'function') window.OverwatchOps.openIntel(loc);
+        else openView('intel');
+      }
+      if (act === 'task') {
+        var grid = gridLabel(loc);
+        openDrawer('Tâche', obj.name || 'Objectif', groupTaskFormHtml() +
+          '<p class="ow-help">Point : ' + escapeHtml(grid) + '. Indiquez le groupe puis transmettez.</p>');
+        fillGroupTaskSelects(true);
+        bindGroupTaskForms(document.getElementById('ow-drawer'));
+        bindDrawerForms();
+        var ta = document.querySelector('#ow-drawer textarea[name="payload"]');
+        if (ta && !ta.value) ta.value = 'Objectif : ' + (obj.name || 'construction') + ' · ' + grid;
+      }
+      if (act === 'floor' || act === 'roof' || act === 'anchor') {
+        var floor = act === 'roof' ? (Number(obj.floors) || 1) : Number(sceneBtn.getAttribute('data-floor'));
+        var note = act === 'anchor' ? (window.prompt('Libellé de l’ancrage', 'Façade nord') || '') : '';
+        if (act === 'anchor' && !note.trim()) return;
+        api('/api/atak/scene/anchor', {
+          method: 'POST',
+          body: {
+            mapId: mapId,
+            id: lastSceneObject.id,
+            floor: isFinite(floor) ? floor : 0,
+            set_floor: act !== 'anchor',
+            face: act === 'roof' ? 'roof' : '',
+            kind: act === 'anchor' ? 'note' : 'note',
+            label: note || (act === 'roof' ? 'Toit' : ('Niveau ' + floor))
+          }
+        }).then(function () {
+          toast(act === 'roof' ? 'Toit sélectionné.' : (act === 'anchor' ? 'Ancrage enregistré.' : 'Étage retenu.'));
+          inspectSceneObject(lastSceneObject.id, lastSceneObject.ll, lastSceneObject.object);
+        }).catch(function () { toast('Impossible d’enregistrer.'); });
+      }
+      return;
+    }
     if (event.target.matches('[data-center-selected]')) {
       var location = selected && point(selected);
       if (location) map.setView(location, Math.max(map.getZoom(), 4));
@@ -4360,6 +4634,13 @@
     renderSquadLinks: renderSquadLinks,
     showCalcDrawer: showCalcDrawer,
     getSelected: function () { return selected; },
+    selectUnit: selectUnit,
+    inspectWorld: inspectWorld,
+    inspectSceneObject: inspectSceneObject,
+    handleWorldClick: handleWorldClick,
+    handleWorldContext: handleWorldContext,
+    openContextAt: openContextAt,
+    pickUnitAt: pickUnitAt,
     renderPresenceHeat: renderPresenceHeat,
     getPhotos: function () { return photos; },
     applyLook: applyLook,

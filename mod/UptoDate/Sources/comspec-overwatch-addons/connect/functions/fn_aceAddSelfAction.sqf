@@ -30,7 +30,7 @@ if (_a isEqualTo []) exitWith {
 
 private _actionId = _a select 0;
 if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-    [player, 1, _path, _actionId] call ace_interact_menu_fnc_removeActionFromObject;
+    [player, 1, _path + [_actionId]] call ace_interact_menu_fnc_removeActionFromObject;
 };
 
 private _installed = missionNamespace getVariable ["COMSPEC_ACESelfActions", []];

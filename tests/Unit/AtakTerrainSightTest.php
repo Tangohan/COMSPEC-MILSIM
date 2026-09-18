@@ -86,6 +86,98 @@ final class AtakTerrainSightTest extends TestCase
         self::assertSame(AtakTerrainSight::GAP_MESSAGE, $out['gap_message']);
     }
 
+    public function testLineOfSightIsMaskedByBuildingJustInFront(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::lineOfSight($grid, 50, 50, 400, 50, 1.6, 0.0, [
+            ['x' => 80, 'y' => 50, 'height' => 8, 'width' => 16, 'depth' => 20, 'z' => 80, 'kind' => 'building'],
+        ]);
+        self::assertSame(AtakTerrainSight::VERDICT_MASKED, $out['verdict']);
+        self::assertSame('Masqué par un bâtiment', $out['verdict_label']);
+        self::assertNotNull($out['obstruction']);
+        self::assertLessThan(35, (float) $out['obstruction']['d']);
+        self::assertGreaterThan(15, (float) $out['obstruction']['d']);
+    }
+
+    public function testLineOfSightHitsTheNearWallNotTheBuildingCenter(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::lineOfSight($grid, 50, 50, 400, 50, 1.6, 0.0, [
+            ['x' => 200, 'y' => 50, 'height' => 20, 'width' => 12, 'depth' => 12, 'z' => 80, 'kind' => 'building'],
+        ]);
+        self::assertSame(AtakTerrainSight::VERDICT_MASKED, $out['verdict']);
+        self::assertLessThan(150, (float) $out['obstruction']['d']);
+        self::assertGreaterThan(130, (float) $out['obstruction']['d']);
+    }
+
+    public function testViewshedIsOpenOnFlatGround(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::viewshed($grid, 250, 250, 200, 1.6, []);
+        self::assertTrue($out['ok']);
+        self::assertTrue($out['ready']);
+        self::assertSame('viewshed', $out['mode']);
+        self::assertSame(100, $out['visible_pct']);
+        self::assertCount(36, $out['sectors']);
+        self::assertTrue($out['sectors'][0]['clear']);
+    }
+
+    public function testViewshedIsMaskedByABuilding(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::viewshed($grid, 50, 50, 400, 1.6, [
+            ['x' => 200, 'y' => 50, 'height' => 20, 'width' => 12, 'depth' => 12, 'z' => 80, 'kind' => 'building'],
+        ]);
+        $masked = array_values(array_filter($out['sectors'], static fn (array $s): bool => empty($s['clear'])));
+        self::assertNotSame([], $masked);
+        self::assertLessThan(100, $out['visible_pct']);
+    }
+
+    public function testHorizonReportsAPeak(): void
+    {
+        $grid = $this->ridgeGrid();
+        $out = AtakTerrainSight::horizon($grid, 50, 250, 400, 1.6, []);
+        self::assertTrue($out['ready']);
+        self::assertNotNull($out['peak']);
+        self::assertCount(72, $out['samples']);
+    }
+
+    public function testSliceListsCrossedBuildings(): void
+    {
+        $grid = $this->flatGrid(80);
+        $out = AtakTerrainSight::slice($grid, [[50, 50], [400, 50]], [
+            ['x' => 200, 'y' => 50, 'height' => 12, 'width' => 10, 'depth' => 10, 'z' => 80, 'kind' => 'building'],
+        ]);
+        self::assertSame('slice', $out['mode']);
+        self::assertNotSame([], $out['volumes']);
+        self::assertSame('building', $out['volumes'][0]['kind']);
+    }
+
+    public function testMeasure3dReportsSpatialDistance(): void
+    {
+        $grid = $this->ridgeGrid();
+        $out = AtakTerrainSight::measure3d($grid, 0, 250, 250, 250);
+        self::assertTrue($out['ready']);
+        self::assertGreaterThan($out['distance_m'], $out['spatial_m']);
+        self::assertNotNull($out['delta_m']);
+        self::assertGreaterThan(0, $out['azimuth_deg']);
+    }
+
+    public function testCoverageGapsListsMissingCells(): void
+    {
+        $grid = [
+            'heights' => AtakTerrainMath::emptyBlob(11 * 11),
+            'cols' => 11,
+            'rows' => 11,
+            'cell_m' => 50,
+            'origin_x' => 0,
+            'origin_y' => 0,
+        ];
+        $gaps = AtakTerrainSight::coverageGaps($grid, 8, 40);
+        self::assertNotSame([], $gaps);
+        self::assertArrayHasKey('x', $gaps[0]);
+    }
+
     public function testLineOfSightIsMaskedByBuildingNotRelief(): void
     {
         $grid = $this->flatGrid(80);

@@ -12,6 +12,7 @@
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith { false };
 
 // Lecture seule : ne pas exiger le mode « full » (écran cassé = position seule).
 // Sinon le journal TOC → jeu restait muet alors que la liaison position tenait.
@@ -41,8 +42,14 @@ private _args = if (_bootstrapped && {_afterId isNotEqualTo "0"}) then {
 };
 
 private _raw = ["COMSPECExtension" callExtension ["GetChatMessages", _args]] call comspec_overwatch_connect_fnc_extResult;
-if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
-if ((_raw select [0, 3]) != "OK|") exitWith { false };
+if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
+    ["messages", 0, " (vide)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+    false
+};
+if ((_raw select [0, 3]) != "OK|") exitWith {
+    ["messages", 0, " (erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+    false
+};
 
 private _body = _raw select [3];
 private _lines = _body splitString (toString [10]);
@@ -115,6 +122,7 @@ private _fnPushIcemanGroup = {
     if (_timeStr isEqualTo "") then { _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString; };
     if ((count _pos) < 2) then { _pos = getPosATL player; };
     if ((count _text) > 160) then { _text = (_text select [0, 160]) + "…"; };
+    if (isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])) exitWith { false };
 
     private _messages = +(missionNamespace getVariable ["Iceman_ATAK_Group_messages", []]);
     if (!(_messages isEqualType [])) then { _messages = []; };
@@ -333,5 +341,7 @@ if (_added > 0 && {!isNil "comspec_overwatch_atak_athena_fnc_athena_updateComms"
 if (_added > 0 && {!isNil "comspec_overwatch_connect_fnc_tabletChatPush"}) then {
     [] call comspec_overwatch_connect_fnc_tabletChatPush;
 };
+
+["messages", count _lines, format [" · nouveaux %1", _added]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 
 _added > 0

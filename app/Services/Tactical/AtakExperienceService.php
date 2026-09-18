@@ -11,10 +11,16 @@ namespace App\Services\Tactical;
 final class AtakExperienceService
 {
     /**
-     * @return list<array{id: string, label: string, description: string, type: string, default: mixed, choices?: list<array{value: string, label: string}>}>
+     * @return list<array{id: string, label: string, description: string, type: string, default: mixed, group: string, surface: string, choices?: list<array{value: string, label: string}>}>
      */
     public function catalog(): array
     {
+        $tri = fn (string $on, string $off): array => [
+            ['value' => 'player', 'label' => 'Laisser le choix à chaque opérateur'],
+            ['value' => 'on', 'label' => $on],
+            ['value' => 'off', 'label' => $off],
+        ];
+
         return [
             [
                 'id' => 'realism',
@@ -22,6 +28,8 @@ final class AtakExperienceService
                 'description' => 'Immersion renforcée pour toute la communauté : moins d’aides à l’écran, pas d’alertes « confort » (immobilité, sauts de position). La liaison, la tablette et les fonctions tactiques restent actives.',
                 'type' => 'bool',
                 'default' => false,
+                'group' => 'ambiance',
+                'surface' => 'experience',
             ],
             [
                 'id' => 'troll',
@@ -29,6 +37,8 @@ final class AtakExperienceService
                 'description' => 'Ambiance décontractée : alertes de suivi exagérées (immobilité, téléportation suspecte) visibles à l’écran. À réserver aux entraînements légers ou sessions fun — incompatible avec le mode réalisme.',
                 'type' => 'bool',
                 'default' => false,
+                'group' => 'ambiance',
+                'surface' => 'experience',
             ],
             [
                 'id' => 'screen_notifications',
@@ -36,11 +46,9 @@ final class AtakExperienceService
                 'description' => 'Bandeaux d’information en bas de la carte en jeu. N’écrit pas dans le chat du jeu.',
                 'type' => 'tri',
                 'default' => 'player',
-                'choices' => [
-                    ['value' => 'player', 'label' => 'Laisser le choix à chaque opérateur'],
-                    ['value' => 'on', 'label' => 'Toujours afficher'],
-                    ['value' => 'off', 'label' => 'Toujours masquer'],
-                ],
+                'group' => 'ambiance',
+                'surface' => 'experience',
+                'choices' => $tri('Toujours afficher', 'Toujours masquer'),
             ],
             [
                 'id' => 'vehicle_detail',
@@ -48,11 +56,9 @@ final class AtakExperienceService
                 'description' => 'Orientation 3D et vitesse lorsque l’opérateur est embarqué.',
                 'type' => 'tri',
                 'default' => 'player',
-                'choices' => [
-                    ['value' => 'player', 'label' => 'Laisser le choix à chaque opérateur'],
-                    ['value' => 'on', 'label' => 'Toujours activer'],
-                    ['value' => 'off', 'label' => 'Toujours désactiver'],
-                ],
+                'group' => 'liaison',
+                'surface' => 'experience',
+                'choices' => $tri('Toujours activer', 'Toujours désactiver'),
             ],
             [
                 'id' => 'require_equipment',
@@ -60,11 +66,9 @@ final class AtakExperienceService
                 'description' => 'La liaison et la tablette ne fonctionnent qu’avec l’équipement choisi dans l’inventaire.',
                 'type' => 'tri',
                 'default' => 'player',
-                'choices' => [
-                    ['value' => 'player', 'label' => 'Laisser le choix à chaque opérateur'],
-                    ['value' => 'on', 'label' => 'Toujours exiger'],
-                    ['value' => 'off', 'label' => 'Jamais exiger'],
-                ],
+                'group' => 'liaison',
+                'surface' => 'experience',
+                'choices' => $tri('Toujours exiger', 'Jamais exiger'),
             ],
             [
                 'id' => 'show_opfor',
@@ -72,12 +76,130 @@ final class AtakExperienceService
                 'description' => 'Positions du camp adverse visibles sur Tacmap pour les observateurs autorisés.',
                 'type' => 'tri',
                 'default' => 'player',
+                'group' => 'carte',
+                'surface' => 'experience',
+                'choices' => $tri('Toujours afficher', 'Toujours masquer'),
+            ],
+            [
+                'id' => 'show_independent',
+                'label' => 'Afficher les indépendants sur la carte web',
+                'description' => 'Positions du camp indépendant visibles sur Tacmap pour les observateurs autorisés.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'carte',
+                'surface' => 'control',
+                'choices' => $tri('Toujours afficher', 'Toujours masquer'),
+            ],
+            [
+                'id' => 'show_civilian',
+                'label' => 'Afficher les civils sur la carte web',
+                'description' => 'Positions civiles visibles sur Tacmap pour les observateurs autorisés.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'carte',
+                'surface' => 'control',
+                'choices' => $tri('Toujours afficher', 'Toujours masquer'),
+            ],
+            [
+                'id' => 'sync_map_markers',
+                'label' => 'Repères de carte vers le poste',
+                'description' => 'Les repères posés en jeu sont transmis au poste de commandement.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'carte',
+                'surface' => 'control',
+                'choices' => $tri('Toujours transmettre', 'Ne jamais transmettre'),
+            ],
+            [
+                'id' => 'atak_realism',
+                'label' => 'Dommages au téléphone ATAK',
+                'description' => 'Les blessures au torse peuvent éteindre, casser l’écran ou détruire le téléphone. Réparable selon le niveau choisi.',
+                'type' => 'list',
+                'default' => 'player',
+                'group' => 'realisme',
+                'surface' => 'control',
                 'choices' => [
-                    ['value' => 'player', 'label' => 'Laisser le choix à chaque opérateur'],
-                    ['value' => 'on', 'label' => 'Toujours afficher'],
-                    ['value' => 'off', 'label' => 'Toujours masquer'],
+                    ['value' => 'player', 'label' => 'Laisser le choix à la mission'],
+                    ['value' => 'off', 'label' => 'Aucun dégât'],
+                    ['value' => '1', 'label' => 'Peut s’éteindre (réparable)'],
+                    ['value' => '2', 'label' => 'L’écran peut être détruit'],
+                    ['value' => '3', 'label' => 'Le téléphone peut être détruit'],
                 ],
             ],
+            [
+                'id' => 'radio_proximity',
+                'label' => 'Écoute radio à proximité',
+                'description' => 'Le poste entend les échanges radio autour des opérateurs.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours activer', 'Toujours désactiver'),
+            ],
+            [
+                'id' => 'ace_menus',
+                'label' => 'Menus Overwatch dans ACE',
+                'description' => 'Les actions Overwatch étendues apparaissent dans le menu d’interaction ACE.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours afficher', 'Toujours masquer'),
+            ],
+            [
+                'id' => 'order_compose',
+                'label' => 'Émission d’ordres depuis le terrain',
+                'description' => 'Les chefs d’unité peuvent rédiger un ordre ou un FRAGO sans passer par la carte du poste.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours autoriser', 'Toujours interdire'),
+            ],
+            [
+                'id' => 'sse_require_item',
+                'label' => 'Terminal SEEK requis',
+                'description' => 'Ouvrir une fiche de renseignement exige un terminal de recueil (SEEK, BII-10 ou téléphone ATAK).',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours exiger', 'Jamais exiger'),
+            ],
+            [
+                'id' => 'playtime',
+                'label' => 'Temps de jeu vers le poste',
+                'description' => 'Le temps passé en mission est transmis au portail.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours transmettre', 'Ne jamais transmettre'),
+            ],
+            [
+                'id' => 'athena_feed',
+                'label' => 'Aperçus caméra automatiques',
+                'description' => 'Des photos casque ou drone partent périodiquement vers le poste.',
+                'type' => 'tri',
+                'default' => 'player',
+                'group' => 'fonctions',
+                'surface' => 'control',
+                'choices' => $tri('Toujours activer', 'Toujours désactiver'),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function groupLabels(): array
+    {
+        return [
+            'ambiance' => 'Ambiance de mission',
+            'liaison' => 'Liaison et équipement',
+            'carte' => 'Carte du poste',
+            'realisme' => 'Réalisme du téléphone',
+            'fonctions' => 'Fonctions de mission',
         ];
     }
 
@@ -91,6 +213,7 @@ final class AtakExperienceService
             $out[$row['id']] = $row['default'];
         }
         $out['guide_custom'] = '';
+        $out['server_control_reviewed'] = false;
 
         return $out;
     }
@@ -127,7 +250,13 @@ final class AtakExperienceService
      */
     public function put(int $tenantId, array $incoming): array
     {
+        $existing = $this->get($tenantId)['settings'];
         $merged = $this->defaults();
+        foreach ($merged as $key => $_) {
+            if (array_key_exists($key, $existing)) {
+                $merged[$key] = $existing[$key];
+            }
+        }
         foreach ($this->catalog() as $row) {
             $id = $row['id'];
             if (!array_key_exists($id, $incoming)) {
@@ -135,10 +264,10 @@ final class AtakExperienceService
             }
             if ($row['type'] === 'bool') {
                 $merged[$id] = (bool) $incoming[$id];
-            } elseif ($row['type'] === 'tri') {
+            } elseif ($row['type'] === 'tri' || $row['type'] === 'list') {
                 $val = (string) $incoming[$id];
                 $allowed = array_column($row['choices'] ?? [], 'value');
-                $merged[$id] = in_array($val, $allowed, true) ? $val : 'player';
+                $merged[$id] = in_array($val, $allowed, true) ? $val : (string) $row['default'];
             }
         }
         if (!empty($merged['realism'])) {
@@ -146,12 +275,11 @@ final class AtakExperienceService
         } elseif (!empty($merged['troll'])) {
             $merged['realism'] = false;
         }
-        $custom = trim((string) ($incoming['guide_custom'] ?? ''));
-        $merged['guide_custom'] = $custom;
-        if (!empty($merged['realism'])) {
-            $merged['troll'] = false;
-        } elseif (!empty($merged['troll'])) {
-            $merged['realism'] = false;
+        if (array_key_exists('guide_custom', $incoming)) {
+            $merged['guide_custom'] = trim((string) $incoming['guide_custom']);
+        }
+        if (!empty($incoming['server_control_reviewed'])) {
+            $merged['server_control_reviewed'] = true;
         }
         $merged['updated_at'] = gmdate('c');
 
@@ -166,14 +294,17 @@ final class AtakExperienceService
     }
 
     /**
-     * @return list<array{id: string, label: string, description: string, type: string, value: mixed, choices?: list<array{value: string, label: string}>}>
+     * @return list<array{id: string, label: string, description: string, type: string, value: mixed, group: string, surface: string, choices?: list<array{value: string, label: string}>}>
      */
-    public function catalogWithState(int $tenantId): array
+    public function catalogWithState(int $tenantId, ?string $surface = null): array
     {
         $state = $this->get($tenantId);
         $settings = $state['settings'];
         $out = [];
         foreach ($this->catalog() as $row) {
+            if ($surface !== null && ($row['surface'] ?? 'experience') !== $surface) {
+                continue;
+            }
             $id = $row['id'];
             $item = $row;
             $item['value'] = $settings[$id] ?? $row['default'];
@@ -193,16 +324,22 @@ final class AtakExperienceService
         $pack = $this->get($tenantId);
         $s = $pack['settings'];
 
-        return [
+        $out = [
             'realism' => !empty($s['realism']),
             'troll' => !empty($s['troll']),
-            'screen_notifications' => (string) ($s['screen_notifications'] ?? 'player'),
-            'vehicle_detail' => (string) ($s['vehicle_detail'] ?? 'player'),
-            'require_equipment' => (string) ($s['require_equipment'] ?? 'player'),
-            'show_opfor' => (string) ($s['show_opfor'] ?? 'player'),
             'guide' => $pack['guide'],
             'updated_at' => $pack['updated_at'],
         ];
+        foreach ($this->catalog() as $row) {
+            $id = $row['id'];
+            if ($row['type'] === 'bool') {
+                $out[$id] = !empty($s[$id]);
+            } else {
+                $out[$id] = (string) ($s[$id] ?? $row['default']);
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -286,6 +423,14 @@ final class AtakExperienceService
             'show_opfor' => [
                 'on' => 'Les positions adverses sont visibles sur Tacmap pour les observateurs.',
                 'off' => 'Les positions adverses sont masquées sur Tacmap.',
+            ],
+            'show_independent' => [
+                'on' => 'Les positions indépendantes sont visibles sur Tacmap.',
+                'off' => 'Les positions indépendantes sont masquées sur Tacmap.',
+            ],
+            'show_civilian' => [
+                'on' => 'Les positions civiles sont visibles sur Tacmap.',
+                'off' => 'Les positions civiles sont masquées sur Tacmap.',
             ],
         ];
         foreach ($map as $key => $labels) {

@@ -92,7 +92,7 @@ if (!(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connectio
     };
     _result set ["mode", "position_only"];
     _result set ["reason", "screen_destroyed"];
-    _result set ["link_state", [] call comspec_overwatch_connect_fnc_refreshLinkState];
+    _result set ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "degraded"]];
     _result
 };
 
@@ -104,7 +104,7 @@ if !(_atak getOrDefault ["powered_on", true]) exitWith {
     _result
 };
 
-private _refreshed = [] call comspec_overwatch_connect_fnc_refreshLinkState;
-_result set ["link_state", _refreshed];
+// Lecture seule : ne pas recalculer la liaison ici (polls + position → boucle badges / overlay).
+_result set ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "linked"]];
 
 _result

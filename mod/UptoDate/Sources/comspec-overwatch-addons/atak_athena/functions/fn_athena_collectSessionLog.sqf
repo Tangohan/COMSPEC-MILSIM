@@ -120,7 +120,7 @@ private _cachedAt = missionNamespace getVariable ["COMSPEC_Athena_SessionLogAt",
 if ((diag_tickTime - _cachedAt) < 1.2 && {_cached isEqualType []} && {(count _cached) > 0}) then {
     _rawLines = _cached;
 } else {
-    private _raw = ["COMSPECExtension" callExtension ["GetLogTail", ["14000"]]] call comspec_overwatch_connect_fnc_extResult;
+    private _raw = ["COMSPECExtension" callExtension ["GetLogTail", ["8000"]]] call comspec_overwatch_connect_fnc_extResult;
     if (_raw isEqualType "" && {(_raw select [0, 3]) isEqualTo "OK|"}) then {
         private _payload = _raw select [3, (count _raw) - 3];
         {

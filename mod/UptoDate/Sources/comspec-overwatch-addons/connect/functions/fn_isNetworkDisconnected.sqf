@@ -12,7 +12,6 @@ if (_isDisconnected) then {
     _state set ["disconnect_until", -1];
     _state set ["sim_local", false];
     missionNamespace setVariable ["COMSPEC_NetworkDisconnectState", _state, false];
-    [] call comspec_overwatch_connect_fnc_refreshLinkState;
 };
 
 if !([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive) exitWith { false };

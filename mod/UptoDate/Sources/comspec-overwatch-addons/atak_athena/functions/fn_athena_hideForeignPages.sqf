@@ -7,9 +7,6 @@ params [["_keep", "", [""]]];
 if (!hasInterface) exitWith {};
 
 private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
-if (isNull _display) then {
-    _display = uiNamespace getVariable ["cTab_Android_dsp", displayNull];
-};
 if (isNull _display) exitWith {};
 
 _keep = toLower _keep;
@@ -26,7 +23,9 @@ if (_keep isEqualTo "") then {
             case "ataknote": { "note" };
             case "ataktask": { "task" };
             case "atakcomms": { "comms" };
-            case "group": { "comms" };
+            case "group": { "msghub" };
+            case "message": { "msghub" };
+            case "atakp2p": { "p2p" };
             case "atakbriefing": { "briefing" };
             case "atakwiki": { "wiki" };
             case "ataksettings": { "settings" };
@@ -48,6 +47,7 @@ private _needles = [
     ["note", "comspec_atak_note"],
     ["task", "comspec_atak_task"],
     ["comms", "comspec_atak_comms"],
+    ["msghub", "comspec_atak_messagehub"],
     ["briefing", "comspec_atak_briefing"],
     ["wiki", "comspec_atak_wiki"],
     ["settings", "comspec_atak_settings"],
@@ -63,21 +63,6 @@ private _keepNeedle = "";
     if ((_x select 0) isEqualTo _keep) then { _keepNeedle = _x select 1; };
 } forEach _needles;
 
-private _modeNow = "";
-if (!isNil "cTab_fnc_getSettings") then {
-    _modeNow = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;
-};
-if (_modeNow isEqualTo "DESKTOP") then {
-    {
-        private _c = _display displayCtrl _x;
-        if (!isNull _c) then {
-            _c ctrlShow false;
-            _c ctrlEnable false;
-            _c ctrlCommit 0;
-        };
-    } forEach [4660, 46600, 17000 + 2620, 17000 + 2621, 17000 + 2622];
-};
-
 if (_keep isEqualTo "") exitWith {};
 
 private _apps = _display displayCtrl (17000 + 4650);
@@ -88,6 +73,11 @@ if (isNull _apps) exitWith {};
     if (_cls isEqualTo "") then {
         // skip
     } else {
+        if (_cls isEqualTo "atak_message") then {
+            private _showP2p = _keep isEqualTo "p2p";
+            _x ctrlShow _showP2p;
+            _x ctrlEnable _showP2p;
+        } else {
         private _ours = false;
         {
             if ((_cls find (_x select 1)) >= 0) then { _ours = true; };
@@ -97,12 +87,13 @@ if (isNull _apps) exitWith {};
             _x ctrlShow _show;
         } else {
             if (
-                (_keep isEqualTo "comms")
-                && {(_cls isEqualTo "atak_message") || {(_cls find "iceman") >= 0 && {(_cls find "group") >= 0}}}
+                ((_keep isEqualTo "comms") || {_keep isEqualTo "msghub"})
+                && {(_cls find "iceman") >= 0 && {(_cls find "group") >= 0}}
             ) then {
                 _x ctrlShow false;
                 _x ctrlEnable false;
             };
+        };
         };
     };
 } forEach (allControls _apps);

@@ -4,6 +4,8 @@
 */
 if (!hasInterface) exitWith {};
 if (isNil "cTabBFTmembers" && {isNil "cTabBFTgroups"}) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_BftRelabel_Lock", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_BftRelabel_Lock", true, false];
 
 private _fncLabel = {
     params ["_u"];
@@ -23,7 +25,7 @@ private _fncLooksLikeSlot = {
     false
 };
 
-if (!isNil "cTabBFTmembers" && {cTabBFTmembers isEqualType []}) then {
+// Les listes BFT cTab doivent rester mutées en place (copie + puis set n’affiche rien).
     {
         if (!(_x isEqualType []) || {(count _x) < 5}) then { continue };
         private _u = _x select 0;
@@ -110,7 +112,7 @@ if (!isNil "cTabBFTvehicles" && {cTabBFTvehicles isEqualType []}) then {
             _best = _x;
             _bestD = _d;
         };
-    } forEach allPlayers;
+    } forEach (+allPlayers);
 
     if (isNull _best) then { continue };
     private _label = [_best] call _fncLabel;
@@ -152,7 +154,7 @@ if (!isNil "cTabBFTvehicles" && {cTabBFTvehicles isEqualType []}) then {
     } else {
         _x setMarkerAlphaLocal 1;
     };
-} forEach allMapMarkers;
+} forEach (+allMapMarkers);
 
 private _headerUnit = player;
 if (!isNil "cTab_player" && {!isNull cTab_player}) then { _headerUnit = cTab_player; };
@@ -163,3 +165,5 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
 if (!isNull _openDisp) then {
     [_openDisp, _headerUnit] call comspec_overwatch_atak_athena_fnc_athena_fillIdentityOverlay;
 };
+
+missionNamespace setVariable ["COMSPEC_BftRelabel_Lock", false, false];

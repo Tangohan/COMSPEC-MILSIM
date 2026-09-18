@@ -69,6 +69,9 @@ final class AtakCommsBackToChannelsAssetTest extends TestCase
 
         self::assertStringContainsString('displayCtrl 46600', $chrome);
         self::assertStringContainsString('IcemanGroupCtrl', $chrome);
+        self::assertStringContainsString('controlsGroupCtrl 9924', $chrome);
+        self::assertStringContainsString('controlsGroupCtrl 9925', $chrome);
+        self::assertStringContainsString('idc in [5, 6, 10, 11', $chrome);
 
         self::assertStringContainsString('commsBack', $title);
         self::assertStringContainsString('toggleSubListMenu', $title);
@@ -78,6 +81,7 @@ final class AtakCommsBackToChannelsAssetTest extends TestCase
 
         self::assertStringContainsString('openAtakApp', $post);
         self::assertStringNotContainsString('athena_openComms', $post);
+        self::assertStringContainsString('0.2, 0.55, 1.1', $opened);
 
         self::assertStringContainsString('Retour aux canaux', $page);
         self::assertStringContainsString('athena_commsTitleClick', $page);
@@ -85,7 +89,7 @@ final class AtakCommsBackToChannelsAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_Comms_Menu', $cfg);
         self::assertStringContainsString('athena_commsFooter', $cfg);
-        self::assertStringContainsString('1.0.144', $cfg);
+        self::assertStringContainsString('1.0.137', $cfg);
 
         self::assertStringContainsString('liste des canaux', strtolower($bug));
         self::assertStringContainsString('Live Feed', $bug);

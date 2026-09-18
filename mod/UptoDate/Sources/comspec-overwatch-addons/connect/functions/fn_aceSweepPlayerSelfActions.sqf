@@ -14,7 +14,7 @@ if (!(_installed isEqualType []) || {_installed isEqualTo []}) exitWith { true }
     if (!(_x isEqualType []) || {(count _x) < 2}) then { continue };
     _x params ["_path", "_actionId"];
     if (!(_path isEqualType []) || {!(_actionId isEqualType "")}) then { continue };
-    [player, 1, _path, _actionId] call ace_interact_menu_fnc_removeActionFromObject;
+    [player, 1, _path + [_actionId]] call ace_interact_menu_fnc_removeActionFromObject;
 } forEach _installed;
 
 true

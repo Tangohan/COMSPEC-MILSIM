@@ -1,59 +1,191 @@
-﻿COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.144 / Extension 2.0.43 — 16/09/2026
+﻿COMSPEC Overwatch 1.5.84 / Athena ATAK 1.0.137 / Extension 2.0.44 — 18/09/2026
 
-[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
-[b]Publication : 16/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.144 · Extension 2.0.43
+[h1]COMSPEC Overwatch — Mise à jour 1.5.84[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.84 · Athena 1.0.137 · Extension 2.0.44
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
 [/quote]
 
-[h2]Correction — Alertes et écran du téléphone[/h2]
-Une alerte du poste n’ajoute plus un voile sur le téléphone en miniature. Les cartouches de la carte restent ceux du téléphone, sans cadre collé par-dessus.
+[h2]Correction — Dépannage : étape Ordres[/h2]
+Le dépannage liaison isole désormais la réception des ordres et leur affichage sur le téléphone. Si le jeu s’arrête, le bandeau indique clairement laquelle des deux étapes est en cours. Le bandeau montre aussi le débit, le poste, les versions, le compte identifié et le taux d’erreur. Le journal indique combien de messages, de repères et d’ordres reviennent.
 
-[h2]Changement — Plus de barre de données en bas de carte[/h2]
-La ligne verte en bas de la carte (sync, fiabilité, versions) n’apparaît plus. La carte reprend toute la hauteur.
+---
 
-[h2]Correction — Menu d’applications et messages du poste[/h2]
-Le menu d’applications s’ouvre au chevron et reste ouvert jusqu’à ce qu’on le referme. Les messages du poste restent dans la messagerie : ils ne s’empilent plus en bandeau en bas de la carte.
+COMSPEC Overwatch 1.5.83 / Athena ATAK 1.0.136 / Extension 2.0.45 — 18/09/2026
 
-[h2]Correction — Plus de fermeture sans ouvrir le téléphone[/h2]
-Le jeu ne se ferme plus tout seul si l’opérateur n’a pas le téléphone en main et ne l’a pas ouvert.
+[h1]COMSPEC Overwatch — Mise à jour 1.5.83[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.83 · Athena 1.0.136 · Extension 2.0.45
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
 
-[h2]Correction — Plus de recadrage de la carte[/h2]
-Athena ne déplace plus et ne redimensionne plus la carte ni le menu d’applications. Le menu s’affiche ou se masque seulement, à la demande du chevron.
+[h2]Nouveau — Contrôle de mission[/h2]
+Le commandement dispose d’un écran unique pour imposer le réalisme, voir les fonctions actives, consulter les relais et activer ou couper ce que la mission utilise. Les opérateurs en liaison reçoivent les règles sous environ une minute. Les réglages du téléphone restent sur l’ATAK.
 
-[h2]Correction — Menu qui reste ouvert[/h2]
-Le menu d'applications s'ouvre et reste ouvert jusqu'au chevron. Sortir le curseur du cadre n'immobilise plus l'écran.
+---
 
-[h2]Correction — Photographies sans surcharge[/h2]
-L’envoi d’une photographie volumineuse depuis le téléphone n’encombre plus la mémoire du jeu.
+COMSPEC Overwatch 1.5.82 / Athena ATAK 1.0.136 / Extension 2.0.44 — 18/09/2026
 
-[h2]Correction — Menu qui ne revient plus tout seul[/h2]
-Le menu d’applications ne s’ouvre plus tout seul juste après l’écran. Il reste fermé jusqu’au chevron.
+[h1]COMSPEC Overwatch — Mise à jour 1.5.82[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.82 · Athena 1.0.136 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
 
-[h2]Amélioration — Affichage IceMan[/h2]
-Les pages du téléphone, les cartouches de la carte, la barre de liaison et l’alerte du poste reprennent l’affichage IceMan : couleurs, alignement et sauts de ligne. L’identité Indicatif / Nom / Rôle reste celle du téléphone.
+[h2]Nouveau — Message : P2P ou Via Athena[/h2]
+En ouvrant Message sur le téléphone, vous choisissez d’abord le canal. P2P — Réseau local : les messages entre téléphones à proximité, comme d’habitude. Via Athena : la messagerie de compte à compte, comme au poste.
 
-[h2]Correction — Pages du téléphone en texte simple[/h2]
-Messagerie, connexion, comptes-rendus, réglages et wiki s’affichent en texte simple. Le jeu ne se ferme plus à l’ouverture d’une page.
+[h2]Correction — Plus de double démarrage en mission[/h2]
+Recocher Overwatch dans les paramètres d’addons ne relance plus tout le mod par-dessus une session déjà ouverte. Les menus, la liaison et les alertes restent un seul jeu. Décochez Overwatch pour couper les échanges ; une session déjà ouverte reste affichée jusqu’à la sortie d’Arma.
 
-[h2]Correction — Textes de la carte[/h2]
-Les cartouches de la carte, la barre de liaison et l’alerte du poste s’affichent en texte simple. Le jeu ne se ferme plus à cause de cet affichage.
+---
 
-[h2]Correction — Menu dans l’écran du téléphone[/h2]
-Le menu d’applications reste dans l’écran, à droite de la carte. Il ne flotte plus à côté du boîtier. Refermé, la carte reprend toute la largeur.
+COMSPEC Overwatch 1.5.81 / Athena ATAK 1.0.135 / Extension 2.0.44 — 18/09/2026
 
-[h2]Correction — Menu d’applications[/h2]
-Le menu d’applications se déroule de nouveau : retour et défilement sont utilisables. Les boutons du bas restent sous le menu, pas sur la carte.
+[h1]COMSPEC Overwatch — Mise à jour 1.5.81[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.81 · Athena 1.0.135 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
 
-[h2]Changement — Écran d’accueil[/h2]
-L’écran d’accueil du téléphone n’affiche plus les raccourcis Connexion Athena, messagerie, Resynch et les autres icônes COMSPEC. Ces fonctions restent dans le menu d’applications et dans le menu ACE.
+[h2]Correction — Dépannage liaison visible sur Échap[/h2]
+Le dépannage se lance depuis le bouton orange en haut à gauche du menu Échap. Plus besoin de chercher dans le panneau. Un bandeau reste à l’écran : Overwatch est coupé, puis chaque fonction de la liaison est rallumée une par une, 55 secondes d’écart. Si le jeu s’arrête, la fonction affichée est en cause.
 
-[h2]Correction — Alerte plein écran[/h2]
-Une alerte envoyée depuis le poste recouvre tout l’écran du téléphone, y compris le menu d’applications. Le titre et le texte restent lisibles.
+---
 
-[h2]Correction — Boutons du menu d’applications[/h2]
-À l’ouverture du menu d’applications, les boutons du bas (photos, recherche, radio) restent collés sous le tiroir. Ils ne recouvrent plus la carte.
+COMSPEC Overwatch 1.5.80 / Athena ATAK 1.0.135 / Extension 2.0.44 — 18/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.80[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.80 · Athena 1.0.135 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Nouveau — Dépannage liaison[/h2]
+Un outil coupe Overwatch, puis rallume chaque fonction de la liaison une par une, avec 55 secondes d’écart. Un bandeau reste à l’écran. Si le jeu s’arrête, la fonction affichée est en cause. Échap, bouton COMSPEC Overwatch, puis Dépannage liaison.
+
+---
+
+COMSPEC Overwatch 1.5.79 / Athena ATAK 1.0.135 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.79[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.79 · Athena 1.0.135 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Plus d’arrêt avec Overwatch actif[/h2]
+Avec Overwatch coché, le jeu ne se ferme plus tout seul, téléphone ouvert ou non. Les repères déjà affichés depuis le poste ne relancent plus une avalanche d’envois. Décochez Overwatch : la position et les messages s’arrêtent aussi.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.134 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.134 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Messagerie sans écran superposé[/h2]
+La liste des canaux n’est plus recouverte par le champ d’envoi ni par Effacer / Supprimer.
+
+[h2]Correction — Plus d’arrêt sans téléphone[/h2]
+Sans téléphone ATAK en poche, le jeu ne se ferme plus tout seul. La liaison avec le poste démarre lorsque l’opérateur a le téléphone.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.133 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.133 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Plus d’arrêt pendant la carte et les repères[/h2]
+Le jeu ne se ferme plus tout seul pendant l’affichage de la carte, la pose d’un repère ou le rafraîchissement des indicatifs.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.132 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.132 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Menu d’applications avec les icônes[/h2]
+Le chevron ouvre le menu d’applications avec les icônes. Ce n’est plus un panneau gris vide.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.131 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.131 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Plus d’arrêt après quelques dizaines de secondes[/h2]
+Le jeu ne se ferme plus tout seul une fois le téléphone ouvert sur la carte, ni après une pause sans activité visible. La page d’état de liaison affiche l’état déjà calculé, sans relancer le calcul à chaque rafraîchissement.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.130 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.130 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Menu d’applications qui se referme[/h2]
+Le menu d’applications s’ouvre et se referme de nouveau avec le chevron et Retour. La carte reste dans le cadre du téléphone.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.129 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.129 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Carte dans l’écran et menu du téléphone[/h2]
+La carte reste dans le cadre du téléphone. Le menu d’applications reprend celui du téléphone : les icônes s’affichent, Retour referme le menu.
+
+[h2]Correction — Arrêt brutal au bout de quelques secondes[/h2]
+Le jeu ne se ferme plus tout seul après quelques secondes, même sans ouvrir le téléphone. Le menu ACE ne se réempile plus à chaque mission de la même session.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.128 / Extension 2.0.44 — 17/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 17/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.128 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Arrêt brutal au bout de quelques secondes[/h2]
+Le jeu ne se ferme plus tout seul après quelques secondes, même sans ouvrir le téléphone. Le menu ACE ne se réempile plus à chaque mission de la même session.
 
 [h2]Correction — Fermeture brutale avec le téléphone ouvert[/h2]
 Avec le téléphone ATAK ouvert et la liaison active, le jeu pouvait se fermer tout seul. Le cadre de l’écran est figé.
@@ -64,7 +196,29 @@ Depuis un canal, le retour ramène à la liste des canaux.
 [h2]Nouveau — Overwatch Beta et téléphone[/h2]
 Alerte plein écran, tâche de groupe, points à atteindre et ralliement depuis le poste. Cap, vitesse, altitude et liaison du terrain s’affichent sur la fiche contact.
 
-Après installation : journal → connect v1.5.78 et Extension 2.0.43.
+Après installation : journal → connect v1.5.78 et Extension 2.0.44.
+
+---
+
+COMSPEC Overwatch 1.5.78 / Athena ATAK 1.0.127 — 15/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.78[/h1]
+[b]Publication : 15/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.78 · Athena 1.0.127 · Extension 2.0.41
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Fermeture brutale avec le téléphone ouvert[/h2]
+Avec le téléphone ATAK ouvert et la liaison active, le jeu pouvait se fermer tout seul. Le cadre de l’écran est figé.
+
+[h2]Correction — Messagerie[/h2]
+Depuis un canal, le retour ramène à la liste des canaux.
+
+[h2]Nouveau — Overwatch Beta et téléphone[/h2]
+Alerte plein écran, tâche de groupe, points à atteindre et ralliement depuis le poste. Cap, vitesse, altitude et liaison du terrain s’affichent sur la fiche contact.
+
+Après installation : journal → connect v1.5.78 et Extension 2.0.41.
 
 ---
 

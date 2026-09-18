@@ -267,7 +267,7 @@ if (_allOk) then {
 
         _statusCtrl ctrlSetBackgroundColor [0.08, 0.08, 0.08, 0.94];
 
-        [_statusCtrl, _statusTxt] call comspec_overwatch_connect_fnc_setPlainText;
+        _statusCtrl ctrlSetStructuredText parseText _statusTxt;
 
         // Hauteur intérieure = contenu ; le host 9698 clippe au-dessus des boutons.
         private _host = [_group, 9698] call comspec_overwatch_atak_athena_fnc_athena_pageCtrl;
@@ -366,7 +366,7 @@ if (_allOk) then {
 
         _authHint ctrlSetBackgroundColor (if (_hintOkBg) then { [0.04, 0.12, 0.08, 0.94] } else { [0.12, 0.08, 0.04, 0.94] });
 
-        [_authHint, (_lines joinString "<br/>")] call comspec_overwatch_connect_fnc_setPlainText;
+        _authHint ctrlSetStructuredText parseText (_lines joinString "<br/>");
 
     };
 

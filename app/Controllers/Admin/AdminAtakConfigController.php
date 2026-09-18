@@ -58,7 +58,7 @@ class AdminAtakConfigController
         $bridgeModulesUpdatedAt = $modulesSvc->get($tenantId)['updated_at'] ?? '';
         $experienceSvc = new AtakExperienceService();
         $experiencePack = $experienceSvc->get($tenantId);
-        $experienceCatalog = $experienceSvc->catalogWithState($tenantId);
+        $experienceCatalog = $experienceSvc->catalogWithState($tenantId, 'experience');
         $experienceSchemaReady = $this->atakConfigRepository->isExperienceSchemaReady();
         $photoHudSvc = new \App\Services\Media\ReconPhotoHudService();
         $photoHud = $photoHudSvc->get($tenantId);
@@ -208,10 +208,13 @@ class AdminAtakConfigController
         $svc = new AtakExperienceService();
         $incoming = [];
         foreach ($svc->catalog() as $row) {
+            if (($row['surface'] ?? 'experience') !== 'experience') {
+                continue;
+            }
             $id = $row['id'];
             if ($row['type'] === 'bool') {
                 $incoming[$id] = (string) $request->input('experience_' . $id, '0') === '1';
-            } elseif ($row['type'] === 'tri') {
+            } elseif ($row['type'] === 'tri' || $row['type'] === 'list') {
                 $incoming[$id] = trim((string) $request->input('experience_' . $id, 'player'));
             }
         }

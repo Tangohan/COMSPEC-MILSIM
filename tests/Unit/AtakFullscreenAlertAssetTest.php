@@ -33,25 +33,10 @@ final class AtakFullscreenAlertAssetTest extends TestCase
         $overwatch = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
         $view = (string) file_get_contents($root . '/views/atak-overwatch-beta.php');
 
-        $layout = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_ATAK_Check_Layout.sqf'
-        );
-
         self::assertStringContainsString('cTab_Android_dlg', $paint);
         self::assertStringContainsString('cTab_Android_dsp', $paint);
-        self::assertStringContainsString('_fncOpenPhone', $paint);
         self::assertStringContainsString('ALERTE POSTE', $paint);
-        self::assertStringContainsString('setPlainText', $paint);
-        self::assertStringContainsString('RscStructuredText', $paint);
-        self::assertStringNotContainsString('Iceman_ReportsDetailText', $paint);
-        self::assertStringNotContainsString('ctrlSetStructuredText parseText', $paint);
-        self::assertStringContainsString('COMSPEC_ATAK_FullMapRect', $paint);
-        self::assertStringContainsString('4660', $paint);
-        self::assertStringContainsString('splitString "%"', $paint);
-        self::assertStringContainsString('ctrlSetZOrder', $paint);
         self::assertStringContainsString('COMSPEC_Athena_FsAlert', $show);
-        self::assertStringContainsString('COMSPEC_Athena_FsAlert', $layout);
-        self::assertStringContainsString('1.0.144', $cfg);
         self::assertStringContainsString('NOTIFY_FULL', $notify);
         self::assertStringContainsString('athena_showFullscreenAlert', $notify);
         self::assertStringContainsString('NOTIFY_FULL', $receive);

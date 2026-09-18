@@ -7,7 +7,9 @@ private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 
 private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
-if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
+if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
+    ["formes", 0, " (vide ou erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+};
 private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];
 private _idx = 0;
@@ -119,15 +121,30 @@ while {_idx >= 0} do {
         _y = _flat select 1;
     };
 
+    if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
+        _flat deleteAt ((count _flat) - 1);
+    };
+
     [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
     _idx = _idPos + 1;
 };
 
+["formes", count _seenIds] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+
+// Liste coupée (tampon moteur ~8 000) : ne pas effacer les formes absentes du morceau.
+if ((count _raw) >= 7990) exitWith {};
+if ((count _seenIds) < 1 && {(count _json) > 4}) exitWith {};
+
 private _existing = missionNamespace getVariable ["COMSPEC_MapShapeMarkers", createHashMap];
+if (!(_existing isEqualType createHashMap)) exitWith {};
 private _allMarkerNames = keys _existing;
+private _prefix = "COMSPEC_shape_";
+private _prefixLen = count _prefix;
 {
     private _markerName = _x;
-    private _idPart = _markerName select [14, count _markerName - 14];
+    if (!(_markerName isEqualType "") || {(count _markerName) <= _prefixLen}) then { continue };
+    private _idPart = _markerName select [_prefixLen, (count _markerName) - _prefixLen];
+    if (_idPart isEqualTo "") then { continue };
     if (!(_idPart in _seenIds)) then {
         _idPart call comspec_overwatch_connect_fnc_deleteMapShape;
     };

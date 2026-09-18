@@ -3,9 +3,14 @@
     IDC 88550–88559. Hors boussole (haut gauche) et Map Tools.
 */
 params ["_disp", "_mapCtrl", "_vis"];
+if (isNull _disp) exitWith {};
+if (!(_vis isEqualType []) || {(count _vis) < 4}) exitWith {};
 _vis params ["_vx", "_vy", "_vw", "_vh"];
+if (!(_vw isEqualType 0) || {!(_vh isEqualType 0)}) exitWith {};
+if (_vw <= 0 || {_vh <= 0}) exitWith {};
 private _fncEnsure = {
     params ["_d", "_idc", "_class"];
+    if (isNull _d) exitWith { controlNull };
     private _c = _d displayCtrl _idc;
     if (isNull _c) then { _c = _d ctrlCreate [_class, _idc]; };
     _c
@@ -35,6 +40,7 @@ private _i = 0;
 {
     _x params ["_id", "_lab", "_idc"];
     private _b = [_disp, _idc, "RscButton"] call _fncEnsure;
+    if (isNull _b) then { continue };
     _b ctrlSetPosition [_barX + (_i * _fw), _barY, _fw - 0.002, _barH];
     _b ctrlSetText _lab;
     _b ctrlSetFont "RobotoCondensed";

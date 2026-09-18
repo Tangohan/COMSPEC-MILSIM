@@ -11,9 +11,12 @@ if (isNull _group || {!ctrlShown _group}) exitWith {};
 private _page = (["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""];
 if (_page isNotEqualTo "" && {!(_page in ["AtakStatus", "COMSPEC_ATAK_Status", "atak_status", "status"])}) exitWith {};
 
-// Mesures à jour
+if (missionNamespace getVariable ["COMSPEC_StatusUpdating", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_StatusUpdating", true, false];
+
+// Mesures à jour — lecture seule de l’état déjà calculé (pas refreshLinkState :
+// ça rappelle updateStatusBadges → bandeau, et reboucle tant que la page est ouverte).
 [] call comspec_overwatch_connect_fnc_measureLatency;
-[] call comspec_overwatch_connect_fnc_refreshLinkState;
 private _ext = [] call comspec_overwatch_connect_fnc_extensionStatus;
 _ext params [["_extOk", false], ["_extCode", "not_loaded"]];
 
@@ -326,12 +329,12 @@ _body = _body + (["Zone radio", _zoneTxt, if (_zoneTxt isEqualTo "Aucune") then 
 
 private _sumCtrl = _group controlsGroupCtrl 9801;
 if (!isNull _sumCtrl) then {
-    [_sumCtrl, _summary] call comspec_overwatch_connect_fnc_setPlainText;
+    _sumCtrl ctrlSetStructuredText parseText _summary;
 };
 private _bodyViewport = _group controlsGroupCtrl 9806;
 private _bodyCtrl = if (!isNull _bodyViewport) then { _bodyViewport controlsGroupCtrl 9802 } else { controlNull };
 if (!isNull _bodyCtrl) then {
-    [_bodyCtrl, _body] call comspec_overwatch_connect_fnc_setPlainText;
+    _bodyCtrl ctrlSetStructuredText parseText _body;
     private _h = ctrlTextHeight _bodyCtrl;
     private _phoneW = safezoneW * 0.8;
     private _phoneH = _phoneW * 4 / 3;
@@ -347,3 +350,4 @@ if (!isNull _bodyCtrl) then {
 };
 
 [] call comspec_overwatch_connect_fnc_logAtakStateChange;
+missionNamespace setVariable ["COMSPEC_StatusUpdating", false, false];

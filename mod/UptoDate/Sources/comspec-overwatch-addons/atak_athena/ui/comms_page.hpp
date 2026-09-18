@@ -137,6 +137,7 @@ class COMSPEC_ATAK_Comms: ATAK_Message
             colorText[] = {0.96, 0.97, 0.98, 1};
             text = "";
             maxChars = 40;
+            tooltip = "Nom du nouveau canal (ex. Escouade Bravo)";
         };
 
         class BtnCreateChannel: COMSPEC_ATAK_Btn

@@ -24,18 +24,18 @@ if (!isNull _group && {ctrlShown _group}) then {
 
     private _cap = _group controlsGroupCtrl 9853;
     if (!isNull _cap) then {
-        [_cap, format [
+        _cap ctrlSetStructuredText parseText format [
             "<t align='center'>%1</t>",
             _label
-        ]] call comspec_overwatch_connect_fnc_setPlainText;
+        ];
     };
 
     private _idx = _group controlsGroupCtrl 9851;
     if (!isNull _idx) then {
-        [_idx, format [
+        _idx ctrlSetStructuredText parseText format [
             "<t align='center'>%1</t>",
             _idxTxt
-        ]] call comspec_overwatch_connect_fnc_setPlainText;
+        ];
     };
 };
 

@@ -497,6 +497,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: static fn (int $tenantId): bool => true,
                 isSatisfied: fn (int $tenantId): bool => $p->hasQualificationReferentielReviewed($tenantId) || $p->hasQualificationDefinitions($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'OVERWATCH_SERVER_CONTROL_V1',
+                title: 'Contrôle de mission Overwatch',
+                description: 'Un écran unique permet d’imposer le réalisme, de voir les fonctions actives et les relais, et d’activer ou de couper ce que la mission utilise. Les communautés déjà en place ne changent rien tant qu’elles n’enregistrent pas.',
+                level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
+                configurePath: 'back-office/atak/controle-serveur',
+                estimateMinutes: 6,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 93,
+                isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
+                isSatisfied: fn (int $tenantId): bool => $p->hasOverwatchServerControlReviewed($tenantId),
+            ),
         ];
     }
 

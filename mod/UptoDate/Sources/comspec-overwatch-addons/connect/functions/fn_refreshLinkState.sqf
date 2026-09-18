@@ -6,6 +6,15 @@
 */
 if (!hasInterface) exitWith { "offline" };
 
+if (missionNamespace getVariable ["COMSPEC_LinkStateRefreshing", false]) exitWith {
+    missionNamespace getVariable ["COMSPEC_LinkState", "offline"]
+};
+private _lastAt = missionNamespace getVariable ["COMSPEC_LinkStateRefreshedAt", -99];
+if ((diag_tickTime - _lastAt) < 0.8) exitWith {
+    missionNamespace getVariable ["COMSPEC_LinkState", "offline"]
+};
+missionNamespace setVariable ["COMSPEC_LinkStateRefreshing", true, false];
+
 [] call comspec_overwatch_connect_fnc_isNetworkDisconnected;
 
 private _atak = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
@@ -68,7 +77,11 @@ if (_prev isNotEqualTo _state) then {
 };
 
 player setVariable ["COMSPEC_LinkState", _state, true];
-[] call comspec_overwatch_connect_fnc_updateStatusBadges;
-[] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
+if (_prev isNotEqualTo _state) then {
+    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
+};
+missionNamespace setVariable ["COMSPEC_LinkStateRefreshedAt", diag_tickTime, false];
+missionNamespace setVariable ["COMSPEC_LinkStateRefreshing", false, false];
 
 _state

@@ -43,9 +43,9 @@ if (!_screenOn) then {
 };
 
 // Soft open TASK si le téléphone est déjà ouvert (pas d’ouverture intrusive à froid).
-private _phoneOpen = !isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull]);
-if (!_phoneOpen) then {
-    _phoneOpen = !isNull (uiNamespace getVariable ["cTab_Android_dsp", displayNull]);
+private _phoneOpen = false;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
+    _phoneOpen = !isNull ([] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay);
 };
 if (_phoneOpen) then {
     private _taskGroup = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];

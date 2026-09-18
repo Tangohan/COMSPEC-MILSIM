@@ -28,7 +28,7 @@ private _fncKnownDisplays = {
     {
         private _d = uiNamespace getVariable [_x, displayNull];
         if (!isNull _d) then { _out pushBackUnique _d; };
-    } forEach ["cTab_Android_dlg", "cTab_Android_dsp"];
+    } forEach ["cTab_Android_dlg"];
     _out
 };
 
@@ -156,10 +156,6 @@ private _open = call _fncOpenPhone;
 if (isNull _open) exitWith {
     { [_x] call _fncHideOn; } forEach (call _fncKnownDisplays);
 };
-{
-    private _d = uiNamespace getVariable [_x, displayNull];
-    if (!isNull _d && {_d isNotEqualTo _open}) then { [_d] call _fncHideOn; };
-} forEach ["cTab_Android_dsp"];
 private _displays = [_open];
 
 {
@@ -173,19 +169,13 @@ private _displays = [_open];
     private _bg = _disp displayCtrl _IDC_BG;
     private _txt = _disp displayCtrl _IDC_TXT;
     private _btn = _disp displayCtrl _IDC_BTN;
-    private _needCreate = isNull _bg || {ctrlParent _bg isNotEqualTo _disp} || {isNull _txt} || {isNull _btn};
+    private _needCreate = isNull _bg || {isNull _txt} || {isNull _btn};
     if (!isNull _txt) then {
         private _haveTxt = toLower (ctrlClassName _txt);
         if ((_haveTxt find "structured") < 0 && {(_haveTxt find "html") < 0}) then { _needCreate = true; };
     };
-    private _menu = _disp displayCtrl 4660;
-    private _menuShown = !isNull _menu && {ctrlShown _menu};
-    if (_menuShown && {!(uiNamespace getVariable ["COMSPEC_Athena_FsAlertMenuLayer", false])}) then {
-        _needCreate = true;
-    };
-    if (!_menuShown) then { uiNamespace setVariable ["COMSPEC_Athena_FsAlertMenuLayer", false]; };
 
-    if (_needCreate) then {
+        if (_needCreate) then {
         [_disp] call _fncHideOn;
         _bg = _disp ctrlCreate ["RscText", _IDC_BG];
         _txt = _disp ctrlCreate ["RscStructuredText", _IDC_TXT];
@@ -200,7 +190,6 @@ private _displays = [_open];
         _txt ctrlAddEventHandler ["MouseButtonDown", _fncDismiss];
         _btn ctrlAddEventHandler ["ButtonClick", _fncDismiss];
         _btn ctrlSetText "FERMER";
-        if (_menuShown) then { uiNamespace setVariable ["COMSPEC_Athena_FsAlertMenuLayer", true]; };
     };
 
     _bg ctrlSetPosition _pos;

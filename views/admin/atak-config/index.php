@@ -37,6 +37,9 @@ foreach ($dataSummary as $k => $v) {
             et <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" class="underline">guide connexion</a>.
             La clé d’accès se génère ci-dessous&nbsp;; Appairer la transmet automatiquement.
         </p>
+        <p class="mt-3">
+            <a href="<?= htmlspecialchars(url('back-office/atak/controle-serveur'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-100">Contrôle de mission — réalisme, fonctions, relais</a>
+        </p>
     </header>
 
     <?php if ($success): ?>

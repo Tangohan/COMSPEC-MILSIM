@@ -10,7 +10,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
 
-private _markers = allMapMarkers;
+private _markers = +allMapMarkers;
 if (!(_markers isEqualType [])) exitWith {};
 
 private _prev = missionNamespace getVariable ["COMSPEC_Athena_MapMarkerSnap", createHashMap];
@@ -19,7 +19,8 @@ private _next = createHashMap;
 
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
-    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_shape_", "ctab_u_"
+    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
+    "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"
 ];
 
 {
@@ -46,6 +47,7 @@ private _mirroredElsewherePrefixes = [
     private _dir = markerDir _name;
     private _alpha = markerAlpha _name;
     private _size = markerSize _name;
+    if (!(_size isEqualType []) || {(count _size) < 2}) then { _size = [1, 1]; };
     private _brush = markerBrush _name;
     private _sig = format [
         "%1|%2|%3|%4|%5|%6|%7|%8|%9|%10|%11",

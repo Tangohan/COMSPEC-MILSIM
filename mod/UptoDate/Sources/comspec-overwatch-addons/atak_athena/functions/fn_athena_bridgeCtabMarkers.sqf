@@ -9,11 +9,20 @@
 */
 if (!hasInterface) exitWith {};
 if (!(["ctab_markers"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_CtabMarkerSync_Lock", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_CtabMarkerSync_Lock", true, false];
 
 private _athenaReady = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 
 private _list = [];
 private _seenIds = createHashMap;
+
+private _copyColl = {
+    params ["_v"];
+    if (_v isEqualType []) exitWith { +_v };
+    if (_v isEqualType createHashMap) exitWith { +_v };
+    []
+};
 
 private _appendList = {
     params ["_cand"];
@@ -34,25 +43,25 @@ private _appendList = {
     } forEach _cand;
 };
 
-if (!isNil "cTabUserMarkerList") then { [cTabUserMarkerList] call _appendList; };
-[missionNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _appendList;
-[missionNamespace getVariable ["cTab_userMarkerList", []]] call _appendList;
-[uiNamespace getVariable ["cTabUserMarkerList", []]] call _appendList;
-[uiNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _appendList;
+if (!isNil "cTabUserMarkerList") then { [[cTabUserMarkerList] call _copyColl] call _appendList; };
+[[missionNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _copyColl] call _appendList;
+[[missionNamespace getVariable ["cTab_userMarkerList", []]] call _copyColl] call _appendList;
+[[uiNamespace getVariable ["cTabUserMarkerList", []]] call _copyColl] call _appendList;
+[[uiNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _copyColl] call _appendList;
 
 // Repli : listes brutes cTab (par clé de chiffrement) → traduction locale
 // Toujours fusionner (BCE remplit cTabUserMarkerList avec un format mixte)
 if (!isNil "cTab_userMarkerLists") then {
-    private _pairs = missionNamespace getVariable ["cTab_userMarkerLists", []];
+    private _pairs = [missionNamespace getVariable ["cTab_userMarkerLists", []]] call _copyColl;
     if (_pairs isEqualType []) then {
         {
             if (!(_x isEqualType []) || {(count _x) < 2}) then { continue };
-            private _rawList = _x select 1;
+            private _rawList = [_x select 1] call _copyColl;
             if (!(_rawList isEqualType [])) then { continue };
             {
                 if (!(_x isEqualType []) || {(count _x) < 2}) then { continue };
                 private _id = _x select 0;
-                private _raw = _x select 1;
+                private _raw = [_x select 1] call _copyColl;
                 if (!(_raw isEqualType [])) then { continue };
                 if (!isNil "cTab_fnc_translateUserMarker") then {
                     private _translated = _raw call cTab_fnc_translateUserMarker;
@@ -69,7 +78,9 @@ if (!isNil "cTab_userMarkerLists") then {
     };
 };
 
-if ((count _list) < 1) exitWith {};
+if ((count _list) < 1) exitWith {
+    missionNamespace setVariable ["COMSPEC_CtabMarkerSync_Lock", false, false];
+};
 
 private _prev = missionNamespace getVariable ["COMSPEC_Athena_CtabMarkerSnap", createHashMap];
 if (!(_prev isEqualType createHashMap)) then { _prev = createHashMap; };
@@ -374,3 +385,4 @@ private _sendMarker = {
 } forEach (keys _prev);
 
 missionNamespace setVariable ["COMSPEC_Athena_CtabMarkerSnap", _next, false];
+missionNamespace setVariable ["COMSPEC_CtabMarkerSync_Lock", false, false];

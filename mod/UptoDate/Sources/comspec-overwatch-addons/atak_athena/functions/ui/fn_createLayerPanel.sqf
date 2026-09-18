@@ -3,10 +3,15 @@
     IDC 88620–88639.
 */
 params ["_disp", "_mapCtrl", "_vis"];
+if (isNull _disp) exitWith {};
+if (!(_vis isEqualType []) || {(count _vis) < 4}) exitWith {};
 _vis params ["_vx", "_vy", "_vw", "_vh"];
+if (!(_vw isEqualType 0) || {!(_vh isEqualType 0)}) exitWith {};
+if (_vw <= 0 || {_vh <= 0}) exitWith {};
 private _show = (missionNamespace getVariable ["COMSPEC_MapActiveTool", ""]) isEqualTo "layers";
 private _fncEnsure = {
     params ["_d", "_idc", "_class"];
+    if (isNull _d) exitWith { controlNull };
     private _c = _d displayCtrl _idc;
     if (isNull _c) then { _c = _d ctrlCreate [_class, _idc]; };
     _c
@@ -18,9 +23,11 @@ private _labels = [
     ["logistics", "Logistique"]
 ];
 private _layers = missionNamespace getVariable ["COMSPEC_MapLayers", createHashMap];
+if (!(_layers isEqualType createHashMap)) then { _layers = createHashMap; };
 private _panel = [_disp, 88620, "RscStructuredText"] call _fncEnsure;
+if (isNull _panel) exitWith {};
 private _pw = (_vw * 0.28) min 0.20;
-private _ph = (_vh * 0.42) min 0.28;
+private _ph = ((_vh * 0.42) min 0.28) max 0.04;
 private _px = _vx + _vw - _pw - (_vw * 0.08);
 private _py = _vy + (_vh * 0.14);
 _panel ctrlSetPosition [_px, _py, _pw, _ph];
@@ -36,7 +43,7 @@ private _html = "<t font='RobotoCondensedBold' size='0.58' color='#5EC7F2'>Couch
         _lab
     ];
 } forEach _labels;
-[_panel, _html] call comspec_overwatch_connect_fnc_setPlainText;
+_panel ctrlSetStructuredText parseText _html;
 _panel ctrlEnable false;
 _panel ctrlShow _show;
 _panel ctrlCommit 0;
@@ -46,7 +53,8 @@ private _n = 0;
     _x params ["_key", "_lab"];
     private _idc = 88621 + _n;
     private _b = [_disp, _idc, "RscButton"] call _fncEnsure;
-    private _rowH = _ph / 12;
+    if (isNull _b) then { continue };
+    private _rowH = (_ph / 12) max 0.002;
     _b ctrlSetPosition [_px + 0.004, _py + (_rowH * (_n + 1.1)), _pw - 0.008, _rowH * 0.85];
     _b ctrlSetText "";
     _b ctrlSetBackgroundColor [0, 0, 0, 0.05];

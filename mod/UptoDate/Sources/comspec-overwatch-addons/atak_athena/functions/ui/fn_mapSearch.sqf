@@ -19,7 +19,7 @@ if (_target isEqualTo []) then {
         if ((toLower (markerText _x) find _low) >= 0 || {(toLower _x find _low) >= 0}) exitWith {
             _target = markerPos _x;
         };
-    } forEach allMapMarkers;
+    } forEach (+allMapMarkers);
 };
 if (_target isEqualTo [] || {(count _target) < 2}) exitWith {
     ["INFO", format ["Aucun résultat pour %1", _q]] call comspec_overwatch_atak_athena_fnc_showNotification;

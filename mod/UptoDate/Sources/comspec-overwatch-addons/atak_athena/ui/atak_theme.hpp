@@ -132,44 +132,4 @@ class COMSPEC_ATAK_BtnWarn: COMSPEC_ATAK_Btn
     };
 };
 
-// Repli IceMan (Iceman_ReportsDetailText : RscStructuredText).
-class COMSPEC_ATAK_StructuredText: RscStructuredText
-{
-    x = 0;
-    y = 0;
-    w = 1;
-    h = 1;
-    shadow = 0;
-    colorBackground[] = {0, 0, 0, 0};
-    colorText[] = {0.37, 0.78, 0.95, 1};
-    class Attributes
-    {
-        font = "EtelkaMonospacePro";
-        color = "#5EC7F2";
-        align = "left";
-        size = "0.64";
-        shadow = "false";
-    };
-};
-
-// Texte multiligne natif (identité IceMan 2620-22 / boutons).
-class COMSPEC_ATAK_PlainText: RscText
-{
-    type = 0;
-    style = 16;
-    shadow = 0;
-    colorBackground[] = {0, 0, 0, 0};
-    colorText[] = {0.37, 0.78, 0.95, 1};
-    font = "EtelkaMonospacePro";
-    sizeEx = 0.018;
-    lineSpacing = 1;
-};
-
-class COMSPEC_ATAK_PlainTextCenter: COMSPEC_ATAK_PlainText
-{
-    style = 18;
-    font = "RobotoCondensed";
-    sizeEx = 0.028;
-};
-
 #endif

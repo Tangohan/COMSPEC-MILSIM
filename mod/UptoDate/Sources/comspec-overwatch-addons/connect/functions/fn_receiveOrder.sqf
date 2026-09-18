@@ -7,6 +7,11 @@ params [["_order", createHashMap]];
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (!(_order isEqualType createHashMap)) exitWith {};
+if (
+    (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false])
+    && {!isNil "comspec_overwatch_connect_fnc_diagIsolateAllows"}
+    && {!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)}
+) exitWith {};
 
 private _id = trim (str (_order getOrDefault ["id", ""]));
 private _issuer = _order getOrDefault ["issuer", ""];

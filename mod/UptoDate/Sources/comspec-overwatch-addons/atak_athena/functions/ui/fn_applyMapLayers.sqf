@@ -32,4 +32,4 @@ private _grp = group player;
         if ((_txt find (toLower (groupId _grp))) < 0) then { _on = false; };
     };
     _name setMarkerAlphaLocal ([0.08, 1] select _on);
-} forEach allMapMarkers;
+} forEach (+allMapMarkers);

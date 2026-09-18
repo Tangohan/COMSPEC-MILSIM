@@ -25,10 +25,10 @@ if ((time - (_stats getOrDefault ["last_cleanup", 0])) > 300) then {
     // Garder seulement les 100 dernières entrées
     private _windowSize = _stats getOrDefault ["window_size", 100];
     if (count _sent > _windowSize) then {
-        _stats set ["window_sent", _sent select [(count _sent - _windowSize), _windowSize]];
+        _stats set ["window_sent", _sent select [((count _sent) - _windowSize) max 0, _windowSize]];
     };
     if (count _received > _windowSize) then {
-        _stats set ["window_received", _received select [(count _received - _windowSize), _windowSize]];
+        _stats set ["window_received", _received select [((count _received) - _windowSize) max 0, _windowSize]];
     };
     
     _stats set ["last_cleanup", time];

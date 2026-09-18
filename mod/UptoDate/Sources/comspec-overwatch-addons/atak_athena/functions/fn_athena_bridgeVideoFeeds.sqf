@@ -110,7 +110,7 @@ if (_ctabHcam isEqualTo [] && {!isNil "cTabHcamlist"} && {cTabHcamlist isEqualTy
 
     };
 
-} forEach allPlayers;
+} forEach (+allPlayers);
 
 
 

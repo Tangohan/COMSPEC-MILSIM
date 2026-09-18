@@ -73,6 +73,29 @@ final class AtakRelayRepository
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public function listForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT map_id, relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at
+                 FROM atak_relays
+                 WHERE tenant_id = ?
+                 ORDER BY last_seen_at DESC'
+            );
+            $st->execute([$tenantId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function getByUid(int $tenantId, int $mapId, string $uid): ?array

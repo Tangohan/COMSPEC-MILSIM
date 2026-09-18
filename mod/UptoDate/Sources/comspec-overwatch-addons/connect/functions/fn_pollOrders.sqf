@@ -19,9 +19,15 @@ private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 
 private _raw = ["COMSPECExtension" callExtension ["GetOrders", [_mapId, "40", _callsign]]] call comspec_overwatch_connect_fnc_extResult;
 
-if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
+if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
+    ["ordres", 0, " (vide)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+    false
+};
 
-if ((_raw select [0, 3]) != "OK|") exitWith { false };
+if ((_raw select [0, 3]) != "OK|") exitWith {
+    ["ordres", 0, " (erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+    false
+};
 
 private _body = _raw select [3];
 
@@ -148,15 +154,32 @@ private _newOnes = [];
 } forEach _lines;
 
 // Liste sans doublons (valeurs de l’index par id).
-_orders = values _byId;
+_orders = [];
+{
+    _orders pushBack _y;
+} forEach _byId;
 missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
 
-{
-    [_x] call comspec_overwatch_connect_fnc_receiveOrder;
-} forEach _newOnes;
+private _canPush = true;
+if (!isNil "comspec_overwatch_connect_fnc_diagIsolateAllows") then {
+    _canPush = ["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows;
+};
 
-if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat") then {
-    [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+["ordres", count _lines, format [
+    " · nouveaux %1 · mémoire %2%3",
+    count _newOnes,
+    count _orders,
+    if (_canPush) then { "" } else { " · affichage reporté" }
+]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+
+if (_canPush) then {
+    {
+        [_x] call comspec_overwatch_connect_fnc_receiveOrder;
+    } forEach _newOnes;
+
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+    };
 };
 
 _added > 0

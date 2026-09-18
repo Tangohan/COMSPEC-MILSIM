@@ -7,6 +7,7 @@
 */
 params ["_unit", ["_force", false, [true]]];
 if (!hasInterface) exitWith { if (_force) then { "" } else { nil } };
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { if (_force) then { "" } else { nil } };
 if (isNull _unit || !alive _unit) exitWith { if (_force) then { "dead" } else { nil } };
 if (isNull player || _unit != player) exitWith { if (_force) then { "dead" } else { nil } };
 // Canal poste (AthenaReady) prioritaire : isReady seul peut flicker hors READY

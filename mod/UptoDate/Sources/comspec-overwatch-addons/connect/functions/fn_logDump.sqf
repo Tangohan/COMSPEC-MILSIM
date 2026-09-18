@@ -46,6 +46,15 @@ private _snapshot = [
     ["INFO", "Diag", _x] call comspec_overwatch_connect_fnc_log;
 } forEach _snapshot;
 
+if (!isNil "comspec_overwatch_connect_fnc_diagStatusSnapshot") then {
+    private _status = [] call comspec_overwatch_connect_fnc_diagStatusSnapshot;
+    if ((_status isEqualType createHashMap)) then {
+        {
+            ["INFO", "Diag", _x] call comspec_overwatch_connect_fnc_log;
+        } forEach (_status getOrDefault ["lines", []]);
+    };
+};
+
 private _buf = missionNamespace getVariable ["COMSPEC_DiagLog", []];
 ["INFO", "Diag", format ["Tampon: %1 ligne(s)", count _buf]] call comspec_overwatch_connect_fnc_log;
 {

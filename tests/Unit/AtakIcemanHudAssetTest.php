@@ -23,9 +23,6 @@ final class AtakIcemanHudAssetTest extends TestCase
         $layout = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_ATAK_Check_Layout.sqf'
         );
-        $enforce = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_enforceDrawer.sqf'
-        );
         $cfg = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/config.cpp'
         );
@@ -39,7 +36,6 @@ final class AtakIcemanHudAssetTest extends TestCase
 
         self::assertStringContainsString('athena_installMapHud', $cfg);
         self::assertStringContainsString('athena_updateMapHud', $cfg);
-        self::assertStringContainsString('athena_enforceDrawer', $cfg);
         self::assertStringContainsString('athena_mapHudZoom', $cfg);
         self::assertStringContainsString('1.0.84', $cfg);
         self::assertStringContainsString('athena_installMapHud', $post);
@@ -70,15 +66,14 @@ final class AtakIcemanHudAssetTest extends TestCase
         self::assertStringContainsString('[COMSPEC][MAP]', $upd);
         self::assertStringContainsString('[COMSPEC][MAP]', $install);
         self::assertStringNotContainsString('forEach [46600', $upd);
-        self::assertStringContainsString('displayCtrl 46600', $layout . $enforce);
-        self::assertStringContainsString('ctrlShow false', $layout . $enforce);
-        self::assertStringNotContainsString('_phoneW * 0.4', $layout . $enforce);
-        self::assertStringNotContainsString('ctrlSetPosition', $enforce);
+        self::assertStringNotContainsString('46600', $layout);
         self::assertStringContainsString('_visW', $upd);
         self::assertStringContainsString('_heading ctrlShow false', $upd);
         self::assertStringContainsString('ctrlSetBackgroundColor [0, 0, 0, 0]', $upd);
         self::assertStringContainsString('ctrlPosition _mapCtrl', $upd);
         self::assertStringContainsString('4660', $upd);
+        self::assertStringContainsString('BCE_fnc_ATAK_getAPPs', $upd);
+        self::assertStringContainsString('COMSPEC_ATAK_MenuHydratedDisplay', $upd);
         self::assertStringContainsString('athena_fillIdentityOverlay', $upd);
         self::assertStringContainsString('ctrlShow true', $upd);
 

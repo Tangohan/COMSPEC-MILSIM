@@ -30,7 +30,7 @@ if (_idx < 0) then { _idx = lbCurSel _ctrl; };
 
 if (_idx < 0) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_Task_selectedId", ""];
-    [_detail, "<t color='#c5cdd6'>Sélectionnez un ordre dans la liste.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
+    _detail ctrlSetStructuredText parseText "<t color='#c5cdd6'>Sélectionnez un ordre dans la liste.</t>";
     _detail ctrlCommit 0;
     [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };
@@ -48,7 +48,7 @@ if (!(_orders isEqualType [])) then { _orders = []; };
 } forEach _orders;
 
 if (_id isEqualTo "" || {(count _order) < 1}) exitWith {
-    [_detail, "<t color='#e8a0a0'>Ordre introuvable. Appuyez sur Actualiser.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
+    _detail ctrlSetStructuredText parseText "<t color='#e8a0a0'>Ordre introuvable. Appuyez sur Actualiser.</t>";
     _detail ctrlCommit 0;
     [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
 };
@@ -144,7 +144,7 @@ if (!(_issuer isEqualType "") || {_issuer isEqualTo ""}) then { _issuer = "C2"; 
 private _target = _order getOrDefault ["target", "—"];
 if (!(_target isEqualType "") || {_target isEqualTo ""}) then { _target = "—"; };
 
-[_detail, format [
+_detail ctrlSetStructuredText parseText format [
     "<t color='#ffd27a' size='1.05'>%1</t><br/><t color='#8b929c'>État  %2 · Priorité  %3</t><br/><br/><t color='#8b929c'>Émetteur</t>  %4<br/><t color='#8b929c'>Destinataire</t>  %5<br/><br/>%6%7",
     [_kind] call _fnc_esc,
     [_stTxt] call _fnc_esc,
@@ -153,7 +153,7 @@ if (!(_target isEqualType "") || {_target isEqualTo ""}) then { _target = "—";
     [_target] call _fnc_esc,
     _body,
     _hint
-]] call comspec_overwatch_connect_fnc_setPlainText;
+];
 _detail ctrlCommit 0;
 
 [] call comspec_overwatch_atak_athena_fnc_athena_taskSyncButtons;
