@@ -4039,6 +4039,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakCommandAlertPermsMigrate = require $root . '/bootstrap/atak_command_alert_permission_migration.php';
+try {
+    echo "Migration atak_command_alert_permission (Overwatch — alerte plein écran)…\n";
+    $atakCommandAlertPermsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_command_alert_permission : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
     echo "Migration atak_donations (financement ATAK)...\n";

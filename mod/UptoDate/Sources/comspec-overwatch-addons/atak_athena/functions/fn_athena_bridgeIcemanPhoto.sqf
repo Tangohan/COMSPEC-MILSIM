@@ -13,12 +13,17 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
-if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };
-if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 if (_filePath isEqualTo "") exitWith { false };
 if ((toLower _filePath) find "comspec_sse_face" >= 0) exitWith { true };
 if ((toLower _fileName) find "comspec_sse_face" >= 0) exitWith { true };
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
+    [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;
+};
+
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };
+if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith { false };
 
 private _keyEarly = toLower _filePath;
 private _deadEarly = profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []];
@@ -50,10 +55,6 @@ if (_force) then {
     };
 } else {
     if (_keyEarly in _failedEarly || {_keyEarly in _deadEarly} || {_baseEarly isNotEqualTo "" && {_baseEarly in _deadEarly}}) exitWith { false };
-};
-
-if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
-    [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;
 };
 
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };

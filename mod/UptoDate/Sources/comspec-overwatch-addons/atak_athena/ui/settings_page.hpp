@@ -61,18 +61,46 @@ class COMSPEC_ATAK_Settings: ATAK_Message
             colorBackground[] = SET_ACCENT;
         };
 
-        // Hauteur réduite pour laisser la barre Retour / Enter visible ; le contenu scroll.
+        // Enregistrer / Actualiser restent visibles ; le reste défile dessous.
+        class BtnSave: COMSPEC_ATAK_BtnGo
+        {
+            idc = 9846;
+            x = QUOTE(COMSPEC_SET_W(0.08));
+            y = QUOTE(COMSPEC_SET_H(0.62));
+            w = QUOTE(COMSPEC_SET_W(1.80));
+            h = QUOTE(COMSPEC_SET_H(0.52));
+            size = QUOTE(COMSPEC_SET_H(0.28));
+            text = "Enregistrer";
+            colorBackground[] = SET_BTN;
+            colorBackground2[] = SET_BTN;
+            colorBackgroundFocused[] = SET_BTN_F;
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_settingsSave";
+        };
+
+        class BtnRefresh: BtnSave
+        {
+            idc = 9848;
+            x = QUOTE(COMSPEC_SET_W(1.96));
+            w = QUOTE(COMSPEC_SET_W(0.96));
+            text = "Actualiser";
+            colorBackground[] = ATAK_BTN;
+            colorBackground2[] = ATAK_BTN;
+            colorBackgroundFocused[] = ATAK_BTN_F;
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateSettings";
+            class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
+        };
+
         class BodyScroll: RscControlsGroup
         {
             idc = 9839;
             x = 0;
-            y = QUOTE(COMSPEC_SET_H(0.62));
+            y = QUOTE(COMSPEC_SET_H(1.20));
             w = QUOTE(COMSPEC_SET_W(3));
-            h = QUOTE(COMSPEC_SET_H(8.55));
+            h = QUOTE(COMSPEC_SET_H(7.97));
             class VScrollbar
             {
                 width = 0.014;
-                autoScrollEnabled = 1;
+                autoScrollEnabled = 0;
                 color[] = {0.45, 0.72, 0.62, 0.85};
             };
             class HScrollbar
@@ -87,17 +115,17 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                     x = QUOTE(COMSPEC_SET_W(0.08));
                     y = QUOTE(COMSPEC_SET_H(0.10));
                     w = QUOTE(COMSPEC_SET_W(2.84));
-                    h = QUOTE(COMSPEC_SET_H(0.92));
-                    text = "Chargement des paramètres…";
-                    colorBackground[] = SET_BG_STRIP;
+                    h = QUOTE(COMSPEC_SET_H(1.50));
+                    text = "<t color='#7CFF9A' size='1.12'>Votre fiche</t><br/><t color='#E8F4F0' size='1.0'>Indicatif, rôle, carte, équipe et affichage.</t><br/><t color='#D0E8DC' size='0.95'>Faites défiler pour la liaison au poste.</t>";
+                    colorBackground[] = {0.04, 0.10, 0.08, 0.92};
                     class Attributes
                     {
                         font = "RobotoCondensed";
-                        color = "#E6EEF0";
+                        color = "#E8F4F0";
                         align = "left";
-                        valign = "middle";
+                        valign = "top";
                         shadow = 1;
-                        size = "0.90";
+                        size = "1.0";
                     };
                 };
 
@@ -105,7 +133,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = -1;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(1.16));
+                    y = QUOTE(COMSPEC_SET_H(1.74));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.44));
                     text = "Indicatif";
@@ -123,7 +151,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9842;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(1.58));
+                    y = QUOTE(COMSPEC_SET_H(2.16));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.50));
                     colorBackground[] = SET_EDIT_BG;
@@ -135,26 +163,26 @@ class COMSPEC_ATAK_Settings: ATAK_Message
 
                 class LblRole: LblCallsign
                 {
-                    y = QUOTE(COMSPEC_SET_H(2.22));
+                    y = QUOTE(COMSPEC_SET_H(2.80));
                     text = "Rôle";
                 };
                 class EditRole: EditCallsign
                 {
                     idc = 9843;
-                    y = QUOTE(COMSPEC_SET_H(2.64));
+                    y = QUOTE(COMSPEC_SET_H(3.22));
                     tooltip = "Saisissez le rôle que vous voulez (Breacher, médecin, chef d’équipe…). Il apparaît auprès de l’équipe et, si vous le choisissez, sur la carte.";
                 };
 
                 class LblMapLabel: LblCallsign
                 {
-                    y = QUOTE(COMSPEC_SET_H(3.28));
+                    y = QUOTE(COMSPEC_SET_H(3.86));
                     text = "Affichage sur la carte";
                 };
                 class ComboMapLabel: RscCombo
                 {
                     idc = 9850;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(3.70));
+                    y = QUOTE(COMSPEC_SET_H(4.28));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.50));
                     colorBackground[] = SET_EDIT_BG;
@@ -165,37 +193,37 @@ class COMSPEC_ATAK_Settings: ATAK_Message
 
                 class LblFire: LblCallsign
                 {
-                    y = QUOTE(COMSPEC_SET_H(4.34));
+                    y = QUOTE(COMSPEC_SET_H(4.92));
                     text = "Équipe de feu";
                 };
                 class ComboFire: ComboMapLabel
                 {
                     idc = 9844;
-                    y = QUOTE(COMSPEC_SET_H(4.76));
+                    y = QUOTE(COMSPEC_SET_H(5.34));
                     tooltip = "";
                 };
 
                 class LblGroup: LblCallsign
                 {
-                    y = QUOTE(COMSPEC_SET_H(5.40));
+                    y = QUOTE(COMSPEC_SET_H(5.98));
                     text = "Groupe en jeu";
                 };
                 class ComboGroup: ComboMapLabel
                 {
                     idc = 9845;
-                    y = QUOTE(COMSPEC_SET_H(5.82));
+                    y = QUOTE(COMSPEC_SET_H(6.40));
                     tooltip = "";
                 };
 
                 class LblProximity: LblCallsign
                 {
-                    y = QUOTE(COMSPEC_SET_H(6.46));
+                    y = QUOTE(COMSPEC_SET_H(7.04));
                     text = "Alerte téléphones suivis";
                 };
                 class ComboProximity: ComboMapLabel
                 {
                     idc = 9849;
-                    y = QUOTE(COMSPEC_SET_H(6.88));
+                    y = QUOTE(COMSPEC_SET_H(7.46));
                     tooltip = "";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_phoneProximitySave";
                 };
@@ -203,13 +231,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblEcoti: LblCallsign
                 {
                     idc = 9861;
-                    y = QUOTE(COMSPEC_SET_H(7.52));
+                    y = QUOTE(COMSPEC_SET_H(8.10));
                     text = "Affichage situation (JVN)";
                 };
                 class ComboEcoti: ComboMapLabel
                 {
                     idc = 9862;
-                    y = QUOTE(COMSPEC_SET_H(7.94));
+                    y = QUOTE(COMSPEC_SET_H(8.52));
                     tooltip = "Désactivé par défaut. Activé : alliés, marqueurs, véhicules, contour et itinéraire apparaissent sous jumelles de vision nocturne. Sans effet si F-PANO ECOTI est déjà chargé.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_ecotiHudSave";
                 };
@@ -217,13 +245,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblEcotiCut: LblCallsign
                 {
                     idc = 9870;
-                    y = QUOTE(COMSPEC_SET_H(8.46));
+                    y = QUOTE(COMSPEC_SET_H(9.04));
                     text = "Découpage d’étage";
                 };
                 class ComboEcotiCut: ComboMapLabel
                 {
                     idc = 9871;
-                    y = QUOTE(COMSPEC_SET_H(8.88));
+                    y = QUOTE(COMSPEC_SET_H(9.46));
                     tooltip = "Désactivé par défaut. Avec l’affichage situation : coupe la silhouette du bâtiment désigné. ACE : Changer d’étage, ou Découper à la hauteur regardée. N’ouvre pas les murs.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_ecotiCutawaySave";
                 };
@@ -231,13 +259,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblEcotiTheme: LblCallsign
                 {
                     idc = 9872;
-                    y = QUOTE(COMSPEC_SET_H(9.42));
+                    y = QUOTE(COMSPEC_SET_H(10.00));
                     text = "Couleurs situation (JVN)";
                 };
                 class ComboEcotiTheme: ComboMapLabel
                 {
                     idc = 9873;
-                    y = QUOTE(COMSPEC_SET_H(9.84));
+                    y = QUOTE(COMSPEC_SET_H(10.42));
                     tooltip = "Couleur des badges, icônes, textes, contours bâtiments et surbrillance des personnes sous JVN. JVN (cyan clair) est le plus lisible de nuit.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_ecotiThemeSave";
                 };
@@ -245,13 +273,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblEcotiRender: LblCallsign
                 {
                     idc = 9874;
-                    y = QUOTE(COMSPEC_SET_H(10.38));
+                    y = QUOTE(COMSPEC_SET_H(10.96));
                     text = "Rendu des pastilles";
                 };
                 class ComboEcotiRender: ComboMapLabel
                 {
                     idc = 9875;
-                    y = QUOTE(COMSPEC_SET_H(10.80));
+                    y = QUOTE(COMSPEC_SET_H(11.38));
                     tooltip = "3D dans le paysage : pastilles collées au monde. 2D à l’écran : calque HUD, pastilles décalées si elles se chevauchent, fondu avec la distance. Les silhouettes de bâtiments restent en 3D.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_ecotiRenderModeSave";
                 };
@@ -259,13 +287,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblLinkStrip: LblCallsign
                 {
                     idc = 9880;
-                    y = QUOTE(COMSPEC_SET_H(11.34));
+                    y = QUOTE(COMSPEC_SET_H(11.92));
                     text = "Afficher la barre de liaison";
                 };
                 class ComboLinkStrip: ComboMapLabel
                 {
                     idc = 9882;
-                    y = QUOTE(COMSPEC_SET_H(11.76));
+                    y = QUOTE(COMSPEC_SET_H(12.34));
                     tooltip = "Affiche sous la barre d’état l’état OK/NOK, la sync, la fiabilité et la perte. Désactivez pour libérer la boussole.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_linkStripSave";
                 };
@@ -273,13 +301,13 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblLinkSim: LblCallsign
                 {
                     idc = 9881;
-                    y = QUOTE(COMSPEC_SET_H(12.40));
+                    y = QUOTE(COMSPEC_SET_H(12.98));
                     text = "Simulation de liaison dégradée";
                 };
                 class ComboLinkSim: ComboMapLabel
                 {
                     idc = 9883;
-                    y = QUOTE(COMSPEC_SET_H(12.82));
+                    y = QUOTE(COMSPEC_SET_H(13.40));
                     tooltip = "Désactivé par défaut. Activé : pertes, fiabilité basse et coupures brèves simulées vers le poste. N’affecte pas une liaison réelle propre quand c’est désactivé.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_linkDegradeSimSave";
                 };
@@ -288,7 +316,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9847;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(13.36));
+                    y = QUOTE(COMSPEC_SET_H(13.94));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.46));
                     text = "Indicatif, rôle, carte, équipe, groupe, barre de liaison et simulation. Enregistrez pour appliquer.";
@@ -303,39 +331,11 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                     };
                 };
 
-                class BtnSave: COMSPEC_ATAK_BtnGo
-                {
-                    idc = 9846;
-                    x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(13.92));
-                    w = QUOTE(COMSPEC_SET_W(1.80));
-                    h = QUOTE(COMSPEC_SET_H(0.52));
-                    size = QUOTE(COMSPEC_SET_H(0.28));
-                    text = "Enregistrer";
-                    colorBackground[] = SET_BTN;
-                    colorBackground2[] = SET_BTN;
-                    colorBackgroundFocused[] = SET_BTN_F;
-                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_settingsSave";
-                };
-
-                class BtnRefresh: BtnSave
-                {
-                    idc = 9848;
-                    x = QUOTE(COMSPEC_SET_W(1.96));
-                    w = QUOTE(COMSPEC_SET_W(0.96));
-                    text = "Actualiser";
-                    colorBackground[] = ATAK_BTN;
-                    colorBackground2[] = ATAK_BTN;
-                    colorBackgroundFocused[] = ATAK_BTN_F;
-                    onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_updateSettings";
-                    class Attributes { font = "RobotoCondensed"; color = "#FFFFFF"; align = "center"; valign = "middle"; shadow = "false"; };
-                };
-
                 class LblLinkSection: RscStructuredText
                 {
                     idc = 9856;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(14.62));
+                    y = QUOTE(COMSPEC_SET_H(14.54));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(1.55));
                     size = QUOTE(COMSPEC_SET_H(0.30));
@@ -355,7 +355,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9857;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(16.32));
+                    y = QUOTE(COMSPEC_SET_H(16.24));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.50));
                     size = QUOTE(COMSPEC_SET_H(0.28));
@@ -370,14 +370,14 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblPortal: LblCallsign
                 {
                     idc = 9858;
-                    y = QUOTE(COMSPEC_SET_H(16.98));
+                    y = QUOTE(COMSPEC_SET_H(16.90));
                     text = "Adresse du portail";
                     show = 0;
                 };
                 class EditPortal: EditCallsign
                 {
                     idc = 9851;
-                    y = QUOTE(COMSPEC_SET_H(17.40));
+                    y = QUOTE(COMSPEC_SET_H(17.32));
                     show = 0;
                     tooltip = "Adresse du portail Athena, par ex. https://athena.ttrd.fr/public — sans slash final.";
                 };
@@ -385,14 +385,14 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblAccessKey: LblCallsign
                 {
                     idc = 9859;
-                    y = QUOTE(COMSPEC_SET_H(18.04));
+                    y = QUOTE(COMSPEC_SET_H(17.96));
                     text = "Clé d’accès communauté";
                     show = 0;
                 };
                 class EditAccessKey: EditCallsign
                 {
                     idc = 9852;
-                    y = QUOTE(COMSPEC_SET_H(18.46));
+                    y = QUOTE(COMSPEC_SET_H(18.38));
                     password = 1;
                     show = 0;
                     tooltip = "Clé fournie par l’administration. Laissez vide si Appairer a déjà configuré la liaison.";
@@ -401,14 +401,14 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 class LblCommunity: LblCallsign
                 {
                     idc = 9860;
-                    y = QUOTE(COMSPEC_SET_H(19.10));
+                    y = QUOTE(COMSPEC_SET_H(19.02));
                     text = "Identifiant de communauté";
                     show = 0;
                 };
                 class EditCommunity: EditCallsign
                 {
                     idc = 9853;
-                    y = QUOTE(COMSPEC_SET_H(19.52));
+                    y = QUOTE(COMSPEC_SET_H(19.44));
                     show = 0;
                     tooltip = "Utile si plusieurs communautés partagent la même adresse. Souvent renseigné automatiquement.";
                 };
@@ -417,7 +417,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9855;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(20.16));
+                    y = QUOTE(COMSPEC_SET_H(20.08));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.72));
                     size = QUOTE(COMSPEC_SET_H(0.28));
@@ -437,7 +437,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9854;
                     x = QUOTE(COMSPEC_SET_W(0.08));
-                    y = QUOTE(COMSPEC_SET_H(21.02));
+                    y = QUOTE(COMSPEC_SET_H(20.94));
                     w = QUOTE(COMSPEC_SET_W(2.84));
                     h = QUOTE(COMSPEC_SET_H(0.52));
                     size = QUOTE(COMSPEC_SET_H(0.28));
@@ -450,12 +450,11 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                     class Attributes { font = "RobotoCondensed"; color = "#7CFF9A"; align = "center"; valign = "middle"; shadow = "false"; };
                 };
 
-                // Marge basse pour scroller « Liaison au poste » au-dessus de Retour.
                 class Spacer: RscText
                 {
                     idc = -1;
                     x = 0;
-                    y = QUOTE(COMSPEC_SET_H(21.68));
+                    y = QUOTE(COMSPEC_SET_H(21.60));
                     w = QUOTE(COMSPEC_SET_W(0.1));
                     h = QUOTE(COMSPEC_SET_H(0.70));
                     colorBackground[] = {0, 0, 0, 0};

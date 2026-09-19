@@ -24,8 +24,8 @@ if (_keep isEqualTo "") then {
             case "ataktask": { "task" };
             case "atakcomms": { "comms" };
             case "group": { "msghub" };
-            case "message": { "msghub" };
-            case "atakp2p": { "p2p" };
+            case "message": { "message" };
+            case "atakp2p": { "message" };
             case "atakbriefing": { "briefing" };
             case "atakwiki": { "wiki" };
             case "ataksettings": { "settings" };
@@ -74,9 +74,9 @@ if (isNull _apps) exitWith {};
         // skip
     } else {
         if (_cls isEqualTo "atak_message") then {
-            private _showP2p = _keep isEqualTo "p2p";
-            _x ctrlShow _showP2p;
-            _x ctrlEnable _showP2p;
+            private _showMsg = _keep isEqualTo "message";
+            _x ctrlShow _showMsg;
+            _x ctrlEnable _showMsg;
         } else {
         private _ours = false;
         {

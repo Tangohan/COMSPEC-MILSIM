@@ -26,4 +26,10 @@ if (!isNil "BCE_cTab_Marker_Sync") then {
 // Marqueurs sans underscore initial : toujours candidats (filtrés ailleurs)
 if ((_markerName select [0, 1]) isNotEqualTo "_") exitWith { true };
 
+// Filet : losange OTAN (o_inf, b_inf…) même si le nom IceMan change
+if (_markerName in allMapMarkers) then {
+    private _type = toLower (markerType _markerName);
+    if ((_type select [0, 2]) in ["o_", "b_", "n_", "c_", "u_"]) exitWith { true };
+};
+
 false

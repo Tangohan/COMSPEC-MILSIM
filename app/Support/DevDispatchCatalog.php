@@ -268,6 +268,168 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(674, '2026-09-19', 'Poste Overwatch : un repère retiré ne revient plus', 'Un compte rendu ou un repère retiré de la carte du poste ne réapparaît plus quelques secondes plus tard. Le retrait tient, même si le marqueur existe encore sur la carte en jeu. Rechargez Overwatch Beta (Ctrl+F5).', [
+            ], [], [
+                'Les comptes rendus et repères du théâtre réapparaissaient après suppression',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Clic droit sur un repère ou un compte rendu, puis Supprimer : il doit rester absent après quelques secondes.',
+            ], 'Overwatch Beta'),
+            $pr(673, '2026-09-19', 'ATAK : les symboles posés sur le téléphone apparaissent au poste', 'Un losange d’infanterie ou un autre symbole posé avec Marker Dropper sur le téléphone apparaît maintenant sur la carte du poste, au même endroit. Relancez Arma complètement (Overwatch 1.5.95).', [
+            ], [], [
+                'Un symbole adverse posé sur le téléphone n’apparaissait pas sur la carte du poste',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.95). Posez un losange d’infanterie avec Marker Dropper : il doit apparaître au poste en quelques secondes.',
+            ], 'Overwatch 1.5.95'),
+            $pr(672, '2026-09-19', 'Poste Overwatch : tracé tactique, symboles OTAN et briefing PDF', 'Le crayon du rail ouvre une barre de tracé au-dessus de la carte : flèche, croquis, zone, surligneur, texte et plan de bâtiment. Les symboles OTAN (ami, ennemi, neutre, inconnu) posent un axe, une attaque, une ligne de phase, une limite de secteur, un rassemblement ou un objectif. Un plan d’étage se rattache à un bâtiment. Exporter PDF prépare une feuille de briefing (carte, légende, fil). Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Barre de tracé : flèche, surligneur, zones et texte',
+                'Symboles OTAN d’affiliation et d’action, dessinés sur la carte',
+                'Plan de bâtiment par étage, rattaché à une position',
+                'Export de briefing avec légende, grille, horodatage et fil',
+            ], [], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Cliquez le crayon du rail : la barre doit apparaître au-dessus de la carte. Tracez une flèche, ouvrez Symboles OTAN, puis Exporter PDF pour une feuille imprimable.',
+            ], 'Overwatch Beta'),
+            $pr(671, '2026-09-19', 'Poste Overwatch : les bâtiments du jeu apparaissent à plat', 'Les constructions, forêts et obstacles relevés en jeu s’affichent désormais sur la carte à plat. Un clic ouvre la fiche de la construction : marquer, poser un objectif, noter un étage. En Relief 3D, les volumes se dressent toujours au-dessus du sol. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Empreintes des bâtiments, forêts et obstacles sur la carte à plat',
+                'Clic pour ouvrir la fiche Construction',
+            ], [
+                'La case Bâtiments, forêts et obstacles commande aussi la vue à plat',
+            ], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Laissez Bâtiments, forêts et obstacles coché. Un relevé reçu en jeu doit montrer des volumes sur la carte ; un clic ouvre la fiche.',
+            ], 'Overwatch Beta'),
+            $pr(670, '2026-09-19', 'ATAK : coupure visible dans la barre d’état', 'Une coupure de liaison n’affiche plus de panneau au milieu de la carte. Les barres de signal, à côté de l’heure et de la batterie, passent au rouge. La carte reste utilisable. Relancez Arma complètement (Overwatch 1.5.94).', [
+            ], [], [
+                'Le panneau Liaison perdue recouvrait la carte et bloquait les commandes',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.94). Pendant une coupure, la carte doit rester cliquable et les barres de signal en haut à droite doivent passer au rouge.',
+            ], 'Overwatch 1.5.94'),
+            $pr(668, '2026-09-19', 'ATAK : Paramètres s’ouvre sur votre fiche', 'La page Paramètres s’ouvrait trop bas, sur la liaison au poste. Elle s’ouvre maintenant sur votre fiche : indicatif, rôle, carte, équipe et affichage. Enregistrer reste visible en haut. Relancez Arma complètement (Athena 1.0.150).', [
+            ], [
+                'Le rendu de la fiche et de la liaison reste le même',
+            ], [
+                'Paramètres sautait en bas de page, les réglages de fiche n’étaient plus visibles',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.150). Paramètres : indicatif et rôle doivent apparaître d’emblée, sans faire défiler vers le haut.',
+            ], 'Athena 1.0.150'),
+            $pr(669, '2026-09-19', 'Poste Overwatch : fiche contact et groupes allégés', 'La fiche d’un contact montre d’abord vitesse, altitude, dernière position et grille, puis centrer, suivre ou donner une tâche. Le téléphone et l’alerte plein écran se déplient à la demande. Dans Groupes, les tâches déjà transmises et l’alerte sont rangées de la même façon. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Fiche contact limitée à l’essentiel, avec volets pour le téléphone et l’alerte',
+                'Onglet Groupes : tâche et urgence côte à côte, listes repliables',
+            ], [
+                'Centrer, suivre et transmettre une tâche restent en un clic',
+            ], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Cliquez un contact : la fiche doit tenir en haut de l’écran. Ordre, Groupes : ouvrez Tâches transmises ou Alerte plein écran seulement si besoin.',
+            ], 'Overwatch Beta'),
+            $pr(667, '2026-09-19', 'ATAK : Transférer réapparaît dans Photo Library', 'Les boutons Transférer et Tout transférer n’apparaissaient pas entre la liste et le nom. Ils se placent maintenant dans cette zone dès que Photo Library est ouverte. Relancez Arma complètement (Athena 1.0.149).', [
+            ], [], [
+                'Photo Library n’affichait pas Transférer ni Tout transférer',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.149). Photo Library : Transférer et Tout transférer doivent être visibles sous la liste.',
+            ], 'Athena 1.0.149'),
+            $pr(666, '2026-09-19', 'Poste Overwatch : les contacts se lisent d’un coup d’œil', 'L’onglet Contacts sépare désormais ceux qui sont en liaison et ceux qui ne le sont plus. Chaque fiche montre le rôle, le groupe, l’âge de la position et si le lien est direct ou par relais. Un hors-ligne se recentre sur sa dernière position connue. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'En liaison et hors liaison, regroupés par escouade',
+                'Badge direct ou relais, et recentrage sur la dernière position d’un contact coupé',
+            ], [
+                'La recherche et le filtre Tous / en ligne / hors ligne / amis / hostiles restent dans l’onglet',
+            ], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Ordre, puis Contacts : les fiches doivent montrer indicatif, rôle et état de liaison.',
+            ], 'Overwatch Beta'),
+            $pr(665, '2026-09-19', 'ATAK : P2P retrouve le chat entre téléphones', 'P2P — Réseau local n’affichait plus que Retour et Send Data, sans liste ni messages. L’écran reprend le chat téléphone à téléphone. Relancez Arma complètement (Athena 1.0.148).', [
+            ], [], [
+                'P2P n’ouvrait plus le chat local',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.148). P2P — Réseau local : la liste des correspondants et le fil de discussion doivent réapparaître.',
+            ], 'Athena 1.0.148'),
+            $pr(664, '2026-09-19', 'ATAK : chaque application a sa propre icône', 'Athena, Briefing et Tutoriel avaient la même bulle. Chacune a maintenant un pictogramme distinct, comme Video Feeds ou Photo Library. Relancez Arma complètement (Athena 1.0.147).', [
+                'Athena, Briefing, Tutoriel, Messagerie et BDA ont chacun une icône différente',
+            ], [], [
+                'Trois applications du menu se ressemblaient au point de se confondre',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.147). Chevron : Athena (tablette), Briefing (presse-papiers), Tutoriel (livre) et Messagerie (bulles) se distinguent d’un coup d’œil.',
+            ], 'Athena 1.0.147'),
+            $pr(663, '2026-09-19', 'ATAK : le menu Échap ne montre plus Overwatch', 'Le bouton COMSPEC Overwatch du menu Échap n’ouvrait plus rien d’utile. Il disparaît. Le dépannage de liaison reste disponible depuis Échap. Relancez Arma complètement (Overwatch 1.5.93).', [
+            ], [], [
+                'Le bouton COMSPEC Overwatch a quitté le menu Échap',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.93). Échap : plus de bouton Overwatch. Dépannage liaison reste en haut à gauche.',
+            ], 'Overwatch 1.5.93'),
+            $pr(662, '2026-09-19', 'ATAK : transférer les photos vers le poste', 'Dans Photo Library, Transférer envoie la vue sélectionnée vers le poste. Tout transférer envoie vos vues locales. Après l’envoi, elles quittent la bibliothèque du téléphone. Relancez Arma complètement (Athena 1.0.146).', [
+                'Transférer envoie la photo sélectionnée vers le poste',
+                'Tout transférer envoie toutes vos photos locales',
+                'Après l’envoi, la photo quitte la bibliothèque du téléphone',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.146). Photo Library : Transférer ou Tout transférer. La vue arrive au poste et disparaît de la liste.',
+            ], 'Athena 1.0.146'),
+            $pr(661, '2026-09-19', 'Poste Overwatch : le relief retrouve le fond de carte', 'En vue Relief 3D ou Tactique 3D, le théâtre restait sombre : le fond de carte n’arrivait pas jusqu’au poste. Le plan et la photo aérienne s’affichent de nouveau sur le relief. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Le fond de carte réapparaît en Relief 3D et Tactique 3D',
+            ], [], [
+                'Le relief s’ouvrait sans le plan ni la photo aérienne',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Tactique 3D : le théâtre doit montrer le même fond qu’à plat, avec le relief.',
+            ], 'Overwatch Beta'),
+            $pr(660, '2026-09-19', 'ATAK : les applications retrouvent leurs icônes', 'Les tuiles Athena du chevron n’affichaient plus d’icône. Elles reprennent le pictogramme au-dessus du nom, comme les autres applications du téléphone. Relancez Arma complètement (Athena 1.0.145).', [
+                'Chaque application Athena a de nouveau son icône au-dessus du nom',
+            ], [], [
+                'Les tuiles Athena du menu n’avaient plus d’icône',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.145). Chevron : Athena, Messagerie, Ordres et Paramètres doivent montrer une icône, comme Video Feeds.',
+            ], 'Athena 1.0.145'),
+            $pr(659, '2026-09-19', 'ATAK : le menu d’applications n’est plus vidé', 'Le chevron ne montrait plus que deux ou trois icônes, mal placées. Le téléphone reprend sa grille d’applications, sans les déplacer. Relancez Arma complètement (Athena 1.0.144).', [
+                'Toutes les applications du téléphone restent dans le menu',
+                'Les icônes et les noms gardent leur place d’origine',
+            ], [], [
+                'Le menu se vidait : Missions en haut, Video Feeds et Quick Pictures en bas',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.144). Ouvrez le téléphone, puis le chevron : la grille complète doit réapparaître, comme sur le pack de septembre.',
+            ], 'Athena 1.0.144'),
+            $pr(657, '2026-09-19', 'ATAK : le menu d’applications reprend sa grille', 'Le chevron mélangeait les icônes, les noms se superposaient, et un clic ouvrait la mauvaise application. Les tuiles reprennent la grille à trois colonnes du téléphone, avec les applications Athena. Relancez Arma complètement (Athena 1.0.143).', [
+                'Les applications se calent en trois colonnes, icône au-dessus du nom',
+                'Les applications Athena réapparaissent dans le menu',
+                'Un clic ouvre uniquement l’application choisie',
+            ], [], [
+                'Les tuiles se superposaient ; Athena manquait ; chaque clic ouvrait Task et Video Feeds',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.143). Ouvrez le téléphone, puis le chevron : grille régulière, tuiles Athena visibles, un clic ouvre une seule application.',
+            ], 'Athena 1.0.143'),
+            $pr(658, '2026-09-19', 'Poste Overwatch : outils de commandement', 'Le poste mesure désormais d’un clic à l’autre, prépare un compte rendu de contact et une demande d’appui ou d’évacuation à partir d’un point de la carte, et montre si une tâche a été vue, est en cours ou terminée. Les positions figées se distinguent du temps réel. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Mesure entre deux points : distance, cap, grilles et temps de parcours',
+                'Compte rendu de contact structuré, posé aussi sur la carte',
+                '9-line et CASEVAC préremplis depuis un clic droit',
+                'Vecteur d’anticipation pour les contacts en mouvement',
+                'Recherche dans le fil d’ordres, alertes sonores près d’un objectif ou d’un ralliement',
+                'Replay et export du bilan de mission depuis le poste',
+                'L’alerte plein écran à tous les opérateurs est réservée au commandement',
+            ], [
+                'Les tâches de groupe affichent vu, accusé, en cours ou terminé d’après le téléphone',
+                'Une position qui n’est plus mise à jour est marquée comme dernière position connue',
+            ], [
+                'Un « terminé » envoyé depuis le téléphone n’était pas reconnu au poste',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Dans Mission, préparez un compte rendu ou une 9-line après un clic droit sur la carte. Un responsable d’organisation attribue le droit d’alerte plein écran dans les fonctions de la communauté.',
+            ], 'Overwatch Beta'),
+            $pr(656, '2026-09-19', 'ATAK : le dépannage laisse une trace', 'Si le jeu s’arrête pendant le dépannage liaison, le journal de session indique désormais quelle étape était en cours. Relancez Arma complètement (Overwatch 1.5.92) avant le prochain essai.', [
+                'Chaque étape du bandeau de dépannage est écrite au journal avant et après son exécution',
+                'La fenêtre de débit et le retour de perte de paquets sont consignés tels quels',
+            ], [], [
+                'Un arrêt pendant le dépannage ne laissait pas de trace de l’étape en cours',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.92). Le bandeau doit indiquer 1.5.92. Lancez le dépannage. En cas d’arrêt, envoyez le journal de session : la dernière étape commencée sans fin correspondante identifie la fonction.',
+            ], 'Overwatch 1.5.92'),
+            $pr(655, '2026-09-19', 'ATAK : envoyer une Quick Picture vers le poste', 'Une vue prise depuis Quick Pictures n’arrivait pas au poste, ou seulement après avoir choisi le bon destinataire. Dans Photo Library, le bouton Vers Athena envoie la photo sélectionnée au poste. Relancez Arma complètement (Athena 1.0.142).', [
+                'Bouton Vers Athena dans Photo Library',
+                'La photo sélectionnée part vers le poste, sans choisir un autre téléphone',
+            ], [], [
+                'Les vues Quick Pictures n’arrivaient pas au poste',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.142). Prenez une vue Quick Pictures, ouvrez Photo Library, sélectionnez-la, puis Vers Athena : elle doit arriver au poste.',
+            ], 'Athena 1.0.142'),
+            $pr(654, '2026-09-19', 'Poste Overwatch : photos datées et actions', 'Les photos reçues du terrain ou du dépannage affichaient l’année 1970 et ne proposaient que Envoyer. Elles portent désormais l’heure réelle. Vous pouvez les agrandir, les flouter, les classer dans un dossier SSE ou les retirer. Rechargez Overwatch Beta (Ctrl+F5). Relancez Arma complètement (Overwatch 1.5.91) pour les prochaines photos prises en jeu.', [
+                'L’heure affichée est celle de la prise ou de la réception, et non 1970',
+                'Agrandir, Flouter, Passer en SSE et Supprimer sous chaque photo',
+                'Clic sur la miniature pour ouvrir en grand',
+            ], [], [
+                'Les photos du dépannage et de la tablette affichaient 1970, avec seulement Envoyer',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Renseignement : les photos déjà reçues doivent afficher une date actuelle, avec Agrandir, Flouter, Passer en SSE et Supprimer. Quittez Arma complètement puis rechargez le pack (Overwatch 1.5.91) avant la prochaine photo en jeu.',
+            ], 'Overwatch 1.5.91'),
             $pr(653, '2026-09-19', 'ATAK : le menu d’applications reprend sa grille', 'Le menu du chevron déformait les tuiles : icônes décalées, libellés absents, cases vides. Les applications reprennent leur place en trois colonnes, avec le fond gris sombre. Relancez Arma complètement (Athena 1.0.141).', [
                 'Les applications du chevron se calent de nouveau en trois colonnes',
                 'Les icônes et les noms restent lisibles, sans cases vides',

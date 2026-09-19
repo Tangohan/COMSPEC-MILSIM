@@ -16,6 +16,7 @@ use PDO;
  * - DELIVERED : Reçu (visible destinataire)
  * - ACK       : Confirmé (accusé de réception)
  * - EXEC      : En cours d’exécution
+ * - DONE      : Terminé (remonté depuis le téléphone)
  * - FAILED    : Échec
  * - CANCELLED : Annulé
  *
@@ -30,7 +31,7 @@ class AtakOrderRepository
     /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
     public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'NOTIFY_FULL', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM', 'PHONE_GEOLOC', 'PHONE_GEOLOC_OFF'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
-    public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
+    public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'DONE', 'FAILED', 'CANCELLED'];
     public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo', 'ally'];
     public const CHANNELS = ['GLOBAL', 'COMMAND', 'SQUAD', 'JTAC', 'AIR'];
     public const SIM_STATES = ['queued', 'transmitting', 'jammed', 'retransmit', 'delivered', 'lost'];
@@ -597,7 +598,7 @@ class AtakOrderRepository
         }
 
         $status = strtoupper((string) ($row['status'] ?? 'PENDING'));
-        if (in_array($status, ['CANCELLED', 'ACK', 'EXEC', 'FAILED'], true)) {
+        if (in_array($status, ['CANCELLED', 'ACK', 'EXEC', 'DONE', 'FAILED'], true)) {
             $row['is_overdue'] = false;
             $row['visible_to_recipient'] = true;
 
@@ -776,6 +777,9 @@ class AtakOrderRepository
         if ($s === 'CANCELED') {
             $s = 'CANCELLED';
         }
+        if ($s === 'COMPLETE' || $s === 'COMPLETED' || $s === 'CLOSED' || $s === 'TERMINE') {
+            $s = 'DONE';
+        }
 
         return in_array($s, self::STATUSES, true) ? $s : 'PENDING';
     }
@@ -783,8 +787,8 @@ class AtakOrderRepository
     /**
      * Transitions autorisées :
      * PENDING/DELIVERED → ACK | FAILED | CANCELLED
-     * ACK → EXEC | FAILED | CANCELLED
-     * EXEC → FAILED | CANCELLED
+     * ACK → EXEC | DONE | FAILED | CANCELLED
+     * EXEC → DONE | FAILED | CANCELLED
      */
     public function canTransitionStatus(string $current, string $next): bool
     {
@@ -803,7 +807,8 @@ class AtakOrderRepository
         return match ($next) {
             'ACK' => in_array($current, ['PENDING', 'DELIVERED'], true),
             'EXEC' => $current === 'ACK',
-            'FAILED' => in_array($current, ['PENDING', 'DELIVERED', 'ACK', 'EXEC'], true),
+            'DONE' => in_array($current, ['ACK', 'EXEC'], true),
+            'FAILED' => in_array($current, ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'DONE'], true),
             'DELIVERED' => $current === 'PENDING',
             default => false,
         };

@@ -33,7 +33,7 @@ final class AtakPlainTextAssetTest extends TestCase
         self::assertStringContainsString('case 62:', $helper);
         self::assertStringContainsString('_w < 0.02', $helper);
         self::assertStringContainsString('class setPlainText {}', $connectCfg);
-        self::assertStringContainsString('1.0.144', $athenaCfg);
+        self::assertStringContainsString('1.0.152', $athenaCfg);
         self::assertStringContainsString('COMSPEC_ATAK_StructuredText: RscStructuredText', $theme);
         self::assertStringContainsString('Iceman_ReportsDetailText', $theme);
 

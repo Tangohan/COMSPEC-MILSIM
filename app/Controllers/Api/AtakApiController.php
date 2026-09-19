@@ -46,6 +46,7 @@ use App\Support\AtakPoMarker;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakOrderWaypoint;
 use App\Support\AtakPlayNight;
+use App\Support\ReconCapturedAt;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
 use App\Support\GroupMessageParser;
@@ -8037,6 +8038,7 @@ class AtakApiController
             'cursor' => $cursor,
             'counts' => $counts,
             'canIssue' => $this->canIssueOrdersFromWeb(),
+            'canIssueAlert' => $this->canIssueFullscreenAlert(),
             'features' => [
                 'structured_targets' => $this->orderRepository->v2ColumnsReady(),
                 'radio_sim' => $this->orderRepository->v2ColumnsReady(),
@@ -8634,6 +8636,14 @@ class AtakApiController
         $resolved = $this->resolveOrderTargetLabel($r, $mapId, $targetType, $targetRef, $targetLabel, $legacyTarget);
         if ($resolved['error'] !== null) {
             return Response::json(['error' => 'target_invalid', 'message' => $resolved['error']], 400);
+        }
+
+        $orderType = strtoupper(trim((string) ($body['order_type'] ?? $body['type'] ?? 'MOVE')));
+        if ($orderType === 'NOTIFY_FULL' && $targetType === 'all' && !$this->canIssueFullscreenAlert()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Votre fonction ne permet pas d’envoyer une alerte plein écran à tous les opérateurs.',
+            ], 403);
         }
 
         $radioSim = true;
@@ -9359,12 +9369,13 @@ class AtakApiController
     private function orderStatusLabelFr(string $status): string
     {
         return match (strtoupper($status)) {
-            'DELIVERED' => 'Reçu',
-            'ACK' => 'Confirmé',
+            'DELIVERED' => 'Vu',
+            'ACK' => 'Accusé',
             'EXEC' => 'En cours',
+            'DONE' => 'Terminé',
             'FAILED' => 'Échec',
             'CANCELLED' => 'Annulé',
-            default => 'Émis',
+            default => 'Transmis',
         };
     }
 
@@ -9407,6 +9418,21 @@ class AtakApiController
     private function canIssueOrdersFromWeb(): bool
     {
         return $this->sessionUserBrief() !== null;
+    }
+
+    private function canIssueFullscreenAlert(): bool
+    {
+        if ($this->sessionUserBrief() === null) {
+            return false;
+        }
+        if (!function_exists('can')) {
+            return false;
+        }
+
+        return can('atak.command.alert')
+            || can('atak.mission_cycle.manage')
+            || can('admin.access')
+            || can('admin.organization');
     }
 
     /**
@@ -10600,6 +10626,8 @@ class AtakApiController
             foreach ($rows as &$row) {
                 $row['url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+                $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
+                $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
             }
             unset($row);
 
@@ -10727,7 +10755,7 @@ class AtakApiController
                 'heading' => isset($_POST['heading']) && is_numeric($_POST['heading']) ? (float) $_POST['heading'] : null,
                 'altitude' => isset($_POST['altitude']) && is_numeric($_POST['altitude']) ? (float) $_POST['altitude'] : null,
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
-                'captured_at' => isset($_POST['capturedAt']) ? (int) $_POST['capturedAt'] : time(),
+                'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ];
             try {
                 (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);

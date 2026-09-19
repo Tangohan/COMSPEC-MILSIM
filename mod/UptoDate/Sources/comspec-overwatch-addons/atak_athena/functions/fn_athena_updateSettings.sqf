@@ -67,7 +67,7 @@ private _teamFr = switch (toUpper _teamColor) do {
 private _sum = [9841] call _ctrl;
 if (!isNull _sum) then {
     _sum ctrlSetStructuredText parseText format [
-        "<t size='0.92'><t color='#8FBEA8'>Identifiant ATAK</t>  %1<br/><t color='#8FBEA8'>Terminal</t>  %2<br/><t color='#8FBEA8'>Groupe actuel</t>  %3 · équipe %4</t>",
+        "<t color='#7CFF9A' size='1.12'>Votre fiche</t><br/><t color='#E8F4F0' size='1.0'><t color='#8FBEA8'>Identifiant ATAK</t>  %1<br/><t color='#8FBEA8'>Terminal</t>  %2<br/><t color='#8FBEA8'>Groupe actuel</t>  %3 · équipe %4</t>",
         _idLine,
         _termLine,
         _gid,

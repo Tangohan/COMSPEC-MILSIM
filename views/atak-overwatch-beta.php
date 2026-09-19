@@ -12,6 +12,8 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-c2.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tacmap.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/TheaterProjection.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlMap.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlLayers.js'),
@@ -91,6 +93,7 @@ $icon = static function (string $path): string {
       <button type="button" data-ow-more>Plus</button>
       <div class="ow-more-menu" id="ow-more-menu" hidden>
         <button type="button" data-ow-replay>Replay</button>
+        <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>
         <button type="button" data-ow-goto>Aller à une grille</button>
         <button type="button" data-ow-panel="intercept">Interception</button>
@@ -182,6 +185,7 @@ $icon = static function (string $path): string {
             </select>
           </label>
           <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments, forêts et obstacles</label>
+          <p class="ow-help">Les volumes relevés en jeu s’affichent sur la carte à plat. Un clic ouvre la fiche de la construction (marquer, objectif, étage). En Relief 3D, ils se dressent au-dessus du sol.</p>
           <label class="ow-toggle" for="atak-scene-quality"><input type="checkbox" id="atak-scene-quality"> Qualité du relevé (cartographie)</label>
           <p class="ow-help">Éteint par défaut. Vert : données complètes. Orange : dimensions approximées. Gris : position seulement. Rouge : géométrie à vérifier.</p>
           <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
@@ -246,8 +250,8 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" id="ow-follow"> Suivre le contact sélectionné</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-look-arrow"> Flèche d’orientation</label>
         <p class="ow-help">Pointe du contact ouvert : orientation du personnage en jeu, pas la caméra. La longueur reste lisible quel que soit le zoom.</p>
-        <label class="ow-toggle"><input type="checkbox" id="ow-predict"> Anticiper la position</label>
-        <p class="ow-help">Pointillés vers la position estimée dans les prochaines secondes, à partir du cap et de la vitesse transmis. Uniquement le contact ouvert. Rien n’est inventé si ces données manquent.</p>
+        <label class="ow-toggle"><input type="checkbox" id="ow-predict"> Anticiper les trajectoires</label>
+        <p class="ow-help">Vecteur pointillé pour chaque contact en mouvement, à partir du cap et de la vitesse déjà transmis. Rien n’est inventé si ces données manquent.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-progress-trail"> Tracé de progression</label>
         <p class="ow-help">Chemin déjà parcouru par le contact ouvert, d’après les positions reçues sur ce poste. Le tracé s’allonge au fur et à mesure.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-label-grid"> Grille sous l’indicatif</label>
@@ -343,6 +347,16 @@ $icon = static function (string $path): string {
         <p class="ow-kicker">Liaison ATAK</p>
         <p class="ow-help" id="ow-relay-mode-help">Par défaut, la liaison du téléphone n’exige pas de relais. Un responsable peut activer le passage obligatoire par antenne dans les réglages ATAK de la communauté.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geofence" checked> Alerte entrée / sortie de zone</label>
+        <label class="ow-toggle"><input type="checkbox" id="ow-c2-alerts" checked> Alerte sonore proche d’un objectif</label>
+        <label class="ow-row">Distance d’alerte
+          <span class="ow-select"><select id="ow-c2-alert-radius" aria-label="Distance d’alerte autour d’un objectif">
+            <option value="100">100 m</option>
+            <option value="250" selected>250 m</option>
+            <option value="500">500 m</option>
+            <option value="1000">1 000 m</option>
+          </select></span>
+        </label>
+        <p class="ow-help">Prévenez le poste si un contact hostile entre dans cette distance autour d’un point à atteindre, ou si un opérateur franchit un ralliement.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-weather-layer" checked> Overlay météo mission</label>
         <label class="ow-row">Largeur réglages
           <input type="range" id="ow-aside-left" min="240" max="420" value="300">
@@ -364,10 +378,11 @@ $icon = static function (string $path): string {
         <button type="button" data-tool="center" data-tip="Recentrer" data-help="Recadre le théâtre entier."><?= $icon('M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z') ?></button>
         <span class="ow-rail-gap"></span>
         <button type="button" data-tool="marker" data-tip="Marqueur" data-help="Un clic pose un repère. L’outil reste actif pour en poser d’autres."><?= $icon('M12 21s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z') ?></button>
+        <button type="button" data-tool="draw" data-tip="Tracé tactique" data-help="Ouvre la barre de tracé : flèches, zones, symboles OTAN, plan de bâtiment et export pour briefing."><?= $icon('M17 3l4 4L7 21l-5 1 1-5L17 3z') ?></button>
         <button type="button" data-tool="line" data-tip="Ligne" data-help="Maintenez et glissez, ou cliquez des sommets puis double-clic."><?= $icon('M4 18L20 6') ?></button>
         <button type="button" data-tool="polygon" data-tip="Zone" data-help="Maintenez pour tracer un lasso. Relâchez pour fermer la zone."><?= $icon('M12 3l8 6-3 10H7L4 9z') ?></button>
         <button type="button" data-tool="circle" data-tip="Cercle" data-help="Appuyez au centre, glissez le rayon, relâchez pour poser."><?= $icon('M12 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14z') ?></button>
-        <button type="button" data-tool="measure" data-tip="Mesure" data-help="Maintenez du départ à l’arrivée. Distance et cap s’affichent."><?= $icon('M4 12h16M8 8v8M16 8v8') ?></button>
+        <button type="button" data-tool="measure" data-tip="Mesure" data-help="Cliquez le départ, puis l’arrivée. Distance, cap, grilles et temps de parcours s’affichent."><?= $icon('M4 12h16M8 8v8M16 8v8') ?></button>
         <span class="ow-rail-gap"></span>
         <button type="button" data-tool="po" data-tip="Point à atteindre" data-help="Cliquez pour poser un point (rayon 20 m). Double-clic termine la série."><?= $icon('M12 3v18M8 8h8') ?></button>
         <button type="button" data-tool="rally" data-tip="Point de ralliement" data-help="Cliquez un lieu de regroupement. Anneau de 50 m au poste et en jeu."><?= $icon('M6 21V4l12 5-12 5') ?></button>
@@ -398,6 +413,107 @@ $icon = static function (string $path): string {
           <button type="button" data-tool="refresh" data-tip="Actualiser" data-help="Relance la synchronisation des contacts et des canaux."><?= $icon('M20 12a8 8 0 1 1-2-5.3M20 4v6h-6') ?><span>Sync</span></button>
         </div>
       </div>
+      <div class="ow-drawbar" id="ow-drawbar" hidden>
+        <div class="ow-drawbar-grp">
+          <button type="button" class="ow-dtool" data-draw="cursor" title="Sélection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3l8 18 2-8 8-2z"/></svg><span class="ow-dtool-tip">Sélection</span></button>
+          <button type="button" class="ow-dtool is-active" data-draw="arrow" title="Flèche tactique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19L19 5M19 5H9M19 5v10"/></svg><span class="ow-dtool-tip">Flèche tactique</span></button>
+          <button type="button" class="ow-dtool" data-draw="freehand" title="Tracé libre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20c3-8 6-12 9-12s2 6 5 6 3-6 6-6"/></svg><span class="ow-dtool-tip">Tracé libre</span></button>
+          <button type="button" class="ow-dtool" data-draw="polygon" title="Zone / polygone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l9 6-3 10H6L3 8z"/></svg><span class="ow-dtool-tip">Zone / polygone</span></button>
+          <button type="button" class="ow-dtool" data-draw="highlight" title="Surligneur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l6-6 4 4-6 6M3 21l4-1 8-8-3-3-8 8z"/></svg><span class="ow-dtool-tip">Surligneur</span></button>
+          <button type="button" class="ow-dtool" data-draw="text" title="Texte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h14M12 5v14"/></svg><span class="ow-dtool-tip">Texte</span></button>
+        </div>
+        <span class="ow-drawbar-sep"></span>
+        <div class="ow-drawbar-grp">
+          <button type="button" class="ow-dtool" data-draw="measure" title="Mesure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l14-14 4 4-14 14H3v-4z"/></svg><span class="ow-dtool-tip">Mesure</span></button>
+          <button type="button" class="ow-dtool" id="ow-btn-bplan" title="Découpage bâtiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg><span class="ow-dtool-tip">Découpage bâtiment</span></button>
+        </div>
+        <span class="ow-drawbar-sep"></span>
+        <div class="ow-drawbar-grp ow-drawbar-otan">
+          <button type="button" class="ow-otan-btn" id="ow-otan-btn" aria-expanded="false" aria-controls="ow-otan-flyout">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19L19 5M19 5H9M19 5v10"/></svg>
+            Symboles OTAN
+          </button>
+          <div class="ow-otan-flyout" id="ow-otan-flyout" hidden>
+            <div class="ow-otan-cap">Affiliation</div>
+            <div class="ow-otan-affil">
+              <button type="button" class="ow-swatch is-on" data-affil="friend" style="background:#5b9dff" title="Ami"><span>Ami</span></button>
+              <button type="button" class="ow-swatch" data-affil="hostile" style="background:#ef5b5b" title="Ennemi"><span>Ennemi</span></button>
+              <button type="button" class="ow-swatch" data-affil="neutral" style="background:#2ecf9a" title="Neutre"><span>Neutre</span></button>
+              <button type="button" class="ow-swatch" data-affil="unknown" style="background:#e8cf4a" title="Inconnu"><span>Inconnu</span></button>
+            </div>
+            <div class="ow-otan-cap">Symboles APP-6</div>
+            <div class="ow-otan-grid">
+              <button type="button" class="ow-otan-item" data-draw="axis"><svg viewBox="0 0 40 20"><line x1="3" y1="14" x2="30" y2="4" stroke="#5b9dff" stroke-width="2"/><path d="M30,4 L24,6 L26,11 Z" fill="#5b9dff"/></svg><span>Axe de progression</span></button>
+              <button type="button" class="ow-otan-item" data-draw="attack"><svg viewBox="0 0 40 20"><path d="M3,17 L3,10 L26,6 L34,3 L26,12 L3,10" fill="#5b9dff"/></svg><span>Attaque principale</span></button>
+              <button type="button" class="ow-otan-item" data-draw="phase"><svg viewBox="0 0 40 20"><line x1="2" y1="10" x2="36" y2="10" stroke="#e8cf4a" stroke-width="2" stroke-dasharray="4 2"/></svg><span>Ligne de phase</span></button>
+              <button type="button" class="ow-otan-item" data-draw="sector"><svg viewBox="0 0 40 20"><line x1="20" y1="2" x2="20" y2="18" stroke="#8b93a1" stroke-width="1.6" stroke-dasharray="5 1.5 1 1.5"/><line x1="14" y1="2" x2="26" y2="2" stroke="#8b93a1" stroke-width="1.6"/></svg><span>Limite de secteur</span></button>
+              <button type="button" class="ow-otan-item" data-draw="assembly"><svg viewBox="0 0 40 20"><rect x="5" y="4" width="30" height="12" fill="none" stroke="#5b9dff" stroke-width="1.8"/></svg><span>Zone de rassemblement</span></button>
+              <button type="button" class="ow-otan-item" data-draw="objective"><svg viewBox="0 0 40 20"><ellipse cx="20" cy="10" rx="15" ry="7" fill="none" stroke="#ef5b5b" stroke-width="1.8"/></svg><span>Objectif</span></button>
+            </div>
+          </div>
+        </div>
+        <span class="ow-drawbar-sep"></span>
+        <div class="ow-drawbar-grp">
+          <button type="button" class="ow-dtool" data-draw="undo" title="Annuler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-1"/></svg><span class="ow-dtool-tip">Annuler</span></button>
+          <button type="button" class="ow-dtool" data-draw="redo" title="Rétablir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h1"/></svg><span class="ow-dtool-tip">Rétablir</span></button>
+        </div>
+        <button type="button" class="ow-export-btn" id="ow-btn-export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          Exporter PDF
+        </button>
+      </div>
+      <aside class="ow-bplan" id="ow-bplan" hidden>
+        <div class="ow-bplan-head">
+          <div class="ow-bplan-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg><span id="ow-bplan-heading">Plan de bâtiment</span></div>
+          <button type="button" class="ow-bplan-close" id="ow-bplan-close" aria-label="Fermer le plan">✕</button>
+        </div>
+        <div class="ow-bplan-floors" id="ow-bplan-floors">
+          <button type="button" class="ow-floor is-active" data-floor="rdc">RDC</button>
+          <button type="button" class="ow-floor" data-floor="etage-1">Étage 1</button>
+          <button type="button" class="ow-floor" id="ow-bplan-add-floor">+ Niveau</button>
+        </div>
+        <div class="ow-bplan-canvas-wrap">
+          <canvas id="ow-bplan-canvas" width="260" height="220" aria-label="Schéma de l’étage"></canvas>
+        </div>
+        <div class="ow-bplan-tools">
+          <button type="button" class="ow-bt is-active" data-btool="wall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/></svg>Mur</button>
+          <button type="button" class="ow-bt" data-btool="door"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h10v18"/><path d="M14 12h6"/></svg>Porte</button>
+          <button type="button" class="ow-bt" data-btool="window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16"/><line x1="4" y1="12" x2="20" y2="12"/></svg>Fenêtre</button>
+          <button type="button" class="ow-bt" data-btool="breach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>Point de brèche</button>
+          <button type="button" class="ow-bt" data-btool="room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5h14M12 5v14"/></svg>Pièce</button>
+        </div>
+        <div class="ow-bplan-foot">
+          <label class="ow-bplan-name">Nom du bâtiment
+            <input type="text" id="ow-bplan-name" maxlength="80" placeholder="Hangar, maison, entrepôt…">
+          </label>
+          <button type="button" class="ow-primary" id="ow-bplan-save">Enregistrer le plan sur la carte</button>
+        </div>
+      </aside>
+      <div class="ow-export-modal" id="ow-export-modal" hidden>
+        <div class="ow-export-card" role="dialog" aria-labelledby="ow-export-title">
+          <div class="ow-export-head">
+            <div class="ow-export-title" id="ow-export-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Exporter en PDF</div>
+            <button type="button" class="ow-bplan-close" id="ow-export-close" aria-label="Fermer">✕</button>
+          </div>
+          <div class="ow-export-body">
+            <label class="ow-chk"><input type="checkbox" id="ow-pdf-annos" checked> Annotations du calque actif (flèches, zones, texte)</label>
+            <label class="ow-chk"><input type="checkbox" id="ow-pdf-legend" checked> Légende tactique</label>
+            <label class="ow-chk"><input type="checkbox" id="ow-pdf-grid"> Grille de coordonnées</label>
+            <label class="ow-chk"><input type="checkbox" id="ow-pdf-time"> Horodatage de mission</label>
+            <label class="ow-chk"><input type="checkbox" id="ow-pdf-chat"> Fil du canal actif</label>
+            <label class="ow-export-field">Format
+              <select id="ow-pdf-format">
+                <option value="a4-landscape">A4 — Paysage</option>
+                <option value="a4-portrait">A4 — Portrait</option>
+                <option value="letter-landscape">Letter — Paysage</option>
+              </select>
+            </label>
+          </div>
+          <div class="ow-export-foot">
+            <button type="button" class="ow-primary" id="ow-export-go">Générer le PDF</button>
+          </div>
+        </div>
+      </div>
       <div id="ow-map" aria-label="Carte tactique temps réel"></div>
       <div id="ow-gl-map" class="ow-gl-map" hidden aria-label="Carte en relief"></div>
       <div class="ow-coordinate" id="ow-coordinate">Grille · Direct</div>
@@ -418,11 +534,14 @@ $icon = static function (string $path): string {
         <button type="button" data-ctx="rally">Point de ralliement (50 m) <span>R</span></button>
         <button type="button" data-ctx="aoi">Zone tactique <span>Z</span></button>
         <div class="ow-context-group">Mesurer</div>
-        <button type="button" data-ctx="measure">Distance <span></span></button>
+        <button type="button" data-ctx="measure">Distance et cap <span></span></button>
         <button type="button" data-ctx="los">Visée / masque <span>V</span></button>
         <div class="ow-context-group">Transmettre</div>
+        <button type="button" data-ctx="salute">Compte rendu SALUTE <span></span></button>
         <button type="button" data-ctx="intel">Observation de terrain <span></span></button>
         <button type="button" data-ctx="sitrep">Compte rendu géolocalisé <span></span></button>
+        <button type="button" data-ctx="nineline">9-line ici <span></span></button>
+        <button type="button" data-ctx="casevac">CASEVAC ici <span></span></button>
         <button type="button" data-ctx="chatgrid">Envoyer la grille au canal <span></span></button>
         <button type="button" data-ctx="copy">Copier les coordonnées <span></span></button>
       </div>
@@ -452,8 +571,10 @@ $icon = static function (string $path): string {
         <span class="ow-green" id="ow-replay-live">Direct</span>
         <input type="range" id="ow-replay-scrub" min="0" max="100" value="100" aria-label="Rejouer les trajectoires">
         <span id="ow-replay-now">Maintenant</span>
+        <button type="button" class="ow-replay-play" data-ow-debrief>Exporter le bilan</button>
       </div>
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
+      <div class="ow-freeze-banner" id="ow-freeze-banner" hidden></div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
       <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
       <div class="ow-toast" id="ow-toast" hidden><small>Athena</small><p id="ow-toast-text"></p></div>
@@ -469,6 +590,7 @@ $icon = static function (string $path): string {
       </div>
       <div class="ow-chat-main" data-chat-panel="channels">
         <label class="ow-search"><span>⌕</span><input id="ow-channel-filter" type="search" placeholder="Canal ou indicatif…"></label>
+        <label class="ow-search"><span>⌕</span><input id="ow-comms-search" type="search" placeholder="Rechercher dans le fil…"></label>
         <div id="ow-channel-list" class="ow-channel-list"></div>
         <div class="ow-fil-head">
           <div class="ow-fil-title"><span class="dot"></span> Fil</div>
@@ -489,18 +611,29 @@ $icon = static function (string $path): string {
           <button type="submit">Envoyer</button>
         </form>
       </div>
-      <div class="ow-chat-main" data-chat-panel="contacts" hidden>
-        <label class="ow-search"><span>⌕</span><input id="ow-search" type="search" placeholder="Filtrer indicatif, groupe, rôle…"></label>
-        <label class="ow-row ow-chat-filter">Afficher
-          <span class="ow-select"><select id="ow-side-filter">
-            <option value="all">Tous</option>
-            <option value="friendly">Amis</option>
-            <option value="hostile">Hostiles</option>
-            <option value="unknown">Inconnus</option>
-          </select></span>
-        </label>
-        <div class="ow-section-label">Contacts autorisés</div>
-        <div id="ow-contact-list" class="ow-contact-list" aria-live="polite"></div>
+      <div class="ow-chat-main ow-bft" data-chat-panel="contacts" hidden>
+        <div class="ow-bft-head">
+          <div class="ow-bft-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Suivi des forces
+            <span class="ow-bft-sub" id="ow-bft-sub">0 unité</span>
+          </div>
+          <label class="ow-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="ow-search" type="search" placeholder="Rechercher un contact…" autocomplete="off">
+          </label>
+          <label class="ow-bft-filter">Afficher
+            <span class="ow-select"><select id="ow-side-filter" aria-label="Filtrer les contacts">
+              <option value="all">Tous</option>
+              <option value="live">En ligne</option>
+              <option value="offline">Hors ligne</option>
+              <option value="friendly">Amis</option>
+              <option value="hostile">Hostiles</option>
+              <option value="unknown">Inconnus</option>
+            </select></span>
+          </label>
+        </div>
+        <div id="ow-contact-list" class="ow-bft-body" aria-live="polite"></div>
       </div>
       <div class="ow-chat-main" data-chat-panel="squads" hidden>
         <p class="ow-help">Les opérateurs d’un même groupe sont reliés sur la carte. Cliquez un groupe pour le cadrer.</p>
@@ -521,6 +654,7 @@ $icon = static function (string $path): string {
 
     <aside class="ow-drawer" id="ow-drawer" hidden>
       <header>
+        <span id="ow-drawer-avatar" class="ow-drawer-avatar" hidden></span>
         <div>
           <small id="ow-drawer-kicker">Panneau</small>
           <h2 id="ow-drawer-title">Contact</h2>
@@ -555,13 +689,13 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil. Replay et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom.</p>
+    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
-    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Bâtiments et forêts n’apparaissent que si un relevé a été reçu pour ce théâtre. En Relief 3D, le sol se relève et les bâtiments du jeu se dressent au-dessus. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
+    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Les bâtiments, forêts et obstacles relevés en jeu apparaissent sur la carte à plat : un clic ouvre la fiche de la construction. En Relief 3D, le sol se relève et les volumes se dressent au-dessus. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
     <h2>Dessin</h2>
-    <p>Maintenez le clic pour tracer une zone, un cercle ou une ligne. Relâchez pour poser. L’outil reste actif. Échap ou Sélection pour quitter. Un clic court pose encore un sommet précis. Clic droit sur un tracé, un point ou un repère, puis Supprimer pour le retirer.</p>
+    <p>Le crayon du rail ouvre la barre de tracé au-dessus de la carte : flèche, croquis, zone, surligneur, texte, symboles OTAN (ami, ennemi, neutre, inconnu) et plan de bâtiment. Maintenez le clic pour tracer, relâchez pour poser. Exporter PDF prépare une feuille de briefing (carte, légende, fil). Échap ou Sélection pour quitter. Clic droit : SALUTE, 9-line, CASEVAC, ou supprimer un tracé.</p>
     <h2>Réglages</h2>
     <p>Police, taille, grille, lecture nocturne et photos sur la carte se règlent à gauche. Chaque choix reste sur ce poste.</p>
     <h2>Fil</h2>
@@ -599,6 +733,8 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-geo-network.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-gotak.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-ops.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-c2.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-tacmap.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-p2.js?v=<?= $h($assetVer) ?>"></script>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false">

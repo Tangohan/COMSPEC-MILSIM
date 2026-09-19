@@ -1,7 +1,7 @@
 /*
     Menu d’applications : fond charbon, libellés cyan.
-    Ne pas redimensionner les tuiles — IceMan calcule icône et texte sur la taille d’origine.
-    On recale seulement X/Y en 3 colonnes, comme BCE_fnc_ATAK_openMenu, avec la largeur réelle.
+    La grille (3 colonnes, icône + nom) est uniquement celle d’IceMan.
+    Ne pas déplacer, recréer ni masquer les tuiles : ça vide le tiroir et vole les clics.
 */
 if (!hasInterface) exitWith {};
 
@@ -29,35 +29,7 @@ _grp ctrlSetBackgroundColor _charcoal;
 
 if (!_open) exitWith {};
 
-private _drawerW = uiNamespace getVariable ["COMSPEC_ATAK_DrawerW", 0];
-if (!(_drawerW isEqualType 0) || {_drawerW != _drawerW} || {_drawerW < 0.06}) then {
-    if (!isNull _bg) then { _drawerW = (ctrlPosition _bg) param [2, 0]; };
-};
-if (!(_drawerW isEqualType 0) || {_drawerW != _drawerW} || {_drawerW < 0.06}) then {
-    _drawerW = (ctrlPosition _grp) param [2, 0];
-};
-if (!(_drawerW isEqualType 0) || {_drawerW != _drawerW} || {_drawerW < 0.06}) exitWith {};
-
-private _order = [];
-if (!isNil "BCE_fnc_ATAK_getAPPs") then {
-    _order = [] call BCE_fnc_ATAK_getAPPs;
-};
-if (!(_order isEqualType []) || {(count _order) < 1}) exitWith {};
-
-private _cols = 3;
-private _appW = _drawerW / _cols;
-private _y = 0;
 {
-    private _ctrl = _grp controlsGroupCtrl (100 + _forEachIndex);
-    if (isNull _ctrl) then { continue };
-
-    private _col = _forEachIndex mod _cols;
-    if (_col == 0 && {_forEachIndex >= _cols}) then {
-        _y = _y + ((ctrlPosition _ctrl) param [3, 0]);
-    };
-
-    _ctrl ctrlSetPositionX (_appW * _col);
-    _ctrl ctrlSetPositionY _y;
-    _ctrl ctrlSetTextColor _cyan;
-    _ctrl ctrlCommit 0;
-} forEach _order;
+    if ((ctrlIDC _x) == 9) then { continue };
+    _x ctrlSetTextColor _cyan;
+} forEach (allControls _grp);

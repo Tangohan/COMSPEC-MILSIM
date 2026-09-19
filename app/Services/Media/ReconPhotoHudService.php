@@ -6,6 +6,7 @@ namespace App\Services\Media;
 
 use App\Core\Database;
 use App\Repositories\TenantRepository;
+use App\Support\ReconCapturedAt;
 
 /**
  * Bandeau d’identification type caméra-piéton, gravé sur les photos terrain à la réception.
@@ -366,17 +367,7 @@ final class ReconPhotoHudService
 
     private function formatStamp(mixed $capturedAt): string
     {
-        $ts = time();
-        if (is_int($capturedAt) && $capturedAt > 1_000_000_000) {
-            $ts = $capturedAt;
-        } elseif (is_numeric($capturedAt) && (int) $capturedAt > 1_000_000_000) {
-            $ts = (int) $capturedAt;
-        } elseif (is_string($capturedAt) && $capturedAt !== '') {
-            $parsed = strtotime($capturedAt);
-            if ($parsed !== false) {
-                $ts = $parsed;
-            }
-        }
+        $ts = ReconCapturedAt::unixFromPosted($capturedAt);
 
         return gmdate('d/m/Y  H:i:s', $ts) . ' Z';
     }

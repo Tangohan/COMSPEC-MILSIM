@@ -266,7 +266,7 @@ window.ArmaMapMarkers = (function () {
     if (/^(mil_|hd_|b_|o_|n_|c_|u_|flag_|contact_|loc_|mplus_|mts_)/i.test(t)) return true;
     if (data.color && /^Color/i.test(String(data.color))) return true;
     if (data.shape && /ICON|ELLIPSE|RECTANGLE|POLYLINE/i.test(String(data.shape))) return true;
-    if (data.source === 'arma' || data.source === 'ctab_user' || data.source === 'ctab_route' || data.source === 'ctab_jump') return true;
+    if (data.source === 'arma' || data.source === 'ctab_user' || data.source === 'ctab_route' || data.source === 'ctab_jump' || data.source === 'bce_widget') return true;
     if (/^ace_/i.test(String(data.source || ''))) return true;
     return false;
   }

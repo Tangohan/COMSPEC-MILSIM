@@ -50,17 +50,16 @@ private _started = 0;
     if (_key in _dead) then { continue };
     if (_base isNotEqualTo "" && {_base in _dead}) then { continue };
 
-    // Marquer vu immédiatement : chemins Photo Library morts ne doivent jamais re-spammer.
-    _seen pushBack _key;
-    while { (count _seen) > 120 } do { _seen deleteAt 0; };
-    missionNamespace setVariable ["COMSPEC_Athena_PhotoSeen", _seen, false];
-    _started = _started + 1;
-
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
         [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;
     };
 
-    // Signal unique — pas de spawn retry / pas d’attente fichier côté SQF.
-    [_filePath, _fileName, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
+    _started = _started + 1;
+    private _ok = [_filePath, _fileName, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
+    if (_ok isEqualType true && {_ok}) then {
+        _seen pushBack _key;
+        while { (count _seen) > 120 } do { _seen deleteAt 0; };
+        missionNamespace setVariable ["COMSPEC_Athena_PhotoSeen", _seen, false];
+    };
 } forEach _records;
 

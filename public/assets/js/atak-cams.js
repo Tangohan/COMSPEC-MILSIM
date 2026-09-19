@@ -324,22 +324,33 @@ window.ATAKCams = (function () {
   }
 
   function formatPhotoStamp(p) {
-    var raw = p && (p.created_at || p.captured_at || p.capturedAt || p.timestamp);
+    var created = p && (p.created_at || '');
+    var captured = p && (p.captured_at || p.capturedAt || p.timestamp);
+    var raw = captured;
+    var createdStr = String(created || '').trim();
+    if (raw == null || raw === '' || /^1970-/.test(String(raw)) || /^0000-/.test(String(raw))) {
+      raw = created;
+    }
     if (raw == null || raw === '') return '';
     // Epoch secondes ou ms
     if (typeof raw === 'number' || (/^\d+$/.test(String(raw)))) {
       var n = Number(raw);
       if (n < 1e12) n *= 1000;
       var dNum = new Date(n);
-      if (!isNaN(dNum.getTime())) {
+      if (!isNaN(dNum.getTime()) && dNum.getUTCFullYear() >= 2001) {
         return formatStampDate(dNum);
       }
+      raw = created;
+      if (raw == null || raw === '') return '';
     }
     var s = String(raw).trim();
     var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
     if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
     var d = new Date(iso);
-    if (isNaN(d.getTime())) return s;
+    if (isNaN(d.getTime()) || d.getUTCFullYear() < 2001) {
+      if (createdStr && createdStr !== s) return formatPhotoStamp({ created_at: createdStr });
+      return s;
+    }
     return formatStampDate(d);
   }
 

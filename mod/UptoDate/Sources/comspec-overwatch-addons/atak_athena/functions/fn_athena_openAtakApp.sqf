@@ -12,8 +12,8 @@ if (!hasInterface) exitWith { false };
 private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _display) exitWith { false };
 
-if (!isNil "BCE_fnc_ATAK_getAPPs") then {
-    [true, true] call BCE_fnc_ATAK_getAPPs;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncAtakApps") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncAtakApps;
 };
 
 private _mode = ["cTab_Android_dlg", "mode"] call cTab_fnc_getSettings;

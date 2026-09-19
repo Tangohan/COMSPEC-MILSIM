@@ -129,7 +129,7 @@ final class AtakPlayNight
         $sql = null;
         foreach ($dateFields as $field) {
             $value = trim((string) ($row[$field] ?? ''));
-            if ($value !== '') {
+            if ($value !== '' && !ReconCapturedAt::isEpochEra($value)) {
                 $sql = $value;
                 break;
             }

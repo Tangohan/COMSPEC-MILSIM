@@ -20,6 +20,28 @@ if (_markerName isEqualTo "") exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { false };
 
+// Joueur Arma / Marker Widget BCE / Dropper TAD — avant le gate téléphone :
+// IceMan compileFinal PlaceMarker, type *Local, coupure simulée.
+private _ulCheck = toLower _markerName;
+private _isUnderscore = ((_markerName select [0, 1]) == "_");
+private _underscoreOk = true;
+if (_isUnderscore) then {
+    if (!isNil "comspec_overwatch_connect_fnc_isSyncableMapMarker") then {
+        _underscoreOk = [_markerName] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+    } else {
+        _underscoreOk = (
+            (_ulCheck find "_user_defined") >= 0
+            || {(_ulCheck find "user_defined") >= 0}
+            || {(_ulCheck find "_defined #") >= 0}
+            || {(_ulCheck find "_ictab_defined") >= 0}
+        );
+    };
+};
+if (_isUnderscore && {!_underscoreOk}) exitWith { false };
+
+private _isWidget = _isUnderscore && {_underscoreOk};
+if (!_force && {_isWidget}) then { _force = true; };
+
 if (
     !_force
     && {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}
@@ -39,24 +61,6 @@ if (!_force) then {
         missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", _txReason, false];
     };
 };
-
-// Joueur Arma / Marker Widget BCE / Dropper TAD
-private _ulCheck = toLower _markerName;
-private _isUnderscore = ((_markerName select [0, 1]) == "_");
-private _underscoreOk = true;
-if (_isUnderscore) then {
-    if (!isNil "comspec_overwatch_connect_fnc_isSyncableMapMarker") then {
-        _underscoreOk = [_markerName] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
-    } else {
-        _underscoreOk = (
-            (_ulCheck find "_user_defined") >= 0
-            || {(_ulCheck find "user_defined") >= 0}
-            || {(_ulCheck find "_defined #") >= 0}
-            || {(_ulCheck find "_ictab_defined") >= 0}
-        );
-    };
-};
-if (_isUnderscore && {!_underscoreOk}) exitWith { false };
 
 // Marqueurs déjà transmis via leur propre appel structuré
 private _mirroredElsewherePrefixes = [

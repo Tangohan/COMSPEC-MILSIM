@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.590;
-        versionStr = "1.5.90";
-        versionAr[] = {1, 5, 90};
+        version = 1.595;
+        versionStr = "1.5.95";
+        versionAr[] = {1, 5, 95};
     };
 };
 
@@ -487,6 +487,7 @@ class CfgFunctions {
             class syncMapMarker {};
             class isSyncableMapMarker {};
             class forceSyncMapMarkers {};
+            class syncNearbyMapMarkers {};
             class queueMapMarker {};
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
@@ -542,6 +543,7 @@ class CfgFunctions {
             class applyZeusAtakEffect {};
             class relayZeusAtakEffect {};
             class updateDeviceOverlay {};
+            class updateAtakLinkChrome {};
             class syncTerminalCompromise {};
             class captureEnemyAtak {};
             class aceDisablePhoneTrack {};

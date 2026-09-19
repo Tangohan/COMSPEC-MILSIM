@@ -44,10 +44,18 @@ final class AtakLayoutClampAssetTest extends TestCase
 
         self::assertStringContainsString('cTab_Android_dlg', $phone);
         self::assertStringContainsString('layoutAppDrawer', $layout);
-        self::assertStringContainsString('ctrlSetPositionX', $drawer);
-        self::assertStringContainsString('ctrlSetPositionY', $drawer);
-        self::assertStringContainsString('BCE_fnc_ATAK_getAPPs', $drawer);
-        self::assertStringNotContainsString('ctrlSetPosition [_cellW', $drawer);
-        self::assertStringContainsString('1.0.141', $cfg);
+        self::assertStringContainsString('ctrlSetBackgroundColor', $drawer);
+        self::assertStringContainsString('ctrlSetTextColor', $drawer);
+        self::assertStringNotContainsString('ctrlSetPositionX', $drawer);
+        self::assertStringNotContainsString('ctrlSetPositionY', $drawer);
+        self::assertStringNotContainsString('ctrlCreate', $drawer);
+        self::assertStringNotContainsString('ctrlDelete', $drawer);
+        self::assertStringNotContainsString('_extra ctrlEnable false', $drawer);
+        self::assertStringNotContainsString('_cellW * _col', $drawer);
+        self::assertStringContainsString('1.0.152', $cfg);
+        self::assertStringContainsString('class message;', $cfg);
+        self::assertStringContainsString('class Athena: message', $cfg);
+        self::assertStringContainsString('class athena_syncAtakApps {}', $cfg);
+        self::assertStringNotContainsString('class Group: message', $cfg);
     }
 }

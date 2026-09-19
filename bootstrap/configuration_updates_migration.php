@@ -540,6 +540,19 @@ SQL
             'dismissible' => 1,
             'sort_order' => 93,
         ],
+        [
+            'code' => 'ATAK_COMMAND_ALERT_RBAC_V1',
+            'version' => '1',
+            'title' => 'Alerte plein écran du poste',
+            'description' => 'L’alerte qui recouvre l’écran de tous les téléphones n’est plus ouverte à chaque compte connecté. Attribuez-la aux fonctions de commandement dans les droits de la communauté.',
+            'configuration_level' => 'recommended',
+            'configure_path' => 'back-office/roles-permissions',
+            'estimate_minutes' => 4,
+            'mandatory' => 0,
+            'blocking' => 0,
+            'dismissible' => 1,
+            'sort_order' => 94,
+        ],
     ];
 
     $upsert = $pdo->prepare(

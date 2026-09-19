@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\ReconCapturedAt;
 use PDO;
 
 class ReconImageRepository
@@ -153,7 +154,7 @@ class ReconImageRepository
             'heading' => $data['heading'] ?? null,
             'altitude' => $data['altitude'] ?? null,
             'device_type' => $data['device_type'] ?? 'CTAB',
-            'captured_at' => isset($data['captured_at']) ? date('Y-m-d H:i:s', (int) $data['captured_at']) : null,
+            'captured_at' => ReconCapturedAt::sqlDateTime($data['captured_at'] ?? null),
             'atak_cas_id' => $data['atak_cas_id'] ?? null,
         ];
         if ($this->hasColumn('fx_profile')) {

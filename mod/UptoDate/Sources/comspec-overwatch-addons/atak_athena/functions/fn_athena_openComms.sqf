@@ -8,15 +8,8 @@ if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
     ["COMSPEC_Warning", ["Terminal ATAK manquant — emportez votre téléphone ou tablette tactique."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
-if (!isNil "BCE_fnc_ATAK_setAPPs_props") then {
-    private _apps = + (profileNamespace getVariable ["BCE_ATAK_APPs", []]);
-    if (!(_apps isEqualType [])) then { _apps = []; };
-    if (!("AtakComms" in _apps)) then {
-        _apps pushBack "AtakComms";
-        profileNamespace setVariable ["BCE_ATAK_APPs", _apps];
-        saveProfileNamespace;
-    };
-    [_apps] call BCE_fnc_ATAK_setAPPs_props;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncAtakApps") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncAtakApps;
 };
 
 missionNamespace setVariable ["COMSPEC_MessageHubOrigin", false, false];

@@ -202,10 +202,14 @@ window.ATAKAerial = (function () {
   }
 
   function tileUrl(spec, z, x, y) {
-    return String(spec.tilePattern)
+    var raw = String(spec.tilePattern)
       .replace('{z}', String(z))
       .replace('{x}', String(x))
       .replace('{y}', String(y));
+    if (window.OverwatchTheaterProjection && window.OverwatchTheaterProjection.proxiedTileUrl) {
+      return window.OverwatchTheaterProjection.proxiedTileUrl(raw);
+    }
+    return raw;
   }
 
   function tileBounds(spec, z, x, y, off) {

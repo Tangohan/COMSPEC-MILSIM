@@ -22,9 +22,10 @@ final class AtakMessageHubAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_ATAK_MessageHub', $cfg);
         self::assertStringContainsString('class AtakP2P: message', $cfg);
-        self::assertStringContainsString('BCE_fnc_ATAK_message_Init', $cfg);
+        self::assertStringContainsString('class Menu_Property: Menu_Property', $cfg);
+        self::assertStringNotContainsString('PAGE_CTRL = "ATAK_Message"', $cfg);
         self::assertStringContainsString('athena_messageHubOnOpened', $cfg);
-        self::assertStringContainsString('1.0.141', $cfg);
+        self::assertStringContainsString('1.0.152', $cfg);
 
         self::assertStringContainsString('P2P — Réseau local', $hub);
         self::assertStringContainsString('Via Athena', $hub);
@@ -34,8 +35,8 @@ final class AtakMessageHubAssetTest extends TestCase
         self::assertStringContainsString('msghub', $opened);
         self::assertStringContainsString('AtakP2P', $p2p);
         self::assertStringContainsString('AtakComms', $ath);
-        self::assertStringContainsString('case "message"', $hide);
-        self::assertStringContainsString('case "atakp2p"', $hide);
+        self::assertStringContainsString('case "message": { "message" }', $hide);
+        self::assertStringContainsString('case "atakp2p": { "message" }', $hide);
         self::assertStringContainsString('COMSPEC_MessageHubOrigin', $title);
         self::assertStringNotContainsString('endpoint', $hub);
         self::assertStringNotContainsString('JSON', $hub);

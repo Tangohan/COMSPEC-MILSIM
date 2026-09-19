@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.46";
+        private const string ExtensionVersion = "2.0.47";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2713,6 +2713,12 @@ public static partial class Extension
         if (function == "StageCapture")
         {
             return StageCaptureToComspec(args.Length > 0 ? args[0] : "");
+        }
+
+        // Photo Library : après transfert vers le poste, retire le JPEG IceMan du disque.
+        if (function == "DeleteLocalFile")
+        {
+            return DeleteLocalScreenshot(args.Length > 0 ? args[0] : "");
         }
 
         // Dossiers où les captures sont réellement cherchées / recopiées (hors ligne).
@@ -9067,6 +9073,96 @@ public static partial class Extension
         catch
         {
             return "ERR|stage_failed";
+        }
+    }
+
+    /// <summary>
+    /// Transfert Photo Library : supprime uniquement une image dans un dossier de captures connu.
+    /// </summary>
+    private static string DeleteLocalScreenshot(string? hint)
+    {
+        try
+        {
+            var raw = (hint ?? "").Trim().Trim('"').Trim('\'');
+            if (string.IsNullOrWhiteSpace(raw))
+                return "ERR|empty";
+
+            string? resolved = null;
+            try
+            {
+                if (File.Exists(raw))
+                    resolved = Path.GetFullPath(raw);
+            }
+            catch { resolved = null; }
+
+            if (resolved == null)
+            {
+                string leaf;
+                try { leaf = Path.GetFileName(raw.Replace('/', '\\')); }
+                catch { leaf = ""; }
+                if (!string.IsNullOrWhiteSpace(leaf))
+                    resolved = FindScreenshotByFileName(leaf, allowUnstable: true);
+            }
+
+            if (string.IsNullOrWhiteSpace(resolved) || !File.Exists(resolved))
+                return "ERR|file_not_found";
+            if (!IsSafeScreenshotDeletePath(resolved))
+                return "ERR|forbidden";
+
+            File.Delete(resolved);
+            return "OK|deleted";
+        }
+        catch
+        {
+            return "ERR|delete_failed";
+        }
+    }
+
+    private static bool IsSafeScreenshotDeletePath(string path)
+    {
+        try
+        {
+            var full = Path.GetFullPath(path);
+            var ext = Path.GetExtension(full);
+            if (!(ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".webp", StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+            bool Under(string? dir)
+            {
+                if (string.IsNullOrWhiteSpace(dir)) return false;
+                try
+                {
+                    var root = Path.GetFullPath(dir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+                    var probe = full.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+                        ? full
+                        : full;
+                    return probe.StartsWith(root, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(dir), StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            var cap = ComspecCaptureDir();
+            if (Under(cap)) return true;
+            foreach (var dir in EnumeratePhotoLookupDirs())
+            {
+                if (Under(dir)) return true;
+            }
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                if (Under(dir)) return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 

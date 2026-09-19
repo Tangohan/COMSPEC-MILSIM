@@ -293,6 +293,7 @@ final class TenantRolePermissionPresetService
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
                     'organization.orbat.manage', 'organization.orbat.view', 'organization.effectifs.hub.view',
                     'organization.catalog.manage',
+                    'atak.mission_cycle.manage', 'atak.command.alert',
                 ]
             )));
         }
