@@ -108,6 +108,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="ow-disclaimer"', $view);
         self::assertStringContainsString('atak-map-crs.js', $view);
         self::assertStringContainsString('data-view="comms"', $view);
+        self::assertStringContainsString('data-view="comms">Ordre</button>', $view);
+        self::assertStringNotContainsString('>Comms</button>', $view);
         self::assertStringContainsString("'/api/chat?mapId='", $overwatchJs);
         self::assertStringContainsString('ow-unread', $overwatchJs);
         self::assertStringContainsString('deleteOwnChat', $overwatchJs);

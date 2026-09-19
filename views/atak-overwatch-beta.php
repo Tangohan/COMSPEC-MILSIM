@@ -81,7 +81,7 @@ $icon = static function (string $path): string {
     <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
       <button type="button" class="is-active" data-view="overwatch">Overwatch</button>
-      <button type="button" data-view="comms">Comms</button>
+      <button type="button" data-view="comms">Ordre</button>
       <button type="button" data-view="mission">Mission</button>
       <button type="button" data-view="layers">Calques</button>
       <button type="button" data-view="intel">Renseignement</button>
@@ -460,7 +460,7 @@ $icon = static function (string $path): string {
     </section>
 
     <aside class="ow-chat" id="ow-chat" aria-label="Tchat opérationnel">
-      <header><span>●</span> Comms <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
+      <header><span>●</span> Ordre <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
       <div class="ow-tabs" role="tablist">
         <button type="button" class="is-active" data-chat-tab="channels">Canaux <span class="ow-unread" data-unread-tab="channels" hidden></span></button>
         <button type="button" data-chat-tab="contacts">Contacts</button>

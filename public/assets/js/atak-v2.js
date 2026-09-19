@@ -16,7 +16,7 @@
     ['Localiser une unité', 'BFT', function () { focus('#atak-units-filter'); }],
     ['Ouvrir le renseignement SSE', 'Intel', function () { selectSection('intel'); }],
     ['Ouvrir les photos', 'Intel', function () { selectSection('intel'); click('[data-tab="photos"]'); }],
-    ['Ouvrir le tchat opérationnel', 'Comms', function () { selectSection('comms'); click('[data-tab="chat"]'); }],
+    ['Ouvrir le tchat opérationnel', 'Ordre', function () { selectSection('comms'); click('[data-tab="chat"]'); }],
     ['Ouvrir la mission', 'Mission', function () { selectSection('c2'); click('[data-tab="mission"]'); }],
     ['Envoyer un SITREP', 'Mission', function () { selectSection('sitac'); click('[data-tab="situation"]'); click('#atak-sitrep-pick-map'); }],
     ['Planifier un itinéraire', 'Carte', function () { click('[data-tool="route"]'); }],
