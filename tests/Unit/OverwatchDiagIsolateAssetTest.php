@@ -28,8 +28,16 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         $esc = (string) file_get_contents($base . '/functions/fn_onInterruptLoad.sqf');
         $pauseHpp = (string) file_get_contents($base . '/display_pause_manager.hpp');
 
+        $probe = (string) file_get_contents($base . '/functions/fn_diagIsolateProbe.sqf');
+
         self::assertStringContainsString('["orders"', $catalog);
         self::assertStringContainsString('["orders_push"', $catalog);
+        self::assertStringContainsString('["probe_chat"', $catalog);
+        self::assertStringContainsString('["probe_marker"', $catalog);
+        self::assertStringContainsString('["probe_photo"', $catalog);
+        self::assertStringContainsString('Message de test', $catalog);
+        self::assertStringContainsString('Repère de test', $catalog);
+        self::assertStringContainsString('Photo et transmission', $catalog);
         self::assertStringContainsString('Ordres (réception)', $catalog);
         self::assertStringContainsString('Ordres (affichage)', $catalog);
         self::assertStringContainsString('_delay = 55', $start);
@@ -42,6 +50,10 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows', $loops);
         self::assertStringContainsString('_canPush', $pollOrders);
         self::assertStringContainsString('affichage reporté', $pollOrders);
+        self::assertStringContainsString('_fnc_markSeen', $pollOrders);
+        self::assertStringContainsString('values _byId', $pollOrders);
+        self::assertStringContainsString('_newOnes select 0', $pollOrders);
+        self::assertStringContainsString('COMSPEC_DiagIsolateActive', $loops);
         self::assertStringContainsString('orders_push', $receive);
         self::assertStringContainsString('diagStatusSnapshot', $hud);
         self::assertStringContainsString('tool:diagisolate', $html);
@@ -51,10 +63,17 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('private _menuVer = 7', $ace);
         self::assertStringContainsString('class diagIsolateStart {}', $cfg);
         self::assertStringContainsString('class diagIsolateLaunch {}', $cfg);
+        self::assertStringContainsString('class diagIsolateProbe {}', $cfg);
         self::assertStringContainsString('class diagStatusSnapshot {}', $cfg);
         self::assertStringContainsString('class noteUplinkReturn {}', $cfg);
         self::assertStringContainsString('COMSPEC_DiagIsolateHud', $cfg);
-        self::assertStringContainsString('1.5.84', $cfg);
+        self::assertStringContainsString('1.5.90', $cfg);
+        self::assertStringContainsString('diagIsolateProbe', $start);
+        self::assertStringContainsString('sendIntel', $probe);
+        self::assertStringContainsString('sendLocalTacticalMarker', $probe);
+        self::assertStringContainsString('captureReconImage', $probe);
+        self::assertStringContainsString('Message de test envoyé vers le poste', $probe);
+        self::assertStringContainsString('COMSPEC_DiagIsolateProbeNote', $hud);
         self::assertStringContainsString('idd = 9995', $dlg);
         self::assertStringContainsString('Lancer (55 s par fonction)', $dlg);
         self::assertStringContainsString('Dépannage liaison demandé', $launch);
@@ -63,5 +82,6 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('Dépannage liaison', $esc);
         self::assertStringContainsString('9606', $pauseHpp);
         self::assertStringContainsString('Dépannage liaison — lancer maintenant', $html);
+        self::assertStringContainsString('un message, un repère et une photo', $html);
     }
 }

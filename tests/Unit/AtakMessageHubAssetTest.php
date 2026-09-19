@@ -24,7 +24,7 @@ final class AtakMessageHubAssetTest extends TestCase
         self::assertStringContainsString('class AtakP2P: message', $cfg);
         self::assertStringContainsString('BCE_fnc_ATAK_message_Init', $cfg);
         self::assertStringContainsString('athena_messageHubOnOpened', $cfg);
-        self::assertStringContainsString('1.0.137', $cfg);
+        self::assertStringContainsString('1.0.141', $cfg);
 
         self::assertStringContainsString('P2P — Réseau local', $hub);
         self::assertStringContainsString('Via Athena', $hub);

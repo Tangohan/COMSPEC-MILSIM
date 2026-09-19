@@ -11,7 +11,131 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Athena 1.0.141 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le menu du chevron déformait les tuiles : icônes décalées, libellés absents, cases vides. Les applications reprennent leur place en trois colonnes, avec le fond gris sombre. Relancez Arma complètement (Athena 1.0.141).
+
+---
+
+## Overwatch 1.5.90 — 2026-09-19
+
+### Correction — File d’ordres
+
+Les ordres déjà reçus du poste n’étaient pas remplacés à chaque lecture : la mémoire du téléphone s’allongeait jusqu’à fermer le jeu. Désormais seuls les ordres encore en attente au poste, plus ceux émis depuis le téléphone, restent en mémoire. Relancez Arma complètement (Overwatch 1.5.90).
+
+---
+
+## Overwatch 1.5.89 / Athena 1.0.140 — 2026-09-19
+
+### Correction — Ordres à l’affichage
+
+Pendant le dépannage, les ordres déjà en mémoire n’étaient pas marqués comme vus. Au passage à l’affichage, le téléphone les livrait tous d’un coup et le jeu se fermait. Désormais un seul ordre est affiché à la fois, et la file déjà reçue n’est plus rejouée. Relancez Arma complètement (Overwatch 1.5.89 · Athena 1.0.140).
+
+---
+
+## Overwatch 1.5.88 — 2026-09-19
+
+### Amélioration — Dépannage liaison
+
+Le dépannage envoie désormais un message de test, pose un repère de test, puis prend une photo et la transmet au poste. Le bandeau indique si l’essai est parti. Relancez Arma complètement (Overwatch 1.5.88).
+
+---
+
+## Athena 1.0.139 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le menu du chevron reprend le fond gris sombre et les libellés cyan. Les icônes ne se superposent plus : elles se calent en trois colonnes dans le tiroir.
+
+---
+
+## Overwatch 1.5.87 — 2026-09-19
+
+### Correction — Ordres d’une partie précédente
+
+Le téléphone ne reçoit plus les ordres encore en attente au poste s’ils ont été émis avant le début de cette partie. Le poste les conserve. Un ordre envoyé pendant la partie en cours arrive normalement. Relancez Arma complètement (Overwatch 1.5.87).
+
+---
+
+## Overwatch 1.5.86 — 2026-09-18
+
+### Correction — Ordres d’une partie précédente
+
+Les ordres encore en attente au poste, issus d’une partie précédente, ne sont plus livrés au téléphone. Seuls les ordres émis pendant la partie en cours apparaissent. Relancez Arma complètement (Overwatch 1.5.86).
+
+---
+
+## Athena 1.0.141 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le menu du chevron déformait les tuiles : icônes décalées, libellés absents, cases vides. Les applications reprennent leur place en trois colonnes, avec le fond gris sombre. Relancez Arma complètement (Athena 1.0.141).
+
+---
+
+## Overwatch 1.5.90 — 2026-09-19
+
+### Correction — File d’ordres
+
+Les ordres déjà reçus du poste n’étaient pas remplacés à chaque lecture : la mémoire du téléphone s’allongeait jusqu’à fermer le jeu. Désormais seuls les ordres encore en attente au poste, plus ceux émis depuis le téléphone, restent en mémoire. Relancez Arma complètement (Overwatch 1.5.90).
+
+---
+
+## Overwatch 1.5.89 / Athena 1.0.140 — 2026-09-19
+
+### Correction — Ordres à l’affichage
+
+Pendant le dépannage, les ordres déjà en mémoire n’étaient pas marqués comme vus. Au passage à l’affichage, le téléphone les livrait tous d’un coup et le jeu se fermait. Désormais un seul ordre est affiché à la fois, et la file déjà reçue n’est plus rejouée. Relancez Arma complètement (Overwatch 1.5.89 · Athena 1.0.140).
+
+---
+
+## Overwatch 1.5.88 — 2026-09-19
+
+### Amélioration — Dépannage liaison
+
+Le dépannage envoie désormais un message de test, pose un repère de test, puis prend une photo et la transmet au poste. Le bandeau indique si l’essai est parti. Relancez Arma complètement (Overwatch 1.5.88).
+
+---
+
+## Athena 1.0.139 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le menu du chevron reprend le fond gris sombre et les libellés cyan. Les icônes ne se superposent plus : elles se calent en trois colonnes dans le tiroir.
+
+---
+
+## Overwatch 1.5.87 — 2026-09-19
+
+### Correction — Ordres d’une partie précédente
+
+Le téléphone ne reçoit plus les ordres encore en attente au poste s’ils ont été émis avant le début de cette partie. Le poste les conserve. Un ordre envoyé pendant la partie en cours arrive normalement. Relancez Arma complètement (Overwatch 1.5.87).
+
+---
+
+## Overwatch 1.5.86 — 2026-09-18
+
+### Correction — Ordres d’une partie précédente
+
+Les ordres encore en attente au poste, issus d’une partie précédente, ne sont plus livrés au téléphone. Seuls les ordres émis pendant la partie en cours apparaissent. Relancez Arma complètement (Overwatch 1.5.86).
+
+---
+
+## Overwatch 1.5.85 — 2026-09-18
+
+### Correction — Prise d’équipement
+
+Récupérer le téléphone ATAK dans l’arsenal ne livre plus d’un coup les ordres déjà en attente et tous les repères du poste. Les échanges attendent la fermeture de l’arsenal. Les alertes et le fil n’apparaissent que lorsque le grand écran du téléphone est vraiment ouvert.
+
+---
+
 ## Portail · Overwatch Beta — 2026-09-18
+
+### Correction — Relief 3D vide
+
+La vue Relief 3D restait un écran vert sombre, sans sol ni bâtiments. Après recharge de la page, le théâtre se relève et les constructions du relevé réapparaissent. Rechargez Overwatch Beta (Ctrl+F5).
 
 ### Nouveau — Visibilité, coupe et lecture 3D
 
@@ -24,6 +148,14 @@ En vue Tactique 3D, les murs, clôtures, ponts et pylônes se dressent avec les 
 ### Amélioration — Relief 3D : clic, masses et lumière
 
 En vue Relief 3D, cliquer un bâtiment ouvre le même menu que sur la carte à plat (marqueurs, ralliement, tâches). Les petites constructions lointaines se regroupent ; le détail revient en se rapprochant. Les ombres suivent l’heure et la météo du bandeau. Rechargez Overwatch Beta.
+
+---
+
+## Athena 1.0.138 — 2026-09-18
+
+### Correction — Fil d’ordres
+
+Le fil du téléphone n’est plus rempli tant que le grand écran ATAK n’est pas ouvert. Un mini-écran 3D à la prise de l’objet ne déclenche plus ce remplissage.
 
 ---
 

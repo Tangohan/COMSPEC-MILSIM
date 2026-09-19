@@ -3,6 +3,11 @@
     Enrichi : extrait coordinates / points pour LINE / POLYLINE (comme cTabIRL createLine).
 */
 if (!hasInterface) exitWith {};
+if (
+    !(missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false])
+    && {!isNil "comspec_overwatch_connect_fnc_uplinkQuiet"}
+    && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}
+) exitWith {};
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 
@@ -12,6 +17,11 @@ if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
 };
 private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];
+private _shaped = 0;
+private _bootSh = missionNamespace getVariable ["COMSPEC_MapShapesBootstrapped", false];
+if (!_bootSh) then {
+    missionNamespace setVariable ["COMSPEC_MapShapesBootstrapped", true, false];
+};
 private _idx = 0;
 private _qq = toString [34]; // "
 
@@ -125,11 +135,14 @@ while {_idx >= 0} do {
         _flat deleteAt ((count _flat) - 1);
     };
 
-    [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
+    if (_bootSh && {_shaped < 6}) then {
+        [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
+        _shaped = _shaped + 1;
+    };
     _idx = _idPos + 1;
 };
 
-["formes", count _seenIds] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+["formes", count _seenIds, if (_bootSh) then { "" } else { " · première lecture" }] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 
 // Liste coupée (tampon moteur ~8 000) : ne pas effacer les formes absentes du morceau.
 if ((count _raw) >= 7990) exitWith {};

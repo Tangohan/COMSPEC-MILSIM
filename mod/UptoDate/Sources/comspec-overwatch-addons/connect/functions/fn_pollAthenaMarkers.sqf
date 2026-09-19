@@ -7,6 +7,11 @@ if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+if (
+    !(missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false])
+    && {!isNil "comspec_overwatch_connect_fnc_uplinkQuiet"}
+    && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}
+) exitWith {};
 
 private _raw = ["COMSPECExtension" callExtension ["GetMarkers", ["world:" + worldName]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
@@ -18,9 +23,14 @@ if (_body isEqualTo "" || {_body isEqualTo "[]"}) exitWith {
 };
 
 private _seen = [];
+private _created = 0;
 private _nl = toString [10];
 private _tab = toString [9];
 private _lines = _body splitString _nl;
+private _bootMk = missionNamespace getVariable ["COMSPEC_WebMarkersBootstrapped", false];
+if (!_bootMk) then {
+    missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
+};
 {
     private _cols = _x splitString _tab;
     if ((count _cols) < 6) then { continue };
@@ -41,6 +51,7 @@ private _lines = _body splitString _nl;
     if ((abs _xPos) < 0.5 && {(abs _yPos) < 0.5}) then { continue };
 
     _seen pushBack _id;
+    if (!_bootMk) then { continue };
     private _name = format ["comspec_webmk_%1", _id];
     if (_typeL isEqualTo "manual" || {!(isClass (configFile >> "CfgMarkers" >> _type))}) then {
         _type = "mil_dot";
@@ -48,6 +59,8 @@ private _lines = _body splitString _nl;
     if (_color isEqualTo "" || {(_color select [0, 1]) isEqualTo "#"}) then {
         _color = "ColorGreen";
     };
+
+    if (!(_name in allMapMarkers) && {_created >= 10}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
@@ -62,13 +75,18 @@ private _lines = _body splitString _nl;
         _mk setMarkerColorLocal _color;
         _mk setMarkerTextLocal _text;
         _mk setMarkerAlphaLocal 1;
+        _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
     if (_unmute < 0) then { _unmute = 0; };
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
 } forEach _lines;
 
-["marqueurs", count _seen, format [" · lignes %1", count _lines]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+["marqueurs", count _seen, format [
+    " · lignes %1%2",
+    count _lines,
+    if (_bootMk) then { "" } else { " · première lecture" }
+]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 
 private _prev = missionNamespace getVariable ["COMSPEC_WebMarkerIds", []];
 if (!(_prev isEqualType [])) then { _prev = []; };

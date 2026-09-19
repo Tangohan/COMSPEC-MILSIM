@@ -47,7 +47,8 @@ private _phoneOpen = false;
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_phoneDisplay") then {
     _phoneOpen = !isNull ([] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay);
 };
-if (_phoneOpen) then {
+private _isolate = missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false];
+if (_phoneOpen && {!_isolate}) then {
     private _taskGroup = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
     if (!isNull _taskGroup && {ctrlShown _taskGroup}) then {
         [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
@@ -60,11 +61,17 @@ if (_phoneOpen) then {
 };
 
 // Miroir IceMan Reports (FRAGO destinataire) — hors signaux terminal / hors drone.
+// Un seul miroir toutes les 8 s : une rafale d’ordres ferme le jeu (tableau négatif).
+private _lastFrago = missionNamespace getVariable ["COMSPEC_OrderIceManAt", -1e9];
+if (!(_lastFrago isEqualType 0)) then { _lastFrago = -1e9; };
 if (
-    !(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])
+    !_isolate
+    && {(diag_tickTime - _lastFrago) >= 8}
+    && {!(missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false])}
     && {!isNil "Iceman_fnc_alerts_receive"}
     && {!(toUpper _type in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM", "PHONE_GEOLOC", "PHONE_GEOLOC_OFF"])}
 ) then {
+    missionNamespace setVariable ["COMSPEC_OrderIceManAt", diag_tickTime, false];
     private _time = if (!isNil "cTab_fnc_currentTime") then { call cTab_fnc_currentTime } else { _timeStr };
     private _pos = getPos player;
     private _grid = mapGridPosition _pos;
@@ -86,14 +93,16 @@ if (
 };
 
 // Miroir chat de groupe IceMan — backfill + nouvel ordre.
-[] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+if (!_isolate) then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
-if (!isNull _group && {ctrlShown _group}) then {
+if (!_isolate && {!isNull _group} && {ctrlShown _group}) then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 };
 
 private _taskGroup2 = uiNamespace getVariable ["COMSPEC_ATAK_Task_group", controlNull];
-if (!isNull _taskGroup2 && {ctrlShown _taskGroup2}) then {
+if (!_isolate && {!isNull _taskGroup2} && {ctrlShown _taskGroup2}) then {
     [] call comspec_overwatch_atak_athena_fnc_athena_updateTask;
 };

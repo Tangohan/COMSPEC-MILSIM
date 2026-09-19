@@ -321,18 +321,27 @@ if (isNil "COMSPEC_ViewshedBridgeEH") then {
     _this call comspec_overwatch_atak_athena_fnc_athena_onOrderReceived;
 }] call CBA_fnc_addEventHandler;
 
-// Backfill chat groupe + app TASK pour les ordres déjà en mémoire (après liaison)
+// Backfill chat groupe + app TASK : seulement téléphone réellement ouvert, après la prise d’équipement.
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (isNull player || {!alive player}) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_hasTerminal" && {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
     if (!isNil "comspec_overwatch_connect_fnc_pollOrders") then {
         [] call comspec_overwatch_connect_fnc_pollOrders;
     };
     if (!isNil "comspec_overwatch_connect_fnc_pollMissionPlan") then {
         [] call comspec_overwatch_connect_fnc_pollMissionPlan;
     };
-    [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+    if (!isNull ([] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay)) then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
+    };
 }, [], 12] call CBA_fnc_waitAndExecute;
 [{
+    if (isNull player || {!alive player}) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_hasTerminal" && {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
+    if (isNull ([] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay)) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_syncOrdersToGroupChat;
 }, [], 25] call CBA_fnc_waitAndExecute;
 

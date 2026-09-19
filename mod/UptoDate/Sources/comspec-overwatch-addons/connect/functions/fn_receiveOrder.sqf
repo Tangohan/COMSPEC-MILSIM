@@ -12,6 +12,7 @@ if (
     && {!isNil "comspec_overwatch_connect_fnc_diagIsolateAllows"}
     && {!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)}
 ) exitWith {};
+if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
 
 private _id = trim (str (_order getOrDefault ["id", ""]));
 private _issuer = _order getOrDefault ["issuer", ""];
@@ -47,13 +48,16 @@ private _typeLabel = [_order] call comspec_overwatch_connect_fnc_orderTypeLabel;
 
 private _ackTerminalSignal = {
     params ["_oid", "_note"];
-    private _acked = [_oid, "ACK", _note] call comspec_overwatch_connect_fnc_updateOrderStatus;
-    if (!_acked) then {
-        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
-        private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
-        if (_by isEqualTo "") then { _by = name player; };
-        ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, _note]]] call comspec_overwatch_connect_fnc_extResult;
-    };
+    [{
+        params ["_oid", "_note"];
+        private _acked = [_oid, "ACK", _note] call comspec_overwatch_connect_fnc_updateOrderStatus;
+        if (!_acked) then {
+            private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+            private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
+            if (_by isEqualTo "") then { _by = name player; };
+            ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, _note]]] call comspec_overwatch_connect_fnc_extResult;
+        };
+    }, [_oid, _note], 3] call CBA_fnc_waitAndExecute;
 };
 
 private _orderStatus = toUpper (_order getOrDefault ["status", "PENDING"]);

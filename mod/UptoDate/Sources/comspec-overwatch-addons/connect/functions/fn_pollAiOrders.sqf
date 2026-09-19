@@ -12,7 +12,26 @@ if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 
-private _raw = ["COMSPECExtension" callExtension ["GetAiOrders", [_mapId]]] call comspec_overwatch_connect_fnc_extResult;
+private _sessionStart = missionNamespace getVariable ["COMSPEC_OrdersSessionStartedAt", ""];
+if (!(_sessionStart isEqualType "") || {_sessionStart isEqualTo ""}) then {
+    private _st = systemTimeUTC;
+    private _p = {
+        params ["_n"];
+        _n = floor _n;
+        if (_n < 10) then { "0" + str _n } else { str _n };
+    };
+    _sessionStart = format ["%1-%2-%3T%4:%5:%6Z",
+        _st select 0,
+        [_st select 1] call _p,
+        [_st select 2] call _p,
+        [_st select 3] call _p,
+        [_st select 4] call _p,
+        [_st select 5] call _p
+    ];
+    missionNamespace setVariable ["COMSPEC_OrdersSessionStartedAt", _sessionStart, false];
+};
+
+private _raw = ["COMSPECExtension" callExtension ["GetAiOrders", [_mapId, _sessionStart]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith { false };
 

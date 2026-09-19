@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.137;
-        versionStr = "1.0.137";
-        versionAr[] = {1, 0, 137};
-        // Historique : 1.0.136 choix Message, 1.0.137 dépannage ordres sans affichage téléphone.
+        version = 1.141;
+        versionStr = "1.0.141";
+        versionAr[] = {1, 0, 141};
+        // Historique : 1.0.139 tiroir, 1.0.140 un seul ordre, 1.0.141 grille menu sans redimension.
     };
 };
 
@@ -42,6 +42,7 @@ class CfgFunctions
             class athena_selectHome {};
             class athena_selectFilter {};
             class athena_applyHomeLayout {};
+            class athena_layoutAppDrawer {};
             class athena_pageCtrl {};
             class athena_resolveAthenaGroup {};
             class athena_hideForeignPages {};

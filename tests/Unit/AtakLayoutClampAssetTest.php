@@ -34,11 +34,20 @@ final class AtakLayoutClampAssetTest extends TestCase
         self::assertStringNotContainsString('[0, 1] select _showMenu', $layout);
         self::assertStringNotContainsString('_endDrawerW', $layout);
 
+        $drawer = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_layoutAppDrawer.sqf'
+        );
+
         self::assertStringContainsString('athena_phoneDisplay', $hud);
         self::assertStringNotContainsString('ctrlCreate', $hud);
         self::assertStringNotContainsString('_fncEnsure', $hud);
 
         self::assertStringContainsString('cTab_Android_dlg', $phone);
-        self::assertStringContainsString('1.0.137', $cfg);
+        self::assertStringContainsString('layoutAppDrawer', $layout);
+        self::assertStringContainsString('ctrlSetPositionX', $drawer);
+        self::assertStringContainsString('ctrlSetPositionY', $drawer);
+        self::assertStringContainsString('BCE_fnc_ATAK_getAPPs', $drawer);
+        self::assertStringNotContainsString('ctrlSetPosition [_cellW', $drawer);
+        self::assertStringContainsString('1.0.141', $cfg);
     }
 }

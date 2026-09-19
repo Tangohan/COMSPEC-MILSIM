@@ -70,6 +70,10 @@ Le théâtre n’est pas du WGS84. `TheaterProjection` (JS) et `AtakTheaterProje
 
 Les fonds (plan / carte du jeu / photo) sont redessinés via le protocole MapLibre `owtile://` à partir du même damier de tuiles.
 
+## CSP
+
+MapLibre et deck.gl créent des Web Workers en URL `blob:`. `SecurityHeadersMiddleware` impose `worker-src 'self' blob:` (y compris si `APP_CSP` est défini sans cette directive). Sans cela, Relief 3D reste un canvas vide : le navigateur retombe sur `script-src` et refuse le worker.
+
 ## Relief
 
 `GET /api/atak/terrain/rgb/{z}/{x}/{y}` sert des PNG Terrain-RGB (cache `storage/atak_terrain/shared/{mapId}/rgb/`). Source : grille DEM existante.

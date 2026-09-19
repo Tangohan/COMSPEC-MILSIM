@@ -86,6 +86,8 @@ class AtakOrderRepository
      * Avec $since (datetime SQL), ne renvoie que les lignes créées/modifiées depuis
      * (y compris CANCELLED = tombstone d’annulation). En vue émetteur, inclut aussi
      * les PENDING encore en transit radio pour que le client puisse animer l’état.
+     * Avec $createdAfter, ne renvoie que les lignes dont created_at est postérieur
+     * (partie en cours côté jeu — indépendant des mises à jour d’un vieux PENDING).
      *
      * @return list<array<string, mixed>>
      */
@@ -94,12 +96,14 @@ class AtakOrderRepository
         int $mapId,
         int $limit = 80,
         bool $issuerView = true,
-        ?string $since = null
+        ?string $since = null,
+        ?string $createdAfter = null
     ): array {
         if (!$this->tablesReady()) {
             return [];
         }
         $since = $this->normalizeSince($since);
+        $createdAfter = $this->normalizeSince($createdAfter);
         $isDelta = $since !== null;
         // Delta : plafond plus haut (petits paquets attendus). Snapshot : limite métier.
         $limit = max(1, min($isDelta ? 500 : 200, $limit));
@@ -117,6 +121,10 @@ class AtakOrderRepository
             }
             $params[] = $since;
             $params[] = $since;
+        }
+        if ($createdAfter !== null) {
+            $sql .= ' AND created_at >= ?';
+            $params[] = $createdAfter;
         }
         $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT ' . $limit;
 

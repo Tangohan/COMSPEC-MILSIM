@@ -9,6 +9,8 @@ if (
     && {!isNil "comspec_overwatch_connect_fnc_diagIsolateAllows"}
     && {!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)}
 ) exitWith { 0 };
+if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith { 0 };
+if (isNull ([] call comspec_overwatch_atak_athena_fnc_athena_phoneDisplay)) exitWith { 0 };
 
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 if (!(_orders isEqualType [])) exitWith { 0 };
@@ -61,6 +63,7 @@ if (!(_messages isEqualType [])) then { _messages = []; };
     _messages pushBack [_gTime, _issuer, _gId, _gGrid, _gText, _gPos, false];
     _pushed pushBack _orderId;
     _added = _added + 1;
+    if (_added >= 1) then { break };
 } forEach _orders;
 
 if (_added > 0) then {

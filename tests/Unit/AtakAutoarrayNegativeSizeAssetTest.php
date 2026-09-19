@@ -90,8 +90,17 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringNotContainsString('["CAManBase", 1, _path, _actionId]', $ace);
         self::assertStringNotContainsString('["CAManBase", 1, _mainPath, _x]', $ace);
 
-        self::assertStringContainsString('1.0.137', $cfg);
-        self::assertStringContainsString('2.0.45', $ext);
+        self::assertStringContainsString('1.0.141', $cfg);
+        $onOrder = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_onOrderReceived.sqf'
+        );
+        $sync = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_syncOrdersToGroupChat.sqf'
+        );
+        self::assertStringContainsString('COMSPEC_OrderIceManAt', $onOrder);
+        self::assertStringContainsString('_isolate', $onOrder);
+        self::assertStringContainsString('_added >= 1', $sync);
+        self::assertStringContainsString('2.0.46', $ext);
 
         self::assertStringContainsString('COMSPEC_StatusUpdating', $status);
         self::assertStringNotContainsString('fnc_refreshLinkState', $status);

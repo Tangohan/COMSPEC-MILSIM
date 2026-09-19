@@ -10,6 +10,7 @@ missionNamespace setVariable ["COMSPEC_DiagIsolateHudLabel", "", false];
 missionNamespace setVariable ["COMSPEC_DiagIsolateHudIndex", 0, false];
 missionNamespace setVariable ["COMSPEC_DiagIsolateHudTotal", 1, false];
 missionNamespace setVariable ["COMSPEC_DiagIsolateUntil", -1, false];
+missionNamespace setVariable ["COMSPEC_DiagIsolateProbeNote", "", false];
 
 private _prev = missionNamespace getVariable ["COMSPEC_DiagIsolatePrevEnabled", true];
 if (!(_prev isEqualType true)) then { _prev = true; };

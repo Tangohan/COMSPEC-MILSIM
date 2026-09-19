@@ -124,7 +124,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
         self::assertStringContainsString('class theaterSurveyResend {};', $cfg);
-        self::assertStringContainsString('1.5.84', $cfg);
+        self::assertStringContainsString('1.5.90', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void

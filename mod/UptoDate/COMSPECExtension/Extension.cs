@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.45";
+        private const string ExtensionVersion = "2.0.46";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3918,13 +3918,14 @@ public static partial class Extension
                     return PollOkClipped(SimplifyMedicalAlertsJson(body));
                 });
             }
-            // Ordres C2 web → jeu. Args : [mapId, limit, callsign?]
+            // Ordres C2 web → jeu. Args : [mapId, limit, callsign?, createdAfter?]
             // Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases\ttype_label
             if (function == "GetOrders")
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
                 var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "40";
                 var callsign = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var createdAfter = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/atak/orders?mapId=" + Uri.EscapeDataString(mapId)
                     + "&limit=" + Uri.EscapeDataString(limit)
                     + "&for_game=1";
@@ -3932,7 +3933,9 @@ public static partial class Extension
                     url += "&steam_uid=" + Uri.EscapeDataString(_steamUid);
                 if (callsign.Length > 0)
                     url += "&callsign=" + Uri.EscapeDataString(callsign);
-                return ServePollGet("GetOrders:" + mapId + ":" + _steamUid + ":" + callsign, url, (body, code) =>
+                if (createdAfter.Length > 0)
+                    url += "&created_after=" + Uri.EscapeDataString(createdAfter);
+                return ServePollGet("GetOrders:" + mapId + ":" + _steamUid + ":" + callsign + ":" + createdAfter, url, (body, code) =>
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
                     return PollOkClipped(SimplifyOrdersJson(body));
@@ -4052,14 +4055,17 @@ public static partial class Extension
                     return PollOkClipped(SimplifyExplosiveCommandsJson(body));
                 });
             }
-            // Déplacements IA alliée (carte ATAK → groupe en jeu). Args : [mapId]
+            // Déplacements IA alliée (carte ATAK → groupe en jeu). Args : [mapId, createdAfter?]
             // Lignes : id\ttype\ttarget_ref\tstatus\tpos_x\tpos_y\tlabel
             if (function == "GetAiOrders")
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var createdAfter = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/atak/orders?mapId=" + Uri.EscapeDataString(mapId)
                     + "&limit=20&for_game=1&for_ai=1";
-                return ServePollGet("GetAiOrders:" + mapId, url, (body, code) =>
+                if (createdAfter.Length > 0)
+                    url += "&created_after=" + Uri.EscapeDataString(createdAfter);
+                return ServePollGet("GetAiOrders:" + mapId + ":" + createdAfter, url, (body, code) =>
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
                     return PollOkClipped(SimplifyAiOrdersJson(body));
@@ -5812,7 +5818,14 @@ public static partial class Extension
             }
             foreach (var el in orders.EnumerateArray())
             {
-                var id = el.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
+                var id = "";
+                if (el.TryGetProperty("id", out var i))
+                {
+                    if (i.ValueKind == JsonValueKind.Number)
+                        id = i.GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    else
+                        id = i.GetString() ?? "";
+                }
                 if (string.IsNullOrEmpty(id)) continue;
                 var type = el.TryGetProperty("type", out var t) ? (t.GetString() ?? "MOVE") : "MOVE";
                 var target = el.TryGetProperty("target", out var tg) ? (tg.GetString() ?? "") : "";
