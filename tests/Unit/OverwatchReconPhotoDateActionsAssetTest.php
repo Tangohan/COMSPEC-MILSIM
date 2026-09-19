@@ -22,7 +22,7 @@ final class OverwatchReconPhotoDateActionsAssetTest extends TestCase
         self::assertStringContainsString('wallClockSeconds', $capture);
         self::assertStringContainsString('2440588', $capture);
         self::assertStringNotContainsString('private _capturedAt = str (floor time);', $capture);
-        self::assertStringContainsString('versionStr = "1.5.95"', $cfg);
+        self::assertStringContainsString('versionStr = "1.5.96"', $cfg);
         self::assertStringContainsString('ReconCapturedAt::unixFromPosted', $ctrl);
         self::assertStringContainsString('ReconCapturedAt::displayFromRow', $ctrl);
         self::assertStringContainsString('ReconCapturedAt::sqlDateTime', $repo);

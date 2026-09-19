@@ -70,8 +70,8 @@ final class AtakBridgeModulesService
             ],
             [
                 'id' => 'wave_relay',
-                'label' => 'Wave Relay / MPU-5',
-                'description' => 'Affiche l’état radio Wave Relay (talkgroup, passerelle) sur les fiches opérateurs.',
+                'label' => 'Relais AT',
+                'description' => 'Affiche le mât le plus proche (position, débit, fiabilité, identité, adresse, passerelle, certificat, places, puissance) sur le téléphone et au poste.',
             ],
             [
                 'id' => 'iceman_alerts',

@@ -101,10 +101,13 @@
   var lastClickWorld = null;
   var lastClickGrid = '';
   var sceneRows = [];
+  var sceneCache = [];
+  var sceneCacheMapId = 0;
+  var scenePreloadPromise = null;
   var sceneCanvas = null;
   var sceneCtx = null;
-  var sceneFetchTimer = 0;
   var sceneDrawFrame = 0;
+  var sceneZooming = false;
   var lastSceneObject = null;
   var measureKeepLayer = null;
   var lastTaskSelectSig = '';
@@ -856,10 +859,26 @@
     );
     return n;
   }
+  function drawTintEl() {
+    return document.getElementById('ow-tac-color') || document.getElementById('ow-draw-color');
+  }
+  function drawWidthEl() {
+    return document.getElementById('ow-tac-width') || document.getElementById('ow-draw-width');
+  }
+  function setDrawTint(color) {
+    var hex = String(color || '').trim();
+    if (!hex) return;
+    var tac = document.getElementById('ow-tac-color');
+    var main = document.getElementById('ow-draw-color');
+    if (tac) tac.value = hex;
+    if (main) main.value = hex;
+  }
   function drawStyle() {
+    var tint = drawTintEl();
+    var width = drawWidthEl();
     return {
-      color: (document.getElementById('ow-draw-color') || {}).value || '#00d69a',
-      stroke: Number((document.getElementById('ow-draw-width') || {}).value || 2)
+      color: (tint && tint.value) || '#00d69a',
+      stroke: Number((width && width.value) || 2)
     };
   }
   function formatMeters(meters) {
@@ -2488,10 +2507,18 @@
     var color = shape.color || '#00d69a';
     var layer = null;
     var type = String(shape.type || '').toUpperCase();
+    var geoType = String(geo.type || '').toLowerCase();
+    if (!type) {
+      if (geoType === 'point') type = 'POINT';
+      else if (geoType === 'linestring') type = 'LINE';
+      else if (geoType === 'polygon') type = 'POLYGON';
+    }
     var meta = parseShapeMeta(shape);
     var nato = String(meta.nato || meta.kind || '');
     var dash = natoDash(meta);
     var latlngs = [];
+    var isLine = type === 'LINE' || type === 'ROUTE' || type === 'POLYLINE' || geoType === 'linestring';
+    var isPoly = type === 'POLYGON' || type === 'AOI' || geoType === 'polygon';
     if (type === 'POINT' && geo.coordinates) {
       var pll = worldToLatLng(geo.coordinates[0], geo.coordinates[1]);
       if (meta.kind === 'buildingPlan') {
@@ -2502,8 +2529,12 @@
       } else {
         layer = L.circleMarker(pll, { radius: 8, color: color, weight: 2, fillOpacity: 0.5 });
       }
-    } else if ((type === 'LINE' || type === 'ROUTE' || type === 'POLYLINE') && Array.isArray(geo.coordinates)) {
-      latlngs = geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); });
+    } else if (isLine && Array.isArray(geo.coordinates)) {
+      latlngs = geo.coordinates.map(function (p) {
+        if (!p) return worldToLatLng(0, 0);
+        if (Array.isArray(p)) return worldToLatLng(p[0], p[1]);
+        return worldToLatLng(p.x != null ? p.x : p.lng, p.y != null ? p.y : p.lat);
+      });
       if (nato === 'attack') {
         layer = L.polygon(filledAttackLatLngs(latlngs, 16), {
           color: color, fillColor: color, fillOpacity: 0.92, weight: 1
@@ -2515,7 +2546,7 @@
           dashArray: dash || undefined
         });
       }
-    } else if ((type === 'POLYGON' || type === 'AOI') && Array.isArray(geo.coordinates)) {
+    } else if (isPoly && Array.isArray(geo.coordinates)) {
       var ring = geo.coordinates[0] && Array.isArray(geo.coordinates[0][0]) ? geo.coordinates[0] : geo.coordinates;
       latlngs = ring.map(function (p) { return worldToLatLng(p[0], p[1]); });
       var fillStyle = String(meta.fill_style || (meta.hatch ? 'hatch-d' : 'solid'));
@@ -2536,6 +2567,9 @@
       }
     }
     if (!layer) return;
+    if (meta.interior && type !== 'POLYGON' && type !== 'AOI' && layer.bindTooltip && !layer.getTooltip()) {
+      layer.bindTooltip(String(meta.interior), { permanent: true, direction: 'center', className: 'ow-geo-label' });
+    }
     if ((nato === 'arrow' || nato === 'axis' || meta.arrow) && type !== 'POINT' && nato !== 'attack' && latlngs.length >= 2) {
       var group = L.featureGroup([layer]);
       var head = arrowHeadPolygon(latlngs, color, false);
@@ -2572,6 +2606,10 @@
 
   function saveShape(type, latlngs, label, opts) {
     opts = opts || {};
+    latlngs = (latlngs || []).slice();
+    if (drawMode && !opts.confirmed) {
+      opts = Object.assign({}, opts, { confirmed: true });
+    }
     if (!opts.confirmed && window.OverwatchOps && typeof window.OverwatchOps.promptShape === 'function') {
       return window.OverwatchOps.promptShape(type, latlngs, label);
     }
@@ -2599,6 +2637,7 @@
         meta: opts.meta || {}
       }
     }).then(function (row) {
+      clearDraft();
       if (row) {
         shapes.push(row);
         drawShape(row);
@@ -2914,20 +2953,17 @@
       var radius = map.distance(draftPoints[0], draftPoints[1]);
       saveShape('AOI', ring, 'Cercle ' + formatMeters(radius));
       toast('Cercle · rayon ' + formatMeters(radius) + ' · surface ' + Math.round(Math.PI * radius * radius) + ' m²');
-      clearDraft();
       return;
     }
     if (activeTool === 'rect' && draftPoints.length >= 2) {
       var rect = rectLatLngs(draftPoints[0], draftPoints[1]);
       saveShape('AOI', rect, 'Rectangle');
       toast('Rectangle · ' + Math.round(polygonAreaM2(rect)) + ' m²');
-      clearDraft();
       return;
     }
     if (activeTool === 'freehand' && draftPoints.length >= 2) {
-      saveShape('LINE', draftPoints, 'Croquis');
+      saveShape('LINE', draftPoints.slice(), 'Croquis');
       toast('Croquis · ' + formatMeters(pathLength(draftPoints)));
-      clearDraft();
       return;
     }
     if (activeTool === 'measure' && draftPoints.length >= 2) {
@@ -2961,53 +2997,47 @@
       return;
     }
     if (activeTool === 'arrow' && draftPoints.length >= 2) {
-      saveShape('LINE', draftPoints, 'Flèche', { confirmed: true, meta: { nato: 'arrow', arrow: true } });
-      clearDraft();
+      saveShape('LINE', draftPoints.slice(), 'Flèche', { confirmed: true, meta: { nato: 'arrow', arrow: true } });
       return;
     }
     if (activeTool === 'axis' && draftPoints.length >= 2) {
-      saveShape('LINE', draftPoints, 'Axe de progression', { confirmed: true, meta: { nato: 'axis', arrow: true } });
-      clearDraft();
+      saveShape('LINE', draftPoints.slice(), 'Axe de progression', { confirmed: true, meta: { nato: 'axis', arrow: true } });
       return;
     }
     if (activeTool === 'attack' && draftPoints.length >= 2) {
-      saveShape('LINE', draftPoints, 'Attaque principale', { confirmed: true, meta: { nato: 'attack', arrow: true, filled: true } });
-      clearDraft();
+      saveShape('LINE', draftPoints.slice(), 'Attaque principale', { confirmed: true, meta: { nato: 'attack', arrow: true, filled: true } });
       return;
     }
     if (activeTool === 'phase' && draftPoints.length >= 2) {
       var phaseName = window.prompt('Nom de la ligne de phase', 'PL ') || 'Ligne de phase';
-      saveShape('LINE', draftPoints, phaseName.trim(), { confirmed: true, meta: { nato: 'phase' } });
-      clearDraft();
+      saveShape('LINE', draftPoints.slice(), phaseName.trim(), { confirmed: true, meta: { nato: 'phase' } });
       return;
     }
     if (activeTool === 'sector' && draftPoints.length >= 2) {
       var sectorName = window.prompt('Limite de secteur', '') || 'Limite de secteur';
-      saveShape('LINE', draftPoints, sectorName.trim(), { confirmed: true, meta: { nato: 'sector' } });
-      clearDraft();
+      saveShape('LINE', draftPoints.slice(), sectorName.trim(), { confirmed: true, meta: { nato: 'sector' } });
       return;
     }
     if (activeTool === 'highlight' && draftPoints.length >= 2) {
-      var hiRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints;
+      var hiRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints.slice();
       var hiName = window.prompt('Libellé de la zone', 'ZONE À RISQUE') || 'ZONE À RISQUE';
+      var hiColor = drawStyle().color || '#f0a63a';
       saveShape('AOI', hiRing, hiName.trim(), {
         confirmed: true,
-        color: '#f0a63a',
+        color: hiColor,
         fillOpacity: 0.18,
-        meta: { nato: 'highlight', fill_opacity: 0.18, fill_color: '#f0a63a' }
+        meta: { nato: 'highlight', fill_opacity: 0.18, fill_color: hiColor }
       });
-      clearDraft();
       return;
     }
     if (activeTool === 'assembly' && draftPoints.length >= 2) {
-      var aaRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints;
+      var aaRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints.slice();
       var aaName = window.prompt('Zone de rassemblement', 'AA ') || 'Zone de rassemblement';
       saveShape('AOI', aaRing, aaName.trim(), {
         confirmed: true,
         fillOpacity: 0,
         meta: { nato: 'assembly', fill_style: 'none' }
       });
-      clearDraft();
       return;
     }
     if (activeTool === 'objective' && draftPoints.length >= 2) {
@@ -3018,18 +3048,15 @@
         fillOpacity: 0,
         meta: { nato: 'objective', fill_style: 'none' }
       });
-      clearDraft();
       return;
     }
     if ((activeTool === 'line' || activeTool === 'route') && draftPoints.length >= 2) {
-      saveShape(activeTool === 'route' ? 'ROUTE' : 'LINE', draftPoints, activeTool === 'route' ? 'Route' : 'Ligne');
-      clearDraft();
+      saveShape(activeTool === 'route' ? 'ROUTE' : 'LINE', draftPoints.slice(), activeTool === 'route' ? 'Route' : 'Ligne');
       return;
     }
     if ((activeTool === 'polygon' || activeTool === 'aoi') && draftPoints.length >= 3) {
-      saveShape(activeTool === 'aoi' ? 'AOI' : 'POLYGON', draftPoints, activeTool === 'aoi' ? 'Zone tactique' : 'Zone');
+      saveShape(activeTool === 'aoi' ? 'AOI' : 'POLYGON', draftPoints.slice(), activeTool === 'aoi' ? 'Zone tactique' : 'Zone');
       toast('Zone · ' + Math.round(polygonAreaM2(draftPoints)) + ' m²');
-      clearDraft();
     }
   }
 
@@ -3108,7 +3135,8 @@
     if (tool === 'profile') toast('Maintenez pour tracer le profil, relâchez pour relever le relief.');
     if (tool === 'circle') toast('Maintenez au centre et glissez le rayon.');
     if (tool === 'rect') toast('Maintenez un coin et glissez l’opposé.');
-    if (tool === 'freehand') toast('Maintenez le clic pour croquer, relâchez pour enregistrer.');
+    if (tool === 'highlight') setDrawTint('#f0a63a');
+    if (tool === 'freehand') toast('Maintenez le clic pour croquer, relâchez pour poser le trait.');
     if (tool === 'text') toast('Cliquez l’emplacement du texte.');
     if (tool === 'bearing') toast('Maintenez du départ à l’arrivée.');
     if (tool === 'los') toast('Maintenez de l’observateur à la cible.');
@@ -3665,8 +3693,15 @@
     var box = document.getElementById('atak-scene-buildings');
     return !box || box.checked;
   }
+  function mapViewMode() {
+    var sel = document.getElementById('atak-terrain-3d-mode');
+    var v = sel ? String(sel.value || 'flat') : 'flat';
+    if (v === 'immersive' || v === 'volume' || v === 'tactical') return v;
+    return 'flat';
+  }
   function leafletSceneWanted() {
     if (!sceneToggleOn()) return false;
+    if (mapViewMode() !== 'immersive') return false;
     var gl = window.OverwatchGlMap;
     if (gl && typeof gl.isActive === 'function' && gl.isActive()) {
       var stage = document.querySelector('.ow-map-stage');
@@ -3680,6 +3715,7 @@
       var pane = map.getPane('owScenePane');
       pane.style.zIndex = '350';
       pane.style.pointerEvents = 'none';
+      pane.classList.add('leaflet-zoom-animated');
     }
     return map.getPane('owScenePane');
   }
@@ -3689,12 +3725,27 @@
     if (sceneCanvas.parentNode !== pane) pane.appendChild(sceneCanvas);
     sceneCanvas.style.position = 'absolute';
     sceneCanvas.style.pointerEvents = 'none';
-    var topLeft = map.containerPointToLayerPoint([0, 0]);
+    var size = map.getSize();
+    var ratio = Math.min(2, window.devicePixelRatio || 1);
+    var padX = Math.round(size.x * 0.35);
+    var padY = Math.round(size.y * 0.35);
+    var cssW = size.x + padX * 2;
+    var cssH = size.y + padY * 2;
+    var w = Math.round(cssW * ratio);
+    var h = Math.round(cssH * ratio);
+    if (sceneCanvas.width !== w || sceneCanvas.height !== h) {
+      sceneCanvas.width = w;
+      sceneCanvas.height = h;
+      sceneCanvas.style.width = cssW + 'px';
+      sceneCanvas.style.height = cssH + 'px';
+    }
+    var topLeft = map.containerPointToLayerPoint([-padX, -padY]);
     if (L.DomUtil && typeof L.DomUtil.setPosition === 'function') L.DomUtil.setPosition(sceneCanvas, topLeft);
     else {
       sceneCanvas.style.left = topLeft.x + 'px';
       sceneCanvas.style.top = topLeft.y + 'px';
     }
+    if (sceneCtx) sceneCtx.setTransform(ratio, 0, 0, ratio, padX * ratio, padY * ratio);
   }
   function sceneCorners(item) {
     var angle = Number(item.bearing || 0) * Math.PI / 180;
@@ -3725,18 +3776,21 @@
   function drawSceneFootprints() {
     sceneDrawFrame = 0;
     if (!sceneCanvas || !sceneCtx) return;
+    if (sceneZooming) return;
     placeSceneCanvas();
     var size = map.getSize();
-    var ratio = Math.min(2, window.devicePixelRatio || 1);
-    sceneCanvas.width = Math.round(size.x * ratio);
-    sceneCanvas.height = Math.round(size.y * ratio);
-    sceneCanvas.style.width = size.x + 'px';
-    sceneCanvas.style.height = size.y + 'px';
-    sceneCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    sceneCtx.clearRect(0, 0, size.x, size.y);
+    var padX = Math.round(size.x * 0.35);
+    var padY = Math.round(size.y * 0.35);
+    sceneCtx.clearRect(-padX - 2, -padY - 2, size.x + padX * 2 + 4, size.y + padY * 2 + 4);
     if (!leafletSceneWanted()) return;
     var zoom = map.getZoom();
-    sceneRows.forEach(function (item) {
+    var view = map.getBounds().pad(0.4);
+    var minSpan = zoom < 2 ? 48 : (zoom < 3 ? 22 : (zoom < 4 ? 10 : 0));
+    var rows = sceneCache.length ? sceneCache : sceneRows;
+    rows.forEach(function (item) {
+      if (minSpan && Math.max(Number(item.width) || 0, Number(item.depth) || 0) < minSpan) return;
+      var ll = worldToLatLng(item.x, item.y);
+      if (!view.contains(ll)) return;
       var pts = sceneCorners(item);
       if (pts.length < 4) return;
       var kind = String(item.kind || 'building');
@@ -3749,7 +3803,25 @@
     });
   }
   function scheduleSceneDraw() {
+    if (sceneZooming) return;
     if (!sceneDrawFrame) sceneDrawFrame = requestAnimationFrame(drawSceneFootprints);
+  }
+  function sceneWorldBbox() {
+    return [0, 0, worldSize, worldSize].join(',');
+  }
+  function preloadSceneAll() {
+    if (scenePreloadPromise && sceneCacheMapId === mapId) return scenePreloadPromise;
+    sceneCacheMapId = mapId;
+    scenePreloadPromise = api('/api/atak/scene?mapId=' + encodeURIComponent(mapId) + '&bbox=' + encodeURIComponent(sceneWorldBbox()) + '&limit=40000').then(function (payload) {
+      sceneCache = asList(payload, 'objects');
+      sceneRows = sceneCache;
+      scheduleSceneDraw();
+      return sceneCache;
+    }).catch(function () {
+      scenePreloadPromise = null;
+      return sceneCache;
+    });
+    return scenePreloadPromise;
   }
   function loadSceneFootprints() {
     if (!leafletSceneWanted()) {
@@ -3757,19 +3829,12 @@
       scheduleSceneDraw();
       return;
     }
-    var b = map.getBounds();
-    var nw = latLngToWorld(b.getNorthWest());
-    var se = latLngToWorld(b.getSouthEast());
-    var bbox = [Math.min(nw.x, se.x), Math.min(nw.y, se.y), Math.max(nw.x, se.x), Math.max(nw.y, se.y)].join(',');
-    api('/api/atak/scene?mapId=' + encodeURIComponent(mapId) + '&bbox=' + encodeURIComponent(bbox) + '&limit=5000').then(function (payload) {
-      sceneRows = asList(payload, 'objects');
+    if (sceneCache.length && sceneCacheMapId === mapId) {
+      sceneRows = sceneCache;
       scheduleSceneDraw();
-    }).catch(function () { scheduleSceneDraw(); });
-  }
-  function queueSceneLoad() {
-    window.clearTimeout(sceneFetchTimer);
-    sceneFetchTimer = window.setTimeout(loadSceneFootprints, 180);
-    scheduleSceneDraw();
+      return;
+    }
+    preloadSceneAll();
   }
   function pointInSceneItem(wx, wy, item) {
     var angle = -(Number(item.bearing || 0) * Math.PI / 180);
@@ -3783,12 +3848,14 @@
     var hd = Math.max(2, Number(item.depth || 4) / 2);
     return Math.abs(lx) <= hw && Math.abs(ly) <= hd;
   }
-  function hitSceneAt(ll) {
-    if (!leafletSceneWanted() || !ll) return null;
+  function hitSceneAt(ll, force) {
+    if (!force && !leafletSceneWanted()) return null;
+    if (!ll) return null;
     var w = latLngToWorld(ll);
     var best = null;
     var bestArea = Infinity;
-    sceneRows.forEach(function (item) {
+    var rows = sceneCache.length ? sceneCache : sceneRows;
+    rows.forEach(function (item) {
       if (!pointInSceneItem(w.x, w.y, item)) return;
       var area = Math.max(4, Number(item.width || 4)) * Math.max(4, Number(item.depth || 4));
       if (area < bestArea) {
@@ -3814,14 +3881,20 @@
     sceneCanvas.setAttribute('aria-hidden', 'true');
     sceneCtx = sceneCanvas.getContext('2d');
     placeSceneCanvas();
-    ['move', 'moveend', 'zoomend', 'resize'].forEach(function (name) {
-      map.on(name, name === 'moveend' || name === 'zoomend' ? queueSceneLoad : scheduleSceneDraw);
+    map.on('zoomstart', function () { sceneZooming = true; });
+    map.on('zoomend', function () {
+      sceneZooming = false;
+      scheduleSceneDraw();
     });
+    map.on('moveend', scheduleSceneDraw);
+    map.on('resize', scheduleSceneDraw);
     var toggle = document.getElementById('atak-scene-buildings');
     if (toggle) toggle.addEventListener('change', function () { loadSceneFootprints(); });
     var mode = document.getElementById('atak-terrain-3d-mode');
     if (mode) mode.addEventListener('change', function () { loadSceneFootprints(); });
     window.addEventListener('atak:terrain3dchange', loadSceneFootprints);
+    window.addEventListener('atak:overwatch-gl-change', loadSceneFootprints);
+    preloadSceneAll();
     loadSceneFootprints();
   }
 
@@ -3887,6 +3960,7 @@
       '<button type="button" class="ow-secondary" data-scene-act="entry">Ajouter une entrée</button>' +
       '<button type="button" class="ow-secondary" data-scene-act="photo">Attacher une photo</button>' +
       '<button type="button" class="ow-secondary" data-scene-act="task">Créer une TASK</button>' +
+      '<button type="button" class="ow-secondary" data-scene-act="plan">Ouvrir le plan d’étage</button>' +
       '</div>';
     if (photos.length) {
       html += '<p class="ow-kicker">Photos à proximité</p>' + photos.map(function (p) {
@@ -5101,6 +5175,11 @@
         var ta = document.querySelector('#ow-drawer textarea[name="payload"]');
         if (ta && !ta.value) ta.value = 'Objectif : ' + (obj.name || 'construction') + ' · ' + grid;
       }
+      if (act === 'plan') {
+        if (window.OverwatchTacmap && typeof window.OverwatchTacmap.attachSceneBuilding === 'function') {
+          window.OverwatchTacmap.attachSceneBuilding(obj, loc);
+        }
+      }
       if (act === 'floor' || act === 'roof' || act === 'anchor') {
         var floor = act === 'roof' ? (Number(obj.floors) || 1) : Number(sceneBtn.getAttribute('data-floor'));
         var note = act === 'anchor' ? (window.prompt('Libellé de l’ancrage', 'Façade nord') || '') : '';
@@ -5449,6 +5528,32 @@
     if (fil) fil.classList.toggle('is-raw', rawToggle.checked);
   });
 
+  function bindDrawTint() {
+    var tac = document.getElementById('ow-tac-color');
+    var main = document.getElementById('ow-draw-color');
+    var tw = document.getElementById('ow-tac-width');
+    var mw = document.getElementById('ow-draw-width');
+    function syncColor(from, to) {
+      if (from && to && to.value !== from.value) to.value = from.value;
+    }
+    if (tac && main) {
+      if (main.value) tac.value = main.value;
+      tac.addEventListener('input', function () { syncColor(tac, main); });
+      main.addEventListener('input', function () { syncColor(main, tac); });
+    }
+    if (tw && mw) {
+      tw.value = mw.value || tw.value;
+      tw.addEventListener('input', function () { mw.value = tw.value; });
+      mw.addEventListener('input', function () { tw.value = mw.value; });
+    }
+    document.querySelectorAll('[data-tint]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setDrawTint(btn.getAttribute('data-tint'));
+      });
+    });
+  }
+  bindDrawTint();
+
   var heatBox = document.getElementById('ow-presence-heat');
   if (heatBox) heatBox.addEventListener('change', renderPresenceHeat);
   var armaBox = document.getElementById('ow-arma-markers');
@@ -5484,6 +5589,10 @@
     openView: openView,
     setTool: setTool,
     saveShape: saveShape,
+    drawShape: drawShape,
+    clearDraft: clearDraft,
+    drawStyle: drawStyle,
+    setDrawTint: setDrawTint,
     undoLastShape: undoLastShape,
     redoLastShape: redoLastShape,
     parseShapeMeta: parseShapeMeta,
@@ -5516,6 +5625,16 @@
     selectUnit: selectUnit,
     inspectWorld: inspectWorld,
     inspectSceneObject: inspectSceneObject,
+    hitSceneAt: hitSceneAt,
+    getSceneBuildings: function () {
+      var rows = sceneCache.length ? sceneCache : sceneRows;
+      return rows.filter(function (item) {
+        return String(item.kind || 'building') === 'building';
+      });
+    },
+    getArmaMarkerRows: function () { return armaMarkerRows; },
+    parseMarkerData: parseMarkerData,
+    markerWorld: markerWorld,
     handleWorldClick: handleWorldClick,
     handleWorldContext: handleWorldContext,
     openContextAt: openContextAt,

@@ -39,6 +39,9 @@ if (isNull _building) exitWith {
 };
 
 private _prevMk = missionNamespace getVariable ["COMSPEC_EcotiBuildingMarker", ""];
+if (_prevMk isNotEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_syncMapMarker"}) then {
+    [_prevMk, true, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+};
 if (_prevMk isNotEqualTo "" && {_prevMk in allMapMarkers}) then {
     deleteMarkerLocal _prevMk;
 };
@@ -57,6 +60,9 @@ _mk setMarkerAlphaLocal 0.9;
 missionNamespace setVariable ["COMSPEC_EcotiMarkedBuilding", _building, false];
 missionNamespace setVariable ["COMSPEC_EcotiMarkedBuildingName", _dn, false];
 missionNamespace setVariable ["COMSPEC_EcotiBuildingMarker", _mkName, false];
+if (!isNil "comspec_overwatch_connect_fnc_syncMapMarker") then {
+    [_mkName, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+};
 
 [true, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
 

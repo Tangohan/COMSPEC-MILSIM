@@ -11,6 +11,18 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.96 / Athena 1.0.153 — 2026-09-19
+
+### Nouveau — Relais AT
+
+Wave Relay devient Relais AT dans le tiroir du téléphone. L’application montre le mât le plus proche : position, débit, fiabilité, identité, adresse réseau, passerelle, certificat, places et puissance. La carte du poste affiche la même fiche. Un mât détruit passe hors service (débit et puissance à zéro). Posez et réglez le mât dans l’éditeur (Modules COMSPEC, notice de pose) ou via Zeus. Relancez Arma complètement (Overwatch 1.5.96, Athena 1.0.153).
+
+### Nouveau — Annuler le pointage de bâtiment
+
+Quand un bâtiment est désigné sous jumelles de vision nocturne, l’affichage situation propose d’annuler ce pointage. La silhouette, le badge et le repère local disparaissent.
+
+---
+
 ## Overwatch 1.5.95 / Athena 1.0.152 — 2026-09-19
 
 ### Correction — Symboles Marker Dropper au poste
@@ -53,6 +65,22 @@ P2P n’affichait plus que Retour et Send Data, sans correspondants ni messages.
 
 ## Overwatch Beta — 2026-09-19
 
+### Correction — Croquis qui disparaissaient
+
+Un croquis tracé au crayon s’effaçait dès l’ouverture du panneau d’enregistrement. Le trait reste maintenant sur la carte. Dans le mode Tracé tactique, il se pose dès que vous relâchez le clic.
+
+### Amélioration — Couleurs du tracé tactique
+
+La barre au-dessus de la carte propose une couleur et une épaisseur de trait. Flèches, croquis, zones, surligneur et symboles OTAN utilisent cette teinte. Les pastilles ami, ennemi, neutre et inconnu restent disponibles, plus une teinte libre. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Nouveau — Plan rattaché à un bâtiment connu
+
+Le plan d’étage se rattache à un bâtiment déjà désigné en jeu, ou à une construction relevée. Vous le choisissez dans la liste. Un clic sur une construction ouverte propose aussi d’ouvrir le plan. Rechargez Overwatch Beta (Ctrl+F5). Pour les désignations en jumelles, relancez Arma.
+
+### Amélioration — À plat et 2D immersif
+
+La vue À plat reste un plan : photo ou carte du jeu, sans volumes. Le 2D immersif montre les constructions du relevé collées au fond. Elles se chargent une fois à l’ouverture : zoomer ne les décale plus. Relief 3D et Tactique 3D dressent toujours le sol. Rechargez Overwatch Beta (Ctrl+F5).
+
 ### Amélioration — Onglet Contacts
 
 Les contacts se séparent entre ceux encore en liaison et ceux qui ne le sont plus, par escouade. Chaque fiche montre le rôle, l’âge de la position, et si le lien est direct ou par relais. Un contact hors ligne se recentre sur sa dernière position connue.
@@ -63,7 +91,7 @@ La fiche d’un contact ne montre plus que l’essentiel : vitesse, altitude, de
 
 ### Amélioration — Constructions du jeu
 
-Les bâtiments, forêts et obstacles relevés en jeu s’affichent sur la carte à plat. Un clic ouvre la fiche de la construction : marquer, poser un objectif, noter un étage. En Relief 3D, les volumes se dressent toujours au-dessus du sol. Rechargez Overwatch Beta (Ctrl+F5).
+En 2D immersif, les bâtiments, forêts et obstacles relevés en jeu s’affichent collés à la carte. Un clic ouvre la fiche de la construction : marquer, poser un objectif, noter un étage. En Relief 3D, les volumes se dressent toujours au-dessus du sol. Rechargez Overwatch Beta (Ctrl+F5).
 
 ### Nouveau — Tracé tactique et briefing
 

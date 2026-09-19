@@ -32,4 +32,9 @@ if (!_open) exitWith {};
 {
     if ((ctrlIDC _x) == 9) then { continue };
     _x ctrlSetTextColor _cyan;
+    private _lab = toLower (ctrlText _x);
+    if ((_lab find "wave relay") >= 0 || {_lab find "waverelay" >= 0}) then {
+        _x ctrlSetText "<t size='1'>Relais AT</t>";
+        _x ctrlSetTooltip "Mât le plus proche : position, débit, fiabilité, identité.";
+    };
 } forEach (allControls _grp);

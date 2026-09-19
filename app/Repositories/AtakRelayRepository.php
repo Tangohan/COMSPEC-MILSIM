@@ -33,18 +33,65 @@ final class AtakRelayRepository
         if (array_key_exists('alive', $payload)) {
             $alive = (bool) $payload['alive'] && $payload['alive'] !== '0' && $payload['alive'] !== 0;
         }
+        $name = trim((string) ($payload['name'] ?? $payload['display_name'] ?? ''));
+        $identity = trim((string) ($payload['identity'] ?? ''));
+        $ip = trim((string) ($payload['ip'] ?? $payload['ip_addr'] ?? ''));
+        $gateway = trim((string) ($payload['gateway'] ?? ''));
+        $certificate = trim((string) ($payload['certificate'] ?? ''));
+        $slots = max(1, min(64, (int) ($payload['slots'] ?? 8)));
+        $used = max(0, min($slots, (int) ($payload['used'] ?? $payload['slots_used'] ?? 0)));
+        $power = max(0, min(999, (int) ($payload['power_w'] ?? 25)));
+        $thru = max(0, min(999, (float) ($payload['throughput_mbps'] ?? 12)));
+        $rel = max(0, min(100, (int) ($payload['reliability_pct'] ?? 92)));
+        if (!$alive) {
+            $power = 0;
+            $thru = 0.0;
+            $rel = 0;
+            $used = 0;
+        }
+
         $st = $this->pdo()->prepare(
-            'INSERT INTO atak_relays (tenant_id, map_id, relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            'INSERT INTO atak_relays (
+                tenant_id, map_id, relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at,
+                display_name, identity, ip_addr, gateway, certificate, slots, slots_used, power_w, throughput_mbps, reliability_pct
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 pos_x = VALUES(pos_x),
                 pos_y = VALUES(pos_y),
                 pos_z = VALUES(pos_z),
                 range_m = VALUES(range_m),
                 alive = VALUES(alive),
-                last_seen_at = NOW()'
+                last_seen_at = NOW(),
+                display_name = VALUES(display_name),
+                identity = VALUES(identity),
+                ip_addr = VALUES(ip_addr),
+                gateway = VALUES(gateway),
+                certificate = VALUES(certificate),
+                slots = VALUES(slots),
+                slots_used = VALUES(slots_used),
+                power_w = VALUES(power_w),
+                throughput_mbps = VALUES(throughput_mbps),
+                reliability_pct = VALUES(reliability_pct)'
         );
-        $st->execute([$tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, $range), $alive ? 1 : 0]);
+        try {
+            $st->execute([
+                $tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, $range), $alive ? 1 : 0,
+                $name, $identity, $ip, $gateway, $certificate, $slots, $used, $power, $thru, $rel,
+            ]);
+        } catch (\Throwable) {
+            $st = $this->pdo()->prepare(
+                'INSERT INTO atak_relays (tenant_id, map_id, relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE
+                    pos_x = VALUES(pos_x),
+                    pos_y = VALUES(pos_y),
+                    pos_z = VALUES(pos_z),
+                    range_m = VALUES(range_m),
+                    alive = VALUES(alive),
+                    last_seen_at = NOW()'
+            );
+            $st->execute([$tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, $range), $alive ? 1 : 0]);
+        }
 
         return $this->getByUid($tenantId, $mapId, $uid) ?? [];
     }
@@ -59,10 +106,7 @@ final class AtakRelayRepository
         }
         try {
             $st = $this->pdo()->prepare(
-                'SELECT relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at
-                 FROM atak_relays
-                 WHERE tenant_id = ? AND map_id = ?
-                 ORDER BY last_seen_at DESC'
+                'SELECT * FROM atak_relays WHERE tenant_id = ? AND map_id = ? ORDER BY last_seen_at DESC'
             );
             $st->execute([$tenantId, max(1, $mapId)]);
 
@@ -82,10 +126,7 @@ final class AtakRelayRepository
         }
         try {
             $st = $this->pdo()->prepare(
-                'SELECT map_id, relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at
-                 FROM atak_relays
-                 WHERE tenant_id = ?
-                 ORDER BY last_seen_at DESC'
+                'SELECT * FROM atak_relays WHERE tenant_id = ? ORDER BY last_seen_at DESC'
             );
             $st->execute([$tenantId]);
 
@@ -101,8 +142,7 @@ final class AtakRelayRepository
     public function getByUid(int $tenantId, int $mapId, string $uid): ?array
     {
         $st = $this->pdo()->prepare(
-            'SELECT relay_uid, pos_x, pos_y, pos_z, range_m, alive, last_seen_at
-             FROM atak_relays WHERE tenant_id = ? AND map_id = ? AND relay_uid = ? LIMIT 1'
+            'SELECT * FROM atak_relays WHERE tenant_id = ? AND map_id = ? AND relay_uid = ? LIMIT 1'
         );
         $st->execute([$tenantId, $mapId, $uid]);
         $row = $st->fetch(PDO::FETCH_ASSOC);

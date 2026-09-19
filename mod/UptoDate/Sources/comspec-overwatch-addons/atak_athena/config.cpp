@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.152;
-        versionStr = "1.0.152";
-        versionAr[] = {1, 0, 152};
-        // Historique : 1.0.151 liaison perdue en icône barre d’état, 1.0.152 Marker Dropper → poste.
+        version = 1.153;
+        versionStr = "1.0.153";
+        versionAr[] = {1, 0, 153};
+        // Historique : 1.0.152 Marker Dropper → poste, 1.0.153 Relais AT.
     };
 };
 
@@ -107,6 +107,9 @@ class CfgFunctions
             class athena_updateStatus {};
             class athena_updateLinkStrip {};
             class athena_openStatus {};
+            class athena_relayOnOpened {};
+            class athena_updateRelay {};
+            class athena_openRelay {};
             class athena_soundOnOpened {};
             class athena_updateSound {};
             class athena_soundAction {};
@@ -285,6 +288,7 @@ class RscControlsGroup;
 #include "ui\message_hub_page.hpp"
 #include "ui\resynch_page.hpp"
 #include "ui\wiki_page.hpp"
+#include "ui\relay_page.hpp"
 
 class ATAK_APPs
 {
@@ -361,6 +365,18 @@ class ATAK_APPs
             ORDER = 3.6;
             PAGE_CTRL = "COMSPEC_ATAK_Status";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
+        };
+    };
+    class WaveRelay: message
+    {
+        text = "<t size='1'>Relais AT</t>";
+        textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.62;
+            PAGE_CTRL = "COMSPEC_ATAK_Relay";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
         };
     };
     class AtakSound: message
@@ -540,6 +556,18 @@ class RscTitles
                 ORDER = 3.6;
                 PAGE_CTRL = "COMSPEC_ATAK_Status";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
+            };
+        };
+        class WaveRelay: message
+        {
+            text = "<t size='1'>Relais AT</t>";
+            textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.62;
+                PAGE_CTRL = "COMSPEC_ATAK_Relay";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
             };
         };
         class AtakSound: message

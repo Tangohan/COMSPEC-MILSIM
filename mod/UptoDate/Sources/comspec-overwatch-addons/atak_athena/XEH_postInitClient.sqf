@@ -506,3 +506,24 @@ missionNamespace setVariable ["COMSPEC_AtakPhoneProxInside", createHashMap, fals
         [] call comspec_overwatch_atak_athena_fnc_athena_updateLinkStrip;
     };
 }, 2, []] call CBA_fnc_addPerFrameHandler;
+
+// Wave Relay IceMan → Relais AT (si IceMan charge après et réécrit la tuile).
+private _forceRelaisAt = {
+    if (!isNil "Iceman_fnc_wr_onOpened" && {!isFinal Iceman_fnc_wr_onOpened}) then {
+        Iceman_fnc_wr_onOpened = {
+            params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
+            [_group, _interfaceInit, _isDialog, _settings] call comspec_overwatch_atak_athena_fnc_athena_relayOnOpened;
+        };
+        missionNamespace setVariable ["Iceman_fnc_wr_onOpened", Iceman_fnc_wr_onOpened];
+        uiNamespace setVariable ["Iceman_fnc_wr_onOpened", Iceman_fnc_wr_onOpened];
+    };
+    if (!isNil "Iceman_fnc_wr_updatePanel" && {!isFinal Iceman_fnc_wr_updatePanel}) then {
+        Iceman_fnc_wr_updatePanel = {
+            [] call comspec_overwatch_atak_athena_fnc_athena_updateRelay;
+        };
+        missionNamespace setVariable ["Iceman_fnc_wr_updatePanel", Iceman_fnc_wr_updatePanel];
+        uiNamespace setVariable ["Iceman_fnc_wr_updatePanel", Iceman_fnc_wr_updatePanel];
+    };
+};
+call _forceRelaisAt;
+{ [_forceRelaisAt, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];

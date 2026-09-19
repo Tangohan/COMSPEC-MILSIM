@@ -3756,6 +3756,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakRelaysFicheMigrate = require $root . '/bootstrap/atak_relays_fiche_migration.php';
+try {
+  echo "Migration atak_relays_fiche (identité, débit, fiabilité, places)...\n";
+  $atakRelaysFicheMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_relays_fiche : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakGeoNetworkMigrate = require $root . '/bootstrap/atak_geo_network_migration.php';
 try {
   echo "Migration atak_geo_network (lieux nommés et segments routiers)...\n";

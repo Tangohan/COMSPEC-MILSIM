@@ -105,7 +105,7 @@ window.OverwatchGlMap = (function () {
   function storedMode() {
     try {
       var v = localStorage.getItem(KEY);
-      if (v === 'volume' || v === 'flat' || v === 'tactical') return v;
+      if (v === 'volume' || v === 'flat' || v === 'tactical' || v === 'immersive') return v;
     } catch (e) {}
     return 'flat';
   }
@@ -542,11 +542,13 @@ window.OverwatchGlMap = (function () {
 
   function setEnabled(on) {
     active = !!on;
-    persistMode(active ? (camMode === 'tactical' ? 'tactical' : 'volume') : 'flat');
-    if (modeSelect) {
-      if (!active) modeSelect.value = 'flat';
-      else if (camMode === 'tactical') modeSelect.value = 'tactical';
-      else modeSelect.value = 'volume';
+    if (active) {
+      persistMode(camMode === 'tactical' ? 'tactical' : 'volume');
+      if (modeSelect) modeSelect.value = camMode === 'tactical' ? 'tactical' : 'volume';
+    } else {
+      var keep = modeSelect && modeSelect.value === 'immersive' ? 'immersive' : 'flat';
+      persistMode(keep);
+      if (modeSelect) modeSelect.value = keep;
     }
     var camBar = document.getElementById('ow-cam-bar');
     if (camBar) camBar.hidden = !active;
@@ -562,6 +564,7 @@ window.OverwatchGlMap = (function () {
     } else {
       if (glMap) syncToLeaflet();
       setHostVisible(false);
+      destroyGl();
       var lm = leafletMap();
       if (lm && typeof lm.invalidateSize === 'function') {
         try { lm.invalidateSize({ animate: false }); } catch (e) {}
@@ -648,7 +651,8 @@ window.OverwatchGlMap = (function () {
     if (modeSelect) {
       modeSelect.addEventListener('change', function () {
         var v = modeSelect.value;
-        if (v === 'flat') {
+        if (v === 'flat' || v === 'immersive') {
+          persistMode(v);
           setEnabled(false);
           return;
         }
@@ -692,7 +696,7 @@ window.OverwatchGlMap = (function () {
       camMode = storedMode() === 'tactical' || (modeSelect && modeSelect.value === 'tactical') ? 'tactical' : 'terrain';
       setEnabled(true);
     } else if (modeSelect) {
-      modeSelect.value = 'flat';
+      modeSelect.value = storedMode() === 'immersive' ? 'immersive' : 'flat';
     }
   }
 
@@ -703,6 +707,8 @@ window.OverwatchGlMap = (function () {
     if (storedMode() === 'volume' || storedMode() === 'tactical') {
       camMode = storedMode() === 'tactical' ? 'tactical' : 'terrain';
       setEnabled(true);
+    } else if (modeSelect) {
+      modeSelect.value = storedMode() === 'immersive' ? 'immersive' : 'flat';
     }
   });
 

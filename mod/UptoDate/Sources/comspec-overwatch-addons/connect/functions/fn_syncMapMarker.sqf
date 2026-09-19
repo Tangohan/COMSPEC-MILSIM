@@ -142,8 +142,9 @@ private _texForJson = (_texture splitString _bs joinString "/");
 _texForJson = (_texForJson splitString """" joinString "'");
 
 private _src = if (_isUnderscore) then { "bce_widget" } else { "arma" };
+private _purpose = if ((_nameLower find "comspec_ecoti_bldg") == 0) then { "building_mark" } else { "" };
 private _json = format [
-    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17""}",
+    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17"",""purpose"":""%18""}",
     (_pos select 0) toFixed 2,
     (_pos select 1) toFixed 2,
     (if (count _pos > 2) then { _pos select 2 } else { 0 }) toFixed 2,
@@ -160,7 +161,8 @@ private _json = format [
     _src,
     (([] call comspec_overwatch_connect_fnc_getCallsign) splitString """" joinString "'"),
     mapGridPosition _pos,
-    _texForJson
+    _texForJson,
+    _purpose
 ];
 
 [_markerName, _json, false, _txBlocked] call _fnc_dispatch

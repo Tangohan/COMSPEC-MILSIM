@@ -68,7 +68,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('class diagStatusSnapshot {}', $cfg);
         self::assertStringContainsString('class noteUplinkReturn {}', $cfg);
         self::assertStringContainsString('COMSPEC_DiagIsolateHud', $cfg);
-        self::assertStringContainsString('1.5.95', $cfg);
+        self::assertStringContainsString('1.5.96', $cfg);
         self::assertStringContainsString('diagIsolateProbe', $start);
         self::assertStringContainsString('sendIntel', $probe);
         self::assertStringContainsString('sendLocalTacticalMarker', $probe);

@@ -20,6 +20,7 @@
   var missionFrames = [];
   var missionGhosts = {};
   var pendingShape = null;
+  var pendingPreview = null;
   var pendingMarker = null;
   var recents = [];
   var markerIntelLayers = [];
@@ -562,14 +563,18 @@
   function promptShape(type, latlngs, label) {
     var api = ow();
     if (!api) return Promise.resolve();
+    latlngs = (latlngs || []).slice();
     pendingShape = { type: type, latlngs: latlngs, label: label || type };
     var closed = type === 'POLYGON' || type === 'AOI';
+    var style = api.drawStyle ? api.drawStyle() : { color: '#00d69a', stroke: 2 };
+    dropPendingPreview();
+    pendingPreview = drawTempShape(type, latlngs, style.color, closed ? 0.12 : 0, 'none', { weight: style.stroke });
     api.openDrawer('Tracé', label || 'Nouveau tracé',
       '<form class="ow-form-grid" id="ow-shape-form">' +
       '<label>Titre<input name="title" required maxlength="80" value="' + esc(label || '') + '"></label>' +
       '<label>Texte intérieur<textarea name="interior" maxlength="240" placeholder="Affiché dans la zone"></textarea></label>' +
-      '<label>Couleur du trait<input name="stroke_color" type="color" value="#00d69a"></label>' +
-      (closed ? '<label>Couleur du fond<input name="fill_color" type="color" value="#00d69a"></label>' +
+      '<label>Couleur du trait<input name="stroke_color" type="color" value="' + esc(style.color || '#00d69a') + '"></label>' +
+      (closed ? '<label>Couleur du fond<input name="fill_color" type="color" value="' + esc(style.color || '#00d69a') + '"></label>' +
         '<label>Fond<select name="fill_style">' +
         '<option value="none">Aucun</option>' +
         '<option value="solid" selected>Plein</option>' +
@@ -580,6 +585,13 @@
       '<div class="ow-form-actions"><button class="ow-primary" type="submit">Enregistrer</button></div></form>'
     );
     var form = document.getElementById('ow-shape-form');
+    var colorInput = form && form.querySelector('[name="stroke_color"]');
+    if (colorInput) {
+      colorInput.addEventListener('input', function () {
+        dropPendingPreview();
+        pendingPreview = drawTempShape(type, latlngs, colorInput.value, closed ? 0.12 : 0, 'none', { weight: style.stroke });
+      });
+    }
     if (form) form.addEventListener('submit', function (event) {
       event.preventDefault();
       var data = new FormData(form);
@@ -587,8 +599,8 @@
         label: String(data.get('title') || label || type).trim(),
         interior: String(data.get('interior') || '').trim(),
         fill_style: String(data.get('fill_style') || 'solid'),
-        fill_color: String(data.get('fill_color') || '#00d69a'),
-        stroke_color: String(data.get('stroke_color') || '#00d69a'),
+        fill_color: String(data.get('fill_color') || style.color || '#00d69a'),
+        stroke_color: String(data.get('stroke_color') || style.color || '#00d69a'),
         hatch: String(data.get('fill_style') || '') === 'hatch-d' || String(data.get('fill_style') || '') === 'hatch-h',
         permanent: !!data.get('permanent')
       });
@@ -600,15 +612,24 @@
     var api = ow();
     if (!api) return null;
     injectHatch();
+    opts = opts || {};
     var hatchClass = fillStyle === 'hatch-h' ? 'ow-hatch-h' : (fillStyle === 'hatch-d' ? 'ow-hatch-diag' : '');
     var layer = (type === 'POLYGON' || type === 'AOI')
-      ? L.polygon(latlngs, { color: color, fillColor: (opts && opts.fill_color) || color, fillOpacity: fillOp, className: hatchClass })
-      : L.polyline(latlngs, { color: color, weight: 2 });
+      ? L.polygon(latlngs, { color: color, fillColor: (opts.fill_color) || color, fillOpacity: fillOp, className: hatchClass, weight: opts.weight || 2 })
+      : L.polyline(latlngs, { color: color, weight: opts.weight || 3 });
     layer.addTo(api.map);
-    if (opts && opts.interior && layer.bindTooltip) {
+    if (opts.interior && layer.bindTooltip) {
       layer.bindTooltip(String(opts.interior), { permanent: true, direction: 'center', className: 'ow-geo-label' });
     }
     return layer;
+  }
+
+  function dropPendingPreview() {
+    var api = ow();
+    if (pendingPreview && api && api.map) {
+      try { api.map.removeLayer(pendingPreview); } catch (ePrev) {}
+    }
+    pendingPreview = null;
   }
 
   function injectHatch() {
@@ -635,12 +656,15 @@
       : (type === 'POLYGON' || type === 'AOI'
         ? { type: 'Polygon', coordinates: [coords.concat([coords[0]])] }
         : { type: 'LineString', coordinates: coords });
-    var color = opts.stroke_color || (document.getElementById('ow-draw-color') || {}).value || '#00d69a';
-    var stroke = Number((document.getElementById('ow-draw-width') || {}).value || 2);
+    var color = opts.stroke_color || (api.drawStyle && api.drawStyle().color) || '#00d69a';
+    var stroke = Number((opts.stroke != null ? opts.stroke : (api.drawStyle && api.drawStyle().stroke)) || 2);
     var fillStyle = opts.fill_style || (opts.hatch ? 'hatch-d' : 'solid');
     var fillOp = fillStyle === 'none' ? 0 : (opts.fill != null ? opts.fill : 0.18);
+    dropPendingPreview();
+    if (api.setDrawTint) api.setDrawTint(color);
     if (!opts.permanent) {
       var apiLayer = drawTempShape(type, latlngs, color, fillOp, fillStyle, opts);
+      if (api.clearDraft) api.clearDraft();
       toast((opts.label || type) + ' posé pour cette session seulement.');
       document.getElementById('ow-drawer').hidden = true;
       return Promise.resolve(apiLayer);
@@ -668,7 +692,11 @@
     }).then(function (row) {
       toast((opts.label || type) + ' enregistré.');
       remember('shape', opts.label || type, row && row.id);
-      if (api.loadShapes) api.loadShapes();
+      if (api.clearDraft) api.clearDraft();
+      if (row && api.drawShape) {
+        if (api.getShapes) api.getShapes().push(row);
+        api.drawShape(row);
+      } else if (api.loadShapes) api.loadShapes();
       else if (row && api.getShapes) {
         api.getShapes().push(row);
         api.renderMap();
@@ -995,8 +1023,11 @@
     }).join('');
     html += armaCards || '<p class="ow-help">Aucun marqueur du théâtre.</p></div>';
     html += '<p class="ow-kicker">Relais ATAK</p><div class="ow-layers-list">';
-    var relayCards = relays.filter(function (row) { return match(row.relay_uid || 'Relais'); }).map(function (row) {
-      return card('relay', row.relay_uid, 'Relais ATAK', row.alive === 0 || row.alive === false ? 'Détruit' : 'En service', 'data-del-relay="' + esc(String(row.relay_uid || '')) + '"');
+    var relayCards = relays.filter(function (row) {
+      return match(relayTitle(row) + ' ' + (row.identity || '') + ' ' + (row.relay_uid || 'Relais'));
+    }).map(function (row) {
+      var alive = row.alive !== 0 && row.alive !== false;
+      return card('relay', row.relay_uid, relayTitle(row), alive ? relayLayerTag(row) : 'Détruit', 'data-del-relay="' + esc(String(row.relay_uid || '')) + '"');
     }).join('');
     html += relayCards || '<p class="ow-help">Aucun relais posé en jeu.</p></div>';
     html += '<div id="ow-layer-confirm" hidden></div>';
@@ -1271,6 +1302,44 @@
     }).catch(function () { relays = []; });
   }
 
+  function relayTitle(row) {
+    return String(row.display_name || row.name || row.identity || row.relay_uid || 'Relais ATAK');
+  }
+
+  function relayLayerTag(row) {
+    var bits = [];
+    if (row.identity) bits.push(String(row.identity));
+    var thru = Number(row.throughput_mbps);
+    if (!isNaN(thru) && thru > 0) bits.push(thru.toFixed(1).replace(/\.0$/, '') + ' Mbit/s');
+    var rel = Number(row.reliability_pct);
+    if (!isNaN(rel)) bits.push(Math.round(rel) + ' %');
+    return bits.join(' · ') || 'En service';
+  }
+
+  function relayPopupHtml(row) {
+    var alive = row.alive !== false && row.alive !== 0;
+    var slots = Number(row.slots || 0);
+    var used = Number(row.slots_used || row.used || 0);
+    var lines = [
+      '<strong>' + esc(relayTitle(row)) + '</strong>',
+      '<div>' + (alive ? 'En service' : 'Détruit') + '</div>'
+    ];
+    if (row.identity) lines.push('<div>Identité · ' + esc(String(row.identity)) + '</div>');
+    if (row.range_m) lines.push('<div>Portée · ' + Math.round(Number(row.range_m)) + ' m</div>');
+    if (row.throughput_mbps != null && row.throughput_mbps !== '') {
+      lines.push('<div>Débit · ' + Number(row.throughput_mbps).toFixed(1).replace(/\.0$/, '') + ' Mbit/s</div>');
+    }
+    if (row.reliability_pct != null && row.reliability_pct !== '') {
+      lines.push('<div>Fiabilité · ' + Math.round(Number(row.reliability_pct)) + ' %</div>');
+    }
+    if (slots > 0) lines.push('<div>Places · ' + used + ' / ' + slots + '</div>');
+    if (row.power_w != null && row.power_w !== '') lines.push('<div>Puissance · ' + Math.round(Number(row.power_w)) + ' W</div>');
+    if (row.ip_addr || row.ip) lines.push('<div>Adresse réseau · ' + esc(String(row.ip_addr || row.ip)) + '</div>');
+    if (row.gateway) lines.push('<div>Passerelle · ' + esc(String(row.gateway)) + '</div>');
+    if (row.certificate) lines.push('<div>Certificat · ' + esc(String(row.certificate)) + '</div>');
+    return lines.join('');
+  }
+
   function renderRelays() {
     var api = ow();
     if (!api) return;
@@ -1281,17 +1350,22 @@
       var ll = api.worldToLatLng(Number(row.pos_x), Number(row.pos_y));
       var alive = row.alive !== false && row.alive !== 0;
       var uid = String(row.relay_uid || row.uid || '');
+      var title = relayTitle(row);
       var icon = L.divIcon({
         className: 'ow-relay-dot' + (alive ? '' : ' is-down'),
-        html: '<span></span><em>Relais</em>',
-        iconSize: [64, 16],
+        html: '<span></span><em>' + esc(title) + '</em>',
+        iconSize: [88, 16],
         iconAnchor: [8, 8]
       });
       var m = L.marker(ll, { icon: icon, interactive: true, keyboard: false }).addTo(api.map);
+      var fiche = alive ? title : (title + ' · détruit');
       if (api.bindLayerContext) {
-        api.bindLayerContext(m, 'relay', uid, alive ? 'Relais ATAK' : 'Relais détruit');
+        api.bindLayerContext(m, 'relay', uid, fiche);
+      }
+      if (m.bindPopup) {
+        m.bindPopup(relayPopupHtml(row), { className: 'ow-relay-popup', maxWidth: 280 });
       } else if (m.bindTooltip) {
-        m.bindTooltip(alive ? 'Relais ATAK' : 'Relais détruit', { direction: 'top' });
+        m.bindTooltip(fiche, { direction: 'top' });
       }
       relayLayers.push(m);
       var range = Number(row.range_m || 2000);

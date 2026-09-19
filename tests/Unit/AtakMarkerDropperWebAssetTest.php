@@ -25,8 +25,8 @@ final class AtakMarkerDropperWebAssetTest extends TestCase
         self::assertStringContainsString('_isWidget', $sync);
         self::assertStringContainsString('if (!_force && {_isWidget}) then { _force = true; };', $sync);
         self::assertStringContainsString('class syncNearbyMapMarkers {}', $cfgC);
-        self::assertStringContainsString('versionStr = "1.5.95"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.152"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.5.96"', $cfgC);
+        self::assertStringContainsString('versionStr = "1.0.153"', $cfgA);
 
         self::assertStringContainsString('o_', $isSync);
         self::assertStringContainsString('_defined #', $isSync);

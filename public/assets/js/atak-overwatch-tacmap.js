@@ -11,6 +11,7 @@
   var draft = null;
   var canvas = null;
   var ctx = null;
+  var attach = null;
 
   function ow() { return window.OverwatchBeta || {}; }
   function toast(msg) { if (ow().toast) ow().toast(msg); }
@@ -18,8 +19,12 @@
 
   function setAffiliation(key) {
     affiliation = AFFIL[key] ? key : 'friend';
+    var color = AFFIL[affiliation];
     var colorEl = $('ow-draw-color');
-    if (colorEl) colorEl.value = AFFIL[affiliation];
+    if (colorEl) colorEl.value = color;
+    var tacEl = $('ow-tac-color');
+    if (tacEl) tacEl.value = color;
+    if (ow().setDrawTint) ow().setDrawTint(color);
     document.querySelectorAll('[data-affil]').forEach(function (btn) {
       btn.classList.toggle('is-on', btn.getAttribute('data-affil') === affiliation);
     });
@@ -63,6 +68,7 @@
     if (open) {
       sizeCanvas();
       redrawPlan();
+      refreshAttachUi();
     }
   }
 
@@ -208,22 +214,264 @@
     redrawPlan();
   }
 
-  function consumeMapClick(latlng) {
-    if (!pendingPin || !latlng) return false;
-    pendingPin = false;
+  function attachSource() {
+    var sel = $('ow-bplan-source');
+    return sel ? String(sel.value || 'map') : 'map';
+  }
+
+  function pointedMarkers() {
     var api = ow();
-    if (!api.saveShape) return true;
-    var title = (($('ow-bplan-name') || {}).value || '').trim() || 'Plan de bâtiment';
+    var rows = api.getArmaMarkerRows ? api.getArmaMarkerRows() : [];
+    var parse = api.parseMarkerData || function () { return {}; };
+    var worldOf = api.markerWorld || function () { return null; };
+    var helper = window.ArmaMapMarkers;
+    var out = [];
+    rows.forEach(function (row) {
+      var data = parse(row);
+      if (data.suppressed) return;
+      var purpose = String(data.purpose || '');
+      var type = String(data.type || '').toLowerCase();
+      var text = String((helper && helper.displayLabelOf) ? helper.displayLabelOf(data) : (data.text || data.label || ''));
+      var isMark = purpose === 'building_mark'
+        || /comspec_ecoti_bldg/i.test(String(data.arma_name || row.arma_name || ''))
+        || (type === 'mil_box' && /green/i.test(String(data.color || '')));
+      if (!isMark) return;
+      var world = worldOf(data);
+      if (!world) return;
+      out.push({
+        id: 'm:' + String(row.id || ''),
+        source: 'pointed',
+        title: text || 'Bâtiment désigné',
+        x: world.x,
+        y: world.y,
+        grid: String(data.grid || '')
+      });
+    });
+    return out;
+  }
+
+  function sceneBuildings() {
+    var api = ow();
+    var rows = api.getSceneBuildings ? api.getSceneBuildings() : [];
+    var center = null;
+    if (api.map && api.latLngToWorld) {
+      try { center = api.latLngToWorld(api.map.getCenter()); } catch (e) { center = null; }
+    }
+    return rows.map(function (item) {
+      var dx = center ? Number(item.x) - center.x : 0;
+      var dy = center ? Number(item.y) - center.y : 0;
+      var grid = '';
+      if (api.gridLabel && api.worldToLatLng) {
+        try { grid = String(api.gridLabel(api.worldToLatLng(item.x, item.y)) || '').replace(/^GRID\s+/i, ''); } catch (e0) { grid = ''; }
+      }
+      var span = Math.round(Number(item.width) || 0) + ' × ' + Math.round(Number(item.depth) || 0) + ' m';
+      return {
+        id: 's:' + String(item.id || ''),
+        source: 'scene',
+        title: String(item.name || item.kind_label || span),
+        x: Number(item.x),
+        y: Number(item.y),
+        grid: grid,
+        width: Number(item.width) || 0,
+        depth: Number(item.depth) || 0,
+        height: Number(item.height) || 0,
+        bearing: Number(item.bearing) || 0,
+        dist: Math.hypot(dx, dy),
+        raw: item
+      };
+    }).sort(function (a, b) { return a.dist - b.dist; });
+  }
+
+  function fillPickList() {
+    var pick = $('ow-bplan-pick');
+    var search = $('ow-bplan-search');
+    if (!pick) return;
+    var src = attachSource();
+    var q = String((search && search.value) || '').trim().toLowerCase();
+    var items = src === 'pointed' ? pointedMarkers() : (src === 'scene' ? sceneBuildings() : []);
+    if (q) {
+      items = items.filter(function (it) {
+        return (it.title + ' ' + (it.grid || '')).toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    if (src === 'scene') items = items.slice(0, 80);
+    var keep = attach ? attach.id : '';
+    pick.innerHTML = '';
+    if (!items.length) {
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = src === 'pointed' ? 'Aucun bâtiment désigné pour le moment' : 'Aucune construction relevée';
+      pick.appendChild(empty);
+      return;
+    }
+    var first = document.createElement('option');
+    first.value = '';
+    first.textContent = 'Choisir…';
+    pick.appendChild(first);
+    items.forEach(function (it) {
+      var opt = document.createElement('option');
+      opt.value = it.id;
+      opt.textContent = it.grid ? (it.title + ' · ' + it.grid) : it.title;
+      pick.appendChild(opt);
+    });
+    fillPickList._items = items;
+    if (keep) pick.value = keep;
+  }
+
+  function refreshAttachUi() {
+    var src = attachSource();
+    var searchWrap = $('ow-bplan-search-wrap');
+    var pickWrap = $('ow-bplan-pick-wrap');
+    var help = $('ow-bplan-attach-help');
+    var save = $('ow-bplan-save');
+    var listed = src === 'pointed' || src === 'scene';
+    if (searchWrap) searchWrap.hidden = !listed;
+    if (pickWrap) pickWrap.hidden = !listed;
+    if (listed) fillPickList();
+    else {
+      attach = null;
+      pendingPin = false;
+    }
+    if (help) {
+      if (src === 'map') help.textContent = 'Enregistrez, puis cliquez le bâtiment sur la carte.';
+      else if (src === 'pointed') help.textContent = 'Choisissez un bâtiment déjà désigné sous jumelles, puis enregistrez.';
+      else help.textContent = 'Choisissez une construction relevée en jeu, puis enregistrez.';
+    }
+    if (save) {
+      save.textContent = src === 'map' ? 'Enregistrer le plan sur la carte' : 'Enregistrer sur ce bâtiment';
+    }
+  }
+
+  function seedFootprint(item) {
+    if (!item || !(Number(item.width) > 1) || !(Number(item.depth) > 1)) return;
+    sizeCanvas();
+    if (!canvas) return;
+    var existing = floors.rdc || [];
+    if (existing.length) return;
+    var w = Number(item.width);
+    var d = Number(item.depth);
+    var scale = Math.min((canvas.width - 48) / w, (canvas.height - 48) / d);
+    var hw = (w * scale) / 2;
+    var hd = (d * scale) / 2;
+    var cx = canvas.width / 2;
+    var cy = canvas.height / 2;
+    floors.rdc = [
+      { tool: 'wall', x1: cx - hw, y1: cy - hd, x2: cx + hw, y2: cy - hd },
+      { tool: 'wall', x1: cx + hw, y1: cy - hd, x2: cx + hw, y2: cy + hd },
+      { tool: 'wall', x1: cx + hw, y1: cy + hd, x2: cx - hw, y2: cy + hd },
+      { tool: 'wall', x1: cx - hw, y1: cy + hd, x2: cx - hw, y2: cy - hd }
+    ];
+    var levels = Math.max(1, Math.min(8, Math.round((Number(item.height) || 3) / 3)));
+    var i;
+    for (i = 1; i < levels; i++) {
+      var key = 'etage-' + i;
+      if (!floors[key]) {
+        floors[key] = [];
+        floorNames[key] = 'Étage ' + i;
+      }
+    }
+    redrawPlan();
+  }
+
+  function setAttachFromPick() {
+    var pick = $('ow-bplan-pick');
+    var items = fillPickList._items || [];
+    var id = pick ? String(pick.value || '') : '';
+    attach = null;
+    if (!id) return;
+    items.forEach(function (it) {
+      if (it.id === id) attach = it;
+    });
+    if (!attach) return;
+    var nameEl = $('ow-bplan-name');
+    if (nameEl && !String(nameEl.value || '').trim()) nameEl.value = attach.title;
+    if (attach.source === 'scene') seedFootprint(attach);
+    var api = ow();
+    if (api.map && api.worldToLatLng && attach.x != null) {
+      try { api.map.panTo(api.worldToLatLng(attach.x, attach.y)); } catch (e) {}
+    }
+  }
+
+  function savePlanAt(latlng, extraMeta) {
+    var api = ow();
+    if (!api.saveShape || !latlng) return false;
+    var title = (($('ow-bplan-name') || {}).value || '').trim() || (attach && attach.title) || 'Plan de bâtiment';
     var payload = {
       kind: 'buildingPlan',
       floors: floors,
       floorNames: floorNames,
       current: floorKey
     };
+    extraMeta = extraMeta || {};
+    Object.keys(extraMeta).forEach(function (k) { payload[k] = extraMeta[k]; });
+    if (attach && attach.source === 'scene') payload.sceneId = String(attach.raw && attach.raw.id ? attach.raw.id : attach.id).replace(/^s:/, '');
+    if (attach && attach.source === 'pointed') payload.pointed = true;
     api.saveShape('POINT', [latlng], title, { confirmed: true, color: '#2ecf9a', meta: payload });
     toast('Plan rattaché à la carte.');
+    pendingPin = false;
     setBplanOpen(false);
     return true;
+  }
+
+  function consumeMapClick(latlng) {
+    if (!pendingPin || !latlng) return false;
+    var api = ow();
+    var hit = api.hitSceneAt ? api.hitSceneAt(latlng, true) : null;
+    if (hit) {
+      attach = {
+        id: 's:' + String(hit.id || ''),
+        source: 'scene',
+        title: String(hit.name || hit.kind_label || 'Construction'),
+        x: Number(hit.x),
+        y: Number(hit.y),
+        width: Number(hit.width) || 0,
+        depth: Number(hit.depth) || 0,
+        height: Number(hit.height) || 0,
+        raw: hit
+      };
+      seedFootprint(attach);
+    }
+    return savePlanAt(latlng, hit ? { sceneId: String(hit.id || '') } : {});
+  }
+
+  function attachSceneBuilding(obj, loc) {
+    if (!obj) return;
+    setBplanOpen(true);
+    var src = $('ow-bplan-source');
+    if (src) src.value = 'scene';
+    refreshAttachUi();
+    attach = {
+      id: 's:' + String(obj.id || ''),
+      source: 'scene',
+      title: String(obj.name || obj.kind_label || 'Construction'),
+      x: Number(obj.x),
+      y: Number(obj.y),
+      width: Number(obj.width) || 0,
+      depth: Number(obj.depth) || 0,
+      height: Number(obj.height) || 0,
+      raw: obj
+    };
+    var nameEl = $('ow-bplan-name');
+    if (nameEl) nameEl.value = attach.title;
+    var pick = $('ow-bplan-pick');
+    if (pick) {
+      var found = false;
+      Array.prototype.forEach.call(pick.options, function (opt) {
+        if (opt.value === attach.id) found = true;
+      });
+      if (!found) {
+        var opt = document.createElement('option');
+        opt.value = attach.id;
+        opt.textContent = attach.title;
+        pick.appendChild(opt);
+      }
+      pick.value = attach.id;
+    }
+    seedFootprint(attach);
+    if (loc && ow().map && ow().map.panTo) {
+      try { ow().map.panTo(loc); } catch (e2) {}
+    }
+    toast('Construction retenue. Dessinez l’étage, puis enregistrez.');
   }
 
   function escapeHtml(value) {
@@ -411,11 +659,28 @@
     });
     var savePlan = $('ow-bplan-save');
     if (savePlan) savePlan.addEventListener('click', function () {
-      pendingPin = true;
       var api = ow();
+      var src = attachSource();
+      if (src === 'pointed' || src === 'scene') {
+        setAttachFromPick();
+        if (!attach || attach.x == null || attach.y == null) {
+          toast(src === 'pointed' ? 'Choisissez d’abord un bâtiment désigné.' : 'Choisissez d’abord une construction relevée.');
+          return;
+        }
+        var ll = api.worldToLatLng ? api.worldToLatLng(attach.x, attach.y) : null;
+        savePlanAt(ll, {});
+        return;
+      }
+      pendingPin = true;
       if (api.setTool) api.setTool('cursor', true);
       toast('Cliquez le bâtiment sur la carte pour y rattacher le plan.');
     });
+    var sourceSel = $('ow-bplan-source');
+    if (sourceSel) sourceSel.addEventListener('change', refreshAttachUi);
+    var searchEl = $('ow-bplan-search');
+    if (searchEl) searchEl.addEventListener('input', fillPickList);
+    var pickEl = $('ow-bplan-pick');
+    if (pickEl) pickEl.addEventListener('change', setAttachFromPick);
     var exportBtn = $('ow-btn-export');
     if (exportBtn) exportBtn.addEventListener('click', function () { setExportOpen(true); });
     var exportClose = $('ow-export-close');
@@ -444,7 +709,8 @@
 
   window.OverwatchTacmap = {
     consumeMapClick: consumeMapClick,
-    isPinning: function () { return pendingPin; }
+    isPinning: function () { return pendingPin; },
+    attachSceneBuilding: attachSceneBuilding
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

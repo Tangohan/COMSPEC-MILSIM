@@ -195,11 +195,59 @@ foreach ($relays as $r) {
                         $alive = !empty($relay['alive']);
                         $range = (int) round((float) ($relay['range_m'] ?? 0));
                         $seen = trim((string) ($relay['last_seen_at'] ?? ''));
+                        $name = trim((string) ($relay['display_name'] ?? ''));
+                        if ($name === '') {
+                            $name = trim((string) ($relay['identity'] ?? ''));
+                        }
+                        if ($name === '') {
+                            $name = (string) ($relay['relay_uid'] ?? 'Relais');
+                        }
+                        $identity = trim((string) ($relay['identity'] ?? ''));
+                        $ip = trim((string) ($relay['ip_addr'] ?? ''));
+                        $gw = trim((string) ($relay['gateway'] ?? ''));
+                        $cert = trim((string) ($relay['certificate'] ?? ''));
+                        $slots = (int) ($relay['slots'] ?? 0);
+                        $used = (int) ($relay['slots_used'] ?? 0);
+                        $power = (int) ($relay['power_w'] ?? 0);
+                        $thru = (float) ($relay['throughput_mbps'] ?? 0);
+                        $relPct = (int) ($relay['reliability_pct'] ?? 0);
+                        $bits = [];
+                        if ((string) ($relay['map_label'] ?? '') !== '') {
+                            $bits[] = (string) $relay['map_label'];
+                        }
+                        if ($identity !== '' && $identity !== $name) {
+                            $bits[] = $identity;
+                        }
+                        if ($range > 0) {
+                            $bits[] = 'portée ' . $range . ' m';
+                        }
+                        if ($alive) {
+                            $bits[] = rtrim(rtrim(number_format($thru, 1, ',', ''), '0'), ',') . ' Mbit/s';
+                            $bits[] = $relPct . ' %';
+                            if ($slots > 0) {
+                                $bits[] = $used . ' / ' . $slots . ' places';
+                            }
+                            if ($power > 0) {
+                                $bits[] = $power . ' W';
+                            }
+                        }
+                        if ($ip !== '') {
+                            $bits[] = 'adresse réseau ' . $ip;
+                        }
+                        if ($gw !== '') {
+                            $bits[] = 'passerelle ' . $gw;
+                        }
+                        if ($cert !== '') {
+                            $bits[] = $cert;
+                        }
+                        if ($seen !== '') {
+                            $bits[] = 'vu ' . $seen;
+                        }
                         ?>
                         <li class="px-5 py-3 flex flex-wrap items-center justify-between gap-2">
                             <div>
-                                <p class="text-sm font-semibold text-slate-900"><?= $h((string) ($relay['relay_uid'] ?? 'Relais')) ?></p>
-                                <p class="text-xs text-slate-500"><?= $h((string) ($relay['map_label'] ?? '')) ?> · portée <?= $range ?> m<?= $seen !== '' ? ' · vu ' . $h($seen) : '' ?></p>
+                                <p class="text-sm font-semibold text-slate-900"><?= $h($name) ?></p>
+                                <p class="text-xs text-slate-500"><?= $h(implode(' · ', $bits)) ?></p>
                             </div>
                             <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold <?= $alive ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800' ?>"><?= $alive ? 'Intact' : 'Hors service' ?></span>
                         </li>

@@ -24,6 +24,16 @@ private _range = _logic getVariable ["RangeM", 2000];
 if (!(_range isEqualType 0)) then { _range = 2000; };
 _range = (_range max 50) min 8000;
 
-[_pos, _range, _name] call comspec_overwatch_connect_fnc_placeAtakRelay;
+private _meta = createHashMap;
+_meta set ["identity", _logic getVariable ["RelayIdentity", _name]];
+_meta set ["ip", _logic getVariable ["RelayIp", ""]];
+_meta set ["gateway", _logic getVariable ["RelayGateway", ""]];
+_meta set ["certificate", _logic getVariable ["RelayCertificate", ""]];
+_meta set ["slots", _logic getVariable ["RelaySlots", 8]];
+_meta set ["power_w", _logic getVariable ["RelayPowerW", 25]];
+_meta set ["throughput_mbps", _logic getVariable ["RelayThroughput", 12]];
+_meta set ["reliability_pct", _logic getVariable ["RelayReliability", 92]];
+
+[_pos, _range, _name, _meta] call comspec_overwatch_connect_fnc_placeAtakRelay;
 deleteVehicle _logic;
 true

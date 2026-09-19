@@ -25,7 +25,7 @@ final class AtakMessageHubAssetTest extends TestCase
         self::assertStringContainsString('class Menu_Property: Menu_Property', $cfg);
         self::assertStringNotContainsString('PAGE_CTRL = "ATAK_Message"', $cfg);
         self::assertStringContainsString('athena_messageHubOnOpened', $cfg);
-        self::assertStringContainsString('1.0.152', $cfg);
+        self::assertStringContainsString('1.0.153', $cfg);
 
         self::assertStringContainsString('P2P — Réseau local', $hub);
         self::assertStringContainsString('Via Athena', $hub);

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.47";
+        private const string ExtensionVersion = "2.0.48";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -7141,7 +7141,15 @@ public static partial class Extension
                 var rz = args[3] ?? "0";
                 var range = args[4] ?? "2000";
                 var alive = (args[5] ?? "1") == "1" || string.Equals(args[5], "true", StringComparison.OrdinalIgnoreCase);
-                var payload = $"{{\"mapId\":{CurrentMapId()},\"relay_uid\":\"{uid}\",\"pos_x\":{rx},\"pos_y\":{ry},\"pos_z\":{rz},\"range_m\":{range},\"alive\":{(alive ? "true" : "false")}}}";
+                var extra = args.Length > 6 ? SanitizeLooseJsonObject(NormalizeArmaJson(args[6] ?? "{}")) : "{}";
+                if (string.IsNullOrWhiteSpace(extra) || extra == "{}") extra = "{}";
+                var extraTrim = extra.Trim();
+                if (extraTrim.StartsWith("{") && extraTrim.EndsWith("}") && extraTrim.Length > 2)
+                    extraTrim = extraTrim.Substring(1, extraTrim.Length - 2);
+                else
+                    extraTrim = "";
+                var extraFrag = extraTrim.Length > 0 ? "," + extraTrim : "";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"relay_uid\":\"{uid}\",\"pos_x\":{rx},\"pos_y\":{ry},\"pos_z\":{rz},\"range_m\":{range},\"alive\":{(alive ? "true" : "false")}{extraFrag}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/relays", payload);
                 return;
             }
