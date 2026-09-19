@@ -195,7 +195,7 @@ if ($atakMapConfig) {
     <a class="overwatch-commandbar__brand" href="<?= htmlspecialchars(url('-ATAK-OVERWATCH-Beta'), ENT_QUOTES, 'UTF-8') ?>"><b>A</b><span>ATHENA<small>OVERWATCH / LIVE</small></span></a>
     <div class="overwatch-commandbar__nav">
       <button type="button" class="is-active" data-overwatch-watchlist>OVERWATCH</button>
-      <button type="button" data-overwatch-tab="chat">COMMS</button>
+      <button type="button" data-overwatch-tab="chat">ORDRE</button>
       <button type="button" data-overwatch-tab="mission">MISSION</button>
       <button type="button" data-overwatch-settings>LAYERS</button>
       <button type="button" data-overwatch-tab="photos">INTEL</button>
@@ -1453,9 +1453,9 @@ if ($atakMapConfig) {
           <span class="atak-section-btn__label">Journal</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
-        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="comms" title="Communications">
+        <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="comms" title="Ordre">
           <span class="atak-section-btn__icon" aria-hidden="true">≋</span>
-          <span class="atak-section-btn__label">Comms</span>
+          <span class="atak-section-btn__label">Ordre</span>
           <span class="atak-section-btn__badge" hidden></span>
         </button>
         <button type="button" class="atak-section-btn" role="tab" aria-selected="false" data-section="support" title="Appuis" onclick="if (window.ATAKPanelChrome) { window.ATAKPanelChrome.activateTab('jtac'); }">

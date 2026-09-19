@@ -46,8 +46,8 @@
       tabs: ['replay']
     },
     comms: {
-      eyebrow: 'ATHENA / COMMS',
-      title: 'Communications',
+      eyebrow: 'ATHENA / ORDRE',
+      title: 'Ordre',
       meta: 'Liaison',
       tabs: ['chat', 'radio', 'liaison']
     },

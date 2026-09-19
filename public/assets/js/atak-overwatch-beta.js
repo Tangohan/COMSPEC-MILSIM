@@ -3959,7 +3959,7 @@
     ['Aller à une grille', 'Carte', function () { setTool('goto'); }],
     ['Anneaux de portée', 'Carte', function () { setTool('range'); }],
     ['Bloc-notes du poste', 'Mission', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'notes' } })); }],
-    ['Ouvrir le tchat opérationnel', 'Comms', function () { openView('comms'); }],
+    ['Ouvrir le tchat opérationnel', 'Ordre', function () { openView('comms'); }],
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
@@ -3987,7 +3987,7 @@
     ['Poser un point à atteindre', 'Carte', function () { setTool('po'); }],
     ['Poser un point de ralliement', 'Carte', function () { setTool('rally'); }],
     ['Transmettre une tâche de groupe', 'Mission', function () { openSquadTaskForm(''); }],
-    ['Envoyer une alerte plein écran', 'Comms', function () { openFullscreenAlertForm(''); }],
+    ['Envoyer une alerte plein écran', 'Ordre', function () { openFullscreenAlertForm(''); }],
     ['Suivre le contact', 'Contacts', function () { followOn = true; var box = document.getElementById('ow-follow'); if (box) box.checked = true; toast('Suivi activé. Ouvrez un contact.'); }],
     ['Annuler le dernier tracé', 'Carte', function () { undoLastShape(); }]
   ];
