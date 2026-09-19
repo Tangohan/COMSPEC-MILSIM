@@ -60,8 +60,8 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         self::assertStringContainsString('uplinkQuiet', $sync);
 
         self::assertStringContainsString('class uplinkQuiet {}', $cfgC);
-        self::assertStringContainsString('1.5.90', $cfgC);
-        self::assertStringContainsString('1.0.141', $cfgA);
+        self::assertStringContainsString('1.5.95', $cfgC);
+        self::assertStringContainsString('1.0.152', $cfgA);
         self::assertStringContainsString('_fnc_markSeen', $orders);
         self::assertStringContainsString('_newOnes select 0', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);

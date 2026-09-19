@@ -18,7 +18,18 @@ private _paint = {
     [] call comspec_overwatch_atak_athena_fnc_athena_updateSettings;
 };
 
+private _scrollTop = {
+    private _page = uiNamespace getVariable ["COMSPEC_ATAK_Settings_group", controlNull];
+    if (isNull _page) exitWith {};
+    private _scroll = _page controlsGroupCtrl 9839;
+    if (isNull _scroll) then { _scroll = _page; };
+    if (!isNull _scroll) then {
+        _scroll ctrlSetScrollValues [0, -1];
+    };
+};
+
 [] call _paint;
+[] call _scrollTop;
 
 if (!isNil "comspec_overwatch_connect_fnc_getFireTeams") then {
     0 spawn {
@@ -30,3 +41,6 @@ if (!isNil "comspec_overwatch_connect_fnc_getFireTeams") then {
 {
     [_paint, [], _x] call CBA_fnc_waitAndExecute;
 } forEach [0.08, 0.25, 0.7, 1.4];
+{
+    [_scrollTop, [], _x] call CBA_fnc_waitAndExecute;
+} forEach [0.08, 0.25];

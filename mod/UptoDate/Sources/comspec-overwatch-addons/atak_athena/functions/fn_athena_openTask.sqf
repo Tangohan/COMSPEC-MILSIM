@@ -9,15 +9,8 @@ if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
 };
 
 // Garantir l’app dans le tiroir avant ouverture
-if (!isNil "BCE_fnc_ATAK_setAPPs_props") then {
-    private _apps = + (profileNamespace getVariable ["BCE_ATAK_APPs", []]);
-    if (!(_apps isEqualType [])) then { _apps = []; };
-    if (!("AtakTask" in _apps)) then {
-        _apps pushBack "AtakTask";
-        profileNamespace setVariable ["BCE_ATAK_APPs", _apps];
-        saveProfileNamespace;
-    };
-    [_apps] call BCE_fnc_ATAK_setAPPs_props;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncAtakApps") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_syncAtakApps;
 };
 
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];

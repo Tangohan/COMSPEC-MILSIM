@@ -86,38 +86,14 @@ if (!isNil "BCE_fnc_getMarkerColor") then {
 // on ré-inscrit l’app et on force le refresh des props (PAGE_CTRL / Opened COMSPEC).
 // Idem pour BII_Identifi (couche SEEK II dans le tiroir ATAK).
 private _ensureAtakApps = {
-    if (isNil "BCE_fnc_ATAK_setAPPs_props") exitWith {};
-
-    private _apps = + (profileNamespace getVariable ["BCE_ATAK_APPs", []]);
-    if !(_apps isEqualType []) then { _apps = []; };
-
-    private _changed = false;
-
-    // Masquer IceMan Groups (Group Messages anglais) — Messagerie COMSPEC suffit
-    if ("Group" in _apps) then {
-        _apps = _apps - ["Group"];
-        _changed = true;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncAtakApps") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_syncAtakApps;
     };
-
-    {
-        private _app = _x;
-        if (isClass (configFile >> "ATAK_APPs" >> _app) && {!(_app in _apps)}) then {
-            _apps pushBack _app;
-            _changed = true;
-        };
-    } forEach ["AtakTask", "AtakComms", "BDA_Report", "BII_Identifi", "AtakNote"];
-
-    if (_changed) then {
-        profileNamespace setVariable ["BCE_ATAK_APPs", _apps];
-        saveProfileNamespace;
-    };
-
-    // Toujours rafraîchir le HashMap props depuis le config (Opened / PAGE_CTRL).
-    [_apps] call BCE_fnc_ATAK_setAPPs_props;
 };
+call _ensureAtakApps;
 {
     [_ensureAtakApps, [], _x] call CBA_fnc_waitAndExecute;
-} forEach [2, 5, 10, 12];
+} forEach [0.5, 2, 5, 10];
 
 // Si IceMan ouvre encore Groups / Group Messages → bascule Messagerie COMSPEC
 // sans relancer toute l’ouverture du téléphone (évite double écran et plantage).
@@ -374,45 +350,53 @@ if (isNil "COMSPEC_ViewshedBridgeEH") then {
     "Iceman_ATAK_MarkersUpdated"
 ];
 
-[{
+private _fncWrapDblClick = {
     if (!isNil "COMSPEC_Wrapped_OnMapDblClick") exitWith {};
     if (isNil "cTab_fnc_onMapDoubleClick") exitWith {};
+    if (isFinal cTab_fnc_onMapDoubleClick) exitWith {
+        COMSPEC_Wrapped_OnMapDblClick = "final";
+    };
     COMSPEC_Wrapped_OnMapDblClick = true;
     missionNamespace setVariable ["COMSPEC_Prev_cTab_onMapDoubleClick", cTab_fnc_onMapDoubleClick];
     cTab_fnc_onMapDoubleClick = {
         private _r = _this call (missionNamespace getVariable ["COMSPEC_Prev_cTab_onMapDoubleClick", {}]);
-        [{
-            if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
-                [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+        private _pos = [0, 0, 0];
+        if (_this isEqualType [] && {(count _this) > 0}) then {
+            private _ctrl = _this select 0;
+            if (!isNull _ctrl) then {
+                private _xC = if ((count _this) > 2) then { _this select 2 } else { 0.5 };
+                private _yC = if ((count _this) > 3) then { _this select 3 } else { 0.5 };
+                _pos = _ctrl ctrlMapScreenToWorld [_xC, _yC];
             };
-        }, [], 0.35] call CBA_fnc_waitAndExecute;
+        };
+        [{
+            params ["_pos"];
+            if (!isNil "comspec_overwatch_connect_fnc_syncNearbyMapMarkers") then {
+                [_pos] call comspec_overwatch_connect_fnc_syncNearbyMapMarkers;
+            } else {
+                if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
+                    [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+                };
+            };
+        }, [_pos], 0.35] call CBA_fnc_waitAndExecute;
         _r
     };
-}, [], 3] call CBA_fnc_waitAndExecute;
-[{
-    if (!isNil "COMSPEC_Wrapped_OnMapDblClick") exitWith {};
-    if (isNil "cTab_fnc_onMapDoubleClick") exitWith {};
-    COMSPEC_Wrapped_OnMapDblClick = true;
-    missionNamespace setVariable ["COMSPEC_Prev_cTab_onMapDoubleClick", cTab_fnc_onMapDoubleClick];
-    cTab_fnc_onMapDoubleClick = {
-        private _r = _this call (missionNamespace getVariable ["COMSPEC_Prev_cTab_onMapDoubleClick", {}]);
-        [{
-            if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
-                [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
-            };
-        }, [], 0.35] call CBA_fnc_waitAndExecute;
-        _r
-    };
-}, [], 10] call CBA_fnc_waitAndExecute;
+};
+[_fncWrapDblClick, [], 3] call CBA_fnc_waitAndExecute;
+[_fncWrapDblClick, [], 10] call CBA_fnc_waitAndExecute;
 
 [{
     [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
 }, 1.5, []] call CBA_fnc_addPerFrameHandler;
 
 // Hook BCE Marker Widget / Dropper → forcer le miroir Athena après pose
-[{
+private _fncWrapPlaceMarker = {
     if (!isNil "COMSPEC_Wrapped_PlaceMarker") exitWith {};
     if (isNil "cTab_fnc_PlaceMarker") exitWith {};
+    if (isFinal cTab_fnc_PlaceMarker) exitWith {
+        // IceMan : fonction verrouillée — clic carte + MarkerCreated prennent le relais
+        COMSPEC_Wrapped_PlaceMarker = "final";
+    };
     COMSPEC_Wrapped_PlaceMarker = true;
     missionNamespace setVariable ["COMSPEC_Prev_cTab_PlaceMarker", cTab_fnc_PlaceMarker];
     cTab_fnc_PlaceMarker = {
@@ -427,60 +411,19 @@ if (isNil "COMSPEC_ViewshedBridgeEH") then {
         };
         [{
             params ["_pos"];
-            if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
-                [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+            if (!isNil "comspec_overwatch_connect_fnc_syncNearbyMapMarkers") then {
+                [_pos] call comspec_overwatch_connect_fnc_syncNearbyMapMarkers;
             } else {
-                {
-                    private _n = _x;
-                    if !([_n] call comspec_overwatch_connect_fnc_isSyncableMapMarker) then { continue };
-                    if ((_n select [0, 1]) isNotEqualTo "_") then { continue };
-                    private _mp = markerPos _n;
-                    if ((_mp distance2D _pos) < 25) then {
-                        [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-                    };
-                } forEach (+allMapMarkers);
-                [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+                if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
+                    [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+                };
             };
-        }, [_pos], 0.2] call CBA_fnc_waitAndExecute;
+        }, [_pos], 0.25] call CBA_fnc_waitAndExecute;
         _r
     };
-}, [], 2] call CBA_fnc_waitAndExecute;
-[{
-    // BCE peut charger après nous
-    if (!isNil "COMSPEC_Wrapped_PlaceMarker") exitWith {};
-    if (isNil "cTab_fnc_PlaceMarker") exitWith {};
-    COMSPEC_Wrapped_PlaceMarker = true;
-    missionNamespace setVariable ["COMSPEC_Prev_cTab_PlaceMarker", cTab_fnc_PlaceMarker];
-    cTab_fnc_PlaceMarker = {
-        private _args = _this;
-        private _prev = missionNamespace getVariable ["COMSPEC_Prev_cTab_PlaceMarker", {}];
-        private _r = _args call _prev;
-        private _pos = [0, 0, 0];
-        if (_args isEqualType []) then {
-            if ((count _args) > 0 && {(_args select 0) isEqualType []}) then {
-                _pos = _args select 0;
-            };
-        };
-        [{
-            params ["_pos"];
-            if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
-                [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
-            } else {
-                {
-                    private _n = _x;
-                    if !([_n] call comspec_overwatch_connect_fnc_isSyncableMapMarker) then { continue };
-                    if ((_n select [0, 1]) isNotEqualTo "_") then { continue };
-                    private _mp = markerPos _n;
-                    if ((_mp distance2D _pos) < 25) then {
-                        [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-                    };
-                } forEach (+allMapMarkers);
-                [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
-            };
-        }, [_pos], 0.2] call CBA_fnc_waitAndExecute;
-        _r
-    };
-}, [], 8] call CBA_fnc_waitAndExecute;
+};
+[_fncWrapPlaceMarker, [], 2] call CBA_fnc_waitAndExecute;
+[_fncWrapPlaceMarker, [], 8] call CBA_fnc_waitAndExecute;
 
 // Après pose TAD Dropper (hors PlaceMarker) : resync rapide des marqueurs `_…_DEFINED`
 [{
@@ -501,7 +444,7 @@ if (isNil "COMSPEC_ViewshedBridgeEH") then {
         if ((_sigMap getOrDefault [_n, ""]) isEqualTo _sig) then { continue };
         _sigMap set [_n, _sig];
         missionNamespace setVariable ["COMSPEC_Athena_BceMarkerQuickSnap", _sigMap, false];
-        [_n, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+        [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
         _dirty = true;
     } forEach _safeMarkers;
     if (_dirty) then {

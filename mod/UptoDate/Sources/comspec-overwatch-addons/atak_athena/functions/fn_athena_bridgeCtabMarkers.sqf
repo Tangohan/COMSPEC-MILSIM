@@ -337,6 +337,24 @@ private _sendMarker = {
     };
     private _type = [_tex] call _typeFromTexture;
     if (_type isEqualTo "") then { _type = "mil_dot"; };
+    // IceMan / BCE : la liste utilisateur peut n’avoir que l’index de catégorie.
+    // Le losange OTAN réel est sur le marqueur carte à la même position.
+    if (_type isEqualTo "mil_dot" || {_type isEqualTo "o_unknown"} || {_type isEqualTo "b_unknown"}) then {
+        private _bestD = 18;
+        {
+            private _d = (markerPos _x) distance2D _pos;
+            if (_d >= _bestD) then { continue };
+            private _mt = toLower (markerType _x);
+            if ((_mt select [0, 2]) in ["o_", "b_", "n_", "c_"]) then {
+                _bestD = _d;
+                _type = markerType _x;
+                private _mc = markerColor _x;
+                if (_mc isNotEqualTo "" && {_mc isNotEqualTo "Default"}) then { _color = _mc; };
+                private _mtext = markerText _x;
+                if (_mtext isNotEqualTo "") then { _textRaw = _mtext; };
+            };
+        } forEach (+allMapMarkers);
+    };
     private _groupSize = [_sizeTex] call _groupFromSizeTex;
     private _drawSize = if ((count _data) > 7 && {(_data select 7) isEqualType 0}) then { _data select 7 } else { 1 };
 

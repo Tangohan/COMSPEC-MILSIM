@@ -511,6 +511,20 @@ final class ConfigurationUpdateCatalog
                 isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
                 isSatisfied: fn (int $tenantId): bool => $p->hasOverwatchServerControlReviewed($tenantId),
             ),
+            new ConfigurationUpdateDefinition(
+                code: 'ATAK_COMMAND_ALERT_RBAC_V1',
+                title: 'Alerte plein écran du poste',
+                description: 'L’alerte qui recouvre l’écran de tous les téléphones n’est plus ouverte à chaque compte connecté. Attribuez-la aux fonctions de commandement dans les droits de la communauté.',
+                level: ConfigurationUpdateDefinition::LEVEL_RECOMMENDED,
+                configurePath: 'back-office/roles-permissions',
+                estimateMinutes: 4,
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 94,
+                isApplicable: fn (int $tenantId): bool => $p->atakApplicable($tenantId),
+                isSatisfied: fn (int $tenantId): bool => $p->hasAtakCommandAlertAssigned($tenantId),
+            ),
         ];
     }
 

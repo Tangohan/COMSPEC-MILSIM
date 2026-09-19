@@ -87,7 +87,11 @@ if (!isNull _overlayCam && {_feedId isEqualTo ""}) then {
         _feedId = format ["drone:%1", _netId];
     };
 };
-private _capturedAt = str (floor time);
+// Horloge réelle (Unix), pas `time` (secondes depuis le briefing → année 1970 au poste).
+private _wall = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
+private _unix = floor (_wall - (2440588 * 86400));
+if (_unix < 1000000000) then { _unix = 0; };
+private _capturedAt = str _unix;
 private _unitName = if (_feedId isEqualTo "") then { name _unit } else { _feedId };
 if (!isNull _overlayHost) then {
     private _hostName = name _overlayHost;

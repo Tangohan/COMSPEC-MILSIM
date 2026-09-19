@@ -17,6 +17,23 @@
   var DRAW_WIDTH_KEY = 'athena:overwatch-draw-width';
   var TILE_CACHE = 'athena-overwatch-tiles-v1';
   var LABEL_SIZE_KEY = 'athena:overwatch-label-size';
+
+  function proxiedTilePattern(pattern) {
+    if (window.OverwatchTheaterProjection && window.OverwatchTheaterProjection.proxiedTilePattern) {
+      return window.OverwatchTheaterProjection.proxiedTilePattern(pattern);
+    }
+    var raw = String(pattern || '');
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    try {
+      if (new URL(raw, window.location.href).hostname === window.location.hostname) return raw;
+    } catch (e0) {}
+    var api = String(window.ATAK_API_BASE || '').replace(/\/$/, '');
+    var encoded = encodeURIComponent(raw)
+      .replace(/%7Bz%7D/gi, '{z}')
+      .replace(/%7Bx%7D/gi, '{x}')
+      .replace(/%7By%7D/gi, '{y}');
+    return api + '/api/atak/tiles?u=' + encoded;
+  }
   var ICON_SIZE_KEY = 'athena:overwatch-icon-size';
   var SETTINGS_COLLAPSED_KEY = 'athena:overwatch-settings-collapsed';
   var CHAT_READ_KEY = 'athena:ow-chat-read-v1';
@@ -43,6 +60,7 @@
   var medevacs = [];
   var zoneAlerts = [];
   var selected = null;
+  var bftSectState = { live: false, offline: false };
   var ctxTarget = null;
   var lastRx = 0;
   var requestStarted = 0;
@@ -67,6 +85,9 @@
   var losLayer = null;
   var losGroups = [];
   var lastShapeId = 0;
+  var drawMode = false;
+  var shapeUndoStack = [];
+  var shapeRedoStack = [];
   var poRows = [];
   var poLayers = [];
   var poAnnounced = {};
@@ -76,6 +97,16 @@
   var RALLY_RADIUS_M = 50;
   var groupTasks = [];
   var canIssueGroupTasks = true;
+  var canIssueAlert = !!(window.ATAK_CAPS && window.ATAK_CAPS.canIssueAlert);
+  var lastClickWorld = null;
+  var lastClickGrid = '';
+  var sceneRows = [];
+  var sceneCanvas = null;
+  var sceneCtx = null;
+  var sceneFetchTimer = 0;
+  var sceneDrawFrame = 0;
+  var lastSceneObject = null;
+  var measureKeepLayer = null;
   var lastTaskSelectSig = '';
   var lastFsSelectSig = '';
   var terminals = [];
@@ -125,7 +156,8 @@
 
   var baseTileLayer = null;
   if (config.tilePattern) {
-    baseTileLayer = L.tileLayer(config.tilePattern, {
+    var tilePattern = proxiedTilePattern(config.tilePattern);
+    baseTileLayer = L.tileLayer(tilePattern, {
       tileSize: Number(config.tileSize || 212),
       minZoom: Number(config.minZoom || 0),
       maxZoom: maxZoom,
@@ -266,6 +298,52 @@
     if (!shown) return '';
     return '<span>' + escapeHtml(label) + '</span><span' + (mono ? ' class="ow-mono"' : '') + '>' + escapeHtml(shown) + '</span>';
   }
+  function statCell(label, value, opts) {
+    opts = opts || {};
+    var shown = displayValue(value) || '—';
+    var cls = 'ow-stat-v' + (opts.mono ? ' is-mono' : '') + (opts.dim ? ' is-dim' : '');
+    return '<div class="ow-stat"><div class="ow-stat-k">' + escapeHtml(label) + '</div><div class="' + cls + '">' +
+      escapeHtml(shown) + '</div></div>';
+  }
+  function pillHtml(text, kind) {
+    if (!text) return '';
+    return '<span class="ow-pill is-' + escapeHtml(kind || 'ok') + '">' + escapeHtml(text) + '</span>';
+  }
+  function discBlock(title, inner, warn) {
+    return '<details class="ow-disc">' +
+      '<summary' + (warn ? ' class="is-warn"' : '') + '>' + escapeHtml(title) +
+      '<span class="ow-disc-car" aria-hidden="true">▾</span></summary>' +
+      '<div class="ow-disc-body">' + inner + '</div></details>';
+  }
+  function btnIcon(d) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' + d + '</svg>';
+  }
+  function clearDrawerContactHead() {
+    var av = document.getElementById('ow-drawer-avatar');
+    if (av) {
+      av.hidden = true;
+      av.innerHTML = '';
+      av.className = 'ow-drawer-avatar';
+    }
+  }
+  function setDrawerContactHead(unit) {
+    var av = document.getElementById('ow-drawer-avatar');
+    var disc = isDisconnected(unit);
+    var sideId = side(unit);
+    if (av) {
+      av.hidden = false;
+      av.innerHTML = escapeHtml(initials(callsign(unit))) + '<span class="ow-bft-status"></span>';
+      av.className = 'ow-drawer-avatar' +
+        (disc ? ' is-offline' : ' is-live') +
+        (sideId === 'hostile' ? ' is-hostile' : '') +
+        (sideId === 'unknown' ? ' is-unknown' : '');
+    }
+    var role = clean(unit.role, '');
+    var grp = group(unit);
+    var sub = [role, grp && grp !== '—' ? grp : ''].filter(Boolean).join(' · ');
+    document.getElementById('ow-drawer-kicker').textContent = sub || 'Contact';
+    document.getElementById('ow-drawer-title').textContent = callsign(unit);
+  }
   function terminalFor(unit) {
     var cs = callsign(unit).toLowerCase();
     var extra = extraOf(unit);
@@ -328,10 +406,11 @@
   function groupTaskFormHtml() {
     return '<form class="ow-form-grid ow-group-task-form">' +
       '<label>Groupe<select name="squad" required><option value="">Choisir un groupe</option></select></label>' +
+      '<div class="ow-field-row">' +
       '<label>Tâche<select name="type">' +
       '<option value="MOVE">Se déplacer</option>' +
-      '<option value="HOLD">Tenir la position</option>' +
-      '<option value="RECON">Reconnaissance</option>' +
+      '<option value="HOLD">Tenir</option>' +
+      '<option value="RECON">Reconnaître</option>' +
       '<option value="QRF">Force de réaction</option>' +
       '</select></label>' +
       '<label>Urgence<span class="ow-select ow-select--prio"><i class="ow-prio-dot" data-prio-dot></i><select name="priority">' +
@@ -340,33 +419,40 @@
       '<option value="URGENT">Urgente</option>' +
       '<option value="CONTACT">Contact</option>' +
       '</select></span></label>' +
-      '<label>Point à atteindre<select name="po"><option value="">Aucun</option></select></label>' +
+      '</div>' +
       '<label>Consignes<textarea name="payload" maxlength="800" placeholder="Ce que le groupe doit faire…"></textarea></label>' +
-      '<button class="ow-primary" type="submit">Transmettre la tâche</button></form>' +
-      '<p class="ow-kicker">Tâches transmises</p>' +
-      '<div class="ow-group-task-list"></div>';
+      '<label>Point à atteindre<select name="po"><option value="">Aucun</option></select></label>' +
+      '<button class="ow-primary" type="submit">' +
+      btnIcon('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>') +
+      'Transmettre la tâche</button></form>' +
+      discBlock('Tâches transmises', '<div class="ow-group-task-list"></div>');
   }
   function fullscreenAlertFormHtml(preset) {
     var locked = preset && preset.dest ? '<input type="hidden" name="dest" value="' + escapeHtml(preset.dest) + '">' : '';
     var destField = preset && preset.dest ? '' :
       '<label>Destinataire<select name="dest" required><option value="all">Tous les opérateurs</option></select></label>';
+    var ph = preset && preset.solo
+      ? 'Ce que l’opérateur doit voir sur l’écran…'
+      : 'Ce que les opérateurs doivent voir…';
     return '<form class="ow-form-grid ow-fs-alert-form">' + locked + destField +
-      '<label>Message<textarea name="message" required maxlength="280" placeholder="Ce que les opérateurs doivent voir sur l’écran…"></textarea></label>' +
-      '<button class="ow-primary" type="submit">Envoyer l’alerte plein écran</button></form>' +
-      '<p class="ow-help">Le message recouvre tout l’écran du téléphone, ouvert ou en position mini. Il disparaît après quelques secondes, ou dès que l’opérateur appuie sur Fermer.</p>';
+      '<label>' + (preset && preset.solo ? '' : 'Message') +
+      '<textarea name="message" required maxlength="280" placeholder="' + escapeHtml(ph) + '"></textarea></label>' +
+      '<button class="ow-primary" type="submit">Envoyer l’alerte</button></form>' +
+      '<p class="ow-help">Recouvre l’écran du téléphone jusqu’à fermeture ou expiration.</p>';
   }
   function fillFsAlertSelects(force) {
     var squads = listSquads();
     var friends = units.filter(function (unit) { return side(unit) !== 'hostile'; });
     var sig = squads.map(function (row) { return row.key; }).join('|') + '#' +
-      friends.map(function (unit) { return callsign(unit); }).join('|') + '#' + (canIssueGroupTasks ? '1' : '0');
+      friends.map(function (unit) { return callsign(unit); }).join('|') + '#' + (canIssueGroupTasks ? '1' : '0') +
+      '#' + (canIssueAlert ? '1' : '0');
     if (!force && sig === lastFsSelectSig) return;
     lastFsSelectSig = sig;
     document.querySelectorAll('.ow-fs-alert-form').forEach(function (form) {
       var destSel = form.querySelector('select[name="dest"]');
       var prev = destSel ? destSel.value : '';
       if (destSel) {
-        destSel.innerHTML = '<option value="all">Tous les opérateurs</option>' +
+        destSel.innerHTML = (canIssueAlert ? '<option value="all">Tous les opérateurs</option>' : '') +
           squads.map(function (row) {
             return '<option value="squad:' + escapeHtml(row.key) + '">Groupe · ' + escapeHtml(row.label) +
               ' · ' + row.members.length + ' opérateur' + (row.members.length > 1 ? 's' : '') + '</option>';
@@ -375,7 +461,9 @@
             return '<option value="unit:' + escapeHtml(callsign(unit)) + '">Opérateur · ' +
               escapeHtml(callsign(unit)) + '</option>';
           }).join('');
-        if (prev && Array.prototype.some.call(destSel.options, function (opt) { return opt.value === prev; })) {
+        if (destSel.options.length === 0) {
+          destSel.innerHTML = '<option value="" disabled selected>Aucun destinataire disponible</option>';
+        } else if (prev && Array.prototype.some.call(destSel.options, function (opt) { return opt.value === prev; })) {
           destSel.value = prev;
         }
       }
@@ -388,6 +476,15 @@
           hint.className = 'ow-help ow-fs-denied';
           hint.textContent = 'Votre profil ne permet pas d’envoyer une alerte depuis le poste.';
           form.appendChild(hint);
+        }
+      } else if (!canIssueAlert) {
+        if (!hint) {
+          hint = document.createElement('p');
+          hint.className = 'ow-help ow-fs-denied';
+          hint.textContent = 'L’alerte à tous les opérateurs est réservée au commandement. Vous pouvez encore viser un groupe ou un indicatif.';
+          form.appendChild(hint);
+        } else {
+          hint.textContent = 'L’alerte à tous les opérateurs est réservée au commandement. Vous pouvez encore viser un groupe ou un indicatif.';
         }
       } else if (hint) {
         hint.remove();
@@ -407,7 +504,7 @@
   function mountFsAlertPanel() {
     var host = document.getElementById('ow-fs-alert-host');
     if (!host || host.dataset.ready === '1') return;
-    host.innerHTML = '<p class="ow-kicker ow-fs-kicker">Alerte plein écran</p>' + fullscreenAlertFormHtml();
+    host.innerHTML = discBlock('Alerte plein écran', fullscreenAlertFormHtml(), true);
     host.dataset.ready = '1';
     bindFsAlertForms(host);
     fillFsAlertSelects(true);
@@ -429,6 +526,10 @@
     var dest = String(data.get('dest') || 'all');
     var message = String(data.get('message') || '').trim();
     if (!message) { toast('Saisissez le message à afficher sur l’écran.'); return; }
+    if (dest === 'all' && !canIssueAlert) {
+      toast('Votre fonction ne permet pas d’alerter tous les opérateurs.');
+      return;
+    }
     var targetType = 'all';
     var targetRef = '';
     var targetLabel = 'Tous les opérateurs';
@@ -536,17 +637,22 @@
   function renderGroupTaskLists() {
     var html = groupTasks.slice(0, 12).map(function (row) {
       var status = String(row.status || '').toUpperCase();
-      var open = status !== 'CANCELLED' && status !== 'FAILED';
+      var open = status !== 'CANCELLED' && status !== 'FAILED' && status !== 'DONE';
       var text = String(row.payload_display || '').trim();
+      var who = String(row.ack_by || row.status_by || '').trim();
+      var statusText = clean(row.status_label, 'Transmis');
+      if (who && (status === 'ACK' || status === 'EXEC' || status === 'DONE' || status === 'DELIVERED')) {
+        statusText += ' · ' + who;
+      }
       return '<div class="ow-event"><span>' + escapeHtml(clean(row.type_label, 'Tâche')) +
         ' · ' + escapeHtml(clean(row.target_label, 'Groupe')) +
-        '</span><strong>' + escapeHtml(clean(row.status_label, 'Émis')) +
+        '</span><strong>' + escapeHtml(statusText) +
         (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') +
         '</strong>' +
         (open && canIssueGroupTasks ? '<button type="button" class="ow-tag" data-cancel-task="' +
           escapeHtml(String(row.id || '')) + '">Annuler</button>' : '') +
         '</div>' + (text ? '<p class="ow-help">' + escapeHtml(text) + '</p>' : '');
-    }).join('') || '<p class="ow-help">Aucune tâche de groupe transmise pour cette mission.</p>';
+    }).join('') || '<p class="ow-help">Aucune tâche transmise pour cette mission.</p>';
     document.querySelectorAll('.ow-group-task-list').forEach(function (host) {
       host.innerHTML = html;
     });
@@ -648,6 +754,8 @@
       });
       if (payload && payload.canIssue === false) canIssueGroupTasks = false;
       else if (payload && payload.canIssue === true) canIssueGroupTasks = true;
+      if (payload && payload.canIssueAlert === false) canIssueAlert = false;
+      else if (payload && payload.canIssueAlert === true) canIssueAlert = true;
       fillGroupTaskSelects();
     }).catch(function () {});
   }
@@ -798,6 +906,138 @@
   function rectLatLngs(a, b) {
     return [a, L.latLng(a.lat, b.lng), b, L.latLng(b.lat, a.lng)];
   }
+  function ellipseLatLngs(a, b, steps) {
+    var cx = (a.lng + b.lng) / 2;
+    var cy = (a.lat + b.lat) / 2;
+    var rx = Math.abs(b.lng - a.lng) / 2;
+    var ry = Math.abs(b.lat - a.lat) / 2;
+    var out = [];
+    var n = steps || 48;
+    var i;
+    for (i = 0; i < n; i += 1) {
+      var ang = (i / n) * Math.PI * 2;
+      out.push(L.latLng(cy + Math.sin(ang) * ry, cx + Math.cos(ang) * rx));
+    }
+    return out;
+  }
+  function parseShapeMeta(shape) {
+    var meta = shape && shape.meta;
+    if (typeof meta === 'string') {
+      try { meta = JSON.parse(meta); } catch (eMeta) { meta = {}; }
+    }
+    return meta && typeof meta === 'object' ? meta : {};
+  }
+  function natoDash(meta) {
+    if (meta.dash) return String(meta.dash);
+    var nato = String(meta.nato || '');
+    if (nato === 'phase') return '8 6';
+    if (nato === 'sector') return '10 4 2 4';
+    if (nato === 'highlight') return '6 4';
+    return null;
+  }
+  function offsetPerp(aw, bw, dist) {
+    var dx = bw.x - aw.x;
+    var dy = bw.y - aw.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return { x: (-dy / len) * dist, y: (dx / len) * dist };
+  }
+  function arrowHeadPolygon(latlngs, color, wide) {
+    if (!latlngs || latlngs.length < 2) return null;
+    var a = latLngToWorld(latlngs[latlngs.length - 2]);
+    var b = latLngToWorld(latlngs[latlngs.length - 1]);
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var ux = dx / len;
+    var uy = dy / len;
+    var size = wide ? 36 : 18;
+    var spread = wide ? 16 : 8;
+    var tip = worldToLatLng(b.x, b.y);
+    var left = worldToLatLng(b.x - ux * size + (-uy) * spread, b.y - uy * size + ux * spread);
+    var right = worldToLatLng(b.x - ux * size - (-uy) * spread, b.y - uy * size - ux * spread);
+    return L.polygon([tip, left, right], { color: color, fillColor: color, fillOpacity: 1, weight: 1, interactive: false });
+  }
+  function filledAttackLatLngs(latlngs, halfWidth) {
+    if (!latlngs || latlngs.length < 2) return [];
+    var left = [];
+    var right = [];
+    var i;
+    for (i = 0; i < latlngs.length; i += 1) {
+      var a = latLngToWorld(latlngs[Math.max(0, i - 1)]);
+      var b = latLngToWorld(latlngs[Math.min(latlngs.length - 1, i + 1)]);
+      if (i === 0) { a = latLngToWorld(latlngs[0]); b = latLngToWorld(latlngs[1]); }
+      if (i === latlngs.length - 1) { a = latLngToWorld(latlngs[i - 1]); b = latLngToWorld(latlngs[i]); }
+      var off = offsetPerp(a, b, halfWidth);
+      var p = latLngToWorld(latlngs[i]);
+      left.push(worldToLatLng(p.x + off.x, p.y + off.y));
+      right.push(worldToLatLng(p.x - off.x, p.y - off.y));
+    }
+    var last = latLngToWorld(latlngs[latlngs.length - 1]);
+    var prev = latLngToWorld(latlngs[latlngs.length - 2]);
+    var dx = last.x - prev.x;
+    var dy = last.y - prev.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var ux = dx / len;
+    var uy = dy / len;
+    var tip = worldToLatLng(last.x, last.y);
+    var headW = halfWidth * 2.4;
+    var leftH = worldToLatLng(last.x - ux * halfWidth * 2.2 + (-uy) * headW, last.y - uy * halfWidth * 2.2 + ux * headW);
+    var rightH = worldToLatLng(last.x - ux * halfWidth * 2.2 - (-uy) * headW, last.y - uy * halfWidth * 2.2 - ux * headW);
+    return left.concat([leftH, tip, rightH], right.slice().reverse());
+  }
+  function sectorTickLayers(latlngs, color) {
+    var out = [];
+    if (!latlngs || latlngs.length < 2) return out;
+    var i;
+    for (i = 1; i < latlngs.length; i += 1) {
+      var a = latLngToWorld(latlngs[i - 1]);
+      var b = latLngToWorld(latlngs[i]);
+      var dx = b.x - a.x;
+      var dy = b.y - a.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var steps = Math.max(1, Math.floor(len / 90));
+      var s;
+      for (s = 0; s <= steps; s += 1) {
+        var t = s / steps;
+        var px = a.x + dx * t;
+        var py = a.y + dy * t;
+        var off = offsetPerp(a, b, 14);
+        out.push(L.polyline([
+          worldToLatLng(px - off.x, py - off.y),
+          worldToLatLng(px + off.x, py + off.y)
+        ], { color: color, weight: 2, interactive: false }));
+      }
+    }
+    return out;
+  }
+  function geometryToLatLngs(geo) {
+    if (!geo) return [];
+    if (geo.type === 'Point' && geo.coordinates) {
+      return [worldToLatLng(geo.coordinates[0], geo.coordinates[1])];
+    }
+    if (geo.type === 'LineString' && Array.isArray(geo.coordinates)) {
+      return geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); });
+    }
+    var ring = geo.coordinates && geo.coordinates[0] && Array.isArray(geo.coordinates[0][0]) ? geo.coordinates[0] : (geo.coordinates || []);
+    var pts = ring.map(function (p) { return worldToLatLng(p[0], p[1]); });
+    if (pts.length > 1 && pts[0].equals && pts[0].equals(pts[pts.length - 1])) pts.pop();
+    return pts;
+  }
+  function isDrawBarTool(tool) {
+    return /^(draw|arrow|freehand|polygon|highlight|text|measure|axis|attack|phase|sector|assembly|objective)$/.test(tool);
+  }
+  function syncDrawBar() {
+    var bar = document.getElementById('ow-drawbar');
+    if (bar) bar.hidden = !drawMode;
+    if (!bar) return;
+    bar.querySelectorAll('[data-draw]').forEach(function (btn) {
+      var name = btn.getAttribute('data-draw');
+      if (name === 'undo' || name === 'redo') return;
+      btn.classList.toggle('is-active', name === activeTool);
+    });
+    var crayon = document.querySelector('.ow-rail [data-tool="draw"]');
+    if (crayon) crayon.classList.toggle('is-active', drawMode);
+  }
   function convexHull(latlngs) {
     var pts = latlngs.slice().sort(function (a, b) { return a.lng - b.lng || a.lat - b.lat; });
     if (pts.length < 3) return pts;
@@ -823,11 +1063,9 @@
     return !box || box.checked;
   }
   function ageLabel(unit) {
-    var raw = unit.updated_at || unit.last_seen_at || unit.last_seen || unit.captured_at;
-    if (!raw) return '';
-    var t = Date.parse(raw);
-    if (!isFinite(t)) return '';
-    var sec = Math.max(0, Math.round((Date.now() - t) / 1000));
+    var sec = unitAgeSec(unit);
+    if (!Number.isFinite(sec)) return '';
+    sec = Math.max(0, Math.round(sec));
     if (sec < 15) return 'à l’instant';
     if (sec < 60) return 'il y a ' + sec + ' s';
     if (sec < 3600) return 'il y a ' + Math.round(sec / 60) + ' min';
@@ -1302,7 +1540,13 @@
     extra += disc ? ' is-offline' : '';
     extra += (!disc && String(unit.status || '').toLowerCase() === 'delayed') ? ' is-delayed' : '';
     extra += pulse ? ' is-squad-pulse' : '';
-    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + '</span>' : '';
+    var age = ageLabel(unit);
+    var ageChip = '';
+    if (disc || String(unit.status || '').toLowerCase() === 'delayed' || (Number.isFinite(unitAgeSec(unit)) && unitAgeSec(unit) >= 20)) {
+      ageChip = '<span class="ow-marker-age-chip ' + (disc || unitAgeSec(unit) >= 60 ? 'is-stale' : 'is-warn') + '">' +
+        escapeHtml((disc ? 'Dernière position connue' : 'Différé') + (age ? ' · ' + age : '')) + '</span>';
+    }
+    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + ageChip + '</span>' : ageChip;
     var badge = (opts.forceLabel && stackCount > 1) ? '<b class="ow-stack-n">+' + (stackCount - 1) + '</b>' : '';
     return L.divIcon({
       className: 'ow-marker ow-mark-' + prefs.style + extra,
@@ -1314,20 +1558,9 @@
 
   function selectUnit(unit) {
     selected = unit;
-    document.getElementById('ow-drawer-kicker').textContent = 'BFT / Contact';
-    document.getElementById('ow-drawer-title').textContent = callsign(unit);
-    
-    // Utiliser le nouveau panneau détaillé si disponible
-    if (window.OverwatchV3 && window.OverwatchV3.showDetailedContactPanel) {
-      document.getElementById('ow-drawer-body').innerHTML = window.OverwatchV3.showDetailedContactPanel(unit);
-      document.getElementById('ow-drawer').hidden = false;
-      return;
-    }
-    
-    // Fallback sur l'ancien panneau
+    setDrawerContactHead(unit);
     var loc = point(unit);
-    var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '—';
-    var heading = unitHeading(unit);
+    var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '';
     var speed = unitSpeed(unit);
     var alt = unitAlt(unit);
     var extra = extraOf(unit);
@@ -1340,30 +1573,20 @@
       return '<button type="button" class="ow-mate" data-unit-id="' + escapeHtml(unitId(row)) + '"><span>' +
         escapeHtml(callsign(row)) + '</span><strong>' + formatMeters(dist) + ' · ' + cap + '°</strong></button>';
     }).join('');
-    var span = 0;
-    mates.concat([unit]).forEach(function (row) {
-      var a = point(row);
-      mates.concat([unit]).forEach(function (other) {
-        var b = point(other);
-        if (a && b) span = Math.max(span, map.distance(a, b));
-      });
-    });
     var stackedHere = unitsAtSamePoint(unit);
     var stackedHtml = stackedHere.map(function (row) {
       return '<button type="button" class="ow-mate" data-unit-id="' + escapeHtml(unitId(row)) + '"><span>' +
         escapeHtml(callsign(row)) + '</span><strong>' + escapeHtml(group(row)) + '</strong></button>';
     }).join('');
-    var certLabel = 'non transmis';
-    var certRef = '';
+    var certLabel = '';
+    var certKind = 'ok';
     var certExp = '';
     if (term) {
       var csSt = String(term.certificate_status || '').toLowerCase();
-      if (csSt === 'revoked') certLabel = 'Révoqué';
-      else if (csSt === 'expired') certLabel = 'Expiré';
-      else if (csSt === 'active' || csSt === 'issued') certLabel = 'Actif';
-      else if (String(term.certificate_ref || '').trim()) certLabel = 'Émis';
-      else certLabel = 'Aucun';
-      certRef = String(term.certificate_ref || '').trim();
+      if (csSt === 'revoked') { certLabel = 'Révoqué'; certKind = 'bad'; }
+      else if (csSt === 'expired') { certLabel = 'Expiré'; certKind = 'bad'; }
+      else if (csSt === 'active' || csSt === 'issued') { certLabel = 'Actif'; certKind = 'ok'; }
+      else if (String(term.certificate_ref || '').trim()) { certLabel = 'Émis'; certKind = 'ok'; }
       certExp = String(term.certificate_expires_at || '').trim();
       if (certExp) {
         var expMs = Date.parse(certExp);
@@ -1371,59 +1594,51 @@
       }
     }
     var ip = extra.client_ip || extra.ip || extra.public_ip || extra.network || (term && term.last_client_ip) || '';
-    var batteryShown = displayValue(extra.battery != null ? extra.battery : unit.battery);
-    if (batteryShown && batteryShown.indexOf('%') < 0) batteryShown += ' %';
-    var health = displayValue(extra.health != null ? extra.health : unit.health);
-    if (/^(ok|healthy|fine)$/i.test(health)) health = 'Indemne';
-    var radio = displayValue(extra.toc_radio || extra.radio_freq || extra.radio || '');
+    var lastTerm = term && term.last_seen_at ? formatSeen(term.last_seen_at) : '';
     var compromiseRaw = term && term.compromise_state ? String(term.compromise_state).toLowerCase() : '';
     var compromise = '';
+    var compromiseKind = 'ok';
     if (compromiseRaw === 'none') compromise = 'Intègre';
-    else if (compromiseRaw === 'captured') compromise = 'Saisi';
-    else if (compromiseRaw === 'compromised') compromise = 'Compromis';
-    var phone = !!(extra.phone_geoloc || extra.source === 'phone');
-    var geoloc = phone ? 'Géolocalisation téléphone' : (loc ? 'Liaison Arma' : '');
-    var lastTerm = term && term.last_seen_at ? formatSeen(term.last_seen_at) : '';
-    var statusRaw = String(unit.status || '').toLowerCase();
-    var liaison = statusRaw === 'offline' ? 'Hors liaison' : (statusRaw === 'delayed' ? 'Différé' : linkLabel(unit));
-    document.getElementById('ow-drawer-body').innerHTML =
-      '<div class="ow-kv">' +
-      kv('Type', clean(unit.type || unit.role, 'BFT')) +
-      kv('Groupe', group(unit)) +
-      kv('Rôle', clean(unit.role, '')) +
-      kv('Liaison', liaison) +
-      kv('Transmission', txLabel(unit)) +
-      kv('État', health) +
-      kv('Cap', heading != null ? Math.round(heading) + '°' : '') +
-      kv('Vitesse', speed != null ? Math.round(speed * 3.6) + ' km/h' : '') +
-      kv('Altitude', alt != null ? Math.round(alt) + ' m' : '') +
-      kv('Dernière pos.', ageLabel(unit) || '') +
-      kv('Grille', clean(unit.grid || unit.mgrs, grid), true) +
-      kv('Source', clean(unit.source, phone ? 'Téléphone ATAK' : 'Athena')) +
-      kv('Géoloc', geoloc) +
+    else if (compromiseRaw === 'captured') { compromise = 'Saisi'; compromiseKind = 'bad'; }
+    else if (compromiseRaw === 'compromised') { compromise = 'Compromis'; compromiseKind = 'bad'; }
+    var lastPos = ageLabel(unit) || (isDisconnected(unit) ? 'hors liaison' : 'à l’instant');
+    var phoneHtml = '<div class="ow-stat-grid">' +
+      (certLabel ? '<div class="ow-stat"><div class="ow-stat-k">Certificat</div>' + pillHtml(certLabel, certKind) + '</div>' : '') +
+      (compromise ? '<div class="ow-stat"><div class="ow-stat-k">Intégrité</div>' + pillHtml(compromise, compromiseKind) + '</div>' : '') +
+      (certExp ? statCell('Échéance', certExp) : '') +
+      (lastTerm ? statCell('Activité', lastTerm, { dim: true }) : '') +
       '</div>' +
-      '<p class="ow-kicker">Téléphone ATAK</p><div class="ow-kv">' +
-      kv('Certificat', certLabel) +
-      kv('Référence', certRef, true) +
-      kv('Échéance', certExp) +
-      kv('Dernière activité', lastTerm) +
-      kv('Adresse réseau', maskIpForDisplay(ip), true) +
-      kv('Intégrité', compromise) +
-      kv('Batterie', batteryShown) +
-      kv('Radio', radio) +
-      '</div>' +
+      (maskIpForDisplay(ip) ? '<div class="ow-stat ow-stat-block">' +
+        '<div class="ow-stat-k">Adresse réseau</div><div class="ow-stat-v is-mono">' +
+        escapeHtml(maskIpForDisplay(ip)) + '</div></div>' : '') +
       (stackedHere.length ? '<p class="ow-kicker">Au même point</p><div class="ow-mate-list">' + stackedHtml + '</div>' +
         '<p class="ow-help">Plusieurs contacts occupent ce lieu. Sur la carte, ils sont écartés autour du point réel.</p>' : '') +
-      (mates.length ? '<p class="ow-kicker">Même groupe</p><p class="ow-help">' + mates.length + ' autre' + (mates.length > 1 ? 's' : '') + (span ? ' · dispersion ' + formatMeters(span) : '') + '</p><div class="ow-mate-list">' + mateHtml + '</div>' : '<p class="ow-help">Aucun autre membre de groupe localisé.</p>') +
-      '<div class="ow-drawer-actions">' +
-      '<button type="button" class="ow-primary" data-center-selected>Centrer sur la carte</button>' +
-      '<button type="button" class="ow-secondary" data-follow-selected>' +
-      (followOn ? 'Arrêter le suivi' : 'Suivre ce contact') + '</button>' +
-      (mates.length ? '<button type="button" class="ow-secondary" data-fit-squad>Cadrer le groupe</button>' : '') +
-      (squadKey(unit) ? '<button type="button" class="ow-secondary" data-squad-task-from-unit>Tâche au groupe</button>' : '') +
+      (mates.length
+        ? '<p class="ow-kicker">Même groupe</p><div class="ow-mate-list">' + mateHtml + '</div>' +
+          '<button type="button" class="ow-secondary" data-fit-squad>Cadrer le groupe</button>'
+        : '<p class="ow-note">Aucun autre membre du groupe localisé.</p>');
+    document.getElementById('ow-drawer-body').innerHTML =
+      '<div class="ow-stat-grid">' +
+      statCell('Vitesse', speed != null ? Math.round(speed * 3.6) + ' km/h' : '') +
+      statCell('Altitude', alt != null ? Math.round(alt) + ' m' : '') +
+      statCell('Dernière position', lastPos, { dim: true }) +
+      statCell('Grille', clean(unit.grid || unit.mgrs, grid), { mono: true }) +
       '</div>' +
-      '<p class="ow-kicker ow-fs-kicker">Alerte plein écran</p>' +
-      fullscreenAlertFormHtml({ dest: 'unit:' + callsign(unit) });
+      '<button type="button" class="ow-primary ow-btn-icon" data-center-selected>' +
+      btnIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>') +
+      'Centrer sur la carte</button>' +
+      '<div class="ow-btn-row">' +
+      '<button type="button" class="ow-secondary ow-btn-icon" data-follow-selected>' +
+      btnIcon('<path d="M9 18l6-6-6-6"/>') +
+      (followOn ? 'Arrêter' : 'Suivre') + '</button>' +
+      (squadKey(unit)
+        ? '<button type="button" class="ow-secondary ow-btn-icon" data-squad-task-from-unit>' +
+          btnIcon('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') +
+          'Tâche</button>'
+        : '') +
+      '</div>' +
+      discBlock('Téléphone ATAK', phoneHtml) +
+      discBlock('Alerte plein écran', fullscreenAlertFormHtml({ dest: 'unit:' + callsign(unit), solo: true }), true);
     document.getElementById('ow-drawer').hidden = false;
     bindFsAlertForms(document.getElementById('ow-drawer'));
     fillFsAlertSelects(true);
@@ -1648,41 +1863,125 @@
     }
   }
 
+  function isBftRelay(unit) {
+    var extra = extraOf(unit);
+    if (unit.gateway_partner || extra.via_relay || extra.radio_relay) return true;
+    var link = String(unit.link_state || extra.link_state || extra.linkState || '').toLowerCase();
+    if (link === 'degraded') return true;
+    if (String(unit.status || '').toLowerCase() === 'delayed') return true;
+    var age = unitAgeSec(unit);
+    return Number.isFinite(age) && age >= 20;
+  }
+  function bftAgeText(unit) {
+    var age = ageLabel(unit);
+    if (isDisconnected(unit)) {
+      if (!age) return 'hors liaison';
+      if (age === 'à l’instant') return 'déconnecté à l’instant';
+      return 'déconnecté ' + age;
+    }
+    if (!age || age === 'à l’instant') return 'actif à l’instant';
+    return age;
+  }
+  function bftSquadStats(key) {
+    var members = units.filter(function (unit) {
+      return !tooOldToShow(unit) && (squadKey(unit) || 'none') === key;
+    });
+    var live = 0;
+    members.forEach(function (unit) { if (!isDisconnected(unit)) live += 1; });
+    return { live: live, total: members.length };
+  }
+  function bftGroupHtml(key, rows, selectedId) {
+    var stats = bftSquadStats(key);
+    var liveHere = rows.some(function (unit) { return !isDisconnected(unit); });
+    var headName = key === 'none' ? 'Sans groupe' : group(rows[0]);
+    var contacts = rows.slice().sort(function (a, b) {
+      return callsign(a).localeCompare(callsign(b), 'fr', { sensitivity: 'base' });
+    }).map(function (unit) {
+      return bftContactHtml(unit, selectedId);
+    }).join('');
+    return '<div class="ow-bft-group"><div class="ow-bft-group-head">' +
+      '<span class="ow-bft-dot' + (liveHere ? ' is-live' : '') + '"></span>' +
+      '<span class="ow-bft-group-name">' + escapeHtml(headName) + '</span>' +
+      '<span class="ow-bft-group-n">' + rows.length + '/' + stats.total + '</span></div>' +
+      contacts + '</div>';
+  }
+  function bftContactHtml(unit, selectedId) {
+    var disc = isDisconnected(unit);
+    var sideId = side(unit);
+    var role = clean(unit.role, '');
+    var relay = !disc && isBftRelay(unit);
+    var cls = 'ow-bft-contact' +
+      (disc ? ' is-offline' : ' is-live') +
+      (sideId === 'hostile' ? ' is-hostile' : '') +
+      (sideId === 'unknown' ? ' is-unknown' : '') +
+      (selectedId === unitId(unit) ? ' is-active' : '');
+    var chan = disc ? '' : ('<span class="ow-bft-chan ' + (relay ? 'is-relay' : 'is-direct') + '">' +
+      (relay ? 'RELAIS' : 'DIRECT') + '</span>');
+    var locate = disc
+      ? '<button type="button" class="ow-bft-locate" data-bft-locate="' + escapeHtml(unitId(unit)) +
+        '" title="Centrer la carte sur la dernière position connue" aria-label="Dernière position connue">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>'
+      : '';
+    var grp = group(unit);
+    return '<div class="' + cls + '" data-unit-id="' + escapeHtml(unitId(unit)) + '" role="button" tabindex="0">' +
+      '<span class="ow-bft-avatar">' + escapeHtml(initials(callsign(unit))) + '<span class="ow-bft-status"></span></span>' +
+      '<span class="ow-bft-info"><span class="ow-bft-top"><span class="ow-bft-name">' + escapeHtml(callsign(unit)) + '</span>' +
+      (role ? '<span class="ow-bft-role">' + escapeHtml(role) + '</span>' : '') + '</span>' +
+      '<span class="ow-bft-bottom"><span>' + escapeHtml(grp) + '</span><span class="ow-bft-sep"></span>' +
+      '<span class="ow-bft-time">' + escapeHtml(bftAgeText(unit)) + '</span></span></span>' +
+      chan + locate + '</div>';
+  }
+  function bftSectionHtml(kind, rows, selectedId) {
+    if (!rows.length) return '';
+    var collapsed = !!bftSectState[kind];
+    var groups = {};
+    rows.forEach(function (unit) {
+      var key = squadKey(unit) || 'none';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(unit);
+    });
+    var keys = Object.keys(groups).sort(function (a, b) {
+      if (a === 'none') return 1;
+      if (b === 'none') return -1;
+      return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+    });
+    var label = kind === 'live' ? 'En liaison' : 'Hors liaison';
+    var count = kind === 'live' ? (rows.length + ' en ligne') : String(rows.length);
+    return '<div class="ow-bft-sect' + (collapsed ? ' is-collapsed' : '') + '">' +
+      '<button type="button" class="ow-bft-sect-head" data-bft-sect="' + kind + '">' +
+      '<span class="ow-bft-car">▾</span><span class="ow-bft-sect-label' + (kind === 'live' ? ' is-on' : ' is-off') + '">' +
+      label + '</span><span class="ow-bft-sect-count">' + escapeHtml(count) + '</span></button>' +
+      '<div class="ow-bft-groups">' + keys.map(function (key) {
+        return bftGroupHtml(key, groups[key], selectedId);
+      }).join('') + '</div></div>';
+  }
   function renderList() {
     var query = (document.getElementById('ow-search').value || '').trim().toLowerCase();
     var sideFilter = (document.getElementById('ow-side-filter') || {}).value || 'all';
     var visible = units.filter(function (unit) {
       if (tooOldToShow(unit)) return false;
-      if (sideFilter !== 'all' && side(unit) !== sideFilter) return false;
+      var disc = isDisconnected(unit);
+      if (sideFilter === 'live' && disc) return false;
+      if (sideFilter === 'offline' && !disc) return false;
+      if (sideFilter === 'friendly' || sideFilter === 'hostile' || sideFilter === 'unknown') {
+        if (side(unit) !== sideFilter) return false;
+      }
       return (callsign(unit) + ' ' + group(unit) + ' ' + clean(unit.role, '')).toLowerCase().indexOf(query) !== -1;
     });
-    var groups = {};
-    visible.forEach(function (unit) {
-      var key = squadKey(unit) || 'none';
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(unit);
-    });
-    document.getElementById('ow-contact-list').innerHTML = Object.keys(groups).sort().map(function (key) {
-      var rows = groups[key];
-      var head = '<div class="ow-squad-head">' + escapeHtml(key === 'none' ? 'Sans groupe' : group(rows[0])) + '<em>' + rows.length + '</em></div>';
-      return head + rows.map(function (unit) {
-        var stale = unit.status === 'delayed' || unit.status === 'offline';
-        var disc = isDisconnected(unit);
-        var pulse = squadColorOn() && hasSquadColor(unit);
-        var stateColor = disc ? DISC_COLOR : (side(unit) === 'hostile' ? markerPrefs().hostile : (side(unit) === 'unknown' ? markerPrefs().unknown : markerPrefs().friend));
-        var squad = hasSquadColor(unit) ? squadColor(unit) : stateColor;
-        var role = clean(unit.role, '');
-        var age = ageLabel(unit);
-        var sub = [role, age].filter(Boolean).join(' · ');
-        var selectedId = selected ? unitId(selected) : '';
-        return '<button type="button" class="ow-contact' + (disc ? ' is-offline' : '') + (selectedId === unitId(unit) ? ' is-active' : '') + (stale && !disc ? ' is-delayed' : '') + '" data-unit-id="' + escapeHtml(unitId(unit)) + '"><span class="cicon' + (disc ? ' is-offline' : '') + (pulse ? ' is-squad-pulse' : '') + '" style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '">' +
-          initials(callsign(unit)) + '</span><span><div class="cname ow-mono">' + escapeHtml(callsign(unit)) +
-          (role ? '<small>' + escapeHtml(role) + '</small>' : '') + '</div><div class="cmeta">' +
-          escapeHtml(sub) + '</div></span><em class="online' + (disc ? ' is-stale' : (stale ? ' is-stale' : ' is-live')) + '">' +
-          (disc ? 'Hors liaison' : (stale ? 'Différé' : 'Direct')) + '</em></button>';
-      }).join('');
-    }).join('') || '<p class="ow-fil-empty">Aucun contact en liaison pour le moment.</p>';
-    document.getElementById('ow-bft-count').textContent = 'BFT ' + visibleUnits().length;
+    var selectedId = selected ? unitId(selected) : '';
+    var liveRows = visible.filter(function (unit) { return !isDisconnected(unit); });
+    var offRows = visible.filter(function (unit) { return isDisconnected(unit); });
+    var html = bftSectionHtml('live', liveRows, selectedId) + bftSectionHtml('offline', offRows, selectedId);
+    var emptyMsg = (query || sideFilter !== 'all')
+      ? 'Aucun contact ne correspond à ce filtre.'
+      : 'Aucun contact en liaison pour le moment.';
+    document.getElementById('ow-contact-list').innerHTML = html ||
+      '<p class="ow-bft-empty">' + emptyMsg + '</p>';
+    var n = visibleUnits().length;
+    var bftCount = document.getElementById('ow-bft-count');
+    if (bftCount) bftCount.textContent = 'BFT ' + n;
+    var sub = document.getElementById('ow-bft-sub');
+    if (sub) sub.textContent = n + ' unité' + (n > 1 ? 's' : '');
     syncEmptyNotice();
     renderHud();
     renderSquadList();
@@ -1983,6 +2282,15 @@
   function renderChatLog(targetId, rows) {
     var host = document.getElementById(targetId);
     if (!host) return;
+    if (targetId === 'ow-chat-log') {
+      var q = String((document.getElementById('ow-comms-search') || {}).value || '').trim().toLowerCase();
+      if (q) {
+        rows = rows.filter(function (row) {
+          var parsed = parseCommsBody(row.body);
+          return (String(row.author || '') + ' ' + String(parsed.text || row.body || '')).toLowerCase().indexOf(q) >= 0;
+        });
+      }
+    }
     var lastDay = null;
     var lastGroupKey = null;
     var html = '';
@@ -2180,38 +2488,76 @@
     var color = shape.color || '#00d69a';
     var layer = null;
     var type = String(shape.type || '').toUpperCase();
+    var meta = parseShapeMeta(shape);
+    var nato = String(meta.nato || meta.kind || '');
+    var dash = natoDash(meta);
+    var latlngs = [];
     if (type === 'POINT' && geo.coordinates) {
-      layer = L.circleMarker(worldToLatLng(geo.coordinates[0], geo.coordinates[1]), {
-        radius: 8, color: color, weight: 2, fillOpacity: 0.5
-      });
+      var pll = worldToLatLng(geo.coordinates[0], geo.coordinates[1]);
+      if (meta.kind === 'buildingPlan') {
+        var pin = document.createElement('div');
+        pin.className = 'ow-bplan-pin';
+        pin.innerHTML = '<small>' + escapeHtml(shape.label || 'Plan') + '</small>Plan rattaché';
+        layer = L.marker(pll, { icon: L.divIcon({ className: '', html: pin.outerHTML, iconSize: [140, 36], iconAnchor: [70, 36] }) });
+      } else {
+        layer = L.circleMarker(pll, { radius: 8, color: color, weight: 2, fillOpacity: 0.5 });
+      }
     } else if ((type === 'LINE' || type === 'ROUTE' || type === 'POLYLINE') && Array.isArray(geo.coordinates)) {
-      layer = L.polyline(geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); }), { color: color, weight: Number(shape.stroke || 2) });
+      latlngs = geo.coordinates.map(function (p) { return worldToLatLng(p[0], p[1]); });
+      if (nato === 'attack') {
+        layer = L.polygon(filledAttackLatLngs(latlngs, 16), {
+          color: color, fillColor: color, fillOpacity: 0.92, weight: 1
+        });
+      } else {
+        layer = L.polyline(latlngs, {
+          color: color,
+          weight: Number(shape.stroke || (nato === 'arrow' || nato === 'axis' ? 3 : 2)),
+          dashArray: dash || undefined
+        });
+      }
     } else if ((type === 'POLYGON' || type === 'AOI') && Array.isArray(geo.coordinates)) {
       var ring = geo.coordinates[0] && Array.isArray(geo.coordinates[0][0]) ? geo.coordinates[0] : geo.coordinates;
-      var meta = shape.meta;
-      if (typeof meta === 'string') {
-        try { meta = JSON.parse(meta); } catch (eMeta) { meta = {}; }
-      }
-      meta = meta && typeof meta === 'object' ? meta : {};
+      latlngs = ring.map(function (p) { return worldToLatLng(p[0], p[1]); });
       var fillStyle = String(meta.fill_style || (meta.hatch ? 'hatch-d' : 'solid'));
       var hatchClass = fillStyle === 'hatch-h' ? 'ow-hatch-h' : (fillStyle === 'hatch-d' || meta.hatch ? 'ow-hatch-diag' : '');
       var fillOp = fillStyle === 'none' ? 0 : Number(shape.fillOpacity || shape.fill_opacity || meta.fill_opacity || 0.15);
-      layer = L.polygon(ring.map(function (p) { return worldToLatLng(p[0], p[1]); }), {
+      if (nato === 'assembly' || nato === 'objective') fillOp = 0;
+      if (nato === 'highlight') fillOp = Number(meta.fill_opacity || 0.18);
+      layer = L.polygon(latlngs, {
         color: color,
         fillColor: meta.fill_color || color,
         fillOpacity: fillOp,
-        className: hatchClass
+        className: hatchClass,
+        dashArray: dash || undefined,
+        weight: nato === 'highlight' ? 1.5 : 2
       });
       if (meta.interior && layer.bindTooltip) {
         layer.bindTooltip(String(meta.interior), { permanent: true, direction: 'center', className: 'ow-geo-label' });
       }
     }
     if (!layer) return;
+    if ((nato === 'arrow' || nato === 'axis' || meta.arrow) && type !== 'POINT' && nato !== 'attack' && latlngs.length >= 2) {
+      var group = L.featureGroup([layer]);
+      var head = arrowHeadPolygon(latlngs, color, false);
+      if (head) group.addLayer(head);
+      layer = group;
+    }
+    if (nato === 'sector' && latlngs.length >= 2) {
+      var ticks = L.featureGroup(layer instanceof L.FeatureGroup ? [layer] : [layer]);
+      sectorTickLayers(latlngs, color).forEach(function (tick) { ticks.addLayer(tick); });
+      layer = ticks;
+    }
     layer.addTo(map);
     shapeLayers[id] = layer;
     bindLayerContext(layer, 'shape', id, shape.label || shape.type || 'Tracé');
-    if (type === 'POINT' && layer.bindTooltip) {
-      layer.bindTooltip(String(shape.label || 'Point'), { direction: 'top', sticky: true });
+    var labelNato = /^(phase|assembly|objective|highlight|sector|axis|attack)$/.test(nato);
+    if ((type === 'POINT' || labelNato) && shape.label && layer.bindTooltip && !layer.getTooltip()) {
+      layer.bindTooltip(String(shape.label), {
+        permanent: labelNato,
+        direction: labelNato ? 'center' : 'top',
+        sticky: !labelNato,
+        className: labelNato ? 'ow-geo-label ow-nato-label' : ''
+      });
     }
   }
 
@@ -2245,8 +2591,8 @@
         mapId: mapId,
         type: type,
         label: label || type,
-        color: style.color,
-        stroke: style.stroke,
+        color: opts.color || style.color,
+        stroke: opts.stroke != null ? opts.stroke : style.stroke,
         fillOpacity: opts.fillOpacity != null ? opts.fillOpacity : 0.15,
         geometry: geometry,
         createdBy: authorName,
@@ -2257,6 +2603,8 @@
         shapes.push(row);
         drawShape(row);
         lastShapeId = Number(row.id || 0);
+        if (lastShapeId) shapeUndoStack.push(lastShapeId);
+        shapeRedoStack = [];
       }
       toast((label || type) + ' enregistré.');
       return row;
@@ -2408,6 +2756,24 @@
       draftLayer = L.polygon(rectLatLngs(draftPoints[0], draftPoints[1]), { color: style.color, dashArray: '4 4' }).addTo(map);
       return;
     }
+    if ((activeTool === 'highlight' || activeTool === 'assembly') && draftPoints.length === 2) {
+      var previewColor = activeTool === 'highlight' ? '#f0a63a' : style.color;
+      draftLayer = L.polygon(rectLatLngs(draftPoints[0], draftPoints[1]), {
+        color: previewColor,
+        fillColor: previewColor,
+        fillOpacity: activeTool === 'highlight' ? 0.18 : 0,
+        dashArray: activeTool === 'highlight' ? '6 4' : '4 4'
+      }).addTo(map);
+      return;
+    }
+    if (activeTool === 'objective' && draftPoints.length === 2) {
+      draftLayer = L.polygon(ellipseLatLngs(draftPoints[0], draftPoints[1]), { color: style.color, fillOpacity: 0, dashArray: '4 4' }).addTo(map);
+      return;
+    }
+    if (activeTool === 'attack' && draftPoints.length >= 2) {
+      draftLayer = L.polygon(filledAttackLatLngs(draftPoints, 16), { color: style.color, fillColor: style.color, fillOpacity: 0.85, weight: 1 }).addTo(map);
+      return;
+    }
     if (draftPoints.length === 1) {
       draftLayer = L.circleMarker(draftPoints[0], { radius: 5, color: style.color }).addTo(map);
     } else if (draftPoints.length > 1) {
@@ -2489,14 +2855,31 @@
   }
 
   function undoLastShape() {
-    if (!lastShapeId) { toast('Aucun tracé récent à retirer.'); return; }
-    var id = lastShapeId;
+    var id = shapeUndoStack.pop() || lastShapeId;
+    if (!id) { toast('Aucun tracé récent à retirer.'); return; }
+    var snap = shapes.filter(function (row) { return Number(row.id) === Number(id); })[0] || null;
     api('/api/map-shapes/' + encodeURIComponent(id), { method: 'DELETE' }).then(function () {
       if (shapeLayers[String(id)]) { map.removeLayer(shapeLayers[String(id)]); delete shapeLayers[String(id)]; }
-      shapes = shapes.filter(function (row) { return Number(row.id) !== id; });
-      lastShapeId = 0;
+      shapes = shapes.filter(function (row) { return Number(row.id) !== Number(id); });
+      lastShapeId = shapeUndoStack[shapeUndoStack.length - 1] || 0;
+      if (snap) shapeRedoStack.push(snap);
       toast('Dernier tracé retiré.');
     }).catch(function () { toast('Impossible de retirer ce tracé.'); });
+  }
+
+  function redoLastShape() {
+    var snap = shapeRedoStack.pop();
+    if (!snap) { toast('Rien à rétablir.'); return; }
+    var geo = geometryOf(snap);
+    var latlngs = geometryToLatLngs(geo);
+    if (!latlngs.length) { toast('Impossible de rétablir ce tracé.'); return; }
+    saveShape(String(snap.type || 'LINE').toUpperCase(), latlngs, snap.label || 'Tracé', {
+      confirmed: true,
+      color: snap.color,
+      stroke: snap.stroke,
+      fillOpacity: snap.fillOpacity || snap.fill_opacity,
+      meta: parseShapeMeta(snap)
+    });
   }
 
   function finishDraft() {
@@ -2547,6 +2930,16 @@
       clearDraft();
       return;
     }
+    if (activeTool === 'measure' && draftPoints.length >= 2) {
+      var mPts = draftPoints.slice();
+      var mMeters = map.distance(mPts[0], mPts[mPts.length - 1]);
+      var mCap = Math.round(bearingWorld(mPts[0], mPts[mPts.length - 1]));
+      toast('Distance : ' + formatMeters(mMeters) + ' · Cap ' + mCap + '°');
+      showCalcDrawer(mPts, mMeters, mCap);
+      measureFrom = null;
+      clearDraft();
+      return;
+    }
     if (activeTool === 'los' && draftPoints.length >= 2) {
       requestLos(draftPoints[0], draftPoints[1]);
       clearDraft();
@@ -2567,6 +2960,67 @@
       clearDraft();
       return;
     }
+    if (activeTool === 'arrow' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints, 'Flèche', { confirmed: true, meta: { nato: 'arrow', arrow: true } });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'axis' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints, 'Axe de progression', { confirmed: true, meta: { nato: 'axis', arrow: true } });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'attack' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints, 'Attaque principale', { confirmed: true, meta: { nato: 'attack', arrow: true, filled: true } });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'phase' && draftPoints.length >= 2) {
+      var phaseName = window.prompt('Nom de la ligne de phase', 'PL ') || 'Ligne de phase';
+      saveShape('LINE', draftPoints, phaseName.trim(), { confirmed: true, meta: { nato: 'phase' } });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'sector' && draftPoints.length >= 2) {
+      var sectorName = window.prompt('Limite de secteur', '') || 'Limite de secteur';
+      saveShape('LINE', draftPoints, sectorName.trim(), { confirmed: true, meta: { nato: 'sector' } });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'highlight' && draftPoints.length >= 2) {
+      var hiRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints;
+      var hiName = window.prompt('Libellé de la zone', 'ZONE À RISQUE') || 'ZONE À RISQUE';
+      saveShape('AOI', hiRing, hiName.trim(), {
+        confirmed: true,
+        color: '#f0a63a',
+        fillOpacity: 0.18,
+        meta: { nato: 'highlight', fill_opacity: 0.18, fill_color: '#f0a63a' }
+      });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'assembly' && draftPoints.length >= 2) {
+      var aaRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints;
+      var aaName = window.prompt('Zone de rassemblement', 'AA ') || 'Zone de rassemblement';
+      saveShape('AOI', aaRing, aaName.trim(), {
+        confirmed: true,
+        fillOpacity: 0,
+        meta: { nato: 'assembly', fill_style: 'none' }
+      });
+      clearDraft();
+      return;
+    }
+    if (activeTool === 'objective' && draftPoints.length >= 2) {
+      var objRing = ellipseLatLngs(draftPoints[0], draftPoints[draftPoints.length - 1]);
+      var objName = window.prompt('Objectif', 'OBJ ') || 'Objectif';
+      saveShape('AOI', objRing, objName.trim(), {
+        confirmed: true,
+        fillOpacity: 0,
+        meta: { nato: 'objective', fill_style: 'none' }
+      });
+      clearDraft();
+      return;
+    }
     if ((activeTool === 'line' || activeTool === 'route') && draftPoints.length >= 2) {
       saveShape(activeTool === 'route' ? 'ROUTE' : 'LINE', draftPoints, activeTool === 'route' ? 'Route' : 'Ligne');
       clearDraft();
@@ -2579,8 +3033,22 @@
     }
   }
 
+  function keepMeasureOverlay(points) {
+    if (measureKeepLayer) {
+      try { map.removeLayer(measureKeepLayer); } catch (eKeep) {}
+      measureKeepLayer = null;
+    }
+    if (!points || points.length < 2) return;
+    measureKeepLayer = L.polyline(points, { color: '#7eb0ff', weight: 2, dashArray: '6 4', interactive: false }).addTo(map);
+  }
+
   function showCalcDrawer(points, meters, cap) {
-    var html = '<p class="ow-help">Mesure relevée sur la carte du théâtre. Les temps de parcours restent indicatifs.</p>' +
+    var a = points[0];
+    var b = points[points.length - 1];
+    keepMeasureOverlay(points);
+    var html = '<p class="ow-help">Mesure entre deux points du théâtre. Les temps de parcours restent indicatifs.</p>' +
+      '<div class="ow-event"><span>Départ</span><strong>' + escapeHtml(gridLabel(a)) + '</strong></div>' +
+      '<div class="ow-event"><span>Arrivée</span><strong>' + escapeHtml(gridLabel(b)) + '</strong></div>' +
       '<div class="ow-event"><span>Distance</span><strong>' + formatMeters(meters) + '</strong></div>' +
       '<div class="ow-event"><span>Cap</span><strong>' + cap + '°</strong></div>';
     if (points.length >= 3) {
@@ -2592,7 +3060,7 @@
     openDrawer('Calcul', 'Mesure', html);
   }
 
-  function setTool(tool) {
+  function setTool(tool, keepDraw) {
     var previous = activeTool;
     if (previous === 'po' && tool !== 'po') {
       finishPoSession();
@@ -2601,10 +3069,21 @@
     if (previous === 'rally' && tool !== 'rally') {
       try { map.doubleClickZoom.enable(); } catch (eRally) {}
     }
+    if (tool === 'draw') {
+      drawMode = true;
+      tool = 'arrow';
+    } else if (keepDraw) {
+      drawMode = true;
+    } else if (tool === 'cursor' || !isDrawBarTool(tool)) {
+      drawMode = false;
+    }
     activeTool = tool;
     document.querySelectorAll('[data-tool]').forEach(function (button) {
-      button.classList.toggle('is-active', button.dataset.tool === tool);
+      var on = button.dataset.tool === tool;
+      if (drawMode && button.closest && button.closest('.ow-rail') && button.dataset.tool === 'cursor') on = false;
+      button.classList.toggle('is-active', on);
     });
+    syncDrawBar();
     if (window.OverwatchGlTactics && window.OverwatchGlTactics.isSplit()) {
       var cmp = document.querySelector('[data-tool="compare"]');
       if (cmp) cmp.classList.add('is-active');
@@ -2634,8 +3113,13 @@
     if (tool === 'bearing') toast('Maintenez du départ à l’arrivée.');
     if (tool === 'los') toast('Maintenez de l’observateur à la cible.');
     if (tool === 'polygon' || tool === 'aoi') toast('Maintenez pour tracer le contour. Relâchez pour fermer la zone.');
-    if (tool === 'line' || tool === 'route') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
-    if (tool === 'measure') toast('Maintenez du premier point au second.');
+    if (tool === 'line' || tool === 'route' || tool === 'arrow' || tool === 'axis' || tool === 'attack') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
+    if (tool === 'phase') toast('Tracez la ligne de phase, puis nommez-la (ex. PL BISON).');
+    if (tool === 'sector') toast('Tracez la limite de secteur, puis indiquez les unités.');
+    if (tool === 'highlight') toast('Glissez un rectangle : zone surlignée, semi-transparente.');
+    if (tool === 'assembly') toast('Glissez le rectangle de la zone de rassemblement.');
+    if (tool === 'objective') toast('Glissez l’ellipse de l’objectif.');
+    if (tool === 'measure') toast('Cliquez le départ, puis l’arrivée. Distance, cap, grilles et temps s’affichent.');
     if (tool === 'viewshed') toast('Cliquez un opérateur, une caméra ou un point d’observation.');
     if (tool === 'horizon') toast('Cliquez le point depuis lequel lire l’horizon.');
     if (tool === 'slice') toast('Glissez de A vers B pour la coupe verticale.');
@@ -2671,6 +3155,7 @@
 
   function onMapClick(event) {
     hideContext();
+    if (window.OverwatchTacmap && typeof window.OverwatchTacmap.consumeMapClick === 'function' && window.OverwatchTacmap.consumeMapClick(event.latlng)) return;
     if (activeTool === 'cursor' || activeTool === 'freehand' || activeTool === 'goto' || activeTool === 'range') return;
     if (activeTool === 'text') {
       var label = window.prompt('Texte à poser sur la carte', '');
@@ -2713,24 +3198,30 @@
       return;
     }
     if (activeTool === 'measure' && !measureFrom) measureFrom = event.latlng;
-    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los' || activeTool === 'slice' || activeTool === 'measure3d') && draftPoints.length >= 2) {
+    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los' || activeTool === 'slice' || activeTool === 'measure3d' || activeTool === 'highlight' || activeTool === 'assembly' || activeTool === 'objective' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'phase' || activeTool === 'sector') && draftPoints.length >= 2) {
       finishDraft();
       return;
     }
-    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' || activeTool === 'volume' ? 3 : 2)) {
+    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'phase' || activeTool === 'sector') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' || activeTool === 'volume' ? 3 : 2)) {
       /* keep collecting until double-click */
     }
   }
 
   function isDragTool(tool) {
-    return /^(circle|rect|freehand|line|route|polygon|aoi|volume|measure|measure3d|bearing|los|eta|profile|slice)$/.test(tool);
+    return /^(circle|rect|freehand|line|route|polygon|aoi|volume|measure|measure3d|bearing|los|eta|profile|slice|arrow|highlight|axis|attack|phase|sector|assembly|objective)$/.test(tool);
   }
   function liveMeasureHud() {
     var el = document.getElementById('ow-live-measure');
     if (!el || draftPoints.length < 2) { if (el) el.hidden = true; return; }
     var meters = pathLength(draftPoints);
-    var bits = [formatMeters(meters)];
-    if (activeTool === 'circle') bits.push('rayon ' + formatMeters(map.distance(draftPoints[0], draftPoints[draftPoints.length - 1])));
+    var a = draftPoints[0];
+    var b = draftPoints[draftPoints.length - 1];
+    var cap = Math.round(bearingWorld(a, b));
+    var bits = [formatMeters(meters), cap + '°'];
+    bits.push(gridLabel(a).replace('Grille ', 'A ') + ' → ' + gridLabel(b).replace('Grille ', 'B '));
+    bits.push('pied ~' + Math.max(1, Math.round(meters / 1.4 / 60)) + ' min');
+    bits.push('véh. ~' + Math.max(1, Math.round(meters / 11 / 60)) + ' min');
+    if (activeTool === 'circle') bits.push('rayon ' + formatMeters(map.distance(a, b)));
     if (activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'rect') bits.push(Math.round(polygonAreaM2(draftPoints)) + ' m²');
     el.textContent = bits.join(' · ');
     el.hidden = false;
@@ -2743,6 +3234,8 @@
   });
   map.on('click', function (event) {
     if (dragMoved) { dragMoved = false; return; }
+    if (window.OverwatchTacmap && typeof window.OverwatchTacmap.consumeMapClick === 'function' && window.OverwatchTacmap.consumeMapClick(event.latlng)) return;
+    if ((activeTool === 'cursor' || !activeTool) && tryInspectScene(event.latlng, event.originalEvent)) return;
     onMapClick(event);
   });
   function endDragDraw() {
@@ -3168,6 +3661,170 @@
     return L.latLng(ll.lat, ll.lng);
   }
 
+  function sceneToggleOn() {
+    var box = document.getElementById('atak-scene-buildings');
+    return !box || box.checked;
+  }
+  function leafletSceneWanted() {
+    if (!sceneToggleOn()) return false;
+    var gl = window.OverwatchGlMap;
+    if (gl && typeof gl.isActive === 'function' && gl.isActive()) {
+      var stage = document.querySelector('.ow-map-stage');
+      if (!stage || !stage.classList.contains('is-split')) return false;
+    }
+    return true;
+  }
+  function ensureScenePane() {
+    if (!map.getPane('owScenePane')) {
+      map.createPane('owScenePane');
+      var pane = map.getPane('owScenePane');
+      pane.style.zIndex = '350';
+      pane.style.pointerEvents = 'none';
+    }
+    return map.getPane('owScenePane');
+  }
+  function placeSceneCanvas() {
+    if (!sceneCanvas) return;
+    var pane = ensureScenePane();
+    if (sceneCanvas.parentNode !== pane) pane.appendChild(sceneCanvas);
+    sceneCanvas.style.position = 'absolute';
+    sceneCanvas.style.pointerEvents = 'none';
+    var topLeft = map.containerPointToLayerPoint([0, 0]);
+    if (L.DomUtil && typeof L.DomUtil.setPosition === 'function') L.DomUtil.setPosition(sceneCanvas, topLeft);
+    else {
+      sceneCanvas.style.left = topLeft.x + 'px';
+      sceneCanvas.style.top = topLeft.y + 'px';
+    }
+  }
+  function sceneCorners(item) {
+    var angle = Number(item.bearing || 0) * Math.PI / 180;
+    var c = Math.cos(angle);
+    var s = Math.sin(angle);
+    var hw = Math.max(2, Number(item.width || 4) / 2);
+    var hd = Math.max(2, Number(item.depth || 4) / 2);
+    var x = Number(item.x);
+    var y = Number(item.y);
+    return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]].map(function (v) {
+      return map.latLngToContainerPoint(worldToLatLng(x + v[0] * c - v[1] * s, y + v[0] * s + v[1] * c));
+    });
+  }
+  function drawScenePoly(points, fill, stroke) {
+    if (!sceneCtx || !points.length) return;
+    sceneCtx.beginPath();
+    sceneCtx.moveTo(points[0].x, points[0].y);
+    points.slice(1).forEach(function (p) { sceneCtx.lineTo(p.x, p.y); });
+    sceneCtx.closePath();
+    sceneCtx.fillStyle = fill;
+    sceneCtx.fill();
+    if (stroke) {
+      sceneCtx.strokeStyle = stroke;
+      sceneCtx.lineWidth = 1;
+      sceneCtx.stroke();
+    }
+  }
+  function drawSceneFootprints() {
+    sceneDrawFrame = 0;
+    if (!sceneCanvas || !sceneCtx) return;
+    placeSceneCanvas();
+    var size = map.getSize();
+    var ratio = Math.min(2, window.devicePixelRatio || 1);
+    sceneCanvas.width = Math.round(size.x * ratio);
+    sceneCanvas.height = Math.round(size.y * ratio);
+    sceneCanvas.style.width = size.x + 'px';
+    sceneCanvas.style.height = size.y + 'px';
+    sceneCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    sceneCtx.clearRect(0, 0, size.x, size.y);
+    if (!leafletSceneWanted()) return;
+    var zoom = map.getZoom();
+    sceneRows.forEach(function (item) {
+      var pts = sceneCorners(item);
+      if (pts.length < 4) return;
+      var kind = String(item.kind || 'building');
+      if (kind === 'forest') drawScenePoly(pts, 'rgba(20,83,45,.42)', 'rgba(52,211,153,.72)');
+      else if (kind === 'building') drawScenePoly(pts, 'rgba(186,196,206,.5)', 'rgba(226,232,240,.92)');
+      else drawScenePoly(pts, 'rgba(120,110,96,.38)', 'rgba(180,168,148,.8)');
+      if (zoom >= 5 && lastSceneObject && String(lastSceneObject.id) === String(item.id)) {
+        drawScenePoly(pts, 'rgba(0,214,154,.22)', 'rgba(0,214,154,.95)');
+      }
+    });
+  }
+  function scheduleSceneDraw() {
+    if (!sceneDrawFrame) sceneDrawFrame = requestAnimationFrame(drawSceneFootprints);
+  }
+  function loadSceneFootprints() {
+    if (!leafletSceneWanted()) {
+      sceneRows = [];
+      scheduleSceneDraw();
+      return;
+    }
+    var b = map.getBounds();
+    var nw = latLngToWorld(b.getNorthWest());
+    var se = latLngToWorld(b.getSouthEast());
+    var bbox = [Math.min(nw.x, se.x), Math.min(nw.y, se.y), Math.max(nw.x, se.x), Math.max(nw.y, se.y)].join(',');
+    api('/api/atak/scene?mapId=' + encodeURIComponent(mapId) + '&bbox=' + encodeURIComponent(bbox) + '&limit=5000').then(function (payload) {
+      sceneRows = asList(payload, 'objects');
+      scheduleSceneDraw();
+    }).catch(function () { scheduleSceneDraw(); });
+  }
+  function queueSceneLoad() {
+    window.clearTimeout(sceneFetchTimer);
+    sceneFetchTimer = window.setTimeout(loadSceneFootprints, 180);
+    scheduleSceneDraw();
+  }
+  function pointInSceneItem(wx, wy, item) {
+    var angle = -(Number(item.bearing || 0) * Math.PI / 180);
+    var c = Math.cos(angle);
+    var s = Math.sin(angle);
+    var dx = wx - Number(item.x);
+    var dy = wy - Number(item.y);
+    var lx = dx * c - dy * s;
+    var ly = dx * s + dy * c;
+    var hw = Math.max(2, Number(item.width || 4) / 2);
+    var hd = Math.max(2, Number(item.depth || 4) / 2);
+    return Math.abs(lx) <= hw && Math.abs(ly) <= hd;
+  }
+  function hitSceneAt(ll) {
+    if (!leafletSceneWanted() || !ll) return null;
+    var w = latLngToWorld(ll);
+    var best = null;
+    var bestArea = Infinity;
+    sceneRows.forEach(function (item) {
+      if (!pointInSceneItem(w.x, w.y, item)) return;
+      var area = Math.max(4, Number(item.width || 4)) * Math.max(4, Number(item.depth || 4));
+      if (area < bestArea) {
+        bestArea = area;
+        best = item;
+      }
+    });
+    return best;
+  }
+  function tryInspectScene(ll, originalEvent) {
+    if (activeTool && activeTool !== 'cursor') return false;
+    var unit = pickUnitAt(ll);
+    if (unit && !(originalEvent && (originalEvent.button === 2 || originalEvent.ctrlKey))) return false;
+    var hit = hitSceneAt(ll);
+    if (!hit || !hit.id) return false;
+    inspectSceneObject(hit.id, ll, hit);
+    return true;
+  }
+  function initSceneFootprints() {
+    if (sceneCanvas) return;
+    sceneCanvas = document.createElement('canvas');
+    sceneCanvas.className = 'ow-scene-footprints';
+    sceneCanvas.setAttribute('aria-hidden', 'true');
+    sceneCtx = sceneCanvas.getContext('2d');
+    placeSceneCanvas();
+    ['move', 'moveend', 'zoomend', 'resize'].forEach(function (name) {
+      map.on(name, name === 'moveend' || name === 'zoomend' ? queueSceneLoad : scheduleSceneDraw);
+    });
+    var toggle = document.getElementById('atak-scene-buildings');
+    if (toggle) toggle.addEventListener('change', function () { loadSceneFootprints(); });
+    var mode = document.getElementById('atak-terrain-3d-mode');
+    if (mode) mode.addEventListener('change', function () { loadSceneFootprints(); });
+    window.addEventListener('atak:terrain3dchange', loadSceneFootprints);
+    loadSceneFootprints();
+  }
+
   function inspectSceneObject(id, ll, hint) {
     id = String(id || '');
     if (!id || id.indexOf('cluster') >= 0) {
@@ -3190,12 +3847,11 @@
       }
       openDrawer('Construction', obj.name || obj.kind_label || 'Volume', sceneObjectHtml(obj, loc));
       bindDrawerForms();
+      scheduleSceneDraw();
     }).catch(function () {
       if (fallbackLl) inspectWorld(fallbackLl);
     });
   }
-
-  var lastSceneObject = null;
 
   function sceneQualityLabel(q) {
     if (q === 'complete') return 'Données complètes';
@@ -3288,11 +3944,13 @@
   function handleWorldClick(ll, originalEvent, layer) {
     ll = asMapLatLng(ll);
     if (!ll) return false;
+    if (window.OverwatchTacmap && typeof window.OverwatchTacmap.consumeMapClick === 'function' && window.OverwatchTacmap.consumeMapClick(ll)) return true;
     var fake = { latlng: ll, originalEvent: originalEvent || null };
     if (activeTool && activeTool !== 'cursor' && activeTool !== 'freehand' && activeTool !== 'goto' && activeTool !== 'range') {
       onMapClick(fake);
       return true;
     }
+    if (tryInspectScene(ll, originalEvent)) return true;
     return inspectWorld(ll, originalEvent, layer);
   }
 
@@ -3315,6 +3973,7 @@
     dropLocalId(postedMarkers, id);
     dropLocalId(armaMarkerLayers, id);
     armaMarkerRows = armaMarkerRows.filter(function (row) { return String(row.id) !== String(id); });
+    if (window.OverwatchOps && window.OverwatchOps.setArmaRows) window.OverwatchOps.setArmaRows(armaMarkerRows);
     poRows = poRows.filter(function (row) { return String(row.id) !== String(id); });
     renderPoMarkers();
     renderArmaMarkers();
@@ -3352,22 +4011,28 @@
       return;
     }
     if (kind === 'sitrep') {
-      if (window.OverwatchOps && window.OverwatchOps.dropSitrepPin) window.OverwatchOps.dropSitrepPin(id);
-      var twin = shapes.filter(function (row) {
-        var meta = row.meta;
-        if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
-        return meta && String(meta.report_id || '') === id;
-      })[0];
-      if (twin && twin.id) {
-        api('/api/map-shapes/' + encodeURIComponent(twin.id), { method: 'DELETE' }).then(function () {
-          dropLocalId(shapeLayers, twin.id);
-          shapes = shapes.filter(function (row) { return String(row.id) !== String(twin.id); });
-          toast('Compte rendu retiré de la carte.');
-          updateStatsBanner();
-        }).catch(function () { toast('Pastille retirée.'); });
-        return;
-      }
-      toast('Pastille retirée.');
+      var mid = (window.OverwatchOps && typeof window.OverwatchOps.missionId === 'function')
+        ? window.OverwatchOps.missionId()
+        : ('mission_' + Number(window.ATAK_TENANT_ID || 0) + '_map_' + Number(mapId || 1));
+      api('/api/intel/report/' + encodeURIComponent(id) + '?missionId=' + encodeURIComponent(mid) + '&mapId=' + encodeURIComponent(mapId), {
+        method: 'DELETE',
+        body: { missionId: mid, mapId: mapId }
+      }).then(function () {
+        if (window.OverwatchOps && window.OverwatchOps.dropSitrepPin) window.OverwatchOps.dropSitrepPin(id);
+        var twin = shapes.filter(function (row) {
+          var meta = parseShapeMeta(row);
+          return meta && String(meta.report_id || '') === id;
+        })[0];
+        if (twin && twin.id) {
+          return api('/api/map-shapes/' + encodeURIComponent(twin.id), { method: 'DELETE' }).then(function () {
+            dropLocalId(shapeLayers, twin.id);
+            shapes = shapes.filter(function (row) { return String(row.id) !== String(twin.id); });
+          });
+        }
+      }).then(function () {
+        toast('Compte rendu retiré.');
+        updateStatsBanner();
+      }).catch(function () { toast('Impossible de retirer ce compte rendu.'); });
       return;
     }
     if (kind === 'shape') {
@@ -3387,9 +4052,13 @@
         toast(goneLabel);
         updateStatsBanner();
       }).catch(function (err) {
-        dropMarkerLocal(id);
-        toast(String(err && err.message) === '404' ? 'Ce repère n’est plus au poste.' : 'Impossible de retirer ce repère.');
-        updateStatsBanner();
+        if (String(err && err.message) === '404') {
+          dropMarkerLocal(id);
+          toast('Ce repère n’est plus au poste.');
+          updateStatsBanner();
+          return;
+        }
+        toast('Impossible de retirer ce repère.');
       });
       return;
     }
@@ -3425,9 +4094,17 @@
     if (btn) btn.hidden = !show;
   }
 
+  function rememberClick(ll) {
+    if (!ll) return '';
+    lastClickWorld = latLngToWorld(ll);
+    lastClickGrid = Math.round(lastClickWorld.x) + ' / ' + Math.round(lastClickWorld.y);
+    return lastClickGrid;
+  }
+
   function openContextAt(ll, originalEvent, layer) {
     if (!ll) return;
     ctxLatLng = ll;
+    rememberClick(ll);
     syncDeleteAction(hitDeletable(ll, layer));
     document.getElementById('ow-ctx-head').textContent = gridLabel(ll);
     var cx = originalEvent && originalEvent.clientX;
@@ -3487,6 +4164,14 @@
     if (act === 'aoi') { setTool('aoi'); draftPoints = [ll]; updateDraft(); toast('Cliquez les sommets, double-clic pour fermer.'); }
     if (act === 'intel') saveIntelNote(ll);
     if (act === 'sitrep') saveSitrep(ll);
+    if (act === 'salute' || act === 'nineline' || act === 'casevac') {
+      rememberClick(ll);
+      openView('mission');
+      toast(act === 'salute'
+        ? 'Grille reprise dans le compte rendu SALUTE.'
+        : (act === 'nineline' ? 'Grille reprise dans la 9-line.' : 'Grille reprise dans le CASEVAC.'));
+      return;
+    }
     if (act === 'po') { placeReachPoint(ll); finishPoSession(); }
     if (act === 'rally') { placeRallyPoint(ll); }
     if (act === 'los') { setTool('los'); draftPoints = [ll]; toast('Cliquez la cible.'); }
@@ -3600,6 +4285,7 @@
   });
 
   function openDrawer(kicker, title, html) {
+    clearDrawerContactHead();
     document.getElementById('ow-drawer-kicker').textContent = kicker;
     document.getElementById('ow-drawer-title').textContent = title;
     document.getElementById('ow-drawer-body').innerHTML = html;
@@ -3612,7 +4298,7 @@
   }
 
   function loadPhotos() {
-    return api('/api/recon/images?limit=30').then(function (payload) {
+    return api('/api/recon/images?limit=80').then(function (payload) {
       photos = asList(payload, 'images');
       updateStatsBanner();
       if (window.OverwatchTools && window.OverwatchTools.drawPhotos) window.OverwatchTools.drawPhotos();
@@ -3655,12 +4341,27 @@
       '<p class="ow-kicker">Alerte plein écran</p>' +
       '<p class="ow-help">Le message recouvre tout l’écran du téléphone, ouvert ou en position mini.</p>' +
       fullscreenAlertFormHtml() +
+      '<p class="ow-kicker">Replay et bilan</p>' +
+      '<p class="ow-help">Rejouez les trajectoires déjà reçues, puis exportez le bilan de mission (carte annotée et fil d’ordres).</p>' +
+      '<div class="ow-form-actions"><button type="button" class="ow-secondary" data-ow-replay>Ouvrir le replay</button>' +
+      '<button type="button" class="ow-primary" data-ow-debrief>Exporter le bilan</button></div>' +
+      '<p class="ow-kicker">Compte rendu SALUTE</p>' +
+      '<p class="ow-help">Taille, activité, position, unité, heure, équipement. Le compte rendu part sur le fil et se pose sur les tracés. Clic droit sur la carte pour préremplir la grille.</p>' +
+      '<form class="ow-form-grid" id="ow-salute-form">' +
+      '<label>Taille<input name="size" placeholder="Ex. 2 véhicules, 8 personnes"></label>' +
+      '<label>Activité<input name="activity" placeholder="Ex. en déplacement vers le nord"></label>' +
+      '<label>Position<input name="location" placeholder="Lieu ou grille" value="' + escapeHtml(lastClickGrid) + '"></label>' +
+      '<label>Unité<input name="unit" placeholder="Ex. infanterie motorisée"></label>' +
+      '<label>Heure<input name="time" placeholder="Heure du contact"></label>' +
+      '<label>Équipement<input name="equipment" placeholder="Ex. RPG, mitrailleuse"></label>' +
+      '<input type="hidden" name="grid" value="' + escapeHtml(lastClickGrid) + '">' +
+      '<button class="ow-primary" type="submit">Transmettre le SALUTE</button></form>' +
       '<p class="ow-kicker">9-line / appui aérien</p>' +
       (nineLines.slice(0, 5).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.author, 'JTAC')) + '</span><span class="ow-tag">' + escapeHtml(clean(row.status, 'ACTIVE')) + '</span></div>';
       }).join('') || '<p class="ow-help">Aucune demande d’appui pour le moment.</p>') +
       '<form class="ow-form-grid" id="ow-nine-form">' +
-      '<label>IP / grille<input name="line1" required placeholder="Point initial"></label>' +
+      '<label>IP / grille<input name="line1" required placeholder="Point initial" value="' + escapeHtml(lastClickGrid) + '"></label>' +
       '<label>Cap<input name="line2" placeholder="Cap d’approche"></label>' +
       '<label>Distance<input name="line3" placeholder="Distance à la cible"></label>' +
       '<label>Élévation<input name="line4" placeholder="Altitude cible"></label>' +
@@ -3676,7 +4377,7 @@
       }).join('') || '<p class="ow-help">Aucune évacuation ouverte.</p>') +
       '<form class="ow-form-grid" id="ow-medevac-form">' +
       '<label>Indicatif<input name="callsign" value="' + escapeHtml(authorName) + '"></label>' +
-      '<label>Grille de ramassage<input name="pickup_grid" placeholder="À pointer sur la carte"></label>' +
+      '<label>Grille de ramassage<input name="pickup_grid" placeholder="À pointer sur la carte" value="' + escapeHtml(lastClickGrid) + '"></label>' +
       '<label>Blessés T1<input name="patients_t1_urgent" type="number" min="0" value="0"></label>' +
       '<label>Blessés T2<input name="patients_t2_urgent" type="number" min="0" value="0"></label>' +
       '<label>Blessés T3<input name="patients_t3_delayed" type="number" min="0" value="0"></label>' +
@@ -3685,18 +4386,94 @@
       '<button class="ow-primary" type="submit">Ouvrir CASEVAC</button></form>';
   }
 
+  function formatPhotoWhen(row) {
+    var captured = String(row && (row.captured_at || '') || '').trim();
+    var created = String(row && (row.created_at || '') || '').trim();
+    var raw = captured;
+    if (!raw || /^1970-/.test(raw) || /^0000-/.test(raw)) raw = created;
+    if (!raw) return '';
+    if (/^\d+$/.test(raw)) {
+      var n = Number(raw);
+      if (n < 1e12) n *= 1000;
+      if (n < 1e12) return created || '';
+      var dNum = new Date(n);
+      if (isNaN(dNum.getTime()) || dNum.getUTCFullYear() < 2001) return created || '';
+      return formatPhotoClock(dNum);
+    }
+    var iso = raw.indexOf('T') >= 0 ? raw : raw.replace(' ', 'T');
+    var d = new Date(iso);
+    if (isNaN(d.getTime()) || d.getUTCFullYear() < 2001) {
+      if (created && created !== raw) return formatPhotoWhen({ captured_at: created, created_at: '' });
+      return raw;
+    }
+    return formatPhotoClock(d);
+  }
+
+  function formatPhotoClock(d) {
+    var dd = d.getDate();
+    var mm = d.getMonth() + 1;
+    var yyyy = d.getFullYear();
+    var hh = d.getHours();
+    var mi = d.getMinutes();
+    return (dd < 10 ? '0' : '') + dd + '/' + (mm < 10 ? '0' : '') + mm + '/' + yyyy +
+      ' · ' + (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi;
+  }
+
+  function openPhotoLightbox(src, blurred) {
+    if (!src) return;
+    var existing = document.getElementById('ow-photo-lightbox');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'ow-photo-lightbox';
+    overlay.className = 'ow-photo-lightbox' + (blurred ? ' is-blurred' : '');
+    overlay.innerHTML =
+      '<button type="button" class="ow-photo-lightbox-close" aria-label="Fermer">×</button>' +
+      '<img src="' + escapeHtml(src) + '" alt="Photo agrandie">';
+    document.body.appendChild(overlay);
+    function close() { overlay.remove(); }
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay || (e.target && e.target.classList && e.target.classList.contains('ow-photo-lightbox-close'))) {
+        close();
+      }
+    });
+    document.addEventListener('keydown', function onKey(ev) {
+      if (ev.key === 'Escape') {
+        document.removeEventListener('keydown', onKey);
+        close();
+      }
+    });
+  }
+
   function intelHtml() {
     return '<label class="ow-search"><span>⌕</span><input id="ow-intel-q" placeholder="Rechercher une photo, une note…"></label>' +
       '<form class="ow-form-grid" id="ow-photo-form">' +
       '<label>Photo liée à la carte<input type="file" name="photo" accept="image/*"></label>' +
       '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
-      photos.slice(0, 12).map(function (row) {
+      photos.slice(0, 24).map(function (row) {
         var url = String(row.url || '');
-        return '<div class="ow-card"><div class="ow-card-head"><span>' + escapeHtml(clean(row.author || row.device_label, 'CAPTURE')) +
+        var id = String(row.id || '');
+        var title = clean(row.author_callsign || row.author || row.device_label, 'CAPTURE');
+        var stamp = formatPhotoWhen(row);
+        var caption = String(row.caption || '').trim();
+        var blurred = !!Number(row.is_blurred || 0);
+        var transferred = !!(row.sse_case_id || row.sse_transferred_at);
+        return '<div class="ow-card' + (blurred ? ' is-blurred' : '') + '" data-photo-card="' + escapeHtml(id) + '">' +
+          '<div class="ow-card-head"><span>' + escapeHtml(title) +
           '</span><span class="ow-tag">' + escapeHtml(clean(row.device_label, 'PHOTO')) + '</span></div>' +
-          (url ? '<div class="ow-thumb" style="background-image:url(\'' + escapeHtml(url) + '\')"></div>' : '') +
-          '<div class="ow-card-body"><div class="ow-event"><span>' + escapeHtml(clean(row.captured_at || row.created_at, '')) +
-          '</span><button type="button" class="ow-tag" data-send-photo="' + escapeHtml(String(row.id || '')) + '">Envoyer</button></div></div></div>';
+          (url
+            ? '<div class="ow-thumb" style="background-image:url(\'' + escapeHtml(url) + '\')" data-photo-op="open" data-photo-id="' + escapeHtml(id) + '" data-photo-url="' + escapeHtml(url) + '" role="button" tabindex="0" title="Ouvrir en grand"></div>'
+            : '') +
+          '<div class="ow-card-body">' +
+          (caption ? '<p class="ow-help">' + escapeHtml(caption) + '</p>' : '') +
+          (transferred ? '<p class="ow-help">Classée dans un dossier SSE</p>' : '') +
+          '<div class="ow-event"><span>' + escapeHtml(stamp) + '</span></div>' +
+          '<div class="ow-photo-actions">' +
+          '<button type="button" class="ow-tag" data-send-photo="' + escapeHtml(id) + '">Envoyer</button>' +
+          (url ? '<button type="button" class="ow-tag" data-photo-op="open" data-photo-id="' + escapeHtml(id) + '" data-photo-url="' + escapeHtml(url) + '">Agrandir</button>' : '') +
+          '<button type="button" class="ow-tag" data-photo-op="blur" data-photo-id="' + escapeHtml(id) + '">' + (blurred ? 'Retirer le flou' : 'Flouter') + '</button>' +
+          '<button type="button" class="ow-tag" data-photo-op="sse" data-photo-id="' + escapeHtml(id) + '">Passer en SSE</button>' +
+          '<button type="button" class="ow-tag red" data-photo-op="delete" data-photo-id="' + escapeHtml(id) + '">Supprimer</button>' +
+          '</div></div></div>';
       }).join('') || '<p class="ow-help">Aucune image reçue pour cette mission.</p>';
   }
 
@@ -3790,8 +4567,13 @@
     if (med) med.addEventListener('submit', function (event) {
       event.preventDefault();
       var data = new FormData(med);
-      var loc = selected && point(selected);
-      var world = loc ? latLngToWorld(loc) : { x: null, y: null };
+      var world = (lastClickWorld && Number.isFinite(Number(lastClickWorld.x)))
+        ? lastClickWorld
+        : { x: null, y: null };
+      if ((world.x == null || world.y == null) && selected) {
+        var loc = point(selected);
+        world = loc ? latLngToWorld(loc) : world;
+      }
       api('/api/atak/medevac', {
         method: 'POST',
         body: {
@@ -3824,6 +4606,69 @@
         }).catch(function () {
           toast('Transmission de la photo refusée.');
         });
+      });
+    });
+    function reloadIntel() {
+      openView('intel');
+    }
+    function photoOps(id, payload) {
+      return api('/api/recon/images/' + encodeURIComponent(id) + '/ops', { method: 'POST', body: payload });
+    }
+    document.querySelectorAll('[data-photo-op]').forEach(function (el) {
+      el.addEventListener('click', function (event) {
+        event.preventDefault();
+        var op = el.getAttribute('data-photo-op') || '';
+        var id = String(el.getAttribute('data-photo-id') || '');
+        var url = String(el.getAttribute('data-photo-url') || '');
+        var card = el.closest('[data-photo-card]');
+        var photo = photos.filter(function (row) { return String(row.id) === id; })[0] || {};
+        if (!url) url = String(photo.url || '');
+        if (op === 'open') {
+          openPhotoLightbox(url, !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0));
+          return;
+        }
+        if (!id) return;
+        if (op === 'delete') {
+          if (!window.confirm('Retirer cette photo du panneau tactique ?')) return;
+          photoOps(id, { action: 'delete' }).then(function () {
+            toast('Photo retirée.');
+            return reloadIntel();
+          }).catch(function () { toast('Impossible de retirer cette photo pour le moment.'); });
+          return;
+        }
+        if (op === 'blur') {
+          var blurred = !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0);
+          photoOps(id, { action: 'blur', blurred: !blurred }).then(function () {
+            toast(blurred ? 'Flou retiré.' : 'Photo floutée.');
+            return reloadIntel();
+          }).catch(function () { toast('Impossible de modifier le flou pour le moment.'); });
+          return;
+        }
+        if (op === 'sse') {
+          api('/api/recon/images/sse-cases').then(function (payload) {
+            var cases = (payload && Array.isArray(payload.cases)) ? payload.cases : [];
+            if (!cases.length) {
+              toast('Aucun dossier SSE ouvert. Ouvrez d’abord le portail SSE.');
+              return;
+            }
+            var choices = cases.map(function (c) {
+              return c.id + ' — ' + (c.reference_code || 'SSE') + ' — ' + (c.title || 'Sans titre');
+            }).join('\n');
+            var selected = window.prompt('Choisissez le numéro du dossier SSE :\n\n' + choices, String(cases[0].id));
+            if (selected === null) return;
+            var caseId = parseInt(String(selected).trim(), 10);
+            if (!caseId) {
+              toast('Dossier SSE invalide.');
+              return;
+            }
+            return photoOps(id, { action: 'sse_transfer', case_id: caseId }).then(function () {
+              toast('Photo classée dans le dossier SSE.');
+              return reloadIntel();
+            });
+          }).catch(function () {
+            toast('Impossible de classer cette photo pour le moment.');
+          });
+        }
       });
     });
     var photoForm = document.getElementById('ow-photo-form');
@@ -3910,6 +4755,7 @@
     if (window.OverwatchOps && typeof window.OverwatchOps.bindLayers === 'function') {
       window.OverwatchOps.bindLayers();
     }
+    try { window.dispatchEvent(new CustomEvent('overwatch:mission-bound')); } catch (eBound) {}
   }
 
   function openView(name) {
@@ -3962,6 +4808,7 @@
     ['Ouvrir le tchat opérationnel', 'Ordre', function () { openView('comms'); }],
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
+    ['Préparer un SALUTE', 'Mission', function () { openView('mission'); toast('Clic droit sur la carte pour préremplir la grille, puis remplissez le compte rendu.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
     ['Ouvrir le replay', 'Outils', function () { document.getElementById('ow-timeline').hidden = !document.getElementById('ow-timeline').hidden; }],
     ['Afficher les paramètres', 'Calques', function () { openView('layers'); }],
@@ -4174,21 +5021,48 @@
   }
 
   document.getElementById('ow-contact-list').addEventListener('click', function (event) {
-    var row = event.target.closest('[data-unit-id]'); if (!row) return;
-    var unit = units.find(function (item) { return unitId(item) === row.dataset.unitId; });
-    if (unit) {
-      selectUnit(unit);
-      var location = point(unit);
-      if (location) map.panTo(location);
-      followOn = true;
-      var box = document.getElementById('ow-follow');
-      if (box) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    var sect = event.target.closest('[data-bft-sect]');
+    if (sect) {
+      var kind = sect.getAttribute('data-bft-sect');
+      bftSectState[kind] = !bftSectState[kind];
+      var box = sect.closest('.ow-bft-sect');
+      if (box) box.classList.toggle('is-collapsed', !!bftSectState[kind]);
+      return;
     }
+    var locBtn = event.target.closest('[data-bft-locate]');
+    var row = event.target.closest('[data-unit-id]');
+    if (!row) return;
+    var unit = units.find(function (item) { return unitId(item) === row.dataset.unitId; });
+    if (!unit) return;
+    selectUnit(unit);
+    var location = point(unit);
+    if (location) map.panTo(location);
+    if (locBtn || isDisconnected(unit)) {
+      followOn = false;
+      var followBox = document.getElementById('ow-follow');
+      if (followBox) { followBox.checked = false; followBox.dispatchEvent(new Event('change')); }
+      renderList();
+      if (locBtn) toast(location ? 'Dernière position connue.' : 'Aucune position enregistrée.');
+      return;
+    }
+    followOn = true;
+    var box = document.getElementById('ow-follow');
+    if (box) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    renderList();
+  });
+  document.getElementById('ow-contact-list').addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var row = event.target.closest('.ow-bft-contact[data-unit-id]');
+    if (!row) return;
+    event.preventDefault();
+    row.click();
   });
   document.getElementById('ow-search').addEventListener('input', renderList);
   var sideFilter = document.getElementById('ow-side-filter');
   if (sideFilter) sideFilter.addEventListener('change', renderList);
   document.getElementById('ow-channel-filter').addEventListener('input', renderChannels);
+  var commsSearch = document.getElementById('ow-comms-search');
+  if (commsSearch) commsSearch.addEventListener('input', function () { renderChatLog('ow-chat-log', chatMessages); });
   document.getElementById('ow-channel-list').addEventListener('click', function (event) {
     var row = event.target.closest('[data-channel]'); if (!row) return;
     activeChannel = row.dataset.channel;
@@ -4610,6 +5484,11 @@
     openView: openView,
     setTool: setTool,
     saveShape: saveShape,
+    undoLastShape: undoLastShape,
+    redoLastShape: redoLastShape,
+    parseShapeMeta: parseShapeMeta,
+    getChatMessages: function () { return chatMessages; },
+    getActiveChannel: function () { return activeChannel; },
     worldToLatLng: worldToLatLng,
     latLngToWorld: latLngToWorld,
     gridLabel: gridLabel,
@@ -4653,7 +5532,15 @@
     getShapes: function () { return shapes; },
     getShapeLayers: function () { return shapeLayers; },
     unitHeading: unitHeading,
-    unitSpeed: unitSpeed
+    unitSpeed: unitSpeed,
+    unitAgeSec: unitAgeSec,
+    unitWorld: unitWorld,
+    side: side,
+    getPoRows: function () { return poRows; },
+    getRallyRows: function () { return rallyRows; },
+    getLastRx: function () { return lastRx; },
+    getLastClickWorld: function () { return lastClickWorld; },
+    getLastClickGrid: function () { return lastClickGrid; }
   };
   applyDisplayPrefsToOw();
 
@@ -4740,6 +5627,7 @@
 
   mountSquadTaskPanel();
   mountFsAlertPanel();
+  initSceneFootprints();
   refreshAll();
   startPoll(pollMs);
   window.setInterval(function () { if (lastRx && Date.now() - lastRx > Math.max(15000, pollMs * 5)) syncStatus(false); }, 3000);

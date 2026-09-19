@@ -829,4 +829,25 @@ final class ConfigurationUpdateProbes
             return false;
         }
     }
+
+    public function hasAtakCommandAlertAssigned(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1
+                 FROM role_permissions rp
+                 INNER JOIN permissions p ON p.id = rp.permission_id
+                 WHERE p.tenant_id = ? AND p.slug = ?
+                 LIMIT 1'
+            );
+            $st->execute([$tenantId, 'atak.command.alert']);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return true;
+        }
+    }
 }

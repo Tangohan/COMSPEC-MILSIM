@@ -61,7 +61,7 @@ final class OverwatchServerControlAssetTest extends TestCase
         self::assertStringContainsString('comspec_sse_require_item', $apply);
         self::assertStringContainsString('athena_feed', $ext);
         self::assertStringContainsString('atak_realism', $ext);
-        self::assertStringContainsString('1.5.90', $cfg);
-        self::assertStringContainsString('2.0.46', $ext);
+        self::assertStringContainsString('1.5.95', $cfg);
+        self::assertStringContainsString('2.0.47', $ext);
     }
 }

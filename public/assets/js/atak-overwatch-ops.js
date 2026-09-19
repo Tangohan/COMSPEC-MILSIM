@@ -154,47 +154,47 @@
     var lookOn = document.getElementById('ow-look-arrow');
     var predOn = document.getElementById('ow-predict');
     if ((!lookOn || !lookOn.checked) && (!predOn || !predOn.checked)) return;
-    var unit = api.getSelected && api.getSelected();
-    if (!unit) return;
-    var loc = api.point(unit);
-    if (!loc) return;
-    var heading = api.unitHeading ? api.unitHeading(unit) : null;
-    if (heading == null || !isFinite(Number(heading))) return;
-    var lookStart = loc;
-    if (lookOn && lookOn.checked) {
-      var shape = headingArrowShape(api, loc, heading, 34);
-      if (shape) {
-        lookStart = shape.tip;
-        lookLayers.push(L.polyline(shape.shaft, {
-          color: '#e8fff4', weight: 3, opacity: 0.95, lineCap: 'round',
-          className: 'ow-look-arrow', pane: 'markerPane', interactive: false
-        }).addTo(api.map));
-        lookLayers.push(L.polygon(shape.head, {
-          color: '#e8fff4', fillColor: '#e8fff4', fillOpacity: 0.95, weight: 1,
-          className: 'ow-look-head', pane: 'markerPane', interactive: false
-        }).addTo(api.map));
-      }
-    }
-    if (predOn && predOn.checked) {
-      var speed = motionSpeedMs(api.unitSpeed ? api.unitSpeed(unit) : null);
-      if (speed != null) {
-        var delayed = String(unit.status || '').toLowerCase() === 'delayed';
-        var dist = Math.min(delayed ? 140 : 280, speed * (delayed ? 8 : 18));
-        if (dist >= 14) {
-          var end = headingPoint(loc, heading, dist);
-          if (end) {
-            predictLayers.push(L.polyline([lookStart, end], {
-              color: '#7eb0ff', weight: 2, dashArray: '5 7', opacity: 0.8, lineCap: 'round',
-              className: 'ow-predict-line', pane: 'markerPane', interactive: false
-            }).addTo(api.map));
-            predictLayers.push(L.circleMarker(end, {
-              radius: 4, color: '#7eb0ff', fillColor: '#0b1a2c', fillOpacity: 0.7, weight: 1.5,
-              className: 'ow-predict-dot', pane: 'markerPane', interactive: false
-            }).addTo(api.map));
-          }
+    var selected = api.getSelected && api.getSelected();
+    var list = predOn && predOn.checked ? (api.getUnits ? api.getUnits() : []) : (selected ? [selected] : []);
+    if (lookOn && lookOn.checked && selected && list.indexOf(selected) < 0) list = [selected].concat(list);
+    list.forEach(function (unit) {
+      if (!unit) return;
+      var loc = api.point(unit);
+      if (!loc) return;
+      var heading = api.unitHeading ? api.unitHeading(unit) : null;
+      if (heading == null || !isFinite(Number(heading))) return;
+      var lookStart = loc;
+      if (lookOn && lookOn.checked && selected && unit === selected) {
+        var shape = headingArrowShape(api, loc, heading, 34);
+        if (shape) {
+          lookStart = shape.tip;
+          lookLayers.push(L.polyline(shape.shaft, {
+            color: '#e8fff4', weight: 3, opacity: 0.95, lineCap: 'round',
+            className: 'ow-look-arrow', pane: 'markerPane', interactive: false
+          }).addTo(api.map));
+          lookLayers.push(L.polygon(shape.head, {
+            color: '#e8fff4', fillColor: '#e8fff4', fillOpacity: 0.95, weight: 1,
+            className: 'ow-look-head', pane: 'markerPane', interactive: false
+          }).addTo(api.map));
         }
       }
-    }
+      if (!(predOn && predOn.checked)) return;
+      var speed = motionSpeedMs(api.unitSpeed ? api.unitSpeed(unit) : null);
+      if (speed == null) return;
+      var delayed = String(unit.status || '').toLowerCase() === 'delayed';
+      var dist = Math.min(delayed ? 140 : 280, speed * (delayed ? 8 : 18));
+      if (dist < 14) return;
+      var end = headingPoint(loc, heading, dist);
+      if (!end) return;
+      predictLayers.push(L.polyline([lookStart, end], {
+        color: '#7eb0ff', weight: 2, dashArray: '5 7', opacity: 0.75, lineCap: 'round',
+        className: 'ow-predict-line', pane: 'markerPane', interactive: false
+      }).addTo(api.map));
+      predictLayers.push(L.circleMarker(end, {
+        radius: 3.5, color: '#7eb0ff', fillColor: '#0b1a2c', fillOpacity: 0.7, weight: 1.5,
+        className: 'ow-predict-dot', pane: 'markerPane', interactive: false
+      }).addTo(api.map));
+    });
   }
 
   function renderProgressTrail() {
@@ -1041,7 +1041,7 @@
     host.hidden = false;
     host.className = 'ow-confirm';
     host.innerHTML = '<p>Retirer ' + esc(label || 'cet élément') + ' de la carte du poste ?</p>' +
-      (kind === 'marker' ? '<p class="ow-help">S’il vient d’Arma, il peut réapparaître tant qu’il existe encore en jeu.</p>' : '') +
+      (kind === 'marker' ? '<p class="ow-help">Le repère disparaît du poste, même s’il reste visible sur la carte en jeu.</p>' : '') +
       (kind === 'relay' ? '<p class="ow-help">Le relais disparaît du poste. S’il existe encore en jeu, il peut réapparaître.</p>' : '') +
       '<div class="ow-form-actions"><button type="button" class="ow-primary" id="ow-del-yes">Retirer</button>' +
       '<button type="button" class="ow-secondary" id="ow-del-no">Annuler</button></div>';
@@ -1468,6 +1468,7 @@
     afterRenderMap: afterRenderMap,
     loadRelays: loadRelays,
     dropSitrepPin: function (id) {
+      sitreps = sitreps.filter(function (row) { return String(row.id) !== String(id); });
       sitrepPins = sitrepPins.filter(function (layer) {
         if (layer && layer._owPin && String(layer._owPin.id) === String(id)) {
           var api = ow();
@@ -1477,6 +1478,7 @@
         return true;
       });
     },
+    missionId: missionId,
     setArmaRows: function (rows) { window.__owArmaRows = rows || []; renderMarkerIntel(); }
   };
   ready();

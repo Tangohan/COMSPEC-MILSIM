@@ -47,6 +47,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('111319.49079327358', $proj);
         self::assertStringContainsString('owtile', $map);
         self::assertStringContainsString('/api/atak/terrain/rgb/{z}/{x}/{y}', $map);
+        self::assertStringContainsString('/api/atak/tiles', $proj);
+        self::assertStringContainsString('proxiedTileUrl', $proj);
+        self::assertStringContainsString('tile.x >= 0 && tile.y >= 0', $map);
         self::assertStringContainsString("modeSelect.value === 'volume'", $map);
         self::assertStringContainsString('setTerrain', $map);
 
@@ -82,6 +85,9 @@ final class OverwatchGlAssetTest extends TestCase
         $beta = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
         self::assertStringContainsString('function inspectWorld', $beta);
         self::assertStringContainsString('function inspectSceneObject', $beta);
+        self::assertStringContainsString('loadSceneFootprints', $beta);
+        self::assertStringContainsString('tryInspectScene', $beta);
+        self::assertStringContainsString('/api/atak/scene?mapId=', $beta);
         self::assertStringContainsString('data-scene-act="task"', $beta);
         self::assertStringContainsString('data-scene-act="anchor"', $beta);
         self::assertStringContainsString('data-tool="viewshed"', $beta);

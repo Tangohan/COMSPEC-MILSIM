@@ -298,17 +298,8 @@ private _html = format [
 _ctrl ctrlSetStructuredText parseText _html;
 _ctrl ctrlShow true;
 
-private _sig = _disp displayCtrl 3;
-if (!isNull _sig) then {
-    if (_ok) then {
-        _sig ctrlSetTextColor [0.55, 0.95, 0.72, 1];
-    } else {
-        if (_degraded) then {
-            _sig ctrlSetTextColor [1, 0.82, 0.48, 1];
-        } else {
-            _sig ctrlSetTextColor [1, 0.55, 0.48, 1];
-        };
-    };
+if (!isNil "comspec_overwatch_connect_fnc_updateAtakLinkChrome") then {
+    [] call comspec_overwatch_connect_fnc_updateAtakLinkChrome;
 };
 
 missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];

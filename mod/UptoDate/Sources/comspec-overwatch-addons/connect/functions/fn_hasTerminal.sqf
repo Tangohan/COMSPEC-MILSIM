@@ -17,6 +17,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_require_item", true])) ex
 
 if (_unit isEqualTo player && {!isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])}) exitWith { true };
 if (_unit isEqualTo player && {!isNull (uiNamespace getVariable ["cTab_Android_dsp", displayNull])}) exitWith { true };
+if (_unit isEqualTo player && {!isNil "cTabIfOpen"}) exitWith { true };
 
 private _custom = trim (missionNamespace getVariable ["comspec_overwatch_required_item_custom", ""]);
 if (_custom isNotEqualTo "") exitWith {

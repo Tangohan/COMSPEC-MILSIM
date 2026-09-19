@@ -68,7 +68,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('class diagStatusSnapshot {}', $cfg);
         self::assertStringContainsString('class noteUplinkReturn {}', $cfg);
         self::assertStringContainsString('COMSPEC_DiagIsolateHud', $cfg);
-        self::assertStringContainsString('1.5.90', $cfg);
+        self::assertStringContainsString('1.5.95', $cfg);
         self::assertStringContainsString('diagIsolateProbe', $start);
         self::assertStringContainsString('sendIntel', $probe);
         self::assertStringContainsString('sendLocalTacticalMarker', $probe);
@@ -81,6 +81,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('diagIsolateStart', $launch);
         self::assertStringContainsString('9606', $esc);
         self::assertStringContainsString('Dépannage liaison', $esc);
+        self::assertStringNotContainsString('ctrlSetText "COMSPEC Overwatch"', $esc);
         self::assertStringContainsString('9606', $pauseHpp);
         self::assertStringContainsString('Dépannage liaison — lancer maintenant', $html);
         self::assertStringContainsString('un message, un repère et une photo', $html);
@@ -89,8 +90,12 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('snapshot ← getPacketLossStats ok', $snap);
         self::assertStringContainsString('pkt raw=', $snap);
         self::assertStringContainsString('win count=%1 sample=%2', $snap);
+        self::assertStringContainsString('_win select [0, 3 min count _win]', $snap);
+        self::assertStringContainsString('snapshot → window_in filter', $snap);
+        self::assertStringContainsString('snapshot ← window_in filter ok', $snap);
         self::assertStringContainsString('snapshot → extensionStatus', $snap);
         self::assertStringContainsString('snapshot ← extensionStatus ok', $snap);
+        self::assertStringContainsString('snapshot skip extensionStatus', $snap);
         self::assertStringContainsString('snapshot → getCallsign', $snap);
         self::assertStringContainsString('snapshot ← getCallsign ok', $snap);
         self::assertStringContainsString('[COMSPEC Overwatch][DEBUG][Diag]', $snap);

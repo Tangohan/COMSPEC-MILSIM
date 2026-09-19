@@ -30,6 +30,30 @@ private _attach = {
             };
             [_world, _mapCtrl, _xC, _yC] call comspec_overwatch_connect_fnc_reachOverlayClick
         }];
+        _map ctrlAddEventHandler ["MouseButtonDblClick", {
+            params ["_mapCtrl", "_button", "_xC", "_yC"];
+            if (_button != 0) exitWith { false };
+            private _world = _mapCtrl ctrlMapScreenToWorld [_xC, _yC];
+            [{
+                params ["_pos"];
+                if (!isNil "comspec_overwatch_connect_fnc_syncNearbyMapMarkers") then {
+                    [_pos] call comspec_overwatch_connect_fnc_syncNearbyMapMarkers;
+                };
+            }, [_world], 0.3] call CBA_fnc_waitAndExecute;
+            false
+        }];
+        _map ctrlAddEventHandler ["MouseButtonUp", {
+            params ["_mapCtrl", "_button", "_xC", "_yC"];
+            if (_button != 0) exitWith { false };
+            private _world = _mapCtrl ctrlMapScreenToWorld [_xC, _yC];
+            [{
+                params ["_pos"];
+                if (!isNil "comspec_overwatch_connect_fnc_syncNearbyMapMarkers") then {
+                    [_pos] call comspec_overwatch_connect_fnc_syncNearbyMapMarkers;
+                };
+            }, [_world], 0.45] call CBA_fnc_waitAndExecute;
+            false
+        }];
         _disp setVariable ["COMSPEC_ReachMapDraw", true];
     } forEach _names;
 };

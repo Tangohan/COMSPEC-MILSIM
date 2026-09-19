@@ -2038,6 +2038,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
+    $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;
     $router->get('/api/athena/tactical/markers', [$tacticalApi, 'index']);
     $router->post('/api/athena/tactical/markers', [$tacticalApi, 'store']);

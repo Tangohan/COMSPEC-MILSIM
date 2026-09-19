@@ -196,7 +196,9 @@ window.OverwatchGlMap = (function () {
     var pattern = spec && spec.tilePattern ? spec.tilePattern : proj.tilePattern;
     var armaZ = proj.pickArmaZoom(mpp, spec || { tileSize: proj.tileSize, factorX: proj.factorx, maxZoom: proj.maxZoom, minZoom: proj.minZoom });
     var tiles = proj.armaTilesForWorld(world, armaZ, spec);
-    var jobs = tiles.slice(0, 24).map(function (tile) {
+    var jobs = tiles.slice(0, 24).filter(function (tile) {
+      return tile && tile.x >= 0 && tile.y >= 0 && tile.z >= 0;
+    }).map(function (tile) {
       return loadImage(proj.tileUrl(pattern, tile.z, tile.x, tile.y), abort).then(function (img) {
         if (!img) return;
         var dx = (tile.minX - world.minX) / (world.maxX - world.minX) * 256;

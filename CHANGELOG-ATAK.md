@@ -11,6 +11,158 @@ Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Overwatch 1.5.95 / Athena 1.0.152 — 2026-09-19
+
+### Correction — Symboles Marker Dropper au poste
+
+Un losange d’infanterie ou un autre symbole posé avec Marker Dropper sur le téléphone apparaît maintenant sur la carte du poste, au même endroit. Relancez Arma complètement (Overwatch 1.5.95).
+
+---
+
+## Overwatch 1.5.94 / Athena 1.0.151 — 2026-09-19
+
+### Correction — Coupure sans panneau sur la carte
+
+Une coupure de liaison n’affiche plus de panneau au milieu de la carte. Les barres de signal, à côté de l’heure et de la batterie, passent au rouge. La carte reste utilisable. Relancez Arma complètement (Overwatch 1.5.94).
+
+---
+
+## Athena 1.0.150 — 2026-09-19
+
+### Correction — Paramètres ouverts sur la fiche
+
+La page Paramètres s’ouvrait trop bas, sur la liaison au poste. Elle s’ouvre maintenant sur votre fiche (indicatif, rôle, carte, équipe). Enregistrer reste visible en haut. Relancez Arma complètement (Athena 1.0.150).
+
+---
+
+## Athena 1.0.149 — 2026-09-19
+
+### Correction — Transférer dans Photo Library
+
+Transférer et Tout transférer n’apparaissaient pas sous la liste. Ils se placent maintenant dans cette zone dès que Photo Library est ouverte. Relancez Arma complètement (Athena 1.0.149).
+
+---
+
+## Athena 1.0.148 — 2026-09-19
+
+### Correction — P2P réseau local
+
+P2P n’affichait plus que Retour et Send Data, sans correspondants ni messages. Le chat téléphone à téléphone revient. Relancez Arma complètement (Athena 1.0.148).
+
+---
+
+## Overwatch Beta — 2026-09-19
+
+### Amélioration — Onglet Contacts
+
+Les contacts se séparent entre ceux encore en liaison et ceux qui ne le sont plus, par escouade. Chaque fiche montre le rôle, l’âge de la position, et si le lien est direct ou par relais. Un contact hors ligne se recentre sur sa dernière position connue.
+
+### Amélioration — Fiche contact et groupes
+
+La fiche d’un contact ne montre plus que l’essentiel : vitesse, altitude, dernière position, grille, puis centrer, suivre ou donner une tâche. Le téléphone et l’alerte plein écran se déplient à la demande. Dans Groupes, les tâches déjà transmises et l’alerte sont rangées de la même façon.
+
+### Amélioration — Constructions du jeu
+
+Les bâtiments, forêts et obstacles relevés en jeu s’affichent sur la carte à plat. Un clic ouvre la fiche de la construction : marquer, poser un objectif, noter un étage. En Relief 3D, les volumes se dressent toujours au-dessus du sol. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Nouveau — Tracé tactique et briefing
+
+Le crayon du rail ouvre une barre au-dessus de la carte : flèche, croquis, zone, surligneur, texte, plan de bâtiment. Les symboles OTAN posent un axe, une attaque, une ligne de phase, une limite de secteur, un rassemblement ou un objectif, selon l’affiliation (ami, ennemi, neutre, inconnu). Un plan d’étage se rattache à une position. Exporter PDF prépare une feuille de briefing (carte, légende, grille, horodatage, fil). Rechargez Overwatch Beta (Ctrl+F5).
+
+### Correction — Repères qui revenaient
+
+Un compte rendu ou un repère retiré de la carte du poste réapparaissait quelques secondes plus tard. Le retrait tient désormais. Rechargez Overwatch Beta (Ctrl+F5).
+
+---
+
+## Athena 1.0.147 — 2026-09-19
+
+### Amélioration — Icônes du menu
+
+Athena, Briefing et Tutoriel avaient la même bulle. Chaque application a maintenant son pictogramme : tablette, presse-papiers, livre, bulles pour la messagerie. Relancez Arma complètement (Athena 1.0.147).
+
+---
+
+## Overwatch 1.5.93 — 2026-09-19
+
+### Correction — Menu Échap
+
+Le bouton COMSPEC Overwatch du menu Échap n’apportait plus rien d’utile. Il disparaît. Le dépannage de liaison reste disponible depuis Échap. Relancez Arma complètement (Overwatch 1.5.93).
+
+---
+
+## Athena 1.0.146 — 2026-09-19
+
+### Nouveau — Transfert vers le poste
+
+Dans Photo Library, **Transférer** envoie la vue sélectionnée vers le poste. **Tout transférer** envoie vos vues locales. Après l’envoi, elles quittent la bibliothèque du téléphone. Relancez Arma complètement (Athena 1.0.146).
+
+---
+
+## Athena 1.0.145 — 2026-09-19
+
+### Correction — Icônes du menu
+
+Les tuiles Athena du chevron n’affichaient plus d’icône. Le pictogramme revient au-dessus du nom, comme sur Video Feeds. Relancez Arma complètement (Athena 1.0.145).
+
+---
+
+## Athena 1.0.144 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le chevron ne montrait plus que deux ou trois icônes, mal placées. Le téléphone ne déplace plus les tuiles : la grille d’origine réapparaît. Relancez Arma complètement (Athena 1.0.144).
+
+---
+
+## Overwatch Beta — 2026-09-19
+
+### Correction — Fond de carte en relief 3D
+
+En vue Relief 3D ou Tactique 3D, le théâtre restait sombre : le plan et la photo aérienne n’arrivaient pas jusqu’au poste. Ils s’affichent de nouveau sur le relief. Rechargez Overwatch Beta (Ctrl+F5).
+
+---
+
+## Overwatch Beta — 2026-09-19
+
+### Nouveau — Outils de commandement
+
+Le poste mesure d’un clic à l’autre (distance, cap, grilles, temps de parcours). Un compte rendu de contact structuré, une 9-line et un CASEVAC se préparent depuis un point de la carte. Les contacts en mouvement montrent un vecteur d’anticipation. Le fil d’ordres se filtre par mot-clé. Des alertes sonores préviennent d’un contact trop proche d’un objectif ou d’un ralliement franchi. Replay et export du bilan sont accessibles depuis Mission et Plus. Une position qui n’est plus mise à jour est indiquée comme dernière position connue, figée. L’alerte plein écran à tous les opérateurs est réservée au commandement. Rechargez Overwatch Beta (Ctrl+F5).
+
+---
+
+## Athena 1.0.143 — 2026-09-19
+
+### Correction — Menu d’applications
+
+Le chevron mélangeait les icônes et les noms. Un clic ouvrait souvent Task et Video Feeds, et les applications Athena n’apparaissaient pas. Les tuiles reprennent la grille à trois colonnes du téléphone. Relancez Arma complètement (Athena 1.0.143).
+
+---
+
+## Overwatch 1.5.92 — 2026-09-19
+
+### Amélioration — Journal du dépannage
+
+Si le jeu s’arrête pendant le dépannage liaison, le journal de session indique désormais quelle étape était en cours. Relancez Arma complètement (Overwatch 1.5.92) avant le prochain essai.
+
+---
+
+## Athena 1.0.142 — 2026-09-19
+
+### Correction — Quick Pictures vers le poste
+
+Une vue prise depuis Quick Pictures n’arrivait pas au poste, ou seulement si l’on choisissait le bon destinataire. Dans Photo Library, le bouton **Vers Athena** envoie la photo sélectionnée au poste. Relancez Arma complètement (Athena 1.0.142).
+
+---
+
+## Overwatch 1.5.91 — 2026-09-19
+
+### Correction — Photos du poste
+
+Les photos reçues du terrain ou du dépannage affichaient l’année 1970 et ne proposaient que Envoyer. L’heure affichée est désormais celle de la prise ou de la réception. Sous chaque photo : Agrandir, Flouter, Passer en SSE, Supprimer. Rechargez Overwatch Beta. Relancez Arma complètement (Overwatch 1.5.91) pour les prochaines photos prises en jeu.
+
+---
+
 ## Athena 1.0.141 — 2026-09-19
 
 ### Correction — Menu d’applications

@@ -41,7 +41,10 @@ if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
         || {_zoneType isEqualTo "no_coverage"};
 };
 
-private _needOverlay = _crashed || {!_connectionOk} || {!_canDisplay} || {!_screenOk} || _isDisconnected || _isCompromised || _zoneOut;
+// Liaison perdue : icône dans la barre d’état, jamais un panneau sur la carte.
+[] call comspec_overwatch_connect_fnc_updateAtakLinkChrome;
+
+private _needOverlay = _crashed || {!_connectionOk} || {!_canDisplay} || {!_screenOk} || _isCompromised || _zoneOut;
 
 private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _display) then {
@@ -221,25 +224,14 @@ if (_crashed) then {
                     ] call _fncResolveTex;
                     _captionPlace = "bottom";
                 } else {
-                    if (_isDisconnected) then {
-                        _title = "Liaison perdue";
-                        _detail = if (_remaining > 0) then {
-                            format ["Reconnexion dans %1 s", _remaining]
-                        } else {
-                            "Reconnexion en cours…"
-                        };
-                        _tex = "";
-                        _captionPlace = "center";
-                    } else {
-                        if (!_powered) then {
-                            _title = "ATAK ÉTEINT";
-                            _detail = "Rallumez l’appareil (interaction personnelle).";
-                            _tex = [
-                                "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa",
-                                "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png"
-                            ] call _fncResolveTex;
-                            _captionPlace = "bottom";
-                        };
+                    if (!_powered) then {
+                        _title = "ATAK ÉTEINT";
+                        _detail = "Rallumez l’appareil (interaction personnelle).";
+                        _tex = [
+                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa",
+                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png"
+                        ] call _fncResolveTex;
+                        _captionPlace = "bottom";
                     };
                 };
             };

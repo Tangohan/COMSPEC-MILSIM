@@ -25,4 +25,15 @@ return static function (PDO $pdo): void {
             $pdo->exec($sql);
         }
     }
+
+    try {
+        $pdo->exec(
+            "UPDATE recon_images
+             SET captured_at = created_at
+             WHERE captured_at IS NOT NULL
+               AND captured_at < '2000-01-01 00:00:00'
+               AND created_at IS NOT NULL"
+        );
+    } catch (\Throwable) {
+    }
 };

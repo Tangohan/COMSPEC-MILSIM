@@ -104,16 +104,18 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
         if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
-        [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
-        [{
-            params ["_m"];
-            if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-            if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
-            if (!(_m in allMapMarkers)) exitWith {};
-            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-            if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
-            [_m, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
-        }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
+            private _forceNow = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+            [_marker, false, _forceNow] call comspec_overwatch_connect_fnc_syncMapMarker;
+            [{
+                params ["_m"];
+                if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
+                if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if (!(_m in allMapMarkers)) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+                private _forceLater = [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+                [_m, false, _forceLater] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
     };
     missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
     COMSPEC_MapMarkerEHs = [

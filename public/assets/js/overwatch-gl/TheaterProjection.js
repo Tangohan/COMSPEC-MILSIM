@@ -6,6 +6,40 @@ window.OverwatchTheaterProjection = (function () {
   var METERS_PER_DEGREE = 111319.49079327358;
   var MERCATOR_MPP0 = 156543.03392804097;
 
+  function apiBase() {
+    var base = window.ATAKSocket && window.ATAKSocket.getApiBase
+      ? window.ATAKSocket.getApiBase()
+      : (window.ATAK_API_BASE || '');
+    return String(base || '').replace(/\/$/, '');
+  }
+
+  function proxiedTileUrl(url) {
+    var raw = String(url || '');
+    if (!raw || raw.indexOf('blob:') === 0 || raw.indexOf('data:') === 0) return raw;
+    if (raw.indexOf('/api/atak/tiles') >= 0) return raw;
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    try {
+      var parsed = new URL(raw, window.location.href);
+      if (parsed.hostname === window.location.hostname) return raw;
+    } catch (e0) {
+      return raw;
+    }
+    return apiBase() + '/api/atak/tiles?u=' + encodeURIComponent(raw);
+  }
+
+  function proxiedTilePattern(pattern) {
+    var raw = String(pattern || '');
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    try {
+      if (new URL(raw, window.location.href).hostname === window.location.hostname) return raw;
+    } catch (e1) {}
+    var encoded = encodeURIComponent(raw)
+      .replace(/%7Bz%7D/gi, '{z}')
+      .replace(/%7Bx%7D/gi, '{x}')
+      .replace(/%7By%7D/gi, '{y}');
+    return apiBase() + '/api/atak/tiles?u=' + encoded;
+  }
+
   function create(raw) {
     var cfg = raw || window.ATAK_MAP_CONFIG || {};
     var offsetX = Number(cfg.offsetX != null ? cfg.offsetX : (cfg.offset_x != null ? cfg.offset_x : 0)) || 0;
@@ -149,10 +183,10 @@ window.OverwatchTheaterProjection = (function () {
     }
 
     function tileUrl(pattern, z, x, y) {
-      return String(pattern || '')
+      return proxiedTileUrl(String(pattern || '')
         .replace('{z}', String(z))
         .replace('{x}', String(x))
-        .replace('{y}', String(y));
+        .replace('{y}', String(y)));
     }
 
     return {
@@ -184,5 +218,10 @@ window.OverwatchTheaterProjection = (function () {
     };
   }
 
-  return { create: create, METERS_PER_DEGREE: METERS_PER_DEGREE };
+  return {
+    create: create,
+    METERS_PER_DEGREE: METERS_PER_DEGREE,
+    proxiedTileUrl: proxiedTileUrl,
+    proxiedTilePattern: proxiedTilePattern
+  };
 })();

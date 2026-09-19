@@ -836,12 +836,13 @@ window.ATAKOrders = (function () {
       return 'En retard';
     }
     switch (String(s || '').toUpperCase()) {
-      case 'DELIVERED': return 'Reçu';
-      case 'ACK': return 'Confirmé';
+      case 'DELIVERED': return 'Vu';
+      case 'ACK': return 'Accusé';
       case 'EXEC': return 'En cours';
+      case 'DONE': return 'Terminé';
       case 'FAILED': return 'Échec';
       case 'CANCELLED': return 'Annulé';
-      default: return 'Émis';
+      default: return 'Transmis';
     }
   }
 
@@ -852,6 +853,7 @@ window.ATAKOrders = (function () {
       case 'DELIVERED': return 'atak-order-badge--status-delivered';
       case 'ACK': return 'atak-order-badge--status-ack';
       case 'EXEC': return 'atak-order-badge--status-exec';
+      case 'DONE': return 'atak-order-badge--status-ack';
       case 'FAILED': return 'atak-order-badge--status-failed';
       case 'CANCELLED': return 'atak-order-badge--status-cancelled';
       default: return 'atak-order-badge--status-pending';
@@ -1146,6 +1148,7 @@ window.ATAKOrders = (function () {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Échec</button>');
         }
         if (status === 'EXEC') {
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--exec" data-order-action="DONE" data-order-id="' + escapeHtml(id) + '">Terminé</button>');
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Échec</button>');
         }
         if (canIssue && status !== 'EXEC') {

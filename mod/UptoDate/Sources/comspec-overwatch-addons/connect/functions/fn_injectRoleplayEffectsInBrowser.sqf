@@ -19,18 +19,8 @@ if (_packetLossStats isEqualType createHashMap) then {
 
 private _jsCode = "";
 
-if (_isDisconnected) then {
-    private _remaining = 0;
-    if (_disconnectInfo isEqualType createHashMap) then {
-        _remaining = _disconnectInfo getOrDefault ["remaining_seconds", 0];
-    };
-    _jsCode = _jsCode + format [
-        "if (window.AtakRoleplayEffects) { AtakRoleplayEffects.showConnectionError('Liaison perdue', 'Reconnexion dans %1 s'); }",
-        _remaining
-    ];
-} else {
-    _jsCode = _jsCode + "if (window.AtakRoleplayEffects) { AtakRoleplayEffects.hideConnectionError(); }";
-};
+// Pas de panneau « Liaison perdue » sur la carte : l’état va dans la barre d’état du téléphone.
+_jsCode = _jsCode + "if (window.AtakRoleplayEffects) { AtakRoleplayEffects.hideConnectionError(); }";
 
 if (_packetLoss > 5) then {
     private _intensity = (_packetLoss / 100) min 0.4;

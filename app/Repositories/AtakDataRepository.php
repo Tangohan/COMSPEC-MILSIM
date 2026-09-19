@@ -376,24 +376,30 @@ class AtakDataRepository
         $stmt = $this->pdo()->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
         $stmt->execute([$tenantId, $mapId, $armaName]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        $incomingDecoded = json_decode($markerData, true);
+        $incomingDecoded = is_array($incomingDecoded) ? $incomingDecoded : [];
         if ($existing) {
-            // Respecte une suppression web : le jeu ne doit pas republier le marqueur.
             if ($this->markerDataIsSuppressed((string) ($existing['marker_data'] ?? ''))) {
                 return $this->getMarkerById($tenantId, (int) $existing['id'])
                     ?? ['id' => (int) $existing['id'], 'layerId' => $layerId, 'markerData' => (string) $existing['marker_data'], 'updated_at' => null];
             }
-            $incoming = json_decode($markerData, true);
             $previous = json_decode((string) ($existing['marker_data'] ?? ''), true);
-            if (is_array($incoming) && is_array($previous)) {
-                $merged = \App\Support\AtakPoMarker::preserveReached($incoming, $previous);
+            if ($incomingDecoded !== [] && is_array($previous)) {
+                $merged = \App\Support\AtakPoMarker::preserveReached($incomingDecoded, $previous);
                 $encoded = json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 if (is_string($encoded) && $encoded !== '') {
                     $markerData = $encoded;
                 }
             }
             $this->pdo()->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
+
             return $this->getMarkerById($tenantId, (int) $existing['id']);
         }
+        $twin = $this->findSuppressedTwin($tenantId, $mapId, $incomingDecoded);
+        if ($twin !== null) {
+            return $twin;
+        }
+
         return $this->addMarker($tenantId, $mapId, $layerId, $markerData, $armaName);
     }
 
@@ -433,10 +439,21 @@ class AtakDataRepository
 
     public function deleteMarkerByArmaName(int $tenantId, int $mapId, string $armaName): bool
     {
-        $stmt = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
+        $stmt = $this->pdo()->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ? LIMIT 1');
         $stmt->execute([$tenantId, $mapId, $armaName]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return false;
+        }
+        // Un retrait fait depuis le poste doit rester : ne pas effacer la trace,
+        // sinon le prochain envoi depuis le jeu recrée le marqueur.
+        if ($this->markerDataIsSuppressed((string) ($row['marker_data'] ?? ''))) {
+            return true;
+        }
+        $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $del->execute([$tenantId, (int) $row['id']]);
 
-        return $stmt->rowCount() > 0;
+        return $del->rowCount() > 0;
     }
 
     public function deleteMarker(int $tenantId, int $id): bool
@@ -447,25 +464,104 @@ class AtakDataRepository
         if (!$row) {
             return false;
         }
+        $decoded = json_decode((string) ($row['marker_data'] ?? '{}'), true);
+        if (!is_array($decoded)) {
+            $decoded = [];
+        }
         $armaName = trim((string) ($row['arma_name'] ?? ''));
-        // Marqueur issu du jeu : soft-suppress pour ne pas le voir revenir au prochain sync.
-        if ($armaName !== '') {
-            $decoded = json_decode((string) ($row['marker_data'] ?? '{}'), true);
-            if (!is_array($decoded)) {
-                $decoded = [];
-            }
-            $decoded['suppressed'] = true;
-            $decoded['suppressed_at'] = gmdate('c');
-            $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            $upd = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
-            $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true}', $tenantId, $id]);
-
-            return true;
+        $source = strtolower(trim((string) ($decoded['source'] ?? '')));
+        $fromGame = $armaName !== '' || in_array($source, ['arma', 'ctab', 'ace', 'bce_widget', 'game'], true);
+        if ($fromGame) {
+            return $this->suppressMarkerRow($tenantId, $id, $decoded);
         }
         $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $del->execute([$tenantId, $id]);
 
         return $del->rowCount() > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     */
+    private function suppressMarkerRow(int $tenantId, int $id, array $decoded): bool
+    {
+        $decoded['suppressed'] = true;
+        $decoded['suppressed_at'] = gmdate('c');
+        $decoded['suppressed_by'] = 'web';
+        $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $upd = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+        $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true,"suppressed_by":"web"}', $tenantId, $id]);
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $incoming
+     * @return array{id:int, layerId?:int, markerData:string, updated_at?:mixed}|null
+     */
+    private function findSuppressedTwin(int $tenantId, int $mapId, array $incoming): ?array
+    {
+        $wantText = $this->markerTextKey($incoming);
+        $wantPos = $this->markerPosPair($incoming);
+        if ($wantText === '' && $wantPos === null) {
+            return null;
+        }
+        $stmt = $this->pdo()->prepare('SELECT id, layer_id, marker_data, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?');
+        $stmt->execute([$tenantId, $mapId]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $raw = (string) ($row['marker_data'] ?? '');
+            if (!$this->markerDataIsSuppressed($raw)) {
+                continue;
+            }
+            $decoded = json_decode($raw, true);
+            $decoded = is_array($decoded) ? $decoded : [];
+            $textOk = $wantText !== '' && $this->markerTextKey($decoded) === $wantText;
+            $have = $this->markerPosPair($decoded);
+            $near = false;
+            if ($wantPos !== null && $have !== null) {
+                $dx = $wantPos[0] - $have[0];
+                $dy = $wantPos[1] - $have[1];
+                $near = ($dx * $dx + $dy * $dy) <= (80 * 80);
+            }
+            $sameBlank = $wantText === '' && $this->markerTextKey($decoded) === '' && $near;
+            if (($textOk && ($near || $wantPos === null || $have === null)) || $sameBlank) {
+                return [
+                    'id' => (int) $row['id'],
+                    'layerId' => (int) ($row['layer_id'] ?? 1),
+                    'markerData' => $raw,
+                    'updated_at' => $row['updated_at'] ?? null,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     */
+    private function markerTextKey(array $decoded): string
+    {
+        return mb_strtolower(trim((string) ($decoded['text'] ?? $decoded['label'] ?? '')));
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     * @return array{0:float,1:float}|null
+     */
+    private function markerPosPair(array $decoded): ?array
+    {
+        $pos = $decoded['pos'] ?? null;
+        if (is_array($pos) && isset($pos[0], $pos[1]) && is_numeric($pos[0]) && is_numeric($pos[1])) {
+            return [(float) $pos[0], (float) $pos[1]];
+        }
+        $x = $decoded['pos_x'] ?? $decoded['x'] ?? null;
+        $y = $decoded['pos_y'] ?? $decoded['y'] ?? null;
+        if (is_numeric($x) && is_numeric($y)) {
+            return [(float) $x, (float) $y];
+        }
+
+        return null;
     }
 
     public function getUnits(int $tenantId, int $mapId): array

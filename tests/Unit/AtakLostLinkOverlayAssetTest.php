@@ -63,10 +63,13 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringNotContainsString('outageEl.hidden = lastPingOk', $view);
     }
 
-    public function testInGameLostLinkDropsOldGraphicAndKeepsOneTimer(): void
+    public function testInGameLostLinkUsesStatusBarNotMapOverlay(): void
     {
         $overlay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updateDeviceOverlay.sqf'
+        );
+        $chrome = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updateAtakLinkChrome.sqf'
         );
         $roleplay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updateAtakEnhancedRoleplay.sqf'
@@ -74,20 +77,33 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         $inject = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_injectRoleplayEffectsInBrowser.sqf'
         );
+        $cfg = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
+        );
+        $note = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/docs/bugs/2026-09-19-liaison-perdue-overlay-carte.md'
+        );
 
-        self::assertStringContainsString('_title = "Liaison perdue"', $overlay);
-        self::assertStringContainsString('Reconnexion dans %1 s', $overlay);
-        self::assertStringNotContainsString('Reconnexion estimée', $overlay);
+        self::assertStringNotContainsString('_title = "Liaison perdue"', $overlay);
+        self::assertStringNotContainsString('_isDisconnected || _isCompromised', $overlay);
+        self::assertStringContainsString('updateAtakLinkChrome', $overlay);
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $overlay);
 
+        self::assertStringContainsString('displayCtrl 3', $chrome);
+        self::assertStringContainsString('Liaison perdue', $chrome);
+        self::assertStringContainsString('99887710', $chrome);
+        self::assertStringContainsString('class updateAtakLinkChrome', $cfg);
+        self::assertStringContainsString('1.5.95', $cfg);
+
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $roleplay);
-        self::assertStringNotContainsString('Reconnexion estimée', $roleplay);
         self::assertStringContainsString('fn_updateDeviceOverlay', $roleplay);
 
-        self::assertStringContainsString("showConnectionError('Liaison perdue', 'Reconnexion dans %1 s')", $inject);
+        self::assertStringContainsString('hideConnectionError()', $inject);
+        self::assertStringNotContainsString("showConnectionError('Liaison perdue'", $inject);
         self::assertStringContainsString('ctrlWebBrowserAction ["ExecJS"', $inject);
         self::assertStringContainsString('cTab_Android_dlg', $inject);
         self::assertStringNotContainsString('Liaison ATAK perdue', $inject);
         self::assertStringNotContainsString('applyMapInterference(0.6)', $inject);
+        self::assertStringContainsString('barre d’état', $note);
     }
 }

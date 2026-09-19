@@ -89,6 +89,7 @@ final class AtakPhoneLoginAssetTest extends TestCase
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString('/api/atak/sync/roster', $routes);
         self::assertStringContainsString('/map-data/{world}/{z}/{x}/{file}', $routes);
+        self::assertStringContainsString('/api/atak/tiles', $routes);
 
         $disconnect = (string) file_get_contents($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_networkDisconnect.sqf');
         self::assertStringContainsString('Logout', $disconnect);

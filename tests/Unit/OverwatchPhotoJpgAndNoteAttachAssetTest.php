@@ -27,6 +27,8 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
             $bridge
         );
         self::assertStringContainsString('_fnc_isJpegPath', $capture);
+        self::assertStringContainsString('wallClockSeconds', $capture);
+        self::assertStringNotContainsString('private _capturedAt = str (floor time);', $capture);
         self::assertStringContainsString('StageCapture', $capture);
         self::assertStringContainsString('GetPhotoSaveDir', $folder);
         self::assertStringContainsString('Arma 3 - COMSPEC\\Captures', $folder);

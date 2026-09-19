@@ -210,6 +210,9 @@ class AtakController
             'canViewBft' => true,
             'canUseMedical' => true,
             'canChat' => true,
+            'canIssueAlert' => (bool) $currentUser && function_exists('can')
+                && (can('atak.command.alert') || can('atak.mission_cycle.manage')
+                    || can('admin.access') || can('admin.organization')),
         ];
         if (!$currentUser) {
             $atakCaps['canViewPersonnel'] = false;
@@ -220,6 +223,7 @@ class AtakController
             $atakCaps['canDeleteOwnUnit'] = false;
             $atakCaps['canTriageMedical'] = false;
             $atakCaps['canManageCertificates'] = false;
+            $atakCaps['canIssueAlert'] = false;
         }
 
         $atakProfileHints = (new AtakSessionProfileHintService())->build($currentUser, $tenantId);

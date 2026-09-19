@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.141;
-        versionStr = "1.0.141";
-        versionAr[] = {1, 0, 141};
-        // Historique : 1.0.139 tiroir, 1.0.140 un seul ordre, 1.0.141 grille menu sans redimension.
+        version = 1.152;
+        versionStr = "1.0.152";
+        versionAr[] = {1, 0, 152};
+        // Historique : 1.0.151 liaison perdue en icône barre d’état, 1.0.152 Marker Dropper → poste.
     };
 };
 
@@ -43,6 +43,7 @@ class CfgFunctions
             class athena_selectFilter {};
             class athena_applyHomeLayout {};
             class athena_layoutAppDrawer {};
+            class athena_syncAtakApps {};
             class athena_pageCtrl {};
             class athena_resolveAthenaGroup {};
             class athena_hideForeignPages {};
@@ -80,6 +81,8 @@ class CfgFunctions
             class athena_snapshotVideoFeed {};
             class athena_installDesktopShortcut {};
             class athena_installPhotoLibraryAthena {};
+            class athena_sendLibraryPhoto {};
+            class athena_removeIcemanPhoto {};
             class athena_createWebMarker {};
             class athena_showLinkDialog {};
             class athena_showPhoneConnect {};
@@ -285,48 +288,23 @@ class RscControlsGroup;
 
 class ATAK_APPs
 {
-    class message
-    {
-        text = "<t size='1'>Message</t>";
-        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        class Menu_Property
-        {
-            ORDER = 0;
-            PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
-            Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
-        };
-    };
+    // IceMan : class message; puis nos apps. Ne pas redéfinir message (sinon plus d’icônes).
+    class message;
     class AtakP2P: message
     {
         text = "<t size='1'>P2P — Réseau local</t>";
         textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        class Menu_Property
+        // PAGE_CTRL / Opened IceMan : ne pas forcer ATAK_Message (écran vide + Send Data).
+        class Menu_Property: Menu_Property
         {
             ORDER = 0.05;
-            PAGE_CTRL = "ATAK_Message";
-            Opened = "BCE_fnc_ATAK_message_Init";
-            ATAK_Buttons = "Message_Menu";
-        };
-    };
-    // IceMan Groups → même choix Message (P2P ou Athena)
-    class Group: message
-    {
-        text = "<t size='1'>Message</t>";
-        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        class Menu_Property
-        {
-            ORDER = 1.11;
-            PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
-            Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
         };
     };
     class Athena: message
     {
         text = "<t size='1'>Athena</t>";
-        textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_athena_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
@@ -363,7 +341,7 @@ class ATAK_APPs
     class AtakComms: message
     {
         text = "<t size='1'>Messagerie</t>";
-        textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_comms_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
@@ -412,7 +390,7 @@ class ATAK_APPs
     class AtakBriefing: message
     {
         text = "<t size='1'>Briefing</t>";
-        textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_briefing_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
@@ -424,7 +402,7 @@ class ATAK_APPs
     class AtakWiki: message
     {
         text = "<t size='1'>Tutoriel / WIKI</t>";
-        textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_wiki_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
@@ -462,7 +440,7 @@ class ATAK_APPs
     class BDA_Report: message
     {
         text = "<t size='1'>BDA Report</t>";
-        textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_bda_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
@@ -491,47 +469,21 @@ class RscTitles
 {
     class ATAK_APPs
     {
-        class message
-        {
-            text = "<t size='1'>Message</t>";
-            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-            class Menu_Property
-            {
-                ORDER = 0;
-                PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
-                Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
-            };
-        };
+        class message;
         class AtakP2P: message
         {
             text = "<t size='1'>P2P — Réseau local</t>";
             textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-            class Menu_Property
+            class Menu_Property: Menu_Property
             {
                 ORDER = 0.05;
-                PAGE_CTRL = "ATAK_Message";
-                Opened = "BCE_fnc_ATAK_message_Init";
-                ATAK_Buttons = "Message_Menu";
-            };
-        };
-        class Group: message
-        {
-            text = "<t size='1'>Message</t>";
-            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-            class Menu_Property
-            {
-                ORDER = 1.11;
-                PAGE_CTRL = "COMSPEC_ATAK_MessageHub";
-                Opened = "comspec_overwatch_atak_athena_fnc_athena_messageHubOnOpened";
             };
         };
         class Athena: message
         {
             text = "<t size='1'>Athena</t>";
-            textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_athena_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
@@ -568,7 +520,7 @@ class RscTitles
         class AtakComms: message
         {
             text = "<t size='1'>Messagerie</t>";
-            textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_comms_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
@@ -617,7 +569,7 @@ class RscTitles
         class AtakBriefing: message
         {
             text = "<t size='1'>Briefing</t>";
-            textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_briefing_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
@@ -629,7 +581,7 @@ class RscTitles
         class AtakWiki: message
         {
             text = "<t size='1'>Tutoriel / WIKI</t>";
-            textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_wiki_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
@@ -665,7 +617,7 @@ class RscTitles
         class BDA_Report: message
         {
             text = "<t size='1'>BDA Report</t>";
-            textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_bda_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
