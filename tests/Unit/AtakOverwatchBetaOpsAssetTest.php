@@ -44,6 +44,7 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('name="urgency"', $ops);
         self::assertStringContainsString('Envoyer aussi sur le canal Commandement', $ops);
         self::assertStringContainsString('promptShape', $ops);
+        self::assertStringContainsString('dropPendingPreview', $ops);
         self::assertStringContainsString('fill_style', $ops);
         self::assertStringContainsString('ColorGreen', $ops);
         self::assertStringContainsString('name="description"', $ops);

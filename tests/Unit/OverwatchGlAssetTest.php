@@ -17,6 +17,7 @@ final class OverwatchGlAssetTest extends TestCase
         $layers = (string) file_get_contents($root . '/public/assets/js/overwatch-gl/OverwatchGlLayers.js');
 
         self::assertStringContainsString('<option value="flat" selected>À plat (2D)</option>', $view);
+        self::assertStringContainsString('<option value="immersive">2D immersif</option>', $view);
         self::assertStringContainsString('<option value="volume">Relief 3D</option>', $view);
         self::assertStringContainsString('<option value="tactical">Tactique 3D</option>', $view);
         self::assertStringContainsString('id="ow-cam-bar"', $view);
@@ -50,7 +51,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('/api/atak/tiles', $proj);
         self::assertStringContainsString('proxiedTileUrl', $proj);
         self::assertStringContainsString('tile.x >= 0 && tile.y >= 0', $map);
-        self::assertStringContainsString("modeSelect.value === 'volume'", $map);
+        self::assertStringContainsString("v === 'flat' || v === 'immersive'", $map);
+        self::assertStringContainsString("storedMode() === 'immersive'", $map);
+        self::assertStringContainsString('destroyGl();', $map);
         self::assertStringContainsString('setTerrain', $map);
 
         self::assertStringContainsString("'&kind=' + encodeURIComponent(kind)", $layers);
@@ -89,6 +92,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('tryInspectScene', $beta);
         self::assertStringContainsString('/api/atak/scene?mapId=', $beta);
         self::assertStringContainsString('data-scene-act="task"', $beta);
+        self::assertStringContainsString('data-scene-act="plan"', $beta);
+        self::assertStringContainsString('getSceneBuildings', $beta);
+        self::assertStringContainsString('hitSceneAt(ll, force)', $beta);
         self::assertStringContainsString('data-scene-act="anchor"', $beta);
         self::assertStringContainsString('data-tool="viewshed"', $beta);
         self::assertStringContainsString('measure3d', $beta);
@@ -156,7 +162,7 @@ final class OverwatchGlAssetTest extends TestCase
         $terrain = (string) file_get_contents($root . '/app/Controllers/Api/AtakTerrainApiController.php');
 
         self::assertStringContainsString('normalizeKind', $ctrl);
-        self::assertStringContainsString("\$limit = min(8000, \$limit)", $ctrl);
+        self::assertStringContainsString("\$limit = min(40000, \$limit)", $ctrl);
         self::assertStringNotContainsString("'model_class'", $ctrl);
         self::assertStringNotContainsString('model_class', substr($ctrl, (int) strpos($ctrl, 'function index')));
         self::assertStringContainsString('kindSql', $repo);

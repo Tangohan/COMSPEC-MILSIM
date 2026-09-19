@@ -30,6 +30,8 @@ if (_keep isEqualTo "") then {
             case "atakwiki": { "wiki" };
             case "ataksettings": { "settings" };
             case "atakstatus": { "status" };
+            case "waverelay": { "relay" };
+            case "atakrelay": { "relay" };
             case "ataksound": { "sound" };
             case "bii_identifi": { "bii" };
             case "atakresynch": { "resynch" };
@@ -52,6 +54,7 @@ private _needles = [
     ["wiki", "comspec_atak_wiki"],
     ["settings", "comspec_atak_settings"],
     ["status", "comspec_atak_status"],
+    ["relay", "comspec_atak_relay"],
     ["sound", "comspec_atak_sound"],
     ["bii", "comspec_atak_bii"],
     ["resynch", "comspec_atak_resynch"],
@@ -86,12 +89,18 @@ if (isNull _apps) exitWith {};
             private _show = (_keepNeedle isNotEqualTo "") && {(_cls find _keepNeedle) >= 0};
             _x ctrlShow _show;
         } else {
+            if ((_cls find "iceman_atak_waverelay") >= 0) then {
+                private _showWr = _keep isEqualTo "relay";
+                _x ctrlShow _showWr;
+                _x ctrlEnable _showWr;
+            } else {
             if (
                 ((_keep isEqualTo "comms") || {_keep isEqualTo "msghub"})
                 && {(_cls find "iceman") >= 0 && {(_cls find "group") >= 0}}
             ) then {
                 _x ctrlShow false;
                 _x ctrlEnable false;
+            };
             };
         };
         };

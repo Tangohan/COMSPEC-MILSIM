@@ -20,7 +20,9 @@ private _html = [
     "<t color='#7CFF9A' size='1.05'>En liaison sur le portail, « non connecté » en jeu ?</t><br/>",
     "<t color='#E8F2FA'>C’est possible. Le poste voit votre appareil (indicatif TA1…), mais le jeu n’a pas ouvert la session compte. Le bandeau doit alors dire « En liaison — compte à ouvrir », pas un simple OK trompeur.</t><br/><br/>",
     "<t color='#FF8A80' size='1.05'>Dépannage — pseudo à la place du nom</t><br/>",
-    "<t color='#E8F2FA'>Si vous voyez le pseudo de jeu (ex. NewPI) au lieu du prénom et du nom Athena : compte non connecté en jeu. Appuyez sur Entrer, ou Appairer / e-mail / Steam. Steam n’est pas obligatoire. Quand c’est bon, le vrai nom apparaît et le bandeau passe à Connecté.</t>"
+    "<t color='#E8F2FA'>Si vous voyez le pseudo de jeu (ex. NewPI) au lieu du prénom et du nom Athena : compte non connecté en jeu. Appuyez sur Entrer, ou Appairer / e-mail / Steam. Steam n’est pas obligatoire. Quand c’est bon, le vrai nom apparaît et le bandeau passe à Connecté.</t><br/><br/>",
+    "<t color='#7CFF9A' size='1.05'>Relais AT</t><br/>",
+    "<t color='#E8F2FA'>L’application Relais AT montre le mât le plus proche : nom, grille, débit, fiabilité, places, puissance, adresse réseau, passerelle et certificat. Un mât détruit passe hors service. Les mâts se posent dans l’éditeur (Modules COMSPEC) ou via Zeus.</t>"
 ] joinString "";
 
 _body ctrlSetStructuredText parseText _html;

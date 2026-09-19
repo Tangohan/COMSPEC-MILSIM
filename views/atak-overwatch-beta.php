@@ -180,12 +180,14 @@ $icon = static function (string $path): string {
           <label class="ow-row" for="atak-terrain-3d-mode">Vue de la carte
             <select id="atak-terrain-3d-mode">
               <option value="flat" selected>À plat (2D)</option>
+              <option value="immersive">2D immersif</option>
               <option value="volume">Relief 3D</option>
               <option value="tactical">Tactique 3D</option>
             </select>
           </label>
+          <p class="ow-help">À plat : photo ou plan, sans volumes. 2D immersif : mêmes constructions collées à la carte, chargées une fois. Relief et Tactique 3D dressent le sol et les volumes.</p>
           <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments, forêts et obstacles</label>
-          <p class="ow-help">Les volumes relevés en jeu s’affichent sur la carte à plat. Un clic ouvre la fiche de la construction (marquer, objectif, étage). En Relief 3D, ils se dressent au-dessus du sol.</p>
+          <p class="ow-help">En 2D immersif, les empreintes restent collées au fond. Un clic ouvre la fiche (marquer, objectif, étage). En Relief 3D, les volumes se dressent. À plat, cette case n’a pas d’effet.</p>
           <label class="ow-toggle" for="atak-scene-quality"><input type="checkbox" id="atak-scene-quality"> Qualité du relevé (cartographie)</label>
           <p class="ow-help">Éteint par défaut. Vert : données complètes. Orange : dimensions approximées. Gris : position seulement. Rouge : géométrie à vérifier.</p>
           <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
@@ -423,6 +425,20 @@ $icon = static function (string $path): string {
           <button type="button" class="ow-dtool" data-draw="text" title="Texte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h14M12 5v14"/></svg><span class="ow-dtool-tip">Texte</span></button>
         </div>
         <span class="ow-drawbar-sep"></span>
+        <div class="ow-drawbar-grp ow-drawbar-tint">
+          <label class="ow-tac-color" title="Couleur du tracé">
+            <input type="color" id="ow-tac-color" value="#00d69a" aria-label="Couleur du tracé">
+          </label>
+          <input type="range" id="ow-tac-width" min="1" max="8" value="2" title="Épaisseur du trait" aria-label="Épaisseur du trait">
+          <button type="button" class="ow-tint" data-tint="#5b9dff" style="background:#5b9dff" title="Ami"></button>
+          <button type="button" class="ow-tint" data-tint="#ef5b5b" style="background:#ef5b5b" title="Ennemi"></button>
+          <button type="button" class="ow-tint" data-tint="#2ecf9a" style="background:#2ecf9a" title="Neutre"></button>
+          <button type="button" class="ow-tint" data-tint="#e8cf4a" style="background:#e8cf4a" title="Inconnu"></button>
+          <button type="button" class="ow-tint" data-tint="#f0a63a" style="background:#f0a63a" title="Attention"></button>
+          <button type="button" class="ow-tint" data-tint="#ffffff" style="background:#fff" title="Blanc"></button>
+          <button type="button" class="ow-tint" data-tint="#111111" style="background:#111" title="Noir"></button>
+        </div>
+        <span class="ow-drawbar-sep"></span>
         <div class="ow-drawbar-grp">
           <button type="button" class="ow-dtool" data-draw="measure" title="Mesure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l14-14 4 4-14 14H3v-4z"/></svg><span class="ow-dtool-tip">Mesure</span></button>
           <button type="button" class="ow-dtool" id="ow-btn-bplan" title="Découpage bâtiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg><span class="ow-dtool-tip">Découpage bâtiment</span></button>
@@ -483,6 +499,22 @@ $icon = static function (string $path): string {
           <button type="button" class="ow-bt" data-btool="room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5h14M12 5v14"/></svg>Pièce</button>
         </div>
         <div class="ow-bplan-foot">
+          <label class="ow-bplan-name">Rattacher le plan
+            <select id="ow-bplan-source" aria-label="Origine du bâtiment">
+              <option value="map" selected>Un clic sur la carte</option>
+              <option value="pointed">Un bâtiment désigné en jeu</option>
+              <option value="scene">Une construction relevée</option>
+            </select>
+          </label>
+          <label class="ow-bplan-name" id="ow-bplan-search-wrap" hidden>Filtrer
+            <input type="search" id="ow-bplan-search" maxlength="80" placeholder="Nom ou grille…">
+          </label>
+          <label class="ow-bplan-name" id="ow-bplan-pick-wrap" hidden>Bâtiment
+            <select id="ow-bplan-pick" aria-label="Choisir un bâtiment">
+              <option value="">Aucun pour le moment</option>
+            </select>
+          </label>
+          <p class="ow-help" id="ow-bplan-attach-help">Enregistrez, puis cliquez le bâtiment sur la carte.</p>
           <label class="ow-bplan-name">Nom du bâtiment
             <input type="text" id="ow-bplan-name" maxlength="80" placeholder="Hangar, maison, entrepôt…">
           </label>
@@ -693,7 +725,7 @@ $icon = static function (string $path): string {
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
-    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. Les bâtiments, forêts et obstacles relevés en jeu apparaissent sur la carte à plat : un clic ouvre la fiche de la construction. En Relief 3D, le sol se relève et les volumes se dressent au-dessus. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
+    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. À plat, la carte reste un plan sans volumes. En 2D immersif, les constructions du relevé sont collées au fond et chargées une fois : le zoom ne les décale plus. En Relief 3D, le sol se relève et les volumes se dressent. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
     <h2>Dessin</h2>
     <p>Le crayon du rail ouvre la barre de tracé au-dessus de la carte : flèche, croquis, zone, surligneur, texte, symboles OTAN (ami, ennemi, neutre, inconnu) et plan de bâtiment. Maintenez le clic pour tracer, relâchez pour poser. Exporter PDF prépare une feuille de briefing (carte, légende, fil). Échap ou Sélection pour quitter. Clic droit : SALUTE, 9-line, CASEVAC, ou supprimer un tracé.</p>
     <h2>Réglages</h2>

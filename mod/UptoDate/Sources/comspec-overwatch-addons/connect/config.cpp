@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.595;
-        versionStr = "1.5.95";
-        versionAr[] = {1, 5, 95};
+        version = 1.596;
+        versionStr = "1.5.96";
+        versionAr[] = {1, 5, 96};
     };
 };
 
@@ -423,6 +423,7 @@ class CfgFunctions {
             class ecotiDraw {};
             class ecotiInit {};
             class ecotiMarkBuilding {};
+            class ecotiClearBuilding {};
             class ecotiCutAtLook {};
             class ecotiCycleFloor {};
             class ecotiIlluminateZone {};
@@ -533,6 +534,7 @@ class CfgFunctions {
             class moduleJammer {};
             class moduleAtakRelay {};
             class placeAtakRelay {};
+            class getNearestAtakRelay {};
             class syncAtakRelay {};
             class syncAtakRelays {};
             class isNearLiveRelay {};

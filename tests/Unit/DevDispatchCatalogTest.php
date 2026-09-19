@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(472, $byKind['update']);
-        self::assertCount(479, $all);
+        self::assertSame(478, $byKind['update']);
+        self::assertCount(484, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -642,6 +642,20 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('1.5.95', strtolower((string) $dropperWeb['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $dropperWeb['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $dropperWeb['activity']));
+        $relaisAt = DevDispatchCatalog::find('update', '676');
+        self::assertNotNull($relaisAt);
+        self::assertSame('00676', $relaisAt['number_pad']);
+        self::assertStringContainsString('relais at', strtolower((string) $relaisAt['title']));
+        self::assertStringContainsString('1.5.96', strtolower((string) $relaisAt['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $relaisAt['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $relaisAt['activity']));
+        $ecotiClear = DevDispatchCatalog::find('update', '675');
+        self::assertNotNull($ecotiClear);
+        self::assertSame('00675', $ecotiClear['number_pad']);
+        self::assertStringContainsString('annuler le pointage', strtolower((string) $ecotiClear['title']));
+        self::assertStringContainsString('1.5.96', strtolower((string) $ecotiClear['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $ecotiClear['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $ecotiClear['activity']));
         $owHideMarkers = DevDispatchCatalog::find('update', '674');
         self::assertNotNull($owHideMarkers);
         self::assertSame('00674', $owHideMarkers['number_pad']);
@@ -649,6 +663,27 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('ne réapparaît plus', strtolower((string) $owHideMarkers['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHideMarkers['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHideMarkers['activity']));
+        $ow2dModes = DevDispatchCatalog::find('update', '677');
+        self::assertNotNull($ow2dModes);
+        self::assertSame('00677', $ow2dModes['number_pad']);
+        self::assertStringContainsString('2d immersif', strtolower((string) $ow2dModes['title']));
+        self::assertStringContainsString('à plat', strtolower((string) $ow2dModes['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $ow2dModes['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $ow2dModes['activity']));
+        $owPlanAttach = DevDispatchCatalog::find('update', '678');
+        self::assertNotNull($owPlanAttach);
+        self::assertSame('00678', $owPlanAttach['number_pad']);
+        self::assertStringContainsString('plan', strtolower((string) $owPlanAttach['title']));
+        self::assertStringContainsString('bâtiment', strtolower((string) $owPlanAttach['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owPlanAttach['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $owPlanAttach['activity']));
+        $owCroquis = DevDispatchCatalog::find('update', '679');
+        self::assertNotNull($owCroquis);
+        self::assertSame('00679', $owCroquis['number_pad']);
+        self::assertStringContainsString('croquis', strtolower((string) $owCroquis['title']));
+        self::assertStringContainsString('couleur', strtolower((string) $owCroquis['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owCroquis['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $owCroquis['activity']));
         $settingsScroll = DevDispatchCatalog::find('update', '668');
         self::assertNotNull($settingsScroll);
         self::assertSame('00668', $settingsScroll['number_pad']);

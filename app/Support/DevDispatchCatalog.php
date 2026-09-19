@@ -268,6 +268,48 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(679, '2026-09-19', 'Poste Overwatch : croquis visibles et couleurs du tracé', 'Le croquis tracé au crayon reste sur la carte. Dans le mode Tracé tactique, vous choisissez la couleur et l’épaisseur du trait avant de dessiner : flèche, croquis, zone, surligneur et symboles OTAN prennent cette couleur. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Le croquis reste affiché dès le relâchement du clic',
+                'Couleur et épaisseur du trait dans la barre de tracé',
+            ], [
+                'Les pastilles ami, ennemi, neutre et inconnu restent disponibles, plus une teinte libre',
+            ], [
+                'Le croquis disparaissait à l’ouverture du panneau d’enregistrement',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez le crayon, choisissez une couleur, tracez un croquis : le trait reste sur la carte.',
+            ], 'Overwatch Beta'),
+            $pr(678, '2026-09-19', 'Poste Overwatch : rattacher un plan au bâtiment déjà connu', 'Le plan d’étage se rattache maintenant à un bâtiment désigné en jeu, ou à une construction déjà relevée. Vous le choisissez dans la liste, sans recliquer dans le vide. Un clic sur une construction ouverte propose aussi d’ouvrir le plan. Rechargez Overwatch Beta (Ctrl+F5). Pour les désignations en jumelles, relancez Arma (Overwatch 1.5.96).', [
+                'Liste des bâtiments désignés en jeu et des constructions relevées',
+                'Emprise du relevé posée comme premier tracé de l’étage',
+            ], [], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Découpage bâtiment. Choisissez Un bâtiment désigné en jeu ou Une construction relevée, puis enregistrez.',
+            ], 'Overwatch Beta'),
+            $pr(677, '2026-09-19', 'Poste Overwatch : À plat et 2D immersif, constructions déjà chargées', 'La vue À plat reste un plan, sans volumes. Le 2D immersif montre les constructions du relevé collées à la carte : elles se chargent une fois à l’ouverture, le zoom ne les décale plus et n’attend plus un nouvel envoi. Relief 3D et Tactique 3D dressent toujours le sol. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Vue 2D immersif, distincte du plan à plat',
+                'Constructions du théâtre chargées une fois à l’ouverture du poste',
+            ], [], [
+                'En zoomant sur le plan, les bâtiments se décalaient et la carte attendait à chaque mouvement',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). À plat : photo ou plan, sans volumes. Passez en 2D immersif : les constructions apparaissent et restent collées quand vous zoomez.',
+            ], 'Overwatch Beta'),
+            $pr(676, '2026-09-19', 'ATAK : Relais AT, fiche du mât le plus proche', 'Dans le tiroir du téléphone, Wave Relay devient Relais AT. L’application montre le mât le plus proche : position, débit, fiabilité, identité, adresse réseau, passerelle, certificat, places et puissance. Le même détail apparaît sur la carte du poste. Un mât détruit passe hors service. Posez et réglez le mât dans l’éditeur (Modules COMSPEC, notice incluse) ou via Zeus. Relancez Arma complètement (Overwatch 1.5.96).', [
+                'Application Relais AT : mât le plus proche et fiche complète',
+                'Carte du poste : nom, débit, fiabilité, places, puissance, adresse, passerelle et certificat',
+                'Éditeur et Zeus : tous les champs du mât, avec notice de pose',
+            ], [
+                'Le débit et la fiabilité baissent avec la distance et les dégâts',
+            ], [
+                'Un mât détruit restait affiché comme intact sur le téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.96, Athena 1.0.153). Ouvrez Relais AT : le mât le plus proche doit afficher sa fiche. Détruisez-le : l’état passe à hors service, y compris au poste.',
+            ], 'Overwatch 1.5.96 · Athena 1.0.153'),
+            $pr(675, '2026-09-19', 'Affichage situation : annuler le pointage de bâtiment', 'Quand un bâtiment est désigné sous jumelles de vision nocturne, l’affichage situation propose désormais d’annuler ce pointage. La silhouette, le badge et le repère local disparaissent. Relancez Arma complètement (Overwatch 1.5.96).', [
+                'Action Annuler le pointage de bâtiment, visible seulement si un bâtiment est déjà désigné',
+            ], [], [
+                'Impossible d’effacer un bâtiment pointé sans relancer la mission',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.96). Désignez un bâtiment, puis Annuler le pointage de bâtiment : la silhouette doit disparaître.',
+            ], 'Overwatch 1.5.96'),
             $pr(674, '2026-09-19', 'Poste Overwatch : un repère retiré ne revient plus', 'Un compte rendu ou un repère retiré de la carte du poste ne réapparaît plus quelques secondes plus tard. Le retrait tient, même si le marqueur existe encore sur la carte en jeu. Rechargez Overwatch Beta (Ctrl+F5).', [
             ], [], [
                 'Les comptes rendus et repères du théâtre réapparaissaient après suppression',

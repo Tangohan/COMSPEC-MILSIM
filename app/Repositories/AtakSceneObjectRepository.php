@@ -21,7 +21,7 @@ final class AtakSceneObjectRepository
     /** @return list<array<string, mixed>> */
     public function visible(int $tenantId, int $mapId, float $minX, float $minY, float $maxX, float $maxY, int $limit = 5000, ?string $kind = null): array
     {
-        $limit = max(1, min(8000, $limit));
+        $limit = max(1, min(40000, $limit));
         $kindFilter = $this->kindSql($kind);
         $params = [$mapId, $minX, $maxX, $minY, $maxY];
         $kindWhere = '';

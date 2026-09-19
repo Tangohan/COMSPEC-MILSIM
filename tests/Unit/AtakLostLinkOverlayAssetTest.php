@@ -93,7 +93,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('Liaison perdue', $chrome);
         self::assertStringContainsString('99887710', $chrome);
         self::assertStringContainsString('class updateAtakLinkChrome', $cfg);
-        self::assertStringContainsString('1.5.95', $cfg);
+        self::assertStringContainsString('1.5.96', $cfg);
 
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $roleplay);
         self::assertStringContainsString('fn_updateDeviceOverlay', $roleplay);

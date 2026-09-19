@@ -32,7 +32,7 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         self::assertStringContainsString('deleteFile _p', $remove);
         self::assertStringContainsString('class athena_sendLibraryPhoto {}', $cfg);
         self::assertStringContainsString('class athena_removeIcemanPhoto {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.0.152"', $cfg);
+        self::assertStringContainsString('versionStr = "1.0.153"', $cfg);
         self::assertStringContainsString('_started = _started + 1', $poll);
         self::assertStringContainsString('rememberLocalPhoto', $bridge);
         self::assertTrue(

@@ -18,7 +18,7 @@ if (isNull player) exitWith {
 
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
 // v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
-private _menuVer = 7;
+private _menuVer = 8;
 if ((uiNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
     missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
@@ -187,6 +187,13 @@ private _link = _root + ["COMSPEC_Link"];
 ["COMSPEC_EcotiMarkBuilding", "Désigner ce bâtiment", {
     [] call comspec_overwatch_connect_fnc_ecotiMarkBuilding;
 }, _sit, _condEcoti] call _fnc_leaf;
+
+["COMSPEC_EcotiClearBuilding", "Annuler le pointage de bâtiment", {
+    [] call comspec_overwatch_connect_fnc_ecotiClearBuilding;
+}, _sit, {
+    ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
+    && {!isNull (missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull])}
+}] call _fnc_leaf;
 
 ["COMSPEC_EcotiCycleFloor", "Changer d’étage", {
     [] call comspec_overwatch_connect_fnc_ecotiCycleFloor;

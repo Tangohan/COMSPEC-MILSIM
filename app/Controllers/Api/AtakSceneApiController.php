@@ -50,7 +50,7 @@ final class AtakSceneApiController
         if ($limit < 1) {
             $limit = 5000;
         }
-        $limit = min(8000, $limit);
+        $limit = min(40000, $limit);
         try {
             $items = $this->objects->visible(
                 $tenantId,

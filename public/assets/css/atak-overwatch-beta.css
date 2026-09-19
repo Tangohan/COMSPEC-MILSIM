@@ -689,6 +689,20 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-drawbar[hidden]{display:none!important}
 .ow-drawbar-grp{display:flex;align-items:center;gap:2px;padding:0 4px;position:relative}
 .ow-drawbar-sep{width:1px;height:22px;background:var(--athena-line-2);margin:0 3px;flex:0 0 auto}
+.ow-drawbar-tint{gap:5px;padding:0 6px}
+.ow-tac-color{
+  width:22px;height:22px;border-radius:6px;overflow:hidden;border:1px solid var(--athena-line-2);
+  display:block;cursor:pointer;flex:0 0 auto;padding:0;background:#101413
+}
+.ow-tac-color input{
+  width:32px;height:32px;border:0;padding:0;margin:-6px;cursor:pointer;background:transparent
+}
+#ow-tac-width{width:64px;height:4px;accent-color:var(--athena-green);cursor:pointer}
+.ow-tint{
+  width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.18);
+  padding:0;cursor:pointer;flex:0 0 auto
+}
+.ow-tint:hover{border-color:#fff}
 .ow-dtool{
   position:relative;width:30px;height:30px;border:0;border-radius:6px;background:transparent;
   color:var(--athena-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0
@@ -758,7 +772,8 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-bt.is-active{color:var(--athena-green);border-color:var(--athena-green)}
 .ow-bplan-foot{padding:12px;border-top:1px solid var(--athena-line)}
 .ow-bplan-name{display:block;font-size:11px;color:var(--athena-muted);margin-bottom:8px}
-.ow-bplan-name input{display:block;width:100%;margin-top:4px;height:30px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);padding:0 8px;font-size:12px}
+.ow-bplan-name select{display:block;width:100%;margin-top:4px;height:30px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);padding:0 8px;font-size:12px}
+.ow-bplan-foot .ow-help{margin:0 0 8px;font-size:11px;line-height:1.4}
 .ow-bplan-foot .ow-primary,.ow-export-foot .ow-primary{width:100%;height:36px}
 .ow-bplan-pin{background:rgba(10,13,18,.92);border:1px solid var(--athena-green);border-radius:8px;padding:6px 8px;color:#c7ceca;font:600 10px var(--ow-sans);box-shadow:0 6px 18px rgba(0,0,0,.5);white-space:nowrap}
 .ow-bplan-pin small{display:block;color:var(--athena-green);margin-bottom:4px}
