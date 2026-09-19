@@ -35,8 +35,12 @@ La même étape faisait trois choses à la fois : lire les ordres, les livrer (a
 
 ## Vérification
 
-Overwatch 1.5.84. Relancer le dépannage jusqu’à Ordres (réception), puis Ordres (affichage). Noter laquelle arrête le jeu. Le journal doit contenir `Retour ordres : …` avant tout affichage.
+Journal `COMSPEC_2026-09-18_155343_430.log`, pack 1.5.84 / Athena 1.0.137. Dépannage 15:54:35 → 16:14:08, **21/21 étapes tenues**, y compris Ordres (réception) puis Ordres (affichage).
+
+Limite de cet essai : **pas de téléphone ATAK**. Les boucles de sync sont restées en attente. Aucune ligne `Retour messages / marqueurs / ordres`. L’arrêt observé à 13:10 se produisait **avec le téléphone ouvert**. Cet essai ne rejoue donc pas le chemin qui fermait le jeu.
+
+Session `COMSPEC_2026-09-18_191918_348.log` : reprise d’équipement avec téléphone, arrêt à 19:20:53. Voir `docs/bugs/2026-09-18-atak-crash-prise-equipement.md`.
 
 ## Statut
 
-Corrigé côté isolation (1.5.84). Cause finale de l’arrêt : à confirmer en jeu.
+Isolation 1.5.84 tenue **sans téléphone**. Crash confirmé **à la prise d’équipement** (1.5.84). Correctif 1.5.85 : à rejouer avec téléphone.

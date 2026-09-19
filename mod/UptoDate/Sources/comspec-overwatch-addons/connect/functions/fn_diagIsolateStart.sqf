@@ -17,6 +17,7 @@ private _token = diag_tickTime;
 missionNamespace setVariable ["COMSPEC_DiagIsolateToken", _token, false];
 missionNamespace setVariable ["COMSPEC_DiagIsolateActive", true, false];
 missionNamespace setVariable ["COMSPEC_DiagIsolateAllow", [], false];
+missionNamespace setVariable ["COMSPEC_DiagIsolateProbeNote", "", false];
 missionNamespace setVariable ["COMSPEC_DiagIsolatePrevEnabled", missionNamespace getVariable ["comspec_overwatch_enabled", true], false];
 missionNamespace setVariable ["comspec_overwatch_enabled", false, false];
 
@@ -53,6 +54,7 @@ missionNamespace setVariable ["COMSPEC_DiagIsolateDelay", _delay, false];
 
         ["WARN", "Diag", format ["Dépannage — étape %1/%2 : %3", _forEachIndex + 1, _total, _label]] call comspec_overwatch_connect_fnc_log;
         [_label, _forEachIndex, _total, _delay] call comspec_overwatch_connect_fnc_diagIsolateHud;
+        [_id, _token] call comspec_overwatch_connect_fnc_diagIsolateProbe;
 
         private _t0 = diag_tickTime;
         while { (diag_tickTime - _t0) < _delay } do {

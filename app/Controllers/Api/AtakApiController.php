@@ -7926,6 +7926,8 @@ class AtakApiController
         $sinceRaw = $request->query('since');
         $since = is_string($sinceRaw) ? trim($sinceRaw) : '';
         $isDelta = $since !== '';
+        $createdAfterRaw = $request->query('created_after');
+        $createdAfter = is_string($createdAfterRaw) ? trim($createdAfterRaw) : '';
         $user = $this->sessionUserBrief();
         $forAi = (int) ($request->query('for_ai') ?? 0) === 1;
         $forGame = (int) ($request->query('for_game') ?? 0) === 1
@@ -7939,7 +7941,8 @@ class AtakApiController
             $mapId,
             min($limit, $isDelta ? 500 : 200),
             $issuerView,
-            $isDelta ? $since : null
+            $isDelta ? $since : null,
+            $createdAfter !== '' ? $createdAfter : null
         );
 
         $steamRaw = (string) ($request->query('steam_uid') ?? $request->query('steam') ?? '');
@@ -8029,6 +8032,7 @@ class AtakApiController
             'orders' => $orders,
             'delta' => $isDelta,
             'since' => $isDelta ? $since : null,
+            'created_after' => $createdAfter !== '' ? $createdAfter : null,
             'server_time' => $serverTime,
             'cursor' => $cursor,
             'counts' => $counts,
@@ -8037,6 +8041,7 @@ class AtakApiController
                 'structured_targets' => $this->orderRepository->v2ColumnsReady(),
                 'radio_sim' => $this->orderRepository->v2ColumnsReady(),
                 'since' => true,
+                'created_after' => true,
                 'custom_templates' => $this->orderTemplateRepository?->tablesReady() ?? false,
                 'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],

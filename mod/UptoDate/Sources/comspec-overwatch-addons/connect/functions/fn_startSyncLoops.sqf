@@ -17,6 +17,13 @@ if (isNil "COMSPEC_UplinkTerminalWatch") then {
         if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
         if (isNull player || {!alive player}) exitWith {};
         if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
+        private _acq = missionNamespace getVariable ["COMSPEC_TerminalAcquiredAt", -1];
+        if (_acq < 0) then {
+            missionNamespace setVariable ["COMSPEC_TerminalAcquiredAt", diag_tickTime, false];
+            ["INFO", "Boot", "Téléphone pris — échanges dans quelques secondes"] call comspec_overwatch_connect_fnc_log;
+        };
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_TerminalAcquiredAt", diag_tickTime])) < 8) exitWith {};
+        if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
         [] call comspec_overwatch_connect_fnc_startSyncLoops;
     }, 2] call CBA_fnc_addPerFrameHandler;
@@ -135,8 +142,9 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
 
 // Relayer les marqueurs déjà présents (Marker Dropper / carte / file d’attente) après liaison Athena.
 [] spawn {
-    uiSleep 1.5;
-    [] call comspec_overwatch_connect_fnc_queueMapMarker; // flush pending
+    uiSleep 6;
+    if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
+    [] call comspec_overwatch_connect_fnc_queueMapMarker;
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
         [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
@@ -233,7 +241,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollOrders;
         }, [], "pollOrders"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 1.5, "orders"] call _fnc_addPoll;
+}, 8, 4, "orders"] call _fnc_addPoll;
 
 [{
         [{
@@ -304,7 +312,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollChatMessages;
         }, [], "pollChatMessages"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 6, 1.2, "chat"] call _fnc_addPoll;
+}, 6, 5, "chat"] call _fnc_addPoll;
 
 [{
         [{
@@ -312,7 +320,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollMapShapes;
         }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 10, 2.7, "shapes"] call _fnc_addPoll;
+}, 10, 10, "shapes"] call _fnc_addPoll;
 
 [{
         [{
@@ -320,7 +328,7 @@ private _fnc_addPoll = {
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollAthenaMarkers;
         }, [], "pollAthenaMarkers"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 8, 1.8, "webmk"] call _fnc_addPoll;
+}, 8, 8, "webmk"] call _fnc_addPoll;
 
 [{
         [{
@@ -357,15 +365,24 @@ private _fnc_addPoll = {
 
 [{
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+    if (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false]) exitWith {};
     if (!(["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+    if (!(missionNamespace getVariable ["COMSPEC_OrdersPollBootstrapped", false])) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
     private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
+    if (!(_orders isEqualType [])) exitWith {};
     private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
-    {
-        if (!(_x isEqualType createHashMap)) then { continue };
-        private _id = _x getOrDefault ["id", ""];
-        if (_id isEqualTo "" || {_id in _seen}) then { continue };
-        [_x] call comspec_overwatch_connect_fnc_receiveOrder;
-    } forEach _orders;
+    if (!(_seen isEqualType [])) then { _seen = []; };
+    _seen = _seen apply { trim (str _x) };
+    private _pending = _orders select {
+        (_x isEqualType createHashMap)
+        && {
+            private _oid = trim (str (_x getOrDefault ["id", ""]));
+            _oid isNotEqualTo "" && {!(_oid in _seen)}
+        }
+    };
+    if ((count _pending) < 1) exitWith {};
+    [_pending select 0] call comspec_overwatch_connect_fnc_receiveOrder;
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
 [{

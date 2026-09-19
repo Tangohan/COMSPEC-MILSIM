@@ -30,6 +30,10 @@ private _bodyTxt = format [
     _label,
     _remainTxt
 ];
+private _probe = missionNamespace getVariable ["COMSPEC_DiagIsolateProbeNote", ""];
+if ((_probe isEqualType "") && {_probe isNotEqualTo ""}) then {
+    _bodyTxt = _bodyTxt + format ["<br/><t align='center' size='0.78' color='#7dffb3'>%1</t>", _probe];
+};
 if (!isNil "comspec_overwatch_connect_fnc_diagStatusSnapshot") then {
     private _snap = [] call comspec_overwatch_connect_fnc_diagStatusSnapshot;
     if ((_snap isEqualType createHashMap) && {(_snap getOrDefault ["hudHtml", ""]) isNotEqualTo ""}) then {

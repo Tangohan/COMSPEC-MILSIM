@@ -38,12 +38,18 @@ private _order = createHashMapFromArray [
     ["priority", _priority],
     ["issuer", _issuer],
     ["status", "PENDING"],
+    ["source", "local"],
     ["createdAt", _now],
     ["updatedAt", _now]
 ];
 
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
-_orders pushBack _order;
+if (!(_orders isEqualType [])) then { _orders = []; };
+private _dup = _orders findIf {
+    (_x isEqualType createHashMap)
+    && {(trim (str (_x getOrDefault ["id", ""]))) isEqualTo _id}
+};
+if (_dup < 0) then { _orders pushBack _order; };
 missionNamespace setVariable ["COMSPEC_Orders", _orders, true];
 
 private _orderLog = missionNamespace getVariable ["COMSPEC_OrderLog", []];

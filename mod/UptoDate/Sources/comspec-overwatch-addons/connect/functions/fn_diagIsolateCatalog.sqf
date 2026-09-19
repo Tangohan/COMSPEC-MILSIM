@@ -1,11 +1,15 @@
 /*
     Étapes du dépannage liaison — libellés opérateurs, une brique à la fois.
     Première étape : Overwatch coupé. Ensuite chaque fonction est rallumée
-    et on attend 55 s avant la suivante.
+    et on attend 55 s avant la suivante. Trois étapes envoient un essai
+    réel vers le poste (message, repère, photo).
 */
 [
     ["idle", "Aucune liaison (Overwatch coupé)"],
     ["position", "Position de l’opérateur"],
+    ["probe_chat", "Message de test"],
+    ["probe_marker", "Repère de test"],
+    ["probe_photo", "Photo et transmission"],
     ["markers", "Envoi des repères carte"],
     ["po", "Points d’objectif"],
     ["chat", "Messages"],

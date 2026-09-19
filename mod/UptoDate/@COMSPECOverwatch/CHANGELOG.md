@@ -1,4 +1,18 @@
-﻿COMSPEC Overwatch 1.5.84 / Athena ATAK 1.0.137 / Extension 2.0.44 — 18/09/2026
+﻿COMSPEC Overwatch 1.5.85 / Athena ATAK 1.0.138 / Extension 2.0.44 — 18/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.5.85[/h1]
+[b]Publication : 18/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.5.85 · Athena 1.0.138 · Extension 2.0.44
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez Workshop et FN, puis relancez.
+[/quote]
+
+[h2]Correction — Prise d’équipement[/h2]
+Récupérer le téléphone ATAK dans l’arsenal ne livre plus d’un coup les ordres déjà en attente et tous les repères du poste. Les échanges attendent la fermeture de l’arsenal. Les alertes et le fil n’apparaissent que lorsque le grand écran du téléphone est vraiment ouvert. Les repères du poste s’affichent ensuite par petits groupes.
+
+---
+
+COMSPEC Overwatch 1.5.84 / Athena ATAK 1.0.137 / Extension 2.0.44 — 18/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.5.84[/h1]
 [b]Publication : 18/09/2026[/b]

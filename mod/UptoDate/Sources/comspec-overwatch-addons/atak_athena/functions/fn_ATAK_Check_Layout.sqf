@@ -34,6 +34,7 @@ private _bgGroup = controlNull;
 if (!isNil "_backgroundGroup" && {_backgroundGroup isEqualType controlNull}) then {
     _bgGroup = _backgroundGroup;
 };
+if (isNull _bgGroup) then { _bgGroup = _disp displayCtrl (17000 + 4660); };
 if (isNull _bgGroup) then { _bgGroup = _disp displayCtrl 4660; };
 if (isNull _bgGroup) exitWith {};
 
@@ -170,4 +171,14 @@ if (!isNull _toolBnt) then {
         ]],
         ["ATAK_Toggle_Spring", _ifaceInit, 1200, [3]]
     ] call BCE_fnc_Anim_CustomOffset;
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_layoutAppDrawer") then {
+    [_open] call comspec_overwatch_atak_athena_fnc_athena_layoutAppDrawer;
+    if (_open) then {
+        private _fncLay = {
+            [true] call comspec_overwatch_atak_athena_fnc_athena_layoutAppDrawer;
+        };
+        { [_fncLay, [], _x] call CBA_fnc_waitAndExecute; } forEach [0.15, 1.25];
+    };
 };

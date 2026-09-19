@@ -268,13 +268,79 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(645, '2026-09-19', 'Poste Overwatch : le relief 3D s’affiche', 'Sur Overwatch Beta, la vue Relief 3D restait un écran vert sombre, sans sol ni bâtiments. Après recharge de la page, le théâtre se relève à nouveau et les constructions du relevé réapparaissent. Rechargez Overwatch Beta (Ctrl+F5).', [
+            $pr(653, '2026-09-19', 'ATAK : le menu d’applications reprend sa grille', 'Le menu du chevron déformait les tuiles : icônes décalées, libellés absents, cases vides. Les applications reprennent leur place en trois colonnes, avec le fond gris sombre. Relancez Arma complètement (Athena 1.0.141).', [
+                'Les applications du chevron se calent de nouveau en trois colonnes',
+                'Les icônes et les noms restent lisibles, sans cases vides',
+            ], [], [
+                'Le menu mélangeait les tuiles et laissait des zones vides',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.141). Ouvrez le téléphone, puis le chevron : la grille d’applications doit être régulière, avec icônes et noms, sans chevauchement.',
+            ], 'Athena 1.0.141'),
+            $pr(652, '2026-09-19', 'ATAK : la file d’ordres ne s’allonge plus toute seule', 'Les ordres déjà reçus du poste n’étaient pas remplacés à chaque lecture : la mémoire du téléphone s’allongeait, puis le jeu se fermait. Désormais seuls les ordres encore en attente au poste, plus ceux émis depuis le téléphone, restent en mémoire. Relancez Arma complètement (Overwatch 1.5.90).', [
+                'Les ordres du poste remplacent ceux déjà reçus, au lieu de s’ajouter',
+                'Un ordre émis depuis le téléphone n’est plus enregistré deux fois',
+            ], [], [
+                'La mémoire des ordres augmentait de quelques unités à chaque lecture, jusqu’à fermer le jeu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.90 · Athena 1.0.140). Le bandeau doit indiquer 1.5.90. Relancez le dépannage avec le téléphone : le compte « mémoire » des ordres doit rester stable d’une lecture à l’autre.',
+            ], 'Overwatch 1.5.90'),
+            $pr(651, '2026-09-19', 'ATAK : les ordres ne ferment plus le jeu à l’affichage', 'Pendant le dépannage, les ordres déjà reçus n’étaient pas marqués comme vus. Au moment de l’affichage, le téléphone les livrait tous d’un coup et le jeu se fermait. Un seul ordre est maintenant affiché à la fois, et la file déjà reçue n’est plus rejouée. Relancez Arma complètement (Overwatch 1.5.89).', [
+                'Les ordres déjà reçus pendant le dépannage ne sont plus rejoués à l’affichage',
+                'Un seul nouvel ordre est présenté à la fois sur le téléphone',
+            ], [], [
+                'Le jeu se fermait dès l’étape d’affichage des ordres, après une file qui s’allongeait',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.89 · Athena 1.0.140). Le bandeau doit indiquer ces versions. Relancez le dépannage avec le téléphone : l’étape Ordres (affichage) ne doit plus fermer le jeu.',
+            ], 'Overwatch 1.5.89'),
+            $pr(650, '2026-09-19', 'Dépannage liaison : essais vers le poste', 'Le dépannage envoie désormais un message de test, pose un repère de test, puis prend une photo et la transmet au poste. Le bandeau indique si l’essai est parti. Relancez Arma complètement (Overwatch 1.5.88).', [
+                'Un message de test part vers le poste pendant le dépannage',
+                'Un repère de test est posé sur la carte et transmis',
+                'Une photo est prise et transmise au poste',
+            ], [], [
+                'Le dépannage rallumait les fonctions sans rien envoyer',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.88). Lancez le dépannage liaison avec le téléphone. Aux étapes Message de test, Repère de test, Photo et transmission, le poste doit recevoir l’essai. Si le jeu s’arrête, la fonction affichée est en cause.',
+            ], 'Overwatch 1.5.88'),
+            $pr(649, '2026-09-19', 'ATAK : menu d’applications lisible', 'Le menu du chevron reprend le fond gris sombre et les libellés cyan. Les icônes ne se superposent plus : elles se calent en trois colonnes. Relancez Arma complètement (Athena 1.0.139).', [
+                'Fond gris sombre et textes cyan dans le menu d’applications',
+                'Les tuiles Video Feeds, Photo Library, Groups et les autres restent chacune à leur place',
+            ], [], [
+                'Les icônes du menu se superposaient, sur un fond gris clair',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.139). Ouvrez le téléphone, puis le chevron : les applications sont en grille, lisibles, sans chevauchement.',
+            ], 'Athena 1.0.139'),
+            $pr(648, '2026-09-19', 'ATAK : le poste ne renvoie plus les anciens ordres', 'Le téléphone ne reçoit plus les ordres encore en attente au poste s’ils ont été émis avant le début de cette partie. Le poste les conserve. Un ordre envoyé pendant la partie arrive normalement. Relancez Arma complètement (Overwatch 1.5.87).', [
+                'Les ordres d’une partie précédente restent visibles au poste seulement',
+                'Un ordre émis après le début de la partie est livré au téléphone',
+            ], [], [
+                'Les anciens ordres encore en attente revenaient à chaque prise de téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.87). En mission, prenez le téléphone : les anciens ordres n’apparaissent pas. Envoyez-en un nouveau depuis le poste : il arrive.',
+            ], 'Overwatch 1.5.87'),
+            $pr(647, '2026-09-18', 'ATAK : seuls les ordres de la partie en cours', 'Les ordres encore en attente au poste, issus d’une partie précédente, ne sont plus livrés au téléphone. Seuls les ordres émis pendant la partie en cours apparaissent, avec alerte et fil. Relancez Arma complètement (Overwatch 1.5.86).', [
+                'Les ordres d’une partie précédente restent au poste, sans alerte ni fil sur le téléphone',
+                'Un ordre émis pendant la partie en cours est livré normalement',
+            ], [], [
+                'Les ordres déjà en attente au poste se déversaient encore sur le téléphone au chargement',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.86). En mission, prenez le téléphone. Les anciens ordres n’apparaissent pas. Un nouvel ordre du poste doit arriver.',
+            ], 'Overwatch 1.5.86'),
+            $pr(646, '2026-09-18', 'Poste Overwatch : le relief 3D s’affiche', 'Sur Overwatch Beta, la vue Relief 3D restait un écran vert sombre, sans sol ni bâtiments. Après recharge de la page, le théâtre se relève à nouveau et les constructions du relevé réapparaissent. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Le sol et les bâtiments du théâtre réapparaissent en Relief 3D et Tactique 3D',
             ], [], [
                 'La vue Relief 3D restait vide après le basculement depuis À plat',
             ], ['atak'], [
                 'Ouvrez Overwatch Beta. Dans Vue de la carte, choisissez Relief 3D. Rechargez la page une fois (Ctrl+F5). Le sol se relève et les bâtiments du relevé se dressent.',
             ]),
+            $pr(645, '2026-09-18', 'ATAK : plus d’arrêt à la prise d’équipement', 'Le téléphone ne livre plus d’un coup les ordres déjà en attente et tous les repères du poste au moment où vous prenez votre équipement. Les échanges attendent la fermeture de l’arsenal. Les alertes et le fil n’apparaissent que si le grand écran du téléphone est vraiment ouvert. Relancez Arma complètement (Overwatch 1.5.85).', [
+                'Après la prise du téléphone : quelques secondes sans alerte ni fil',
+                'Les ordres déjà en attente sont mémorisés sans vibration ni plein écran',
+                'Les repères du poste apparaissent ensuite, par petits groupes',
+            ], [], [
+                'Le jeu se fermait dès la récupération de l’ATAK dans l’arsenal',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.85). En mission, prenez le téléphone dans l’arsenal, fermez-le, attendez une vingtaine de secondes, puis ouvrez l’ATAK. Le jeu reste ouvert.',
+            ], 'Overwatch 1.5.85'),
             $pr(644, '2026-09-18', 'Poste Overwatch : visibilité, coupe et lecture 3D', 'Sur Overwatch Beta, un clic donne le masque de visibilité autour d’un observateur. L’horizon dessine la silhouette du relief. Une coupe A vers B montre le sol et les constructions. La comparaison 2D / 3D aligne les deux lectures. Les symboles restent lisibles derrière un obstacle. Une pile remplace les icônes empilées. Une note, une photo ou une tâche peut s’ancrer à une façade ou un étage. Un volume a une altitude basse et haute. Le replay peut suivre l’action. Rechargez Overwatch Beta.', [
                 'Masque de visibilité : portions de terrain visibles ou masquées depuis un opérateur, un point ou une caméra',
                 'Horizon : silhouette du relief et obstacle dominant autour d’un point',
