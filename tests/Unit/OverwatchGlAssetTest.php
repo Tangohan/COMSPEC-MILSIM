@@ -101,6 +101,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('HeatmapLayer', $layers);
         self::assertStringContainsString('setSplit', $map);
         self::assertStringContainsString('getCamera', $map);
+        self::assertStringContainsString('trackResize: false', $map);
+        self::assertStringContainsString('scheduleResize', $map);
+        self::assertStringContainsString('already running', $map);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $terrain = (string) file_get_contents($root . '/app/Controllers/Api/AtakTerrainApiController.php');
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/AtakSceneApiController.php');

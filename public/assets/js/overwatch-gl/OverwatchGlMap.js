@@ -28,6 +28,8 @@ window.OverwatchGlMap = (function () {
   var KEY_CAM = 'athena:ow-gl-cam';
   var splitOn = false;
   var syncLock = false;
+  var resizeTimer = 0;
+  var hostObs = null;
 
   function sunFromWeather(w) {
     w = w || {};
@@ -341,6 +343,52 @@ window.OverwatchGlMap = (function () {
     }
   }
 
+  function cancelScheduledResize() {
+    if (resizeTimer) {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = 0;
+    }
+  }
+
+  function applyResize() {
+    if (!glMap) return;
+    try {
+      glMap.resize();
+    } catch (err) {
+      if (String(err && err.message || err).indexOf('already running') >= 0) {
+        window.setTimeout(function () {
+          if (!glMap) return;
+          try { glMap.resize(); } catch (e2) {}
+        }, 48);
+      }
+    }
+  }
+
+  function scheduleResize() {
+    if (!glMap) return;
+    cancelScheduledResize();
+    resizeTimer = window.setTimeout(function () {
+      resizeTimer = 0;
+      applyResize();
+    }, 32);
+  }
+
+  function bindHostResize() {
+    if (hostObs || !host || typeof ResizeObserver === 'undefined') return;
+    hostObs = new ResizeObserver(function () {
+      scheduleResize();
+    });
+    try { hostObs.observe(host); } catch (e) { hostObs = null; }
+  }
+
+  function unbindHostResize() {
+    cancelScheduledResize();
+    if (hostObs) {
+      try { hostObs.disconnect(); } catch (e) {}
+      hostObs = null;
+    }
+  }
+
   function setHostVisible(on) {
     if (host) host.hidden = !(on || splitOn);
     if (leafletEl) {
@@ -362,7 +410,7 @@ window.OverwatchGlMap = (function () {
     }
     setHostVisible(active || splitOn);
     window.setTimeout(function () {
-      if (glMap) glMap.resize();
+      scheduleResize();
       var lm = leafletMap();
       if (lm && typeof lm.invalidateSize === 'function') {
         try { lm.invalidateSize({ animate: false }); } catch (e) {}
@@ -417,6 +465,7 @@ window.OverwatchGlMap = (function () {
     if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.detach === 'function') {
       window.OverwatchGlLayers.detach();
     }
+    unbindHostResize();
     if (glMap) {
       try { glMap.remove(); } catch (e) {}
       glMap = null;
@@ -427,7 +476,7 @@ window.OverwatchGlMap = (function () {
     if (glMap || starting) {
       if (glMap) {
         setHostVisible(true);
-        glMap.resize();
+        scheduleResize();
         syncFromLeaflet();
         applyTerrain();
       }
@@ -450,14 +499,18 @@ window.OverwatchGlMap = (function () {
         maxZoom: 16.5,
         dragRotate: true,
         pitchWithRotate: true,
-        cooperativeGestures: false
+        cooperativeGestures: false,
+        trackResize: false
       });
     } catch (err) {
       starting = false;
       return;
     }
+    bindHostResize();
+    scheduleResize();
     glMap.on('load', function () {
       starting = false;
+      scheduleResize();
       try { glMap.doubleClickZoom.disable(); } catch (e0) {}
       glMap.on('dblclick', onGlDblClick);
       applyTerrain();
@@ -500,7 +553,7 @@ window.OverwatchGlMap = (function () {
       startGl();
       setHostVisible(true);
       if (glMap) {
-        glMap.resize();
+        scheduleResize();
         syncFromLeaflet();
         applyTerrain();
       }
@@ -631,7 +684,7 @@ window.OverwatchGlMap = (function () {
       lookObs.observe(stage, { attributes: true, attributeFilter: ['data-look'] });
     }
     window.addEventListener('resize', function () {
-      if (active && glMap) glMap.resize();
+      if (active && glMap) scheduleResize();
     });
     if (storedMode() === 'volume' || storedMode() === 'tactical' || (modeSelect && (modeSelect.value === 'volume' || modeSelect.value === 'tactical'))) {
       camMode = storedMode() === 'tactical' || (modeSelect && modeSelect.value === 'tactical') ? 'tactical' : 'terrain';
