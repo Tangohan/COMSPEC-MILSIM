@@ -137,6 +137,10 @@ Récupérer le téléphone ATAK dans l’arsenal ne livre plus d’un coup les o
 
 La vue Relief 3D restait un écran vert sombre, sans sol ni bâtiments. Après recharge de la page, le théâtre se relève et les constructions du relevé réapparaissent. Rechargez Overwatch Beta (Ctrl+F5).
 
+### Correction — Relief 3D figé au redimensionnement
+
+Agrandir la fenêtre, ouvrir le comparatif 2D / 3D ou basculer Relief 3D ne fige plus la carte. Le sol et les bâtiments restent affichés. Rechargez Overwatch Beta.
+
 ### Nouveau — Visibilité, coupe et lecture 3D
 
 Un clic sur un observateur affiche les portions de terrain visibles et masquées. L’horizon dessine la silhouette du relief. Une coupe de A vers B montre le sol et les constructions. La comparaison 2D / 3D aligne les deux lectures. Les symboles restent lisibles derrière un obstacle (réaliste, silhouette ou toujours visibles). Une pile remplace les icônes empilées. Une note, une photo ou une tâche peut s’ancrer à une façade, un étage ou un toit. Un volume a une altitude basse et haute. Le replay peut suivre l’action, avec traces de déplacement et densité de passages. Les vues de caméra s’enregistrent. Rechargez Overwatch Beta.

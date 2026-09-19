@@ -74,6 +74,8 @@ Les fonds (plan / carte du jeu / photo) sont redessinés via le protocole MapLib
 
 MapLibre et deck.gl créent des Web Workers en URL `blob:`. `SecurityHeadersMiddleware` impose `worker-src 'self' blob:` (y compris si `APP_CSP` est défini sans cette directive). Sans cela, Relief 3D reste un canvas vide : le navigateur retombe sur `script-src` et refuse le worker.
 
+La carte est créée avec `trackResize: false`. Overwatch recale la taille via `scheduleResize` (un passage groupé) pour éviter l’erreur MapLibre `Attempting to run(), but is already running` au ResizeObserver.
+
 ## Relief
 
 `GET /api/atak/terrain/rgb/{z}/{x}/{y}` sert des PNG Terrain-RGB (cache `storage/atak_terrain/shared/{mapId}/rgb/`). Source : grille DEM existante.

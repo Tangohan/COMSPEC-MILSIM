@@ -16,6 +16,7 @@ private _tr = missionNamespace getVariable ["COMSPEC_LinkTraffic", createHashMap
 if (!(_tr isEqualType createHashMap)) then { _tr = createHashMap; };
 private _win = _tr getOrDefault ["window_in", []];
 if (!(_win isEqualType [])) then { _win = []; };
+diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] win count=%1 sample=%2", count _win, _win select [0, 3 min count _win]];
 private _now = diag_tickTime;
 _win = _win select { ((_x select 0) + 10) >= _now };
 private _sumIn = 0;
@@ -30,9 +31,18 @@ private _totalIn = _tr getOrDefault ["bytes_in_total", 0];
 if (!(_totalIn isEqualType 0)) then { _totalIn = 0; };
 private _totalInKo = round (_totalIn / 1000);
 
+diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot → getPacketLossStats (win=%1)", count _win];
 private _pkt = createHashMap;
 if (!isNil "comspec_overwatch_connect_fnc_getPacketLossStats") then {
     _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
+};
+if (isNil "_pkt") then {
+    diag_log "[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getPacketLossStats ok, keys=nil";
+    diag_log "[COMSPEC Overwatch][DEBUG][Diag] pkt raw=nil";
+    _pkt = createHashMap;
+} else {
+    diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getPacketLossStats ok, keys=%1", (_pkt isEqualType createHashMap) && {count (keys _pkt)}];
+    diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] pkt raw=%1", _pkt];
 };
 if (!(_pkt isEqualType createHashMap)) then { _pkt = createHashMap; };
 private _sent = _pkt getOrDefault ["packets_sent_total", 0];
@@ -56,9 +66,16 @@ private _ath = getText (configFile >> "CfgPatches" >> "comspec_overwatch_atak_at
 if (_ath isEqualTo "") then { _ath = "—"; };
 private _extVer = missionNamespace getVariable ["COMSPEC_ExtVersionCached", ""];
 if (_extVer isEqualTo "") then {
+    diag_log "[COMSPEC Overwatch][DEBUG][Diag] snapshot → extensionStatus";
     private _ext = [false, "", ""];
     if (!isNil "comspec_overwatch_connect_fnc_extensionStatus") then {
         _ext = [] call comspec_overwatch_connect_fnc_extensionStatus;
+    };
+    if (isNil "_ext") then {
+        diag_log "[COMSPEC Overwatch][DEBUG][Diag] snapshot ← extensionStatus ok, raw=nil";
+        _ext = [false, "", ""];
+    } else {
+        diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot ← extensionStatus ok, raw=%1", _ext];
     };
     _ext params ["", "", ["_ping", ""]];
     if ((_ping isEqualType "") && {(_ping select [0, 3]) isEqualTo "OK|"}) then {
@@ -70,9 +87,16 @@ if (_extVer isEqualTo "") then {
     missionNamespace setVariable ["COMSPEC_ExtVersionCached", _extVer, false];
 };
 
+diag_log "[COMSPEC Overwatch][DEBUG][Diag] snapshot → getCallsign";
 private _cs = "";
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
     _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+};
+if (isNil "_cs") then {
+    diag_log "[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getCallsign ok, raw=nil";
+    _cs = "";
+} else {
+    diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getCallsign ok, raw=%1", _cs];
 };
 if (!(_cs isEqualType "")) then { _cs = ""; };
 private _linked = missionNamespace getVariable ["COMSPEC_OperatorLinked", false];

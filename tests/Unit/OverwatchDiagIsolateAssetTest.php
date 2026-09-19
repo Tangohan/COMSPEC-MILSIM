@@ -29,6 +29,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         $pauseHpp = (string) file_get_contents($base . '/display_pause_manager.hpp');
 
         $probe = (string) file_get_contents($base . '/functions/fn_diagIsolateProbe.sqf');
+        $snap = (string) file_get_contents($base . '/functions/fn_diagStatusSnapshot.sqf');
 
         self::assertStringContainsString('["orders"', $catalog);
         self::assertStringContainsString('["orders_push"', $catalog);
@@ -83,5 +84,15 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('9606', $pauseHpp);
         self::assertStringContainsString('Dépannage liaison — lancer maintenant', $html);
         self::assertStringContainsString('un message, un repère et une photo', $html);
+
+        self::assertStringContainsString('snapshot → getPacketLossStats', $snap);
+        self::assertStringContainsString('snapshot ← getPacketLossStats ok', $snap);
+        self::assertStringContainsString('pkt raw=', $snap);
+        self::assertStringContainsString('win count=%1 sample=%2', $snap);
+        self::assertStringContainsString('snapshot → extensionStatus', $snap);
+        self::assertStringContainsString('snapshot ← extensionStatus ok', $snap);
+        self::assertStringContainsString('snapshot → getCallsign', $snap);
+        self::assertStringContainsString('snapshot ← getCallsign ok', $snap);
+        self::assertStringContainsString('[COMSPEC Overwatch][DEBUG][Diag]', $snap);
     }
 }
