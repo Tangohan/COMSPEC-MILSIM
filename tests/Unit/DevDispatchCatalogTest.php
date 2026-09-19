@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(439, $byKind['update']);
-        self::assertCount(445, $all);
+        self::assertSame(440, $byKind['update']);
+        self::assertCount(446, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -461,6 +461,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringNotContainsString('maplibre', strtolower((string) $overwatchTactics['activity']));
         self::assertStringNotContainsString('deck.gl', strtolower((string) $overwatchTactics['activity']));
         self::assertStringNotContainsString('indexeddb', strtolower((string) $overwatchTactics['activity']));
+        $overwatchCsp = DevDispatchCatalog::find('update', '645');
+        self::assertNotNull($overwatchCsp);
+        self::assertSame('00645', $overwatchCsp['number_pad']);
+        self::assertStringContainsString('relief 3d', strtolower((string) $overwatchCsp['title']));
+        self::assertStringContainsString('écran vert', strtolower((string) $overwatchCsp['activity']));
+        self::assertStringNotContainsString('maplibre', strtolower((string) $overwatchCsp['activity']));
+        self::assertStringNotContainsString('csp', strtolower((string) $overwatchCsp['activity']));
+        self::assertStringNotContainsString('worker', strtolower((string) $overwatchCsp['activity']));
         $update = DevDispatchCatalog::find('update', '198');
         self::assertNotNull($update);
         self::assertSame('00198', $update['number_pad']);

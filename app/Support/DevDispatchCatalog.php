@@ -268,6 +268,13 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(645, '2026-09-19', 'Poste Overwatch : le relief 3D s’affiche', 'Sur Overwatch Beta, la vue Relief 3D restait un écran vert sombre, sans sol ni bâtiments. Après recharge de la page, le théâtre se relève à nouveau et les constructions du relevé réapparaissent. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Le sol et les bâtiments du théâtre réapparaissent en Relief 3D et Tactique 3D',
+            ], [], [
+                'La vue Relief 3D restait vide après le basculement depuis À plat',
+            ], ['atak'], [
+                'Ouvrez Overwatch Beta. Dans Vue de la carte, choisissez Relief 3D. Rechargez la page une fois (Ctrl+F5). Le sol se relève et les bâtiments du relevé se dressent.',
+            ]),
             $pr(644, '2026-09-18', 'Poste Overwatch : visibilité, coupe et lecture 3D', 'Sur Overwatch Beta, un clic donne le masque de visibilité autour d’un observateur. L’horizon dessine la silhouette du relief. Une coupe A vers B montre le sol et les constructions. La comparaison 2D / 3D aligne les deux lectures. Les symboles restent lisibles derrière un obstacle. Une pile remplace les icônes empilées. Une note, une photo ou une tâche peut s’ancrer à une façade ou un étage. Un volume a une altitude basse et haute. Le replay peut suivre l’action. Rechargez Overwatch Beta.', [
                 'Masque de visibilité : portions de terrain visibles ou masquées depuis un opérateur, un point ou une caméra',
                 'Horizon : silhouette du relief et obstacle dominant autour d’un point',
