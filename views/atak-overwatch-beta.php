@@ -185,35 +185,64 @@ $icon = static function (string $path): string {
               <option value="tactical">Tactique 3D</option>
             </select>
           </label>
-          <p class="ow-help">À plat : photo ou plan, sans volumes. 2D immersif : mêmes constructions collées à la carte, chargées une fois. Relief et Tactique 3D dressent le sol et les volumes.</p>
+          <p class="ow-help">À plat : photo ou plan, sans volumes. 2D immersif : emprises des constructions collées à la photo, comme un relevé de toits. Relief et Tactique 3D dressent le sol et les volumes.</p>
           <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments, forêts et obstacles</label>
-          <p class="ow-help">En 2D immersif, les empreintes restent collées au fond. Un clic ouvre la fiche (marquer, objectif, étage). En Relief 3D, les volumes se dressent. À plat, cette case n’a pas d’effet.</p>
+          <p class="ow-help">En 2D immersif, chaque construction du relevé apparaît en emprise au sol, collée à la photo. Un clic ouvre la fiche (marquer, objectif, étage). En Relief 3D, les volumes se dressent. À plat, cette case n’a pas d’effet.</p>
           <label class="ow-toggle" for="atak-scene-quality"><input type="checkbox" id="atak-scene-quality"> Qualité du relevé (cartographie)</label>
           <p class="ow-help">Éteint par défaut. Vert : données complètes. Orange : dimensions approximées. Gris : position seulement. Rouge : géométrie à vérifier.</p>
-          <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
-            <select id="atak-symbol-occlusion">
-              <option value="realistic">Réaliste</option>
-              <option value="silhouette">Silhouette</option>
-              <option value="always" selected>Toujours visibles</option>
-            </select>
-          </label>
-          <label class="ow-toggle" for="atak-ghost-trails"><input type="checkbox" id="atak-ghost-trails"> Traces de déplacement</label>
-          <label class="ow-toggle" for="atak-time-heat"><input type="checkbox" id="atak-time-heat"> Densité de passages</label>
-          <label class="ow-toggle" for="atak-focus-mission"><input type="checkbox" id="atak-focus-mission"> Concentrer sur la mission</label>
-          <label class="ow-toggle" for="atak-cinematic-aar"><input type="checkbox" id="atak-cinematic-aar"> Caméra qui suit le replay</label>
-          <label class="ow-toggle" for="atak-scene-inspector"><input type="checkbox" id="atak-scene-inspector"> Inspection des constructions (cartographie)</label>
-          <label class="ow-toggle" for="atak-coverage-diag"><input type="checkbox" id="atak-coverage-diag"> Manques de relief sur la carte</label>
-          <p class="ow-kicker">Vues enregistrées</p>
+          <div class="ow-opt">
+            <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
+              <select id="atak-symbol-occlusion">
+                <option value="realistic">Réaliste</option>
+                <option value="silhouette">Silhouette</option>
+                <option value="always" selected>Toujours visibles</option>
+              </select>
+            </label>
+            <button type="button" class="ow-i" aria-label="À propos des symboles derrière un obstacle" data-help="Toujours visibles : les pastilles restent lisibles derrière un bâtiment. Réaliste : un contact caché par un mur ou le relief disparaît. Silhouette : il reste une ombre.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-ghost-trails"><input type="checkbox" id="atak-ghost-trails"> Traces de déplacement</label>
+            <button type="button" class="ow-i" aria-label="À propos des traces de déplacement" data-help="Laisse un sillage derrière chaque contact qui se déplace, pour voir d’où il vient.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-time-heat"><input type="checkbox" id="atak-time-heat"> Densité de passages</label>
+            <button type="button" class="ow-i" aria-label="À propos de la densité de passages" data-help="Colorie les endroits souvent fréquentés. Plus la teinte est marquée, plus des contacts y sont passés.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-focus-mission"><input type="checkbox" id="atak-focus-mission"> Concentrer sur la mission</label>
+            <button type="button" class="ow-i" aria-label="À propos de concentrer sur la mission" data-help="Masque ce qui est loin des objectifs et des points déjà posés, pour ne garder que le secteur utile.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-cinematic-aar"><input type="checkbox" id="atak-cinematic-aar"> Caméra qui suit le replay</label>
+            <button type="button" class="ow-i" aria-label="À propos de la caméra du replay" data-help="Pendant la relecture, la vue suit toute seule le contact rejoué.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-scene-inspector"><input type="checkbox" id="atak-scene-inspector"> Inspection des constructions</label>
+            <button type="button" class="ow-i" aria-label="À propos de l’inspection des constructions" data-help="Dans la fiche d’un bâtiment, affiche aussi les détails du relevé : hauteur, emprise, origine. Utile pour vérifier le terrain, pas pour la conduite.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-toggle" for="atak-coverage-diag"><input type="checkbox" id="atak-coverage-diag"> Manques de relief sur la carte</label>
+            <button type="button" class="ow-i" aria-label="À propos des manques de relief" data-help="Surligner les zones où le sol n’a pas encore été relevé. Le relief y sera plat ou incomplet.">i</button>
+          </div>
+          <p class="ow-kicker ow-kicker-opt">Vues enregistrées
+            <button type="button" class="ow-i" aria-label="À propos des vues enregistrées" data-help="Mémorise le cadrage actuel — endroit, zoom, inclinaison — pour y revenir d’un clic.">i</button>
+          </p>
           <button type="button" class="ow-secondary" id="ow-bookmark-save">Enregistrer la vue actuelle</button>
           <div id="ow-bookmark-list"></div>
-          <label class="ow-row" for="atak-terrain-exaggeration">Exagération Z
-            <input type="range" id="atak-terrain-exaggeration" min="1" max="4" step="0.1" value="2.5">
-          </label>
-          <span id="atak-terrain-exaggeration-val">2.5×</span>
-          <label class="ow-row" for="atak-terrain-pitch">Inclinaison
-            <input type="range" id="atak-terrain-pitch" min="25" max="65" step="1" value="48">
-          </label>
-          <span id="atak-terrain-pitch-val">48°</span>
+          <div class="ow-opt">
+            <label class="ow-row" for="atak-terrain-exaggeration">Hauteur du relief
+              <input type="range" id="atak-terrain-exaggeration" min="1" max="4" step="0.1" value="2.5">
+            </label>
+            <span id="atak-terrain-exaggeration-val">2.5×</span>
+            <button type="button" class="ow-i" aria-label="À propos de la hauteur du relief" data-help="Amplifie les collines pour mieux les lire. 1× = hauteur réelle du terrain.">i</button>
+          </div>
+          <div class="ow-opt">
+            <label class="ow-row" for="atak-terrain-pitch">Inclinaison
+              <input type="range" id="atak-terrain-pitch" min="25" max="65" step="1" value="48">
+            </label>
+            <span id="atak-terrain-pitch-val">48°</span>
+            <button type="button" class="ow-i" aria-label="À propos de l’inclinaison" data-help="Penche la vue en relief. Plus la valeur est haute, plus on voit le sol de face.">i</button>
+          </div>
         </div>
         <div id="atak-settings-map-data">
           <span class="atak-terrain-status" id="atak-terrain-status">Données terrain — aucune couverture</span>
@@ -588,6 +617,8 @@ $icon = static function (string $path): string {
           <button type="button" data-ow-cam="ground">Sol</button>
         </div>
         <div class="ow-wx" id="ow-wx" hidden></div>
+        <div class="ow-scene-load" id="ow-scene-load" hidden>Chargement du relevé…</div>
+        <div class="ow-freeze-banner" id="ow-freeze-banner" hidden></div>
       </div>
       <div class="ow-timeline" id="ow-timeline" hidden>
         <button type="button" class="ow-replay-play" id="ow-replay-play" aria-label="Lecture">Lecture</button>
@@ -606,7 +637,6 @@ $icon = static function (string $path): string {
         <button type="button" class="ow-replay-play" data-ow-debrief>Exporter le bilan</button>
       </div>
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
-      <div class="ow-freeze-banner" id="ow-freeze-banner" hidden></div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
       <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
       <div class="ow-toast" id="ow-toast" hidden><small>Athena</small><p id="ow-toast-text"></p></div>
@@ -725,7 +755,7 @@ $icon = static function (string $path): string {
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
-    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. À plat, la carte reste un plan sans volumes. En 2D immersif, les constructions du relevé sont collées au fond et chargées une fois : le zoom ne les décale plus. En Relief 3D, le sol se relève et les volumes se dressent. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
+    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. À plat, la carte reste un plan sans volumes. En 2D immersif, les constructions du relevé apparaissent en emprise au sol, collées à la photo, comme un relevé de toits. En Relief 3D, le sol se relève et les volumes se dressent. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
     <h2>Dessin</h2>
     <p>Le crayon du rail ouvre la barre de tracé au-dessus de la carte : flèche, croquis, zone, surligneur, texte, symboles OTAN (ami, ennemi, neutre, inconnu) et plan de bâtiment. Maintenez le clic pour tracer, relâchez pour poser. Exporter PDF prépare une feuille de briefing (carte, légende, fil). Échap ou Sélection pour quitter. Clic droit : SALUTE, 9-line, CASEVAC, ou supprimer un tracé.</p>
     <h2>Réglages</h2>

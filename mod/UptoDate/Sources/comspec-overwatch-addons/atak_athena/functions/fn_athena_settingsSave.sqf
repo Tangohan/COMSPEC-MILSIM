@@ -132,6 +132,7 @@ if (!isNull _cbGrp) then {
 [] call comspec_overwatch_atak_athena_fnc_athena_ecotiCutawaySave;
 [] call comspec_overwatch_atak_athena_fnc_athena_ecotiThemeSave;
 [] call comspec_overwatch_atak_athena_fnc_athena_ecotiRenderModeSave;
+[] call comspec_overwatch_atak_athena_fnc_athena_ecotiTubeInfoSave;
 [] call comspec_overwatch_atak_athena_fnc_athena_linkStripSave;
 [] call comspec_overwatch_atak_athena_fnc_athena_linkDegradeSimSave;
 saveProfileNamespace;

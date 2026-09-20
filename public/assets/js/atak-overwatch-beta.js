@@ -109,6 +109,7 @@
   var sceneDrawFrame = 0;
   var sceneZooming = false;
   var lastSceneObject = null;
+  var hoverSceneId = null;
   var measureKeepLayer = null;
   var lastTaskSelectSig = '';
   var lastFsSelectSig = '';
@@ -768,6 +769,7 @@
     return markerPrefs().friend;
   }
   var STALE_HIDE_SEC = 15 * 60;
+  var STALE_DEAD_SEC = 2 * 60 * 60;
   var DISC_COLOR = '#8d9592';
   function unitAgeSec(unit) {
     if (!unit) return NaN;
@@ -799,8 +801,9 @@
     return link === 'offline' || link === 'disconnected' || link === 'lost';
   }
   function tooOldToShow(unit) {
-    if (isTrackedAi(unit) || !isDisconnected(unit)) return false;
     var age = unitAgeSec(unit);
+    if (Number.isFinite(age) && age > STALE_DEAD_SEC) return true;
+    if (isTrackedAi(unit) || !isDisconnected(unit)) return false;
     return Number.isFinite(age) && age > STALE_HIDE_SEC;
   }
   function hasSquadColor(unit) {
@@ -1187,13 +1190,23 @@
         if (armaMarkerLayers[id]) { map.removeLayer(armaMarkerLayers[id]); delete armaMarkerLayers[id]; }
         return;
       }
+      var buildingLike = helper.isBuildingLikeArea && helper.isBuildingLikeArea(data);
+      if (buildingLike && leafletSceneWanted() && sceneCache.length) {
+        if (armaMarkerLayers[id]) { map.removeLayer(armaMarkerLayers[id]); delete armaMarkerLayers[id]; }
+        return;
+      }
       seen[id] = true;
       var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
+      if (buildingLike) title = '';
       var desc = String(data.description || '').trim();
-      var tip = desc ? (String(title) + ' — ' + desc) : String(title);
+      var tip = title ? (desc ? (String(title) + ' — ' + desc) : String(title)) : '';
       if (armaMarkerLayers[id]) {
         if (armaMarkerLayers[id].setLatLng) armaMarkerLayers[id].setLatLng(latlng);
-        if (armaMarkerLayers[id].setTooltipContent) armaMarkerLayers[id].setTooltipContent(tip);
+        if (buildingLike && armaMarkerLayers[id].setStyle && helper.buildingFootprintStyle) {
+          armaMarkerLayers[id].setStyle(helper.buildingFootprintStyle());
+        }
+        if (tip && armaMarkerLayers[id].setTooltipContent) armaMarkerLayers[id].setTooltipContent(tip);
+        else if (!tip && armaMarkerLayers[id].unbindTooltip) armaMarkerLayers[id].unbindTooltip();
         return;
       }
       var layer = null;
@@ -1203,7 +1216,8 @@
         layer = L.marker(latlng, { icon: helper.leafletDivIcon(L, data), keyboard: false });
       }
       if (!layer) return;
-      if (layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
+      if (tip && layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
+      else if (layer.unbindTooltip) layer.unbindTooltip();
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
       bindLayerContext(layer, 'arma', id, title);
@@ -3327,8 +3341,12 @@
     if (kind) {
       layer._owPin = { kind: kind, id: String(id || ''), label: label || '' };
     }
-    if (label && layer.bindTooltip && !layer.getTooltip()) {
-      layer.bindTooltip(label, { direction: 'top', sticky: true });
+    var tipLabel = String(label || '').trim();
+    if (window.ArmaMapMarkers && window.ArmaMapMarkers.isTechnicalLabel && window.ArmaMapMarkers.isTechnicalLabel(tipLabel)) {
+      tipLabel = '';
+    }
+    if (tipLabel && layer.bindTooltip && !layer.getTooltip()) {
+      layer.bindTooltip(tipLabel, { direction: 'top', sticky: true });
     }
     if (layer._owCtxBound) return layer;
     layer._owCtxBound = true;
@@ -3759,6 +3777,71 @@
       return map.latLngToContainerPoint(worldToLatLng(x + v[0] * c - v[1] * s, y + v[0] * s + v[1] * c));
     });
   }
+  function isForestKind(kind) {
+    var k = String(kind || '').toLowerCase();
+    return k === 'forest' || k === 'forests' || k === 'tree' || k === 'trees' || k === 'wood' || k === 'woods';
+  }
+  function drawForestBlob(x, y, radiusM) {
+    if (!sceneCtx) return;
+    var c = map.latLngToContainerPoint(worldToLatLng(x, y));
+    var edge = map.latLngToContainerPoint(worldToLatLng(Number(x) + Math.max(4, radiusM), y));
+    var rad = Math.max(3, Math.hypot(edge.x - c.x, edge.y - c.y));
+    var grd = sceneCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, rad);
+    grd.addColorStop(0, 'rgba(26, 72, 36, 0.46)');
+    grd.addColorStop(0.58, 'rgba(24, 64, 32, 0.26)');
+    grd.addColorStop(1, 'rgba(24, 64, 32, 0)');
+    sceneCtx.beginPath();
+    sceneCtx.arc(c.x, c.y, rad, 0, Math.PI * 2);
+    sceneCtx.fillStyle = grd;
+    sceneCtx.fill();
+  }
+  function drawForests(rows, zoom, view) {
+    if (zoom < 3.3) return;
+    var members = [];
+    rows.forEach(function (item) {
+      if (!isForestKind(item.kind)) return;
+      var ll = worldToLatLng(item.x, item.y);
+      if (!view.contains(ll)) return;
+      members.push(item);
+    });
+    if (!members.length) return;
+    var cell = zoom >= 5.6 ? 0 : (zoom >= 4.5 ? 24 : 42);
+    if (!cell) {
+      members.forEach(function (item) {
+        var span = Math.max(Number(item.width) || 0, Number(item.depth) || 0, 8);
+        drawForestBlob(item.x, item.y, (span / 2) * 0.7);
+      });
+      return;
+    }
+    var bins = {};
+    members.forEach(function (item) {
+      var gx = Math.floor(Number(item.x) / cell);
+      var gy = Math.floor(Number(item.y) / cell);
+      var k = gx + ':' + gy;
+      if (!bins[k]) bins[k] = { x: 0, y: 0, n: 0, r: 0 };
+      bins[k].x += Number(item.x);
+      bins[k].y += Number(item.y);
+      bins[k].n += 1;
+      bins[k].r += Math.max(Number(item.width) || 8, Number(item.depth) || 8) / 2;
+    });
+    Object.keys(bins).forEach(function (k) {
+      var b = bins[k];
+      var radius = Math.min(cell * 0.85, (b.r / b.n) * (1.15 + Math.log(b.n + 1) * 0.35));
+      drawForestBlob(b.x / b.n, b.y / b.n, radius);
+    });
+  }
+  function setSceneLoad(on, text) {
+    var el = document.getElementById('ow-scene-load');
+    if (!el) return;
+    el.hidden = !on;
+    if (on) el.textContent = text || 'Chargement du relevé…';
+  }
+  var sceneLoadTimer = 0;
+  function sceneLoadHint(on) {
+    window.clearTimeout(sceneLoadTimer);
+    if (!on) { setSceneLoad(false); return; }
+    sceneLoadTimer = window.setTimeout(function () { setSceneLoad(true); }, 280);
+  }
   function drawScenePoly(points, fill, stroke) {
     if (!sceneCtx || !points.length) return;
     sceneCtx.beginPath();
@@ -3769,7 +3852,7 @@
     sceneCtx.fill();
     if (stroke) {
       sceneCtx.strokeStyle = stroke;
-      sceneCtx.lineWidth = 1;
+      sceneCtx.lineWidth = 1.2;
       sceneCtx.stroke();
     }
   }
@@ -3787,16 +3870,21 @@
     var view = map.getBounds().pad(0.4);
     var minSpan = zoom < 2 ? 48 : (zoom < 3 ? 22 : (zoom < 4 ? 10 : 0));
     var rows = sceneCache.length ? sceneCache : sceneRows;
+    drawForests(rows, zoom, view);
     rows.forEach(function (item) {
+      if (isForestKind(item.kind)) return;
       if (minSpan && Math.max(Number(item.width) || 0, Number(item.depth) || 0) < minSpan) return;
       var ll = worldToLatLng(item.x, item.y);
       if (!view.contains(ll)) return;
       var pts = sceneCorners(item);
       if (pts.length < 4) return;
       var kind = String(item.kind || 'building');
-      if (kind === 'forest') drawScenePoly(pts, 'rgba(20,83,45,.42)', 'rgba(52,211,153,.72)');
-      else if (kind === 'building') drawScenePoly(pts, 'rgba(186,196,206,.5)', 'rgba(226,232,240,.92)');
+      if (kind === 'building') drawScenePoly(pts, 'rgba(196,206,214,.52)', 'rgba(232,238,244,.95)');
       else drawScenePoly(pts, 'rgba(120,110,96,.38)', 'rgba(180,168,148,.8)');
+      if (zoom >= 4 && hoverSceneId && String(hoverSceneId) === String(item.id)
+        && (!lastSceneObject || String(lastSceneObject.id) !== String(item.id))) {
+        drawScenePoly(pts, 'rgba(226,232,240,.2)', 'rgba(255,255,255,.98)');
+      }
       if (zoom >= 5 && lastSceneObject && String(lastSceneObject.id) === String(item.id)) {
         drawScenePoly(pts, 'rgba(0,214,154,.22)', 'rgba(0,214,154,.95)');
       }
@@ -3812,13 +3900,17 @@
   function preloadSceneAll() {
     if (scenePreloadPromise && sceneCacheMapId === mapId) return scenePreloadPromise;
     sceneCacheMapId = mapId;
+    sceneLoadHint(true);
     scenePreloadPromise = api('/api/atak/scene?mapId=' + encodeURIComponent(mapId) + '&bbox=' + encodeURIComponent(sceneWorldBbox()) + '&limit=40000').then(function (payload) {
       sceneCache = asList(payload, 'objects');
       sceneRows = sceneCache;
       scheduleSceneDraw();
+      renderArmaMarkers();
+      sceneLoadHint(false);
       return sceneCache;
     }).catch(function () {
       scenePreloadPromise = null;
+      sceneLoadHint(false);
       return sceneCache;
     });
     return scenePreloadPromise;
@@ -3827,11 +3919,13 @@
     if (!leafletSceneWanted()) {
       sceneRows = [];
       scheduleSceneDraw();
+      renderArmaMarkers();
       return;
     }
     if (sceneCache.length && sceneCacheMapId === mapId) {
       sceneRows = sceneCache;
       scheduleSceneDraw();
+      renderArmaMarkers();
       return;
     }
     preloadSceneAll();
@@ -3888,12 +3982,27 @@
     });
     map.on('moveend', scheduleSceneDraw);
     map.on('resize', scheduleSceneDraw);
+    map.on('mousemove', function (event) {
+      if (!leafletSceneWanted() || (activeTool && activeTool !== 'cursor')) {
+        if (hoverSceneId) { hoverSceneId = null; scheduleSceneDraw(); }
+        return;
+      }
+      var hit = hitSceneAt(event.latlng);
+      var next = hit && hit.id ? String(hit.id) : null;
+      if (next === hoverSceneId) return;
+      hoverSceneId = next;
+      scheduleSceneDraw();
+    });
     var toggle = document.getElementById('atak-scene-buildings');
     if (toggle) toggle.addEventListener('change', function () { loadSceneFootprints(); });
     var mode = document.getElementById('atak-terrain-3d-mode');
     if (mode) mode.addEventListener('change', function () { loadSceneFootprints(); });
     window.addEventListener('atak:terrain3dchange', loadSceneFootprints);
     window.addEventListener('atak:overwatch-gl-change', loadSceneFootprints);
+    window.addEventListener('overwatch:scene-load', function (event) {
+      var d = event && event.detail ? event.detail : {};
+      setSceneLoad(!!d.on, d.text);
+    });
     preloadSceneAll();
     loadSceneFootprints();
   }
@@ -5653,6 +5762,7 @@
     unitHeading: unitHeading,
     unitSpeed: unitSpeed,
     unitAgeSec: unitAgeSec,
+    isTrackedAi: isTrackedAi,
     unitWorld: unitWorld,
     side: side,
     getPoRows: function () { return poRows; },

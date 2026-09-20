@@ -47,9 +47,9 @@ final class OverwatchBootReentryAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_Athena_PreInitDone', $athPre);
         self::assertStringContainsString('COMSPEC_Athena_PostInitDone', $athPost);
-        self::assertStringContainsString('1.5.96', $cfg);
+        self::assertStringContainsString('1.6.4', $cfg);
 
-        self::assertStringContainsString('corrigÃ©', strtolower($bug));
+        self::assertStringContainsString('corrigé', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

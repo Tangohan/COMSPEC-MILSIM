@@ -18,6 +18,7 @@ if (_target isEqualTo "" || {_targetType in ["all", "team", ""]}) exitWith { tru
 private _myCallsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 private _myGroup = groupId (group player);
 private _myName = name player;
+private _myAthena = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
 private _myMid = missionNamespace getVariable ["COMSPEC_MilitaryId", ""];
 if (!(_myMid isEqualType "")) then { _myMid = str _myMid; };
 _myMid = trim _myMid;
@@ -26,7 +27,7 @@ private _idents = [];
 {
     private _v = trim _x;
     if (!(_v isEqualTo "")) then { _idents pushBackUnique (toLower _v); };
-} forEach [_myCallsign, _myGroup, _myName, _myMid];
+} forEach [_myCallsign, _myGroup, _myName, _myMid, _myAthena];
 
 if (_myMid != "") then {
     _idents pushBackUnique (toLower ("mid:" + _myMid));

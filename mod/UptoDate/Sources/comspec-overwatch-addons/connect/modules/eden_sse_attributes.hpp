@@ -6,8 +6,9 @@
     mission qui place trente civils veut cocher le sujet intéressant dans ses
     attributs, pas gérer trente logiques.
 
-    Ces attributs écrivent exactement les mêmes variables que le module — un seul
-    contrat, deux façons de le renseigner.
+    Ces attributs passent par sseEdenWriteField, comme le module « Profil
+    d’identité SSE » : un seul contrat (variables COMSPEC_SSE_*), deux façons
+    de le renseigner.
 
     `condition = "objectBrain"` : la catégorie n'apparaît que sur ce qui a un
     cerveau, donc pas sur un mur ou une caisse.
@@ -33,7 +34,7 @@ class Cfg3DEN
                         tooltip = "Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d'identité du terminal SEEK.";
                         property = "COMSPEC_SSE_Profile_Preset";
                         control = "Combo";
-                        expression = "if (_value != 'auto') then { [_this, ([_value] call comspec_overwatch_connect_fnc_sseProfilePreset)] call comspec_overwatch_connect_fnc_sseApplyProfile; };";
+                        expression = "[_this, 'Preset', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "'auto'";
                         typeName = "STRING";
 
@@ -52,7 +53,7 @@ class Cfg3DEN
                         tooltip = "Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.";
                         property = "COMSPEC_SSE_LastName";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_LastName', _value, true]; _this setVariable ['COMSPEC_SSE_NameAuthored', true, true]; };";
+                        expression = "[_this, 'LastName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -63,7 +64,7 @@ class Cfg3DEN
                         tooltip = "Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.";
                         property = "COMSPEC_SSE_FirstName";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_FirstName', _value, true]; _this setVariable ['COMSPEC_SSE_NameAuthored', true, true]; };";
+                        expression = "[_this, 'FirstName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -74,7 +75,7 @@ class Cfg3DEN
                         tooltip = "Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.";
                         property = "COMSPEC_SSE_Alias";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_Alias', _value, true]; };";
+                        expression = "[_this, 'Alias', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -85,7 +86,7 @@ class Cfg3DEN
                         tooltip = "Ce que le sujet déclare, pas ce qui est établi.";
                         property = "COMSPEC_SSE_Nationality";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_Nationality', _value, true]; };";
+                        expression = "[_this, 'Nationality', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -96,7 +97,7 @@ class Cfg3DEN
                         tooltip = "Détermine si un interprète est nécessaire pour l'entretien.";
                         property = "COMSPEC_SSE_Language";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_Language', _value, true]; };";
+                        expression = "[_this, 'Language', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -107,7 +108,7 @@ class Cfg3DEN
                         tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
                         property = "COMSPEC_SSE_RecordRef";
                         control = "Edit";
-                        expression = "if (_value != '') then { _this setVariable ['COMSPEC_SSE_RecordRef', _value, true]; };";
+                        expression = "[_this, 'RecordRef', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -118,7 +119,7 @@ class Cfg3DEN
                         tooltip = "Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.";
                         property = "COMSPEC_SSE_Confidence";
                         control = "Edit";
-                        expression = "if (_value >= 0) then { _this setVariable ['COMSPEC_SSE_Confidence', ((round _value) max 0) min 100, true]; };";
+                        expression = "[_this, 'Confidence', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "-1";
                         validate = "number";
                         typeName = "NUMBER";
@@ -130,7 +131,7 @@ class Cfg3DEN
                         tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.";
                         property = "COMSPEC_SSE_Seed";
                         control = "Edit";
-                        expression = "if (_value > 0) then { _this setVariable ['COMSPEC_SSE_Seed', round _value, true]; };";
+                        expression = "[_this, 'Seed', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
                         defaultValue = "0";
                         validate = "number";
                         typeName = "NUMBER";

@@ -393,7 +393,7 @@ private _fnc_applyNet = {
     "comspec_overwatch_ecoti_hud", "CHECKBOX",
     [
         "Affichage situation (JVN)",
-        "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne. Désactivé par défaut — activez aussi depuis ATAK → Paramètres. Sans effet si le mod F-PANO ECOTI est déjà chargé."
+        "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne, avec tube, boussole et pastilles. Désactivé par défaut — activez aussi depuis ATAK → Paramètres. Sans effet si le mod F-PANO ECOTI est déjà chargé."
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
     false
@@ -457,7 +457,15 @@ private _fnc_applyNet = {
         "Quand un bâtiment est désigné : coupe la silhouette au plafond de l’étage choisi, met en évidence la dalle et marque les points intérieurs de cet étage. N’ouvre pas les murs (limite du moteur). Désactivé par défaut ; nécessite l’affichage situation. Menu ACE : Changer d’étage ou Découper à la hauteur regardée."
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
-    false
+    false,
+    0,
+    {
+        params ["_value"];
+        if (!(_value isEqualType true)) then { _value = false; };
+        if (!_value) then {
+            missionNamespace setVariable ["COMSPEC_EcotiCutawayFloor", 0, false];
+        };
+    }
 ] call CBA_fnc_addSetting;
 
 [
@@ -496,6 +504,66 @@ private _fnc_applyNet = {
     ],
     ["COMSPEC Overwatch", "Affichage situation"],
     true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_tube_fx", "CHECKBOX",
+    [
+        "Rendu tube (grain et contraste)",
+        "Ajoute le grain, une légère frange sur les bords et le contraste du tube lorsque l’affichage situation est actif. Complète la vision nocturne améliorée d’ACE, sans la remplacer. Décochez si un profil d’image externe gère déjà le tube."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_autogate", "CHECKBOX",
+    [
+        "Assombrissement face aux phares",
+        "Quand un véhicule éclaire vers vous, le tube se ferme un instant pour éviter l’éblouissement. ACE gère déjà l’aveuglement localisé si la vision nocturne améliorée est activée."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_gps_hud", "CHECKBOX",
+    [
+        "Boussole et grille dans le tube",
+        "Affiche la direction, la grille, la distance regardée et l’heure dans le tube, avec le masque des trois oculaires. Pour n’avoir que la direction, cochez aussi « Boussole uniquement »."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_compass_only", "CHECKBOX",
+    [
+        "Boussole uniquement",
+        "Dans le tube, n’affiche que votre direction. Masque la grille, la distance regardée, l’heure et les autres indications. L’affichage situation doit être actif."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_fusion", "CHECKBOX",
+    [
+        "Halo thermique sur les sources chaudes",
+        "Ajoute un halo clair sur les alliés proches, les véhicules moteur allumé et le bâtiment désigné. Si une fusion thermique est déjà fournie par un autre pack, Overwatch n’ajoute pas la sienne."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ecoti_badge_plate", "CHECKBOX",
+    [
+        "Plaque derrière les libellés",
+        "En rendu 2D à l’écran : fond très léger derrière le nom et la distance. Décochez pour le style pastille seule (recommandé sous jumelles)."
+    ],
+    ["COMSPEC Overwatch", "Affichage situation"],
+    false
 ] call CBA_fnc_addSetting;
 
 [
@@ -798,7 +866,7 @@ missionNamespace setVariable ["COMSPEC_LastLatencyAt", -1, false];
 
 // Bus d'évènements + C2 + Intel Engine
 // EventBus / caches locaux : pas de broadcast depuis le dédié.
-// Orders / OrderLog : publiés pour synchro MP (émis côté client via issueOrder).
+// Orders / OrderLog : locaux uniquement (un HashMap public plante le moteur).
 if (hasInterface || {isServer}) then {
     if (isNil {missionNamespace getVariable "COMSPEC_EventBus"}) then {
         missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, false];

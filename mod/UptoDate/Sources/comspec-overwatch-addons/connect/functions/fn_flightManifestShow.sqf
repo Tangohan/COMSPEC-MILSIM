@@ -1,9 +1,16 @@
 /*
-    Ouvre le manifeste de vol (idd 9998).
-    Sur le téléphone ATAK : createDisplay pour ne pas fermer cTab.
+    Ouvre le manifeste de vol.
+    Avec le téléphone : application ATAK. Sinon : dialogue overlay.
 */
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+if (
+    ([player] call comspec_overwatch_connect_fnc_hasTerminal)
+    && { !isNil "comspec_overwatch_atak_athena_fnc_athena_openManifest" }
+) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openManifest;
+};
 
 if (!isNull (uiNamespace getVariable ["COMSPEC_FlightManifest_Display", displayNull])) exitWith {};
 
@@ -23,7 +30,7 @@ if (!isNull _parent) then {
 };
 
 if (!_ok || {isNull _disp}) exitWith {
-    ["Impossible d’ouvrir le manifeste de vol.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["Impossible d'ouvrir le manifeste de vol.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
 
 uiNamespace setVariable ["COMSPEC_FlightManifest_Display", _disp];

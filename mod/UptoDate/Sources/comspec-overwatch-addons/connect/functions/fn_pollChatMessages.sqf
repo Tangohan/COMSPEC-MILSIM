@@ -117,6 +117,7 @@ private _fnPushComms = {
 private _fnPushIcemanGroup = {
     params ["_senderName", "_groupId", "_grid", "_text", "_timeStr", ["_pos", []]];
     if ((trim _text) isEqualTo "") exitWith { false };
+    if (((toUpper _text) find "ORDER|") >= 0) exitWith { false };
     if (_groupId isEqualTo "") then { _groupId = groupId group player; };
     if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
     if (_timeStr isEqualTo "") then { _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString; };
@@ -265,7 +266,8 @@ if (!_bootstrapped) exitWith {
     // Alertes / ordres déjà gérés par d’autres polls
     if ((_plainU find "ALERTE TACTIQUE") == 0) then { continue };
     if ((_plainU find "ALERTE MEDICALE") == 0 || {(_plainU find "ALERTE MÉDICALE") == 0}) then { continue };
-    if ((_plainU find "ORDER|") == 0) then { continue };
+    if ((_plainU find "ORDER|") >= 0) then { continue };
+    if ((_bodyU find "ORDER|") >= 0) then { continue };
 
     private _isHq = (
         (_plainU find "[HQ]") >= 0

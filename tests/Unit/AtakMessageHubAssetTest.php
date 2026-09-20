@@ -21,11 +21,14 @@ final class AtakMessageHubAssetTest extends TestCase
         $title = (string) file_get_contents($base . '/functions/fn_athena_commsTitleClick.sqf');
 
         self::assertStringContainsString('COMSPEC_ATAK_MessageHub', $cfg);
+        self::assertStringContainsString('class message;', $cfg);
         self::assertStringContainsString('class AtakP2P: message', $cfg);
-        self::assertStringContainsString('class Menu_Property: Menu_Property', $cfg);
-        self::assertStringNotContainsString('PAGE_CTRL = "ATAK_Message"', $cfg);
+        self::assertStringNotContainsString('class Menu_Property: Menu_Property', $cfg);
+        self::assertStringContainsString('PAGE_CTRL = "ATAK_Message"', $cfg);
+        self::assertStringContainsString('Opened = "BCE_fnc_ATAK_message_Init"', $cfg);
+        self::assertStringContainsString('ATAK_Buttons = "Message_Menu"', $cfg);
         self::assertStringContainsString('athena_messageHubOnOpened', $cfg);
-        self::assertStringContainsString('1.0.153', $cfg);
+        self::assertStringContainsString('1.0.158', $cfg);
 
         self::assertStringContainsString('P2P — Réseau local', $hub);
         self::assertStringContainsString('Via Athena', $hub);

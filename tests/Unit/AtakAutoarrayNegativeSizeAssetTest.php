@@ -90,7 +90,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringNotContainsString('["CAManBase", 1, _path, _actionId]', $ace);
         self::assertStringNotContainsString('["CAManBase", 1, _mainPath, _x]', $ace);
 
-        self::assertStringContainsString('1.0.153', $cfg);
+        self::assertStringContainsString('1.0.158', $cfg);
         $onOrder = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_onOrderReceived.sqf'
         );
@@ -111,7 +111,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringContainsString('count _windowSent) > 100', $sent);
         self::assertStringNotContainsString('ctrlParent _fx isNotEqualTo', $overlay);
 
-        self::assertStringContainsString('taille de tableau nÃ©gative', strtolower($bug));
+        self::assertStringContainsString('taille de tableau négative', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

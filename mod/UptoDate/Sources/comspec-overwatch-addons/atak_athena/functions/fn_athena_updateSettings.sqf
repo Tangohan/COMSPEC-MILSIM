@@ -228,8 +228,6 @@ if (!isNull _cbEcotiCut) then {
     missionNamespace setVariable ["COMSPEC_AtakEcotiCutFilling", true, false];
     private _cutOn = missionNamespace getVariable ["comspec_overwatch_ecoti_building_cutaway", false];
     if (!(_cutOn isEqualType true)) then { _cutOn = false; };
-    private _profCut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
-    if (_profCut isEqualType true) then { _cutOn = _profCut; };
     lbClear _cbEcotiCut;
     private _iCutOff = _cbEcotiCut lbAdd "Désactivé";
     _cbEcotiCut lbSetData [_iCutOff, "0"];
@@ -287,6 +285,39 @@ if (!isNull _cbEcotiRender) then {
     } forEach _optsR;
     _cbEcotiRender lbSetCurSel _selR;
     missionNamespace setVariable ["COMSPEC_AtakEcotiRenderFilling", false, false];
+};
+
+private _cbEcotiTube = [9877] call _ctrl;
+if (!isNull _cbEcotiTube) then {
+    missionNamespace setVariable ["COMSPEC_AtakEcotiTubeFilling", true, false];
+    private _gpsOn = missionNamespace getVariable ["comspec_overwatch_ecoti_gps_hud", true];
+    if (!(_gpsOn isEqualType true)) then { _gpsOn = true; };
+    private _onlyOn = missionNamespace getVariable ["comspec_overwatch_ecoti_compass_only", false];
+    if (!(_onlyOn isEqualType true)) then { _onlyOn = false; };
+    private _profTube = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
+    if (_profTube isEqualType "" && {_profTube isNotEqualTo "UNSET"}) then {
+        private _p = toLower _profTube;
+        if (_p isEqualTo "compass") then { _onlyOn = true; _gpsOn = true; };
+        if (_p isEqualTo "off") then { _onlyOn = false; _gpsOn = false; };
+        if (_p isEqualTo "full") then { _onlyOn = false; _gpsOn = true; };
+    };
+    private _tubeMode = "full";
+    if (_onlyOn) then { _tubeMode = "compass"; };
+    if (!_gpsOn && {!_onlyOn}) then { _tubeMode = "off"; };
+    lbClear _cbEcotiTube;
+    private _optsT = [
+        ["full", "Complet (boussole, grille, heure)"],
+        ["compass", "Boussole uniquement"],
+        ["off", "Masqué"]
+    ];
+    private _selT = 0;
+    {
+        private _ix = _cbEcotiTube lbAdd (_x select 1);
+        _cbEcotiTube lbSetData [_ix, _x select 0];
+        if ((_x select 0) isEqualTo _tubeMode) then { _selT = _ix; };
+    } forEach _optsT;
+    _cbEcotiTube lbSetCurSel _selT;
+    missionNamespace setVariable ["COMSPEC_AtakEcotiTubeFilling", false, false];
 };
 
 private _cbLinkStrip = [9882] call _ctrl;

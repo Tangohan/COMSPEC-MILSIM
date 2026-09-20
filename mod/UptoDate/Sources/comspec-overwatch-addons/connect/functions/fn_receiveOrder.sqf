@@ -6,6 +6,14 @@ params [["_order", createHashMap]];
 
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+// remoteExec : paires [["id","…"],…] uniquement — jamais un HashMap réseau.
+if (_order isEqualType []) then {
+    if ((count _order) > 0 && {(_order select 0) isEqualType []}) then {
+        _order = createHashMapFromArray _order;
+    } else {
+        _order = createHashMap;
+    };
+};
 if (!(_order isEqualType createHashMap)) exitWith {};
 if (
     (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false])
@@ -27,13 +35,19 @@ if (!([_order] call comspec_overwatch_connect_fnc_orderConcernsPlayer)) exitWith
 // Ne pas notifier l’émetteur sauf s’il est aussi destinataire explicite
 private _myName = name player;
 private _myCallsign = [] call comspec_overwatch_connect_fnc_getCallsign;
+private _myAthena = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
 private _target = trim (_order getOrDefault ["target", ""]);
 private _explicitMe = (_target != "") && {
     (toLower _target) isEqualTo (toLower _myCallsign)
     || {(toLower _target) isEqualTo (toLower _myName)}
+    || {(toLower _target) isEqualTo (toLower _myAthena)}
 };
-if (_issuer isEqualTo _myName && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF", "NOTIFY_FULL"])}) exitWith {};
-if (_issuer isEqualTo _myCallsign && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF", "NOTIFY_FULL"])}) exitWith {};
+private _selfIssued = (
+    (_issuer isEqualTo _myAthena && {_myAthena isNotEqualTo ""})
+    || {_issuer isEqualTo _myCallsign}
+    || {_issuer isEqualTo _myName}
+);
+if (_selfIssued && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHONE_GEOLOC_OFF", "NOTIFY_FULL"])}) exitWith {};
 
 // Éviter les doublons (remoteExec + bus local + poll) — ids toujours en chaîne
 private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];

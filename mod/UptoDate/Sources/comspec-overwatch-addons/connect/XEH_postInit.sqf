@@ -223,7 +223,9 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         };
         private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
         if (_cut isEqualType true) then {
-            [_cut, false] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
+            saveProfileNamespace;
         };
         private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
         if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
@@ -232,6 +234,10 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
         if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
             [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
+        };
+        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
+        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
+            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
         };
         [false, true] call comspec_overwatch_connect_fnc_linkStripApplySetting;
         private _linkSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];

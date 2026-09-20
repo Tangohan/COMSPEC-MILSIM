@@ -7160,6 +7160,40 @@ class AtakApiController
             ], 201);
         }
 
+        // Ordre C2 jeu : enregistrer la fiche, jamais le protocole brut dans la messagerie.
+        $orderBody = is_string($bodyText) ? $bodyText : '';
+        $parsedOrderEarly = $this->orderRepository?->parseOrderChatBody($orderBody);
+        if (
+            is_array($parsedOrderEarly)
+            && ($parsedOrderEarly['external_id'] ?? '') !== ''
+        ) {
+            if (($parsedOrderEarly['issuer'] ?? '') === '') {
+                $parsedOrderEarly['issuer'] = is_string($author) ? $author : '';
+            }
+            $orderRow = null;
+            if ($this->orderRepository->tablesReady()) {
+                $orderRow = $this->orderRepository->upsertByExternalId($tenantId, $mapId, $parsedOrderEarly);
+            }
+            if (is_array($orderRow)) {
+                $this->activityLog?->record(
+                    $tenantId,
+                    $mapId,
+                    AtakActivityLogService::TYPE_ORDER,
+                    'Ordre reçu du théâtre — ' . $this->orderTypeLabelFr(
+                        (string) ($orderRow['order_type'] ?? ''),
+                        (string) ($orderRow['type_label'] ?? '')
+                    ),
+                    (string) ($orderRow['issuer'] ?? $author)
+                );
+            }
+
+            return Response::json([
+                'ok' => true,
+                'hidden_from_chat' => true,
+                'order' => is_array($orderRow) ? $this->serializeOrder($orderRow) : null,
+            ], 201);
+        }
+
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
         $medicalDup = false;
         $row = null;
@@ -7309,28 +7343,6 @@ class AtakApiController
                 $gameActor,
                 (int) ($row['id'] ?? 0)
             );
-        }
-
-        // Pont jeu → web : messages ORDER|… émis par le mod (SendChat)
-        $parsedOrder = $this->orderRepository?->parseOrderChatBody((string) $bodyText);
-        if (is_array($parsedOrder) && ($parsedOrder['external_id'] ?? '') !== '') {
-            if (($parsedOrder['issuer'] ?? '') === '') {
-                $parsedOrder['issuer'] = (string) $author;
-            }
-            $orderRow = $this->orderRepository->upsertByExternalId($tenantId, $mapId, $parsedOrder);
-            if (is_array($orderRow)) {
-                $row['order'] = $this->serializeOrder($orderRow);
-                $this->activityLog?->record(
-                    $tenantId,
-                    $mapId,
-                    AtakActivityLogService::TYPE_ORDER,
-                    'Ordre reçu du théâtre — ' . $this->orderTypeLabelFr(
-                        (string) ($orderRow['order_type'] ?? ''),
-                        (string) ($orderRow['type_label'] ?? '')
-                    ),
-                    (string) ($orderRow['issuer'] ?? $author)
-                );
-            }
         }
 
         // Lot 1A : FRAGO IceMan / alerte tactique → canon atak_orders (onglet Ordres)
@@ -11172,6 +11184,11 @@ class AtakApiController
                 'status' => $status,
                 'pilot_status' => $r['pilot_status'],
                 'aircraft_count' => (int) ($r['aircraft_count'] ?? 1),
+                'fuel_pct' => isset($r['fuel_pct']) ? (int) $r['fuel_pct'] : null,
+                'auth_code' => $r['auth_code'] ?? $r['auth'] ?? null,
+                'station' => $r['station'] ?? null,
+                'mission_id' => $r['mission_id'] ?? null,
+                'checklist' => $r['checklist'] ?? null,
                 'updated_at' => $r['updated_at'],
                 'source' => $r['source'] ?? null,
                 'vehicle_id' => $r['vehicle_id'] ?? null,
@@ -11206,7 +11223,7 @@ class AtakApiController
         if ($callsign === '' || $pilotStatus === '') {
             return Response::json(['error' => 'callsign and pilot_status required'], 400);
         }
-        $allowed = ['ROGER', 'INBOUND', 'ENGAGED', 'RTB'];
+        $allowed = ['ROGER', 'INBOUND', 'ONSTA', 'ENGAGED', 'RTB'];
         if (!in_array(strtoupper($pilotStatus), $allowed, true)) {
             return Response::json(['error' => 'Invalid pilot_status'], 400);
         }

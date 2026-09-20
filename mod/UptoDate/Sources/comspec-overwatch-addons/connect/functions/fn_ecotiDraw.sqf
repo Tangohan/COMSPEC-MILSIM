@@ -17,14 +17,21 @@ private _showVehicles = missionNamespace getVariable ["comspec_overwatch_ecoti_s
 private _showOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_outline", true];
 private _showRoute = missionNamespace getVariable ["comspec_overwatch_ecoti_show_route", true];
 private _showUnitOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_unit_outline", true];
-private _icon = "\a3\ui_f\data\map\markers\military\dot_CA.paa";
+private _icon = [] call comspec_overwatch_connect_fnc_ecotiIconPath;
 private _drawn = 0;
 private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
+private _fusionOn = missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true];
+if (!(_fusionOn isEqualType true)) then { _fusionOn = true; };
 private _colAllies = _theme getOrDefault ["allies", [0.75, 1, 0.95, 1]];
 private _colVeh = _theme getOrDefault ["vehicles", [0.7, 0.95, 1, 1]];
 private _colOutline = _theme getOrDefault ["outline", [1, 1, 0.7, 0.95]];
 private _colUnit = _theme getOrDefault ["unit", [0.8, 1, 0.95, 0.98]];
 private _colBldg = _theme getOrDefault ["building", [0.65, 1, 0.9, 0.98]];
+if (_fusionOn && {!([] call comspec_overwatch_connect_fnc_ecotiA3tiPresent)}) then {
+    private _hot = _theme getOrDefault ["thermal", [1, 0.96, 0.86, 0.95]];
+    _colOutline = [_hot select 0, _hot select 1, _hot select 2, 0.96];
+    _colBldg = [_hot select 0, _hot select 1, _hot select 2, 0.98];
+};
 
 private _bldg = missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull];
 private _bldgMk = missionNamespace getVariable ["COMSPEC_EcotiBuildingMarker", ""];
@@ -122,6 +129,9 @@ if (_showAllies) then {
         if (_showUnitOutline && {_dist <= 120}) then {
             [_x, _colUnit] call comspec_overwatch_connect_fnc_ecotiDrawUnitOutline;
         };
+        if (_fusionOn) then {
+            [_pos, _dist, "unit"] call comspec_overwatch_connect_fnc_ecotiDrawFusion;
+        };
         _entries pushBack [_pos, _icon, _colAllies, _label, _dist, 0.5];
     } forEach _units;
     [_entries] call _fnc_drawSorted;
@@ -142,6 +152,9 @@ if (_showVehicles && {_drawn < _maxIcons}) then {
         private _dist = _camPos distance _pos;
         private _dn = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
         if (_dn isEqualTo "") then { _dn = typeOf _x };
+        if (_fusionOn && {isEngineOn _x}) then {
+            [_pos, _dist, "vehicle"] call comspec_overwatch_connect_fnc_ecotiDrawFusion;
+        };
         _entries pushBack [_pos, "\a3\ui_f\data\map\markers\nato\b_armor.paa", _colVeh, _dn, _dist, 0.52];
     } forEach _vehs;
     [[_entries] call _fnc_dedupSpatial] call _fnc_drawSorted;
@@ -251,6 +264,9 @@ if (!isNull _bldg) then {
     };
 
     private _bDist = _camPos distance _bPos;
+    if (_fusionOn) then {
+        [_bPos, _bDist, "building"] call comspec_overwatch_connect_fnc_ecotiDrawFusion;
+    };
     private _bCompact = if ([_bPos] call _fnc_screenOk) then { [_bPos] call _fnc_needsCompact } else { false };
     [
         _bPos,

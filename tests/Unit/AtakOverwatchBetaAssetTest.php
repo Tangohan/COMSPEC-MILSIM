@@ -187,6 +187,12 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringNotContainsString("clean(unit.call_sign || unit.callsign || unit.name || unit.label, 'CONTACT')", $overwatchJs);
         self::assertStringContainsString('tooOldToShow', $overwatchJs);
         self::assertStringContainsString('STALE_HIDE_SEC', $overwatchJs);
+        self::assertStringContainsString('STALE_DEAD_SEC', $overwatchJs);
+        self::assertStringContainsString('drawForests', $overwatchJs);
+        self::assertStringContainsString('drawForestBlob', $overwatchJs);
+        self::assertStringContainsString('isForestKind', $overwatchJs);
+        self::assertStringContainsString('createRadialGradient', $overwatchJs);
+        self::assertStringContainsString('Chargement du relevé', $overwatchJs);
         self::assertStringContainsString('is-squad-pulse', $overwatchJs);
         self::assertStringContainsString('id="ow-squad-color"', $view);
         self::assertStringContainsString('is-offline', $overwatchJs);
@@ -237,6 +243,7 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="ow-comms-search"', $view);
         self::assertStringContainsString('id="ow-c2-alerts"', $view);
         self::assertStringContainsString('id="ow-freeze-banner"', $view);
+        self::assertStringContainsString('id="ow-scene-load"', $view);
         self::assertStringContainsString('data-ctx="salute"', $view);
         self::assertStringContainsString('data-ctx="nineline"', $view);
         self::assertStringContainsString('data-ctx="casevac"', $view);
@@ -269,6 +276,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('sceneZooming', $overwatchJs);
         self::assertStringContainsString('limit=40000', $overwatchJs);
         self::assertStringContainsString('.ow-scene-footprints', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
+        self::assertStringContainsString('.ow-i', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
+        self::assertStringContainsString('emprise au sol', $view);
+        self::assertStringContainsString('isBuildingLikeArea', $overwatchJs);
+        self::assertStringContainsString('rgba(196,206,214,.52)', $overwatchJs);
+        $armaMarkersJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/arma-map-markers.js');
+        self::assertStringContainsString('function isTechnicalLabel', $armaMarkersJs);
+        self::assertStringContainsString('function isBuildingLikeArea', $armaMarkersJs);
+        self::assertStringContainsString('buildingFootprintStyle', $armaMarkersJs);
         self::assertStringContainsString('id="ow-drawbar"', $view);
         self::assertStringContainsString('<option value="immersive">2D immersif</option>', $view);
         self::assertStringContainsString('id="ow-bplan"', $view);

@@ -1,12 +1,12 @@
 /*
     Badge ECOTI sous JVN.
-    Mode world3d : drawIcon3D.
+    Mode world3d : drawIcon3D (losange, ombre portée, fondu distance).
     Mode screen2d : file pour le HUD écran (anti-chevauchement).
     Params: [_pos, _icon, _color, _label, _dist, _iconSize, _compact]
 */
 params [
     ["_pos", [0, 0, 0], [[]]],
-    ["_icon", "\a3\ui_f\data\map\markers\military\dot_CA.paa", [""]],
+    ["_icon", "", [""]],
     ["_color", [0.75, 1, 0.95, 1], [[]]],
     ["_label", "", [""]],
     ["_dist", 0, [0]],
@@ -15,6 +15,10 @@ params [
 ];
 
 if (!(_pos isEqualType []) || {(count _pos) < 3}) exitWith {};
+
+if (_icon isEqualTo "" || {_icon find "military\dot_CA" >= 0}) then {
+    _icon = [] call comspec_overwatch_connect_fnc_ecotiIconPath;
+};
 
 private _mode = missionNamespace getVariable ["comspec_overwatch_ecoti_render_mode", "world3d"];
 if (!(_mode isEqualType "")) then { _mode = "world3d"; };
@@ -33,6 +37,16 @@ private _txtCol = _theme getOrDefault ["badge", [1, 1, 1, 1]];
 
 private _sz = (_iconSize max 0.28) min 0.7;
 if (_compact) then { _sz = _sz * 0.72; };
+
+private _maxDist = missionNamespace getVariable ["comspec_overwatch_ecoti_max_dist", 1200];
+private _fadeStart = (_maxDist * 0.4) max 80;
+private _fade = if (_dist <= _fadeStart) then {
+    1
+} else {
+    (1 - (0.65 * ((_dist - _fadeStart) / ((_maxDist - _fadeStart) max 1)))) max 0.32
+};
+_color set [3, ((_color select 3) * _fade) min 1];
+_txtCol set [3, ((_txtCol select 3) * _fade) min 1];
 
 if (_compact) exitWith {
     drawIcon3D [
@@ -82,11 +96,6 @@ if ((count _name) > 22) then {
 private _txt = format ["%1 · %2", _name, _distTxt];
 private _fs = (linearConversion [40, 900, _dist, 0.028, 0.022, true]) max 0.02;
 
-// Fondu léger avec la distance aussi en 3D.
-private _fade = linearConversion [80, 1200, _dist, 1, 0.45, true];
-_color set [3, ((_color select 3) * _fade) min 1];
-_txtCol set [3, ((_txtCol select 3) * _fade) min 1];
-
 drawIcon3D [
     _icon,
     _color,
@@ -108,7 +117,7 @@ drawIcon3D [
     0.01,
     0,
     _txt,
-    0,
+    1,
     _fs,
     "PuristaMedium",
     "right"

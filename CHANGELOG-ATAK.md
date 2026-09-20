@@ -7,7 +7,123 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+
+---
+
+## Vague 2026-09-20 — Overwatch 1.6.4 / SSE 0.7.22 / Athena 1.0.158
+
+Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md).
+
+### Nouveau — Boussole seule sous jumelles
+
+Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Choix : Paramètres du téléphone, ligne Dans le tube, ou options du jeu (Affichage situation).
+
+### Amélioration — Aide sur les options de vue
+
+À côté des options de vue, un i ouvre une phrase d’aide : traces, densité de passages, replay, inspection des bâtiments, manques de relief.
+
+### Correction — Positions figées et couvert végétal
+
+Sans opérateur en liaison, le bandeau rouge ne parle plus de positions figées. Les arbres et le couvert n’apparaissent plus en pavés sur toute la carte : ils se lisent en se rapprochant, en taches de houppier. Un message indique le chargement du relevé.
+
+### Amélioration — 2D immersif, emprises de constructions
+
+En 2D immersif, les constructions du relevé se lisent comme des toits sur la photo : emprise claire, collée au terrain. Un rectangle sans nom posé en jeu n’affiche plus de nom technique au survol. Un clic ouvre toujours la fiche de la construction.
+
+### Correction — Menu d’applications du téléphone
+
+Le chevron reprend sa grille : icônes alignées, noms lisibles, Video Feeds à sa place. L’application réseau local s’ouvre toujours.
+
+### Correction — Démarrage du téléphone ATAK
+
+Le téléphone s’ouvre de nouveau au lancement. L’application réseau local ne bloquait plus le chargement.
+
+### Nouveau — Affichage situation sous jumelles
+
+Sous jumelles de vision nocturne, le champ reprend un tube à trois oculaires : grain, contraste, et un assombrissement si un véhicule éclaire vers vous. La boussole, la grille, la distance regardée et l’heure apparaissent dans le tube. Les pastilles sont des losanges. Un halo clair marque les alliés proches, un véhicule moteur allumé et le bâtiment désigné.
+
+### Correction — Découpage d’étage
+
+Quand un bâtiment est désigné et le découpage d’étage actif, une croix marque le plafond de l’étage regardé.
+
+### Correction — Identité SEEK
+
+Le module, les attributs de la personne et le pack SSE imposent le même nom et le même verdict (Signalé ou Recherché) au terminal SEEK.
+
+### Correction — Surcharge mémoire
+
+Moins d’arrêts liés aux tuiles de carte, au dépassement de carte et à un ordre mal formé.
+
+### Nouveau — Canaux de discussion, photothèque, carte du poste
+
+Canaux Commandement, Général, JTAC. Photothèque : envoi vers le site et le SSE. Carte du poste : prédiction de déplacement, pointage, données terrain. Dépannage de liaison via Échap.
+
+Relancez Arma complètement (Overwatch 1.6.4, pack SSE 0.7.22, Athena 1.0.158).
+
+---
+
+## Pack SSE 0.7.22 — 2026-09-20
+
+### Correction — Identité SEEK depuis l’éditeur du pack SSE
+
+Dans l’éditeur, le pack SSE reprend désormais le même résultat que Overwatch : nom, prénom, alias, et le choix Signalé ou Recherché. Le terminal SEEK du pack affiche ce nom et ce verdict, même sans Overwatch. Relancez Arma complètement (pack SSE 0.7.22).
+
+---
+
+## Overwatch 1.6.3 — 2026-09-20
+
+### Correction — Découpage d’étage sur la silhouette
+
+Quand un bâtiment est désigné et le **découpage d’étage** actif, une croix marque désormais le plafond de l’étage que vous regardez. Les séparateurs d’étage restent visibles ; l’étage affiché se distingue clairement. Le choix découpage se mémorise au même endroit, que vous le changiez depuis le téléphone ATAK ou depuis les options du jeu. Relancez Arma complètement (Overwatch 1.6.3).
+
+---
+
+## Overwatch 1.6.2 — 2026-09-20
+
+### Correction — Profil d’identité SSE dans l’éditeur
+
+Dans l’éditeur, le module **Profil d’identité SSE** impose maintenant le même résultat que les attributs de la personne : nom, alias, et le choix Signalé ou Recherché. Le terminal SEEK voit ces informations sur les sujets synchronisés. Le mât Relais AT n’a plus de zone à redimensionner : la portée se règle uniquement en mètres. Relancez Arma complètement (Overwatch 1.6.2).
+
+---
+
+## Overwatch 1.6.1 — 2026-09-20
+
+### Amélioration — Affichage situation sous jumelles
+
+Sous jumelles de vision nocturne, le champ reprend un tube à trois oculaires : grain, contraste, et un assombrissement si un véhicule éclaire vers vous. La boussole, la grille, la distance regardée et l’heure apparaissent dans le tube. Les pastilles sont des losanges, le texte reste lisible, et les alliés lointains s’estompent. Un halo clair marque les alliés proches, un véhicule moteur allumé et le bâtiment désigné. Si une fusion thermique est déjà fournie par un autre pack, Overwatch n’ajoute pas la sienne. Relancez Arma complètement (Overwatch 1.6.1).
+
+---
+
+## Overwatch 1.6.0 / Athena 1.0.155 — 2026-09-19
+
+### Amélioration — Manifeste de vol
+
+Le manifeste reprend l’appareil dans lequel vous êtes : nom, personnes à bord, munitions, pods et autonomie. Vous confirmez les codes, le numéro de mission et le canevas d’attaque, puis vous transmettez. Le poste voit la même fiche. Relancez Arma complètement (Overwatch 1.6.0, Athena 1.0.155).
+
+---
+
+## Overwatch 1.5.99 — 2026-09-19
+
+### Correction — Ordres C2
+
+Un ordre donné en jeu n’arrête plus Arma. Il part sous votre nom Athena, pas sous le surnom du jeu. Le chat de groupe ne montre plus la ligne technique. Relancez Arma complètement (Overwatch 1.5.99).
+
+---
+
+## Overwatch 1.5.98 / Athena 1.0.154 — 2026-09-19
+
+### Nouveau — Appui aérien et manifeste dans le téléphone
+
+La demande d’appui aérien et le manifeste de vol s’ouvrent dans le téléphone, depuis le tiroir. Vous indiquez le type, la grille et une note, ou l’appareil, le rôle et les codes, sans recouvrir le terrain. Relancez Arma complètement (Overwatch 1.5.98, Athena 1.0.154).
+
+---
+
+## Overwatch 1.5.97 — 2026-09-19
+
+### Amélioration — Manifeste de vol
+
+Le manifeste de vol se remplit aussi depuis le sol. Vous choisissez le type d’appareil, le rôle, la destination, les personnes à bord et une note pour le poste. La grille et le carburant sont proposés automatiquement. En vol, l’appareil est toujours détecté. Une réponse **À poste** s’ajoute aux statuts pilote. Le poste affiche la fiche complète. Relancez Arma complètement (Overwatch 1.5.97).
 
 ---
 

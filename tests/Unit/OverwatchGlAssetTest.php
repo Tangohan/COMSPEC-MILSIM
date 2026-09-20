@@ -27,6 +27,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('id="atak-ghost-trails"', $view);
         self::assertStringContainsString('id="atak-scene-inspector"', $view);
         self::assertStringContainsString('id="atak-coverage-diag"', $view);
+        self::assertStringContainsString('class="ow-i"', $view);
+        self::assertStringContainsString('sillage derrière chaque contact', $view);
+        self::assertStringContainsString('zones où le sol n’a pas encore été relevé', $view);
         self::assertStringContainsString('data-tool="viewshed"', $view);
         self::assertStringContainsString('data-tool="horizon"', $view);
         self::assertStringContainsString('data-tool="slice"', $view);
@@ -70,6 +73,10 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('pickable: true', $layers);
         self::assertStringContainsString('fill-extrusion', $layers);
         self::assertStringContainsString('clusterForests', $layers);
+        self::assertStringContainsString('Math.cos(t) * radius', $layers);
+        self::assertStringContainsString('zoom >= 13.4', $layers);
+        self::assertStringContainsString('overwatch:scene-load', $layers);
+        self::assertStringContainsString('Chargement du relevé', $layers);
         self::assertStringContainsString('heightAt', $layers);
         self::assertStringContainsString('AGL', $layers);
         self::assertStringContainsString('bbox', $layers);

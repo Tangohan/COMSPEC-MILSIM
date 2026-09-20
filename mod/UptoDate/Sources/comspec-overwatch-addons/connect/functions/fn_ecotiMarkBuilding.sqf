@@ -44,7 +44,7 @@ if (_dn isEqualTo "") then { _dn = "Bâtiment"; };
 private _grid = mapGridPosition _building;
 private _label = format ["%1 (%2)", _dn, _grid];
 
-private _mkName = format ["COMSPEC_ECOTI_BLDG_%1", round (random 99999)];
+private _mkName = [] call comspec_overwatch_connect_fnc_ecotiBuildingMarkerName;
 private _pos = getPosATL _building;
 private _mk = createMarkerLocal [_mkName, _pos];
 _mk setMarkerTypeLocal "mil_box";

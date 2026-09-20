@@ -194,9 +194,32 @@ window.ATAKUnitPopup = (function () {
     if (s === 'delayed') return 'Signal différé';
     if (s === 'offline') return 'Hors liaison';
     if (s === 'in-flight' || s === 'in_flight') return 'En vol';
+    if (s === 'available') return 'Au sol';
     if (s === 'suspect') return 'À vérifier';
     if (!s) return '';
     return String(status);
+  }
+
+  function missionRoleLabelFr(role) {
+    var x = String(role || '').toLowerCase().trim();
+    if (x === 'transport') return 'Transport';
+    if (x === 'cas' || x === 'appui') return 'Appui aérien';
+    if (x === 'recon' || x === 'reconnaissance') return 'Reconnaissance';
+    if (x === 'medevac' || x === 'evac') return 'Évacuation sanitaire';
+    if (x === 'resupply' || x === 'ravitaillement') return 'Ravitaillement';
+    if (x === 'escort' || x === 'escorte') return 'Escorte';
+    if (x === 'other' || x === 'autre') return 'Autre';
+    return role ? String(role) : '';
+  }
+
+  function pilotStatusLabelFr(st) {
+    var x = String(st || '').toUpperCase().trim();
+    if (x === 'ROGER') return 'Reçu';
+    if (x === 'INBOUND') return 'En approche';
+    if (x === 'ONSTA') return 'À poste';
+    if (x === 'ENGAGED') return 'Engagé';
+    if (x === 'RTB') return 'Retour';
+    return st ? String(st) : '';
   }
 
   function affiliationLabelFr(a) {
@@ -230,7 +253,7 @@ window.ATAKUnitPopup = (function () {
 
   function statusTone(status) {
     var s = String(status || '').toLowerCase().trim();
-    if (s === 'linked' || s === 'in-flight' || s === 'in_flight') return 'ok';
+    if (s === 'linked' || s === 'in-flight' || s === 'in_flight' || s === 'available') return 'ok';
     if (s === 'delayed' || s === 'suspect') return 'warn';
     if (s === 'offline') return 'danger';
     return '';
@@ -504,15 +527,38 @@ window.ATAKUnitPopup = (function () {
     else if (sideU === 'GUER' || sideU === 'CIV' || String(statusRaw).toUpperCase() === 'SUSPECT') aff = 'unknown';
     var freq = a.freq != null && a.freq !== '' ? String(a.freq) : '';
     var laser = a.laser != null && a.laser !== '' ? String(a.laser) : '';
+    var auth = a.auth_code || a.auth || '';
+    var role = missionRoleLabelFr(a.mission_id || a.mission || '');
+    var dest = a.station || a.destination || '';
+    var notes = a.checklist || a.notes || '';
+    if (typeof notes === 'string' && notes.charAt(0) === '{') notes = '';
+    var fuel = a.fuel_pct != null && a.fuel_pct !== '' ? (String(a.fuel_pct) + ' %') : '';
+    var ordnance = a.ordnance || '';
+    if (typeof ordnance === 'string' && ordnance.charAt(0) === '[') {
+      try {
+        var parsedOrd = JSON.parse(ordnance);
+        if (Array.isArray(parsedOrd)) ordnance = parsedOrd.join(' · ');
+      } catch (eOrd) {}
+    }
+    var play = a.bingo_fuel || '';
     var grid = formatGrid(a, {});
     var updated = formatTimeAgo(a.updated_at || a.last_update);
+    var pilot = pilotStatusLabelFr(a.pilot_status || '');
 
     var rows =
       row('Statut', status, statusTone(statusRaw)) +
+      row('Réponse pilote', pilot) +
+      row('Rôle', role) +
       row('Affiliation', affiliationLabelFr(aff)) +
       row('Fréquence', freq) +
       row('Code laser', laser) +
+      row('Authentification', auth) +
+      row('Destination', dest) +
+      row('Carburant', fuel) +
+      row('Autonomie', play) +
+      row('Emport', ordnance) +
       row('Coordonnées', grid) +
+      row('Notes', notes) +
       row('Dernière MAJ', updated);
     var occBlock = occupantsHtml(a, {
       occupants: a.occupants || a.crew,

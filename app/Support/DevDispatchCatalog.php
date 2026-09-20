@@ -268,6 +268,129 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(694, '2026-09-20', 'Affichage situation : boussole seule sous jumelles', 'Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Le choix se fait dans Paramètres du téléphone, ligne Dans le tube, ou dans les options du jeu. Relancez Arma complètement (Overwatch 1.6.4).', [
+                'Boussole seule dans le tube, au choix',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.4). Activez l’affichage situation. Dans Paramètres, choisissez Boussole uniquement : sous jumelles, seule la direction reste visible.',
+            ], 'Overwatch 1.6.4'),
+            $pr(693, '2026-09-20', 'Poste Overwatch : précisions sur les options de vue', 'À côté des options de vue, un i ouvre une phrase d’aide : traces, densité de passages, replay, inspection des bâtiments, manques de relief. Survolez ou cliquez le i pour lire ce que la case change à l’écran. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Aide courte sur chaque option de vue, derrière un i',
+            ], [], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Dans Relief et scène, survolez le i à droite d’une option : le texte doit expliquer ce que vous verrez sur la carte.',
+            ], 'Overwatch Beta'),
+            $pr(692, '2026-09-20', 'Poste Overwatch : relevé lisible, sans fausse alerte', 'Le bandeau « ce n’est plus du temps réel » n’apparaît que s’il y a vraiment des opérateurs en liaison récemment. Les arbres et le couvert ne tapissent plus la carte de pavés : ils n’apparaissent qu’en se rapprochant, en taches de houppier. Un message indique le chargement du relevé. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Chargement du relevé annoncé sur la carte',
+                'Couvert végétal en houppier, pas en pavés',
+            ], [], [
+                'Le bandeau des positions figées s’affichait sans opérateur en liaison',
+                'Les arbres formaient des carrés illisibles dès qu’on dézoomait',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Sans téléphone en liaison, le bandeau rouge ne doit pas parler de positions figées. En 2D immersif ou Relief 3D, dézoomez : plus de tapis de pavés verts. En vous rapprochant, le couvert apparaît en taches. Si le relevé met un moment, un message de chargement s’affiche.',
+            ], 'Overwatch Beta'),
+            $pr(691, '2026-09-20', 'Téléphone ATAK : grille d’applications rétablie', 'Le menu d’applications du téléphone reprend sa grille : icônes alignées, noms lisibles, Video Feeds à sa place. L’application réseau local s’ouvre toujours. Relancez Arma complètement (Athena 1.0.157).', [], [], [
+                'Les tuiles du chevron se superposaient après le correctif de démarrage',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.157). Ouvrez le chevron : la grille d’applications doit être régulière, sans icônes empilées.',
+            ], 'Athena 1.0.157'),
+            $pr(690, '2026-09-20', 'Poste Overwatch : constructions en emprise au sol', 'En 2D immersif, les constructions du relevé se lisent comme des toits sur la photo : emprise claire, collée au terrain. Un rectangle sans nom posé en jeu n’affiche plus de nom technique. Un clic ouvre toujours la fiche de la construction. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Emprises de constructions collées à la photo en 2D immersif',
+            ], [
+                'Les rectangles de taille bâtiment sans libellé se lisent comme le relevé',
+            ], [
+                'Un nom interne du jeu s’affichait au survol d’une emprise',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en 2D immersif sur la photo aérienne : les constructions du relevé apparaissent en emprise au sol. Un rectangle sans nom ne montre plus de libellé technique.',
+            ], 'Overwatch Beta'),
+            $pr(689, '2026-09-20', 'Téléphone ATAK : ouverture au lancement', 'Le téléphone s’ouvre de nouveau au lancement. L’application réseau local ne bloquait plus le chargement. Relancez Arma complètement (Athena 1.0.156).', [], [], [
+                'Le téléphone ne démarrait plus à cause de l’application réseau local',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.156). Le téléphone doit s’ouvrir sans fenêtre d’erreur.',
+            ], 'Athena 1.0.156'),
+            $pr(688, '2026-09-20', 'Patch mémoire, canaux de discussion et carte du poste', 'Moins d’arrêts liés à la mémoire : tuiles de carte, dépassement de carte, ordre mal formé. Canaux de discussion Commandement, Général, JTAC. Photothèque : envoyer les photos vers le site et le SSE. Carte du poste : prédiction de déplacement, pointage, données terrain. Dépannage de liaison via Échap. Relancez Arma complètement (Overwatch 1.6.3, pack SSE 0.7.22).', [
+                'Canaux de discussion Commandement, Général, JTAC',
+                'Photothèque : envoi des photos vers le site et le SSE',
+                'Carte du poste : prédiction de déplacement, pointage, données terrain',
+                'Dépannage de liaison via la touche Échap',
+            ], [
+                'Meilleure stabilité générale',
+            ], [
+                'Surcharge mémoire liée aux tuiles, au dépassement de carte et à un ordre mal formé',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.3, SSE 0.7.22).',
+            ], 'Overwatch 1.6.3 / SSE 0.7.22'),
+            $pr(687, '2026-09-20', 'Pack SSE : nom et verdict SEEK depuis l’éditeur', 'Dans l’éditeur, le pack SSE reprend désormais le même résultat que Overwatch : nom, prénom, alias, et le choix Signalé ou Recherché. Le terminal SEEK du pack affiche ce nom et ce verdict, même sans Overwatch. Relancez Arma complètement (pack SSE 0.7.22).', [
+                'Nom, prénom, alias et verdict de requête se renseignent dans les attributs SSE',
+                'Le terminal SEEK du pack reprend le verdict choisi en préparation de mission',
+            ], [], [
+                'Le pack SSE ignorait le nom et le verdict imposés dans l’éditeur',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack SSE 0.7.22. Dans l’éditeur, activez SSE sur un civil, choisissez Recherché, indiquez un nom. En jeu, le terminal SEEK doit afficher ce nom et la correspondance confirmée.',
+            ], 'SSE 0.7.22'),
+            $pr(686, '2026-09-20', 'Découpage d’étage : l’étage regardé est marqué', 'Quand un bâtiment est désigné et le découpage d’étage actif, une croix marque désormais le plafond de l’étage que vous regardez. Le choix se mémorise au même endroit, que vous le changiez depuis le téléphone ATAK ou depuis les options du jeu. Relancez Arma complètement (Overwatch 1.6.3).', [], [
+                'Le choix découpage d’étage reste le même depuis le téléphone et depuis les options du jeu',
+            ], [
+                'L’étage regardé n’était jamais mis en évidence sur la silhouette',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.3). Activez l’affichage situation et le découpage d’étage. Désignez un bâtiment, changez d’étage : une croix doit apparaître sur la dalle de l’étage affiché.',
+            ], 'Overwatch 1.6.3'),
+            $pr(685, '2026-09-20', 'Profil d’identité SSE : même résultat depuis le module', 'Dans l’éditeur, le module Profil d’identité SSE impose maintenant le même résultat que les attributs de la personne : nom, alias, et le choix Signalé ou Recherché. Le terminal SEEK voit ces informations sur les sujets synchronisés. Le mât Relais AT n’a plus de zone à redimensionner : la portée se règle uniquement en mètres. Relancez Arma complètement (Overwatch 1.6.2).', [
+                'Le module et les attributs de la personne renseignent la même identité SEEK',
+                'Le choix Recherché ou Signalé s’applique vraiment aux sujets synchronisés',
+            ], [], [
+                'Le module Profil d’identité SSE n’imposait pas le nom ni le verdict choisis dans l’éditeur',
+                'Le mât Relais AT proposait une zone sans effet',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.2). Dans l’éditeur, posez le module Profil d’identité SSE sur un civil, choisissez Recherché, indiquez un nom. En jeu, le terminal SEEK doit afficher ce nom et la correspondance confirmée.',
+            ], 'Overwatch 1.6.2'),
+            $pr(684, '2026-09-20', 'Affichage situation : tube, boussole et halo thermique', 'Sous jumelles de vision nocturne, le champ reprend un tube à trois oculaires : grain, contraste, et un assombrissement si un véhicule éclaire vers vous. La boussole, la grille, la distance regardée et l’heure apparaissent dans le tube. Les pastilles sont des losanges, le texte reste lisible, les alliés lointains s’estompent. Un halo clair marque les alliés proches, un véhicule moteur allumé et le bâtiment désigné. Relancez Arma complètement (Overwatch 1.6.1).', [
+                'Tube à trois oculaires avec boussole, grille et heure',
+                'Pastilles en losange, texte lisible, fondu selon la distance',
+                'Halo clair sur les alliés proches, un véhicule moteur allumé et le bâtiment désigné',
+            ], [
+                'L’affichage situation complète la vision nocturne améliorée d’ACE, sans la remplacer',
+            ], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.1). Activez l’affichage situation, passez en jumelles : le tube, la boussole et les pastilles doivent apparaître. Un véhicule qui vous éclaire assombrit le tube un instant.',
+            ], 'Overwatch 1.6.1'),
+            $pr(683, '2026-09-19', 'Manifeste de vol : appareil, à bord, emport et canevas', 'Le manifeste reprend tout seul le nom de l’appareil, les personnes à bord, les munitions, les pods et l’autonomie. Vous confirmez l’authentification, le code d’annulation et le canevas d’attaque, puis vous transmettez au poste. Relancez Arma complètement (Overwatch 1.6.0, Athena 1.0.155).', [
+                'Détection de l’appareil, des occupants, de l’emport et des capteurs',
+                'Canevas d’attaque en neuf lignes, prêt à compléter',
+                'Actualisation depuis le téléphone ou le formulaire',
+            ], [
+                'La fiche du poste montre l’emport, l’autonomie et les personnes à bord',
+            ], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack. Montez dans un hélicoptère, ouvrez Manifeste : le modèle, l’équipage et les munitions doivent être remplis. Transmettez. Au poste, la fiche reprend ces informations.',
+            ], 'Overwatch 1.6.0 / Athena 1.0.155'),
+            $pr(682, '2026-09-19', 'Ordres C2 : plus d’arrêt du jeu, identité Athena', 'Un ordre donné en jeu n’arrête plus Arma. Il part sous votre nom Athena, pas sous le surnom du jeu. Le chat de groupe ne montre plus la ligne technique. Relancez Arma complètement (Overwatch 1.5.99).', [
+                'Les ordres ACE et Athena restent dans le téléphone et au poste',
+            ], [
+                'L’émetteur affiché est le nom Athena, à défaut l’indicatif',
+            ], [
+                'Un ordre en jeu fermait Arma',
+                'L’ordre remontait sous le surnom Arma, et le texte technique s’affichait dans le chat de groupe',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.99). Donnez un ordre de déplacement depuis le menu situation : le jeu reste ouvert, le poste voit votre nom Athena, le chat de groupe ne montre pas de ligne technique.',
+            ], 'Overwatch 1.5.99'),
+            $pr(681, '2026-09-19', 'ATAK : appui aérien et manifeste dans le téléphone', 'La demande d’appui aérien et le manifeste de vol s’ouvrent dans le téléphone, depuis le tiroir. Vous remplissez le type, la grille et la note, ou l’appareil, le rôle et les codes, sans recouvrir le terrain. Relancez Arma complètement (Overwatch 1.5.98, Athena 1.0.154).', [
+                'Application Appui aérien dans le tiroir du téléphone',
+                'Application Manifeste de vol dans le même tiroir',
+            ], [
+                'Les boutons Athena et le menu situation ouvrent ces applications',
+            ], [
+                'Ces formulaires s’ouvraient par-dessus le jeu au lieu du téléphone',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack. Ouvrez le téléphone, tiroir : Appui aérien et Manifeste. Envoyez une demande, puis un manifeste. Le poste doit les recevoir.',
+            ], 'Overwatch 1.5.98 / Athena 1.0.154'),
+            $pr(680, '2026-09-19', 'ATAK : manifeste de vol plus complet', 'Le manifeste de vol sert aussi depuis le sol. Vous indiquez le type d’appareil, le rôle, la destination, la grille, le carburant, les personnes à bord et une note pour le poste. En vol, l’appareil, la grille et le carburant sont remplis tout seuls. Une réponse À poste s’ajoute aux statuts pilote. Le poste affiche la même fiche. Relancez Arma complètement (Overwatch 1.5.97).', [
+                'Type d’appareil, rôle, destination, grille, carburant et note',
+                'Déclaration depuis le sol, sans libellé technique',
+                'Réponse pilote À poste, visible au poste',
+            ], [
+                'La fiche aérienne du poste reprend rôle, destination, carburant et authentification',
+            ], [
+                'Une déclaration depuis le sol n’indiquait ni modèle ni mission utiles',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.5.97). Ouvrez Manifeste de vol à pied : remplissez l’appareil et le rôle, transmettez. Au poste, la fiche doit montrer ces informations.',
+            ], 'Overwatch 1.5.97'),
             $pr(679, '2026-09-19', 'Poste Overwatch : croquis visibles et couleurs du tracé', 'Le croquis tracé au crayon reste sur la carte. Dans le mode Tracé tactique, vous choisissez la couleur et l’épaisseur du trait avant de dessiner : flèche, croquis, zone, surligneur et symboles OTAN prennent cette couleur. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Le croquis reste affiché dès le relâchement du clic',
                 'Couleur et épaisseur du trait dans la barre de tracé',

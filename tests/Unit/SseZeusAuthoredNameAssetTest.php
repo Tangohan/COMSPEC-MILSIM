@@ -7,8 +7,8 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Zeus Â« Profil d'identitÃ© SSE Â» : Nom + PrÃ©nom doivent entrer dans l'identitÃ©
- * gÃ©nÃ©rÃ©e, pas seulement dans les champs du terminal.
+ * Zeus « Profil d'identité SSE » : Nom + Prénom doivent entrer dans l'identité
+ * générée, pas seulement dans les champs du terminal.
  */
 final class SseZeusAuthoredNameAssetTest extends TestCase
 {
@@ -21,7 +21,7 @@ final class SseZeusAuthoredNameAssetTest extends TestCase
         self::assertStringContainsString('["name", _full]', $sqf);
         self::assertStringContainsString('["first_name", _first]', $sqf);
         self::assertStringContainsString('["last_name", _last]', $sqf);
-        self::assertStringContainsString('1.5.16', (string) file_get_contents(
+        self::assertStringContainsString('1.6.4', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
         ));
     }
@@ -33,7 +33,7 @@ final class SseZeusAuthoredNameAssetTest extends TestCase
         );
         self::assertStringContainsString('_identity set ["name", _full]', $sqf);
         self::assertStringContainsString('comspec_sse_fnc_setSection', $sqf);
-        self::assertStringContainsString('0.7.21', (string) file_get_contents(
+        self::assertStringContainsString('0.7.22', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp'
         ));
     }

@@ -58,7 +58,7 @@ if (_isFrago && {_payload isEqualTo ""}) exitWith {
 private _target = if (_targetType isEqualTo "all") then { "" } else { _targetLabel };
 if (_target isEqualTo "" && {_targetType isNotEqualTo "all"}) then {
     _target = groupId (group player);
-    if (_target isEqualTo "") then { _target = name player; };
+    if (_target isEqualTo "") then { _target = [] call comspec_overwatch_connect_fnc_orderIssuerLabel; };
 };
 
 private _order = [_orderType, _target, _payload, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;

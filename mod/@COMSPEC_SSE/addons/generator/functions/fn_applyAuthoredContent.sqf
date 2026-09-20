@@ -88,10 +88,18 @@ private _role = ["comspec_sse_personRole"] call _fnc_txt;
 private _nat = ["comspec_sse_personNationality", "COMSPEC_SSE_Nationality"] call _fnc_txt;
 private _lang = ["comspec_sse_personLanguage", "COMSPEC_SSE_Language"] call _fnc_txt;
 private _phoneNo = ["comspec_sse_personPhone"] call _fnc_txt;
+private _first = ["COMSPEC_SSE_FirstName"] call _fnc_txt;
+private _last = ["COMSPEC_SSE_LastName"] call _fnc_txt;
+private _aliasAuth = ["COMSPEC_SSE_Alias"] call _fnc_txt;
 if (_role isNotEqualTo "") then { _id set ["role", _role]; };
 if (_nat isNotEqualTo "") then { _id set ["nationality", _nat]; };
 if (_lang isNotEqualTo "") then { _id set ["language", _lang]; };
 if (_phoneNo isNotEqualTo "") then { _id set ["phone", _phoneNo]; };
+if (_first isNotEqualTo "") then { _id set ["first_name", _first]; };
+if (_last isNotEqualTo "") then { _id set ["last_name", _last]; };
+if (_aliasAuth isNotEqualTo "") then { _id set ["alias", _aliasAuth]; };
+private _fullAuth = trim (format ["%1 %2", _first, _last]);
+if (_fullAuth isNotEqualTo "") then { _id set ["name", _fullAuth]; };
 [_entity, "identity", _id, false] call comspec_sse_fnc_setSection;
 
 // --- Documents ---

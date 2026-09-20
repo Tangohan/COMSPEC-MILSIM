@@ -24,8 +24,14 @@ private _isCustomType = (_typeUp select [0, 4]) isEqualTo "TYP_"
     || {(_typeUp select [0, 7]) isEqualTo "CUSTOM_"};
 if (!(_typeUp in _validTypes) && {!_isCustomType}) then { _orderType = "MOVE"; };
 
-private _id = format ["ORD-%1-%2", round (serverTime * 1000), floor random 9999];
-private _issuer = name player;
+// toFixed 0 : format "%1" d’un grand nombre devient "3.29e+08" et casse l’identifiant.
+private _id = format [
+    "ORD-%1-%2",
+    (round (diag_tickTime * 1000)) toFixed 0,
+    (floor random 10000) toFixed 0
+];
+private _issuer = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
+_issuer = (_issuer splitString "|") joinString " ";
 private _now = serverTime;
 
 private _order = createHashMapFromArray [
@@ -50,7 +56,8 @@ private _dup = _orders findIf {
     && {(trim (str (_x getOrDefault ["id", ""]))) isEqualTo _id}
 };
 if (_dup < 0) then { _orders pushBack _order; };
-missionNamespace setVariable ["COMSPEC_Orders", _orders, true];
+// Jamais public : un tableau de HashMap diffusé plante le moteur.
+missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
 
 private _orderLog = missionNamespace getVariable ["COMSPEC_OrderLog", []];
 _orderLog pushBack [
@@ -61,7 +68,7 @@ _orderLog pushBack [
     _target,
     "PENDING"
 ];
-missionNamespace setVariable ["COMSPEC_OrderLog", _orderLog, true];
+missionNamespace setVariable ["COMSPEC_OrderLog", _orderLog, false];
 
 // "TT:<type>|" en tête du payload : rétrocompatible (un payload sans ce préfixe se comporte
 // exactement comme avant), parsé côté PHP sans décaler les positions ORDER|... existantes.
@@ -74,7 +81,20 @@ private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, 
 "COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
 
 ["OnOrderIssued", _order] call comspec_overwatch_connect_fnc_publishEvent;
-// Diffusion multi-clients (le bus d’évènements local ne traverse pas le réseau)
-[_order] remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", 0, false];
+
+// HashMap interdit en remoteExec (crash). Paires seulement, hors émetteur.
+private _net = [
+    ["id", _id],
+    ["parentId", _parentOrderId],
+    ["type", _orderType],
+    ["typeLabel", _order getOrDefault ["typeLabel", ""]],
+    ["target", _target],
+    ["payload", _payload],
+    ["priority", _priority],
+    ["issuer", _issuer],
+    ["status", "PENDING"],
+    ["source", "local"]
+];
+[_net] remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", -2, false];
 
 _order

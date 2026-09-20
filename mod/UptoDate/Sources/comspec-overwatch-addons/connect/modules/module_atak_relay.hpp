@@ -12,6 +12,9 @@
         isDisposable = 0;
         is3DEN = 1;
         curatorCanAttach = 0;
+        canSetArea = 0;
+        canSetAreaHeight = 0;
+        canSetAreaShape = 0;
         icon = "\A3\ui_f\data\map\markers\military\flag_CA.paa";
         portrait = "\A3\ui_f\data\map\markers\military\flag_CA.paa";
 
