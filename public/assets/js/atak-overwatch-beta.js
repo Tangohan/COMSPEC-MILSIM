@@ -1571,21 +1571,24 @@
     var squad = hasSquadColor(unit) ? squadColor(unit) : stateColor;
     var pulse = squadColorOn() && hasSquadColor(unit);
     extra += disc ? ' is-offline' : '';
-    extra += (!disc && String(unit.status || '').toLowerCase() === 'delayed') ? ' is-delayed' : '';
     extra += pulse ? ' is-squad-pulse' : '';
+    var ageSec = unitAgeSec(unit);
+    var delayedSt = String(unit.status || '').toLowerCase() === 'delayed';
+    var lagging = !disc && (delayedSt || (Number.isFinite(ageSec) && ageSec >= 20 && ageSec < 60));
+    var stalePos = !disc && Number.isFinite(ageSec) && ageSec >= 60;
+    extra += lagging ? ' is-delayed' : '';
+    extra += stalePos ? ' is-stale-pos' : '';
     var age = ageLabel(unit);
-    var ageChip = '';
-    if (disc || String(unit.status || '').toLowerCase() === 'delayed' || (Number.isFinite(unitAgeSec(unit)) && unitAgeSec(unit) >= 20)) {
-      ageChip = '<span class="ow-marker-age-chip ' + (disc || unitAgeSec(unit) >= 60 ? 'is-stale' : 'is-warn') + '">' +
-        escapeHtml((disc ? 'Dernière position connue' : 'Différé') + (age ? ' · ' + age : '')) + '</span>';
-    }
-    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + ageChip + '</span>' : ageChip;
+    var hint = '';
+    if (disc) hint = 'Dernière position connue' + (age ? ' · ' + age : '');
+    else if (stalePos || lagging) hint = 'Différé' + (age ? ' · ' + age : '');
+    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + '</span>' : '';
     var badge = (opts.forceLabel && stackCount > 1) ? '<b class="ow-stack-n">+' + (stackCount - 1) + '</b>' : '';
     return L.divIcon({
       className: 'ow-marker ow-mark-' + prefs.style + extra,
       iconSize: [16, 16],
       iconAnchor: [8, 8],
-      html: '<div style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '"><i></i>' + label + badge + '</div>'
+      html: '<div' + (hint ? ' title="' + escapeHtml(hint) + '"' : '') + ' style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '"><i></i>' + label + badge + '</div>'
     });
   }
 
@@ -3785,11 +3788,11 @@
     if (!sceneCtx) return;
     var c = map.latLngToContainerPoint(worldToLatLng(x, y));
     var edge = map.latLngToContainerPoint(worldToLatLng(Number(x) + Math.max(4, radiusM), y));
-    var rad = Math.max(3, Math.hypot(edge.x - c.x, edge.y - c.y));
+    var rad = Math.max(4, Math.hypot(edge.x - c.x, edge.y - c.y));
     var grd = sceneCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, rad);
-    grd.addColorStop(0, 'rgba(26, 72, 36, 0.46)');
-    grd.addColorStop(0.58, 'rgba(24, 64, 32, 0.26)');
-    grd.addColorStop(1, 'rgba(24, 64, 32, 0)');
+    grd.addColorStop(0, 'rgba(22, 64, 30, 0.34)');
+    grd.addColorStop(0.52, 'rgba(24, 70, 32, 0.18)');
+    grd.addColorStop(1, 'rgba(24, 70, 32, 0)');
     sceneCtx.beginPath();
     sceneCtx.arc(c.x, c.y, rad, 0, Math.PI * 2);
     sceneCtx.fillStyle = grd;
@@ -3805,29 +3808,47 @@
       members.push(item);
     });
     if (!members.length) return;
-    var cell = zoom >= 5.6 ? 0 : (zoom >= 4.5 ? 24 : 42);
-    if (!cell) {
-      members.forEach(function (item) {
-        var span = Math.max(Number(item.width) || 0, Number(item.depth) || 0, 8);
-        drawForestBlob(item.x, item.y, (span / 2) * 0.7);
-      });
-      return;
-    }
+    var cell = zoom >= 6.6 ? 16 : (zoom >= 5.2 ? 28 : 40);
     var bins = {};
     members.forEach(function (item) {
       var gx = Math.floor(Number(item.x) / cell);
       var gy = Math.floor(Number(item.y) / cell);
       var k = gx + ':' + gy;
-      if (!bins[k]) bins[k] = { x: 0, y: 0, n: 0, r: 0 };
-      bins[k].x += Number(item.x);
-      bins[k].y += Number(item.y);
-      bins[k].n += 1;
-      bins[k].r += Math.max(Number(item.width) || 8, Number(item.depth) || 8) / 2;
+      if (!bins[k]) bins[k] = [];
+      bins[k].push(item);
     });
     Object.keys(bins).forEach(function (k) {
-      var b = bins[k];
-      var radius = Math.min(cell * 0.85, (b.r / b.n) * (1.15 + Math.log(b.n + 1) * 0.35));
-      drawForestBlob(b.x / b.n, b.y / b.n, radius);
+      var list = bins[k];
+      var sx = 0;
+      var sy = 0;
+      var i;
+      for (i = 0; i < list.length; i += 1) {
+        sx += Number(list[i].x);
+        sy += Number(list[i].y);
+      }
+      var cx = sx / list.length;
+      var cy = sy / list.length;
+      var reach = 0;
+      var farthest = list[0];
+      var farD = 0;
+      for (i = 0; i < list.length; i += 1) {
+        var half = Math.max(Number(list[i].width) || 8, Number(list[i].depth) || 8) / 2;
+        var dist = Math.hypot(Number(list[i].x) - cx, Number(list[i].y) - cy);
+        if (dist + half > reach) reach = dist + half;
+        if (dist > farD) {
+          farD = dist;
+          farthest = list[i];
+        }
+      }
+      var radius = Math.max(8, reach * 1.08 + cell * 0.16);
+      drawForestBlob(cx, cy, radius);
+      if (list.length >= 3 && farD > 6) {
+        drawForestBlob(
+          (Number(farthest.x) + cx) / 2,
+          (Number(farthest.y) + cy) / 2,
+          radius * 0.7
+        );
+      }
     });
   }
   function setSceneLoad(on, text) {

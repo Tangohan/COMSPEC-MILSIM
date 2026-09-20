@@ -73,6 +73,7 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('pickable: true', $layers);
         self::assertStringContainsString('fill-extrusion', $layers);
         self::assertStringContainsString('clusterForests', $layers);
+        self::assertStringContainsString('zoom >= 14 ? 70 : 110', $layers);
         self::assertStringContainsString('Math.cos(t) * radius', $layers);
         self::assertStringContainsString('zoom >= 13.4', $layers);
         self::assertStringContainsString('overwatch:scene-load', $layers);

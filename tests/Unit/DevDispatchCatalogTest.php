@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(491, $byKind['update']);
-        self::assertCount(497, $all);
+        self::assertSame(494, $byKind['update']);
+        self::assertCount(500, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -774,6 +774,27 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('aide', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHelpI['activity']));
+        $manifestText = DevDispatchCatalog::find('update', '697');
+        self::assertNotNull($manifestText);
+        self::assertSame('00697', $manifestText['number_pad']);
+        self::assertStringContainsString('manifeste', strtolower((string) $manifestText['title']));
+        self::assertStringContainsString('repères', strtolower((string) $manifestText['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $manifestText['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $manifestText['activity']));
+        $staleFrame = DevDispatchCatalog::find('update', '696');
+        self::assertNotNull($staleFrame);
+        self::assertSame('00696', $staleFrame['number_pad']);
+        self::assertStringContainsString('cadre', strtolower((string) $staleFrame['title']));
+        self::assertStringContainsString('pointillés', strtolower((string) $staleFrame['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $staleFrame['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $staleFrame['activity']));
+        $forestCanopy = DevDispatchCatalog::find('update', '695');
+        self::assertNotNull($forestCanopy);
+        self::assertSame('00695', $forestCanopy['number_pad']);
+        self::assertStringContainsString('houppier', strtolower((string) $forestCanopy['title']));
+        self::assertStringContainsString('bosquet', strtolower((string) $forestCanopy['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $forestCanopy['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $forestCanopy['activity']));
         $ecotiCompass = DevDispatchCatalog::find('update', '694');
         self::assertNotNull($ecotiCompass);
         self::assertSame('00694', $ecotiCompass['number_pad']);

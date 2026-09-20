@@ -19,6 +19,18 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-202
 
 Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Choix : Paramètres du téléphone, ligne Dans le tube, ou options du jeu (Affichage situation).
 
+### Correction — Manifeste de vol et repères texte
+
+Le manifeste de vol s’enregistre même si l’emport est saisi en phrase libre. Les repères posés en jeu comme du texte seul, sans picto, apparaissent au poste dans un cadre coloré. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Correction — Position différée, sans bandeau
+
+Quand une position n’est plus à l’instant, l’indicatif reste lisible : le cadre passe en pointillés (ambre, puis rouge). Plus de bandeau « Différé » sous le nom. Le détail reste au survol et dans la fiche. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Amélioration — Bosquets en houppier
+
+En 2D immersif, un groupe d’arbres dans un champ se lit comme un houppier collé à la photo, plus comme une grille de carrés verts. Les constructions restent des toits clairs. Rechargez Overwatch Beta (Ctrl+F5).
+
 ### Amélioration — Aide sur les options de vue
 
 À côté des options de vue, un i ouvre une phrase d’aide : traces, densité de passages, replay, inspection des bâtiments, manques de relief.

@@ -689,8 +689,17 @@ window.ArmaMapMarkers = (function () {
     return relToCdnUrl(raw);
   }
 
+  function isInvisibleArmaIcon(data) {
+    var type = normalizeTypeKey(data && (data.type || data.icon || ''));
+    if (/^(empty|emptyicon|empty_ca)$/.test(type)) return true;
+    var tex = String((data && (data.texture || data.iconPath)) || '').replace(/\\/g, '/').toLowerCase();
+    if (!tex) return false;
+    return /empty_ca|\/empty\.png|\/empty\.paa|markers\/military\/empty/.test(tex);
+  }
+
   function resolvePngUrl(data) {
     if (!data || typeof data !== 'object') return '';
+    if (isInvisibleArmaIcon(data)) return '';
     var tex = data.texture || data.iconPath || '';
     if (tex && String(tex).charAt(0) !== '#') {
       var fromTex = armaTextureToPngUrl(tex);
@@ -730,23 +739,27 @@ window.ArmaMapMarkers = (function () {
       .replace(/>/g, '&gt;');
   }
 
-  function labelSpanHtml(label, labelColor) {
-    return '<span class="arma-map-marker-label" style="font:700 9px/1.15 ui-sans-serif,system-ui,sans-serif;color:' + labelColor +
-      ';text-shadow:0 0 2px #000,0 1px 2px #000,0 0 6px rgba(0,0,0,.85);white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;">' +
-      String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').slice(0, 22) +
+  function labelSpanHtml(label, labelColor, framed) {
+    var max = framed ? 42 : 22;
+    var frame = framed
+      ? 'padding:2px 7px;background:#0a0e0dcc;border:1px solid ' + (labelColor || '#e7cc5b') + ';border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.4);'
+      : '';
+    return '<span class="arma-map-marker-label' + (framed ? ' is-framed' : '') + '" style="font:700 10px/1.2 ui-sans-serif,system-ui,sans-serif;color:' + labelColor +
+      ';' + frame + 'text-shadow:0 0 2px #000,0 1px 2px #000;white-space:nowrap;max-width:' + (framed ? '180' : '110') + 'px;overflow:hidden;text-overflow:ellipsis;">' +
+      String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').slice(0, max) +
       '</span>';
   }
 
   /** Libellé carte permanent : texte métier réel (évite le bruit « Repère » générique). */
-  function mapLabelHtml(rawLabel, labelColor) {
+  function mapLabelHtml(rawLabel, labelColor, framed) {
     var t = String(rawLabel || '').trim();
     if (!t) return '';
     if (/^rep[eè]re\b/i.test(t)) return '';
-    return labelSpanHtml(t, labelColor || '#93c5fd');
+    return labelSpanHtml(t, labelColor || '#93c5fd', !!framed);
   }
 
-  function wrapGlyphWithLabel(glyphHtml, rawLabel, labelColor, glyphSize) {
-    var labelHtml = mapLabelHtml(rawLabel, labelColor);
+  function wrapGlyphWithLabel(glyphHtml, rawLabel, labelColor, glyphSize, framed) {
+    var labelHtml = mapLabelHtml(rawLabel, labelColor, framed);
     var gw = (glyphSize && glyphSize[0]) || 17;
     var gh = (glyphSize && glyphSize[1]) || gw;
     if (!labelHtml) {
@@ -777,7 +790,8 @@ window.ArmaMapMarkers = (function () {
     var typeKey = decoded.typeKey;
     var mutedLabel = !rawLabel || label.indexOf('Repère') === 0;
     var labelColor = mutedLabel ? '#94a3b8' : color;
-    var pngUrl = resolvePngUrl(data);
+    var framed = isInvisibleArmaIcon(data);
+    var pngUrl = framed ? '' : resolvePngUrl(data);
 
     var S = window.ATAKMarkerSizes;
     var glyphPx = S ? S.px('normal') : 17;
@@ -805,10 +819,10 @@ window.ArmaMapMarkers = (function () {
       if (dir && needsRotation(typeKey)) {
         rotateStyle = 'transform:rotate(' + dir + 'deg);transform-origin:center center;';
       }
-      var shape = shapeHtml(typeKey, color);
+      var shape = shapeHtml(framed ? 'box' : typeKey, color);
       // Diamant rouge pour repères hostiles simples (Marker Dropper)
       if ((decoded.kind === 'handdrawn' || decoded.kind === 'unknown') && /red|opfor|east/i.test(String((data && data.color) || ''))) {
-        if (typeKey === 'dot' || typeKey === 'marker') {
+        if (framed || typeKey === 'dot' || typeKey === 'marker') {
           shape = shapeHtml('destroy', color);
         }
       }
@@ -838,7 +852,7 @@ window.ArmaMapMarkers = (function () {
         iconInner +
         '<span class="arma-marker-paa-fallback" style="display:none;">' + glyphHtml + '</span>'
       );
-      var pngPacked = wrapGlyphWithLabel(htmlPngCore, rawLabel, labelColor, iconSize);
+      var pngPacked = wrapGlyphWithLabel(htmlPngCore, rawLabel, labelColor, iconSize, framed);
       return {
         html: pngPacked.html,
         color: color,
@@ -853,7 +867,7 @@ window.ArmaMapMarkers = (function () {
     }
 
     var wrapGlyph = S && S.wrapGlyph ? S.wrapGlyph : function (h) { return h; };
-    var packed = wrapGlyphWithLabel(wrapGlyph(glyphHtml), rawLabel, labelColor, iconSize);
+    var packed = wrapGlyphWithLabel(wrapGlyph(glyphHtml), rawLabel, labelColor, iconSize, framed);
     return {
       html: packed.html,
       color: color,
@@ -1076,6 +1090,7 @@ window.ArmaMapMarkers = (function () {
     readShape: readShape,
     readBrush: readBrush,
     readSize: readSize,
+    isInvisibleArmaIcon: isInvisibleArmaIcon,
     resolvePngUrl: resolvePngUrl,
     armaTextureToPngUrl: armaTextureToPngUrl
   };
