@@ -44,7 +44,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('comspec_overwatch_connect_fnc_sampleGeoNetwork', $theater);
         self::assertStringContainsString('theaterSurveyVerify', $theater);
         $ace = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_initACE.sqf');
-        self::assertStringContainsString('RelevÃ© de la carte', $ace);
+        self::assertStringContainsString('Relevé de la carte', $ace);
         self::assertStringContainsString('theaterSurveyShow', $ace);
         self::assertStringNotContainsString('fnc_sampleTerrain', $ace);
         self::assertStringNotContainsString('fnc_sampleScene', $ace);
@@ -78,12 +78,12 @@ final class AtakSceneIngestAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $verify = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_theaterSurveyVerify.sqf');
         self::assertStringContainsString('Theater.Coverage', $verify);
-        self::assertStringContainsString('VÃ©rification auprÃ¨s du poste', $verify);
+        self::assertStringContainsString('Vérification auprès du poste', $verify);
         self::assertStringContainsString('COMSPEC_TheaterResendMode', $verify);
         self::assertStringContainsString('_sceneGap', $verify);
         self::assertStringContainsString('_terrainGap', $verify);
         self::assertStringContainsString('_geoGap', $verify);
-        self::assertStringContainsString('Renvoyer les donnÃ©es manquantes', $verify);
+        self::assertStringContainsString('Renvoyer les données manquantes', $verify);
         self::assertStringNotContainsString('sampleTheater', $verify);
         self::assertStringNotContainsString('/api/', $verify);
 
@@ -124,7 +124,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
         self::assertStringContainsString('class theaterSurveyResend {};', $cfg);
-        self::assertStringContainsString('1.5.96', $cfg);
+        self::assertStringContainsString('1.6.4', $cfg);
     }
 
     public function testTheaterSurveyModuleAndDialogExist(): void
@@ -139,14 +139,14 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('sleep', $sqf);
 
         $dlg = (string) file_get_contents($root . '/display_theater_survey.hpp');
-        self::assertStringContainsString('RelevÃ© de la carte', $dlg);
-        self::assertStringContainsString('DURÃ‰E DU RELEVÃ‰', $dlg);
-        self::assertStringContainsString('DONNÃ‰ES COLLECTÃ‰ES', $dlg);
+        self::assertStringContainsString('Relevé de la carte', $dlg);
+        self::assertStringContainsString('DURÉE DU RELEVÉ', $dlg);
+        self::assertStringContainsString('DONNÉES COLLECTÉES', $dlg);
         self::assertStringContainsString('SECTEUR EN COURS', $dlg);
-        self::assertStringContainsString('DERNIER RELEVÃ‰', $dlg);
+        self::assertStringContainsString('DERNIER RELEVÉ', $dlg);
         self::assertStringContainsString('TRANSMISSION AU POSTE', $dlg);
-        self::assertStringContainsString('VÃ©rifier lâ€™intÃ©gritÃ©', $dlg);
-        self::assertStringContainsString('Renvoyer les donnÃ©es manquantes', $dlg);
+        self::assertStringContainsString('Vérifier l’intégrité', $dlg);
+        self::assertStringContainsString('Renvoyer les données manquantes', $dlg);
         self::assertStringContainsString('Villes 0', $dlg);
         self::assertStringContainsString('idd = 9994', $dlg);
         self::assertStringNotContainsString('sqf', strtolower($dlg));
@@ -154,12 +154,12 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringNotContainsString('endpoint', strtolower($dlg));
 
         $mod = (string) file_get_contents($root . '/modules/module_theater_survey.hpp');
-        self::assertStringContainsString('Relever la carte du thÃ©Ã¢tre', $mod);
+        self::assertStringContainsString('Relever la carte du théâtre', $mod);
         self::assertStringContainsString('COMSPEC_Outils', $mod);
 
         $zen = (string) file_get_contents($root . '/functions/fn_registerZenTheaterSurvey.sqf');
         self::assertStringContainsString('COMSPEC Outils', $zen);
-        self::assertStringContainsString('Relever la carte du thÃ©Ã¢tre', $zen);
+        self::assertStringContainsString('Relever la carte du théâtre', $zen);
         self::assertStringContainsString('ace_zeus_fnc_addModule', $zen);
         self::assertStringContainsString('COMSPEC_ZenTheaterSurveyRegistered', $zen);
 
@@ -203,7 +203,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         $collect = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_collectVehicleOccupants.sqf');
         self::assertStringContainsString('crew _vehicle', $collect);
         self::assertStringContainsString('assignedVehicleRole', $collect);
-        self::assertStringContainsString('se dÃ©placer', $collect);
+        self::assertStringContainsString('se déplacer', $collect);
 
         $air = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_reportCrewedAirAssets.sqf');
         self::assertStringContainsString('collectVehicleOccupants', $air);
@@ -250,10 +250,10 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('PersistQueueToDisk', $cs);
 
         $cb = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
-        self::assertStringContainsString('Poste momentanÃ©ment injoignable', $cb);
+        self::assertStringContainsString('Poste momentanément injoignable', $cb);
         self::assertStringContainsString('if (_sec > 3) then { _sec = 3; }', $cb);
         self::assertStringContainsString('COMSPEC_VideoFeedsBackoffUntil', $cb);
         self::assertStringContainsString('case "AccessDenied":', $cb);
-        self::assertStringContainsString('AccÃ¨s refusÃ© â€” pause', $cb);
+        self::assertStringContainsString('Accès refusé — pause', $cb);
     }
 }

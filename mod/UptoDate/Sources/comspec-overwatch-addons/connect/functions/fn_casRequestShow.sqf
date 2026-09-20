@@ -1,18 +1,27 @@
 /*
-    Ouvre le mini-formulaire de demande d’appui aérien (idd 9988).
-    Sur le téléphone ATAK : createDisplay pour ne pas fermer cTab.
+    Ouvre le formulaire de demande d'appui aérien.
+    Avec le téléphone : application ATAK. Sinon : dialogue overlay.
     Params optionnel : position monde pour préremplir la grille (clic carte).
 */
 params [["_world", []]];
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
-if (!isNull (uiNamespace getVariable ["COMSPEC_CasRequest_Display", displayNull])) exitWith {};
-
 if (!(_world isEqualType []) || {(count _world) < 2}) then {
     _world = missionNamespace getVariable ["COMSPEC_CasPrefillPos", []];
 };
-if (!(_world isEqualType []) || {(count _world) < 2}) then { _world = getPos player; };
+if ((_world isEqualType []) && {(count _world) >= 2}) then {
+    missionNamespace setVariable ["COMSPEC_CasPrefillPos", _world, false];
+};
+
+if (
+    ([player] call comspec_overwatch_connect_fnc_hasTerminal)
+    && { !isNil "comspec_overwatch_atak_athena_fnc_athena_openCas" }
+) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openCas;
+};
+
+if (!isNull (uiNamespace getVariable ["COMSPEC_CasRequest_Display", displayNull])) exitWith {};
 
 private _parent = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
 if (isNull _parent) then {
@@ -30,25 +39,8 @@ if (!isNull _parent) then {
 };
 
 if (!_ok || {isNull _disp}) exitWith {
-    ["Impossible d’ouvrir la demande d’appui aérien.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["Impossible d'ouvrir la demande d'appui aérien.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
 
 uiNamespace setVariable ["COMSPEC_CasRequest_Display", _disp];
-
-(_disp displayCtrl 9702) ctrlSetText format ["Grille %1", mapGridPosition _world];
-(_disp displayCtrl 9703) ctrlSetText "";
-
-private _combo = _disp displayCtrl 9701;
-lbClear _combo;
-{
-    _x params ["_label", "_code"];
-    private _i = _combo lbAdd _label;
-    _combo lbSetData [_i, _code];
-} forEach [
-    ["Appui immédiat (danger proche)", "CAS"],
-    ["Reconnaissance aérienne", "RECON_AIR"],
-    ["Couverture / survol", "COVER"],
-    ["Extraction / extraction aérienne", "EXTRACT"]
-];
-_combo lbSetCurSel 0;
-missionNamespace setVariable ["COMSPEC_CasPrefillPos", [], false];
+[_world] call comspec_overwatch_connect_fnc_casRequestFill;

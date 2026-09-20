@@ -292,7 +292,7 @@ window.ArmaMapMarkers = (function () {
       if (fromCat && fromCat !== 'Repère' && fromCat !== 'Repere') return fromCat;
     }
     var sh = readShape(data);
-    if (sh === 'RECTANGLE') return 'Zone rectangulaire';
+    if (sh === 'RECTANGLE') return isBuildingLikeArea(data) ? 'Construction' : 'Zone rectangulaire';
     if (sh === 'ELLIPSE') return 'Zone circulaire';
     if (sh === 'POLYLINE') return 'Tracé';
     if (decoded.kind === 'loc') {
@@ -420,10 +420,52 @@ window.ArmaMapMarkers = (function () {
     return fixUtf8Mojibake(String(data.text || data.label || data.name || '').trim());
   }
 
+  /** Nom interne Arma / widget, jamais un libellé métier. */
+  function isTechnicalLabel(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return false;
+    if (/^(marker|item|obj|bis_o)[_ ]?\d+$/i.test(s)) return true;
+    if (/^_user_defined/i.test(s) || /^_ictab/i.test(s)) return true;
+    if (/^comspec_(shape|webmk|tabletmk)_/i.test(s)) return true;
+    return false;
+  }
+
+  /**
+   * Rectangle sans nom utile, taille d’un bâtiment : emprise de construction, pas une zone tracée.
+   */
+  function isBuildingLikeArea(data) {
+    if (!data || readShape(data) !== 'RECTANGLE') return false;
+    var raw = labelOf(data);
+    if (raw && !isTechnicalLabel(raw)) return false;
+    var size = readSize(data);
+    var spanW = Math.max(1, Number(size[0]) || 1) * 2;
+    var spanH = Math.max(1, Number(size[1]) || 1) * 2;
+    var spanMax = Math.max(spanW, spanH);
+    var spanMin = Math.min(spanW, spanH);
+    if (spanMax < 4 || spanMax > 160 || spanMin < 2) return false;
+    var purpose = String(data.purpose || '').toLowerCase();
+    if (purpose && purpose !== 'building_mark' && purpose !== 'building' && purpose !== 'construction') return false;
+    return true;
+  }
+
+  function buildingFootprintStyle() {
+    return {
+      color: '#e8eef4',
+      fillColor: '#c4ced6',
+      fillOpacity: 0.5,
+      opacity: 0.94,
+      weight: 1,
+      dashArray: null
+    };
+  }
+
   /** Libellé carte : jamais un indicatif « nu » (évite de confondre un repère avec un effectif). */
   function displayLabelOf(data) {
     var raw = labelOf(data);
-    if (!raw) return 'Repère';
+    if (!raw || isTechnicalLabel(raw)) {
+      if (isAreaShape(data) || isBuildingLikeArea(data)) return '';
+      return 'Repère';
+    }
     var typeFr = typeLabelFr(data);
     // Texte = indicatif joueur / callsign court → préfixer pour distinguer du BFT OTAN.
     if (/^[A-Za-z]{1,3}-?\d{1,4}$/.test(raw) || /^[A-Z]{1,4}\d{0,3}$/.test(raw)) {
@@ -896,8 +938,9 @@ window.ArmaMapMarkers = (function () {
     var alpha = readAlpha(data);
     var size = readSize(data);
     var dir = readDir(data);
-    var style = brushStyle(readBrush(data), color, alpha);
-    var label = labelOf(data);
+    var buildingLike = isBuildingLikeArea(data);
+    var style = buildingLike ? buildingFootprintStyle() : brushStyle(readBrush(data), color, alpha);
+    var label = displayLabelOf(data);
 
     if (shape === 'POLYLINE') {
       var poly = data.polyline || data.points || [];
@@ -1017,6 +1060,9 @@ window.ArmaMapMarkers = (function () {
     fixUtf8Mojibake: fixUtf8Mojibake,
     isArmaStyleMarker: isArmaStyleMarker,
     isAreaShape: isAreaShape,
+    isTechnicalLabel: isTechnicalLabel,
+    isBuildingLikeArea: isBuildingLikeArea,
+    buildingFootprintStyle: buildingFootprintStyle,
     buildIconSpec: buildIconSpec,
     leafletDivIcon: leafletDivIcon,
     leafletShapeLayer: leafletShapeLayer,

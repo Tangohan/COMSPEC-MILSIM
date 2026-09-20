@@ -1,13 +1,24 @@
 /*
     Rend la file de pastilles en 2D écran (worldToScreen + contrôles).
-    Anti-chevauchement vertical + fondu selon la distance.
+    Losange / icône, ombre portée, fondu distance. Pas de plaque pleine par défaut.
     Params: [_queue] — liste [_pos, _icon, _color, _label, _dist, _iconSize, _compact]
 */
 params [["_queue", [], [[]]]];
 
 if (!hasInterface) exitWith {};
 if (_queue isEqualTo []) exitWith {
-    [] call comspec_overwatch_connect_fnc_ecotiHudHide;
+    private _dispKeep = uiNamespace getVariable ["COMSPEC_EcotiHudDisp", displayNull];
+    if (isNull _dispKeep) exitWith {};
+    private _prev = uiNamespace getVariable ["COMSPEC_EcotiHudSlotCount", 0];
+    if (!(_prev isEqualType 0)) then { _prev = 0; };
+    for "_i" from 0 to (_prev - 1) do {
+        private _base = 77500 + (_i * 4);
+        {
+            private _c = _dispKeep displayCtrl _x;
+            if (!isNull _c) then { _c ctrlShow false; _c ctrlCommit 0; };
+        } forEach [_base, _base + 1, _base + 2, _base + 3];
+    };
+    uiNamespace setVariable ["COMSPEC_EcotiHudSlotCount", 0];
 };
 
 private _disp = [] call comspec_overwatch_connect_fnc_ecotiHudEnsure;
@@ -17,6 +28,8 @@ missionNamespace setVariable ["COMSPEC_EcotiHudLayerOn", true, false];
 private _maxDist = missionNamespace getVariable ["comspec_overwatch_ecoti_max_dist", 1200];
 private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
 private _txtColBase = _theme getOrDefault ["badge", [1, 1, 1, 1]];
+private _showPlate = missionNamespace getVariable ["comspec_overwatch_ecoti_badge_plate", false];
+if (!(_showPlate isEqualType true)) then { _showPlate = false; };
 
 private _prevSlots = uiNamespace getVariable ["COMSPEC_EcotiHudSlotCount", 0];
 if (!(_prevSlots isEqualType 0)) then { _prevSlots = 0; };
@@ -25,28 +38,29 @@ _queue = [_queue, [], { _x select 4 }, "ASCEND"] call BIS_fnc_sortBy;
 
 private _boxes = [];
 private _used = 0;
-private _bw = 0.22 * safeZoneW;
-private _bhFull = 0.032 * safeZoneH;
+private _bhFull = 0.026 * safeZoneH;
 private _bhDot = 0.018 * safeZoneH;
 private _gap = 0.004 * safeZoneH;
-private _iconW = 0.018 * safeZoneW;
+private _iconW = 0.016 * safeZoneW;
 
 private _fnc_getCtrls = {
     params ["_idx"];
     private _base = 77500 + (_idx * 4);
     private _bg = _disp displayCtrl _base;
-    private _edge = _disp displayCtrl (_base + 1);
+    private _sh = _disp displayCtrl (_base + 1);
     private _pic = _disp displayCtrl (_base + 2);
     private _txt = _disp displayCtrl (_base + 3);
     if (isNull _bg) then {
         _bg = _disp ctrlCreate ["RscText", _base];
-        _edge = _disp ctrlCreate ["RscText", _base + 1];
+        _sh = _disp ctrlCreate ["RscText", _base + 1];
         _pic = _disp ctrlCreate ["RscPictureKeepAspect", _base + 2];
         _txt = _disp ctrlCreate ["RscText", _base + 3];
-        _txt ctrlSetFont "RobotoCondensed";
-        _txt ctrlSetFontHeight (0.028 * safeZoneH);
+        _sh ctrlSetFont "PuristaMedium";
+        _txt ctrlSetFont "PuristaMedium";
+        _sh ctrlSetFontHeight (0.022 * safeZoneH);
+        _txt ctrlSetFontHeight (0.022 * safeZoneH);
     };
-    [_bg, _edge, _pic, _txt]
+    [_bg, _sh, _pic, _txt]
 };
 
 {
@@ -60,7 +74,12 @@ private _fnc_getCtrls = {
     private _sy = _scr select 1;
     if (_sx < -0.02 || {_sx > 1.02} || {_sy < -0.02} || {_sy > 1.02}) then { continue };
 
-    private _alpha = linearConversion [80, _maxDist max 200, _dist, 0.95, 0.28, true];
+    private _fadeStart = (_maxDist * 0.4) max 80;
+    private _alpha = if (_dist <= _fadeStart) then {
+        0.95
+    } else {
+        (0.95 - (0.67 * ((_dist - _fadeStart) / ((_maxDist - _fadeStart) max 1)))) max 0.28
+    };
     _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
     private _iconCol = [
         _col select 0,
@@ -90,7 +109,14 @@ private _fnc_getCtrls = {
     };
     if ((count _name) > 20) then { _name = (_name select [0, 18]) + "…"; };
     private _distTxt = [_dist] call comspec_overwatch_connect_fnc_ecotiFormatDistance;
+    private _line = format ["%1 · %2", _name, _distTxt];
 
+    if (_ic isEqualTo "" || {_ic find "military\dot_CA" >= 0}) then {
+        _ic = [] call comspec_overwatch_connect_fnc_ecotiIconPath;
+    };
+
+    private _txtW = (((count _line) * 0.0062 * safeZoneW) + 0.01 * safeZoneW) min (0.2 * safeZoneW);
+    private _bw = _iconW + 0.006 * safeZoneW + _txtW;
     private _bh = if (_compact) then { _bhDot } else { _bhFull };
     private _px = safeZoneX + (_sx * safeZoneW) - (_iconW * 0.5);
     private _py = safeZoneY + (_sy * safeZoneH) - (_bh * 0.5);
@@ -116,22 +142,20 @@ private _fnc_getCtrls = {
         _guard = _guard + 1;
     };
 
-    if (_py > (safeZoneY + safeZoneH * 0.92)) then {
+    if (_py > (safeZoneY + safeZoneH * 0.88)) then {
         _compact = true;
         _bh = _bhDot;
+        _bw = _iconW * 1.15;
     };
 
-    _boxes pushBack [_px, _py, if (_compact) then { _iconW * 1.2 } else { _bw }, _bh];
-    ([_used] call _fnc_getCtrls) params ["_bg", "_edge", "_pic", "_txt"];
-
-    private _bgCol = [0.04, 0.07, 0.08, 0.72 * _alpha];
-    private _edgeCol = [_iconCol select 0, _iconCol select 1, _iconCol select 2, 0.85 * _alpha];
+    _boxes pushBack [_px, _py, _bw, _bh];
+    ([_used] call _fnc_getCtrls) params ["_bg", "_sh", "_pic", "_txt"];
 
     if (_iconW < 0.001 || {_bhDot < 0.001} || {_bw < 0.001} || {_bh < 0.001}) then { continue };
 
     if (_compact) then {
         _bg ctrlShow false;
-        _edge ctrlShow false;
+        _sh ctrlShow false;
         _txt ctrlShow false;
         _pic ctrlShow true;
         _pic ctrlSetText _ic;
@@ -139,32 +163,36 @@ private _fnc_getCtrls = {
         _pic ctrlSetPosition [_px, _py, _iconW, _bhDot];
         _pic ctrlCommit 0;
     } else {
-        _bg ctrlShow true;
-        _edge ctrlShow true;
+        if (_showPlate) then {
+            _bg ctrlShow true;
+            _bg ctrlSetBackgroundColor [0, 0, 0, 0.14 * _alpha];
+            _bg ctrlSetPosition [_px - 0.002 * safeZoneW, _py, _bw + 0.004 * safeZoneW, _bh];
+            _bg ctrlCommit 0;
+        } else {
+            _bg ctrlShow false;
+        };
+
         _pic ctrlShow true;
-        _txt ctrlShow true;
-
-        _bg ctrlSetBackgroundColor _bgCol;
-        _bg ctrlSetPosition [_px, _py, _bw, _bh];
-        _bg ctrlCommit 0;
-
-        _edge ctrlSetBackgroundColor _edgeCol;
-        _edge ctrlSetPosition [_px, _py, 0.0035 * safeZoneW, _bh];
-        _edge ctrlCommit 0;
-
         _pic ctrlSetText _ic;
         _pic ctrlSetTextColor _iconCol;
-        _pic ctrlSetPosition [_px + 0.006 * safeZoneW, _py + 0.004 * safeZoneH, _iconW, _iconW];
+        _pic ctrlSetPosition [_px, _py + 0.002 * safeZoneH, _iconW, _iconW];
         _pic ctrlCommit 0;
 
-        _txt ctrlSetText format ["%1 · %2", _name, _distTxt];
+        private _tx = _px + _iconW + 0.004 * safeZoneW;
+        private _ty = _py - 0.001 * safeZoneH;
+        private _tw = _txtW;
+        private _th = _bh;
+
+        _sh ctrlShow true;
+        _sh ctrlSetText _line;
+        _sh ctrlSetTextColor [0, 0, 0, 0.55 * _alpha];
+        _sh ctrlSetPosition [_tx + 0.0012 * safeZoneW, _ty + 0.0012 * safeZoneH, _tw, _th];
+        _sh ctrlCommit 0;
+
+        _txt ctrlShow true;
+        _txt ctrlSetText _line;
         _txt ctrlSetTextColor _txtCol;
-        _txt ctrlSetPosition [
-            _px + 0.028 * safeZoneW,
-            _py + 0.002 * safeZoneH,
-            _bw - 0.032 * safeZoneW,
-            _bh
-        ];
+        _txt ctrlSetPosition [_tx, _ty, _tw, _th];
         _txt ctrlCommit 0;
     };
 
@@ -172,8 +200,8 @@ private _fnc_getCtrls = {
 } forEach _queue;
 
 for "_i" from _used to (_prevSlots - 1) do {
-    ([_i] call _fnc_getCtrls) params ["_bg", "_edge", "_pic", "_txt"];
-    { _x ctrlShow false; _x ctrlCommit 0; } forEach [_bg, _edge, _pic, _txt];
+    ([_i] call _fnc_getCtrls) params ["_bg", "_sh", "_pic", "_txt"];
+    { _x ctrlShow false; _x ctrlCommit 0; } forEach [_bg, _sh, _pic, _txt];
 };
 
 uiNamespace setVariable ["COMSPEC_EcotiHudSlotCount", _used];

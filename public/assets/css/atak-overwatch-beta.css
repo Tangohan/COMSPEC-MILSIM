@@ -115,6 +115,20 @@ button{cursor:pointer}
 .ow-looks legend{font-size:12px;font-weight:600;padding:0 4px}
 .ow-looks label,.ow-toggle{display:flex;align-items:flex-start;gap:8px;padding:5px 2px;border-bottom:1px solid #171c1a;font-size:12px}
 .ow-looks label:last-child,.ow-toggle:last-of-type{border-bottom:0}
+.ow-opt{position:relative;display:flex;align-items:flex-start;gap:6px;border-bottom:1px solid #171c1a}
+.ow-opt:last-child{border-bottom:0}
+.ow-opt .ow-toggle,.ow-opt .ow-row{flex:1;min-width:0;border-bottom:0;margin-top:0}
+.ow-opt .ow-row{padding:5px 2px}
+.ow-i{flex:0 0 18px;width:18px;height:18px;margin-top:5px;padding:0;border:1px solid #3a4440;border-radius:50%;background:#121615;color:#9aa8a2;font:700 11px/16px ui-sans-serif,system-ui,sans-serif;cursor:help}
+.ow-i:hover,.ow-i:focus{color:#f2f6f3;border-color:#7a8a82;outline:none}
+.ow-i[data-help]:hover::after,.ow-i[data-help]:focus::after,.ow-i[data-help]:focus-visible::after{
+  content:attr(data-help);position:absolute;left:8px;right:8px;top:calc(100% + 4px);z-index:12;
+  padding:8px 10px;background:#101413;border:1px solid #2f3a36;color:#dce4e0;
+  font:500 11px/1.45 ui-sans-serif,system-ui,sans-serif;border-radius:4px;text-align:left;white-space:normal;
+  box-shadow:0 10px 28px #0009
+}
+.ow-kicker-opt{display:flex;align-items:center;gap:8px}
+.ow-kicker-opt .ow-i{margin-top:0}
 .ow-looks strong{display:block;font-size:12px;font-weight:600}
 .ow-looks small{display:block;color:var(--athena-muted);margin-top:2px;font-size:11px;font-weight:400}
 .ow-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;margin-top:8px}
@@ -122,6 +136,8 @@ button{cursor:pointer}
 .ow-row input[type="range"]{width:110px}
 .ow-wx{background:#080b0acc;border:1px solid #27302d;padding:5px 8px;font-size:11px;font-weight:500;color:#dff9ef;max-width:min(360px,calc(100vw - 120px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:4px}
 .ow-wx[hidden]{display:none!important}
+.ow-scene-load{background:#101613ee;border:1px solid #3a4a40;color:#d7eadc;padding:6px 10px;font-size:12px;font-weight:600;border-radius:4px;max-width:min(360px,72%)}
+.ow-scene-load[hidden]{display:none!important}
 .ow-spark{width:100%;height:72px;display:block;margin:8px 0;background:#0a0d0c;border:1px solid #1c2321}
 
 .ow-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:4px 0 10px}
@@ -522,7 +538,7 @@ button.ow-mate strong{flex:0 0 auto;font-family:var(--ow-mono);font-size:11px;fo
 .ow-north{position:absolute;right:12px;top:10px;z-index:6;width:26px;height:26px;display:grid;place-items:center;border:1px solid #27302d;background:#080b0acc;color:var(--athena-text);font-size:11px;font-weight:700}
 .ow-live-measure{position:absolute;left:52px;bottom:48px;z-index:6;background:#080b0acc;border:1px solid #27302d;padding:6px 10px;font-size:12px;font-weight:500;color:#dff9ef;max-width:min(560px,72vw);line-height:1.35}
 .ow-live-measure[hidden]{display:none}
-.ow-freeze-banner{position:absolute;left:52px;top:12px;z-index:7;background:#3a1418ee;border:1px solid #c45a63;color:#f3c4c7;padding:7px 11px;font-size:12px;font-weight:600;max-width:min(440px,72%);pointer-events:none}
+.ow-freeze-banner{background:#3a1418ee;border:1px solid #c45a63;color:#f3c4c7;padding:7px 11px;font-size:12px;font-weight:600;max-width:min(440px,72%);border-radius:4px;pointer-events:none}
 .ow-freeze-banner[hidden]{display:none}
 .ow-cs .ow-marker-age-chip{display:block;margin-top:3px}
 .ow-po-label{background:transparent;border:0}

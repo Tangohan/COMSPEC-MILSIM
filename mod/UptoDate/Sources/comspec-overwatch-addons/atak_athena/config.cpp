@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.153;
-        versionStr = "1.0.153";
-        versionAr[] = {1, 0, 153};
-        // Historique : 1.0.152 Marker Dropper → poste, 1.0.153 Relais AT.
+        version = 1.158;
+        versionStr = "1.0.158";
+        versionAr[] = {1, 0, 158};
+        // Historique : 1.0.157 tuiles tiroir, 1.0.158 boussole seule JVN.
     };
 };
 
@@ -110,6 +110,10 @@ class CfgFunctions
             class athena_relayOnOpened {};
             class athena_updateRelay {};
             class athena_openRelay {};
+            class athena_casOnOpened {};
+            class athena_openCas {};
+            class athena_manifestOnOpened {};
+            class athena_openManifest {};
             class athena_soundOnOpened {};
             class athena_updateSound {};
             class athena_soundAction {};
@@ -125,6 +129,7 @@ class CfgFunctions
             class athena_ecotiCutawaySave {};
             class athena_ecotiThemeSave {};
             class athena_ecotiRenderModeSave {};
+            class athena_ecotiTubeInfoSave {};
             class athena_linkStripSave {};
             class athena_linkDegradeSimSave {};
             class athena_phoneProximityTick {};
@@ -289,20 +294,26 @@ class RscControlsGroup;
 #include "ui\resynch_page.hpp"
 #include "ui\wiki_page.hpp"
 #include "ui\relay_page.hpp"
+#include "ui\cas_page.hpp"
+#include "ui\manifest_page.hpp"
 
 class ATAK_APPs
 {
-    // IceMan : class message; puis nos apps. Ne pas redéfinir message (sinon plus d’icônes).
+    // IceMan : class message; puis nos apps. Ne pas redéfinir message (sinon tuiles cassées).
     class message;
     class AtakP2P: message
     {
         text = "<t size='1'>P2P — Réseau local</t>";
         textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        // PAGE_CTRL / Opened IceMan : ne pas forcer ATAK_Message (écran vide + Send Data).
-        class Menu_Property: Menu_Property
+        // Recopie IceMan : ne pas hériter Menu_Property (classe introuvable au boot)
+        // et ne pas rouvrir message (ça casse la grille du tiroir).
+        class Menu_Property
         {
             ORDER = 0.05;
+            PAGE_CTRL = "ATAK_Message";
+            Opened = "BCE_fnc_ATAK_message_Init";
+            ATAK_Buttons = "Message_Menu";
         };
     };
     class Athena: message
@@ -340,6 +351,30 @@ class ATAK_APPs
             PAGE_CTRL = "COMSPEC_ATAK_Task";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
             ATAK_Buttons = "COMSPEC_Task_Menu";
+        };
+    };
+    class AtakCas: message
+    {
+        text = "<t size='1'>Appui aérien</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.13;
+            PAGE_CTRL = "COMSPEC_ATAK_Cas";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_casOnOpened";
+        };
+    };
+    class AtakManifest: message
+    {
+        text = "<t size='1'>Manifeste</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\heli_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 1.14;
+            PAGE_CTRL = "COMSPEC_ATAK_Manifest";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_manifestOnOpened";
         };
     };
     class AtakComms: message
@@ -491,9 +526,12 @@ class RscTitles
             text = "<t size='1'>P2P — Réseau local</t>";
             textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-            class Menu_Property: Menu_Property
+            class Menu_Property
             {
                 ORDER = 0.05;
+                PAGE_CTRL = "ATAK_Message";
+                Opened = "BCE_fnc_ATAK_message_Init";
+                ATAK_Buttons = "Message_Menu";
             };
         };
         class Athena: message
@@ -531,6 +569,30 @@ class RscTitles
                 PAGE_CTRL = "COMSPEC_ATAK_Task";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_taskOnOpened";
                 ATAK_Buttons = "COMSPEC_Task_Menu";
+            };
+        };
+        class AtakCas: message
+        {
+            text = "<t size='1'>Appui aérien</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.13;
+                PAGE_CTRL = "COMSPEC_ATAK_Cas";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_casOnOpened";
+            };
+        };
+        class AtakManifest: message
+        {
+            text = "<t size='1'>Manifeste</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\heli_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 1.14;
+                PAGE_CTRL = "COMSPEC_ATAK_Manifest";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_manifestOnOpened";
             };
         };
         class AtakComms: message

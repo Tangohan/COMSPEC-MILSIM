@@ -18,6 +18,7 @@ class CfgFunctions {
         class eden {
             file = "z\comspec_sse\addons\eden\functions";
             class edenApplyAttributes {};
+            class edenWriteField {};
             class edenInitEntity {};
             class domexGetNode {};
             class domexApplyObject {};
@@ -109,6 +110,48 @@ class Cfg3DEN {
                             class CUSTOM { name = "Forcer le nom Eden"; value = "CUSTOM"; };
                         };
                     };
+                    class COMSPEC_SSE_Profile_Preset {
+                        displayName = "Ce que la base doit répondre";
+                        tooltip = "Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d’identité du terminal SEEK.";
+                        property = "COMSPEC_SSE_Profile_Preset";
+                        control = "Combo";
+                        expression = "[_this, 'Preset', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        class values {
+                            class Auto { name = "Génération automatique (défaut)"; value = "auto"; default = 1; };
+                            class Inconnu { name = "Inconnu des bases"; value = "inconnu"; };
+                            class Signale { name = "Signalé — correspondance partielle"; value = "signale"; };
+                            class Recherche { name = "Recherché — correspondance confirmée"; value = "recherche"; };
+                        };
+                    };
+                    class COMSPEC_SSE_LastName {
+                        displayName = "Nom";
+                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.";
+                        property = "COMSPEC_SSE_LastName";
+                        control = "Edit";
+                        expression = "[_this, 'LastName', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_SSE_FirstName {
+                        displayName = "Prénom";
+                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.";
+                        property = "COMSPEC_SSE_FirstName";
+                        control = "Edit";
+                        expression = "[_this, 'FirstName', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_SSE_Alias {
+                        displayName = "Alias connu";
+                        tooltip = "Surnom sous lequel le sujet est connu. C’est souvent le seul élément dont dispose le terrain.";
+                        property = "COMSPEC_SSE_Alias";
+                        control = "Edit";
+                        expression = "[_this, 'Alias', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
                     class comspec_sse_personRole {
                         displayName = "Rôle déclaré";
                         tooltip = "Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.";
@@ -122,7 +165,7 @@ class Cfg3DEN {
                         displayName = "Nationalité déclarée";
                         property = "comspec_sse_personNationality";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_personNationality', _value, true];";
+                        expression = "[_this, 'Nationality', _value] call comspec_sse_fnc_edenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -130,7 +173,7 @@ class Cfg3DEN {
                         displayName = "Langue parlée";
                         property = "comspec_sse_personLanguage";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_personLanguage', _value, true];";
+                        expression = "[_this, 'Language', _value] call comspec_sse_fnc_edenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
                     };

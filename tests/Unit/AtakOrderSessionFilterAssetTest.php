@@ -35,7 +35,7 @@ final class AtakOrderSessionFilterAssetTest extends TestCase
 
         self::assertStringContainsString('["GetAiOrders", [_mapId, _sessionStart]]', $ai);
 
-        self::assertStringContainsString('versionStr = "1.5.96"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.4"', $cfg);
 
         self::assertStringContainsString('1.5.87', $bug);
         self::assertStringNotContainsString('endpoint', $bug);

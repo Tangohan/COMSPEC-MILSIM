@@ -29,7 +29,10 @@ final class AtakOverwatchC2AssetTest extends TestCase
         self::assertStringContainsString('openDebrief', $c2);
         self::assertStringContainsString('/api/replay/aar/', $c2);
         self::assertStringContainsString('Positions figées', $c2);
+        self::assertStringContainsString('liveWindow', $c2);
+        self::assertStringContainsString('isTrackedAi', $c2);
         self::assertStringContainsString('.ow-freeze-banner', $css);
+        self::assertStringContainsString('.ow-scene-load', $css);
         self::assertStringContainsString('list.forEach', $ops);
         self::assertStringContainsString('ATAK_COMMAND_ALERT_RBAC_V1', $catalog);
         self::assertStringContainsString('ATAK_COMMAND_ALERT_RBAC_V1', $seed);

@@ -22,6 +22,17 @@ window.OverwatchGlLayers = (function () {
   var opts = { occlusion: 'always', ghost: false, heat: false, focus: false, cinematic: false };
   var lastCam = { x: 0, y: 0 };
   var meshMem = {};
+  var loadHintTimer = 0;
+  function sceneLoadHint(on) {
+    window.clearTimeout(loadHintTimer);
+    if (!on) {
+      try { window.dispatchEvent(new CustomEvent('overwatch:scene-load', { detail: { on: false } })); } catch (e0) {}
+      return;
+    }
+    loadHintTimer = window.setTimeout(function () {
+      try { window.dispatchEvent(new CustomEvent('overwatch:scene-load', { detail: { on: true, text: 'Chargement du relevé…' } })); } catch (e1) {}
+    }, 280);
+  }
 
   function apiBase() {
     var base = window.ATAKSocket && window.ATAKSocket.getApiBase
@@ -159,18 +170,22 @@ window.OverwatchGlLayers = (function () {
     });
     return Object.keys(bins).map(function (k) {
       var b = bins[k];
-      var x0 = b.gx * cell;
-      var y0 = b.gy * cell;
-      var z = heightAt(x0 + cell / 2, y0 + cell / 2);
-      var poly = [
-        [x0, y0], [x0 + cell, y0], [x0 + cell, y0 + cell], [x0, y0 + cell]
-      ].map(function (p) {
-        var ll = proj.worldToLngLat(p[0], p[1]);
-        return [ll[0], ll[1], z];
-      });
+      var cx = b.gx * cell + cell / 2;
+      var cy = b.gy * cell + cell / 2;
+      var z = heightAt(cx, cy);
+      var cover = Math.min(0.9, 0.28 + b.n * 0.07);
+      var radius = (cell / 2) * cover;
+      var poly = [];
+      var steps = 12;
+      var s;
+      for (s = 0; s < steps; s++) {
+        var t = (s / steps) * Math.PI * 2;
+        var ll = proj.worldToLngLat(cx + Math.cos(t) * radius, cy + Math.sin(t) * radius);
+        poly.push([ll[0], ll[1], z]);
+      }
       return {
         polygon: poly,
-        height: Math.max(4, Math.min(14, b.h / b.n)),
+        height: Math.max(4, Math.min(12, b.h / b.n)),
         density: b.d / b.n
       };
     });
@@ -269,12 +284,16 @@ window.OverwatchGlLayers = (function () {
       buildings = [];
       forests = [];
       obstacles = [];
+      sceneLoadHint(false);
       redraw();
       return;
     }
     var bbox = worldBbox();
     if (!bbox) return;
-    Promise.all([fetchBuildings(bbox), fetchKind('forest', bbox)]).then(function (rows) {
+    var lod = lodForZoom();
+    var forestP = (lod === '0' || lod === '1') ? Promise.resolve([]) : fetchKind('forest', bbox);
+    sceneLoadHint(true);
+    Promise.all([fetchBuildings(bbox), forestP]).then(function (rows) {
       buildings = rows[0] || [];
       forests = rows[1] || [];
       if (!obstacles.length && lastLod !== '0' && lastLod !== '1') {
@@ -291,7 +310,7 @@ window.OverwatchGlLayers = (function () {
         });
       }
       redraw();
-    });
+    }).then(function () { sceneLoadHint(false); }, function () { sceneLoadHint(false); });
   }
 
   function queueLoad() {
@@ -632,7 +651,7 @@ window.OverwatchGlLayers = (function () {
         autoHighlight: true
       }));
     }
-    if (buildingsOn && forests.length) {
+    if (buildingsOn && forests.length && zoom >= 13.4) {
       if (zoom >= 15.4) {
         layers.push(new window.deck.IconLayer({
           id: 'ow-gl-forest-icons',
@@ -815,6 +834,7 @@ window.OverwatchGlLayers = (function () {
 
   function forestCollection() {
     var zoom = glMap ? glMap.getZoom() : 12;
+    if (zoom < 13.4) return { type: 'FeatureCollection', features: [] };
     var clustered = clusterForests(forests, zoom >= 14 ? 50 : 90);
     return {
       type: 'FeatureCollection',

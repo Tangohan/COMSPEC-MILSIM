@@ -19,8 +19,8 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         $bridge = (string) file_get_contents($root . '/functions/fn_athena_bridgeIcemanPhoto.sqf');
         $note = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/bugs/2026-09-19-photo-library-transferer.md');
 
-        self::assertStringContainsString('TRANSFÃ‰RER', $install);
-        self::assertStringContainsString('TOUT TRANSFÃ‰RER', $install);
+        self::assertStringContainsString('TRANSFÉRER', $install);
+        self::assertStringContainsString('TOUT TRANSFÉRER', $install);
         self::assertStringContainsString('ctrlCreate', $install);
         self::assertStringContainsString('RscButton', $install);
         self::assertStringContainsString('CBA_fnc_addPerFrameHandler', $install);
@@ -32,13 +32,13 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         self::assertStringContainsString('deleteFile _p', $remove);
         self::assertStringContainsString('class athena_sendLibraryPhoto {}', $cfg);
         self::assertStringContainsString('class athena_removeIcemanPhoto {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.0.153"', $cfg);
+        self::assertStringContainsString('versionStr = "1.0.158"', $cfg);
         self::assertStringContainsString('_started = _started + 1', $poll);
         self::assertStringContainsString('rememberLocalPhoto', $bridge);
         self::assertTrue(
             strpos($bridge, 'rememberLocalPhoto') < strpos($bridge, 'COMSPEC_AthenaReady')
         );
-        self::assertStringContainsString('TransfÃ©rer', $note);
+        self::assertStringContainsString('Transférer', $note);
         self::assertStringNotContainsString('endpoint', $note);
     }
 }

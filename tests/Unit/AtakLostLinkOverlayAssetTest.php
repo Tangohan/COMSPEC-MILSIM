@@ -32,7 +32,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringNotContainsString('LIAISON ATAK PERDUE', $view);
         self::assertSame(1, substr_count($view, 'id="atak-connection-lost-msg"'));
         self::assertStringContainsString('atak-connection-lost__timer', $view);
-        self::assertStringContainsString('Reconnexion en coursâ€¦', $view);
+        self::assertStringContainsString('Reconnexion en cours…', $view);
 
         self::assertStringContainsString('function formatReconnectLabel', $js);
         self::assertStringContainsString("return 'Reconnexion dans ' + match[1] + ' s'", $js);
@@ -49,7 +49,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
             $view
         );
         self::assertStringContainsString('window.ATAKSocket.isApiPaused()', $view);
-        self::assertStringContainsString('Reconnexion en coursâ€¦', $view);
+        self::assertStringContainsString('Reconnexion en cours…', $view);
     }
 
     public function testConcurrentOrIsolatedPingFailureDoesNotReportAnOutage(): void
@@ -93,7 +93,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('Liaison perdue', $chrome);
         self::assertStringContainsString('99887710', $chrome);
         self::assertStringContainsString('class updateAtakLinkChrome', $cfg);
-        self::assertStringContainsString('1.5.96', $cfg);
+        self::assertStringContainsString('1.6.4', $cfg);
 
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $roleplay);
         self::assertStringContainsString('fn_updateDeviceOverlay', $roleplay);
@@ -104,6 +104,6 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('cTab_Android_dlg', $inject);
         self::assertStringNotContainsString('Liaison ATAK perdue', $inject);
         self::assertStringNotContainsString('applyMapInterference(0.6)', $inject);
-        self::assertStringContainsString('barre dâ€™Ã©tat', $note);
+        self::assertStringContainsString('barre d’état', $note);
     }
 }

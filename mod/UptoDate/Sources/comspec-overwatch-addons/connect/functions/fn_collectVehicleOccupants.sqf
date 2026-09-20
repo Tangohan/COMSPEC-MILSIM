@@ -43,11 +43,20 @@ private _out = [];
     private _name = "";
     if (isPlayer _u) then {
         if (_u isEqualTo player) then {
-            _name = [] call comspec_overwatch_connect_fnc_getCallsign;
+            _name = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
         } else {
             private _cs = _u getVariable ["COMSPEC_Callsign", ""];
             if (!(_cs isEqualType "")) then { _cs = str _cs };
             _name = trim _cs;
+            if (_name isEqualTo "") then {
+                private _an = _u getVariable ["comspec_profile_name", ""];
+                if (_an isEqualType "") then { _name = trim _an; };
+            };
+        };
+        if (_name isEqualTo "" || {(toLower _name) in ["unknown", "inconnu", "operateur", "opérateur", "newpi"]}) then {
+            if (_u isEqualTo player) then {
+                _name = [true] call comspec_overwatch_connect_fnc_getCallsign;
+            };
         };
         if (_name isEqualTo "") then { _name = name _u; };
     } else {

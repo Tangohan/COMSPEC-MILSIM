@@ -115,6 +115,10 @@ if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
     private _vehicleId = netId _x;
     private _fuelPct = (round ((fuel _x) * 100)) max 0 min 100;
     private _occ = [_x] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
+    private _load = [_x] call comspec_overwatch_connect_fnc_collectAircraftLoadout;
+    private _ordnance = _load getOrDefault ["ordnance", ""];
+    private _playMin = if (_fuelPct > 0) then { round (_fuelPct * 0.45) } else { 0 };
+    private _playTxt = if (_playMin > 0) then { format ["%1 min", _playMin toFixed 0] } else { "" };
     private _pilotName = "";
     {
         if ((_x getOrDefault ["seat", ""]) isEqualTo "driver") exitWith {
@@ -149,6 +153,8 @@ if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
         ["crew", _occ],
         ["occupants", _occ],
         ["crew_count", count _occ],
+        ["ordnance", _ordnance],
+        ["bingo_fuel", _playTxt],
         ["lastUpdate", floor time]
     ];
 

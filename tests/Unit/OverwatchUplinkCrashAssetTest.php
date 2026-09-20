@@ -60,11 +60,11 @@ final class OverwatchUplinkCrashAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_ACEClassTreeVer', $ace);
         self::assertStringContainsString('cTab_Android_dlg', $chat);
 
-        self::assertStringContainsString('1.0.153', $cfgA);
-        self::assertStringContainsString('1.5.96', $cfgC);
+        self::assertStringContainsString('1.0.158', $cfgA);
+        self::assertStringContainsString('1.6.4', $cfgC);
 
-        self::assertStringContainsString('Ã©cho des repÃ¨res', strtolower($bug));
-        self::assertStringContainsString('corrigÃ©', strtolower($bug));
+        self::assertStringContainsString('écho des repères', strtolower($bug));
+        self::assertStringContainsString('corrigé', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

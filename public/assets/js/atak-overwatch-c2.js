@@ -163,18 +163,22 @@
     if (!el || !api) return;
     var last = api.getLastRx ? api.getLastRx() : 0;
     var units = api.getUnits ? api.getUnits() : [];
+    var liveWindow = 15 * 60;
+    var liveCount = 0;
     var staleCount = 0;
     var oldest = 0;
     units.forEach(function (unit) {
+      if (api.isTrackedAi && api.isTrackedAi(unit)) return;
       var age = api.unitAgeSec ? api.unitAgeSec(unit) : NaN;
-      if (!Number.isFinite(age)) return;
+      if (!Number.isFinite(age) || age > liveWindow) return;
+      liveCount += 1;
       if (age >= 20) {
         staleCount += 1;
         if (age > oldest) oldest = age;
       }
     });
-    var rxAge = last ? (Date.now() - last) / 1000 : 999;
-    var frozen = rxAge >= 12 || staleCount > 0;
+    var rxAge = last ? (Date.now() - last) / 1000 : 0;
+    var frozen = liveCount > 0 && (rxAge >= 12 || staleCount > 0);
     if (!frozen) {
       el.hidden = true;
       return;

@@ -79,12 +79,12 @@ for "_i" from 0 to (_n - 1) do {
     drawLine3D [_bot select _i, _top select _i, _col];
 };
 
-private _lastFloor = if (_cutaway) then { _sel } else { _floors - 1 };
+private _lastFloor = if (_cutaway) then { (_sel + 1) min _floors } else { _floors - 1 };
 if (_floors > 1 || {_cutaway}) then {
     for "_i" from 1 to _lastFloor do {
         private _t = _i / _floors;
         private _z = _z0 + (_h * _t);
-        private _isSel = _cutaway && {_i == (_sel + 1)};
+        private _isSel = _cutaway && {_i == _lastFloor};
         private _fCol = if (_isSel) then { _floorColSel } else { _floorCol };
         private _pts = [_z] call _fnc_ringAt;
         private _pn = count _pts;

@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.596;
-        versionStr = "1.5.96";
-        versionAr[] = {1, 5, 96};
+        version = 1.64;
+        versionStr = "1.6.4";
+        versionAr[] = {1, 6, 4};
     };
 };
 
@@ -55,6 +55,7 @@ class CfgFunctions {
             class sseActiveCase {};
             class sseApplyProfile {};
             class sseProfilePreset {};
+            class sseEdenWriteField {};
             class sseModuleTargets {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
@@ -86,6 +87,8 @@ class CfgFunctions {
             class medevacDialogSubmit {};
             class casRequestShow {};
             class casRequestSubmit {};
+            class casRequestFill {};
+            class casRequestCtrl {};
             class casDialogShow {};
             class flightManifestShow {};
             class reportDiag {};
@@ -212,6 +215,8 @@ class CfgFunctions {
             class hideAceMenu {};
             class fillFlightManifest {};
             class submitFlightManifest {};
+            class manifestCtrl {};
+            class collectAircraftLoadout {};
             class requestFireSolution {};
             class receiveFireSolution {};
             class displayFireSolution {};
@@ -256,6 +261,7 @@ class CfgFunctions {
             class orderParseWaypoint {};
             class orderApplyMoveWaypoint {};
             class receiveOrder {};
+            class orderIssuerLabel {};
             class orderConcernsPlayer {};
             class orderTypeLabel {};
             class pollOrders {};
@@ -423,6 +429,7 @@ class CfgFunctions {
             class ecotiDraw {};
             class ecotiInit {};
             class ecotiMarkBuilding {};
+            class ecotiBuildingMarkerName {};
             class ecotiClearBuilding {};
             class ecotiCutAtLook {};
             class ecotiCycleFloor {};
@@ -432,9 +439,19 @@ class CfgFunctions {
             class ecotiApplyCutawaySetting {};
             class ecotiApplyThemeSetting {};
             class ecotiApplyRenderModeSetting {};
+            class ecotiApplyTubeInfoSetting {};
             class ecotiHudEnsure {};
             class ecotiHudHide {};
             class ecotiHudRender {};
+            class ecotiA3tiPresent {};
+            class ecotiIconPath {};
+            class ecotiInitPostFX {};
+            class ecotiStopPostFX {};
+            class ecotiTickPostFX {};
+            class ecotiChromeEnsure {};
+            class ecotiChromeHide {};
+            class ecotiChromeRender {};
+            class ecotiDrawFusion {};
             class linkStripApplySetting {};
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
@@ -844,6 +861,18 @@ class RscTitles
         name = "COMSPEC_EcotiScreenHud";
         onLoad = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', _this select 0];";
         onUnload = "uiNamespace setVariable ['COMSPEC_EcotiHudDisp', displayNull]; uiNamespace setVariable ['COMSPEC_EcotiHudSlotCount', 0];";
+        class controls {};
+    };
+    class COMSPEC_EcotiChromeHud
+    {
+        idd = -1;
+        movingEnable = 0;
+        duration = 1e+011;
+        fadein = 0;
+        fadeout = 0;
+        name = "COMSPEC_EcotiChromeHud";
+        onLoad = "uiNamespace setVariable ['COMSPEC_EcotiChromeDisp', _this select 0];";
+        onUnload = "uiNamespace setVariable ['COMSPEC_EcotiChromeDisp', displayNull];";
         class controls {};
     };
     class COMSPEC_DiagIsolateHud

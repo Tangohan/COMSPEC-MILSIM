@@ -52,7 +52,7 @@ final class AtakLayoutClampAssetTest extends TestCase
         self::assertStringNotContainsString('ctrlDelete', $drawer);
         self::assertStringNotContainsString('_extra ctrlEnable false', $drawer);
         self::assertStringNotContainsString('_cellW * _col', $drawer);
-        self::assertStringContainsString('1.0.153', $cfg);
+        self::assertStringContainsString('1.0.158', $cfg);
         self::assertStringContainsString('class message;', $cfg);
         self::assertStringContainsString('class Athena: message', $cfg);
         self::assertStringContainsString('class athena_syncAtakApps {}', $cfg);

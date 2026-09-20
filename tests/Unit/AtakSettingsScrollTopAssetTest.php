@@ -17,7 +17,7 @@ final class AtakSettingsScrollTopAssetTest extends TestCase
         $cfg = (string) file_get_contents($root . '/config.cpp');
         $note = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/bugs/2026-09-19-parametres-scroll-bas.md');
 
-        self::assertStringContainsString('versionStr = "1.0.153"', $cfg);
+        self::assertStringContainsString('versionStr = "1.0.158"', $cfg);
         self::assertStringContainsString('autoScrollEnabled = 0', $page);
         self::assertStringContainsString('Votre fiche', $page);
         self::assertStringContainsString('ctrlSetScrollValues [0, -1]', $opened);

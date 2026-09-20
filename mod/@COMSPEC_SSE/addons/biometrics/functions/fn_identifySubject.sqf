@@ -78,7 +78,35 @@ params [
             };
         };
 
-        if (!isNil "comspec_sse_fnc_extensionCall") then {
+        private _forced = _target getVariable ["COMSPEC_SSE_MatchResult", ""];
+        if (!(_forced isEqualType "")) then { _forced = ""; };
+        _forced = toLower (trim _forced);
+        private _forcedOk = _forced in ["none", "possible", "confirmed"];
+
+        if (_forcedOk) then {
+            private _forcedScore = _target getVariable ["COMSPEC_SSE_Confidence", -1];
+            if (!(_forcedScore isEqualType 0) || {_forcedScore < 0}) then {
+                _forcedScore = switch (_forced) do {
+                    case "confirmed": { 93 };
+                    case "possible": { 58 };
+                    default { 0 };
+                };
+            };
+            private _forcedRef = _target getVariable ["COMSPEC_SSE_RecordRef", ""];
+            if (!(_forcedRef isEqualType "")) then { _forcedRef = ""; };
+            _forcedRef = trim _forcedRef;
+            _verdict = switch (_forced) do {
+                case "confirmed": { "Recherché — correspondance confirmée" };
+                case "possible": { "Signalé — correspondance partielle" };
+                default { "Inconnu des bases" };
+            };
+            _recordRef = _forcedRef;
+            _score = _forcedScore;
+            _note = "Verdict imposé par la préparation de mission.";
+            _okQuery = true;
+        };
+
+        if (!_forcedOk && {!isNil "comspec_sse_fnc_extensionCall"}) then {
             private _raw = ["QuerySseIdentity", [_first, _last, _alias, _name]] call comspec_sse_fnc_extensionCall;
             if (!(_raw isEqualType "")) then { _raw = str _raw; };
             private _u = toUpper _raw;

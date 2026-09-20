@@ -1,7 +1,7 @@
 /*
     Palette ECOTI selon le thème choisi (lisibilité sous JVN).
     Retourne un HashMap-like via tableau de paires, ou lecture directe des clés.
-    Clés utiles : allies, vehicles, outline, building, floor, unit, badge, glow
+    Clés utiles : allies, vehicles, outline, building, floor, unit, badge, glow, thermal
 */
 private _theme = missionNamespace getVariable ["comspec_overwatch_ecoti_theme", "nvg"];
 if (!(_theme isEqualType "")) then { _theme = "nvg"; };
@@ -15,6 +15,7 @@ private _floor = [1, 0.95, 0.35, 0.95];
 private _unit = [0.7, 1, 0.9, 0.95];
 private _badge = [0.95, 1, 0.98, 1];
 private _glow = [0.85, 1, 0.95, 0.55];
+private _thermal = [1, 0.96, 0.86, 0.58];
 
 switch (_theme) do {
     case "lime": {
@@ -78,5 +79,6 @@ createHashMapFromArray [
     ["floor", _floor],
     ["unit", _unit],
     ["badge", _badge],
-    ["glow", _glow]
+    ["glow", _glow],
+    ["thermal", _thermal]
 ]

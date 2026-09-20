@@ -22,6 +22,10 @@ if (_keep isEqualTo "") then {
             case "reports": { "reports" };
             case "ataknote": { "note" };
             case "ataktask": { "task" };
+            case "atakcas": { "cas" };
+            case "comspec_atak_cas": { "cas" };
+            case "atakmanifest": { "manifest" };
+            case "comspec_atak_manifest": { "manifest" };
             case "atakcomms": { "comms" };
             case "group": { "msghub" };
             case "message": { "message" };
@@ -48,6 +52,8 @@ private _needles = [
     ["reports", "iceman_atak_reports"],
     ["note", "comspec_atak_note"],
     ["task", "comspec_atak_task"],
+    ["cas", "comspec_atak_cas"],
+    ["manifest", "comspec_atak_manifest"],
     ["comms", "comspec_atak_comms"],
     ["msghub", "comspec_atak_messagehub"],
     ["briefing", "comspec_atak_briefing"],

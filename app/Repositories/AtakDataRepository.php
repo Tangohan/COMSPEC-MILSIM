@@ -1679,7 +1679,7 @@ class AtakDataRepository
             $stmt->execute([$tenantId, $mapId]);
         }
 
-        return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->withoutProtocolOrderChat(array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC)));
     }
 
     /**
@@ -1715,7 +1715,7 @@ class AtakDataRepository
             $stmt->execute([$tenantId, $mapId, $afterId]);
         }
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->withoutProtocolOrderChat($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function addChatMessage(
@@ -2206,7 +2206,28 @@ class AtakDataRepository
         $stmt->bindValue(3, $withinSeconds, PDO::PARAM_INT);
         $stmt->execute();
 
-        return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->withoutProtocolOrderChat(array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC)));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withoutProtocolOrderChat(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            $body = ltrim((string) ($row['body'] ?? ''));
+            if (strncasecmp($body, 'ORDER|', 6) === 0) {
+                continue;
+            }
+            if (stripos($body, 'ORDER|') !== false) {
+                continue;
+            }
+            $out[] = $row;
+        }
+
+        return $out;
     }
 
     /**
@@ -2685,7 +2706,7 @@ class AtakDataRepository
             if ($prevSource === 'manifest') {
                 $fields['source'] = 'manifest';
             }
-            foreach (['freq', 'radio_main', 'radio_aux', 'laser', 'auth', 'auth_code', 'pilot', 'crew', 'ordnance', 'station', 'eta_minutes', 'bingo_fuel', 'checklist', 'mission_id'] as $keep) {
+            foreach (['freq', 'radio_main', 'radio_aux', 'laser', 'auth', 'auth_code', 'pilot', 'crew', 'ordnance', 'station', 'eta_minutes', 'bingo_fuel', 'checklist', 'mission_id', 'fuel_pct'] as $keep) {
                 $incomingEmpty = $fields[$keep] === null || $fields[$keep] === '';
                 $prev = $existing[$keep] ?? null;
                 if ($incomingEmpty && $prev !== null && $prev !== '') {

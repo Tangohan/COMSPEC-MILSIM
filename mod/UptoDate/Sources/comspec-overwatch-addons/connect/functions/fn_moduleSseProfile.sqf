@@ -31,6 +31,7 @@ if (_this isEqualType objNull) then {
 };
 
 if (isNull _logic) exitWith { false };
+if (is3DEN) exitWith { true };
 if (!(_units isEqualType [])) then { _units = []; };
 if (!(_activated isEqualType true)) then { _activated = true; };
 if (!_activated) exitWith { false };
@@ -49,28 +50,50 @@ if (_targets isEqualTo []) exitWith {
     false
 };
 
-private _preset = _logic getVariable ["Preset", "auto"];
-if (!(_preset isEqualType "")) then { _preset = "auto"; };
+private _fnc_txt = {
+    params ["_short", "_prefixed"];
+    private _v = _logic getVariable [_prefixed, ""];
+    if (!(_v isEqualType "") || {(trim str _v) isEqualTo ""}) then {
+        _v = _logic getVariable [_short, ""];
+    };
+    if (!(_v isEqualType "")) then { _v = ""; };
+    trim _v
+};
+
+private _preset = [_logic] call {
+    params ["_l"];
+    private _v = _l getVariable ["COMSPEC_SSE_Preset", ""];
+    if (!(_v isEqualType "") || {(trim _v) isEqualTo ""}) then {
+        _v = _l getVariable ["Preset", "auto"];
+    };
+    if (!(_v isEqualType "")) then { _v = "auto"; };
+    private _p = toLower (trim _v);
+    if (_p isEqualTo "") then { _p = "auto"; };
+    _p
+};
 
 private _profile = [_preset] call comspec_overwatch_connect_fnc_sseProfilePreset;
 
 // Les champs saisis à la main complètent le preset et le remplacent en cas de conflit.
 {
-    _x params ["_varName", "_key"];
-    private _v = _logic getVariable [_varName, ""];
-    if ((_v isEqualType "") && { (trim _v) isNotEqualTo "" }) then {
-        _profile pushBack [_key, trim _v];
+    _x params ["_short", "_prefixed", "_key"];
+    private _v = [_short, _prefixed] call _fnc_txt;
+    if (_v isNotEqualTo "") then {
+        _profile pushBack [_key, _v];
     };
 } forEach [
-    ["LastName", "last_name"],
-    ["FirstName", "first_name"],
-    ["Alias", "alias"],
-    ["Nationality", "nationality"],
-    ["Language", "language"],
-    ["RecordRef", "record_ref"]
+    ["LastName", "COMSPEC_SSE_LastName", "last_name"],
+    ["FirstName", "COMSPEC_SSE_FirstName", "first_name"],
+    ["Alias", "COMSPEC_SSE_Alias", "alias"],
+    ["Nationality", "COMSPEC_SSE_Nationality", "nationality"],
+    ["Language", "COMSPEC_SSE_Language", "language"],
+    ["RecordRef", "COMSPEC_SSE_RecordRef", "record_ref"]
 ];
 
-private _seed = _logic getVariable ["Seed", 0];
+private _seed = _logic getVariable ["COMSPEC_SSE_Seed", 0];
+if (!(_seed isEqualType 0) || {_seed <= 0}) then {
+    _seed = _logic getVariable ["Seed", 0];
+};
 if (_seed isEqualType 0 && { _seed > 0 }) then { _profile pushBack ["seed", _seed]; };
 
 {
