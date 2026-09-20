@@ -20,7 +20,7 @@ final class AtakFlightManifestAssetTest extends TestCase
         $air = (string) file_get_contents($root . '/public/assets/js/atak-air-assets.js');
         $popup = (string) file_get_contents($root . '/public/assets/js/atak-unit-popup.js');
 
-        self::assertStringContainsString('versionStr = "1.6.4"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
         self::assertStringContainsString('DESTINATION / ZONE', $dlg);
         self::assertStringContainsString('PERSONNES ù BORD', $dlg);
         self::assertStringContainsString('EMPORT / MUNITIONS', $dlg);

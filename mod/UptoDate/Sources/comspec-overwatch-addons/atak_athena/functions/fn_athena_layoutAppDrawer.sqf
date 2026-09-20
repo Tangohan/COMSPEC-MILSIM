@@ -29,11 +29,16 @@ _grp ctrlSetBackgroundColor _charcoal;
 
 if (!_open) exitWith {};
 
+private _hasRelaisAt = false;
+{
+    if ((ctrlClassName _x) isEqualTo "AtakRelay") then { _hasRelaisAt = true; };
+} forEach (allControls _grp);
+
 {
     if ((ctrlIDC _x) == 9) then { continue };
     _x ctrlSetTextColor _cyan;
     private _lab = toLower (ctrlText _x);
-    if ((_lab find "wave relay") >= 0 || {_lab find "waverelay" >= 0}) then {
+    if (!_hasRelaisAt && {(_lab find "wave relay") >= 0 || {_lab find "waverelay" >= 0}}) then {
         _x ctrlSetText "<t size='1'>Relais AT</t>";
         _x ctrlSetTooltip "Mât le plus proche : position, débit, fiabilité, identité.";
     };

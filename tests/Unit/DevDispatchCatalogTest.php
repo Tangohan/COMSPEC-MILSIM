@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(496, $byKind['update']);
-        self::assertCount(502, $all);
+        self::assertSame(497, $byKind['update']);
+        self::assertCount(503, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -774,6 +774,20 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('aide', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHelpI['activity']));
+        $mapMarkerWeb = DevDispatchCatalog::find('update', '702');
+        self::assertNotNull($mapMarkerWeb);
+        self::assertSame('00702', $mapMarkerWeb['number_pad']);
+        self::assertStringContainsString('repères', strtolower((string) $mapMarkerWeb['title']));
+        self::assertStringContainsString('carte', strtolower((string) $mapMarkerWeb['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $mapMarkerWeb['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $mapMarkerWeb['activity']));
+        $p2pRelay = DevDispatchCatalog::find('update', '701');
+        self::assertNotNull($p2pRelay);
+        self::assertSame('00701', $p2pRelay['number_pad']);
+        self::assertStringContainsString('relais', strtolower((string) $p2pRelay['title']));
+        self::assertStringContainsString('réseau local', strtolower((string) $p2pRelay['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $p2pRelay['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $p2pRelay['activity']));
         $freezeLive = DevDispatchCatalog::find('update', '700');
         self::assertNotNull($freezeLive);
         self::assertSame('00700', $freezeLive['number_pad']);

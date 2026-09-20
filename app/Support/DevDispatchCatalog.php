@@ -268,6 +268,21 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(702, '2026-09-20', 'Carte du poste : repères posés en jeu', 'Un point posé sur la carte d’Arma 3 (canal global) apparaît maintenant sur la carte du poste, au même endroit. Fermez la carte en jeu : le repère remonte en quelques secondes, même s’il n’a pas de nom. Relancez Arma complètement (Overwatch 1.6.5).', [
+                'Repère posé sur la carte en jeu visible au poste après fermeture de la carte',
+            ], [], [
+                'Un point posé sur la carte Arma n’apparaissait pas sur Overwatch Beta',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.5). Posez un point sur la carte en jeu, fermez la carte, puis ouvrez Overwatch Beta en Direct : le repère est au même endroit.',
+            ], 'Overwatch 1.6.5'),
+            $pr(701, '2026-09-20', 'Téléphone ATAK : réseau local et Relais AT', 'Dans le menu d’applications, P2P ouvre de nouveau le réseau local (contacts et messages). Relais AT apparaît juste à côté : fiche du mât le plus proche (position, débit, fiabilité, identité, adresse, passerelle, certificat, places, puissance). Relancez Arma complètement (Athena 1.0.159).', [
+                'Application Relais AT dans le chevron, à côté du réseau local',
+            ], [], [
+                'P2P — Réseau ouvrait un écran vide',
+                'Relais AT n’apparaissait pas dans les premières tuiles du menu',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.159). Chevron : Relais AT est sur la première ligne. P2P affiche les contacts du réseau local, pas un écran vide.',
+            ], 'Athena 1.0.159'),
             $pr(700, '2026-09-20', 'Poste Overwatch : plus d’alerte figée sur un opérateur encore en liaison', 'Un opérateur encore en liaison et en forme n’est plus annoncé comme position figée au bout de quelques secondes. Le bandeau n’apparaît que si plus personne n’est à jour depuis plus d’une minute, ou si le poste n’a plus reçu le théâtre depuis longtemps. Un cadre en pointillés n’entoure l’indicatif que dans ces mêmes cas. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Bandeau « positions figées » réservé à une vraie coupure, pas à un opérateur immobile quelques secondes',
             ], [

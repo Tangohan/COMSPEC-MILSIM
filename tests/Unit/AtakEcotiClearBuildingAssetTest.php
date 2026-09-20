@@ -21,7 +21,7 @@ final class AtakEcotiClearBuildingAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_EcotiMarkedBuilding', $clear);
         self::assertStringContainsString('class ecotiClearBuilding {}', $cfg);
         self::assertStringContainsString('class ecotiBuildingMarkerName {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.6.4"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
         $mark = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiMarkBuilding.sqf');
         $sync = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_syncMapMarker.sqf');
         self::assertStringContainsString('syncMapMarker', $mark);

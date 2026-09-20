@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.64;
-        versionStr = "1.6.4";
-        versionAr[] = {1, 6, 4};
+        version = 1.65;
+        versionStr = "1.6.5";
+        versionAr[] = {1, 6, 5};
     };
 };
 
@@ -502,10 +502,12 @@ class CfgFunctions {
             class canOpenOverwatchUi {};
             class openAtakEnhanced {};
             class resolveBceMarkerText {};
+            class resolveMarkerEhName {};
             class syncMapMarker {};
             class isSyncableMapMarker {};
             class forceSyncMapMarkers {};
             class syncNearbyMapMarkers {};
+            class syncUserMapMarkers {};
             class queueMapMarker {};
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
