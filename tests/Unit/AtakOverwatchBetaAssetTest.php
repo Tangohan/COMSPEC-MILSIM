@@ -109,6 +109,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('atak-map-crs.js', $view);
         self::assertStringContainsString('data-view="comms"', $view);
         self::assertStringContainsString('data-view="comms">Ordre</button>', $view);
+        self::assertStringContainsString('data-view="air">Air</button>', $view);
+        self::assertStringContainsString("'/api/atak/air-assets?mapId='", $overwatchJs);
+        self::assertStringContainsString('function airHtml', $overwatchJs);
+        self::assertStringContainsString('loadAirAssets', $overwatchJs);
+        self::assertStringContainsString('eta_minutes', $overwatchJs);
+        self::assertStringContainsString('Demandes JTAC', $overwatchJs);
+        self::assertStringContainsString('Arrivée estimée', $overwatchJs);
+        self::assertStringContainsString('.ow-air-card', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
         self::assertStringNotContainsString('>Comms</button>', $view);
         self::assertStringContainsString("'/api/chat?mapId='", $overwatchJs);
         self::assertStringContainsString('ow-unread', $overwatchJs);
@@ -288,6 +296,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('function isTechnicalLabel', $armaMarkersJs);
         self::assertStringContainsString('function isBuildingLikeArea', $armaMarkersJs);
         self::assertStringContainsString('function isInvisibleArmaIcon', $armaMarkersJs);
+        self::assertStringContainsString('function shouldUsePngGlyph', $armaMarkersJs);
+        self::assertStringContainsString('pngNeedsColorMask', $armaMarkersJs);
         self::assertStringContainsString('arma-map-marker-label', $armaMarkersJs);
         self::assertStringContainsString('is-framed', $armaMarkersJs);
         self::assertStringContainsString('buildingFootprintStyle', $armaMarkersJs);

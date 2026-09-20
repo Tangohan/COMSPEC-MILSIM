@@ -260,7 +260,10 @@ final class AtakAirAssetMergeService
         $primary = $rankA >= $rankB ? $a : $b;
         $secondary = $rankA >= $rankB ? $b : $a;
         $out = $primary;
-        foreach (['model', 'aircraft_type', 'freq', 'laser', 'auth', 'pilot', 'pilot_status', 'side'] as $field) {
+        foreach ([
+            'model', 'aircraft_type', 'freq', 'laser', 'auth', 'pilot', 'pilot_status', 'side',
+            'station', 'dest', 'mission_id', 'ordnance', 'bingo_fuel', 'checklist', 'notes',
+        ] as $field) {
             $cur = trim((string) ($out[$field] ?? ''));
             $add = trim((string) ($secondary[$field] ?? ''));
             if ($cur === '' && $add !== '') {
@@ -289,6 +292,18 @@ final class AtakAirAssetMergeService
             $vid = trim((string) ($secondary['vehicle_id'] ?? ''));
             if ($vid !== '') {
                 $out['vehicle_id'] = $vid;
+            }
+        }
+        if (($out['eta_minutes'] ?? null) === null || $out['eta_minutes'] === '') {
+            $eta = $secondary['eta_minutes'] ?? null;
+            if ($eta !== null && $eta !== '') {
+                $out['eta_minutes'] = (int) $eta;
+            }
+        }
+        if (($out['fuel_pct'] ?? null) === null || $out['fuel_pct'] === '') {
+            $fuel = $secondary['fuel_pct'] ?? null;
+            if ($fuel !== null && $fuel !== '') {
+                $out['fuel_pct'] = (int) $fuel;
             }
         }
         $mergedOcc = self::mergeOccupants(self::occupantsOf($primary), self::occupantsOf($secondary));

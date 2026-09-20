@@ -541,6 +541,7 @@ window.ATAKUnitPopup = (function () {
       } catch (eOrd) {}
     }
     var play = a.bingo_fuel || '';
+    var eta = a.eta_minutes != null && a.eta_minutes !== '' ? (String(a.eta_minutes) + ' min') : '';
     var grid = formatGrid(a, {});
     var updated = formatTimeAgo(a.updated_at || a.last_update);
     var pilot = pilotStatusLabelFr(a.pilot_status || '');
@@ -554,6 +555,7 @@ window.ATAKUnitPopup = (function () {
       row('Code laser', laser) +
       row('Authentification', auth) +
       row('Destination', dest) +
+      row('Arrivée estimée', eta) +
       row('Carburant', fuel) +
       row('Autonomie', play) +
       row('Emport', ordnance) +

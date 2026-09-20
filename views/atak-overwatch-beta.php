@@ -85,6 +85,7 @@ $icon = static function (string $path): string {
       <button type="button" class="is-active" data-view="overwatch">Overwatch</button>
       <button type="button" data-view="comms">Ordre</button>
       <button type="button" data-view="mission">Mission</button>
+      <button type="button" data-view="air">Air</button>
       <button type="button" data-view="layers">Calques</button>
       <button type="button" data-view="intel">Renseignement</button>
       <button type="button" data-view="tools">Outils</button>
@@ -92,6 +93,7 @@ $icon = static function (string $path): string {
     <div class="ow-more">
       <button type="button" data-ow-more>Plus</button>
       <div class="ow-more-menu" id="ow-more-menu" hidden>
+        <button type="button" data-view="air">Air</button>
         <button type="button" data-ow-replay>Replay</button>
         <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>
@@ -751,7 +753,7 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom.</p>
+    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air, dans la barre du haut, rassemble les aéronefs, les manifestes et les demandes JTAC.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>

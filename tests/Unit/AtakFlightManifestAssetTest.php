@@ -45,5 +45,9 @@ final class AtakFlightManifestAssetTest extends TestCase
         self::assertStringContainsString('Emport', $popup);
         self::assertStringContainsString('Autonomie', $popup);
         self::assertStringContainsString('ordnance', $air);
+        self::assertStringContainsString('eta_minutes', $air);
+        self::assertStringContainsString('Arrivée estimée', $air);
+        self::assertStringContainsString("'eta_minutes'", $api);
+        self::assertStringContainsString("'bingo_fuel'", $api);
     }
 }

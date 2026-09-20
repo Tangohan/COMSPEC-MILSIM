@@ -19,6 +19,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-202
 
 Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Choix : Paramètres du téléphone, ligne Dans le tube, ou options du jeu (Affichage situation).
 
+### Correction — Pictos du jeu sur la carte
+
+Les points, cases et alertes posés en jeu réapparaissent en couleur sur la carte du poste. Auparavant le picto était une silhouette transparente : il ne restait que le nom, quand il y en avait un. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Nouveau — Espace Air du poste
+
+Le poste Overwatch Beta ouvre un espace **Air** dans la barre du haut. Chaque aéronef déclaré apparaît avec son manifeste : indicatif, mission, emport, carburant, autonomie et arrivée estimée. Les demandes JTAC se lisent et se préparent dans le même tiroir. Clic droit sur la carte pour reprendre la grille. Rechargez Overwatch Beta (Ctrl+F5).
+
 ### Correction — Manifeste de vol et repères texte
 
 Le manifeste de vol s’enregistre même si l’emport est saisi en phrase libre. Les repères posés en jeu comme du texte seul, sans picto, apparaissent au poste dans un cadre coloré. Rechargez Overwatch Beta (Ctrl+F5).

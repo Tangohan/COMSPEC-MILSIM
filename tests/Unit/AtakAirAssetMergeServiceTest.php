@@ -184,4 +184,39 @@ final class AtakAirAssetMergeServiceTest extends TestCase
         self::assertSame(3, $merged[0]['crew_count']);
         self::assertSame('N-01', $merged[0]['pilot']);
     }
+
+    public function testManifestEtaAndOrdnanceSurviveOccupancyMerge(): void
+    {
+        $merged = AtakAirAssetMergeService::merge([
+            [
+                'callsign' => 'HAWK-1',
+                'model' => 'Chinook HC5',
+                'aircraft_type' => 'helicopter',
+                'ordnance' => 'Hydra · Hellfire',
+                'eta_minutes' => 12,
+                'bingo_fuel' => '20 min',
+                'station' => 'LZ North',
+                'pos_x' => 1000.0,
+                'pos_y' => 2000.0,
+                'source' => 'manifest',
+            ],
+            [
+                'callsign' => 'Alpha 1-4',
+                'model' => 'Chinook HC5',
+                'aircraft_type' => 'helicopter',
+                'pos_x' => 1008.0,
+                'pos_y' => 2004.0,
+                'vehicle_id' => '2:14',
+                'source' => 'occupancy',
+            ],
+        ], []);
+
+        self::assertCount(1, $merged);
+        self::assertSame('HAWK-1', $merged[0]['callsign']);
+        self::assertSame('Hydra · Hellfire', $merged[0]['ordnance']);
+        self::assertSame(12, $merged[0]['eta_minutes']);
+        self::assertSame('20 min', $merged[0]['bingo_fuel']);
+        self::assertSame('LZ North', $merged[0]['station']);
+        self::assertSame(1008.0, $merged[0]['pos_x']);
+    }
 }
