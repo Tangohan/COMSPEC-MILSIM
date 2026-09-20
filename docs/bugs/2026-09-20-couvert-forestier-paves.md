@@ -2,30 +2,28 @@
 
 ## Contexte
 
-Poste Overwatch Beta, vue 2D immersif ou Relief 3D, dézoom sur tout le théâtre. Relevé bâtiments / forêts déjà reçu.
+Poste Overwatch Beta, vue 2D immersif sur photo aérienne. Relevé bâtiments / forêts déjà reçu. Bosquets isolés dans les champs.
 
 ## Symptôme
 
-Toute l’île se tapisse de prismes ou de carrés verts. En zoomant, les arbres restent des pavés illisibles. Le relevé apparaît d’un coup, sans indication de chargement.
+Chaque arbre d’un bosquet apparaît comme un carré vert, axe aligné, avec un contour. Un bosquet dans un champ forme une grille de pavés, collée sur la photo. Les constructions, elles, se lisent correctement en emprise claire.
 
 ## Cause
 
-Chaque objet forêt était dessiné comme un rectangle (emprise) ou regroupé dans une grille de cubes. Au large, des milliers de pavés recouvraient le fond. Aucun message n’attendait la fin du chargement.
+Le relevé envoie un volume par arbre (emprise). Le rendu 2D dessinait cette emprise (rectangle ou cercle avec contour) telle quelle. Un bosquet de dix arbres devenait dix pavés.
 
 ## Correctif
 
-Le couvert n’est plus dessiné à l’échelle du théâtre. En se rapprochant, il apparaît en taches de houppier (cercles), pas en carrés. Un bandeau « Chargement du relevé » s’affiche si l’attente dépasse un court délai.
+Les objets de couvert sont regroupés par voisinage. Chaque groupe est dessiné en tache de houppier (dégradé radial, sans contour), assez large pour fondre les arbres d’un même bosquet. Les constructions restent des polygones d’emprise. En Relief 3D, le couvert est aussi regroupé plus largement.
 
 ## Fichiers touchés
 
 - `public/assets/js/atak-overwatch-beta.js`
 - `public/assets/js/overwatch-gl/OverwatchGlLayers.js`
-- `views/atak-overwatch-beta.php`
-- `public/assets/css/atak-overwatch-beta.css`
 
 ## Vérification
 
-Recharger Overwatch Beta (Ctrl+F5). Dézoomer : plus de tapis de pavés verts. Se rapprocher d’un bois : taches de houppier. Si le relevé met un moment, le message de chargement apparaît puis disparaît.
+Recharger Overwatch Beta (Ctrl+F5). Passez en 2D immersif sur la photo aérienne, au-dessus d’un bosquet dans un champ : une ou deux taches, pas une grille de carrés. Un bâtiment isolé reste un toit clair.
 
 ## Statut
 

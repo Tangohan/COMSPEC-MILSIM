@@ -268,6 +268,28 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(697, '2026-09-20', 'Poste Overwatch : manifeste de vol et repères texte', 'Le manifeste de vol s’enregistre même si l’emport est saisi en phrase libre. Les repères posés en jeu comme du texte seul, sans picto, apparaissent au poste dans un cadre coloré, lisible sur la photo. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Repères texte seul lisibles dans un cadre coloré',
+            ], [], [
+                'Le manifeste de vol était refusé quand l’emport n’était pas une liste structurée',
+                'Les noms de lieux sans picto n’avaient plus de cadre au poste',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Un manifeste avec emport en phrase libre doit bien arriver au poste. Sur la photo aérienne, un nom de lieu sans picto (navire, zone en mer) doit apparaître dans un cadre coloré, pas seulement en texte flottant.',
+            ], 'Overwatch Beta'),
+            $pr(696, '2026-09-20', 'Poste Overwatch : liaison différée sur le cadre', 'Quand une position n’est plus à l’instant, l’indicatif reste le même : le cadre passe en pointillés, ambre ou rouge selon l’ancienneté. Plus de bandeau « Différé » collé sous le nom. Le détail reste au survol et dans la fiche. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Cadre en pointillés colorés quand la position n’est plus à l’instant',
+            ], [
+                'Le bandeau de texte sous l’indicatif a disparu',
+            ], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Une position en retard : le cadre de l’indicatif est en pointillés, sans texte supplémentaire sur la carte. Survolez pour lire l’ancienneté.',
+            ], 'Overwatch Beta'),
+            $pr(695, '2026-09-20', 'Poste Overwatch : bosquets en houppier', 'En 2D immersif, les arbres d’un même bosquet se lisent comme un houppier, collé à la photo, sans carré autour de chaque arbre. Les constructions restent en emprise claire. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Bosquets fusionnés en tache de houppier sur la photo aérienne',
+            ], [
+                'Le couvert ne dessine plus un pavé par arbre',
+            ], [], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en 2D immersif sur la photo aérienne : un bosquet dans un champ doit former une ou deux taches, pas une grille de carrés verts. Les bâtiments restent des toits clairs.',
+            ], 'Overwatch Beta'),
             $pr(694, '2026-09-20', 'Affichage situation : boussole seule sous jumelles', 'Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Le choix se fait dans Paramètres du téléphone, ligne Dans le tube, ou dans les options du jeu. Relancez Arma complètement (Overwatch 1.6.4).', [
                 'Boussole seule dans le tube, au choix',
             ], [], [], ['atak'], [

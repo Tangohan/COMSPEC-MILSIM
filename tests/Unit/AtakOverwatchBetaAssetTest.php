@@ -192,10 +192,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('drawForestBlob', $overwatchJs);
         self::assertStringContainsString('isForestKind', $overwatchJs);
         self::assertStringContainsString('createRadialGradient', $overwatchJs);
+        self::assertStringContainsString('if (isForestKind(item.kind)) return;', $overwatchJs);
         self::assertStringContainsString('Chargement du relevé', $overwatchJs);
         self::assertStringContainsString('is-squad-pulse', $overwatchJs);
         self::assertStringContainsString('id="ow-squad-color"', $view);
         self::assertStringContainsString('is-offline', $overwatchJs);
+        self::assertStringContainsString('is-stale-pos', $overwatchJs);
+        self::assertStringContainsString("is-delayed", $overwatchJs);
+        self::assertStringNotContainsString('ow-marker-age-chip', $overwatchJs);
         self::assertStringContainsString('data-ow-rail-more', $view);
         self::assertStringContainsString('id="ow-rail-extra"', $view);
         self::assertStringContainsString('aria-controls="ow-rail-extra"', $view);
@@ -283,6 +287,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         $armaMarkersJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/arma-map-markers.js');
         self::assertStringContainsString('function isTechnicalLabel', $armaMarkersJs);
         self::assertStringContainsString('function isBuildingLikeArea', $armaMarkersJs);
+        self::assertStringContainsString('function isInvisibleArmaIcon', $armaMarkersJs);
+        self::assertStringContainsString('arma-map-marker-label', $armaMarkersJs);
+        self::assertStringContainsString('is-framed', $armaMarkersJs);
         self::assertStringContainsString('buildingFootprintStyle', $armaMarkersJs);
         self::assertStringContainsString('id="ow-drawbar"', $view);
         self::assertStringContainsString('<option value="immersive">2D immersif</option>', $view);

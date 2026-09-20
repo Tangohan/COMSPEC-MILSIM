@@ -2674,20 +2674,13 @@ class AtakDataRepository
             'auth' => $data['auth'] ?? null,
             'auth_code' => $data['auth_code'] ?? $data['authCode'] ?? null,
             'pilot' => $data['pilot'] ?? null,
-            'crew' => (static function ($data) {
-                $crew = $data['occupants'] ?? $data['crew'] ?? null;
-                if ($crew === null) {
-                    return null;
-                }
-
-                return is_string($crew) ? $crew : json_encode($crew);
-            })($data),
+            'crew' => self::jsonForSqlColumn($data['occupants'] ?? $data['crew'] ?? null),
             'fuel_pct' => isset($data['fuelPct']) ? (int) $data['fuelPct'] : (isset($data['fuel_pct']) ? (int) $data['fuel_pct'] : null),
-            'ordnance' => isset($data['ordnance']) ? (is_string($data['ordnance']) ? $data['ordnance'] : json_encode($data['ordnance'])) : null,
+            'ordnance' => self::jsonForSqlColumn($data['ordnance'] ?? null),
             'station' => $data['station'] ?? null,
             'eta_minutes' => isset($data['etaMinutes']) ? (int) $data['etaMinutes'] : (isset($data['eta_minutes']) ? (int) $data['eta_minutes'] : null),
             'bingo_fuel' => $data['bingoFuel'] ?? $data['bingo_fuel'] ?? null,
-            'checklist' => isset($data['checklist']) ? (is_string($data['checklist']) ? $data['checklist'] : json_encode($data['checklist'])) : null,
+            'checklist' => self::jsonForSqlColumn($data['checklist'] ?? null),
             'pos_x' => $data['pos_x'] ?? (is_array($pos) && isset($pos[0]) ? (float) $pos[0] : null),
             'pos_y' => $data['pos_y'] ?? (is_array($pos) && isset($pos[1]) ? (float) $pos[1] : null),
             'pos_z' => $data['pos_z'] ?? (is_array($pos) && isset($pos[2]) ? (float) $pos[2] : null),
@@ -2757,7 +2750,71 @@ class AtakDataRepository
         }
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_air_assets WHERE id = ?');
         $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? self::presentAirAssetRow($row) : $row;
+    }
+
+    /**
+     * Colonnes JSON MariaDB : une phrase métier (emport, notes) n’est pas du JSON.
+     * On encode toujours une valeur JSON valide.
+     */
+    public static function jsonForSqlColumn(mixed $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+        if (is_array($raw) || is_object($raw)) {
+            $json = json_encode($raw, JSON_UNESCAPED_UNICODE);
+            return $json === false ? null : $json;
+        }
+        if (is_bool($raw) || is_int($raw) || is_float($raw)) {
+            return json_encode($raw);
+        }
+        $s = trim((string) $raw);
+        if ($s === '') {
+            return null;
+        }
+        json_decode($s);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $s;
+        }
+
+        return json_encode($s, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public static function presentAirAssetRow(array $row): array
+    {
+        foreach (['ordnance', 'checklist'] as $key) {
+            $val = $row[$key] ?? null;
+            if (!is_string($val) || $val === '') {
+                continue;
+            }
+            $decoded = json_decode($val, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                continue;
+            }
+            if (is_string($decoded)) {
+                $row[$key] = $decoded;
+            } elseif (is_array($decoded) && $decoded !== [] && array_is_list($decoded)) {
+                $allText = true;
+                foreach ($decoded as $bit) {
+                    if (!is_string($bit) && !is_int($bit) && !is_float($bit)) {
+                        $allText = false;
+                        break;
+                    }
+                }
+                if ($allText) {
+                    $row[$key] = implode(' · ', array_map(static fn ($b) => (string) $b, $decoded));
+                }
+            }
+        }
+
+        return $row;
     }
 
     /**
@@ -2827,6 +2884,7 @@ class AtakDataRepository
         $stmt->execute([$tenantId, $mapId, $cutoff]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$r) {
+            $r = self::presentAirAssetRow($r);
             $r['status'] = $r['status'] ?? 'IN-FLIGHT';
             $crew = $r['crew'] ?? null;
             if (is_string($crew) && $crew !== '') {

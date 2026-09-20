@@ -675,14 +675,14 @@ window.OverwatchGlLayers = (function () {
       } else {
         layers.push(new window.deck.PolygonLayer({
           id: 'ow-gl-forests',
-          data: clusterForests(forests, zoom >= 14 ? 50 : 90),
+          data: clusterForests(forests, zoom >= 14 ? 70 : 110),
           extruded: true,
           filled: true,
           getPolygon: function (d) { return d.polygon; },
-          getElevation: function (d) { return Math.max(3, Math.min(10, Number(d.height) || 6)); },
+          getElevation: function (d) { return Math.max(2.2, Math.min(7, Number(d.height) || 5)); },
           getFillColor: function (d) {
-            var a = Math.max(70, Math.min(160, (Number(d.density) || 1) * 110));
-            return [28, 92, 48, a];
+            var a = Math.max(55, Math.min(120, (Number(d.density) || 1) * 80));
+            return [24, 78, 40, a];
           },
           material: false,
           pickable: false
@@ -835,7 +835,7 @@ window.OverwatchGlLayers = (function () {
   function forestCollection() {
     var zoom = glMap ? glMap.getZoom() : 12;
     if (zoom < 13.4) return { type: 'FeatureCollection', features: [] };
-    var clustered = clusterForests(forests, zoom >= 14 ? 50 : 90);
+    var clustered = clusterForests(forests, zoom >= 14 ? 70 : 110);
     return {
       type: 'FeatureCollection',
       features: clustered.map(function (d) {

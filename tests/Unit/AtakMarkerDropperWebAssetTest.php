@@ -43,6 +43,8 @@ final class AtakMarkerDropperWebAssetTest extends TestCase
         self::assertStringContainsString('o_', $bridge);
 
         self::assertStringContainsString("data.source === 'bce_widget'", $js);
+        self::assertStringContainsString('function isInvisibleArmaIcon', $js);
+        self::assertStringContainsString('empty_ca', $js);
         self::assertStringContainsString('losange', strtolower($note));
         self::assertStringNotContainsString('endpoint', $note);
     }
