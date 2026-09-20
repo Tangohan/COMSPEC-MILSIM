@@ -268,6 +268,23 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(699, '2026-09-20', 'Poste Overwatch : pictos du jeu de nouveau visibles', 'Les points, cases et alertes posés en jeu réapparaissent en couleur sur la carte du poste. Auparavant, le picto était une silhouette transparente : seuls les noms restaient lisibles. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Pictos du jeu (point, case, alerte) dessinés en couleur, comme sur la carte en jeu',
+            ], [], [
+                'Les marqueurs du théâtre n’avaient plus de picto, seulement un nom quand il y en avait un',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Les marqueurs posés en jeu doivent montrer un picto coloré, pas seulement un nom. Un nom sans picto (navire, zone en mer) reste dans un cadre.',
+            ], 'Overwatch Beta'),
+            $pr(698, '2026-09-20', 'Poste Overwatch : aéronefs, manifestes et demandes d’appui', 'Le poste Overwatch Beta ouvre un espace Air : chaque aéronef déclaré apparaît avec son manifeste (indicatif, emport, carburant, arrivée estimée). Les demandes JTAC se lisent et se préparent depuis le même tiroir. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Espace Air dans la barre du haut, avec fiches aéronefs et demandes d’appui',
+                'Arrivée estimée, emport et autonomie visibles sur chaque fiche',
+            ], [
+                'Une demande d’appui se prépare depuis Air, clic droit sur la carte pour reprendre la grille',
+            ], [
+                'Les aéronefs et les demandes JTAC n’avaient pas de page dédiée sur Overwatch Beta',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Dans la barre du haut, ouvrez Air. Un manifeste de vol envoyé depuis le jeu doit apparaître avec l’emport et l’arrivée estimée. Une demande d’appui se prépare dans le même tiroir.',
+            ], 'Overwatch Beta'),
             $pr(697, '2026-09-20', 'Poste Overwatch : manifeste de vol et repères texte', 'Le manifeste de vol s’enregistre même si l’emport est saisi en phrase libre. Les repères posés en jeu comme du texte seul, sans picto, apparaissent au poste dans un cadre coloré, lisible sur la photo. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Repères texte seul lisibles dans un cadre coloré',
             ], [], [

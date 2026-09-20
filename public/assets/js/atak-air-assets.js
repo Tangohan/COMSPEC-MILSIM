@@ -106,6 +106,7 @@ window.ATAKAirAssets = (function () {
         (a.auth_code || a.auth ? '<div class="atak-air-asset-auth">Auth. ' + esc(a.auth_code || a.auth) + '</div>' : '') +
         (n ? '<div class="atak-air-asset-crew">' + n + ' à bord</div>' : '') +
         (a.ordnance ? '<div class="atak-air-asset-ordnance">' + esc(a.ordnance) + '</div>' : '') +
+        (a.eta_minutes != null && a.eta_minutes !== '' ? '<div class="atak-air-asset-eta">Arrivée estimée ' + esc(String(a.eta_minutes)) + ' min</div>' : '') +
         (a.bingo_fuel ? '<div class="atak-air-asset-play">Autonomie ' + esc(String(a.bingo_fuel)) + '</div>' : '') +
         (a.fuel_pct != null && a.fuel_pct !== '' ? '<div class="atak-air-asset-fuel">Carburant ' + esc(String(a.fuel_pct)) + ' %</div>' : '') +
         (notes ? '<div class="atak-air-asset-notes">' + esc(notes) + '</div>' : '') +

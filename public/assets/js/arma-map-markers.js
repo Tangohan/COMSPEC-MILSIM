@@ -731,6 +731,19 @@ window.ArmaMapMarkers = (function () {
     return /\/(military|handdrawn)\//i.test(String(pngUrl || ''));
   }
 
+  /**
+   * Silhouettes military/handdrawn : PNG blanc/transparent. Si le fichier répond 200,
+   * le repli SVG ne s’affiche jamais — le picto disparaît. Drapeaux et lieux gardent le PNG.
+   */
+  function shouldUsePngGlyph(decoded, pngUrl) {
+    if (!pngUrl) return false;
+    var kind = decoded && decoded.kind;
+    if (kind === 'flag' || kind === 'loc') return true;
+    if (kind === 'nato' || kind === 'metis' || kind === 'handdrawn' || kind === 'unknown') return false;
+    if (pngNeedsColorMask(pngUrl)) return false;
+    return true;
+  }
+
   function escapeAttr(s) {
     return String(s || '')
       .replace(/&/g, '&amp;')
@@ -792,6 +805,7 @@ window.ArmaMapMarkers = (function () {
     var labelColor = mutedLabel ? '#94a3b8' : color;
     var framed = isInvisibleArmaIcon(data);
     var pngUrl = framed ? '' : resolvePngUrl(data);
+    if (!shouldUsePngGlyph(decoded, pngUrl)) pngUrl = '';
 
     var S = window.ATAKMarkerSizes;
     var glyphPx = S ? S.px('normal') : 17;
@@ -1091,6 +1105,8 @@ window.ArmaMapMarkers = (function () {
     readBrush: readBrush,
     readSize: readSize,
     isInvisibleArmaIcon: isInvisibleArmaIcon,
+    pngNeedsColorMask: pngNeedsColorMask,
+    shouldUsePngGlyph: shouldUsePngGlyph,
     resolvePngUrl: resolvePngUrl,
     armaTextureToPngUrl: armaTextureToPngUrl
   };

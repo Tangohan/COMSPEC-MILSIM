@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(494, $byKind['update']);
-        self::assertCount(500, $all);
+        self::assertSame(496, $byKind['update']);
+        self::assertCount(502, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -774,6 +774,21 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('aide', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHelpI['activity']));
+        $gameGlyphs = DevDispatchCatalog::find('update', '699');
+        self::assertNotNull($gameGlyphs);
+        self::assertSame('00699', $gameGlyphs['number_pad']);
+        self::assertStringContainsString('pictos', strtolower((string) $gameGlyphs['title']));
+        self::assertStringContainsString('couleur', strtolower((string) $gameGlyphs['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $gameGlyphs['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $gameGlyphs['activity']));
+        $airPage = DevDispatchCatalog::find('update', '698');
+        self::assertNotNull($airPage);
+        self::assertSame('00698', $airPage['number_pad']);
+        self::assertStringContainsString('aéronefs', strtolower((string) $airPage['title']));
+        self::assertStringContainsString('manifestes', strtolower((string) $airPage['activity']));
+        self::assertStringContainsString('jtac', strtolower((string) $airPage['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $airPage['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $airPage['activity']));
         $manifestText = DevDispatchCatalog::find('update', '697');
         self::assertNotNull($manifestText);
         self::assertSame('00697', $manifestText['number_pad']);

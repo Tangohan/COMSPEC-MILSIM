@@ -11187,8 +11187,15 @@ class AtakApiController
                 'fuel_pct' => isset($r['fuel_pct']) ? (int) $r['fuel_pct'] : null,
                 'auth_code' => $r['auth_code'] ?? $r['auth'] ?? null,
                 'station' => $r['station'] ?? null,
+                'dest' => $r['station'] ?? $r['dest'] ?? null,
                 'mission_id' => $r['mission_id'] ?? null,
                 'checklist' => $r['checklist'] ?? null,
+                'notes' => $r['notes'] ?? $r['checklist'] ?? null,
+                'ordnance' => $r['ordnance'] ?? null,
+                'eta_minutes' => isset($r['eta_minutes']) && $r['eta_minutes'] !== '' && $r['eta_minutes'] !== null
+                    ? (int) $r['eta_minutes']
+                    : null,
+                'bingo_fuel' => $r['bingo_fuel'] ?? null,
                 'updated_at' => $r['updated_at'],
                 'source' => $r['source'] ?? null,
                 'vehicle_id' => $r['vehicle_id'] ?? null,

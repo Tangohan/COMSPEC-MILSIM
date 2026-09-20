@@ -459,6 +459,10 @@ button.ow-mate strong{flex:0 0 auto;font-family:var(--ow-mono);font-size:11px;fo
 .ow-card-head{height:34px;border-bottom:1px solid #1c2321;display:flex;align-items:center;padding:0 9px;font-size:12px;font-weight:600}
 .ow-card-head span:last-child{margin-left:auto}
 .ow-card-body{padding:9px;font-size:10px}
+button.ow-air-card{appearance:none;-webkit-appearance:none;display:block;width:100%;text-align:left;border:1px solid #222a27;background:#0d1110;margin-bottom:10px;border-radius:6px;color:inherit;padding:0;cursor:pointer}
+button.ow-air-card:hover{border-color:#2f4a40;background:#101615}
+button.ow-air-card .ow-card-head{pointer-events:none}
+.ow-air-card .ow-kv{margin-bottom:0;font-size:11px}
 .ow-thumb{height:128px;background:#1a1f1d center/cover no-repeat;position:relative;cursor:pointer}
 .ow-card.is-blurred .ow-thumb{filter:blur(14px)}
 .ow-photo-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}

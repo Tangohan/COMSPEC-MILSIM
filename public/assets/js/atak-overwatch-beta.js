@@ -57,6 +57,8 @@
   var unreadByChannel = {};
   var photos = [];
   var nineLines = [];
+  var casRows = [];
+  var airAssets = [];
   var medevacs = [];
   var zoneAlerts = [];
   var selected = null;
@@ -1202,6 +1204,9 @@
       var tip = title ? (desc ? (String(title) + ' — ' + desc) : String(title)) : '';
       if (armaMarkerLayers[id]) {
         if (armaMarkerLayers[id].setLatLng) armaMarkerLayers[id].setLatLng(latlng);
+        if (!buildingLike && helper.leafletDivIcon && armaMarkerLayers[id].setIcon && !(helper.isAreaShape && helper.isAreaShape(data))) {
+          armaMarkerLayers[id].setIcon(helper.leafletDivIcon(L, data));
+        }
         if (buildingLike && armaMarkerLayers[id].setStyle && helper.buildingFootprintStyle) {
           armaMarkerLayers[id].setStyle(helper.buildingFootprintStyle());
         }
@@ -4370,10 +4375,11 @@
     if (act === 'sitrep') saveSitrep(ll);
     if (act === 'salute' || act === 'nineline' || act === 'casevac') {
       rememberClick(ll);
-      openView('mission');
+      if (act === 'nineline') openView('air');
+      else openView('mission');
       toast(act === 'salute'
         ? 'Grille reprise dans le compte rendu SALUTE.'
-        : (act === 'nineline' ? 'Grille reprise dans la 9-line.' : 'Grille reprise dans le CASEVAC.'));
+        : (act === 'nineline' ? 'Grille reprise dans la demande d’appui.' : 'Grille reprise dans le CASEVAC.'));
       return;
     }
     if (act === 'po') { placeReachPoint(ll); finishPoSession(); }
@@ -4512,7 +4518,231 @@
   function loadNine() {
     return api('/api/nine-line?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       nineLines = asList(payload, 'items');
+      paintAirLists();
     }).catch(function () { nineLines = []; });
+  }
+
+  function loadCas() {
+    return api('/api/cas?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      casRows = asList(payload, 'items');
+      paintAirLists();
+    }).catch(function () { casRows = []; });
+  }
+
+  function loadAirAssets() {
+    return api('/api/atak/air-assets?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      airAssets = asList(payload, 'items');
+      paintAirLists();
+    }).catch(function () { airAssets = []; });
+  }
+
+  function jtacRows() {
+    var seen = {};
+    var out = [];
+    casRows.concat(nineLines).forEach(function (row) {
+      if (!row) return;
+      var id = String(row.id || '');
+      if (id && seen[id]) return;
+      if (id) seen[id] = true;
+      out.push(row);
+    });
+    return out;
+  }
+
+  function airStatusLabel(s) {
+    s = String(s || '').toUpperCase();
+    if (s === 'SUSPECT') return 'À vérifier';
+    if (s === 'OFFLINE') return 'Hors liaison';
+    if (s === 'AVAILABLE') return 'Au sol';
+    return 'En vol';
+  }
+
+  function airPilotLabel(s) {
+    s = String(s || '').toUpperCase();
+    if (s === 'ROGER') return 'Reçu';
+    if (s === 'INBOUND') return 'En approche';
+    if (s === 'ONSTA') return 'À poste';
+    if (s === 'ENGAGED') return 'Engagé';
+    if (s === 'RTB') return 'Retour';
+    return '';
+  }
+
+  function airRoleLabel(s) {
+    s = String(s || '').toLowerCase();
+    if (s === 'transport') return 'Transport';
+    if (s === 'cas') return 'Appui aérien';
+    if (s === 'recon') return 'Reconnaissance';
+    if (s === 'medevac') return 'Évacuation sanitaire';
+    if (s === 'resupply') return 'Ravitaillement';
+    if (s === 'escort') return 'Escorte';
+    return '';
+  }
+
+  function jtacStatusLabel(s) {
+    s = String(s || '').toUpperCase();
+    if (s === 'DRAFT') return 'Brouillon';
+    if (s === 'SUBMITTED' || s === 'ACTIVE') return 'Transmise';
+    if (s === 'ACKNOWLEDGED') return 'Accusée';
+    if (s === 'CHECKING') return 'Vérification';
+    if (s === 'TARGET_ACQUIRED') return 'Objectif acquis';
+    if (s === 'INBOUND') return 'En approche';
+    if (s === 'CLEARED_HOT') return 'Feu autorisé';
+    if (s === 'ENGAGED') return 'Engagé';
+    if (s === 'BDA_PENDING') return 'Compte rendu en attente';
+    if (s === 'COMPLETE') return 'Terminée';
+    if (s === 'ABORTED' || s === 'CANCELLED') return 'Annulée';
+    if (s === 'REQUESTED') return 'Demandée';
+    if (s === 'LAUNCHED') return 'Décollée';
+    if (s === 'ON_SCENE') return 'Sur zone';
+    return s || 'Transmise';
+  }
+
+  function formatAirOrdnance(raw) {
+    if (raw == null || raw === '') return '';
+    if (Array.isArray(raw)) {
+      return raw.map(function (bit) { return String(bit); }).filter(Boolean).join(' · ');
+    }
+    if (typeof raw === 'object') {
+      var bits = [];
+      Object.keys(raw).forEach(function (key) {
+        var val = raw[key];
+        if (val == null || val === '') return;
+        bits.push(String(val));
+      });
+      return bits.join(' · ');
+    }
+    return String(raw);
+  }
+
+  function airCrewCount(row) {
+    var occ = row && (row.occupants || row.crew);
+    if (typeof occ === 'string') {
+      try { occ = JSON.parse(occ); } catch (e) { occ = []; }
+    }
+    if (Array.isArray(occ)) return occ.length;
+    var n = Number(row && row.crew_count);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function airEtaLabel(row) {
+    var n = Number(row && row.eta_minutes);
+    if (!Number.isFinite(n) || n < 0) return '';
+    if (n === 0) return 'Arrivée estimée maintenant';
+    return 'Arrivée estimée ' + n + ' min';
+  }
+
+  function airLocate(row) {
+    if (!row) return;
+    var cs = String(row.callsign || row.call_sign || '').toLowerCase();
+    var match = units.filter(function (unit) {
+      return callsign(unit).toLowerCase() === cs;
+    })[0];
+    if (match) {
+      selectUnit(match);
+      var loc = point(match);
+      if (loc) map.setView(loc, Math.max(map.getZoom(), 4));
+      return;
+    }
+    var x = Number(row.pos_x);
+    var y = Number(row.pos_y);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      var ll = worldToLatLng(x, y);
+      if (ll) map.setView(ll, Math.max(map.getZoom(), 4));
+    }
+  }
+
+  function airAssetCardHtml(row) {
+    var status = airStatusLabel(row.status);
+    var pilot = airPilotLabel(row.pilot_status);
+    var role = airRoleLabel(row.mission_id);
+    var dest = String(row.station || row.dest || '').trim();
+    var eta = airEtaLabel(row);
+    var ordnance = formatAirOrdnance(row.ordnance);
+    var notes = String(row.checklist || row.notes || '').trim();
+    if (notes.charAt(0) === '{') notes = '';
+    var n = airCrewCount(row);
+    var kv = '';
+    if (row.model) kv += '<span>Appareil</span><span>' + escapeHtml(row.model) + (row.aircraft_count > 1 ? ' ×' + row.aircraft_count : '') + '</span>';
+    if (role) kv += '<span>Mission</span><span>' + escapeHtml(role) + '</span>';
+    if (dest) kv += '<span>Destination</span><span>' + escapeHtml(dest) + '</span>';
+    if (eta) kv += '<span>ETA</span><span>' + escapeHtml(eta.replace(/^Arrivée estimée /, '')) + '</span>';
+    if (row.freq) kv += '<span>Fréquence</span><span>' + escapeHtml(row.freq) + '</span>';
+    if (row.laser) kv += '<span>Code laser</span><span>' + escapeHtml(row.laser) + '</span>';
+    if (row.auth_code || row.auth) kv += '<span>Authentification</span><span>' + escapeHtml(row.auth_code || row.auth) + '</span>';
+    if (n) kv += '<span>À bord</span><span>' + n + ' personne' + (n > 1 ? 's' : '') + '</span>';
+    if (ordnance) kv += '<span>Emport</span><span>' + escapeHtml(ordnance) + '</span>';
+    if (row.fuel_pct != null && row.fuel_pct !== '') kv += '<span>Carburant</span><span>' + escapeHtml(String(row.fuel_pct)) + ' %</span>';
+    if (row.bingo_fuel) kv += '<span>Autonomie</span><span>' + escapeHtml(String(row.bingo_fuel)) + '</span>';
+    if (notes) kv += '<span>Notes</span><span>' + escapeHtml(notes) + '</span>';
+    var tag = status + (pilot ? ' · ' + pilot : '');
+    return '<button type="button" class="ow-air-card" data-air-locate="' + escapeHtml(String(row.callsign || '')) + '">' +
+      '<div class="ow-card-head"><span>' + escapeHtml(clean(row.callsign, 'Aéronef')) +
+      '</span><span class="ow-tag">' + escapeHtml(tag) + '</span></div>' +
+      (kv ? '<div class="ow-card-body"><div class="ow-kv">' + kv + '</div></div>' : '') +
+      '</button>';
+  }
+
+  function jtacCardHtml(row) {
+    var author = clean(row.author || row.jtac || row.call_sign, 'JTAC');
+    var assigned = String(row.assignedAircraft || row.assigned_aircraft || '').trim();
+    var target = String(row.line5 || '').trim();
+    var grid = String(row.line1 || row.line6 || '').trim();
+    var kv = '';
+    if (assigned) kv += '<span>Appareil</span><span>' + escapeHtml(assigned) + '</span>';
+    if (grid) kv += '<span>Point initial</span><span>' + escapeHtml(grid) + '</span>';
+    if (target) kv += '<span>Objectif</span><span>' + escapeHtml(target) + '</span>';
+    if (row.line7) kv += '<span>Type</span><span>' + escapeHtml(String(row.line7)) + '</span>';
+    return '<div class="ow-card">' +
+      '<div class="ow-card-head"><span>' + escapeHtml(author) +
+      '</span><span class="ow-tag">' + escapeHtml(jtacStatusLabel(row.status)) + '</span></div>' +
+      (kv ? '<div class="ow-card-body"><div class="ow-kv">' + kv + '</div></div>' : '') +
+      '</div>';
+  }
+
+  function nineFormHtml() {
+    return '<form class="ow-form-grid" id="ow-nine-form">' +
+      '<label>IP / grille<input name="line1" required placeholder="Point initial" value="' + escapeHtml(lastClickGrid) + '"></label>' +
+      '<label>Cap<input name="line2" placeholder="Cap d’approche"></label>' +
+      '<label>Distance<input name="line3" placeholder="Distance à la cible"></label>' +
+      '<label>Élévation<input name="line4" placeholder="Altitude cible"></label>' +
+      '<label>Description<input name="line5" placeholder="Nature de la cible"></label>' +
+      '<label>Marquage<input name="line6" placeholder="Fumée, laser…"></label>' +
+      '<label>Type de mission<input name="line7" value="CAS"></label>' +
+      '<label>Amis à proximité<input name="line8" placeholder="Position des amis"></label>' +
+      '<label>Sortie<input name="line9" placeholder="Itinéraire de sortie"></label>' +
+      '<button class="ow-primary" type="submit">Envoyer la demande</button></form>';
+  }
+
+  function airListHtml() {
+    return airAssets.map(airAssetCardHtml).join('') ||
+      '<p class="ow-help">Aucun aéronef déclaré pour le moment. Un manifeste de vol envoyé depuis le jeu apparaît ici avec l’emport, le carburant et l’arrivée estimée.</p>';
+  }
+
+  function jtacListHtml() {
+    var rows = jtacRows().slice(0, 12);
+    return rows.map(jtacCardHtml).join('') ||
+      '<p class="ow-help">Aucune demande d’appui pour le moment.</p>';
+  }
+
+  function paintAirLists() {
+    var airHost = document.getElementById('ow-air-list');
+    var jtacHost = document.getElementById('ow-jtac-list');
+    if (airHost) airHost.innerHTML = airListHtml();
+    if (jtacHost) jtacHost.innerHTML = jtacListHtml();
+  }
+
+  function airHtml() {
+    return card('Situation aérienne', String(airAssets.length),
+      '<div class="ow-event"><span>Aéronefs</span><strong>' + airAssets.length + '</strong></div>' +
+      '<div class="ow-event"><span>Demandes d’appui</span><strong>' + jtacRows().length + '</strong></div>') +
+      '<p class="ow-kicker">Aéronefs</p>' +
+      '<p class="ow-help">Manifestes de vol reçus du jeu : indicatif, mission, emport, carburant et arrivée estimée. Cliquez une fiche pour centrer la carte.</p>' +
+      '<div id="ow-air-list">' + airListHtml() + '</div>' +
+      '<p class="ow-kicker">Demandes JTAC</p>' +
+      '<p class="ow-help">Les 9-line transmises par le terrain ou préparées ici. Clic droit sur la carte pour reprendre la grille.</p>' +
+      '<div id="ow-jtac-list">' + jtacListHtml() + '</div>' +
+      '<p class="ow-kicker">Nouvelle demande d’appui</p>' +
+      nineFormHtml();
   }
 
   function loadMedevac() {
@@ -4560,21 +4790,12 @@
       '<label>Équipement<input name="equipment" placeholder="Ex. RPG, mitrailleuse"></label>' +
       '<input type="hidden" name="grid" value="' + escapeHtml(lastClickGrid) + '">' +
       '<button class="ow-primary" type="submit">Transmettre le SALUTE</button></form>' +
-      '<p class="ow-kicker">9-line / appui aérien</p>' +
-      (nineLines.slice(0, 5).map(function (row) {
-        return '<div class="ow-event"><span>' + escapeHtml(clean(row.author, 'JTAC')) + '</span><span class="ow-tag">' + escapeHtml(clean(row.status, 'ACTIVE')) + '</span></div>';
+      '<p class="ow-kicker">Appui aérien</p>' +
+      '<p class="ow-help">Les aéronefs, les manifestes et les demandes JTAC sont dans l’espace Air.</p>' +
+      '<button type="button" class="ow-secondary" data-open-view="air">Ouvrir Air</button>' +
+      (jtacRows().slice(0, 3).map(function (row) {
+        return '<div class="ow-event"><span>' + escapeHtml(clean(row.author || row.jtac, 'JTAC')) + '</span><span class="ow-tag">' + escapeHtml(jtacStatusLabel(row.status)) + '</span></div>';
       }).join('') || '<p class="ow-help">Aucune demande d’appui pour le moment.</p>') +
-      '<form class="ow-form-grid" id="ow-nine-form">' +
-      '<label>IP / grille<input name="line1" required placeholder="Point initial" value="' + escapeHtml(lastClickGrid) + '"></label>' +
-      '<label>Cap<input name="line2" placeholder="Cap d’approche"></label>' +
-      '<label>Distance<input name="line3" placeholder="Distance à la cible"></label>' +
-      '<label>Élévation<input name="line4" placeholder="Altitude cible"></label>' +
-      '<label>Description<input name="line5" placeholder="Nature de la cible"></label>' +
-      '<label>Marquage<input name="line6" placeholder="Fumée, laser…"></label>' +
-      '<label>Type de mission<input name="line7" value="CAS"></label>' +
-      '<label>Amis à proximité<input name="line8" placeholder="Position des amis"></label>' +
-      '<label>Sortie<input name="line9" placeholder="Itinéraire de sortie"></label>' +
-      '<button class="ow-primary" type="submit">Envoyer 9-line</button></form>' +
       '<p class="ow-kicker">CASEVAC</p>' +
       (medevacs.slice(0, 5).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(clean(row.status, 'OPEN')) + '</span></div>';
@@ -4764,8 +4985,11 @@
           line9: data.get('line9')
         }
       })
-        .then(function () { toast('9-Line transmise.'); loadNine().then(function () { openView('mission'); }); })
-        .catch(function () { toast('9-Line refusée.'); });
+        .then(function () {
+          toast('Demande d’appui transmise.');
+          Promise.all([loadNine(), loadCas()]).then(function () { openView('air'); });
+        })
+        .catch(function () { toast('Demande d’appui refusée.'); });
     });
     var med = document.getElementById('ow-medevac-form');
     if (med) med.addEventListener('submit', function (event) {
@@ -4943,6 +5167,9 @@
     bindGroupTaskForms(document.getElementById('ow-drawer'));
     bindFsAlertForms(document.getElementById('ow-drawer'));
     fillGroupTaskSelects(true);
+    document.querySelectorAll('[data-open-view]').forEach(function (button) {
+      button.addEventListener('click', function () { openView(button.getAttribute('data-open-view')); });
+    });
     fillFsAlertSelects(true);
     document.querySelectorAll('[data-ow-group-task]').forEach(function (button) {
       button.addEventListener('click', function () { openSquadTaskForm(''); });
@@ -4973,9 +5200,17 @@
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
     if (name === 'layers') { openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
-      Promise.all([loadNine(), loadMedevac(), loadGroupTasks()]).then(function () {
+      Promise.all([loadNine(), loadCas(), loadMedevac(), loadGroupTasks()]).then(function () {
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
+      });
+      return;
+    }
+    if (name === 'air') {
+      Promise.all([loadAirAssets(), loadNine(), loadCas()]).then(function () {
+        openDrawer('Appui aérien', 'Air', airHtml());
+        bindDrawerForms();
+        map.invalidateSize();
       });
       return;
     }
@@ -5011,6 +5246,7 @@
     ['Bloc-notes du poste', 'Mission', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'notes' } })); }],
     ['Ouvrir le tchat opérationnel', 'Ordre', function () { openView('comms'); }],
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
+    ['Ouvrir Air', 'Air', function () { openView('air'); }],
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
     ['Préparer un SALUTE', 'Mission', function () { openView('mission'); toast('Clic droit sur la carte pour préremplir la grille, puis remplissez le compte rendu.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
@@ -5192,7 +5428,13 @@
       var drawer = document.getElementById('ow-drawer');
       var squadsOpen = squadsPanel && !squadsPanel.hidden;
       var missionOpen = drawer && !drawer.hidden && drawerTitle && drawerTitle.textContent === 'Mission';
+      var airOpen = drawer && !drawer.hidden && drawerTitle && drawerTitle.textContent === 'Air';
       if (squadsOpen || missionOpen) loadGroupTasks();
+      if (airOpen) {
+        loadAirAssets();
+        loadNine();
+        loadCas();
+      }
     }, Math.max(3000, Number(ms) || 5000));
   }
 
@@ -5207,6 +5449,9 @@
     loadGroupTasks();
     loadAlerts();
     loadPhotos();
+    loadAirAssets();
+    loadNine();
+    loadCas();
     loadWeather().then(function (payload) {
       var w = payload && payload.weather ? payload.weather : payload;
       var chip = document.getElementById('ow-weather-chip');
@@ -5400,6 +5645,16 @@
   document.querySelectorAll('[data-view]').forEach(function (button) {
     button.addEventListener('click', function () { openView(button.dataset.view); });
   });
+  var airDrawer = document.getElementById('ow-drawer');
+  if (airDrawer) {
+    airDrawer.addEventListener('click', function (event) {
+      var locate = event.target.closest('[data-air-locate]');
+      if (!locate) return;
+      var cs = locate.getAttribute('data-air-locate');
+      var row = airAssets.filter(function (item) { return String(item.callsign || '') === cs; })[0] || { callsign: cs };
+      airLocate(row);
+    });
+  }
   document.querySelectorAll('[data-chat-tab]').forEach(function (button) {
     button.addEventListener('click', function () { switchChatTab(button.dataset.chatTab); });
   });
@@ -5771,6 +6026,7 @@
     pickUnitAt: pickUnitAt,
     renderPresenceHeat: renderPresenceHeat,
     getPhotos: function () { return photos; },
+    getAirAssets: function () { return airAssets; },
     applyLook: applyLook,
     formatMeters: formatMeters,
     loadShapes: loadShapes,
