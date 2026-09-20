@@ -772,11 +772,30 @@
   }
   var STALE_HIDE_SEC = 15 * 60;
   var STALE_DEAD_SEC = 2 * 60 * 60;
+  var LIVE_TTL_SEC = 120;
+  var DELAYED_SEC = 72;
   var DISC_COLOR = '#8d9592';
+  function stampUnitAges(list) {
+    var now = Date.now();
+    return (list || []).map(function (unit) {
+      var next = Object.assign({}, unit);
+      next._receivedAt = now;
+      var apiAge = Number(unit.age_seconds);
+      next._ageAtReceive = Number.isFinite(apiAge) && apiAge >= 0 ? apiAge : NaN;
+      return next;
+    });
+  }
   function unitAgeSec(unit) {
     if (!unit) return NaN;
-    var apiAge = Number(unit.age_seconds);
-    if (Number.isFinite(apiAge) && apiAge >= 0) return apiAge;
+    var apiAge = Number(unit._ageAtReceive);
+    if (!Number.isFinite(apiAge) || apiAge < 0) apiAge = Number(unit.age_seconds);
+    if (Number.isFinite(apiAge) && apiAge >= 0) {
+      var received = Number(unit._receivedAt);
+      if (Number.isFinite(received) && received > 0) {
+        return Math.max(0, apiAge + (Date.now() - received) / 1000);
+      }
+      return apiAge;
+    }
     var extra = extraOf(unit || {});
     var stamped = extra.last_seen_at || unit.updated_at || unit.last_seen_at || unit.last_seen;
     if (!stamped) return NaN;
@@ -1579,8 +1598,8 @@
     extra += pulse ? ' is-squad-pulse' : '';
     var ageSec = unitAgeSec(unit);
     var delayedSt = String(unit.status || '').toLowerCase() === 'delayed';
-    var lagging = !disc && (delayedSt || (Number.isFinite(ageSec) && ageSec >= 20 && ageSec < 60));
-    var stalePos = !disc && Number.isFinite(ageSec) && ageSec >= 60;
+    var lagging = !disc && (delayedSt || (Number.isFinite(ageSec) && ageSec >= DELAYED_SEC && ageSec < LIVE_TTL_SEC));
+    var stalePos = !disc && Number.isFinite(ageSec) && ageSec >= LIVE_TTL_SEC;
     extra += lagging ? ' is-delayed' : '';
     extra += stalePos ? ' is-stale-pos' : '';
     var age = ageLabel(unit);
@@ -1908,10 +1927,7 @@
     var extra = extraOf(unit);
     if (unit.gateway_partner || extra.via_relay || extra.radio_relay) return true;
     var link = String(unit.link_state || extra.link_state || extra.linkState || '').toLowerCase();
-    if (link === 'degraded') return true;
-    if (String(unit.status || '').toLowerCase() === 'delayed') return true;
-    var age = unitAgeSec(unit);
-    return Number.isFinite(age) && age >= 20;
+    return link === 'degraded';
   }
   function bftAgeText(unit) {
     var age = ageLabel(unit);
@@ -2062,7 +2078,7 @@
   }
 
   function applyPayload(payload) {
-    units = asList(payload, 'units');
+    units = stampUnitAges(asList(payload, 'units'));
     lastRx = Date.now();
     renderMap();
     renderList();
@@ -6039,6 +6055,9 @@
     unitHeading: unitHeading,
     unitSpeed: unitSpeed,
     unitAgeSec: unitAgeSec,
+    DELAYED_SEC: DELAYED_SEC,
+    LIVE_TTL_SEC: LIVE_TTL_SEC,
+    getPollMs: function () { return pollMs; },
     isTrackedAi: isTrackedAi,
     unitWorld: unitWorld,
     side: side,

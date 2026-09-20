@@ -15,6 +15,10 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-202
 
 Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md).
 
+### Correction — Positions figées trop tôt
+
+Un opérateur encore en liaison et en forme n’est plus annoncé comme « position figée » au bout de quelques secondes. Le bandeau n’apparaît que si personne n’est plus à jour depuis plus d’une minute, ou si le poste n’a plus reçu le théâtre depuis longtemps. Un cadre en pointillés n’entoure l’indicatif que dans ces mêmes cas. Rechargez Overwatch Beta (Ctrl+F5).
+
 ### Nouveau — Boussole seule sous jumelles
 
 Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Choix : Paramètres du téléphone, ligne Dans le tube, ou options du jeu (Affichage situation).

@@ -268,6 +268,15 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(700, '2026-09-20', 'Poste Overwatch : plus d’alerte figée sur un opérateur encore en liaison', 'Un opérateur encore en liaison et en forme n’est plus annoncé comme position figée au bout de quelques secondes. Le bandeau n’apparaît que si plus personne n’est à jour depuis plus d’une minute, ou si le poste n’a plus reçu le théâtre depuis longtemps. Un cadre en pointillés n’entoure l’indicatif que dans ces mêmes cas. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Bandeau « positions figées » réservé à une vraie coupure, pas à un opérateur immobile quelques secondes',
+            ], [
+                'Cadre en pointillés autour de l’indicatif seulement quand la position n’a plus été confirmée depuis plus d’une minute',
+            ], [
+                'Un opérateur encore en liaison était parfois affiché comme figé alors qu’il allait bien',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Un opérateur en ligne et en forme doit rester sans bandeau rouge. Le bandeau n’apparaît que si tout le monde a cessé d’être à jour, ou si le poste n’entend plus le théâtre.',
+            ], 'Overwatch Beta'),
             $pr(699, '2026-09-20', 'Poste Overwatch : pictos du jeu de nouveau visibles', 'Les points, cases et alertes posés en jeu réapparaissent en couleur sur la carte du poste. Auparavant, le picto était une silhouette transparente : seuls les noms restaient lisibles. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Pictos du jeu (point, case, alerte) dessinés en couleur, comme sur la carte en jeu',
             ], [], [

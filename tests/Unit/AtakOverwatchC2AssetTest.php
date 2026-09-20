@@ -30,6 +30,11 @@ final class AtakOverwatchC2AssetTest extends TestCase
         self::assertStringContainsString('/api/replay/aar/', $c2);
         self::assertStringContainsString('Positions figées', $c2);
         self::assertStringContainsString('liveWindow', $c2);
+        self::assertStringContainsString('delayedSec', $c2);
+        self::assertStringContainsString('staleCount === liveCount', $c2);
+        self::assertStringContainsString('Math.max(45, pollSec * 3)', $c2);
+        self::assertStringNotContainsString('age >= 20', $c2);
+        self::assertStringNotContainsString('rxAge >= 12', $c2);
         self::assertStringContainsString('isTrackedAi', $c2);
         self::assertStringContainsString('.ow-freeze-banner', $css);
         self::assertStringContainsString('.ow-scene-load', $css);

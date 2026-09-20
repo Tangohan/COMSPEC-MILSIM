@@ -164,6 +164,10 @@
     var last = api.getLastRx ? api.getLastRx() : 0;
     var units = api.getUnits ? api.getUnits() : [];
     var liveWindow = 15 * 60;
+    var delayedSec = api.DELAYED_SEC > 0 ? api.DELAYED_SEC : 72;
+    var pollSec = (api.getPollMs ? api.getPollMs() : 5000) / 1000;
+    if (!(pollSec > 0)) pollSec = 5;
+    var rxLimit = Math.max(45, pollSec * 3);
     var liveCount = 0;
     var staleCount = 0;
     var oldest = 0;
@@ -172,19 +176,21 @@
       var age = api.unitAgeSec ? api.unitAgeSec(unit) : NaN;
       if (!Number.isFinite(age) || age > liveWindow) return;
       liveCount += 1;
-      if (age >= 20) {
+      if (age >= delayedSec) {
         staleCount += 1;
         if (age > oldest) oldest = age;
       }
     });
     var rxAge = last ? (Date.now() - last) / 1000 : 0;
-    var frozen = liveCount > 0 && (rxAge >= 12 || staleCount > 0);
+    var rxFrozen = last > 0 && rxAge >= rxLimit;
+    var allStale = liveCount > 0 && staleCount === liveCount;
+    var frozen = rxFrozen || allStale;
     if (!frozen) {
       el.hidden = true;
       return;
     }
     var bits = [];
-    if (rxAge >= 12) bits.push('liaison jeu figée');
+    if (rxFrozen) bits.push('liaison jeu figée');
     if (staleCount) {
       var label = oldest >= 60 ? (Math.round(oldest / 60) + ' min') : (Math.round(oldest) + ' s');
       bits.push(staleCount + ' dernière' + (staleCount > 1 ? 's' : '') + ' position' + (staleCount > 1 ? 's' : '') + ' connue' + (staleCount > 1 ? 's' : '') + ' · ' + label);

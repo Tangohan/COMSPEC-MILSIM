@@ -774,6 +774,13 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('aide', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHelpI['activity']));
+        $freezeLive = DevDispatchCatalog::find('update', '700');
+        self::assertNotNull($freezeLive);
+        self::assertSame('00700', $freezeLive['number_pad']);
+        self::assertStringContainsString('figée', strtolower((string) $freezeLive['title']));
+        self::assertStringContainsString('liaison', strtolower((string) $freezeLive['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $freezeLive['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $freezeLive['activity']));
         $gameGlyphs = DevDispatchCatalog::find('update', '699');
         self::assertNotNull($gameGlyphs);
         self::assertSame('00699', $gameGlyphs['number_pad']);
