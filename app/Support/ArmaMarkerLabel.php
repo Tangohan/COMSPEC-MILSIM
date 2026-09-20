@@ -18,7 +18,7 @@ final class ArmaMarkerLabel
         if (str_starts_with(strtolower($value), 'comspec_')) {
             return true;
         }
-        if (preg_match('/_(?:user|ictab)_defined\s*#/i', $value) === 1) {
+        if (preg_match('/_(?:user|ictab)_defined/i', $value) === 1) {
             return true;
         }
         if (preg_match('/^ctab_u_\d+$/i', $value) === 1) {

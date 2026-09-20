@@ -20,12 +20,12 @@ if (isNull _parent) then {
         || {diag_tickTime > _deadline}
     };
     if (isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])) exitWith {};
-    private _page = "WaveRelay";
-    ["WaveRelay"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+    private _page = "AtakRelay";
+    ["AtakRelay"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
     uiSleep 0.12;
     if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Relay_group", controlNull])) then {
-        ["AtakRelay"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
-        _page = "AtakRelay";
+        ["WaveRelay"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+        _page = "WaveRelay";
     };
     uiSleep 0.12;
     if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Relay_group", controlNull])) then {

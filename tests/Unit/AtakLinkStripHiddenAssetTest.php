@@ -30,7 +30,7 @@ final class AtakLinkStripHiddenAssetTest extends TestCase
             $root . '/docs/bugs/2026-09-16-atak-barre-donnees-bas.md'
         );
 
-        self::assertStringContainsString('1.0.158', $cfg);
+        self::assertStringContainsString('1.0.160', $cfg);
         self::assertStringContainsString('99871', $strip);
         self::assertStringContainsString('ctrlShow false', $strip);
         self::assertStringContainsString('ctrlDelete', $strip);

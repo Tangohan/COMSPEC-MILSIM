@@ -120,11 +120,13 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
     missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
     COMSPEC_MapMarkerEHs = [
         addMissionEventHandler ["MarkerCreated", {
-            params ["_marker"];
+            private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+            if (_marker isEqualTo "") exitWith {};
             [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
-            params ["_marker"];
+            private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+            if (_marker isEqualTo "") exitWith {};
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -132,7 +134,8 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
-            params ["_marker"];
+            private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+            if (_marker isEqualTo "") exitWith {};
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -164,6 +167,13 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
 }, 45, []] call CBA_fnc_addPerFrameHandler;
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
+        [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
+    };
+}, 8, []] call CBA_fnc_addPerFrameHandler;
 
 private _fnc_addPoll = {
     params ["_code", "_interval", "_delay", ["_id", "", [""]]];

@@ -11,9 +11,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-202
 
 ---
 
-## Vague 2026-09-20 — Overwatch 1.6.4 / SSE 0.7.22 / Athena 1.0.158
+## Vague 2026-09-20 — Overwatch 1.6.5 / SSE 0.7.22 / Athena 1.0.160
+
+### Correction — Repère carte Arma absent du poste
+
+Un point posé sur la carte d’Arma 3 (canal global) apparaît maintenant sur la carte du poste, au même endroit. Fermez la carte en jeu : le repère remonte en quelques secondes, même s’il n’a pas de nom. Relancez Arma complètement (Overwatch 1.6.5).
+
+### Correction — Journal de liaison trop bavard
+
+Le journal n’écrit plus la même ligne vide toutes les quelques secondes. Une lecture inchangée (aucun message, aucune forme, aucun ordre) reste silencieuse.
+
+## Vague 2026-09-20 — Overwatch 1.6.4 / SSE 0.7.22 / Athena 1.0.159
 
 Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md).
+
+### Correction — P2P réseau local vide
+
+Dans le menu d’applications, **P2P — Réseau** ouvre de nouveau le réseau local : liste des contacts et messages. L’écran n’est plus blanc.
+
+### Nouveau — Application Relais AT
+
+**Relais AT** apparaît sur la première ligne du chevron, à côté de P2P. Elle affiche le mât le plus proche : position, débit, fiabilité, identité, adresse réseau, passerelle, certificat, places et puissance. S’il n’y a pas de mât à portée, l’écran l’indique clairement.
+
+### Correction — Positions figées trop tôt
+
+Un opérateur encore en liaison et en forme n’est plus annoncé comme « position figée » au bout de quelques secondes. Le bandeau n’apparaît que si personne n’est plus à jour depuis plus d’une minute, ou si le poste n’a plus reçu le théâtre depuis longtemps. Un cadre en pointillés n’entoure l’indicatif que dans ces mêmes cas. Rechargez Overwatch Beta (Ctrl+F5).
 
 ### Nouveau — Boussole seule sous jumelles
 
@@ -79,7 +101,7 @@ Moins d’arrêts liés aux tuiles de carte, au dépassement de carte et à un o
 
 Canaux Commandement, Général, JTAC. Photothèque : envoi vers le site et le SSE. Carte du poste : prédiction de déplacement, pointage, données terrain. Dépannage de liaison via Échap.
 
-Relancez Arma complètement (Overwatch 1.6.4, pack SSE 0.7.22, Athena 1.0.158).
+Relancez Arma complètement (Overwatch 1.6.4, pack SSE 0.7.22, Athena 1.0.159).
 
 ---
 

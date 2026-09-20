@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.158;
-        versionStr = "1.0.158";
-        versionAr[] = {1, 0, 158};
-        // Historique : 1.0.157 tuiles tiroir, 1.0.158 boussole seule JVN.
+        version = 1.160;
+        versionStr = "1.0.160";
+        versionAr[] = {1, 0, 160};
+        // Historique : 1.0.157 tuiles, 1.0.158 boussole JVN, 1.0.159 P2P + Relais AT, 1.0.160 marqueurs carte.
     };
 };
 
@@ -44,6 +44,7 @@ class CfgFunctions
             class athena_applyHomeLayout {};
             class athena_layoutAppDrawer {};
             class athena_syncAtakApps {};
+            class athena_filterDrawerApps {};
             class athena_pageCtrl {};
             class athena_resolveAthenaGroup {};
             class athena_hideForeignPages {};
@@ -110,6 +111,7 @@ class CfgFunctions
             class athena_relayOnOpened {};
             class athena_updateRelay {};
             class athena_openRelay {};
+            class athena_p2pOnOpened {};
             class athena_casOnOpened {};
             class athena_openCas {};
             class athena_manifestOnOpened {};
@@ -305,15 +307,27 @@ class ATAK_APPs
     {
         text = "<t size='1'>P2P — Réseau local</t>";
         textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        // Recopie IceMan : ne pas hériter Menu_Property (classe introuvable au boot)
-        // et ne pas rouvrir message (ça casse la grille du tiroir).
+        onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_messageHubOpenP2P";
+        // Ne pas ChangeTool cette tuile : IceMan n’alimente que la page native « message ».
         class Menu_Property
         {
             ORDER = 0.05;
             PAGE_CTRL = "ATAK_Message";
-            Opened = "BCE_fnc_ATAK_message_Init";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_p2pOnOpened";
             ATAK_Buttons = "Message_Menu";
+        };
+    };
+    class AtakRelay: message
+    {
+        text = "<t size='1'>Relais AT</t>";
+        textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        tooltip = "Mât le plus proche : position, débit, fiabilité, identité.";
+        class Menu_Property
+        {
+            ORDER = 0.08;
+            PAGE_CTRL = "COMSPEC_ATAK_Relay";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
         };
     };
     class Athena: message
@@ -400,18 +414,6 @@ class ATAK_APPs
             ORDER = 3.6;
             PAGE_CTRL = "COMSPEC_ATAK_Status";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
-        };
-    };
-    class WaveRelay: message
-    {
-        text = "<t size='1'>Relais AT</t>";
-        textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
-        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-        class Menu_Property
-        {
-            ORDER = 3.62;
-            PAGE_CTRL = "COMSPEC_ATAK_Relay";
-            Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
         };
     };
     class AtakSound: message
@@ -525,13 +527,26 @@ class RscTitles
         {
             text = "<t size='1'>P2P — Réseau local</t>";
             textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_messageHubOpenP2P";
             class Menu_Property
             {
                 ORDER = 0.05;
                 PAGE_CTRL = "ATAK_Message";
-                Opened = "BCE_fnc_ATAK_message_Init";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_p2pOnOpened";
                 ATAK_Buttons = "Message_Menu";
+            };
+        };
+        class AtakRelay: message
+        {
+            text = "<t size='1'>Relais AT</t>";
+            textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            tooltip = "Mât le plus proche : position, débit, fiabilité, identité.";
+            class Menu_Property
+            {
+                ORDER = 0.08;
+                PAGE_CTRL = "COMSPEC_ATAK_Relay";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
             };
         };
         class Athena: message
@@ -618,18 +633,6 @@ class RscTitles
                 ORDER = 3.6;
                 PAGE_CTRL = "COMSPEC_ATAK_Status";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
-            };
-        };
-        class WaveRelay: message
-        {
-            text = "<t size='1'>Relais AT</t>";
-            textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
-            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
-            class Menu_Property
-            {
-                ORDER = 3.62;
-                PAGE_CTRL = "COMSPEC_ATAK_Relay";
-                Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
             };
         };
         class AtakSound: message

@@ -442,10 +442,12 @@ private _fncWrapPlaceMarker = {
         private _pos = markerPos _n;
         private _sig = format ["%1|%2|%3|%4|%5", _pos select 0, _pos select 1, markerType _n, markerText _n, markerColor _n];
         if ((_sigMap getOrDefault [_n, ""]) isEqualTo _sig) then { continue };
-        _sigMap set [_n, _sig];
-        missionNamespace setVariable ["COMSPEC_Athena_BceMarkerQuickSnap", _sigMap, false];
-        [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-        _dirty = true;
+        private _sent = [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+        if (_sent) then {
+            _sigMap set [_n, _sig];
+            missionNamespace setVariable ["COMSPEC_Athena_BceMarkerQuickSnap", _sigMap, false];
+            _dirty = true;
+        };
     } forEach _safeMarkers;
     if (_dirty) then {
         [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
@@ -527,3 +529,24 @@ private _forceRelaisAt = {
 };
 call _forceRelaisAt;
 { [_forceRelaisAt, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];
+
+// Liste du tiroir : Relais AT visible, Wave Relay IceMan retiré (sinon deux tuiles).
+private _wrapDrawerApps = {
+    if (isNil "BCE_fnc_ATAK_getAPPs") exitWith {};
+    if (isFinal BCE_fnc_ATAK_getAPPs) exitWith {};
+    if (isNil "COMSPEC_BCE_getAPPsOrig") then {
+        COMSPEC_BCE_getAPPsOrig = BCE_fnc_ATAK_getAPPs;
+    };
+    BCE_fnc_ATAK_getAPPs = {
+        private _apps = _this call COMSPEC_BCE_getAPPsOrig;
+        if (!(_apps isEqualType [])) exitWith { _apps };
+        if (isNil "comspec_overwatch_atak_athena_fnc_athena_filterDrawerApps") exitWith { _apps };
+        _apps = [_apps] call comspec_overwatch_atak_athena_fnc_athena_filterDrawerApps;
+        if (!isNil "BCE_fnc_ATAK_setAPPs_props" && {(count _apps) > 0}) then {
+            [_apps] call BCE_fnc_ATAK_setAPPs_props;
+        };
+        _apps
+    };
+};
+call _wrapDrawerApps;
+{ [_wrapDrawerApps, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];

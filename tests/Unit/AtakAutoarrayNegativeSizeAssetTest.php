@@ -90,7 +90,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringNotContainsString('["CAManBase", 1, _path, _actionId]', $ace);
         self::assertStringNotContainsString('["CAManBase", 1, _mainPath, _x]', $ace);
 
-        self::assertStringContainsString('1.0.158', $cfg);
+        self::assertStringContainsString('1.0.160', $cfg);
         $onOrder = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_onOrderReceived.sqf'
         );

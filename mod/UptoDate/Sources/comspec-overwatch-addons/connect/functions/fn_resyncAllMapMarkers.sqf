@@ -59,12 +59,18 @@ private _mirroredElsewherePrefixes = [
 
     // force=true : rattrapage même si la liaison est momentanément dégradée
     // (fiab. < 100 %) — sinon les INF / Widget restent coincés côté téléphone.
-    [_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+    // Ne figer la signature qu’après un envoi réussi, sinon plus aucun essai.
+    private _ok = [_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+    if (!_ok) then { _next set [_name, ""]; };
 } forEach _markers;
 
 {
     if (!(_x in _next)) then {
-        "COMSPECExtension" callExtension ["SendMarker", [_x, "{}", "1", "1"]];
+        private _delName = _x;
+        if ((_delName find "#") >= 0) then {
+            _delName = (_delName splitString "#" joinString "__H__");
+        };
+        "COMSPECExtension" callExtension ["SendMarker", [_delName, "{}", "1", "1"]];
     };
 } forEach (keys _prev);
 

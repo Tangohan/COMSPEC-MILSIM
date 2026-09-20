@@ -20,7 +20,7 @@ final class AtakC2OrderIssueAssetTest extends TestCase
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakDataRepository.php');
 
-        self::assertStringContainsString('versionStr = "1.6.4"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
         self::assertStringContainsString('class orderIssuerLabel', $cfg);
 
         self::assertStringContainsString('toFixed 0', $issue);

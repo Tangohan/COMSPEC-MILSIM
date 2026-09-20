@@ -70,6 +70,13 @@ private _mirroredElsewherePrefixes = [
 private _nameLower = toLower _markerName;
 if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) exitWith { false };
 
+// Nom filaire : le « # » des marqueurs joueur (_USER_DEFINED #owner/id/canal)
+// casse parfois l’argument callExtension. L’original reste dans le JSON.
+private _wireName = _markerName;
+if ((_wireName find "#") >= 0) then {
+    _wireName = (_wireName splitString "#" joinString "__H__");
+};
+
 private _fnc_dispatch = {
     params ["_name", "_body", "_del", "_blocked"];
     if (_blocked || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith {
@@ -84,7 +91,7 @@ private _fnc_dispatch = {
 };
 
 if (_deleted) exitWith {
-    [_markerName, "{}", true, _txBlocked] call _fnc_dispatch
+    [_wireName, "{}", true, _txBlocked] call _fnc_dispatch
 };
 
 private _shape = toUpper (markerShape _markerName);
@@ -141,7 +148,14 @@ private _bs = toString [92];
 private _texForJson = (_texture splitString _bs joinString "/");
 _texForJson = (_texForJson splitString """" joinString "'");
 
-private _src = if (_isUnderscore) then { "bce_widget" } else { "arma" };
+private _src = "arma";
+if (_isUnderscore) then {
+    if ((_nameLower find "_ictab") >= 0 || {(_nameLower find "ictab_defined") >= 0}) then {
+        _src = "bce_widget";
+    } else {
+        _src = "arma";
+    };
+};
 private _purpose = if ((_nameLower find "comspec_ecoti_bldg") == 0) then { "building_mark" } else { "" };
 private _json = format [
     "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17"",""purpose"":""%18""}",
@@ -165,4 +179,4 @@ private _json = format [
     _purpose
 ];
 
-[_markerName, _json, false, _txBlocked] call _fnc_dispatch
+[_wireName, _json, false, _txBlocked] call _fnc_dispatch

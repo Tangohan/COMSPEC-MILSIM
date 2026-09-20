@@ -2,13 +2,22 @@
 
 Copier-coller Workshop :
 
-[h1]COMSPEC Overwatch — Mise à jour 1.6.4[/h1]
+[h1]COMSPEC Overwatch — Mise à jour 1.6.5[/h1]
 [b]Publication : 20/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.6.4 · SSE 0.7.22 · Athena 1.0.158
+[b]Pack :[/b] Overwatch 1.6.5 · SSE 0.7.22 · Athena 1.0.160
 
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez le pack, puis relancez.
 [/quote]
+
+[h2]Correction — Repère posé en jeu absent du poste[/h2]
+Un point posé sur la carte d’Arma 3 apparaît maintenant sur la carte du poste. Fermez la carte en jeu : le repère remonte en quelques secondes, même s’il n’a pas de nom.
+
+[h2]Correction — P2P réseau local vide[/h2]
+Dans le menu d’applications, P2P ouvre de nouveau le réseau local : contacts et messages. L’écran n’est plus blanc.
+
+[h2]Nouveau — Application Relais AT[/h2]
+Relais AT apparaît sur la première ligne du chevron, à côté de P2P. Elle affiche le mât le plus proche : position, débit, fiabilité, identité, adresse réseau, passerelle, certificat, places et puissance.
 
 [h2]Nouveau — Boussole seule sous jumelles[/h2]
 Sous jumelles, vous pouvez n’afficher que votre boussole dans le tube, sans la grille, la distance ni l’heure. Le choix se fait dans Paramètres du téléphone (Dans le tube) ou dans les options du jeu.
@@ -58,4 +67,4 @@ La carte du poste anticipe désormais le déplacement. Le pointage et les donné
 [h2]Amélioration — Liaison et dépannage[/h2]
 La liaison est plus stable. En cas de souci, la touche Échap ouvre le dépannage de liaison.
 
-[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.4 · SSE 0.7.22 · Athena 1.0.158
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.5 · SSE 0.7.22 · Athena 1.0.160

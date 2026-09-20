@@ -68,7 +68,10 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('class diagStatusSnapshot {}', $cfg);
         self::assertStringContainsString('class noteUplinkReturn {}', $cfg);
         self::assertStringContainsString('COMSPEC_DiagIsolateHud', $cfg);
-        self::assertStringContainsString('1.6.4', $cfg);
+        self::assertStringContainsString('1.6.5', $cfg);
+        $noteUp = (string) file_get_contents($base . '/functions/fn_noteUplinkReturn.sqf');
+        self::assertStringContainsString('COMSPEC_UplinkLastSig_', $noteUp);
+        self::assertStringContainsString('if (!_changed) then', $noteUp);
         self::assertStringContainsString('diagIsolateProbe', $start);
         self::assertStringContainsString('sendIntel', $probe);
         self::assertStringContainsString('sendLocalTacticalMarker', $probe);

@@ -20,8 +20,8 @@ final class AtakAirAppsAssetTest extends TestCase
         $hide = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_hideForeignPages.sqf');
         $wiki = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateWiki.sqf');
 
-        self::assertStringContainsString('versionStr = "1.0.158"', $cfgA);
-        self::assertStringContainsString('versionStr = "1.6.4"', $cfgC);
+        self::assertStringContainsString('versionStr = "1.0.160"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.6.5"', $cfgC);
         self::assertStringContainsString('text = "<t size=\'1\'>Appui aérien</t>"', $cfgA);
         self::assertStringContainsString('text = "<t size=\'1\'>Manifeste</t>"', $cfgA);
         self::assertStringContainsString('PAGE_CTRL = "COMSPEC_ATAK_Cas"', $cfgA);

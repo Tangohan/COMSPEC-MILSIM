@@ -74,11 +74,13 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
         missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [
             addMissionEventHandler ["MarkerCreated", {
-                params ["_marker"];
+                private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+                if (_marker isEqualTo "") exitWith {};
                 [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
             }],
             addMissionEventHandler ["MarkerUpdated", {
-                params ["_marker"];
+                private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+                if (_marker isEqualTo "") exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -86,7 +88,8 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
             }],
             addMissionEventHandler ["MarkerDeleted", {
-                params ["_marker"];
+                private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
+                if (_marker isEqualTo "") exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -96,6 +99,26 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
         ];
         ["INFO", "Markers", "EH MarkerCreated/Updated/Deleted enregistrés (early)"] call comspec_overwatch_connect_fnc_log;
     };
+};
+
+// Fermeture de la carte Arma : les repères joueur (canal global) sont souvent
+// confirmés seulement à ce moment. Deux envois courts, puis le rattrapage 8 s.
+if (isNil "COMSPEC_MapClosedEh") then {
+    COMSPEC_MapClosedEh = addMissionEventHandler ["Map", {
+        params ["_mapIsOpened"];
+        if (_mapIsOpened) exitWith {};
+        [{
+            if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
+                [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
+            };
+        }, [], 0.35] call CBA_fnc_waitAndExecute;
+        [{
+            if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
+                [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
+            };
+        }, [], 1.25] call CBA_fnc_waitAndExecute;
+    }];
+    ["INFO", "Markers", "EH Map fermée — envoi des repères joueur"] call comspec_overwatch_connect_fnc_log;
 };
 
 // Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot).
