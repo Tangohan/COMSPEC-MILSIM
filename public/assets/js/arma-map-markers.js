@@ -464,6 +464,8 @@ window.ArmaMapMarkers = (function () {
     var raw = labelOf(data);
     if (!raw || isTechnicalLabel(raw)) {
       if (isAreaShape(data) || isBuildingLikeArea(data)) return '';
+      var by = String((data && (data.placed_by || data.callsign)) || '').trim();
+      if (by && !isTechnicalLabel(by)) return 'Repère · ' + by;
       return 'Repère';
     }
     var typeFr = typeLabelFr(data);
@@ -475,6 +477,19 @@ window.ArmaMapMarkers = (function () {
       return raw;
     }
     return raw;
+  }
+
+  function markerTooltipOf(data) {
+    var title = displayLabelOf(data);
+    var bits = [];
+    var by = String((data && (data.placed_by || data.author || data.callsign)) || '').trim();
+    if (by && !isTechnicalLabel(by)) bits.push('Posé par ' + by);
+    var ch = String((data && data.channel) || '').trim();
+    if (ch) bits.push(ch);
+    var at = String((data && data.placed_at) || '').trim();
+    if (at) bits.push(at);
+    if (!bits.length) return title;
+    return title ? (title + ' — ' + bits.join(' · ')) : bits.join(' · ');
   }
 
   /**
@@ -1098,6 +1113,7 @@ window.ArmaMapMarkers = (function () {
     parsePos: parsePos,
     labelOf: labelOf,
     displayLabelOf: displayLabelOf,
+    markerTooltipOf: markerTooltipOf,
     isLiveUnitDuplicate: isLiveUnitDuplicate,
     typeLabelFr: typeLabelFr,
     readDir: readDir,

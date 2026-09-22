@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.160;
-        versionStr = "1.0.160";
-        versionAr[] = {1, 0, 160};
-        // Historique : 1.0.157 tuiles, 1.0.158 boussole JVN, 1.0.159 P2P + Relais AT, 1.0.160 marqueurs carte.
+        version = 1.165;
+        versionStr = "1.0.165";
+        versionAr[] = {1, 0, 165};
+        // Historique : 1.0.164 couches/IFF, 1.0.165 Reco dans le téléphone.
     };
 };
 
@@ -110,6 +110,8 @@ class CfgFunctions
             class athena_openStatus {};
             class athena_relayOnOpened {};
             class athena_updateRelay {};
+            class athena_updateQueueBadge {};
+            class athena_updateBuildingSheet {};
             class athena_openRelay {};
             class athena_p2pOnOpened {};
             class athena_casOnOpened {};
@@ -136,6 +138,8 @@ class CfgFunctions
             class athena_linkDegradeSimSave {};
             class athena_phoneProximityTick {};
             class athena_phoneProximityAlert {};
+            class athena_iffProximityTick {};
+            class athena_iffProximityAlert {};
             class athena_hookPhoneGeolocMap {};
             class athena_installPhoneGeolocMap {};
             class athena_hookReachMap {};
@@ -152,6 +156,10 @@ class CfgFunctions
             class athena_noteOnOpened {};
             class athena_updateNote {};
             class athena_openNote {};
+            class athena_openRecon {};
+            class athena_reconOnOpened {};
+            class athena_updateRecon {};
+            class athena_reconSubmit {};
             class athena_taskOnOpened {};
             class athena_updateTask {};
             class athena_taskSelect {};
@@ -290,6 +298,7 @@ class RscControlsGroup;
 #include "ui\bda_host_page.hpp"
 #include "ui\bii_page.hpp"
 #include "ui\note_page.hpp"
+#include "ui\recon_page.hpp"
 #include "ui\task_page.hpp"
 #include "ui\comms_page.hpp"
 #include "ui\message_hub_page.hpp"
@@ -487,6 +496,19 @@ class ATAK_APPs
             ORDER = 1.16;
             PAGE_CTRL = "COMSPEC_ATAK_Note";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
+        };
+    };
+    class AtakRecon: message
+    {
+        text = "<t size='1'>Reco</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        tooltip = "Noter ce que vous voyez, là où vous regardez.";
+        class Menu_Property
+        {
+            ORDER = 1.155;
+            PAGE_CTRL = "COMSPEC_ATAK_Recon";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_reconOnOpened";
         };
     };
     // Stub BCE BDA_Report : PAGE_CTRL/Opened vides → erreur "Opened function...". On le répare.
@@ -705,6 +727,19 @@ class RscTitles
                 ORDER = 1.16;
                 PAGE_CTRL = "COMSPEC_ATAK_Note";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_noteOnOpened";
+            };
+        };
+        class AtakRecon: message
+        {
+            text = "<t size='1'>Reco</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            tooltip = "Noter ce que vous voyez, là où vous regardez.";
+            class Menu_Property
+            {
+                ORDER = 1.155;
+                PAGE_CTRL = "COMSPEC_ATAK_Recon";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_reconOnOpened";
             };
         };
         class BDA_Report: message

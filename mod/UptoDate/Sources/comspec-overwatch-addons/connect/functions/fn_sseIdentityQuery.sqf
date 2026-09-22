@@ -95,6 +95,9 @@ private _fnc_resolve = {
     uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
     uiNamespace setVariable ["COMSPEC_SsePerson_Query", [_result, _confidence, _ref]];
     [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+    if (!isNil "comspec_overwatch_connect_fnc_seekHistoryPush") then {
+        [_target, _result, _confidence, _ref] call comspec_overwatch_connect_fnc_seekHistoryPush;
+    };
 
     private _msg = switch (_result) do {
         case "confirmed": { format ["Correspondance confirmée — dossier %1.", _ref] };

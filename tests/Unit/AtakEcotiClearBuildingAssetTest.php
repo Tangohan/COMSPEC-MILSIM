@@ -15,13 +15,13 @@ final class AtakEcotiClearBuildingAssetTest extends TestCase
         $clear = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiClearBuilding.sqf');
         $cfg = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
 
-        self::assertStringContainsString('Annuler le pointage de bâtiment', $ace);
+        self::assertStringContainsString('Annuler le pointage de bï¿½timent', $ace);
         self::assertStringContainsString('COMSPEC_EcotiClearBuilding', $ace);
         self::assertStringContainsString('private _menuVer = 8', $ace);
         self::assertStringContainsString('COMSPEC_EcotiMarkedBuilding', $clear);
         self::assertStringContainsString('class ecotiClearBuilding {}', $cfg);
         self::assertStringContainsString('class ecotiBuildingMarkerName {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
         $mark = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiMarkBuilding.sqf');
         $sync = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_syncMapMarker.sqf');
         self::assertStringContainsString('syncMapMarker', $mark);

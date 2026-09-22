@@ -52,12 +52,30 @@ if ((count (keys _info)) < 1) then {
 } else {
     private _alive = _info getOrDefault ["alive", false];
     private _name = _info getOrDefault ["name", "Relais"];
-    private _state = if (_alive) then {
-        if (_info getOrDefault ["in_range", false]) then { "À portée — intact" } else { "Hors portée — intact" };
-    } else {
-        "Détruit"
+    private _sig = createHashMap;
+    if (!isNil "comspec_overwatch_connect_fnc_atakSignalState") then {
+        _sig = [] call comspec_overwatch_connect_fnc_atakSignalState;
     };
-    private _stateCol = if (!_alive) then { "#FF8A80" } else {
+    if (!(_sig isEqualType createHashMap)) then { _sig = createHashMap; };
+    private _bars = _sig getOrDefault ["bars", 0];
+    if (!(_bars isEqualType 0)) then { _bars = 0; };
+    private _sigCol = _sig getOrDefault ["color_html", "#E8F2FA"];
+    private _sigTip = _sig getOrDefault ["tip", ""];
+    private _barTxt = "";
+    for "_i" from 1 to 4 do {
+        private _c = if (_i <= _bars) then { _sigCol } else { "#2A3A40" };
+        _barTxt = _barTxt + format ["<t color='%1' size='1.35'>▌</t>", _c];
+    };
+    private _state = if (_sig getOrDefault ["jammed", false]) then {
+        _sigTip
+    } else {
+        if (_alive) then {
+            if (_info getOrDefault ["in_range", false]) then { "À portée — intact" } else { "Hors portée — intact" };
+        } else {
+            "Détruit"
+        }
+    };
+    private _stateCol = if (!_alive || {_sig getOrDefault ["jammed", false]}) then { "#FF8A80" } else {
         if (_info getOrDefault ["in_range", false]) then { "#7CFF9A" } else { "#FFE08A" };
     };
     private _row = {
@@ -66,7 +84,8 @@ if ((count (keys _info)) < 1) then {
     };
     _html = [
         format ["<t color='#7CFF9A' size='1.08'>%1</t><br/>", _name],
-        format ["<t color='%1'>%2</t><br/><br/>", _stateCol, _state],
+        format ["<t color='%1'>%2</t><br/>", _stateCol, _state],
+        format ["<t color='#8FB4C8'>Signal</t><br/>%1<t color='#E8F2FA' size='0.9'>  %2/4</t><br/><br/>", _barTxt, _bars],
         // État mode réalisme - en haut de la fiche relais
         format ["<t color='%1'>Mode liaison : %2</t><br/>", _realismColor, _realismMode],
         format ["<t color='#E8F2FA' size='0.9'>%1</t><br/><br/>", _realismExplain],
@@ -86,3 +105,6 @@ if ((count (keys _info)) < 1) then {
 _body ctrlSetStructuredText parseText _html;
 _body ctrlShow true;
 _body ctrlCommit 0;
+if (!isNil "comspec_overwatch_connect_fnc_updateNearestRelayMap") then {
+    [] call comspec_overwatch_connect_fnc_updateNearestRelayMap;
+};

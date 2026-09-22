@@ -37,9 +37,9 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('["probe_marker"', $catalog);
         self::assertStringContainsString('["probe_photo"', $catalog);
         self::assertStringContainsString('Message de test', $catalog);
-        self::assertStringContainsString('Repère de test', $catalog);
+        self::assertStringContainsString('Repï¿½re de test', $catalog);
         self::assertStringContainsString('Photo et transmission', $catalog);
-        self::assertStringContainsString('Ordres (réception)', $catalog);
+        self::assertStringContainsString('Ordres (rï¿½ception)', $catalog);
         self::assertStringContainsString('Ordres (affichage)', $catalog);
         self::assertStringContainsString('_delay = 55', $start);
         self::assertStringContainsString('COMSPEC_DiagIsolateLast', $start);
@@ -50,7 +50,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('diagIsolateAllows', $loops);
         self::assertStringContainsString('["orders_push"] call comspec_overwatch_connect_fnc_diagIsolateAllows', $loops);
         self::assertStringContainsString('_canPush', $pollOrders);
-        self::assertStringContainsString('affichage reporté', $pollOrders);
+        self::assertStringContainsString('affichage reportï¿½', $pollOrders);
         self::assertStringContainsString('_fnc_markSeen', $pollOrders);
         self::assertStringContainsString('values _byId', $pollOrders);
         self::assertStringContainsString('_newOnes select 0', $pollOrders);
@@ -58,9 +58,9 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('orders_push', $receive);
         self::assertStringContainsString('diagStatusSnapshot', $hud);
         self::assertStringContainsString('tool:diagisolate', $html);
-        self::assertStringContainsString('Dépannage liaison', $html);
+        self::assertStringContainsString('Dï¿½pannage liaison', $html);
         self::assertStringContainsString('tool:diagisolate', $js);
-        self::assertStringContainsString('Dépannage liaison', $ace);
+        self::assertStringContainsString('Dï¿½pannage liaison', $ace);
         self::assertStringContainsString('private _menuVer = 7', $ace);
         self::assertStringContainsString('class diagIsolateStart {}', $cfg);
         self::assertStringContainsString('class diagIsolateLaunch {}', $cfg);
@@ -68,7 +68,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('class diagStatusSnapshot {}', $cfg);
         self::assertStringContainsString('class noteUplinkReturn {}', $cfg);
         self::assertStringContainsString('COMSPEC_DiagIsolateHud', $cfg);
-        self::assertStringContainsString('1.6.5', $cfg);
+        self::assertStringContainsString('1.6.9', $cfg);
         $noteUp = (string) file_get_contents($base . '/functions/fn_noteUplinkReturn.sqf');
         self::assertStringContainsString('COMSPEC_UplinkLastSig_', $noteUp);
         self::assertStringContainsString('if (!_changed) then', $noteUp);
@@ -76,18 +76,18 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('sendIntel', $probe);
         self::assertStringContainsString('sendLocalTacticalMarker', $probe);
         self::assertStringContainsString('captureReconImage', $probe);
-        self::assertStringContainsString('Message de test envoyé vers le poste', $probe);
+        self::assertStringContainsString('Message de test envoyï¿½ vers le poste', $probe);
         self::assertStringContainsString('COMSPEC_DiagIsolateProbeNote', $hud);
         self::assertStringContainsString('idd = 9995', $dlg);
         self::assertStringContainsString('Lancer (55 s par fonction)', $dlg);
-        self::assertStringContainsString('Dépannage liaison demandé', $launch);
+        self::assertStringContainsString('Dï¿½pannage liaison demandï¿½', $launch);
         self::assertStringContainsString('diagIsolateStart', $launch);
         self::assertStringContainsString('9606', $esc);
-        self::assertStringContainsString('Dépannage liaison', $esc);
+        self::assertStringContainsString('Dï¿½pannage liaison', $esc);
         self::assertStringNotContainsString('ctrlSetText "COMSPEC Overwatch"', $esc);
         self::assertStringContainsString('9606', $pauseHpp);
-        self::assertStringContainsString('Dépannage liaison — lancer maintenant', $html);
-        self::assertStringContainsString('un message, un repère et une photo', $html);
+        self::assertStringContainsString('Dï¿½pannage liaison ï¿½ lancer maintenant', $html);
+        self::assertStringContainsString('un message, un repï¿½re et une photo', $html);
 
         self::assertStringContainsString('snapshot ? getPacketLossStats', $snap);
         self::assertStringContainsString('snapshot ? getPacketLossStats ok', $snap);

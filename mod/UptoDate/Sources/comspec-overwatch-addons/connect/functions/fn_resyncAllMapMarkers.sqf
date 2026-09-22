@@ -19,8 +19,8 @@ private _next = createHashMap;
 
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
-    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
-    "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"
+    "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
+    "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"
 ];
 
 {

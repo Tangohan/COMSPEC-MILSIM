@@ -301,6 +301,12 @@ _ctrl ctrlShow true;
 if (!isNil "comspec_overwatch_connect_fnc_updateAtakLinkChrome") then {
     [] call comspec_overwatch_connect_fnc_updateAtakLinkChrome;
 };
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateQueueBadge") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateQueueBadge;
+};
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet;
+};
 
 missionNamespace setVariable ["COMSPEC_LinkStripUpdating", false, false];
 true

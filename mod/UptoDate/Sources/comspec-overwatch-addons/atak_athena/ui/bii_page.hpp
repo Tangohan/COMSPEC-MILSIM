@@ -109,10 +109,39 @@ class COMSPEC_ATAK_BII: ATAK_Message
             x = QUOTE(COMSPEC_BII_W(0.08));
             y = QUOTE(COMSPEC_BII_H(4.58));
             w = QUOTE(COMSPEC_BII_W(2.84));
-            h = QUOTE(COMSPEC_BII_H(1.10));
-            size = QUOTE(COMSPEC_BII_H(0.38));
+            h = QUOTE(COMSPEC_BII_H(0.78));
+            size = QUOTE(COMSPEC_BII_H(0.34));
             text = "Dossiers";
             onButtonClick = "['builder'] call comspec_overwatch_atak_athena_fnc_athena_openBiiTab";
+        };
+
+        class JournalTitle: RscStructuredText
+        {
+            idc = 9819;
+            x = QUOTE(COMSPEC_BII_W(0.08));
+            y = QUOTE(COMSPEC_BII_H(5.48));
+            w = QUOTE(COMSPEC_BII_W(2.84));
+            h = QUOTE(COMSPEC_BII_H(0.36));
+            colorBackground[] = {0, 0, 0, 0};
+            text = "<t size='0.78' color='#5EC8F0'>Journal des identifications</t>";
+        };
+
+        class Journal: RscStructuredText
+        {
+            idc = 9820;
+            x = QUOTE(COMSPEC_BII_W(0.08));
+            y = QUOTE(COMSPEC_BII_H(5.86));
+            w = QUOTE(COMSPEC_BII_W(2.84));
+            h = QUOTE(COMSPEC_BII_H(2.10));
+            colorBackground[] = ATAK_BG_DETAIL;
+            text = "";
+            class Attributes
+            {
+                font = "RobotoCondensed";
+                color = "#E8F2FA";
+                align = "left";
+                size = 0.72;
+            };
         };
     };
 };

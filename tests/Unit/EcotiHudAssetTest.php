@@ -98,7 +98,7 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('comspec_overwatch_ecoti_compass_only', $pre);
         self::assertStringContainsString('Boussole uniquement', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_fusion', $pre);
-        self::assertStringContainsString('Découpage d’étage (silhouette)', $pre);
+        self::assertStringContainsString('Dï¿½coupage dï¿½ï¿½tage (silhouette)', $pre);
         self::assertStringContainsString('class ecotiInit', $cfg);
         self::assertStringContainsString('class ecotiDrawBadge', $cfg);
         self::assertStringContainsString('class ecotiThemeColors', $cfg);
@@ -112,8 +112,8 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('class ecotiDrawFusion', $cfg);
         self::assertStringContainsString('class ecotiApplyTubeInfoSetting', $cfg);
         self::assertStringContainsString('class COMSPEC_EcotiChromeHud', $cfg);
-        self::assertStringContainsString('1.6.5', $cfg);
-        self::assertStringContainsString('1.0.160', $atakCfg);
+        self::assertStringContainsString('1.6.9', $cfg);
+        self::assertStringContainsString('1.0.165', $atakCfg);
         self::assertStringContainsString('class athena_ecotiThemeSave', $atakCfg);
         self::assertStringContainsString('class athena_ecotiTubeInfoSave', $atakCfg);
         self::assertStringContainsString('ecotiInit', $post);

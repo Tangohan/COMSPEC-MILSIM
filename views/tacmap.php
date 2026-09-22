@@ -56,6 +56,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js?v=202608282030"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js?v=202607282040"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon-notes.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-aerial.js?v=202609140010"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -151,6 +152,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <span class="tacmap-map-toolbar__tag">cTab</span>
             <label><input type="checkbox" id="tacmap-layer-tactical" checked /> Signalements</label>
             <label><input type="checkbox" id="tacmap-layer-recon" checked /> Photos</label>
+            <label><input type="checkbox" id="tacmap-layer-recon-notes" checked /> Notes reco</label>
           </div>
           <div class="tacmap-map-toolbar__group" aria-label="Autres calques">
             <label><input type="checkbox" id="tacmap-layer-danger" checked /> Zones</label>
@@ -159,6 +161,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <label><input type="checkbox" id="tacmap-layer-intel" /> Indices</label>
             <label><input type="checkbox" id="tacmap-layer-sse" /> Dossiers SSE</label>
             <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Terrain</label>
+            <label><input type="checkbox" id="tacmap-layer-buildings" checked /> Bâtiments</label>
+            <label><input type="checkbox" id="tacmap-layer-network-zones" checked /> Zones réseau</label>
             <label><input type="checkbox" id="tacmap-layer-geo-places" /> Villes</label>
             <label><input type="checkbox" id="tacmap-layer-geo-roads" /> Routes</label>
             <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
@@ -230,6 +234,12 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Signalements (cTab / Athena)</p>
             <div id="tacmap-tactical-list">
               <p class="text-sm text-[color:var(--tm-muted)]">Aucun signalement récent.</p>
+            </div>
+          </section>
+          <section>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Notes de reconnaissance</p>
+            <div id="tacmap-recon-notes-list">
+              <p class="text-sm text-[color:var(--tm-muted)]">Aucune note de reco récente.</p>
             </div>
           </section>
           <section>
@@ -347,12 +357,16 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             layerAir: 'tacmap-layer-air',
             layerTactical: 'tacmap-layer-tactical',
             layerRecon: 'tacmap-layer-recon',
+            layerReconNotes: 'tacmap-layer-recon-notes',
             layerElevation: 'tacmap-layer-elevation',
+            layerBuildings: 'tacmap-layer-buildings',
+            layerNetworkZones: 'tacmap-layer-network-zones',
             layerGeoPlaces: 'tacmap-layer-geo-places',
             layerGeoRoads: 'tacmap-layer-geo-roads',
             layerRoute: 'tacmap-layer-route',
             tacticalList: 'tacmap-tactical-list',
             reconList: 'tacmap-recon-list',
+            reconNotesList: 'tacmap-recon-notes-list',
             toolViewshed: 'tacmap-tool-viewshed',
             toolHeatmap: 'tacmap-tool-heatmap',
             toolRouteFoot: 'tacmap-tool-route-foot',

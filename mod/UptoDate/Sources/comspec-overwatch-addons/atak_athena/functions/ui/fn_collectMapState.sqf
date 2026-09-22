@@ -49,8 +49,17 @@ if (!(_layers isEqualType createHashMap) || {count _layers == 0}) then {
         ["units", true], ["vehicles", true], ["objectives", true],
         ["player_markers", true], ["athena", true], ["intel", true],
         ["photos", true], ["jtac", true], ["cas", true], ["sigint", true],
-        ["logistics", true]
+        ["logistics", true], ["enemy_ai", true], ["relays", true],
+        ["network_zones", true], ["recon_notes", true]
     ];
+    private _saved = profileNamespace getVariable ["COMSPEC_MapLayersPairs", []];
+    if (_saved isEqualType [] && {count _saved > 0}) then {
+        {
+            if (_x isEqualType [] && {(count _x) >= 2}) then {
+                _layers set [_x select 0, _x select 1];
+            };
+        } forEach _saved;
+    };
     missionNamespace setVariable ["COMSPEC_MapLayers", _layers, false];
 };
 

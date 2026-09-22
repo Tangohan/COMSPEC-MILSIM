@@ -22,6 +22,9 @@ if (!isNil "COMSPEC_RoleplayZones") then {
     {
         if ((_x getOrDefault ["source", ""]) isNotEqualTo "portal") then {
             _filtered pushBack _x;
+        } else {
+            private _oldMk = _x getOrDefault ["marker", ""];
+            if (_oldMk isNotEqualTo "") then { deleteMarker _oldMk; };
         };
     } forEach COMSPEC_RoleplayZones;
     COMSPEC_RoleplayZones = _filtered;
@@ -67,6 +70,24 @@ private _mapType = {
     _zone set ["position", _pos];
     _zone set ["radius", _radius max 25];
     _zone set ["source", "portal"];
+
+    private _color = switch (_type) do {
+        case "no_coverage": { "ColorRed" };
+        case "interference": { "ColorOrange" };
+        case "degraded": { "ColorYellow" };
+        case "jammer": { "ColorPink" };
+        default { "ColorGrey" };
+    };
+    private _markerName = format ["comspec_roleplay_zone_%1", _zone get "id"];
+    createMarker [_markerName, _pos];
+    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerSize [_radius max 25, _radius max 25];
+    _markerName setMarkerColor _color;
+    _markerName setMarkerBrush "Solid";
+    _markerName setMarkerAlpha (0.18 + 0.55 * (((_zone get "intensity") min 100 max 0) / 100));
+    _markerName setMarkerText format ["%1 (%2m)", _name, round (_radius max 25)];
+    _zone set ["marker", _markerName];
+    _zone set ["color", _color];
 
     COMSPEC_RoleplayZones pushBack _zone;
 } forEach (_zonesLines splitString toString [10]);

@@ -23,11 +23,4 @@ _floors = (round _floors) max 1;
 private _sel = missionNamespace getVariable ["COMSPEC_EcotiCutawayFloor", 0];
 if (!(_sel isEqualType 0)) then { _sel = 0; };
 _sel = ((round _sel) + 1) mod _floors;
-missionNamespace setVariable ["COMSPEC_EcotiCutawayFloor", _sel, false];
-
-[
-    format ["Découpage : étage %1 sur %2.", _sel + 1, _floors],
-    "system",
-    "info"
-] call comspec_overwatch_connect_fnc_announce;
-_sel
+[_sel, true] call comspec_overwatch_connect_fnc_ecotiSetFloor;

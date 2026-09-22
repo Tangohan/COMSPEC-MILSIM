@@ -22,27 +22,27 @@ final class AtakRelayAtAssetTest extends TestCase
         $view = (string) file_get_contents($root . '/views/admin/atak/server_control.php');
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
 
-        self::assertStringContainsString('versionStr = "1.0.160"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
         self::assertStringContainsString('canSetArea = 0;', $eden);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfgC);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
         self::assertStringContainsString('filterDrawerApps', $cfgA);
         self::assertStringContainsString('class AtakRelay: message', $cfgA);
         self::assertStringContainsString('ORDER = 0.08;', $cfgA);
         self::assertStringContainsString('text = "<t size=\'1\'>Relais AT</t>"', $cfgA);
         self::assertStringContainsString('PAGE_CTRL = "COMSPEC_ATAK_Relay"', $cfgA);
         self::assertStringContainsString('class COMSPEC_ATAK_Relay', $page);
-        self::assertStringContainsString('Adresse rseau', $update);
+        self::assertStringContainsString('Adresse rï¿½seau', $update);
         self::assertStringContainsString('getNearestAtakRelay', $update);
         self::assertStringContainsString('throughput_mbps', $nearest);
         self::assertStringContainsString('Tutoriel Eden', $eden);
         self::assertStringContainsString('RelayCertificate', $eden);
         self::assertStringContainsString('relayPopupHtml', $js);
-        self::assertStringContainsString('Adresse rseau', $js);
+        self::assertStringContainsString('Adresse rï¿½seau', $js);
         self::assertStringContainsString('display_name', $repo);
         self::assertStringContainsString('ip_addr', $repo);
-        self::assertStringContainsString('adresse rseau', $view);
+        self::assertStringContainsString('adresse rï¿½seau', $view);
         self::assertStringNotContainsString('endpoint', strtolower($view));
         self::assertStringContainsString('args.Length > 6', $ext);
-        self::assertStringContainsString('2.0.48', $ext);
+        self::assertStringContainsString('2.0.51', $ext);
     }
 }

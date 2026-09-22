@@ -42,3 +42,59 @@ private _lines = [
 ];
 
 _body ctrlSetStructuredText parseText (_lines joinString "<br/>");
+
+private _journal = _group controlsGroupCtrl 9820;
+if (isNull _journal) exitWith {};
+
+private _hist = [];
+private _grp = group player;
+if (!isNull _grp) then {
+    private _shared = _grp getVariable ["COMSPEC_SeekQueryHistory", []];
+    if (_shared isEqualType []) then { _hist = _shared; };
+};
+if ((count _hist) < 1) then {
+    private _local = missionNamespace getVariable ["COMSPEC_SeekQueryHistory", []];
+    if (_local isEqualType []) then { _hist = _local; };
+};
+
+private _jLines = [];
+if ((count _hist) < 1) then {
+    _jLines pushBack "<t color='#A0A0A0'>Aucune interrogation pour l’instant. Les relevés identifiés apparaissent ici, avec le statut, la confiance et l’heure.</t>";
+} else {
+    private _shown = 0;
+    {
+        if (_shown >= 12) then { continue };
+        if (!(_x isEqualType []) || {(count _x) < 8}) then { continue };
+        _x params ["", "_clock", "_who", "_alias", "_status", "_conf", "_ref", "_grid", ["_code", ""]];
+        private _col = switch (toLower _code) do {
+            case "confirmed": { "#7CFF9A" };
+            case "possible": { "#FFE08A" };
+            default { "#A8B8C8" };
+        };
+        private _aliasBit = if (_alias isEqualType "" && {_alias isNotEqualTo ""}) then {
+            format [" «%1»", _alias]
+        } else { "" };
+        private _confBit = if ((_conf isEqualType 0) && {_conf > 0}) then {
+            format [" · %1 %%", _conf]
+        } else { "" };
+        private _refBit = if (_ref isEqualType "" && {_ref isNotEqualTo ""}) then {
+            format [" · %1", _ref]
+        } else { "" };
+        _jLines pushBack format [
+            "<t color='#8FB4C8'>%1</t>  <t color='#E8F2FA'>%2%3</t><br/><t color='%4'>%5</t><t color='#A0A0A0'>%6%7 · grille %8</t>",
+            _clock,
+            _who,
+            _aliasBit,
+            _col,
+            _status,
+            _confBit,
+            _refBit,
+            _grid
+        ];
+        _shown = _shown + 1;
+    } forEach _hist;
+};
+
+_journal ctrlSetStructuredText parseText (_jLines joinString "<br/><br/>");
+_journal ctrlShow true;
+_journal ctrlCommit 0;

@@ -51,7 +51,6 @@ if (!_bootMk) then {
     if ((abs _xPos) < 0.5 && {(abs _yPos) < 0.5}) then { continue };
 
     _seen pushBack _id;
-    if (!_bootMk) then { continue };
     private _name = format ["comspec_webmk_%1", _id];
     if (_typeL isEqualTo "manual" || {!(isClass (configFile >> "CfgMarkers" >> _type))}) then {
         _type = "mil_dot";
@@ -59,22 +58,25 @@ if (!_bootMk) then {
     if (_color isEqualTo "" || {(_color select [0, 1]) isEqualTo "#"}) then {
         _color = "ColorGreen";
     };
+    if (_text isEqualTo "") then { _text = "Repère poste"; };
 
-    if (!(_name in allMapMarkers) && {_created >= 10}) then { continue };
+    if (!(_name in allMapMarkers) && {_created >= 25}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
     if (_name in allMapMarkers) then {
-        _name setMarkerPosLocal [_xPos, _yPos];
-        _name setMarkerTextLocal _text;
-        _name setMarkerTypeLocal _type;
-        _name setMarkerColorLocal _color;
+        _name setMarkerPos [_xPos, _yPos];
+        _name setMarkerText _text;
+        _name setMarkerType _type;
+        _name setMarkerColor _color;
     } else {
-        private _mk = createMarkerLocal [_name, [_xPos, _yPos]];
-        _mk setMarkerTypeLocal _type;
-        _mk setMarkerColorLocal _color;
-        _mk setMarkerTextLocal _text;
-        _mk setMarkerAlphaLocal 1;
+        private _mk = createMarker [_name, [_xPos, _yPos]];
+        if (_mk isEqualTo "") then { _mk = _name; };
+        _mk setMarkerType _type;
+        _mk setMarkerColor _color;
+        _mk setMarkerText _text;
+        _mk setMarkerSize [0.85, 0.85];
+        _mk setMarkerAlpha 1;
         _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
@@ -97,7 +99,7 @@ if ((count _raw) < 7990) then {
             if (_n in allMapMarkers) then {
                 private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
                 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
-                deleteMarkerLocal _n;
+                deleteMarker _n;
                 private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
                 if (_unmute < 0) then { _unmute = 0; };
                 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];

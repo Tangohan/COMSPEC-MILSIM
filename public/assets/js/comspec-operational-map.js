@@ -251,6 +251,283 @@
     }
   }
 
+  function inferNetworkEffect(data) {
+    var effect = String((data && (data.effect || data.zone_type)) || '').toLowerCase();
+    if (effect && effect !== 'mil_circle' && effect !== 'ellipse' && effect !== 'icon') return effect;
+    var text = String((data && (data.text || data.label || data.name)) || '').toLowerCase();
+    if (text.indexOf('brouill') >= 0 || text.indexOf('jammer') >= 0) return 'jammer';
+    if (text.indexOf('sans couverture') >= 0 || text.indexOf('absence') >= 0) return 'no_coverage';
+    if (text.indexOf('interf') >= 0 || text.indexOf('perte') >= 0) return 'interference';
+    var col = String((data && data.color) || '').toLowerCase();
+    if (col.indexOf('pink') >= 0) return 'jammer';
+    if (col.indexOf('red') >= 0 || col.indexOf('east') >= 0) return 'no_coverage';
+    if (col.indexOf('orange') >= 0) return 'interference';
+    return 'degraded';
+  }
+
+  function networkZoneStyle(effect, intensity, alpha) {
+    var kind = String(effect || '').toLowerCase();
+    var color = '#eab308';
+    var label = 'Couverture dégradée';
+    if (kind === 'no_coverage' || kind === 'no_signal') {
+      color = '#ef4444';
+      label = 'Sans couverture';
+    } else if (kind === 'jammer' || kind === 'jamming') {
+      color = '#ec4899';
+      label = 'Brouillage actif';
+    } else if (kind === 'interference') {
+      color = '#f97316';
+      label = 'Interférences';
+    } else if (kind === 'high_loss') {
+      color = '#f97316';
+      label = 'Forte perte de signal';
+    }
+    var inten = Number(intensity);
+    if (isNaN(inten)) {
+      var a = Number(alpha);
+      inten = isNaN(a) ? 50 : Math.round(Math.max(0, Math.min(1, a)) * 100);
+    }
+    inten = Math.max(0, Math.min(100, inten));
+    return {
+      color: color,
+      fill: 0.08 + 0.5 * (inten / 100),
+      label: label,
+      intensity: inten,
+    };
+  }
+
+  function isNetworkZoneMarker(m, data) {
+    var id = String((m && (m.id || m.name)) || '').toLowerCase();
+    if (id.indexOf('comspec_roleplay_zone_') >= 0) return true;
+    var purpose = String((data && data.purpose) || '').toLowerCase();
+    return purpose === 'network_zone' || purpose === 'roleplay_zone';
+  }
+
+  function parseMarkerPayload(m) {
+    var raw = m && m.markerData;
+    if (typeof raw === 'string') {
+      try { return JSON.parse(raw || '{}'); } catch (e) { return {}; }
+    }
+    return raw || {};
+  }
+
+  function networkZoneDedupeKey(x, y) {
+    return Math.round(Number(x) / 12) + ':' + Math.round(Number(y) / 12);
+  }
+
+  function addNetworkZoneCircle(layerGroup, x, y, radius, style, popupLabel) {
+    if (!layerGroup || isNaN(x) || isNaN(y) || !(radius > 0)) return;
+    var latlng = L.latLng(y, x);
+    var layer = L.circle(latlng, {
+      radius: radius,
+      color: style.color,
+      weight: 2,
+      fillColor: style.color,
+      fillOpacity: style.fill,
+      opacity: 0.85,
+      interactive: true,
+    });
+    var title = popupLabel || style.label;
+    layer.bindPopup(
+      '<div class="atak-marker-popup__kind">Zone réseau</div><strong>' +
+      String(title).replace(/</g, '&lt;') + '</strong>' +
+      '<p class="atak-marker-popup__hint">Intensité ' + Math.round(style.intensity) +
+      ' % — à éviter ou à traverser en connaissance de cause.</p>'
+    );
+    layer.addTo(layerGroup);
+  }
+
+  function createSceneBuildingOverlay(opts) {
+    var map = opts && opts.map;
+    var apiBase = (opts && opts.apiBase) || '';
+    var getMapId = (opts && opts.getMapId) || function () { return 1; };
+    var enabled = opts && opts.enabled !== false;
+    var canvas = null;
+    var ctx = null;
+    var objects = [];
+    var frame = 0;
+    var fetchTimer = 0;
+    var destroyed = false;
+
+    function ensurePane() {
+      if (!map || !map.getPane) return null;
+      if (!map.getPane('tacmapSceneBuildings')) {
+        map.createPane('tacmapSceneBuildings');
+        var pane = map.getPane('tacmapSceneBuildings');
+        pane.style.zIndex = '350';
+        pane.style.pointerEvents = 'none';
+      }
+      return map.getPane('tacmapSceneBuildings');
+    }
+
+    function placeCanvas() {
+      if (!canvas || !map) return;
+      var pane = ensurePane();
+      if (!pane) return;
+      if (canvas.parentNode !== pane) pane.appendChild(canvas);
+      canvas.style.position = 'absolute';
+      canvas.style.pointerEvents = 'none';
+      var topLeft = map.containerPointToLayerPoint([0, 0]);
+      if (window.L && L.DomUtil && typeof L.DomUtil.setPosition === 'function') {
+        L.DomUtil.setPosition(canvas, topLeft);
+      } else {
+        canvas.style.left = topLeft.x + 'px';
+        canvas.style.top = topLeft.y + 'px';
+      }
+    }
+
+    function armaPoint(x, y) {
+      return map.latLngToContainerPoint(L.latLng(Number(y), Number(x)));
+    }
+
+    function corners(item) {
+      var angle = Number(item.bearing || 0) * Math.PI / 180;
+      var c = Math.cos(angle);
+      var s = Math.sin(angle);
+      var hw = Number(item.width || 4) / 2;
+      var hd = Number(item.depth || 4) / 2;
+      return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]].map(function (v) {
+        return armaPoint(Number(item.x) + v[0] * c - v[1] * s, Number(item.y) + v[0] * s + v[1] * c);
+      });
+    }
+
+    function polygon(points, fill, stroke) {
+      if (!points.length) return;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      points.slice(1).forEach(function (p) { ctx.lineTo(p.x, p.y); });
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    function inflateFootprint(points, minSpan) {
+      if (!points.length) return points;
+      var minX = points[0].x, maxX = points[0].x, minY = points[0].y, maxY = points[0].y, i;
+      for (i = 1; i < points.length; i += 1) {
+        if (points[i].x < minX) minX = points[i].x;
+        if (points[i].x > maxX) maxX = points[i].x;
+        if (points[i].y < minY) minY = points[i].y;
+        if (points[i].y > maxY) maxY = points[i].y;
+      }
+      var spanX = maxX - minX, spanY = maxY - minY;
+      if (spanX >= minSpan && spanY >= minSpan) return points;
+      var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      var hx = Math.max(minSpan / 2, spanX / 2), hy = Math.max(minSpan / 2, spanY / 2);
+      return points.map(function (p) {
+        return {
+          x: cx + (spanX < 0.5 ? (p.x >= cx ? hx : -hx) : (p.x - cx) * (hx * 2 / Math.max(spanX, 0.5))),
+          y: cy + (spanY < 0.5 ? (p.y >= cy ? hy : -hy) : (p.y - cy) * (hy * 2 / Math.max(spanY, 0.5))),
+        };
+      });
+    }
+
+    function drawObject(item) {
+      var zoom = map.getZoom();
+      var minSpan = zoom < 3 ? 16 : (zoom < 5 ? 10 : 4);
+      var base = inflateFootprint(corners(item), minSpan);
+      var scale = Math.max(0.28, Math.min(1.4, zoom / 9));
+      var rise = Math.max(zoom < 4 ? 10 : 2, Number(item.height || item.height_m || 3) * scale);
+      var top = base.map(function (p) { return { x: p.x, y: p.y - rise }; });
+      polygon([base[1], base[2], top[2], top[1]], 'rgba(71,85,105,.78)');
+      polygon([base[2], base[3], top[3], top[2]], 'rgba(51,65,85,.88)');
+      polygon(top, 'rgba(203,213,225,.9)', 'rgba(15,23,42,.8)');
+    }
+
+    function draw() {
+      frame = 0;
+      if (destroyed || !canvas || !map || !ctx) return;
+      placeCanvas();
+      var size = map.getSize();
+      var ratio = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(size.x * ratio);
+      canvas.height = Math.round(size.y * ratio);
+      canvas.style.width = size.x + 'px';
+      canvas.style.height = size.y + 'px';
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, size.x, size.y);
+      if (!enabled) return;
+      objects.slice().sort(function (a, b) { return Number(a.y) - Number(b.y); }).forEach(drawObject);
+    }
+
+    function schedule() {
+      if (!frame) frame = requestAnimationFrame(draw);
+    }
+
+    function loadVisible() {
+      if (destroyed || !map || !enabled) {
+        schedule();
+        return;
+      }
+      var bounds = map.getBounds();
+      var sw = bounds.getSouthWest();
+      var ne = bounds.getNorthEast();
+      var bbox = [sw.lng, sw.lat, ne.lng, ne.lat].join(',');
+      fetch(apiBase + '/atak/scene?mapId=' + encodeURIComponent(getMapId()) +
+        '&bbox=' + encodeURIComponent(bbox) + '&kind=building', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          objects = (data && Array.isArray(data.objects)) ? data.objects : [];
+          schedule();
+        })
+        .catch(function () { schedule(); });
+    }
+
+    function queueLoad() {
+      window.clearTimeout(fetchTimer);
+      fetchTimer = window.setTimeout(loadVisible, 180);
+      schedule();
+    }
+
+    function onMove() { schedule(); }
+    function onIdle() { queueLoad(); }
+
+    if (map) {
+      canvas = document.createElement('canvas');
+      canvas.className = 'tacmap-scene-buildings';
+      canvas.setAttribute('aria-hidden', 'true');
+      ctx = canvas.getContext('2d');
+      placeCanvas();
+      map.on('move', onMove);
+      map.on('moveend', onIdle);
+      map.on('zoomend', onIdle);
+      map.on('resize', onMove);
+      if (enabled) loadVisible();
+    }
+
+    return {
+      setEnabled: function (on) {
+        enabled = !!on;
+        if (enabled) loadVisible();
+        else {
+          objects = [];
+          schedule();
+        }
+      },
+      reload: loadVisible,
+      destroy: function () {
+        destroyed = true;
+        window.clearTimeout(fetchTimer);
+        if (frame) cancelAnimationFrame(frame);
+        if (map) {
+          map.off('move', onMove);
+          map.off('moveend', onIdle);
+          map.off('zoomend', onIdle);
+          map.off('resize', onMove);
+        }
+        if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+        canvas = null;
+        ctx = null;
+        objects = [];
+      },
+    };
+  }
+
   function parseMarkerDataPos(pos, isWorld) {
     if (!pos || !pos.length) return null;
     var x, y;
@@ -611,6 +888,9 @@
         geoRoads: false,
         tactical: true,
         recon: true,
+        reconNotes: true,
+        buildings: true,
+        networkZones: true,
       },
       affiliations: {
         friend: true,
@@ -635,6 +915,7 @@
     var geoNetwork = null;
     var routePlanner = null;
     var lastGeoBboxKey = '';
+    var buildingOverlay = null;
 
     function getEl(id) {
       return typeof id === 'string' ? document.getElementById(id) : id;
@@ -657,7 +938,9 @@
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
         ['intel', layerGroups.intel], ['air', layerGroups.air], ['sse', layerGroups.sse],
         ['elevation', layerGroups.elevation], ['route', layerGroups.route],
-        ['tactical', layerGroups.tactical], ['tactical', layerGroups.reports], ['recon', layerGroups.recon]].forEach(function (pair) {
+        ['tactical', layerGroups.tactical], ['tactical', layerGroups.reports], ['recon', layerGroups.recon],
+        ['reconNotes', layerGroups.reconNotes],
+        ['networkZones', layerGroups.networkZones]].forEach(function (pair) {
         var key = pair[0];
         var lg = pair[1];
         if (!lg) return;
@@ -847,6 +1130,52 @@
         .catch(function () {});
     }
 
+    function refreshNetworkZones(fromMarkers, isWorld) {
+      if (!layerGroups.networkZones) return;
+      layerGroups.networkZones.clearLayers();
+      if (!state.layers.networkZones || isWorld) return;
+      var seen = {};
+      (fromMarkers || []).forEach(function (row) {
+        var data = row.data || {};
+        var pos = parseMarkerDataPos(data.pos, false);
+        if (!pos) return;
+        var x = pos.lng;
+        var y = pos.lat;
+        var size = data.size || [];
+        var radius = Math.max(Number(size[0]) || 0, Number(size[1]) || 0);
+        if (!(radius > 0) && data.radius != null) radius = Number(data.radius);
+        var style = networkZoneStyle(inferNetworkEffect(data), data.intensity, data.alpha);
+        var key = networkZoneDedupeKey(x, y);
+        seen[key] = true;
+        var label = (data.text || data.label || style.label) + '';
+        addNetworkZoneCircle(layerGroups.networkZones, x, y, radius, style, label);
+      });
+      fetch(apiBase + '/atak/roleplay-stats?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (payload) {
+          if (!payload || !state.layers.networkZones || !layerGroups.networkZones) return;
+          var zones = payload.zones_json;
+          if (typeof zones === 'string') {
+            try { zones = JSON.parse(zones || '[]'); } catch (e) { zones = []; }
+          }
+          if (!Array.isArray(zones)) return;
+          zones.forEach(function (z) {
+            if (!z) return;
+            var center = z.center || z.position || [];
+            var x = Number(center[0]);
+            var y = Number(center[1]);
+            if (isNaN(x) || isNaN(y)) return;
+            var key = networkZoneDedupeKey(x, y);
+            if (seen[key]) return;
+            seen[key] = true;
+            var style = networkZoneStyle(z.effect || z.type, z.intensity, z.alpha);
+            var label = z.name || z.label || style.label;
+            addNetworkZoneCircle(layerGroups.networkZones, x, y, Number(z.radius) || 0, style, label);
+          });
+        })
+        .catch(function () {});
+    }
+
     function refreshSecondaryLayers() {
       if (state.currentMapType !== 'arma' && state.currentMapType !== 'image') return;
       var isWorld = false;
@@ -862,14 +1191,29 @@
           onFeatureContextMenu: onTacmapFeatureContextMenu,
         });
       }
-      if (state.layers.markers) {
+      if (state.layers.markers || state.layers.networkZones) {
         fetch(apiBase + '/markers?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
           .then(function (r) { return r.json(); })
           .then(function (list) {
-            renderAtakMarkers(layerGroups.markers, list, isWorld, onTacmapFeatureContextMenu, lastUnitsRaw);
+            var regular = [];
+            var netFromMarkers = [];
+            (list || []).forEach(function (m) {
+              var data = parseMarkerPayload(m);
+              if (isNetworkZoneMarker(m, data)) netFromMarkers.push({ marker: m, data: data });
+              else regular.push(m);
+            });
+            if (state.layers.markers) {
+              renderAtakMarkers(layerGroups.markers, regular, isWorld, onTacmapFeatureContextMenu, lastUnitsRaw);
+            }
+            refreshNetworkZones(netFromMarkers, isWorld);
           })
-          .catch(function () {});
+          .catch(function () {
+            if (state.layers.networkZones) refreshNetworkZones([], isWorld);
+          });
+      } else if (layerGroups.networkZones) {
+        layerGroups.networkZones.clearLayers();
       }
+      if (buildingOverlay && state.layers.buildings) buildingOverlay.reload();
       if (state.layers.pings) {
         fetch(apiBase + '/pings?mapId=' + encodeURIComponent(state.currentMapId) + '&limit=80', { credentials: 'include' })
           .then(function (r) { return r.json(); })
@@ -916,6 +1260,8 @@
       }
       if (state.layers.recon) refreshReconPanel();
       else if (layerGroups.recon) layerGroups.recon.clearLayers();
+      if (state.layers.reconNotes) refreshReconNotesPanel();
+      else if (layerGroups.reconNotes) layerGroups.reconNotes.clearLayers();
     }
 
     function renderTacticalMarkers(alerts) {
@@ -1001,6 +1347,36 @@
         L.marker(latlng, { icon: icon, zIndexOffset: 340 })
           .bindPopup(html)
           .addTo(layerGroups.recon);
+      });
+    }
+
+    function renderReconNoteMarkers(notes) {
+      if (!layerGroups.reconNotes || !map) return;
+      layerGroups.reconNotes.clearLayers();
+      if (!state.layers.reconNotes) return;
+      var Chip = window.TacmapReconNotes;
+      (notes || []).forEach(function (n) {
+        if (!Chip || !Chip.hasPos(n)) return;
+        var x = parseFloat(n.pos_x);
+        var y = parseFloat(n.pos_y);
+        var latlng = L.latLng(y, x);
+        var spec = Chip.tagSpec(n.tag);
+        var opacity = n.opacity != null ? Number(n.opacity) : 1;
+        var icon = L.divIcon({
+          className: 'tacmap-recon-note-marker',
+          html: '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.55rem;height:1.45rem;padding:0 5px;border-radius:3px;opacity:' +
+            opacity + ';background:' + spec.color + ';color:#0b1220;font-size:8px;font-weight:800;letter-spacing:.04em;box-shadow:0 0 0 2px rgba(0,0,0,.4);">' +
+            escapeHtml(String(spec.label).slice(0, 4).toUpperCase()) + '</span>',
+          iconSize: [28, 24],
+          iconAnchor: [14, 12],
+        });
+        var popup = '<strong>' + escapeHtml(spec.label) + '</strong>';
+        if (n.author) popup += '<br/>' + escapeHtml(n.author);
+        if (n.confidence_label) popup += '<br/>' + escapeHtml(n.confidence_label);
+        if (n.text) popup += '<br/>' + escapeHtml(String(n.text).slice(0, 160));
+        L.marker(latlng, { icon: icon, zIndexOffset: 360, opacity: opacity })
+          .bindPopup(popup)
+          .addTo(layerGroups.reconNotes);
       });
     }
 
@@ -1432,11 +1808,21 @@
           renderUnitsOnMap(filtered);
           renderRosterAndTable(filtered);
           // Repères carte : recharger pour masquer ceux qui doublonnent un BFT.
-          if (state.layers.markers && layerGroups.markers) {
+          if ((state.layers.markers || state.layers.networkZones) && layerGroups.markers) {
             fetch(apiBase + '/markers?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
               .then(function (r) { return r.json(); })
               .then(function (mlist) {
-                renderAtakMarkers(layerGroups.markers, mlist, false, onTacmapFeatureContextMenu, lastUnitsRaw);
+                var regular = [];
+                var netFromMarkers = [];
+                (mlist || []).forEach(function (m) {
+                  var data = parseMarkerPayload(m);
+                  if (isNetworkZoneMarker(m, data)) netFromMarkers.push({ marker: m, data: data });
+                  else regular.push(m);
+                });
+                if (state.layers.markers) {
+                  renderAtakMarkers(layerGroups.markers, regular, false, onTacmapFeatureContextMenu, lastUnitsRaw);
+                }
+                if (state.layers.networkZones) refreshNetworkZones(netFromMarkers, false);
               })
               .catch(function () {});
           }
@@ -1477,6 +1863,8 @@
         if (needRecreate) {
           mapIntervals.forEach(function (id) { clearInterval(id); });
           mapIntervals = [];
+          if (buildingOverlay && buildingOverlay.destroy) buildingOverlay.destroy();
+          buildingOverlay = null;
           map.remove();
           map = null;
           layerGroups = {};
@@ -1519,6 +1907,8 @@
         layerGroups.tactical = L.layerGroup();
         layerGroups.reports = L.layerGroup();
         layerGroups.recon = L.layerGroup();
+        layerGroups.reconNotes = L.layerGroup();
+        layerGroups.networkZones = L.layerGroup();
         map.on('contextmenu', function (e) {
           if (L.DomEvent) L.DomEvent.preventDefault(e);
           if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1577,6 +1967,20 @@
         renderRosterAndTable([]);
         renderMedicalPanel([]);
         updateUnitCountEl();
+      }
+      if (!isWorld && map) {
+        if (!buildingOverlay) {
+          buildingOverlay = createSceneBuildingOverlay({
+            map: map,
+            apiBase: apiBase,
+            getMapId: function () { return state.currentMapId; },
+            enabled: !!state.layers.buildings,
+          });
+        } else {
+          buildingOverlay.setEnabled(!!state.layers.buildings);
+        }
+      } else if (buildingOverlay) {
+        buildingOverlay.setEnabled(false);
       }
       applyLayerVisibility();
       setTimeout(invalidateSize, 100);
@@ -1637,6 +2041,10 @@
           refreshGeoLayers();
           return;
         }
+        if (key === 'buildings') {
+          if (buildingOverlay) buildingOverlay.setEnabled(!!state.layers.buildings);
+          return;
+        }
         if (state.currentMapType === 'arma' || state.currentMapType === 'image') {
           if (key === 'units') syncUnits();
           else refreshSecondaryLayers();
@@ -1679,6 +2087,9 @@
     bindLayerCheckbox(els.layerGeoRoads, 'geoRoads');
     bindLayerCheckbox(els.layerTactical, 'tactical');
     bindLayerCheckbox(els.layerRecon, 'recon');
+    bindLayerCheckbox(els.layerReconNotes, 'reconNotes');
+    bindLayerCheckbox(els.layerBuildings, 'buildings');
+    bindLayerCheckbox(els.layerNetworkZones, 'networkZones');
 
     function bindAffCheckbox(id, key) {
       var el = getEl(id);
@@ -1833,6 +2244,17 @@
       });
     }
 
+    function refreshReconNotesPanel() {
+      var listEl = getEl(els.reconNotesList);
+      if (!listEl || !window.TacmapReconNotes) return;
+      window.TacmapReconNotes.poll(apiBase, state.currentMapId, listEl, {
+        onNotes: function (notes) {
+          renderReconNoteMarkers(notes);
+        },
+        onLocate: focusMapPos,
+      });
+    }
+
     function refreshReconPanel() {
       var listEl = getEl(els.reconList);
       if (!listEl || !window.TacmapRecon) return;
@@ -1890,10 +2312,12 @@
     intervals.push(setInterval(refreshPlatformHealth, 60000));
     intervals.push(setInterval(refreshTacticalPanel, Math.max(syncMs, 8000)));
     intervals.push(setInterval(refreshReconPanel, Math.max(syncMs, 12000)));
+    intervals.push(setInterval(refreshReconNotesPanel, Math.max(syncMs, 8000)));
     intervals.push(setInterval(refreshWeatherBanner, Math.max(syncMs, 20000)));
     loadMissionSettings();
     refreshTacticalPanel();
     refreshReconPanel();
+    refreshReconNotesPanel();
     refreshWeatherBanner();
 
     var initialSlug = (mapSel && mapSel.value) || ctx.defaultMapSlug || 'altis';
@@ -1903,6 +2327,8 @@
       destroy: function () {
         intervals.forEach(function (id) { clearInterval(id); });
         mapIntervals.forEach(function (id) { clearInterval(id); });
+        if (buildingOverlay && buildingOverlay.destroy) buildingOverlay.destroy();
+        buildingOverlay = null;
         if (map) {
           try { map.remove(); } catch (e) {}
         }

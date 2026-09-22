@@ -7,9 +7,71 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Vague 2026-09-20 — Overwatch 1.6.9 / SSE 0.7.22 / Athena 1.0.165
+
+### Nouveau — Notes de reconnaissance
+
+Un opérateur note ce qu’il voit depuis l’application **Reco** du téléphone : une ligne de texte, un type (véhicule, groupe armé, position statique, obstacle ou mine, civil, infrastructure, autre) et la confiance (vu direct ou rapporté). Le point se place sous le regard. Toute l’équipe le voit en jeu ; au poste, le calque **Notes reco** et la liste à droite le montrent. Après vingt minutes le point pâlit, après quarante minutes il est presque gris. Relancez Arma complètement (Overwatch 1.6.9 · Athena 1.0.165).
+
+## Vague 2026-09-20 — Overwatch 1.6.8 / SSE 0.7.22 / Athena 1.0.164
+
+### Nouveau — Bâtiments en volume sur la carte du poste
+
+Le relevé du théâtre alimente maintenant la carte du poste : chaque bâtiment apparaît comme un volume, avec la hauteur scannée. Plus besoin d’une carte plate pour juger un îlot. La couche **Bâtiments** se coupe depuis la barre de calques.
+
+### Nouveau — Couches dans le téléphone
+
+Sur la carte du téléphone, **Couches** ouvre une liste à cocher : contacts ennemis, alliés suivis, relais, zones réseau, rapports SIGINT. Le choix est local, il ne dépend plus d’un module posé au lancement. Il est mémorisé d’une session à l’autre.
+
+### Nouveau — Zones réseau sur la carte
+
+Les zones de brouillage, d’interférences, de couverture dégradée ou d’absence de signal se lisent en ombre sur la carte du poste et du téléphone. L’opacité suit l’intensité. On peut les éviter au lieu de les découvrir en perdant la liaison.
+
+### Nouveau — Alerte de proximité IFF
+
+Quand un contact non identifié entre dans le rayon, le téléphone vibre une fois et affiche la distance. L’alerte reste discrète et ne se répète pas tant que le contact reste à proximité. Relancez Arma complètement (Overwatch 1.6.8 · Athena 1.0.164).
+
+## Vague 2026-09-20 — Overwatch 1.6.7 / SSE 0.7.22 / Athena 1.0.163
+
+### Nouveau — Barres de signal Relais
+
+Les barres de signal en haut du téléphone suivent le mât Relais le plus proche. Elles se vident hors de portée, passent au rouge si le mât est détruit ou si la zone est brouillée, et jaunissent dans une zone dégradée. La fiche Relais AT affiche le même état.
+
+### Nouveau — Étages depuis le téléphone
+
+Quand un bâtiment est désigné, une fiche apparaît sur la carte du téléphone : nom, étage, curseur. Changer d’étage se fait sans rouvrir le menu ACE. Le badge en jeu suit.
+
+### Nouveau — Journal des identifications
+
+Dans BII-10, chaque interrogation SEEK reste listée : sujet, statut, confiance, heure et grille. L’équipe du groupe voit le même journal.
+
+### Nouveau — Messages en attente de synchro
+
+Hors couverture, un bandeau indique combien de messages attendent encore d’être envoyés. Dès que la liaison revient, le libellé passe à « en cours de synchro ». Relancez Arma complètement (Overwatch 1.6.7 · Athena 1.0.163).
+
+## Vague 2026-09-20 — Overwatch 1.6.6 / SSE 0.7.22 / Athena 1.0.162
+
+### Correction — Transférer les vues de l’album
+
+Dans Photo Library, **Transférer** et **Tout transférer** envoient maintenant les vues réellement présentes dans l’album du téléphone. Le dépannage de liaison prenait déjà une vue neuve et la trouvait ; les boutons de l’album retrouvent aussi les vues enregistrées avec ATAK Enhanced. Relancez Arma complètement (Athena 1.0.162).
+
+## Vague 2026-09-20 — Overwatch 1.6.6 / SSE 0.7.22 / Athena 1.0.161
+
+### Amélioration — Repères jeu vers le poste
+
+Un point posé sur la carte d’Arma 3 arrive au poste avec le poseur, le canal et l’heure. Au survol, on lit qui l’a posé et à quelle heure. Un point sans nom s’affiche « Repère · » suivi du poseur. Un déplacement ou une suppression en jeu se voit tout de suite au poste.
+
+### Nouveau — Repère du poste sur la carte Arma
+
+Un point posé depuis Overwatch Beta apparaît maintenant sur la carte d’Arma 3, comme un vrai repère d’opérateur. Toute l’équipe le voit. S’il n’a pas de nom, il s’affiche « Repère poste ».
+
+### Nouveau — Mât Relais sur la carte
+
+Le mât Relais le plus proche se lit sur la carte : une pastille et un cercle de portée (vert à portée, jaune hors portée, rouge si le mât est détruit). En quittant la zone, un avis prévient. Relancez Arma complètement (Overwatch 1.6.6).
 
 ## Vague 2026-09-20 — Overwatch 1.6.5 / SSE 0.7.22 / Athena 1.0.160
 
