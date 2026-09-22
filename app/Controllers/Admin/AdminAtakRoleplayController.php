@@ -72,19 +72,155 @@ class AdminAtakRoleplayController
         }
 
         $config = $this->atakConfigRepo->getRoleplayConfig($tenantId);
+        
+        // Utiliser la vue améliorée par défaut (ancienne vue dispo avec ?legacy=1)
+        $useLegacy = ($request->query('legacy') === '1');
+        $viewName = $useLegacy ? 'admin.atak.roleplay' : 'admin.atak.roleplay_enhanced';
 
         return Response::view('layout.main', [
-            'content' => 'admin.atak.roleplay',
+            'content' => $viewName,
             'title' => 'Mode Roleplay ATAK',
             'pageTitle' => 'Mode Roleplay ATAK',
             'tenant' => $tenant,
             'config' => $config,
             'zoneRows' => $this->decodeZoneRows($config['zones_config'] ?? null),
             'zoneEffectOptions' => self::ZONE_EFFECT_LABELS,
+            'serverTests' => null, // Sera chargé via AJAX
             'csrfToken' => Csrf::token(),
             'roleplayFormAction' => $this->roleplayUrl(),
             'roleplayResetUrl' => $this->roleplayUrl('reset'),
             'atakHubUrl' => url('back-office/atak'),
+        ]);
+    }
+    
+    /**
+     * Exécute les tests serveur et retourne les résultats en JSON.
+     */
+    public function serverTests(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Non authentifié'], 401);
+        }
+
+        $config = $this->atakConfigRepo->getRoleplayConfig($tenantId);
+        $tests = [];
+
+        // Test 1 : Configuration chargée
+        $tests[] = [
+            'name' => 'Configuration roleplay chargée',
+            'passed' => !empty($config),
+            'message' => !empty($config) ? 'Configuration présente en base' : 'Aucune configuration trouvée'
+        ];
+
+        // Test 2 : Simulation réseau
+        if ($config['network_enabled'] ?? false) {
+            $latencyOk = ($config['latency_max_ms'] ?? 0) >= ($config['latency_min_ms'] ?? 0);
+            $tests[] = [
+                'name' => 'Simulation réseau active',
+                'passed' => $latencyOk,
+                'message' => $latencyOk 
+                    ? sprintf('Latence: %d-%d ms, Perte: %.1f%%', $config['latency_min_ms'], $config['latency_max_ms'], $config['packet_loss_percent'] ?? 0)
+                    : 'Latence max < latence min (incohérent)'
+            ];
+        } else {
+            $tests[] = [
+                'name' => 'Simulation réseau',
+                'passed' => true,
+                'message' => 'Désactivée'
+            ];
+        }
+
+        // Test 3 : Déconnexions temporaires
+        if ($config['disconnect_enabled'] ?? false) {
+            $disconnectOk = ($config['disconnect_max_sec'] ?? 0) >= ($config['disconnect_min_sec'] ?? 0);
+            $tests[] = [
+                'name' => 'Déconnexions temporaires',
+                'passed' => $disconnectOk,
+                'message' => $disconnectOk
+                    ? sprintf('Coupures de %d-%d sec toutes les %d sec', $config['disconnect_min_sec'], $config['disconnect_max_sec'], $config['disconnect_interval_sec'] ?? 600)
+                    : 'Durée max < durée min (incohérent)'
+            ];
+        } else {
+            $tests[] = [
+                'name' => 'Déconnexions temporaires',
+                'passed' => true,
+                'message' => 'Désactivées'
+            ];
+        }
+
+        // Test 4 : Liaison via relais
+        $tests[] = [
+            'name' => 'Liaison ATAK via relais',
+            'passed' => true,
+            'message' => ($config['link_via_relays'] ?? false) 
+                ? '⚡ Actif : transmission via relais uniquement'
+                : 'Désactivé : transmission directe'
+        ];
+
+        // Test 5 : Capteurs médicaux
+        if ($config['sensor_enabled'] ?? false) {
+            $totalDefects = ($config['sensor_failure_percent'] ?? 0) + ($config['sensor_error_percent'] ?? 0) + ($config['sensor_missing_percent'] ?? 0);
+            $tests[] = [
+                'name' => 'Capteurs médicaux',
+                'passed' => $totalDefects <= 100,
+                'message' => $totalDefects <= 100
+                    ? sprintf('Défauts: %.1f%% total', $totalDefects)
+                    : '⚠️ Total > 100% (risque de chevauchement)'
+            ];
+        } else {
+            $tests[] = [
+                'name' => 'Capteurs médicaux',
+                'passed' => true,
+                'message' => 'Désactivés'
+            ];
+        }
+
+        // Test 6 : Zones géographiques
+        $zonesConfig = $config['zones_config'] ?? null;
+        $zones = $this->decodeZoneRows($zonesConfig);
+        if ($config['zones_enabled'] ?? false) {
+            $tests[] = [
+                'name' => 'Zones géographiques',
+                'passed' => count($zones) > 0,
+                'message' => count($zones) > 0
+                    ? sprintf('%d zone(s) de dégradation définie(s)', count($zones))
+                    : '⚠️ Activé mais aucune zone définie'
+            ];
+        } else {
+            $tests[] = [
+                'name' => 'Zones géographiques',
+                'passed' => true,
+                'message' => 'Désactivées'
+            ];
+        }
+
+        // Test 7 : Données chiffrées
+        $tests[] = [
+            'name' => 'Données chiffrées / brouillage',
+            'passed' => true,
+            'message' => ($config['intel_scramble_enabled'] ?? false)
+                ? '🔒 Actif : certificats requis'
+                : 'Désactivé'
+        ];
+
+        // Test 8 : Double pénalité réseau
+        $portalDisconnect = ($config['disconnect_enabled'] ?? false);
+        $tests[] = [
+            'name' => 'Warning double pénalité',
+            'passed' => !$portalDisconnect,
+            'message' => $portalDisconnect
+                ? '⚠️ Coupures portail actives - vérifier CBA client'
+                : 'Pas de risque détecté'
+        ];
+
+        return Response::json([
+            'ok' => true,
+            'tests' => $tests,
+            'summary' => [
+                'total' => count($tests),
+                'passed' => count(array_filter($tests, fn($t) => $t['passed']))
+            ]
         ]);
     }
 

@@ -146,55 +146,6 @@ final class AdminAtakRealismConfigController
         }
     }
 
-        $forbidden = ModuleFeatureAccess::guardAtak('manage', 'back-office/atak');
-        if ($forbidden instanceof Response) {
-            return Response::json(['ok' => false, 'error' => 'Accès refusé.'], 403);
-        }
-
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
-        }
-
-        // Récupérer les données JSON du body
-        $raw = file_get_contents('php://input');
-        $body = json_decode($raw, true);
-        
-        if (!is_array($body) || !isset($body['config'])) {
-            return Response::json(['ok' => false, 'error' => 'Format de configuration invalide.'], 422);
-        }
-
-        $configJson = $body['config'];
-        $configName = trim((string) ($body['config_name'] ?? 'Configuration modifiée'));
-        $userId = (int) Session::get('user_id');
-
-        try {
-            $newConfig = $this->configRepo->upsertConfig(
-                $tenantId,
-                $configJson,
-                $userId,
-                $configName,
-                '1.0.0'
-            );
-
-            return Response::json([
-                'ok' => true,
-                'message' => 'Configuration enregistrée avec succès.',
-                'config' => $newConfig,
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return Response::json([
-                'ok' => false,
-                'error' => 'Validation échouée : ' . $e->getMessage(),
-            ], 422);
-        } catch (\Throwable $e) {
-            error_log('Failed to save realism config: ' . $e->getMessage());
-            return Response::json([
-                'ok' => false,
-                'error' => 'Erreur lors de l'enregistrement de la configuration.',
-            ], 500);
-        }
-    }
-
     /**
      * Historique des versions de configuration.
      */
