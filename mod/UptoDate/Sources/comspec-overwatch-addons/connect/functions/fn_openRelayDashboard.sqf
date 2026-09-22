@@ -2,7 +2,7 @@
     Tableau de bord en jeu : Liste tous les relais avec statut et erreurs
     Accessible via action ACE sur objets spéciaux ou via scroll menu
     
-    Usage: call ATHENA_fnc_openRelayDashboard
+    Usage: call comspec_overwatch_connect_fnc_openRelayDashboard
 */
 
 if (!hasInterface) exitWith {};
@@ -167,7 +167,7 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
     closeDialog 0;
     [] spawn {
         sleep 0.5;
-        call ATHENA_fnc_openRelayDashboard;
+        call comspec_overwatch_connect_fnc_openRelayDashboard;
     };
 }];
 

@@ -534,6 +534,11 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     [{
         [] call comspec_overwatch_connect_fnc_addAtakRepairAction;
     }, [], 9] call CBA_fnc_waitAndExecute;
+    
+    // Actions tableau de bord relais (ACE/scroll sur objets marqués)
+    [{
+        [] call comspec_overwatch_connect_fnc_addRelayDashboardActions;
+    }, [], 10] call CBA_fnc_waitAndExecute;
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).

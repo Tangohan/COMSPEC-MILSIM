@@ -588,6 +588,12 @@ class CfgFunctions {
             class zeusAttributesSse {};
             class zeusAttributesAtak {};
             class zeusAttributesOverwatch {};
+            
+            // Gestion des relais en jeu (Zeus + dashboard joueur)
+            class zeusModuleScanRelays {};
+            class openRelayDashboard {};
+            class addRelayDashboardActions {};
+            class zeusResyncRelay {};
         };
         class auth {
             file = "z\comspec_overwatch\addons\connect\functions\auth";
@@ -804,6 +810,13 @@ class CfgFactionClasses
         priority = 2;
         side = 7;
     };
+    class COMSPEC_ATAK : NO_CATEGORY
+    {
+        displayName = "COMSPEC ATAK";
+        priority = 2;
+        side = 7;
+        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
+    };
 };
 
 #include "ui_base.hpp"
@@ -855,6 +868,73 @@ class CfgVehicles
 
     // Relais ATAK (mât détruisible)
     #include "modules\module_atak_relay.hpp"
+    
+    // Modules Zeus pour gestion des relais en jeu
+    class COMSPEC_ModuleScanRelays: Module_F {
+        scope = 2;
+        displayName = "Scanner réseau relais";
+        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
+        category = "COMSPEC_ATAK";
+        function = "comspec_overwatch_connect_fnc_zeusModuleScanRelays";
+        functionPriority = 1;
+        isGlobal = 0;
+        isTriggerActivated = 1;
+        isDisposable = 0;
+        
+        class Arguments {
+            class ScanRadius {
+                displayName = "Rayon de scan (m)";
+                description = "Distance maximum pour détecter les relais";
+                typeName = "NUMBER";
+                defaultValue = 5000;
+            };
+            class AutoUpload {
+                displayName = "Upload automatique";
+                description = "Remonter automatiquement les relais détectés";
+                typeName = "BOOL";
+                defaultValue = 1;
+            };
+        };
+        
+        class ModuleDescription {
+            description = "Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.";
+            sync[] = {};
+        };
+    };
+    
+    class COMSPEC_ModuleRelayDashboard: Module_F {
+        scope = 2;
+        displayName = "Tableau de bord relais";
+        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
+        category = "COMSPEC_ATAK";
+        function = "comspec_overwatch_connect_fnc_openRelayDashboard";
+        functionPriority = 1;
+        isGlobal = 0;
+        isTriggerActivated = 1;
+        isDisposable = 0;
+        
+        class ModuleDescription {
+            description = "Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.";
+            sync[] = {};
+        };
+    };
+    
+    class COMSPEC_ModuleResyncRelay: Module_F {
+        scope = 2;
+        displayName = "Resync relais";
+        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\upload_ca.paa";
+        category = "COMSPEC_ATAK";
+        function = "comspec_overwatch_connect_fnc_zeusResyncRelay";
+        functionPriority = 1;
+        isGlobal = 0;
+        isTriggerActivated = 1;
+        isDisposable = 0;
+        
+        class ModuleDescription {
+            description = "Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.";
+            sync[] = {};
+        };
+    };
 };
 
 // Attributs Eden SSE + EH

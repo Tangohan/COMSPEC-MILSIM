@@ -10,7 +10,7 @@ if (!hasInterface) exitWith {};
     "COMSPEC_OpenRelayDashboard",
     "📡 Tableau de bord relais ATAK",
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
-    {call ATHENA_fnc_openRelayDashboard},
+    {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {true}
 ] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
@@ -18,7 +18,7 @@ if (!hasInterface) exitWith {};
     "COMSPEC_OpenRelayDashboard",
     "📡 Tableau de bord relais ATAK",
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
-    {call ATHENA_fnc_openRelayDashboard},
+    {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {true}
 ] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
@@ -27,7 +27,7 @@ if (!hasInterface) exitWith {};
     "COMSPEC_OpenRelayDashboard",
     "📡 Tableau de bord relais ATAK",
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
-    {call ATHENA_fnc_openRelayDashboard},
+    {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {_target getVariable ["COMSPEC_HasRelayDashboard", false]}
 ] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
@@ -35,7 +35,7 @@ if (!hasInterface) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {
     player addAction [
         "📡 Tableau de bord relais ATAK",
-        {call ATHENA_fnc_openRelayDashboard},
+        {call comspec_overwatch_connect_fnc_openRelayDashboard},
         nil,
         1.5,
         true,
