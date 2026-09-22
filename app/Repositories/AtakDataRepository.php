@@ -14,10 +14,12 @@ class AtakDataRepository
 
     /**
      * Délai sans position / heartbeat au-delà duquel une unité en liaison
-     * est considérée hors liaison (effetifs, carte, journal).
+     * est considérée hors liaison (effectifs, carte, journal).
      * Aligné sur public/assets/js/atak-units.js (LIVE_TTL_MS).
+     * Marge au-dessus du heartbeat max (120 s) pour éviter le clignotement
+     * quand une sync est un peu en retard (backoff, relais, zone).
      */
-    public const UNIT_LIVE_TTL_SECONDS = 120;
+    public const UNIT_LIVE_TTL_SECONDS = 180;
 
     /**
      * Fenêtre de présence récente au poste : effectifs + dernière position connue.

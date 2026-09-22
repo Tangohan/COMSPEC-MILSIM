@@ -164,9 +164,17 @@ if (_name isNotEqualTo "" && {_armaName isNotEqualTo ""} && {(toLower _name) isE
 };
 private _hasAthenaIdentity = _name isNotEqualTo "";
 
-// OK réel = canal lié + Athena prêt + identité compte chargée.
-// healthFresh seul ne doit plus afficher OK avec un pseudo jeu.
-private _ok = (_state isEqualTo "linked") && {_ready} && {_hasAthenaIdentity};
+// OK réel = canal lié + Athena prêt + identité compte + position encore fraîche.
+// Sans fraîcheur position : le poste bascule hors liaison alors que le bandeau
+// restait « OK » — d’où l’apparition / disparition au poste.
+private _lastSyncForOk = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+private _syncAgeOk = if ((_lastSyncForOk isEqualType 0) && {_lastSyncForOk >= 0}) then {
+    round (diag_tickTime - _lastSyncForOk)
+} else {
+    9999
+};
+private _posFresh = _syncAgeOk < 90;
+private _ok = (_state isEqualTo "linked") && {_ready} && {_hasAthenaIdentity} && {_posFresh};
 private _degraded = !_ok && {(_state isEqualTo "degraded") || {(_state isEqualTo "linked") && {_ready || _healthFresh}}};
 
 private _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;

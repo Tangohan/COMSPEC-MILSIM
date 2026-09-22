@@ -268,6 +268,42 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(711, '2026-09-22', 'Carte ATAK : plus besoin de Resynch pour réapparaître', 'Quand la position cessait de remonter, il fallait relancer Resynch à la main pour réapparaître au poste. Le téléphone rattrape maintenant tout seul une sync trop ancienne, y compris après un spawn ou un téléphone pris en retard. Rechargez la carte ATAK (Ctrl+F5). Relancez Arma complètement après le pack Overwatch 1.6.11 · Athena 1.0.166.', [
+                'Relance automatique de la position si la dernière sync dépasse une minute',
+                'Première position dès que le téléphone est pris, sans attendre plusieurs secondes',
+                'Si le spawn est annulé (respawn / Zeus), les boucles de sync se relancent dès que c’est jouable',
+                'Le poste garde un contact en liaison un peu plus longtemps entre deux positions',
+            ], [], [
+                'Il fallait ouvrir Resynch en jeu pour réapparaître sur la carte du poste',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.11 · Athena 1.0.166). Rechargez aussi /atak/ (Ctrl+F5). Sans Resynch, la pastille ne doit plus disparaître pour de bon après une pause de sync.',
+            ], 'Overwatch 1.6.11'),
+            $pr(710, '2026-09-22', 'Carte ATAK : écran de préparation jusqu’à l’entrée', 'À l’ouverture de la carte tactique et du poste Overwatch Beta, l’écran de préparation Halo réapparaît. Sur le sas de reprise, il reste en place jusqu’à « Entrer dans la session », puis laisse place à la carte. Rechargez la carte ATAK et Overwatch Beta (Ctrl+F5).', [
+                'Écran de préparation rétabli sur Overwatch Beta',
+                'Sur la carte ATAK, la préparation se termine seulement après l’entrée en session',
+            ], [], [
+                'L’écran de préparation disparaissait trop tôt, ou manquait sur Overwatch Beta',
+            ], ['atak'], [
+                'Rechargez /atak/ et Overwatch Beta (Ctrl+F5). À l’ouverture, l’écran de préparation doit apparaître ; sur une reprise, il disparaît après « Entrer dans la session ».',
+            ], 'Vague 2026.09'),
+            $pr(709, '2026-09-22', 'Poste Overwatch : surveillance automatique dans Support', 'Dans l’onglet Support, le poste signale tout seul les coupures brutales suspectes, les versions Overwatch différentes, un pack de développement, un joueur en avance ou en retard, et un parc trop ancien. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Fil automatique dans Support : crashs et coupures brutales',
+                'Écarts de version Overwatch : mismatch, version de développement, joueur en avance ou en retard',
+                'Pastille non lus sur Support quand un nouvel incident apparaît',
+            ], [], [
+                'L’onglet Support ne montrait que les signalements saisis à la main',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Ordre → Support : les alertes automatiques apparaissent au-dessus du fil. Un joueur avec un pack différent doit produire une ligne Version.',
+            ], 'Overwatch Beta'),
+            $pr(708, '2026-09-22', 'Poste Overwatch : tableau Réseau', 'Le poste Overwatch Beta ouvre un espace Réseau : relais posés en jeu, terminaux ATAK déjà remontés, et satellites lorsque un catalogue est fourni. Un clic sur un relais recentre la carte. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Espace Réseau dans la barre du haut : relais, terminaux ATAK et satellites',
+                'Liste des relais avec état, portée, places et débit ; clic pour centrer la carte',
+                'Liste des terminaux avec certificat et dernière activité ; clic pour ouvrir le contact lié',
+            ], [], [
+                'Les relais et les terminaux n’avaient pas de tableau dédié sur Overwatch Beta',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Dans la barre du haut, ouvrez Réseau. Les mâts posés en jeu et les téléphones déjà vus doivent apparaître dans les listes.',
+            ], 'Overwatch Beta'),
             $pr(707, '2026-09-20', 'ATAK : notes de reconnaissance', 'Dans le téléphone, l’application Reco sert à noter ce que l’on voit, là où l’on regarde. Le point arrive au poste avec le type, le texte, l’auteur et s’il s’agit d’un vu direct ou d’un rapport. Les notes trop anciennes s’estompent. Relancez Arma complètement (Overwatch 1.6.9 · Athena 1.0.165).', [
                 'Application Reco dans le tiroir du téléphone — observation courte, type, confiance',
                 'Repère partagé en jeu et sur la carte du poste',

@@ -81,11 +81,13 @@ $totalSettings = max($totalSettings, 5);
             </div>
         </header>
 
-        <!-- Layout 2 colonnes : Config (gauche) + Tests & Carte (droite) -->
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <!-- Layout 2 colonnes : Config (gauche) + Tests & Carte (droite)
+             Utiliser lg: (pas xl:) : xl:col-span-8 est absent du CSS Tailwind compilé,
+             ce qui réduisait la colonne config à 1/12 et rendait le formulaire illisible. -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             <!-- Colonne gauche : Configuration (8/12) -->
-            <div class="xl:col-span-8 space-y-6">
+            <div class="lg:col-span-8 min-w-0 space-y-6">
                 <form method="POST" action="<?= $h($roleplayFormAction) ?>" class="space-y-6" id="roleplay-form">
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
 
@@ -382,7 +384,7 @@ $totalSettings = max($totalSettings, 5);
             </div>
 
             <!-- Colonne droite : Tests serveur + Carte (4/12) -->
-            <div class="xl:col-span-4 space-y-6">
+            <div class="lg:col-span-4 min-w-0 space-y-6">
                 
                 <!-- Tests serveur -->
                 <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">

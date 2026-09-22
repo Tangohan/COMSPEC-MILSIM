@@ -232,6 +232,11 @@ return [
         ]],
         ['path' => 'back-office/atak/fire-teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · TACTIQUE', 'title' => 'Équipes de feu', 'css' => ['back-office-fire-teams.css']],
         ['path' => 'back-office/atak', 'group' => 'ATAK', 'kicker' => 'ATAK · POSTE', 'title' => 'Poste de situation', 'subtitle' => 'Dossiers SSE déjà identifiés et localisation téléphone.'],
+        ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Règles de mission, fonctions actives et relais de liaison.'],
+        ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Mâts Relais vus depuis le théâtre : état, portée, places et fiabilité.', 'quick' => [
+            ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
+            ['label' => 'Mode roleplay', 'href' => 'back-office/atak/roleplay'],
+        ]],
         ['path' => 'back-office/atak/operateurs', 'group' => 'ATAK', 'kicker' => 'ATAK · SESSIONS', 'title' => 'Sessions & connexions', 'subtitle' => 'Opérateurs actuellement en liaison et historique de présence sur la carte.'],
         ['path' => 'back-office/atak/fiche-operateur', 'group' => 'ATAK', 'kicker' => 'ATAK · FICHE OPÉRATEUR', 'title' => 'Fiche opérateur', 'subtitle' => 'Vue consolidée identité, terminal, certificat et liaison.'],
         ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Inventaire des terminaux appairés et rattachements opérateur.'],

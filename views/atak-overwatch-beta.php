@@ -12,6 +12,7 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-support-auto.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-c2.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tacmap.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/TheaterProjection.js'),
@@ -59,6 +60,7 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/halo-loader.css?v=<?= $h($assetVer) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -79,6 +81,12 @@ $icon = static function (string $path): string {
   </script>
 </head>
 <body>
+<?php
+  $baseUrl = $base;
+  $haloLoaderHint = 'Préparation du poste Overwatch…';
+  $haloLoaderSeenKey = 'athena-halo-loader-overwatch-beta';
+  require base_path('views/partials/halo_loader.php');
+?>
 <div class="ow-shell">
   <header class="ow-topbar">
     <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
@@ -87,6 +95,7 @@ $icon = static function (string $path): string {
       <button type="button" data-view="comms">Ordre</button>
       <button type="button" data-view="mission">Mission</button>
       <button type="button" data-view="air">Air</button>
+      <button type="button" data-view="network">Réseau</button>
       <button type="button" data-view="layers">Calques</button>
       <button type="button" data-view="intel">Renseignement</button>
       <button type="button" data-view="radio">Radio</button>
@@ -98,6 +107,7 @@ $icon = static function (string $path): string {
       <button type="button" data-ow-more>Plus</button>
       <div class="ow-more-menu" id="ow-more-menu" hidden>
         <button type="button" data-view="air">Air</button>
+        <button type="button" data-view="network">Réseau</button>
         <button type="button" data-view="radio">Radio</button>
         <button type="button" data-view="iff">Identification</button>
         <button type="button" data-view="pings">Pings</button>
@@ -404,10 +414,10 @@ $icon = static function (string $path): string {
         <p class="ow-help">Prévenez le poste si un contact hostile entre dans cette distance autour d’un point à atteindre, ou si un opérateur franchit un ralliement.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-weather-layer" checked> Overlay météo mission</label>
         <label class="ow-row">Largeur réglages
-          <input type="range" id="ow-aside-left" min="240" max="420" value="300">
+          <input type="range" id="ow-aside-left" min="240" max="480" value="300">
         </label>
-        <label class="ow-row">Largeur tchat
-          <input type="range" id="ow-aside-right" min="240" max="420" value="300">
+        <label class="ow-row">Largeur tchat / effectifs
+          <input type="range" id="ow-aside-right" min="280" max="560" value="380">
         </label>
         <p class="ow-kicker">Mission</p>
         <button type="button" class="ow-primary" data-overwatch-export>Exporter</button>
@@ -744,7 +754,8 @@ $icon = static function (string $path): string {
         <div id="ow-squad-list" class="ow-contact-list" aria-live="polite"></div>
       </div>
       <div class="ow-chat-main" data-chat-panel="support" hidden>
-        <p class="ow-help">Assistance technique, séparée des canaux de mission.</p>
+        <p class="ow-help">Assistance technique, séparée des canaux de mission. Le poste surveille aussi les crashs et les écarts de version Overwatch.</p>
+        <div id="ow-support-auto" class="ow-support-auto" aria-live="polite"></div>
         <div id="ow-support-log" class="ow-fil"></div>
         <form class="ow-chat-compose" id="ow-support-form">
           <input id="ow-support-input" maxlength="500" placeholder="Décrire le problème…" autocomplete="off">
@@ -790,7 +801,7 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air, dans la barre du haut, rassemble les aéronefs, les manifestes et les demandes JTAC.</p>
+    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
@@ -913,6 +924,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-sse-layers.js?v=<?= $h($assetVer) ?>"></script>

@@ -1,307 +1,328 @@
 <?php
 declare(strict_types=1);
 
-/** @var array $tenant */
-/** @var list<array> $relays */
-/** @var array $stats */
+/** @var list<array<string, mixed>> $relays */
+/** @var array<string, mixed> $stats */
+/** @var bool $linkViaRelays */
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$relays = is_array($relays ?? null) ? $relays : [];
+$stats = is_array($stats ?? null) ? $stats : [];
+$linkViaRelays = !empty($linkViaRelays);
 
-// Fonction helper pour formatter la date
-$formatDate = function($timestamp) {
-    if (!$timestamp) return '—';
-    $dt = new DateTime($timestamp);
-    $now = new DateTime();
-    $diff = $now->diff($dt);
-    
-    if ($diff->days === 0 && $diff->h === 0 && $diff->i < 5) {
-        return '<span class="text-emerald-600 font-semibold">● En direct</span>';
-    } elseif ($diff->days === 0) {
-        return '<span class="text-blue-600">Il y a ' . $diff->h . 'h ' . $diff->i . 'min</span>';
-    } elseif ($diff->days === 1) {
-        return '<span class="text-amber-600">Hier</span>';
-    } else {
-        return '<span class="text-slate-500">' . $diff->days . ' jours</span>';
+$formatSeen = static function (?string $timestamp): string {
+    if ($timestamp === null || trim($timestamp) === '') {
+        return 'Jamais vu';
     }
+    try {
+        $dt = new DateTimeImmutable($timestamp);
+    } catch (Throwable) {
+        return 'Date inconnue';
+    }
+    $diff = (new DateTimeImmutable('now'))->getTimestamp() - $dt->getTimestamp();
+    if ($diff < 120) {
+        return 'À l’instant';
+    }
+    if ($diff < 3600) {
+        return 'Il y a ' . max(1, (int) round($diff / 60)) . ' min';
+    }
+    if ($diff < 86400) {
+        return 'Il y a ' . max(1, (int) round($diff / 3600)) . ' h';
+    }
+
+    return $dt->format('d/m H:i');
 };
 
-// Couleur de statut
-$statusColor = function($alive, $reliability) {
-    if (!$alive) return 'bg-slate-700 text-white';
-    if ($reliability >= 90) return 'bg-emerald-500 text-white';
-    if ($reliability >= 70) return 'bg-blue-500 text-white';
-    if ($reliability >= 50) return 'bg-amber-500 text-white';
-    return 'bg-rose-500 text-white';
-};
+$statusMeta = static function (bool $alive, int $reliability): array {
+    if (!$alive) {
+        return ['label' => 'Hors service', 'class' => 'bg-slate-100 text-slate-700 border-slate-200'];
+    }
+    if ($reliability >= 90) {
+        return ['label' => 'En service', 'class' => 'bg-emerald-50 text-emerald-900 border-emerald-200'];
+    }
+    if ($reliability >= 70) {
+        return ['label' => 'Correct', 'class' => 'bg-sky-50 text-sky-900 border-sky-200'];
+    }
+    if ($reliability >= 50) {
+        return ['label' => 'Dégradé', 'class' => 'bg-amber-50 text-amber-950 border-amber-200'];
+    }
 
-$statusLabel = function($alive, $reliability) {
-    if (!$alive) return 'HORS LIGNE';
-    if ($reliability >= 90) return 'EXCELLENT';
-    if ($reliability >= 70) return 'BON';
-    if ($reliability >= 50) return 'DÉGRADÉ';
-    return 'CRITIQUE';
+    return ['label' => 'Critique', 'class' => 'bg-rose-50 text-rose-900 border-rose-200'];
 };
 ?>
+<div class="min-h-0 flex-1 bg-slate-50">
+    <div class="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
 
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-    <!-- Header style Germinal -->
-    <div class="border-b border-amber-500/30 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
-        <div class="max-w-[1600px] mx-auto px-6 py-8">
-            <div class="flex items-start justify-between gap-6">
-                <div>
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
-                            <svg class="w-7 h-7 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-400 mb-1">COMSPEC ATAK — Réseau tactique</p>
-                            <h1 class="text-3xl font-black text-white tracking-tight">Tours de réseau radio</h1>
-                        </div>
-                    </div>
-                    <p class="text-sm text-slate-400 max-w-2xl">
-                        Supervision en temps réel du réseau de relais radio tactique. 
-                        Couverture, capacité, état de santé et performances.
-                    </p>
-                </div>
-
-                <!-- Stats globales (style Germinal) -->
-                <div class="grid grid-cols-4 gap-3">
-                    <div class="bg-slate-800/50 border border-emerald-500/30 rounded-lg px-4 py-3 backdrop-blur-sm">
-                        <div class="text-2xl font-black text-emerald-400"><?= $stats['alive'] ?></div>
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Actifs</div>
-                    </div>
-                    <div class="bg-slate-800/50 border border-slate-600/30 rounded-lg px-4 py-3 backdrop-blur-sm">
-                        <div class="text-2xl font-black text-slate-400"><?= $stats['dead'] ?></div>
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hors ligne</div>
-                    </div>
-                    <div class="bg-slate-800/50 border border-blue-500/30 rounded-lg px-4 py-3 backdrop-blur-sm">
-                        <div class="text-2xl font-black text-blue-400"><?= $stats['used_slots'] ?>/<?= $stats['total_slots'] ?></div>
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Connexions</div>
-                    </div>
-                    <div class="bg-slate-800/50 border border-amber-500/30 rounded-lg px-4 py-3 backdrop-blur-sm">
-                        <div class="text-2xl font-black text-amber-400"><?= $stats['network_load'] ?>%</div>
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Charge réseau</div>
-                    </div>
+        <header class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 shadow-sm">
+            <div class="relative px-5 sm:px-8 py-7">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-2">ATAK · Relais</p>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Réseau de relais</h1>
+                <p class="mt-2 text-sm text-slate-600 max-w-3xl leading-relaxed">
+                    Les mâts Relais posés en mission apparaissent ici : état, portée, places et fiabilité.
+                    Le poste Overwatch et l’application Relais AT du téléphone lisent les mêmes informations.
+                </p>
+                <div class="mt-5 flex flex-wrap gap-2">
+                    <a href="<?= $h(url('back-office/atak/controle-serveur')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Contrôle de mission</a>
+                    <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Simulation réseau</a>
+                    <a href="#tutoriel-relais" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-100">Tutoriel Relais</a>
+                    <a href="<?= $h(url('atak')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Carte du poste</a>
                 </div>
             </div>
+        </header>
 
-            <!-- Navigation rapide -->
-            <div class="mt-6 flex gap-2">
-                <a href="<?= url('back-office/atak') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors">
-                    ← Poste de situation
-                </a>
-                <a href="<?= url('back-office/atak/roleplay') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors">
-                    Mode Roleplay
-                </a>
-                <a href="<?= url('admin/atak/realism/config') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors">
-                    Config réalisme
-                </a>
-                <a href="<?= url('atak') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-600 bg-amber-600/20 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-600/30 transition-colors">
-                    🗺️ Carte tactique
-                </a>
+        <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Situation du réseau">
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">En service</p>
+                <p class="mt-2 text-2xl font-black text-emerald-800"><?= (int) ($stats['alive'] ?? 0) ?></p>
+                <p class="mt-1 text-xs text-slate-500">Mâts intacts</p>
             </div>
-        </div>
-    </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Hors service</p>
+                <p class="mt-2 text-2xl font-black text-slate-800"><?= (int) ($stats['dead'] ?? 0) ?></p>
+                <p class="mt-1 text-xs text-slate-500">Détruits ou absents</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Places</p>
+                <p class="mt-2 text-2xl font-black text-slate-900"><?= (int) ($stats['used_slots'] ?? 0) ?> / <?= (int) ($stats['total_slots'] ?? 0) ?></p>
+                <p class="mt-1 text-xs text-slate-500">Téléphones qui s’appuient sur un mât</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Règle de liaison</p>
+                <p class="mt-2 text-lg font-black text-slate-900"><?= $linkViaRelays ? 'Relais obligatoire' : 'Liaison libre' ?></p>
+                <p class="mt-1 text-xs text-slate-500"><?= $linkViaRelays
+                    ? 'Hors portée d’un mât intact : plus de données ATAK'
+                    : 'Le téléphone peut transmettre sans mât' ?></p>
+            </div>
+        </section>
 
-    <!-- Contenu principal -->
-    <div class="max-w-[1600px] mx-auto px-6 py-8 space-y-6">
-
-        <?php if (empty($relays)): ?>
-        <!-- État vide -->
-        <div class="rounded-xl border border-slate-700 bg-slate-800/50 p-12 text-center backdrop-blur-sm">
-            <svg class="w-16 h-16 text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-            </svg>
-            <h3 class="text-lg font-bold text-slate-300 mb-2">Aucun relais déployé</h3>
-            <p class="text-sm text-slate-500 mb-6">Les relais apparaîtront ici une fois déployés en jeu par Zeus ou les joueurs.</p>
-            <a href="<?= url('docs/TUTORIEL-JOUEUR-REALISME.md') ?>" class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors">
-                📖 Guide relais radio
-            </a>
-        </div>
+        <?php if ($relays === []): ?>
+            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm px-6 py-10 text-center">
+                <p class="text-lg font-bold text-slate-900">Aucun mât Relais sur ce théâtre</p>
+                <p class="mt-2 text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
+                    Dès qu’un mât est posé en mission (éditeur ou Zeus), il apparaît ici, sur la carte du poste et dans Relais AT sur le téléphone.
+                </p>
+                <a href="#tutoriel-relais" class="mt-6 inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                    Ouvrir le tutoriel
+                </a>
+            </section>
         <?php else: ?>
-
-        <!-- Metrics bar -->
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Portée moyenne</div>
-                <div class="text-2xl font-black text-white"><?= number_format($stats['avg_range'], 0, ',', ' ') ?> <span class="text-base text-slate-500">m</span></div>
-            </div>
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Puissance totale</div>
-                <div class="text-2xl font-black text-white"><?= $stats['total_power'] ?> <span class="text-base text-slate-500">W</span></div>
-            </div>
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Débit total</div>
-                <div class="text-2xl font-black text-white"><?= $stats['total_throughput'] ?> <span class="text-base text-slate-500">Mbps</span></div>
-            </div>
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Fiabilité moyenne</div>
-                <div class="text-2xl font-black text-white"><?= $stats['avg_reliability'] ?> <span class="text-base text-slate-500">%</span></div>
-            </div>
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Slots libres</div>
-                <div class="text-2xl font-black text-white"><?= $stats['free_slots'] ?> <span class="text-base text-slate-500">/ <?= $stats['total_slots'] ?></span></div>
-            </div>
-            <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Relais total</div>
-                <div class="text-2xl font-black text-white"><?= $stats['total'] ?></div>
-            </div>
-        </div>
-
-        <!-- Table des relais (style Germinal terminal) -->
-        <div class="rounded-xl border border-slate-700 bg-slate-900/80 overflow-hidden backdrop-blur-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-slate-700 bg-slate-800/80">
-                            <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-amber-400">Statut</th>
-                            <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-amber-400">Identifiant</th>
-                            <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-amber-400">Position</th>
-                            <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-wider text-amber-400">Portée</th>
-                            <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-wider text-amber-400">Connexions</th>
-                            <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-wider text-amber-400">Puissance</th>
-                            <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-wider text-amber-400">Débit</th>
-                            <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-wider text-amber-400">Fiabilité</th>
-                            <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-amber-400">Réseau</th>
-                            <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-amber-400">Dernière activité</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800">
-                        <?php foreach ($relays as $relay): ?>
-                        <?php
-                        $alive = (bool) ($relay['alive'] ?? false);
-                        $reliability = (int) ($relay['reliability_pct'] ?? 0);
-                        $slots = (int) ($relay['slots'] ?? 0);
-                        $slotsUsed = (int) ($relay['slots_used'] ?? 0);
-                        $loadPct = $slots > 0 ? round(($slotsUsed / $slots) * 100) : 0;
-                        ?>
-                        <tr class="hover:bg-slate-800/50 transition-colors">
-                            <!-- Statut -->
-                            <td class="px-4 py-4">
-                                <span class="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-black uppercase tracking-wider <?= $statusColor($alive, $reliability) ?>">
-                                    <?php if ($alive): ?>
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
-                                    <?php else: ?>
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>
-                                    <?php endif; ?>
-                                    <?= $statusLabel($alive, $reliability) ?>
-                                </span>
-                            </td>
-
-                            <!-- Identifiant -->
-                            <td class="px-4 py-4">
-                                <div class="font-mono text-sm font-semibold text-white">
-                                    <?= $h($relay['display_name'] ?: $relay['relay_uid']) ?>
-                                </div>
-                                <?php if (!empty($relay['identity'])): ?>
-                                <div class="text-xs text-slate-500 font-mono mt-0.5"><?= $h($relay['identity']) ?></div>
-                                <?php endif; ?>
-                            </td>
-
-                            <!-- Position -->
-                            <td class="px-4 py-4">
-                                <div class="text-xs font-mono text-slate-300">
-                                    <div>X: <span class="text-white"><?= number_format($relay['pos_x'], 0) ?></span></div>
-                                    <div>Y: <span class="text-white"><?= number_format($relay['pos_y'], 0) ?></span></div>
-                                    <?php if (($relay['pos_z'] ?? 0) > 0): ?>
-                                    <div>Z: <span class="text-white"><?= number_format($relay['pos_z'], 0) ?></span></div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-
-                            <!-- Portée -->
-                            <td class="px-4 py-4 text-right">
-                                <div class="text-base font-bold text-white"><?= number_format($relay['range_m'], 0) ?> <span class="text-xs text-slate-500">m</span></div>
-                            </td>
-
-                            <!-- Connexions -->
-                            <td class="px-4 py-4">
-                                <div class="flex flex-col items-center gap-1">
-                                    <div class="text-base font-bold text-white"><?= $slotsUsed ?> / <?= $slots ?></div>
-                                    <div class="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                        <div class="h-full <?= $loadPct > 80 ? 'bg-rose-500' : ($loadPct > 50 ? 'bg-amber-500' : 'bg-emerald-500') ?>" style="width: <?= $loadPct ?>%"></div>
-                                    </div>
-                                    <div class="text-[10px] text-slate-500"><?= $loadPct ?>%</div>
-                                </div>
-                            </td>
-
-                            <!-- Puissance -->
-                            <td class="px-4 py-4 text-right">
-                                <div class="text-base font-bold text-white"><?= $relay['power_w'] ?? 0 ?> <span class="text-xs text-slate-500">W</span></div>
-                            </td>
-
-                            <!-- Débit -->
-                            <td class="px-4 py-4 text-right">
-                                <div class="text-base font-bold text-white"><?= number_format($relay['throughput_mbps'] ?? 0, 1) ?> <span class="text-xs text-slate-500">Mbps</span></div>
-                            </td>
-
-                            <!-- Fiabilité -->
-                            <td class="px-4 py-4 text-right">
-                                <div class="inline-flex items-center gap-2">
-                                    <div class="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                        <div class="h-full <?= $reliability >= 90 ? 'bg-emerald-500' : ($reliability >= 70 ? 'bg-blue-500' : ($reliability >= 50 ? 'bg-amber-500' : 'bg-rose-500')) ?>" style="width: <?= $reliability ?>%"></div>
-                                    </div>
-                                    <span class="text-base font-bold text-white"><?= $reliability ?>%</span>
-                                </div>
-                            </td>
-
-                            <!-- Réseau -->
-                            <td class="px-4 py-4">
-                                <div class="text-xs font-mono text-slate-300 space-y-0.5">
-                                    <?php if (!empty($relay['ip_addr'])): ?>
-                                    <div title="IP">🔸 <?= $h($relay['ip_addr']) ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($relay['gateway'])): ?>
-                                    <div title="Gateway" class="text-slate-500">→ <?= $h($relay['gateway']) ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($relay['certificate'])): ?>
-                                    <div title="Certificat" class="text-emerald-500">🔒 Cert OK</div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-
-                            <!-- Dernière activité -->
-                            <td class="px-4 py-4">
-                                <div class="text-xs">
-                                    <?= $formatDate($relay['last_seen_at']) ?>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Légende -->
-        <div class="rounded-lg border border-slate-700 bg-slate-800/50 p-4 backdrop-blur-sm">
-            <div class="flex items-start gap-6 text-xs">
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
-                    <span class="text-slate-400">EXCELLENT (≥90%)</span>
+            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Mâts visibles</h2>
+                        <p class="text-xs text-slate-500 mt-0.5"><?= count($relays) ?> antenne<?= count($relays) > 1 ? 's' : '' ?> remontée<?= count($relays) > 1 ? 's' : '' ?> depuis le théâtre</p>
+                    </div>
+                    <a href="#tutoriel-relais" class="text-xs font-semibold text-emerald-800 hover:underline">Comment ça marche ?</a>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-                    <span class="text-slate-400">BON (70-89%)</span>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-left text-xs uppercase tracking-wider text-slate-500">
+                                <th class="px-5 py-3 font-semibold">État</th>
+                                <th class="px-5 py-3 font-semibold">Nom</th>
+                                <th class="px-5 py-3 font-semibold">Portée</th>
+                                <th class="px-5 py-3 font-semibold">Places</th>
+                                <th class="px-5 py-3 font-semibold">Débit</th>
+                                <th class="px-5 py-3 font-semibold">Fiabilité</th>
+                                <th class="px-5 py-3 font-semibold">Dernière activité</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <?php foreach ($relays as $relay): ?>
+                                <?php
+                                $alive = !empty($relay['alive']);
+                                $reliability = (int) ($relay['reliability_pct'] ?? 0);
+                                $meta = $statusMeta($alive, $reliability);
+                                $slots = (int) ($relay['slots'] ?? 0);
+                                $used = (int) ($relay['slots_used'] ?? 0);
+                                $name = trim((string) ($relay['display_name'] ?? ''));
+                                if ($name === '') {
+                                    $name = trim((string) ($relay['relay_uid'] ?? 'Relais'));
+                                }
+                                $identity = trim((string) ($relay['identity'] ?? ''));
+                                ?>
+                                <tr class="hover:bg-slate-50/80">
+                                    <td class="px-5 py-3.5">
+                                        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold <?= $h($meta['class']) ?>">
+                                            <?= $h($meta['label']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5">
+                                        <div class="font-semibold text-slate-900"><?= $h($name) ?></div>
+                                        <?php if ($identity !== ''): ?>
+                                            <div class="text-xs text-slate-500 mt-0.5"><?= $h($identity) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-800"><?= number_format((float) ($relay['range_m'] ?? 0), 0, ',', ' ') ?> m</td>
+                                    <td class="px-5 py-3.5 text-slate-800"><?= $used ?> / <?= $slots ?></td>
+                                    <td class="px-5 py-3.5 text-slate-800"><?= number_format((float) ($relay['throughput_mbps'] ?? 0), 1, ',', ' ') ?> Mbit/s</td>
+                                    <td class="px-5 py-3.5 text-slate-800"><?= $reliability ?> %</td>
+                                    <td class="px-5 py-3.5 text-slate-600"><?= $h($formatSeen(isset($relay['last_seen_at']) ? (string) $relay['last_seen_at'] : null)) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
-                    <span class="text-slate-400">DÉGRADÉ (50-69%)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-rose-500"></span>
-                    <span class="text-slate-400">CRITIQUE (<50%)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-slate-700"></span>
-                    <span class="text-slate-400">HORS LIGNE</span>
-                </div>
-            </div>
-        </div>
-
+            </section>
         <?php endif; ?>
 
+        <section id="tutoriel-relais" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden scroll-mt-8">
+            <div class="px-5 sm:px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Tutoriel</p>
+                <h2 class="mt-1 text-xl font-black text-slate-900 tracking-tight">Mettre en place les mâts Relais</h2>
+                <p class="mt-2 text-sm text-slate-600 max-w-3xl leading-relaxed">
+                    Six étapes pour le commandement, Zeus et les opérateurs. Aucun fichier externe : tout se lit ici.
+                </p>
+            </div>
+
+            <div class="px-5 sm:px-6 pt-4 flex flex-wrap gap-2" role="tablist" aria-label="Étapes du tutoriel Relais">
+                <?php
+                $steps = [
+                    '1' => 'À quoi ça sert',
+                    '2' => 'Poser un mât',
+                    '3' => 'Sur le téléphone',
+                    '4' => 'Au poste',
+                    '5' => 'Règle obligatoire',
+                    '6' => 'Détruire un mât',
+                ];
+                foreach ($steps as $id => $label):
+                ?>
+                    <button type="button"
+                        class="relay-tuto-tab inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors <?= $id === '1' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' ?>"
+                        data-relay-tuto="<?= $h($id) ?>"
+                        role="tab"
+                        aria-selected="<?= $id === '1' ? 'true' : 'false' ?>">
+                        <?= $h($id . '. ' . $label) ?>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="px-5 sm:px-6 py-6 space-y-0">
+                <article class="relay-tuto-panel" data-relay-panel="1" role="tabpanel">
+                    <h3 class="text-base font-bold text-slate-900">Un mât Relais, c’est une antenne de liaison</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Sur le théâtre, un mât Relais représente une antenne autour de laquelle les téléphones ATAK peuvent s’appuyer.
+                        Chaque mât a une portée, un nombre de places, un débit et une fiabilité. S’il est détruit, il ne sert plus.
+                    </p>
+                    <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Les opérateurs voient le mât le plus proche dans l’application <strong>Relais AT</strong> du téléphone.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Le poste voit les mâts sur la carte et dans cette page.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Si la règle « Relais obligatoire » est active, un téléphone hors portée d’un mât intact ne transmet plus.</span></li>
+                    </ul>
+                </article>
+
+                <article class="relay-tuto-panel hidden" data-relay-panel="2" role="tabpanel" hidden>
+                    <h3 class="text-base font-bold text-slate-900">Poser un mât depuis l’éditeur ou Zeus</h3>
+                    <ol class="mt-3 space-y-3 text-sm text-slate-700 leading-relaxed list-decimal pl-5">
+                        <li>Dans l’éditeur Eden : ouvrez les modules <strong>COMSPEC</strong>, choisissez <strong>Relais ATAK (mât)</strong>, placez-le sur une colline, un toit ou une zone d’atterrissage.</li>
+                        <li>Renseignez au minimum le <strong>nom</strong>, la <strong>portée</strong> et l’<strong>identité</strong> (ex. RLY-NORD-01). Les places, le débit, la fiabilité et la puissance peuvent rester aux valeurs proposées.</li>
+                        <li>Laissez l’adresse réseau et la passerelle vides si vous voulez qu’elles soient générées à la pose.</li>
+                        <li>En mission, Zeus peut aussi poser ou détruire un mât déjà présent.</li>
+                    </ol>
+                    <p class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                        Astuce : un mât trop bas ou coincé entre des murs couvre mal. Préférez un point haut, visible, à une distance utile de la zone d’action.
+                    </p>
+                </article>
+
+                <article class="relay-tuto-panel hidden" data-relay-panel="3" role="tabpanel" hidden>
+                    <h3 class="text-base font-bold text-slate-900">Ce que voit l’opérateur sur le téléphone</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Dans le menu d’applications du téléphone, ouvrez <strong>Relais AT</strong>.
+                    </p>
+                    <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Le mât le plus proche s’affiche avec son nom, sa grille, son débit et sa fiabilité.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Les barres de signal se remplissent près du mât, et baissent quand on s’éloigne.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Si le mât est détruit, Relais AT indique clairement qu’il est hors service.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Un avis prévient quand on quitte la portée d’un mât encore intact.</span></li>
+                    </ul>
+                </article>
+
+                <article class="relay-tuto-panel hidden" data-relay-panel="4" role="tabpanel" hidden>
+                    <h3 class="text-base font-bold text-slate-900">Ce que voit le poste de commandement</h3>
+                    <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Sur Overwatch Beta : calque <strong>Relais ATAK</strong> et espace <strong>Réseau</strong> pour la liste.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Sur cette page : état, portée, places occupées, débit et dernière activité.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Un mât détruit passe hors service ici et sur la carte (pastille et emprise rouges).</span></li>
+                    </ul>
+                    <p class="mt-4 text-sm text-slate-600 leading-relaxed">
+                        Si la liste reste vide alors qu’un mât a été posé, vérifiez que la mission a bien démarré avec Overwatch et que le mât a été placé via le module Relais ATAK.
+                    </p>
+                </article>
+
+                <article class="relay-tuto-panel hidden" data-relay-panel="5" role="tabpanel" hidden>
+                    <h3 class="text-base font-bold text-slate-900">Rendre le relais obligatoire</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Par défaut, le téléphone peut transmettre sans mât. Vous pouvez imposer le passage par antenne pour toute la communauté.
+                    </p>
+                    <ol class="mt-3 space-y-3 text-sm text-slate-700 leading-relaxed list-decimal pl-5">
+                        <li>Ouvrez <a class="font-semibold text-emerald-800 underline" href="<?= $h(url('back-office/atak/controle-serveur')) ?>">Contrôle de mission</a>.</li>
+                        <li>Dans la section Relais de liaison, activez l’exigence d’un relais intact.</li>
+                        <li>Enregistrez. Dès lors, un téléphone hors portée d’un mât en service ne remonte plus de données ATAK.</li>
+                    </ol>
+                    <p class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        Règle actuelle pour votre communauté :
+                        <strong><?= $linkViaRelays ? 'Relais obligatoire' : 'Liaison libre (sans mât exigé)' ?></strong>.
+                    </p>
+                </article>
+
+                <article class="relay-tuto-panel hidden" data-relay-panel="6" role="tabpanel" hidden>
+                    <h3 class="text-base font-bold text-slate-900">Détruire un mât et en voir l’effet</h3>
+                    <ol class="mt-3 space-y-3 text-sm text-slate-700 leading-relaxed list-decimal pl-5">
+                        <li>En jeu, détruisez le mât (tir, charge, ou action Zeus).</li>
+                        <li>Sur le téléphone, Relais AT passe le mât en hors service : débit et puissance tombent à zéro.</li>
+                        <li>Au poste, la pastille devient rouge et cette page affiche « Hors service ».</li>
+                        <li>Si la règle obligatoire est active, les téléphones qui ne dépendaient que de ce mât perdent la liaison jusqu’à rejoindre un autre mât intact.</li>
+                    </ol>
+                    <p class="mt-4 text-sm text-slate-600 leading-relaxed">
+                        Pour rejouer le scénario : posez un nouveau mât, ou réparez / remplacez l’objet selon votre mise en scène.
+                    </p>
+                </article>
+            </div>
+
+            <div class="px-5 sm:px-6 pb-6 flex flex-wrap gap-2">
+                <button type="button" id="relay-tuto-prev" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" disabled>Étape précédente</button>
+                <button type="button" id="relay-tuto-next" class="inline-flex items-center rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">Étape suivante</button>
+            </div>
+        </section>
     </div>
 </div>
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-relay-tuto]'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-relay-panel]'));
+  var prev = document.getElementById('relay-tuto-prev');
+  var next = document.getElementById('relay-tuto-next');
+  var current = '1';
+
+  function show(id) {
+    current = String(id);
+    tabs.forEach(function (btn) {
+      var on = btn.getAttribute('data-relay-tuto') === current;
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.className = 'relay-tuto-tab inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ' +
+        (on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50');
+    });
+    panels.forEach(function (panel) {
+      var on = panel.getAttribute('data-relay-panel') === current;
+      panel.classList.toggle('hidden', !on);
+      if (on) panel.removeAttribute('hidden');
+      else panel.setAttribute('hidden', 'hidden');
+    });
+    if (prev) prev.disabled = current === '1';
+    if (next) next.disabled = current === '6';
+  }
+
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () { show(btn.getAttribute('data-relay-tuto')); });
+  });
+  if (prev) prev.addEventListener('click', function () {
+    var n = Math.max(1, Number(current) - 1);
+    show(String(n));
+  });
+  if (next) next.addEventListener('click', function () {
+    var n = Math.min(6, Number(current) + 1);
+    show(String(n));
+  });
+  show('1');
+})();
+</script>

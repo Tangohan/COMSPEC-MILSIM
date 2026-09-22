@@ -21,6 +21,13 @@ module.exports = {
     'lg:translate-x-0',
     'ease-[cubic-bezier(0.33,1,0.68,1)]',
     'shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)]',
+    /* Grille roleplay / dashboards : filet si une vue utilise xl:col-span-* hors scan */
+    'xl:grid-cols-12',
+    'xl:col-span-8',
+    'xl:col-span-4',
+    'lg:grid-cols-12',
+    'lg:col-span-8',
+    'lg:col-span-4',
     /* Méga-menu : utilitaires arbitraires du header (filet de sécurité après build Tailwind) */
     'w-[min(60rem,calc(100vw-1.25rem))]',
     'max-w-[calc(100vw-1rem)]',

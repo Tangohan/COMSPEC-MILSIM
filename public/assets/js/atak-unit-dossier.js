@@ -165,13 +165,10 @@ window.ATAKUnitDossier = (function () {
     var occN = (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsFrom)
       ? window.ATAKUnitPopup.occupantsFrom(u, ex).length : 0;
     if (occN) html += row('Personnes à bord', String(occN));
-    if (window.ATAKUnitPopup && window.ATAKUnitPopup.occupantsHtml) {
-      var occBlock = window.ATAKUnitPopup.occupantsHtml(u, Object.assign({}, ex, {
-        platform: ex.platform || u.aircraft_type || (u.motion && u.motion.category) || '',
-        vehicle_label: vLab
-      }));
-      if (occBlock) html += occBlock;
-    }
+    // Liste d’équipage réservée à l’onglet Personnel (évite doublon Situation / Personnel).
+    if (u.eta_minutes != null && u.eta_minutes !== '') html += row('ETA', String(u.eta_minutes) + ' min');
+    if (u.bingo_fuel) html += row('Autonomie', String(u.bingo_fuel));
+    if (u.fuel_pct != null && u.fuel_pct !== '') html += row('Carburant', String(u.fuel_pct) + ' %');
     html += block('Source Arma', row('Vitesse', arma.speed_ms != null ? (arma.speed_ms * 3.6).toFixed(1) + ' km/h' : '') + row('Orientation', arma.heading_deg != null ? Math.round(arma.heading_deg) + '°' : ''));
     html += block('Analyse Athena', row('Statut', M ? M.statusLabel(ath.motion_status) : ath.motion_status)
       + row('Confiance', ath.confidence != null ? Math.round(ath.confidence * 100) + ' %' : '')

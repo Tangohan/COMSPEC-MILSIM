@@ -37,6 +37,11 @@ if (_remain > 0) exitWith {
 
 missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
 
+// Lever freins API (sinon une sync « coincée » reste bloquée même en Resynch forcé).
+missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
+missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
+
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
     private _msg = "Liaison Athena coupée — impossible de tout renvoyer pour le moment.";
     missionNamespace setVariable ["COMSPEC_LastResynchSummary", [

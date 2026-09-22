@@ -110,7 +110,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <?php endif; ?>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/app-update-modal.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
-  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <?php if (!empty($atakOverwatchBeta)): ?>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-overwatch-beta.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -248,8 +248,9 @@ if ($atakMapConfig) {
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
   $haloLoaderSeenKey = 'athena-halo-loader-atak';
-  require base_path('views/partials/halo_loader.php');
   ?>
+  <script>window.__ATAK_SESSION_GATE_PENDING__ = true;</script>
+  <?php require base_path('views/partials/halo_loader.php'); ?>
   <?php if (!empty($atakMaintenanceActive) && !empty($canAccessAdminAtakConfig)): ?>
   <div class="atak-maint-banner" role="status" style="position:relative;z-index:40;padding:0.65rem 1rem;background:#78350f;color:#fffbeb;font-size:0.85rem;text-align:center;">
     Mode maintenance actif — les opérateurs ne voient pas cette carte.
