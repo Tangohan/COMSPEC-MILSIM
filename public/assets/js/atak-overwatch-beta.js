@@ -1904,6 +1904,9 @@
     if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.select === 'function') {
       try { window.ATAKReachOverlay.select(unit, { center: false }); } catch (e) {}
     }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
+      try { window.ATAKUnitDossier.open(unit); } catch (e2) {}
+    }
   }
 
   function layerVisible(unit) {
@@ -2345,6 +2348,15 @@
     renderList();
     syncStatus(true);
     window.dispatchEvent(new CustomEvent('overwatch:units-updated', { detail: { units: units } }));
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: units } }));
+    } catch (e) {}
+    if (window.ATAKRadio && typeof window.ATAKRadio.onUnitsUpdated === 'function') {
+      try { window.ATAKRadio.onUnitsUpdated(); } catch (e2) {}
+    }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.render === 'function') {
+      try { window.ATAKUnitDossier.render(); } catch (e3) {}
+    }
   }
 
   function syncStatus(ok) {
@@ -2366,7 +2378,13 @@
   function refreshUnits() {
     requestStarted = Date.now();
     return api('/api/units?mapId=' + encodeURIComponent(mapId) + '&include_gateway=1')
-      .then(applyPayload)
+      .then(function (payload) {
+        if (window.ATAKMap && typeof window.ATAKMap.setUnitsMarkers === 'function') {
+          window.ATAKMap.setUnitsMarkers(asList(payload, 'units'));
+        } else {
+          applyPayload(payload);
+        }
+      })
       .then(function () { return loadPoMarkers(); })
       .then(function () { return loadArmaMarkers(); })
       .then(function () { return loadVehicles(); })
@@ -4816,6 +4834,7 @@
       airAssets = Array.isArray(payload) ? payload : asList(payload, 'items');
       paintAirLists();
       renderAirAssetsOnMap(airAssets);
+      try { window.dispatchEvent(new CustomEvent('atak:air-markers-updated', { detail: { assets: airAssets } })); } catch (e) {}
     }).catch(function () {
       airAssets = [];
       clearAirAssetMarkers();
@@ -5494,6 +5513,33 @@
     try { window.dispatchEvent(new CustomEvent('overwatch:mission-bound')); } catch (eBound) {}
   }
 
+  function restoreOpsPanels() {
+    var host = document.getElementById('ow-legacy-ops');
+    if (!host) return;
+    ['tab-radio', 'tab-identification', 'tab-pings'].forEach(function (id) {
+      var panel = document.getElementById(id);
+      if (panel && panel.parentElement !== host) host.appendChild(panel);
+    });
+    host.hidden = true;
+  }
+  function showOpsPanel(panelId, kicker, title) {
+    var host = document.getElementById('ow-legacy-ops');
+    var panel = document.getElementById(panelId);
+    if (!panel) {
+      openDrawer(kicker, title, '<p class="ow-help">Panneau indisponible.</p>');
+      return;
+    }
+    restoreOpsPanels();
+    if (host) host.hidden = true;
+    openDrawer(kicker, title, '');
+    var body = document.getElementById('ow-drawer-body');
+    if (body) {
+      body.innerHTML = '';
+      body.appendChild(panel);
+      panel.hidden = false;
+      panel.style.display = '';
+    }
+  }
   function openView(name) {
     document.querySelectorAll('.ow-nav button, .ow-more-menu button[data-view]').forEach(function (button) {
       button.classList.toggle('is-active', button.dataset.view === name);
@@ -5501,11 +5547,12 @@
     var workspace = document.querySelector('.ow-workspace');
     workspace.classList.toggle('is-comms', name === 'comms');
     workspace.classList.toggle('is-settings', name === 'layers');
-    if (name === 'overwatch') { document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
+    if (name === 'overwatch') { restoreOpsPanels(); document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
-    if (name === 'layers') { openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
+    if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
       Promise.all([loadNine(), loadCas(), loadMedevac(), loadGroupTasks()]).then(function () {
+        restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
       });
@@ -5513,6 +5560,7 @@
     }
     if (name === 'air') {
       Promise.all([loadAirAssets(), loadNine(), loadCas()]).then(function () {
+        restoreOpsPanels();
         openDrawer('Appui aérien', 'Air', airHtml());
         bindDrawerForms();
         map.invalidateSize();
@@ -5520,7 +5568,31 @@
       return;
     }
     if (name === 'intel') {
-      loadPhotos().then(function () { openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
+      loadPhotos().then(function () { restoreOpsPanels(); openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
+      return;
+    }
+    if (name === 'radio') {
+      showOpsPanel('tab-radio', 'Radio', 'Proximité');
+      if (window.ATAKRadio && typeof window.ATAKRadio.render === 'function') {
+        try { window.ATAKRadio.render(); } catch (e) {}
+      }
+      return;
+    }
+    if (name === 'iff' || name === 'identification') {
+      showOpsPanel('tab-identification', 'Identification', 'IFF');
+      if (window.ATAKIFF && typeof window.ATAKIFF.refresh === 'function') {
+        try { window.ATAKIFF.refresh(); } catch (e) {}
+      }
+      if (window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
+        try { window.ATAKIFF.onTabActivated(); } catch (e2) {}
+      }
+      return;
+    }
+    if (name === 'pings') {
+      showOpsPanel('tab-pings', 'Pings', 'Repères');
+      if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+        try { window.ATAKPings.fetchPings(); } catch (e) {}
+      }
       return;
     }
     if (name === 'tools') {
@@ -5637,6 +5709,14 @@
       markerDepth: src.markerDepth !== false,
       markerMotion: src.markerMotion !== false,
       showIntelPhotoMarkers: src.showIntelPhotoMarkers !== false,
+      showUnitTrails: src.showUnitTrails !== false,
+      showUnitGhostTrails: !!src.showUnitGhostTrails || !!src.showSseGhostTracks,
+      showSseGhostTracks: !!src.showSseGhostTracks || !!src.showUnitGhostTrails,
+      showMotionArrows: src.showMotionArrows !== false,
+      showMotionProjection: src.showMotionProjection !== false,
+      showMotionTrail: src.showMotionTrail !== false,
+      showAssignmentLines: src.showAssignmentLines !== false,
+      showEtaLabels: !!src.showEtaLabels,
       terrainHillshade: src.terrainHillshade != null ? !!src.terrainHillshade : true,
       terrainContours10: src.terrainContours10 != null ? !!src.terrainContours10 : true,
       terrainContours50: !!src.terrainContours50,
@@ -5689,16 +5769,66 @@
   }
 
   window.ATAKSocket = { getMapId: function () { return mapId; }, getApiBase: function () { return apiBase; } };
+  function applyOffset(latOrY, lngOrX) {
+    return [Number(latOrY) + Number(config.offsetY || 0), Number(lngOrX) + Number(config.offsetX || 0)];
+  }
+  var mapPingMarkers = {};
+  function addTemporaryPingMarker(posX, posY, author, message, pingId) {
+    var x = Number(posX);
+    var y = Number(posY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    var ll = worldToLatLng(x, y);
+    var id = pingId != null && String(pingId) !== '' ? String(pingId) : ('live_' + Date.now());
+    if (mapPingMarkers[id]) {
+      try { map.removeLayer(mapPingMarkers[id]); } catch (e) {}
+    }
+    var marker = L.circleMarker(ll, {
+      radius: 7,
+      color: '#00d69a',
+      weight: 2,
+      fillColor: '#00d69a',
+      fillOpacity: 0.35
+    }).addTo(map);
+    marker.bindPopup('<strong>' + escapeHtml(author || 'Ping') + '</strong><br/>' + escapeHtml(message || ''));
+    mapPingMarkers[id] = marker;
+  }
+  function setPingsOnMap(list) {
+    var seen = {};
+    (Array.isArray(list) ? list : []).forEach(function (p) {
+      if (!p || p.pos_x == null || p.pos_y == null) return;
+      var id = p.id != null ? String(p.id) : ('p_' + p.pos_x + '_' + p.pos_y);
+      seen[id] = true;
+      addTemporaryPingMarker(p.pos_x, p.pos_y, p.author, p.message, id);
+    });
+    Object.keys(mapPingMarkers).forEach(function (id) {
+      if (!seen[id] && id.indexOf('live_') !== 0) {
+        try { map.removeLayer(mapPingMarkers[id]); } catch (e) {}
+        delete mapPingMarkers[id];
+      }
+    });
+  }
   window.ATAKMap = {
     getMap: function () { return map; },
     getBaseTileLayer: function () { return baseTileLayer; },
     worldFromLatLng: latLngToWorld,
     latLngFromWorld: function (x, y) { return worldToLatLng(x, y); },
+    applyOffset: applyOffset,
     invalidateSize: function () { try { map.invalidateSize({ animate: false }); } catch (e) {} },
     getDisplayPrefs: getDisplayPrefs,
     patchDisplayPrefs: patchDisplayPrefs,
     setGpsVehiclesOnMap: renderGpsVehiclesOnMap,
-    setAirAssets: renderAirAssetsOnMap
+    setAirAssets: function (rows) {
+      renderAirAssetsOnMap(rows);
+      try { window.dispatchEvent(new CustomEvent('atak:air-markers-updated', { detail: { assets: airAssets } })); } catch (e) {}
+    },
+    setUnitsMarkers: function (list) {
+      applyPayload(Array.isArray(list) ? { units: list } : list);
+    },
+    setPingsOnMap: setPingsOnMap,
+    addTemporaryPingMarker: addTemporaryPingMarker
+  };
+  window.ATAKAirAssets = {
+    getAssets: function () { return airAssets; }
   };
   window.ATAKUnits = {
     getUnits: function () { return units; },
@@ -5769,6 +5899,39 @@
   };
   window.ATAKShowNotification = toast;
   window.ATAKShowError = toast;
+
+  function syncTrailPrefsFromUi() {
+    var trails = document.getElementById('atak-unit-trails');
+    var ghost = document.getElementById('atak-ghost-trails');
+    patchDisplayPrefs({
+      showUnitTrails: !trails || trails.checked,
+      showUnitGhostTrails: !!(ghost && ghost.checked),
+      showSseGhostTracks: !!(ghost && ghost.checked)
+    });
+  }
+  ['atak-unit-trails', 'atak-ghost-trails'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', syncTrailPrefsFromUi);
+  });
+  syncTrailPrefsFromUi();
+  try {
+    window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map } }));
+  } catch (eMap) {}
+  window.setTimeout(function () {
+    try {
+      window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map } }));
+    } catch (eMap2) {}
+    if (window.ATAKSseLayers && typeof window.ATAKSseLayers.startPolling === 'function') {
+      try { window.ATAKSseLayers.startPolling(); } catch (eSse) {}
+    }
+    if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+      try { window.ATAKPings.fetchPings(); } catch (ePing2) {}
+    }
+  }, 600);
+  if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+    try { window.ATAKPings.fetchPings(); } catch (ePing) {}
+  }
 
   function startPoll(ms) {
     if (pollTimer) window.clearInterval(pollTimer);
@@ -5889,6 +6052,7 @@
     loadChat(activeChannel);
   });
   document.querySelector('[data-close-drawer]').addEventListener('click', function () {
+    restoreOpsPanels();
     document.getElementById('ow-drawer').hidden = true;
     lastSceneObject = null;
     if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.setFocus === 'function') {

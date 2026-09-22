@@ -89,12 +89,18 @@ $icon = static function (string $path): string {
       <button type="button" data-view="air">Air</button>
       <button type="button" data-view="layers">Calques</button>
       <button type="button" data-view="intel">Renseignement</button>
+      <button type="button" data-view="radio">Radio</button>
+      <button type="button" data-view="iff">IFF</button>
+      <button type="button" data-view="pings">Pings</button>
       <button type="button" data-view="tools">Outils</button>
     </nav>
     <div class="ow-more">
       <button type="button" data-ow-more>Plus</button>
       <div class="ow-more-menu" id="ow-more-menu" hidden>
         <button type="button" data-view="air">Air</button>
+        <button type="button" data-view="radio">Radio</button>
+        <button type="button" data-view="iff">Identification</button>
+        <button type="button" data-view="pings">Pings</button>
         <button type="button" data-ow-replay>Replay</button>
         <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>
@@ -288,6 +294,9 @@ $icon = static function (string $path): string {
         <p class="ow-help">Vecteur pointillé pour chaque contact en mouvement, à partir du cap et de la vitesse déjà transmis. Rien n’est inventé si ces données manquent.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-progress-trail"> Tracé de progression</label>
         <p class="ow-help">Chemin déjà parcouru par le contact ouvert, d’après les positions reçues sur ce poste. Le tracé s’allonge au fur et à mesure.</p>
+        <label class="ow-toggle"><input type="checkbox" id="atak-unit-trails" checked> Tracés unitaires (qualité)</label>
+        <label class="ow-toggle"><input type="checkbox" id="atak-ghost-trails"> Tracés fantômes (hors liaison)</label>
+        <p class="ow-help">Les tracés qualité reprennent le camp, la perte de liaison et les fantômes. Les fantômes n’apparaissent que pour les contacts hors liaison.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-label-grid"> Grille sous l’indicatif</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-po-markers" checked> Points d’objectif (libellé PO) — rayon 20 m</label>
         <p class="ow-help">Un marqueur nommé PO, PO 1 ou PO-2 devient un point d’objectif. Dès qu’un téléphone ATAK entre dans les 20 mètres, le point est confirmé atteint.</p>
@@ -580,6 +589,7 @@ $icon = static function (string $path): string {
       </div>
       <div id="ow-map" aria-label="Carte tactique temps réel"></div>
       <div id="ow-gl-map" class="ow-gl-map" hidden aria-label="Carte en relief"></div>
+      <aside class="atak-dossier" id="atak-unit-dossier" hidden aria-label="Fiche d’unité"></aside>
       <div class="ow-coordinate" id="ow-coordinate">Grille · Direct</div>
       <div class="ow-empty" id="ow-empty" hidden role="status">
         <button type="button" class="ow-empty-close" id="ow-empty-close" aria-label="Masquer l’avis" title="Masquer">×</button>
@@ -804,14 +814,110 @@ $icon = static function (string $path): string {
   </div>
 </div>
 
+<div id="ow-legacy-ops" hidden>
+  <div class="ow-ops-panel" id="tab-radio">
+    <div class="atak-radio-head" id="atak-radio-head">
+      <p class="atak-panel-hint">Qui émet près d’un opérateur en liaison, et sur quel réseau. L’écoute audio se fait en jeu ; ici vous suivez qui émet.</p>
+      <div class="atak-radio-toolbar">
+        <label class="atak-radio-field"><span>Opérateur de référence</span>
+          <select id="atak-radio-focus"><option value="">Opérateur de référence (auto)</option></select>
+        </label>
+        <label class="atak-radio-field"><span>Rayon (m)</span>
+          <select id="atak-radio-radius">
+            <option value="50">50</option>
+            <option value="75" selected>75</option>
+            <option value="100">100</option>
+            <option value="150">150</option>
+            <option value="200">200</option>
+          </select>
+        </label>
+        <label class="atak-radio-check"><input type="checkbox" id="atak-radio-tx-only" /><span>Émissions uniquement</span></label>
+        <label class="atak-radio-check"><input type="checkbox" id="atak-radio-hide-nomodule" /><span>Masquer si aucun module radio</span></label>
+      </div>
+      <div class="atak-radio-listen-bar" id="atak-radio-listen-bar" hidden></div>
+      <div class="atak-radio-banner" id="atak-radio-banner" hidden></div>
+    </div>
+    <div class="atak-radio-list" id="atak-radio-list"></div>
+    <span id="atak-radio-tab-badge" hidden></span>
+  </div>
+
+  <div class="ow-ops-panel" id="tab-identification">
+    <div class="atak-iff-panel">
+      <div class="atak-panel-strip">
+        <span class="atak-panel-strip-title">Identification (IFF)</span>
+        <button type="button" class="atak-ops-btn" id="atak-iff-refresh">Actualiser</button>
+      </div>
+      <p class="atak-panel-hint">Défi / réponse pour confirmer qu’une unité est amie.</p>
+      <div class="atak-iff-alert-banner" id="atak-iff-alert-banner" hidden role="alert"></div>
+      <div class="atak-iff-current" id="atak-iff-current">
+        <p class="atak-iff-label">Défi courant</p>
+        <p class="atak-iff-code" id="atak-iff-challenge-code">—</p>
+        <p class="atak-iff-valid" id="atak-iff-valid-until">Aucun défi actif pour cette carte.</p>
+        <p class="atak-iff-expire" id="atak-iff-expire-countdown" hidden></p>
+        <p class="atak-iff-empty" id="atak-iff-empty-challenge">Publiez un défi ci-dessous pour démarrer l’identification.</p>
+      </div>
+      <div class="atak-ops-form atak-iff-form">
+        <label class="atak-ops-field">Code de défi
+          <input type="text" id="atak-iff-new-code" maxlength="32" autocomplete="off" placeholder="Ex. DELTA7" spellcheck="false" />
+        </label>
+        <label class="atak-ops-field">Durée de validité
+          <select id="atak-iff-valid-minutes">
+            <option value="15">15 minutes</option>
+            <option value="30" selected>30 minutes</option>
+            <option value="60">1 heure</option>
+            <option value="120">2 heures</option>
+          </select>
+        </label>
+        <div class="atak-iff-actions">
+          <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-iff-generate">Publier le défi</button>
+          <button type="button" class="atak-ops-btn" id="atak-iff-sync-units">Inscrire les unités en liaison</button>
+        </div>
+      </div>
+      <p class="atak-iff-feedback" id="atak-iff-feedback" hidden></p>
+      <div class="atak-ops-form">
+        <label class="atak-ops-field">Unité
+          <select id="atak-iff-respond-asset"><option value="">Choisir une unité…</option></select>
+        </label>
+        <label class="atak-ops-field">Code réponse
+          <input type="text" id="atak-iff-respond-code" maxlength="64" autocomplete="off" spellcheck="false" />
+        </label>
+        <button type="button" class="atak-ops-btn" id="atak-iff-respond-submit">Envoyer la réponse</button>
+      </div>
+      <div class="atak-iff-assets">
+        <p class="atak-iff-label">État des réponses</p>
+        <div id="atak-iff-assets-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ow-ops-panel" id="tab-pings">
+    <p class="atak-panel-hint">Clic droit sur la carte pour envoyer un ping. Les pings reçus apparaissent ici et sur la carte.</p>
+    <div class="atak-pings-list" id="atak-pings-list">
+      <div class="atak-empty-state">
+        <p class="atak-empty-state-title">Aucun ping</p>
+        <p class="atak-empty-state-text">Clic droit sur la carte → Envoyer un ping.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-map-crs.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/nato-sidc-icons.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-marker-catalog.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-map-markers.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-motion.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-unit-popup.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-sse-layers.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-radio.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-iff.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-super-ping.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-pings.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tools.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.js"></script>

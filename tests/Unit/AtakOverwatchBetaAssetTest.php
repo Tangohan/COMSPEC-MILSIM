@@ -132,6 +132,17 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('ATAKReachOverlay', $overwatchJs);
         self::assertStringContainsString('Équipage', $overwatchJs);
         self::assertStringContainsString('Munitions', $overwatchJs);
+        self::assertStringContainsString('atak-unit-dossier.js', $view);
+        self::assertStringContainsString('id="atak-unit-dossier"', $view);
+        self::assertStringContainsString('atak-sse-layers.js', $view);
+        self::assertStringContainsString('atak-radio.js', $view);
+        self::assertStringContainsString('atak-iff.js', $view);
+        self::assertStringContainsString('atak-pings.js', $view);
+        self::assertStringContainsString('data-view="radio"', $view);
+        self::assertStringContainsString('ATAKUnitDossier', $overwatchJs);
+        self::assertStringContainsString('showOpsPanel', $overwatchJs);
+        self::assertStringContainsString('atak:mapready', $overwatchJs);
+        self::assertStringContainsString('setUnitsMarkers', $overwatchJs);
         self::assertStringNotContainsString('>Comms</button>', $view);
         self::assertStringContainsString("'/api/chat?mapId='", $overwatchJs);
         self::assertStringContainsString('ow-unread', $overwatchJs);
