@@ -13,6 +13,7 @@ use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Repositories\UserRepository;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\ConfigSchemaService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SteamId;
 
@@ -60,6 +61,35 @@ final class AtakRealismApiController
         }
 
         $configJson = json_decode($config['config_json'], true);
+        
+        return Response::json([
+            'ok' => true,
+            'config' => $configJson,
+            'version' => $config['config_version'] ?? '1.0.0',
+            'updated_at' => $config['updated_at'] ?? null,
+        ]);
+    }
+    
+    /**
+     * Endpoint GET pour le schéma JSON (structure, validation, profils).
+     * Utile pour génération UI côté client.
+     */
+    public function getSchema(Request $request, array $params = []): Response
+    {
+        try {
+            $schema = ConfigSchemaService::getSchema();
+            
+            return Response::json([
+                'ok' => true,
+                'schema' => $schema
+            ]);
+        } catch (\Exception $e) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Failed to load schema: ' . $e->getMessage()
+            ], 500);
+        }
+    }
         
         return Response::json([
             'ok' => true,

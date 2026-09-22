@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$schema = $schema ?? [];
 $config = $config ?? [];
 $configMeta = $configMeta ?? [];
 $history = is_array($history ?? null) ? $history : [];
@@ -9,732 +10,714 @@ $csrfToken = (string) ($csrfToken ?? '');
 $success = $success ?? null;
 $error = $error ?? null;
 
-// Extraire les domaines de config
-$radioRelays = $config['radio_relays'] ?? [];
-$zonesRoleplay = $config['zones_roleplay'] ?? [];
-$networkSim = $config['network_simulation'] ?? [];
-$certificates = $config['certificates'] ?? [];
-$terminalDamage = $config['terminal_damage'] ?? [];
-$waypoints = $config['waypoints_routes'] ?? [];
-$symbology = $config['symbology_map'] ?? [];
-$controlMeasures = $config['control_measures'] ?? [];
-$coverage = $config['coverage_viewshed'] ?? [];
-$experience = $config['experience_ambiance'] ?? [];
-$other = $config['other_settings'] ?? [];
+// Encoder JSON pour JavaScript
+$schemaJson = json_encode($schema, JSON_UNESCAPED_UNICODE);
+$configJson = json_encode($config, JSON_UNESCAPED_UNICODE);
+$profilesJson = json_encode($schema['profiles'] ?? [], JSON_UNESCAPED_UNICODE);
 ?>
 
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
-
-        <!-- Header -->
-        <header class="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-slate-50 shadow-sm">
-            <div class="relative px-5 sm:px-8 py-7">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-900/80 mb-2">COMSPEC ATAK — Configuration centralisée</p>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Réalisme ATAK</h1>
-                <p class="mt-2 text-sm text-slate-600 max-w-3xl leading-relaxed">
-                    Configuration unifiée de tous les paramètres de réalisme : relais radio, certificats, dommages terminal, simulation réseau, zones tactiques, itinéraires, symbologie, couverture terrain.
-                    Source de vérité pour le mod Arma 3 et le web ATAK/Tacmap.
-                </p>
-                <div class="mt-5 flex flex-wrap gap-2">
-                    <a href="<?= $h(url('back-office/atak/controle-serveur')) ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">
-                        ← Contrôle de mission
-                    </a>
-                    <button type="button" id="btn-history" class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100">
-                        📜 Historique
-                    </button>
-                </div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Réalisme ATAK — ATHENA C2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --athena-primary: #00ff00;
+            --athena-bg: #0d0d0d;
+            --athena-card: #1a1a1a;
+            --athena-border: #333;
+            --athena-text: #e0e0e0;
+            --athena-muted: #888;
+        }
+        
+        body {
+            background-color: var(--athena-bg);
+            color: var(--athena-text);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background-color: var(--athena-card);
+            border-bottom: 2px solid var(--athena-primary);
+            padding: 1rem 2rem;
+        }
+        
+        .navbar-brand {
+            color: var(--athena-primary) !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .container-fluid {
+            max-width: 1400px;
+            padding: 2rem;
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, #1a3a1a 0%, #1a1a1a 100%);
+            border: 1px solid var(--athena-primary);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .header-card h1 {
+            color: var(--athena-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .header-card .meta {
+            color: var(--athena-muted);
+            font-size: 0.9rem;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: 1px solid;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-success {
+            background-color: #1a3a1a;
+            border-color: var(--athena-primary);
+            color: var(--athena-primary);
+        }
+        
+        .alert-danger {
+            background-color: #3a1a1a;
+            border-color: #ff0000;
+            color: #ff6666;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--athena-primary);
+            color: var(--athena-bg);
+        }
+        
+        .btn-primary:hover {
+            background-color: #00cc00;
+            box-shadow: 0 0 10px var(--athena-primary);
+        }
+        
+        .btn-secondary {
+            background-color: var(--athena-card);
+            color: var(--athena-text);
+            border: 1px solid var(--athena-border);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #2a2a2a;
+        }
+        
+        .btn-profile {
+            background-color: var(--athena-card);
+            border: 1px solid var(--athena-border);
+            color: var(--athena-text);
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-profile:hover {
+            border-color: var(--athena-primary);
+        }
+        
+        .tabs-container {
+            background-color: var(--athena-card);
+            border: 1px solid var(--athena-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .nav-tabs {
+            background-color: #0d0d0d;
+            border-bottom: 2px solid var(--athena-primary);
+            padding: 1rem 1rem 0;
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        
+        .nav-tabs .nav-link {
+            background-color: var(--athena-card);
+            border: 1px solid var(--athena-border);
+            color: var(--athena-muted);
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px 6px 0 0;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background-color: #2a2a2a;
+            color: var(--athena-text);
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: var(--athena-primary);
+            color: var(--athena-bg);
+            border-color: var(--athena-primary);
+        }
+        
+        .tab-content {
+            padding: 2rem;
+        }
+        
+        .domain-header h3 {
+            color: var(--athena-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .domain-header .text-muted {
+            color: var(--athena-muted);
+            margin-bottom: 2rem;
+            display: block;
+        }
+        
+        .parameters-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .parameter-row {
+            background-color: #0d0d0d;
+            border: 1px solid var(--athena-border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .parameter-label {
+            flex: 0 0 40%;
+        }
+        
+        .parameter-label label {
+            color: var(--athena-primary);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .parameter-label small {
+            color: var(--athena-muted);
+        }
+        
+        .help-icon {
+            cursor: help;
+            margin-left: 0.5rem;
+            opacity: 0.6;
+        }
+        
+        .parameter-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-control, .form-select {
+            background-color: var(--athena-card);
+            border: 1px solid var(--athena-border);
+            color: var(--athena-text);
+            padding: 0.5rem 1rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--athena-card);
+            border-color: var(--athena-primary);
+            color: var(--athena-text);
+            box-shadow: 0 0 5px var(--athena-primary);
+        }
+        
+        .form-range {
+            width: 100%;
+            accent-color: var(--athena-primary);
+        }
+        
+        .slider-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider-value {
+            min-width: 100px;
+            text-align: right;
+            color: var(--athena-primary);
+            font-weight: bold;
+        }
+        
+        .form-check-input {
+            background-color: var(--athena-card);
+            border: 1px solid var(--athena-border);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--athena-primary);
+            border-color: var(--athena-primary);
+        }
+        
+        .form-check-label {
+            color: var(--athena-text);
+        }
+        
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+        }
+        
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .color-hex {
+            font-weight: bold;
+            color: var(--athena-primary);
+        }
+        
+        .number-input-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .input-unit {
+            color: var(--athena-muted);
+        }
+        
+        .multi-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .save-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--athena-card);
+            border-top: 2px solid var(--athena-primary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .spinner-border {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-width: 2px;
+            border-color: var(--athena-primary);
+            border-right-color: transparent;
+        }
+        
+        .modal-content {
+            background-color: var(--athena-card);
+            color: var(--athena-text);
+            border: 1px solid var(--athena-primary);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--athena-border);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--athena-border);
+        }
+        
+        .history-item {
+            background-color: #0d0d0d;
+            border: 1px solid var(--athena-border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .history-item:hover {
+            border-color: var(--athena-primary);
+        }
+        
+        @media (max-width: 768px) {
+            .parameter-row {
+                flex-direction: column;
+            }
+            
+            .parameter-label {
+                flex: 1;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container-fluid">
+            <span class="navbar-brand">⚙️ ATHENA C2 — Configuration Réalisme ATAK</span>
+            <div>
+                <a href="<?= $h(url('back-office/atak/controle-serveur')) ?>" class="btn btn-secondary btn-sm">
+                    ← Retour
+                </a>
             </div>
-        </header>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="header-card">
+            <h1>📡 Configuration Réalisme ATAK</h1>
+            <div class="meta">
+                Version: <?= $h($configMeta['version'] ?? '1.0.0') ?> | 
+                Dernière modification: <?= $h($configMeta['updated_at'] ?? 'Jamais') ?>
+                <?php if (isset($schema['metadata']['total_parameters'])): ?>
+                    | <?= $schema['metadata']['total_parameters'] ?> paramètres
+                <?php endif; ?>
+            </div>
+        </div>
 
         <?php if ($success): ?>
-            <div class="rounded-xl border border-green-200 bg-green-50 px-5 py-4">
-                <p class="text-sm text-green-900"><?= $h($success) ?></p>
+            <div class="alert alert-success" role="alert">
+                ✅ <?= $h($success) ?>
             </div>
         <?php endif; ?>
 
         <?php if ($error): ?>
-            <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
-                <p class="text-sm text-red-900"><?= $h($error) ?></p>
+            <div class="alert alert-danger" role="alert">
+                ❌ <?= $h($error) ?>
             </div>
         <?php endif; ?>
 
-        <!-- Métadonnées config -->
-        <div class="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-bold text-slate-900"><?= $h($configMeta['name'] ?? 'Configuration actuelle') ?></p>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Version <?= $h($configMeta['version'] ?? '1.0.0') ?> 
-                        · Modifiée le <?= $h($configMeta['updated_at'] ?? 'N/A') ?>
-                    </p>
-                </div>
-                <button type="button" id="btn-save-config" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-                    💾 Enregistrer
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button type="button" id="btn-save" class="btn btn-primary">
+                💾 Enregistrer configuration
+            </button>
+            
+            <button type="button" id="btn-history" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#historyModal">
+                📜 Historique
+            </button>
+            
+            <button type="button" id="btn-verify" class="btn btn-secondary" onclick="window.open('<?= $h(url('admin/atak/realism/verify')) ?>', '_blank')">
+                🔍 Vérifier migration
+            </button>
+            
+            <div style="flex: 1;"></div>
+            
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span style="color: var(--athena-muted); font-size: 0.9rem;">Profils :</span>
+                <button type="button" class="btn btn-profile" data-profile="beginner">
+                    🟢 Débutant
+                </button>
+                <button type="button" class="btn btn-profile" data-profile="event">
+                    🟡 Événement
+                </button>
+                <button type="button" class="btn btn-profile" data-profile="expert">
+                    🔴 Expert
                 </button>
             </div>
         </div>
 
-        <!-- Navigation onglets -->
-        <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="border-b border-slate-200 bg-slate-50/50 px-5 py-3">
-                <nav class="flex flex-wrap gap-2" id="tabs-nav">
-                    <button class="tab-btn active" data-tab="radio">📡 Relais radio</button>
-                    <button class="tab-btn" data-tab="zones">🗺️ Zones roleplay</button>
-                    <button class="tab-btn" data-tab="network">🌐 Simulation réseau</button>
-                    <button class="tab-btn" data-tab="certificates">🔐 Certificats</button>
-                    <button class="tab-btn" data-tab="damage">💥 Dommages terminal</button>
-                    <button class="tab-btn" data-tab="waypoints">📍 Itinéraires</button>
-                    <button class="tab-btn" data-tab="symbology">🎯 Symbologie</button>
-                    <button class="tab-btn" data-tab="control">🎖️ Control Measures</button>
-                    <button class="tab-btn" data-tab="coverage">📡 Couverture</button>
-                    <button class="tab-btn" data-tab="experience">🎮 Expérience</button>
-                </nav>
+        <!-- Onglets -->
+        <div class="tabs-container">
+            <ul class="nav nav-tabs" id="domainTabs" role="tablist">
+                <!-- Généré dynamiquement par JavaScript -->
+            </ul>
+
+            <div class="tab-content" id="domainTabsContent">
+                <!-- Généré dynamiquement par JavaScript -->
             </div>
-
-            <form id="realism-config-form" class="px-5 py-6">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-
-                <!-- Onglet 1: Relais radio -->
-                <div class="tab-content active" data-tab="radio">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Relais radio et proximité</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="radio_relays.link_via_relays" <?= !empty($radioRelays['link_via_relays']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Exiger un relais pour la liaison de données</span>
-                        </label>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Portée relais par défaut (m)</label>
-                            <input type="number" name="radio_relays.relay_range_m" value="<?= $h($radioRelays['relay_range_m'] ?? 2000) ?>" min="50" max="8000" class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Slots par relais</label>
-                            <input type="number" name="radio_relays.relay_slots" value="<?= $h($radioRelays['relay_slots'] ?? 8) ?>" min="1" max="64" class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Puissance (W)</label>
-                            <input type="number" name="radio_relays.relay_power_w" value="<?= $h($radioRelays['relay_power_w'] ?? 25) ?>" min="0" max="999" class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
-                    </div>
-                    
-                    <h3 class="text-md font-bold text-slate-900 mb-3 mt-6">
-                        ☔ Effet météo sur les communications
-                        <span class="help-icon" data-tooltip="Les conditions météo affectent la portée et le débit des relais radio">?</span>
-                    </h3>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="radio_relays.weather_effects_enabled" <?= !empty($radioRelays['weather_effects_enabled']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Activer les effets météo sur les comms</span>
-                        </label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">
-                                    Pluie - Portée (%)
-                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas de pluie">?</span>
-                                </label>
-                                <input type="number" name="radio_relays.rain_range_multiplier" value="<?= $h($radioRelays['rain_range_multiplier'] ?? 0.85) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <p class="text-xs text-slate-500 mt-1">0.85 = réduction à 85%</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">
-                                    Brouillard - Portée (%)
-                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas de brouillard">?</span>
-                                </label>
-                                <input type="number" name="radio_relays.fog_range_multiplier" value="<?= $h($radioRelays['fog_range_multiplier'] ?? 0.70) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <p class="text-xs text-slate-500 mt-1">0.70 = réduction à 70%</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">
-                                    Orage - Portée (%)
-                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas d'orage">?</span>
-                                </label>
-                                <input type="number" name="radio_relays.storm_range_multiplier" value="<?= $h($radioRelays['storm_range_multiplier'] ?? 0.60) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <p class="text-xs text-slate-500 mt-1">0.60 = réduction à 60%</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">
-                                    Seuil vent (km/h)
-                                    <span class="help-icon" data-tooltip="Vitesse de vent à partir de laquelle la portée est affectée">?</span>
-                                </label>
-                                <input type="number" name="radio_relays.wind_threshold_kmh" value="<?= $h($radioRelays['wind_threshold_kmh'] ?? 50) ?>" min="0" max="200" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <p class="text-xs text-slate-500 mt-1">Vent au-delà de ce seuil affecte les comms</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">
-                                    Pénalité vent (%/10km/h)
-                                    <span class="help-icon" data-tooltip="Réduction de portée par tranche de 10 km/h au-delà du seuil">?</span>
-                                </label>
-                                <input type="number" name="radio_relays.wind_range_penalty_per_10kmh" value="<?= $h($radioRelays['wind_range_penalty_per_10kmh'] ?? 0.05) ?>" min="0" max="0.5" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <p class="text-xs text-slate-500 mt-1">0.05 = -5% portée par tranche de 10 km/h</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Calculateur d'impact météo -->
-                        <div class="border-t border-slate-200 pt-4 mt-4">
-                            <h4 class="text-sm font-bold text-slate-700 mb-2">💡 Calculateur d'impact</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Portée base (m)</label>
-                                    <input type="number" id="weather-calc-base" value="2000" min="50" max="8000" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Condition</label>
-                                    <select id="weather-calc-condition" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-                                        <option value="none">Temps clair</option>
-                                        <option value="rain">Pluie</option>
-                                        <option value="fog">Brouillard</option>
-                                        <option value="storm">Orage</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Vent (km/h)</label>
-                                    <input type="number" id="weather-calc-wind" value="0" min="0" max="200" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-                                </div>
-                            </div>
-                            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                                <p class="text-sm font-bold text-blue-900">Portée effective : <span id="weather-calc-result">2000</span>m</p>
-                                <p class="text-xs text-blue-700 mt-1" id="weather-calc-detail">100% de la portée base</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 2: Zones roleplay -->
-                <div class="tab-content" data-tab="zones" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Zones tactiques à effets</h2>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="zones_roleplay.zones_enabled" <?= !empty($zonesRoleplay['zones_enabled']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Activer les zones roleplay</span>
-                        </label>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Rayon par défaut (m)</label>
-                            <input type="number" name="zones_roleplay.default_zone_radius_m" value="<?= $h($zonesRoleplay['default_zone_radius_m'] ?? 200) ?>" min="25" class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 3: Simulation réseau -->
-                <div class="tab-content" data-tab="network" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Simulation réseau (portail + client)</h2>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="network_simulation.portal_enabled" <?= !empty($networkSim['portal_enabled']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Activer simulation portail</span>
-                        </label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Latence min (ms)</label>
-                                <input type="number" name="network_simulation.portal_latency_min_ms" value="<?= $h($networkSim['portal_latency_min_ms'] ?? 0) ?>" min="0" class="w-full rounded border border-slate-300 px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Latence max (ms)</label>
-                                <input type="number" name="network_simulation.portal_latency_max_ms" value="<?= $h($networkSim['portal_latency_max_ms'] ?? 0) ?>" min="0" class="w-full rounded border border-slate-300 px-3 py-2">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 4: Certificats -->
-                <div class="tab-content" data-tab="certificates" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Certificats et appairage</h2>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="certificates.automatic_pairing" <?= !empty($certificates['automatic_pairing']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Appairage automatique</span>
-                        </label>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Durée certificat (jours)</label>
-                            <input type="number" name="certificates.certificate_duration_days" value="<?= $h($certificates['certificate_duration_days'] ?? 365) ?>" min="1" max="1825" class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 5: Dommages terminal -->
-                <div class="tab-content" data-tab="damage" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Dommages au terminal ATAK</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Niveau réalisme</label>
-                            <select name="terminal_damage.atak_realism_level" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <option value="0" <?= ($terminalDamage['atak_realism_level'] ?? 0) == 0 ? 'selected' : '' ?>>Désactivé</option>
-                                <option value="1" <?= ($terminalDamage['atak_realism_level'] ?? 0) == 1 ? 'selected' : '' ?>>Au choix du joueur</option>
-                                <option value="2" <?= ($terminalDamage['atak_realism_level'] ?? 0) == 2 ? 'selected' : '' ?>>Forcé serveur</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 6: Itinéraires -->
-                <div class="tab-content" data-tab="waypoints" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Itinéraires et waypoints</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Rayon waypoint par défaut (m)</label>
-                        <input type="number" name="waypoints_routes.waypoint_radius_default_m" value="<?= $h($waypoints['waypoint_radius_default_m'] ?? 25) ?>" min="5" class="w-full rounded border border-slate-300 px-3 py-2">
-                    </div>
-                </div>
-
-                <!-- Onglet 7: Symbologie -->
-                <div class="tab-content" data-tab="symbology" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Symbologie et carte</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Détail véhicule</label>
-                            <select name="symbology_map.vehicle_detail_mode" class="w-full rounded border border-slate-300 px-3 py-2">
-                                <option value="player" <?= ($symbology['vehicle_detail_mode'] ?? 'player') === 'player' ? 'selected' : '' ?>>Au choix du joueur</option>
-                                <option value="on" <?= ($symbology['vehicle_detail_mode'] ?? 'player') === 'on' ? 'selected' : '' ?>>Toujours actif</option>
-                                <option value="off" <?= ($symbology['vehicle_detail_mode'] ?? 'player') === 'off' ? 'selected' : '' ?>>Toujours désactivé</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 8: Control Measures -->
-                <div class="tab-content" data-tab="control" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">🎖️ Control Measures MIL-STD-2525D</h2>
-                    <p class="text-sm text-slate-600 mb-4">Mesures de contrôle doctrine US Army : axes d'avance, lignes de départ, limites de progression, phase lines, objectifs, checkpoints.</p>
-                    
-                    <div class="space-y-6">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="control_measures.enabled" <?= !empty($controlMeasures['enabled']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Activer les Control Measures</span>
-                        </label>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Axis of Advance (Axes d'avance nommés)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.axis_naming_enabled" <?= !empty($controlMeasures['axis_naming_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Nommage des axes (NEPTUNE, MARS, etc.)</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Largeur par défaut (m)</label>
-                                    <input type="number" name="control_measures.axis_default_width_m" value="<?= $h($controlMeasures['axis_default_width_m'] ?? 500) ?>" min="50" max="5000" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Line of Departure (LD)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.ld_enabled" <?= !empty($controlMeasures['ld_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Activer les lignes de départ</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
-                                    <input type="color" name="control_measures.ld_default_color" value="<?= $h($controlMeasures['ld_default_color'] ?? '#00ff00') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Limit of Advance (LOA)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.loa_enabled" <?= !empty($controlMeasures['loa_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Activer les limites de progression</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
-                                    <input type="color" name="control_measures.loa_default_color" value="<?= $h($controlMeasures['loa_default_color'] ?? '#ff0000') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Phase Lines (PL)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.phase_line_enabled" <?= !empty($controlMeasures['phase_line_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Activer les phase lines</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
-                                    <input type="color" name="control_measures.phase_line_default_color" value="<?= $h($controlMeasures['phase_line_default_color'] ?? '#ffff00') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Objectifs nommés (OBJ)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.objective_enabled" <?= !empty($controlMeasures['objective_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Activer les objectifs nommés</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Rayon par défaut (m)</label>
-                                    <input type="number" name="control_measures.objective_default_radius_m" value="<?= $h($controlMeasures['objective_default_radius_m'] ?? 200) ?>" min="25" max="2000" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Checkpoints numérotés (CP)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.checkpoint_enabled" <?= !empty($controlMeasures['checkpoint_enabled']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Activer les checkpoints</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="control_measures.checkpoint_auto_number" <?= !empty($controlMeasures['checkpoint_auto_number']) ? 'checked' : '' ?>>
-                                    <span class="text-sm font-medium">Numérotation automatique</span>
-                                </label>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Rayon par défaut (m)</label>
-                                    <input type="number" name="control_measures.checkpoint_default_radius_m" value="<?= $h($controlMeasures['checkpoint_default_radius_m'] ?? 50) ?>" min="10" max="500" class="w-full rounded border border-slate-300 px-3 py-2">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4">
-                            <h3 class="text-md font-bold text-slate-900 mb-3">Permissions</h3>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Visibilité par défaut</label>
-                                <select name="control_measures.control_measure_visibility" class="w-full rounded border border-slate-300 px-3 py-2">
-                                    <option value="public" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'public' ? 'selected' : '' ?>>Public (tout le monde)</option>
-                                    <option value="team" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'team' ? 'selected' : '' ?>>Équipe uniquement</option>
-                                    <option value="private" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'private' ? 'selected' : '' ?>>Privé (créateur uniquement)</option>
-                                </select>
-                                <p class="text-xs text-slate-500 mt-1">Qui peut voir les control measures créés</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Onglet 9: Couverture -->
-                <div class="tab-content" data-tab="coverage" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Couverture et viewshed</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Rayon viewshed par défaut (m)</label>
-                        <input type="number" name="coverage_viewshed.viewshed_radius_default_m" value="<?= $h($coverage['viewshed_radius_default_m'] ?? 500) ?>" min="25" max="2000" class="w-full rounded border border-slate-300 px-3 py-2">
-                    </div>
-                </div>
-
-                <!-- Onglet 10: Expérience -->
-                <div class="tab-content" data-tab="experience" style="display:none;">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4">Expérience et ambiance</h2>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="experience_ambiance.realism_mode" <?= !empty($experience['realism_mode']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Mode réalisme général</span>
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="experience_ambiance.troll_mode" <?= !empty($experience['troll_mode']) ? 'checked' : '' ?>>
-                            <span class="text-sm font-medium">Mode troll</span>
-                        </label>
-                    </div>
-                </div>
-
-            </form>
         </div>
 
-        <!-- Modal historique (simple pour l'instant) -->
-        <div id="history-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
-                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-900">Historique des configurations</h3>
-                    <button type="button" id="close-history" class="text-slate-500 hover:text-slate-900">✕</button>
+        <!-- Espace pour barre fixe -->
+        <div style="height: 80px;"></div>
+    </div>
+
+    <!-- Barre de sauvegarde fixe -->
+    <div class="save-bar">
+        <div id="save-status">
+            <span style="color: var(--athena-muted);">Prêt à enregistrer</span>
+        </div>
+        <button type="button" id="btn-save-bottom" class="btn btn-primary">
+            💾 Enregistrer
+        </button>
+    </div>
+
+    <!-- Modal Historique -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📜 Historique des versions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="px-6 py-4">
-                    <?php if ($history === []): ?>
-                        <p class="text-sm text-slate-500">Aucun historique disponible.</p>
+                <div class="modal-body">
+                    <?php if (empty($history)): ?>
+                        <p style="color: var(--athena-muted);">Aucun historique disponible.</p>
                     <?php else: ?>
-                        <ul class="space-y-2">
-                            <?php foreach ($history as $item): ?>
-                                <li class="p-3 rounded border border-slate-200 hover:bg-slate-50">
-                                    <p class="text-sm font-medium text-slate-900"><?= $h($item['config_name'] ?? 'Sans nom') ?></p>
-                                    <p class="text-xs text-slate-500">
-                                        Version <?= $h($item['config_version'] ?? 'N/A') ?> 
-                                        · Modifiée le <?= $h($item['updated_at'] ?? 'N/A') ?>
-                                        · <?= !empty($item['is_active']) ? '✓ Active' : 'Archivée' ?>
-                                    </p>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <?php foreach ($history as $item): ?>
+                            <div class="history-item">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong style="color: var(--athena-primary);">
+                                        <?= $h($item['config_name'] ?? 'Sans nom') ?>
+                                    </strong>
+                                    <span style="color: var(--athena-muted); font-size: 0.9rem;">
+                                        <?= $h($item['updated_at'] ?? '') ?>
+                                    </span>
+                                </div>
+                                <div style="color: var(--athena-muted); font-size: 0.9rem;">
+                                    Version: <?= $h($item['config_version'] ?? '1.0.0') ?>
+                                    <?php if (isset($item['updated_by'])): ?>
+                                        | Par: User #<?= $h($item['updated_by']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
             </div>
         </div>
-
     </div>
-</div>
 
-<style>
-.tab-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    border-radius: 0.5rem;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #64748b;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.tab-btn:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-}
-.tab-btn.active {
-    background: #0f172a;
-    color: white;
-    border-color: #0f172a;
-}
-.help-icon {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
-    text-align: center;
-    background: #94a3b8;
-    color: white;
-    border-radius: 50%;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: help;
-    margin-left: 4px;
-    position: relative;
-}
-.help-icon:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    background: #1e293b;
-    color: white;
-    font-size: 12px;
-    font-weight: normal;
-    white-space: nowrap;
-    border-radius: 6px;
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.help-icon:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 2px;
-    border: 6px solid transparent;
-    border-top-color: #1e293b;
-    z-index: 1000;
-}
-</style>
-
-<script>
-// Gestion des onglets
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= $h(url('assets/js/atak-realism-ui-generator.js')) ?>"></script>
+    <script>
+        // Données PHP → JavaScript
+        const SCHEMA = <?= $schemaJson ?>;
+        const CURRENT_CONFIG = <?= $configJson ?>;
+        const PROFILES = <?= $profilesJson ?>;
+        const CSRF_TOKEN = '<?= $h($csrfToken) ?>';
+        const SAVE_URL = '<?= $h(url('admin/atak/realism/save')) ?>';
         
-        // Activer l'onglet
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        // Instance générateur
+        let generator = null;
         
-        // Afficher le contenu
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.style.display = content.dataset.tab === tab ? 'block' : 'none';
-        });
-    });
-});
-
-// Enregistrement de la config
-document.getElementById('btn-save-config')?.addEventListener('click', async () => {
-    const form = document.getElementById('realism-config-form');
-    const formData = new FormData(form);
-    
-    // Construire la config JSON depuis le formulaire
-    const config = {
-        radio_relays: {},
-        zones_roleplay: {},
-        network_simulation: {},
-        certificates: {},
-        terminal_damage: {},
-        waypoints_routes: {},
-        symbology_map: {},
-        control_measures: {},
-        coverage_viewshed: {},
-        experience_ambiance: {},
-        other_settings: {}
-    };
-    
-    for (const [key, value] of formData.entries()) {
-        if (key === '_csrf_token') continue;
-        
-        const parts = key.split('.');
-        if (parts.length === 2) {
-            const [domain, field] = parts;
-            const input = form.querySelector(`[name="${key}"]`);
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[ATHENA] Initialisation UI réalisme...');
+            console.log('Schéma:', SCHEMA);
+            console.log('Config actuelle:', CURRENT_CONFIG);
             
-            if (!input) continue;
+            generator = new AtakRealismUIGenerator(SCHEMA);
+            generator.loadValues(CURRENT_CONFIG);
             
-            if (input.type === 'checkbox') {
-                config[domain][field] = input.checked;
-            } else if (input.type === 'number') {
-                config[domain][field] = parseFloat(value) || 0;
-            } else if (input.type === 'color') {
-                config[domain][field] = value; // Couleur hex comme string
-            } else if (input.tagName === 'SELECT') {
-                config[domain][field] = value;
-            } else {
-                config[domain][field] = value;
+            renderTabs();
+            renderAllDomains();
+            generator.attachEvents();
+            attachSaveHandlers();
+            attachProfileHandlers();
+            
+            // Activer premier onglet
+            const firstTab = document.querySelector('.nav-link');
+            if (firstTab) {
+                firstTab.click();
             }
-        }
-    }
-    
-    // Validation côté client
-    const errors = [];
-    
-    // Valider relay_range_m
-    if (config.radio_relays.relay_range_m) {
-        const range = config.radio_relays.relay_range_m;
-        if (range < 50 || range > 8000) {
-            errors.push('La portée du relais doit être entre 50 et 8000m');
-        }
-    }
-    
-    // Valider certificate_duration_days
-    if (config.certificates.certificate_duration_days) {
-        const days = config.certificates.certificate_duration_days;
-        if (days < 1 || days > 1825) {
-            errors.push('La durée du certificat doit être entre 1 et 1825 jours');
-        }
-    }
-    
-    // Valider viewshed_radius
-    if (config.coverage_viewshed.viewshed_radius_default_m) {
-        const radius = config.coverage_viewshed.viewshed_radius_default_m;
-        if (radius < 25 || radius > 2000) {
-            errors.push('Le rayon viewshed doit être entre 25 et 2000m');
-        }
-    }
-    
-    // Valider multiplicateurs météo (0-1)
-    const weatherMultipliers = [
-        'rain_range_multiplier',
-        'fog_range_multiplier',
-        'storm_range_multiplier',
-        'rain_throughput_multiplier',
-        'fog_throughput_multiplier',
-        'storm_throughput_multiplier'
-    ];
-    weatherMultipliers.forEach(mult => {
-        if (config.radio_relays[mult] !== undefined) {
-            const val = config.radio_relays[mult];
-            if (val < 0 || val > 1) {
-                errors.push(`Le multiplicateur ${mult} doit être entre 0 et 1`);
-            }
-        }
-    });
-    
-    if (errors.length > 0) {
-        alert('Erreurs de validation :\n\n' + errors.join('\n'));
-        return;
-    }
-    
-    try {
-        const response = await fetch('<?= url('admin/atak/realism/save') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': formData.get('_csrf_token')
-            },
-            body: JSON.stringify({
-                config,
-                config_name: 'Configuration modifiée le ' + new Date().toLocaleString('fr-FR'),
-                _csrf_token: formData.get('_csrf_token')
-            })
+            
+            console.log('[ATHENA] UI initialisée avec succès');
         });
         
-        const data = await response.json();
-        
-        if (data.ok) {
-            alert('✓ Configuration enregistrée avec succès !');
-            location.reload();
-        } else {
-            alert('Erreur : ' + (data.error || 'Erreur inconnue'));
+        function renderTabs() {
+            const tabsContainer = document.getElementById('domainTabs');
+            const domains = SCHEMA.domains || {};
+            
+            // Trier domaines par order
+            const sortedDomains = Object.entries(domains).sort((a, b) => {
+                return (a[1].order || 99) - (b[1].order || 99);
+            });
+            
+            sortedDomains.forEach(([key, domain], index) => {
+                const li = document.createElement('li');
+                li.className = 'nav-item';
+                li.role = 'presentation';
+                
+                const button = document.createElement('button');
+                button.className = index === 0 ? 'nav-link active' : 'nav-link';
+                button.id = `tab-${key}`;
+                button.dataset.bsToggle = 'tab';
+                button.dataset.bsTarget = `#content-${key}`;
+                button.type = 'button';
+                button.role = 'tab';
+                button.textContent = domain.label || key;
+                
+                li.appendChild(button);
+                tabsContainer.appendChild(li);
+            });
         }
-    } catch (e) {
-        alert('Erreur de communication avec le serveur');
-        console.error(e);
-    }
-});
-
-// Modal historique
-document.getElementById('btn-history')?.addEventListener('click', () => {
-    document.getElementById('history-modal').classList.remove('hidden');
-    document.getElementById('history-modal').classList.add('flex');
-});
-
-document.getElementById('close-history')?.addEventListener('click', () => {
-    document.getElementById('history-modal').classList.add('hidden');
-    document.getElementById('history-modal').classList.remove('flex');
-});
-
-// Calculateur d'impact météo
-function updateWeatherCalculator() {
-    const base = parseFloat(document.getElementById('weather-calc-base')?.value || 2000);
-    const condition = document.getElementById('weather-calc-condition')?.value || 'none';
-    const wind = parseFloat(document.getElementById('weather-calc-wind')?.value || 0);
-    
-    // Lire les multiplicateurs depuis le formulaire
-    const rainMult = parseFloat(document.querySelector('[name="radio_relays.rain_range_multiplier"]')?.value || 0.85);
-    const fogMult = parseFloat(document.querySelector('[name="radio_relays.fog_range_multiplier"]')?.value || 0.70);
-    const stormMult = parseFloat(document.querySelector('[name="radio_relays.storm_range_multiplier"]')?.value || 0.60);
-    const windThreshold = parseFloat(document.querySelector('[name="radio_relays.wind_threshold_kmh"]')?.value || 50);
-    const windPenalty = parseFloat(document.querySelector('[name="radio_relays.wind_range_penalty_per_10kmh"]')?.value || 0.05);
-    
-    // Calculer multiplicateur météo
-    let weatherMult = 1.0;
-    let weatherDesc = 'Temps clair';
-    if (condition === 'rain') {
-        weatherMult = rainMult;
-        weatherDesc = `Pluie (${Math.round(rainMult * 100)}%)`;
-    } else if (condition === 'fog') {
-        weatherMult = fogMult;
-        weatherDesc = `Brouillard (${Math.round(fogMult * 100)}%)`;
-    } else if (condition === 'storm') {
-        weatherMult = stormMult;
-        weatherDesc = `Orage (${Math.round(stormMult * 100)}%)`;
-    }
-    
-    // Calculer multiplicateur vent
-    let windMult = 1.0;
-    let windDesc = '';
-    if (wind > windThreshold) {
-        const windOver = wind - windThreshold;
-        const penalties = Math.floor(windOver / 10);
-        windMult = Math.max(0.5, 1.0 - (penalties * windPenalty));
-        windDesc = ` × Vent ${wind}km/h (${Math.round(windMult * 100)}%)`;
-    }
-    
-    // Portée effective
-    const effective = Math.round(base * weatherMult * windMult);
-    const percent = Math.round((effective / base) * 100);
-    
-    document.getElementById('weather-calc-result').textContent = effective;
-    document.getElementById('weather-calc-detail').textContent = 
-        `${weatherDesc}${windDesc} = ${percent}% de la portée base`;
-}
-
-// Attacher les événements au calculateur
-['weather-calc-base', 'weather-calc-condition', 'weather-calc-wind'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', updateWeatherCalculator);
-    document.getElementById(id)?.addEventListener('change', updateWeatherCalculator);
-});
-
-// Mettre à jour le calculateur quand les multiplicateurs changent
-document.querySelectorAll('[name^="radio_relays."][name*="multiplier"], [name^="radio_relays.wind"]').forEach(input => {
-    input.addEventListener('input', updateWeatherCalculator);
-});
-
-// Initialiser le calculateur
-updateWeatherCalculator();
-</script>
+        
+        function renderAllDomains() {
+            const contentContainer = document.getElementById('domainTabsContent');
+            const domains = SCHEMA.domains || {};
+            
+            // Trier domaines par order
+            const sortedDomains = Object.entries(domains).sort((a, b) => {
+                return (a[1].order || 99) - (b[1].order || 99);
+            });
+            
+            sortedDomains.forEach(([key, domain], index) => {
+                const div = document.createElement('div');
+                div.className = index === 0 ? 'tab-pane fade show active' : 'tab-pane fade';
+                div.id = `content-${key}`;
+                div.role = 'tabpanel';
+                
+                generator.renderDomain(key, div);
+                contentContainer.appendChild(div);
+            });
+        }
+        
+        function attachSaveHandlers() {
+            const saveButtons = [
+                document.getElementById('btn-save'),
+                document.getElementById('btn-save-bottom')
+            ];
+            
+            saveButtons.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    await saveConfig();
+                });
+            });
+        }
+        
+        async function saveConfig() {
+            const statusDiv = document.getElementById('save-status');
+            statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+            
+            try {
+                // Extraire valeurs
+                const config = generator.extractValues();
+                
+                // Valider côté client
+                const validation = generator.validate(config);
+                
+                if (!validation.valid) {
+                    alert('❌ Configuration invalide :\n\n' + validation.errors.join('\n'));
+                    statusDiv.innerHTML = '<span style="color: #ff0000;">❌ Erreurs de validation</span>';
+                    return;
+                }
+                
+                // Envoyer au serveur
+                const response = await fetch(SAVE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({
+                        config: config,
+                        name: 'Configuration modifiée via UI',
+                        _csrf: CSRF_TOKEN
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    statusDiv.innerHTML = '<span style="color: var(--athena-primary);">✅ ' + result.message + '</span>';
+                    
+                    // Recharger page après 1.5s
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusDiv.innerHTML = '<span style="color: #ff0000;">❌ ' + result.error + '</span>';
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        alert('❌ Erreurs serveur :\n\n' + result.errors.join('\n'));
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Erreur save:', error);
+                statusDiv.innerHTML = '<span style="color: #ff0000;">❌ Erreur réseau</span>';
+                alert('❌ Erreur réseau : ' + error.message);
+            }
+        }
+        
+        function attachProfileHandlers() {
+            const profileButtons = document.querySelectorAll('[data-profile]');
+            
+            profileButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const profileKey = btn.dataset.profile;
+                    applyProfile(profileKey);
+                });
+            });
+        }
+        
+        function applyProfile(profileKey) {
+            const profile = PROFILES[profileKey];
+            
+            if (!profile) {
+                alert('❌ Profil introuvable : ' + profileKey);
+                return;
+            }
+            
+            const confirmed = confirm(
+                `🎯 Appliquer le profil "${profile.label}" ?\n\n` +
+                `${profile.description}\n\n` +
+                `⚠️ Ceci remplacera les valeurs actuelles par les valeurs du profil.`
+            );
+            
+            if (!confirmed) return;
+            
+            // Merger overrides dans config actuelle
+            const overrides = profile.overrides || {};
+            
+            Object.keys(overrides).forEach(domainKey => {
+                Object.keys(overrides[domainKey]).forEach(paramKey => {
+                    const input = document.getElementById(`${domainKey}_${paramKey}`);
+                    
+                    if (input) {
+                        const value = overrides[domainKey][paramKey];
+                        const type = input.dataset.type;
+                        
+                        if (type === 'toggle') {
+                            input.checked = value;
+                            input.dispatchEvent(new Event('change'));
+                        } else if (type === 'slider' || type === 'number') {
+                            input.value = value;
+                            input.dispatchEvent(new Event('input'));
+                        } else {
+                            input.value = value;
+                        }
+                    }
+                });
+            });
+            
+            alert('✅ Profil "' + profile.label + '" appliqué.\n\nN\'oubliez pas de sauvegarder !');
+        }
+    </script>
+</body>
+</html>
