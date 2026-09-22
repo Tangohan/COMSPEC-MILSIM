@@ -1223,3 +1223,9 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-map-stage .atak-dossier{right:12px;top:12px}
 #atak-ghost-trails+#ow-ghost-help,.ow-trail-toggles{margin:0}
 
+
+.ow-air-sheet .ow-air-card.is-sheet{display:block;width:100%;text-align:left;cursor:default;border:1px solid var(--athena-line-2);border-radius:8px;background:#0e1211;padding:0;overflow:hidden}
+.ow-air-sheet .ow-air-card.is-sheet .ow-card-head{padding:10px 12px;border-bottom:1px solid var(--athena-line-2)}
+.ow-air-sheet .ow-air-card.is-sheet .ow-card-body{padding:10px 12px}
+.ow-air-sheet .ow-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px}
+.ow-air-sheet .ow-kv>span:nth-child(odd){color:var(--athena-muted)}

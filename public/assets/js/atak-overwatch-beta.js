@@ -1423,12 +1423,11 @@
       if (airAssetMarkers[id]) {
         airAssetMarkers[id].setLatLng(latlng);
         airAssetMarkers[id].setIcon(icon);
+        airAssetMarkers[id].off('click').on('click', function () { openAirAssetSheet(a); });
         return;
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
-      marker.bindPopup('<strong>' + escapeHtml(label) + '</strong><br/>' +
-        escapeHtml(a.model || a.aircraft_type || '') + '<br/>' + escapeHtml(airStatusLabel(status)));
-      marker.on('click', function () { airLocate(a); });
+      marker.on('click', function () { openAirAssetSheet(a); });
       marker.addTo(map);
       airAssetMarkers[id] = marker;
     });
@@ -1901,11 +1900,26 @@
     renderSquadLinks();
     renderRangeRings();
     renderMap();
-    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.select === 'function') {
-      try { window.ATAKReachOverlay.select(unit, { center: false }); } catch (e) {}
-    }
+    syncReachOverlay(unit);
     if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
       try { window.ATAKUnitDossier.open(unit); } catch (e2) {}
+    }
+  }
+
+  function reachZoneEnabled() {
+    var box = document.getElementById('ow-reach-zone');
+    return !!(box && box.checked);
+  }
+  function syncReachOverlay(unit) {
+    if (!window.ATAKReachOverlay) return;
+    if (!reachZoneEnabled()) {
+      if (typeof window.ATAKReachOverlay.clear === 'function') {
+        try { window.ATAKReachOverlay.clear(true); } catch (e) {}
+      }
+      return;
+    }
+    if (unit && typeof window.ATAKReachOverlay.select === 'function') {
+      try { window.ATAKReachOverlay.select(unit, { center: false }); } catch (e2) {}
     }
   }
 
@@ -4936,24 +4950,55 @@
     return 'Arrivée estimée ' + n + ' min';
   }
 
-  function airLocate(row) {
-    if (!row) return;
-    var cs = String(row.callsign || row.call_sign || '').toLowerCase();
-    var match = units.filter(function (unit) {
-      return callsign(unit).toLowerCase() === cs;
-    })[0];
-    if (match) {
-      selectUnit(match);
-      var loc = point(match);
-      if (loc) map.setView(loc, Math.max(map.getZoom(), 4));
-      return;
+  function normalizeAirAsset(row) {
+    if (!row) return null;
+    var asset = Object.assign({}, row);
+    var cs = String(asset.callsign || asset.call_sign || '').trim();
+    asset.callsign = cs;
+    asset.call_sign = cs;
+    return asset;
+  }
+  function airAssetDetailHtml(row) {
+    var card = airAssetCardHtml(row);
+    // La carte liste est un bouton : pour le tiroir on garde le contenu sans wrapper interactif.
+    return '<div class="ow-air-sheet">' + card.replace(/^<button\b[^>]*>/, '<div class="ow-air-card is-sheet">').replace(/<\/button>$/, '</div>') + '</div>';
+  }
+  function openAirAssetSheet(row) {
+    var asset = normalizeAirAsset(row);
+    if (!asset) return;
+    selected = null;
+    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.clear === 'function') {
+      try { window.ATAKReachOverlay.clear(true); } catch (e) {}
     }
-    var x = Number(row.pos_x);
-    var y = Number(row.pos_y);
-    if (Number.isFinite(x) && Number.isFinite(y)) {
+    var x = Number(asset.pos_x);
+    var y = Number(asset.pos_y);
+    if (Number.isFinite(x) && Number.isFinite(y) && (Math.abs(x) > 0.5 || Math.abs(y) > 0.5)) {
       var ll = worldToLatLng(x, y);
       if (ll) map.setView(ll, Math.max(map.getZoom(), 4));
+    } else {
+      var match = units.filter(function (unit) {
+        return callsign(unit).toLowerCase() === String(asset.callsign || '').toLowerCase();
+      })[0];
+      var loc = match ? point(match) : null;
+      if (loc) map.setView(loc, Math.max(map.getZoom(), 4));
     }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
+      try { window.ATAKUnitDossier.open(asset); } catch (e2) {}
+    }
+    clearDrawerContactHead();
+    setDrawerContactHead({
+      call_sign: asset.callsign,
+      role: asset.model || asset.aircraft_type || 'Aéronef',
+      group: asset.group_name || asset.group || 'Air',
+      side: asset.side
+    });
+    document.getElementById('ow-drawer-kicker').textContent = 'Fiche aérienne';
+    document.getElementById('ow-drawer-title').textContent = clean(asset.callsign, 'Aéronef');
+    document.getElementById('ow-drawer-body').innerHTML = airAssetDetailHtml(asset);
+    document.getElementById('ow-drawer').hidden = false;
+  }
+  function airLocate(row) {
+    openAirAssetSheet(row);
   }
 
   function airAssetCardHtml(row) {
@@ -5596,6 +5641,7 @@
       return;
     }
     if (name === 'tools') {
+      restoreOpsPanels();
       openDrawer('Système', 'Outils', toolsHtml());
       bindDrawerForms();
       map.invalidateSize();
@@ -5915,6 +5961,25 @@
     el.addEventListener('change', syncTrailPrefsFromUi);
   });
   syncTrailPrefsFromUi();
+
+  var REACH_KEY = 'athena:overwatch-reach-zone';
+  var reachBox = document.getElementById('ow-reach-zone');
+  if (reachBox) {
+    try {
+      var savedReach = localStorage.getItem(REACH_KEY);
+      // Désactivé par défaut ; on ne réactive que si l’opérateur l’a explicitement coché.
+      reachBox.checked = savedReach === '1';
+    } catch (eReach) {
+      reachBox.checked = false;
+    }
+    reachBox.addEventListener('change', function () {
+      try { localStorage.setItem(REACH_KEY, reachBox.checked ? '1' : '0'); } catch (eSave) {}
+      if (reachBox.checked && selected) syncReachOverlay(selected);
+      else syncReachOverlay(null);
+      renderRangeRings();
+    });
+    if (!reachBox.checked) syncReachOverlay(null);
+  }
   try {
     window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map } }));
   } catch (eMap) {}

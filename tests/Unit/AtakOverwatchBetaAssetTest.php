@@ -143,6 +143,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('showOpsPanel', $overwatchJs);
         self::assertStringContainsString('atak:mapready', $overwatchJs);
         self::assertStringContainsString('setUnitsMarkers', $overwatchJs);
+        self::assertStringContainsString('ow-reach-zone', $view);
+        self::assertStringContainsString('openAirAssetSheet', $overwatchJs);
+        self::assertStringContainsString('reachZoneEnabled', $overwatchJs);
         self::assertStringNotContainsString('>Comms</button>', $view);
         self::assertStringContainsString("'/api/chat?mapId='", $overwatchJs);
         self::assertStringContainsString('ow-unread', $overwatchJs);
