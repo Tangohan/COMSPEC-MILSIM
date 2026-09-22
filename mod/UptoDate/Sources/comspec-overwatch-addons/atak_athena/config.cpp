@@ -320,7 +320,7 @@ class ATAK_APPs
     class AtakRelay: message
     {
         text = "<t size='1'>Relais AT</t>";
-        textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+        textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_relay_ca.paa";
         onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         tooltip = "Mât le plus proche : position, débit, fiabilité, identité.";
         class Menu_Property
@@ -539,7 +539,7 @@ class RscTitles
         class AtakRelay: message
         {
             text = "<t size='1'>Relais AT</t>";
-            textureNoShortcut = "\A3\ui_f\data\map\vehicleicons\iconTransmitter_ca.paa";
+            textureNoShortcut = "\z\comspec_overwatch\addons\atak_athena\data\icons\app_relay_ca.paa";
             onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             tooltip = "Mât le plus proche : position, débit, fiabilité, identité.";
             class Menu_Property
