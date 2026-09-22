@@ -17,11 +17,18 @@ _unit setVariable ["COMSPEC_RelaySigintAt", _now, false];
 private _list = missionNamespace getVariable ["COMSPEC_AtakRelays", []];
 private _sent = 0;
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
+
+// Récupérer range par défaut depuis config
+private _defaultRange = 2000;
+if (!isNil "ATHENA_fnc_getRealismParam") then {
+    _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
+};
+
 {
     if (isNull _x || {!alive _x}) then { continue };
     if (!(_x getVariable ["COMSPEC_AtakRelay", false])) then { continue };
-    private _range = _x getVariable ["COMSPEC_AtakRelayRange", 2000];
-    if (!(_range isEqualType 0)) then { _range = 2000; };
+    private _range = _x getVariable ["COMSPEC_AtakRelayRange", _defaultRange];
+    if (!(_range isEqualType 0)) then { _range = _defaultRange; };
     if ((_x distance2D _unit) > _range) then { continue };
     private _rpos = getPosATL _x;
     private _dir = _x getDir _unit;
