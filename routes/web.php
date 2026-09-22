@@ -1591,6 +1591,11 @@ return function (Router $router) {
     $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/realism/config', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak/realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/realism/verify', [\App\Controllers\Admin\AdminAtakRealismVerifyController::class, 'verify'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides/google-url', [AdminBriefingSlidesController::class, 'updateGoogleUrl'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2280,6 +2285,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/certificates', [\App\Controllers\Api\AtakRealismApiController::class, 'certificates']);
     $router->get('/api/atak/crypto-domains', [\App\Controllers\Api\AtakRealismApiController::class, 'cryptoDomains']);
     $router->post('/api/atak/crypto-domains', [\App\Controllers\Api\AtakRealismApiController::class, 'cryptoDomains']);
+    $router->get('/api/atak/realism/config', [\App\Controllers\Api\AtakRealismApiController::class, 'getConfig']);
+    $router->get('/api/atak/realism/schema', [\App\Controllers\Api\AtakRealismApiController::class, 'getSchema']);
+    $router->post('/api/atak/realism/weather-effects', [\App\Controllers\Api\AtakRealismApiController::class, 'calculateWeatherEffects']);
     $router->get('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'index']);
     $router->get('/api/atak/aar-reports/export', [\App\Controllers\Api\AarReportsApiController::class, 'export']);
     $router->post('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'store']);

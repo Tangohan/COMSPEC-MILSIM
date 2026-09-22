@@ -8,11 +8,19 @@ params [
 ];
 if (isNull _obj) exitWith { false };
 
+// Récupérer valeurs par défaut depuis config centralisée
+private _defaultRange = 2000;
+private _defaultSlots = 8;
+if (!isNil "ATHENA_fnc_getRealismParam") then {
+    _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
+    _defaultSlots = ["radio_relays", "max_relay_connections", 10] call ATHENA_fnc_getRealismParam;
+};
+
 private _uid = _obj getVariable ["COMSPEC_AtakRelayUid", ""];
 if (_uid isEqualTo "") then { _uid = netId _obj; };
 private _pos = getPosATL _obj;
-private _range = _obj getVariable ["COMSPEC_AtakRelayRange", 2000];
-if (!(_range isEqualType 0)) then { _range = 2000; };
+private _range = _obj getVariable ["COMSPEC_AtakRelayRange", _defaultRange];
+if (!(_range isEqualType 0)) then { _range = _defaultRange; };
 private _alive = _aliveHint && {alive _obj} && {damage _obj < 0.95};
 private _name = _obj getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
 if (!(_name isEqualType "") || {_name isEqualTo ""}) then { _name = "Relais ATAK"; };
@@ -20,11 +28,11 @@ private _identity = _obj getVariable ["COMSPEC_AtakRelayIdentity", _name];
 private _ip = _obj getVariable ["COMSPEC_AtakRelayIp", ""];
 private _gw = _obj getVariable ["COMSPEC_AtakRelayGateway", ""];
 private _cert = _obj getVariable ["COMSPEC_AtakRelayCertificate", ""];
-private _slots = _obj getVariable ["COMSPEC_AtakRelaySlots", 8];
+private _slots = _obj getVariable ["COMSPEC_AtakRelaySlots", _defaultSlots];
 private _power = _obj getVariable ["COMSPEC_AtakRelayPowerW", 25];
 private _thru = _obj getVariable ["COMSPEC_AtakRelayThroughput", 12];
 private _rel = _obj getVariable ["COMSPEC_AtakRelayReliability", 92];
-if (!(_slots isEqualType 0)) then { _slots = 8; };
+if (!(_slots isEqualType 0)) then { _slots = _defaultSlots; };
 if (!(_power isEqualType 0)) then { _power = 25; };
 if (!(_thru isEqualType 0)) then { _thru = 12; };
 if (!(_rel isEqualType 0)) then { _rel = 92; };

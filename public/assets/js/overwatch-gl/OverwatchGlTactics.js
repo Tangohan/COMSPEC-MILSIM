@@ -83,7 +83,7 @@ window.OverwatchGlTactics = (function () {
       }
     }
     apiOw.openDrawer('Visibilité', 'Masque', '<p class="ow-help">Calcul du masque de visibilité…</p>');
-    call('/api/atak/terrain/viewshed', { method: 'POST', body: { mapId: apiOw.mapId, observer: observer, radius_m: 800 } }).then(function (payload) {
+    call('/api/atak/terrain/viewshed', { method: 'POST', body: { mapId: apiOw.mapId, observer: observer, radius_m: 500 } }).then(function (payload) {
       if (!payload || payload.ready === false) {
         apiOw.openDrawer('Visibilité', 'Masque', '<p class="ow-help">' + (payload && (payload.gap_message || payload.message) || 'Relief non relevé.') + '</p>');
         return;

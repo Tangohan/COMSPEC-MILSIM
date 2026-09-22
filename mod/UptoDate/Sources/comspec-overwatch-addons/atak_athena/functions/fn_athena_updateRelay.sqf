@@ -20,13 +20,34 @@ if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
 };
 if (!(_info isEqualType createHashMap)) then { _info = createHashMap; };
 
+// Récupérer état mode réalisme
+private _linkViaRelays = missionNamespace getVariable ["COMSPEC_LinkViaRelays", false];
+private _realismMode = "Arcade";
+private _realismColor = "#8FB4C8"; // Gris neutre
+private _realismExplain = "Transmission directe satellite — couverture illimitée";
+
+if (_linkViaRelays) then {
+    _realismMode = "Réaliste";
+    _realismColor = "#FFE08A"; // Orange/jaune
+    _realismExplain = "Relais obligatoire pour transmission données — portée limitée";
+};
+
 private _html = "";
 if ((count (keys _info)) < 1) then {
     _html = [
         "<t color='#FFE08A' size='1.05'>Aucun mât à proximité</t><br/><br/>",
-        "<t color='#E8F2FA'>Aucun relais n’a été posé sur ce théâtre, ou ils sont trop loin pour être listés.</t><br/><br/>",
+        "<t color='#E8F2FA'>Aucun relais n'a été posé sur ce théâtre, ou ils sont trop loin pour être listés.</t><br/><br/>",
+        // État mode réalisme - diagnostic
+        format ["<t color='%1'>Mode liaison : %2</t><br/>", _realismColor, _realismMode],
+        format ["<t color='#E8F2FA' size='0.9'>%1</t><br/><br/>", _realismExplain],
+        // Aide contextualisée
+        if (_linkViaRelays) then {
+            "<t color='#FF8A80'>⚠ Position non transmise sans relais à portée</t><br/><br/>"
+        } else {
+            "<t color='#7CFF9A'>✓ Position transmise en continu (mode arcade)</t><br/><br/>"
+        },
         "<t color='#7CFF9A'>Pose</t><br/>",
-        "<t color='#E8F2FA'>Dans l’éditeur : Modules COMSPEC → Relais ATAK (mât). Renseignez nom, portée, identité, débit, fiabilité, places, puissance, adresse, passerelle et certificat. Le mât est détruisible.</t>"
+        "<t color='#E8F2FA'>Dans l'éditeur : Modules COMSPEC → Relais ATAK (mât). Renseignez nom, portée, identité, débit, fiabilité, places, puissance, adresse, passerelle et certificat. Le mât est détruisible.</t>"
     ] joinString "";
 } else {
     private _alive = _info getOrDefault ["alive", false];
@@ -65,6 +86,9 @@ if ((count (keys _info)) < 1) then {
         format ["<t color='#7CFF9A' size='1.08'>%1</t><br/>", _name],
         format ["<t color='%1'>%2</t><br/>", _stateCol, _state],
         format ["<t color='#8FB4C8'>Signal</t><br/>%1<t color='#E8F2FA' size='0.9'>  %2/4</t><br/><br/>", _barTxt, _bars],
+        // État mode réalisme - en haut de la fiche relais
+        format ["<t color='%1'>Mode liaison : %2</t><br/>", _realismColor, _realismMode],
+        format ["<t color='#E8F2FA' size='0.9'>%1</t><br/><br/>", _realismExplain],
         ["Identité", _info getOrDefault ["identity", "—"]] call _row,
         ["Position", format ["Grille %1 · %2 m", _info getOrDefault ["grid", "—"], round (_info getOrDefault ["dist", 0])]] call _row,
         ["Portée", format ["%1 m", round (_info getOrDefault ["range", 0])]] call _row,

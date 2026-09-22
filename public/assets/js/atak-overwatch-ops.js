@@ -24,6 +24,9 @@
   var pendingMarker = null;
   var recents = [];
   var markerIntelLayers = [];
+  
+  // Config réalisme centralisée (chargée au démarrage)
+  var realismConfig = null;
   var MARKER_SYMBOLS = [
     { key: 'mil_dot', group: 'Repères', short: 'Repère', label: 'Repère', hint: 'Point simple, vu à cet endroit.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
     { key: 'mil_triangle', group: 'Repères', short: 'Triangle', label: 'Triangle', hint: 'Repère triangulaire, souvent un contact ou un axe.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
@@ -59,6 +62,19 @@
   function ow() { return window.OverwatchBeta || null; }
   function esc(v) { var api = ow(); return api ? api.escapeHtml(v) : String(v == null ? '' : v); }
   function toast(t) { var api = ow(); if (api) api.toast(t); }
+  
+  // Charger config réalisme depuis API (utilisée pour fallbacks)
+  function loadRealismConfig() {
+    if (typeof window.AtakRealismConfig !== 'undefined') {
+      window.AtakRealismConfig.load().then(function (config) {
+        realismConfig = config;
+        console.log('[OverwatchOps] Realism config loaded');
+      }).catch(function (err) {
+        console.warn('[OverwatchOps] Failed to load realism config:', err);
+      });
+    }
+  }
+  
   function missionId() {
     return 'mission_' + Number(window.ATAK_TENANT_ID || 0) + '_map_' + Number((ow() && ow().mapId) || window.ATAK_DEFAULT_MAP_ID || 1);
   }
@@ -1368,7 +1384,12 @@
         m.bindTooltip(fiche, { direction: 'top' });
       }
       relayLayers.push(m);
-      var range = Number(row.range_m || 2000);
+      // Utiliser config réalisme pour fallback range
+      var defaultRange = 2000;
+      if (realismConfig && typeof window.AtakRealismConfig !== 'undefined') {
+        defaultRange = window.AtakRealismConfig.get(realismConfig, 'radio_relays', 'relay_range_m', 2000);
+      }
+      var range = Number(row.range_m || defaultRange);
       relayLayers.push(L.polygon(circleByRadius(ll, range, 48), {
         color: alive ? '#e7b14d' : '#e05b63',
         weight: 1,
@@ -1519,6 +1540,7 @@
       return;
     }
     loadRecents();
+    loadRealismConfig(); // Charger config réalisme
     bootGeo();
     bindReplay();
     loadTraffic();

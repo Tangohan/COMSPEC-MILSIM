@@ -13,6 +13,7 @@ use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Repositories\UserRepository;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\ConfigSchemaService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SteamId;
 
@@ -26,11 +27,120 @@ final class AtakRealismApiController
         private ?TacticalPhonePairingRepository $pairingRepository = null,
         private ?UserRepository $userRepository = null,
         private ?TenantAdminSettingsRepository $adminSettings = null,
+        private ?\App\Repositories\AtakRealismConfigRepository $realismConfigRepo = null,
+        private ?\App\Services\Tactical\AtakWeatherEffectsService $weatherService = null,
     ) {
         $this->realismRepository ??= new AtakRealismRepository();
         $this->pairingRepository ??= new TacticalPhonePairingRepository();
         $this->userRepository ??= new UserRepository();
         $this->adminSettings ??= new TenantAdminSettingsRepository();
+        $this->realismConfigRepo ??= new \App\Repositories\AtakRealismConfigRepository();
+        $this->weatherService ??= new \App\Services\Tactical\AtakWeatherEffectsService($this->realismConfigRepo);
+    }
+
+    /**
+     * Endpoint GET pour la configuration centralisée réalisme ATAK.
+     * Accessible depuis le mod (Extension C#) et le web (JS).
+     */
+    public function getConfig(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+
+        $config = $this->realismConfigRepo->getActiveConfig($tenantId);
+        
+        if ($config === null) {
+            // Fallback : retourner une config par défaut si aucune n'existe
+            // (cas d'un tenant pas encore migré)
+            return Response::json([
+                'ok' => false,
+                'error' => 'No realism config found for this tenant. Run migration seed first.',
+            ], 404);
+        }
+
+        $configJson = json_decode($config['config_json'], true);
+        
+        return Response::json([
+            'ok' => true,
+            'config' => $configJson,
+            'version' => $config['config_version'] ?? '1.0.0',
+            'updated_at' => $config['updated_at'] ?? null,
+        ]);
+    }
+    
+    /**
+     * Endpoint GET pour le schéma JSON (structure, validation, profils).
+     * Utile pour génération UI côté client.
+     */
+    public function getSchema(Request $request, array $params = []): Response
+    {
+        try {
+            $schema = ConfigSchemaService::getSchema();
+            
+            return Response::json([
+                'ok' => true,
+                'schema' => $schema
+            ]);
+        } catch (\Exception $e) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Failed to load schema: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+        
+        return Response::json([
+            'ok' => true,
+            'config' => $configJson,
+            'version' => $config['config_version'],
+            'config_name' => $config['config_name'],
+            'updated_at' => $config['updated_at'],
+        ]);
+    }
+
+    /**
+     * Endpoint POST pour calculer les effets météo sur la portée des relais.
+     * Utilisé par le mod et le web pour obtenir la portée effective en fonction de la météo actuelle.
+     * 
+     * Body attendu :
+     * {
+     *   "base_range": 2000,
+     *   "weather": {
+     *     "rain": 0.5,
+     *     "fog": 0.3,
+     *     "overcast": 0.7,
+     *     "wind_kmh": 80
+     *   }
+     * }
+     */
+    public function calculateWeatherEffects(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+
+        $body = $this->body($request);
+        $baseRange = (float) ($body['base_range'] ?? 2000);
+        $weather = $body['weather'] ?? [];
+
+        if (!is_array($weather)) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Weather data must be an object with rain, fog, overcast, wind_kmh fields.',
+            ], 422);
+        }
+
+        $effects = $this->weatherService->calculateEffectiveRange($tenantId, $baseRange, $weather);
+
+        return Response::json([
+            'ok' => true,
+            'base_range' => $baseRange,
+            'weather' => $weather,
+            'effects' => $effects,
+        ]);
     }
 
     public function terminals(Request $request, array $params = []): Response

@@ -39,7 +39,7 @@ if (!isNil "comspec_overwatch_connect_fnc_getPacketLossStats") then {
     _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
 };
 if (isNil "_pkt") then { _pkt = createHashMap; };
-diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getPacketLossStats ok, keys=%1", (_pkt isEqualType createHashMap) && {count (keys _pkt)}];
+diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] snapshot ← getPacketLossStats ok, keys=%1", if (_pkt isEqualType createHashMap) then {count (keys _pkt)} else {0}];
 diag_log format ["[COMSPEC Overwatch][DEBUG][Diag] pkt raw=%1", _pkt];
 if (!(_pkt isEqualType createHashMap)) then { _pkt = createHashMap; };
 private _sent = _pkt getOrDefault ["packets_sent_total", 0];

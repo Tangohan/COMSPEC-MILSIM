@@ -37,16 +37,24 @@ private _bestAnyD = 1e9;
 private _obj = if (!isNull _bestLive) then { _bestLive } else { _bestAny };
 if (isNull _obj) exitWith { _out };
 
+// Récupérer valeurs par défaut depuis config centralisée
+private _defaultRange = 2000;
+private _defaultSlots = 8;
+if (!isNil "ATHENA_fnc_getRealismParam") then {
+    _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
+    _defaultSlots = ["radio_relays", "max_relay_connections", 10] call ATHENA_fnc_getRealismParam;
+};
+
 private _alive = alive _obj && {damage _obj < 0.95};
 private _dist = _unit distance2D _obj;
-private _range = _obj getVariable ["COMSPEC_AtakRelayRange", 2000];
-if (!(_range isEqualType 0)) then { _range = 2000; };
+private _range = _obj getVariable ["COMSPEC_AtakRelayRange", _defaultRange];
+if (!(_range isEqualType 0)) then { _range = _defaultRange; };
 private _pos = getPosATL _obj;
 private _name = _obj getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
 if (!(_name isEqualType "") || {_name isEqualTo ""}) then { _name = "Relais ATAK"; };
 
-private _slots = _obj getVariable ["COMSPEC_AtakRelaySlots", 8];
-if (!(_slots isEqualType 0)) then { _slots = 8; };
+private _slots = _obj getVariable ["COMSPEC_AtakRelaySlots", _defaultSlots];
+if (!(_slots isEqualType 0)) then { _slots = _defaultSlots; };
 _slots = (round _slots) max 1 min 64;
 private _used = 0;
 if (_alive) then {

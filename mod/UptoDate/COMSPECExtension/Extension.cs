@@ -4629,6 +4629,83 @@ public static partial class Extension
             {
                 return BeginUploadSseNoteAttachment(args);
             }
+            
+            // ============================================================================
+            // Phase 3 : Configuration réalisme centralisée
+            // ============================================================================
+            
+            if (function == "GetRealismConfig")
+            {
+                try
+                {
+                    using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    return GetRealismConfigSync(ct.Token);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
+            
+            if (function == "GetRealismParam" && args.Length >= 2)
+            {
+                try
+                {
+                    var domain = (args[0] ?? "").Trim();
+                    var key = (args[1] ?? "").Trim();
+                    if (domain.Length == 0 || key.Length == 0) 
+                        return "ERR|missing_args";
+                        
+                    using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    return GetRealismParamSync(domain, key, ct.Token);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
+            
+            if (function == "ApplyRealismProfile" && args.Length >= 1)
+            {
+                try
+                {
+                    var profileKey = (args[0] ?? "").Trim();
+                    if (profileKey.Length == 0) 
+                        return "ERR|missing_profile_key";
+                        
+                    using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    return ApplyRealismProfileSync(profileKey, ct.Token);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
+            
+            if (function == "CalculateWeatherEffects" && args.Length >= 5)
+            {
+                try
+                {
+                    if (!double.TryParse((args[0] ?? "0").Trim(), out var baseRange)) 
+                        return "ERR|invalid_base_range";
+                    if (!double.TryParse((args[1] ?? "0").Trim(), out var rain)) 
+                        return "ERR|invalid_rain";
+                    if (!double.TryParse((args[2] ?? "0").Trim(), out var fog)) 
+                        return "ERR|invalid_fog";
+                    if (!double.TryParse((args[3] ?? "0").Trim(), out var overcast)) 
+                        return "ERR|invalid_overcast";
+                    if (!double.TryParse((args[4] ?? "0").Trim(), out var windKmh)) 
+                        return "ERR|invalid_wind";
+                        
+                    return CalculateWeatherEffectsSync(baseRange, rain, fog, overcast, windKmh);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
+            
+            if (function == "SyncRelay" && args.Length >= 1)
+            {
+                try
+                {
+                    var relayDataJson = (args[0] ?? "").Trim();
+                    if (relayDataJson.Length == 0) 
+                        return "ERR|missing_relay_data";
+                        
+                    using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    return SyncRelaySync(relayDataJson, ct.Token);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
         }
         catch (OperationCanceledException)
         {
