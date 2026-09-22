@@ -186,6 +186,98 @@ Orage + vent max: 600m (30%, pire cas)
 
 ---
 
+## 🎯 Améliorations architecturales planifiées
+
+Suite aux retours utilisateur, 4 améliorations majeures ont été spécifiées pour simplifier l'utilisation et la maintenance :
+
+### 1. Deux niveaux d'UI (admin/joueur)
+
+**Admin** :
+- UI générée automatiquement depuis schéma JSON
+- Profils prédéfinis : 🟢 Débutant (arcade), 🟡 Événement (équilibré), 🔴 Expert (simulation)
+- Zéro JSON brut à éditer, que des sliders/toggles/dropdowns
+- Application profil en 1 clic
+
+**Joueur** :
+- Vue contextuelle réduite : "mes relais", "mon terminal"
+- Infos pertinentes uniquement (portée, slots, certificat)
+- 2-3 actions max par contexte (réparer, renouveler cert, chercher relais)
+- Zéro notion de "config", juste des infos opérationnelles
+
+**Impact** : Adoption joueurs facilitée, admin simplifié
+
+---
+
+### 2. Modifier objets posés depuis web
+
+**Overrides par instance** :
+- Table `atak_relay_overrides` pour boosts temporaires/permanents
+- Interface admin : modal "⚡ Booster relais" avec durée (1h, 4h, 24h, mission, permanent)
+- Polling Extension C# (15s) pour sync temps réel en jeu
+
+**Workflow** :
+1. Admin web : boost portée relais #12 de 2000m → 5000m (durée : 4h)
+2. Extension C# poll l'API toutes les 15s, détecte l'override
+3. SQF `fn_updateRelayFromWeb` applique les nouveaux params en jeu
+4. Notification joueur : "📡 Relais boosté à 5000m par le commandement"
+
+**Impact** : Flexibilité opérationnelle totale sans redémarrage mission
+
+---
+
+### 3. Architecture générique : 1 fichier = 1 paramètre
+
+**Schéma JSON source unique** :
+- Types, labels, bornes, unités, help intégré
+- UI admin auto-générée depuis schéma
+- API générique `/api/atak/realism/config/{domain}/{key}`
+- Fonction SQF générique `fn_getRealismParam`
+
+**Aujourd'hui** : Ajouter paramètre = 7 fichiers à modifier  
+**Demain** : Ajouter paramètre = **1 ligne JSON**, tout le reste automatique
+
+**Exemple** :
+```json
+{
+  "relay_power_consumption_w": {
+    "label": "Consommation électrique",
+    "type": "slider",
+    "unit": "W",
+    "min": 10,
+    "max": 500,
+    "default": 100
+  }
+}
+```
+
+Aucun code PHP/SQF/JS à toucher. Le paramètre apparaît automatiquement dans l'UI, l'API, les helpers.
+
+**Impact** : Maintenance divisée par 7, extensibilité sans limite
+
+---
+
+### 4. Tutoriel intégré + page dédiée
+
+**Aide contextuelle admin** :
+- Panneau help par onglet (À quoi ça sert ? Paramètres clés ? Impact en jeu ?)
+- Screenshots, exemples, profils recommandés
+
+**Page tutoriel joueur** : `/guide/realism-atak`
+- Guide complet : relais, certificats, dégâts, météo
+- Captures HUD/Tacmap
+- FAQ intégrée
+- Badges météo expliqués (🌧️ Pluie, 🌫️ Brouillard, 💨 Vent)
+
+**Impact** : Adoption facilitée, support réduit
+
+---
+
+**Documentation complète** : `/docs/technique/ameliorations-ux-architecture.md` (30 pages)
+
+**Effort total** : 8-10 jours (intégrable Phase 2.5 ou début Phase 3)
+
+---
+
 ## 🚀 Déploiement
 
 ### Prérequis
