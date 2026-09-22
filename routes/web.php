@@ -2224,7 +2224,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/cas/{id}/ack', [AtakApiController::class, 'casAck']);
     $router->post('/api/cas/{id}/check-line', [AtakApiController::class, 'casCheckLine']);
     $router->post('/api/cas/{id}/status', [AtakApiController::class, 'casStatus']);
-    // Recon images (Cams)
+    // Notes de reconnaissance + photos (Cams)
+    $router->get('/api/recon/notes', [AtakApiController::class, 'reconNotesIndex']);
+    $router->post('/api/recon/notes', [AtakApiController::class, 'reconNotesStore']);
     $router->get('/api/recon/images', [AtakApiController::class, 'reconImagesIndex']);
     $router->post('/api/recon/images', [AtakApiController::class, 'reconImagesStore']);
     $router->get('/api/recon/images/sse-cases', [AtakApiController::class, 'reconImagesSseCases']);

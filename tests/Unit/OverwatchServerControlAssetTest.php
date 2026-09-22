@@ -43,15 +43,15 @@ final class OverwatchServerControlAssetTest extends TestCase
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $cfg = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
 
-        self::assertStringContainsString('Contrôle de mission', $view);
-        self::assertStringContainsString('Exiger un relais pour la liaison de données', $view);
+        self::assertStringContainsString('Contrï¿½le de mission', $view);
+        self::assertStringContainsString('Exiger un relais pour la liaison de donnï¿½es', $view);
         self::assertStringContainsString('Fonctions actives', $view);
         self::assertStringNotContainsString('endpoint', strtolower($view));
         self::assertStringNotContainsString('json', strtolower($view));
 
         self::assertStringContainsString('/back-office/atak/controle-serveur', $routes);
         self::assertStringContainsString('storeRules', $routes);
-        self::assertStringContainsString('Contrôle de mission', $nav);
+        self::assertStringContainsString('Contrï¿½le de mission', $nav);
         self::assertStringContainsString('listForTenant', $ctrl);
         self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $catalog);
         self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $seed);
@@ -62,6 +62,6 @@ final class OverwatchServerControlAssetTest extends TestCase
         self::assertStringContainsString('athena_feed', $ext);
         self::assertStringContainsString('atak_realism', $ext);
         self::assertStringContainsString('1.6.4', $cfg);
-        self::assertStringContainsString('2.0.48', $ext);
+        self::assertStringContainsString('2.0.51', $ext);
     }
 }

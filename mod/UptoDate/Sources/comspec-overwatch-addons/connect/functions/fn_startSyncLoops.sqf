@@ -122,6 +122,22 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
         addMissionEventHandler ["MarkerCreated", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
             if (_marker isEqualTo "") exitWith {};
+            private _ch = _this param [1, -1];
+            private _own = _this param [2, -1];
+            private _local = _this param [3, false];
+            if (_local isEqualTo true) then {
+                private _st = systemTime;
+                private _hh = str (_st select 3);
+                private _mm = str (_st select 4);
+                if ((count _hh) < 2) then { _hh = "0" + _hh; };
+                if ((count _mm) < 2) then { _mm = "0" + _mm; };
+                private _by = if (!isNull player) then { name player } else { "" };
+                missionNamespace setVariable [
+                    format ["COMSPEC_UserMkMeta_%1", _marker],
+                    [_ch, _by, format ["%1:%2", _hh, _mm], _own],
+                    false
+                ];
+            };
             [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
@@ -131,7 +147,8 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
-            [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+            [_marker, false, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
@@ -140,7 +157,8 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
-            [_marker, true, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+            [_marker, true, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
     ];
 };

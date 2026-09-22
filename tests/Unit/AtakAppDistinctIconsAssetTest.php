@@ -14,7 +14,7 @@ final class AtakAppDistinctIconsAssetTest extends TestCase
         $cfg = (string) file_get_contents($root . '/config.cpp');
         $icons = $root . '/data/icons';
 
-        self::assertStringContainsString('versionStr = "1.0.160"', $cfg);
+        self::assertStringContainsString('versionStr = "1.0.165"', $cfg);
         self::assertStringNotContainsString('instructor_ca.paa', $cfg);
         self::assertStringContainsString('app_athena_ca.paa', $cfg);
         self::assertStringContainsString('app_briefing_ca.paa', $cfg);

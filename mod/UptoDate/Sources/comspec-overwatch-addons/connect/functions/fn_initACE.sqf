@@ -18,7 +18,7 @@ if (isNull player) exitWith {
 
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
 // v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
-private _menuVer = 8;
+private _menuVer = 9;
 if ((uiNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
     missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
@@ -59,7 +59,7 @@ private _legacyFlat = [
     "COMSPEC_EcotiRouteAdd", "COMSPEC_EcotiRouteClear",
     "COMSPEC_Ping", "COMSPEC_Med", "COMSPEC_MedInbox", "COMSPEC_IntelNote",
     "COMSPEC_Resynch", "COMSPEC_HelmetSnap", "COMSPEC_DroneSnap", "COMSPEC_LaserSync",
-    "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon",
+    "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
     "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
     "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
     "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull",
@@ -255,6 +255,14 @@ private _link = _root + ["COMSPEC_Link"];
 
 ["COMSPEC_Recon", "Envoyer photo Recon", {
     [] call comspec_overwatch_connect_fnc_captureReconImage;
+}, _tx] call _fnc_leaf;
+
+["COMSPEC_ReconNote", "Reco : Noter", {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openRecon") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openRecon;
+    } else {
+        [] call comspec_overwatch_connect_fnc_reconNoteShow;
+    };
 }, _tx] call _fnc_leaf;
 
 ["COMSPEC_HelmetSnap", "Envoyer aperçu casque", {

@@ -27,6 +27,9 @@ if (_tab isEqualTo "briefing") exitWith {
 if (_tab isEqualTo "cas") exitWith {
     [] call comspec_overwatch_connect_fnc_casRequestShow;
 };
+if (_tab isEqualTo "recon" || {_tab isEqualTo "reco"} || {_tab isEqualTo "recon_note"}) exitWith {
+    [] call comspec_overwatch_atak_athena_fnc_athena_openRecon;
+};
 if (_tab isEqualTo "manifest") exitWith {
     [] call comspec_overwatch_connect_fnc_flightManifestShow;
 };

@@ -25,7 +25,7 @@ final class AtakMultiMapQueueAssetTest extends TestCase
         self::assertStringContainsString('LoadQueueFromDisk()', $dll);
         self::assertStringContainsString('str _mapId', $connect);
         self::assertStringContainsString('comspec_overwatch_map_id', $pre);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfgC);
-        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.44"/', $dll);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
+        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.50"/', $dll);
     }
 }

@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.65;
-        versionStr = "1.6.5";
-        versionAr[] = {1, 6, 5};
+        version = 1.69;
+        versionStr = "1.6.9";
+        versionAr[] = {1, 6, 9};
     };
 };
 
@@ -232,6 +232,10 @@ class CfgFunctions {
             class pollMapShapes {};
             class pollAthenaMarkers {};
             class captureReconImage {};
+            class reconLookPos {};
+            class reconNoteShow {};
+            class reconNoteSubmit {};
+            class reconPushNote {};
             class getActiveCaptureCam {};
             class promoteCaptureCam {};
             class restoreCaptureCam {};
@@ -433,6 +437,10 @@ class CfgFunctions {
             class ecotiClearBuilding {};
             class ecotiCutAtLook {};
             class ecotiCycleFloor {};
+            class ecotiSetFloor {};
+            class atakSignalState {};
+            class pendingSyncCount {};
+            class seekHistoryPush {};
             class ecotiIlluminateZone {};
             class ecotiRouteEdit {};
             class ecotiApplyHudSetting {};
@@ -508,6 +516,8 @@ class CfgFunctions {
             class forceSyncMapMarkers {};
             class syncNearbyMapMarkers {};
             class syncUserMapMarkers {};
+            class userMapMarkerMeta {};
+            class updateNearestRelayMap {};
             class queueMapMarker {};
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
@@ -811,6 +821,7 @@ class CfgFactionClasses
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
 #include "display_intel_note.hpp"
+#include "display_recon_note.hpp"
 #include "display_medevac.hpp"
 #include "display_bug_report.hpp"
 #include "display_order_inbox.hpp"

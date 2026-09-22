@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(497, $byKind['update']);
-        self::assertCount(503, $all);
+        self::assertSame(505, $byKind['update']);
+        self::assertCount(511, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -774,6 +774,47 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('aide', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHelpI['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $owHelpI['activity']));
+        $signalQueue = DevDispatchCatalog::find('update', '705');
+        self::assertNotNull($signalQueue);
+        self::assertSame('00705', $signalQueue['number_pad']);
+        self::assertStringContainsString('signal', strtolower((string) $signalQueue['title']));
+        self::assertStringContainsString('étage', strtolower((string) $signalQueue['activity']));
+        self::assertStringContainsString('journal', strtolower((string) $signalQueue['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $signalQueue['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $signalQueue['activity']));
+        $sceneLayersIff = DevDispatchCatalog::find('update', '706');
+        self::assertNotNull($sceneLayersIff);
+        self::assertSame('00706', $sceneLayersIff['number_pad']);
+        self::assertStringContainsString('bâtiments', strtolower((string) $sceneLayersIff['title']));
+        self::assertStringContainsString('couches', strtolower((string) $sceneLayersIff['activity']));
+        self::assertStringContainsString('zones réseau', strtolower((string) $sceneLayersIff['activity']));
+        self::assertStringContainsString('identifié', strtolower((string) $sceneLayersIff['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $sceneLayersIff['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $sceneLayersIff['activity']));
+        $reconNotes = DevDispatchCatalog::find('update', '707');
+        self::assertNotNull($reconNotes);
+        self::assertSame('00707', $reconNotes['number_pad']);
+        self::assertStringContainsString('reconnaissance', strtolower((string) $reconNotes['title']));
+        self::assertStringContainsString('téléphone', strtolower((string) $reconNotes['activity']));
+        self::assertStringContainsString('reco', strtolower((string) $reconNotes['activity']));
+        self::assertStringContainsString('poste', strtolower((string) $reconNotes['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $reconNotes['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $reconNotes['activity']));
+        $photoAlbumXfer = DevDispatchCatalog::find('update', '704');
+        self::assertNotNull($photoAlbumXfer);
+        self::assertSame('00704', $photoAlbumXfer['number_pad']);
+        self::assertStringContainsString('transférer', strtolower((string) $photoAlbumXfer['title']));
+        self::assertStringContainsString('album', strtolower((string) $photoAlbumXfer['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $photoAlbumXfer['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $photoAlbumXfer['activity']));
+        $mapMarkerShare = DevDispatchCatalog::find('update', '703');
+        self::assertNotNull($mapMarkerShare);
+        self::assertSame('00703', $mapMarkerShare['number_pad']);
+        self::assertStringContainsString('repères', strtolower((string) $mapMarkerShare['title']));
+        self::assertStringContainsString('relais', strtolower((string) $mapMarkerShare['activity']));
+        self::assertStringContainsString('carte arma', strtolower((string) $mapMarkerShare['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $mapMarkerShare['activity']));
+        self::assertStringNotContainsString('sqf', strtolower((string) $mapMarkerShare['activity']));
         $mapMarkerWeb = DevDispatchCatalog::find('update', '702');
         self::assertNotNull($mapMarkerWeb);
         self::assertSame('00702', $mapMarkerWeb['number_pad']);

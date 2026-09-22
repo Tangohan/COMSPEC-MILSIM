@@ -28,7 +28,7 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         self::assertStringContainsString('< 8', $quiet);
 
         self::assertStringContainsString('COMSPEC_TerminalAcquiredAt', $loops);
-        self::assertStringContainsString('Téléphone pris', $loops);
+        self::assertStringContainsString('Tï¿½lï¿½phone pris', $loops);
         self::assertStringContainsString('uplinkQuiet', $loops);
         self::assertStringContainsString(', 8, 4, "orders"]', $loops);
         self::assertStringContainsString(', 8, 8, "webmk"]', $loops);
@@ -47,7 +47,7 @@ final class OverwatchGearUplinkAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_WebMarkersBootstrapped', $markers);
         self::assertStringContainsString('_created >= 10', $markers);
-        self::assertStringContainsString('première lecture', $markers);
+        self::assertStringContainsString('premiï¿½re lecture', $markers);
 
         self::assertStringContainsString('COMSPEC_MapShapesBootstrapped', $shapes);
         self::assertStringContainsString('_shaped < 6', $shapes);
@@ -60,15 +60,15 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         self::assertStringContainsString('uplinkQuiet', $sync);
 
         self::assertStringContainsString('class uplinkQuiet {}', $cfgC);
-        self::assertStringContainsString('1.6.5', $cfgC);
-        self::assertStringContainsString('1.0.160', $cfgA);
+        self::assertStringContainsString('1.6.9', $cfgC);
+        self::assertStringContainsString('1.0.165', $cfgA);
         self::assertStringContainsString('_fnc_markSeen', $orders);
         self::assertStringContainsString('_newOnes select 0', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);
-        self::assertStringContainsString('photo de la dernière lecture', $orders);
+        self::assertStringContainsString('photo de la derniï¿½re lecture', $orders);
 
-        self::assertStringContainsString('équipement', mb_strtolower($bug));
-        self::assertStringContainsString('corrigé', mb_strtolower($bug));
+        self::assertStringContainsString('ï¿½quipement', mb_strtolower($bug));
+        self::assertStringContainsString('corrigï¿½', mb_strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
         self::assertStringNotContainsString('JSON', $bug);

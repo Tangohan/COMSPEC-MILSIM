@@ -4066,6 +4066,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakReconNotesMigrate = require $root . '/bootstrap/atak_recon_notes_migration.php';
+try {
+    echo "Migration recon_notes (notes de reconnaissance)...\n";
+    $atakReconNotesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] recon_notes : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakForumChannelsSeed = require $root . '/bootstrap/atak_forum_channels_seed.php';
 try {
     echo "Seed forum ATAK / COMSPEC (changelogs, FAQ, retours)...\n";

@@ -2,13 +2,25 @@
 
 Copier-coller Workshop :
 
-[h1]COMSPEC Overwatch — Mise à jour 1.6.5[/h1]
+[h1]COMSPEC Overwatch — Mise à jour 1.6.6[/h1]
 [b]Publication : 20/09/2026[/b]
-[b]Pack :[/b] Overwatch 1.6.5 · SSE 0.7.22 · Athena 1.0.160
+[b]Pack :[/b] Overwatch 1.6.6 · SSE 0.7.22 · Athena 1.0.162
 
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement (pas seulement le lobby), rechargez le pack, puis relancez.
 [/quote]
+
+[h2]Correction — Transférer les vues de l’album[/h2]
+Dans Photo Library, Transférer et Tout transférer envoient maintenant les vues réellement présentes dans l’album du téléphone, y compris celles enregistrées avec ATAK Enhanced.
+
+[h2]Amélioration — Repères jeu vers le poste[/h2]
+Un point posé sur la carte d’Arma 3 arrive au poste avec le poseur, le canal et l’heure. Au survol, on lit qui l’a posé. Un point sans nom s’affiche « Repère · » suivi du poseur.
+
+[h2]Nouveau — Repère du poste sur la carte Arma[/h2]
+Un point posé depuis Overwatch Beta apparaît maintenant sur la carte d’Arma 3, comme un vrai repère d’opérateur. Toute l’équipe le voit.
+
+[h2]Nouveau — Mât Relais sur la carte[/h2]
+Le mât Relais le plus proche se lit sur la carte : une pastille et un cercle de portée. Vert à portée, jaune hors portée, rouge si le mât est détruit. Un avis prévient quand on quitte la zone.
 
 [h2]Correction — Repère posé en jeu absent du poste[/h2]
 Un point posé sur la carte d’Arma 3 apparaît maintenant sur la carte du poste. Fermez la carte en jeu : le repère remonte en quelques secondes, même s’il n’a pas de nom.
@@ -67,4 +79,4 @@ La carte du poste anticipe désormais le déplacement. Le pointage et les donné
 [h2]Amélioration — Liaison et dépannage[/h2]
 La liaison est plus stable. En cas de souci, la touche Échap ouvre le dépannage de liaison.
 
-[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.5 · SSE 0.7.22 · Athena 1.0.160
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.6 · SSE 0.7.22 · Athena 1.0.162

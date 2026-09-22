@@ -851,3 +851,42 @@ html.tacmap-night .leaflet-control-attribution {
 .tacmap-recon-meta p { color: var(--tm-muted); margin: 0; }
 .tacmap-recon-item--locate { cursor: pointer; }
 .tacmap-recon-item--locate:hover { filter: brightness(1.05); }
+.tacmap-recon-note {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.45rem 0.5rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--tm-border) 70%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--tm-panel) 80%, transparent);
+}
+.tacmap-recon-note.is-aging { filter: saturate(0.75); }
+.tacmap-recon-note.is-stale { filter: grayscale(0.45); }
+.tacmap-recon-note__chip {
+  width: 10px;
+  min-height: 2.2rem;
+  border-radius: 2px;
+  margin-top: 0.15rem;
+}
+.tacmap-recon-note__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  font-size: 0.75rem;
+}
+.tacmap-recon-note__body strong { color: var(--tm-fg); }
+.tacmap-recon-note__body span,
+.tacmap-recon-note__body em {
+  color: var(--tm-muted);
+  font-style: normal;
+  font-size: 0.68rem;
+}
+.tacmap-recon-note__body p {
+  margin: 0;
+  color: var(--tm-fg);
+  line-height: 1.35;
+}
+.tacmap-recon-note--locate { cursor: pointer; }
+.tacmap-recon-note--locate:hover { filter: brightness(1.06); }

@@ -30,7 +30,7 @@ final class AtakLinkStripHiddenAssetTest extends TestCase
             $root . '/docs/bugs/2026-09-16-atak-barre-donnees-bas.md'
         );
 
-        self::assertStringContainsString('1.0.160', $cfg);
+        self::assertStringContainsString('1.0.165', $cfg);
         self::assertStringContainsString('99871', $strip);
         self::assertStringContainsString('ctrlShow false', $strip);
         self::assertStringContainsString('ctrlDelete', $strip);
@@ -48,7 +48,7 @@ final class AtakLinkStripHiddenAssetTest extends TestCase
         self::assertStringNotContainsString('COMSPEC_LinkStripVisible", "UNSET"', $postInit);
 
         self::assertStringContainsString('plus affich', $settings);
-        self::assertStringContainsString('barre de données', strtolower($bug));
+        self::assertStringContainsString('barre de donnï¿½es', strtolower($bug));
         self::assertStringContainsString('1.0.143', $bug);
         self::assertStringNotContainsString('endpoint', $bug);
     }

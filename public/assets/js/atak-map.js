@@ -1360,7 +1360,9 @@ window.ATAKMap = (function () {
     marker._atakData = data;
     marker._atakGrid = { lng: lng, lat: lat };
     marker.bindPopup(popupHtml);
-    var tipLabel = (armaHelper && armaHelper.displayLabelOf) ? armaHelper.displayLabelOf(data) : (data.label || data.text || data.name || 'Repère');
+    var tipLabel = (armaHelper && armaHelper.markerTooltipOf)
+      ? armaHelper.markerTooltipOf(data)
+      : ((armaHelper && armaHelper.displayLabelOf) ? armaHelper.displayLabelOf(data) : (data.label || data.text || data.name || 'Repère'));
     var tipType = (armaHelper && armaHelper.typeLabelFr) ? armaHelper.typeLabelFr(data) : '';
     bindMarkerChrome(marker, tipLabel, [
       tipType,

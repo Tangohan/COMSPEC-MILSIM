@@ -157,3 +157,15 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_relabelBft") then {
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert") then {
     [] call comspec_overwatch_atak_athena_fnc_athena_paintFullscreenAlert;
 };
+
+private _vis = [_visX, _visY, _visW, _visH];
+if (!isNil "comspec_overwatch_atak_athena_fnc_createLayerPanel") then {
+    [_disp, _mapCtrl, _vis] call comspec_overwatch_atak_athena_fnc_createLayerPanel;
+};
+private _layersAt = missionNamespace getVariable ["COMSPEC_MapLayersTickAt", -10];
+if (diag_tickTime - _layersAt > 1.1) then {
+    missionNamespace setVariable ["COMSPEC_MapLayersTickAt", diag_tickTime, false];
+    if (!isNil "comspec_overwatch_atak_athena_fnc_applyMapLayers") then {
+        [] call comspec_overwatch_atak_athena_fnc_applyMapLayers;
+    };
+};

@@ -7,7 +7,8 @@ if (!alive player) exitWith {};
 
 private _radius = missionNamespace getVariable ["COMSPEC_AtakPhoneProximityM", 200];
 if (!(_radius isEqualType 0)) then { _radius = 200; };
-if (_radius <= 0) exitWith {};
+
+if (_radius > 0) then {
 
 private _inside = missionNamespace getVariable ["COMSPEC_AtakPhoneProxInside", createHashMap];
 if (!(_inside isEqualType createHashMap)) then { _inside = createHashMap; };
@@ -69,3 +70,9 @@ _scan append allDeadMen;
 } forEach _scan;
 
 missionNamespace setVariable ["COMSPEC_AtakPhoneProxInside", _inside, false];
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_iffProximityTick") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_iffProximityTick;
+};
+

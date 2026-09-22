@@ -252,7 +252,7 @@ class COMSPEC_ATAK_Settings: ATAK_Message
                 {
                     idc = 9871;
                     y = QUOTE(COMSPEC_SET_H(9.46));
-                    tooltip = "Désactivé par défaut. Avec l’affichage situation : coupe la silhouette du bâtiment désigné. ACE : Changer d’étage, ou Découper à la hauteur regardée. N’ouvre pas les murs.";
+                    tooltip = "Désactivé par défaut. Avec l’affichage situation : coupe la silhouette du bâtiment désigné. Sur la carte du téléphone, un curseur d’étage apparaît dès qu’un bâtiment est désigné. ACE : Changer d’étage, ou Découper à la hauteur regardée. N’ouvre pas les murs.";
                     onLBSelChanged = "[] call comspec_overwatch_atak_athena_fnc_athena_ecotiCutawaySave";
                 };
 

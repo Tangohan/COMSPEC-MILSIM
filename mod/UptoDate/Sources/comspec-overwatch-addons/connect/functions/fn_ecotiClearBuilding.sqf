@@ -26,4 +26,7 @@ if (!isNull _building) then {
 };
 
 ["Pointage de bâtiment annulé.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet;
+};
 true
