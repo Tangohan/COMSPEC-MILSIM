@@ -75,7 +75,7 @@ final class AtakRelayRepository
         );
         try {
             $st->execute([
-                $tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, $range), $alive ? 1 : 0,
+                $tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, min(8000, $range)), $alive ? 1 : 0,
                 $name, $identity, $ip, $gateway, $certificate, $slots, $used, $power, $thru, $rel,
             ]);
         } catch (\Throwable) {
@@ -90,7 +90,7 @@ final class AtakRelayRepository
                     alive = VALUES(alive),
                     last_seen_at = NOW()'
             );
-            $st->execute([$tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, $range), $alive ? 1 : 0]);
+            $st->execute([$tenantId, max(1, $mapId), $uid, $x, $y, $z, max(50, min(8000, $range)), $alive ? 1 : 0]);
         }
 
         return $this->getByUid($tenantId, $mapId, $uid) ?? [];

@@ -48,6 +48,26 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
         <form method="POST" action="<?= $h($roleplayFormAction) ?>" class="space-y-6">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
 
+            <!-- Warning double pénalité réseau -->
+            <?php
+            $portalDisconnect = !empty($config['disconnect_enabled']);
+            // Note : client_sim_enabled sera vérifié une fois centralisé en Phase 1
+            // Pour l'instant, on affiche uniquement un warning si les coupures portail sont actives
+            ?>
+            <?php if ($portalDisconnect): ?>
+            <div id="double-penalty-warning" class="rounded-xl border-2 border-amber-400 bg-amber-50 px-5 py-4" role="alert">
+                <div class="flex items-start gap-3">
+                    <svg class="h-6 w-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <p class="font-bold text-amber-900">Coupures réseau actives côté portail</p>
+                        <p class="text-sm text-amber-800 mt-1">Les déconnexions temporaires sont activées côté serveur (portail 5-30s/600s). Si la simulation client est également active dans CBA, les joueurs subiront une double pénalité. Recommandation : désactivez l'un des deux systèmes.</p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Simulation réseau -->
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">

@@ -170,22 +170,8 @@ foreach ($relays as $r) {
         <section id="relais" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                 <h2 class="text-sm font-black text-slate-900 tracking-tight">Relais de liaison</h2>
-                <p class="mt-1 text-xs text-slate-600 leading-relaxed">Les mâts se posent en jeu (éditeur ou Zeus). Ici vous voyez ceux déjà connus, et vous décidez si le téléphone doit passer par un relais intact.</p>
+                <p class="mt-1 text-xs text-slate-600 leading-relaxed">Les mâts se posent en jeu (éditeur ou Zeus). La configuration des relais obligatoires est disponible dans <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="underline text-blue-600 hover:text-blue-800">Simulation réseau et capteurs</a>.</p>
             </div>
-            <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/relais')) ?>" class="px-5 py-5 border-b border-slate-100">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                <input type="hidden" name="link_via_relays" value="0">
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" name="link_via_relays" value="1" class="mt-1 rounded border-slate-300"<?= $linkViaRelays ? ' checked' : '' ?>>
-                    <span>
-                        <span class="block text-sm font-medium text-slate-800">Exiger un relais pour la liaison de données</span>
-                        <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed">La voix n’est pas concernée. Sans relais intact à portée, le téléphone ne transmet plus vers le poste.</span>
-                    </span>
-                </label>
-                <div class="mt-4">
-                    <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer la règle des relais</button>
-                </div>
-            </form>
             <?php if ($relays === []): ?>
                 <p class="px-5 py-6 text-sm text-slate-500">Aucun relais n’a encore été vu depuis le théâtre. Posez-en un en mission pour qu’il apparaisse ici.</p>
             <?php else: ?>

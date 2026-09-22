@@ -145,26 +145,20 @@ final class AdminOverwatchServerControlController
         return Response::redirect(url('back-office/atak/controle-serveur') . '#fonctions');
     }
 
+    /**
+     * @deprecated Cette méthode est obsolète. Le paramètre link_via_relays est maintenant
+     * géré exclusivement dans back-office/atak/roleplay pour éviter la duplication (incohérence #5).
+     * Cette route sera supprimée en Phase 4 du plan de centralisation.
+     */
     public function storeRelays(Request $request, array $params = []): Response
     {
         $redirect = $this->guardPost($request);
         if ($redirect instanceof Response) {
             return $redirect;
         }
-        $tenantId = $this->tenantId();
-        $config = $this->atakConfig->getRoleplayConfig($tenantId);
-        $config['link_via_relays'] = (string) $request->input('link_via_relays', '0') === '1';
-        $config['link_via_relays_reviewed'] = true;
-        $this->atakConfig->updateRoleplayConfig($tenantId, $config);
-        try {
-            \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
-                ->markCompleted($tenantId, 'ATAK_LINK_VIA_RELAYS_V1', (int) (Session::get('user_id') ?? 0) ?: null);
-        } catch (\Throwable) {
-        }
-        $this->markControlReviewed($tenantId);
-        Session::flash('success', 'Règle de liaison par relais enregistrée. Les opérateurs en liaison la reçoivent sous environ une minute.');
-
-        return Response::redirect(url('back-office/atak/controle-serveur') . '#relais');
+        // Redirection vers la page roleplay où ce paramètre est maintenant géré
+        Session::flash('error', 'Ce paramètre est maintenant géré dans la page "Simulation réseau et capteurs".');
+        return Response::redirect(url('back-office/atak/roleplay'));
     }
 
     private function tenantId(): int
