@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRealismConfigRepository;
+use App\Services\ConfigSchemaService;
 use App\Support\ModuleFeatureAccess;
 
 /**
@@ -25,7 +26,7 @@ final class AdminAtakRealismConfigController
     }
 
     /**
-     * Affichage de l'écran de configuration avec 9 onglets.
+     * Affichage de l'écran de configuration avec 11 onglets générés depuis schéma.
      */
     public function index(Request $request, array $params = []): Response
     {
@@ -42,10 +43,22 @@ final class AdminAtakRealismConfigController
         // Récupérer la config active ou créer un template par défaut
         $activeConfig = $this->configRepo->getActiveConfig($tenantId);
         
+        // Charger schéma JSON
+        $schema = ConfigSchemaService::getSchema();
+        
         if ($activeConfig === null) {
-            // Pas encore de config : afficher un message d'erreur ou rediriger vers seed
-            Session::flash('error', 'Aucune configuration trouvée. Lancez la migration seed d'abord.');
-            return Response::redirect(url('back-office/atak/controle-serveur'));
+            // Pas encore de config : créer une config par défaut depuis schéma
+            $defaultConfig = ConfigSchemaService::buildDefaultConfig();
+            
+            // Insérer dans DB
+            $this->configRepo->upsertConfig(
+                $tenantId,
+                'Configuration par défaut (auto-générée)',
+                $defaultConfig
+            );
+            
+            // Recharger
+            $activeConfig = $this->configRepo->getActiveConfig($tenantId);
         }
 
         $config = json_decode($activeConfig['config_json'], true);
@@ -55,6 +68,7 @@ final class AdminAtakRealismConfigController
             'content' => 'admin.atak_realism.config',
             'title' => 'Configuration réalisme ATAK',
             'pageTitle' => 'Configuration réalisme ATAK',
+            'schema' => $schema,
             'config' => $config,
             'configMeta' => [
                 'id' => $activeConfig['id'],
@@ -71,6 +85,7 @@ final class AdminAtakRealismConfigController
 
     /**
      * Enregistrement de la configuration (API POST).
+     * Validation stricte selon schéma JSON.
      */
     public function save(Request $request, array $params = []): Response
     {
@@ -78,6 +93,58 @@ final class AdminAtakRealismConfigController
         if ($tenantId < 1) {
             return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
         }
+        
+        $forbidden = ModuleFeatureAccess::guardAtak('manage', 'back-office/atak');
+        if ($forbidden instanceof Response) {
+            return Response::json(['ok' => false, 'error' => 'Accès refusé.'], 403);
+        }
+
+        // Vérifier CSRF
+        if (!Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'Token CSRF invalide.'], 400);
+        }
+
+        // Récupérer config JSON envoyée
+        $configJson = $request->input('config');
+        
+        if (!is_array($configJson)) {
+            return Response::json(['ok' => false, 'error' => 'Config JSON invalide.'], 400);
+        }
+
+        // Validation stricte selon schéma
+        $validation = ConfigSchemaService::validateConfig($configJson);
+        
+        if (!$validation['valid']) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Configuration invalide.',
+                'errors' => $validation['errors']
+            ], 400);
+        }
+
+        // Enregistrer (avec historisation automatique via Repository)
+        $configName = $request->input('name', 'Configuration modifiée');
+        
+        try {
+            $this->configRepo->upsertConfig(
+                $tenantId,
+                $configName,
+                $configJson,
+                $request->user['id'] ?? null
+            );
+            
+            return Response::json([
+                'ok' => true,
+                'message' => 'Configuration enregistrée avec succès.'
+            ]);
+            
+        } catch (\Exception $e) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Erreur enregistrement : ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
         $forbidden = ModuleFeatureAccess::guardAtak('manage', 'back-office/atak');
         if ($forbidden instanceof Response) {
