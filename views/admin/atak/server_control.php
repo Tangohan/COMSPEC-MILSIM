@@ -39,6 +39,7 @@ foreach ($relays as $r) {
                     <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Simulation réseau et capteurs</a>
                     <a href="<?= $h(url('admin/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
                     <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
+                    <a href="<?= $h(url('admin/atak/realism/config')) ?>" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-100">⚙️ Config réalisme centralisée</a>
                 </div>
             </div>
         </header>

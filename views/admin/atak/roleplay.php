@@ -41,6 +41,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     <a href="<?= url('atak') ?>" class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-950 shadow-sm hover:bg-blue-50/80 transition-colors">
                         Carte tactique ATAK
                     </a>
+                    <a href="<?= url('admin/atak/realism/config') ?>" class="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-950 shadow-sm hover:bg-violet-100 transition-colors">
+                        ⚙️ Config réalisme centralisée
+                    </a>
                 </div>
             </div>
         </header>

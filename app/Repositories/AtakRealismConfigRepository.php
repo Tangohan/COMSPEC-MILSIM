@@ -169,6 +169,59 @@ final class AtakRealismConfigRepository
             }
         }
 
+        // Validation paramètres météo
+        if (isset($relays['weather_effects_enabled']) && $relays['weather_effects_enabled']) {
+            $multipliers = [
+                'rain_range_multiplier',
+                'fog_range_multiplier',
+                'storm_range_multiplier',
+                'rain_throughput_multiplier',
+                'fog_throughput_multiplier',
+                'storm_throughput_multiplier',
+            ];
+            foreach ($multipliers as $mult) {
+                if (isset($relays[$mult])) {
+                    $val = (float) $relays[$mult];
+                    if ($val < 0 || $val > 1) {
+                        $errors[] = "{$mult} must be between 0 and 1";
+                    }
+                }
+            }
+            if (isset($relays['wind_threshold_kmh'])) {
+                $wind = (int) $relays['wind_threshold_kmh'];
+                if ($wind < 0 || $wind > 200) {
+                    $errors[] = 'wind_threshold_kmh must be between 0 and 200';
+                }
+            }
+            if (isset($relays['wind_range_penalty_per_10kmh'])) {
+                $penalty = (float) $relays['wind_range_penalty_per_10kmh'];
+                if ($penalty < 0 || $penalty > 0.5) {
+                    $errors[] = 'wind_range_penalty_per_10kmh must be between 0 and 0.5';
+                }
+            }
+        }
+
+        // Validation control measures
+        $controlMeasures = $configJson['control_measures'] ?? [];
+        if (isset($controlMeasures['axis_default_width_m'])) {
+            $width = (int) $controlMeasures['axis_default_width_m'];
+            if ($width < 50 || $width > 5000) {
+                $errors[] = 'axis_default_width_m must be between 50 and 5000';
+            }
+        }
+        if (isset($controlMeasures['objective_default_radius_m'])) {
+            $radius = (int) $controlMeasures['objective_default_radius_m'];
+            if ($radius < 25 || $radius > 2000) {
+                $errors[] = 'objective_default_radius_m must be between 25 and 2000';
+            }
+        }
+        if (isset($controlMeasures['checkpoint_default_radius_m'])) {
+            $radius = (int) $controlMeasures['checkpoint_default_radius_m'];
+            if ($radius < 10 || $radius > 500) {
+                $errors[] = 'checkpoint_default_radius_m must be between 10 and 500';
+            }
+        }
+
         return ['valid' => $errors === [], 'errors' => $errors];
     }
 

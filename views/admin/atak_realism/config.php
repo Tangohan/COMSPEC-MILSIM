@@ -116,7 +116,10 @@ $other = $config['other_settings'] ?? [];
                         </div>
                     </div>
                     
-                    <h3 class="text-md font-bold text-slate-900 mb-3 mt-6">☔ Effet météo sur les communications</h3>
+                    <h3 class="text-md font-bold text-slate-900 mb-3 mt-6">
+                        ☔ Effet météo sur les communications
+                        <span class="help-icon" data-tooltip="Les conditions météo affectent la portée et le débit des relais radio">?</span>
+                    </h3>
                     <div class="space-y-4">
                         <label class="flex items-center gap-2">
                             <input type="checkbox" name="radio_relays.weather_effects_enabled" <?= !empty($radioRelays['weather_effects_enabled']) ? 'checked' : '' ?>>
@@ -124,31 +127,74 @@ $other = $config['other_settings'] ?? [];
                         </label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Pluie - Portée (%)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    Pluie - Portée (%)
+                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas de pluie">?</span>
+                                </label>
                                 <input type="number" name="radio_relays.rain_range_multiplier" value="<?= $h($radioRelays['rain_range_multiplier'] ?? 0.85) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
                                 <p class="text-xs text-slate-500 mt-1">0.85 = réduction à 85%</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Brouillard - Portée (%)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    Brouillard - Portée (%)
+                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas de brouillard">?</span>
+                                </label>
                                 <input type="number" name="radio_relays.fog_range_multiplier" value="<?= $h($radioRelays['fog_range_multiplier'] ?? 0.70) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
                                 <p class="text-xs text-slate-500 mt-1">0.70 = réduction à 70%</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Orage - Portée (%)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    Orage - Portée (%)
+                                    <span class="help-icon" data-tooltip="Multiplicateur appliqué à la portée en cas d'orage">?</span>
+                                </label>
                                 <input type="number" name="radio_relays.storm_range_multiplier" value="<?= $h($radioRelays['storm_range_multiplier'] ?? 0.60) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
                                 <p class="text-xs text-slate-500 mt-1">0.60 = réduction à 60%</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Seuil vent (km/h)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    Seuil vent (km/h)
+                                    <span class="help-icon" data-tooltip="Vitesse de vent à partir de laquelle la portée est affectée">?</span>
+                                </label>
                                 <input type="number" name="radio_relays.wind_threshold_kmh" value="<?= $h($radioRelays['wind_threshold_kmh'] ?? 50) ?>" min="0" max="200" class="w-full rounded border border-slate-300 px-3 py-2">
                                 <p class="text-xs text-slate-500 mt-1">Vent au-delà de ce seuil affecte les comms</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Pénalité vent (%/10km/h)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    Pénalité vent (%/10km/h)
+                                    <span class="help-icon" data-tooltip="Réduction de portée par tranche de 10 km/h au-delà du seuil">?</span>
+                                </label>
                                 <input type="number" name="radio_relays.wind_range_penalty_per_10kmh" value="<?= $h($radioRelays['wind_range_penalty_per_10kmh'] ?? 0.05) ?>" min="0" max="0.5" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
                                 <p class="text-xs text-slate-500 mt-1">0.05 = -5% portée par tranche de 10 km/h</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Calculateur d'impact météo -->
+                        <div class="border-t border-slate-200 pt-4 mt-4">
+                            <h4 class="text-sm font-bold text-slate-700 mb-2">💡 Calculateur d'impact</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Portée base (m)</label>
+                                    <input type="number" id="weather-calc-base" value="2000" min="50" max="8000" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Condition</label>
+                                    <select id="weather-calc-condition" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+                                        <option value="none">Temps clair</option>
+                                        <option value="rain">Pluie</option>
+                                        <option value="fog">Brouillard</option>
+                                        <option value="storm">Orage</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Vent (km/h)</label>
+                                    <input type="number" id="weather-calc-wind" value="0" min="0" max="200" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+                                </div>
+                            </div>
+                            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                                <p class="text-sm font-bold text-blue-900">Portée effective : <span id="weather-calc-result">2000</span>m</p>
+                                <p class="text-xs text-blue-700 mt-1" id="weather-calc-detail">100% de la portée base</p>
                             </div>
                         </div>
                     </div>
@@ -437,6 +483,49 @@ $other = $config['other_settings'] ?? [];
     color: white;
     border-color: #0f172a;
 }
+.help-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background: #94a3b8;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: help;
+    margin-left: 4px;
+    position: relative;
+}
+.help-icon:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: #1e293b;
+    color: white;
+    font-size: 12px;
+    font-weight: normal;
+    white-space: nowrap;
+    border-radius: 6px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.help-icon:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 2px;
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+    z-index: 1000;
+}
 </style>
 
 <script>
@@ -484,14 +573,70 @@ document.getElementById('btn-save-config')?.addEventListener('click', async () =
             const [domain, field] = parts;
             const input = form.querySelector(`[name="${key}"]`);
             
+            if (!input) continue;
+            
             if (input.type === 'checkbox') {
                 config[domain][field] = input.checked;
             } else if (input.type === 'number') {
                 config[domain][field] = parseFloat(value) || 0;
+            } else if (input.type === 'color') {
+                config[domain][field] = value; // Couleur hex comme string
+            } else if (input.tagName === 'SELECT') {
+                config[domain][field] = value;
             } else {
                 config[domain][field] = value;
             }
         }
+    }
+    
+    // Validation côté client
+    const errors = [];
+    
+    // Valider relay_range_m
+    if (config.radio_relays.relay_range_m) {
+        const range = config.radio_relays.relay_range_m;
+        if (range < 50 || range > 8000) {
+            errors.push('La portée du relais doit être entre 50 et 8000m');
+        }
+    }
+    
+    // Valider certificate_duration_days
+    if (config.certificates.certificate_duration_days) {
+        const days = config.certificates.certificate_duration_days;
+        if (days < 1 || days > 1825) {
+            errors.push('La durée du certificat doit être entre 1 et 1825 jours');
+        }
+    }
+    
+    // Valider viewshed_radius
+    if (config.coverage_viewshed.viewshed_radius_default_m) {
+        const radius = config.coverage_viewshed.viewshed_radius_default_m;
+        if (radius < 25 || radius > 2000) {
+            errors.push('Le rayon viewshed doit être entre 25 et 2000m');
+        }
+    }
+    
+    // Valider multiplicateurs météo (0-1)
+    const weatherMultipliers = [
+        'rain_range_multiplier',
+        'fog_range_multiplier',
+        'storm_range_multiplier',
+        'rain_throughput_multiplier',
+        'fog_throughput_multiplier',
+        'storm_throughput_multiplier'
+    ];
+    weatherMultipliers.forEach(mult => {
+        if (config.radio_relays[mult] !== undefined) {
+            const val = config.radio_relays[mult];
+            if (val < 0 || val > 1) {
+                errors.push(`Le multiplicateur ${mult} doit être entre 0 et 1`);
+            }
+        }
+    });
+    
+    if (errors.length > 0) {
+        alert('Erreurs de validation :\n\n' + errors.join('\n'));
+        return;
     }
     
     try {
@@ -532,4 +677,64 @@ document.getElementById('close-history')?.addEventListener('click', () => {
     document.getElementById('history-modal').classList.add('hidden');
     document.getElementById('history-modal').classList.remove('flex');
 });
+
+// Calculateur d'impact météo
+function updateWeatherCalculator() {
+    const base = parseFloat(document.getElementById('weather-calc-base')?.value || 2000);
+    const condition = document.getElementById('weather-calc-condition')?.value || 'none';
+    const wind = parseFloat(document.getElementById('weather-calc-wind')?.value || 0);
+    
+    // Lire les multiplicateurs depuis le formulaire
+    const rainMult = parseFloat(document.querySelector('[name="radio_relays.rain_range_multiplier"]')?.value || 0.85);
+    const fogMult = parseFloat(document.querySelector('[name="radio_relays.fog_range_multiplier"]')?.value || 0.70);
+    const stormMult = parseFloat(document.querySelector('[name="radio_relays.storm_range_multiplier"]')?.value || 0.60);
+    const windThreshold = parseFloat(document.querySelector('[name="radio_relays.wind_threshold_kmh"]')?.value || 50);
+    const windPenalty = parseFloat(document.querySelector('[name="radio_relays.wind_range_penalty_per_10kmh"]')?.value || 0.05);
+    
+    // Calculer multiplicateur météo
+    let weatherMult = 1.0;
+    let weatherDesc = 'Temps clair';
+    if (condition === 'rain') {
+        weatherMult = rainMult;
+        weatherDesc = `Pluie (${Math.round(rainMult * 100)}%)`;
+    } else if (condition === 'fog') {
+        weatherMult = fogMult;
+        weatherDesc = `Brouillard (${Math.round(fogMult * 100)}%)`;
+    } else if (condition === 'storm') {
+        weatherMult = stormMult;
+        weatherDesc = `Orage (${Math.round(stormMult * 100)}%)`;
+    }
+    
+    // Calculer multiplicateur vent
+    let windMult = 1.0;
+    let windDesc = '';
+    if (wind > windThreshold) {
+        const windOver = wind - windThreshold;
+        const penalties = Math.floor(windOver / 10);
+        windMult = Math.max(0.5, 1.0 - (penalties * windPenalty));
+        windDesc = ` × Vent ${wind}km/h (${Math.round(windMult * 100)}%)`;
+    }
+    
+    // Portée effective
+    const effective = Math.round(base * weatherMult * windMult);
+    const percent = Math.round((effective / base) * 100);
+    
+    document.getElementById('weather-calc-result').textContent = effective;
+    document.getElementById('weather-calc-detail').textContent = 
+        `${weatherDesc}${windDesc} = ${percent}% de la portée base`;
+}
+
+// Attacher les événements au calculateur
+['weather-calc-base', 'weather-calc-condition', 'weather-calc-wind'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateWeatherCalculator);
+    document.getElementById(id)?.addEventListener('change', updateWeatherCalculator);
+});
+
+// Mettre à jour le calculateur quand les multiplicateurs changent
+document.querySelectorAll('[name^="radio_relays."][name*="multiplier"], [name^="radio_relays.wind"]').forEach(input => {
+    input.addEventListener('input', updateWeatherCalculator);
+});
+
+// Initialiser le calculateur
+updateWeatherCalculator();
 </script>
