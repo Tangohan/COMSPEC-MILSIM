@@ -1,0 +1,130 @@
+# COMSPEC Overwatch v1.7.0 — Configuration Réalisme Centralisée
+
+## 🎯 Nouveautés majeures
+
+### Configuration centralisée complète
+- ✨ **105 paramètres unifiés** dans 11 domaines (relais, zones, réseau, certificats, dommages, waypoints, symbologie, control measures, ISR, ambiance)
+- ✨ **Interface admin moderne** avec 9 onglets générés dynamiquement
+- ✨ **3 profils préréglés** : Débutant, Événement, Expert (application en un clic)
+- ✨ **Validation stricte** côté serveur et client avec retours visuels
+- ✨ **Historisation complète** : qui a modifié quoi, quand, avec versioning
+
+### Gestion des relais en jeu
+- ✨ **3 modules Zeus** :
+  - **Scanner réseau** : Détecte automatiquement tous les relais dans un rayon
+  - **Tableau de bord** : Interface full-screen avec statuts temps réel
+  - **Resync rapide** : Resynchronisation instantanée d'un relais
+- ✨ **Actions ACE pour joueurs** : Accès au dashboard depuis laptop/tablette
+- ✨ **Color-coding dynamique** : OK (vert), Saturé (bleu), Endommagé (orange), Critique (rouge), Hors ligne (gris)
+- ✨ **Détection d'erreurs** : Config manquante, valeurs incohérentes, relais orphelins
+
+### Dashboard Roleplay amélioré
+- ✨ **Tests serveur en temps réel** : 8 vérifications automatiques
+- ✨ **Carte interactive** : Visualisation des zones géographiques roleplay
+- ✨ **UI réorganisée** : Layout 2 colonnes (config + monitoring)
+- ✨ **Page réseau de relais** : Vue d'ensemble style terminal avec statistiques globales
+
+### Extension C# (COMSPEC DLL)
+- ✨ **5 nouvelles méthodes** :
+  - `GetRealismConfig` : Config complète avec cache (3 min)
+  - `GetRealismParam` : Lecture d'un paramètre spécifique
+  - `ApplyRealismProfile` : Application d'un profil préréglé
+  - `CalculateWeatherEffects` : Impact météo sur portée/débit relais
+  - `SyncRelay` : Synchronisation relais vers serveur
+
+### Helpers SQF
+- ✨ **`fn_getRealismParam`** : Lecture paramètre depuis config centralisée
+- ✨ **`fn_applyRealismProfile`** : Application profil depuis Zeus/admin
+- ✨ **`fn_placeRealismRelay`** : Placement relais avec config + météo
+- ✨ **`fn_updateRelayWeatherEffects`** : Mise à jour dynamique range/débit
+- ✨ **Modules Zeus** : Scanner, Dashboard, Resync
+- ✨ **8 fonctions refactorées** pour utiliser la config centralisée
+
+## 🔧 Améliorations
+
+### Base de données
+- 🔧 Table `atak_realism_config` : Source unique pour tous les paramètres
+- 🔧 Table `atak_relay_overrides` : Modifications par instance
+- 🔧 Script migration unifié : Création tables + migration + validation
+
+### API REST
+- 🔧 `GET /api/atak/realism/config` : Config active par domaine
+- 🔧 `GET /api/atak/realism/schema` : Schéma JSON complet
+- 🔧 `GET /api/atak/roleplay/server-tests` : Tests automatiques
+- 🔧 `GET /api/atak/relays/{mapId}/{uid}` : Détails relais
+- 🔧 `DELETE /api/atak/relays/{mapId}/{uid}` : Suppression relais
+
+### Configuration mod
+- 🔧 Faction `COMSPEC_ATAK` pour modules Zeus
+- 🔧 Initialisation automatique au boot
+- 🔧 Icône relais personnalisée
+
+## 🐛 Corrections
+
+### SQF
+- 🐛 `fn_diagStatusSnapshot.sqf` : Type mismatch corrigé
+- 🐛 `fn_athena_updateRelay.sqf` : Affichage mode réalisme + signal bars
+- 🐛 `fn_athena_filterDrawerApps.sqf` : App "message" dupliquée supprimée
+
+### PHP
+- 🐛 `setup-realism-migration.php` : `Database::getPdo()` corrigé
+- 🐛 `AtakRealismApiController.php` : Code orphelin supprimé
+- 🐛 `AdminAtakRealismConfigController.php` : Code orphelin supprimé
+
+## ✅ Résolution d'incohérences (12/12)
+
+Toutes les incohérences identifiées dans l'audit ont été résolues :
+1. ✅ Portée relais alignée (2000m)
+2. ✅ Slots relais alignés (10)
+3. ✅ Viewshed aligné (500m)
+4. ✅ Zone roleplay (200m)
+5. ✅ Certificats unifiés (15 jours)
+6. ✅ Toggle link_via_relays unique
+7. ✅ Seuil terminal (70%)
+8. ✅ Waypoints GPS paramétrables
+9. ✅ Symbologie MIL-STD-2525D
+10. ✅ Simulation réseau unifiée
+11. ✅ Dommages terminal centralisés
+12. ✅ ISR satellite paramétrable
+
+## 📊 Statistiques
+
+- **27 fichiers créés** (SQF, PHP, JS, C#, docs)
+- **18 fichiers modifiés**
+- **~8,500 lignes de code ajoutées**
+- **105 paramètres centralisés**
+- **3 profils préréglés**
+- **3 modules Zeus**
+- **8 fonctions SQF refactorées**
+- **5 méthodes C# nouvelles**
+
+## ⚙️ Installation
+
+### Serveur
+1. Exécuter `php setup-realism-migration.php --tenant-id=1`
+2. Vérifier `/admin/atak/realism/verify` (tous tests ✅)
+
+### Mod
+1. Recompiler l'extension C# avec les nouvelles méthodes
+2. Générer `app_relay_ca.paa` avec Arma 3 Tools
+3. Rebuild les PBOs avec Addon Builder
+4. Copier `@comspec_overwatch` sur le serveur
+
+## 📚 Documentation
+
+- Guide complet de rebuild : `docs/GUIDE-REBUILD-MOD-v1.7.0.md`
+- Tutoriel joueur (18 pages) : `docs/TUTORIEL-JOUEUR-REALISME.md`
+- Guide gestion relais Zeus : `docs/GUIDE-GESTION-RELAIS-ZEUS-INGAME.md`
+
+## ⚠️ Important
+
+- **Rétrocompatibilité maintenue** : Pas de breaking changes
+- **Migration manuelle requise** : Exécuter le script PHP
+- **Recompilation C# nécessaire** : Nouvelles méthodes à intégrer
+
+---
+
+**Version** : 1.7.0  
+**Date** : 22 septembre 2026  
+**Pull Request** : #548  
+**Projet** : ATHENA C2 (COMSPEC-MILSIM)
