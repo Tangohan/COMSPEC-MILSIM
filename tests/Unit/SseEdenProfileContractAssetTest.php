@@ -31,7 +31,7 @@ final class SseEdenProfileContractAssetTest extends TestCase
         );
 
         self::assertStringContainsString('class sseEdenWriteField {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
 
         self::assertStringContainsString("[_this, 'Preset', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField", $mod);
         self::assertStringContainsString("[_this, 'LastName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField", $mod);

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-        private const string ExtensionVersion = "2.0.48";
+    private const string ExtensionVersion = "2.0.51";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2506,7 +2506,7 @@ public static partial class Extension
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -2777,6 +2777,16 @@ public static partial class Extension
             if (ticks == 0) return "OK|none";
             var ageSec = Math.Max(0, (int)((DateTime.UtcNow.Ticks - ticks) / TimeSpan.TicksPerSecond));
             return $"OK|{_lastPostErrorCode}|{_lastPostErrorPath}|{ageSec}";
+        }
+
+        if (function == "GetPendingQueueCount")
+        {
+            var n = PendingPosts.Count;
+            lock (CoalescedPositionLock)
+            {
+                if (_coalescedPosition is not null) n++;
+            }
+            return "OK|" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         // Nouvelle session journal (1 fichier / lancement Arma). args[0] = nb de fichiers à conserver (défaut 12).
@@ -3446,6 +3456,21 @@ public static partial class Extension
                     return "{\"status\":\"error\",\"message\":\"" + EscapeJson(msg) + "\"}";
                 }
                 return safeBody.Length <= MaxOutputBytes - 1 ? safeBody : safeBody.Substring(0, MaxOutputBytes - 1);
+            }
+            if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return "ERR|payload_vide";
+                var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
+                var body = ReadContentUtf8(response, token);
+                var safeBody = (body ?? "").Replace("\n", " ").Replace("\r", "").Replace("|", "/");
+                if ((int)response.StatusCode == 429) return "ERR|cooldown";
+                if (!response.IsSuccessStatusCode)
+                {
+                    var msg = safeBody.Length > 160 ? safeBody.Substring(0, 160) + "..." : safeBody;
+                    return "ERR|http_" + (int)response.StatusCode + "|" + msg;
+                }
+                return "OK|" + (safeBody.Length <= 180 ? safeBody : safeBody.Substring(0, 180));
             }
             if (function == "GetCASForCallsign" && args.Length >= 1)
             {
@@ -7170,6 +7195,14 @@ public static partial class Extension
                 return;
             }
 
+            if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return;
+                EnqueueOrSend(_baseUrl + "/api/recon/notes", json);
+                return;
+            }
+
             if (function == "IFF.Response" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
                 var json = args[0] ?? "{}";
@@ -8781,6 +8814,7 @@ public static partial class Extension
             if (string.IsNullOrWhiteSpace(name)) return false;
             if (name.Equals("Screenshots", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.Equals("Screenshot", StringComparison.OrdinalIgnoreCase)) return true;
+            if (name.Equals("ATAK_PhotoLibrary", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.Equals("Captures", StringComparison.OrdinalIgnoreCase))
             {
                 var parent = Directory.GetParent(dir)?.Name;
@@ -9040,11 +9074,19 @@ public static partial class Extension
             {
                 if (isJpeg)
                 {
-                    // Un JPEG IceMan annoncé n’est pas une preuve de fichier.
-                    // On ne reprend pas une autre photo récente « pour remplir ».
-                    var leaf = Path.GetFileName(raw);
-                    if (!string.IsNullOrWhiteSpace(leaf))
-                        resolved = FindScreenshotByFileName(leaf);
+                    // IceMan pose souvent le JPEG dans addons\ATAK_PhotoLibrary,
+                    // pas dans Screenshots du profil. On tente le chemin annoncé,
+                    // puis le nom seul dans tous les dossiers connus — jamais une
+                    // autre photo récente « pour remplir ».
+                    resolved = ResolveLocalImagePath(raw, newestFallback: null);
+                    if (resolved == null)
+                    {
+                        var leaf = Path.GetFileName(raw.Replace('/', '\\'));
+                        if (!string.IsNullOrWhiteSpace(leaf))
+                            resolved = FindScreenshotByFileName(leaf, allowUnstable: true);
+                    }
+                    if (resolved != null && HasSpecificImageFileName(raw) && !SamePhotoStem(raw, resolved))
+                        resolved = null;
                 }
                 else if (isSseNamed)
                 {
@@ -9213,6 +9255,8 @@ public static partial class Extension
         foreach (var d in EnumerateScreenshotDirs())
             Add(d);
         foreach (var d in EnumerateLooseScreenshotDirs())
+            Add(d);
+        foreach (var d in EnumerateIcemanPhotoLibraryDirs())
             Add(d);
 
         foreach (var d in EnumerateScreenshotDirs())
@@ -9446,6 +9490,55 @@ public static partial class Extension
         }
     }
 
+    /// <summary>
+    /// Dossier où IceMan / BCE posent les JPEG Photo Library :
+    /// <c>!Workshop\@…\addons\ATAK_PhotoLibrary</c> — pas Screenshots du profil.
+    /// Scan plat uniquement (pas de récursion Workshop).
+    /// </summary>
+    private static IEnumerable<string> EnumerateIcemanPhotoLibraryDirs()
+    {
+        var dirs = new List<string>();
+        void Add(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p) || !Directory.Exists(p)) return;
+            try { p = Path.GetFullPath(p); }
+            catch { return; }
+            if (!dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
+                dirs.Add(p);
+        }
+
+        void ScanModRoot(string modDir)
+        {
+            if (string.IsNullOrWhiteSpace(modDir) || !Directory.Exists(modDir)) return;
+            Add(Path.Combine(modDir, "addons", "ATAK_PhotoLibrary"));
+            Add(Path.Combine(modDir, "ATAK_PhotoLibrary"));
+        }
+
+        void ScanWorkshop(string workshopRoot)
+        {
+            if (string.IsNullOrWhiteSpace(workshopRoot) || !Directory.Exists(workshopRoot)) return;
+            string[] mods;
+            try { mods = Directory.GetDirectories(workshopRoot); }
+            catch { return; }
+            foreach (var modDir in mods)
+                ScanModRoot(modDir);
+        }
+
+        try
+        {
+            var cwd = Directory.GetCurrentDirectory();
+            if (!string.IsNullOrWhiteSpace(cwd))
+            {
+                ScanWorkshop(Path.Combine(cwd, "!Workshop"));
+                ScanWorkshop(Path.Combine(cwd, "!workshop"));
+                Add(Path.Combine(cwd, "addons", "ATAK_PhotoLibrary"));
+            }
+        }
+        catch { /* ignore */ }
+
+        return dirs;
+    }
+
     private static IEnumerable<string> EnumerateScreenshotDirs()
     {
         var dirs = new List<string>();
@@ -9607,6 +9700,8 @@ public static partial class Extension
                         shot = Path.Combine(modDir, "Screenshot");
                         if (!Directory.Exists(shot))
                             shot = Path.Combine(modDir, "Screenshots");
+                        if (!Directory.Exists(shot))
+                            shot = Path.Combine(modDir, "addons", "ATAK_PhotoLibrary");
                         if (!Directory.Exists(shot)) continue;
                         shot = Path.GetFullPath(shot);
                     }
@@ -9617,6 +9712,9 @@ public static partial class Extension
                     if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0)
                         score = 3;
                     else if (name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0)
+                        score = 2;
+                    else if (name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0)
                         score = 2;
                     else if (name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0)
                         score = 1;

@@ -55,6 +55,13 @@ private _fnc_sendOne = {
             private _body = trim (_raw select [3, (count _raw) - 3]);
             if (_body isNotEqualTo "") then { _upload = _body; };
         };
+        if (_upload isEqualTo _path && {_fileName isNotEqualTo ""} && {_fileName isNotEqualTo _path}) then {
+            private _rawName = ["COMSPECExtension" callExtension ["StageCapture", [_fileName]]] call comspec_overwatch_connect_fnc_extResult;
+            if ((_rawName isEqualType "") && {((count _rawName) >= 4)} && {(_rawName select [0, 3]) isEqualTo "OK|"}) then {
+                private _bodyName = trim (_rawName select [3, (count _rawName) - 3]);
+                if (_bodyName isNotEqualTo "") then { _upload = _bodyName; };
+            };
+        };
     };
 
     private _ok = [_upload, _fileName, _silent, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
@@ -65,25 +72,57 @@ private _fnc_sendOne = {
     _ok
 };
 
+private _fnc_isLocalRecord = {
+    params ["_rec"];
+    if (!(_rec isEqualType []) || {_rec isEqualTo []}) exitWith { false };
+    private _origin = toLower (str (_rec param [1, "local"]));
+    if ((_origin find "received") >= 0) exitWith { false };
+    private _path = _rec param [2, ""];
+    private _fileName = _rec param [3, ""];
+    if (_path isEqualTo "" && {_fileName isNotEqualTo ""}) then { _path = _fileName; };
+    _path isNotEqualTo ""
+};
+
+private _fnc_recordsFromDisk = {
+    private _out = [];
+    if (isNil "comspec_overwatch_connect_fnc_listLocalScreenshots") exitWith { _out };
+    private _shots = [] call comspec_overwatch_connect_fnc_listLocalScreenshots;
+    if (!(_shots isEqualType [])) exitWith { _out };
+    {
+        if (!(_x isEqualType []) || {(count _x) < 2}) then { continue };
+        private _path = _x param [0, ""];
+        private _name = _x param [1, ""];
+        if (_path isEqualTo "") then { continue };
+        if (_name isEqualTo "") then {
+            private _segs = _path splitString "\/";
+            _name = _segs select ((count _segs) - 1);
+        };
+        _out pushBack ["disk_" + _name, "local", _path, _name];
+    } forEach _shots;
+    _out
+};
+
 if (_all) exitWith {
     if (missionNamespace getVariable ["COMSPEC_PhotoXferBusy", false]) exitWith { false };
-    if (isNil "Iceman_fnc_photo_getRecords") exitWith { false };
 
     missionNamespace setVariable ["COMSPEC_PhotoXferBusy", true, false];
-    [_fnc_sendOne, _fnc_notifyFail] spawn {
-        params ["_fnc_sendOne", "_fnc_notifyFail"];
-        private _records = [] call Iceman_fnc_photo_getRecords;
+    [_fnc_sendOne, _fnc_notifyFail, _fnc_isLocalRecord, _fnc_recordsFromDisk] spawn {
+        params ["_fnc_sendOne", "_fnc_notifyFail", "_fnc_isLocalRecord", "_fnc_recordsFromDisk"];
+        private _records = [];
+        if (!isNil "Iceman_fnc_photo_getRecords") then {
+            _records = [] call Iceman_fnc_photo_getRecords;
+        };
         if (!(_records isEqualType [])) then { _records = []; };
-        private _locals = _records select {
-            (_x isEqualType [])
-            && {(_x param [1, ""]) isEqualTo "local"}
-            && {((_x param [2, ""]) isNotEqualTo "") || {(_x param [3, ""]) isNotEqualTo ""}}
+        private _locals = _records select { [_x] call _fnc_isLocalRecord };
+
+        if (_locals isEqualTo []) then {
+            _locals = [] call _fnc_recordsFromDisk;
         };
 
         if (_locals isEqualTo []) exitWith {
             missionNamespace setVariable ["COMSPEC_PhotoXferBusy", false, false];
             if (!isNil "cTab_fnc_addNotification") then {
-                ["PHOTOS", "Aucune photo locale à transférer.", 4] call cTab_fnc_addNotification;
+                ["PHOTOS", "Aucune vue à transférer dans l’album.", 4] call cTab_fnc_addNotification;
             };
         };
 

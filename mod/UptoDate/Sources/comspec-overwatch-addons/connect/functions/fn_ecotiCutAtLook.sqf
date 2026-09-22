@@ -90,8 +90,11 @@ missionNamespace setVariable ["COMSPEC_EcotiCutawayFloor", _sel, false];
 [_building, true] call comspec_overwatch_connect_fnc_ecotiRefreshBuildingFootprint;
 
 [
-    format ["Découpe visuelle : %1 — étage %2/%3 (hauteur regardée).", _dn, _sel + 1, _floors],
+    format ["Découpe visuelle : %1 — étage %2/%3 (hauteur regardée). Le curseur du téléphone suit.", _dn, _sel + 1, _floors],
     "system",
     "info"
 ] call comspec_overwatch_connect_fnc_announce;
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updateBuildingSheet;
+};
 _sel

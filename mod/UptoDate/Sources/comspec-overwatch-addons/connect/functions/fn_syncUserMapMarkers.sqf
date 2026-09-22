@@ -19,6 +19,11 @@ private _n = 0;
         || {(_ul find "ictab_defined") >= 0}
     );
     if (!_isUser) then { continue };
+    if (isMultiplayer && {!isNil "comspec_overwatch_connect_fnc_userMapMarkerMeta"}) then {
+        private _meta = [_name] call comspec_overwatch_connect_fnc_userMapMarkerMeta;
+        private _own = _meta getOrDefault ["owner_id", -1];
+        if (_own >= 0 && {_own isNotEqualTo clientOwner}) then { continue };
+    };
     if ((abs ((markerPos _name) select 0) < 0.5) && {(abs ((markerPos _name) select 1) < 0.5)}) then { continue };
     if ([_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker) then {
         _n = _n + 1;

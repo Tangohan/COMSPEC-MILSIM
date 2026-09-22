@@ -20,9 +20,9 @@ final class AtakAirAppsAssetTest extends TestCase
         $hide = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_hideForeignPages.sqf');
         $wiki = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateWiki.sqf');
 
-        self::assertStringContainsString('versionStr = "1.0.160"', $cfgA);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfgC);
-        self::assertStringContainsString('text = "<t size=\'1\'>Appui aérien</t>"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
+        self::assertStringContainsString('text = "<t size=\'1\'>Appui aï¿½rien</t>"', $cfgA);
         self::assertStringContainsString('text = "<t size=\'1\'>Manifeste</t>"', $cfgA);
         self::assertStringContainsString('PAGE_CTRL = "COMSPEC_ATAK_Cas"', $cfgA);
         self::assertStringContainsString('PAGE_CTRL = "COMSPEC_ATAK_Manifest"', $cfgA);
@@ -34,7 +34,7 @@ final class AtakAirAppsAssetTest extends TestCase
         self::assertStringContainsString('athena_openManifest', $showMf);
         self::assertStringContainsString('atakcas', $hide);
         self::assertStringContainsString('atakmanifest', $hide);
-        self::assertStringContainsString('Appui aérien et manifeste', $wiki);
+        self::assertStringContainsString('Appui aï¿½rien et manifeste', $wiki);
         self::assertStringNotContainsString('json', strtolower($wiki));
     }
 }

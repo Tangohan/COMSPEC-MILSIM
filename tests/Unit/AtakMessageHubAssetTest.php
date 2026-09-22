@@ -28,7 +28,7 @@ final class AtakMessageHubAssetTest extends TestCase
         self::assertStringContainsString('Opened = "comspec_overwatch_atak_athena_fnc_athena_p2pOnOpened"', $cfg);
         self::assertStringContainsString('ATAK_Buttons = "Message_Menu"', $cfg);
         self::assertStringContainsString('athena_messageHubOnOpened', $cfg);
-        self::assertStringContainsString('1.0.160', $cfg);
+        self::assertStringContainsString('1.0.165', $cfg);
 
         self::assertStringContainsString('P2P — Réseau local', $hub);
         self::assertStringContainsString('Via Athena', $hub);

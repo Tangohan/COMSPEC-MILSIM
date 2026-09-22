@@ -49,6 +49,11 @@ final class ArmaMarkerLabel
             return $armaName;
         }
 
+        $by = trim((string) ($decoded['placed_by'] ?? $decoded['callsign'] ?? ''));
+        if ($by !== '' && !self::isTechnicalName($by)) {
+            return 'Repère · ' . $by;
+        }
+
         return 'Repère tactique';
     }
 
@@ -57,9 +62,9 @@ final class ArmaMarkerLabel
      */
     public static function actorFromMarker(array $decoded, string $fallback = ''): string
     {
-        $cs = trim((string) ($decoded['callsign'] ?? ''));
-        if ($cs !== '' && !self::isTechnicalName($cs)) {
-            return $cs;
+        $by = trim((string) ($decoded['placed_by'] ?? $decoded['callsign'] ?? ''));
+        if ($by !== '' && !self::isTechnicalName($by)) {
+            return $by;
         }
         $fallback = trim($fallback);
         if ($fallback !== '' && !self::isTechnicalName($fallback)) {

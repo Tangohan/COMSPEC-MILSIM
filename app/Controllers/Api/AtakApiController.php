@@ -21,6 +21,8 @@ use App\Support\AtakPlanAccess;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
+use App\Repositories\ReconNoteRepository;
+use App\Support\ReconNoteCatalog;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
@@ -136,6 +138,13 @@ class AtakApiController
     {
         return $this->reconRepo ??= new ReconImageRepository();
     }
+
+    private function reconNotes(): ReconNoteRepository
+    {
+        return $this->reconNoteRepo ??= new ReconNoteRepository();
+    }
+
+    private ?ReconNoteRepository $reconNoteRepo = null;
 
     private function ingestTrafficRepo(): AtakIngestTrafficRepository
     {
@@ -10605,6 +10614,90 @@ class AtakApiController
             return Response::json(['error' => 'Not found or invalid status'], 404);
         }
         return Response::json($row);
+    }
+
+    // --- Notes de reconnaissance ---
+    public function reconNotesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        try {
+            $rows = $this->reconNotes()->listForMap($tenantId, $mapId, min((int) ($request->query('limit') ?: 80), 200));
+
+            return Response::json(['notes' => $rows]);
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-notes] index ' . $e->getMessage());
+
+            return Response::json(['notes' => []]);
+        }
+    }
+
+    public function reconNotesStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $text = trim((string) ($body['text'] ?? ''));
+        $tag = ReconNoteCatalog::normalizeTag((string) ($body['tag'] ?? ''));
+        if ($text === '' && $tag === '') {
+            return Response::json([
+                'error' => 'empty',
+                'message' => 'Indiquez une observation ou un type.',
+            ], 400);
+        }
+        $sourceId = trim((string) ($body['id'] ?? $body['source_id'] ?? ''));
+        if ($sourceId === '') {
+            $sourceId = 'RECON_' . bin2hex(random_bytes(8));
+        }
+        $existing = $this->reconNotes()->findBySource($tenantId, $sourceId);
+        $authorUid = trim((string) ($body['authorUid'] ?? $body['author_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($existing === null && $authorUid !== '') {
+            $since = $this->reconNotes()->secondsSinceLastByAuthor($tenantId, $authorUid);
+            if ($since !== null && $since < ReconNoteCatalog::COOLDOWN_SEC) {
+                return Response::json([
+                    'error' => 'cooldown',
+                    'message' => 'Attendez quelques secondes avant une nouvelle note.',
+                ], 429);
+            }
+        }
+        $pos = $body['pos'] ?? null;
+        $x = (float) ($body['pos_x'] ?? 0);
+        $y = (float) ($body['pos_y'] ?? 0);
+        $z = (float) ($body['pos_z'] ?? 0);
+        if (is_array($pos) && count($pos) >= 2) {
+            $x = (float) ($pos[0] ?? $x);
+            $y = (float) ($pos[1] ?? $y);
+            $z = (float) ($pos[2] ?? $z);
+        }
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
+        $row = $this->reconNotes()->upsert([
+            'tenant_id' => $tenantId,
+            'map_id' => $mapId,
+            'mission_id' => (string) ($body['missionId'] ?? $body['mission_id'] ?? ''),
+            'source_id' => $sourceId,
+            'text' => $text,
+            'tag' => $tag,
+            'author' => (string) ($body['author'] ?? ''),
+            'author_uid' => $authorUid,
+            'confidence' => (string) ($body['confidence'] ?? ''),
+            'pos_x' => $x,
+            'pos_y' => $y,
+            'pos_z' => $z,
+        ]);
+        $this->recordGameIngest($tenantId, max(1, $mapId), false);
+
+        return Response::json(['ok' => true, 'note' => $row]);
     }
 
     // --- Recon images ---

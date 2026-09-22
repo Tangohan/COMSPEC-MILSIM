@@ -20,17 +20,17 @@ final class AtakFlightManifestAssetTest extends TestCase
         $air = (string) file_get_contents($root . '/public/assets/js/atak-air-assets.js');
         $popup = (string) file_get_contents($root . '/public/assets/js/atak-unit-popup.js');
 
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfg);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
         self::assertStringContainsString('DESTINATION / ZONE', $dlg);
-        self::assertStringContainsString('PERSONNES ù BORD', $dlg);
+        self::assertStringContainsString('PERSONNES ÔøΩ BORD', $dlg);
         self::assertStringContainsString('EMPORT / MUNITIONS', $dlg);
         self::assertStringContainsString('CANEVAS D', $dlg);
-        self::assertStringContainsString('ù POSTE', $dlg);
+        self::assertStringContainsString('ÔøΩ POSTE', $dlg);
         self::assertStringContainsString('class ValType: RscCombo', $dlg);
-        self::assertStringContainsString('Hùlicoptùre', $fill);
+        self::assertStringContainsString('HÔøΩlicoptÔøΩre', $fill);
         self::assertStringContainsString('collectAircraftLoadout', $fill);
         self::assertStringContainsString('collectVehicleOccupants', $fill);
-        self::assertStringNotContainsString('ù prùciser (dùclaration sol)', $fill);
+        self::assertStringNotContainsString('ÔøΩ prÔøΩciser (dÔøΩclaration sol)', $fill);
         self::assertStringContainsString('mission_id', $submit);
         self::assertStringContainsString('station', $submit);
         self::assertStringContainsString('ordnance', $submit);
@@ -40,13 +40,13 @@ final class AtakFlightManifestAssetTest extends TestCase
         self::assertStringContainsString('jsonForSqlColumn', (string) file_get_contents($root . '/app/Repositories/AtakDataRepository.php'));
         self::assertStringContainsString('mission_id', $api);
         self::assertStringContainsString('Au sol', $air);
-        self::assertStringContainsString('Frùquence', $air);
+        self::assertStringContainsString('FrÔøΩquence', $air);
         self::assertStringContainsString('Code laser', $air);
         self::assertStringContainsString('Emport', $popup);
         self::assertStringContainsString('Autonomie', $popup);
         self::assertStringContainsString('ordnance', $air);
         self::assertStringContainsString('eta_minutes', $air);
-        self::assertStringContainsString('ArrivÈe estimÈe', $air);
+        self::assertStringContainsString('ArrivÔøΩe estimÔøΩe', $air);
         self::assertStringContainsString("'eta_minutes'", $api);
         self::assertStringContainsString("'bingo_fuel'", $api);
     }

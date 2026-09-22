@@ -77,8 +77,9 @@ private _marker = createMarker [_markerName, _position];
 _marker setMarkerShape "ELLIPSE";
 _marker setMarkerSize [_radius, _radius];
 _marker setMarkerColor _color;
-_marker setMarkerBrush "Border";
-_marker setMarkerAlpha 0.55;
+_marker setMarkerBrush "Solid";
+private _alpha = 0.18 + 0.55 * ((_intensity min 100 max 0) / 100);
+_marker setMarkerAlpha _alpha;
 _marker setMarkerText format ["%1 (%2m)", _typeName, round _radius];
 _zone set ["marker", _markerName];
 

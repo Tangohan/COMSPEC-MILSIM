@@ -1220,7 +1220,8 @@
       var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
       if (buildingLike) title = '';
       var desc = String(data.description || '').trim();
-      var tip = title ? (desc ? (String(title) + ' — ' + desc) : String(title)) : '';
+      var tip = helper.markerTooltipOf ? helper.markerTooltipOf(data) : (title ? (desc ? (String(title) + ' — ' + desc) : String(title)) : '');
+      if (desc && tip && tip.indexOf(desc) < 0) tip = tip + ' — ' + desc;
       if (armaMarkerLayers[id]) {
         if (armaMarkerLayers[id].setLatLng) armaMarkerLayers[id].setLatLng(latlng);
         if (!buildingLike && helper.leafletDivIcon && armaMarkerLayers[id].setIcon && !(helper.isAreaShape && helper.isAreaShape(data))) {

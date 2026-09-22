@@ -65,7 +65,8 @@ if (!_force) then {
 // Marqueurs déjà transmis via leur propre appel structuré
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
-    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_", "ctab_u_"
+    "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
+    "comspec_relay_", "comspec_recon_", "ctab_u_"
 ];
 private _nameLower = toLower _markerName;
 if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) exitWith { false };
@@ -156,9 +157,26 @@ if (_isUnderscore) then {
         _src = "arma";
     };
 };
-private _purpose = if ((_nameLower find "comspec_ecoti_bldg") == 0) then { "building_mark" } else { "" };
+private _purpose = "";
+if ((_nameLower find "comspec_ecoti_bldg") == 0) then { _purpose = "building_mark"; };
+if ((_nameLower find "comspec_roleplay_zone_") == 0) then { _purpose = "network_zone"; };
+private _placedBy = [] call comspec_overwatch_connect_fnc_getCallsign;
+private _channel = "";
+private _placedAt = "";
+if (!isNil "comspec_overwatch_connect_fnc_userMapMarkerMeta") then {
+    private _meta = [_markerName] call comspec_overwatch_connect_fnc_userMapMarkerMeta;
+    if (_meta isEqualType createHashMap) then {
+        private _by = _meta getOrDefault ["placed_by", ""];
+        if (_by isNotEqualTo "") then { _placedBy = _by; };
+        _channel = _meta getOrDefault ["channel", ""];
+        _placedAt = _meta getOrDefault ["placed_at", ""];
+    };
+};
+if (_text isEqualTo "" && {_placedBy isNotEqualTo ""}) then {
+    _text = format ["Repère · %1", _placedBy];
+};
 private _json = format [
-    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17"",""purpose"":""%18""}",
+    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""%14"",""callsign"":""%15"",""grid"":""%16"",""texture"":""%17"",""purpose"":""%18"",""placed_by"":""%19"",""channel"":""%20"",""placed_at"":""%21""}",
     (_pos select 0) toFixed 2,
     (_pos select 1) toFixed 2,
     (if (count _pos > 2) then { _pos select 2 } else { 0 }) toFixed 2,
@@ -173,10 +191,13 @@ private _json = format [
     _brush,
     _polyJson,
     _src,
-    (([] call comspec_overwatch_connect_fnc_getCallsign) splitString """" joinString "'"),
+    (_placedBy splitString """" joinString "'"),
     mapGridPosition _pos,
     _texForJson,
-    _purpose
+    _purpose,
+    (_placedBy splitString """" joinString "'"),
+    (_channel splitString """" joinString "'"),
+    (_placedAt splitString """" joinString "'")
 ];
 
 [_wireName, _json, false, _txBlocked] call _fnc_dispatch

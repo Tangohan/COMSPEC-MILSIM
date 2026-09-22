@@ -25,8 +25,8 @@ final class AtakVanillaMapMarkerWebAssetTest extends TestCase
 
         self::assertStringContainsString('class syncUserMapMarkers {}', $cfgC);
         self::assertStringContainsString('class resolveMarkerEhName {}', $cfgC);
-        self::assertStringContainsString('versionStr = "1.6.5"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.160"', $cfgA);
+        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
+        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
 
         self::assertStringContainsString('_user_defined', $syncUser);
         self::assertStringContainsString('syncMapMarker', $syncUser);

@@ -268,6 +268,47 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(707, '2026-09-20', 'ATAK : notes de reconnaissance', 'Dans le téléphone, l’application Reco sert à noter ce que l’on voit, là où l’on regarde. Le point arrive au poste avec le type, le texte, l’auteur et s’il s’agit d’un vu direct ou d’un rapport. Les notes trop anciennes s’estompent. Relancez Arma complètement (Overwatch 1.6.9 · Athena 1.0.165).', [
+                'Application Reco dans le tiroir du téléphone — observation courte, type, confiance',
+                'Repère partagé en jeu et sur la carte du poste',
+                'Liste chronologique au poste, avec fondu après vingt puis quarante minutes',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.9 · Athena 1.0.165). Ouvrez le téléphone, chevron, Reco. Écrivez une ligne, choisissez un type, envoyez. Au poste, le calque Notes reco et la liste à droite montrent le point. Au bout de vingt minutes il pâlit, après quarante minutes il est presque gris.',
+            ], 'Overwatch 1.6.9 · Athena 1.0.165'),
+            $pr(706, '2026-09-20', 'ATAK : bâtiments du théâtre, couches, zones réseau et alerte IFF', 'La carte du poste montre les bâtiments relevés comme des volumes, avec leur hauteur. Dans le téléphone, chacun choisit ce qu’il voit : contacts ennemis, alliés, relais, zones réseau, rapports SIGINT. Les zones de brouillage et de couverture apparaissent ombragées. Un contact non identifié trop proche déclenche une alerte discrète. Relancez Arma complètement (Overwatch 1.6.8 · Athena 1.0.164).', [
+                'Volumes de bâtiments sur la carte du poste, d’après le relevé du théâtre',
+                'Panneau Couches dans le téléphone : masquer ou afficher contacts, relais, zones réseau et rapports',
+                'Zones réseau ombragées sur la carte, plus visibles selon l’intensité',
+                'Alerte discrète quand un contact non identifié entre dans le rayon',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.8 · Athena 1.0.164). Sur la carte du poste, activez Bâtiments : les immeubles du relevé apparaissent en volume. Sur le téléphone, ouvrez Couches pour afficher ou masquer votre vue. Une zone de brouillage se lit en ombre. Approchez un contact non identifié : le téléphone vibre une fois.',
+            ], 'Overwatch 1.6.8 · Athena 1.0.164'),
+            $pr(705, '2026-09-20', 'ATAK : signal Relais, étage, journal SEEK et file d’attente', 'Le téléphone montre maintenant le réseau Relais en barres de signal, le découpage d’étage du bâtiment désigné, le journal des identifications SEEK et le nombre de messages encore en attente de synchro. Relancez Arma complètement (Overwatch 1.6.7 · Athena 1.0.163).', [
+                'Barres de signal du mât Relais le plus proche, avec bascule hors portée, mât détruit ou zone brouillée',
+                'Curseur d’étage sur la fiche du bâtiment désigné, synchronisé avec le badge en jeu',
+                'Journal des identifications dans BII-10 : sujet, statut, confiance et heure',
+                'Badge « messages en attente de synchro » hors couverture',
+            ], [], [], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.7 · Athena 1.0.163). Ouvrez le téléphone près d’un mât Relais : les barres de signal se remplissent. Désignez un bâtiment puis changez d’étage depuis la fiche. Après une interrogation SEEK, ouvrez BII-10 : la ligne reste dans le journal. Hors couverture, le bandeau indique les messages encore en attente.',
+            ], 'Overwatch 1.6.7 · Athena 1.0.163'),
+            $pr(704, '2026-09-20', 'ATAK : Transférer retrouve les vues de l’album', 'Dans Photo Library, Transférer et Tout transférer envoient maintenant les vues réellement présentes dans l’album du téléphone, y compris celles enregistrées avec ATAK Enhanced. Le dépannage de liaison prenait déjà une vue neuve ; les boutons de l’album la retrouvent aussi. Relancez Arma complètement (Athena 1.0.162).', [
+                'Transférer et Tout transférer lisent l’album du téléphone, pas seulement une vue de dépannage',
+            ], [], [
+                'Les boutons de l’album n’envoyaient rien alors que les vues étaient bien enregistrées',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Athena 1.0.162). Photo Library : Transférer envoie la vue choisie vers le poste. Tout transférer envoie toutes vos vues de l’album.',
+            ], 'Athena 1.0.162'),
+            $pr(703, '2026-09-20', 'Repères partagés et mât Relais sur la carte', 'Un point posé en jeu arrive au poste avec le poseur, le canal et l’heure. Un point posé depuis le poste apparaît maintenant sur la carte Arma, comme un vrai repère d’opérateur. Le mât Relais le plus proche se lit sur la carte, avec son emprise ; un avis prévient quand on quitte sa portée. Relancez Arma complètement (Overwatch 1.6.6).', [
+                'Repère jeu → poste : poseur, canal et heure au survol',
+                'Repère du poste visible sur la carte Arma, pour tout le monde',
+                'Mât Relais le plus proche et emprise de portée sur la carte',
+            ], [
+                'Un point sans nom s’affiche « Repère · » suivi du poseur',
+            ], [
+                'Un point posé au poste restait seulement sur le téléphone ATAK',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack (Overwatch 1.6.6). Posez un point en jeu : au poste, le survol indique qui l’a posé. Posez un point depuis Overwatch Beta : il apparaît sur la carte Arma. Approchez puis éloignez-vous d’un mât Relais : la pastille change de couleur et un avis prévient à la sortie de portée.',
+            ], 'Overwatch 1.6.6'),
             $pr(702, '2026-09-20', 'Carte du poste : repères posés en jeu', 'Un point posé sur la carte d’Arma 3 (canal global) apparaît maintenant sur la carte du poste, au même endroit. Fermez la carte en jeu : le repère remonte en quelques secondes, même s’il n’a pas de nom. Relancez Arma complètement (Overwatch 1.6.5).', [
                 'Repère posé sur la carte en jeu visible au poste après fermeture de la carte',
             ], [], [

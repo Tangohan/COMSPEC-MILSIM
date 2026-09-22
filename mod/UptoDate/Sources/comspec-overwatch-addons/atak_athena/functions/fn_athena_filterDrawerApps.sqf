@@ -19,4 +19,17 @@ if (!("AtakRelay" in _apps) && {isClass (configFile >> "ATAK_APPs" >> "AtakRelay
     };
 };
 
+if (!("AtakRecon" in _apps) && {isClass (configFile >> "ATAK_APPs" >> "AtakRecon")}) then {
+    private _i = _apps find "AtakNote";
+    if (_i < 0) then { _i = _apps find "AtakCas"; };
+    if (_i < 0) then { _i = _apps find "AtakRelay"; };
+    if (_i < 0) then {
+        _apps pushBack "AtakRecon";
+    } else {
+        private _head = _apps select [0, _i + 1];
+        private _tail = _apps select [_i + 1, (count _apps) - (_i + 1)];
+        _apps = _head + ["AtakRecon"] + _tail;
+    };
+};
+
 _apps
