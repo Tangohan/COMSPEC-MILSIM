@@ -1,43 +1,36 @@
-# Overwatch Beta — double superposition sur les aéronefs
+# Overwatch Beta — double fiche (dossier + tiroir)
 
 **Statut :** corrigé (sources)
 
 ## Contexte
 
-Poste Overwatch Beta (`/ATAK-OVERWATCH-Beta`). Clic sur un aéronef (ex. Dustoff / HH-60M) ouvre la fiche.
+Poste Overwatch Beta. Clic sur une unité (infanterie YA1, aéronef, etc.).
 
 ## Symptôme
 
-La fiche « Dustoff » affiche deux couches de texte l’une sur l’autre : libellés Situation (Véhicule, Chef, ETA, Autonomie…) mélangés à l’onglet Personnel (liste À bord). Illisible.
+Deux fiches en même temps : le dossier flottant (`#atak-unit-dossier`) par-dessus le tiroir (`#ow-drawer`). Illisible ; données Source Arma / Analyse Athena uniquement dans le dossier.
 
 ## Cause
 
-`openAirAssetSheet` (et le clic sur un contact aérien via `selectUnit`) ouvrait **en même temps** :
-
-1. le **dossier flottant** (`ATAKUnitDossier`, onglets Situation / Personnel…) ;
-2. le **tiroir droit** avec la même fiche (`airAssetDetailHtml`).
-
-Le dossier était semi-transparent (`rgba(…, 0.94)`), donc le contenu du tiroir transparaissait. En plus, l’onglet Situation du dossier répétait déjà la liste d’équipage (réservée à Personnel).
+`selectUnit` et `openAirAssetSheet` appelaient `ATAKUnitDossier.open` **en plus** du remplissage du tiroir (ou à la place pour l’aérien, ce qui masquait le tiroir voulu).
 
 ## Correctif
 
-- Aéronef : ouvrir uniquement le dossier ; masquer le tiroir.
-- Fond du dossier opaque (`#0c1016`).
-- Liste d’équipage uniquement dans l’onglet Personnel ; ETA / autonomie / carburant restent dans Situation.
+- Plus d’ouverture du dossier flottant sur Overwatch Beta : uniquement le tiroir.
+- Fermeture forcée du dossier à chaque sélection ; CSS `display:none` de secours.
+- Tiroir enrichi : État, blocs Source Arma et Analyse Athena.
+- Aéronef : tiroir fiche aérienne uniquement.
 
 ## Fichiers touchés
 
 - `public/assets/js/atak-overwatch-beta.js`
-- `public/assets/js/atak-unit-dossier.js`
 - `public/assets/css/atak-overwatch-beta.css`
-- `public/assets/css/atak-cop.css`
 
 ## Vérification
 
-1. Recharger Overwatch Beta (Ctrl+F5).
-2. Cliquer Dustoff (ou autre aéronef) : une seule fiche, onglets lisibles.
-3. Onglet Personnel : liste À bord sans fantômes de Situation.
-4. Onglet Situation : position / ETA / autonomie, sans liste d’équipage dupliquée.
+1. Ctrl+F5 Overwatch Beta.
+2. Clic YA1 (ou autre) : un seul panneau (tiroir), avec État / Source Arma / Analyse Athena.
+3. Clic aéronef : une seule fiche dans le tiroir, pas de dossier flottant.
 
 ## Statut
 

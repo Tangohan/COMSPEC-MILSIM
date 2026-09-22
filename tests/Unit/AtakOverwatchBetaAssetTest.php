@@ -125,6 +125,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('ATAK_CALLSIGN_TO_USER', $view);
         self::assertStringContainsString('id="ow-filter-wave"', $view);
         self::assertStringContainsString('id="ow-effectifs"', $view);
+        self::assertStringContainsString('id="ow-effectifs-open"', $view);
+        self::assertStringContainsString('id="ow-effectifs-modal"', $view);
+        self::assertStringContainsString('openEffectifsModal', $overwatchJs);
         self::assertStringContainsString('renderEffectifsTable', $overwatchJs);
         self::assertStringContainsString('isWave', $overwatchJs);
         self::assertStringContainsString('formatSpeedDisplay', $overwatchJs);

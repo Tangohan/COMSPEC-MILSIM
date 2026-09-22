@@ -308,6 +308,60 @@
     var arma = unit.source_arma || extra.source_arma || {};
     return arma && typeof arma === 'object' ? arma : {};
   }
+  function athenaOf(unit) {
+    var extra = extraOf(unit);
+    var ath = unit.analysis_athena || extra.analysis_athena || {};
+    return ath && typeof ath === 'object' ? ath : {};
+  }
+  function closeUnitDossier() {
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.close === 'function') {
+      try { window.ATAKUnitDossier.close(); } catch (e) {}
+    }
+    var el = document.getElementById('atak-unit-dossier');
+    if (el) {
+      el.hidden = true;
+      el.innerHTML = '';
+    }
+  }
+  function motionStatusLabel(unit) {
+    var M = window.ATAKMotion;
+    if (!M || typeof M.statusLabel !== 'function') return '';
+    var raw = (unit.motion && unit.motion.status) || athenaOf(unit).motion_status || '';
+    return M.statusLabel(raw) || '';
+  }
+  function unitSourceBlocksHtml(unit) {
+    var M = window.ATAKMotion;
+    var arma = armaOf(unit);
+    var ath = athenaOf(unit);
+    var armaRows = '';
+    if (arma.speed_ms != null && arma.speed_ms !== '') {
+      armaRows += statCell('Vitesse', (Number(arma.speed_ms) * 3.6).toFixed(1) + ' km/h');
+    }
+    if (arma.heading_deg != null && arma.heading_deg !== '') {
+      armaRows += statCell('Orientation', Math.round(Number(arma.heading_deg)) + '°');
+    }
+    var athStatus = M && typeof M.statusLabel === 'function'
+      ? (M.statusLabel(ath.motion_status) || '')
+      : String(ath.motion_status || '');
+    var athTrend = M && typeof M.trendLabel === 'function'
+      ? (M.trendLabel(ath.trend) || '')
+      : String(ath.trend || '');
+    var athConf = ath.confidence != null && ath.confidence !== ''
+      ? Math.round(Number(ath.confidence) * (Number(ath.confidence) <= 1 ? 100 : 1)) + ' %'
+      : '';
+    var athRows = '';
+    if (athStatus) athRows += statCell('Statut', athStatus);
+    if (athConf) athRows += statCell('Confiance', athConf);
+    if (athTrend) athRows += statCell('Tendance', athTrend);
+    var html = '';
+    if (armaRows) {
+      html += '<div class="ow-drawer-block"><div class="ow-drawer-block-title">Source Arma</div><div class="ow-stat-grid">' + armaRows + '</div></div>';
+    }
+    if (athRows) {
+      html += '<div class="ow-drawer-block"><div class="ow-drawer-block-title">Analyse Athena</div><div class="ow-stat-grid">' + athRows + '</div></div>';
+    }
+    return html;
+  }
   function linkLabel(unit) {
     var extra = extraOf(unit);
     var raw = String(unit.link_state || extra.link_state || extra.linkState || '').toLowerCase();
@@ -1821,19 +1875,7 @@
 
   function selectUnit(unit) {
     selected = unit;
-    // Aéronef : une seule fiche (dossier). Le tiroir + dossier en même temps
-    // provoquaient une double superposition illisible.
-    if (isAir(unit) && window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
-      clearDrawerContactHead();
-      var airDrawer = document.getElementById('ow-drawer');
-      if (airDrawer) airDrawer.hidden = true;
-      renderSquadLinks();
-      renderRangeRings();
-      renderMap();
-      syncReachOverlay(unit);
-      try { window.ATAKUnitDossier.open(unit); } catch (eAir) {}
-      return;
-    }
+    closeUnitDossier();
     setDrawerContactHead(unit);
     var loc = point(unit);
     var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : '';
@@ -1879,6 +1921,7 @@
     else if (compromiseRaw === 'compromised') { compromise = 'Compromis'; compromiseKind = 'bad'; }
     var lastPos = ageLabel(unit) || (isDisconnected(unit) ? 'hors liaison' : 'à l’instant');
     var heading = unitHeading(unit);
+    var motionState = motionStatusLabel(unit);
     var team = clean(unit.fire_team_label || extra.fire_team_label, '');
     var grpName = clean(extra.group_name || unit.group_name || unit.group, '');
     var leader = clean(extra.leader || extra.group_leader || unit.pilot || unit.leader, '');
@@ -1905,6 +1948,7 @@
       statCell('Vitesse', formatSpeedDisplay(speed)) +
       statCell('Cap', heading != null ? Math.round(heading) + '°' : '') +
       statCell('Altitude', alt != null ? Math.round(alt) + ' m' : '') +
+      (motionState ? statCell('État', motionState) : '') +
       statCell('Dernière position', lastPos, { dim: true }) +
       statCell('Grille', clean(unit.grid || unit.grid_ref || unit.mgrs, grid), { mono: true }) +
       (grpName ? statCell('Groupe', grpName) : '') +
@@ -1914,6 +1958,7 @@
       (ammo ? statCell('Munitions', ammo) : '') +
       (health != null ? statCell('Santé', Math.round(health) + ' %') : '') +
       '</div>' +
+      unitSourceBlocksHtml(unit) +
       '<button type="button" class="ow-primary ow-btn-icon" data-center-selected>' +
       btnIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>') +
       'Centrer sur la carte</button>' +
@@ -1936,9 +1981,6 @@
     renderRangeRings();
     renderMap();
     syncReachOverlay(unit);
-    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
-      try { window.ATAKUnitDossier.open(unit); } catch (e3) {}
-    }
   }
 
   function reachZoneEnabled() {
@@ -2296,9 +2338,15 @@
   function renderEffectifsTable(list) {
     var body = document.getElementById('ow-units-table-body');
     var countEl = document.getElementById('ow-effectifs-count');
+    var subEl = document.getElementById('ow-effectifs-modal-sub');
     if (!body) return;
     var rows = Array.isArray(list) ? list : visibleUnits();
     if (countEl) countEl.textContent = String(rows.length);
+    if (subEl) {
+      subEl.textContent = rows.length
+        ? (rows.length + ' contact' + (rows.length > 1 ? 's' : '') + ' avec le filtre actuel.')
+        : 'Aucun contact avec le filtre actuel.';
+    }
     body.innerHTML = rows.map(function (unit) {
       var loc = point(unit);
       var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : clean(unit.grid || unit.grid_ref, '—');
@@ -2316,6 +2364,17 @@
         '<td>' + escapeHtml(notes) + '</td>' +
         '</tr>';
     }).join('') || '<tr><td colspan="7" class="ow-help">Aucun effectif transmis.</td></tr>';
+  }
+
+  function openEffectifsModal() {
+    renderEffectifsTable();
+    var modal = document.getElementById('ow-effectifs-modal');
+    if (modal) modal.hidden = false;
+  }
+
+  function closeEffectifsModal() {
+    var modal = document.getElementById('ow-effectifs-modal');
+    if (modal) modal.hidden = true;
   }
   function renderList() {
     var query = (document.getElementById('ow-search').value || '').trim().toLowerCase();
@@ -5017,15 +5076,7 @@
       var loc = match ? point(match) : null;
       if (loc) map.setView(loc, Math.max(map.getZoom(), 4));
     }
-    // Une seule fiche : le dossier flottant. Remplir aussi le tiroir avec la même
-    // carte provoquait une double superposition (texte en transparence).
-    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
-      try { window.ATAKUnitDossier.open(asset); } catch (e2) {}
-      clearDrawerContactHead();
-      var drawer = document.getElementById('ow-drawer');
-      if (drawer) drawer.hidden = true;
-      return;
-    }
+    closeUnitDossier();
     clearDrawerContactHead();
     setDrawerContactHead({
       call_sign: asset.callsign,
@@ -5343,6 +5394,42 @@
     return clean(row.display_name || row.name || row.identity || row.relay_uid, 'Relais ATAK');
   }
 
+  function networkKv(label, value, opts) {
+    if (value == null || value === '') return '';
+    var mono = opts && opts.mono ? ' class="ow-mono"' : '';
+    return '<span>' + escapeHtml(label) + '</span><span' + mono + '>' + escapeHtml(String(value)) + '</span>';
+  }
+
+  function networkRelayDetailHtml(row) {
+    var alive = row.alive !== false && row.alive !== 0;
+    var range = Number(row.range_m || 0);
+    var slots = Number(row.slots || 0);
+    var used = Number(row.slots_used || row.used || 0);
+    var thru = Number(row.throughput_mbps);
+    var rel = Number(row.reliability_pct);
+    var power = Number(row.power_w);
+    var html = networkKv('État', alive ? 'En service' : 'Détruit');
+    if (range > 0) html += networkKv('Portée', Math.round(range) + ' m');
+    if (slots > 0) html += networkKv('Places utilisées', used + ' / ' + slots);
+    if (!isNaN(thru) && thru > 0) html += networkKv('Débit', thru.toFixed(1).replace(/\.0$/, '') + ' Mbit/s');
+    if (!isNaN(rel) && alive) html += networkKv('Fiabilité', Math.round(rel) + ' %');
+    if (!isNaN(power) && power > 0) html += networkKv('Puissance', Math.round(power) + ' W');
+    var identity = clean(row.identity || row.relay_uid, '');
+    if (identity) html += networkKv('Identité', identity, { mono: true });
+    var cert = clean(row.certificate || row.cert || '', '');
+    if (cert) html += networkKv('Certificat', cert, { mono: true });
+    var gw = clean(row.gateway || '', '');
+    if (gw) html += networkKv('Passerelle', gw, { mono: true });
+    var ip = maskIpForDisplay(row.ip_addr || row.ip || '');
+    if (ip) html += networkKv('Adresse réseau', ip, { mono: true });
+    var grid = '';
+    if (Number.isFinite(Number(row.pos_x)) && Number.isFinite(Number(row.pos_y))) {
+      grid = Math.round(Number(row.pos_x)) + ' ' + Math.round(Number(row.pos_y));
+    }
+    if (grid) html += networkKv('Grille', grid, { mono: true });
+    return html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '';
+  }
+
   function networkRelayMeta(row) {
     var bits = [];
     var range = Number(row.range_m || 0);
@@ -5353,7 +5440,7 @@
     var thru = Number(row.throughput_mbps);
     if (!isNaN(thru) && thru > 0) bits.push(thru.toFixed(1).replace(/\.0$/, '') + ' Mbit/s');
     var rel = Number(row.reliability_pct);
-    if (!isNaN(rel) && row.alive !== false && row.alive !== 0) bits.push(Math.round(rel) + ' %');
+    if (!isNaN(rel) && row.alive !== false && row.alive !== 0) bits.push(Math.round(rel) + ' % fiabilité');
     return bits.join(' · ');
   }
 
@@ -5368,11 +5455,12 @@
     var head = '<span>' + escapeHtml(title) +
       (meta ? '<small class="ow-net-meta">' + escapeHtml(meta) + '</small>' : '') +
       '</span><strong class="' + (alive ? 'is-ok' : 'is-down') + '">' + escapeHtml(status) + '</strong>';
-    if (canFocus) {
-      return '<button type="button" class="ow-net-row" data-focus-relay-x="' + escapeHtml(String(x)) +
-        '" data-focus-relay-y="' + escapeHtml(String(y)) + '" title="Centrer la carte sur ce relais">' + head + '</button>';
-    }
-    return '<div class="ow-net-row is-static">' + head + '</div>';
+    var body = networkRelayDetailHtml(row);
+    var headHtml = canFocus
+      ? '<button type="button" class="ow-net-row" data-focus-relay-x="' + escapeHtml(String(x)) +
+        '" data-focus-relay-y="' + escapeHtml(String(y)) + '" title="Centrer la carte sur ce relais">' + head + '</button>'
+      : '<div class="ow-net-row is-static">' + head + '</div>';
+    return '<article class="ow-net-card">' + headHtml + body + '</article>';
   }
 
   function networkTerminalCertLabel(t) {
@@ -5383,35 +5471,180 @@
       var ms = Date.parse(expires.indexOf('T') >= 0 ? expires : expires.replace(' ', 'T'));
       expired = !isNaN(ms) && ms < Date.now();
     }
-    if (s === 'revoked') return 'Certificat révoqué';
-    if (s === 'expired' || expired) return 'Certificat expiré';
-    if (s === 'active' || s === 'issued') return 'Certificat actif';
-    if (String(t && t.certificate_ref || '').trim()) return 'Certificat émis';
-    return 'Sans certificat';
+    if (s === 'revoked') return 'Révoqué';
+    if (s === 'expired' || expired) return 'Expiré';
+    if (s === 'active' || s === 'issued') return 'Actif';
+    if (String(t && t.certificate_ref || '').trim()) return 'Émis';
+    return 'Aucun';
+  }
+
+  function networkFindUnitForTerminal(t) {
+    var tcs = String(t.operator_callsign || t.callsign || '').trim().toLowerCase();
+    var found = null;
+    units.forEach(function (u) {
+      if (found) return;
+      if (tcs && callsign(u).toLowerCase() === tcs) found = u;
+    });
+    return found;
+  }
+
+  function nearestRelayForUnit(unit) {
+    var loc = point(unit);
+    if (!loc) return null;
+    var rows = networkRelays.slice();
+    if (!rows.length && window.OverwatchOps && typeof window.OverwatchOps.getRelays === 'function') {
+      try { rows = window.OverwatchOps.getRelays() || []; } catch (e) { rows = []; }
+    }
+    var best = null;
+    var bestD = Infinity;
+    rows.forEach(function (row) {
+      if (row.alive === false || row.alive === 0) return;
+      var x = Number(row.pos_x);
+      var y = Number(row.pos_y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      var ll = worldToLatLng(x, y);
+      if (!ll) return;
+      var d = map.distance(loc, ll);
+      var range = Number(row.range_m || 0);
+      if (range > 0 && d > range) return;
+      if (d < bestD) {
+        bestD = d;
+        best = row;
+      }
+    });
+    return best;
+  }
+
+  function networkTerminalDetailHtml(t, unit) {
+    var extra = unit ? extraOf(unit) : {};
+    var arma = unit ? armaOf(unit) : {};
+    var relay = unit ? nearestRelayForUnit(unit) : null;
+    var html = '';
+
+    var atakId = clean(
+      extra.bft_id || extra.military_id || extra.atak_id || t.operator_military_id || t.terminal_uid || '',
+      ''
+    );
+    if (atakId) html += networkKv('Adresse ATAK', atakId, { mono: true });
+
+    var type = clean(t.device_type || t.terminal_type || t.platform_label || extra.platform, 'ATAK');
+    html += networkKv('Type', type);
+
+    var cert = networkTerminalCertLabel(t);
+    html += networkKv('Certificat', cert);
+    var certRef = clean(t.certificate_ref || extra.certificate_ref, '');
+    if (certRef) html += networkKv('Référence', certRef, { mono: true });
+    var certExp = String(t.certificate_expires_at || '').trim();
+    if (certExp) {
+      var expMs = Date.parse(certExp.indexOf('T') >= 0 ? certExp : certExp.replace(' ', 'T'));
+      if (!isNaN(expMs)) certExp = new Date(expMs).toLocaleDateString('fr-FR');
+      html += networkKv('Échéance', certExp);
+    }
+    var auth = clean(t.certificate_authority || '', '');
+    if (auth) html += networkKv('Autorité', auth);
+    var crypto = clean(t.crypto_domain_label || '', '');
+    if (crypto) html += networkKv('Réseau crypto', crypto);
+
+    if (unit) {
+      var link = linkLabel(unit);
+      if (link && link !== 'non transmise') html += networkKv('Liaison', link);
+      var tx = txLabel(unit);
+      if (tx && tx !== 'non transmise') html += networkKv('Transmission', tx);
+    } else {
+      var rawLink = String(extra.link_state || t.link_state || '').toLowerCase();
+      if (rawLink) html += networkKv('Liaison', rawLink === 'linked' ? 'ouverte' : rawLink);
+    }
+
+    var loss = firstNumber(extra.packet_loss, arma.packet_loss, t.packet_loss);
+    if (loss != null) {
+      var reliability = Math.max(0, Math.min(100, Math.round(100 - Number(loss))));
+      html += networkKv('Fiabilité', reliability + ' %');
+      html += networkKv('Perte de paquets', Number(loss).toFixed(1).replace(/\.0$/, '') + ' %');
+    } else if (relay && relay.reliability_pct != null && relay.reliability_pct !== '') {
+      html += networkKv('Fiabilité (relais)', Math.round(Number(relay.reliability_pct)) + ' %');
+    }
+
+    var thru = firstNumber(extra.throughput_mbps, relay && relay.throughput_mbps);
+    if (thru != null && thru > 0) {
+      html += networkKv('Débit', Number(thru).toFixed(1).replace(/\.0$/, '') + ' Mbit/s');
+    }
+
+    var sent = firstNumber(extra.packets_sent, t.packets_sent);
+    var recv = firstNumber(extra.packets_received, t.packets_received);
+    if (sent != null || recv != null) {
+      var sentN = sent != null ? Math.round(sent) : '—';
+      var recvN = recv != null ? Math.round(recv) : '—';
+      html += networkKv('Taux de transmission', recvN + ' reçus / ' + sentN + ' envoyés');
+    }
+
+    var latency = firstNumber(extra.latency_ms, t.latency_ms);
+    if (latency != null && latency >= 0) html += networkKv('Latence', Math.round(latency) + ' ms');
+
+    if (relay) {
+      var slots = Number(relay.slots || 0);
+      var used = Number(relay.slots_used || relay.used || 0);
+      if (slots > 0) {
+        html += networkKv('Ressources relais', used + ' / ' + slots + ' places · ' + networkRelayTitle(relay));
+      } else {
+        html += networkKv('Relais utilisé', networkRelayTitle(relay));
+      }
+    }
+
+    var ip = maskIpForDisplay(
+      extra.client_ip || extra.ip || extra.public_ip || extra.network || t.last_client_ip || ''
+    );
+    if (ip) html += networkKv('Adresse réseau', ip, { mono: true });
+
+    var overwatch = clean(
+      t.mod_version || extra.mod_version || extra.overwatch_version || '',
+      ''
+    );
+    if (overwatch) html += networkKv('Pack Overwatch', overwatch, { mono: true });
+    var dll = clean(
+      t.extension_version || extra.extension_version || extra.dll_version || '',
+      ''
+    );
+    if (dll) html += networkKv('Liaison Athena', dll, { mono: true });
+    var game = clean(
+      extra.arma_version || extra.game_version || t.arma_version || t.arma_build || extra.arma_build || '',
+      ''
+    );
+    if (game) html += networkKv('Version du jeu', game, { mono: true });
+
+    var compromiseRaw = String(t.compromise_state || extra.compromise_state || '').toLowerCase();
+    if (compromiseRaw === 'none' || compromiseRaw === '') {
+      /* skip or show RAS */
+    } else if (compromiseRaw === 'captured') {
+      html += networkKv('Intégrité', 'Saisi');
+    } else if (compromiseRaw === 'compromised') {
+      html += networkKv('Intégrité', 'Compromis');
+    } else if (compromiseRaw) {
+      html += networkKv('Intégrité', compromiseRaw);
+    }
+
+    var seen = formatSeen(t.last_seen_at) || (unit ? formatSeen(unit.updated_at) : '');
+    if (seen) html += networkKv('Dernière activité', seen);
+
+    return html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '';
   }
 
   function networkTerminalRowHtml(t) {
     var call = clean(t.operator_callsign || t.callsign || t.terminal_label, 'Terminal');
-    var unit = null;
-    units.forEach(function (u) {
-      if (unit) return;
-      var ucs = callsign(u).toLowerCase();
-      var tcs = String(t.operator_callsign || t.callsign || '').trim().toLowerCase();
-      if (tcs && ucs === tcs) unit = u;
-    });
+    var unit = networkFindUnitForTerminal(t);
     var seen = formatSeen(t.last_seen_at) || (unit ? formatSeen(unit.updated_at) : '') || 'Aucune activité';
-    var type = clean(t.device_type || t.terminal_type || t.platform_label, 'ATAK');
     var cert = networkTerminalCertLabel(t);
-    var meta = [type, cert, seen].filter(Boolean).join(' · ');
+    var type = clean(t.device_type || t.terminal_type || t.platform_label, 'ATAK');
+    var meta = [type, 'Certificat ' + cert.toLowerCase(), seen].filter(Boolean).join(' · ');
     var unitId = unit ? String(unit.id || unit.unit_id || unit.call_sign || unit.callsign || '') : '';
+    var status = unit ? 'Lié' : 'Hors carte';
     var head = '<span>' + escapeHtml(call) +
       '<small class="ow-net-meta">' + escapeHtml(meta) + '</small></span>' +
-      '<strong>' + escapeHtml(unit ? 'Lié' : 'Hors carte') + '</strong>';
-    if (unitId) {
-      return '<button type="button" class="ow-net-row" data-focus-terminal="' + escapeHtml(unitId) +
-        '" title="Ouvrir le contact associé">' + head + '</button>';
-    }
-    return '<div class="ow-net-row is-static">' + head + '</div>';
+      '<strong class="' + (unit ? 'is-ok' : '') + '">' + escapeHtml(status) + '</strong>';
+    var headHtml = unitId
+      ? '<button type="button" class="ow-net-row" data-focus-terminal="' + escapeHtml(unitId) +
+        '" title="Ouvrir le contact associé">' + head + '</button>'
+      : '<div class="ow-net-row is-static">' + head + '</div>';
+    return '<article class="ow-net-card">' + headHtml + networkTerminalDetailHtml(t, unit) + '</article>';
   }
 
   function networkRelaysListHtml() {
@@ -5444,7 +5677,7 @@
       '<p class="ow-help">' + escapeHtml(modeHelp) + '</p>' +
       '<div id="ow-network-relays">' + networkRelaysListHtml() + '</div>' +
       '<p class="ow-kicker">Terminaux ATAK</p>' +
-      '<p class="ow-help">Appareils qui ont déjà contacté le poste : indicatif, certificat et dernière activité.</p>' +
+      '<p class="ow-help">Appareils qui ont déjà contacté le poste : certificat, liaison, transmission, versions et adresse quand elles sont connues.</p>' +
       '<div id="ow-network-terminals">' + networkTerminalsListHtml() + '</div>' +
       '<p class="ow-kicker">Satellites</p>' +
       '<p class="ow-help">Aucun catalogue satellitaire n’est fourni pour ce théâtre. Rien n’est inventé.</p>' +
@@ -6301,7 +6534,20 @@
       if (!row) return;
       var id = row.getAttribute('data-unit-id');
       var unit = units.filter(function (u) { return unitId(u) === id; })[0];
-      if (unit) selectUnit(unit);
+      if (unit) {
+        selectUnit(unit);
+        closeEffectifsModal();
+      }
+    });
+  }
+  var effectifsOpen = document.getElementById('ow-effectifs-open');
+  if (effectifsOpen) effectifsOpen.addEventListener('click', openEffectifsModal);
+  var effectifsClose = document.getElementById('ow-effectifs-close');
+  if (effectifsClose) effectifsClose.addEventListener('click', closeEffectifsModal);
+  var effectifsModal = document.getElementById('ow-effectifs-modal');
+  if (effectifsModal) {
+    effectifsModal.addEventListener('click', function (event) {
+      if (event.target === effectifsModal) closeEffectifsModal();
     });
   }
   document.getElementById('ow-channel-filter').addEventListener('input', renderChannels);
@@ -6316,6 +6562,7 @@
   });
   document.querySelector('[data-close-drawer]').addEventListener('click', function () {
     restoreOpsPanels();
+    closeUnitDossier();
     document.getElementById('ow-drawer').hidden = true;
     lastSceneObject = null;
     if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.setFocus === 'function') {
@@ -6482,7 +6729,11 @@
     var tag = String((event.target && event.target.tagName) || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); togglePalette(palette.hidden); }
-    if (event.key === 'Escape') { togglePalette(false); hideContext(); document.getElementById('ow-drawer').hidden = true; setTool('cursor'); }
+    if (event.key === 'Escape') {
+      var effectifsModalEsc = document.getElementById('ow-effectifs-modal');
+      if (effectifsModalEsc && !effectifsModalEsc.hidden) { closeEffectifsModal(); return; }
+      togglePalette(false); hideContext(); document.getElementById('ow-drawer').hidden = true; setTool('cursor');
+    }
     if ((event.key === 'Delete' || event.key === 'Backspace') && !document.getElementById('ow-context').hidden && ctxTarget) {
       event.preventDefault();
       var toDrop = ctxTarget;

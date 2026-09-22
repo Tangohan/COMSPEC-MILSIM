@@ -431,6 +431,8 @@ button{cursor:pointer}
 .ow-stat-v.is-mono{font-family:var(--ow-mono);font-size:12px;font-weight:500}
 .ow-stat-v.is-dim{color:var(--athena-muted);font-weight:400}
 .ow-stat-block{margin-top:10px}
+.ow-drawer-block{margin-top:12px;padding-top:10px;border-top:1px solid var(--athena-line)}
+.ow-drawer-block-title{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--athena-muted);margin-bottom:8px}
 .ow-pill{font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:10px;display:inline-block}
 .ow-pill.is-ok{color:var(--athena-green);background:rgba(0,214,154,.12)}
 .ow-pill.is-bad{color:var(--athena-red);background:rgba(224,91,99,.14)}
@@ -481,7 +483,7 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-photo-lightbox.is-blurred img{filter:blur(18px)}
 .ow-photo-lightbox-close{position:absolute;top:16px;right:18px;width:36px;height:36px;border:1px solid #27302d;background:#101413;color:#e4e8e8;border-radius:4px;font-size:22px;line-height:1;cursor:pointer}
 .ow-event{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid #171c1a;font-size:12px;align-items:center}
-.ow-net-row{appearance:none;-webkit-appearance:none;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;padding:9px 2px;border:0;border-bottom:1px solid #171c1a;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ow-net-row{appearance:none;-webkit-appearance:none;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;padding:9px 2px;border:0;border-bottom:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ow-net-row.is-static{cursor:default}
 .ow-net-row:not(.is-static):hover{background:#101513}
 .ow-net-row>span{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -489,6 +491,10 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-net-row>strong.is-ok{color:#7dcea0}
 .ow-net-row>strong.is-down{color:#ee777f}
 .ow-net-meta{color:var(--athena-muted);font-size:11px;font-weight:500;line-height:1.35}
+.ow-net-card{border-bottom:1px solid #171c1a;padding-bottom:10px;margin-bottom:4px}
+.ow-net-card:last-child{border-bottom:0;margin-bottom:0}
+.ow-net-kv{margin:0 2px 4px;padding:6px 0 2px;border-top:1px solid #141a18}
+.ow-net-kv>span:nth-child(even){font-size:12px}
 .ow-support-auto{margin:0 10px 8px;display:flex;flex-direction:column;gap:6px;max-height:42%;overflow:auto;min-height:0}
 .ow-support-auto-row{border:1px solid var(--athena-line-2);border-radius:6px;background:#0e1211;padding:8px 10px}
 .ow-support-auto-row.is-critical{border-color:#5b2b30;background:#140c0d}
@@ -849,13 +855,20 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-bft-chan.is-wave{color:#7dd3fc;background:rgba(56,189,248,.14)}
 #ow-filter-wave{margin-left:6px}
 #ow-filter-wave.is-active{background:rgba(56,189,248,.2);border-color:rgba(56,189,248,.45);color:#7dd3fc}
-.ow-effectifs{border-top:1px solid var(--athena-line);padding:10px 12px 12px;flex:1 1 48%;min-height:200px;max-height:58%;display:flex;flex-direction:column;min-width:0}
-.ow-effectifs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--athena-muted)}
-.ow-effectifs-head strong{color:var(--athena-text);font-weight:700;font-size:13px}
-.ow-effectifs-head span{font-size:12px;font-weight:600;color:var(--athena-text)}
-.ow-effectifs-scroll{overflow:auto;min-height:0;flex:1;border:1px solid var(--athena-line-2);border-radius:6px}
+.ow-effectifs{border-top:1px solid var(--athena-line);padding:10px 12px 12px;flex:0 0 auto;min-height:0;max-height:none;display:block;min-width:0}
+.ow-effectifs-open{width:100%;margin:0;height:36px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.ow-effectifs-open span{font-variant-numeric:tabular-nums;color:var(--athena-text);font-weight:700}
+.ow-effectifs-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:24px}
+.ow-effectifs-modal[hidden]{display:none!important}
+.ow-effectifs-modal-card{width:min(1100px,100%);height:min(820px,92vh);background:#090c0b;border:1px solid #27302d;border-radius:10px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ow-effectifs-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px 12px;border-bottom:1px solid var(--athena-line)}
+.ow-effectifs-modal-head h2{margin:0;font-family:var(--ow-display);font-size:18px;letter-spacing:-.02em}
+.ow-effectifs-modal-head .ow-help{margin:4px 0 0}
+.ow-effectifs-modal-close{width:32px;height:32px;border:0;border-radius:6px;background:transparent;color:#8b9590;font-size:22px;line-height:1;cursor:pointer;flex:0 0 auto}
+.ow-effectifs-modal-close:hover{background:#151b19;color:#e4e8e8}
+.ow-effectifs-modal-scroll{overflow:auto;min-height:0;flex:1;padding:0}
 .ow-effectifs-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px}
-.ow-effectifs-table th,.ow-effectifs-table td{padding:9px 12px;border-bottom:1px solid var(--athena-line-2);text-align:left;white-space:nowrap;line-height:1.35}
+.ow-effectifs-table th,.ow-effectifs-table td{padding:10px 14px;border-bottom:1px solid var(--athena-line-2);text-align:left;white-space:nowrap;line-height:1.35}
 .ow-effectifs-table th{position:sticky;top:0;background:#121715;color:var(--athena-muted);font-weight:600;z-index:1;font-size:12px}
 .ow-effectifs-table th:first-child,.ow-effectifs-table td:first-child{position:sticky;left:0;z-index:2;background:#0e1211;box-shadow:2px 0 0 var(--athena-line-2);font-weight:600;min-width:7.5rem}
 .ow-effectifs-table th:first-child{z-index:3;background:#121715;top:0}
@@ -1254,7 +1267,8 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-ops-panel .atak-ping-item__main{flex:1;text-align:left;background:transparent;border:0;color:var(--athena-text);cursor:pointer;font-size:12px}
 .ow-ops-panel .atak-ping-item__del{border:0;background:transparent;color:var(--athena-muted);cursor:pointer;font-size:16px}
 .ow-ops-panel .atak-empty-state{padding:16px;text-align:center;color:var(--athena-muted)}
-.ow-map-stage .atak-dossier{right:12px;top:12px}
+.ow-map-stage .atak-dossier{display:none!important}
+#atak-unit-dossier{display:none!important}
 #atak-ghost-trails+#ow-ghost-help,.ow-trail-toggles{margin:0}
 
 
