@@ -27,12 +27,14 @@ final class AtakRealismApiController
         private ?UserRepository $userRepository = null,
         private ?TenantAdminSettingsRepository $adminSettings = null,
         private ?\App\Repositories\AtakRealismConfigRepository $realismConfigRepo = null,
+        private ?\App\Services\Tactical\AtakWeatherEffectsService $weatherService = null,
     ) {
         $this->realismRepository ??= new AtakRealismRepository();
         $this->pairingRepository ??= new TacticalPhonePairingRepository();
         $this->userRepository ??= new UserRepository();
         $this->adminSettings ??= new TenantAdminSettingsRepository();
         $this->realismConfigRepo ??= new \App\Repositories\AtakRealismConfigRepository();
+        $this->weatherService ??= new \App\Services\Tactical\AtakWeatherEffectsService($this->realismConfigRepo);
     }
 
     /**
@@ -65,6 +67,49 @@ final class AtakRealismApiController
             'version' => $config['config_version'],
             'config_name' => $config['config_name'],
             'updated_at' => $config['updated_at'],
+        ]);
+    }
+
+    /**
+     * Endpoint POST pour calculer les effets météo sur la portée des relais.
+     * Utilisé par le mod et le web pour obtenir la portée effective en fonction de la météo actuelle.
+     * 
+     * Body attendu :
+     * {
+     *   "base_range": 2000,
+     *   "weather": {
+     *     "rain": 0.5,
+     *     "fog": 0.3,
+     *     "overcast": 0.7,
+     *     "wind_kmh": 80
+     *   }
+     * }
+     */
+    public function calculateWeatherEffects(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+
+        $body = $this->body($request);
+        $baseRange = (float) ($body['base_range'] ?? 2000);
+        $weather = $body['weather'] ?? [];
+
+        if (!is_array($weather)) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'Weather data must be an object with rain, fog, overcast, wind_kmh fields.',
+            ], 422);
+        }
+
+        $effects = $this->weatherService->calculateEffectiveRange($tenantId, $baseRange, $weather);
+
+        return Response::json([
+            'ok' => true,
+            'base_range' => $baseRange,
+            'weather' => $weather,
+            'effects' => $effects,
         ]);
     }
 

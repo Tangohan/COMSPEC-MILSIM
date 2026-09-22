@@ -2283,6 +2283,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/crypto-domains', [\App\Controllers\Api\AtakRealismApiController::class, 'cryptoDomains']);
     $router->post('/api/atak/crypto-domains', [\App\Controllers\Api\AtakRealismApiController::class, 'cryptoDomains']);
     $router->get('/api/atak/realism/config', [\App\Controllers\Api\AtakRealismApiController::class, 'getConfig']);
+    $router->post('/api/atak/realism/weather-effects', [\App\Controllers\Api\AtakRealismApiController::class, 'calculateWeatherEffects']);
     $router->get('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'index']);
     $router->get('/api/atak/aar-reports/export', [\App\Controllers\Api\AarReportsApiController::class, 'export']);
     $router->post('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'store']);
