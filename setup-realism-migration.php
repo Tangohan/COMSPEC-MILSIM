@@ -35,7 +35,7 @@ class RealismMigration
     
     public function __construct()
     {
-        $this->pdo = Database::connection();
+        $this->pdo = Database::getPdo();
         $this->startTime = time();
     }
     
