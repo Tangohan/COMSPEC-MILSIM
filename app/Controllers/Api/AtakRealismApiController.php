@@ -26,11 +26,46 @@ final class AtakRealismApiController
         private ?TacticalPhonePairingRepository $pairingRepository = null,
         private ?UserRepository $userRepository = null,
         private ?TenantAdminSettingsRepository $adminSettings = null,
+        private ?\App\Repositories\AtakRealismConfigRepository $realismConfigRepo = null,
     ) {
         $this->realismRepository ??= new AtakRealismRepository();
         $this->pairingRepository ??= new TacticalPhonePairingRepository();
         $this->userRepository ??= new UserRepository();
         $this->adminSettings ??= new TenantAdminSettingsRepository();
+        $this->realismConfigRepo ??= new \App\Repositories\AtakRealismConfigRepository();
+    }
+
+    /**
+     * Endpoint GET pour la configuration centralisée réalisme ATAK.
+     * Accessible depuis le mod (Extension C#) et le web (JS).
+     */
+    public function getConfig(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+
+        $config = $this->realismConfigRepo->getActiveConfig($tenantId);
+        
+        if ($config === null) {
+            // Fallback : retourner une config par défaut si aucune n'existe
+            // (cas d'un tenant pas encore migré)
+            return Response::json([
+                'ok' => false,
+                'error' => 'No realism config found for this tenant. Run migration seed first.',
+            ], 404);
+        }
+
+        $configJson = json_decode($config['config_json'], true);
+        
+        return Response::json([
+            'ok' => true,
+            'config' => $configJson,
+            'version' => $config['config_version'],
+            'config_name' => $config['config_name'],
+            'updated_at' => $config['updated_at'],
+        ]);
     }
 
     public function terminals(Request $request, array $params = []): Response
