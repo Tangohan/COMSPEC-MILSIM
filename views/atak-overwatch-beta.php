@@ -305,10 +305,12 @@ $icon = static function (string $path): string {
         <p class="ow-kicker">Anneaux de portée</p>
         <p class="ow-help">Cercles autour du contact ouvert. Distances en mètres sur le théâtre.</p>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="100"> 100 m</label>
-        <label class="ow-toggle"><input type="checkbox" data-ow-ring="250" checked> 250 m</label>
-        <label class="ow-toggle"><input type="checkbox" data-ow-ring="500" checked> 500 m</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-ring="250"> 250 m</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-ring="500"> 500 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="1000"> 1 000 m</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-ring="2000"> 2 000 m</label>
+        <label class="ow-toggle"><input type="checkbox" id="ow-reach-zone"> Zone possible (anneaux jaune / vert)</label>
+        <p class="ow-help">Estimation pied (vert) et véhicule (jaune) depuis la dernière position connue. Désactivée par défaut ; activez-la seulement si vous en avez besoin.</p>
         <p class="ow-kicker">Superposition</p>
         <p class="ow-help">Calques posés au-dessus du fond. Chaque option se mémorise sur ce poste.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-grid-overlay"> Grille du théâtre</label>
