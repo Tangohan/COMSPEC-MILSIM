@@ -17,6 +17,7 @@ $certificates = $config['certificates'] ?? [];
 $terminalDamage = $config['terminal_damage'] ?? [];
 $waypoints = $config['waypoints_routes'] ?? [];
 $symbology = $config['symbology_map'] ?? [];
+$controlMeasures = $config['control_measures'] ?? [];
 $coverage = $config['coverage_viewshed'] ?? [];
 $experience = $config['experience_ambiance'] ?? [];
 $other = $config['other_settings'] ?? [];
@@ -84,6 +85,7 @@ $other = $config['other_settings'] ?? [];
                     <button class="tab-btn" data-tab="damage">💥 Dommages terminal</button>
                     <button class="tab-btn" data-tab="waypoints">📍 Itinéraires</button>
                     <button class="tab-btn" data-tab="symbology">🎯 Symbologie</button>
+                    <button class="tab-btn" data-tab="control">🎖️ Control Measures</button>
                     <button class="tab-btn" data-tab="coverage">📡 Couverture</button>
                     <button class="tab-btn" data-tab="experience">🎮 Expérience</button>
                 </nav>
@@ -95,7 +97,7 @@ $other = $config['other_settings'] ?? [];
                 <!-- Onglet 1: Relais radio -->
                 <div class="tab-content active" data-tab="radio">
                     <h2 class="text-lg font-bold text-slate-900 mb-4">Relais radio et proximité</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <label class="flex items-center gap-2">
                             <input type="checkbox" name="radio_relays.link_via_relays" <?= !empty($radioRelays['link_via_relays']) ? 'checked' : '' ?>>
                             <span class="text-sm font-medium">Exiger un relais pour la liaison de données</span>
@@ -111,6 +113,43 @@ $other = $config['other_settings'] ?? [];
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Puissance (W)</label>
                             <input type="number" name="radio_relays.relay_power_w" value="<?= $h($radioRelays['relay_power_w'] ?? 25) ?>" min="0" max="999" class="w-full rounded border border-slate-300 px-3 py-2">
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-md font-bold text-slate-900 mb-3 mt-6">☔ Effet météo sur les communications</h3>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="radio_relays.weather_effects_enabled" <?= !empty($radioRelays['weather_effects_enabled']) ? 'checked' : '' ?>>
+                            <span class="text-sm font-medium">Activer les effets météo sur les comms</span>
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Pluie - Portée (%)</label>
+                                <input type="number" name="radio_relays.rain_range_multiplier" value="<?= $h($radioRelays['rain_range_multiplier'] ?? 0.85) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
+                                <p class="text-xs text-slate-500 mt-1">0.85 = réduction à 85%</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Brouillard - Portée (%)</label>
+                                <input type="number" name="radio_relays.fog_range_multiplier" value="<?= $h($radioRelays['fog_range_multiplier'] ?? 0.70) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
+                                <p class="text-xs text-slate-500 mt-1">0.70 = réduction à 70%</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Orage - Portée (%)</label>
+                                <input type="number" name="radio_relays.storm_range_multiplier" value="<?= $h($radioRelays['storm_range_multiplier'] ?? 0.60) ?>" min="0" max="1" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
+                                <p class="text-xs text-slate-500 mt-1">0.60 = réduction à 60%</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Seuil vent (km/h)</label>
+                                <input type="number" name="radio_relays.wind_threshold_kmh" value="<?= $h($radioRelays['wind_threshold_kmh'] ?? 50) ?>" min="0" max="200" class="w-full rounded border border-slate-300 px-3 py-2">
+                                <p class="text-xs text-slate-500 mt-1">Vent au-delà de ce seuil affecte les comms</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Pénalité vent (%/10km/h)</label>
+                                <input type="number" name="radio_relays.wind_range_penalty_per_10kmh" value="<?= $h($radioRelays['wind_range_penalty_per_10kmh'] ?? 0.05) ?>" min="0" max="0.5" step="0.01" class="w-full rounded border border-slate-300 px-3 py-2">
+                                <p class="text-xs text-slate-500 mt-1">0.05 = -5% portée par tranche de 10 km/h</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -205,7 +244,121 @@ $other = $config['other_settings'] ?? [];
                     </div>
                 </div>
 
-                <!-- Onglet 8: Couverture -->
+                <!-- Onglet 8: Control Measures -->
+                <div class="tab-content" data-tab="control" style="display:none;">
+                    <h2 class="text-lg font-bold text-slate-900 mb-4">🎖️ Control Measures MIL-STD-2525D</h2>
+                    <p class="text-sm text-slate-600 mb-4">Mesures de contrôle doctrine US Army : axes d'avance, lignes de départ, limites de progression, phase lines, objectifs, checkpoints.</p>
+                    
+                    <div class="space-y-6">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="control_measures.enabled" <?= !empty($controlMeasures['enabled']) ? 'checked' : '' ?>>
+                            <span class="text-sm font-medium">Activer les Control Measures</span>
+                        </label>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Axis of Advance (Axes d'avance nommés)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.axis_naming_enabled" <?= !empty($controlMeasures['axis_naming_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Nommage des axes (NEPTUNE, MARS, etc.)</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Largeur par défaut (m)</label>
+                                    <input type="number" name="control_measures.axis_default_width_m" value="<?= $h($controlMeasures['axis_default_width_m'] ?? 500) ?>" min="50" max="5000" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Line of Departure (LD)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.ld_enabled" <?= !empty($controlMeasures['ld_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Activer les lignes de départ</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
+                                    <input type="color" name="control_measures.ld_default_color" value="<?= $h($controlMeasures['ld_default_color'] ?? '#00ff00') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Limit of Advance (LOA)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.loa_enabled" <?= !empty($controlMeasures['loa_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Activer les limites de progression</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
+                                    <input type="color" name="control_measures.loa_default_color" value="<?= $h($controlMeasures['loa_default_color'] ?? '#ff0000') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Phase Lines (PL)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.phase_line_enabled" <?= !empty($controlMeasures['phase_line_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Activer les phase lines</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur par défaut</label>
+                                    <input type="color" name="control_measures.phase_line_default_color" value="<?= $h($controlMeasures['phase_line_default_color'] ?? '#ffff00') ?>" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Objectifs nommés (OBJ)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.objective_enabled" <?= !empty($controlMeasures['objective_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Activer les objectifs nommés</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Rayon par défaut (m)</label>
+                                    <input type="number" name="control_measures.objective_default_radius_m" value="<?= $h($controlMeasures['objective_default_radius_m'] ?? 200) ?>" min="25" max="2000" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Checkpoints numérotés (CP)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.checkpoint_enabled" <?= !empty($controlMeasures['checkpoint_enabled']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Activer les checkpoints</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="control_measures.checkpoint_auto_number" <?= !empty($controlMeasures['checkpoint_auto_number']) ? 'checked' : '' ?>>
+                                    <span class="text-sm font-medium">Numérotation automatique</span>
+                                </label>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Rayon par défaut (m)</label>
+                                    <input type="number" name="control_measures.checkpoint_default_radius_m" value="<?= $h($controlMeasures['checkpoint_default_radius_m'] ?? 50) ?>" min="10" max="500" class="w-full rounded border border-slate-300 px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <h3 class="text-md font-bold text-slate-900 mb-3">Permissions</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Visibilité par défaut</label>
+                                <select name="control_measures.control_measure_visibility" class="w-full rounded border border-slate-300 px-3 py-2">
+                                    <option value="public" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'public' ? 'selected' : '' ?>>Public (tout le monde)</option>
+                                    <option value="team" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'team' ? 'selected' : '' ?>>Équipe uniquement</option>
+                                    <option value="private" <?= ($controlMeasures['control_measure_visibility'] ?? 'team') === 'private' ? 'selected' : '' ?>>Privé (créateur uniquement)</option>
+                                </select>
+                                <p class="text-xs text-slate-500 mt-1">Qui peut voir les control measures créés</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet 9: Couverture -->
                 <div class="tab-content" data-tab="coverage" style="display:none;">
                     <h2 class="text-lg font-bold text-slate-900 mb-4">Couverture et viewshed</h2>
                     <div>
@@ -214,7 +367,7 @@ $other = $config['other_settings'] ?? [];
                     </div>
                 </div>
 
-                <!-- Onglet 9: Expérience -->
+                <!-- Onglet 10: Expérience -->
                 <div class="tab-content" data-tab="experience" style="display:none;">
                     <h2 class="text-lg font-bold text-slate-900 mb-4">Expérience et ambiance</h2>
                     <div class="space-y-4">
@@ -317,6 +470,7 @@ document.getElementById('btn-save-config')?.addEventListener('click', async () =
         terminal_damage: {},
         waypoints_routes: {},
         symbology_map: {},
+        control_measures: {},
         coverage_viewshed: {},
         experience_ambiance: {},
         other_settings: {}

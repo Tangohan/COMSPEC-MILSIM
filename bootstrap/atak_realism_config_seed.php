@@ -62,6 +62,16 @@ function run_atak_realism_config_seed(PDO $pdo): void
                 'radio_proximity_radius_m' => 75,
                 'radio_proximity_interval_s' => 2,
                 'phone_proximity_radius_m' => 200,
+                // Effet météo sur les comms
+                'weather_effects_enabled' => true,
+                'rain_range_multiplier' => 0.85, // pluie réduit portée à 85%
+                'fog_range_multiplier' => 0.70, // brouillard réduit portée à 70%
+                'storm_range_multiplier' => 0.60, // orage réduit portée à 60%
+                'rain_throughput_multiplier' => 0.90, // pluie réduit débit à 90%
+                'fog_throughput_multiplier' => 0.80, // brouillard réduit débit à 80%
+                'storm_throughput_multiplier' => 0.65, // orage réduit débit à 65%
+                'wind_threshold_kmh' => 50, // vent > 50 km/h affecte les comms
+                'wind_range_penalty_per_10kmh' => 0.05, // -5% portée par tranche de 10 km/h au-delà du seuil
             ],
             'zones_roleplay' => [
                 'zones_enabled' => (bool) ($roleplay['zones_enabled'] ?? false),
@@ -154,6 +164,31 @@ function run_atak_realism_config_seed(PDO $pdo): void
                 ],
                 'marker_detection_radius_m' => 20,
                 'po_marker_radius_m' => 20,
+            ],
+            'control_measures' => [
+                // Control measures MIL-STD-2525D / APP-6
+                'enabled' => true,
+                'axis_naming_enabled' => true, // Axis of Advance nommé (NEPTUNE, MARS, etc.)
+                'axis_default_width_m' => 500,
+                'axis_label_prefix' => 'AXIS',
+                'ld_enabled' => true, // Line of Departure
+                'ld_label_prefix' => 'LD',
+                'ld_default_color' => '#00ff00',
+                'loa_enabled' => true, // Limit of Advance
+                'loa_label_prefix' => 'LOA',
+                'loa_default_color' => '#ff0000',
+                'phase_line_enabled' => true, // Phase Lines
+                'phase_line_label_prefix' => 'PL',
+                'phase_line_default_color' => '#ffff00',
+                'objective_enabled' => true, // Objectifs nommés
+                'objective_label_prefix' => 'OBJ',
+                'objective_default_radius_m' => 200,
+                'checkpoint_enabled' => true, // Checkpoints numérotés
+                'checkpoint_label_prefix' => 'CP',
+                'checkpoint_auto_number' => true,
+                'checkpoint_default_radius_m' => 50,
+                'control_measure_visibility' => 'team', // public, team, private
+                'allow_edit_by_role' => ['commander', 'platoon_leader', 'squad_leader'],
             ],
             'coverage_viewshed' => [
                 'viewshed_radius_default_m' => 500, // résout incohérence #8

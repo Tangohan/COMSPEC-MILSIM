@@ -128,6 +128,7 @@ final class AtakRealismConfigRepository
             'terminal_damage',
             'waypoints_routes',
             'symbology_map',
+            'control_measures',
             'coverage_viewshed',
             'experience_ambiance',
             'other_settings',
