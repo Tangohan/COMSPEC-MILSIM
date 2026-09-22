@@ -716,27 +716,11 @@ $icon = static function (string $path): string {
           <button type="button" class="ow-tag" id="ow-filter-wave" title="Uniquement Wave Relay" aria-pressed="false">Wave</button>
         </div>
         <div id="ow-contact-list" class="ow-bft-body" aria-live="polite"></div>
-        <div class="ow-effectifs" id="ow-effectifs" aria-label="Tableau des effectifs">
-          <div class="ow-effectifs-head">
-            <strong>Tableau des effectifs</strong>
+        <div class="ow-effectifs" id="ow-effectifs">
+          <button type="button" class="ow-secondary ow-effectifs-open" id="ow-effectifs-open" aria-haspopup="dialog" aria-controls="ow-effectifs-modal">
+            Tableau des effectifs
             <span id="ow-effectifs-count">0</span>
-          </div>
-          <div class="ow-effectifs-scroll">
-            <table class="ow-effectifs-table">
-              <thead>
-                <tr>
-                  <th>Indicatif</th>
-                  <th>Rôle</th>
-                  <th>Équipe</th>
-                  <th>Liaison</th>
-                  <th>Cap</th>
-                  <th>Grille</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody id="ow-units-table-body"></tbody>
-            </table>
-          </div>
+          </button>
         </div>
       </div>
       <div class="ow-chat-main" data-chat-panel="squads" hidden>
@@ -806,6 +790,34 @@ $icon = static function (string $path): string {
     <h2>Fil</h2>
     <p>Les messages sont groupés par auteur. La barre colorée indique l’urgence. Une pastille signale les messages non lus. Vous pouvez retirer les vôtres, ou vider le fil pour tout le poste.</p>
     <button type="button" class="ow-primary" id="ow-guide-ok">Fermer l’aide</button>
+  </div>
+</div>
+
+<div class="ow-effectifs-modal" id="ow-effectifs-modal" hidden>
+  <div class="ow-effectifs-modal-card" role="dialog" aria-modal="true" aria-labelledby="ow-effectifs-modal-title">
+    <header class="ow-effectifs-modal-head">
+      <div>
+        <h2 id="ow-effectifs-modal-title">Tableau des effectifs</h2>
+        <p class="ow-help" id="ow-effectifs-modal-sub">Contacts visibles avec le filtre actuel.</p>
+      </div>
+      <button type="button" class="ow-effectifs-modal-close" id="ow-effectifs-close" aria-label="Fermer">×</button>
+    </header>
+    <div class="ow-effectifs-modal-scroll">
+      <table class="ow-effectifs-table">
+        <thead>
+          <tr>
+            <th>Indicatif</th>
+            <th>Rôle</th>
+            <th>Équipe</th>
+            <th>Liaison</th>
+            <th>Cap</th>
+            <th>Grille</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="ow-units-table-body"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
