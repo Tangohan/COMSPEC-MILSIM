@@ -1,44 +1,42 @@
-# ATAK / Overwatch Beta — loader Halo absent ou trop court
+# ATAK / Overwatch Beta — loader Halo vs écran d’accueil
 
 **Statut :** corrigé (sources)
 
 ## Contexte
 
-Carte ATAK (`/atak/`) avec sas de reprise, et poste Overwatch Beta.
+Carte ATAK (`/atak/`) avec sas de reprise (« Connexion ATAK » / Entrer), et poste Overwatch Beta.
 
 ## Symptôme
 
-- Sur Overwatch Beta : pas d’écran de préparation à l’ouverture.
-- Sur `/atak/` : le loader disparaissait pendant (ou avant) le sas « Reprise ATAK », donc aucun écran Halo visible avant la carte.
+- Sur `/atak/` : le loader Halo disparaissait pendant (ou avant) le sas, donc plus visible au bon moment.
+- Sur Overwatch Beta : un Halo ajouté sans sas restait bloqué sur « PRÊT » et masquait toute la page (tuiles 401 / `readyState` qui ne passe pas à `complete` → `finish()` refusait de sortir).
 
 ## Cause
 
-1. Overwatch Beta n’incluait pas le partial Halo.
-2. `halo-loader.js` forçait `finish()` au `load` / timeout sans attendre la sortie du sas session.
-3. Le partial Halo était injecté **avant** le markup du sas : le script ne voyait pas encore l’overlay et ne mettait pas `__ATAK_SESSION_GATE_PENDING__`.
+1. `halo-loader.js` forçait `finish()` au `load` / timeout sans attendre la sortie du sas session sur `/atak/`.
+2. Le partial Halo était injecté **avant** le markup du sas : le script ne voyait pas encore l’overlay.
+3. Overwatch Beta n’a **pas** d’écran d’accueil ATAK : y coller le Halo sans sas provoquait un blocage infini.
 
 ## Correctif
 
-- Partial Halo + CSS sur Overwatch Beta.
-- Fin du loader bloquée tant que le sas est ouvert (`pageReadyForHalo`, événement `atak:session-gate-ready`).
-- Flag `__ATAK_SESSION_GATE_PENDING__` posé avant le loader sur `/atak/`.
-- Cache-bust du script Halo (`?v=` + mtime).
+- Sur `/atak/` : Halo conservé jusqu’à « Entrer dans la session » (`__ATAK_SESSION_GATE_PENDING__`, `atak:session-gate-ready`).
+- Sur Overwatch Beta : **Halo retiré** — l’accueil ATAK reste sur `/atak/` ; le poste beta ouvre directement l’interface.
+- Filet de sécurité Halo : si aucun sas n’est ouvert, forcer la sortie après le délai max (évite un overlay collé sur « PRÊT »).
 
 ## Fichiers touchés
 
-- `views/atak-overwatch-beta.php`
+- `views/atak-overwatch-beta.php` (retrait Halo)
 - `views/atak.php`
 - `views/partials/halo_loader.php`
 - `public/assets/js/halo-loader.js`
 - `public/assets/js/atak-session-profile.js`
 - `public/assets/css/halo-loader.css`
-- `app/Support/DevDispatchCatalog.php` (UPDATE #710)
 
 ## Vérification
 
-1. Ctrl+F5 sur `/atak/` : loader visible, puis sas ; après « Entrer dans la session », courte fin du loader puis carte.
-2. Ctrl+F5 sur Overwatch Beta : loader Halo jusqu’à la carte prête.
-3. Popout / session téléphone : pas de blocage infini du loader.
+1. Ctrl+F5 sur `/atak/` : loader puis sas ; après « Entrer », carte.
+2. Ctrl+F5 sur Overwatch Beta : plus de Halo, interface poste immédiatement.
+3. Pas de blocage infini du loader hors sas.
 
 ## Statut
 

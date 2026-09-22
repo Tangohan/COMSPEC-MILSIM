@@ -60,7 +60,6 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
-  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/halo-loader.css?v=<?= $h($assetVer) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -81,12 +80,6 @@ $icon = static function (string $path): string {
   </script>
 </head>
 <body>
-<?php
-  $baseUrl = $base;
-  $haloLoaderHint = 'Préparation du poste Overwatch…';
-  $haloLoaderSeenKey = 'athena-halo-loader-overwatch-beta';
-  require base_path('views/partials/halo_loader.php');
-?>
 <div class="ow-shell">
   <header class="ow-topbar">
     <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>

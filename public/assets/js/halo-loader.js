@@ -340,8 +340,21 @@
     if (performance.now() - start >= minMs) finish();
   });
 
-  /* Filet de sécurité : ne termine que si le sas est déjà levé. */
+  /* Filet de sécurité : sans sas ouvert, forcer la sortie même si readyState traîne. */
   window.setTimeout(function () {
-    finish();
+    if (done) return;
+    if (window.__ATAK_SESSION_GATE_PENDING__) return;
+    var hub = document.getElementById('atak-session-profile-overlay');
+    var guest = document.getElementById('atak-session-guest-hub');
+    if ((hub && !hub.hidden) || (guest && !guest.hidden)) return;
+    if (document.body && document.body.classList.contains('atak-session-profile-locked')) return;
+    done = true;
+    try { sessionStorage.setItem(SEEN_KEY, '1'); } catch (eSafety) { /* ignore */ }
+    setProgress(100);
+    root.classList.add('is-done');
+    root.setAttribute('aria-busy', 'false');
+    window.setTimeout(function () {
+      if (root.parentNode) root.parentNode.removeChild(root);
+    }, 80);
   }, maxMs + 400);
 })();
