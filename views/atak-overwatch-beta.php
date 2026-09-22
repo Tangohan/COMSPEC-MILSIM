@@ -74,6 +74,7 @@ $icon = static function (string $path): string {
     window.ATAK_TENANT_LABEL = <?= json_encode($community) ?>;
     window.ATAK_CSRF = <?= json_encode(\App\Core\Csrf::token()) ?>;
     window.ATAK_CSRF_TOKEN = window.ATAK_CSRF;
+    window.ATAK_CALLSIGN_TO_USER = <?= json_encode($atakCallsignToUser ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
   </script>
 </head>
@@ -405,7 +406,7 @@ $icon = static function (string $path): string {
       </div>
     </aside>
 
-    <section class="ow-map-stage" id="ow-map-stage" data-look="color">
+    <section class="ow-map-stage atak-map-wrap" id="ow-map-stage" data-look="color">
       <div class="ow-rail" aria-label="Outils cartographiques">
         <button type="button" class="is-active" data-tool="cursor" data-tip="Sélection" data-help="Cliquez un contact ou un tracé. Échap quitte l’outil en cours."><?= $icon('M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM15 15l4 4') ?></button>
         <button type="button" data-tool="center" data-tip="Recentrer" data-help="Recadre le théâtre entier."><?= $icon('M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z') ?></button>
@@ -694,10 +695,34 @@ $icon = static function (string $path): string {
               <option value="friendly">Amis</option>
               <option value="hostile">Hostiles</option>
               <option value="unknown">Inconnus</option>
+              <option value="wave">Wave</option>
             </select></span>
           </label>
+          <button type="button" class="ow-tag" id="ow-filter-wave" title="Uniquement Wave Relay" aria-pressed="false">Wave</button>
         </div>
         <div id="ow-contact-list" class="ow-bft-body" aria-live="polite"></div>
+        <div class="ow-effectifs" id="ow-effectifs" aria-label="Tableau des effectifs">
+          <div class="ow-effectifs-head">
+            <strong>Tableau des effectifs</strong>
+            <span id="ow-effectifs-count">0</span>
+          </div>
+          <div class="ow-effectifs-scroll">
+            <table class="ow-effectifs-table">
+              <thead>
+                <tr>
+                  <th>Indicatif</th>
+                  <th>Rôle</th>
+                  <th>Équipe</th>
+                  <th>Liaison</th>
+                  <th>Cap</th>
+                  <th>Grille</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="ow-units-table-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <div class="ow-chat-main" data-chat-panel="squads" hidden>
         <p class="ow-help">Les opérateurs d’un même groupe sont reliés sur la carte. Cliquez un groupe pour le cadrer.</p>
@@ -785,6 +810,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/arma-marker-catalog.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-map-markers.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tools.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>

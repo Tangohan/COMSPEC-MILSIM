@@ -256,7 +256,7 @@ button{cursor:pointer}
 .ow-bft-title svg{width:14px;height:14px;color:var(--athena-green);flex:0 0 auto}
 .ow-bft-sub{margin-left:auto;font-size:11px;font-weight:500;color:var(--athena-muted)}
 .ow-bft .ow-search{margin:0 0 8px}
-.ow-bft-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--athena-muted)}
+.ow-bft-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--athena-muted);flex-wrap:wrap}
 .ow-bft-filter .ow-select{flex:1}
 .ow-bft-filter select{width:100%;height:28px;background:#0e1211;border:1px solid #242c29;border-radius:6px;color:var(--athena-text);font-size:12px;padding:0 8px}
 .ow-bft-body{flex:1;min-height:0;overflow:auto;padding:0}
@@ -815,3 +815,37 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-export-field select{display:block;width:100%;margin-top:5px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);font-size:12px;padding:7px 9px}
 .ow-export-foot{padding:12px 16px 16px}
 .ow-nato-label span{font-weight:700;letter-spacing:.02em}
+
+/* Parité poste : Wave, avatars, effectifs, aérien / véhicules, zone de déplacement */
+.ow-bft-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}
+.ow-bft-chan.is-wave{color:#7dd3fc;background:rgba(56,189,248,.14)}
+#ow-filter-wave{margin-left:6px}
+#ow-filter-wave.is-active{background:rgba(56,189,248,.2);border-color:rgba(56,189,248,.45);color:#7dd3fc}
+.ow-effectifs{border-top:1px solid var(--athena-line);padding:8px 10px 10px;flex:0 0 auto;max-height:38%;display:flex;flex-direction:column;min-height:0}
+.ow-effectifs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--athena-muted)}
+.ow-effectifs-head strong{color:var(--athena-text);font-weight:700}
+.ow-effectifs-scroll{overflow:auto;min-height:0;border:1px solid var(--athena-line-2);border-radius:6px}
+.ow-effectifs-table{width:100%;border-collapse:collapse;font-size:11px}
+.ow-effectifs-table th,.ow-effectifs-table td{padding:5px 7px;border-bottom:1px solid var(--athena-line-2);text-align:left;white-space:nowrap}
+.ow-effectifs-table th{position:sticky;top:0;background:#121715;color:var(--athena-muted);font-weight:600;z-index:1}
+.ow-effectifs-table tr{cursor:pointer}
+.ow-effectifs-table tr:hover td{background:rgba(0,214,154,.06)}
+.ow-effectifs-table tr.is-active td{background:rgba(0,214,154,.12)}
+.ow-effectifs-table tr.is-offline td{color:var(--athena-muted)}
+.ow-effectifs-table td.is-mono{font-family:var(--ow-mono)}
+.ow-track-line{stroke-linecap:round;stroke-linejoin:round}
+.ow-track-line.is-stale{opacity:.45}
+.ow-gps-map-icon,.ow-air-map-icon{background:transparent;border:0}
+.ow-gps-pin{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #f59e0b;filter:drop-shadow(0 0 1px #000);display:block}
+.ow-gps-label,.ow-air-label{display:block;margin-top:2px;font-size:9px;font-weight:700;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap}
+.ow-air-glyph{color:#3b82f6;font-size:12px;font-weight:700;filter:drop-shadow(0 0 1px #000)}
+.ow-map-stage.atak-map-wrap .atak-reach-legend{left:.75rem;bottom:4.5rem;z-index:620;min-width:16rem;max-width:22rem;padding:.7rem .8rem .65rem;background:rgba(10,14,22,.92);border:1px solid rgba(148,163,184,.28);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);color:#e2e8f0}
+.ow-map-stage .atak-reach-legend__head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.25rem}
+.ow-map-stage .atak-reach-legend__head strong{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#86efac}
+.ow-map-stage .atak-reach-legend__close{border:1px solid rgba(148,163,184,.35);background:transparent;color:#cbd5e1;font-size:.65rem;padding:.15rem .4rem;border-radius:4px;cursor:pointer}
+.ow-map-stage .atak-reach-legend__status,.ow-map-stage .atak-reach-legend__grid,.ow-map-stage .atak-reach-legend__hint{margin:.15rem 0;font-size:.68rem;color:#cbd5e1}
+.ow-map-stage .atak-reach-legend__rings{list-style:none;margin:.4rem 0 .35rem;padding:0}
+.ow-map-stage .atak-reach-legend__rings li{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
+.ow-map-stage .atak-reach-swatch{width:.85rem;height:.85rem;border-radius:50%;flex-shrink:0}
+.ow-map-stage .atak-reach-swatch--foot{background:rgba(34,197,94,.35);border:2px solid #4ade80}
+.ow-map-stage .atak-reach-swatch--vehicle{background:rgba(245,158,11,.28);border:2px dashed #f59e0b}
