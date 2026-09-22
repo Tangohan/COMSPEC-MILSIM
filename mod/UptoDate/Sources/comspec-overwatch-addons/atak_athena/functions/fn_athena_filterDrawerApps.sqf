@@ -1,15 +1,15 @@
 /*
-    Tiroir : Relais AT (AtakRelay) en tête, pas de doublon Wave Relay IceMan.
+    Tiroir : Relais AT (AtakRelay) en tête, pas de doublon Wave Relay / Message IceMan.
 */
 params [["_apps", [], [[]]]];
 
 if (!(_apps isEqualType [])) exitWith { [] };
 
-_apps = _apps select { _x isNotEqualTo "WaveRelay" };
+// Supprimer apps IceMan en doublon
+_apps = _apps select { _x isNotEqualTo "WaveRelay" && {_x isNotEqualTo "message"} };
 
 if (!("AtakRelay" in _apps) && {isClass (configFile >> "ATAK_APPs" >> "AtakRelay")}) then {
     private _i = _apps find "AtakP2P";
-    if (_i < 0) then { _i = _apps find "message"; };
     if (_i < 0) then {
         _apps pushBack "AtakRelay";
     } else {

@@ -301,7 +301,7 @@ class RscControlsGroup;
 
 class ATAK_APPs
 {
-    // IceMan : class message; puis nos apps. Ne pas redéfinir message (sinon tuiles cassées).
+    // IceMan : class message; (classe base, pas affichée grâce au filtre tiroir)
     class message;
     class AtakP2P: message
     {
