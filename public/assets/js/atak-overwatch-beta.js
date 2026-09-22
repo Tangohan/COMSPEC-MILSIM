@@ -1901,8 +1901,8 @@
     renderSquadLinks();
     renderRangeRings();
     renderMap();
-    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.toggleFromUnit === 'function') {
-      try { window.ATAKReachOverlay.toggleFromUnit(unit, { center: false }); } catch (e) {}
+    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.select === 'function') {
+      try { window.ATAKReachOverlay.select(unit, { center: false }); } catch (e) {}
     }
   }
 
