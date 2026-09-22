@@ -1595,6 +1595,7 @@ return function (Router $router) {
     $router->post('/admin/atak/realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/realism/verify', [\App\Controllers\Admin\AdminAtakRealismVerifyController::class, 'verify'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides/google-url', [AdminBriefingSlidesController::class, 'updateGoogleUrl'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

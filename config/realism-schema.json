@@ -1,0 +1,1267 @@
+{
+  "schema_version": "1.0.0",
+  "metadata": {
+    "name": "ATHENA C2 Realism Configuration Schema",
+    "description": "Schéma JSON source unique pour tous les paramètres de réalisme ATAK",
+    "updated_at": "2026-09-22",
+    "total_parameters": 105
+  },
+  "domains": {
+    "radio_relays": {
+      "label": "📡 Relais radio",
+      "description": "Configuration des relais radio et communications",
+      "order": 1,
+      "parameters": {
+        "link_via_relays": {
+          "label": "Relais obligatoire pour liaison données",
+          "description": "Les terminaux doivent être à portée d'un relais intact pour transmettre",
+          "type": "toggle",
+          "default": false,
+          "help": "Désactiver pour mode arcade. Activer pour réalisme maximal. La voix n'est pas concernée.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "relay_range_m": {
+          "label": "Portée des relais",
+          "description": "Distance maximale de transmission d'un relais radio",
+          "type": "slider",
+          "unit": "m",
+          "min": 50,
+          "max": 8000,
+          "step": 50,
+          "default": 2000,
+          "help": "Portée nominale d'un relais. Affectée par la météo si activée. Les joueurs voient un cercle de portée sur Tacmap.",
+          "validation": {
+            "min": 50,
+            "max": 8000,
+            "required": true
+          }
+        },
+        "relay_range_min_m": {
+          "label": "Portée minimale (clamp)",
+          "description": "Portée minimale autorisée pour un relais",
+          "type": "number",
+          "unit": "m",
+          "default": 50,
+          "help": "Valeur technique de clamp. Ne pas modifier sauf besoin spécifique.",
+          "validation": {
+            "min": 10,
+            "max": 1000,
+            "required": true
+          }
+        },
+        "relay_range_max_m": {
+          "label": "Portée maximale (clamp)",
+          "description": "Portée maximale autorisée pour un relais",
+          "type": "number",
+          "unit": "m",
+          "default": 8000,
+          "help": "Valeur technique de clamp. Ne pas modifier sauf besoin spécifique.",
+          "validation": {
+            "min": 1000,
+            "max": 20000,
+            "required": true
+          }
+        },
+        "relay_throughput_kbps": {
+          "label": "Débit nominal relais",
+          "description": "Débit maximal d'un relais en kbit/s",
+          "type": "slider",
+          "unit": "kbps",
+          "min": 64,
+          "max": 1024,
+          "step": 64,
+          "default": 256,
+          "help": "Débit disponible pour les terminaux connectés. Affecté par la météo.",
+          "validation": {
+            "min": 64,
+            "max": 1024,
+            "required": true
+          }
+        },
+        "max_relay_connections": {
+          "label": "Connexions maximales par relais",
+          "description": "Nombre de terminaux pouvant se connecter simultanément",
+          "type": "slider",
+          "unit": "slots",
+          "min": 1,
+          "max": 50,
+          "step": 1,
+          "default": 10,
+          "help": "Si dépassé, les nouveaux terminaux sont refusés.",
+          "validation": {
+            "min": 1,
+            "max": 50,
+            "required": true
+          }
+        },
+        "weather_effects_enabled": {
+          "label": "Effets météo activés",
+          "description": "La météo impacte la portée et le débit",
+          "type": "toggle",
+          "default": true,
+          "help": "Pluie, brouillard et vent réduisent les performances radio. Désactiver pour mode arcade.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "rain_range_multiplier": {
+          "label": "Multiplicateur portée (pluie)",
+          "description": "Facteur de réduction de portée sous la pluie",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.5,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.85,
+          "help": "0.85 = 85% de la portée nominale. Actif si weather_effects_enabled = true.",
+          "validation": {
+            "min": 0.5,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "fog_range_multiplier": {
+          "label": "Multiplicateur portée (brouillard)",
+          "description": "Facteur de réduction de portée sous le brouillard",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.5,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.70,
+          "help": "0.70 = 70% de la portée nominale. Actif si weather_effects_enabled = true.",
+          "validation": {
+            "min": 0.5,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "storm_range_multiplier": {
+          "label": "Multiplicateur portée (orage)",
+          "description": "Facteur de réduction de portée sous l'orage",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.3,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.60,
+          "help": "0.60 = 60% de la portée nominale. Orage = pluie forte + nuages épais.",
+          "validation": {
+            "min": 0.3,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "rain_throughput_multiplier": {
+          "label": "Multiplicateur débit (pluie)",
+          "description": "Facteur de réduction de débit sous la pluie",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.5,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.90,
+          "help": "0.90 = 90% du débit nominal.",
+          "validation": {
+            "min": 0.5,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "fog_throughput_multiplier": {
+          "label": "Multiplicateur débit (brouillard)",
+          "description": "Facteur de réduction de débit sous le brouillard",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.5,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.80,
+          "help": "0.80 = 80% du débit nominal.",
+          "validation": {
+            "min": 0.5,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "storm_throughput_multiplier": {
+          "label": "Multiplicateur débit (orage)",
+          "description": "Facteur de réduction de débit sous l'orage",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.3,
+          "max": 1.0,
+          "step": 0.05,
+          "default": 0.65,
+          "help": "0.65 = 65% du débit nominal.",
+          "validation": {
+            "min": 0.3,
+            "max": 1.0,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "wind_threshold_kmh": {
+          "label": "Seuil vent (km/h)",
+          "description": "Vitesse de vent à partir de laquelle une pénalité s'applique",
+          "type": "slider",
+          "unit": "km/h",
+          "min": 0,
+          "max": 200,
+          "step": 10,
+          "default": 50,
+          "help": "Au-delà de ce seuil, la portée est réduite progressivement.",
+          "validation": {
+            "min": 0,
+            "max": 200,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        },
+        "wind_range_penalty_per_10kmh": {
+          "label": "Pénalité vent par 10 km/h",
+          "description": "Réduction de portée par tranche de 10 km/h au-delà du seuil",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.01,
+          "max": 0.5,
+          "step": 0.01,
+          "default": 0.05,
+          "help": "0.05 = -5% par 10 km/h. Exemple : vent 80 km/h avec seuil 50 → -15%.",
+          "validation": {
+            "min": 0.01,
+            "max": 0.5,
+            "required": true
+          },
+          "depends_on": "weather_effects_enabled"
+        }
+      }
+    },
+    "zones_roleplay": {
+      "label": "🗺️ Zones roleplay",
+      "description": "Zones géographiques avec effets spéciaux (portée réduite, débit limité)",
+      "order": 2,
+      "parameters": {
+        "zones_enabled": {
+          "label": "Zones roleplay activées",
+          "description": "Activer les zones avec effets sur communications",
+          "type": "toggle",
+          "default": false,
+          "help": "Les zones sont créées par Zeus ou admin. Entrée/sortie détectée automatiquement.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "zone_default_radius_m": {
+          "label": "Rayon par défaut des zones",
+          "description": "Rayon d'une zone roleplay lors de sa création",
+          "type": "slider",
+          "unit": "m",
+          "min": 50,
+          "max": 5000,
+          "step": 50,
+          "default": 200,
+          "help": "Modifiable zone par zone après création.",
+          "validation": {
+            "min": 50,
+            "max": 5000,
+            "required": true
+          }
+        },
+        "zone_range_factor": {
+          "label": "Facteur portée en zone",
+          "description": "Multiplicateur de portée des relais dans une zone",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.1,
+          "max": 1.0,
+          "step": 0.1,
+          "default": 0.5,
+          "help": "0.5 = 50% de la portée normale. Simule interférences ou brouillage.",
+          "validation": {
+            "min": 0.1,
+            "max": 1.0,
+            "required": true
+          }
+        },
+        "zone_throughput_factor": {
+          "label": "Facteur débit en zone",
+          "description": "Multiplicateur de débit des relais dans une zone",
+          "type": "slider",
+          "unit": "%",
+          "min": 0.1,
+          "max": 1.0,
+          "step": 0.1,
+          "default": 0.3,
+          "help": "0.3 = 30% du débit normal. Simule saturation ou brouillage.",
+          "validation": {
+            "min": 0.1,
+            "max": 1.0,
+            "required": true
+          }
+        }
+      }
+    },
+    "network_simulation": {
+      "label": "🌐 Simulation réseau",
+      "description": "Coupures temporaires, latence, perte paquets",
+      "order": 3,
+      "parameters": {
+        "disconnect_enabled": {
+          "label": "Coupures réseau activées (portail)",
+          "description": "Simule des déconnexions temporaires côté serveur",
+          "type": "toggle",
+          "default": false,
+          "help": "Coupures aléatoires 5-30s toutes les 10 minutes. Ne pas activer si simulation client active (double pénalité).",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "disconnect_duration_min_s": {
+          "label": "Durée coupure min (s)",
+          "description": "Durée minimale d'une coupure réseau",
+          "type": "slider",
+          "unit": "s",
+          "min": 1,
+          "max": 60,
+          "step": 1,
+          "default": 5,
+          "help": "Coupure aléatoire entre min et max.",
+          "validation": {
+            "min": 1,
+            "max": 60,
+            "required": true
+          },
+          "depends_on": "disconnect_enabled"
+        },
+        "disconnect_duration_max_s": {
+          "label": "Durée coupure max (s)",
+          "description": "Durée maximale d'une coupure réseau",
+          "type": "slider",
+          "unit": "s",
+          "min": 5,
+          "max": 120,
+          "step": 5,
+          "default": 30,
+          "help": "Coupure aléatoire entre min et max.",
+          "validation": {
+            "min": 5,
+            "max": 120,
+            "required": true
+          },
+          "depends_on": "disconnect_enabled"
+        },
+        "disconnect_interval_s": {
+          "label": "Intervalle entre coupures (s)",
+          "description": "Temps entre deux coupures réseau",
+          "type": "slider",
+          "unit": "s",
+          "min": 60,
+          "max": 3600,
+          "step": 60,
+          "default": 600,
+          "help": "600s = 10 minutes entre chaque coupure.",
+          "validation": {
+            "min": 60,
+            "max": 3600,
+            "required": true
+          },
+          "depends_on": "disconnect_enabled"
+        },
+        "client_sim_enabled": {
+          "label": "Simulation client activée (CBA)",
+          "description": "Simulation réseau côté client Arma (latence, perte paquets)",
+          "type": "toggle",
+          "default": false,
+          "help": "Nécessite addon CBA. Ne pas activer si coupures portail actives (double pénalité).",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "latency_ms": {
+          "label": "Latence simulée (ms)",
+          "description": "Délai artificiel ajouté aux transmissions",
+          "type": "slider",
+          "unit": "ms",
+          "min": 0,
+          "max": 1000,
+          "step": 10,
+          "default": 50,
+          "help": "50ms = latence réaliste satellite. 0 = aucune latence.",
+          "validation": {
+            "min": 0,
+            "max": 1000,
+            "required": true
+          },
+          "depends_on": "client_sim_enabled"
+        },
+        "packet_loss_percent": {
+          "label": "Perte paquets (%)",
+          "description": "Pourcentage de paquets perdus",
+          "type": "slider",
+          "unit": "%",
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "default": 5,
+          "help": "5% = perte réaliste. 0% = aucune perte.",
+          "validation": {
+            "min": 0,
+            "max": 50,
+            "required": true
+          },
+          "depends_on": "client_sim_enabled"
+        }
+      }
+    },
+    "certificates": {
+      "label": "🔐 Certificats",
+      "description": "Certificats électroniques pour authentification terminaux",
+      "order": 4,
+      "parameters": {
+        "certificate_required": {
+          "label": "Certificat requis",
+          "description": "Les terminaux doivent avoir un certificat valide pour transmettre",
+          "type": "toggle",
+          "default": true,
+          "help": "Désactiver pour mode arcade. Activer pour réalisme maximal.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "certificate_duration_days": {
+          "label": "Durée validité certificat (jours)",
+          "description": "Nombre de jours avant expiration d'un certificat",
+          "type": "slider",
+          "unit": "jours",
+          "min": 1,
+          "max": 3650,
+          "step": 30,
+          "default": 365,
+          "help": "365 jours = 1 an. Les certificats expirés doivent être renouvelés par le QG.",
+          "validation": {
+            "min": 1,
+            "max": 3650,
+            "required": true
+          }
+        },
+        "auto_renew_certificates": {
+          "label": "Renouvellement automatique",
+          "description": "Les certificats sont renouvelés automatiquement avant expiration",
+          "type": "toggle",
+          "default": false,
+          "help": "Si activé, renouvellement 7 jours avant expiration. Désactiver pour réalisme maximal.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "certificate_authority_label": {
+          "label": "Nom autorité certificat",
+          "description": "Nom affiché de l'autorité émettrice",
+          "type": "text",
+          "default": "ATHENA C2 PKI",
+          "help": "Personnalisable par communauté (ex: 'OTAN PKI', '1er RCP CA').",
+          "validation": {
+            "maxLength": 100
+          }
+        },
+        "revoke_on_compromise": {
+          "label": "Révoquer si terminal compromis",
+          "description": "Révoquer automatiquement le certificat si terminal capturé",
+          "type": "toggle",
+          "default": true,
+          "help": "Si activé, terminal capturé = certificat révoqué immédiatement.",
+          "validation": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "terminal_damage": {
+      "label": "💥 Dégâts terminal",
+      "description": "Dommages physiques aux terminaux ATAK",
+      "order": 5,
+      "parameters": {
+        "terminal_damage_enabled": {
+          "label": "Dégâts terminaux activés",
+          "description": "Les terminaux peuvent être endommagés par impacts/explosions",
+          "type": "toggle",
+          "default": true,
+          "help": "Désactiver pour mode arcade. Activer pour réalisme maximal.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "hits_before_destruction": {
+          "label": "Impacts avant destruction",
+          "description": "Nombre d'impacts avant destruction totale du terminal",
+          "type": "slider",
+          "unit": "hits",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "default": 3,
+          "help": "3 hits = terminal détruit après 3 impacts proches. Réparable avant.",
+          "validation": {
+            "min": 1,
+            "max": 10,
+            "required": true
+          },
+          "depends_on": "terminal_damage_enabled"
+        },
+        "repair_time_seconds": {
+          "label": "Temps de réparation (s)",
+          "description": "Durée de l'action de réparation d'un terminal endommagé",
+          "type": "slider",
+          "unit": "s",
+          "min": 10,
+          "max": 600,
+          "step": 10,
+          "default": 300,
+          "help": "300s = 5 minutes. Nécessite kit de réparation.",
+          "validation": {
+            "min": 10,
+            "max": 600,
+            "required": true
+          },
+          "depends_on": "terminal_damage_enabled"
+        },
+        "critical_failure_chance": {
+          "label": "Chance panne critique (%)",
+          "description": "Probabilité qu'un impact cause une panne critique (destruction immédiate)",
+          "type": "slider",
+          "unit": "%",
+          "min": 0,
+          "max": 50,
+          "step": 5,
+          "default": 10,
+          "help": "10% = 1 chance sur 10 qu'un impact détruise le terminal immédiatement.",
+          "validation": {
+            "min": 0,
+            "max": 50,
+            "required": true
+          },
+          "depends_on": "terminal_damage_enabled"
+        },
+        "explosion_radius_m": {
+          "label": "Rayon explosion dégâts (m)",
+          "description": "Distance max entre explosion et terminal pour causer dégâts",
+          "type": "slider",
+          "unit": "m",
+          "min": 1,
+          "max": 50,
+          "step": 1,
+          "default": 10,
+          "help": "10m = explosion à moins de 10m cause dégâts.",
+          "validation": {
+            "min": 1,
+            "max": 50,
+            "required": true
+          },
+          "depends_on": "terminal_damage_enabled"
+        },
+        "repair_kit_required": {
+          "label": "Kit réparation requis",
+          "description": "Nécessite un item 'Kit réparation ATAK' dans l'inventaire",
+          "type": "toggle",
+          "default": true,
+          "help": "Si activé, réparation impossible sans kit. Désactiver pour simplifier.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "terminal_damage_enabled"
+        },
+        "damage_affects_functions": {
+          "label": "Dégâts affectent fonctions",
+          "description": "Terminal endommagé perd certaines fonctions (GPS, caméra, etc.)",
+          "type": "toggle",
+          "default": false,
+          "help": "Si activé, terminal endommagé = perte progressive fonctionnalités.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "terminal_damage_enabled"
+        }
+      }
+    },
+    "waypoints": {
+      "label": "📍 Itinéraires",
+      "description": "Calcul et affichage des itinéraires GPS",
+      "order": 6,
+      "parameters": {
+        "use_road_network": {
+          "label": "Utiliser réseau routier",
+          "description": "Calcul itinéraires sur routes réelles plutôt que lignes droites",
+          "type": "toggle",
+          "default": false,
+          "help": "Nécessite export réseau routier de la map. Plus réaliste mais plus lent.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "snap_to_roads": {
+          "label": "Snap to roads",
+          "description": "Forcer les waypoints à suivre les routes",
+          "type": "toggle",
+          "default": false,
+          "help": "Si activé, waypoints placés sur la route la plus proche.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "use_road_network"
+        },
+        "simplification_threshold_m": {
+          "label": "Seuil simplification (m)",
+          "description": "Distance min entre waypoints après simplification",
+          "type": "slider",
+          "unit": "m",
+          "min": 0,
+          "max": 500,
+          "step": 10,
+          "default": 50,
+          "help": "50m = waypoints rapprochés fusionnés. 0 = pas de simplification.",
+          "validation": {
+            "min": 0,
+            "max": 500,
+            "required": true
+          }
+        },
+        "detect_town_names": {
+          "label": "Détecter noms communes",
+          "description": "Afficher les communes traversées par l'itinéraire",
+          "type": "toggle",
+          "default": true,
+          "help": "Ex: 'Kavala → Athira via Agios Dionysios'. Nécessite use_road_network.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "use_road_network"
+        },
+        "show_waypoint_names": {
+          "label": "Afficher noms waypoints",
+          "description": "Afficher le nom de chaque waypoint sur la carte",
+          "type": "toggle",
+          "default": true,
+          "help": "Si désactivé, seulement numéros (WP1, WP2...).",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "auto_calculate_routes": {
+          "label": "Calcul automatique itinéraires",
+          "description": "Recalculer itinéraire automatiquement si waypoint ajouté/supprimé",
+          "type": "toggle",
+          "default": false,
+          "help": "Si activé, calcul auto après chaque modification.",
+          "validation": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "symbology_map": {
+      "label": "🎯 Symbologie",
+      "description": "Rendu des symboles tactiques sur carte",
+      "order": 7,
+      "parameters": {
+        "symbology_standard": {
+          "label": "Standard symbologie",
+          "description": "Norme de symbologie militaire utilisée",
+          "type": "dropdown",
+          "options": [
+            {"value": "milstd2525d", "label": "MIL-STD-2525D (US)"},
+            {"value": "app6d", "label": "APP-6D (OTAN)"},
+            {"value": "simple", "label": "Simplifié (icônes custom)"}
+          ],
+          "default": "milstd2525d",
+          "help": "MIL-STD-2525D recommandé pour compatibilité maximale.",
+          "validation": {
+            "enum": ["milstd2525d", "app6d", "simple"]
+          }
+        },
+        "symbol_size": {
+          "label": "Taille symboles",
+          "description": "Taille des symboles tactiques sur carte",
+          "type": "dropdown",
+          "options": [
+            {"value": "small", "label": "Petit"},
+            {"value": "medium", "label": "Moyen"},
+            {"value": "large", "label": "Grand"}
+          ],
+          "default": "medium",
+          "help": "Moyen recommandé. Grand pour événements, Petit pour cartes denses.",
+          "validation": {
+            "enum": ["small", "medium", "large"]
+          }
+        },
+        "friendly_color": {
+          "label": "Couleur amis",
+          "description": "Couleur des symboles amis sur carte",
+          "type": "color",
+          "default": "#0099ff",
+          "help": "Bleu par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "hostile_color": {
+          "label": "Couleur ennemis",
+          "description": "Couleur des symboles ennemis sur carte",
+          "type": "color",
+          "default": "#ff0000",
+          "help": "Rouge par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "neutral_color": {
+          "label": "Couleur neutres",
+          "description": "Couleur des symboles neutres sur carte",
+          "type": "color",
+          "default": "#00ff00",
+          "help": "Vert par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        }
+      }
+    },
+    "control_measures": {
+      "label": "🎖️ Control Measures",
+      "description": "Symboles doctrine MIL-STD-2525D (axes, objectifs, checkpoints)",
+      "order": 8,
+      "parameters": {
+        "enabled": {
+          "label": "Control measures activés",
+          "description": "Activer les control measures doctrine",
+          "type": "toggle",
+          "default": true,
+          "help": "Axes d'attaque, LD, LOA, phase lines, objectifs, checkpoints.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "axis_naming_enabled": {
+          "label": "Axes nommables",
+          "description": "Autoriser nommage libre des axes (ex: AXIS NEPTUNE)",
+          "type": "toggle",
+          "default": true,
+          "help": "Si désactivé, axes numérotés automatiquement (AXIS 1, AXIS 2...).",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "axis_default_width_m": {
+          "label": "Largeur axes par défaut (m)",
+          "description": "Largeur du couloir d'un axis of advance",
+          "type": "slider",
+          "unit": "m",
+          "min": 50,
+          "max": 5000,
+          "step": 50,
+          "default": 500,
+          "help": "500m = corridor de 250m de chaque côté de la ligne centrale.",
+          "validation": {
+            "min": 50,
+            "max": 5000,
+            "required": true
+          },
+          "depends_on": "enabled"
+        },
+        "axis_label_prefix": {
+          "label": "Préfixe label axes",
+          "description": "Préfixe automatique des labels d'axes",
+          "type": "text",
+          "default": "AXIS",
+          "help": "Ex: 'AXIS' → 'AXIS NEPTUNE'. Personnalisable.",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "axis_naming_enabled"
+        },
+        "ld_enabled": {
+          "label": "Lines of Departure (LD) activées",
+          "description": "Autoriser création de lignes de départ",
+          "type": "toggle",
+          "default": true,
+          "help": "LD = ligne depuis laquelle l'attaque démarre.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "ld_label_prefix": {
+          "label": "Préfixe label LD",
+          "description": "Préfixe automatique des labels de LD",
+          "type": "text",
+          "default": "LD",
+          "help": "Ex: 'LD' → 'LD BLUE'.",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "ld_enabled"
+        },
+        "ld_default_color": {
+          "label": "Couleur LD par défaut",
+          "description": "Couleur des lignes de départ",
+          "type": "color",
+          "default": "#00ff00",
+          "help": "Vert par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "depends_on": "ld_enabled"
+        },
+        "loa_enabled": {
+          "label": "Limits of Advance (LOA) activées",
+          "description": "Autoriser création de limites de progression",
+          "type": "toggle",
+          "default": true,
+          "help": "LOA = ligne au-delà de laquelle ne pas progresser sans ordre.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "loa_label_prefix": {
+          "label": "Préfixe label LOA",
+          "description": "Préfixe automatique des labels de LOA",
+          "type": "text",
+          "default": "LOA",
+          "help": "Ex: 'LOA' → 'LOA RED'.",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "loa_enabled"
+        },
+        "loa_default_color": {
+          "label": "Couleur LOA par défaut",
+          "description": "Couleur des limites de progression",
+          "type": "color",
+          "default": "#ff0000",
+          "help": "Rouge par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "depends_on": "loa_enabled"
+        },
+        "phase_line_enabled": {
+          "label": "Phase Lines activées",
+          "description": "Autoriser création de lignes de phase",
+          "type": "toggle",
+          "default": true,
+          "help": "Phase lines = marqueurs de phases successives d'une opération.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "phase_line_label_prefix": {
+          "label": "Préfixe label phase lines",
+          "description": "Préfixe automatique des labels de phase lines",
+          "type": "text",
+          "default": "PL",
+          "help": "Ex: 'PL' → 'PL ORANGE'.",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "phase_line_enabled"
+        },
+        "phase_line_default_color": {
+          "label": "Couleur phase lines par défaut",
+          "description": "Couleur des lignes de phase",
+          "type": "color",
+          "default": "#ffff00",
+          "help": "Jaune par défaut (MIL-STD-2525D).",
+          "validation": {
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "depends_on": "phase_line_enabled"
+        },
+        "objective_enabled": {
+          "label": "Objectifs activés",
+          "description": "Autoriser création d'objectifs nommés",
+          "type": "toggle",
+          "default": true,
+          "help": "Objectifs = zones/points à capturer/sécuriser.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "objective_label_prefix": {
+          "label": "Préfixe label objectifs",
+          "description": "Préfixe automatique des labels d'objectifs",
+          "type": "text",
+          "default": "OBJ",
+          "help": "Ex: 'OBJ' → 'OBJ WOLF'.",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "objective_enabled"
+        },
+        "objective_default_radius_m": {
+          "label": "Rayon objectifs par défaut (m)",
+          "description": "Rayon d'un objectif lors de sa création",
+          "type": "slider",
+          "unit": "m",
+          "min": 25,
+          "max": 2000,
+          "step": 25,
+          "default": 200,
+          "help": "200m = objectif de taille moyenne. Modifiable après création.",
+          "validation": {
+            "min": 25,
+            "max": 2000,
+            "required": true
+          },
+          "depends_on": "objective_enabled"
+        },
+        "checkpoint_enabled": {
+          "label": "Checkpoints activés",
+          "description": "Autoriser création de checkpoints",
+          "type": "toggle",
+          "default": true,
+          "help": "Checkpoints = points de repère pour navigation et rapports.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "enabled"
+        },
+        "checkpoint_label_prefix": {
+          "label": "Préfixe label checkpoints",
+          "description": "Préfixe automatique des labels de checkpoints",
+          "type": "text",
+          "default": "CP",
+          "help": "Ex: 'CP' → 'CP1', 'CP2' (si auto-numérotation).",
+          "validation": {
+            "maxLength": 20
+          },
+          "depends_on": "checkpoint_enabled"
+        },
+        "checkpoint_auto_number": {
+          "label": "Auto-numérotation checkpoints",
+          "description": "Numéroter automatiquement les checkpoints (CP1, CP2...)",
+          "type": "toggle",
+          "default": true,
+          "help": "Si désactivé, nommage manuel obligatoire.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "checkpoint_enabled"
+        },
+        "checkpoint_default_radius_m": {
+          "label": "Rayon checkpoints par défaut (m)",
+          "description": "Rayon d'influence d'un checkpoint",
+          "type": "slider",
+          "unit": "m",
+          "min": 10,
+          "max": 500,
+          "step": 10,
+          "default": 50,
+          "help": "50m = checkpoint standard. Modifiable après création.",
+          "validation": {
+            "min": 10,
+            "max": 500,
+            "required": true
+          },
+          "depends_on": "checkpoint_enabled"
+        },
+        "control_measure_visibility": {
+          "label": "Visibilité control measures",
+          "description": "Qui peut voir les control measures créés",
+          "type": "dropdown",
+          "options": [
+            {"value": "team", "label": "Équipe uniquement"},
+            {"value": "faction", "label": "Toute la faction"},
+            {"value": "all", "label": "Tous les joueurs"}
+          ],
+          "default": "team",
+          "help": "'team' recommandé pour confidentialité. 'all' pour briefings.",
+          "validation": {
+            "enum": ["team", "faction", "all"]
+          },
+          "depends_on": "enabled"
+        },
+        "allow_edit_by_role": {
+          "label": "Rôles autorisés édition",
+          "description": "Rôles pouvant créer/modifier/supprimer control measures",
+          "type": "multi-select",
+          "options": [
+            {"value": "commander", "label": "Commander"},
+            {"value": "platoon_leader", "label": "Platoon Leader"},
+            {"value": "squad_leader", "label": "Squad Leader"},
+            {"value": "all", "label": "Tous"}
+          ],
+          "default": ["commander", "platoon_leader", "squad_leader"],
+          "help": "RBAC strict. 'all' déconseillé (chaos possible).",
+          "validation": {
+            "minItems": 1
+          },
+          "depends_on": "enabled"
+        }
+      }
+    },
+    "coverage_viewshed": {
+      "label": "📡 Couverture",
+      "description": "Calcul couverture visuelle et radio (viewshed)",
+      "order": 9,
+      "parameters": {
+        "viewshed_enabled": {
+          "label": "Viewshed activé",
+          "description": "Calcul et affichage des zones de couverture visuelle",
+          "type": "toggle",
+          "default": true,
+          "help": "Calcul ligne de vue depuis position observateur. Coûteux en CPU.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "viewshed_radius_default_m": {
+          "label": "Rayon viewshed par défaut (m)",
+          "description": "Distance max de calcul viewshed",
+          "type": "slider",
+          "unit": "m",
+          "min": 100,
+          "max": 5000,
+          "step": 100,
+          "default": 500,
+          "help": "500m recommandé (équilibre précision/performance). Max 5000m.",
+          "validation": {
+            "min": 100,
+            "max": 5000,
+            "required": true
+          },
+          "depends_on": "viewshed_enabled"
+        },
+        "viewshed_resolution_m": {
+          "label": "Résolution viewshed (m)",
+          "description": "Taille des cellules de calcul viewshed",
+          "type": "slider",
+          "unit": "m",
+          "min": 1,
+          "max": 50,
+          "step": 1,
+          "default": 10,
+          "help": "10m recommandé. 1m = très précis mais très lent. 50m = rapide mais grossier.",
+          "validation": {
+            "min": 1,
+            "max": 50,
+            "required": true
+          },
+          "depends_on": "viewshed_enabled"
+        },
+        "include_vegetation": {
+          "label": "Inclure végétation",
+          "description": "La végétation bloque la ligne de vue",
+          "type": "toggle",
+          "default": true,
+          "help": "Si activé, arbres/buissons bloquent vue. Désactiver pour simplifier.",
+          "validation": {
+            "type": "boolean"
+          },
+          "depends_on": "viewshed_enabled"
+        }
+      }
+    },
+    "experience_ambiance": {
+      "label": "🎮 Expérience",
+      "description": "Réglages généraux d'expérience et ambiance",
+      "order": 10,
+      "parameters": {
+        "realism_level": {
+          "label": "Niveau réalisme général",
+          "description": "Niveau de réalisme global (indépendant des profils)",
+          "type": "dropdown",
+          "options": [
+            {"value": "arcade", "label": "Arcade (casual)"},
+            {"value": "balanced", "label": "Équilibré"},
+            {"value": "simulation", "label": "Simulation (hardcore)"}
+          ],
+          "default": "balanced",
+          "help": "Indicateur visuel pour les joueurs. N'affecte pas directement les paramètres.",
+          "validation": {
+            "enum": ["arcade", "balanced", "simulation"]
+          }
+        },
+        "atak_realism_enabled": {
+          "label": "Réalisme ATAK activé",
+          "description": "Activer le système de réalisme ATAK global",
+          "type": "toggle",
+          "default": true,
+          "help": "Master switch. Si désactivé, tous les paramètres réalisme sont ignorés.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "show_realism_hud": {
+          "label": "Afficher HUD réalisme",
+          "description": "Afficher indicateurs réalisme dans le HUD en jeu",
+          "type": "toggle",
+          "default": true,
+          "help": "Météo, portée relais, état certificat... Si désactivé, info cachée.",
+          "validation": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "other_settings": {
+      "label": "⚙️ Autres",
+      "description": "Paramètres divers non catégorisés",
+      "order": 11,
+      "parameters": {
+        "enable_debug_logs": {
+          "label": "Logs debug activés",
+          "description": "Activer logs détaillés côté serveur et mod",
+          "type": "toggle",
+          "default": false,
+          "help": "Pour diagnostic problèmes. Désactiver en production (spam logs).",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "telemetry_enabled": {
+          "label": "Télémétrie activée",
+          "description": "Collecter statistiques d'usage (anonyme)",
+          "type": "toggle",
+          "default": false,
+          "help": "Stats agrégées : nb relais créés, distance moy itinéraires, etc.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "experimental_features": {
+          "label": "Fonctionnalités expérimentales",
+          "description": "Activer fonctionnalités en cours de développement",
+          "type": "toggle",
+          "default": false,
+          "help": "Peut causer bugs/régressions. Réservé tests.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "config_version_lock": {
+          "label": "Verrouillage version config",
+          "description": "Empêcher modification config par admins (lock production)",
+          "type": "toggle",
+          "default": false,
+          "help": "Si activé, seul system admin peut modifier. Pour événements officiels.",
+          "validation": {
+            "type": "boolean"
+          }
+        },
+        "automatic_backup": {
+          "label": "Sauvegarde automatique config",
+          "description": "Backup auto config avant chaque modification",
+          "type": "toggle",
+          "default": true,
+          "help": "Recommandé. Permet restauration en cas d'erreur.",
+          "validation": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "profiles": {
+    "beginner": {
+      "label": "🟢 Débutant (arcade)",
+      "description": "Expérience simplifiée, pas de contraintes réalistes",
+      "recommended_for": "Nouveaux joueurs, événements publics, découverte du système",
+      "overrides": {
+        "radio_relays": {
+          "link_via_relays": false,
+          "relay_range_m": 5000,
+          "weather_effects_enabled": false
+        },
+        "certificates": {
+          "certificate_required": false,
+          "auto_renew_certificates": true
+        },
+        "terminal_damage": {
+          "terminal_damage_enabled": false
+        },
+        "network_simulation": {
+          "disconnect_enabled": false,
+          "client_sim_enabled": false
+        },
+        "experience_ambiance": {
+          "realism_level": "arcade"
+        }
+      }
+    },
+    "event": {
+      "label": "🟡 Événement (équilibré)",
+      "description": "Compromis entre réalisme et accessibilité",
+      "recommended_for": "Événements communautaires, missions officielles, gameplay équilibré",
+      "overrides": {
+        "radio_relays": {
+          "link_via_relays": true,
+          "relay_range_m": 3000,
+          "weather_effects_enabled": true
+        },
+        "certificates": {
+          "certificate_required": true,
+          "certificate_duration_days": 365,
+          "auto_renew_certificates": false
+        },
+        "terminal_damage": {
+          "terminal_damage_enabled": true,
+          "hits_before_destruction": 5,
+          "critical_failure_chance": 5
+        },
+        "network_simulation": {
+          "disconnect_enabled": false,
+          "client_sim_enabled": false
+        },
+        "experience_ambiance": {
+          "realism_level": "balanced"
+        }
+      }
+    },
+    "expert": {
+      "label": "🔴 Expert (simulation)",
+      "description": "Réalisme maximal, contraintes militaires réelles",
+      "recommended_for": "Joueurs expérimentés, unités milsim, entraînements réalistes",
+      "overrides": {
+        "radio_relays": {
+          "link_via_relays": true,
+          "relay_range_m": 2000,
+          "weather_effects_enabled": true
+        },
+        "certificates": {
+          "certificate_required": true,
+          "certificate_duration_days": 180,
+          "auto_renew_certificates": false,
+          "revoke_on_compromise": true
+        },
+        "terminal_damage": {
+          "terminal_damage_enabled": true,
+          "hits_before_destruction": 2,
+          "critical_failure_chance": 15,
+          "repair_kit_required": true,
+          "damage_affects_functions": true
+        },
+        "network_simulation": {
+          "disconnect_enabled": true,
+          "client_sim_enabled": false
+        },
+        "zones_roleplay": {
+          "zones_enabled": true
+        },
+        "experience_ambiance": {
+          "realism_level": "simulation"
+        }
+      }
+    }
+  }
+}
