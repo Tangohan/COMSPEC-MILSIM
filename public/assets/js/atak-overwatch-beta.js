@@ -1423,6 +1423,7 @@
       if (airAssetMarkers[id]) {
         airAssetMarkers[id].setLatLng(latlng);
         airAssetMarkers[id].setIcon(icon);
+        airAssetMarkers[id].off('click').on('click', function () { openAirAssetSheet(a); });
         return;
       }
       var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
