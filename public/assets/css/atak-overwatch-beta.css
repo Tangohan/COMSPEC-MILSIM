@@ -256,7 +256,7 @@ button{cursor:pointer}
 .ow-bft-title svg{width:14px;height:14px;color:var(--athena-green);flex:0 0 auto}
 .ow-bft-sub{margin-left:auto;font-size:11px;font-weight:500;color:var(--athena-muted)}
 .ow-bft .ow-search{margin:0 0 8px}
-.ow-bft-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--athena-muted)}
+.ow-bft-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--athena-muted);flex-wrap:wrap}
 .ow-bft-filter .ow-select{flex:1}
 .ow-bft-filter select{width:100%;height:28px;background:#0e1211;border:1px solid #242c29;border-radius:6px;color:var(--athena-text);font-size:12px;padding:0 8px}
 .ow-bft-body{flex:1;min-height:0;overflow:auto;padding:0}
@@ -815,3 +815,411 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-export-field select{display:block;width:100%;margin-top:5px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);font-size:12px;padding:7px 9px}
 .ow-export-foot{padding:12px 16px 16px}
 .ow-nato-label span{font-weight:700;letter-spacing:.02em}
+
+/* Parité poste : Wave, avatars, effectifs, aérien / véhicules, zone de déplacement */
+.ow-bft-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}
+.ow-bft-chan.is-wave{color:#7dd3fc;background:rgba(56,189,248,.14)}
+#ow-filter-wave{margin-left:6px}
+#ow-filter-wave.is-active{background:rgba(56,189,248,.2);border-color:rgba(56,189,248,.45);color:#7dd3fc}
+.ow-effectifs{border-top:1px solid var(--athena-line);padding:8px 10px 10px;flex:0 0 auto;max-height:38%;display:flex;flex-direction:column;min-height:0}
+.ow-effectifs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--athena-muted)}
+.ow-effectifs-head strong{color:var(--athena-text);font-weight:700}
+.ow-effectifs-scroll{overflow:auto;min-height:0;border:1px solid var(--athena-line-2);border-radius:6px}
+.ow-effectifs-table{width:100%;border-collapse:collapse;font-size:11px}
+.ow-effectifs-table th,.ow-effectifs-table td{padding:5px 7px;border-bottom:1px solid var(--athena-line-2);text-align:left;white-space:nowrap}
+.ow-effectifs-table th{position:sticky;top:0;background:#121715;color:var(--athena-muted);font-weight:600;z-index:1}
+.ow-effectifs-table tr{cursor:pointer}
+.ow-effectifs-table tr:hover td{background:rgba(0,214,154,.06)}
+.ow-effectifs-table tr.is-active td{background:rgba(0,214,154,.12)}
+.ow-effectifs-table tr.is-offline td{color:var(--athena-muted)}
+.ow-effectifs-table td.is-mono{font-family:var(--ow-mono)}
+.ow-track-line{stroke-linecap:round;stroke-linejoin:round}
+.ow-track-line.is-stale{opacity:.45}
+.ow-gps-map-icon,.ow-air-map-icon{background:transparent;border:0}
+.ow-gps-pin{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #f59e0b;filter:drop-shadow(0 0 1px #000);display:block}
+.ow-gps-label,.ow-air-label{display:block;margin-top:2px;font-size:9px;font-weight:700;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap}
+.ow-air-glyph{color:#3b82f6;font-size:12px;font-weight:700;filter:drop-shadow(0 0 1px #000)}
+.ow-map-stage.atak-map-wrap .atak-reach-legend{left:.75rem;bottom:4.5rem;z-index:620;min-width:16rem;max-width:22rem;padding:.7rem .8rem .65rem;background:rgba(10,14,22,.92);border:1px solid rgba(148,163,184,.28);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);color:#e2e8f0}
+.ow-map-stage .atak-reach-legend__head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.25rem}
+.ow-map-stage .atak-reach-legend__head strong{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#86efac}
+.ow-map-stage .atak-reach-legend__close{border:1px solid rgba(148,163,184,.35);background:transparent;color:#cbd5e1;font-size:.65rem;padding:.15rem .4rem;border-radius:4px;cursor:pointer}
+.ow-map-stage .atak-reach-legend__status,.ow-map-stage .atak-reach-legend__grid,.ow-map-stage .atak-reach-legend__hint{margin:.15rem 0;font-size:.68rem;color:#cbd5e1}
+.ow-map-stage .atak-reach-legend__rings{list-style:none;margin:.4rem 0 .35rem;padding:0}
+.ow-map-stage .atak-reach-legend__rings li{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
+.ow-map-stage .atak-reach-swatch{width:.85rem;height:.85rem;border-radius:50%;flex-shrink:0}
+.ow-map-stage .atak-reach-swatch--foot{background:rgba(34,197,94,.35);border:2px solid #4ade80}
+.ow-map-stage .atak-reach-swatch--vehicle{background:rgba(245,158,11,.28);border:2px dashed #f59e0b}
+
+/* Dossier unité (extrait atak-cop) */
+/* COP Athena — fiche unité, tableau global, relief, timeline */
+
+.atak-dossier {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: min(360px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 16, 22, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  overflow: hidden;
+}
+.atak-dossier[hidden] { display: none !important; }
+.atak-dossier__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-dossier__cs {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.atak-dossier__sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.atak-dossier__close,
+.atak-cop__close {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.atak-dossier__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px 0;
+}
+.atak-dossier__tab {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.atak-dossier__tab.is-active {
+  color: #f8fafc;
+  border-bottom-color: #38bdf8;
+}
+.atak-dossier__body {
+  overflow: auto;
+  padding: 10px 14px 14px;
+}
+.atak-dossier__row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 8px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 2px 0;
+}
+.atak-dossier__k { color: #94a3b8; }
+.atak-dossier__v { color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.atak-dossier__block {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+.atak-dossier__block-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  margin-bottom: 6px;
+}
+.atak-dossier__empty { color: #94a3b8; font-size: 0.85rem; padding: 8px 14px; }
+.atak-occ { margin-top: 10px; }
+.atak-occ__title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.atak-occ__n {
+  display: inline-flex;
+  min-width: 1.25rem;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.16);
+  color: #e0f2fe;
+  font-variant-numeric: tabular-nums;
+}
+.atak-occ__list { list-style: none; margin: 0; padding: 0; }
+.atak-occ__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 0.82rem;
+}
+.atak-occ__name { color: #f1f5f9; }
+.atak-occ__seat { color: #94a3b8; font-size: 0.75rem; text-align: right; }
+.atak-occ--popup { margin-top: 6px; font-size: 0.78rem; color: #e2e8f0; }
+.atak-dossier--phone {
+  width: min(300px, calc(100% - 24px));
+}
+.atak-dossier--phone .atak-dossier__cs {
+  letter-spacing: 0.04em;
+}
+.atak-unit-popup--phone .atak-unit-popup__empty {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.atak-cop {
+  position: absolute;
+  inset: 8px;
+  z-index: 1300;
+  background: rgba(8, 12, 18, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  color: #e2e8f0;
+}
+.atak-cop[hidden] { display: none !important; }
+.atak-cop__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-cop__title {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.atak-cop__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+}
+.atak-cop__chip {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.atak-cop__chip.is-active {
+  background: #0e7490;
+  border-color: #22d3ee;
+  color: #fff;
+}
+.atak-cop__table-wrap {
+  overflow: auto;
+  flex: 1;
+  padding: 0 10px 12px;
+}
+.atak-cop table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.atak-cop th,
+.atak-cop td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  white-space: nowrap;
+}
+.atak-cop th {
+  cursor: pointer;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  position: sticky;
+  top: 0;
+  background: rgba(8, 12, 18, 0.98);
+}
+.atak-cop tbody tr { cursor: pointer; }
+.atak-cop tbody tr:hover { background: rgba(14, 116, 144, 0.18); }
+.atak-cop__empty { text-align: center; color: #94a3b8; padding: 24px !important; }
+
+.atak-timeline {
+  position: absolute;
+  left: 12px;
+  bottom: 40px;
+  width: min(420px, calc(100% - 18.5rem));
+  min-width: min(16rem, calc(100% - 24px));
+  max-height: 220px;
+  z-index: 1100;
+  background: rgba(12, 16, 22, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+  color: #e2e8f0;
+}
+.atak-timeline[hidden] { display: none !important; }
+.atak-timeline summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  list-style: none;
+}
+.atak-timeline summary::-webkit-details-marker { display: none; }
+.atak-timeline__list {
+  margin: 0;
+  padding: 0 12px 10px;
+  max-height: 170px;
+  overflow: auto;
+  list-style: none;
+}
+.atak-timeline__item {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr auto;
+  gap: 8px;
+  font-size: 0.75rem;
+  padding: 3px 0;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+}
+.atak-timeline__item time { color: #64748b; font-variant-numeric: tabular-nums; }
+.atak-timeline__item--warn { border-left-color: #f59e0b; }
+.atak-timeline__item--alert { border-left-color: #ef4444; }
+.atak-timeline__item--info { border-left-color: #38bdf8; }
+.atak-timeline__item--combat { border-left-color: #f97316; }
+.atak-timeline__item--loc { cursor: pointer; }
+.atak-timeline__item--loc:hover { background: rgba(249, 115, 22, 0.12); }
+.atak-timeline__src { color: #64748b; font-size: 0.65rem; }
+.atak-timeline__empty { color: #64748b; font-size: 0.78rem; padding: 0 12px 10px; }
+
+.atak-map-look__terrain {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+.atak-map-look__terrain .atak-map-look__key {
+  margin-bottom: 4px;
+}
+.atak-terrain-status {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 6px 0 0;
+}
+.atak-terrain-inventory {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+.atak-terrain-inventory__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 2px 0;
+  min-height: 1.5em;
+  line-height: 1.5;
+  font: 600 11px/1.5 var(--atak-font-secondary, ui-sans-serif, system-ui, sans-serif);
+}
+.atak-terrain-inventory__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.atak-terrain-inventory__value {
+  flex: 0 1 auto;
+  color: #cbd5e1;
+  text-align: right;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.atak-contour-label {
+  background: rgba(15, 23, 42, 0.72);
+  border: none;
+  color: #e7e5e4;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+
+/* Ops Radio / IFF / Pings (extrait compact pour Overwatch Beta) */
+.ow-ops-panel{padding:8px 10px 14px;overflow:auto;max-height:70vh}
+.ow-ops-panel .atak-panel-hint,.ow-ops-panel .atak-panel-strip-title{font-size:12px;color:var(--athena-muted);margin:0 0 8px}
+.ow-ops-panel .atak-ops-btn{appearance:none;border:1px solid var(--athena-line-2);background:#121715;color:var(--athena-text);border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer}
+.ow-ops-panel .atak-ops-btn--primary{background:rgba(0,214,154,.16);border-color:rgba(0,214,154,.4);color:var(--athena-green)}
+.ow-ops-panel .atak-ops-field{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;font-size:11px;color:var(--athena-muted)}
+.ow-ops-panel .atak-ops-field input,.ow-ops-panel .atak-ops-field select,.ow-ops-panel .atak-radio-field select{background:#0e1211;border:1px solid #242c29;border-radius:6px;color:var(--athena-text);padding:6px 8px}
+.ow-ops-panel .atak-radio-toolbar{display:grid;gap:8px;margin-bottom:8px}
+.ow-ops-panel .atak-radio-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--athena-text)}
+.ow-ops-panel .atak-radio-card{border:1px solid var(--athena-line-2);border-radius:8px;padding:8px;margin-bottom:8px;background:#0e1211}
+.ow-ops-panel .atak-radio-card--tx{border-color:rgba(231,177,77,.5)}
+.ow-ops-panel .atak-radio-card__head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ow-ops-panel .atak-radio-card__meta{font-size:11px;color:var(--athena-muted);margin:4px 0}
+.ow-ops-panel .atak-radio-card__actions{display:flex;gap:6px;flex-wrap:wrap}
+.ow-ops-panel .atak-radio-pill{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06)}
+.ow-ops-panel .atak-radio-pill--tx{color:#e7b14d;background:rgba(231,177,77,.15)}
+.ow-ops-panel .atak-radio-pill--listen{color:#7dd3fc;background:rgba(56,189,248,.14)}
+.ow-ops-panel .atak-radio-pill--wr,.ow-ops-panel .atak-radio-pill--gw{color:#7dd3fc}
+.ow-ops-panel .atak-radio-btn{appearance:none;border:1px solid var(--athena-line-2);background:transparent;color:var(--athena-text);border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer}
+.ow-ops-panel .atak-radio-btn--primary{border-color:rgba(0,214,154,.45);color:var(--athena-green)}
+.ow-ops-panel .atak-radio-listen-bar{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(56,189,248,.1);margin-bottom:8px}
+.ow-ops-panel .atak-radio-banner{padding:8px;border-radius:6px;margin-bottom:8px;font-size:12px}
+.ow-ops-panel .atak-radio-banner--warn{background:rgba(231,177,77,.12);color:#e7b14d}
+.ow-ops-panel .atak-radio-banner--ok{background:rgba(0,214,154,.12);color:var(--athena-green)}
+.ow-ops-panel .atak-iff-code{font-size:22px;font-weight:700;letter-spacing:.08em;margin:4px 0}
+.ow-ops-panel .atak-iff-asset{border:1px solid var(--athena-line-2);border-radius:8px;padding:8px;margin-bottom:6px}
+.ow-ops-panel .atak-iff-asset--ok{border-color:rgba(0,214,154,.4)}
+.ow-ops-panel .atak-iff-asset--err{border-color:rgba(224,91,99,.45)}
+.ow-ops-panel .atak-iff-asset--warn{border-color:rgba(231,177,77,.45)}
+.ow-ops-panel .atak-iff-asset--alert{box-shadow:0 0 0 1px rgba(224,91,99,.35)}
+.ow-ops-panel .atak-iff-feedback{font-size:12px;margin:8px 0}
+.ow-ops-panel .atak-iff-alert-banner{padding:8px;border-radius:6px;background:rgba(224,91,99,.12);color:#e05b63;margin-bottom:8px}
+.ow-ops-panel .atak-ping-item{display:flex;gap:6px;align-items:flex-start;border-bottom:1px solid var(--athena-line-2);padding:6px 0}
+.ow-ops-panel .atak-ping-item__main{flex:1;text-align:left;background:transparent;border:0;color:var(--athena-text);cursor:pointer;font-size:12px}
+.ow-ops-panel .atak-ping-item__del{border:0;background:transparent;color:var(--athena-muted);cursor:pointer;font-size:16px}
+.ow-ops-panel .atak-empty-state{padding:16px;text-align:center;color:var(--athena-muted)}
+.ow-map-stage .atak-dossier{right:12px;top:12px}
+#atak-ghost-trails+#ow-ghost-help,.ow-trail-toggles{margin:0}
+

@@ -59,6 +59,10 @@
   var nineLines = [];
   var casRows = [];
   var airAssets = [];
+  var gpsVehicles = [];
+  var gpsVehicleMarkers = {};
+  var airAssetMarkers = {};
+  var filterWave = false;
   var medevacs = [];
   var zoneAlerts = [];
   var selected = null;
@@ -232,6 +236,49 @@
     var raw = String(unit.type || unit.role || unit.vehicle_class || '').toLowerCase();
     return /vehicle|car|tank|armor|truck|boat/.test(raw) && !isAir(unit);
   }
+  function flagOn(value) {
+    return value === true || value === 1 || value === '1' || value === 'true';
+  }
+  function profileOf(unit) {
+    var mapUsers = window.ATAK_CALLSIGN_TO_USER || {};
+    var key = callsign(unit).toUpperCase();
+    return mapUsers[key] || null;
+  }
+  function isWave(unit) {
+    var extra = extraOf(unit);
+    return flagOn(extra.wr_mpu5) || flagOn(extra.wr_gateway) || flagOn(extra.wr_bridge);
+  }
+  function formatSpeedDisplay(speedMs) {
+    if (speedMs == null || !Number.isFinite(speedMs) || speedMs < 0) return '';
+    var kmh = speedMs * 3.6;
+    if (kmh < 10) return kmh.toFixed(1).replace('.', ',') + ' km/h (à pied)';
+    return Math.round(kmh) + ' km/h';
+  }
+  function seatLabelFr(seat) {
+    var s = String(seat || '').toLowerCase();
+    if (s === 'driver' || s === 'pilot') return 'Pilote';
+    if (s === 'commander' || s === 'leader') return 'Chef';
+    if (s === 'gunner') return 'Tireur';
+    if (s === 'copilot') return 'Copilote';
+    if (s === 'cargo' || s === 'passenger') return 'Passager';
+    return seat ? String(seat) : 'À bord';
+  }
+  function airOccupantsList(row) {
+    var occ = row && (row.occupants || row.crew);
+    if (typeof occ === 'string') {
+      try { occ = JSON.parse(occ); } catch (e) { occ = []; }
+    }
+    return Array.isArray(occ) ? occ : [];
+  }
+  function vehicleClassLabel(kind) {
+    var k = String(kind || '').toUpperCase();
+    if (k === 'HELICOPTER') return 'Hélicoptère';
+    if (k === 'FIXED_WING') return 'Avion';
+    if (k === 'UAV') return 'Drone';
+    if (k === 'BOAT') return 'Embarcation';
+    if (k === 'ARTILLERY') return 'Artillerie';
+    return 'Véhicule';
+  }
   function extraOf(unit) {
     var extra = unit.extra || unit.meta || {};
     if (typeof extra === 'string') {
@@ -336,9 +383,14 @@
     var av = document.getElementById('ow-drawer-avatar');
     var disc = isDisconnected(unit);
     var sideId = side(unit);
+    var profile = profileOf(unit);
     if (av) {
       av.hidden = false;
-      av.innerHTML = escapeHtml(initials(callsign(unit))) + '<span class="ow-bft-status"></span>';
+      if (profile && profile.avatarUrl) {
+        av.innerHTML = '<img class="ow-bft-avatar-img" src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="32" height="32" loading="lazy"><span class="ow-bft-status"></span>';
+      } else {
+        av.innerHTML = escapeHtml(initials(callsign(unit))) + '<span class="ow-bft-status"></span>';
+      }
       av.className = 'ow-drawer-avatar' +
         (disc ? ' is-offline' : ' is-live') +
         (sideId === 'hostile' ? ' is-hostile' : '') +
@@ -1258,6 +1310,135 @@
       renderArmaMarkers();
     }).catch(function () {});
   }
+  function clearGpsVehicleMarkers() {
+    Object.keys(gpsVehicleMarkers).forEach(function (id) {
+      try { map.removeLayer(gpsVehicleMarkers[id]); } catch (e) {}
+      delete gpsVehicleMarkers[id];
+    });
+  }
+  function renderGpsVehiclesOnMap(rows) {
+    gpsVehicles = Array.isArray(rows) ? rows : gpsVehicles;
+    if (hiddenLayers.vehicles) { clearGpsVehicleMarkers(); return; }
+    var seen = {};
+    gpsVehicles.forEach(function (item) {
+      if (!item) return;
+      var id = item.id != null ? String(item.id) : String(item.vehicle_callsign || '');
+      if (!id) return;
+      var x = Number(item.pos_x);
+      var y = Number(item.pos_y);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 1 && Math.abs(y) < 1)) return;
+      seen[id] = true;
+      var latlng = worldToLatLng(x, y);
+      var pretty = String(item.vehicle_name || item.vehicle_callsign || 'Véhicule');
+      var gps = String(item.mission_type || '').toUpperCase() === 'GPS_BEACON';
+      var color = gps ? '#38bdf8' : '#f59e0b';
+      var kind = gps ? 'Balise GPS' : 'Véhicule suivi';
+      var icon = L.divIcon({
+        className: 'ow-gps-map-icon',
+        html: '<span class="ow-gps-pin" style="border-bottom-color:' + color + '"></span><span class="ow-gps-label">' + escapeHtml(pretty) + '</span>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 16]
+      });
+      var popup = '<div class="ow-gps-popup"><strong>' + escapeHtml(pretty) + '</strong><br/>' +
+        escapeHtml(kind) + ' · ' + escapeHtml(vehicleClassLabel(item.vehicle_class)) +
+        (item.crew_count != null ? '<br/>À bord : ' + escapeHtml(String(item.crew_count)) : '') + '</div>';
+      if (gpsVehicleMarkers[id]) {
+        gpsVehicleMarkers[id].setLatLng(latlng);
+        gpsVehicleMarkers[id].setIcon(icon);
+        if (gpsVehicleMarkers[id].setPopupContent) gpsVehicleMarkers[id].setPopupContent(popup);
+        return;
+      }
+      var marker = L.marker(latlng, { icon: icon, zIndexOffset: 380 });
+      marker.bindPopup(popup);
+      marker.addTo(map);
+      gpsVehicleMarkers[id] = marker;
+    });
+    Object.keys(gpsVehicleMarkers).forEach(function (id) {
+      if (!seen[id]) {
+        try { map.removeLayer(gpsVehicleMarkers[id]); } catch (e) {}
+        delete gpsVehicleMarkers[id];
+      }
+    });
+  }
+  function loadVehicles() {
+    return api('/api/atak/vehicles?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      var rows = Array.isArray(payload && payload.vehicles) ? payload.vehicles : asList(payload, 'vehicles');
+      var now = Date.now();
+      gpsVehicles = rows.filter(function (item) {
+        if (!item) return false;
+        if (String(item.status || '').toUpperCase() === 'DESTROYED') return false;
+        var raw = item.last_seen_at || item.updated_at || '';
+        if (!raw) return true;
+        var ts = Date.parse(String(raw).indexOf('T') >= 0 ? String(raw) : String(raw).replace(' ', 'T'));
+        if (!Number.isFinite(ts)) return true;
+        return (now - ts) < (4 * 60 * 1000);
+      });
+      renderGpsVehiclesOnMap(gpsVehicles);
+    }).catch(function () {
+      gpsVehicles = [];
+      clearGpsVehicleMarkers();
+    });
+  }
+  function clearAirAssetMarkers() {
+    Object.keys(airAssetMarkers).forEach(function (id) {
+      try { map.removeLayer(airAssetMarkers[id]); } catch (e) {}
+      delete airAssetMarkers[id];
+    });
+  }
+  function renderAirAssetsOnMap(rows) {
+    airAssets = Array.isArray(rows) ? rows : airAssets;
+    if (hiddenLayers.air) { clearAirAssetMarkers(); return; }
+    var nato = window.NatoSidcIcons;
+    var seen = {};
+    airAssets.forEach(function (a) {
+      if (!a) return;
+      var id = 'air_' + String(a.callsign || a.call_sign || a.id || '').replace(/\s/g, '_');
+      if (!id || id === 'air_') return;
+      var x = Number(a.pos_x);
+      var y = Number(a.pos_y);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return;
+      seen[id] = true;
+      var latlng = worldToLatLng(x, y);
+      var airSide = String(a.side || 'WEST').toUpperCase();
+      var status = String(a.status || 'IN-FLIGHT').toUpperCase();
+      var aff = 'friend';
+      if (airSide === 'EAST') aff = 'hostile';
+      else if (airSide === 'GUER' || airSide === 'CIV' || status === 'SUSPECT') aff = 'unknown';
+      var label = a.callsign || a.call_sign || 'Aérien';
+      var icon = nato && nato.leafletDivIcon
+        ? nato.leafletDivIcon(L, {
+            affiliation: aff,
+            aircraftType: a.aircraft_type || 'plane',
+            role: a.model || a.aircraft_type || '',
+            callSign: label,
+            showLabel: true,
+            size: 22
+          })
+        : L.divIcon({
+            className: 'ow-air-map-icon',
+            html: '<span class="ow-air-glyph">▲</span><span class="ow-air-label">' + escapeHtml(label) + '</span>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+      if (airAssetMarkers[id]) {
+        airAssetMarkers[id].setLatLng(latlng);
+        airAssetMarkers[id].setIcon(icon);
+        return;
+      }
+      var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
+      marker.bindPopup('<strong>' + escapeHtml(label) + '</strong><br/>' +
+        escapeHtml(a.model || a.aircraft_type || '') + '<br/>' + escapeHtml(airStatusLabel(status)));
+      marker.on('click', function () { airLocate(a); });
+      marker.addTo(map);
+      airAssetMarkers[id] = marker;
+    });
+    Object.keys(airAssetMarkers).forEach(function (id) {
+      if (!seen[id]) {
+        try { map.removeLayer(airAssetMarkers[id]); } catch (e) {}
+        delete airAssetMarkers[id];
+      }
+    });
+  }
   function renderPresenceHeat() {
     if (presenceLayer) { map.removeLayer(presenceLayer); presenceLayer = null; }
     var box = document.getElementById('ow-presence-heat');
@@ -1663,6 +1844,13 @@
     else if (compromiseRaw === 'captured') { compromise = 'Saisi'; compromiseKind = 'bad'; }
     else if (compromiseRaw === 'compromised') { compromise = 'Compromis'; compromiseKind = 'bad'; }
     var lastPos = ageLabel(unit) || (isDisconnected(unit) ? 'hors liaison' : 'à l’instant');
+    var heading = unitHeading(unit);
+    var team = clean(unit.fire_team_label || extra.fire_team_label, '');
+    var grpName = clean(extra.group_name || unit.group_name || unit.group, '');
+    var leader = clean(extra.leader || extra.group_leader || unit.pilot || unit.leader, '');
+    var fuel = firstNumber(extra.fuel_pct, armaOf(unit).fuel_pct, unit.fuel_pct);
+    var ammo = clean(extra.ammo || armaOf(unit).ammo || unit.ammo, '');
+    var health = firstNumber(extra.health, armaOf(unit).health, unit.health);
     var phoneHtml = '<div class="ow-stat-grid">' +
       (certLabel ? '<div class="ow-stat"><div class="ow-stat-k">Certificat</div>' + pillHtml(certLabel, certKind) + '</div>' : '') +
       (compromise ? '<div class="ow-stat"><div class="ow-stat-k">Intégrité</div>' + pillHtml(compromise, compromiseKind) + '</div>' : '') +
@@ -1680,10 +1868,17 @@
         : '<p class="ow-note">Aucun autre membre du groupe localisé.</p>');
     document.getElementById('ow-drawer-body').innerHTML =
       '<div class="ow-stat-grid">' +
-      statCell('Vitesse', speed != null ? Math.round(speed * 3.6) + ' km/h' : '') +
+      statCell('Vitesse', formatSpeedDisplay(speed)) +
+      statCell('Cap', heading != null ? Math.round(heading) + '°' : '') +
       statCell('Altitude', alt != null ? Math.round(alt) + ' m' : '') +
       statCell('Dernière position', lastPos, { dim: true }) +
-      statCell('Grille', clean(unit.grid || unit.mgrs, grid), { mono: true }) +
+      statCell('Grille', clean(unit.grid || unit.grid_ref || unit.mgrs, grid), { mono: true }) +
+      (grpName ? statCell('Groupe', grpName) : '') +
+      (team ? statCell('Équipe', team) : '') +
+      (leader ? statCell('Chef', leader) : '') +
+      (fuel != null ? statCell('Carburant', Math.round(fuel) + ' %') : '') +
+      (ammo ? statCell('Munitions', ammo) : '') +
+      (health != null ? statCell('Santé', Math.round(health) + ' %') : '') +
       '</div>' +
       '<button type="button" class="ow-primary ow-btn-icon" data-center-selected>' +
       btnIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>') +
@@ -1706,6 +1901,12 @@
     renderSquadLinks();
     renderRangeRings();
     renderMap();
+    if (window.ATAKReachOverlay && typeof window.ATAKReachOverlay.select === 'function') {
+      try { window.ATAKReachOverlay.select(unit, { center: false }); } catch (e) {}
+    }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.open === 'function') {
+      try { window.ATAKUnitDossier.open(unit); } catch (e2) {}
+    }
   }
 
   function layerVisible(unit) {
@@ -1760,7 +1961,7 @@
         }
         markers[id].setZIndexOffset(isSel ? 800 : 400 - index);
         markers[id].off('click').on('click', function () { selectUnit(unit); });
-        appendTrack(id, trueLoc);
+        appendTrack(id, trueLoc, unit);
       });
     });
     Object.keys(markers).forEach(function (id) {
@@ -1901,22 +2102,37 @@
     fillGroupTaskSelects();
   }
 
-  function appendTrack(id, location) {
+  function trackColorForUnit(unit) {
+    var kind = side(unit);
+    if (kind === 'hostile') return '#e05b63';
+    if (kind === 'unknown') return '#e7b14d';
+    return '#00d69a';
+  }
+  function appendTrack(id, location, unit) {
     if (!trackSamples[id]) trackSamples[id] = [];
     var prev = trackSamples[id][trackSamples[id].length - 1];
     if (prev && map.distance(prev.ll, location) < 2.5) return;
-    trackSamples[id].push({ ll: location, t: Date.now() });
+    var live = !(unit && isDisconnected(unit));
+    trackSamples[id].push({ ll: location, t: Date.now(), live: live });
     if (trackSamples[id].length > 240) trackSamples[id].shift();
     var progress = document.getElementById('ow-progress-trail');
     var skipLine = !!(progress && progress.checked && selected && unitId(selected) === id);
+    var color = trackColorForUnit(unit || {});
+    var style = {
+      color: color,
+      weight: 2.25,
+      opacity: live ? 0.72 : 0.38,
+      dashArray: live ? null : '4 7',
+      interactive: false,
+      className: 'ow-track-line' + (live ? '' : ' is-stale')
+    };
     if (!trackLines[id]) {
-      trackLines[id] = L.polyline(trackSamples[id].map(function (row) { return row.ll; }), {
-        color: '#00d69a', weight: 2, opacity: 0.55, interactive: false, className: 'ow-track-line'
-      });
+      trackLines[id] = L.polyline(trackSamples[id].map(function (row) { return row.ll; }), style);
       if (tracksOn && !hiddenLayers.tracks && !skipLine) trackLines[id].addTo(map);
       return;
     }
     trackLines[id].setLatLngs(trackSamples[id].map(function (row) { return row.ll; }));
+    if (trackLines[id].setStyle) trackLines[id].setStyle(style);
     if (tracksOn && !hiddenLayers.tracks && !skipLine) {
       if (!map.hasLayer(trackLines[id])) trackLines[id].addTo(map);
     } else if (map.hasLayer(trackLines[id])) {
@@ -1968,21 +2184,36 @@
     var sideId = side(unit);
     var role = clean(unit.role, '');
     var relay = !disc && isBftRelay(unit);
+    var wave = isWave(unit);
+    var profile = profileOf(unit);
     var cls = 'ow-bft-contact' +
       (disc ? ' is-offline' : ' is-live') +
       (sideId === 'hostile' ? ' is-hostile' : '') +
       (sideId === 'unknown' ? ' is-unknown' : '') +
       (selectedId === unitId(unit) ? ' is-active' : '');
-    var chan = disc ? '' : ('<span class="ow-bft-chan ' + (relay ? 'is-relay' : 'is-direct') + '">' +
-      (relay ? 'RELAIS' : 'DIRECT') + '</span>');
+    var chanBits = [];
+    if (!disc) {
+      chanBits.push('<span class="ow-bft-chan ' + (relay ? 'is-relay' : 'is-direct') + '">' +
+        (relay ? 'RELAIS' : 'DIRECT') + '</span>');
+    }
+    if (wave) {
+      var extra = extraOf(unit);
+      chanBits.push('<span class="ow-bft-chan is-wave" title="Wave Relay">WAVE</span>');
+      if (flagOn(extra.wr_gateway)) chanBits.push('<span class="ow-bft-chan is-wave" title="Passerelle Wave">PASSERELLE</span>');
+      if (flagOn(extra.wr_bridge)) chanBits.push('<span class="ow-bft-chan is-wave" title="Pont radio actif">PONT</span>');
+    }
+    var chan = chanBits.join('');
     var locate = disc
       ? '<button type="button" class="ow-bft-locate" data-bft-locate="' + escapeHtml(unitId(unit)) +
         '" title="Centrer la carte sur la dernière position connue" aria-label="Dernière position connue">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>'
       : '';
     var grp = group(unit);
+    var avatarInner = (profile && profile.avatarUrl)
+      ? '<img class="ow-bft-avatar-img" src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="32" height="32" loading="lazy">'
+      : escapeHtml(initials(callsign(unit)));
     return '<div class="' + cls + '" data-unit-id="' + escapeHtml(unitId(unit)) + '" role="button" tabindex="0">' +
-      '<span class="ow-bft-avatar">' + escapeHtml(initials(callsign(unit))) + '<span class="ow-bft-status"></span></span>' +
+      '<span class="ow-bft-avatar">' + avatarInner + '<span class="ow-bft-status"></span></span>' +
       '<span class="ow-bft-info"><span class="ow-bft-top"><span class="ow-bft-name">' + escapeHtml(callsign(unit)) + '</span>' +
       (role ? '<span class="ow-bft-role">' + escapeHtml(role) + '</span>' : '') + '</span>' +
       '<span class="ow-bft-bottom"><span>' + escapeHtml(grp) + '</span><span class="ow-bft-sep"></span>' +
@@ -2013,12 +2244,43 @@
         return bftGroupHtml(key, groups[key], selectedId);
       }).join('') + '</div></div>';
   }
+  function renderEffectifsTable(list) {
+    var body = document.getElementById('ow-units-table-body');
+    var countEl = document.getElementById('ow-effectifs-count');
+    if (!body) return;
+    var rows = Array.isArray(list) ? list : visibleUnits();
+    if (countEl) countEl.textContent = String(rows.length);
+    body.innerHTML = rows.map(function (unit) {
+      var loc = point(unit);
+      var grid = loc ? Math.round(latLngToWorld(loc).x) + ' / ' + Math.round(latLngToWorld(loc).y) : clean(unit.grid || unit.grid_ref, '—');
+      var heading = unitHeading(unit);
+      var notes = clean(unit.notes || extraOf(unit).notes, '—');
+      return '<tr data-unit-id="' + escapeHtml(unitId(unit)) + '" class="' +
+        (isDisconnected(unit) ? 'is-offline' : 'is-live') +
+        (selected && unitId(selected) === unitId(unit) ? ' is-active' : '') + '">' +
+        '<td>' + escapeHtml(callsign(unit)) + '</td>' +
+        '<td>' + escapeHtml(clean(unit.role, '—')) + '</td>' +
+        '<td>' + escapeHtml(clean(unit.fire_team_label || group(unit), '—')) + '</td>' +
+        '<td>' + escapeHtml(isDisconnected(unit) ? 'Hors liaison' : 'En liaison') + '</td>' +
+        '<td>' + (heading != null ? escapeHtml(String(Math.round(heading)) + '°') : '—') + '</td>' +
+        '<td class="is-mono">' + escapeHtml(grid) + '</td>' +
+        '<td>' + escapeHtml(notes) + '</td>' +
+        '</tr>';
+    }).join('') || '<tr><td colspan="7" class="ow-help">Aucun effectif transmis.</td></tr>';
+  }
   function renderList() {
     var query = (document.getElementById('ow-search').value || '').trim().toLowerCase();
     var sideFilter = (document.getElementById('ow-side-filter') || {}).value || 'all';
+    var waveBtn = document.getElementById('ow-filter-wave');
+    if (waveBtn) {
+      waveBtn.classList.toggle('is-active', !!filterWave);
+      waveBtn.setAttribute('aria-pressed', filterWave ? 'true' : 'false');
+    }
     var visible = units.filter(function (unit) {
       if (tooOldToShow(unit)) return false;
       var disc = isDisconnected(unit);
+      if (filterWave && !isWave(unit)) return false;
+      if (sideFilter === 'wave' && !isWave(unit)) return false;
       if (sideFilter === 'live' && disc) return false;
       if (sideFilter === 'offline' && !disc) return false;
       if (sideFilter === 'friendly' || sideFilter === 'hostile' || sideFilter === 'unknown') {
@@ -2030,7 +2292,7 @@
     var liveRows = visible.filter(function (unit) { return !isDisconnected(unit); });
     var offRows = visible.filter(function (unit) { return isDisconnected(unit); });
     var html = bftSectionHtml('live', liveRows, selectedId) + bftSectionHtml('offline', offRows, selectedId);
-    var emptyMsg = (query || sideFilter !== 'all')
+    var emptyMsg = (query || sideFilter !== 'all' || filterWave)
       ? 'Aucun contact ne correspond à ce filtre.'
       : 'Aucun contact en liaison pour le moment.';
     document.getElementById('ow-contact-list').innerHTML = html ||
@@ -2040,6 +2302,7 @@
     if (bftCount) bftCount.textContent = 'BFT ' + n;
     var sub = document.getElementById('ow-bft-sub');
     if (sub) sub.textContent = n + ' unité' + (n > 1 ? 's' : '');
+    renderEffectifsTable(visible);
     syncEmptyNotice();
     renderHud();
     renderSquadList();
@@ -2085,6 +2348,15 @@
     renderList();
     syncStatus(true);
     window.dispatchEvent(new CustomEvent('overwatch:units-updated', { detail: { units: units } }));
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: units } }));
+    } catch (e) {}
+    if (window.ATAKRadio && typeof window.ATAKRadio.onUnitsUpdated === 'function') {
+      try { window.ATAKRadio.onUnitsUpdated(); } catch (e2) {}
+    }
+    if (window.ATAKUnitDossier && typeof window.ATAKUnitDossier.render === 'function') {
+      try { window.ATAKUnitDossier.render(); } catch (e3) {}
+    }
   }
 
   function syncStatus(ok) {
@@ -2106,9 +2378,17 @@
   function refreshUnits() {
     requestStarted = Date.now();
     return api('/api/units?mapId=' + encodeURIComponent(mapId) + '&include_gateway=1')
-      .then(applyPayload)
+      .then(function (payload) {
+        if (window.ATAKMap && typeof window.ATAKMap.setUnitsMarkers === 'function') {
+          window.ATAKMap.setUnitsMarkers(asList(payload, 'units'));
+        } else {
+          applyPayload(payload);
+        }
+      })
       .then(function () { return loadPoMarkers(); })
       .then(function () { return loadArmaMarkers(); })
+      .then(function () { return loadVehicles(); })
+      .then(function () { return loadAirAssets(); })
       .then(function () { return loadTerminals(); })
       .catch(function () { syncStatus(false); });
   }
@@ -4507,6 +4787,9 @@
         });
       }
       if (input.dataset.owLayer === 'shapes') loadShapes();
+      if (input.dataset.owLayer === 'vehicles') renderGpsVehiclesOnMap(gpsVehicles);
+      if (input.dataset.owLayer === 'air') renderAirAssetsOnMap(airAssets);
+      if (input.dataset.owLayer === 'arma-markers') renderArmaMarkers();
       renderMap();
     });
   });
@@ -4548,9 +4831,14 @@
 
   function loadAirAssets() {
     return api('/api/atak/air-assets?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
-      airAssets = asList(payload, 'items');
+      airAssets = Array.isArray(payload) ? payload : asList(payload, 'items');
       paintAirLists();
-    }).catch(function () { airAssets = []; });
+      renderAirAssetsOnMap(airAssets);
+      try { window.dispatchEvent(new CustomEvent('atak:air-markers-updated', { detail: { assets: airAssets } })); } catch (e) {}
+    }).catch(function () {
+      airAssets = [];
+      clearAirAssetMarkers();
+    });
   }
 
   function jtacRows() {
@@ -4678,16 +4966,35 @@
     var notes = String(row.checklist || row.notes || '').trim();
     if (notes.charAt(0) === '{') notes = '';
     var n = airCrewCount(row);
+    var occupants = airOccupantsList(row);
+    var chef = clean(row.leader || row.group_leader || row.pilot, '');
+    var team = clean(row.fire_team_label || row.team, '');
+    var grp = clean(row.group_name || row.group, '');
+    var ammo = clean(row.ammo || (row.source_arma && row.source_arma.ammo), '');
+    var model = clean(row.model || row.aircraft_type, '');
     var kv = '';
-    if (row.model) kv += '<span>Appareil</span><span>' + escapeHtml(row.model) + (row.aircraft_count > 1 ? ' ×' + row.aircraft_count : '') + '</span>';
+    kv += '<span>Situation</span><span>' + escapeHtml(status + (pilot ? ' · ' + pilot : '')) + '</span>';
+    if (model) kv += '<span>Modèle</span><span>' + escapeHtml(model) + (row.aircraft_count > 1 ? ' ×' + row.aircraft_count : '') + '</span>';
+    if (chef) kv += '<span>Chef</span><span>' + escapeHtml(chef) + '</span>';
+    if (team) kv += '<span>Équipe</span><span>' + escapeHtml(team) + '</span>';
+    if (grp) kv += '<span>Groupe</span><span>' + escapeHtml(grp) + '</span>';
     if (role) kv += '<span>Mission</span><span>' + escapeHtml(role) + '</span>';
     if (dest) kv += '<span>Destination</span><span>' + escapeHtml(dest) + '</span>';
     if (eta) kv += '<span>ETA</span><span>' + escapeHtml(eta.replace(/^Arrivée estimée /, '')) + '</span>';
     if (row.freq) kv += '<span>Fréquence</span><span>' + escapeHtml(row.freq) + '</span>';
     if (row.laser) kv += '<span>Code laser</span><span>' + escapeHtml(row.laser) + '</span>';
     if (row.auth_code || row.auth) kv += '<span>Authentification</span><span>' + escapeHtml(row.auth_code || row.auth) + '</span>';
-    if (n) kv += '<span>À bord</span><span>' + n + ' personne' + (n > 1 ? 's' : '') + '</span>';
+    if (occupants.length) {
+      kv += '<span>Équipage</span><span>' + occupants.map(function (o) {
+        var name = clean((o && (o.name || o.callsign || o.call_sign)) || '', '—');
+        var seat = seatLabelFr(o && (o.seat || o.role));
+        return escapeHtml(name) + (seat ? ' (' + escapeHtml(seat) + ')' : '');
+      }).join('<br/>') + '</span>';
+    } else if (n) {
+      kv += '<span>À bord</span><span>' + n + ' personne' + (n > 1 ? 's' : '') + '</span>';
+    }
     if (ordnance) kv += '<span>Emport</span><span>' + escapeHtml(ordnance) + '</span>';
+    if (ammo) kv += '<span>Munitions</span><span>' + escapeHtml(ammo) + '</span>';
     if (row.fuel_pct != null && row.fuel_pct !== '') kv += '<span>Carburant</span><span>' + escapeHtml(String(row.fuel_pct)) + ' %</span>';
     if (row.bingo_fuel) kv += '<span>Autonomie</span><span>' + escapeHtml(String(row.bingo_fuel)) + '</span>';
     if (notes) kv += '<span>Notes</span><span>' + escapeHtml(notes) + '</span>';
@@ -5206,6 +5513,33 @@
     try { window.dispatchEvent(new CustomEvent('overwatch:mission-bound')); } catch (eBound) {}
   }
 
+  function restoreOpsPanels() {
+    var host = document.getElementById('ow-legacy-ops');
+    if (!host) return;
+    ['tab-radio', 'tab-identification', 'tab-pings'].forEach(function (id) {
+      var panel = document.getElementById(id);
+      if (panel && panel.parentElement !== host) host.appendChild(panel);
+    });
+    host.hidden = true;
+  }
+  function showOpsPanel(panelId, kicker, title) {
+    var host = document.getElementById('ow-legacy-ops');
+    var panel = document.getElementById(panelId);
+    if (!panel) {
+      openDrawer(kicker, title, '<p class="ow-help">Panneau indisponible.</p>');
+      return;
+    }
+    restoreOpsPanels();
+    if (host) host.hidden = true;
+    openDrawer(kicker, title, '');
+    var body = document.getElementById('ow-drawer-body');
+    if (body) {
+      body.innerHTML = '';
+      body.appendChild(panel);
+      panel.hidden = false;
+      panel.style.display = '';
+    }
+  }
   function openView(name) {
     document.querySelectorAll('.ow-nav button, .ow-more-menu button[data-view]').forEach(function (button) {
       button.classList.toggle('is-active', button.dataset.view === name);
@@ -5213,11 +5547,12 @@
     var workspace = document.querySelector('.ow-workspace');
     workspace.classList.toggle('is-comms', name === 'comms');
     workspace.classList.toggle('is-settings', name === 'layers');
-    if (name === 'overwatch') { document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
+    if (name === 'overwatch') { restoreOpsPanels(); document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
-    if (name === 'layers') { openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
+    if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
       Promise.all([loadNine(), loadCas(), loadMedevac(), loadGroupTasks()]).then(function () {
+        restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
       });
@@ -5225,6 +5560,7 @@
     }
     if (name === 'air') {
       Promise.all([loadAirAssets(), loadNine(), loadCas()]).then(function () {
+        restoreOpsPanels();
         openDrawer('Appui aérien', 'Air', airHtml());
         bindDrawerForms();
         map.invalidateSize();
@@ -5232,7 +5568,31 @@
       return;
     }
     if (name === 'intel') {
-      loadPhotos().then(function () { openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
+      loadPhotos().then(function () { restoreOpsPanels(); openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
+      return;
+    }
+    if (name === 'radio') {
+      showOpsPanel('tab-radio', 'Radio', 'Proximité');
+      if (window.ATAKRadio && typeof window.ATAKRadio.render === 'function') {
+        try { window.ATAKRadio.render(); } catch (e) {}
+      }
+      return;
+    }
+    if (name === 'iff' || name === 'identification') {
+      showOpsPanel('tab-identification', 'Identification', 'IFF');
+      if (window.ATAKIFF && typeof window.ATAKIFF.refresh === 'function') {
+        try { window.ATAKIFF.refresh(); } catch (e) {}
+      }
+      if (window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
+        try { window.ATAKIFF.onTabActivated(); } catch (e2) {}
+      }
+      return;
+    }
+    if (name === 'pings') {
+      showOpsPanel('tab-pings', 'Pings', 'Repères');
+      if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+        try { window.ATAKPings.fetchPings(); } catch (e) {}
+      }
       return;
     }
     if (name === 'tools') {
@@ -5349,6 +5709,14 @@
       markerDepth: src.markerDepth !== false,
       markerMotion: src.markerMotion !== false,
       showIntelPhotoMarkers: src.showIntelPhotoMarkers !== false,
+      showUnitTrails: src.showUnitTrails !== false,
+      showUnitGhostTrails: !!src.showUnitGhostTrails || !!src.showSseGhostTracks,
+      showSseGhostTracks: !!src.showSseGhostTracks || !!src.showUnitGhostTrails,
+      showMotionArrows: src.showMotionArrows !== false,
+      showMotionProjection: src.showMotionProjection !== false,
+      showMotionTrail: src.showMotionTrail !== false,
+      showAssignmentLines: src.showAssignmentLines !== false,
+      showEtaLabels: !!src.showEtaLabels,
       terrainHillshade: src.terrainHillshade != null ? !!src.terrainHillshade : true,
       terrainContours10: src.terrainContours10 != null ? !!src.terrainContours10 : true,
       terrainContours50: !!src.terrainContours50,
@@ -5401,18 +5769,115 @@
   }
 
   window.ATAKSocket = { getMapId: function () { return mapId; }, getApiBase: function () { return apiBase; } };
+  function applyOffset(latOrY, lngOrX) {
+    return [Number(latOrY) + Number(config.offsetY || 0), Number(lngOrX) + Number(config.offsetX || 0)];
+  }
+  var mapPingMarkers = {};
+  function addTemporaryPingMarker(posX, posY, author, message, pingId) {
+    var x = Number(posX);
+    var y = Number(posY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    var ll = worldToLatLng(x, y);
+    var id = pingId != null && String(pingId) !== '' ? String(pingId) : ('live_' + Date.now());
+    if (mapPingMarkers[id]) {
+      try { map.removeLayer(mapPingMarkers[id]); } catch (e) {}
+    }
+    var marker = L.circleMarker(ll, {
+      radius: 7,
+      color: '#00d69a',
+      weight: 2,
+      fillColor: '#00d69a',
+      fillOpacity: 0.35
+    }).addTo(map);
+    marker.bindPopup('<strong>' + escapeHtml(author || 'Ping') + '</strong><br/>' + escapeHtml(message || ''));
+    mapPingMarkers[id] = marker;
+  }
+  function setPingsOnMap(list) {
+    var seen = {};
+    (Array.isArray(list) ? list : []).forEach(function (p) {
+      if (!p || p.pos_x == null || p.pos_y == null) return;
+      var id = p.id != null ? String(p.id) : ('p_' + p.pos_x + '_' + p.pos_y);
+      seen[id] = true;
+      addTemporaryPingMarker(p.pos_x, p.pos_y, p.author, p.message, id);
+    });
+    Object.keys(mapPingMarkers).forEach(function (id) {
+      if (!seen[id] && id.indexOf('live_') !== 0) {
+        try { map.removeLayer(mapPingMarkers[id]); } catch (e) {}
+        delete mapPingMarkers[id];
+      }
+    });
+  }
   window.ATAKMap = {
     getMap: function () { return map; },
     getBaseTileLayer: function () { return baseTileLayer; },
     worldFromLatLng: latLngToWorld,
     latLngFromWorld: function (x, y) { return worldToLatLng(x, y); },
+    applyOffset: applyOffset,
     invalidateSize: function () { try { map.invalidateSize({ animate: false }); } catch (e) {} },
     getDisplayPrefs: getDisplayPrefs,
-    patchDisplayPrefs: patchDisplayPrefs
+    patchDisplayPrefs: patchDisplayPrefs,
+    setGpsVehiclesOnMap: renderGpsVehiclesOnMap,
+    setAirAssets: function (rows) {
+      renderAirAssetsOnMap(rows);
+      try { window.dispatchEvent(new CustomEvent('atak:air-markers-updated', { detail: { assets: airAssets } })); } catch (e) {}
+    },
+    setUnitsMarkers: function (list) {
+      applyPayload(Array.isArray(list) ? { units: list } : list);
+    },
+    setPingsOnMap: setPingsOnMap,
+    addTemporaryPingMarker: addTemporaryPingMarker
+  };
+  window.ATAKAirAssets = {
+    getAssets: function () { return airAssets; }
   };
   window.ATAKUnits = {
     getUnits: function () { return units; },
-    setUnits: function (rows) { applyPayload(rows); wrapCot('a-f-G-U-C', { count: (rows || []).length }); }
+    setUnits: function (rows) { applyPayload(rows); wrapCot('a-f-G-U-C', { count: (rows || []).length }); },
+    parseCoords: function (u) {
+      var x = u && u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : NaN;
+      var y = u && u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : NaN;
+      if (isNaN(x) || isNaN(y)) {
+        var parts = String((u && u.grid_ref) || '').trim().split(/\s+/);
+        if (parts.length >= 2) { x = parseFloat(parts[0]); y = parseFloat(parts[1]); }
+      }
+      return { x: x, y: y };
+    },
+    unitAgeSeconds: function (u) { return unitAgeSec(u); },
+    resolveLiveStatus: function (u) {
+      if (isDisconnected(u)) return 'offline';
+      var st = String((u && u.status) || '').toLowerCase();
+      return st || 'linked';
+    },
+    formatAgeFr: function (sec) {
+      if (!Number.isFinite(sec)) return '';
+      if (sec < 5) return 'à l’instant';
+      if (sec < 60) return Math.round(sec) + ' s';
+      if (sec < 3600) return Math.round(sec / 60) + ' min';
+      return Math.round(sec / 3600) + ' h';
+    },
+    formatGrid: function (u) {
+      var loc = point(u);
+      if (!loc) return String((u && (u.grid_ref || u.grid)) || '').trim();
+      var w = latLngToWorld(loc);
+      return Math.round(w.x) + ' / ' + Math.round(w.y);
+    },
+    getUnitByKey: function (key) {
+      var k = String(key || '');
+      for (var i = 0; i < units.length; i++) {
+        var u = units[i];
+        var idKey = u && u.id != null ? 'id:' + String(u.id) : '';
+        var csKey = 'cs:' + callsign(u).toUpperCase();
+        if (k === idKey || k === csKey) return u;
+      }
+      return null;
+    },
+    getUnitById: function (id) {
+      var want = String(id || '');
+      for (var i = 0; i < units.length; i++) {
+        if (String(units[i].id || '') === want) return units[i];
+      }
+      return null;
+    }
   };
   window.ATAKChat = {
     getCachedMessages: function () { return chatMessages.concat(supportMessages); },
@@ -5434,6 +5899,39 @@
   };
   window.ATAKShowNotification = toast;
   window.ATAKShowError = toast;
+
+  function syncTrailPrefsFromUi() {
+    var trails = document.getElementById('atak-unit-trails');
+    var ghost = document.getElementById('atak-ghost-trails');
+    patchDisplayPrefs({
+      showUnitTrails: !trails || trails.checked,
+      showUnitGhostTrails: !!(ghost && ghost.checked),
+      showSseGhostTracks: !!(ghost && ghost.checked)
+    });
+  }
+  ['atak-unit-trails', 'atak-ghost-trails'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', syncTrailPrefsFromUi);
+  });
+  syncTrailPrefsFromUi();
+  try {
+    window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map } }));
+  } catch (eMap) {}
+  window.setTimeout(function () {
+    try {
+      window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map } }));
+    } catch (eMap2) {}
+    if (window.ATAKSseLayers && typeof window.ATAKSseLayers.startPolling === 'function') {
+      try { window.ATAKSseLayers.startPolling(); } catch (eSse) {}
+    }
+    if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+      try { window.ATAKPings.fetchPings(); } catch (ePing2) {}
+    }
+  }, 600);
+  if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+    try { window.ATAKPings.fetchPings(); } catch (ePing) {}
+  }
 
   function startPoll(ms) {
     if (pollTimer) window.clearInterval(pollTimer);
@@ -5526,6 +6024,23 @@
   document.getElementById('ow-search').addEventListener('input', renderList);
   var sideFilter = document.getElementById('ow-side-filter');
   if (sideFilter) sideFilter.addEventListener('change', renderList);
+  var waveFilterBtn = document.getElementById('ow-filter-wave');
+  if (waveFilterBtn) {
+    waveFilterBtn.addEventListener('click', function () {
+      filterWave = !filterWave;
+      renderList();
+    });
+  }
+  var effectifsBody = document.getElementById('ow-units-table-body');
+  if (effectifsBody) {
+    effectifsBody.addEventListener('click', function (event) {
+      var row = event.target.closest('tr[data-unit-id]');
+      if (!row) return;
+      var id = row.getAttribute('data-unit-id');
+      var unit = units.filter(function (u) { return unitId(u) === id; })[0];
+      if (unit) selectUnit(unit);
+    });
+  }
   document.getElementById('ow-channel-filter').addEventListener('input', renderChannels);
   var commsSearch = document.getElementById('ow-comms-search');
   if (commsSearch) commsSearch.addEventListener('input', function () { renderChatLog('ow-chat-log', chatMessages); });
@@ -5537,6 +6052,7 @@
     loadChat(activeChannel);
   });
   document.querySelector('[data-close-drawer]').addEventListener('click', function () {
+    restoreOpsPanels();
     document.getElementById('ow-drawer').hidden = true;
     lastSceneObject = null;
     if (window.OverwatchGlLayers && typeof window.OverwatchGlLayers.setFocus === 'function') {
