@@ -11,6 +11,16 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-202
 
 ---
 
+## Vague 2026-09-22 — Overwatch Beta / Athena
+
+### Nouveau — Surveillance automatique dans Support
+
+Dans **Support**, le poste affiche tout seul les incidents techniques : coupure brutale suspecte, gel de téléphone, versions Overwatch différentes, pack de développement, joueur en avance (parc en retard) ou joueur trop ancien. Les signalements manuels restent disponibles en dessous. Rechargez Overwatch Beta (Ctrl+F5).
+
+### Nouveau — Espace Réseau au poste
+
+Sur Overwatch Beta, **Réseau** dans la barre du haut liste les relais posés en jeu (état, portée, places, débit), les terminaux ATAK déjà remontés (certificat, dernière activité) et les satellites lorsqu’un catalogue est fourni. Un clic sur un relais recentre la carte ; un clic sur un terminal ouvre le contact lié. Rechargez Overwatch Beta (Ctrl+F5).
+
 ## Vague 2026-09-20 — Overwatch 1.6.9 / SSE 0.7.22 / Athena 1.0.165
 
 ### Nouveau — Notes de reconnaissance

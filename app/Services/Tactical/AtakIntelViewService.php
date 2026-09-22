@@ -7,6 +7,8 @@ namespace App\Services\Tactical;
 use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Services\Deployment\VersionCompatibility;
+use App\Services\Game\GameOverwatchExperienceService;
 use App\Support\ComspecApiKeyAuth;
 use App\Core\Session;
 
@@ -263,8 +265,51 @@ final class AtakIntelViewService
             $link = strtolower((string) ($extra['link_state'] ?? $status));
             $updated = strtotime((string) ($unit['updated_at'] ?? '')) ?: 0;
             $stale = $updated > 0 && ($now - $updated) > 180;
+            $crashed = $this->truthy($extra['device_crashed'] ?? null);
+            $restored = $this->looksLikeSessionRestore($extra);
+            $crashSuspect = (
+                ($link === 'offline' || $status === 'offline' || $link === 'lost')
+                && $updated > 0
+                && ($now - $updated) >= 20
+                && ($now - $updated) <= 240
+                && !$this->truthy($extra['intentional_disconnect'] ?? null)
+                && !$this->truthy($extra['logout'] ?? null)
+            );
 
-            if ($link === 'offline' || $status === 'offline' || $stale) {
+            if ($crashed) {
+                $alerts[] = [
+                    'code' => 'crash',
+                    'severity' => 'critical',
+                    'title' => 'Crash / gel terminal',
+                    'message' => ($cs !== '' ? $cs : 'Opérateur') . ' — le téléphone est gelé (crash simulé ou panne).',
+                    'call_sign' => $cs,
+                    'terminal_uid' => (string) ($extra['terminal_uid'] ?? ''),
+                    'at' => (string) ($unit['updated_at'] ?? ''),
+                    'kind' => 'crash',
+                ];
+            } elseif ($restored) {
+                $alerts[] = [
+                    'code' => 'crash_recover',
+                    'severity' => 'warn',
+                    'title' => 'Reprise après coupure',
+                    'message' => ($cs !== '' ? $cs : 'Opérateur') . ' — reprise de session après une coupure brutale (crash possible).',
+                    'call_sign' => $cs,
+                    'terminal_uid' => (string) ($extra['terminal_uid'] ?? ''),
+                    'at' => (string) ($unit['updated_at'] ?? ''),
+                    'kind' => 'crash',
+                ];
+            } elseif ($crashSuspect) {
+                $alerts[] = [
+                    'code' => 'crash_suspect',
+                    'severity' => 'warn',
+                    'title' => 'Coupure brutale suspectée',
+                    'message' => ($cs !== '' ? $cs : 'Opérateur') . ' — liaison coupée sans arrêt propre, dans les dernières minutes.',
+                    'call_sign' => $cs,
+                    'terminal_uid' => (string) ($extra['terminal_uid'] ?? ''),
+                    'at' => (string) ($unit['updated_at'] ?? ''),
+                    'kind' => 'crash',
+                ];
+            } elseif ($link === 'offline' || $status === 'offline' || $stale) {
                 $alerts[] = [
                     'code' => 'offline',
                     'severity' => 'warn',
@@ -299,6 +344,10 @@ final class AtakIntelViewService
             }
         }
 
+        foreach ($this->collectVersionAlerts($tenantId, is_array($units) ? $units : []) as $versionAlert) {
+            $alerts[] = $versionAlert;
+        }
+
         // Déduplique par code+callsign
         $seen = [];
         $unique = [];
@@ -312,6 +361,220 @@ final class AtakIntelViewService
         }
 
         return $unique;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $units
+     * @return list<array<string, mixed>>
+     */
+    private function collectVersionAlerts(int $tenantId, array $units): array
+    {
+        $alerts = [];
+        $minMod = '1.5.0';
+        try {
+            $exp = (new GameOverwatchExperienceService())->get($tenantId);
+            $candidate = trim((string) ($exp['min_mod_version'] ?? ''));
+            if ($candidate !== '') {
+                $minMod = $candidate;
+            }
+        } catch (\Throwable) {
+        }
+
+        /** @var list<array{call:string,uid:string,version:string,at:string}> $entries */
+        $entries = [];
+        try {
+            if ($this->realism->tablesReady()) {
+                foreach ($this->realism->listTerminals($tenantId) as $terminal) {
+                    if (AtakRealismRepository::isWebSessionTerminal($terminal)) {
+                        continue;
+                    }
+                    $ver = $this->normalizeModVersion((string) ($terminal['mod_version'] ?? ''));
+                    if ($ver === '') {
+                        continue;
+                    }
+                    $entries[] = [
+                        'call' => (string) ($terminal['operator_callsign'] ?? $terminal['terminal_label'] ?? ''),
+                        'uid' => (string) ($terminal['terminal_uid'] ?? ''),
+                        'version' => $ver,
+                        'at' => (string) ($terminal['updated_at'] ?? $terminal['last_seen_at'] ?? ''),
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        foreach ($units as $unit) {
+            if (!is_array($unit)) {
+                continue;
+            }
+            $extra = AtakDataRepository::decodeExtra($unit['extra'] ?? null);
+            $ver = $this->normalizeModVersion((string) (
+                $extra['mod_version'] ?? $unit['mod_version'] ?? $extra['overwatch_version'] ?? ''
+            ));
+            if ($ver === '') {
+                continue;
+            }
+            $cs = (string) ($unit['call_sign'] ?? '');
+            $uid = (string) ($extra['terminal_uid'] ?? '');
+            $dup = false;
+            foreach ($entries as $existing) {
+                if (($uid !== '' && $existing['uid'] === $uid) || ($cs !== '' && strcasecmp($existing['call'], $cs) === 0)) {
+                    $dup = true;
+                    break;
+                }
+            }
+            if ($dup) {
+                continue;
+            }
+            $entries[] = [
+                'call' => $cs,
+                'uid' => $uid,
+                'version' => $ver,
+                'at' => (string) ($unit['updated_at'] ?? ''),
+            ];
+        }
+
+        if ($entries === []) {
+            return [];
+        }
+
+        $stableCounts = [];
+        foreach ($entries as $row) {
+            if ($this->isDevModVersion($row['version'])) {
+                continue;
+            }
+            $stableCounts[$row['version']] = ($stableCounts[$row['version']] ?? 0) + 1;
+        }
+        $fleetRef = $minMod;
+        if ($stableCounts !== []) {
+            arsort($stableCounts);
+            $fleetRef = (string) array_key_first($stableCounts);
+        }
+
+        $uniqueStable = array_keys($stableCounts);
+        if (count($uniqueStable) > 1) {
+            $alerts[] = [
+                'code' => 'version_mismatch',
+                'severity' => 'warn',
+                'title' => 'Versions Overwatch différentes',
+                'message' => 'Plusieurs versions coexistent sur le théâtre : ' . implode(', ', $uniqueStable) . '. Référence parc : ' . $fleetRef . '.',
+                'call_sign' => '',
+                'terminal_uid' => '',
+                'at' => gmdate('Y-m-d H:i:s'),
+                'kind' => 'version',
+            ];
+        }
+
+        foreach ($entries as $row) {
+            $label = $row['call'] !== '' ? $row['call'] : 'Opérateur';
+            $ver = $row['version'];
+            if ($this->isDevModVersion($ver)) {
+                $alerts[] = [
+                    'code' => 'version_dev',
+                    'severity' => 'warn',
+                    'title' => 'Version de développement',
+                    'message' => $label . ' — pack de développement détecté (' . $ver . ').',
+                    'call_sign' => $row['call'],
+                    'terminal_uid' => $row['uid'],
+                    'at' => $row['at'],
+                    'kind' => 'version',
+                ];
+                continue;
+            }
+            if ($minMod !== '' && VersionCompatibility::compare($ver, $minMod) < 0) {
+                $alerts[] = [
+                    'code' => 'version_outdated',
+                    'severity' => 'critical',
+                    'title' => 'Pack trop ancien',
+                    'message' => $label . ' — Overwatch ' . $ver . ', minimum exigé ' . $minMod . '.',
+                    'call_sign' => $row['call'],
+                    'terminal_uid' => $row['uid'],
+                    'at' => $row['at'],
+                    'kind' => 'version',
+                ];
+                continue;
+            }
+            if ($fleetRef !== '' && VersionCompatibility::compare($ver, $fleetRef) < 0) {
+                $alerts[] = [
+                    'code' => 'version_behind',
+                    'severity' => 'warn',
+                    'title' => 'Joueur en retard sur le parc',
+                    'message' => $label . ' — Overwatch ' . $ver . ', alors que le parc est en ' . $fleetRef . '.',
+                    'call_sign' => $row['call'],
+                    'terminal_uid' => $row['uid'],
+                    'at' => $row['at'],
+                    'kind' => 'version',
+                ];
+            } elseif ($fleetRef !== '' && VersionCompatibility::compare($ver, $fleetRef) > 0) {
+                $alerts[] = [
+                    'code' => 'version_ahead',
+                    'severity' => 'warn',
+                    'title' => 'Joueur en avance / serveur en retard',
+                    'message' => $label . ' — Overwatch ' . $ver . ', plus récent que le parc (' . $fleetRef . '). Vérifiez le pack du serveur et des autres joueurs.',
+                    'call_sign' => $row['call'],
+                    'terminal_uid' => $row['uid'],
+                    'at' => $row['at'],
+                    'kind' => 'version',
+                ];
+            }
+        }
+
+        return $alerts;
+    }
+
+    private function normalizeModVersion(string $raw): string
+    {
+        $v = trim($raw);
+        if ($v === '' || strcasecmp($v, 'unknown') === 0 || strcasecmp($v, 'n/a') === 0) {
+            return '';
+        }
+
+        return $this->clip($v, 40);
+    }
+
+    private function isDevModVersion(string $version): bool
+    {
+        return (bool) preg_match('/(?:^|[.\-_])(dev|alpha|beta|rc\d*|git|local|wip|nightly)(?:$|[.\-_])/i', $version)
+            || str_contains(strtolower($version), '-dev')
+            || str_contains(strtolower($version), '.dev');
+    }
+
+    private function looksLikeSessionRestore(array $extra): bool
+    {
+        foreach (['session_restore', 'restored_session', 'ctd_restore', 'post_ctd'] as $key) {
+            if ($this->truthy($extra[$key] ?? null)) {
+                return true;
+            }
+        }
+        $reason = strtolower((string) ($extra['restore_reason'] ?? $extra['last_event'] ?? $extra['event'] ?? ''));
+
+        return $reason !== '' && (str_contains($reason, 'session_restore') || str_contains($reason, 'ctd') || str_contains($reason, 'crash'));
+    }
+
+    private function truthy(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value)) {
+            return ((float) $value) !== 0.0;
+        }
+        $raw = strtolower(trim((string) $value));
+
+        return in_array($raw, ['1', 'true', 'yes', 'on', 'oui'], true);
+    }
+
+    private function clip(string $value, int $max): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $max);
+        }
+
+        return substr($value, 0, $max);
     }
 
     /**

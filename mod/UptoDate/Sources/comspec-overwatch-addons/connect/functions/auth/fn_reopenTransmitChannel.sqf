@@ -45,9 +45,14 @@ private _fnc_forcePos = {
 
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
     ["INFO", "Athena", "Canal poste déjà ouvert — freins API levés"] call comspec_overwatch_connect_fnc_log;
-    // Boucles déjà là mais jamais de position : pousser tout de suite.
+    // Boucles déjà là mais jamais de position, OU sync devenue trop vieille :
+    // forcer une remontée (évite d’exiger un Resynch manuel pour réapparaître au poste).
     private _lastPos = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
-    if (!(_lastPos isEqualType 0) || {_lastPos < 0}) then {
+    private _needForce = true;
+    if ((_lastPos isEqualType 0) && {_lastPos >= 0}) then {
+        _needForce = (diag_tickTime - _lastPos) > 45;
+    };
+    if (_needForce) then {
         [] call _fnc_forcePos;
     };
     true

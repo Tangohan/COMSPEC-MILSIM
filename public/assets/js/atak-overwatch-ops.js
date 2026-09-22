@@ -1563,6 +1563,7 @@
     drawLos: drawLos,
     afterRenderMap: afterRenderMap,
     loadRelays: loadRelays,
+    getRelays: function () { return relays.slice(); },
     dropSitrepPin: function (id) {
       sitreps = sitreps.filter(function (row) { return String(row.id) !== String(id); });
       sitrepPins = sitrepPins.filter(function (layer) {

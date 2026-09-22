@@ -435,6 +435,14 @@
   function openPanel(name) {
     if (name === 'osint') openOsint();
     if (name === 'sats') {
+      if (window.OverwatchBeta && typeof window.OverwatchBeta.openView === 'function') {
+        window.OverwatchBeta.openView('network');
+        return;
+      }
+      try {
+        var btn = document.querySelector('.ow-nav [data-view="network"]');
+        if (btn) { btn.click(); return; }
+      } catch (e) {}
       toast('Aucun catalogue satellitaire n’est fourni. Rien n’est inventé.');
       return;
     }

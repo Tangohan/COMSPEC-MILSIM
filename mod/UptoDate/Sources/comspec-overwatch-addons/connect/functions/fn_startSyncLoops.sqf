@@ -21,8 +21,17 @@ if (isNil "COMSPEC_UplinkTerminalWatch") then {
         if (_acq < 0) then {
             missionNamespace setVariable ["COMSPEC_TerminalAcquiredAt", diag_tickTime, false];
             ["INFO", "Boot", "Téléphone pris — échanges dans quelques secondes"] call comspec_overwatch_connect_fnc_log;
+            // Ne pas attendre 8 s pour la première position : sinon Resynch manuel
+            // reste le seul moyen de réapparaître après un spawn tardif.
+            if (!isNil "comspec_overwatch_connect_fnc_updatePosition"
+                && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
+                && {!isNull player}
+                && {alive player}
+            ) then {
+                [player, true] call comspec_overwatch_connect_fnc_updatePosition;
+            };
         };
-        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_TerminalAcquiredAt", diag_tickTime])) < 8) exitWith {};
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_TerminalAcquiredAt", diag_tickTime])) < 3) exitWith {};
         if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
         [] call comspec_overwatch_connect_fnc_startSyncLoops;

@@ -29,6 +29,10 @@ private _fnc_skip = {
     missionNamespace setVariable ["COMSPEC_PosSkipLogAt", _now, false];
     missionNamespace setVariable ["COMSPEC_PosSkipReason", _reason, false];
     diag_log format ["[COMSPEC] UpdatePosition skip: %1 (state=%2)", _reason, getClientStateNumber];
+    // Journal session (throttlé) : visible dans le fichier COMSPEC_*.log
+    if (_force || {(_now - _last) >= 45}) then {
+        ["WARN", "Tx", format ["position non envoyée — %1", _reason]] call comspec_overwatch_connect_fnc_log;
+    };
 };
 
 // Grâce REAPP / respawn : pas de POST ni d’alerte médicale (spike ACE + MRH + handshake)
@@ -251,7 +255,16 @@ if (!_shouldSend) exitWith {};
 // Pipeline liaison unifié — position seule si écran cassé, blocage si hors couverture
 private _txGate = [false] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {
-    if (_force) then { _txGate getOrDefault ["reason", "blocked"] } else { nil };
+    // Répercuter l’état réel sur le bandeau (sinon OK + sync 2m alors que rien ne part).
+    private _ls = _txGate getOrDefault ["link_state", "offline"];
+    if (_ls isEqualType "" && {_ls isNotEqualTo ""}) then {
+        private _prev = missionNamespace getVariable ["COMSPEC_LinkState", "linked"];
+        if (_prev isNotEqualTo _ls) then {
+            missionNamespace setVariable ["COMSPEC_LinkState", _ls, false];
+            [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+        };
+    };
+    if (_force) then { _txGate getOrDefault ["reason", "blocked"] } else { nil }
 };
 private _txMode = _txGate getOrDefault ["mode", "full"];
 private _linkState = _txGate getOrDefault ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "linked"]];
@@ -602,6 +615,13 @@ missionNamespace setVariable ["COMSPEC_lastHeading", _heading, true];
 missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
+
+// Trace session (throttlée) pour diagnostiquer les disparitions au poste sans Resynch.
+private _lastPosLog = missionNamespace getVariable ["COMSPEC_PosTxLogAt", -1e9];
+if (_force || {(_now - _lastPosLog) >= 30}) then {
+    missionNamespace setVariable ["COMSPEC_PosTxLogAt", _now, false];
+    ["INFO", "Tx", format ["→ position %1", _callSign]] call comspec_overwatch_connect_fnc_log;
+};
 
 private _atakSync = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 if (_atakSync isEqualType createHashMap) then {

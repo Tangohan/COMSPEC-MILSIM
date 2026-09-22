@@ -67,6 +67,7 @@ $navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
 $navAtakSessionsActive = $boNavAtakOperators;
 $navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
 $navAtakControlActive = str_starts_with($p, 'back-office/atak/controle-serveur');
+$navAtakRelaysActive = str_starts_with($p, 'back-office/atak/relays-network');
 $navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay') || str_starts_with($p, 'admin/atak/roleplay');
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
@@ -146,6 +147,7 @@ $cooperationChildren = [
 $atakDeviceChildren = array_values(array_filter([
     ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'active' => $navAtakHubActive],
     ['label' => 'Contrôle de mission', 'href' => url('back-office/atak/controle-serveur'), 'active' => $navAtakControlActive],
+    ['label' => 'Réseau de relais', 'href' => url('back-office/atak/relays-network'), 'active' => $navAtakRelaysActive],
     ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
     ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
@@ -295,6 +297,12 @@ $athNavGroups = [
                 'active' => $navAtakControlActive,
             ],
             [
+                'label' => 'Réseau de relais',
+                'href' => url('back-office/atak/relays-network'),
+                'icon' => 'radio',
+                'active' => $navAtakRelaysActive,
+            ],
+            [
                 'label' => 'Accès renseignement',
                 'href' => url('back-office/renseignement/acces'),
                 'icon' => 'cert',
@@ -304,7 +312,7 @@ $athNavGroups = [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),
                 'icon' => 'phone',
-                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive || $navAtakControlActive || str_starts_with($p, 'back-office/atak/detection-marqueurs'),
+                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive || $navAtakControlActive || $navAtakRelaysActive || str_starts_with($p, 'back-office/atak/detection-marqueurs'),
                 'children' => $atakDeviceChildren,
             ],
             ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],

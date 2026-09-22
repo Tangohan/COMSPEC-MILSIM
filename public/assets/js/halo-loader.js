@@ -151,6 +151,11 @@
 
   function finish() {
     if (done) return;
+    if (!pageReadyForHalo()) {
+      /* Ne jamais retirer le loader tant que le sas session est ouvert. */
+      if (!skipAnim) window.requestAnimationFrame(tick);
+      return;
+    }
     done = true;
     try {
       sessionStorage.setItem(SEEN_KEY, '1');
@@ -165,22 +170,58 @@
     }, skipAnim ? 0 : (reduced ? 80 : 240));
   }
 
+  function pageReadyForHalo() {
+    if (document.readyState !== 'complete') return false;
+    if (document.body && document.body.classList.contains('atak-session-profile-locked')) {
+      return false;
+    }
+    var hub = document.getElementById('atak-session-profile-overlay');
+    if (hub && !hub.hidden) return false;
+    var guest = document.getElementById('atak-session-guest-hub');
+    if (guest && !guest.hidden) return false;
+    if (window.__ATAK_SESSION_GATE_PENDING__) return false;
+    return true;
+  }
+
   function tick(now) {
+    if (done) return;
     var elapsed = now - start;
     if (!reduced && !skipAnim) {
       phase = (elapsed / 900) % (Math.PI * 2);
     }
     var natural = Math.min(100, (elapsed / Math.max(maxMs, 1)) * 100);
     var eased = natural < 70 ? natural * 0.92 : 70 + (natural - 70) * 1.35;
-    var pageReady = document.readyState === 'complete';
+    var pageReady = pageReadyForHalo();
     if (pageReady && elapsed >= minMs) {
       setProgress(Math.max(eased, 96));
       finish();
       return;
     }
+    /* Sous le sas : plafonner à ~88 % et continuer l’animation jusqu’à l’entrée. */
     setProgress(Math.min(eased, pageReady ? 96 : 88));
     window.requestAnimationFrame(tick);
   }
+
+  /* Si un sas session existe sur la page, attendre sa décision avant de terminer. */
+  if (document.getElementById('atak-session-profile-overlay') || document.getElementById('atak-session-guest-hub')) {
+    window.__ATAK_SESSION_GATE_PENDING__ = true;
+  }
+  window.addEventListener('atak:session-gate-ready', function () {
+    window.__ATAK_SESSION_GATE_PENDING__ = false;
+    if (!done) window.requestAnimationFrame(tick);
+  });
+
+  try {
+    var lockObserver = new MutationObserver(function () {
+      if (done) return;
+      if (pageReadyForHalo()) {
+        window.requestAnimationFrame(tick);
+      }
+    });
+    if (document.body) {
+      lockObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+  } catch (eObs) { /* ignore */ }
 
   /**
    * True si la cible est le même document (seule l’ancre peut changer).
@@ -280,6 +321,14 @@
 
   if (skipAnim) {
     setProgress(100);
+    /* Sas ATAK ouvert : garder le loader jusqu’à « Entrer », même si déjà vu. */
+    if (window.__ATAK_SESSION_GATE_PENDING__) {
+      window.addEventListener('atak:session-gate-ready', function onGateSkip() {
+        window.removeEventListener('atak:session-gate-ready', onGateSkip);
+        finish();
+      });
+      return;
+    }
     finish();
     return;
   }
@@ -291,5 +340,8 @@
     if (performance.now() - start >= minMs) finish();
   });
 
-  window.setTimeout(finish, maxMs + 400);
+  /* Filet de sécurité : ne termine que si le sas est déjà levé. */
+  window.setTimeout(function () {
+    finish();
+  }, maxMs + 400);
 })();

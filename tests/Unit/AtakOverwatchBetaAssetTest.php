@@ -237,7 +237,7 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('is-stale-pos', $overwatchJs);
         self::assertStringContainsString("is-delayed", $overwatchJs);
         self::assertStringContainsString('var DELAYED_SEC = 72', $overwatchJs);
-        self::assertStringContainsString('var LIVE_TTL_SEC = 120', $overwatchJs);
+        self::assertStringContainsString('var LIVE_TTL_SEC = 180', $overwatchJs);
         self::assertStringContainsString('stampUnitAges', $overwatchJs);
         self::assertStringContainsString('ageSec >= DELAYED_SEC', $overwatchJs);
         self::assertStringNotContainsString('ageSec >= 20 && ageSec < 60', $overwatchJs);

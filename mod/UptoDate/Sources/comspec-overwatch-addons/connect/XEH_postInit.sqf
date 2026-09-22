@@ -230,7 +230,9 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         }] call CBA_fnc_addEventHandler;
     };
 
-    // Filet : canal ouvert mais boucles absentes / position jamais partie.
+    // Filet : canal ouvert mais boucles absentes / position jamais partie / sync devenue trop vieille.
+    // Avant : on ne forçait que si LastPositionSync < 0 → dès qu’une position avait été
+    // envoyée une fois, un blocage (backoff, relais, zone) exigeait un Resynch manuel.
     if (isNil "COMSPEC_PosUplinkWatchdog") then {
         COMSPEC_PosUplinkWatchdog = [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -244,7 +246,17 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
                 };
             };
             private _lastPos = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
-            if ((_lastPos isEqualType 0) && {_lastPos >= 0}) exitWith {};
+            private _stale = true;
+            if ((_lastPos isEqualType 0) && {_lastPos >= 0}) then {
+                _stale = (diag_tickTime - _lastPos) > 60;
+            };
+            if (!_stale) exitWith {};
+            private _lastTry = missionNamespace getVariable ["COMSPEC_PosWatchdogForceAt", -1e9];
+            if ((diag_tickTime - _lastTry) < 20) exitWith {};
+            missionNamespace setVariable ["COMSPEC_PosWatchdogForceAt", diag_tickTime, false];
+            // Comme Resynch : lever les freins API sinon la force échoue encore.
+            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+            missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
             if (!isNil "comspec_overwatch_connect_fnc_updatePosition") then {
                 [player, true] call comspec_overwatch_connect_fnc_updatePosition;
             };
@@ -364,6 +376,33 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
 
         if (isNull player || {!alive player} || {isNull findDisplay 46}) exitWith {
             ["WARN", "Boot", "Spawn non stabilisé — sync différée annulée"] call comspec_overwatch_connect_fnc_log;
+            // Filet : après un respawn / Zeus, relancer dès que le joueur est de nouveau jouable.
+            if (isNil "COMSPEC_SpawnRetryWatch") then {
+                COMSPEC_SpawnRetryWatch = [{
+                    if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
+                        if (!isNil "COMSPEC_SpawnRetryWatch") then {
+                            [COMSPEC_SpawnRetryWatch] call CBA_fnc_removePerFrameHandler;
+                            COMSPEC_SpawnRetryWatch = nil;
+                        };
+                    };
+                    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+                    if (isNull player || {!alive player} || {isNull findDisplay 46}) exitWith {};
+                    if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+                    private _p = getPosWorld player;
+                    if ((abs (_p select 0) < 1) && {abs (_p select 1) < 1}) exitWith {};
+                    if (!isNil "COMSPEC_SpawnRetryWatch") then {
+                        [COMSPEC_SpawnRetryWatch] call CBA_fnc_removePerFrameHandler;
+                        COMSPEC_SpawnRetryWatch = nil;
+                    };
+                    ["INFO", "Boot", "Spawn rétabli — relance des boucles de sync"] call comspec_overwatch_connect_fnc_log;
+                    if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
+                        [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                    } else {
+                        [] call comspec_overwatch_connect_fnc_startSyncLoops;
+                    };
+                }, 5] call CBA_fnc_addPerFrameHandler;
+            };
         };
 
         missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];

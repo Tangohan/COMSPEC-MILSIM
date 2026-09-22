@@ -1583,10 +1583,14 @@ return function (Router $router) {
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->delete('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/roleplay/intel-scramble', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'intelScrambleRedirect'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/api/atak/roleplay/server-tests', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'serverTests'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay')), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

@@ -520,6 +520,7 @@ window.ATAKSessionProfile = (function () {
     var overlay = document.getElementById('atak-session-profile-overlay');
     if (!overlay) return;
     hubMode = mode || 'onboarding';
+    window.__ATAK_SESSION_GATE_PENDING__ = true;
     var suggested = state || detectSuggestions();
     fillIdentity();
     fillForm(suggested);
@@ -529,7 +530,7 @@ window.ATAKSessionProfile = (function () {
     overlay.classList.toggle('atak-session-hub--edit', hubMode === 'edit');
     overlay.classList.toggle('atak-session-hub--resume', hubMode === 'resume');
     setBodyLocked(true);
-    dismissHalo();
+    /* Ne pas tuer le loader ici : il se termine après « Entrer dans la session ». */
 
     if (hubMode === 'edit') {
       setStep('profile');
@@ -561,10 +562,11 @@ window.ATAKSessionProfile = (function () {
       fireReady();
       return;
     }
+    window.__ATAK_SESSION_GATE_PENDING__ = true;
     guest.hidden = false;
     guest.setAttribute('aria-hidden', 'false');
     setBodyLocked(true);
-    dismissHalo();
+    /* Loader conservé sous le sas invité jusqu’à « Continuer ». */
     var btn = document.getElementById('atak-guest-continue');
     if (btn && typeof btn.focus === 'function') {
       try {
@@ -578,6 +580,10 @@ window.ATAKSessionProfile = (function () {
   function fireReady() {
     if (readyFired) return;
     readyFired = true;
+    try {
+      window.__ATAK_SESSION_GATE_PENDING__ = false;
+      window.dispatchEvent(new CustomEvent('atak:session-gate-ready'));
+    } catch (eGate) {}
     readyCallbacks.forEach(function (cb) {
       try {
         cb(state);
@@ -598,6 +604,14 @@ window.ATAKSessionProfile = (function () {
   function enterSession() {
     markWelcomeSeen();
     hideOverlay();
+    /* Le loader Halo reste visible jusqu’à fireReady (puis se termine tout seul). */
+    var halo = document.getElementById('halo-loader');
+    if (halo) {
+      halo.classList.remove('is-done');
+      halo.setAttribute('aria-busy', 'true');
+      halo.style.display = '';
+      try { sessionStorage.removeItem(halo.getAttribute('data-halo-seen-key') || ''); } catch (e) {}
+    }
     fireReady();
   }
 

@@ -4,6 +4,7 @@
 .halo-loader {
   position: fixed;
   inset: 0;
+  /* Sous le sas session ATAK (100050) : visible au boot et juste après « Entrer ». */
   z-index: 99999;
   display: flex;
   flex-direction: column;

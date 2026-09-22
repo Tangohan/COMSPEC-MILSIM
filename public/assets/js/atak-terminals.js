@@ -143,7 +143,7 @@
     return null;
   }
 
-  var TERMINAL_LIVE_MS = 120 * 1000;
+  var TERMINAL_LIVE_MS = 180 * 1000;
 
   function terminalLiveStatus(t, unit) {
     if (unit && window.ATAKUnits && typeof window.ATAKUnits.resolveLiveStatus === 'function') {

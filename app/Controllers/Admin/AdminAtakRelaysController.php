@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRelayRepository;
+use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 
 /**
@@ -46,13 +47,27 @@ final class AdminAtakRelaysController
         // Calculer statistiques
         $stats = $this->calculateStats($relays);
 
+        $linkViaRelays = false;
+        try {
+            $roleplay = (new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
+            $linkViaRelays = !empty($roleplay['link_via_relays']);
+        } catch (\Throwable) {
+            $linkViaRelays = false;
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.atak.relays_network',
-            'title' => 'Réseau de relais ATAK',
-            'pageTitle' => 'Réseau de relais ATAK',
+            'title' => 'Réseau de relais',
+            'pageTitle' => 'Réseau de relais',
+            'boPageTitle' => 'Réseau de relais',
+            'boPageKicker' => 'ATAK · RELAIS',
+            'boPageSubtitle' => 'Mâts Relais vus depuis le théâtre : état, portée, places et fiabilité.',
+            'boPageGroup' => 'ATAK',
+            'boSkipPageHead' => true,
             'tenant' => $tenant,
             'relays' => $relays,
             'stats' => $stats,
+            'linkViaRelays' => $linkViaRelays,
         ]);
     }
 

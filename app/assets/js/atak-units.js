@@ -8,7 +8,7 @@ window.ATAKUnits = (function () {
   /** Empreinte du dernier rendu liste/table — évite rebuild DOM à chaque poll. */
   var lastRenderFp = '';
   /** Aligné sur AtakDataRepository::UNIT_LIVE_TTL_SECONDS (sec). */
-  var LIVE_TTL_MS = 120 * 1000;
+  var LIVE_TTL_MS = 180 * 1000;
   var ORIGIN_EPS = 0.5;
 
   function getApiBase() {
