@@ -90,15 +90,6 @@ final class AtakRealismApiController
             ], 500);
         }
     }
-        
-        return Response::json([
-            'ok' => true,
-            'config' => $configJson,
-            'version' => $config['config_version'],
-            'config_name' => $config['config_name'],
-            'updated_at' => $config['updated_at'],
-        ]);
-    }
 
     /**
      * Endpoint POST pour calculer les effets météo sur la portée des relais.
