@@ -1360,6 +1360,7 @@
         }
         if (tip && armaMarkerLayers[id].setTooltipContent) armaMarkerLayers[id].setTooltipContent(tip);
         else if (!tip && armaMarkerLayers[id].unbindTooltip) armaMarkerLayers[id].unbindTooltip();
+        bindArmaMarkerEdit(armaMarkerLayers[id], id);
         return;
       }
       var layer = null;
@@ -1374,10 +1375,157 @@
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
       bindLayerContext(layer, 'arma', id, title);
+      bindArmaMarkerEdit(layer, id);
     });
     Object.keys(armaMarkerLayers).forEach(function (id) {
       if (!seen[id]) { map.removeLayer(armaMarkerLayers[id]); delete armaMarkerLayers[id]; }
     });
+  }
+  function bindArmaMarkerEdit(layer, id) {
+    if (!layer || layer._owEditBound) return;
+    layer._owEditBound = true;
+    layer.on('click', function (event) {
+      if (activeTool && activeTool !== 'cursor') return;
+      L.DomEvent.stop(event);
+      openArmaMarkerSheet(id);
+    });
+  }
+  function markerIconOptions(selected) {
+    var opts = [
+      ['mil_dot', 'Repère'],
+      ['mil_triangle', 'Triangle'],
+      ['mil_box', 'Carré'],
+      ['mil_circle', 'Cercle'],
+      ['mil_flag', 'Drapeau'],
+      ['mil_warning', 'Alerte'],
+      ['mil_objective', 'Objectif'],
+      ['mil_destroy', 'Destruction'],
+      ['loc_hospital', 'Poste médical'],
+      ['loc_fuelstation', 'Carburant'],
+      ['loc_transmitter', 'Antenne'],
+      ['b_hq', 'QG ami'],
+      ['b_air', 'Air ami'],
+      ['b_installation', 'Installation amie'],
+      ['o_installation', 'Installation hostile'],
+      ['n_unknown', 'Inconnu'],
+      ['hd_dot', 'Repère (main)'],
+      ['hd_flag', 'Drapeau (main)']
+    ];
+    var sel = String(selected || '').toLowerCase();
+    return opts.map(function (pair) {
+      return '<option value="' + escapeHtml(pair[0]) + '"' + (sel === pair[0] ? ' selected' : '') + '>' + escapeHtml(pair[1]) + '</option>';
+    }).join('');
+  }
+  function markerColorOptions(selected) {
+    var opts = [
+      ['ColorBlue', 'Bleu'],
+      ['ColorRed', 'Rouge'],
+      ['ColorGreen', 'Vert'],
+      ['ColorYellow', 'Jaune'],
+      ['ColorOrange', 'Orange'],
+      ['ColorWhite', 'Blanc'],
+      ['ColorBlack', 'Noir'],
+      ['ColorBrown', 'Brun'],
+      ['ColorPink', 'Rose'],
+      ['ColorKhaki', 'Kaki'],
+      ['ColorWEST', 'Camp ami'],
+      ['ColorEAST', 'Camp adverse'],
+      ['ColorGUER', 'Indépendant']
+    ];
+    var raw = String(selected || '');
+    var sel = raw.toLowerCase();
+    var html = opts.map(function (pair) {
+      var match = sel === pair[0].toLowerCase() || sel === ('#' + pair[0].toLowerCase());
+      return '<option value="' + escapeHtml(pair[0]) + '"' + (match ? ' selected' : '') + '>' + escapeHtml(pair[1]) + '</option>';
+    }).join('');
+    if (raw && raw.charAt(0) === '#' && opts.every(function (p) { return p[0].toLowerCase() !== sel; })) {
+      html = '<option value="' + escapeHtml(raw) + '" selected>Couleur actuelle</option>' + html;
+    }
+    return html;
+  }
+  function armaMarkerSheetHtml(row) {
+    var data = parseMarkerData(row);
+    var helper = window.ArmaMapMarkers;
+    var name = helper && helper.labelOf ? helper.labelOf(data) : (data.text || data.label || '');
+    var desc = String(data.description || '').trim();
+    var type = String(data.type || data.icon || 'mil_dot').toLowerCase();
+    var color = String(data.color || 'ColorBlue');
+    var permanent = !!(data.web_permanent);
+    return '<p class="ow-help">Modifiez le rendu au poste. Si le marqueur est permanent, le jeu ne peut plus l’effacer ni écraser son nom et son icône.</p>' +
+      '<form class="ow-form-grid" id="ow-marker-edit-form" data-marker-id="' + escapeHtml(String(row.id || '')) + '">' +
+      '<label>Nom<input name="text" required maxlength="80" placeholder="Nom affiché sur la carte" value="' + escapeHtml(name) + '"></label>' +
+      '<label>Description<textarea name="description" maxlength="280" placeholder="Précision pour le poste…">' + escapeHtml(desc) + '</textarea></label>' +
+      '<label>Icône<select name="type">' + markerIconOptions(type) + '</select></label>' +
+      '<label>Couleur<select name="color">' + markerColorOptions(color) + '</select></label>' +
+      '<label class="ow-check"><input type="checkbox" name="permanent"' + (permanent ? ' checked' : '') + '> Permanent sur le serveur</label>' +
+      '<button class="ow-primary" type="submit">Enregistrer</button>' +
+      '<button class="ow-secondary" type="button" data-del-arma="' + escapeHtml(String(row.id || '')) + '">Retirer du poste</button>' +
+      '</form>';
+  }
+  function openArmaMarkerSheet(id) {
+    var row = armaMarkerRows.filter(function (item) { return String(item.id) === String(id); })[0];
+    if (!row) {
+      toast('Marqueur introuvable.');
+      return;
+    }
+    var data = parseMarkerData(row);
+    var helper = window.ArmaMapMarkers;
+    var title = helper && helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
+    selected = null;
+    closeUnitDossier();
+    clearDrawerContactHead();
+    document.getElementById('ow-drawer-kicker').textContent = 'Marqueur du théâtre';
+    document.getElementById('ow-drawer-title').textContent = clean(title, 'Repère');
+    document.getElementById('ow-drawer-body').innerHTML = armaMarkerSheetHtml(row);
+    document.getElementById('ow-drawer').hidden = false;
+    bindDrawerForms();
+    var world = markerWorld(data) || (helper && helper.parsePos ? helper.parsePos(data) : null);
+    if (world) {
+      var ll = worldToLatLng(world.x, world.y);
+      if (ll) map.setView(ll, Math.max(map.getZoom(), 4));
+    }
+  }
+  function saveArmaMarkerEdit(form) {
+    var id = form.getAttribute('data-marker-id');
+    if (!id) return;
+    var data = new FormData(form);
+    var body = {
+      mapId: mapId,
+      text: String(data.get('text') || '').trim(),
+      description: String(data.get('description') || '').trim(),
+      type: String(data.get('type') || 'mil_dot'),
+      color: String(data.get('color') || 'ColorBlue'),
+      permanent: !!(form.querySelector('[name="permanent"]') && form.querySelector('[name="permanent"]').checked)
+    };
+    if (!body.text) {
+      toast('Indiquez un nom.');
+      return;
+    }
+    api('/api/markers/' + encodeURIComponent(id), { method: 'PATCH', body: body })
+      .then(function (row) {
+        toast('Marqueur mis à jour.');
+        var next = Array.isArray(armaMarkerRows) ? armaMarkerRows.slice() : [];
+        var found = false;
+        next = next.map(function (item) {
+          if (String(item.id) !== String(id)) return item;
+          found = true;
+          return Object.assign({}, item, {
+            markerData: row && row.markerData != null ? row.markerData : item.markerData,
+            marker_data: row && row.markerData != null ? row.markerData : item.marker_data
+          });
+        });
+        if (!found && row) next.push(row);
+        armaMarkerRows = next;
+        if (window.OverwatchOps && window.OverwatchOps.setArmaRows) window.OverwatchOps.setArmaRows(armaMarkerRows);
+        // Forcer le rebuild d’icône (sinon setIcon peut être sauté sur égalité partielle).
+        if (armaMarkerLayers[id]) {
+          try { map.removeLayer(armaMarkerLayers[id]); } catch (e) {}
+          delete armaMarkerLayers[id];
+        }
+        renderArmaMarkers();
+        openArmaMarkerSheet(id);
+      })
+      .catch(function () { toast('Impossible d’enregistrer ce marqueur.'); });
   }
   function loadArmaMarkers() {
     return api('/api/atak/markers?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
@@ -4700,12 +4848,14 @@
     ctxTarget = target || null;
     var group = document.getElementById('ow-ctx-delete-group');
     var btn = document.getElementById('ow-ctx-delete');
+    var editBtn = document.getElementById('ow-ctx-edit-arma');
     var show = !!target;
     if (group) {
       group.hidden = !show;
       group.textContent = (target && target.label) ? String(target.label) : 'Élément';
     }
     if (btn) btn.hidden = !show;
+    if (editBtn) editBtn.hidden = !(target && target.kind === 'arma');
   }
 
   function rememberClick(ll) {
@@ -4770,6 +4920,10 @@
     var ll = ctxLatLng;
     hideContext();
     if (act === 'delete') { deleteMapTarget(target); return; }
+    if (act === 'edit-arma') {
+      if (target && target.kind === 'arma' && target.id) openArmaMarkerSheet(target.id);
+      return;
+    }
     if (act === 'marker') saveMarker(ll, 'Marqueur');
     if (act === 'ping') {
       if (window.OverwatchOps && window.OverwatchOps.openPing) window.OverwatchOps.openPing(ll);
@@ -5055,7 +5209,11 @@
   function airAssetDetailHtml(row) {
     var card = airAssetCardHtml(row);
     // La carte liste est un bouton : pour le tiroir on garde le contenu sans wrapper interactif.
-    return '<div class="ow-air-sheet">' + card.replace(/^<button\b[^>]*>/, '<div class="ow-air-card is-sheet">').replace(/<\/button>$/, '</div>') + '</div>';
+    var sheet = '<div class="ow-air-sheet">' + card.replace(/^<button\b[^>]*>/, '<div class="ow-air-card is-sheet">').replace(/<\/button>$/, '</div>') + '</div>';
+    return sheet +
+      '<p class="ow-kicker">Manifeste de vol</p>' +
+      '<p class="ow-help">Consultez la fiche ci-dessus, puis mettez à jour le manifeste si besoin. Les changements sont visibles immédiatement pour le poste.</p>' +
+      manifestFormHtml(row);
   }
   function openAirAssetSheet(row) {
     var asset = normalizeAirAsset(row);
@@ -5088,6 +5246,7 @@
     document.getElementById('ow-drawer-title').textContent = clean(asset.callsign, 'Aéronef');
     document.getElementById('ow-drawer-body').innerHTML = airAssetDetailHtml(asset);
     document.getElementById('ow-drawer').hidden = false;
+    bindDrawerForms();
   }
   function airLocate(row) {
     openAirAssetSheet(row);
@@ -5174,9 +5333,86 @@
       '<button class="ow-primary" type="submit">Envoyer la demande</button></form>';
   }
 
+  function manifestCrewText(row) {
+    var occupants = airOccupantsList(row || {});
+    if (!occupants.length) return '';
+    return occupants.map(function (o) {
+      var name = clean((o && (o.name || o.callsign || o.call_sign)) || '', '');
+      var seat = seatLabelFr(o && (o.seat || o.role));
+      if (!name) return '';
+      return seat ? (name + ' — ' + seat) : name;
+    }).filter(Boolean).join('\n');
+  }
+
+  function manifestSelectOptions(pairs, selected) {
+    var sel = String(selected || '').toLowerCase();
+    return pairs.map(function (pair) {
+      var value = pair[0];
+      var label = pair[1];
+      var isSel = sel === String(value).toLowerCase() ? ' selected' : '';
+      return '<option value="' + escapeHtml(value) + '"' + isSel + '>' + escapeHtml(label) + '</option>';
+    }).join('');
+  }
+
+  function manifestFormHtml(pref) {
+    pref = pref || {};
+    var cs = clean(pref.callsign || pref.call_sign, '');
+    var model = clean(pref.model || pref.aircraft_type, '');
+    var role = String(pref.mission_id || '').toLowerCase() || 'transport';
+    var status = String(pref.status || 'AVAILABLE').toUpperCase();
+    if (status !== 'AVAILABLE' && status !== 'IN-FLIGHT' && status !== 'OFFLINE' && status !== 'SUSPECT') {
+      status = 'IN-FLIGHT';
+    }
+    var dest = clean(pref.station || pref.dest, '');
+    var fuel = pref.fuel_pct != null && pref.fuel_pct !== '' ? String(pref.fuel_pct) : '';
+    var bingo = clean(pref.bingo_fuel, '');
+    var eta = pref.eta_minutes != null && pref.eta_minutes !== '' ? String(pref.eta_minutes) : '';
+    var freq = clean(pref.freq || pref.radio_main, '');
+    var laser = clean(pref.laser, '');
+    var auth = clean(pref.auth_code || pref.auth, '');
+    var ordnance = formatAirOrdnance(pref.ordnance);
+    var notes = String(pref.checklist || pref.notes || '').trim();
+    if (notes.charAt(0) === '{') notes = '';
+    var crew = manifestCrewText(pref);
+    var submitLabel = cs ? 'Mettre à jour le manifeste' : 'Déclarer le manifeste';
+    return '<form class="ow-form-grid" id="ow-manifest-form">' +
+      '<label>Indicatif<input name="callsign" required placeholder="Ex. Super 6-1" value="' + escapeHtml(cs) + '"></label>' +
+      '<label>Appareil<input name="model" placeholder="Ex. UH-60M Blackhawk" value="' + escapeHtml(model) + '"></label>' +
+      '<label>Mission<select name="mission_id">' +
+      manifestSelectOptions([
+        ['transport', 'Transport'],
+        ['cas', 'Appui aérien'],
+        ['recon', 'Reconnaissance'],
+        ['medevac', 'Évacuation sanitaire'],
+        ['resupply', 'Ravitaillement'],
+        ['escort', 'Escorte'],
+        ['other', 'Autre']
+      ], role) +
+      '</select></label>' +
+      '<label>Situation<select name="status">' +
+      manifestSelectOptions([
+        ['AVAILABLE', 'Au sol'],
+        ['IN-FLIGHT', 'En vol'],
+        ['OFFLINE', 'Hors liaison'],
+        ['SUSPECT', 'À vérifier']
+      ], status) +
+      '</select></label>' +
+      '<label>Destination<input name="station" placeholder="Zone, LZ, grille…" value="' + escapeHtml(dest) + '"></label>' +
+      '<label>Carburant (%)<input name="fuel_pct" type="number" min="0" max="100" placeholder="0 à 100" value="' + escapeHtml(fuel) + '"></label>' +
+      '<label>Autonomie<input name="bingo_fuel" placeholder="Ex. 45 min" value="' + escapeHtml(bingo) + '"></label>' +
+      '<label>Arrivée estimée (min)<input name="eta_minutes" type="number" min="0" placeholder="Minutes" value="' + escapeHtml(eta) + '"></label>' +
+      '<label>Fréquence<input name="freq" placeholder="Ex. 251.0" value="' + escapeHtml(freq) + '"></label>' +
+      '<label>Code laser<input name="laser" placeholder="Ex. 1688" value="' + escapeHtml(laser) + '"></label>' +
+      '<label>Authentification<input name="auth" placeholder="Code d’authentification" value="' + escapeHtml(auth) + '"></label>' +
+      '<label>Emport<textarea name="ordnance" placeholder="Munitions, pods, charge utile…">' + escapeHtml(ordnance) + '</textarea></label>' +
+      '<label>Équipage<textarea name="crew" placeholder="Une personne par ligne">' + escapeHtml(crew) + '</textarea></label>' +
+      '<label>Notes<textarea name="notes" placeholder="Mission, annulation, canevas…">' + escapeHtml(notes) + '</textarea></label>' +
+      '<button class="ow-primary" type="submit">' + escapeHtml(submitLabel) + '</button></form>';
+  }
+
   function airListHtml() {
     return airAssets.map(airAssetCardHtml).join('') ||
-      '<p class="ow-help">Aucun aéronef déclaré pour le moment. Un manifeste de vol envoyé depuis le jeu apparaît ici avec l’emport, le carburant et l’arrivée estimée.</p>';
+      '<p class="ow-help">Aucun aéronef déclaré pour le moment. Un manifeste de vol envoyé depuis le jeu, ou créé ici, apparaît avec l’emport, le carburant et l’arrivée estimée.</p>';
   }
 
   function jtacListHtml() {
@@ -5197,8 +5433,11 @@
       '<div class="ow-event"><span>Aéronefs</span><strong>' + airAssets.length + '</strong></div>' +
       '<div class="ow-event"><span>Demandes d’appui</span><strong>' + jtacRows().length + '</strong></div>') +
       '<p class="ow-kicker">Aéronefs</p>' +
-      '<p class="ow-help">Manifestes de vol reçus du jeu : indicatif, mission, emport, carburant et arrivée estimée. Cliquez une fiche pour centrer la carte.</p>' +
+      '<p class="ow-help">Manifestes de vol reçus du jeu ou créés au poste : indicatif, mission, emport, carburant et arrivée estimée. Cliquez une fiche pour la consulter et la mettre à jour.</p>' +
       '<div id="ow-air-list">' + airListHtml() + '</div>' +
+      '<p class="ow-kicker">Nouveau manifeste de vol</p>' +
+      '<p class="ow-help">Déclarez un aéronef depuis le poste (indicatif, appareil, équipage, emport). Cliquez une fiche existante pour la modifier.</p>' +
+      manifestFormHtml(null) +
       '<p class="ow-kicker">Demandes JTAC</p>' +
       '<p class="ow-help">Les 9-line transmises par le terrain ou préparées ici. Clic droit sur la carte pour reprendre la grille.</p>' +
       '<div id="ow-jtac-list">' + jtacListHtml() + '</div>' +
@@ -5230,12 +5469,9 @@
       '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
       '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
       '<div class="ow-event"><span>Photos</span><strong>' + photos.length + '</strong></div>') +
-      '<p class="ow-kicker">Tâches de groupe</p>' +
-      '<p class="ow-help">Transmettez une tâche à un groupe visible sur la carte. Elle arrive sur les téléphones ATAK des opérateurs concernés.</p>' +
-      groupTaskFormHtml() +
-      '<p class="ow-kicker">Alerte plein écran</p>' +
-      '<p class="ow-help">Le message recouvre tout l’écran du téléphone, ouvert ou en position mini.</p>' +
-      fullscreenAlertFormHtml() +
+      '<p class="ow-kicker">Ordres et alertes</p>' +
+      '<p class="ow-help">Les tâches de groupe et l’alerte plein écran se préparent dans Ordre → Groupes, à côté du fil.</p>' +
+      '<button type="button" class="ow-secondary" data-ow-group-task>Ouvrir Ordre → Groupes</button>' +
       '<p class="ow-kicker">Replay et bilan</p>' +
       '<p class="ow-help">Rejouez les trajectoires déjà reçues, puis exportez le bilan de mission (carte annotée et fil d’ordres).</p>' +
       '<div class="ow-form-actions"><button type="button" class="ow-secondary" data-ow-replay>Ouvrir le replay</button>' +
@@ -5701,13 +5937,20 @@
       return '<div class="ow-event"><span>' + escapeHtml(row.label) +
         '</span><strong>50 m</strong><button type="button" class="ow-tag" data-del-rally="' + escapeHtml(String(row.id || '')) + '">Retirer</button></div>';
     }).join('') || '<p class="ow-help">Aucun point de ralliement. Rail gauche : outil ⚑, ou clic droit → Point de ralliement.</p>';
-    var armaList = armaMarkerRows.slice(0, 24).map(function (row) {
+    var armaList = armaMarkerRows.slice(0, 40).map(function (row) {
       var data = parseMarkerData(row);
       var helper = window.ArmaMapMarkers;
       var label = helper && helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
-      return '<div class="ow-event"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(helper && helper.typeLabelFr ? helper.typeLabelFr(data) : '') + '</strong></div>';
-    }).join('') || '<p class="ow-help">Aucun marqueur du théâtre pour l’instant. Ils apparaissent dès qu’ils sont posés en jeu.</p>';
-    return '<p class="ow-help">Les fonds et le relief se règlent à gauche. Ici : état live, marqueurs, points d’objectif, ralliements et tracés.</p>' +
+      var kind = helper && helper.typeLabelFr ? helper.typeLabelFr(data) : '';
+      var tags = [];
+      if (data.web_permanent) tags.push('Permanent');
+      else if (data.web_locked) tags.push('Personnalisé');
+      return '<div class="ow-event"><span>' + escapeHtml(label) +
+        (tags.length ? ' · ' + escapeHtml(tags.join(' · ')) : '') +
+        '</span><strong>' + escapeHtml(kind) + '</strong>' +
+        '<button type="button" class="ow-tag" data-edit-arma="' + escapeHtml(String(row.id || '')) + '">Modifier</button></div>';
+    }).join('') || '<p class="ow-help">Aucun marqueur du théâtre pour l’instant. Ils apparaissent dès qu’ils sont posés en jeu. Cliquez un marqueur sur la carte pour le personnaliser.</p>';
+    return '<p class="ow-help">Les fonds et le relief se règlent à gauche. Ici : état live, marqueurs, points d’objectif, ralliements et tracés. Cliquez un marqueur pour changer son nom, son icône ou le rendre permanent.</p>' +
       '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
       '<div class="ow-event"><span>Marqueurs</span><strong>' + armaMarkerRows.length + '</strong></div>' +
       '<div class="ow-event"><span>Points d’objectif</span><strong>' + poRows.length + '</strong></div>' +
@@ -5745,6 +5988,66 @@
           Promise.all([loadNine(), loadCas()]).then(function () { openView('air'); });
         })
         .catch(function () { toast('Demande d’appui refusée.'); });
+    });
+    var manifest = document.getElementById('ow-manifest-form');
+    if (manifest) manifest.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var data = new FormData(manifest);
+      var callsign = String(data.get('callsign') || '').trim();
+      if (!callsign) {
+        toast('Indiquez un indicatif.');
+        return;
+      }
+      var crewRaw = String(data.get('crew') || '');
+      var occupants = crewRaw.split(/\r?\n/).map(function (line) {
+        return String(line || '').trim();
+      }).filter(Boolean).map(function (line) {
+        var parts = line.split(/\s+[—–\-]\s+/);
+        var name = String(parts[0] || '').trim();
+        var seat = String(parts[1] || '').trim();
+        return { name: name, seat: seat || 'cargo', role: seat || '', player: false };
+      });
+      var fuelRaw = String(data.get('fuel_pct') || '').trim();
+      var etaRaw = String(data.get('eta_minutes') || '').trim();
+      var ordnance = String(data.get('ordnance') || '').trim();
+      var notes = String(data.get('notes') || '').trim();
+      var body = {
+        mapId: mapId,
+        callsign: callsign,
+        call_sign: callsign,
+        model: String(data.get('model') || '').trim(),
+        aircraft_type: String(data.get('model') || '').trim(),
+        mission_id: String(data.get('mission_id') || 'transport'),
+        status: String(data.get('status') || 'AVAILABLE'),
+        station: String(data.get('station') || '').trim(),
+        bingo_fuel: String(data.get('bingo_fuel') || '').trim(),
+        freq: String(data.get('freq') || '').trim(),
+        radio_main: String(data.get('freq') || '').trim(),
+        laser: String(data.get('laser') || '').trim(),
+        auth: String(data.get('auth') || '').trim(),
+        auth_code: String(data.get('auth') || '').trim(),
+        ordnance: ordnance,
+        checklist: notes,
+        notes: notes,
+        occupants: occupants,
+        crew: occupants,
+        pax: occupants.length,
+        pilot: authorName
+      };
+      if (fuelRaw !== '') body.fuel_pct = Number(fuelRaw);
+      if (etaRaw !== '') body.eta_minutes = Number(etaRaw);
+      api('/api/atak/flight-manifest', { method: 'POST', body: body })
+        .then(function (row) {
+          toast('Manifeste de vol enregistré.');
+          return loadAirAssets().then(function () {
+            var match = airAssets.filter(function (item) {
+              return String(item.callsign || '').toLowerCase() === callsign.toLowerCase();
+            })[0] || row;
+            if (match) openAirAssetSheet(match);
+            else openView('air');
+          });
+        })
+        .catch(function () { toast('Manifeste de vol refusé.'); });
     });
     var med = document.getElementById('ow-medevac-form');
     if (med) med.addEventListener('submit', function (event) {
@@ -5919,6 +6222,21 @@
         }).catch(function () { toast('Impossible de retirer ce point de ralliement.'); });
       });
     });
+    document.querySelectorAll('[data-edit-arma]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openArmaMarkerSheet(button.getAttribute('data-edit-arma'));
+      });
+    });
+    document.querySelectorAll('[data-del-arma]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        deleteMapTarget({ kind: 'arma', id: button.getAttribute('data-del-arma'), label: 'Marqueur' });
+      });
+    });
+    var markerEdit = document.getElementById('ow-marker-edit-form');
+    if (markerEdit) markerEdit.addEventListener('submit', function (event) {
+      event.preventDefault();
+      saveArmaMarkerEdit(markerEdit);
+    });
     bindGroupTaskForms(document.getElementById('ow-drawer'));
     bindFsAlertForms(document.getElementById('ow-drawer'));
     fillGroupTaskSelects(true);
@@ -6010,7 +6328,7 @@
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
     if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
-      Promise.all([loadNine(), loadCas(), loadMedevac(), loadGroupTasks()]).then(function () {
+      Promise.all([loadNine(), loadCas(), loadMedevac()]).then(function () {
         restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();

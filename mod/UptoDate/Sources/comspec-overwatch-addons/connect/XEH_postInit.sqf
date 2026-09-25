@@ -7,6 +7,7 @@ COMSPEC_Overwatch_PostInitDone = true;
 
 if (isServer) then {
     [] call comspec_overwatch_connect_fnc_initProxyTrackServer;
+    [] call comspec_overwatch_connect_fnc_initServerHub;
 };
 if (!hasInterface) exitWith {};
 
@@ -148,6 +149,22 @@ if (hasInterface && {isNil "COMSPEC_RelayMapPfh"}) then {
             [] call comspec_overwatch_connect_fnc_updateNearestRelayMap;
         };
     }, 2] call CBA_fnc_addPerFrameHandler;
+};
+
+// Hub serveur → clients : appliquer les drapeaux mission sans re-poll Athena.
+if (hasInterface && {isNil "COMSPEC_ServerMissionStateEh"}) then {
+    COMSPEC_ServerMissionStateEh = ["COMSPEC_serverMissionState", {
+        params ["_viaRelays", "_zonesEnabled", "_netEnabled", "_intelScramble"];
+        missionNamespace setVariable ["COMSPEC_LinkViaRelays", _viaRelays, false];
+        missionNamespace setVariable ["COMSPEC_IntelScramble", _intelScramble, false];
+        if (_netEnabled || {_zonesEnabled}) then {
+            missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, false];
+            missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, false];
+        };
+        if (_zonesEnabled) then {
+            missionNamespace setVariable ["comspec_overwatch_roleplay_visual_effects", true, false];
+        };
+    }] call CBA_fnc_addEventHandler;
 };
 
 // Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot).

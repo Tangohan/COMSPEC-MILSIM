@@ -1,8 +1,9 @@
 /*
     Crée/met à jour les zones roleplay depuis la config portail.
     Format lignes (extension GetRoleplayConfig) : name\ttype\tx\ty\tradius\tintensity
+    Exécution serveur : un seul jeu de marqueurs pour toute la mission.
 */
-if (!isServer && {!hasInterface}) exitWith {};
+if (!isServer) exitWith { false };
 
 private _cfg = missionNamespace getVariable ["COMSPEC_PortalRoleplayConfig", createHashMap];
 private _zonesLines = _cfg getOrDefault ["zones_lines", ""];

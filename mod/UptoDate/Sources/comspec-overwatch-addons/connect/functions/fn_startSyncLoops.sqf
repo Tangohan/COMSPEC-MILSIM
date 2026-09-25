@@ -332,6 +332,7 @@ private _fnc_addPoll = {
 [{
         [{
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            if (missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]) exitWith {};
             if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
             [] call comspec_overwatch_connect_fnc_pollAiOrders;
         }, [], "pollAiOrders"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -437,6 +438,8 @@ private _fnc_addPoll = {
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false]) exitWith {};
+        // Hub serveur porte déjà ce poll (évite N clients → Athena).
+        if (missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
     }, [], "pollRoleplayConfig"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -447,6 +450,8 @@ private _fnc_addPoll = {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         if (!(["relays"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+        // Relais : boucle unique côté hub serveur.
+        if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
         [] call comspec_overwatch_connect_fnc_syncAtakRelays;
     }, [], "syncAtakRelays"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 12, []] call CBA_fnc_addPerFrameHandler;

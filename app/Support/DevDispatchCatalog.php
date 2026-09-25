@@ -268,6 +268,40 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(715, '2026-09-22', 'Poste Overwatch : choisir le kit de marqueurs', 'Lors de la pose d’un marqueur sur Overwatch Beta, le poste peut désormais choisir le kit OTAN, Arma 3, Metis ou MarkersPlus, puis le symbole correspondant. Le choix de kit est mémorisé pour la prochaine pose. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Onglets OTAN, Arma 3, Metis et MarkersPlus dans le tiroir Marqueur du théâtre',
+                'Palette filtrée selon le kit choisi, avec aperçu du symbole',
+                'Dernier kit utilisé repris automatiquement à la prochaine pose',
+            ], [], [
+                'Tous les symboles étaient mélangés sans distinction de kit',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Posez un marqueur : choisissez un kit, puis un symbole. Rouvrez le tiroir : le même kit doit être préselectionné.',
+            ], 'Overwatch Beta'),
+            $pr(714, '2026-09-22', 'Poste Overwatch : personnaliser les marqueurs du théâtre', 'Sur Overwatch Beta, un marqueur posé en jeu peut être personnalisé depuis le poste : nom, description, icône, couleur, et option permanent sur le serveur. Le réglage reste en place même si le jeu renvoie le marqueur. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Clic sur un marqueur (ou Modifier dans Calques) pour ouvrir la fiche',
+                'Nom, description, icône et couleur enregistrés au poste',
+                'Option Permanent sur le serveur : le jeu ne peut plus l’effacer ni écraser le rendu',
+            ], [], [
+                'Les marqueurs du théâtre n’étaient que consultables, sans personnalisation au poste',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Cliquez un marqueur sur la carte, changez le nom et l’icône, enregistrez. Avec Permanent, un retrait en jeu ne doit plus faire disparaître le marqueur du poste.',
+            ], 'Overwatch Beta'),
+            $pr(713, '2026-09-22', 'Poste Overwatch : Ordre et Mission ne se doublonnent plus', 'Les tâches de groupe et l’alerte plein écran restent uniquement dans Ordre → Groupes. Mission se concentre sur le bilan, le SALUTE et le CASEVAC, avec un raccourci vers Groupes. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Mission sans second formulaire de tâche ni d’alerte plein écran',
+                'Raccourci « Ouvrir Ordre → Groupes » depuis Mission',
+            ], [], [
+                'Mission et Ordre → Groupes montraient les mêmes formulaires côte à côte',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Mission : plus de formulaire de tâche en double. Les tâches se préparent dans Ordre → Groupes.',
+            ], 'Overwatch Beta'),
+            $pr(712, '2026-09-22', 'Poste Overwatch : créer et mettre à jour un manifeste de vol', 'Dans l’espace Air, le poste peut désormais déclarer un manifeste de vol (indicatif, appareil, mission, équipage, emport, carburant) et le mettre à jour depuis la fiche aérienne. Les manifestes reçus du jeu restent visibles comme avant. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Formulaire « Nouveau manifeste de vol » dans l’espace Air',
+                'Sur une fiche aérienne, consultation et mise à jour du manifeste dans le même tiroir',
+            ], [], [
+                'Le poste ne pouvait que lire les manifestes envoyés depuis le jeu',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Air : remplissez un manifeste et validez. Cliquez une fiche existante : la fiche s’affiche et le formulaire reprend ses valeurs pour mise à jour.',
+            ], 'Overwatch Beta'),
             $pr(711, '2026-09-22', 'Carte ATAK : plus besoin de Resynch pour réapparaître', 'Quand la position cessait de remonter, il fallait relancer Resynch à la main pour réapparaître au poste. Le téléphone rattrape maintenant tout seul une sync trop ancienne, y compris après un spawn ou un téléphone pris en retard. Rechargez la carte ATAK (Ctrl+F5). Relancez Arma complètement après le pack Overwatch 1.6.11 · Athena 1.0.166.', [
                 'Relance automatique de la position si la dernière sync dépasse une minute',
                 'Première position dès que le téléphone est pris, sans attendre plusieurs secondes',

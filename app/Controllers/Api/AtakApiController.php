@@ -4071,10 +4071,58 @@ class AtakApiController
             return Response::json(['error' => 'Not found'], 404);
         }
         $body = $this->jsonBody($request);
-        $markerData = isset($body['markerData'])
-            ? (is_string($body['markerData']) ? $body['markerData'] : json_encode($body['markerData']))
-            : null;
-        if ($markerData === null) {
+        $existing = $this->atak->getMarkerById($tenantId, $id);
+        if ($existing === null) {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+        $decoded = [];
+        if (isset($body['markerData'])) {
+            $raw = $body['markerData'];
+            if (is_string($raw)) {
+                $parsed = json_decode($raw, true);
+                $decoded = is_array($parsed) ? $parsed : [];
+            } elseif (is_array($raw)) {
+                $decoded = $raw;
+            }
+        } else {
+            $prev = json_decode((string) ($existing['markerData'] ?? $existing['marker_data'] ?? '{}'), true);
+            $decoded = is_array($prev) ? $prev : [];
+        }
+        $label = $body['text'] ?? $body['label'] ?? $body['name'] ?? null;
+        if ($label !== null) {
+            $label = trim((string) $label);
+            $decoded['text'] = $label;
+            $decoded['label'] = $label;
+        }
+        if (array_key_exists('description', $body)) {
+            $decoded['description'] = trim((string) ($body['description'] ?? ''));
+        }
+        if (isset($body['type']) || isset($body['icon'])) {
+            $type = strtolower(trim(str_replace([' ', '-'], '_', (string) ($body['type'] ?? $body['icon'] ?? ''))));
+            if ($type !== '') {
+                $decoded['type'] = $type;
+                unset($decoded['pngUrl'], $decoded['texture'], $decoded['iconPath']);
+            }
+        }
+        if (isset($body['color'])) {
+            $decoded['color'] = $this->normalizeArmaMarkerColor((string) $body['color']);
+        }
+        $permanent = $body['web_permanent'] ?? $body['permanent'] ?? null;
+        if ($permanent !== null) {
+            $decoded['web_permanent'] = filter_var($permanent, FILTER_VALIDATE_BOOLEAN);
+        }
+        // Toute édition depuis le poste verrouille le rendu face à la resynchro jeu.
+        $decoded['web_locked'] = true;
+        $decoded['web_edited_at'] = gmdate('c');
+        $brief = $this->sessionUserBrief();
+        if (is_array($brief)) {
+            $by = trim((string) ($brief['callsign'] ?? $brief['displayName'] ?? ''));
+            if ($by !== '') {
+                $decoded['web_edited_by'] = $by;
+            }
+        }
+        $markerData = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($markerData) || $markerData === '') {
             return Response::json(['error' => 'markerData required'], 400);
         }
         $layerId = isset($body['layerId']) ? (int) $body['layerId'] : null;
@@ -10390,17 +10438,29 @@ class AtakApiController
 
     public function flightManifestStore(Request $request, array $params = []): Response
     {
-        if (!$this->authArma()) {
-            return Response::json(['error' => 'Unauthorized'], 401);
-        }
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
         }
         $tenantId = $r;
-        $actor = $this->guardArmaWrite($request, $tenantId, false);
-        if ($actor instanceof Response) {
-            return $actor;
+        $fromArma = $this->authArma();
+        $actor = null;
+        if ($fromArma) {
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+        } else {
+            $brief = $this->sessionUserBrief();
+            if ($brief === null) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = [
+                'steam_uid' => null,
+                'session_ok' => true,
+                'callsign' => (string) ($brief['callsign'] ?? ''),
+                'label' => (string) ($brief['displayName'] ?? ''),
+            ];
         }
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
@@ -10408,8 +10468,10 @@ class AtakApiController
         $callsign = $this->resolveFlightManifestCallsign($tenantId, $mapId, $body, $actor);
         $missionToken = getenv('ATAK_MISSION_AUTH_TOKEN') ?: getenv('COMSPEC_MISSION_AUTH') ?: '';
         $status = $body['status'] ?? 'IN-FLIGHT';
+        // Jeton mission : uniquement pour les envois depuis le jeu (pas pour le poste).
         if (
-            !$occupancy
+            $fromArma
+            && !$occupancy
             && $missionToken !== ''
             && ($body['auth'] ?? $body['authCode'] ?? '') !== $missionToken
         ) {

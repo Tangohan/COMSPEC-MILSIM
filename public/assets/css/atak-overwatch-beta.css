@@ -245,7 +245,7 @@ button{cursor:pointer}
   min-height:0;
 }
 .ow-chat-main[data-chat-panel="support"] > .ow-help{flex:0 0 auto;padding:8px 10px 0}
-.ow-chat-main[data-chat-panel="support"] .ow-support-auto{flex:0 1 auto}
+.ow-chat-main[data-chat-panel="support"] .ow-support-auto{flex:0 0 auto}
 .ow-chat-main[data-chat-panel="support"] #ow-support-log{flex:1 1 auto;min-height:80px}
 .ow-chat-main[data-chat-panel="support"] .ow-chat-compose{flex:0 0 auto}
 .ow-search{display:flex;align-items:center;gap:6px;margin:var(--ow-chat-inset);border:1px solid #242c29;background:#0e1211;padding:0 8px;color:var(--athena-muted);flex:0 0 auto;border-radius:4px}
@@ -495,7 +495,15 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-net-card:last-child{border-bottom:0;margin-bottom:0}
 .ow-net-kv{margin:0 2px 4px;padding:6px 0 2px;border-top:1px solid #141a18}
 .ow-net-kv>span:nth-child(even){font-size:12px}
-.ow-support-auto{margin:0 10px 8px;display:flex;flex-direction:column;gap:6px;max-height:42%;overflow:auto;min-height:0}
+.ow-support-auto{margin:0 10px 8px;display:flex;flex-direction:column;gap:6px;max-height:none;overflow:visible;min-height:0;flex:0 0 auto}
+.ow-support-auto-fold{border:1px solid var(--athena-line-2);border-radius:6px;background:#0c100f;overflow:hidden}
+.ow-support-auto-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;cursor:pointer;list-style:none;user-select:none}
+.ow-support-auto-summary::-webkit-details-marker{display:none}
+.ow-support-auto-summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--athena-muted);border-bottom:2px solid var(--athena-muted);transform:rotate(45deg);flex:0 0 auto;margin-top:-3px;opacity:.85;transition:transform .15s ease}
+.ow-support-auto-fold[open]>.ow-support-auto-summary::after{transform:rotate(225deg);margin-top:2px}
+.ow-support-auto-summary-title{font-size:12.5px;font-weight:700;color:var(--athena-text)}
+.ow-support-auto-summary-count{font-family:var(--ow-mono);font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--athena-muted);border:1px solid var(--athena-line-2);border-radius:3px;padding:2px 6px;white-space:nowrap}
+.ow-support-auto-list{display:flex;flex-direction:column;gap:6px;padding:0 8px 8px;max-height:min(28vh,220px);overflow:auto;min-height:0}
 .ow-support-auto-row{border:1px solid var(--athena-line-2);border-radius:6px;background:#0e1211;padding:8px 10px}
 .ow-support-auto-row.is-critical{border-color:#5b2b30;background:#140c0d}
 .ow-support-auto-row.is-warn{border-color:#57441e;background:#14110a}
@@ -707,7 +715,8 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-layer-card .ow-layer-actions{display:flex;gap:4px;align-items:center}
 .ow-layer-card button{height:24px;padding:0 8px;border:1px solid var(--athena-line-2);background:#101413;color:#c7ceca;border-radius:3px;font-size:11px}
 .ow-layer-card .ow-ctx-danger{color:#ee777f}
-.ow-form-grid{display:grid;gap:8px;padding:4px 0 10px}
+.ow-form-grid label.ow-check{flex-direction:row;align-items:center;gap:8px;font-size:12px;color:var(--athena-text)}
+.ow-form-grid label.ow-check input{width:auto;margin:0}
 .ow-form-grid label{display:grid;gap:4px;font-size:12px}
 .ow-form-grid input,.ow-form-grid textarea,.ow-form-grid select{width:100%;border:1px solid var(--athena-line-2);background:#0e1211;color:var(--athena-text);border-radius:4px;padding:6px 8px}
 .ow-form-grid textarea{min-height:72px;resize:vertical}
@@ -717,6 +726,10 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-confirm .ow-form-actions{flex-wrap:wrap}
 .ow-confirm .ow-primary{width:auto;margin-top:0;height:28px}
 .ow-hatch-fill{fill:url(#ow-hatch-diag)}
+.ow-marker-kit-panel{display:grid;gap:8px}
+.ow-marker-kits{display:flex;flex-wrap:wrap;gap:4px}
+.ow-marker-kit{border:1px solid var(--athena-line-2);background:#101413;color:#c7ceca;border-radius:4px;padding:5px 9px;font-size:11px;font-weight:600;letter-spacing:.02em;cursor:pointer}
+.ow-marker-kit.is-on{border-color:var(--athena-green);color:#fff;background:#12201b}
 .ow-marker-board{display:grid;gap:8px}
 .ow-marker-group{margin:8px 0 0;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--athena-muted)}
 .ow-marker-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;max-height:220px;overflow:auto;padding:2px}

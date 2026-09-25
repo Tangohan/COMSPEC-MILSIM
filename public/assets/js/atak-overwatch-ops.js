@@ -27,37 +27,46 @@
   
   // Config réalisme centralisée (chargée au démarrage)
   var realismConfig = null;
-  var MARKER_SYMBOLS = [
-    { key: 'mil_dot', group: 'Repères', short: 'Repère', label: 'Repère', hint: 'Point simple, vu à cet endroit.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'mil_triangle', group: 'Repères', short: 'Triangle', label: 'Triangle', hint: 'Repère triangulaire, souvent un contact ou un axe.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'mil_box', group: 'Repères', short: 'Carré', label: 'Carré', hint: 'Zone ou bâtiment signalé.', noun: 'Ce carré', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'mil_circle', group: 'Repères', short: 'Cercle', label: 'Cercle', hint: 'Point d’intérêt ou rassemblement.', noun: 'Ce cercle', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'mil_flag', group: 'Repères', short: 'Drapeau', label: 'Drapeau', hint: 'Position tenue ou à marquer.', noun: 'Ce drapeau', kind: 'static', warnMin: 50, staleMin: 180 },
-    { key: 'mil_objective', group: 'Repères', short: 'Objectif', label: 'Objectif', hint: 'But de manœuvre encore pertinent plus longtemps.', noun: 'Cet objectif', kind: 'static', warnMin: 60, staleMin: 240 },
-    { key: 'mil_warning', group: 'Repères', short: 'Alerte', label: 'Alerte', hint: 'Danger signalé : mines, embuscade, zone interdite.', noun: 'Cette alerte', kind: 'static', warnMin: 15, staleMin: 45 },
-    { key: 'mil_destroy', group: 'Repères', short: 'Destruction', label: 'Destruction', hint: 'Cible à détruire ou déjà détruite.', noun: 'Cette destruction', kind: 'static', warnMin: 30, staleMin: 90 },
-    { key: 'mil_ambush', group: 'Repères', short: 'Embuscade', label: 'Embuscade', hint: 'Dispositif d’embuscade vu ou prévu.', noun: 'Cette embuscade', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 4 },
-    { key: 'mil_join', group: 'Repères', short: 'Ralliement', label: 'Ralliement', hint: 'Point de regroupement.', noun: 'Ce ralliement', kind: 'static', warnMin: 30, staleMin: 90 },
-    { key: 'mil_start', group: 'Repères', short: 'Départ', label: 'Départ', hint: 'Point de départ d’un mouvement.', noun: 'Ce départ', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'mil_end', group: 'Repères', short: 'Arrivée', label: 'Arrivée', hint: 'Point d’arrivée prévu.', noun: 'Cette arrivée', kind: 'static', warnMin: 40, staleMin: 120 },
-    { key: 'hd_dot', group: 'Repères', short: 'Croquis', label: 'Repère au crayon', hint: 'Annotation à la main, moins formelle.', noun: 'Ce croquis', kind: 'static', warnMin: 30, staleMin: 90 },
-    { key: 'b_inf', group: 'Unités amies', short: 'Infanterie', label: 'Infanterie amie', hint: 'Groupe à pied ami vu ici.', noun: 'Cette infanterie amie', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 5 },
-    { key: 'b_motor_inf', group: 'Unités amies', short: 'Motorisée', label: 'Infanterie motorisée amie', hint: 'Infanterie amie montée sur véhicules légers.', noun: 'Cette infanterie motorisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 40 },
-    { key: 'b_mech_inf', group: 'Unités amies', short: 'Mécanisée', label: 'Infanterie mécanisée amie', hint: 'Infanterie amie sous blindés de transport.', noun: 'Cette infanterie mécanisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 30 },
-    { key: 'b_armor', group: 'Unités amies', short: 'Blindé', label: 'Blindé ami', hint: 'Char ou engin blindé ami.', noun: 'Ce blindé ami', kind: 'vehicle', warnMin: 12, staleMin: 35, speedKmh: 25 },
-    { key: 'b_recon', group: 'Unités amies', short: 'Recon', label: 'Reconnaissance amie', hint: 'Élément de reconnaissance ami, souvent mobile.', noun: 'Cette reconnaissance amie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 15 },
-    { key: 'b_air', group: 'Unités amies', short: 'Hélico', label: 'Hélicoptère ami', hint: 'Voilure tournante amie vue au-dessus de ce point.', noun: 'Cet hélicoptère ami', kind: 'air', warnMin: 4, staleMin: 12, speedKmh: 120 },
-    { key: 'o_inf', group: 'Unités hostiles', short: 'Infanterie', label: 'Infanterie hostile', hint: 'Groupe à pied adverse vu ici. Il peut déjà avoir bougé.', noun: 'Cette infanterie hostile', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
-    { key: 'o_motor_inf', group: 'Unités hostiles', short: 'Motorisée', label: 'Infanterie motorisée hostile', hint: 'Infanterie adverse montée, capable de quitter vite la zone.', noun: 'Cette infanterie motorisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 40 },
-    { key: 'o_mech_inf', group: 'Unités hostiles', short: 'Mécanisée', label: 'Infanterie mécanisée hostile', hint: 'Infanterie adverse sous VCI.', noun: 'Cette infanterie mécanisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 30 },
-    { key: 'o_armor', group: 'Unités hostiles', short: 'Blindé', label: 'Blindé hostile', hint: 'Char ou engin blindé adverse.', noun: 'Ce blindé hostile', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
-    { key: 'o_recon', group: 'Unités hostiles', short: 'Recon', label: 'Reconnaissance hostile', hint: 'Éclaireurs adverses, rarement immobiles longtemps.', noun: 'Cette reconnaissance hostile', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
-    { key: 'o_air', group: 'Unités hostiles', short: 'Hélico', label: 'Hélicoptère hostile', hint: 'Voilure tournante adverse. Le point vieillit très vite.', noun: 'Cet hélicoptère hostile', kind: 'air', warnMin: 3, staleMin: 8, speedKmh: 140 },
-    { key: 'n_inf', group: 'Unités inconnues', short: 'Infanterie', label: 'Infanterie inconnue', hint: 'Groupe à pied dont le camp n’est pas tranché.', noun: 'Cette infanterie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
-    { key: 'n_armor', group: 'Unités inconnues', short: 'Blindé', label: 'Blindé inconnu', hint: 'Engin blindé d’appartenance incertaine.', noun: 'Ce blindé', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
-    { key: 'n_recon', group: 'Unités inconnues', short: 'Recon', label: 'Reconnaissance inconnue', hint: 'Élément mobile non identifié.', noun: 'Cette reconnaissance', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
-    { key: 'loc_hospital', group: 'Lieux', short: 'Médical', label: 'Poste médical', hint: 'Point santé, en principe fixe.', noun: 'Ce poste médical', kind: 'static', warnMin: 90, staleMin: 360 }
+  var MARKER_KITS = [
+    { id: 'otan', label: 'OTAN' },
+    { id: 'arma', label: 'Arma 3' },
+    { id: 'metis', label: 'Metis' },
+    { id: 'markersplus', label: 'MarkersPlus' }
   ];
+  var MARKER_KIT_KEY = 'athena:ow-marker-kit';
+  var activeMarkerKit = 'otan';
+  var MARKER_SYMBOLS = [
+    { key: 'mil_dot', kit: 'arma', group: 'Repères', short: 'Repère', label: 'Repère', hint: 'Point simple, vu à cet endroit.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_triangle', kit: 'arma', group: 'Repères', short: 'Triangle', label: 'Triangle', hint: 'Repère triangulaire, souvent un contact ou un axe.', noun: 'Ce repère', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_box', kit: 'arma', group: 'Repères', short: 'Carré', label: 'Carré', hint: 'Zone ou bâtiment signalé.', noun: 'Ce carré', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_circle', kit: 'arma', group: 'Repères', short: 'Cercle', label: 'Cercle', hint: 'Point d’intérêt ou rassemblement.', noun: 'Ce cercle', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_flag', kit: 'arma', group: 'Repères', short: 'Drapeau', label: 'Drapeau', hint: 'Position tenue ou à marquer.', noun: 'Ce drapeau', kind: 'static', warnMin: 50, staleMin: 180 },
+    { key: 'mil_objective', kit: 'arma', group: 'Repères', short: 'Objectif', label: 'Objectif', hint: 'But de manœuvre encore pertinent plus longtemps.', noun: 'Cet objectif', kind: 'static', warnMin: 60, staleMin: 240 },
+    { key: 'mil_warning', kit: 'arma', group: 'Repères', short: 'Alerte', label: 'Alerte', hint: 'Danger signalé : mines, embuscade, zone interdite.', noun: 'Cette alerte', kind: 'static', warnMin: 15, staleMin: 45 },
+    { key: 'mil_destroy', kit: 'arma', group: 'Repères', short: 'Destruction', label: 'Destruction', hint: 'Cible à détruire ou déjà détruite.', noun: 'Cette destruction', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'mil_ambush', kit: 'arma', group: 'Repères', short: 'Embuscade', label: 'Embuscade', hint: 'Dispositif d’embuscade vu ou prévu.', noun: 'Cette embuscade', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 4 },
+    { key: 'mil_join', kit: 'arma', group: 'Repères', short: 'Ralliement', label: 'Ralliement', hint: 'Point de regroupement.', noun: 'Ce ralliement', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'mil_start', kit: 'arma', group: 'Repères', short: 'Départ', label: 'Départ', hint: 'Point de départ d’un mouvement.', noun: 'Ce départ', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'mil_end', kit: 'arma', group: 'Repères', short: 'Arrivée', label: 'Arrivée', hint: 'Point d’arrivée prévu.', noun: 'Cette arrivée', kind: 'static', warnMin: 40, staleMin: 120 },
+    { key: 'hd_dot', kit: 'arma', group: 'Repères', short: 'Croquis', label: 'Repère au crayon', hint: 'Annotation à la main, moins formelle.', noun: 'Ce croquis', kind: 'static', warnMin: 30, staleMin: 90 },
+    { key: 'b_inf', kit: 'otan', group: 'Unités amies', short: 'Infanterie', label: 'Infanterie amie', hint: 'Groupe à pied ami vu ici.', noun: 'Cette infanterie amie', kind: 'infantry', warnMin: 10, staleMin: 25, speedKmh: 5 },
+    { key: 'b_motor_inf', kit: 'otan', group: 'Unités amies', short: 'Motorisée', label: 'Infanterie motorisée amie', hint: 'Infanterie amie montée sur véhicules légers.', noun: 'Cette infanterie motorisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 40 },
+    { key: 'b_mech_inf', kit: 'otan', group: 'Unités amies', short: 'Mécanisée', label: 'Infanterie mécanisée amie', hint: 'Infanterie amie sous blindés de transport.', noun: 'Cette infanterie mécanisée amie', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 30 },
+    { key: 'b_armor', kit: 'otan', group: 'Unités amies', short: 'Blindé', label: 'Blindé ami', hint: 'Char ou engin blindé ami.', noun: 'Ce blindé ami', kind: 'vehicle', warnMin: 12, staleMin: 35, speedKmh: 25 },
+    { key: 'b_recon', kit: 'otan', group: 'Unités amies', short: 'Recon', label: 'Reconnaissance amie', hint: 'Élément de reconnaissance ami, souvent mobile.', noun: 'Cette reconnaissance amie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 15 },
+    { key: 'b_air', kit: 'otan', group: 'Unités amies', short: 'Hélico', label: 'Hélicoptère ami', hint: 'Voilure tournante amie vue au-dessus de ce point.', noun: 'Cet hélicoptère ami', kind: 'air', warnMin: 4, staleMin: 12, speedKmh: 120 },
+    { key: 'o_inf', kit: 'otan', group: 'Unités hostiles', short: 'Infanterie', label: 'Infanterie hostile', hint: 'Groupe à pied adverse vu ici. Il peut déjà avoir bougé.', noun: 'Cette infanterie hostile', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
+    { key: 'o_motor_inf', kit: 'otan', group: 'Unités hostiles', short: 'Motorisée', label: 'Infanterie motorisée hostile', hint: 'Infanterie adverse montée, capable de quitter vite la zone.', noun: 'Cette infanterie motorisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 40 },
+    { key: 'o_mech_inf', kit: 'otan', group: 'Unités hostiles', short: 'Mécanisée', label: 'Infanterie mécanisée hostile', hint: 'Infanterie adverse sous VCI.', noun: 'Cette infanterie mécanisée hostile', kind: 'vehicle', warnMin: 10, staleMin: 25, speedKmh: 30 },
+    { key: 'o_armor', kit: 'otan', group: 'Unités hostiles', short: 'Blindé', label: 'Blindé hostile', hint: 'Char ou engin blindé adverse.', noun: 'Ce blindé hostile', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
+    { key: 'o_recon', kit: 'otan', group: 'Unités hostiles', short: 'Recon', label: 'Reconnaissance hostile', hint: 'Éclaireurs adverses, rarement immobiles longtemps.', noun: 'Cette reconnaissance hostile', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
+    { key: 'o_air', kit: 'otan', group: 'Unités hostiles', short: 'Hélico', label: 'Hélicoptère hostile', hint: 'Voilure tournante adverse. Le point vieillit très vite.', noun: 'Cet hélicoptère hostile', kind: 'air', warnMin: 3, staleMin: 8, speedKmh: 140 },
+    { key: 'n_inf', kit: 'otan', group: 'Unités inconnues', short: 'Infanterie', label: 'Infanterie inconnue', hint: 'Groupe à pied dont le camp n’est pas tranché.', noun: 'Cette infanterie', kind: 'infantry', warnMin: 8, staleMin: 20, speedKmh: 4 },
+    { key: 'n_armor', kit: 'otan', group: 'Unités inconnues', short: 'Blindé', label: 'Blindé inconnu', hint: 'Engin blindé d’appartenance incertaine.', noun: 'Ce blindé', kind: 'vehicle', warnMin: 12, staleMin: 30, speedKmh: 25 },
+    { key: 'n_recon', kit: 'otan', group: 'Unités inconnues', short: 'Recon', label: 'Reconnaissance inconnue', hint: 'Élément mobile non identifié.', noun: 'Cette reconnaissance', kind: 'infantry', warnMin: 6, staleMin: 16, speedKmh: 15 },
+    { key: 'loc_hospital', kit: 'arma', group: 'Lieux', short: 'Médical', label: 'Poste médical', hint: 'Point santé, en principe fixe.', noun: 'Ce poste médical', kind: 'static', warnMin: 90, staleMin: 360 }
+  ];
+  var librarySymbolsCache = null;
 
   function ow() { return window.OverwatchBeta || null; }
   function esc(v) { var api = ow(); return api ? api.escapeHtml(v) : String(v == null ? '' : v); }
@@ -250,18 +259,111 @@
     }
   }
 
+  function loadMarkerKitPref() {
+    try {
+      var raw = String(localStorage.getItem(MARKER_KIT_KEY) || '').trim();
+      if (MARKER_KITS.some(function (k) { return k.id === raw; })) activeMarkerKit = raw;
+    } catch (e) {}
+  }
+
+  function saveMarkerKitPref(kit) {
+    activeMarkerKit = kit;
+    try { localStorage.setItem(MARKER_KIT_KEY, kit); } catch (e) {}
+  }
+
+  function fixLibraryLabel(s) {
+    var str = String(s || '');
+    if (!/Ã.|â€|Ã‰|Ã¨|Ã©|Ã /.test(str)) return str;
+    try {
+      var bytes = new Uint8Array(str.length);
+      for (var i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i) & 0xff;
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+      return str;
+    }
+  }
+
+  function libraryGroupFor(item) {
+    var cat = String(item.category || '');
+    var aff = String(item.affiliation || '');
+    if (item.source === 'markersplus') return 'Repères MarkersPlus';
+    if (cat.indexOf('metis-blu') === 0 || aff === 'friend') return 'Unités amies';
+    if (cat.indexOf('metis-red') === 0 || aff === 'hostile') return 'Unités hostiles';
+    if (cat.indexOf('metis-neu') === 0 || cat.indexOf('metis-unk') === 0 || aff === 'unknown' || aff === 'neutral') {
+      return 'Unités inconnues';
+    }
+    return 'Autres';
+  }
+
+  function libraryShort(label) {
+    var t = fixLibraryLabel(label).replace(/^Ami\s*-\s*/i, '').replace(/^Adverse\s*-\s*/i, '')
+      .replace(/^Inconnu\s*-\s*/i, '').replace(/^Neutre\s*-\s*/i, '');
+    if (t.length > 14) t = t.slice(0, 13) + '…';
+    return t || 'Symbole';
+  }
+
+  function kindFromKey(key, aff) {
+    var k = String(key || '').toLowerCase();
+    if (/air|helico|rotary|plane|uav|aviation/.test(k)) return 'air';
+    if (/armor|mech|motor|vehicle|wheeled|tank/.test(k)) return 'vehicle';
+    if (aff === 'hostile' || aff === 'friend') return 'infantry';
+    return 'static';
+  }
+
+  function buildLibrarySymbols() {
+    if (librarySymbolsCache) return librarySymbolsCache;
+    var items = (window.ArmaMarkerLibraryIndex && window.ArmaMarkerLibraryIndex.ITEMS) || [];
+    var out = [];
+    items.forEach(function (item) {
+      if (!item || !item.key) return;
+      var src = String(item.source || '');
+      if (src !== 'metis' && src !== 'markersplus') return;
+      var cat = String(item.category || '');
+      if (cat.indexOf('metis-special') === 0) return;
+      var label = fixLibraryLabel(item.label || item.key);
+      var kit = src === 'metis' ? 'metis' : 'markersplus';
+      out.push({
+        key: item.key,
+        kit: kit,
+        group: libraryGroupFor(item),
+        short: libraryShort(label),
+        label: label,
+        hint: kit === 'metis' ? 'Symbole Metis Marker.' : 'Symbole MarkersPlus.',
+        noun: 'Ce symbole',
+        kind: kindFromKey(item.key, item.affiliation),
+        warnMin: 12,
+        staleMin: 40,
+        speedKmh: null,
+        png: item.png || ''
+      });
+    });
+    librarySymbolsCache = out;
+    return out;
+  }
+
+  function allMarkerSymbols() {
+    return MARKER_SYMBOLS.concat(buildLibrarySymbols());
+  }
+
+  function symbolsForKit(kit) {
+    var id = kit || activeMarkerKit || 'otan';
+    return allMarkerSymbols().filter(function (item) { return item.kit === id; });
+  }
+
   function markerSymbol(key) {
     var i;
-    for (i = 0; i < MARKER_SYMBOLS.length; i += 1) {
-      if (MARKER_SYMBOLS[i].key === key) return MARKER_SYMBOLS[i];
+    var all = allMarkerSymbols();
+    for (i = 0; i < all.length; i += 1) {
+      if (all[i].key === key) return all[i];
     }
-    return MARKER_SYMBOLS[0];
+    var kitList = symbolsForKit(activeMarkerKit);
+    return kitList[0] || MARKER_SYMBOLS[0];
   }
 
   function markerColor(key) {
-    if (String(key).indexOf('o_') === 0) return 'ColorEAST';
-    if (String(key).indexOf('n_') === 0) return 'ColorGUER';
-    if (String(key).indexOf('b_') === 0) return 'ColorWEST';
+    if (String(key).indexOf('o_') === 0 || String(key).indexOf('mts_red') === 0) return 'ColorEAST';
+    if (String(key).indexOf('n_') === 0 || String(key).indexOf('mts_neu') === 0 || String(key).indexOf('mts_unk') === 0) return 'ColorGUER';
+    if (String(key).indexOf('b_') === 0 || String(key).indexOf('mts_blu') === 0) return 'ColorWEST';
     return 'ColorGreen';
   }
 
@@ -271,7 +373,7 @@
     var color = String((data && data.color) || '').toLowerCase();
     if (color === 'coloreast' || color === 'colorred' || color.indexOf('east') >= 0) return true;
     var type = String((data && data.type) || (spec && spec.key) || '').toLowerCase();
-    if (type.indexOf('o_') === 0) return true;
+    if (type.indexOf('o_') === 0 || type.indexOf('mts_red') === 0) return true;
     if (spec && spec.group === 'Unités hostiles') return true;
     var helper = window.ArmaMapMarkers;
     if (helper && typeof helper.decodeType === 'function') {
@@ -283,17 +385,29 @@
 
   function markerThumb(key) {
     var helper = window.ArmaMapMarkers;
+    var specRow = markerSymbol(key);
+    if (helper && helper.resolvePngUrl && specRow && (specRow.kit === 'metis' || specRow.kit === 'markersplus')) {
+      var png = helper.resolvePngUrl({ type: key, pngUrl: specRow.png || '', png: specRow.png || '' });
+      if (png && /^https?:\/\//i.test(png)) {
+        return '<span class="ow-marker-thumb"><img src="' + esc(png) + '" alt="" width="26" height="26"></span>';
+      }
+      if (png && png.indexOf('/') === 0) {
+        return '<span class="ow-marker-thumb"><img src="' + esc(png) + '" alt="" width="26" height="26"></span>';
+      }
+    }
     if (helper && helper.buildIconSpec) {
-      var spec = helper.buildIconSpec({ type: key, color: markerColor(key), label: '', text: '' });
+      var payload = { type: key, color: markerColor(key), label: '', text: '' };
+      if (specRow && specRow.png) payload.pngUrl = specRow.png;
+      var spec = helper.buildIconSpec(payload);
       if (spec && spec.html) return '<span class="ow-marker-thumb">' + spec.html + '</span>';
     }
     return '<span class="ow-marker-thumb ow-marker-thumb-empty">●</span>';
   }
 
-  function markerGroups() {
+  function markerGroups(list) {
     var groups = [];
     var seen = {};
-    MARKER_SYMBOLS.forEach(function (item) {
+    (list || symbolsForKit()).forEach(function (item) {
       if (!seen[item.group]) {
         seen[item.group] = true;
         groups.push(item.group);
@@ -302,30 +416,80 @@
     return groups;
   }
 
-  function markerPickerHtml(selected) {
-    var html = '<div class="ow-marker-board">';
-    markerGroups().forEach(function (group) {
+  function markerKitTabsHtml(kit) {
+    return '<div class="ow-marker-kits" role="tablist" aria-label="Kit de marqueurs">' +
+      MARKER_KITS.map(function (row) {
+        return '<button type="button" class="ow-marker-kit' + (row.id === kit ? ' is-on' : '') +
+          '" data-ow-mkit="' + esc(row.id) + '" role="tab" aria-selected="' + (row.id === kit ? 'true' : 'false') + '">' +
+          esc(row.label) + '</button>';
+      }).join('') +
+      '</div>';
+  }
+
+  function markerPickerHtml(selected, kit) {
+    kit = kit || activeMarkerKit;
+    var list = symbolsForKit(kit);
+    var html = '<div class="ow-marker-kit-panel" data-ow-mkit-panel="' + esc(kit) + '">' + markerKitTabsHtml(kit);
+    if (!list.length) {
+      html += '<p class="ow-help">Aucun symbole dans ce kit pour le moment.</p></div>';
+      return html;
+    }
+    if (!list.some(function (item) { return item.key === selected; })) {
+      selected = list[0].key;
+    }
+    html += '<div class="ow-marker-board" data-ow-mkit-board="' + esc(kit) + '">';
+    markerGroups(list).forEach(function (group) {
       html += '<p class="ow-marker-group">' + esc(group) + '</p><div class="ow-marker-picker">';
-      MARKER_SYMBOLS.filter(function (item) { return item.group === group; }).forEach(function (item) {
+      list.filter(function (item) { return item.group === group; }).forEach(function (item) {
         html += '<button type="button" class="ow-marker-pick' + (selected === item.key ? ' is-on' : '') + '" data-ow-mtype="' + esc(item.key) + '" title="' + esc(item.label) + '">' +
           markerThumb(item.key) + '<span>' + esc(item.short) + '</span></button>';
       });
       html += '</div>';
     });
     html += '<p class="ow-marker-group">Liste</p><div class="ow-marker-list" role="list">';
-    MARKER_SYMBOLS.forEach(function (item) {
+    list.forEach(function (item) {
       html += '<button type="button" class="ow-marker-list-row' + (selected === item.key ? ' is-on' : '') + '" data-ow-mtype="' + esc(item.key) + '" role="listitem">' +
         markerThumb(item.key) +
         '<span><strong>' + esc(item.label) + '</strong><small>' + esc(item.hint) + '</small></span></button>';
     });
     html += '</div>';
     var cur = markerSymbol(selected);
-    html += '<p class="ow-marker-hint" id="ow-marker-hint">' + esc(cur.hint) + '</p></div>';
+    html += '<p class="ow-marker-hint" id="ow-marker-hint">' + esc(cur.hint) + '</p></div></div>';
     return html;
   }
 
+  function bindMarkerPicker(form) {
+    if (!form) return;
+    form.querySelectorAll('[data-ow-mtype]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        syncMarkerPick(btn.getAttribute('data-ow-mtype') || 'mil_dot');
+      });
+    });
+    form.querySelectorAll('[data-ow-mkit]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var kit = btn.getAttribute('data-ow-mkit') || 'otan';
+        if (kit === activeMarkerKit) return;
+        saveMarkerKitPref(kit);
+        var panel = form.querySelector('.ow-marker-kit-panel');
+        if (!panel || !panel.parentNode) return;
+        var first = symbolsForKit(kit)[0];
+        var nextType = first ? first.key : 'mil_dot';
+        var keep = pendingMarker && symbolsForKit(kit).some(function (s) { return s.key === pendingMarker.type; });
+        if (keep) nextType = pendingMarker.type;
+        var wrap = document.createElement('div');
+        wrap.innerHTML = markerPickerHtml(nextType, kit);
+        var next = wrap.firstChild;
+        if (!next) return;
+        panel.parentNode.replaceChild(next, panel);
+        pendingMarker.type = nextType;
+        bindMarkerPicker(form);
+        syncMarkerPick(nextType);
+      });
+    });
+  }
+
   function syncMarkerPick(key) {
-    pendingMarker.type = key || 'mil_dot';
+    pendingMarker.type = key || (symbolsForKit()[0] && symbolsForKit()[0].key) || 'mil_dot';
     var cur = markerSymbol(pendingMarker.type);
     document.querySelectorAll('[data-ow-mtype]').forEach(function (btn) {
       btn.classList.toggle('is-on', btn.getAttribute('data-ow-mtype') === pendingMarker.type);
@@ -347,15 +511,18 @@
   function promptMarker(ll) {
     var api = ow();
     if (!api) return Promise.resolve();
-    pendingMarker = { ll: ll, type: 'mil_dot' };
+    loadMarkerKitPref();
+    var kitList = symbolsForKit(activeMarkerKit);
+    var defaultType = (kitList[0] && kitList[0].key) || 'mil_dot';
+    pendingMarker = { ll: ll, type: defaultType };
     var w = api.latLngToWorld(ll);
-    var first = markerSymbol('mil_dot');
+    var first = markerSymbol(defaultType);
     api.openDrawer('Repère', 'Marqueur du théâtre',
-      '<p class="ow-help">Le symbole choisi apparaît au poste et en jeu, comme un marqueur posé sur la carte du théâtre.</p>' +
+      '<p class="ow-help">Choisissez un kit (OTAN, Arma 3, Metis ou MarkersPlus), puis le symbole. Il apparaît au poste et en jeu.</p>' +
       '<form class="ow-form-grid" id="ow-marker-form">' +
       '<label>Libellé<input name="label" required maxlength="80" placeholder="Nom du repère"></label>' +
       '<label>Description<textarea name="description" maxlength="400" placeholder="Effectif vu, armement, attitude, ce qui s’est passé."></textarea></label>' +
-      '<label>Symbole</label>' + markerPickerHtml('mil_dot') +
+      '<label>Kit et symbole</label>' + markerPickerHtml(defaultType, activeMarkerKit) +
       '<label>Déplacement<select name="movement">' +
       '<option value="still" selected>À l’arrêt</option>' +
       '<option value="moving">En déplacement</option>' +
@@ -373,12 +540,8 @@
       '<p class="ow-help">Grille ' + Math.round(w.x) + ' / ' + Math.round(w.y) + '</p>' +
       '<div class="ow-form-actions"><button class="ow-primary" type="submit">Poser</button></div></form>'
     );
-    document.querySelectorAll('#ow-marker-form [data-ow-mtype]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        syncMarkerPick(btn.getAttribute('data-ow-mtype') || 'mil_dot');
-      });
-    });
     var form = document.getElementById('ow-marker-form');
+    bindMarkerPicker(form);
     if (form) {
       var speed = form.querySelector('[name="speed_kmh"]');
       if (speed) speed.addEventListener('input', function () { speed.dataset.touched = '1'; });
@@ -412,31 +575,38 @@
     var speed = Number(opts.speed_kmh);
     var patrol = Number(opts.patrol_m);
     var movement = opts.movement === 'moving' || opts.movement === 'shuttle' ? opts.movement : 'still';
+    var typeKey = String(type);
+    var affiliation = '';
+    if (typeKey.indexOf('o_') === 0 || typeKey.indexOf('mts_red') === 0) affiliation = 'hostile';
+    else if (typeKey.indexOf('b_') === 0 || typeKey.indexOf('mts_blu') === 0) affiliation = 'friend';
+    else if (typeKey.indexOf('n_') === 0 || typeKey.indexOf('mts_neu') === 0 || typeKey.indexOf('mts_unk') === 0) affiliation = 'unknown';
+    var markerData = {
+      type: type,
+      color: markerColor(type),
+      affiliation: affiliation,
+      label: opts.label,
+      text: opts.label,
+      description: opts.description || '',
+      author: api.authorName,
+      pos: [w.x, w.y],
+      pos_x: w.x,
+      pos_y: w.y,
+      source: 'web',
+      placed_at: new Date().toISOString(),
+      movement: movement,
+      heading: Number.isFinite(heading) ? heading : null,
+      speed_kmh: Number.isFinite(speed) && speed > 0 ? speed : (spec.speedKmh || null),
+      patrol_m: Number.isFinite(patrol) && patrol > 0 ? patrol : 250,
+      presence_noun: spec.noun,
+      warn_min: spec.warnMin,
+      stale_min: spec.staleMin
+    };
+    if (spec && spec.png) markerData.png = spec.png;
     return api.api('/api/markers', {
       method: 'POST',
       body: {
         mapId: api.mapId,
-        markerData: {
-          type: type,
-          color: markerColor(type),
-          affiliation: String(type).indexOf('o_') === 0 ? 'hostile' : (String(type).indexOf('b_') === 0 ? 'friend' : (String(type).indexOf('n_') === 0 ? 'unknown' : '')),
-          label: opts.label,
-          text: opts.label,
-          description: opts.description || '',
-          author: api.authorName,
-          pos: [w.x, w.y],
-          pos_x: w.x,
-          pos_y: w.y,
-          source: 'web',
-          placed_at: new Date().toISOString(),
-          movement: movement,
-          heading: Number.isFinite(heading) ? heading : null,
-          speed_kmh: Number.isFinite(speed) && speed > 0 ? speed : (spec.speedKmh || null),
-          patrol_m: Number.isFinite(patrol) && patrol > 0 ? patrol : 250,
-          presence_noun: spec.noun,
-          warn_min: spec.warnMin,
-          stale_min: spec.staleMin
-        }
+        markerData: markerData
       }
     }).then(function () {
       toast('Marqueur posé — visible au poste et en jeu.');

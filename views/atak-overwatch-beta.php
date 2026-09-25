@@ -606,6 +606,7 @@ $icon = static function (string $path): string {
         <div class="ow-context-head" id="ow-ctx-head">Grille</div>
         <div class="ow-context-group" id="ow-ctx-delete-group" hidden>Élément</div>
         <button type="button" class="ow-ctx-danger" id="ow-ctx-delete" data-ctx="delete" hidden>Supprimer <span>Suppr</span></button>
+        <button type="button" id="ow-ctx-edit-arma" data-ctx="edit-arma" hidden>Personnaliser le marqueur <span></span></button>
         <div class="ow-context-group">Poser</div>
         <button type="button" data-ctx="marker">Marqueur du théâtre <span>M</span></button>
         <button type="button" data-ctx="ping">Repère rapide <span>•</span></button>
@@ -778,7 +779,7 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, les canaux et le fil : vous pouvez aussi chercher un mot dans le fil. Replay, bilan de mission et le journal sont dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
+    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE et au CASEVAC. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
@@ -923,6 +924,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-map-crs.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/nato-sidc-icons.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-marker-catalog.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/arma-marker-library-index.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-map-markers.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-popup.js?v=<?= $h($assetVer) ?>"></script>

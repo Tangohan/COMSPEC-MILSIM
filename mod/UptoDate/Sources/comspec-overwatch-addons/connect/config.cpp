@@ -17,9 +17,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.611;
-        versionStr = "1.6.11";
-        versionAr[] = {1, 6, 9};
+        version = 1.612;
+        versionStr = "1.6.12";
+        versionAr[] = {1, 6, 12};
     };
 };
 
@@ -371,6 +371,10 @@ class CfgFunctions {
             class reportAllySnapshot {};
             class isNearestAtakReporter {};
             class initProxyTrackServer {};
+            class initServerHub {};
+            class serverEnqueue {};
+            class serverFlushQueue {};
+            class serverPollMissionState {};
             class reportEnemyPosition {};
             class reportEnemyAiPositions {};
             class moduleAtakShowEnemyAi {};
