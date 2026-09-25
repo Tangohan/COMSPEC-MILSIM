@@ -53,13 +53,11 @@ final class AtakMapDataController
 
     /**
      * Relais same-origin des tuiles Atlas / plan-ops pour la vue relief (canevas).
+     * Note: endpoint public (pas de vérification session) car les tuiles sont des requêtes
+     * fetch() sans credentials, et les URLs distantes sont déjà publiques (GitHub Pages).
      */
     public function proxy(Request $request, array $params = []): Response
     {
-        $tenant = Session::get('tenant_id');
-        if ($tenant === null || $tenant === '' || (int) $tenant < 1) {
-            return $this->fail(403);
-        }
         $raw = (string) ($request->query('u') ?? $request->query('url') ?? '');
         $url = AtakRemoteTileGuard::normalize($raw);
         if ($url === null) {
