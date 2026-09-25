@@ -54,18 +54,28 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
             <!-- Warning double pénalité réseau -->
             <?php
             $portalDisconnect = !empty($config['disconnect_enabled']);
-            // Note : client_sim_enabled sera vérifié une fois centralisé en Phase 1
-            // Pour l'instant, on affiche uniquement un warning si les coupures portail sont actives
+            $portalNetworkOn = !empty($config['network_enabled']);
+            // Note : client_sim_enabled (comspec_overwatch_link_degrade_sim) ne peut pas être vérifié ici
+            // car c'est un setting CBA côté client. Le warning est affiché si simulation portail active.
             ?>
-            <?php if ($portalDisconnect): ?>
-            <div id="double-penalty-warning" class="rounded-xl border-2 border-amber-400 bg-amber-50 px-5 py-4" role="alert">
+            <?php if ($portalDisconnect || $portalNetworkOn): ?>
+            <div id="double-penalty-warning" class="rounded-xl border-2 border-red-400 bg-red-50 px-5 py-4" role="alert">
                 <div class="flex items-start gap-3">
-                    <svg class="h-6 w-6 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <svg class="h-6 w-6 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <div>
-                        <p class="font-bold text-amber-900">Coupures réseau actives côté portail</p>
-                        <p class="text-sm text-amber-800 mt-1">Les déconnexions temporaires sont activées côté serveur (portail 5-30s/600s). Si la simulation client est également active dans CBA, les joueurs subiront une double pénalité. Recommandation : désactivez l'un des deux systèmes.</p>
+                        <p class="font-bold text-red-900">⚠️ ATTENTION : Risque de double pénalité réseau</p>
+                        <p class="text-sm text-red-800 mt-1 mb-2">
+                            <strong>Simulation portail active</strong> : <?= $portalNetworkOn ? 'Latence/pertes paquets activées' : '' ?><?= $portalDisconnect ? ' · Déconnexions temporaires activées (5-30s / 600s)' : '' ?>.
+                        </p>
+                        <p class="text-sm text-red-800 leading-relaxed">
+                            Si vos joueurs ont <strong>également activé</strong> le setting CBA <code class="bg-red-100 px-1 rounded">comspec_overwatch_link_degrade_sim</code> (simulation liaison dégradée client), 
+                            ils subiront une <strong>DOUBLE pénalité</strong> : coupures portail (5-30s/600s) + coupures client (4-22s/240-600s) + pertes paquets cumulées.
+                        </p>
+                        <p class="text-xs text-red-700 mt-2 font-semibold">
+                            📖 Recommandation : Désactivez l'un des deux systèmes. Consultez <a href="<?= $h(url('docs/glossaire-realisme.md')) ?>" class="underline">le glossaire réalisme</a> pour plus de détails.
+                        </p>
                     </div>
                 </div>
             </div>
