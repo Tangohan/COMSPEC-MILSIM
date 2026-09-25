@@ -1,9 +1,22 @@
 /*
     Synchronise la config roleplay portail (zones, réseau) vers le client.
     Appelle l'extension GetRoleplayConfig → /api/atak/roleplay-stats
+    Si le hub serveur porte déjà ce poll, le client ne rappelle pas Athena.
 */
-if (!hasInterface) exitWith {};
+if (!hasInterface && {!isServer}) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+// Hub serveur actif avec uplink : pas de double appel HTTP ni recreation des zones.
+if (
+    hasInterface
+    && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}
+) exitWith { true };
+
+if (isServer && {!hasInterface}) exitWith {
+    // Dedicated : le hub appelle serverPollMissionState.
+    [] call comspec_overwatch_connect_fnc_serverPollMissionState
+};
+
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
 private _raw = ["COMSPECExtension" callExtension ["GetRoleplayConfig", []]] call comspec_overwatch_connect_fnc_extResult;

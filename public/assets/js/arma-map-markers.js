@@ -482,12 +482,16 @@ window.ArmaMapMarkers = (function () {
   function markerTooltipOf(data) {
     var title = displayLabelOf(data);
     var bits = [];
+    var desc = String((data && data.description) || '').trim();
+    if (desc) bits.push(desc);
     var by = String((data && (data.placed_by || data.author || data.callsign)) || '').trim();
     if (by && !isTechnicalLabel(by)) bits.push('Posé par ' + by);
     var ch = String((data && data.channel) || '').trim();
     if (ch) bits.push(ch);
     var at = String((data && data.placed_at) || '').trim();
     if (at) bits.push(at);
+    if (data && data.web_permanent) bits.push('Permanent poste');
+    else if (data && data.web_locked) bits.push('Personnalisé poste');
     if (!bits.length) return title;
     return title ? (title + ' — ' + bits.join(' · ')) : bits.join(' · ');
   }

@@ -7,10 +7,13 @@
   window.__OW_SUPPORT_AUTO__ = true;
 
   var POLL_MS = 12000;
+  var COLLAPSE_AT = 2;
   var seenKeys = {};
   var lastHtml = '';
   var liveWatch = {};
   var localAlerts = [];
+  /** null = auto (ouvert si peu d’alertes) ; true/false = choix opérateur */
+  var foldOpen = null;
 
   function apiBase() {
     return String(window.ATAK_API_BASE || '').replace(/\/$/, '');
@@ -60,6 +63,21 @@
     return Object.keys(map).map(function (k) { return map[k]; });
   }
 
+  function isFoldOpen(count) {
+    if (foldOpen === true) return true;
+    if (foldOpen === false) return false;
+    return count <= COLLAPSE_AT;
+  }
+
+  function bindFold(host) {
+    var details = host.querySelector('details.ow-support-auto-fold');
+    if (!details || details.dataset.bound === '1') return;
+    details.dataset.bound = '1';
+    details.addEventListener('toggle', function () {
+      foldOpen = !!details.open;
+    });
+  }
+
   function render(alerts) {
     var host = document.getElementById('ow-support-auto');
     if (!host) return;
@@ -77,15 +95,31 @@
       }
       return;
     }
-    var html = rows.map(function (a) {
+    var critical = rows.filter(function (a) {
+      return a.severity === 'critical' || a.severity === 'error';
+    }).length;
+    var open = isFoldOpen(rows.length);
+    var summaryBits = rows.length + ' alerte' + (rows.length > 1 ? 's' : '');
+    if (critical > 0) {
+      summaryBits += ' · ' + critical + ' critique' + (critical > 1 ? 's' : '');
+    }
+    var list = rows.map(function (a) {
       return '<article class="ow-support-auto-row ' + severityClass(a.severity) + '">' +
         '<header><span class="ow-support-auto-kind">' + esc(kindLabel(a)) + '</span>' +
         '<strong>' + esc(a.title || 'Alerte') + '</strong></header>' +
         '<p>' + esc(a.message || '') + '</p></article>';
     }).join('');
+    var html = '<details class="ow-support-auto-fold"' + (open ? ' open' : '') + '>' +
+      '<summary class="ow-support-auto-summary">' +
+      '<span class="ow-support-auto-summary-title">Surveillance automatique</span>' +
+      '<span class="ow-support-auto-summary-count">' + esc(summaryBits) + '</span>' +
+      '</summary>' +
+      '<div class="ow-support-auto-list">' + list + '</div>' +
+      '</details>';
     if (html !== lastHtml) {
       host.innerHTML = html;
       lastHtml = html;
+      bindFold(host);
     }
     var fresh = 0;
     rows.forEach(function (a) {

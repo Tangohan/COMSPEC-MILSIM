@@ -94,6 +94,10 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="ow-follow"', $view);
         self::assertStringContainsString('id="ow-po-markers"', $view);
         self::assertStringContainsString("'/api/atak/markers/'", $overwatchJs);
+        self::assertStringContainsString('openArmaMarkerSheet', $overwatchJs);
+        self::assertStringContainsString('ow-marker-edit-form', $overwatchJs);
+        self::assertStringContainsString('Permanent sur le serveur', $overwatchJs);
+        self::assertStringContainsString("'/api/markers/'", $overwatchJs);
         self::assertStringContainsString('loadPoMarkers', $overwatchJs);
         self::assertStringContainsString("'/api/atak/terrain/los'", $overwatchJs);
         self::assertStringContainsString('altitudeAtPoint', $overwatchJs);
@@ -116,6 +120,10 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('eta_minutes', $overwatchJs);
         self::assertStringContainsString('Demandes JTAC', $overwatchJs);
         self::assertStringContainsString('Arrivée estimée', $overwatchJs);
+        self::assertStringContainsString('ow-manifest-form', $overwatchJs);
+        self::assertStringContainsString('Nouveau manifeste de vol', $overwatchJs);
+        self::assertStringContainsString("'/api/atak/flight-manifest'", $overwatchJs);
+        self::assertStringContainsString('manifestFormHtml', $overwatchJs);
         self::assertStringContainsString('.ow-air-card', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
         self::assertStringContainsString("'/api/atak/vehicles?mapId='", $overwatchJs);
         self::assertStringContainsString('renderGpsVehiclesOnMap', $overwatchJs);
@@ -367,6 +375,16 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         $opsJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-ops.js');
         self::assertStringContainsString('dropPendingPreview', $opsJs);
         self::assertStringContainsString('missionId: missionId', $opsJs);
+        self::assertStringContainsString('MARKER_KITS', $opsJs);
+        self::assertStringContainsString("id: 'otan'", $opsJs);
+        self::assertStringContainsString("id: 'arma'", $opsJs);
+        self::assertStringContainsString("id: 'metis'", $opsJs);
+        self::assertStringContainsString("id: 'markersplus'", $opsJs);
+        self::assertStringContainsString('ow-marker-kit-panel', $opsJs);
+        self::assertStringContainsString('data-ow-mkit', $opsJs);
+        self::assertStringContainsString('athena:ow-marker-kit', $opsJs);
+        self::assertStringContainsString('buildLibrarySymbols', $opsJs);
+        self::assertStringContainsString('.ow-marker-kits', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
         $markerRepo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/AtakDataRepository.php');
         self::assertStringContainsString('findSuppressedTwin', $markerRepo);
         self::assertStringContainsString('suppressMarkerRow', $markerRepo);

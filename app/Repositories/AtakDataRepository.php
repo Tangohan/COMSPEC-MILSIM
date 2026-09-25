@@ -388,6 +388,7 @@ class AtakDataRepository
             $previous = json_decode((string) ($existing['marker_data'] ?? ''), true);
             if ($incomingDecoded !== [] && is_array($previous)) {
                 $merged = \App\Support\AtakPoMarker::preserveReached($incomingDecoded, $previous);
+                $merged = \App\Support\AtakMarkerWebOverride::preserveOnUpsert($merged, $previous);
                 $encoded = json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 if (is_string($encoded) && $encoded !== '') {
                     $markerData = $encoded;
@@ -450,6 +451,11 @@ class AtakDataRepository
         // Un retrait fait depuis le poste doit rester : ne pas effacer la trace,
         // sinon le prochain envoi depuis le jeu recrée le marqueur.
         if ($this->markerDataIsSuppressed((string) ($row['marker_data'] ?? ''))) {
+            return true;
+        }
+        $decoded = json_decode((string) ($row['marker_data'] ?? '{}'), true);
+        if (is_array($decoded) && \App\Support\AtakMarkerWebOverride::isPermanent($decoded)) {
+            // Marqueur permanent côté poste : le jeu ne peut pas l’effacer.
             return true;
         }
         $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');

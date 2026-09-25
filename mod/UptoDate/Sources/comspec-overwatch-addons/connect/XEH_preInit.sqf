@@ -69,6 +69,12 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_server_hub", "CHECKBOX",
+    ["Hub serveur (charge mission)", "Sur le serveur dédié ou l’hôte : un seul poll pour les relais, zones roleplay, ordres IA et file anti-spam. Les clients gardent leur liaison personnelle (position, téléphone)."],
+    "COMSPEC Overwatch", true, true
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_map_id", "SLIDER",
     ["Numéro de carte (opération)", "Identifiant de la carte Athena pour cette mission. Changez-le si plusieurs opérations tournent en même temps, pour ne pas mélanger les positions."],
     "COMSPEC Overwatch", [1, 99, 1, 0],

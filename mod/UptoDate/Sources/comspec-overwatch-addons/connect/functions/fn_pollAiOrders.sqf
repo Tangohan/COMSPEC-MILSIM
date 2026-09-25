@@ -1,12 +1,25 @@
 /*
     Interroge Athena pour les déplacements demandés aux IA alliées (carte ATAK).
     Lignes : id \t type \t target_ref \t status \t pos_x \t pos_y \t label
+    Priorité serveur (hub) : un seul poll pour toute la mission.
 */
-if (!hasInterface) exitWith { false };
+if (!isServer && {!hasInterface}) exitWith { false };
+if (
+    hasInterface
+    && {!isServer}
+    && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}
+) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+if (
+    !(missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+    && {!(missionNamespace getVariable ["COMSPEC_ServerUplinkOk", false])}
+) exitWith { false };
 
-private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+private _txGate = createHashMap;
+_txGate set ["can_transmit", true];
+if (hasInterface) then {
+    _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+};
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
@@ -71,8 +84,11 @@ private _n = 0;
     if ([_px, _py, _oid, _label, _unit] call comspec_overwatch_connect_fnc_applyAiMoveOrder) then {
         _applied pushBack _oid;
         _n = _n + 1;
-        private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
-        if (_by isEqualTo "") then { _by = name player; };
+        private _by = "SERVER";
+        if (hasInterface) then {
+            _by = [] call comspec_overwatch_connect_fnc_getCallsign;
+            if (_by isEqualTo "") then { _by = name player; };
+        };
         ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, "Deplacement IA"]]] call comspec_overwatch_connect_fnc_extResult;
         [
             {
