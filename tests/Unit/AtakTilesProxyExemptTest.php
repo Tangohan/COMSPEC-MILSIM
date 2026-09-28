@@ -12,10 +12,17 @@ final class AtakTilesProxyExemptTest extends TestCase
     public function testTilesProxyIsExemptFromTacticalApiKey(): void
     {
         $root = dirname(__DIR__, 2);
-        $cfg = require $root . '/config/tactical_api.php';
+        $cfgFile = (string) file_get_contents($root . '/config/tactical_api.php');
+        self::assertStringContainsString("'/api/atak/tiles'", $cfgFile);
+        self::assertFalse(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/tiles'));
+        self::assertTrue(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/position'));
+        self::assertFalse(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/ping'));
+    }
 
-        self::assertContains('/api/atak/tiles', $cfg['atak_exempt_paths'] ?? []);
-        self::assertFalse(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/tiles', $cfg));
-        self::assertTrue(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/position', $cfg));
+    public function testTacticalConfigSurvivesNonArrayRequire(): void
+    {
+        // pathRequiresProtection doit toujours renvoyer un bool sans TypeError.
+        self::assertIsBool(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/geo/places'));
+        self::assertIsBool(ComspecApiKeyAuth::pathRequiresProtection('/api/system/version'));
     }
 }

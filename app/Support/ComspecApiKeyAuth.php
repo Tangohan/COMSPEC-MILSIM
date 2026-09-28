@@ -31,6 +31,9 @@ final class ComspecApiKeyAuth
     /** @var array<string, mixed>|null */
     private static ?array $jsonObjectCache = null;
 
+    /** @var array<string, mixed>|null Config tactique (évite require répété / TypeError si non-array). */
+    private static ?array $tacticalConfigCache = null;
+
     public static function isAppProduction(): bool
     {
         $e = strtolower(trim((string) (($_ENV['APP_ENV'] ?? getenv('APP_ENV')) ?: '')));
@@ -199,6 +202,7 @@ final class ComspecApiKeyAuth
         self::$matchedUserId = null;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
+        self::$tacticalConfigCache = null;
     }
 
     public static function requestPresentsValidKey(): bool
@@ -507,10 +511,42 @@ final class ComspecApiKeyAuth
     /** @return array<string, mixed> */
     private static function tacticalConfig(): array
     {
+        if (self::$tacticalConfigCache !== null) {
+            return self::$tacticalConfigCache;
+        }
+
+        $fallback = [
+            'protected_prefixes' => [],
+            'atak_exempt_paths' => [
+                '/api/atak/ping',
+                '/api/atak/whoami',
+                '/api/atak/tiles',
+                '/api/atak/game-link/redeem',
+                '/api/atak/game-link/by-steam',
+                '/api/atak/pair/start',
+                '/api/atak/pair/status',
+                '/api/atak/pair/redeem',
+                '/api/atak/recovery/redeem',
+                '/api/atak/beta-register',
+                '/api/atak/mod-report',
+            ],
+            'exempt_paths' => [],
+        ];
+
         // Chemin projet sans base_path() : le middleware peut s’exécuter avant le chargement complet des helpers.
         $root = dirname(__DIR__, 2);
         $path = $root . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'tactical_api.php';
+        if (!is_file($path)) {
+            return self::$tacticalConfigCache = $fallback;
+        }
 
-        return is_file($path) ? require $path : ['protected_prefixes' => [], 'atak_exempt_paths' => [], 'exempt_paths' => []];
+        // Éviter le ternaire `? require :` et valider le type : un include déjà fait
+        // (require_once) ou un fichier sans `return` renvoie true/1 → TypeError fatale.
+        $loaded = require $path;
+        if (!is_array($loaded)) {
+            return self::$tacticalConfigCache = $fallback;
+        }
+
+        return self::$tacticalConfigCache = $loaded;
     }
 }
