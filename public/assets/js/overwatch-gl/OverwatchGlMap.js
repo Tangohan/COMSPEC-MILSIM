@@ -144,6 +144,9 @@ window.OverwatchGlMap = (function () {
   }
 
   function loadImage(url, abort) {
+    if (window.OverwatchTileCache && typeof window.OverwatchTileCache.loadImage === 'function') {
+      return window.OverwatchTileCache.loadImage(url, abort).catch(function () { return null; });
+    }
     return new Promise(function (resolve, reject) {
       if (!url) {
         resolve(null);
@@ -181,47 +184,67 @@ window.OverwatchGlMap = (function () {
     var z = parseInt(parts[0], 10) || 0;
     var x = parseInt(parts[1], 10) || 0;
     var y = parseInt(parts[2], 10) || 0;
-    var world = proj.mercatorTileWorld(z, x, y);
-    var canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#1a221c';
-    ctx.fillRect(0, 0, 256, 256);
-    if (world.maxX < 0 || world.maxY < 0 || world.minX > proj.worldSize || world.minY > proj.worldSize) {
-      return canvasToArrayBuffer(canvas).then(function (data) { return { data: data }; });
-    }
-    var mpp = (world.maxX - world.minX) / 256;
-    var spec = currentSpec;
-    var pattern = spec && spec.tilePattern ? spec.tilePattern : proj.tilePattern;
-    var armaZ = proj.pickArmaZoom(mpp, spec || { tileSize: proj.tileSize, factorX: proj.factorx, maxZoom: proj.maxZoom, minZoom: proj.minZoom });
-    var tiles = proj.armaTilesForWorld(world, armaZ, spec);
-    var jobs = tiles.slice(0, 24).filter(function (tile) {
-      return tile && tile.x >= 0 && tile.y >= 0 && tile.z >= 0;
-    }).map(function (tile) {
-      return loadImage(proj.tileUrl(pattern, tile.z, tile.x, tile.y), abort).then(function (img) {
-        if (!img) return;
-        var dx = (tile.minX - world.minX) / (world.maxX - world.minX) * 256;
-        var dw = (tile.maxX - tile.minX) / (world.maxX - world.minX) * 256;
-        var dy = (world.maxY - tile.maxY) / (world.maxY - world.minY) * 256;
-        var dh = (tile.maxY - tile.minY) / (world.maxY - world.minY) * 256;
-        try { ctx.drawImage(img, dx, dy, dw, dh); } catch (e) {}
-      });
-    });
-    return Promise.all(jobs).then(function () {
-      if (paintFilter === 'grayscale(1) contrast(1.18) brightness(1.02)') {
-        var id = ctx.getImageData(0, 0, 256, 256);
-        var d = id.data;
-        var i, g;
-        for (i = 0; i < d.length; i += 4) {
-          g = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
-          g = Math.max(0, Math.min(255, (g - 128) * 1.18 + 128 * 1.02));
-          d[i] = d[i + 1] = d[i + 2] = g;
-        }
-        ctx.putImageData(id, 0, 0);
+    var composeKey = [z, x, y, currentFond || 'plan', paintFilter || 'none'].join('|');
+    var cacheApi = window.OverwatchTileCache;
+
+    function paintFresh() {
+      var world = proj.mercatorTileWorld(z, x, y);
+      var canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#1a221c';
+      ctx.fillRect(0, 0, 256, 256);
+      if (world.maxX < 0 || world.maxY < 0 || world.minX > proj.worldSize || world.minY > proj.worldSize) {
+        return canvasToArrayBuffer(canvas).then(function (data) { return { data: data }; });
       }
-      return canvasToArrayBuffer(canvas).then(function (data) { return { data: data }; });
-    });
+      var mpp = (world.maxX - world.minX) / 256;
+      var spec = currentSpec;
+      var pattern = spec && spec.tilePattern ? spec.tilePattern : proj.tilePattern;
+      var armaZ = proj.pickArmaZoom(mpp, spec || { tileSize: proj.tileSize, factorX: proj.factorx, maxZoom: proj.maxZoom, minZoom: proj.minZoom });
+      var tiles = proj.armaTilesForWorld(world, armaZ, spec);
+      var painted = 0;
+      var jobs = tiles.slice(0, 24).filter(function (tile) {
+        return tile && tile.x >= 0 && tile.y >= 0 && tile.z >= 0;
+      }).map(function (tile) {
+        return loadImage(proj.tileUrl(pattern, tile.z, tile.x, tile.y), abort).then(function (img) {
+          if (!img) return;
+          painted += 1;
+          var dx = (tile.minX - world.minX) / (world.maxX - world.minX) * 256;
+          var dw = (tile.maxX - tile.minX) / (world.maxX - world.minX) * 256;
+          var dy = (world.maxY - tile.maxY) / (world.maxY - world.minY) * 256;
+          var dh = (tile.maxY - tile.minY) / (world.maxY - world.minY) * 256;
+          try { ctx.drawImage(img, dx, dy, dw, dh); } catch (e) {}
+        });
+      });
+      return Promise.all(jobs).then(function () {
+        if (paintFilter === 'grayscale(1) contrast(1.18) brightness(1.02)') {
+          var id = ctx.getImageData(0, 0, 256, 256);
+          var d = id.data;
+          var i, g;
+          for (i = 0; i < d.length; i += 4) {
+            g = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+            g = Math.max(0, Math.min(255, (g - 128) * 1.18 + 128 * 1.02));
+            d[i] = d[i + 1] = d[i + 2] = g;
+          }
+          ctx.putImageData(id, 0, 0);
+        }
+        return canvasToArrayBuffer(canvas).then(function (data) {
+          if (painted > 0 && cacheApi && typeof cacheApi.putArrayBuffer === 'function') {
+            cacheApi.putArrayBuffer(composeKey, data);
+          }
+          return { data: data };
+        });
+      });
+    }
+
+    if (cacheApi && typeof cacheApi.getArrayBuffer === 'function') {
+      return cacheApi.getArrayBuffer(composeKey).then(function (cached) {
+        if (cached && cached.byteLength > 1024) return { data: cached };
+        return paintFresh();
+      }).catch(function () { return paintFresh(); });
+    }
+    return paintFresh();
   }
 
   function rgbUrl() {

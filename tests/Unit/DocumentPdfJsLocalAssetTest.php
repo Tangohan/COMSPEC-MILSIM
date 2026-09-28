@@ -27,7 +27,7 @@ final class DocumentPdfJsLocalAssetTest extends TestCase
         self::assertFileExists($root . '/public/assets/vendor/pdfjs/pdf.worker.min.mjs');
         self::assertFileExists($root . '/docs/bugs/2026-09-01-documents-pdfjs-csp.md');
         self::assertFileExists($root . '/docs/bugs/2026-09-02-pdf-mjs-mime.md');
-        self::assertStringContainsString("athena-shell-v9", $sw);
+        self::assertStringContainsString("athena-shell-v10", $sw);
         self::assertStringContainsString('/assets/vendor/pdfjs/', $sw);
         self::assertStringContainsString('/documents/', $sw);
         self::assertStringContainsString("new URL(url).origin !== self.location.origin", $sw);

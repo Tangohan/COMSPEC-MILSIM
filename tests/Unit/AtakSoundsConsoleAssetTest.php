@@ -46,6 +46,10 @@ final class AtakSoundsConsoleAssetTest extends TestCase
         self::assertStringContainsString("dest === 'audio'", $sw);
         self::assertStringContainsString("headers.get('range')", $sw);
         self::assertStringContainsString("ct.indexOf('audio/')", $sw);
-        self::assertStringContainsString('athena-shell-v9', $sw);
+        self::assertStringContainsString('athena-shell-v10', $sw);
+        self::assertStringContainsString('athena-overwatch-tiles-v2', $sw);
+        self::assertStringContainsString('isMapTileRequest', $sw);
+        self::assertStringContainsString('/api/atak/tiles', $sw);
+        self::assertStringContainsString('/api/atak/terrain/rgb/', $sw);
     }
 }

@@ -62,6 +62,8 @@ final class AtakPollBackoffAssetTest extends TestCase
         self::assertStringContainsString("url.indexOf('/api/')", $sw);
         self::assertStringContainsString("url.indexOf('/uploads/')", $sw);
         self::assertStringContainsString("url.indexOf('/public/atak')", $sw);
+        self::assertStringContainsString('isMapTileRequest', $sw);
+        self::assertStringContainsString('athena-overwatch-tiles-v2', $sw);
         self::assertStringContainsString("status: 504", $sw);
         self::assertStringNotContainsString('Response.error()', $sw);
         self::assertStringNotContainsString('return fetch(event.request);', $sw);

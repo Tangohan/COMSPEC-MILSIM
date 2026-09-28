@@ -16,6 +16,7 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-c2.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tacmap.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/TheaterProjection.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchTileCache.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlMap.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlLayers.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/overwatch-gl/OverwatchGlTactics.js')
@@ -931,6 +932,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-motion.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-popup.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchTileCache.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>

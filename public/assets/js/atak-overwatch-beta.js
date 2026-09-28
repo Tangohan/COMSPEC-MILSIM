@@ -15,7 +15,9 @@
   var ASIDE_KEY = 'athena:overwatch-aside-widths-v2';
   var DRAW_COLOR_KEY = 'athena:overwatch-draw-color';
   var DRAW_WIDTH_KEY = 'athena:overwatch-draw-width';
-  var TILE_CACHE = 'athena-overwatch-tiles-v1';
+  var TILE_CACHE = (window.OverwatchTileCache && window.OverwatchTileCache.NAME)
+    ? window.OverwatchTileCache.NAME
+    : 'athena-overwatch-tiles-v2';
   var LABEL_SIZE_KEY = 'athena:overwatch-label-size';
 
   function proxiedTilePattern(pattern) {
@@ -182,6 +184,10 @@
     baseTileLayer.on('tileload', function (ev) {
       var src = ev && ev.tile && ev.tile.src;
       if (!src || !window.caches) return;
+      if (window.OverwatchTileCache && window.OverwatchTileCache.fetchBlob) {
+        window.OverwatchTileCache.fetchBlob(src).catch(function () {});
+        return;
+      }
       caches.open(TILE_CACHE).then(function (cache) {
         return fetch(src, { mode: 'cors', credentials: 'omit' }).then(function (res) {
           if (res && res.ok) cache.put(src, res);
@@ -191,9 +197,16 @@
     baseTileLayer.on('tileerror', function (ev) {
       var img = ev && ev.tile;
       if (!img || !window.caches) return;
+      var restore = function (blob) {
+        if (blob) img.src = URL.createObjectURL(blob);
+      };
+      if (window.OverwatchTileCache && window.OverwatchTileCache.fetchBlob) {
+        window.OverwatchTileCache.fetchBlob(img.src).then(restore).catch(function () {});
+        return;
+      }
       caches.open(TILE_CACHE).then(function (cache) {
         return cache.match(img.src).then(function (hit) {
-          if (hit) return hit.blob().then(function (blob) { img.src = URL.createObjectURL(blob); });
+          if (hit) return hit.blob().then(restore);
         });
       }).catch(function () {});
     });
@@ -7510,9 +7523,11 @@
   window.setTimeout(function () { map.invalidateSize({ animate: false }); }, 120);
 
   caches.open(TILE_CACHE).then(function () {
-    document.getElementById('ow-cache-label').textContent = 'Fonds prêts';
+    var label = document.getElementById('ow-cache-label');
+    if (label) label.textContent = 'Fonds en cache local';
   }).catch(function () {
-    document.getElementById('ow-cache-label').textContent = 'Fonds indisponibles';
+    var label = document.getElementById('ow-cache-label');
+    if (label) label.textContent = 'Fonds indisponibles';
   });
 
   mountSquadTaskPanel();
