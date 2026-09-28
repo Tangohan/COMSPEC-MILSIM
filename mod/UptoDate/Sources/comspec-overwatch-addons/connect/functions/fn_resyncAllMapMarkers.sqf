@@ -13,6 +13,10 @@ if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
 private _markers = +allMapMarkers;
 if (!(_markers isEqualType [])) exitWith {};
 
+// Budget : ne pas rejouer toute la carte d’un coup après une longue session
+private _budget = 40;
+private _spent = 0;
+
 private _prev = missionNamespace getVariable ["COMSPEC_Athena_MapMarkerSnap", createHashMap];
 if (!(_prev isEqualType createHashMap)) then { _prev = createHashMap; };
 private _next = createHashMap;
@@ -54,8 +58,18 @@ private _mirroredElsewherePrefixes = [
         _pos select 0, _pos select 1, _type, _text, _color, _dir, _alpha, _shape,
         _size select 0, _size select 1, _brush
     ];
+    if ((_prev getOrDefault [_name, ""]) isEqualTo _sig) then {
+        _next set [_name, _sig];
+        continue
+    };
+
+    if (_spent >= _budget) then {
+        // Reporter : garder l’ancienne signature pour retenter au prochain passage
+        _next set [_name, _prev getOrDefault [_name, ""]];
+        continue
+    };
+    _spent = _spent + 1;
     _next set [_name, _sig];
-    if ((_prev getOrDefault [_name, ""]) isEqualTo _sig) then { continue };
 
     // force=true : rattrapage même si la liaison est momentanément dégradée
     // (fiab. < 100 %) — sinon les INF / Widget restent coincés côté téléphone.
@@ -64,14 +78,17 @@ private _mirroredElsewherePrefixes = [
     if (!_ok) then { _next set [_name, ""]; };
 } forEach _markers;
 
-{
-    if (!(_x in _next)) then {
-        private _delName = _x;
-        if ((_delName find "#") >= 0) then {
-            _delName = (_delName splitString "#" joinString "__H__");
+// Suppressions : seulement si le budget n’a pas été saturé (sinon on risque des faux positifs)
+if (_spent < _budget) then {
+    {
+        if (!(_x in _next)) then {
+            private _delName = _x;
+            if ((_delName find "#") >= 0) then {
+                _delName = (_delName splitString "#" joinString "__H__");
+            };
+            "COMSPECExtension" callExtension ["SendMarker", [_delName, "{}", "1", "1"]];
         };
-        "COMSPECExtension" callExtension ["SendMarker", [_delName, "{}", "1", "1"]];
-    };
-} forEach (keys _prev);
+    } forEach (keys _prev);
+};
 
 missionNamespace setVariable ["COMSPEC_Athena_MapMarkerSnap", _next, false];

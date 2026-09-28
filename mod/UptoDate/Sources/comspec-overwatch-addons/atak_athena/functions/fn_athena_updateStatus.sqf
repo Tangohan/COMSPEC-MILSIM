@@ -244,6 +244,21 @@ _body = _body + ([
     format ["%1 envoyés · %2 reçus", _sentTot, _recvTot],
     "#e8f4f0"
 ] call _row);
+private _tr = missionNamespace getVariable ["COMSPEC_LinkTraffic", createHashMap];
+if (_tr isEqualType createHashMap) then {
+    private _cpm = _tr getOrDefault ["calls_per_min", 0];
+    private _ctot = _tr getOrDefault ["calls_total", 0];
+    private _cerr = _tr getOrDefault ["calls_err", 0];
+    private _bin = _tr getOrDefault ["bytes_in_total", 0];
+    private _loadColor = if (_cpm >= 40) then { "#ff8a7a" } else {
+        if (_cpm >= 20) then { "#ffd27a" } else { "#7dffb0" }
+    };
+    _body = _body + ([
+        "Charge liaison (1 min)",
+        format ["%1 échanges · %2 au total · %3 en erreur · ~%4 Ko reçus", _cpm, _ctot, _cerr, round (_bin / 1024)],
+        _loadColor
+    ] call _row);
+};
 _body = _body + (["Module de liaison", _extLabel, _extColor] call _row);
 _body = _body + ([
     "Athena prêt",

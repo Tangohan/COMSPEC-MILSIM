@@ -40,10 +40,15 @@ private _vol = ["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
 if (_vol <= 0.01) exitWith {};
 
 private _silentVib = _pref isEqualTo "silent_vib";
-private _snd = switch (_kind) do {
-    case "down": { if (_silentVib) then { "COMSPEC_ATAK_Vibrate" } else { "COMSPEC_ATAK_Disconnect" } };
-    case "up": { if (_silentVib) then { "COMSPEC_ATAK_Vibrate" } else { "COMSPEC_ATAK_Start" } };
-    default { "COMSPEC_ATAK_Vibrate" };
+if (_silentVib) then {
+    if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+        [1, false] call comspec_overwatch_connect_fnc_playAtakVibrate;
+    };
+} else {
+    private _snd = switch (_kind) do {
+        case "down": { "COMSPEC_ATAK_Disconnect" };
+        case "up": { "COMSPEC_ATAK_Start" };
+        default { "COMSPEC_ATAK_Vibrate" };
+    };
+    playSoundUI [_snd, _vol, 1];
 };
-
-playSoundUI [_snd, _vol, 1];

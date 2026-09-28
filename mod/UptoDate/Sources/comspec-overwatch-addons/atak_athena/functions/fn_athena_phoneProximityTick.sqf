@@ -57,6 +57,10 @@ _scan append allDeadMen;
 
     if (!_alert) then { continue };
 
+    private _gLast = missionNamespace getVariable ["COMSPEC_AtakPhoneProxGlobalAt", -999];
+    if ((diag_tickTime - _gLast) < 12) then { continue };
+    missionNamespace setVariable ["COMSPEC_AtakPhoneProxGlobalAt", diag_tickTime, false];
+
     private _label = "Téléphone suivi";
     if (!isNil "comspec_overwatch_connect_fnc_phoneTrackCallsign") then {
         _label = [_u] call comspec_overwatch_connect_fnc_phoneTrackCallsign;

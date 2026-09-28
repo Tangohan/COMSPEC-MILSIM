@@ -1900,7 +1900,10 @@ class AtakApiController
         if ($r instanceof Response) {
             return $r;
         }
-        $summary = $this->ingestTrafficRepo()->summary((int) $r, $this->mapId($request));
+        $tenantId = (int) $r;
+        $mapId = $this->mapId($request);
+        $summary = $this->ingestTrafficRepo()->summary($tenantId, $mapId);
+        $summary['load'] = $this->atak->syncLoadSnapshot($tenantId, $mapId);
 
         return Response::json($summary);
     }
@@ -2540,6 +2543,7 @@ class AtakApiController
                 'events' => $events,
                 'total' => $result['total'],
                 'has_more' => $result['has_more'],
+                'load' => $this->buildSyncLoadStats($tenantId, $mapId, $events),
             ]);
         }
 
@@ -2571,7 +2575,31 @@ class AtakApiController
         return Response::json([
             'events' => $events,
             'cursor' => $cursor,
+            'load' => $this->buildSyncLoadStats($tenantId, $mapId, $events),
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return array<string, int>
+     */
+    private function buildSyncLoadStats(int $tenantId, int $mapId, array $events): array
+    {
+        $load = $this->atak->syncLoadSnapshot($tenantId, $mapId);
+        $cut = time() - 300;
+        $n = 0;
+        foreach ($events as $e) {
+            if (!is_array($e)) {
+                continue;
+            }
+            $at = strtotime((string) ($e['at'] ?? ''));
+            if ($at !== false && $at >= $cut) {
+                $n++;
+            }
+        }
+        $load['events_5m'] = $n;
+
+        return $load;
     }
 
     /**

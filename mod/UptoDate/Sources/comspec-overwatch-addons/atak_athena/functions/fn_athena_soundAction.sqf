@@ -67,11 +67,11 @@ switch (toLower _action) do {
                 ["Silence total actif - changez le style d'alerte pour entendre un son.", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
             };
             case "silent_vib": {
-                private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-                if (_vol > 0.01) then {
-                    playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
-                } else {
-                    ["Volume vibration trop bas.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+                if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+                    private _ok = [1, true] call comspec_overwatch_connect_fnc_playAtakVibrate;
+                    if (!_ok) then {
+                        ["Volume vibration trop bas ou style muet.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+                    };
                 };
             };
             case "stalker": {

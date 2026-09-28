@@ -161,6 +161,8 @@ $icon = static function (string $path): string {
           <div class="ow-event"><span>Depuis la dernière synchro</span><strong id="ow-traffic-since">Aucune remontée</strong></div>
           <div class="ow-event"><span>Volume 15 min</span><strong id="ow-traffic-window">0 Mo</strong></div>
           <div class="ow-event"><span>Dont photos</span><strong id="ow-traffic-photos">0 Mo</strong></div>
+          <div class="ow-event"><span>Opérateurs en liaison</span><strong id="ow-traffic-ops">—</strong></div>
+          <div class="ow-event"><span>Repères carte</span><strong id="ow-traffic-markers">—</strong></div>
         </div>
 
         <p class="ow-kicker">Fond de carte</p>

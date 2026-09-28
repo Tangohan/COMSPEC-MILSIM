@@ -22,6 +22,13 @@ if (_body isEqualTo "" || {_body isEqualTo "[]"}) exitWith {
     ["marqueurs", 0, " (aucun)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
 
+// Skip si payload inchangé (évite de rejouer tout l’historique à chaque poll)
+private _sig = format ["%1:%2", count _body, _body select [0, ((count _body) min 48)]];
+if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_WebMarkersSig", ""])) exitWith {
+    ["marqueurs", 0, " (inchangé)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+};
+missionNamespace setVariable ["COMSPEC_WebMarkersSig", _sig, false];
+
 private _seen = [];
 private _created = 0;
 private _nl = toString [10];

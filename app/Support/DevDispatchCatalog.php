@@ -268,6 +268,32 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(717, '2026-09-28', 'Pack jeu : arsenal fluide, moins de vibrations, charge visible', 'L’arsenal ne télécharge plus les tenues de l’organisation tant que vous n’ouvrez pas le bouton ATHENA. Le téléphone vibre moins souvent. Après une longue session, la synchronisation des marqueurs est étalée. La charge de liaison est visible en jeu, sur Overwatch Beta et dans le back-office (Liaison temps réel). Relancez Arma après Overwatch 1.6.14 · Athena 1.0.167.', [
+                'Bouton arsenal « ATHENA : Collection de votre organisation » avec chargement à la demande',
+                'Indicateur de charge liaison sur l’écran État du téléphone',
+                'Bandeau de charge sur le journal Activité de liaison (carte ATAK / poste)',
+                'Panneau trafic Overwatch Beta : opérateurs en liaison et repères carte',
+                'Santé de la synchronisation dans le back-office (Liaison temps réel)',
+            ], [
+                'Vibrations de proximité limitées (une seule, avec délai)',
+            ], [
+                'Gel de l’arsenal au chargement des tenues communauté',
+                'Resynchronisation massive des marqueurs après de longues sessions',
+            ], ['atak'], [
+                'Quittez Arma. Rechargez Overwatch 1.6.14 et Athena 1.0.167. Ouvrez l’arsenal : il doit rester fluide. Cliquez « ATHENA : Collection de votre organisation » : un chargement s’affiche puis les collections. Vérifiez État pour la ligne « Charge liaison ». Sur Overwatch Beta, le panneau trafic affiche opérateurs et repères. Dans le back-office ATAK, la rubrique Liaison temps réel montre la santé de sync.',
+            ], 'Overwatch 1.6.14'),
+            $pr(716, '2026-09-28', 'Pack jeu : boussole K et sons radio préservés', 'La touche K ne prend plus le téléphone ATAK : elle redevient la boussole du jeu. Les volumes du terminal n’agissent que sur les alertes COMSPEC et ne doivent plus interférer avec les bips radio (ACRE) ni les sons du jeu. Relancez Arma complètement après le pack Overwatch 1.6.13.', [], [
+                'Textes d’aide du téléphone et du carnet : plus de mention « touche K » pour ouvrir ATAK',
+                'Volume général ATAK décrit comme limité au terminal (pas au jeu ni à la radio)',
+                'Arrêt de surveillance radio : le canal d’origine est restauré',
+            ], [
+                'K ouvrait le téléphone et masquait la boussole native',
+                'Surveillance radio ACRE plus robuste pour ne pas perturber la chaîne d’événements audio',
+                'Surveillance radio qui basculait le canal sans pouvoir le rendre',
+                'Tableau de bord Relais qui ne se fermait plus correctement',
+            ], ['atak'], [
+                'Quittez Arma complètement. Rechargez le pack Overwatch 1.6.13. Appuyez sur K : la boussole doit s’afficher. Avec ACRE, le bip de fin d’émission doit rester audible même si le volume ATAK est à zéro. Pour rouvrir le téléphone : Options → Contrôles → Extension Addon, ou Ctrl+K / Ctrl+Shift+K. Si vous surveillez un réseau radio depuis le téléphone, arrêtez la surveillance pour retrouver votre canal.',
+            ], 'Overwatch 1.6.13'),
             $pr(715, '2026-09-22', 'Poste Overwatch : choisir le kit de marqueurs', 'Lors de la pose d’un marqueur sur Overwatch Beta, le poste peut désormais choisir le kit OTAN, Arma 3, Metis ou MarkersPlus, puis le symbole correspondant. Le choix de kit est mémorisé pour la prochaine pose. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Onglets OTAN, Arma 3, Metis et MarkersPlus dans le tiroir Marqueur du théâtre',
                 'Palette filtrée selon le kit choisi, avec aperçu du symbole',

@@ -300,6 +300,26 @@ window.ATAKActivity = (function () {
     updateBadge();
   }
 
+  function updateLoadStrip(load) {
+    var wrap = document.getElementById('atak-activity-load');
+    if (!wrap || !load || typeof load !== 'object') return;
+    var ops = document.getElementById('atak-activity-load-ops');
+    var mk = document.getElementById('atak-activity-load-mk');
+    var ev = document.getElementById('atak-activity-load-ev');
+    var live = Number(load.operators_live || 0);
+    var total = Number(load.operators_total || 0);
+    var markers = Number(load.markers || 0);
+    var events5 = Number(load.events_5m || 0);
+    if (ops) ops.textContent = live + ' en liaison' + (total > live ? ' / ' + total : '');
+    if (mk) mk.textContent = markers + ' repère' + (markers > 1 ? 's' : '');
+    if (ev) {
+      ev.textContent = events5 + ' échange' + (events5 > 1 ? 's' : '') + ' / 5 min';
+      ev.classList.toggle('atak-pill--warn', events5 >= 80);
+      ev.classList.toggle('atak-pill--ok', events5 > 0 && events5 < 80);
+    }
+    wrap.hidden = false;
+  }
+
   function isStaleEvent(ev) {
     if (!ev || !ev.at) return false;
     var windowSec = (typeof window.ATAK_ACTIVITY_STALE_SECONDS === 'number' && window.ATAK_ACTIVITY_STALE_SECONDS > 0)
@@ -1218,6 +1238,7 @@ window.ATAKActivity = (function () {
           if (emptyEl) emptyEl.hidden = events.length > 0;
         }
         mergeEvents(events, !!incremental, cursor);
+        if (data && data.load) updateLoadStrip(data.load);
         // Chargement initial : peupler Assistances depuis tout l’historique Liaison visible.
         if (!incremental && window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromActivityEvents === 'function') {
           window.ATAKMedicalAlerts.ingestFromActivityEvents(events);

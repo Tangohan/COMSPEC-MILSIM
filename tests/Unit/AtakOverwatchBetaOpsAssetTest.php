@@ -57,6 +57,8 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('ow-los-block', $ops);
         self::assertStringContainsString("color: '#00d69a'", $ops);
         self::assertStringContainsString('/api/atak/ingest-traffic', $ops);
+        self::assertStringContainsString('ow-traffic-ops', $ops);
+        self::assertStringContainsString('payload.load', $ops);
         self::assertStringContainsString('Relais ATAK', $ops);
         self::assertStringContainsString('registerScratch', $ops);
         self::assertStringContainsString("api.registerScratch(group, 'los'", $ops);

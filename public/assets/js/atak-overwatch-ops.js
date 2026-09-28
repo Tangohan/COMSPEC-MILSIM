@@ -1380,6 +1380,15 @@
       if (win) win.textContent = formatMo(payload && payload.bytes_15m);
       var ph = document.getElementById('ow-traffic-photos');
       if (ph) ph.textContent = formatMo(payload && payload.photo_bytes_15m);
+      var load = payload && payload.load ? payload.load : {};
+      var opsEl = document.getElementById('ow-traffic-ops');
+      if (opsEl) {
+        var live = Number(load.operators_live || 0);
+        var total = Number(load.operators_total || 0);
+        opsEl.textContent = live + (total > live ? ' / ' + total : '');
+      }
+      var mkEl = document.getElementById('ow-traffic-markers');
+      if (mkEl) mkEl.textContent = String(Number(load.markers || 0));
       drawSpark(payload && payload.series);
     }).catch(function () {});
   }

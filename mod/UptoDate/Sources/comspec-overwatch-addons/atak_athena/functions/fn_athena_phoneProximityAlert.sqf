@@ -1,6 +1,7 @@
 /*
     Vibration + bandeau quand un ATAK allié entre dans le rayon d’un téléphone suivi.
     Params: [_displayName, _distanceM]
+    Anti-spam : 1 vibration max, cooldown global + cooldown par contact.
 */
 params [
     ["_displayName", "Téléphone suivi", [""]],
@@ -24,25 +25,10 @@ private _distTxt = if (_distanceM >= 1000) then {
 };
 
 private _msg = format ["Téléphone proche — %1 (%2)", _name, _distTxt];
-private _style = missionNamespace getVariable ["comspec_overwatch_notif_sound", "silent_vib"];
-if (!(_style isEqualType "")) then { _style = "silent_vib"; };
-private _muted = (toLower _style) isEqualTo "mute";
 
-if (!_muted) then {
-    private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-    if (_vol > 0.01) then {
-        playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
-        [_vol] spawn {
-            params ["_vol"];
-            uiSleep 0.28;
-            playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
-            uiSleep 0.32;
-            private _v2 = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-            if (_v2 > 0.01) then {
-                playSoundUI ["COMSPEC_ATAK_Vibrate", _v2, 1];
-            };
-        };
-    };
+// Vibration unique (anti-spam géré dans playAtakVibrate)
+if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+    [1, false] call comspec_overwatch_connect_fnc_playAtakVibrate;
 };
 
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;

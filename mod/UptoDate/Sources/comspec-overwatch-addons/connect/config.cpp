@@ -17,8 +17,8 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.612;
-        versionStr = "1.6.12";
+        version = 1.614;
+        versionStr = "1.6.14";
         versionAr[] = {1, 6, 12};
     };
 };
@@ -136,6 +136,7 @@ class CfgFunctions {
             class arsenalPullAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
+            class arsenalOverlayBeginLoad {};
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
             class arsenalCollectionName {};
@@ -194,6 +195,7 @@ class CfgFunctions {
             class getRadioTxState {};
             class scanRadioProximity {};
             class monitorRadioNet {};
+            class unmonitorRadioNet {};
             class initRadioMonitor {};
             class getMedicalState {};
             class isPlayerSpawnStable {};
@@ -548,6 +550,7 @@ class CfgFunctions {
             class addAtakRepairAction {};
             class updateAtakEnhancedRoleplay {};
             class playAtakEnhancedSound {};
+            class playAtakVibrate {};
             class createRoleplayZone {};
             class deleteRoleplayZone {};
             class getPlayerRoleplayZone {};
@@ -697,8 +700,9 @@ class CfgNotifications {
     };
 };
 
+// Sons ATAK uniquement (classes COMSPEC_*). Jamais de fadeSound / soundVolume /
+// enableEnvironment : ACRE, le jeu et les autres mods gardent leur audio.
 class CfgSounds {
-    sounds[] = {};
     class COMSPEC_ATAK_SilentVib {
         name = "Silencieux — vibration seule";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_silencieux_vibration.ogg", 1, 1, 50};

@@ -399,6 +399,10 @@ switch (true) do {
         [_ch, _rid] call comspec_overwatch_connect_fnc_monitorRadioNet;
         call _fnc_refresh;
     };
+    case ((_cmd select [0, 15]) isEqualTo "radio:unmonitor"): {
+        [] call comspec_overwatch_connect_fnc_unmonitorRadioNet;
+        call _fnc_refresh;
+    };
     case ((_cmd select [0, 11]) isEqualTo "radio:focus"): {
         private _rest = _cmd select [11, (count _cmd) - 11];
         if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };

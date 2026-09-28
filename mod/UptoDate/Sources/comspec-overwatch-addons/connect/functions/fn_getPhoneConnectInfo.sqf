@@ -24,7 +24,7 @@ private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 if (_prefix != "OK") exitWith {
     private _code = if (count _parts >= 2) then { _parts select 1 } else { _raw };
     private _msg = switch (_code) do {
-        case "not_connected": { "Liaison Athena non établie — liez votre compte (touche K → Compte Athena) ou vérifiez l’URL du mod, puis réessayez." };
+        case "not_connected": { "Liaison Athena non établie — liez votre compte (téléphone ATAK → Compte Athena) ou vérifiez l’URL du mod, puis réessayez." };
         case "not_found": { "Adresse Athena incorrecte ou service indisponible (page introuvable). Utilisez https://athena.ttrd.fr/public sans slash final." };
         case "unauthorized": { "Accès refusé — liez votre compte Athena en jeu, ou renseignez la clé d’accès fournie par votre admin." };
         case "mod_steam_blocked": { "Accès au mod refusé pour cet identifiant Steam — contactez un administrateur de la communauté." };

@@ -193,7 +193,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
-}, 45, []] call CBA_fnc_addPerFrameHandler;
+}, 90, []] call CBA_fnc_addPerFrameHandler;
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};

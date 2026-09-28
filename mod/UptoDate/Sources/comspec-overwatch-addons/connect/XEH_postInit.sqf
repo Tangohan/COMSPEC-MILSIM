@@ -505,7 +505,9 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     };
 
     // ACE : inconscience / rétablissement
-    // Plus d’entrées dans le menu molette : tablette = K, hub = Ctrl+Shift+K, messagerie = Ctrl+K.
+    // Plus d’entrées dans le menu molette : téléphone / messagerie / apps via
+    // Options → Contrôles → Extension Addon (Ctrl+K / Ctrl+Shift+K proposés ;
+    // K libre pour la boussole native).
     // (Les outils restent accessibles via le hub / ACE / tablette.)
 
     // Roleplay : PFH pour simuler les déconnexions réseau aléatoires

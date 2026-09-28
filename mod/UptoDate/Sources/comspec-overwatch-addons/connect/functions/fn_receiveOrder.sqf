@@ -84,11 +84,11 @@ if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onVibrate") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onVibrate;
     } else {
-        // Fallback si atak_athena absent — son packé connect, UI (toujours audible)
-        playSoundUI ["COMSPEC_ATAK_Vibrate", 1.6, 1];
-        [] spawn {
-            uiSleep 0.35;
-            playSoundUI ["COMSPEC_ATAK_Vibrate", 1.6, 1];
+        // Fallback si atak_athena absent — une seule vibration
+        if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+            [1, true] call comspec_overwatch_connect_fnc_playAtakVibrate;
+        } else {
+            playSoundUI ["COMSPEC_ATAK_Vibrate", 1.2, 1];
         };
         private _msg = format ["Votre terminal vibre — appel de %1", _issuer];
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;

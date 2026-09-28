@@ -1007,6 +1007,62 @@ class AtakDataRepository
     }
 
     /**
+     * Instantané de charge liaison pour le poste (métriques simples).
+     *
+     * @return array{
+     *   operators_live: int,
+     *   operators_total: int,
+     *   markers: int,
+     *   events_5m: int,
+     *   window_seconds: int
+     * }
+     */
+    public function syncLoadSnapshot(int $tenantId, int $mapId): array
+    {
+        $ttl = self::UNIT_LIVE_TTL_SECONDS;
+        $live = 0;
+        $total = 0;
+        $markers = 0;
+
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE
+                        WHEN status IN (\'linked\', \'delayed\')
+                         AND updated_at IS NOT NULL
+                         AND updated_at >= (NOW() - INTERVAL ' . (int) $ttl . ' SECOND)
+                        THEN 1 ELSE 0 END) AS live
+                 FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            );
+            $st->execute([$tenantId, $mapId]);
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+            $total = (int) ($row['total'] ?? 0);
+            $live = (int) ($row['live'] ?? 0);
+        } catch (\Throwable) {
+            // table absente / schéma partiel
+        }
+
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT COUNT(*) FROM atak_markers WHERE tenant_id = ? AND map_id = ?'
+            );
+            $st->execute([$tenantId, $mapId]);
+            $markers = (int) $st->fetchColumn();
+        } catch (\Throwable) {
+            $markers = 0;
+        }
+
+        return [
+            'operators_live' => $live,
+            'operators_total' => $total,
+            'markers' => $markers,
+            'events_5m' => 0, // rempli côté contrôleur (journal fichier)
+            'window_seconds' => $ttl,
+        ];
+    }
+
+    /**
      * Clés TOC (notes effectifs) à préserver lors d’un upsert position jeu.
      * @return list<string>
      */

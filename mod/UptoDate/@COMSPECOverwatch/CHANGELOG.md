@@ -1,4 +1,70 @@
-﻿COMSPEC Overwatch 1.6.12 / Athena ATAK 1.0.166 / Extension 2.0.51 — 22/09/2026
+﻿COMSPEC Overwatch 1.6.14 / Athena ATAK 1.0.167 / Extension 2.0.51 — 28/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.6.14[/h1]
+[b]Publication : 28/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.6.14 · Athena 1.0.167 · Extension 2.0.51
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement, mettez à jour le pack, puis relancez. Rechargez aussi la carte du poste (Ctrl+F5) pour voir la charge de liaison.
+[/quote]
+
+[h2]Correction — Arsenal qui gelait[/h2]
+Le bouton Athena de l’arsenal ne synchronise plus les tenues tant que vous ne cliquez pas dessus. Un indicateur de chargement s’affiche, puis la collection de l’organisation.
+
+[list]
+[*] libellé : ATHENA : Collection de votre organisation ;
+[*] plus de téléchargement massif des tenues pour les icônes ;
+[*] ouverture de l’arsenal à nouveau fluide.
+[/list]
+
+[h2]Correction — Vibrations trop fréquentes[/h2]
+Le téléphone ne vibre plus en rafales. Une seule vibration, avec un délai minimum entre deux alertes de proximité. La commande Vibrer depuis le poste reste immédiate.
+
+[h2]Amélioration — Charge de synchronisation[/h2]
+Après une longue session, la carte et les marqueurs ne sont plus rejoués d’un seul bloc. Vous voyez désormais la charge de liaison :
+
+[list]
+[*] écran État du téléphone : charge liaison (échanges récents) ;
+[*] Overwatch Beta : panneau trafic avec opérateurs en liaison et repères carte ;
+[*] back-office ATAK : santé de la synchronisation sous Liaison temps réel.
+[/list]
+
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.14 · Athena 1.0.167 · Extension 2.0.51
+
+---
+
+COMSPEC Overwatch 1.6.13 / Athena ATAK 1.0.166 / Extension 2.0.51 — 28/09/2026
+
+[h1]COMSPEC Overwatch — Mise à jour 1.6.13[/h1]
+[b]Publication : 28/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.6.13 · Athena 1.0.166 · Extension 2.0.51
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement, mettez à jour le pack, puis relancez. La touche K redevient la boussole du jeu ; assignez au besoin un raccourci téléphone dans Options → Contrôles → Extension Addon.
+[/quote]
+
+[h2]Correction — Boussole native (touche K)[/h2]
+Le téléphone ATAK n’est plus ouvert par défaut avec la touche K. Celle-ci affiche de nouveau la boussole du jeu.
+
+[list]
+[*] le raccourci « Téléphone ATAK / tablette » n’a plus de touche par défaut ;
+[*] les profils qui avaient encore K sont libérés automatiquement une fois ;
+[*] Ctrl+K (messagerie) et Ctrl+Shift+K (applications) restent proposés.
+[/list]
+
+[h2]Correction — Sons radio et jeu préservés[/h2]
+Les volumes du terminal n’agissent que sur les alertes COMSPEC. Ils ne doivent pas couper les bips radio (ACRE) ni les sons du jeu ou des autres mods.
+
+[list]
+[*] surveillance radio ACRE en lecture seule, plus robuste ;
+[*] bascule de canal pour surveillance : le canal d’origine est restauré à l’arrêt ;
+[*] libellé du volume général ATAK clarifié ;
+[*] tableau de bord Relais qui se ferme correctement (ESC / bouton).
+[/list]
+
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.13 · Athena 1.0.166 · Extension 2.0.51
+
+---
+
+COMSPEC Overwatch 1.6.12 / Athena ATAK 1.0.166 / Extension 2.0.51 — 22/09/2026
 
 [h1]COMSPEC Overwatch — Mise à jour 1.6.12[/h1]
 [b]Publication : 22/09/2026[/b]

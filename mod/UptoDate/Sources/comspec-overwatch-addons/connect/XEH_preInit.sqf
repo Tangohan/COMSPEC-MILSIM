@@ -258,7 +258,7 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_sound_master", "SLIDER",
-    ["Volume général ATAK", "Multiplie tous les sons du terminal (alertes, vibration, effets de liaison). 0 = silence total. Réglable depuis l’app Sons de l’ATAK."],
+    ["Volume général ATAK", "Multiplie uniquement les sons du terminal COMSPEC (alertes, vibration, effets de liaison). N’affecte ni le jeu, ni ACRE, ni les autres mods. 0 = silence ATAK seulement. Réglable depuis l’app Sons de l’ATAK."],
     "COMSPEC Overwatch",
     [0, 1, 1, 2],
     false
@@ -340,7 +340,7 @@ private _fnc_applyNet = {
     "comspec_overwatch_atak_ui_only", "CHECKBOX",
     [
         "Interface uniquement via ATAK Enhanced (recommandé)",
-        "Activé par défaut : la touche K et les menus associés ouvrent le téléphone ATAK Enhanced. La tablette Overwatch séparée n’est plus ouverte hors d’ATAK. Décochez seulement si vous devez retrouver l’ancienne tablette Overwatch hors ATAK. La liaison Athena et la synchronisation restent actives dans les deux cas."
+        "Activé par défaut : les raccourcis ATAK (Options → Contrôles → Extension Addon) ouvrent le téléphone ATAK Enhanced. La tablette Overwatch séparée n’est plus ouverte hors d’ATAK. Décochez seulement si vous devez retrouver l’ancienne tablette Overwatch hors ATAK. La liaison Athena et la synchronisation restent actives dans les deux cas. La touche K reste réservée à la boussole du jeu."
     ],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
@@ -669,13 +669,17 @@ private _fnc_applyNet = {
 ] call CBA_fnc_addSetting;
 
 // Raccourcis (CBA — personnalisables dans Options > Contrôles > Extension Addon)
-// Par défaut (ATAK Enhanced only) :
-//   K / Ctrl+K / Ctrl+Shift+K → téléphone ATAK Enhanced
-// Si « Interface uniquement via ATAK Enhanced » est décoché :
-//   K → tablette Overwatch, Ctrl+K → messagerie, Ctrl+Shift+K → applications
+// Pas de défaut sur K : la boussole native Arma utilise K.
+// Ctrl+K / Ctrl+Shift+K restent proposés (messagerie / apps).
+// Une fois par profil : écrase l’ancien défaut K pour rendre la boussole.
+private _hubOverwrite = !(profileNamespace getVariable ["COMSPEC_KeybindHubKFreed_v1", false]);
+if (_hubOverwrite) then {
+    profileNamespace setVariable ["COMSPEC_KeybindHubKFreed_v1", true];
+    saveProfileNamespace;
+};
 [
     "COMSPEC Overwatch", "comspec_menu_hub",
-    ["Téléphone ATAK / tablette", "Ouvre ATAK Enhanced (défaut) ou la tablette Overwatch si l’option ATAK-only est désactivée (K)"],
+    ["Téléphone ATAK / tablette", "Ouvre ATAK Enhanced (défaut) ou la tablette Overwatch si l’option ATAK-only est désactivée. Aucune touche par défaut — K reste la boussole du jeu. Assignez un raccourci dans Options → Contrôles → Extension Addon."],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
         if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
@@ -687,8 +691,8 @@ private _fnc_applyNet = {
         true
     },
     "",
-    [0x25, [false, false, false]], // DIK_K
-    false, 0, false
+    [], // plus de DIK_K — boussole native
+    false, 0, _hubOverwrite
 ] call CBA_fnc_addKeybind;
 
 [
@@ -989,8 +993,10 @@ if (isClass (configFile >> "CfgPatches" >> "comspec_sse_biometrics")) then {
     ["Ouvrir fiche SSE (FRS / SEEK)", "Ouvre le terminal de recueil source. Defaut : Ctrl+Shift+S (si le mod SSE n'est pas charge)."],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-        [] call comspec_overwatch_connect_fnc_sseOpenFromKeybind;
-        true
+        private _ok = [] call comspec_overwatch_connect_fnc_sseOpenFromKeybind;
+        if (_ok isEqualType true) exitWith { _ok };
+        // Ouverture tentée sans booléen explicite : consommer la touche seulement si pas d’échec clair
+        !(_ok isEqualTo false)
     },
     "",
     _sseKeyDefault,

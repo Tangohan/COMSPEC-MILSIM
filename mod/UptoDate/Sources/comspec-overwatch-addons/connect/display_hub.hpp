@@ -35,7 +35,7 @@ class COMSPEC_Hub_Dialog {
 
         class Subtitle: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.62' color='#8aa0b4'>Centre opérationnel · touche K</t>";
+            text = "<t align='center' size='0.62' color='#8aa0b4'>Centre opérationnel · raccourcis dans Options</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.125 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;

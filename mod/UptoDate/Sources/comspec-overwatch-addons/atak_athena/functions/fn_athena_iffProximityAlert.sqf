@@ -18,15 +18,9 @@ private _distTxt = if (_distanceM >= 1000) then {
 };
 
 private _msg = format ["Contact non identifié — %1", _distTxt];
-private _style = missionNamespace getVariable ["comspec_overwatch_notif_sound", "silent_vib"];
-if (!(_style isEqualType "")) then { _style = "silent_vib"; };
-private _muted = (toLower _style) isEqualTo "mute";
 
-if (!_muted) then {
-    private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-    if (_vol > 0.01) then {
-        playSoundUI ["COMSPEC_ATAK_Vibrate", _vol * 0.7, 1];
-    };
+if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+    [0.7, false] call comspec_overwatch_connect_fnc_playAtakVibrate;
 };
 
 ["ATHENA", _msg, 5] call comspec_overwatch_connect_fnc_addScreenToast;

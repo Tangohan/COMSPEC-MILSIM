@@ -17,22 +17,19 @@ if (_order isEqualType createHashMap) then {
 
 private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
 
-private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-if (_vol > 0.01) then {
-    playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
-    [_vol] spawn {
-        params ["_vol"];
-        uiSleep 0.35;
-        private _v2 = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
-        if (_v2 > 0.01) then {
-            playSoundUI ["COMSPEC_ATAK_Vibrate", _v2, 1];
-        };
+// Vibration forcée TOC (ignore le cooldown anti-spam des alertes de proximité)
+if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then {
+    [1, true] call comspec_overwatch_connect_fnc_playAtakVibrate;
+} else {
+    private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+    if (_vol > 0.01) then {
+        playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
     };
 };
 
 private _msg = format ["Votre terminal vibre — appel de %1", _issuer];
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
-        ["ATHENA", _msg, 6] call comspec_overwatch_connect_fnc_addScreenToast;
+["ATHENA", _msg, 6] call comspec_overwatch_connect_fnc_addScreenToast;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 // Le TOC a atteint ce terminal : lever une coupure simulée aléatoire.

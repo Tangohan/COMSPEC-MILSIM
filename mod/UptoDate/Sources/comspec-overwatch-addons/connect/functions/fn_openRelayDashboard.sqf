@@ -7,11 +7,20 @@
 
 if (!hasInterface) exitWith {};
 
-// Fermer les dialogs existants
-closeDialog 0;
+// Fermer un éventuel dashboard précédent (createDisplay, pas createDialog)
+private _prev = uiNamespace getVariable ["COMSPEC_RelayDashboard_Display", displayNull];
+if (!isNull _prev) then { _prev closeDisplay 2; };
 
 // Créer le display
 private _display = findDisplay 46 createDisplay "RscDisplayEmpty";
+if (isNull _display) exitWith { false };
+uiNamespace setVariable ["COMSPEC_RelayDashboard_Display", _display];
+private _fnc_closeDash = {
+    private _d = uiNamespace getVariable ["COMSPEC_RelayDashboard_Display", displayNull];
+    if (!isNull _d) then { _d closeDisplay 2; };
+    uiNamespace setVariable ["COMSPEC_RelayDashboard_Display", displayNull];
+};
+uiNamespace setVariable ["COMSPEC_RelayDashboard_Close", _fnc_closeDash];
 
 // Background semi-transparent
 private _bg = _display ctrlCreate ["RscText", 1000];
@@ -164,7 +173,7 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
     hint format ["✅ %1 relais resynchronisés", _count];
     
     // Fermer et rouvrir pour refresh
-    closeDialog 0;
+    call (uiNamespace getVariable ["COMSPEC_RelayDashboard_Close", {}]);
     [] spawn {
         sleep 0.5;
         call comspec_overwatch_connect_fnc_openRelayDashboard;
@@ -203,7 +212,7 @@ _btnClose ctrlSetText "✖";
 _btnClose ctrlSetBackgroundColor [0.6, 0.1, 0.1, 0.9];
 _btnClose ctrlSetTextColor [1, 1, 1, 1];
 _btnClose ctrlAddEventHandler ["ButtonClick", {
-    closeDialog 0;
+    call (uiNamespace getVariable ["COMSPEC_RelayDashboard_Close", {}]);
 }];
 
 // Info footer
@@ -261,11 +270,12 @@ _listBox ctrlAddEventHandler ["LBDblClick", {
     };
 }];
 
-// ESC pour fermer
+// ESC pour fermer (createDisplay → closeDisplay, pas closeDialog)
 _display displayAddEventHandler ["KeyDown", {
     params ["_display", "_key"];
-    if (_key == 1) then { // ESC
-        closeDialog 0;
+    if (_key == 1) exitWith {
+        _display closeDisplay 2;
+        uiNamespace setVariable ["COMSPEC_RelayDashboard_Display", displayNull];
         true
     };
     false

@@ -649,6 +649,36 @@ foreach ($dataSummary as $k => $v) {
 
                 <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
                     <h2 class="text-sm font-bold text-slate-800 mb-4">Liaison temps réel (site ↔ Tacmap ↔ jeu)</h2>
+                    <div id="atak-config-sync-health" class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4" data-map-id="<?= (int) ($config['default_map_id'] ?? 1) ?>">
+                        <p class="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-3">Santé de la synchronisation</p>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Dernière remontée</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-ago">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Débit récent</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-kbps">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Volume 15 min</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-vol">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Opérateurs en liaison</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-ops">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Repères carte</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-mk">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase text-slate-500">Dont photos (15 min)</p>
+                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-photo">—</p>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">Mesures live depuis le jeu et le poste. Se rafraîchit toutes les 10 secondes. Aucune action requise ici.</p>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Adresse de base du service de liaison (facultatif)</label>
                         <input type="url" name="node_url" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-slate-300 focus:border-slate-400" placeholder="Laisser vide pour utiliser ce site" value="<?= htmlspecialchars((string) ($config['node_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" />
@@ -754,3 +784,47 @@ foreach ($dataSummary as $k => $v) {
         </aside>
     </div>
 </div>
+<script>
+(function () {
+  var root = document.getElementById('atak-config-sync-health');
+  if (!root) return;
+  var mapId = root.getAttribute('data-map-id') || '1';
+  var base = <?= json_encode(rtrim((string) ($baseUrl ?? ''), '/'), JSON_UNESCAPED_SLASHES) ?>;
+  function fmtMo(bytes) {
+    var n = Number(bytes || 0);
+    if (n < 1024) return n + ' o';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' ko';
+    return (n / (1024 * 1024)).toFixed(2) + ' Mo';
+  }
+  function tick() {
+    fetch(base + '/api/atak/ingest-traffic?mapId=' + encodeURIComponent(mapId), { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        var ago = document.getElementById('atak-cfg-sync-ago');
+        var kbps = document.getElementById('atak-cfg-sync-kbps');
+        var vol = document.getElementById('atak-cfg-sync-vol');
+        var ops = document.getElementById('atak-cfg-sync-ops');
+        var mk = document.getElementById('atak-cfg-sync-mk');
+        var ph = document.getElementById('atak-cfg-sync-photo');
+        if (ago) ago.textContent = d.last_sync_ago || 'Aucune remontée';
+        if (kbps) {
+          var k = Number(d.kbps_now || 0);
+          kbps.textContent = k >= 10 ? Math.round(k) + ' ko/s' : (k > 0 ? k.toFixed(1) + ' ko/s' : '0');
+        }
+        if (vol) vol.textContent = fmtMo(d.bytes_15m);
+        if (ph) ph.textContent = fmtMo(d.photo_bytes_15m);
+        var load = d.load || {};
+        if (ops) {
+          var live = Number(load.operators_live || 0);
+          var total = Number(load.operators_total || 0);
+          ops.textContent = live + (total > live ? ' / ' + total : '');
+        }
+        if (mk) mk.textContent = String(Number(load.markers || 0));
+      })
+      .catch(function () {});
+  }
+  tick();
+  window.setInterval(tick, 10000);
+})();
+</script>

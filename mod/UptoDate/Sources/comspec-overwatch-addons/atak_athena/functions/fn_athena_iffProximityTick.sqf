@@ -55,6 +55,10 @@ private _grp = group player;
     private _last = _cool getOrDefault [_key, -999];
     if ((_now - _last) < 45) then { continue };
     _cool set [_key, _now];
+    // Aussi un cooldown global : plusieurs contacts = une seule alerte toutes les 12 s
+    private _gLast = missionNamespace getVariable ["COMSPEC_AtakIffProxGlobalAt", -999];
+    if ((_now - _gLast) < 12) then { continue };
+    missionNamespace setVariable ["COMSPEC_AtakIffProxGlobalAt", _now, false];
     [_dist] call comspec_overwatch_atak_athena_fnc_athena_iffProximityAlert;
 } forEach allUnits;
 

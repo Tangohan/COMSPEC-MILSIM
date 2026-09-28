@@ -2822,6 +2822,11 @@ if ($atakMapConfig) {
                 <span class="atak-pill atak-pill--ok" id="atak-activity-meta-count">0</span>
                 <span class="atak-activity-meta-label" id="atak-activity-meta-label">dans le journal</span>
               </div>
+              <div class="atak-activity-load" id="atak-activity-load" hidden aria-live="polite">
+                <span class="atak-pill" id="atak-activity-load-ops">0 en liaison</span>
+                <span class="atak-pill" id="atak-activity-load-mk">0 repères</span>
+                <span class="atak-pill" id="atak-activity-load-ev">0 échanges / 5 min</span>
+              </div>
               <div class="atak-activity-actions">
                 <a class="atak-activity-link" id="atak-activity-fullscreen" href="<?= $base ?>/atak/liaison">Voir tout</a>
                 <button type="button" class="atak-activity-clear" id="atak-activity-clear" title="Mettre le journal de côté sans le supprimer">Vider</button>

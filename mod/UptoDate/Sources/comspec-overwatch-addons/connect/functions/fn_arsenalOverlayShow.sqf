@@ -19,17 +19,17 @@ private _sideW = 13 * _gridW;
 private _gap = 0.010;
 private _guiH = ((((safezoneW / safezoneH) min 1.2) / 1.2) / 25);
 
-private _btnW = 0.096 * safezoneW;
-private _btnH = 0.030 * safezoneH;
+private _btnW = 0.255 * safezoneW;
+private _btnH = 0.032 * safezoneH;
 private _btnX = safeZoneX + safeZoneW - _sideW - _gap - _btnW;
 private _btnY = safeZoneY + 0.010;
 
 private _tog = _display ctrlCreate ["RscButton", 884400];
 _tog ctrlSetPosition [_btnX, _btnY, _btnW, _btnH];
-_tog ctrlSetText "Athena";
-_tog ctrlSetTooltip "Tenues de la communauté — ouvrir ou fermer";
+_tog ctrlSetText "ATHENA : Collection de votre organisation";
+_tog ctrlSetTooltip "ATHENA : Collection de votre organisation — aucune synchronisation tant que vous ne cliquez pas.";
 _tog ctrlSetFont "PuristaMedium";
-_tog ctrlSetFontHeight (_guiH * 0.82);
+_tog ctrlSetFontHeight (_guiH * 0.62);
 _tog ctrlSetBackgroundColor [0.08, 0.18, 0.16, 0.94];
 _tog ctrlSetTextColor [0.82, 0.96, 0.90, 1];
 _tog ctrlAddEventHandler ["ButtonClick", {
@@ -42,9 +42,11 @@ _tog ctrlAddEventHandler ["ButtonClick", {
     _d setVariable ["COMSPEC_ArsenalOverlayOpen", _open];
     _grp ctrlShow _open;
     if (!isNull _btn) then {
-        _btn ctrlSetText (if (_open) then { "Fermer" } else { "Athena" });
+        _btn ctrlSetText (if (_open) then { "Fermer la collection" } else { "ATHENA : Collection de votre organisation" });
     };
-    if (_open) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
+    if (!_open) exitWith {};
+    // Aucune sync tant que le panneau n’est pas ouvert — et chargement différé + loader
+    [_d] call comspec_overwatch_connect_fnc_arsenalOverlayBeginLoad;
 }];
 _tog ctrlCommit 0;
 _display setVariable ["COMSPEC_ArsenalToggle", _tog];
@@ -74,7 +76,7 @@ _accent ctrlCommit 0;
 private _pad = 0.012;
 private _title = _display ctrlCreate ["RscStructuredText", -1, _grp];
 _title ctrlSetPosition [_pad, 0.008, _w - (_pad * 2), 0.028];
-_title ctrlSetStructuredText parseText "<t size='1.12' color='#d8f6ec' font='PuristaBold'>Tenues de la communauté</t><t size='0.78' color='#7a9a92'>   Partager vos tenues · importer celles de la communauté</t>";
+_title ctrlSetStructuredText parseText "<t size='1.05' color='#d8f6ec' font='PuristaBold'>ATHENA : Collection de votre organisation</t><t size='0.74' color='#7a9a92'>   Partager · importer — chargement uniquement à l’ouverture</t>";
 _title ctrlCommit 0;
 
 private _hint = _display ctrlCreate ["RscStructuredText", 884419, _grp];
@@ -273,6 +275,8 @@ _btnPushOne ctrlAddEventHandler ["ButtonClick", {
             ["Ouvrez une collection, choisissez une tenue, puis Partager cette tenue.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
         };
         [[_name]] call comspec_overwatch_connect_fnc_arsenalPushAll;
+        missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false];
+        _d setVariable ["COMSPEC_ArsenalForceList", true];
         [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
     };
 }];
@@ -289,7 +293,11 @@ _btnPushAll ctrlAddEventHandler ["ButtonClick", {
     [] spawn {
         [] call comspec_overwatch_connect_fnc_arsenalPushAll;
         private _d = uiNamespace getVariable ["ace_arsenal_display", displayNull];
-        if (!isNull _d) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
+        if (!isNull _d) then {
+            missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false];
+            _d setVariable ["COMSPEC_ArsenalForceList", true];
+            [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
+        };
     };
 }];
 _btnPushAll ctrlCommit 0;
@@ -317,6 +325,8 @@ _btnPullOne ctrlAddEventHandler ["ButtonClick", {
             ["Ouvrez une collection, choisissez une tenue, puis Importer cette tenue.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
         };
         ["", [_id]] call comspec_overwatch_connect_fnc_arsenalPullAll;
+        missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false];
+        _d setVariable ["COMSPEC_ArsenalForceList", true];
         [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
     };
 }];
@@ -333,7 +343,11 @@ _btnPullAll ctrlAddEventHandler ["ButtonClick", {
     [] spawn {
         [] call comspec_overwatch_connect_fnc_arsenalPullAll;
         private _d = uiNamespace getVariable ["ace_arsenal_display", displayNull];
-        if (!isNull _d) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
+        if (!isNull _d) then {
+            missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false];
+            _d setVariable ["COMSPEC_ArsenalForceList", true];
+            [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
+        };
     };
 }];
 _btnPullAll ctrlCommit 0;
@@ -408,6 +422,8 @@ _btnDelCloud ctrlAddEventHandler ["ButtonClick", {
         if (!_ok) exitWith {};
         if ([_id] call comspec_overwatch_connect_fnc_arsenalDeleteCloud) then {
             ["La tenue a été retirée de la communauté.", "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
+            missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false];
+            _d setVariable ["COMSPEC_ArsenalForceList", true];
             [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
         };
     };

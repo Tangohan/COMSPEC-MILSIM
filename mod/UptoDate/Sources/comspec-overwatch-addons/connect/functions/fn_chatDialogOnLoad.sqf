@@ -26,7 +26,7 @@ if (!isNull _logCtrl) then {
                 "[Athena] Journal vide — liaison showne active. Envoyez un message ou rouvrez Compte Athena si le site ne reçoit rien."
             };
             default {
-                "[Athena] Aucun événement. Touche K → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
+                "[Athena] Aucun événement. Ouvrez le téléphone ATAK → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
             };
         };
         _logCtrl ctrlSetText (_hint + (toString [10]));

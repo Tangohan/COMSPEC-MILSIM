@@ -16,8 +16,8 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.166;
-        versionStr = "1.0.166";
+        version = 1.167;
+        versionStr = "1.0.167";
         versionAr[] = {1, 0, 165};
         // Historique : 1.0.164 couches/IFF, 1.0.165 Reco dans le téléphone.
     };
