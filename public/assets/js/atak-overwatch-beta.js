@@ -7530,6 +7530,70 @@
     if (label) label.textContent = 'Fonds indisponibles';
   });
 
+  (function mountTilesPrefetch() {
+    var btn = document.getElementById('ow-tiles-prefetch');
+    var cancelBtn = document.getElementById('ow-tiles-prefetch-cancel');
+    var status = document.getElementById('ow-tiles-prefetch-status');
+    if (!btn) return;
+    var abortCtrl = null;
+    function setStatus(text) {
+      if (status) status.textContent = text || '';
+    }
+    function busy(on) {
+      btn.disabled = !!on;
+      btn.hidden = !!on;
+      if (cancelBtn) cancelBtn.hidden = !on;
+    }
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function () {
+        if (abortCtrl) abortCtrl.abort();
+      });
+    }
+    btn.addEventListener('click', function () {
+      if (!window.OverwatchTileCache || typeof window.OverwatchTileCache.prefetchTheater !== 'function') {
+        setStatus('Le téléchargement des fonds n’est pas disponible sur ce navigateur.');
+        return;
+      }
+      if (abortCtrl) return;
+      abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      busy(true);
+      setStatus('Préparation du téléchargement…');
+      window.OverwatchTileCache.prefetchTheater({
+        signal: abortCtrl ? abortCtrl.signal : null,
+        onProgress: function (done, total, phase) {
+          if (phase === 'start') {
+            setStatus('Téléchargement : 0 / ' + total + ' — vous pouvez continuer à travailler.');
+            return;
+          }
+          if (phase === 'progress' || phase === 'done') {
+            setStatus('Téléchargement : ' + done + ' / ' + total + (phase === 'done' ? ' — terminé.' : ' — en cours…'));
+          }
+        }
+      }).then(function (result) {
+        abortCtrl = null;
+        busy(false);
+        if (!result) {
+          setStatus('Téléchargement interrompu.');
+          return;
+        }
+        if (result.cancelled) {
+          setStatus('Téléchargement arrêté (' + result.done + ' / ' + result.total + ' déjà enregistrés).');
+          return;
+        }
+        var label = document.getElementById('ow-cache-label');
+        if (label) label.textContent = 'Fonds téléchargés';
+        setStatus(
+          'Fonds enregistrés dans ce navigateur (' + result.ok + ' extraits). ' +
+          'Les zooms suivants utilisent d’abord ces copies locales.'
+        );
+      }).catch(function (err) {
+        abortCtrl = null;
+        busy(false);
+        setStatus(err && err.message ? String(err.message) : 'Échec du téléchargement des fonds.');
+      });
+    });
+  })();
+
   mountSquadTaskPanel();
   mountFsAlertPanel();
   initSceneFootprints();

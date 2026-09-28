@@ -164,12 +164,163 @@ window.OverwatchTileCache = (function () {
     return openCache().then(function (cache) { return !!cache; });
   }
 
+  function tileUrlFromPattern(pattern, z, x, y) {
+    var raw = String(pattern || '')
+      .replace('{z}', String(z))
+      .replace('{x}', String(x))
+      .replace('{y}', String(y));
+    if (window.OverwatchTheaterProjection && window.OverwatchTheaterProjection.proxiedTileUrl) {
+      return window.OverwatchTheaterProjection.proxiedTileUrl(raw);
+    }
+    var api = String(window.ATAK_API_BASE || '').replace(/\/$/, '');
+    if (/^https?:\/\//i.test(raw) && api) {
+      try {
+        if (new URL(raw, window.location.href).hostname !== window.location.hostname) {
+          return api + '/api/atak/tiles?u=' + encodeURIComponent(raw);
+        }
+      } catch (e) {}
+    }
+    return raw;
+  }
+
+  function collectTheaterPatterns() {
+    var out = [];
+    var seen = {};
+    function add(pattern, minZ, maxZ, label) {
+      var p = String(pattern || '');
+      if (!p || seen[p]) return;
+      seen[p] = true;
+      out.push({
+        pattern: p,
+        minZ: Math.max(0, minZ != null ? Number(minZ) : 0),
+        maxZ: Math.max(0, maxZ != null ? Number(maxZ) : 5),
+        label: label || 'Fond'
+      });
+    }
+    var cfg = window.ATAK_MAP_CONFIG || {};
+    if (cfg.tilePattern) {
+      add(cfg.tilePattern, cfg.minZoom, cfg.maxZoom != null ? cfg.maxZoom : 5, 'Plan');
+    }
+    if (window.ATAKAerial && typeof window.ATAKAerial.resolveLayers === 'function') {
+      window.ATAKAerial.resolveLayers(cfg).forEach(function (layer) {
+        if (!layer || !layer.spec || !layer.spec.tilePattern) return;
+        add(
+          layer.spec.tilePattern,
+          layer.spec.minZoom,
+          layer.spec.maxZoom,
+          layer.label || layer.id || 'Calque'
+        );
+      });
+    }
+    return out;
+  }
+
+  function listUrlsForPattern(entry, maxZCap) {
+    var urls = [];
+    var maxZ = Math.min(entry.maxZ, maxZCap != null ? maxZCap : entry.maxZ);
+    var z;
+    for (z = entry.minZ; z <= maxZ; z++) {
+      var n = Math.pow(2, z);
+      var x;
+      var y;
+      for (x = 0; x < n; x++) {
+        for (y = 0; y < n; y++) {
+          urls.push(tileUrlFromPattern(entry.pattern, z, x, y));
+        }
+      }
+    }
+    return urls;
+  }
+
+  /**
+   * Télécharge les fonds du théâtre dans le cache navigateur.
+   * options: { onProgress(done, total, phase), signal, concurrency, maxTiles }
+   */
+  function prefetchTheater(options) {
+    options = options || {};
+    var onProgress = typeof options.onProgress === 'function' ? options.onProgress : function () {};
+    var signal = options.signal || null;
+    var concurrency = Math.max(2, Math.min(8, Number(options.concurrency) || 5));
+    var maxTiles = Math.max(200, Number(options.maxTiles) || 4200);
+    var entries = collectTheaterPatterns();
+    if (!entries.length) {
+      return Promise.reject(new Error('Aucun fond de carte à télécharger.'));
+    }
+
+    var maxZCap = 7;
+    var urls = [];
+    function rebuild() {
+      urls = [];
+      entries.forEach(function (entry) {
+        listUrlsForPattern(entry, maxZCap).forEach(function (u) { urls.push(u); });
+      });
+      // Dédupliquer
+      var uniq = {};
+      urls = urls.filter(function (u) {
+        if (uniq[u]) return false;
+        uniq[u] = true;
+        return true;
+      });
+    }
+    rebuild();
+    while (urls.length > maxTiles && maxZCap > 3) {
+      maxZCap -= 1;
+      rebuild();
+    }
+
+    var total = urls.length;
+    var done = 0;
+    var ok = 0;
+    var failed = 0;
+    var idx = 0;
+    onProgress(0, total, 'start');
+
+    function aborted() {
+      return !!(signal && signal.aborted);
+    }
+
+    function next() {
+      if (aborted()) return Promise.resolve({ cancelled: true, done: done, total: total, ok: ok, failed: failed });
+      if (idx >= urls.length) {
+        return Promise.resolve({ cancelled: false, done: done, total: total, ok: ok, failed: failed, maxZoom: maxZCap });
+      }
+      var url = urls[idx++];
+      return fetchBlob(url).then(function (blob) {
+        done += 1;
+        if (blob) ok += 1;
+        else failed += 1;
+        onProgress(done, total, 'progress');
+        return next();
+      });
+    }
+
+    var workers = [];
+    var w;
+    for (w = 0; w < concurrency; w++) {
+      workers.push(next());
+    }
+    return Promise.all(workers).then(function () {
+      var cancelled = aborted();
+      onProgress(done, total, cancelled ? 'cancelled' : 'done');
+      return {
+        cancelled: cancelled,
+        done: done,
+        total: total,
+        ok: ok,
+        failed: failed,
+        maxZoom: maxZCap
+      };
+    });
+  }
+
   return {
     NAME: NAME,
     fetchBlob: fetchBlob,
     loadImage: loadImage,
     getArrayBuffer: getArrayBuffer,
     putArrayBuffer: putArrayBuffer,
-    ready: ready
+    ready: ready,
+    prefetchTheater: prefetchTheater,
+    collectTheaterPatterns: collectTheaterPatterns
   };
 })();

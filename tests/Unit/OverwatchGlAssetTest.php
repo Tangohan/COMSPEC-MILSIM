@@ -55,6 +55,9 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('/api/atak/terrain/rgb/{z}/{x}/{y}', $map);
         self::assertStringContainsString('OverwatchTileCache', $map);
         self::assertStringContainsString('putArrayBuffer', $map);
+        self::assertStringContainsString('prefetchTheater', (string) file_get_contents($root . '/public/assets/js/overwatch-gl/OverwatchTileCache.js'));
+        self::assertStringContainsString('id="ow-tiles-prefetch"', $view);
+        self::assertStringContainsString('Télécharger les fonds du théâtre', $view);
         self::assertStringContainsString('/api/atak/tiles', $proj);
         self::assertStringContainsString('proxiedTileUrl', $proj);
         $aerial = (string) file_get_contents($root . '/public/assets/js/atak-aerial.js');

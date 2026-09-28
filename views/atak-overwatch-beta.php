@@ -171,6 +171,11 @@ $icon = static function (string $path): string {
           <legend>Calques Atlas</legend>
           <p class="ow-help">Carte du jeu (topographique) ou photo aérienne. Les contacts restent en place.</p>
           <div id="atak-fond-calques-list"></div>
+          <p class="ow-kicker">Fonds dans ce navigateur</p>
+          <p class="ow-help">Télécharge plan et photos du théâtre pour les garder sous la main. Ensuite, zoomer ne redemande plus tout au poste.</p>
+          <button type="button" class="ow-secondary" id="ow-tiles-prefetch">Télécharger les fonds du théâtre</button>
+          <button type="button" class="ow-secondary" id="ow-tiles-prefetch-cancel" hidden>Arrêter le téléchargement</button>
+          <p class="ow-help" id="ow-tiles-prefetch-status" aria-live="polite"></p>
         </fieldset>
         <fieldset class="ow-looks" id="ow-altis-looks">
           <legend>Lecture</legend>
