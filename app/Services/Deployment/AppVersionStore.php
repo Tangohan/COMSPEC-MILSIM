@@ -26,10 +26,21 @@ final class AppVersionStore
             throw new \InvalidArgumentException('Version invalide.');
         }
 
-        $payload = [
+        $existing = [];
+        if (is_file($this->path())) {
+            $decoded = json_decode((string) file_get_contents($this->path()), true);
+            if (is_array($decoded)) {
+                $existing = $decoded;
+            }
+        }
+
+        $payload = array_merge($existing, [
             'version' => $version,
             'updated_at' => (new \DateTimeImmutable('now'))->format(\DateTimeInterface::ATOM),
-        ];
+        ]);
+        if (!isset($payload['pack']) || !is_array($payload['pack'])) {
+            unset($payload['pack']);
+        }
 
         $dir = dirname($this->path());
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {

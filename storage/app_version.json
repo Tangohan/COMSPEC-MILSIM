@@ -1,4 +1,10 @@
 {
-  "version": "1.6.02",
-  "updated_at": "2026-09-02T05:30:00+02:00"
+  "version": "1.6.14",
+  "updated_at": "2026-09-28T20:54:00+02:00",
+  "git_sha": "fb2eae0a5",
+  "pack": {
+    "overwatch": "1.6.14",
+    "athena": "1.0.167",
+    "extension": "2.0.51"
+  }
 }

@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
 use App\Services\ConfigurationUpdate\ConfigurationUpdateService;
+use App\Support\PlatformProductionStatus;
 
 /**
  * Centre de configuration post-mise à jour + page « Nouveautés ».
@@ -77,6 +78,7 @@ final class ConfigurationUpdateController
             'tenant' => $tenant,
             'summary' => $summary,
             'canManage' => $this->canManage(),
+            'productionStatus' => PlatformProductionStatus::snapshot(),
         ]);
     }
 
