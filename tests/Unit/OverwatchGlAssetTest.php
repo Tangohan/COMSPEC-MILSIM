@@ -49,10 +49,14 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('offsetY', $proj);
         self::assertStringContainsString('worldSize', $proj);
         self::assertStringContainsString('111319.49079327358', $proj);
+        self::assertStringContainsString('atlasGrid', $proj);
+        self::assertStringContainsString('s.tileSize != null ? s.tileSize : tileWidth', $proj);
         self::assertStringContainsString('owtile', $map);
         self::assertStringContainsString('/api/atak/terrain/rgb/{z}/{x}/{y}', $map);
         self::assertStringContainsString('/api/atak/tiles', $proj);
         self::assertStringContainsString('proxiedTileUrl', $proj);
+        $aerial = (string) file_get_contents($root . '/public/assets/js/atak-aerial.js');
+        self::assertStringContainsString('tileWidth: Number(rawSpec.tileWidth) || ts', $aerial);
         self::assertStringContainsString('tile.x >= 0 && tile.y >= 0', $map);
         self::assertStringContainsString("v === 'flat' || v === 'immersive'", $map);
         self::assertStringContainsString("storedMode() === 'immersive'", $map);

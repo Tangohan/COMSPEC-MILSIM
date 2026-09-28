@@ -22,11 +22,14 @@ window.ATAKAerial = (function () {
 
   function overlaySpec(rawSpec) {
     if (!rawSpec || !rawSpec.tilePattern) return null;
+    var ts = Number(rawSpec.tileSize) || DEFAULT_OVERLAY.tileSize;
     return {
       tilePattern: String(rawSpec.tilePattern),
       factorX: Number(rawSpec.factorX) || DEFAULT_OVERLAY.factorX,
       factorY: Number(rawSpec.factorY) || Number(rawSpec.factorX) || DEFAULT_OVERLAY.factorY,
-      tileSize: Number(rawSpec.tileSize) || DEFAULT_OVERLAY.tileSize,
+      tileSize: ts,
+      // Aligné sur tileSize Atlas (381) — le peintre Relief 3D ne doit pas hériter du 212 Jetelain.
+      tileWidth: Number(rawSpec.tileWidth) || ts,
       minZoom: rawSpec.minZoom != null ? Number(rawSpec.minZoom) : DEFAULT_OVERLAY.minZoom,
       maxZoom: rawSpec.maxZoom != null ? Number(rawSpec.maxZoom) : DEFAULT_OVERLAY.maxZoom,
       attribution: rawSpec.attribution || DEFAULT_OVERLAY.attribution

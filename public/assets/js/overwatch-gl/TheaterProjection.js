@@ -136,10 +136,25 @@ window.OverwatchTheaterProjection = (function () {
       var fx = Number(s.factorX != null ? s.factorX : factorx) || factorx;
       var fy = Number(s.factorY != null ? s.factorY : factory) || factory;
       var ts = Number(s.tileSize != null ? s.tileSize : tileSize) || tileSize;
-      var tw = Number(s.tileWidth != null ? s.tileWidth : tileWidth) || ts;
+      // Atlas (photo / carte du jeu) : tileWidth = tileSize (ex. 381).
+      // Ne pas retomber sur le tileWidth Jetelain du plan (212) — sinon le fond 3D
+      // se décale de ~13 km et les contacts / bâtiments flottent en mer.
+      var tw = Number(
+        s.tileWidth != null ? s.tileWidth
+          : (s.tileSize != null ? s.tileSize : tileWidth)
+      ) || ts;
       var z = Math.max(0, Math.min(8, Math.round(armaZoom)));
       var scale = Math.pow(2, z);
+      // Grille Atlas (atak-aerial) : indexation en mètres monde 0…W, pas en lng/lat+offset.
+      // Même formule que tileBounds() côté 2D — obligatoire si offsetX/Y ≠ 0.
+      var atlasGrid = !!(s.factorX != null || s.factorY != null || s.tileSize != null);
       function pxPy(wx, wy) {
+        if (atlasGrid) {
+          return {
+            px: scale * fx * wx,
+            py: scale * (-fy * wy + tw)
+          };
+        }
         var lng = wx + offsetX;
         var lat = wy + offsetY;
         return { px: scale * fx * lng, py: scale * (-fy * lat + tw) };
@@ -154,18 +169,29 @@ window.OverwatchTheaterProjection = (function () {
       var tx, ty;
       for (tx = minTx; tx <= maxTx; tx++) {
         for (ty = minTy; ty <= maxTy; ty++) {
-          var x0 = (tx * ts) / (scale * fx) - offsetX;
-          var x1 = ((tx + 1) * ts) / (scale * fx) - offsetX;
-          var lat0 = (tw - (ty * ts) / scale) / fy - offsetY;
-          var lat1 = (tw - ((ty + 1) * ts) / scale) / fy - offsetY;
+          var x0;
+          var x1;
+          var y0;
+          var y1;
+          if (atlasGrid) {
+            x0 = (tx * ts) / (scale * fx);
+            x1 = ((tx + 1) * ts) / (scale * fx);
+            y0 = (tw - (ty * ts) / scale) / fy;
+            y1 = (tw - ((ty + 1) * ts) / scale) / fy;
+          } else {
+            x0 = (tx * ts) / (scale * fx) - offsetX;
+            x1 = ((tx + 1) * ts) / (scale * fx) - offsetX;
+            y0 = (tw - (ty * ts) / scale) / fy - offsetY;
+            y1 = (tw - ((ty + 1) * ts) / scale) / fy - offsetY;
+          }
           tiles.push({
             z: z,
             x: tx,
             y: ty,
             minX: Math.min(x0, x1),
             maxX: Math.max(x0, x1),
-            minY: Math.min(lat0, lat1),
-            maxY: Math.max(lat0, lat1)
+            minY: Math.min(y0, y1),
+            maxY: Math.max(y0, y1)
           });
         }
       }
