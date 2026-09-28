@@ -57,7 +57,7 @@ final class PlatformProductionStatus
             $sha = $git['sha'];
         }
 
-        $bulletin = DevDispatchCatalog::featured();
+        $bulletin = DevDispatchCatalog::forProductionBanner();
         $bulletinTitle = is_array($bulletin) ? trim((string) ($bulletin['title'] ?? '')) : '';
         $bulletinUrl = '';
         if (is_array($bulletin) && ($bulletin['kind'] ?? '') !== '' && ($bulletin['number_pad'] ?? '') !== '') {

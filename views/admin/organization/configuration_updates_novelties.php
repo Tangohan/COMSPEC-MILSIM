@@ -74,7 +74,7 @@ $prodCodenameLabel = htmlspecialchars((string) ($prod['codename_label'] ?? ''), 
 
             <?php if ($prodBulletin !== ''): ?>
             <p class="mt-4 text-xs leading-relaxed text-slate-600">
-                Dernier bulletin mis en avant&nbsp;: <span class="font-medium text-slate-800"><?= $prodBulletin ?></span>
+                Dernière mise à jour&nbsp;: <span class="font-medium text-slate-800"><?= $prodBulletin ?></span>
             </p>
             <?php endif; ?>
         </div>

@@ -64,13 +64,38 @@ final class DevDispatchCatalog
                 return $row;
             }
         }
+
+        return self::latestUpdate() ?? self::all()[0] ?? null;
+    }
+
+    /**
+     * Dernière mise à jour livrée (UPDATE), pour bannières prod et libellés opérationnels.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function latestUpdate(): ?array
+    {
+        $best = null;
         foreach (self::all() as $row) {
-            if ($row['kind'] === self::KIND_SPOTREP) {
-                return $row;
+            if (($row['kind'] ?? '') !== self::KIND_UPDATE) {
+                continue;
+            }
+            if ($best === null || (int) ($row['number'] ?? 0) > (int) ($best['number'] ?? 0)) {
+                $best = $row;
             }
         }
 
-        return self::all()[0] ?? null;
+        return $best;
+    }
+
+    /**
+     * Bulletin à afficher côté organisation : UPDATE récente, sinon bulletin mis en avant.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function forProductionBanner(): ?array
+    {
+        return self::latestUpdate() ?? self::featured();
     }
 
     public static function href(string $kind, int|string $number): string
@@ -268,7 +293,7 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(719, '2026-09-28', 'Pack jeu : plus de rafale de liaison différée', 'Quand le poste était un instant injoignable, les repères partaient tous ensemble et le délai de nouvel essai montait trop vite, avec des alertes en rafale. Les marqueurs sont maintenant envoyés calmement, et le délai ne s’emballe plus. Relancez Arma après Overwatch 1.6.15 · Extension 2.0.52.', [], [], [
+            $pr(719, '2026-09-28', 'Liaison : envois de marqueurs calmés', 'Quand le poste était un instant injoignable, les repères partaient tous ensemble et le délai de nouvel essai montait trop vite, avec des alertes en rafale. Les marqueurs sont maintenant envoyés calmement, et le délai ne s’emballe plus. Relancez Arma après Overwatch 1.6.15 · Extension 2.0.52.', [], [], [
                 'Délai de nouvel essai qui passait trop vite à dix minutes',
                 'Alertes « liaison différée » répétées à chaque marqueur',
             ], ['atak'], [
@@ -1666,9 +1691,9 @@ final class DevDispatchCatalog
                 'from' => 'État-major COMSPEC',
                 'to' => 'Communautés Athena, opérateurs ATAK, cellule S1, Zeus, commandement',
                 'category' => 'Opérations et poste',
-                'activity' => 'Dossier de mission, tablette lisible, bureau plus clair',
+                'activity' => 'Publication du dossier de mission, tablette ATAK plus lisible, pages effectifs clarifiées',
                 'size' => 'Overwatch 1.4.97 · Athena 1.0.58',
-                'title' => 'Le plan se publie, la tablette se lit, le bureau s’aère',
+                'title' => 'Dossier de mission, tablette ATAK et effectifs',
                 'featured' => true,
                 'companion_kind' => self::KIND_TECHREP,
                 'companion_number' => 3,

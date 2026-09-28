@@ -8,9 +8,13 @@ TECHREP #00003
 FROM:     État-major COMSPEC
 TO:       Communautés Athena, opérateurs ATAK, cellule S1, Zeus, commandement
 MATERIEL: Opérations et poste
-ACTIVITY: Dossier de mission, tablette lisible, bureau plus clair
+ACTIVITY: Publication du dossier de mission, tablette ATAK plus lisible, pages effectifs clarifiées
 SIZE:     Overwatch 1.4.97 · Athena 1.0.58
 ```
+
+# Titre
+
+Dossier de mission, tablette ATAK et effectifs
 
 # NOTES
 

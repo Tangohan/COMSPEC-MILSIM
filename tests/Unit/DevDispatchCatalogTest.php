@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(505, $byKind['update']);
-        self::assertCount(511, $all);
+        self::assertSame(507, $byKind['update']);
+        self::assertCount(513, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -35,6 +35,16 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertSame('Athena Operations', $featured['reporter']);
         self::assertSame('on September 1, 2026', $featured['reported_on']);
         self::assertStringContainsString('nouveautes/spotrep/00003', (string) $featured['href']);
+        self::assertSame('Dossier de mission, tablette ATAK et effectifs', $featured['title']);
+    }
+
+    public function testProductionBannerPrefersLatestUpdate(): void
+    {
+        $row = DevDispatchCatalog::forProductionBanner();
+        self::assertNotNull($row);
+        self::assertSame('update', $row['kind']);
+        self::assertSame(719, (int) $row['number']);
+        self::assertStringContainsString('marqueurs', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
