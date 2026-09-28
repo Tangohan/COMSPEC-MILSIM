@@ -115,7 +115,7 @@ window.OverwatchGlMap = (function () {
   }
 
   function exaggeration() {
-    return clamp(exaggerationInput && exaggerationInput.value, 1, 4) || 2.5;
+    return clamp(exaggerationInput && exaggerationInput.value, 1, 3.2) || 2.0;
   }
 
   function pitch() {
@@ -525,7 +525,9 @@ window.OverwatchGlMap = (function () {
         dragRotate: true,
         pitchWithRotate: true,
         cooperativeGestures: false,
-        trackResize: false
+        trackResize: false,
+        antialias: true,
+        pixelRatio: Math.min(2, window.devicePixelRatio || 1)
       });
     } catch (err) {
       starting = false;

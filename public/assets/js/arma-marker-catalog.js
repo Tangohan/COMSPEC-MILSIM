@@ -252,12 +252,12 @@ window.ArmaMarkerCatalog = (function () {
     var r = String(rest || '');
     if (/armor|anti_armor|main_gun/.test(r)) return 'armor';
     if (/artillery|mortar|rocket|missile|fire_support/.test(r)) return 'artillery';
-    if (/rotary|air_assault|aviation/.test(r)) return 'aviation_rotary';
+    if (/rotary|air_assault|airborne|aviation|helicopter/.test(r)) return 'aviation_rotary';
     if (/fixed_wing|vstol/.test(r)) return 'aviation_fixed';
     if (/uav/.test(r)) return 'uav';
     if (/recon|intelligence|ranger|sniper|observer/.test(r)) return 'recon';
     if (/medical|medevac/.test(r)) return 'medical';
-    if (/supply|maintenance|transport|engineer|support|eod|cbrn/.test(r)) return 'logistics';
+    if (/supply|maintenance|transport|engineer|support|eod|cbrn|bridging/.test(r)) return 'logistics';
     if (/headquarters|hq|liaison|command/.test(r)) return 'hq';
     return 'infantry';
   }

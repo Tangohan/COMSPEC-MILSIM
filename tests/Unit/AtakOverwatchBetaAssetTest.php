@@ -343,6 +343,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('function isInvisibleArmaIcon', $armaMarkersJs);
         self::assertStringContainsString('function shouldUsePngGlyph', $armaMarkersJs);
         self::assertStringContainsString('pngNeedsColorMask', $armaMarkersJs);
+        self::assertStringContainsString('if (pngNeedsColorMask(pngUrl)) return true;', $armaMarkersJs);
+        self::assertStringNotContainsString('if (pngNeedsColorMask(pngUrl)) return false;', $armaMarkersJs);
         self::assertStringContainsString('arma-map-marker-label', $armaMarkersJs);
         self::assertStringContainsString('is-framed', $armaMarkersJs);
         self::assertStringContainsString('buildingFootprintStyle', $armaMarkersJs);
@@ -384,7 +386,13 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('data-ow-mkit', $opsJs);
         self::assertStringContainsString('athena:ow-marker-kit', $opsJs);
         self::assertStringContainsString('buildLibrarySymbols', $opsJs);
+        self::assertStringContainsString("kit === 'markersplus' || kit === 'arma'", $opsJs);
+        self::assertStringContainsString('arma-marker-paa-mask', $opsJs);
+        self::assertStringContainsString('listBadgeHtml', $opsJs);
         self::assertStringContainsString('.ow-marker-kits', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
+        $catalogJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/arma-marker-catalog.js');
+        self::assertStringContainsString('airborne', $catalogJs);
+        self::assertStringContainsString('function metisNatoRole', $catalogJs);
         $markerRepo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/AtakDataRepository.php');
         self::assertStringContainsString('findSuppressedTwin', $markerRepo);
         self::assertStringContainsString('suppressMarkerRow', $markerRepo);

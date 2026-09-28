@@ -29,5 +29,9 @@ final class AtakSceneKindTest extends TestCase
         self::assertSame('N+1', $floors[1]['label']);
         self::assertSame('N+2', $floors[2]['label']);
         self::assertSame('Toit', $floors[3]['label']);
+        self::assertSame('house', AtakSceneKind::facade('Land_i_House_Small_04_V1_F'));
+        self::assertSame('hangar', AtakSceneKind::facade('Land_i_Shed_F'));
+        self::assertSame('church', AtakSceneKind::facade('Land_Chapel_V1_F'));
+        self::assertSame('concrete', AtakSceneKind::facade('Land_City_Wall_F', 'wall'));
     }
 }

@@ -174,6 +174,12 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
             private _d = abs ((_max select 1) - (_min select 1));
             private _h = abs ((_max select 2) - (_min select 2));
             if (_h < 2 || {(_w * _d) < 12}) then { continue };
+            /* Poteaux / panneaux / glissières : pas des bâtiments. */
+            private _short = _w min _d;
+            private _long = _w max _d;
+            if ((_short < 1.2) && {_h >= 3.2} && {_h >= (_long * 1.15)}) then { continue };
+            if ((_short < 1.55) && {(_long / (_short max 0.01)) >= 4}) then { continue };
+            if (((_w * _d) < 9) && {_h > 2.8} && {_short < 2.2}) then { continue };
             if (_w > 500) then { _w = 500; };
             if (_d > 500) then { _d = 500; };
             if (_h > 100) then { _h = 100; };
@@ -243,10 +249,11 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
             private _d = abs ((_max select 1) - (_min select 1));
             private _h = abs ((_max select 2) - (_min select 2));
             if (_h < 0.7) then { continue };
-            if ((_w max _d) < 2.5) then { continue };
+            /* Garder les poteaux fins ; les longs rubans restent des murs. */
+            if ((_w max _d) < 0.8 && {_h < 2.5}) then { continue };
             if (_w > 220) then { _w = 220; };
             if (_d > 12) then { _d = 12; };
-            if (_h > 28) then { _h = 28; };
+            if (_h > 18) then { _h = 18; };
             private _cls = toLower (typeOf _x);
             private _kind = "wall";
             if ((_cls find "fence") >= 0 || {(_cls find "wire") >= 0}) then { _kind = "fence"; };

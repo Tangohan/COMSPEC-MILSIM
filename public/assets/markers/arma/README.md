@@ -8,7 +8,7 @@ Déposez ici les PNG convertis depuis les textures marqueurs Arma (`.paa`), en c
 |---------|--------|
 | `a3/` | Arma 3 vanilla |
 | `markersplus/` | MarkersPlus |
-| `z/mts/` | Metis Marker |
+| `z/mts/` | Metis Marker (optionnel — sans PNG, Overwatch affiche le glyphe APP-6) |
 | `ctab/` | cTab |
 
 ## Bibliothèque documentation

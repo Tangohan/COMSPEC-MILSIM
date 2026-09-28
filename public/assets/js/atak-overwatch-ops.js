@@ -386,22 +386,39 @@
   function markerThumb(key) {
     var helper = window.ArmaMapMarkers;
     var specRow = markerSymbol(key);
-    if (helper && helper.resolvePngUrl && specRow && (specRow.kit === 'metis' || specRow.kit === 'markersplus')) {
-      var png = helper.resolvePngUrl({ type: key, pngUrl: specRow.png || '', png: specRow.png || '' });
-      if (png && /^https?:\/\//i.test(png)) {
-        return '<span class="ow-marker-thumb"><img src="' + esc(png) + '" alt="" width="26" height="26"></span>';
-      }
-      if (png && png.indexOf('/') === 0) {
+    var kit = specRow && specRow.kit ? specRow.kit : '';
+    /* MarkersPlus / Arma : PNG locaux (Arma = silhouette military/handdrawn teintée). */
+    if (helper && helper.resolvePngUrl && (kit === 'markersplus' || kit === 'arma')) {
+      var png = helper.resolvePngUrl({ type: key, pngUrl: (specRow && specRow.png) || '', png: (specRow && specRow.png) || '' });
+      if (png && (/^https?:\/\//i.test(png) || png.indexOf('/') === 0)) {
+        var needsMask = helper.pngNeedsColorMask
+          ? helper.pngNeedsColorMask(png)
+          : /\/(military|handdrawn)\//i.test(png);
+        if (needsMask) {
+          return '<span class="ow-marker-thumb"><span class="arma-marker-paa-mask-wrap" style="width:24px;height:24px;">' +
+            '<span class="arma-marker-paa-mask" style="width:24px;height:24px;background:' + esc(armaThumbColor(key)) +
+            ';-webkit-mask-image:url(\'' + esc(png) + '\');mask-image:url(\'' + esc(png) + '\');"></span></span></span>';
+        }
         return '<span class="ow-marker-thumb"><img src="' + esc(png) + '" alt="" width="26" height="26"></span>';
       }
     }
     if (helper && helper.buildIconSpec) {
       var payload = { type: key, color: markerColor(key), label: '', text: '' };
-      if (specRow && specRow.png) payload.pngUrl = specRow.png;
+      if (specRow && specRow.kit === 'markersplus' && specRow.png) payload.pngUrl = specRow.png;
       var spec = helper.buildIconSpec(payload);
       if (spec && spec.html) return '<span class="ow-marker-thumb">' + spec.html + '</span>';
     }
+    if (helper && typeof helper.listBadgeHtml === 'function') {
+      var badge = helper.listBadgeHtml({ type: key, color: markerColor(key) });
+      if (badge) return '<span class="ow-marker-thumb">' + badge + '</span>';
+    }
     return '<span class="ow-marker-thumb ow-marker-thumb-empty">●</span>';
+  }
+
+  function armaThumbColor(key) {
+    var hex = { ColorWEST: '#4e9de0', ColorEAST: '#d9534f', ColorGUER: '#4ec94e', ColorGreen: '#4ec94e', ColorYellow: '#e7cc5b' };
+    var name = markerColor(key);
+    return hex[name] || '#4ec94e';
   }
 
   function markerGroups(list) {

@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(507, $byKind['update']);
-        self::assertCount(513, $all);
+        self::assertSame(524, $byKind['update']);
+        self::assertCount(530, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -43,8 +43,8 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(719, (int) $row['number']);
-        self::assertStringContainsString('marqueurs', mb_strtolower((string) $row['title']));
+        self::assertSame(725, (int) $row['number']);
+        self::assertStringContainsString('arma', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -894,6 +894,29 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('metis', strtolower((string) $markerKits['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $markerKits['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $markerKits['activity']));
+        $owC2 = DevDispatchCatalog::find('update', '723');
+        self::assertNotNull($owC2);
+        self::assertSame('00723', $owC2['number_pad']);
+        self::assertStringContainsString('contacts lisibles', strtolower((string) $owC2['title']));
+        self::assertStringContainsString('tige', strtolower((string) $owC2['activity']));
+        self::assertStringContainsString('colonne', strtolower((string) $owC2['activity']));
+        self::assertStringNotContainsString('maplibre', strtolower((string) $owC2['activity']));
+        self::assertStringNotContainsString('deck.gl', strtolower((string) $owC2['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owC2['activity']));
+        $owMetis = DevDispatchCatalog::find('update', '724');
+        self::assertNotNull($owMetis);
+        self::assertSame('00724', $owMetis['number_pad']);
+        self::assertStringContainsString('metis', strtolower((string) $owMetis['title']));
+        self::assertStringContainsString('cadre', strtolower((string) $owMetis['activity']));
+        self::assertStringNotContainsString('png', strtolower((string) $owMetis['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owMetis['activity']));
+        $owArmaIcons = DevDispatchCatalog::find('update', '725');
+        self::assertNotNull($owArmaIcons);
+        self::assertSame('00725', $owArmaIcons['number_pad']);
+        self::assertStringContainsString('arma 3', strtolower((string) $owArmaIcons['title']));
+        self::assertStringContainsString('silhouette', strtolower((string) $owArmaIcons['activity']));
+        self::assertStringNotContainsString('png', strtolower((string) $owArmaIcons['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owArmaIcons['activity']));
         $manifestText = DevDispatchCatalog::find('update', '697');
         self::assertNotNull($manifestText);
         self::assertSame('00697', $manifestText['number_pad']);

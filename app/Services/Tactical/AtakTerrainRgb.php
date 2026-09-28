@@ -67,7 +67,7 @@ final class AtakTerrainRgb
         $name = $x . '_' . $y . '.png';
         $path = $dir . '/' . $name;
         $stampFile = $dir . '/' . $x . '_' . $y . '.stamp';
-        $stampPayload = $stamp . '|' . sprintf('%.3f,%.3f', $offsetX, $offsetY);
+        $stampPayload = $stamp . '|rgb-v2|' . sprintf('%.3f,%.3f', $offsetX, $offsetY);
         if (is_file($path) && is_file($stampFile) && trim((string) @file_get_contents($stampFile)) === $stampPayload) {
             return $path;
         }
@@ -112,7 +112,7 @@ final class AtakTerrainRgb
         $dir = $this->dir($mapId);
         $path = $dir . '/terrain-rgb.png';
         $stampFile = $dir . '/stamp-rgb.txt';
-        if (is_file($path) && is_file($stampFile) && trim((string) @file_get_contents($stampFile)) === $stamp && $stamp !== '') {
+        if (is_file($path) && is_file($stampFile) && trim((string) @file_get_contents($stampFile)) === ($stamp . '|rgb-v2') && $stamp !== '') {
             return $this->overviewMeta($path, $meta);
         }
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
@@ -129,7 +129,7 @@ final class AtakTerrainRgb
         if (!$this->writeOverview($path, $grid)) {
             return is_file($path) ? $this->overviewMeta($path, $grid) : null;
         }
-        @file_put_contents($stampFile, $stamp, LOCK_EX);
+        @file_put_contents($stampFile, $stamp . '|rgb-v2', LOCK_EX);
 
         return $this->overviewMeta($path, $grid);
     }
@@ -145,6 +145,35 @@ final class AtakTerrainRgb
         if ($cols < 2 || $rows < 2) {
             return false;
         }
+        /* Lissage 3×3 léger : réduit les pics d’échantillonnage avant encodage. */
+        $smooth = [];
+        for ($r = 0; $r < $rows; $r++) {
+            for ($c = 0; $c < $cols; $c++) {
+                $sum = 0.0;
+                $n = 0;
+                for ($dy = -1; $dy <= 1; $dy++) {
+                    for ($dx = -1; $dx <= 1; $dx++) {
+                        $nc = $c + $dx;
+                        $nr = $r + $dy;
+                        if ($nc < 0 || $nr < 0 || $nc >= $cols || $nr >= $rows) {
+                            continue;
+                        }
+                        $z = AtakTerrainMath::cellZ($blob, $cols, $nc, $nr);
+                        if ($z === null) {
+                            continue;
+                        }
+                        $sum += $z;
+                        $n++;
+                    }
+                }
+                $center = AtakTerrainMath::cellZ($blob, $cols, $c, $r);
+                if ($n < 3 || $center === null) {
+                    $smooth[$r][$c] = $center;
+                } else {
+                    $smooth[$r][$c] = ($center * 0.55) + (($sum / $n) * 0.45);
+                }
+            }
+        }
         $im = @imagecreatetruecolor($cols, $rows);
         if ($im === false) {
             return false;
@@ -155,7 +184,7 @@ final class AtakTerrainRgb
         for ($r = 0; $r < $rows; $r++) {
             $imgRow = $rows - 1 - $r;
             for ($c = 0; $c < $cols; $c++) {
-                $z = AtakTerrainMath::cellZ($blob, $cols, $c, $r);
+                $z = $smooth[$r][$c] ?? null;
                 $rgb = self::encodeMeters($z === null ? 0.0 : $z);
                 imagesetpixel($im, $c, $imgRow, imagecolorallocate($im, $rgb['r'], $rgb['g'], $rgb['b']));
             }

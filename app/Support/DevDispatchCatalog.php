@@ -293,6 +293,80 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(725, '2026-09-28', 'Poste Overwatch : vrais symboles Arma 3', 'Dans le tiroir Marqueur, le kit Arma 3 montrait des formes génériques (losanges, carrés) au lieu des icônes du jeu. Les repères Arma (point, triangle, alerte, drapeau…) reprennent maintenant la silhouette d’Arma 3, teintée selon la couleur du marqueur. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Icônes Arma 3 (military / croquis) dans le choix de symbole',
+            ], [
+                'Triangle, drapeau et alertes mieux distingués si l’image n’est pas disponible',
+            ], [
+                'Kit Arma 3 affiché avec des formes toutes semblables, peu fidèles au jeu',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Marqueur → Arma 3 : le triangle doit être un triangle, l’alerte l’icône d’avertissement du jeu, le drapeau un drapeau — pas des losanges identiques.',
+            ], 'Overwatch Beta'),
+            $pr(724, '2026-09-28', 'Poste Overwatch : symboles Metis visibles', 'Dans le tiroir Marqueur du théâtre, le kit Metis affichait des cases vides à la place des symboles. Les symboles Metis apparaissent maintenant avec un cadre d’affiliation lisible (ami, hostile, inconnu), comme pour le kit OTAN. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Aperçu des symboles Metis dans le choix de kit Marqueur',
+            ], [
+                'Correspondance des rôles Metis (aéroporté, aviation…) vers le cadre standard',
+            ], [
+                'Cases noires sans symbole lorsque le kit Metis était sélectionné',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Marqueur → kit Metis : chaque case doit montrer un cadre coloré avec un pictogramme, pas un carré vide.',
+            ], 'Overwatch Beta'),
+            $pr(723, '2026-09-28', 'Poste Overwatch : contacts lisibles en Relief 3D', 'En Relief 3D, chaque contact garde une taille stable à l’écran, face à la caméra, avec une fine tige jusqu’au sol pour marquer sa position réelle. Les symboles restent lisibles derrière un bâtiment (légèrement atténués), les alertes médicales projettent une colonne verticale pulsante, et les aéronefs s’affichent à leur altitude avec une ligne vers le sol. L’indicatif complet n’apparaît que pour le contact sélectionné ou survolé. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Symboles à taille constante face à la caméra, ancrés au sol par une tige',
+                'Pied au sol et colonnes d’alerte médicale visibles de loin',
+                'Altitude affichée pour les aéronefs, avec ligne vers l’ombre au sol',
+                'Indicatif complet seulement sur sélection ou survol ; regroupement selon la distance à l’écran',
+                'Zone de sélection élargie et surlignage au survol',
+            ], [
+                'Netteté des symboles OTAN renforcée, halo sombre pour la photo claire',
+                'Contact derrière un bâtiment toujours visible, un peu plus transparent',
+            ], [
+                'Symboles qui grossissaient ou disparaissaient avec la distance',
+                'Position réelle difficile à lire quand le symbole flotte au-dessus des toits',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Relief 3D : chaque contact doit avoir une tige jusqu’au sol. Survolez un contact : l’indicatif complet apparaît. Un contact médical doit montrer une colonne verticale. Approchez un bâtiment devant un contact : le symbole reste visible, un peu plus transparent.',
+            ], 'Overwatch Beta'),
+            $pr(722, '2026-09-28', 'Poste Overwatch : symboles OTAN sur le Relief 3D', 'En Relief 3D, les contacts s’affichent avec la symbologie militaire standard (cadre, couleur d’affiliation, rôle). L’indicatif reste lisible au-dessus du symbole. Un contact ancien s’atténue, un contact médical est entouré d’un anneau d’alerte, et le déplacement s’indique par un vecteur. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Symboles OTAN / APP-6 pour amis, hostiles, neutres et inconnus',
+                'Icône selon le rôle (infanterie, blindé, aérien, santé…)',
+                'Vecteur de déplacement selon le cap et la vitesse',
+                'Anneau d’alerte sur les contacts médicaux critiques',
+                'Atténuation des contacts dont la position n’est plus fraîche',
+            ], [
+                'Indicatifs en police monospace, regroupés au dézoom',
+            ], [
+                'Pastilles colorées peu lisibles pour un opérateur formé OTAN',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Relief 3D : les contacts doivent apparaître avec un cadre OTAN (bleu ami, rouge hostile…). Approchez un contact médical : un anneau d’alerte l’entoure.',
+            ], 'Overwatch Beta'),
+            $pr(721, '2026-09-28', 'Poste Overwatch : Relief 3D sans peigne de poteaux', 'En Relief 3D, les poteaux, glissières et murs fins ne se dressent plus comme des immeubles le long des routes. Les libellés des contacts restent lisibles au-dessus des volumes, sans se superposer. Les longs obstacles deviennent un trait au sol plutôt qu’une dalle qui coupe l’écran. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Poteaux dessinés en colonnes fines, murs et clôtures en rubans bas',
+                'Libellés des contacts avec fond sombre, trait de liaison et regroupement',
+                'Ombre de contact sous les constructions pour les ancrer au sol',
+            ], [
+                'Petits volumes lointains masqués pour limiter le bruit',
+                'Toits avec léger débord pour mieux lire la forme',
+            ], [
+                'Dalles verticales régulières le long des routes',
+                'Texte blanc illisible sur les volumes gris',
+                'Longs obstacles formant une ligne sombre à travers le cadre',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Relief 3D sur une route bordée de poteaux : plus de peigne de dalles. Les indicatifs doivent se lire clairement au-dessus des contacts.',
+            ], 'Overwatch Beta'),
+            $pr(720, '2026-09-28', 'Poste Overwatch : volumes du Relief 3D plus lisibles', 'En Relief 3D, les constructions ne sont plus des boîtes grises uniformes posées sur la photo. Elles prennent une teinte selon leur type, un toit distinct, un ombrage cohérent avec le jour, et deviennent plus transparentes en très gros plan pour laisser lire les toits de la photo. Les murs fins ne se dressent plus comme des immeubles. Les contacts gardent un halo lisible. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Teintes et toits distincts selon le type de construction',
+                'Ombrage des volumes aligné sur la lumière du jour',
+                'Transparence des volumes en très gros plan pour lire la photo',
+                'Halo autour des contacts pour les lire sur fond clair ou sombre',
+            ], [
+                'Hauteur du relief un peu moins agressive par défaut',
+                'Relief du sol légèrement adouci pour limiter les pics artificiels',
+            ], [
+                'Longues dalles fines extrudées à hauteur de bâtiment',
+                'Volumes qui flottaient ou s’enfonçaient dans le sol',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Relief 3D sur un village : les constructions doivent se distinguer les unes des autres, avec un toit plus sombre. Approchez : la photo des toits doit rester lisible. Les contacts restent bien visibles avec un contour clair.',
+            ], 'Overwatch Beta'),
             $pr(719, '2026-09-28', 'Liaison : envois de marqueurs calmés', 'Quand le poste était un instant injoignable, les repères partaient tous ensemble et le délai de nouvel essai montait trop vite, avec des alertes en rafale. Les marqueurs sont maintenant envoyés calmement, et le délai ne s’emballe plus. Relancez Arma après Overwatch 1.6.15 · Extension 2.0.52.', [], [], [
                 'Délai de nouvel essai qui passait trop vite à dix minutes',
                 'Alertes « liaison différée » répétées à chaque marqueur',

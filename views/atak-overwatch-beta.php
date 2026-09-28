@@ -251,9 +251,9 @@ $icon = static function (string $path): string {
           <div id="ow-bookmark-list"></div>
           <div class="ow-opt">
             <label class="ow-row" for="atak-terrain-exaggeration">Hauteur du relief
-              <input type="range" id="atak-terrain-exaggeration" min="1" max="4" step="0.1" value="2.5">
+              <input type="range" id="atak-terrain-exaggeration" min="1" max="3.2" step="0.1" value="2.0">
             </label>
-            <span id="atak-terrain-exaggeration-val">2.5×</span>
+            <span id="atak-terrain-exaggeration-val">2.0×</span>
             <button type="button" class="ow-i" aria-label="À propos de la hauteur du relief" data-help="Amplifie les collines pour mieux les lire. 1× = hauteur réelle du terrain.">i</button>
           </div>
           <div class="ow-opt">
@@ -930,6 +930,8 @@ $icon = static function (string $path): string {
 
 <script src="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-map-crs.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/vendor/milsymbol/milsymbol.js"></script>
+<script src="<?= $h($base) ?>/assets/js/milstd-catalog.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/nato-sidc-icons.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-marker-catalog.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/arma-marker-library-index.js?v=<?= $h($assetVer) ?>"></script>
@@ -953,6 +955,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.js"></script>
 <script src="<?= $h($base) ?>/assets/vendor/deck.gl/deck.min.js"></script>
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/TheaterProjection.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlSymbols.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlMap.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlLayers.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlTactics.js?v=<?= $h($owAsset) ?>"></script>

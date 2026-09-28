@@ -198,4 +198,38 @@ final class AtakSceneKind
 
         return $tail !== '' ? 'Construction ' . $tail : 'Construction';
     }
+
+    /**
+     * Famille visuelle pour le Relief 3D (pas le classname technique).
+     * house | hangar | church | tower | concrete | stone
+     */
+    public static function facade(string $model, string $kind = self::BUILDING): string
+    {
+        if (self::normalize($kind) !== self::BUILDING) {
+            return 'concrete';
+        }
+        $lower = strtolower($model);
+        if (str_contains($lower, 'church') || str_contains($lower, 'chapel')) {
+            return 'church';
+        }
+        if (str_contains($lower, 'tower') || str_contains($lower, 'lighthouse') || str_contains($lower, 'radar')) {
+            return 'tower';
+        }
+        if (str_contains($lower, 'warehouse') || str_contains($lower, 'shed') || str_contains($lower, 'hangar')
+            || str_contains($lower, 'factory') || str_contains($lower, 'industrial')) {
+            return 'hangar';
+        }
+        if (str_contains($lower, 'concrete') || str_contains($lower, 'bunker') || str_contains($lower, 'barracks')) {
+            return 'concrete';
+        }
+        if (str_contains($lower, 'stone') || str_contains($lower, 'ruin') || str_contains($lower, 'castle')) {
+            return 'stone';
+        }
+        if (str_contains($lower, 'house') || str_contains($lower, 'home') || str_contains($lower, 'shop')
+            || str_contains($lower, 'offices') || str_contains($lower, 'i_house') || str_contains($lower, 'slum')) {
+            return 'house';
+        }
+
+        return 'concrete';
+    }
 }

@@ -202,12 +202,21 @@ window.ATAK_MARKER_ICONS_CDN = <?= json_encode($markerIconsCdn, JSON_UNESCAPED_U
     }
 
     function previewHtml(it) {
-        if (it.pngUrl) {
+        /* Metis : PNG z/mts/ souvent absents → glyphe APP-6. MarkersPlus / autres : PNG si dispo. */
+        var preferSvg = String(it.source || '') === 'metis' || String((it.entry && it.entry.kind) || '') === 'metis';
+        if (!preferSvg && it.pngUrl) {
             return '<img src="' + escapeHtml(it.pngUrl) + '" alt="" loading="lazy" width="40" height="40" style="object-fit:contain;max-width:40px;max-height:40px;" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false);" />' +
                 '<span hidden class="site-docs__markers-fallback" aria-hidden="true">◆</span>';
         }
         if (window.ArmaMapMarkers && typeof window.ArmaMapMarkers.listBadgeHtml === 'function') {
-            return window.ArmaMapMarkers.listBadgeHtml({ type: it.key, color: 'ColorWEST' });
+            var color = it.affiliation === 'hostile' ? 'ColorEAST'
+              : (it.affiliation === 'friend' ? 'ColorWEST'
+              : (it.affiliation === 'neutral' ? 'ColorGUER' : 'ColorUNKNOWN'));
+            return window.ArmaMapMarkers.listBadgeHtml({ type: it.key, color: color, affiliation: it.affiliation || '' });
+        }
+        if (it.pngUrl) {
+            return '<img src="' + escapeHtml(it.pngUrl) + '" alt="" loading="lazy" width="40" height="40" style="object-fit:contain;max-width:40px;max-height:40px;" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false);" />' +
+                '<span hidden class="site-docs__markers-fallback" aria-hidden="true">◆</span>';
         }
         return '<span class="site-docs__markers-fallback" aria-hidden="true">◆</span>';
     }

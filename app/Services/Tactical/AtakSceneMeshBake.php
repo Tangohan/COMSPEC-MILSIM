@@ -15,7 +15,7 @@ use Throwable;
  */
 final class AtakSceneMeshBake
 {
-    public const SCHEMA = 3;
+    public const SCHEMA = 5;
 
     public function __construct(
         private ?AtakSceneObjectRepository $objects = null,
@@ -148,6 +148,7 @@ final class AtakSceneMeshBake
         }
         $buildings = [];
         $anomalies = [];
+        $demoted = [];
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -155,22 +156,39 @@ final class AtakSceneMeshBake
             $box = AtakSceneBounds::sanitize($row);
             $x = (float) ($row['x'] ?? 0);
             $y = (float) ($row['y'] ?? 0);
-            $base = is_array($grid) ? AtakTerrainMath::heightAt($grid, $x, $y) : null;
+            $bearing = (float) ($row['bearing'] ?? 0);
+            $base = is_array($grid)
+                ? self::baseUnderBox($grid, $x, $y, $bearing, $box['width'], $box['depth'])
+                : null;
             $quality = AtakSceneKind::quality($row, $box['clipped']);
+            $model = (string) ($row['model'] ?? $row['model_class'] ?? '');
+            $shape = (string) ($box['shape'] ?? AtakSceneBounds::SHAPE_BUILDING);
             $item = [
                 'id' => (string) ($row['id'] ?? ''),
                 'kind' => 'building',
                 'x' => $x,
                 'y' => $y,
-                'bearing' => (float) ($row['bearing'] ?? 0),
+                'bearing' => $bearing,
                 'width' => $box['width'],
                 'depth' => $box['depth'],
                 'height' => $box['height'],
                 'base_z' => $base !== null ? round($base, 2) : 0.0,
                 'floors' => AtakSceneKind::floors($box['height']),
                 'quality' => $quality,
+                'facade' => AtakSceneKind::facade($model, 'building'),
+                'shape' => $shape,
             ];
-            $buildings[] = $item;
+            if ($shape === AtakSceneBounds::SHAPE_POLE || $shape === AtakSceneBounds::SHAPE_PANEL) {
+                $item['kind'] = $shape === AtakSceneBounds::SHAPE_PANEL ? 'fence' : 'pylon';
+                $item['facade'] = 'concrete';
+                $demoted[] = $item;
+            } elseif ($shape === AtakSceneBounds::SHAPE_RIBBON) {
+                $item['kind'] = 'wall';
+                $item['facade'] = 'concrete';
+                $demoted[] = $item;
+            } else {
+                $buildings[] = $item;
+            }
             if ($box['clipped']) {
                 $anomalies[] = [
                     'id' => $item['id'],
@@ -191,21 +209,29 @@ final class AtakSceneMeshBake
                 continue;
             }
             $kind = AtakSceneKind::normalize((string) ($row['kind'] ?? 'wall'));
-            $box = AtakSceneBounds::sanitizeObstacle($row);
+            $box = AtakSceneBounds::sanitizeObstacle($row + ['kind' => $kind]);
             $x = (float) ($row['x'] ?? 0);
             $y = (float) ($row['y'] ?? 0);
-            $base = is_array($grid) ? AtakTerrainMath::heightAt($grid, $x, $y) : null;
+            $bearing = (float) ($row['bearing'] ?? 0);
+            $base = is_array($grid)
+                ? self::baseUnderBox($grid, $x, $y, $bearing, $box['width'], $box['depth'])
+                : null;
+            $shape = (string) ($box['shape'] ?? AtakSceneBounds::SHAPE_RIBBON);
+            if ($shape === AtakSceneBounds::SHAPE_POLE && ($kind === 'wall' || $kind === 'fence')) {
+                $kind = 'pylon';
+            }
             $obstacles[] = [
                 'id' => (string) ($row['id'] ?? ''),
                 'kind' => $kind,
                 'x' => $x,
                 'y' => $y,
-                'bearing' => (float) ($row['bearing'] ?? 0),
+                'bearing' => $bearing,
                 'width' => $box['width'],
                 'depth' => $box['depth'],
                 'height' => $box['height'],
                 'base_z' => $base !== null ? round($base, 2) : 0.0,
                 'quality' => AtakSceneKind::quality($row, $box['clipped']),
+                'shape' => $shape,
             ];
             if ($box['clipped']) {
                 $anomalies[] = [
@@ -215,6 +241,9 @@ final class AtakSceneMeshBake
                     'reasons' => $box['reasons'],
                 ];
             }
+        }
+        foreach ($demoted as $row) {
+            $obstacles[] = $row;
         }
         $this->writeAnomalies($mapId, $anomalies);
 
@@ -292,6 +321,7 @@ final class AtakSceneMeshBake
                 'depth' => max(AtakSceneBounds::MIN_EDGE, min(AtakSceneBounds::MAX_DEPTH, $maxY - $minY)),
                 'height' => max(AtakSceneBounds::MIN_HEIGHT, min(AtakSceneBounds::MAX_HEIGHT, $h)),
                 'base_z' => $z / max(1, count($members)),
+                'facade' => (string) ($members[0]['facade'] ?? 'concrete'),
             ];
         }
 
@@ -307,6 +337,35 @@ final class AtakSceneMeshBake
     public static function lodSettlements(array $buildings, float $cell = 400.0): array
     {
         return self::lodClusters($buildings, $cell, 999999.0, false);
+    }
+
+    /**
+     * Altitude du sol sous l’emprise : point le plus bas (évite de flotter / s’enfoncer).
+     *
+     * @param array<string, mixed> $grid
+     */
+    private static function baseUnderBox(array $grid, float $x, float $y, float $bearingDeg, float $width, float $depth): ?float
+    {
+        $angle = deg2rad($bearingDeg);
+        $c = cos($angle);
+        $s = sin($angle);
+        $hw = max(1.0, $width) / 2.0;
+        $hd = max(1.0, $depth) / 2.0;
+        $samples = [[-$hw, -$hd], [$hw, -$hd], [$hw, $hd], [-$hw, $hd], [0.0, 0.0]];
+        $min = null;
+        foreach ($samples as $v) {
+            $px = $x + $v[0] * $c - $v[1] * $s;
+            $py = $y + $v[0] * $s + $v[1] * $c;
+            $z = AtakTerrainMath::heightAt($grid, $px, $py);
+            if ($z === null) {
+                continue;
+            }
+            if ($min === null || $z < $min) {
+                $min = $z;
+            }
+        }
+
+        return $min;
     }
 
     /**

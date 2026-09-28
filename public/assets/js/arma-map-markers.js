@@ -377,20 +377,28 @@ window.ArmaMapMarkers = (function () {
       || k === 'bunker' || k === 'mountain' || k === 'eye' || k === 'port') {
       return locGlyphHtml(k, c);
     }
-    // Diamant hostile (Marker Dropper / APP-6) pour alerte / destruction / objectif rouge
-    if (k === 'warning' || k === 'destroy' || k === 'objective' || k === 'ambush' || k === 'triangle') {
-      var isAlert = (k === 'warning');
-      return '<span style="display:inline-block;width:12px;height:12px;background:' + c +
-        ';transform:rotate(45deg);border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);' +
-        (isAlert ? 'outline:1px solid rgba(255,255,255,.35);outline-offset:-3px;' : '') +
-        '"></span>';
+    // Formes distinctes (repli si PNG military/handdrawn absent)
+    if (k === 'triangle') {
+      return '<span style="display:inline-block;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid ' + c +
+        ';filter:drop-shadow(0 0 1px #000);"></span>';
+    }
+    if (k === 'warning' || k === 'destroy' || k === 'objective' || k === 'ambush') {
+      var mark = k === 'warning' ? '!' : (k === 'destroy' ? '×' : (k === 'ambush' ? 'E' : '•'));
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:' + c +
+        ';transform:rotate(45deg);border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);">' +
+        '<span style="transform:rotate(-45deg);font:800 9px/1 ui-sans-serif,system-ui,sans-serif;color:#0a0e0d;">' + mark + '</span></span>';
     }
     if (k === 'unknown') {
       // Trèfle / quatrefeuille
       return '<span style="display:inline-block;width:14px;height:14px;background:' + c +
         ';border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3);"></span>';
     }
-    if (k === 'box' || k === 'marker' || k === 'flag') {
+    if (k === 'flag') {
+      return '<span style="display:inline-block;position:relative;width:12px;height:12px;">' +
+        '<span style="position:absolute;left:1px;top:0;width:2px;height:12px;background:' + c + ';"></span>' +
+        '<span style="position:absolute;left:3px;top:1px;width:8px;height:6px;background:' + c + ';"></span></span>';
+    }
+    if (k === 'box' || k === 'marker') {
       return '<span style="display:inline-block;width:11px;height:11px;background:' + c + ';border:1px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3);"></span>';
     }
     if (k === 'circle' || k === 'join' || k === 'pickup') {
@@ -751,15 +759,17 @@ window.ArmaMapMarkers = (function () {
   }
 
   /**
-   * Silhouettes military/handdrawn : PNG blanc/transparent. Si le fichier répond 200,
-   * le repli SVG ne s’affiche jamais — le picto disparaît. Drapeaux et lieux gardent le PNG.
+   * Silhouettes military/handdrawn : PNG blanc → masque couleur (vrais icônes Arma).
+   * OTAN / Metis : SVG APP-6. Lieux / drapeaux : PNG colorés tels quels.
    */
   function shouldUsePngGlyph(decoded, pngUrl) {
     if (!pngUrl) return false;
     var kind = decoded && decoded.kind;
+    if (kind === 'nato' || kind === 'metis') return false;
+    /* Chemins military/handdrawn : activer le masque (sinon le blanc disparaît). */
+    if (pngNeedsColorMask(pngUrl)) return true;
     if (kind === 'flag' || kind === 'loc') return true;
-    if (kind === 'nato' || kind === 'metis' || kind === 'handdrawn' || kind === 'unknown') return false;
-    if (pngNeedsColorMask(pngUrl)) return false;
+    if (kind === 'handdrawn' || kind === 'unknown') return false;
     return true;
   }
 
