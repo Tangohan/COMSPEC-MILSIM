@@ -99,10 +99,14 @@ window.ATAKCams = (function () {
   function resolveMediaUrl(u) {
     if (!u) return '';
     u = String(u);
-    if (u.indexOf('http') === 0 || u.indexOf('//') === 0) return u;
+    if (u.indexOf('http') === 0 || u.indexOf('//') === 0) {
+      /* VPS root=public/ : /public/uploads → /uploads */
+      return u.replace(/^(https?:\/\/[^/]+)\/public\/uploads\//i, '$1/uploads/');
+    }
     var base = getApiBase();
     // apiBase se termine souvent par /api → remonter à la racine publique pour /uploads
     var origin = String(base || '').replace(/\/$/, '').replace(/\/api(?:\/atak)?$/, '');
+    if (u.indexOf('/public/uploads/') === 0) u = u.slice('/public'.length);
     return origin + (u.charAt(0) === '/' ? u : '/' + u);
   }
 

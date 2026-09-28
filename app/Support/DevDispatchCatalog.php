@@ -293,6 +293,11 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(727, '2026-09-28', 'Poste : photos terrain de nouveau visibles', 'Les photos remontées depuis le jeu s’affichaient en liste mais l’image restait cassée. Les vignettes pointent maintenant vers la bonne adresse sur le poste. Rechargez Overwatch Beta ou ATAK (Ctrl+F5).', [], [], [
+                'Photos de reconnaissance listées mais image introuvable (carré cassé)',
+            ], ['atak', 'command'], [
+                'Rechargez le poste (Ctrl+F5). Ouvrez Photos / Renseignement : les clichés déjà reçus du jeu doivent s’afficher. Si une photo reste vide, renvoyez-la une fois depuis le terrain.',
+            ], 'Overwatch Beta'),
             $pr(726, '2026-09-28', 'Poste Overwatch : Relief 3D sans erreur de volumes', 'En Relief 3D, le chargement des constructions ne provoque plus d’erreur dans la console, et les indicatifs des contacts restent lisibles sur un fond sombre. Rechargez Overwatch Beta (Ctrl+F5).', [], [
                 'Indicatifs des contacts avec fond sombre, sans scintillement de contour',
             ], [

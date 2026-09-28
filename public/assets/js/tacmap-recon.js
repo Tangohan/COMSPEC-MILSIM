@@ -18,7 +18,10 @@
       u = '/uploads/recon/' + String(p.image_path).split('/').pop();
     }
     if (!u) return '';
-    if (u.indexOf('http') === 0 || u.indexOf('//') === 0) return u;
+    if (u.indexOf('http') === 0 || u.indexOf('//') === 0) {
+      return String(u).replace(/^(https?:\/\/[^/]+)\/public\/uploads\//i, '$1/uploads/');
+    }
+    if (u.indexOf('/public/uploads/') === 0) u = u.slice('/public'.length);
     var origin = '';
     try {
       // apiBase = …/api → racine publique

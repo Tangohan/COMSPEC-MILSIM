@@ -1955,6 +1955,21 @@
     });
   }
 
+  function resolvePhotoUrl(raw) {
+    var u = String(raw || '').trim();
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u) || u.indexOf('//') === 0) {
+      return u.replace(/^(https?:\/\/[^/]+)\/public\/uploads\//i, '$1/uploads/');
+    }
+    if (u.indexOf('/public/uploads/') === 0) u = u.slice('/public'.length);
+    if (u.charAt(0) !== '/') u = '/' + u;
+    var origin = String(apiBase || '').replace(/\/$/, '').replace(/\/api(?:\/atak)?$/, '');
+    if (!origin) {
+      try { origin = window.location.origin; } catch (e0) { origin = ''; }
+    }
+    return origin + u;
+  }
+
   function toast(text) {
     var box = document.getElementById('ow-toast');
     document.getElementById('ow-toast-text').textContent = text;
@@ -5585,7 +5600,10 @@
       '<label>Photo liée à la carte<input type="file" name="photo" accept="image/*"></label>' +
       '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
       photos.slice(0, 24).map(function (row) {
-        var url = String(row.url || '');
+        var url = resolvePhotoUrl(row.url || row.path || '');
+        if (!url && row.image_path) {
+          url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+        }
         var id = String(row.id || '');
         var title = clean(row.author_callsign || row.author || row.device_label, 'CAPTURE');
         var stamp = formatPhotoWhen(row);
@@ -6097,7 +6115,7 @@
       button.addEventListener('click', function () {
         var id = button.dataset.sendPhoto;
         var photo = photos.filter(function (row) { return String(row.id) === String(id); })[0] || {};
-        var url = String(photo.url || '').trim();
+        var url = resolvePhotoUrl(photo.url || photo.path || '');
         var caption = String(photo.caption || photo.label || 'Photo de renseignement').trim() || 'Photo de renseignement';
         var text = url ? (caption + ' — ' + url) : (caption + ' transmise depuis le poste.');
         sendChat(activeChannel, text).then(function () {

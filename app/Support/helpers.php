@@ -67,7 +67,8 @@ if (!function_exists('e')) {
 if (!function_exists('user_media_public_url')) {
     /**
      * Résout une photo / bannière utilisateur (chemin relatif uploads/… ou URL absolue http(s)).
-     * Sur Athena (APP_BASE_PATH=/public), force le préfixe /public devant /uploads/.
+     * - VPS (APP_BASE_PATH vide, root = public/) : /uploads/…
+     * - Hostinger historique (APP_BASE_PATH=/public) : /public/uploads/…
      */
     function user_media_public_url(?string $path): ?string
     {
@@ -222,10 +223,20 @@ if (!function_exists('normalize_public_uploads_url')) {
         if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
             $prefix = '/public';
         }
+
+        /* VPS : APP_BASE_PATH vide + root = …/public → canonique /uploads/… (pas /public/uploads). */
         if ($prefix === '') {
-            $prefix = '/public';
+            if (preg_match('#^(https?://[^/]+)/public/uploads/#i', $url) === 1) {
+                return (string) preg_replace('#^(https?://[^/]+)/public/uploads#i', '$1/uploads', $url, 1);
+            }
+            if (str_starts_with($url, '/public/uploads/')) {
+                return substr($url, strlen('/public'));
+            }
+
+            return $url;
         }
-        // Déjà préfixé
+
+        // Sous-dossier (Hostinger) : forcer APP_BASE_PATH devant /uploads/.
         if (preg_match('#' . preg_quote($prefix, '#') . '/uploads/#i', $url) === 1) {
             return $url;
         }
