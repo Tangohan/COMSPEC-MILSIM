@@ -36,6 +36,7 @@ final class SecurityHeadersCspWorkerTest extends TestCase
 
         self::assertNotNull($csp);
         self::assertMatchesRegularExpression("/worker-src[^;]*'self'[^;]*blob:/i", (string) $csp);
+        self::assertMatchesRegularExpression('/connect-src[^;]*\bdata:/i', (string) $csp);
         self::assertStringNotContainsString("script-src blob:", (string) $csp);
     }
 
@@ -49,7 +50,8 @@ final class SecurityHeadersCspWorkerTest extends TestCase
 
         $_ENV['APP_CSP'] = $src;
         $csp = $this->headerFromMiddleware();
-        self::assertSame($src . "; worker-src 'self' blob:", $csp);
+        self::assertStringContainsString("; worker-src 'self' blob:", (string) $csp);
+        self::assertMatchesRegularExpression('/connect-src[^;]*\bdata:/i', (string) $csp);
     }
 
     public function testExistingWorkerSrcGainsBlobWithoutReplacingSelf(): void
@@ -79,6 +81,34 @@ final class SecurityHeadersCspWorkerTest extends TestCase
     {
         $src = "script-src 'self'; worker-src 'self' blob:";
         self::assertSame($src, SecurityHeadersMiddleware::ensureWorkerSrc($src));
+    }
+
+    public function testConnectSrcGainsDataForDeckGlIcons(): void
+    {
+        $src = "script-src 'self'; connect-src 'self' https: wss:";
+        $out = SecurityHeadersMiddleware::ensureConnectSrcData($src);
+        self::assertMatchesRegularExpression("/connect-src data: 'self' https: wss:/i", $out);
+    }
+
+    public function testConnectSrcDataAlreadyPresentIsNotDuplicated(): void
+    {
+        $src = "connect-src 'self' data: https: wss:";
+        self::assertSame($src, SecurityHeadersMiddleware::ensureConnectSrcData($src));
+    }
+
+    public function testExplicitConnectNoneIsLeftAlone(): void
+    {
+        $src = "script-src 'self'; connect-src 'none'";
+        self::assertSame($src, SecurityHeadersMiddleware::ensureConnectSrcData($src));
+    }
+
+    public function testConfiguredCspWithoutConnectSrcGetsDataAppended(): void
+    {
+        $src = "default-src 'self'; script-src 'self'";
+        self::assertSame(
+            $src . "; connect-src 'self' data: https: wss:",
+            SecurityHeadersMiddleware::ensureConnectSrcData($src)
+        );
     }
 
     private function headerFromMiddleware(): ?string

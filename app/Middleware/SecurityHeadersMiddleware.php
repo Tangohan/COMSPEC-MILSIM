@@ -13,6 +13,8 @@ use App\Core\Response;
  * MapLibre / deck.gl (Overwatch Beta Relief 3D) créent des Web Workers via blob: URL.
  * Sans worker-src explicite, le navigateur retombe sur script-src et bloque le worker :
  * la vue 3D reste un écran vide.
+ *
+ * deck.gl charge aussi des icônes SVG en data: via fetch() — connect-src doit autoriser data:.
  */
 final class SecurityHeadersMiddleware
 {
@@ -20,7 +22,7 @@ final class SecurityHeadersMiddleware
         . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
         . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         . "img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; "
-        . "connect-src 'self' https: wss:; media-src 'self' blob:; "
+        . "connect-src 'self' data: https: wss:; media-src 'self' blob:; "
         . "worker-src 'self' blob:";
 
     public function __invoke(Request $request, callable $next): Response
@@ -34,7 +36,9 @@ final class SecurityHeadersMiddleware
         if ($csp === '') {
             $csp = self::DEFAULT_CSP;
         }
-        $response->header('Content-Security-Policy', self::ensureWorkerSrc($csp));
+        $csp = self::ensureWorkerSrc($csp);
+        $csp = self::ensureConnectSrcData($csp);
+        $response->header('Content-Security-Policy', $csp);
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || ((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
         if ($https || env('APP_FORCE_HTTPS', false)) {
@@ -72,5 +76,35 @@ final class SecurityHeadersMiddleware
         }
 
         return rtrim($csp, '; ') . "; worker-src 'self' blob:";
+    }
+
+    /**
+     * Garantit data: dans connect-src (icônes SVG deck.gl chargées via fetch).
+     * Si connect-src vaut déjà 'none', on ne touche pas.
+     */
+    public static function ensureConnectSrcData(string $csp): string
+    {
+        $csp = trim($csp);
+        if ($csp === '') {
+            return $csp;
+        }
+        if (preg_match('/(?:^|;)\s*connect-src\s+([^;]*)/i', $csp, $m) === 1) {
+            $value = trim((string) ($m[1] ?? ''));
+            if ($value === '' || preg_match("/^'none'$/i", $value) === 1 || preg_match('/\bdata:/i', $value) === 1) {
+                return rtrim($csp, '; ');
+            }
+            $replaced = preg_replace_callback(
+                '/((?:^|;)\s*)connect-src\s+[^;]*/i',
+                static function (array $match) use ($value): string {
+                    return $match[1] . 'connect-src data: ' . $value;
+                },
+                $csp,
+                1
+            );
+
+            return rtrim((string) ($replaced ?? $csp), '; ');
+        }
+
+        return rtrim($csp, '; ') . "; connect-src 'self' data: https: wss:";
     }
 }
