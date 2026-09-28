@@ -1,4 +1,27 @@
-﻿COMSPEC Overwatch 1.6.14 « Opération Phoenix » / Athena ATAK 1.0.167 / Extension 2.0.51 — 28/09/2026
+﻿COMSPEC Overwatch 1.6.15 « Opération Phoenix » / Athena ATAK 1.0.167 / Extension 2.0.52 — 28/09/2026
+
+[h1]COMSPEC Overwatch — Opération Phoenix (1.6.15)[/h1]
+[b]Publication : 28/09/2026[/b]
+[b]Pack :[/b] Overwatch 1.6.15 · Athena 1.0.167 · Extension 2.0.52
+[b]Nom de code :[/b] Opération Phoenix (ligne 1.x)
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement, mettez à jour le pack, puis relancez.
+[/quote]
+
+[h2]Correction — Liaison qui s’empilait[/h2]
+Quand le poste était momentanément injoignable, les envois de marqueurs partaient tous en même temps et le délai de nouvel essai montait trop vite jusqu’à dix minutes, avec beaucoup d’alertes inutiles.
+
+[list]
+[*] les marqueurs partent désormais un par un via la file de liaison (dernière version d’un même repère) ;
+[*] le délai de nouvel essai ne grimpe plus d’un cran à chaque échec simultané ;
+[*] les messages « liaison différée » ne se répètent plus en rafale.
+[/list]
+
+[b]Versions à vérifier en jeu :[/b] Overwatch 1.6.15 · Athena 1.0.167 · Extension 2.0.52
+
+---
+
+COMSPEC Overwatch 1.6.14 « Opération Phoenix » / Athena ATAK 1.0.167 / Extension 2.0.51 — 28/09/2026
 
 [h1]COMSPEC Overwatch — Opération Phoenix (1.6.14)[/h1]
 [b]Publication : 28/09/2026[/b]

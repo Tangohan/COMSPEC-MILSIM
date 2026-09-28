@@ -43,6 +43,6 @@ final class AtakRelayAtAssetTest extends TestCase
         self::assertStringContainsString('adresse r�seau', $view);
         self::assertStringNotContainsString('endpoint', strtolower($view));
         self::assertStringContainsString('args.Length > 6', $ext);
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
     }
 }

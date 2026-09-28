@@ -26,7 +26,7 @@ final class AtakOrderSessionFilterAssetTest extends TestCase
         self::assertStringContainsString("'created_after' => true", $api);
 
         self::assertStringContainsString('created_after=', $ext);
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
 
         self::assertStringContainsString('COMSPEC_OrdersSessionStartedAt', $orders);
         self::assertStringContainsString('systemTimeUTC', $orders);

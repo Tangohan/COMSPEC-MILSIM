@@ -38,7 +38,7 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         $ext = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         self::assertStringContainsString('ATAK_PhotoLibrary', $ext);
         self::assertStringContainsString('EnumerateIcemanPhotoLibraryDirs', $ext);
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
         self::assertStringContainsString('_started = _started + 1', $poll);
         self::assertStringContainsString('rememberLocalPhoto', $bridge);
         self::assertTrue(

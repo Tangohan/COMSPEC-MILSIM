@@ -1,11 +1,11 @@
 {
-  "version": "1.6.14",
+  "version": "1.6.15",
   "codename": "Phoenix",
-  "updated_at": "2026-09-28T20:54:00+02:00",
-  "git_sha": "fb2eae0a5",
+  "updated_at": "2026-09-28T21:10:00+02:00",
+  "git_sha": "",
   "pack": {
-    "overwatch": "1.6.14",
+    "overwatch": "1.6.15",
     "athena": "1.0.167",
-    "extension": "2.0.51"
+    "extension": "2.0.52"
   }
 }

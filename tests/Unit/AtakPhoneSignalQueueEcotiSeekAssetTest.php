@@ -62,7 +62,7 @@ final class AtakPhoneSignalQueueEcotiSeekAssetTest extends TestCase
         self::assertStringContainsString('athena_updateQueueBadge', $strip);
         self::assertStringContainsString('athena_updateBuildingSheet', $strip);
 
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
         self::assertStringContainsString('GetPendingQueueCount', $ext);
     }
 }

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.51";
+    private const string ExtensionVersion = "2.0.52";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -65,6 +65,9 @@ public static partial class Extension
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
+    /// <summary>Marqueurs : dernière version par arma_name (évite N POST parallèles au boot / resync).</summary>
+    private static readonly ConcurrentDictionary<string, (string Url, string Body)> PendingMarkersByName =
+        new(StringComparer.OrdinalIgnoreCase);
     private static readonly int MaxQueueSize = 500;
     private static readonly object QueueDrainLock = new();
     /// <summary>
@@ -88,6 +91,7 @@ public static partial class Extension
     /// <summary>
     /// Échelle unique pour tout le trafic sortant (position, caméras, relevés, occupants, tchat) :
     /// 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. Entrée après 3 échecs ; 2 succès baissent d’un cran.
+    /// L’escalade est plafonnée à un cran par fenêtre (pas de fusée 45→600 en ms sous rafale code 0).
     /// </summary>
     private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
     private const int SendFailStreakToEnter = 3;
@@ -97,6 +101,8 @@ public static partial class Extension
     private static int _sendOkStreak;
     private static int _sendBackoffStep;
     private static long _lastSendBackoffCbTicks;
+    private static long _lastBackoffEscalateTicks;
+    private static int _lastNotifiedBackoffSec = -1;
     private static long _lastAuth401ReauthTicks;
     private static long _terrainChunkBlockedUntilTicks;
     /// <summary>Cooldown des flux caméra (best-effort) : ne pas geler position / manifeste.</summary>
@@ -766,9 +772,14 @@ public static partial class Extension
     private static bool IsBestEffortEndpoint(string url) =>
         IsVideoFeedsEndpoint(url) || IsWeatherEndpoint(url);
 
-    /// <summary>Occupation aérienne / véhicules : file drainée, prioritaire sur les flux caméra.</summary>
+    /// <summary>Occupation aérienne / véhicules / marqueurs : file drainée (pas de rafale POST).</summary>
     private static bool IsTacticalQueuedEndpoint(string url) =>
-        IsFlightManifestEndpoint(url);
+        IsFlightManifestEndpoint(url) || IsMarkerEndpoint(url);
+
+    private static bool IsMarkerEndpoint(string url) =>
+        url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
+        && !url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
+        && !url.Contains("marker-detection", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsBestEffortCoolingNow() =>
         DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _bestEffortCoolUntilTicks);
@@ -858,7 +869,7 @@ public static partial class Extension
 
     /// <summary>
     /// Retry après échec / backoff. Positions = slot unique (dernière gagne) ;
-    /// autres posts = FIFO bornée.
+    /// marqueurs = slot par arma_name ; autres posts = FIFO bornée.
     /// </summary>
     private static void EnqueueForRetry(string url, string jsonBody)
     {
@@ -870,12 +881,38 @@ public static partial class Extension
             PersistQueueToDisk();
             return;
         }
+        if (IsMarkerEndpoint(url))
+        {
+            var key = ExtractMarkerArmaName(jsonBody);
+            if (key.Length == 0)
+                key = "anon:" + (PendingMarkersByName.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            PendingMarkersByName[key] = (url, jsonBody);
+            EnsureDrainTimer();
+            PersistQueueToDisk();
+            return;
+        }
         if (PendingPosts.Count < MaxQueueSize)
         {
             PendingPosts.Enqueue((url, jsonBody));
             EnsureDrainTimer();
         }
         PersistQueueToDisk();
+    }
+
+    private static string ExtractMarkerArmaName(string jsonBody)
+    {
+        if (string.IsNullOrWhiteSpace(jsonBody)) return "";
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonBody);
+            if (doc.RootElement.TryGetProperty("arma_name", out var p))
+            {
+                var n = (p.GetString() ?? "").Trim();
+                if (n.Length > 0) return n;
+            }
+        }
+        catch { /* ignore */ }
+        return "";
     }
 
     private static bool TryTakeCoalescedPosition(out (string Url, string Body) item)
@@ -962,9 +999,18 @@ public static partial class Extension
     private static void NotifySendBackoff(int sec)
     {
         var now = DateTime.UtcNow.Ticks;
-        if (now - System.Threading.Interlocked.Read(ref _lastSendBackoffCbTicks) <= TimeSpan.FromSeconds(2).Ticks)
+        // Même délai : un rappel toutes les 20 s max. Délai différent : anti-rafale 2 s.
+        if (sec == _lastNotifiedBackoffSec)
+        {
+            if (now - System.Threading.Interlocked.Read(ref _lastSendBackoffCbTicks) <= TimeSpan.FromSeconds(20).Ticks)
+                return;
+        }
+        else if (now - System.Threading.Interlocked.Read(ref _lastSendBackoffCbTicks) <= TimeSpan.FromSeconds(2).Ticks)
+        {
             return;
+        }
         System.Threading.Interlocked.Exchange(ref _lastSendBackoffCbTicks, now);
+        _lastNotifiedBackoffSec = sec;
         InvokeCallback("SendBackoff", sec.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
@@ -1010,12 +1056,21 @@ public static partial class Extension
 
         if (_sendBackoffStep > 0)
         {
-            if (_sendBackoffStep < SendBackoffLadderSec.Length)
+            // Une seule montée d’échelle par fenêtre (~moitié du délai courant, min 20 s).
+            // Sinon une rafale de code 0 grimpe 45→600 en quelques millisecondes.
+            var nowEsc = DateTime.UtcNow.Ticks;
+            var gapSec = Math.Max(20, CurrentSendBackoffSec() / 2);
+            if (_sendBackoffStep < SendBackoffLadderSec.Length
+                && nowEsc - System.Threading.Interlocked.Read(ref _lastBackoffEscalateTicks) >= TimeSpan.FromSeconds(gapSec).Ticks)
+            {
                 _sendBackoffStep++;
+                System.Threading.Interlocked.Exchange(ref _lastBackoffEscalateTicks, nowEsc);
+            }
         }
         else if (_sendFailStreak >= SendFailStreakToEnter)
         {
             _sendBackoffStep = 1;
+            System.Threading.Interlocked.Exchange(ref _lastBackoffEscalateTicks, DateTime.UtcNow.Ticks);
         }
 
         int delaySec;
@@ -1087,6 +1142,7 @@ public static partial class Extension
         {
             _sendOkStreak = 0;
             _networkBackoffSec = 1;
+            _lastNotifiedBackoffSec = -1;
             var hadPause = System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) > 0
                 || System.Threading.Interlocked.Read(ref _networkBackoffUntilTicks) > 0;
             System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
@@ -1111,6 +1167,7 @@ public static partial class Extension
         {
             _sendBackoffStep = 0;
             _networkBackoffSec = 1;
+            _lastNotifiedBackoffSec = -1;
             System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
             System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
             NotifySendBackoff(0);
@@ -1330,11 +1387,33 @@ public static partial class Extension
                         EnqueueForRetry(item.Url, item.Body);
                     continue;
                 }
+                if (IsMarkerEndpoint(item.Url))
+                {
+                    EnqueueForRetry(item.Url, item.Body);
+                    continue;
+                }
                 if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
                     continue;
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
+            }
+            // Marqueurs coalescés (budget restant).
+            if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
+            {
+                foreach (var key in PendingMarkersByName.Keys)
+                {
+                    if (sent >= maxPerTick) break;
+                    if (!PendingMarkersByName.TryRemove(key, out var mk)) continue;
+                    if (!TryResolveQueuedUrl(ref mk))
+                    {
+                        EnqueueForRetry(mk.Url, mk.Body);
+                        break;
+                    }
+                    if (!TrySendQueuedPost(mk))
+                        break;
+                    sent++;
+                }
             }
             // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
             if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
@@ -1390,6 +1469,11 @@ public static partial class Extension
                 {
                     if (lines.Count >= MaxQueueSize) break;
                     lines.Add(QueueRowJson(item.Url, item.Body));
+                }
+                foreach (var mk in PendingMarkersByName.Values)
+                {
+                    if (lines.Count >= MaxQueueSize) break;
+                    lines.Add(QueueRowJson(mk.Url, mk.Body));
                 }
                 File.WriteAllLines(fifo, lines);
                 lock (CoalescedPositionLock)
@@ -7310,7 +7394,12 @@ public static partial class Extension
                 var payload = deleted
                     ? "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + ",\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"deleted\":true}"
                     : "{\"mapId\":" + CurrentMapId().ToString(System.Globalization.CultureInfo.InvariantCulture) + ",\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"markerData\":" + markerDataRaw + "}";
-                EnqueueOrSend(_baseUrl + "/api/atak/marker", payload);
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/marker", out var markerUri, out _) || markerUri is null)
+                {
+                    EnqueueOrSend("queued:/api/atak/marker", payload);
+                    return;
+                }
+                EnqueueOrSend(markerUri.AbsoluteUri, payload);
                 return;
             }
 

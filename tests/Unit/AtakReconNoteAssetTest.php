@@ -77,7 +77,7 @@ final class AtakReconNoteAssetTest extends TestCase
         self::assertStringContainsString('Véhicule', $dlg);
         self::assertStringContainsString('8', $show);
         self::assertStringContainsString('"comspec_recon_"', $sync);
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
         self::assertStringContainsString('RECON.Note', $ext);
         self::assertStringContainsString('/api/recon/notes', $ext);
         self::assertStringContainsString('ReconNote', $ext);

@@ -268,6 +268,12 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(719, '2026-09-28', 'Pack jeu : plus de rafale de liaison différée', 'Quand le poste était un instant injoignable, les repères partaient tous ensemble et le délai de nouvel essai montait trop vite, avec des alertes en rafale. Les marqueurs sont maintenant envoyés calmement, et le délai ne s’emballe plus. Relancez Arma après Overwatch 1.6.15 · Extension 2.0.52.', [], [], [
+                'Délai de nouvel essai qui passait trop vite à dix minutes',
+                'Alertes « liaison différée » répétées à chaque marqueur',
+            ], ['atak'], [
+                'Quittez Arma. Rechargez Overwatch 1.6.15 et Extension 2.0.52. Dans le journal, le dump doit afficher Overwatch 1.6.15 et Extension 2.0.52. En cas de coupure courte, une seule ligne « liaison différée » suffit ; les marqueurs reprennent ensuite sans saturer le poste.',
+            ], 'Overwatch 1.6.15'),
             $pr(718, '2026-09-28', 'Packs majeurs : un nom de ville américaine', 'Chaque grande génération du pack (quand le premier chiffre de version change) porte désormais un nom de code américain. La ligne actuelle 1.x s’appelle Opération Phoenix. La prochaine génération 2.x sera Denver. Les petites mises à jour restent sous le même nom.', [
                 'Nom de code « Opération Phoenix » pour toute la ligne 1.x',
                 'Affichage du nom de code sur la page Nouveautés de l’organisation',

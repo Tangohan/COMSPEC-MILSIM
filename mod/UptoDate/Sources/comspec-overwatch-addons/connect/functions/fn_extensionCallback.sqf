@@ -130,19 +130,27 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
     };
     case "SendBackoff": {
-        // Échelle partagée : 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. 0 = reprise normale.
+        // Échelle partagée : 45 s → … → 10 min. 0 = reprise. Anti-spam journal si même délai.
         private _sec = parseNumber _data;
         if (!(_sec isEqualType 0)) then { _sec = 0; };
         if (_sec <= 0) then {
             missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
             missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
             missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", 0, false];
+            missionNamespace setVariable ["COMSPEC_SendBackoffAnnouncedSec", -1, false];
         } else {
             if (_sec < 8) then { _sec = 8; };
             if (_sec > 600) then { _sec = 600; };
             missionNamespace setVariable ["COMSPEC_SendBackoffSec", _sec, false];
             missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
             missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
+            private _prevSec = missionNamespace getVariable ["COMSPEC_SendBackoffAnnouncedSec", -1];
+            private _prevAt = missionNamespace getVariable ["COMSPEC_SendBackoffAnnouncedAt", -1e9];
+            if (!(_prevSec isEqualType 0)) then { _prevSec = -1; };
+            if (!(_prevAt isEqualType 0)) then { _prevAt = -1e9; };
+            if (_sec == _prevSec && {(diag_tickTime - _prevAt) < 20}) exitWith {};
+            missionNamespace setVariable ["COMSPEC_SendBackoffAnnouncedSec", _sec, false];
+            missionNamespace setVariable ["COMSPEC_SendBackoffAnnouncedAt", diag_tickTime, false];
             [
                 "WARN",
                 "Tx",
@@ -152,11 +160,13 @@ switch (_function) do {
         };
     };
     case "NetworkHiccup": {
-        // Timeout / coupure : pause courte, sans crier saturation du poste.
+        // Timeout / coupure : pause courte. Si déjà en liaison différée, ne pas doubler le journal.
         private _sec = parseNumber _data;
         if (!(_sec isEqualType 0) || {_sec < 1}) then { _sec = 2; };
         if (_sec > 3) then { _sec = 3; };
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
+        private _deferred = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
+        if ((_deferred isEqualType 0) && {_deferred >= 8}) exitWith {};
         [
             "WARN",
             "Tx",

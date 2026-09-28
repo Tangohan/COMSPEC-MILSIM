@@ -100,7 +100,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_OrderIceManAt', $onOrder);
         self::assertStringContainsString('_isolate', $onOrder);
         self::assertStringContainsString('_added >= 1', $sync);
-        self::assertStringContainsString('2.0.51', $ext);
+        self::assertStringContainsString('2.0.52', $ext);
 
         self::assertStringContainsString('COMSPEC_StatusUpdating', $status);
         self::assertStringNotContainsString('fnc_refreshLinkState', $status);
