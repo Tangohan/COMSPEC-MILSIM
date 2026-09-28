@@ -20,5 +20,9 @@ final class PlatformProductionStatusTest extends TestCase
         self::assertArrayHasKey('athena_version', $snap);
         self::assertArrayHasKey('extension_version', $snap);
         self::assertArrayHasKey('pack_label', $snap);
+        self::assertArrayHasKey('codename', $snap);
+        self::assertArrayHasKey('codename_label', $snap);
+        self::assertSame('Phoenix', $snap['codename']);
+        self::assertSame('Opération Phoenix', $snap['codename_label']);
     }
 }

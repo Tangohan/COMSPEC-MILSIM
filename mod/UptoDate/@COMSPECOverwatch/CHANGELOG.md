@@ -1,8 +1,9 @@
-﻿COMSPEC Overwatch 1.6.14 / Athena ATAK 1.0.167 / Extension 2.0.51 — 28/09/2026
+﻿COMSPEC Overwatch 1.6.14 « Opération Phoenix » / Athena ATAK 1.0.167 / Extension 2.0.51 — 28/09/2026
 
-[h1]COMSPEC Overwatch — Mise à jour 1.6.14[/h1]
+[h1]COMSPEC Overwatch — Opération Phoenix (1.6.14)[/h1]
 [b]Publication : 28/09/2026[/b]
 [b]Pack :[/b] Overwatch 1.6.14 · Athena 1.0.167 · Extension 2.0.51
+[b]Nom de code :[/b] Opération Phoenix (ligne 1.x)
 [quote]
 [b]Important :[/b] quittez Arma 3 complètement, mettez à jour le pack, puis relancez. Rechargez aussi la carte du poste (Ctrl+F5) pour voir la charge de liaison.
 [/quote]

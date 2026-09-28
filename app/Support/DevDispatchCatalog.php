@@ -268,6 +268,12 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(718, '2026-09-28', 'Packs majeurs : un nom de ville américaine', 'Chaque grande génération du pack (quand le premier chiffre de version change) porte désormais un nom de code américain. La ligne actuelle 1.x s’appelle Opération Phoenix. La prochaine génération 2.x sera Denver. Les petites mises à jour restent sous le même nom.', [
+                'Nom de code « Opération Phoenix » pour toute la ligne 1.x',
+                'Affichage du nom de code sur la page Nouveautés de l’organisation',
+            ], [], [], ['atak', 'platform'], [
+                'Sur Nouveautés de l’organisation, la bannière de production affiche Opération Phoenix à côté de la version. Les mises à jour 1.6.x restent Phoenix ; seul un passage en 2.0 changera de nom.',
+            ], 'Opération Phoenix'),
             $pr(717, '2026-09-28', 'Pack jeu : arsenal fluide, moins de vibrations, charge visible', 'L’arsenal ne télécharge plus les tenues de l’organisation tant que vous n’ouvrez pas le bouton ATHENA. Le téléphone vibre moins souvent. Après une longue session, la synchronisation des marqueurs est étalée. La charge de liaison est visible en jeu, sur Overwatch Beta et dans le back-office (Liaison temps réel). Relancez Arma après Overwatch 1.6.14 · Athena 1.0.167.', [
                 'Bouton arsenal « ATHENA : Collection de votre organisation » avec chargement à la demande',
                 'Indicateur de charge liaison sur l’écran État du téléphone',

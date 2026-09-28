@@ -22,7 +22,10 @@ final class PlatformProductionStatus
      *   pack_label: string,
      *   git_sha: string,
      *   bulletin_title: string,
-     *   bulletin_url: string
+     *   bulletin_url: string,
+     *   codename: string,
+     *   codename_label: string,
+     *   major: int
      * }
      */
     public static function snapshot(): array
@@ -72,6 +75,12 @@ final class PlatformProductionStatus
             $packParts[] = 'Extension ' . $extension;
         }
 
+        $codeVersion = $overwatch !== '' ? $overwatch : $platform;
+        $fromFile = trim((string) ($file['codename'] ?? ''));
+        $codeMeta = PackCodenameCatalog::forVersion($codeVersion);
+        $codename = $fromFile !== '' ? $fromFile : (string) ($codeMeta['name'] ?? '');
+        $codenameLabel = $codename !== '' ? ('Opération ' . $codename) : (string) ($codeMeta['label'] ?? '');
+
         return [
             'platform_version' => $platform,
             'deployed_at' => $deployedAt?->format(\DateTimeInterface::ATOM),
@@ -84,6 +93,9 @@ final class PlatformProductionStatus
             'git_sha' => $sha !== '' ? substr($sha, 0, 7) : '',
             'bulletin_title' => $bulletinTitle,
             'bulletin_url' => $bulletinUrl,
+            'codename' => $codename,
+            'codename_label' => $codenameLabel,
+            'major' => (int) ($codeMeta['major'] ?? PackCodenameCatalog::majorOf($codeVersion)),
         ];
     }
 
