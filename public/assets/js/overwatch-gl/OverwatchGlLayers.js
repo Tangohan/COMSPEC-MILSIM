@@ -1458,29 +1458,15 @@ window.OverwatchGlLayers = (function () {
           getColor: [220, 230, 220, 230],
           getPixelOffset: [0, 18],
           fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-          outlineWidth: 3,
-          outlineColor: [10, 14, 12, 220],
+          background: true,
+          getBackgroundColor: [10, 14, 12, 200],
+          backgroundPadding: [3, 1],
           billboard: true,
           pickable: false,
           parameters: { depthTest: false }
         }));
       }
       if (labeled.length) {
-        layers.push(new window.deck.TextLayer({
-          id: 'ow-gl-unit-labels-bg',
-          data: labeled,
-          getPosition: function (d) { return d.position; },
-          getText: function (d) { return d.shortLabel || d.label; },
-          getSize: function (d) { return d.fullLabel ? 13 : 11; },
-          getColor: [12, 16, 14, 0],
-          getPixelOffset: [0, -22],
-          fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-          outlineWidth: 8,
-          outlineColor: [14, 18, 16, 230],
-          billboard: true,
-          pickable: false,
-          parameters: { depthTest: false }
-        }));
         layers.push(new window.deck.TextLayer({
           id: 'ow-gl-unit-labels',
           data: labeled,
@@ -1490,8 +1476,9 @@ window.OverwatchGlLayers = (function () {
           getColor: [236, 242, 236, 255],
           getPixelOffset: [0, -22],
           fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-          outlineWidth: 2,
-          outlineColor: [12, 16, 14, 210],
+          background: true,
+          getBackgroundColor: [14, 18, 16, 220],
+          backgroundPadding: [4, 2],
           billboard: true,
           pickable: false,
           parameters: { depthTest: false }
@@ -1663,6 +1650,9 @@ window.OverwatchGlLayers = (function () {
     if (!glMap || typeof glMap.getSource !== 'function') return;
     if (!glMap.getSource('ow-buildings')) {
       glMap.addSource('ow-buildings', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    }
+    if (!glMap.getLayer || !glMap.getLayer('ow-buildings-fill')) {
+      /* fill-extrusion-opacity : constante uniquement (pas d’expression data). */
       glMap.addLayer({
         id: 'ow-buildings-fill',
         type: 'fill-extrusion',
@@ -1671,12 +1661,16 @@ window.OverwatchGlLayers = (function () {
           'fill-extrusion-color': ['coalesce', ['get', 'color'], '#bac4ce'],
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': ['coalesce', ['get', 'opacity'], 0.72]
+          'fill-extrusion-opacity': 0.72
         }
       });
+    } else {
+      try { glMap.setPaintProperty('ow-buildings-fill', 'fill-extrusion-opacity', 0.72); } catch (e0) {}
     }
     if (!glMap.getSource('ow-forests')) {
       glMap.addSource('ow-forests', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    }
+    if (!glMap.getLayer || !glMap.getLayer('ow-forests-fill')) {
       glMap.addLayer({
         id: 'ow-forests-fill',
         type: 'fill-extrusion',

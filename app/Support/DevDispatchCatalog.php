@@ -293,6 +293,14 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(726, '2026-09-28', 'Poste Overwatch : Relief 3D sans erreur de volumes', 'En Relief 3D, le chargement des constructions ne provoque plus d’erreur dans la console, et les indicatifs des contacts restent lisibles sur un fond sombre. Rechargez Overwatch Beta (Ctrl+F5).', [], [
+                'Indicatifs des contacts avec fond sombre, sans scintillement de contour',
+            ], [
+                'Erreur au chargement des volumes du Relief 3D',
+                'Avertissement sur le contour des libellés de contacts',
+            ], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Passez en Relief 3D : la console ne doit plus afficher d’erreur sur les volumes, et les indicatifs restent lisibles.',
+            ], 'Overwatch Beta'),
             $pr(725, '2026-09-28', 'Poste Overwatch : vrais symboles Arma 3', 'Dans le tiroir Marqueur, le kit Arma 3 montrait des formes génériques (losanges, carrés) au lieu des icônes du jeu. Les repères Arma (point, triangle, alerte, drapeau…) reprennent maintenant la silhouette d’Arma 3, teintée selon la couleur du marqueur. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Icônes Arma 3 (military / croquis) dans le choix de symbole',
             ], [

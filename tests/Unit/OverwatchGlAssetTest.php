@@ -98,6 +98,11 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('handleWorldClick', $layers);
         self::assertStringContainsString('pickable: true', $layers);
         self::assertStringContainsString('fill-extrusion', $layers);
+        self::assertStringContainsString("'fill-extrusion-opacity': 0.72", $layers);
+        self::assertStringNotContainsString("['get', 'opacity']", $layers);
+        self::assertStringContainsString('background: true', $layers);
+        self::assertStringContainsString('getBackgroundColor', $layers);
+        self::assertStringNotContainsString('ow-gl-unit-labels-bg', $layers);
         self::assertStringContainsString('clusterForests', $layers);
         self::assertStringContainsString('zoom >= 14 ? 70 : 110', $layers);
         self::assertStringContainsString('Math.cos(t) * radius', $layers);

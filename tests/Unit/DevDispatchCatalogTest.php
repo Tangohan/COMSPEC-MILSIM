@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(524, $byKind['update']);
-        self::assertCount(530, $all);
+        self::assertSame(525, $byKind['update']);
+        self::assertCount(531, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -43,8 +43,8 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(725, (int) $row['number']);
-        self::assertStringContainsString('arma', mb_strtolower((string) $row['title']));
+        self::assertSame(726, (int) $row['number']);
+        self::assertStringContainsString('relief 3d', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -917,6 +917,14 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('silhouette', strtolower((string) $owArmaIcons['activity']));
         self::assertStringNotContainsString('png', strtolower((string) $owArmaIcons['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owArmaIcons['activity']));
+        $owGlFix = DevDispatchCatalog::find('update', '726');
+        self::assertNotNull($owGlFix);
+        self::assertSame('00726', $owGlFix['number_pad']);
+        self::assertStringContainsString('relief 3d', strtolower((string) $owGlFix['title']));
+        self::assertStringContainsString('volumes', strtolower((string) $owGlFix['title'] . ' ' . $owGlFix['activity']));
+        self::assertStringNotContainsString('maplibre', strtolower((string) $owGlFix['activity']));
+        self::assertStringNotContainsString('sdf', strtolower((string) $owGlFix['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owGlFix['activity']));
         $manifestText = DevDispatchCatalog::find('update', '697');
         self::assertNotNull($manifestText);
         self::assertSame('00697', $manifestText['number_pad']);
