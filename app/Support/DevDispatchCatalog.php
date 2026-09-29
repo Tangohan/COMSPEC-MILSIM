@@ -293,6 +293,55 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(734, '2026-09-29', 'Mes qualifications : brevet et validité', 'Sur Mes qualifications, chaque titre affiche désormais sa validité (permanente ou échéance), l’insigne ou la catégorie, et un bouton pour générer ou télécharger le brevet PDF quand la qualification est obtenue. Le libellé de page reprend « Mes qualifications », comme dans le menu. Rechargez le portail (Ctrl+F5).', [
+                'Bouton Générer le brevet sur chaque qualification obtenue sans PDF',
+                'Téléchargement du brevet depuis la carte une fois le PDF établi',
+                'Validité : permanente, jours restants ou période de grâce',
+                'Insigne de la qualification lorsqu’il est renseigné, sinon initiales de catégorie',
+            ], [
+                'Émetteur et catégorie affichés à la place du libellé générique Communauté',
+                'Compteur de qualifications placé au-dessus de la liste',
+            ], [
+                'Notice passive « Brevet PDF pas encore versé » sans action',
+                'Icône RH identique sur toutes les cartes',
+            ], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Mes qualifications : chaque carte doit proposer Générer le brevet ou Télécharger le brevet, avec la validité lisible.',
+            ], 'Portail Athena'),
+            $pr(733, '2026-09-29', 'Tableau de bord opérateur : lecture plus claire', 'Le tableau de bord de l’espace opérateur affiche désormais le vrai poste (fonction) distinct du nom d’unité, remonte l’intégration inachevée en bandeau, et allège les blocs vides ainsi que les raccourcis redondants. Le titre de page reprend « Tableau de bord », comme dans le menu. Rechargez le portail (Ctrl+F5).', [
+                'Fonction tirée du poste d’unité lorsqu’il est renseigné',
+                'Bandeau d’intégration en tête de page tant que l’arrivée n’est pas terminée',
+                'Badge ou couleur d’unité à côté du nom',
+                'Agenda compact lorsqu’aucune manœuvre ni mission n’est annoncée',
+            ], [
+                'Raccourcis de la carte personnelle : Mon unité et Mes qualifications à la place du doublon Mes démarches',
+            ], [
+                'Fonction qui répétait le nom de l’unité',
+                'Titre de page différent du libellé Tableau de bord du menu',
+            ], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Tableau de bord : si votre arrivée n’est pas terminée, le bandeau doit être en haut. Unité et Fonction ne doivent plus afficher la même chaîne.',
+            ], 'Portail Athena'),
+            $pr(732, '2026-09-29', 'Organigramme : fiches unités enrichies', 'Chaque unité dispose désormais d’une fiche complète : devise, couleur, type métier, statut, postes pourvus et vacants, journal d’activités et documents rattachés. Sur l’organigramme, le commandant et l’adjoint apparaissent sur chaque nœud, avec un liseré d’alerte si un poste clé est vacant. Rechargez le portail (Ctrl+F5).', [
+                'Fiche unité avec identité, postes, journal d’activités et documents',
+                'Types d’unité (Commandement, Opérationnel, Soutien, Formation) par communauté',
+                'Postes clés Commandant et Adjoint créés automatiquement pour chaque nouvelle unité',
+                'Commandant et adjoint visibles sur les nœuds de l’organigramme',
+            ], [
+                'Page Mon unité : devise et couleur d’accent de l’unité',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Dans Structure, ouvrez une unité puis « Ouvrir la fiche complète ». Sur l’arbre, un poste clé vacant se voit au liseré rouge.',
+            ], 'Portail Athena'),
+            $pr(731, '2026-09-29', 'Espace opérateur : menu latéral par usage', 'Le menu de gauche de l’espace opérateur n’est plus un fourre-tout « Ma situation ». Les liens sont regroupés par usage : Pilotage, Personnel, Terrain, Administratif, Organisation et Système. Les réglages de compte ne sont plus rangés sous Communauté. Rechargez le portail (Ctrl+F5).', [
+                'Sections Pilotage, Personnel, Terrain, Administratif, Organisation et Système',
+                'Outils de session (carte, liaison ATAK, Overwatch, événements) regroupés sous Terrain',
+                'Démarches et messagerie regroupées sous Administratif',
+                'Paramètres de compte isolés sous Système',
+            ], [
+                'Tableau de bord conservé en tête de menu',
+            ], [
+                'Paramètres de compte présentés sous Communauté',
+            ], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Dans l’espace opérateur, le menu doit commencer par Pilotage puis Personnel, Terrain, Administratif, Organisation et Système — sans section « Ma situation ».',
+            ], 'Portail Athena'),
             $pr(730, '2026-09-29', 'Portail : page Mon unité enrichie', 'Dans Ma situation, la page Mon unité présente désormais votre affectation principale avec le chemin dans l’organigramme, votre fonction, le chef d’unité, les camarades de la même unité et les sous-unités rattachées. Rechargez le portail (Ctrl+F5).', [
                 'Vue d’affectation avec chemin d’organigramme, effectif et sous-unités',
             ], [

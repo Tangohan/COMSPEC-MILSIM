@@ -170,226 +170,289 @@ $jnetChildren = [
 ];
 
 $isOperatorBoNav = !empty($isOperatorBoNav);
-$athNavGroups = [
-    [
-        'key' => 'pilotage',
-        'label' => 'PILOTAGE',
-        'items' => array_values(array_filter([
-            ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
-            $canMurOperationnel
-                ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
-                : null,
-            ['label' => 'Agenda', 'href' => url('back-office/events') . '?vue=calendrier', 'icon' => 'cal', 'active' => $boNavEvents],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'personnel',
-        'label' => 'PERSONNEL',
-        'items' => array_values(array_filter([
-            [
-                'label' => 'Effectifs',
-                'href' => effectifs_workspace_url(),
-                'icon' => 'users',
-                'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive || $navAccessActive || $navJobsActive,
-                'badge' => $recBadgeStr,
-                'warn' => $recBadgeStr !== null,
-                'children' => $membersChildren,
-            ],
-            [
-                'label' => 'Organisation',
-                'href' => url('back-office/organisation-effectifs'),
-                'icon' => 'orbat',
-                'active' => $navOrbatActive || !empty($boNavCatalog),
-                'children' => $orbatChildren,
-            ],
-            [
-                'label' => 'Corrections RH',
-                'href' => url('back-office/personnel/corrections'),
-                'icon' => 'users',
-                'active' => str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '/back-office/personnel/corrections'),
-            ],
-            $canTraining
-                ? ['label' => 'Formations', 'href' => url($lmsResPath), 'icon' => 'book', 'active' => $navFormationsActive]
-                : null,
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'roleplay',
-        'label' => 'ROLEPLAY',
-        'items' => array_values(array_filter([
-            [
-                'label' => 'Immersion & tutorat',
-                'href' => url('back-office/roleplay-followup'),
-                'icon' => 'roleplay',
-                'active' => $navRoleplaySectionActive,
-                'children' => $roleplayChildren,
-            ],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'communaute',
-        'label' => 'COMMUNAUTÉ',
-        'items' => array_values(array_filter([
-            ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'icon' => 'rocket', 'active' => $boNavInitialSetup, 'warn' => true],
-            [
-                'label' => 'Paramètres',
-                'href' => url('back-office/community'),
-                'icon' => 'home',
-                'active' => $navCommunityActive || $navPublicPageActive || $navInscriptionActive || $navMediasActive,
-                'children' => $communityChildren,
-            ],
-            ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],
-            ['label' => 'Mini-articles', 'href' => url('back-office/articles'), 'icon' => 'book', 'active' => !empty($boNavArticles)],
-            ['label' => 'Intégration des nouveaux membres', 'href' => url('back-office/integration-membres'), 'icon' => 'path', 'active' => $boNavOnbMembers],
-            ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'icon' => 'chart', 'active' => $boNavAnalytics],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'operations',
-        'label' => 'OPÉRATIONS',
-        'items' => array_values(array_filter([
-            ['label' => 'Opérations', 'href' => url('back-office/events'), 'icon' => 'ops', 'active' => $boNavEvents],
-            ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
-            ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => !empty($boNavMissionsPortal)],
-            ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'orbat', 'active' => $boNavPlanning],
-            [
-                'label' => 'Coopérations inter-unités',
-                'href' => cooperation_mission_index_url(),
-                'icon' => 'coop',
-                'active' => $boNavCooperation,
-                'children' => $cooperationChildren,
-            ],
-            [
-                'label' => 'RSVP',
-                'href' => url('back-office/events'),
-                'icon' => 'rsvp',
-                'active' => $navRsvpActive || $navRsvpHistActive,
-                'warn' => true,
-                'children' => $rsvpChildren,
-            ],
-            ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar, 'warn' => true],
-            (
-                class_exists(\App\Support\PortalAccessChoice::class)
-                && \App\Support\PortalAccessChoice::isNoOrganizationContext()
-            ) ? null : [
-                'label' => 'Extranet d’unité',
-                'href' => url('jnet'),
-                'icon' => 'orbat',
-                'active' => $boNavJnet,
-                'children' => $jnetChildren,
-            ],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'atak',
-        'label' => 'ATAK',
-        'items' => array_values(array_filter([
-            [
-                'label' => 'Poste de situation',
-                'href' => url('back-office/atak'),
-                'icon' => 'ops',
-                'active' => $navAtakHubActive,
-            ],
-            [
-                'label' => 'Contrôle de mission',
-                'href' => url('back-office/atak/controle-serveur'),
-                'icon' => 'gear',
-                'active' => $navAtakControlActive,
-            ],
-            [
-                'label' => 'Réseau de relais',
-                'href' => url('back-office/atak/relays-network'),
-                'icon' => 'radio',
-                'active' => $navAtakRelaysActive,
-            ],
-            [
-                'label' => 'Accès renseignement',
-                'href' => url('back-office/renseignement/acces'),
-                'icon' => 'cert',
-                'active' => str_starts_with($p, 'back-office/renseignement'),
-            ],
-            [
-                'label' => 'Terminaux',
-                'href' => url('back-office/atak/realisme'),
-                'icon' => 'phone',
-                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive || $navAtakControlActive || $navAtakRelaysActive || str_starts_with($p, 'back-office/atak/detection-marqueurs'),
-                'children' => $atakDeviceChildren,
-            ],
-            ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],
-            ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'icon' => 'cert', 'active' => $navAtakCertsActive, 'warn' => true],
-            ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'icon' => 'roleplay', 'active' => $navAtakRoleplayActive],
-            ['label' => 'Détection des marqueurs', 'href' => url('back-office/atak/detection-marqueurs'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/atak/detection-marqueurs')],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
-    [
-        'key' => 'systeme',
-        'label' => 'SYSTÈME',
-        'items' => array_values(array_filter([
-            ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'icon' => 'audit', 'active' => $boNavAudit],
-            $canIntegrationsBo
-                ? ['label' => 'Intégrations', 'href' => url('back-office/integrations'), 'icon' => 'plug', 'active' => $boNavInteg, 'warn' => true]
-                : null,
-            ['label' => 'Paramètres', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
-        ], static fn (?array $row): bool => is_array($row))),
-    ],
+
+$opOnglet = (string) ($_GET['onglet'] ?? '');
+$opFicheBase = str_starts_with($p, 'back-office/ma-situation/ma-fiche')
+    || $p === 'personnel/me'
+    || str_starts_with($p, 'personnel/me/');
+$opSuiviActive = $opFicheBase && $opOnglet === 'suivi';
+$opFicheActive = $opFicheBase && $opOnglet !== 'suivi';
+$opAccountSystemActive = $p === 'account/preferences'
+    || str_starts_with($p, 'account/preferences/')
+    || $p === 'account/security'
+    || str_starts_with($p, 'account/security/')
+    || $p === 'account/password'
+    || str_starts_with($p, 'account/password/')
+    || $p === 'account/mail'
+    || str_starts_with($p, 'account/mail/')
+    || $p === 'account/donnees'
+    || str_starts_with($p, 'account/donnees/')
+    || $p === 'account/acces'
+    || str_starts_with($p, 'account/acces/');
+$opMonCompteActive = ($p === 'account' || str_starts_with($p, 'account/')) && !$opAccountSystemActive;
+$opExtranetItem = (
+    class_exists(\App\Support\PortalAccessChoice::class)
+    && \App\Support\PortalAccessChoice::isNoOrganizationContext()
+) ? null : [
+    'label' => 'Extranet d’unité',
+    'href' => url('jnet'),
+    'icon' => 'orbat',
+    'active' => $boNavJnet,
 ];
 
 if ($isOperatorBoNav) {
-    array_unshift($athNavGroups, [
-        'key' => 'ma-situation',
-        'label' => 'MA SITUATION',
-        'items' => [
-            ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => str_starts_with($p, 'back-office/ma-situation/ma-fiche') || $p === 'personnel/me' || str_starts_with($p, 'personnel/me/')],
-            ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => false],
-            ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
-            [
-                'label' => 'Mes qualifications',
-                'href' => url('back-office/ma-situation/qualifications'),
-                'icon' => 'cert',
-                'active' => str_starts_with($p, 'back-office/ma-situation/qualifications'),
-                'badge' => $opQualifBadge,
-                'warn' => $opQualifBadge !== null,
-                'notif' => $opQualifBadge !== null,
+    // Navigation opérateur par usage — pas le menu admin filtré.
+    $athNavGroups = [
+        [
+            'key' => 'pilotage',
+            'label' => 'PILOTAGE',
+            'items' => [
+                ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
             ],
-            [
-                'label' => 'Mon coffre',
-                'href' => url('back-office/ma-situation/coffre'),
-                'icon' => 'cert',
-                'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
-            ],
-            [
-                'label' => 'Mes démarches',
-                'href' => url('back-office/ma-situation/mes-demarches'),
-                'icon' => 'path',
-                'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh'),
-                'badge' => $opDemarchesBadge,
-                'warn' => $opDemarchesBadge !== null,
-                'notif' => $opDemarchesBadge !== null,
-            ],
-            ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
-            [
-                'label' => 'Événements',
-                'href' => url('back-office/ma-situation/evenements'),
-                'icon' => 'cal',
-                'active' => $p === 'evenements' || str_starts_with($p, 'evenements/') || str_starts_with($p, 'back-office/ma-situation/evenements'),
-                'badge' => $opEventsBadge,
-                'warn' => $opEventsBadge !== null,
-                'notif' => $opEventsBadge !== null,
-            ],
-            ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
-            ['label' => 'Overwatch Beta', 'href' => url('-ATAK-OVERWATCH-Beta'), 'icon' => 'ops', 'active' => in_array($p, ['-ATAK-OVERWATCH-Beta', 'atak-overwatch-beta', 'ATAK-OVERWATCH-Beta'], true), 'badge' => 'BETA'],
-            [
-                'label' => 'Boîte de réception',
-                'href' => url('boite-reception'),
-                'icon' => 'mail',
-                'active' => $p === 'boite-reception',
-                'badge' => $opInboxBadge,
-                'warn' => $opInboxBadge !== null,
-                'notif' => $opInboxBadge !== null,
-            ],
-            ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'gear', 'active' => $p === 'account' || str_starts_with($p, 'account/')],
         ],
-    ]);
+        [
+            'key' => 'personnel',
+            'label' => 'PERSONNEL',
+            'items' => [
+                ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => $opFicheActive],
+                ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
+                [
+                    'label' => 'Mes qualifications',
+                    'href' => url('back-office/ma-situation/qualifications'),
+                    'icon' => 'cert',
+                    'active' => str_starts_with($p, 'back-office/ma-situation/qualifications'),
+                    'badge' => $opQualifBadge,
+                    'warn' => $opQualifBadge !== null,
+                    'notif' => $opQualifBadge !== null,
+                ],
+                ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => $opSuiviActive],
+                [
+                    'label' => 'Mon coffre',
+                    'href' => url('back-office/ma-situation/coffre'),
+                    'icon' => 'cert',
+                    'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
+                ],
+                ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'users', 'active' => $opMonCompteActive],
+            ],
+        ],
+        [
+            'key' => 'terrain',
+            'label' => 'TERRAIN',
+            'items' => [
+                ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
+                ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
+                ['label' => 'Overwatch Beta', 'href' => url('-ATAK-OVERWATCH-Beta'), 'icon' => 'ops', 'active' => in_array($p, ['-ATAK-OVERWATCH-Beta', 'atak-overwatch-beta', 'ATAK-OVERWATCH-Beta'], true), 'badge' => 'BETA'],
+                [
+                    'label' => 'Événements',
+                    'href' => url('back-office/ma-situation/evenements'),
+                    'icon' => 'cal',
+                    'active' => $p === 'evenements' || str_starts_with($p, 'evenements/') || str_starts_with($p, 'back-office/ma-situation/evenements'),
+                    'badge' => $opEventsBadge,
+                    'warn' => $opEventsBadge !== null,
+                    'notif' => $opEventsBadge !== null,
+                ],
+            ],
+        ],
+        [
+            'key' => 'administratif',
+            'label' => 'ADMINISTRATIF',
+            'items' => [
+                [
+                    'label' => 'Mes démarches',
+                    'href' => url('back-office/ma-situation/mes-demarches'),
+                    'icon' => 'path',
+                    'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh'),
+                    'badge' => $opDemarchesBadge,
+                    'warn' => $opDemarchesBadge !== null,
+                    'notif' => $opDemarchesBadge !== null,
+                ],
+                [
+                    'label' => 'Boîte de réception',
+                    'href' => url('boite-reception'),
+                    'icon' => 'mail',
+                    'active' => $p === 'boite-reception',
+                    'badge' => $opInboxBadge,
+                    'warn' => $opInboxBadge !== null,
+                    'notif' => $opInboxBadge !== null,
+                ],
+            ],
+        ],
+        [
+            'key' => 'organisation',
+            'label' => 'ORGANISATION',
+            'items' => array_values(array_filter([
+                [
+                    'label' => 'Coopérations inter-unités',
+                    'href' => cooperation_mission_index_url(),
+                    'icon' => 'coop',
+                    'active' => $boNavCooperation,
+                ],
+                $opExtranetItem,
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'systeme',
+            'label' => 'SYSTÈME',
+            'items' => [
+                ['label' => 'Paramètres', 'href' => url('account/preferences'), 'icon' => 'gear', 'active' => $opAccountSystemActive],
+            ],
+        ],
+    ];
+} else {
+    $athNavGroups = [
+        [
+            'key' => 'pilotage',
+            'label' => 'PILOTAGE',
+            'items' => array_values(array_filter([
+                ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
+                $canMurOperationnel
+                    ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
+                    : null,
+                ['label' => 'Agenda', 'href' => url('back-office/events') . '?vue=calendrier', 'icon' => 'cal', 'active' => $boNavEvents],
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'personnel',
+            'label' => 'PERSONNEL',
+            'items' => array_values(array_filter([
+                [
+                    'label' => 'Effectifs',
+                    'href' => effectifs_workspace_url(),
+                    'icon' => 'users',
+                    'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive || $navAccessActive || $navJobsActive,
+                    'badge' => $recBadgeStr,
+                    'warn' => $recBadgeStr !== null,
+                    'children' => $membersChildren,
+                ],
+                [
+                    'label' => 'Organisation',
+                    'href' => url('back-office/organisation-effectifs'),
+                    'icon' => 'orbat',
+                    'active' => $navOrbatActive || !empty($boNavCatalog),
+                    'children' => $orbatChildren,
+                ],
+                [
+                    'label' => 'Corrections RH',
+                    'href' => url('back-office/personnel/corrections'),
+                    'icon' => 'users',
+                    'active' => str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '/back-office/personnel/corrections'),
+                ],
+                $canTraining
+                    ? ['label' => 'Formations', 'href' => url($lmsResPath), 'icon' => 'book', 'active' => $navFormationsActive]
+                    : null,
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'roleplay',
+            'label' => 'ROLEPLAY',
+            'items' => array_values(array_filter([
+                [
+                    'label' => 'Immersion & tutorat',
+                    'href' => url('back-office/roleplay-followup'),
+                    'icon' => 'roleplay',
+                    'active' => $navRoleplaySectionActive,
+                    'children' => $roleplayChildren,
+                ],
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'communaute',
+            'label' => 'COMMUNAUTÉ',
+            'items' => array_values(array_filter([
+                ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'icon' => 'rocket', 'active' => $boNavInitialSetup, 'warn' => true],
+                [
+                    'label' => 'Paramètres',
+                    'href' => url('back-office/community'),
+                    'icon' => 'home',
+                    'active' => $navCommunityActive || $navPublicPageActive || $navInscriptionActive || $navMediasActive,
+                    'children' => $communityChildren,
+                ],
+                ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],
+                ['label' => 'Mini-articles', 'href' => url('back-office/articles'), 'icon' => 'book', 'active' => !empty($boNavArticles)],
+                ['label' => 'Intégration des nouveaux membres', 'href' => url('back-office/integration-membres'), 'icon' => 'path', 'active' => $boNavOnbMembers],
+                ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'icon' => 'chart', 'active' => $boNavAnalytics],
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'operations',
+            'label' => 'OPÉRATIONS',
+            'items' => array_values(array_filter([
+                ['label' => 'Opérations', 'href' => url('back-office/events'), 'icon' => 'ops', 'active' => $boNavEvents],
+                ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
+                ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => !empty($boNavMissionsPortal)],
+                ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'orbat', 'active' => $boNavPlanning],
+                [
+                    'label' => 'Coopérations inter-unités',
+                    'href' => cooperation_mission_index_url(),
+                    'icon' => 'coop',
+                    'active' => $boNavCooperation,
+                    'children' => $cooperationChildren,
+                ],
+                [
+                    'label' => 'RSVP',
+                    'href' => url('back-office/events'),
+                    'icon' => 'rsvp',
+                    'active' => $navRsvpActive || $navRsvpHistActive,
+                    'warn' => true,
+                    'children' => $rsvpChildren,
+                ],
+                ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar, 'warn' => true],
+                $opExtranetItem === null ? null : array_merge($opExtranetItem, ['children' => $jnetChildren]),
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'atak',
+            'label' => 'ATAK',
+            'items' => array_values(array_filter([
+                [
+                    'label' => 'Poste de situation',
+                    'href' => url('back-office/atak'),
+                    'icon' => 'ops',
+                    'active' => $navAtakHubActive,
+                ],
+                [
+                    'label' => 'Contrôle de mission',
+                    'href' => url('back-office/atak/controle-serveur'),
+                    'icon' => 'gear',
+                    'active' => $navAtakControlActive,
+                ],
+                [
+                    'label' => 'Réseau de relais',
+                    'href' => url('back-office/atak/relays-network'),
+                    'icon' => 'radio',
+                    'active' => $navAtakRelaysActive,
+                ],
+                [
+                    'label' => 'Accès renseignement',
+                    'href' => url('back-office/renseignement/acces'),
+                    'icon' => 'cert',
+                    'active' => str_starts_with($p, 'back-office/renseignement'),
+                ],
+                [
+                    'label' => 'Terminaux',
+                    'href' => url('back-office/atak/realisme'),
+                    'icon' => 'phone',
+                    'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive || $navAtakRoleplayActive || $navAtakControlActive || $navAtakRelaysActive || str_starts_with($p, 'back-office/atak/detection-marqueurs'),
+                    'children' => $atakDeviceChildren,
+                ],
+                ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],
+                ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'icon' => 'cert', 'active' => $navAtakCertsActive, 'warn' => true],
+                ['label' => 'Mode roleplay', 'href' => url('back-office/atak/roleplay'), 'icon' => 'roleplay', 'active' => $navAtakRoleplayActive],
+                ['label' => 'Détection des marqueurs', 'href' => url('back-office/atak/detection-marqueurs'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/atak/detection-marqueurs')],
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+        [
+            'key' => 'systeme',
+            'label' => 'SYSTÈME',
+            'items' => array_values(array_filter([
+                ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'icon' => 'audit', 'active' => $boNavAudit],
+                $canIntegrationsBo
+                    ? ['label' => 'Intégrations', 'href' => url('back-office/integrations'), 'icon' => 'plug', 'active' => $boNavInteg, 'warn' => true]
+                    : null,
+                ['label' => 'Paramètres', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
+            ], static fn (?array $row): bool => is_array($row))),
+        ],
+    ];
 }
 
 $athNavFilterGroup = static function (array $groups) use ($boHrefAllowed): array {

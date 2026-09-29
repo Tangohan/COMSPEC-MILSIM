@@ -461,6 +461,14 @@ final class OrbatApiController
 
         $created = $this->unitRepository->create($tenantId, $data);
         $this->recordUnitCreationHistory($tenantId, $created, $parentId);
+        $newUnitId = (int) ($created['id'] ?? 0);
+        if ($newUnitId > 0) {
+            try {
+                $this->resolveBilletService()->ensureKeyPosts($tenantId, $newUnitId, (int) Session::get('user_id'));
+            } catch (\Throwable) {
+                // Non bloquant : création d’unité réussie même si postes clés absents temporairement
+            }
+        }
 
         return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
     }
@@ -1136,6 +1144,24 @@ final class OrbatApiController
             $det = trim((string) $request->input('orbat_details', ''));
             // TEXT : plus de troncature agressive — plafond de sécurité très large
             $data['orbat_details'] = $det === '' ? null : mb_substr($det, 0, 100000);
+        }
+        if ($request->input('motto') !== null && $this->unitRepository->hasTableColumn('units', 'motto')) {
+            $motto = trim((string) $request->input('motto', ''));
+            $data['motto'] = $motto === '' ? null : mb_substr($motto, 0, 255);
+        }
+        if ($request->input('description_long') !== null && $this->unitRepository->hasTableColumn('units', 'description_long')) {
+            $long = trim((string) $request->input('description_long', ''));
+            $data['description_long'] = $long === '' ? null : mb_substr($long, 0, 100000);
+        }
+        if ($request->input('accent_color') !== null && $this->unitRepository->hasTableColumn('units', 'accent_color')) {
+            $data['accent_color'] = trim((string) $request->input('accent_color', ''));
+        }
+        if ($request->input('unit_type_id') !== null && $this->unitRepository->hasTableColumn('units', 'unit_type_id')) {
+            $tid = (int) $request->input('unit_type_id', 0);
+            $data['unit_type_id'] = $tid > 0 ? $tid : null;
+        }
+        if ($request->input('clear_badge') === '1' && $this->unitRepository->hasTableColumn('units', 'badge_media_path')) {
+            $data['badge_media_path'] = null;
         }
 
         if ($request->input('clear_chart_icon') === '1' && $this->unitRepository->hasTableColumn('units', 'orbat_icon_path')) {

@@ -522,6 +522,14 @@ class OrganizationDashboardController
             $mission = null;
         }
 
+        $unitNameLookup = [];
+        foreach ($units as $unitRow) {
+            $uid = (int) ($unitRow['id'] ?? 0);
+            if ($uid > 0) {
+                $unitNameLookup[$uid] = trim((string) ($unitRow['name'] ?? ''));
+            }
+        }
+
         $gradeLabel = '';
         try {
             $gradeId = (int) ($user['grade_id'] ?? 0);
@@ -550,17 +558,16 @@ class OrganizationDashboardController
             $dutyLabel = '';
         }
 
+        // Fonction = intitulé du poste ORBAT (billet), pas le nom d’unité.
         $functionLabel = '';
         try {
-            $assignments = (new PersonnelAssignmentRepository())->listActiveForUserResolved($userId);
-            foreach ($assignments as $assignment) {
-                if (!is_array($assignment)) {
-                    continue;
-                }
-                $roleName = trim((string) ($assignment['role_name'] ?? ''));
-                if ($roleName !== '') {
-                    $functionLabel = $roleName;
-                    if (!empty($assignment['is_primary'])) {
+            $billetRepo = Container::get(\App\Repositories\OrbatBilletRepository::class);
+            if ($billetRepo->schemaReady()) {
+                foreach ($billetRepo->primaryBilletsForUser($tenantId, $userId) as $billetRow) {
+                    $title = trim((string) ($billetRow['billet_title'] ?? $billetRow['function_label'] ?? ''));
+                    $unitName = $unitNameLookup[(int) ($billetRow['unit_id'] ?? 0)] ?? '';
+                    if ($title !== '' && strcasecmp($title, $unitName) !== 0) {
+                        $functionLabel = $title;
                         break;
                     }
                 }
@@ -569,7 +576,39 @@ class OrganizationDashboardController
             $functionLabel = '';
         }
         if ($functionLabel === '') {
-            $functionLabel = trim((string) ($profile['rp_operational_function'] ?? $profile['primary_role'] ?? ''));
+            try {
+                $assignments = (new PersonnelAssignmentRepository())->listActiveForUserResolved($userId);
+                foreach ($assignments as $assignment) {
+                    if (!is_array($assignment)) {
+                        continue;
+                    }
+                    $roleName = trim((string) ($assignment['role_name'] ?? ''));
+                    $unitName = $unitNameLookup[(int) ($assignment['unit_id'] ?? 0)] ?? '';
+                    if ($roleName === '' || strcasecmp($roleName, $unitName) === 0) {
+                        continue;
+                    }
+                    // Évite les libellés génériques qui ne disent rien.
+                    if (in_array(mb_strtolower($roleName), ['membre', 'member', 'opérateur', 'operateur'], true)) {
+                        if ($functionLabel === '') {
+                            $functionLabel = $roleName;
+                        }
+                        continue;
+                    }
+                    $functionLabel = $roleName;
+                    if (!empty($assignment['is_primary'])) {
+                        break;
+                    }
+                }
+            } catch (\Throwable) {
+                // conserve billet si déjà trouvé
+            }
+        }
+        if ($functionLabel === '') {
+            $functionLabel = trim((string) ($profile['rp_operational_function'] ?? ''));
+            $primaryUnitName = $units[0]['name'] ?? '';
+            if ($functionLabel !== '' && is_string($primaryUnitName) && strcasecmp($functionLabel, trim((string) $primaryUnitName)) === 0) {
+                $functionLabel = '';
+            }
         }
 
         $absences = [];
@@ -725,11 +764,11 @@ class OrganizationDashboardController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.operator_overview',
-            'title' => 'Mon espace opérationnel',
+            'title' => 'Tableau de bord',
             'isBackOfficeShell' => true,
-            'boPageGroup' => 'Opérateur',
-            'boPageTitle' => 'Mon espace opérationnel',
-            'boPageKicker' => 'OPÉRATEUR · MA SITUATION',
+            'boPageGroup' => 'Pilotage',
+            'boPageTitle' => 'Tableau de bord',
+            'boPageKicker' => 'OPÉRATEUR · PILOTAGE',
             'boPageSubtitle' => 'Ce qui vous concerne : communauté, démarches, manœuvres et liaison ATAK.',
             'operatorTenant' => $tenant,
             'operatorUser' => $user,

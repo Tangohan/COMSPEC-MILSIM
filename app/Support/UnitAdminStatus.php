@@ -14,6 +14,7 @@ final class UnitAdminStatus
     public const INACTIVE = 'inactive';
     public const FORMING = 'forming';
     public const REORGANIZING = 'reorganizing';
+    public const RESERVE = 'reserve';
     public const ARCHIVED = 'archived';
 
     /** @var list<string> */
@@ -23,6 +24,7 @@ final class UnitAdminStatus
         self::INACTIVE,
         self::FORMING,
         self::REORGANIZING,
+        self::RESERVE,
         self::ARCHIVED,
     ];
 
@@ -32,6 +34,7 @@ final class UnitAdminStatus
         self::PARTIALLY_ACTIVE,
         self::FORMING,
         self::REORGANIZING,
+        self::RESERVE,
     ];
 
     public static function normalize(?string $raw): string
@@ -52,9 +55,14 @@ final class UnitAdminStatus
             'en_reorganisation' => self::REORGANIZING,
             'reorganizing' => self::REORGANIZING,
             'reorganisation' => self::REORGANIZING,
+            'reserve' => self::RESERVE,
+            'réserve' => self::RESERVE,
+            'en_reserve' => self::RESERVE,
             'archive' => self::ARCHIVED,
             'archived' => self::ARCHIVED,
             'archivé' => self::ARCHIVED,
+            'dissoute' => self::ARCHIVED,
+            'dissous' => self::ARCHIVED,
         ];
         if (isset($aliases[$t])) {
             return $aliases[$t];
@@ -78,7 +86,8 @@ final class UnitAdminStatus
             self::INACTIVE => 'Inactif',
             self::FORMING => 'En formation',
             self::REORGANIZING => 'En réorganisation',
-            self::ARCHIVED => 'Archivé',
+            self::RESERVE => 'Réserve',
+            self::ARCHIVED => 'Archivé / Dissoute',
             default => 'Actif',
         };
     }
@@ -90,6 +99,7 @@ final class UnitAdminStatus
             self::INACTIVE => 'INACTIF',
             self::FORMING => 'EN FORMATION',
             self::REORGANIZING => 'EN RÉORGANISATION',
+            self::RESERVE => 'RÉSERVE',
             self::ARCHIVED => 'ARCHIVÉ',
             default => 'ACTIF',
         };
@@ -105,7 +115,7 @@ final class UnitAdminStatus
     {
         $s = self::normalize($status);
 
-        return in_array($s, [self::ACTIVE, self::PARTIALLY_ACTIVE, self::FORMING, self::REORGANIZING], true);
+        return in_array($s, [self::ACTIVE, self::PARTIALLY_ACTIVE, self::FORMING, self::REORGANIZING, self::RESERVE], true);
     }
 
     /** Jamais proposée pour une nouvelle affectation. */

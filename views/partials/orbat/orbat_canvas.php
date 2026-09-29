@@ -34,11 +34,19 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     .orbat-node-wrapper { display: flex; flex-direction: column; align-items: center; position: relative; padding: 0 10px; }
     .orbat-node-card {
         min-width: 132px; max-width: 170px;
-        background: rgba(255,255,255,0.92); border: 1px solid rgba(15,23,42,0.08); border-radius: 16px;
+        background: rgba(255,255,255,0.92); border: 2px solid rgba(15,23,42,0.08); border-radius: 16px;
         padding: 12px 12px 10px; backdrop-filter: blur(8px);
         box-shadow: 0 12px 30px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
         position: relative; z-index: 2; cursor: pointer;
         transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .orbat-node-card.is-health-critical {
+        border-color: #f87171;
+        box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.28), 0 12px 30px rgba(15,23,42,0.06);
+    }
+    .orbat-node-card.is-health-warn {
+        border-color: #fb923c;
+        box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.22), 0 12px 30px rgba(15,23,42,0.06);
     }
     .orbat-node-card:hover {
         transform: translateY(-2px);
@@ -188,6 +196,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     .admin-status-inactive { color: #7f1d1d; background: #fee2e2; border-color: #fca5a5; }
     .admin-status-forming { color: #1e3a8a; background: #dbeafe; border-color: #93c5fd; }
     .admin-status-reorganizing { color: #9a3412; background: #ffedd5; border-color: #fdba74; }
+    .admin-status-reserve { color: #1e40af; background: #dbeafe; border-color: #93c5fd; }
     .admin-status-archived { color: #334155; background: #f1f5f9; border-color: #cbd5e1; }
     .orbat-view-switch {
         display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px;
@@ -309,6 +318,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 <label><input type="checkbox" name="orbat-admin-status" value="partially_active" checked> Partiellement actif</label>
                 <label><input type="checkbox" name="orbat-admin-status" value="forming" checked> En formation</label>
                 <label><input type="checkbox" name="orbat-admin-status" value="reorganizing" checked> En réorganisation</label>
+                <label><input type="checkbox" name="orbat-admin-status" value="reserve" checked> Réserve</label>
                 <label><input type="checkbox" name="orbat-admin-status" value="inactive"> Inactif</label>
                 <label><input type="checkbox" name="orbat-admin-status" value="archived"> Archivé</label>
             </div>
@@ -377,8 +387,12 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                             <p id="detail-strength" class="text-sm font-black uppercase mt-2">—</p>
                         </div>
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Chef d’unité</p>
+                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Commandant</p>
                             <p id="detail-lead" class="text-sm font-black uppercase mt-2">—</p>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                            <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Adjoint</p>
+                            <p id="detail-deputy" class="text-sm font-black uppercase mt-2">—</p>
                         </div>
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                             <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Readiness</p>
@@ -483,6 +497,14 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                                 </datalist>
                             </div>
                         </div>
+                        <div>
+                            <label for="orbat-ed-motto" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Devise</label>
+                            <input id="orbat-ed-motto" type="text" maxlength="255" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label for="orbat-ed-accent" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Couleur d’accent</label>
+                            <input id="orbat-ed-accent" type="color" value="#0f172a" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-1 py-1">
+                        </div>
                         <div id="orbat-ed-details-block">
                             <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
                             <p class="mb-2 text-[10px] text-slate-500 leading-snug">Informations de contexte affichées sur la fiche (repères, organisation interne, notes de pilotage).</p>
@@ -514,6 +536,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                             </select>
                         </div>
                         <p id="orbat-save-status" class="min-h-[1.25rem] text-xs font-medium" role="status" aria-live="polite"></p>
+                        <a id="orbat-open-full-sheet" href="#" class="hidden ath-btn ath-btn--solid w-full text-center">Ouvrir la fiche complète</a>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -527,6 +550,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     <?php if ($showOrbatEditTools): ?>
     <span class="orbat-ctx-label">Fiche</span>
     <button type="button" role="menuitem" data-ctx="edit">Ouvrir la fiche à droite</button>
+    <button type="button" role="menuitem" data-ctx="full-sheet">Ouvrir la fiche complète…</button>
     <button type="button" role="menuitem" data-ctx="rename">Renommer…</button>
     <button type="button" role="menuitem" data-ctx="struct-type">Type de structure…</button>
     <button type="button" role="menuitem" data-ctx="commander">Chef d’unité…</button>
@@ -909,7 +933,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     function bindEditors() {
         if (!showOrbatEditTools || editorsBound) return;
         editorsBound = true;
-        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-struct-type", "orbat-ed-admin-status", "orbat-ed-admin-status-note", "orbat-ed-visibility", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander", "orbat-ed-show-public", "orbat-ed-founded-on", "orbat-ed-custom-date", "orbat-ed-custom-date-label"].forEach(function(id) {
+        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-struct-type", "orbat-ed-admin-status", "orbat-ed-admin-status-note", "orbat-ed-visibility", "orbat-ed-mission", "orbat-ed-motto", "orbat-ed-accent", "orbat-ed-details", "orbat-ed-commander", "orbat-ed-show-public", "orbat-ed-founded-on", "orbat-ed-custom-date", "orbat-ed-custom-date-label"].forEach(function(id) {
             const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener("input", scheduleSave);
@@ -942,6 +966,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const adminNoteEl = document.getElementById("orbat-ed-admin-status-note");
         const visibilityEl = document.getElementById("orbat-ed-visibility");
         const missionEl = document.getElementById("orbat-ed-mission");
+        const mottoEl = document.getElementById("orbat-ed-motto");
+        const accentEl = document.getElementById("orbat-ed-accent");
         const detailsEl = document.getElementById("orbat-ed-details");
         const cmdEl = document.getElementById("orbat-ed-commander");
         const showPublicEl = document.getElementById("orbat-ed-show-public");
@@ -961,6 +987,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         body.append("name", name);
         body.append("code", codeEl ? codeEl.value.trim() : "");
         body.append("public_blurb", missionEl ? missionEl.value.trim() : "");
+        body.append("motto", mottoEl ? mottoEl.value.trim() : "");
+        body.append("accent_color", accentEl ? accentEl.value : "");
         body.append("show_on_public_page", showPublicEl && showPublicEl.checked ? "1" : "0");
         body.append("public_founded_on", foundedEl ? foundedEl.value : "");
         body.append("public_custom_date", customDateEl ? customDateEl.value : "");
@@ -1005,12 +1033,15 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const adminNote = document.getElementById("orbat-ed-admin-status-note");
         const visibility = document.getElementById("orbat-ed-visibility");
         const mission = document.getElementById("orbat-ed-mission");
+        const motto = document.getElementById("orbat-ed-motto");
+        const accent = document.getElementById("orbat-ed-accent");
         const details = document.getElementById("orbat-ed-details");
         const cmd = document.getElementById("orbat-ed-commander");
         const showPublic = document.getElementById("orbat-ed-show-public");
         const foundedOn = document.getElementById("orbat-ed-founded-on");
         const customDate = document.getElementById("orbat-ed-custom-date");
         const customLabel = document.getElementById("orbat-ed-custom-date-label");
+        const fullSheet = document.getElementById("orbat-open-full-sheet");
         refreshOrbatTypeSelect();
         refreshStructTypeSelect();
         refreshAdminStatusSelect("orbat-ed-admin-status", node.adminStatus || "active");
@@ -1036,12 +1067,22 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             updateVisibilityConsequence("orbat-ed-visibility", "orbat-ed-visibility-consequence");
         }
         if (mission) mission.value = (node.mission && node.mission !== "—") ? node.mission : "";
-        if (details) details.value = node.orbatDetails || "";
+        if (motto) motto.value = node.motto || "";
+        if (accent) accent.value = (node.accentColor && /^#[0-9A-Fa-f]{6}$/.test(node.accentColor)) ? node.accentColor : "#0f172a";
+        if (details) details.value = node.orbatDetails || node.descriptionLong || "";
         if (cmd) cmd.value = (node.commanderUserId && node.commanderUserId > 0) ? String(node.commanderUserId) : "";
         if (showPublic) showPublic.checked = node.showOnPublicPage !== false;
         if (foundedOn) foundedOn.value = node.publicFoundedOn || "";
         if (customDate) customDate.value = node.publicCustomDate || "";
         if (customLabel) customLabel.value = node.publicCustomDateLabel || "";
+        if (fullSheet) {
+            if (uid > 0) {
+                fullSheet.href = <?= json_encode(url('back-office/organisation/unites/'), JSON_UNESCAPED_SLASHES) ?> + String(uid);
+                fullSheet.classList.remove("hidden");
+            } else {
+                fullSheet.classList.add("hidden");
+            }
+        }
         isHydratingForm = false;
         bindEditors();
     }
@@ -1225,9 +1266,19 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const wrapper = document.createElement("div");
         wrapper.className = "orbat-node-wrapper";
         const card = document.createElement("div");
-        card.className = "orbat-node-card" + (isPh ? " orbat-placeholder-card" : "");
+        var health = node.keyPostsHealth || {};
+        var healthClass = "";
+        if (health.commanderVacant || health.deputyVacant) {
+            healthClass = " is-health-critical";
+        } else if (health.underStrength) {
+            healthClass = " is-health-warn";
+        }
+        card.className = "orbat-node-card" + (isPh ? " orbat-placeholder-card" : "") + healthClass;
         card.dataset.nodeId = node.id;
         card.style.position = "relative";
+        if (node.accentColor && /^#[0-9A-Fa-f]{6}$/.test(node.accentColor)) {
+            card.style.borderLeft = "4px solid " + node.accentColor;
+        }
         const top = document.createElement("div");
         top.className = "orbat-node-top";
         const insignia = document.createElement("div");
@@ -1246,12 +1297,12 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         sub.textContent = node.role || "—";
         const meta = document.createElement("div");
         meta.className = "orbat-node-meta";
-        var readTxt = (typeof node.readinessScore === "number") ? (node.readinessScore + "% ready") : "n/d";
-        meta.innerHTML = "<span>" + getChartDisplayLabel(node.type) + "</span><span>" + (
-            node.billetManningLabel
-                ? escapeHtml(node.billetManningLabel)
-                : ((node.strength || 0) + " pax")
-        ) + " · " + readTxt + "</span>";
+        var manningTxt = (typeof node.strengthFilled === "number" && typeof node.strengthTheoretical === "number" && node.strengthTheoretical > 0)
+            ? (node.strengthFilled + "/" + node.strengthTheoretical)
+            : ((node.strength || 0) + " pax");
+        var cmdShort = (node.commander && node.commander.label) ? String(node.commander.label) : (node.leader || "—");
+        var adjShort = (node.deputy && node.deputy.label) ? String(node.deputy.label) : "—";
+        meta.innerHTML = "<span>" + escapeHtml(cmdShort) + " / " + escapeHtml(adjShort) + "</span><span>" + escapeHtml(manningTxt) + "</span>";
         card.appendChild(top);
         card.appendChild(label);
         card.appendChild(sub);
@@ -1404,7 +1455,12 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                 el.textContent = (node.strength || 0) + " personnels";
             }
         }
-        if (el = document.getElementById("detail-lead")) el.textContent = node.leader || "—";
+        if (el = document.getElementById("detail-lead")) {
+            el.textContent = (node.commander && node.commander.label) ? node.commander.label : (node.leader || "—");
+        }
+        if (el = document.getElementById("detail-deputy")) {
+            el.textContent = (node.deputy && node.deputy.label) ? node.deputy.label : "—";
+        }
         if (el = document.getElementById("detail-readiness")) el.textContent = typeof node.readinessScore === "number"
             ? (node.readinessScore + "% (unité + sous-unités)")
             : "Non calculé";
@@ -1980,6 +2036,13 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                         panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
                         var nameFocus = document.getElementById("orbat-ed-name");
                         if (nameFocus) setTimeout(function() { nameFocus.focus(); }, 120);
+                    }
+                    return;
+                }
+                if (act === "full-sheet") {
+                    closeCtxMenu();
+                    if (uid > 0) {
+                        window.location.href = <?= json_encode(url('back-office/organisation/unites/'), JSON_UNESCAPED_SLASHES) ?> + String(uid);
                     }
                     return;
                 }

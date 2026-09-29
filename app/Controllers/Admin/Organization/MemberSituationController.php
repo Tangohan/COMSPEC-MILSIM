@@ -21,6 +21,10 @@ use App\Controllers\Web\CommunityEventsController;
 use App\Controllers\Web\PersonnelController;
 use App\Controllers\Web\RhWorkspaceController;
 use App\Services\Personnel\OperatorDocumentVaultService;
+use App\Services\Personnel\QualificationBadgeStorageService;
+use App\Services\Personnel\QualificationCertificatePdfService;
+use App\Services\Personnel\QualificationTemporalStatusService;
+use App\Support\QualificationAdminStatus;
 
 /**
  * Pages personnelles sous /back-office/ma-situation/* (coque Athena, sans redirection portail).
@@ -35,6 +39,9 @@ final class MemberSituationController
         private ?QualificationAwardRepository $awards = null,
         private ?PersonnelAssignmentRepository $assignments = null,
         private ?OperatorDocumentVaultService $vault = null,
+        private ?QualificationCertificatePdfService $certificates = null,
+        private ?QualificationTemporalStatusService $temporal = null,
+        private ?QualificationBadgeStorageService $badges = null,
     ) {
         $this->authService ??= Container::get(AuthService::class);
         $this->realism ??= Container::get(AtakRealismRepository::class);
@@ -43,6 +50,9 @@ final class MemberSituationController
         $this->awards ??= Container::get(QualificationAwardRepository::class);
         $this->assignments ??= Container::get(PersonnelAssignmentRepository::class);
         $this->vault ??= new OperatorDocumentVaultService();
+        $this->certificates ??= Container::get(QualificationCertificatePdfService::class);
+        $this->temporal ??= Container::get(QualificationTemporalStatusService::class);
+        $this->badges ??= Container::get(QualificationBadgeStorageService::class);
     }
 
     public function liaisonAtak(Request $request, array $params = []): Response
@@ -59,7 +69,7 @@ final class MemberSituationController
             'title' => 'Ma liaison ATAK',
             'content' => 'admin.member_situation.liaison_atak',
             'boPageTitle' => 'Ma liaison ATAK',
-            'boPageKicker' => 'OPÉRATEUR · LIAISON',
+            'boPageKicker' => 'OPÉRATEUR · MA LIAISON ATAK',
             'boPageSubtitle' => 'Terminaux associés à votre compte, certificat de liaison et actions utiles.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
@@ -81,7 +91,7 @@ final class MemberSituationController
             'title' => 'Mes appareils ATAK',
             'content' => 'admin.member_situation.appareils',
             'boPageTitle' => 'Mes appareils ATAK',
-            'boPageKicker' => 'OPÉRATEUR · LIAISON',
+            'boPageKicker' => 'OPÉRATEUR · MES APPAREILS ATAK',
             'boPageSubtitle' => 'Retirez un téléphone ou une tablette qui n’est plus le vôtre.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
@@ -251,7 +261,7 @@ final class MemberSituationController
             'title' => 'Mon unité',
             'content' => 'admin.member_situation.unite',
             'boPageTitle' => 'Mon unité',
-            'boPageKicker' => 'OPÉRATEUR · AFFECTATION',
+            'boPageKicker' => 'OPÉRATEUR · MON UNITÉ',
             'boPageSubtitle' => 'Votre place dans l’organigramme, vos camarades et votre fonction.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
@@ -281,7 +291,7 @@ final class MemberSituationController
             'title' => 'Événements',
             'content' => 'community.events',
             'boPageTitle' => 'Événements',
-            'boPageKicker' => 'OPÉRATEUR · AGENDA',
+            'boPageKicker' => 'OPÉRATEUR · ÉVÉNEMENTS',
             'boPageSubtitle' => 'Manœuvres, formations et inscriptions à venir.',
             'eventsInBackOffice' => true,
             'boSkipSessionFlashes' => true,
@@ -307,7 +317,7 @@ final class MemberSituationController
             'title' => 'Mon coffre',
             'content' => 'admin.member_situation.coffre',
             'boPageTitle' => 'Mon coffre',
-            'boPageKicker' => 'OPÉRATEUR · DOCUMENTS',
+            'boPageKicker' => 'OPÉRATEUR · MON COFFRE',
             'boPageSubtitle' => 'Toutes les pièces qui vous concernent : dossier RH, brevets et attestations de formation.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
@@ -330,16 +340,69 @@ final class MemberSituationController
             $awards = [];
         }
 
+        $enriched = [];
+        foreach ($awards as $award) {
+            if (!is_array($award)) {
+                continue;
+            }
+            $enriched[] = $this->enrichAwardForOperatorView($award);
+        }
+
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes qualifications',
             'content' => 'admin.member_situation.qualifications',
             'boPageTitle' => 'Mes qualifications',
-            'boPageKicker' => 'OPÉRATEUR · FORMATIONS',
+            'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
-            'awards' => $awards,
+            'awards' => $enriched,
+            'success' => Session::getFlash('success'),
+            'error' => Session::getFlash('error'),
         ]));
+    }
+
+    public function generateBrevet(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [, $tenantId, $userId] = $ctx;
+
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/ma-situation/qualifications'));
+        }
+
+        $awardId = (int) ($params['awardId'] ?? 0);
+        $award = $this->awards->find($awardId, $tenantId);
+        if ($award === null || (int) ($award['user_id'] ?? 0) !== $userId) {
+            Session::flash('error', 'Cette qualification n’est pas disponible.');
+
+            return Response::redirect(url('back-office/ma-situation/qualifications'));
+        }
+
+        $admin = QualificationAdminStatus::normalize(
+            (string) ($award['admin_status'] ?? $award['status'] ?? '')
+        );
+        if ($admin !== QualificationAdminStatus::OBTAINED) {
+            Session::flash('error', 'Le brevet n’est disponible que pour une qualification obtenue.');
+
+            return Response::redirect(url('back-office/ma-situation/qualifications'));
+        }
+
+        try {
+            $res = $this->certificates->generate($tenantId, $awardId, $userId);
+            Session::flash('success', 'Brevet généré (n° ' . $res['certificate_number'] . ').');
+
+            return Response::redirect(url('back-office/ma-situation/qualifications/' . $awardId . '/brevet'));
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(url('back-office/ma-situation/qualifications'));
+        }
     }
 
     public function downloadBrevet(Request $request, array $params = []): Response
@@ -381,6 +444,57 @@ final class MemberSituationController
             });
 
         return $response;
+    }
+
+    /**
+     * @param array<string, mixed> $award
+     * @return array<string, mixed>
+     */
+    private function enrichAwardForOperatorView(array $award): array
+    {
+        $badgeRel = trim((string) ($award['level_badge_path'] ?? ''));
+        if ($badgeRel === '') {
+            $badgeRel = trim((string) ($award['definition_badge_path'] ?? ''));
+        }
+        $award['badge_url'] = $badgeRel !== ''
+            ? $this->badges->publicUrl($badgeRel)
+            : '';
+
+        $category = trim((string) ($award['category_name'] ?? ''));
+        $sealLetters = '';
+        if ($category !== '') {
+            $words = preg_split('/\s+/u', $category) ?: [];
+            foreach ($words as $word) {
+                $ch = mb_substr(trim((string) $word), 0, 1);
+                if ($ch !== '') {
+                    $sealLetters .= mb_strtoupper($ch);
+                }
+                if (mb_strlen($sealLetters) >= 3) {
+                    break;
+                }
+            }
+        }
+        if ($sealLetters === '') {
+            $name = trim((string) ($award['definition_name'] ?? $award['qualification_name'] ?? 'Q'));
+            $sealLetters = mb_strtoupper(mb_substr($name, 0, 2));
+        }
+        $award['seal_letters'] = $sealLetters !== '' ? $sealLetters : 'Q';
+
+        $temporal = $this->temporal->resolve($award);
+        $award['temporal_code'] = $temporal['code'];
+        $award['temporal_label'] = $temporal['label'];
+        $award['days_remaining'] = $temporal['days_remaining'];
+
+        $admin = QualificationAdminStatus::normalize(
+            (string) ($award['admin_status'] ?? $award['status'] ?? '')
+        );
+        $award['admin_status_normalized'] = $admin;
+        $award['can_generate_brevet'] = $admin === QualificationAdminStatus::OBTAINED
+            && trim((string) ($award['certificate_document_path'] ?? '')) === '';
+        $award['is_permanent_flag'] = !empty($award['is_permanent'])
+            || trim((string) ($award['expires_at'] ?? '')) === '';
+
+        return $award;
     }
 
     /**

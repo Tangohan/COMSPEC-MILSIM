@@ -315,8 +315,16 @@ final class TenantBootstrapService
                 $configSvc->markCompleted($tenantId, 'LOGIN_ACCUEIL_IMAGES_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'PERSONNEL_HR_DESK_V1', $newUserId);
                 $configSvc->markCompleted($tenantId, 'OPERATIONS_WORKSPACE_V1', $newUserId);
+                $configSvc->markCompleted($tenantId, 'UNIT_TYPE_DEFINITIONS_V1', $newUserId);
             } catch (\Throwable $e) {
                 // Tables absentes ou moteur non déployé : non bloquant
+            }
+
+            try {
+                \App\Core\Container::get(\App\Repositories\UnitTypeDefinitionRepository::class)
+                    ->ensureSystemDefaults($tenantId);
+            } catch (\Throwable $e) {
+                // Référentiel types d’unité optionnel
             }
 
             $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;

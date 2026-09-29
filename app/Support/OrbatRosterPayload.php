@@ -128,6 +128,11 @@ final class OrbatRosterPayload
             'chartIconUrl' => $iconPath !== null && $iconPath !== '' ? $iconPath : null,
             'chartImageUrl' => $imagePath !== null && $imagePath !== '' ? $imagePath : null,
             'commanderUserId' => (int) ($u['commander_user_id'] ?? 0),
+            'motto' => trim((string) ($u['motto'] ?? '')),
+            'descriptionLong' => trim((string) ($u['description_long'] ?? '')),
+            'accentColor' => trim((string) ($u['accent_color'] ?? $u['public_accent_color'] ?? '')),
+            'unitTypeId' => (int) ($u['unit_type_id'] ?? 0),
+            'badgeMediaUrl' => (($bp = trim((string) ($u['badge_media_path'] ?? ''))) !== '') ? $bp : null,
             'showOnPublicPage' => !array_key_exists('show_on_public_page', $u)
                 || (int) ($u['show_on_public_page'] ?? 0) === 1,
             'publicFoundedOn' => self::normalizePublicDate($u['public_founded_on'] ?? null),
@@ -413,9 +418,50 @@ final class OrbatRosterPayload
             }
             $node['derivedCommand'] = $derivedCommand;
             $node['capacitySignals'] = $capacitySignals;
+
+            $cmdNode = null;
+            $deputyNode = null;
+            $keyVacantKinds = [];
+            foreach ($node['billets'] as $b) {
+                $kind = strtolower((string) ($b['key_post_kind'] ?? ''));
+                if ($kind === '' && !empty($b['is_key_post'])) {
+                    $kind = 'key';
+                }
+                if ((int) ($b['vacant'] ?? 0) > 0 && in_array($kind, ['commander', 'deputy'], true)) {
+                    $keyVacantKinds[$kind] = true;
+                }
+            }
+            foreach ($derivedCommand as $dc) {
+                $kind = strtolower((string) ($dc['kind'] ?? ''));
+                $entry = [
+                    'userId' => (int) ($dc['user_id'] ?? 0),
+                    'label' => (string) ($dc['label'] ?? ''),
+                    'billetId' => (int) ($dc['billet_id'] ?? 0),
+                    'title' => (string) ($dc['title'] ?? ''),
+                    'occupancyType' => (string) ($dc['occupancy_type'] ?? ''),
+                ];
+                if ($kind === 'commander' && $cmdNode === null) {
+                    $cmdNode = $entry;
+                }
+                if ($kind === 'deputy' && $deputyNode === null) {
+                    $deputyNode = $entry;
+                }
+            }
+            $node['commander'] = $cmdNode;
+            $node['deputy'] = $deputyNode;
+            $node['keyPostsHealth'] = [
+                'commanderVacant' => !empty($keyVacantKinds['commander']),
+                'deputyVacant' => !empty($keyVacantKinds['deputy']),
+                'underStrength' => (int) ($m['filled'] ?? 0) < (int) ($m['authorized'] ?? 0),
+                'authorized' => (int) ($m['authorized'] ?? 0),
+                'filled' => (int) ($m['filled'] ?? 0),
+            ];
             if ($derivedCommand !== [] && trim((string) ($node['leader'] ?? '')) === '') {
                 $node['leader'] = (string) ($derivedCommand[0]['label'] ?? '');
                 $node['leaderFromBillet'] = true;
+            }
+            if ($cmdNode !== null && trim((string) ($cmdNode['label'] ?? '')) !== '') {
+                $node['leader'] = (string) $cmdNode['label'];
             }
 
             // Remplacer le strength « membres » par le pourvu postes si des billets existent

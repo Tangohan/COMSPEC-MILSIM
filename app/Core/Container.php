@@ -1318,10 +1318,21 @@ class Container
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\OrganizationVisibilityHistoryRepository::class => new \App\Repositories\OrganizationVisibilityHistoryRepository(),
             \App\Repositories\OrbatBilletRepository::class => new \App\Repositories\OrbatBilletRepository(),
+            \App\Repositories\UnitTypeDefinitionRepository::class => new \App\Repositories\UnitTypeDefinitionRepository(),
+            \App\Repositories\UnitActivityRepository::class => new \App\Repositories\UnitActivityRepository(),
             \App\Services\Organization\OrbatBilletService::class => new \App\Services\Organization\OrbatBilletService(
                 self::get(\App\Repositories\OrbatBilletRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\OrganizationVisibilityHistoryRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\UnitSheetController::class => new \App\Controllers\Admin\Organization\UnitSheetController(
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\UnitTypeDefinitionRepository::class),
+                self::get(\App\Services\Organization\OrbatBilletService::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Repositories\UnitActivityRepository::class),
+                self::get(\App\Repositories\DocumentRepository::class),
+                self::get(UserRepository::class),
             ),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
             \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),

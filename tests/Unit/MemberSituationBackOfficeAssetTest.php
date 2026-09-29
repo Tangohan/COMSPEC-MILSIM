@@ -63,13 +63,25 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('bo-dossier-hero', $qualifications);
         self::assertStringContainsString('bo-doc-sheet', $qualifications);
         self::assertStringContainsString('bo-doc-card__body--actions', $qualifications);
+        self::assertStringContainsString('Générer le brevet', $qualifications);
+        self::assertStringContainsString('Télécharger le brevet', $qualifications);
+        self::assertStringContainsString('Voir le détail', $qualifications);
+        self::assertStringContainsString('Expire dans', $qualifications);
+        self::assertStringContainsString('bo-doc-sheet__seal--badge', $qualifications);
+        self::assertStringContainsString('bo-doc-list-head', $qualifications);
         self::assertStringContainsString('Ouvrir mon coffre', $qualifications);
+        self::assertStringNotContainsString('Brevet PDF pas encore versé au dossier.', $qualifications);
+        self::assertStringNotContainsString("'Communauté'", $qualifications);
         self::assertStringNotContainsString('bo-doc-card__dl', $qualifications);
         self::assertFileExists($root . '/views/admin/member_situation/coffre.php');
         self::assertFileExists($root . '/public/assets/css/back-office-member-situation.css');
         self::assertStringContainsString('downloadBrevet', $controller);
+        self::assertStringContainsString('generateBrevet', $controller);
+        self::assertStringContainsString('enrichAwardForOperatorView', $controller);
+        self::assertStringContainsString('OPÉRATEUR · MES QUALIFICATIONS', $controller);
         self::assertStringContainsString('function coffre', $controller);
         self::assertStringContainsString('OperatorDocumentVaultService', $controller);
         self::assertStringContainsString('listPhysicalTerminalsForUser', $controller);
+        self::assertStringContainsString("'/back-office/ma-situation/qualifications/{awardId}/generer-brevet'", $routes);
     }
 }

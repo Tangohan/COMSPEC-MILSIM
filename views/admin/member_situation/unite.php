@@ -18,6 +18,11 @@ $unitPath = trim((string) ($primary['assignment_path'] ?? ''));
 $unitCode = trim((string) ($unit['code'] ?? ''));
 $unitTypeRaw = strtolower(trim((string) ($unit['type'] ?? $primary['unit_type'] ?? '')));
 $unitBlurb = trim((string) ($unit['public_blurb'] ?? ''));
+$unitMotto = trim((string) ($unit['motto'] ?? ''));
+$unitAccent = trim((string) ($unit['accent_color'] ?? $unit['public_accent_color'] ?? ''));
+if ($unitAccent === '' || !preg_match('/^#[0-9A-Fa-f]{6}$/', $unitAccent)) {
+    $unitAccent = '';
+}
 $role = trim((string) ($primary['role_name'] ?? $primary['role_label'] ?? $primary['assignment_role'] ?? ''));
 $startedAt = trim((string) ($primary['started_at'] ?? $primary['assigned_at'] ?? ''));
 $startedLabel = '';
@@ -90,7 +95,7 @@ $mateLabel = static function (array $mate): string {
             </div>
         </section>
     <?php else: ?>
-        <header class="bo-unit-hero">
+        <header class="bo-unit-hero"<?= $unitAccent !== '' ? ' style="--bo-unit-accent:' . $h($unitAccent) . '"' : '' ?>>
             <div class="bo-unit-hero__main">
                 <p class="bo-unit-hero__kicker">
                     <?= $h($communityName !== '' ? $communityName : 'Communauté') ?>
@@ -105,6 +110,9 @@ $mateLabel = static function (array $mate): string {
                     </nav>
                 <?php endif; ?>
                 <h2 class="bo-unit-hero__title"><?= $h($unitName) ?></h2>
+                <?php if ($unitMotto !== ''): ?>
+                    <p class="bo-unit-hero__motto">« <?= $h($unitMotto) ?> »</p>
+                <?php endif; ?>
                 <div class="bo-unit-hero__tags">
                     <?php if ($unitTypeLabel !== ''): ?>
                         <span class="bo-unit-tag"><?= $h($unitTypeLabel) ?></span>

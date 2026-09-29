@@ -142,6 +142,7 @@ $bootstrapFiles = [
     'personnel_org_history_migration.php',
     'organization_visibility_status_migration.php',
     'orbat_billets_management_migration.php',
+    'unit_identity_enrichment_migration.php',
     'personnel_stage_bilans_migration.php',
     'member_integration_migration.php',
     'personnel_function_kits_migration.php',
@@ -294,6 +295,7 @@ run_operator_game_registry_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_organization_visibility_status_migration($pdo);
 run_orbat_billets_management_migration($pdo);
+run_unit_identity_enrichment_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_member_integration_migration($pdo);
 run_personnel_function_kits_migration($pdo);

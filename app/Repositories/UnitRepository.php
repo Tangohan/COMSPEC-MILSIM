@@ -1022,6 +1022,24 @@ class UnitRepository
         if ($this->columnExists('units', 'orbat_details')) {
             $allowed[] = 'orbat_details';
         }
+        if ($this->columnExists('units', 'motto')) {
+            $allowed[] = 'motto';
+        }
+        if ($this->columnExists('units', 'description_long')) {
+            $allowed[] = 'description_long';
+        }
+        if ($this->columnExists('units', 'accent_color')) {
+            $allowed[] = 'accent_color';
+        }
+        if ($this->columnExists('units', 'unit_type_id')) {
+            $allowed[] = 'unit_type_id';
+        }
+        if ($this->columnExists('units', 'badge_media_path')) {
+            $allowed[] = 'badge_media_path';
+        }
+        if ($this->columnExists('units', 'org_callsign')) {
+            $allowed[] = 'org_callsign';
+        }
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $data)) {
                 continue;
@@ -1035,7 +1053,7 @@ class UnitRepository
             $fields[] = $key . ' = ?';
             if ($key === 'show_on_public_page') {
                 $params[] = !empty($data[$key]) ? 1 : 0;
-            } elseif ($key === 'parent_id' || $key === 'commander_user_id' || $key === 'display_order') {
+            } elseif ($key === 'parent_id' || $key === 'commander_user_id' || $key === 'display_order' || $key === 'unit_type_id') {
                 $params[] = $data[$key] !== '' && $data[$key] !== null ? (int) $data[$key] : null;
             } elseif ($key === 'public_capacity') {
                 $v = trim((string) ($data[$key] ?? ''));
@@ -1049,7 +1067,7 @@ class UnitRepository
                 } else {
                     $params[] = max(0, (int) $v);
                 }
-            } elseif ($key === 'public_accent_color') {
+            } elseif ($key === 'public_accent_color' || $key === 'accent_color') {
                 $v = trim((string) ($data[$key] ?? ''));
                 $params[] = preg_match('/^#[0-9A-Fa-f]{6}$/', $v) ? strtoupper($v) : null;
             } elseif ($key === 'public_founded_on' || $key === 'public_custom_date') {

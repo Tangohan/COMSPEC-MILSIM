@@ -77,6 +77,39 @@ class DocumentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Documents rattachés à une unité (colonne unit_id).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForUnit(int $tenantId, int $unitId, ?string $status = null, int $limit = 50): array
+    {
+        if ($tenantId < 1 || $unitId < 1) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $sql = 'SELECT d.*, dc.name AS category_name, dc.slug AS category_slug, dc.color AS category_color,
+                       dv.id AS version_id, dv.file_path, dv.mime_type, dv.size, dv.version_number
+                FROM documents d
+                LEFT JOIN document_categories dc ON dc.id = d.document_category_id
+                LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
+                WHERE d.tenant_id = ? AND d.unit_id = ?';
+        $params = [$tenantId, $unitId];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND d.status = ?';
+            $params[] = $status;
+        }
+        $sql .= ' ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.title ASC LIMIT ' . $limit;
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT d.*, dv.id AS version_id, dv.version_number, dv.file_path, dv.original_name, dv.mime_type, dv.size, dv.checksum

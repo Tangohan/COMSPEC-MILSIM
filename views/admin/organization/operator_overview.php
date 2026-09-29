@@ -34,16 +34,25 @@ $h = static fn (mixed $value): string => htmlspecialchars(trim((string) $value),
 $displayName = trim((string) ($user['display_name'] ?? $profile['character_name'] ?? ''));
 $callsign = trim((string) ($user['callsign'] ?? $profile['callsign'] ?? ''));
 $communityName = trim((string) ($tenant['name'] ?? ''));
-$unitNames = [];
+
+$primaryUnit = null;
 foreach ($units as $unit) {
-    if (!is_array($unit)) {
-        continue;
-    }
-    $unitName = trim((string) ($unit['name'] ?? $unit['code'] ?? ''));
-    if ($unitName !== '') {
-        $unitNames[] = $unitName;
+    if (is_array($unit)) {
+        $primaryUnit = $unit;
+        break;
     }
 }
+$unitName = is_array($primaryUnit) ? trim((string) ($primaryUnit['name'] ?? $primaryUnit['code'] ?? '')) : '';
+$unitAccent = '';
+$unitBadge = '';
+if (is_array($primaryUnit)) {
+    $accentRaw = trim((string) ($primaryUnit['accent_color'] ?? $primaryUnit['public_accent_color'] ?? ''));
+    if (preg_match('/^#[0-9A-Fa-f]{6}$/', $accentRaw)) {
+        $unitAccent = strtoupper($accentRaw);
+    }
+    $unitBadge = trim((string) ($primaryUnit['badge_media_path'] ?? $primaryUnit['orbat_icon_path'] ?? ''));
+}
+$extraUnitCount = max(0, count($units) - 1);
 
 $dateTime = static function (mixed $raw): string {
     $timestamp = strtotime((string) $raw);
@@ -80,14 +89,43 @@ $elevationStatusLabel = static function (string $status): string {
     };
 };
 
-$hasSituation = $absences !== [] || $elevations !== [] || $mobility !== [] || $onboardingRemaining !== [] || $inboxUnread > 0 || $alerts !== [] || $followupAttention;
+$hasSituation = $absences !== [] || $elevations !== [] || $mobility !== [] || $inboxUnread > 0 || $alerts !== [] || $followupAttention;
+$hasAgenda = $events !== [] || $mission !== null;
+$showOnboardingBanner = $onboardingRemaining !== [];
 $linkClass = 'text-sm font-bold text-emerald-700 hover:underline';
 $cardClass = 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm';
 $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
 ?>
 
 <div class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
-    <section class="<?= $h($cardClass) ?>">
+    <?php if ($showOnboardingBanner): ?>
+    <section class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 shadow-sm" role="status">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-amber-800">Intégration</p>
+                <h2 class="mt-1 text-lg font-black text-slate-950">Votre arrivée n’est pas terminée</h2>
+                <p class="mt-1 text-sm text-amber-950/90">
+                    <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
+                        ? $h($onboardingNudge)
+                        : 'Il reste des étapes à accomplir pour finaliser votre intégration.' ?>
+                    <?php if ($dutyLabel !== ''): ?>
+                        · Position de service : <strong><?= $h($dutyLabel) ?></strong>
+                    <?php endif; ?>
+                </p>
+                <?php if ($onboardingRemaining !== []): ?>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-800">
+                    <?php foreach (array_slice($onboardingRemaining, 0, 5) as $step): ?>
+                        <li><?= $h((string) ($step['label'] ?? '')) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </div>
+            <a class="ath-btn ath-btn--solid shrink-0" href="<?= $h(url('mon-integration')) ?>">Ouvrir Mon intégration</a>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <section class="<?= $h($cardClass) ?>"<?= $unitAccent !== '' ? ' style="--op-unit-accent:' . $h($unitAccent) . '"' : '' ?>>
         <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
             <?php if ($portraitUrl !== ''): ?>
                 <img src="<?= $h($portraitUrl) ?>" alt="" class="h-20 w-20 shrink-0 rounded-2xl object-cover ring-1 ring-slate-200">
@@ -104,7 +142,8 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             <div class="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end">
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche')) ?>">Voir ma fiche</a>
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Mon suivi</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Mes démarches</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">Mon unité</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/qualifications')) ?>">Mes qualifications</a>
             </div>
         </div>
         <dl class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -119,8 +158,18 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
             <div>
                 <dt class="<?= $h($dtClass) ?>">Unité</dt>
                 <dd class="mt-1 font-semibold text-slate-900">
-                    <?php if ($unitNames !== []): ?>
-                        <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>"><?= $h(implode(' · ', $unitNames)) ?></a>
+                    <?php if ($unitName !== ''): ?>
+                        <a class="inline-flex items-center gap-2 <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">
+                            <?php if ($unitBadge !== ''): ?>
+                                <img src="<?= $h($unitBadge) ?>" alt="" class="h-7 w-7 rounded-lg object-cover ring-1 ring-slate-200" width="28" height="28">
+                            <?php elseif ($unitAccent !== ''): ?>
+                                <span class="inline-block h-7 w-1.5 rounded-full" style="background:<?= $h($unitAccent) ?>" aria-hidden="true"></span>
+                            <?php endif; ?>
+                            <span><?= $h($unitName) ?></span>
+                        </a>
+                        <?php if ($extraUnitCount > 0): ?>
+                            <span class="mt-1 block text-xs font-medium text-slate-500">+ <?= (int) $extraUnitCount ?> autre<?= $extraUnitCount > 1 ? 's' : '' ?></span>
+                        <?php endif; ?>
                     <?php else: ?>
                         Non affecté
                         · <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">Voir</a>
@@ -189,7 +238,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <section class="<?= $h($cardClass) ?>">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-black text-slate-950">Ce qui vous concerne</h2>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Ouvrir Mes démarches</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('boite-reception')) ?>">Boîte de réception</a>
             </div>
             <?php if (!$hasSituation): ?>
                 <p class="mt-4 text-sm text-slate-600">Rien n’est en attente de votre côté pour le moment. Vos absences, demandes et messages apparaîtront ici.</p>
@@ -213,6 +262,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900">Absence en cours<?= $reason !== '' ? ' — ' . $h($reason) : '' ?></p>
                             <?php if ($period !== ''): ?><p class="mt-1 text-sm text-slate-600"><?= $h($period) ?></p><?php endif; ?>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
                     <?php foreach ($elevations as $elevation): ?>
@@ -223,6 +273,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900">Demande d’élévation — <?= $h($kindLabel) ?></p>
                             <p class="mt-1 text-sm text-slate-600"><?= $h($elevationStatusLabel((string) ($elevation['status'] ?? ''))) ?></p>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
                     <?php foreach ($mobility as $wish): ?>
@@ -233,24 +284,9 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900"><?= $h($typeLabel) ?></p>
                             <p class="mt-1 text-sm text-slate-600">En attente de réponse.</p>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
-                    <?php if ($onboardingRemaining !== []): ?>
-                        <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                            <p class="font-semibold text-slate-900">Votre arrivée n’est pas terminée</p>
-                            <p class="mt-1 text-sm text-slate-600">
-                                <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
-                                    ? $h($onboardingNudge)
-                                    : 'Il reste des étapes à accomplir pour finaliser votre intégration.' ?>
-                            </p>
-                            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                                <?php foreach ($onboardingRemaining as $step): ?>
-                                    <li><?= $h((string) ($step['label'] ?? '')) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('mon-integration')) ?>">Ouvrir Mon intégration</a>
-                        </li>
-                    <?php endif; ?>
                     <?php if ($followupAttention): ?>
                         <li class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                             <p class="font-semibold text-slate-900">Votre parcours dans l’unité</p>
@@ -285,13 +321,21 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
 
         <section class="<?= $h($cardClass) ?>">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-lg font-black text-slate-950">Prochaines manœuvres</h2>
+                <h2 class="text-lg font-black text-slate-950">Agenda opérationnel</h2>
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/evenements')) ?>">Voir le calendrier</a>
             </div>
-            <?php if ($events === []): ?>
-                <p class="mt-4 text-sm text-slate-600">Aucune manœuvre n’est encore annoncée. Dès qu’un créneau est publié, il apparaîtra ici.</p>
+            <?php if (!$hasAgenda): ?>
+                <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                    <span class="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-400 ring-1 ring-slate-200" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    </span>
+                    <p class="text-sm font-semibold text-slate-800">Rien de prévu pour l’instant</p>
+                    <p class="mt-1 max-w-sm text-sm text-slate-500">Les prochaines manœuvres et la mission en cours apparaîtront ici dès qu’elles seront annoncées.</p>
+                </div>
             <?php else: ?>
-                <ul class="mt-4 space-y-3">
+                <?php if ($events !== []): ?>
+                <h3 class="mt-4 text-xs font-black uppercase tracking-wider text-slate-500">Prochaines manœuvres</h3>
+                <ul class="mt-2 space-y-3">
                     <?php foreach ($events as $event): ?>
                         <?php
                         $when = $dateTime($event['starts_at'] ?? '');
@@ -303,38 +347,40 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         </li>
                     <?php endforeach; ?>
                 </ul>
-            <?php endif; ?>
-
-            <div class="mt-6 border-t border-slate-100 pt-5">
-                <h3 class="text-base font-black text-slate-950">Mission en cours</h3>
-                <?php if ($mission === null): ?>
-                    <p class="mt-2 text-sm text-slate-600">Aucune mission n’est actuellement déclarée en direct.</p>
-                <?php else: ?>
-                    <p class="mt-2 text-xl font-black text-slate-950"><?= $h((string) ($mission['operation_name'] ?? $mission['title'] ?? '')) ?></p>
-                    <?php
-                    $missionCode = trim((string) ($mission['mission_code'] ?? ''));
-                    $taskForce = trim((string) ($mission['task_force_name'] ?? ''));
-                    ?>
-                    <?php if ($missionCode !== '' || $taskForce !== ''): ?>
-                        <p class="mt-2 text-sm text-slate-600">
-                            <?= $missionCode !== '' ? $h($missionCode) : '' ?>
-                            <?= $missionCode !== '' && $taskForce !== '' ? ' · ' : '' ?>
-                            <?= $taskForce !== '' ? $h($taskForce) : '' ?>
-                        </p>
-                    <?php endif; ?>
                 <?php endif; ?>
-            </div>
+
+                <div class="<?= $events !== [] ? 'mt-6 border-t border-slate-100 pt-5' : 'mt-4' ?>">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-500">Mission en cours</h3>
+                    <?php if ($mission === null): ?>
+                        <p class="mt-2 text-sm text-slate-600">Aucune mission n’est actuellement déclarée en direct.</p>
+                    <?php else: ?>
+                        <p class="mt-2 text-xl font-black text-slate-950"><?= $h((string) ($mission['operation_name'] ?? $mission['title'] ?? '')) ?></p>
+                        <?php
+                        $missionCode = trim((string) ($mission['mission_code'] ?? ''));
+                        $taskForce = trim((string) ($mission['task_force_name'] ?? ''));
+                        ?>
+                        <?php if ($missionCode !== '' || $taskForce !== ''): ?>
+                            <p class="mt-2 text-sm text-slate-600">
+                                <?= $missionCode !== '' ? $h($missionCode) : '' ?>
+                                <?= $missionCode !== '' && $taskForce !== '' ? ' · ' : '' ?>
+                                <?= $taskForce !== '' ? $h($taskForce) : '' ?>
+                            </p>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </section>
     </div>
 
     <section class="<?= $h($cardClass) ?>">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-lg font-black text-slate-950">Ma liaison ATAK</h2>
+            <h2 class="text-lg font-black text-slate-950">
+                <a class="hover:underline" href="<?= $h(url('back-office/ma-situation/liaison-atak')) ?>">Ma liaison ATAK</a>
+            </h2>
             <div class="flex flex-wrap gap-3">
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('atak')) ?>">Ouvrir la carte</a>
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/appareils')) ?>">Gérer les appareils</a>
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/premiere-liaison')) ?>">Configurer ATAK</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/liaison-atak')) ?>">Voir la liaison</a>
             </div>
         </div>
         <?php if ($terminals === []): ?>
@@ -390,7 +436,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 ['label' => 'Boîte de réception', 'hint' => $inboxUnread > 0 ? ($inboxUnread === 1 ? '1 message à lire' : $inboxUnread . ' messages à lire') : 'Messages de la communauté', 'href' => url('boite-reception')],
                 ['label' => 'Mon compte', 'hint' => 'Portrait, sécurité et préférences', 'href' => url('account')],
             ];
-            if ($onboardingRemaining !== []) {
+            if ($showOnboardingBanner) {
                 array_unshift($shortcuts, ['label' => 'Mon intégration', 'hint' => 'Étapes d’arrivée restantes', 'href' => url('mon-integration')]);
             }
             foreach ($shortcuts as $shortcut):

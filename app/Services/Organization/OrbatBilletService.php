@@ -62,6 +62,147 @@ final class OrbatBilletService
     }
 
     /**
+     * Assure les postes clés Commandant + Adjoint (slots=1) pour une unité.
+     *
+     * @return array{ok: bool, created: list<int>, message?: string}
+     */
+    public function ensureKeyPosts(int $tenantId, int $unitId, ?int $actorUserId = null): array
+    {
+        if (!$this->schemaReady()) {
+            return ['ok' => false, 'created' => [], 'message' => 'Schéma postes ORBAT indisponible.'];
+        }
+        if ($unitId < 1 || $this->units->findById($unitId, $tenantId) === null) {
+            return ['ok' => false, 'created' => [], 'message' => 'Structure introuvable.'];
+        }
+
+        $needed = [
+            'commander' => ['code' => 'CMD', 'title' => 'Commandant', 'sort_order' => 1],
+            'deputy' => ['code' => 'ADJ', 'title' => 'Adjoint', 'sort_order' => 2],
+        ];
+        $existing = $this->billets->listForUnit($tenantId, $unitId, true);
+        $have = [];
+        foreach ($existing as $b) {
+            if ((int) ($b['is_active'] ?? 1) !== 1) {
+                continue;
+            }
+            $kind = strtolower(trim((string) ($b['key_post_kind'] ?? '')));
+            if ($kind !== '' && isset($needed[$kind])) {
+                $have[$kind] = true;
+            }
+            $code = strtoupper(trim((string) ($b['code'] ?? '')));
+            if ($code === 'CMD') {
+                $have['commander'] = true;
+            }
+            if ($code === 'ADJ') {
+                $have['deputy'] = true;
+            }
+        }
+
+        $created = [];
+        foreach ($needed as $kind => $meta) {
+            if (!empty($have[$kind])) {
+                continue;
+            }
+            $res = $this->createBillet($tenantId, [
+                'unit_id' => $unitId,
+                'code' => $meta['code'],
+                'title' => $meta['title'],
+                'authorized_slots' => 1,
+                'is_key_post' => 1,
+                'key_post_kind' => $kind,
+                'sort_order' => $meta['sort_order'],
+                'is_critical' => $kind === 'commander' ? 1 : 0,
+            ], $actorUserId);
+            if (!empty($res['ok']) && !empty($res['id'])) {
+                $created[] = (int) $res['id'];
+            }
+        }
+
+        return ['ok' => true, 'created' => $created];
+    }
+
+    /**
+     * Synchronise units.commander_user_id depuis le titulaire PRIMARY du billet commander.
+     */
+    public function syncCommanderCache(int $tenantId, int $unitId): void
+    {
+        if (!$this->schemaReady() || $unitId < 1 || $tenantId < 1) {
+            return;
+        }
+        $billets = $this->billets->listForUnit($tenantId, $unitId, false);
+        $commanderBilletId = 0;
+        foreach ($billets as $b) {
+            $kind = strtolower(trim((string) ($b['key_post_kind'] ?? '')));
+            $code = strtoupper(trim((string) ($b['code'] ?? '')));
+            if ($kind === 'commander' || $code === 'CMD') {
+                $commanderBilletId = (int) ($b['id'] ?? 0);
+                break;
+            }
+        }
+        $commanderUserId = null;
+        if ($commanderBilletId > 0) {
+            $holders = $this->billets->activeHolders($tenantId, $commanderBilletId);
+            foreach ($holders as $h) {
+                $occ = BilletOccupancyType::normalize((string) ($h['occupancy_type'] ?? 'primary'));
+                if ($occ === BilletOccupancyType::PRIMARY || $occ === BilletOccupancyType::ACTING) {
+                    $uid = (int) ($h['user_id'] ?? 0);
+                    if ($uid > 0) {
+                        $commanderUserId = $uid;
+                        break;
+                    }
+                }
+            }
+        }
+        $this->units->update($unitId, $tenantId, ['commander_user_id' => $commanderUserId]);
+    }
+
+    /**
+     * Applique un template de postes selon le type d’unité (en plus des postes clés).
+     *
+     * @return array{ok: bool, created: list<int>}
+     */
+    public function applyUnitTypeTemplate(int $tenantId, int $unitId, ?string $unitTypeCode = null, ?int $actorUserId = null): array
+    {
+        $this->ensureKeyPosts($tenantId, $unitId, $actorUserId);
+        $code = strtolower(trim((string) $unitTypeCode));
+        $extra = match ($code) {
+            'operationnel' => [
+                ['code' => 'OP', 'title' => 'Opérateur', 'authorized_slots' => 4, 'sort_order' => 10],
+            ],
+            'soutien' => [
+                ['code' => 'SUP', 'title' => 'Soutien', 'authorized_slots' => 2, 'sort_order' => 10],
+            ],
+            'formation' => [
+                ['code' => 'INSTR', 'title' => 'Instructeur', 'authorized_slots' => 2, 'sort_order' => 10],
+                ['code' => 'STAG', 'title' => 'Stagiaire', 'authorized_slots' => 6, 'sort_order' => 20],
+            ],
+            default => [],
+        };
+        $existing = $this->billets->listForUnit($tenantId, $unitId, true);
+        $codes = [];
+        foreach ($existing as $b) {
+            if ((int) ($b['is_active'] ?? 1) === 1) {
+                $codes[strtoupper((string) ($b['code'] ?? ''))] = true;
+            }
+        }
+        $created = [];
+        foreach ($extra as $row) {
+            if (!empty($codes[strtoupper($row['code'])])) {
+                continue;
+            }
+            $res = $this->createBillet($tenantId, array_merge($row, [
+                'unit_id' => $unitId,
+                'is_key_post' => 0,
+            ]), $actorUserId);
+            if (!empty($res['ok']) && !empty($res['id'])) {
+                $created[] = (int) $res['id'];
+            }
+        }
+
+        return ['ok' => true, 'created' => $created];
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @return array{ok: bool, message?: string}
      */
@@ -173,6 +314,11 @@ final class OrbatBilletService
             }
         }
 
+        $unitId = (int) ($billet['unit_id'] ?? 0);
+        if ($unitId > 0) {
+            $this->syncCommanderCache($tenantId, $unitId);
+        }
+
         return ['ok' => true, 'id' => $id, 'warnings' => $warnings];
     }
 
@@ -187,6 +333,11 @@ final class OrbatBilletService
         ?int $actorUserId = null,
         ?string $reason = null
     ): array {
+        $unitIdForSync = 0;
+        if ($billetId !== null && $billetId > 0) {
+            $billet = $this->billets->findById($tenantId, $billetId);
+            $unitIdForSync = (int) ($billet['unit_id'] ?? 0);
+        }
         if (!$this->billets->endHolder($tenantId, $holderId)) {
             return ['ok' => false, 'message' => 'Fin d’occupation impossible.'];
         }
@@ -200,6 +351,9 @@ final class OrbatBilletService
                 ['holder_id' => $holderId, 'billet_id' => $billetId],
                 $reason
             );
+        }
+        if ($unitIdForSync > 0) {
+            $this->syncCommanderCache($tenantId, $unitIdForSync);
         }
 
         return ['ok' => true];

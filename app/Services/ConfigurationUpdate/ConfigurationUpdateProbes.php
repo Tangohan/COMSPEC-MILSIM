@@ -813,6 +813,40 @@ final class ConfigurationUpdateProbes
         }
     }
 
+    public function hasUnitTypeDefinitions(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM unit_type_definitions WHERE tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$tenantId]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasUnitTypeDefinitionsReviewed(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $settings = $this->tenants->getSettings($tenantId);
+            $block = is_array($settings['unit_type_definitions'] ?? null)
+                ? $settings['unit_type_definitions']
+                : [];
+
+            return !empty($block['reviewed']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function hasOverwatchServerControlReviewed(int $tenantId): bool
     {
         if ($tenantId < 1) {
