@@ -51,6 +51,13 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertFileExists($root . '/views/admin/member_situation/liaison_atak.php');
         self::assertFileExists($root . '/views/admin/member_situation/appareils.php');
         self::assertFileExists($root . '/views/admin/member_situation/unite.php');
+        $unite = (string) file_get_contents($root . '/views/admin/member_situation/unite.php');
+        self::assertStringContainsString('bo-unit-hero', $unite);
+        self::assertStringContainsString('bo-unit-roster', $unite);
+        self::assertStringContainsString('Camarades', $unite);
+        self::assertStringContainsString('Ouvrir l’organigramme', $unite);
+        self::assertStringContainsString('hierarchyMetaByUnitId', $controller);
+        self::assertStringContainsString('listActiveMembersByUnitForTenant', $controller);
         self::assertFileExists($root . '/views/admin/member_situation/qualifications.php');
         $qualifications = (string) file_get_contents($root . '/views/admin/member_situation/qualifications.php');
         self::assertStringContainsString('bo-dossier-hero', $qualifications);

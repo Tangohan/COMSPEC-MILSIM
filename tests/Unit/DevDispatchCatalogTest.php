@@ -43,8 +43,8 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(729, (int) $row['number']);
-        self::assertStringContainsString('suppr', mb_strtolower((string) $row['title']));
+        self::assertSame(730, (int) $row['number']);
+        self::assertStringContainsString('unité', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -947,6 +947,12 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('survol', strtolower((string) $owHoverDelete['title'] . ' ' . $owHoverDelete['activity']));
         self::assertStringNotContainsString('keydown', strtolower((string) $owHoverDelete['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owHoverDelete['activity']));
+        $owUnite = DevDispatchCatalog::find('update', '730');
+        self::assertNotNull($owUnite);
+        self::assertSame('00730', $owUnite['number_pad']);
+        self::assertStringContainsString('unité', strtolower((string) $owUnite['title']));
+        self::assertStringContainsString('organigramme', strtolower((string) $owUnite['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owUnite['activity']));
         $manifestText = DevDispatchCatalog::find('update', '697');
         self::assertNotNull($manifestText);
         self::assertSame('00697', $manifestText['number_pad']);

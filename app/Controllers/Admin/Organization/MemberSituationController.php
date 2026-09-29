@@ -146,7 +146,7 @@ final class MemberSituationController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$user, , $userId] = $ctx;
+        [$user, $tenantId, $userId] = $ctx;
 
         $assignments = [];
         try {
@@ -155,15 +155,115 @@ final class MemberSituationController
             $assignments = [];
         }
 
+        $unitRepo = new \App\Repositories\UnitRepository();
+        $hierarchy = [];
+        try {
+            $hierarchy = $unitRepo->hierarchyMetaByUnitId($tenantId);
+        } catch (\Throwable) {
+            $hierarchy = [];
+        }
+
+        $enriched = [];
+        foreach ($assignments as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            $meta = $hierarchy[$unitId] ?? null;
+            $row['assignment_path'] = is_array($meta) ? trim((string) ($meta['path'] ?? '')) : '';
+            $row['hierarchy_depth'] = is_array($meta) ? (int) ($meta['depth'] ?? 0) : 0;
+            $enriched[] = $row;
+        }
+
+        $primary = null;
+        foreach ($enriched as $row) {
+            if (!empty($row['is_primary'])) {
+                $primary = $row;
+                break;
+            }
+        }
+        if ($primary === null && $enriched !== []) {
+            $primary = $enriched[0];
+        }
+
+        $primaryUnitId = (int) ($primary['unit_id'] ?? 0);
+        $unit = null;
+        $commander = null;
+        $teammates = [];
+        $subUnits = [];
+        if ($primaryUnitId > 0) {
+            try {
+                $unit = $unitRepo->findById($primaryUnitId, $tenantId);
+            } catch (\Throwable) {
+                $unit = null;
+            }
+            $commanderId = (int) (($unit['commander_user_id'] ?? null) ?: ($primary['commander_user_id'] ?? 0));
+            if ($commanderId > 0) {
+                try {
+                    $commander = $this->userRepository->findById($commanderId, $tenantId);
+                } catch (\Throwable) {
+                    $commander = null;
+                }
+            }
+            try {
+                $byUnit = $this->assignments->listActiveMembersByUnitForTenant($tenantId);
+                $teammates = is_array($byUnit[$primaryUnitId] ?? null) ? $byUnit[$primaryUnitId] : [];
+            } catch (\Throwable) {
+                $teammates = [];
+            }
+            try {
+                $subUnits = $unitRepo->childrenForTenant($tenantId, $primaryUnitId);
+            } catch (\Throwable) {
+                $subUnits = [];
+            }
+        }
+
+        $secondary = [];
+        $primaryKey = null;
+        if ($primary !== null) {
+            $pid = (int) ($primary['id'] ?? 0);
+            $primaryKey = $pid > 0
+                ? 'id:' . $pid
+                : 'u:' . $primaryUnitId . '|r:' . trim((string) ($primary['role_name'] ?? ''));
+        }
+        foreach ($enriched as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            $key = $rid > 0
+                ? 'id:' . $rid
+                : 'u:' . (int) ($row['unit_id'] ?? 0) . '|r:' . trim((string) ($row['role_name'] ?? ''));
+            if ($primaryKey !== null && $key === $primaryKey) {
+                continue;
+            }
+            $secondary[] = $row;
+        }
+
+        $communityName = trim((string) ($user['tenant_name'] ?? ''));
+        if ($communityName === '') {
+            try {
+                $tenant = (new \App\Repositories\TenantRepository())->findById($tenantId);
+                $communityName = trim((string) ($tenant['name'] ?? ''));
+            } catch (\Throwable) {
+                $communityName = '';
+            }
+        }
+
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mon unité',
             'content' => 'admin.member_situation.unite',
             'boPageTitle' => 'Mon unité',
             'boPageKicker' => 'OPÉRATEUR · AFFECTATION',
-            'boPageSubtitle' => 'Votre affectation actuelle dans la communauté.',
+            'boPageSubtitle' => 'Votre place dans l’organigramme, vos camarades et votre fonction.',
             'backOfficePageCss' => ['back-office-member-situation.css'],
             'user' => $user,
-            'assignments' => $assignments,
+            'assignments' => $enriched,
+            'primaryAssignment' => $primary,
+            'secondaryAssignments' => $secondary,
+            'unit' => is_array($unit) ? $unit : null,
+            'commander' => is_array($commander) ? $commander : null,
+            'teammates' => $teammates,
+            'subUnits' => $subUnits,
+            'communityName' => $communityName,
+            'viewerUserId' => $userId,
         ]));
     }
 

@@ -293,6 +293,13 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(730, '2026-09-29', 'Portail : page Mon unité enrichie', 'Dans Ma situation, la page Mon unité présente désormais votre affectation principale avec le chemin dans l’organigramme, votre fonction, le chef d’unité, les camarades de la même unité et les sous-unités rattachées. Rechargez le portail (Ctrl+F5).', [
+                'Vue d’affectation avec chemin d’organigramme, effectif et sous-unités',
+            ], [
+                'Accès rapide vers l’organigramme et la fiche personnelle',
+            ], [], ['command'], [
+                'Ouvrez Ma situation → Mon unité. Si vous êtes affecté, vous devez voir le nom de l’unité, votre fonction et la liste des opérateurs de la même unité.',
+            ], 'Portail Athena'),
             $pr(729, '2026-09-28', 'Poste Overwatch : supprimer au survol avec Suppr', 'Sur le théâtre Overwatch Beta, survolez un repère, un tracé ou un croquis : l’élément se met en surbrillance et un bandeau rappelle la touche Suppr. Appuyez sur Suppr (ou Retour arrière) pour le retirer, sans ouvrir le menu contextuel. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Surbrillance de l’élément sous le curseur avec rappel « Suppr »',
                 'Suppression immédiate au clavier sans menu contextuel',
