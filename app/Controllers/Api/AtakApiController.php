@@ -6571,7 +6571,7 @@ class AtakApiController
                 $row = $byAuthorAny[$cs];
             }
             if (is_array($row)) {
-                $feed['snapshot_url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
+                $feed['snapshot_url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
                 $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
                 $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
                 $feed['snapshot_caption'] = $row['caption'] ?? null;
@@ -10819,7 +10819,7 @@ class AtakApiController
                 $rows = $this->applyPlayNightFilter($rows, 'all', ['captured_at', 'created_at']);
             }
             foreach ($rows as &$row) {
-                $row['url'] = user_media_public_url('uploads/recon/' . basename((string) ($row['image_path'] ?? '')));
+                $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
                 $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
                 $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
@@ -10901,22 +10901,13 @@ class AtakApiController
                 return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
             }
 
-            $dir = function_exists('base_path')
-                ? base_path('public/uploads/recon')
-                : (dirname(__DIR__, 2) . '/../public/uploads/recon');
-            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-                error_log('[atak/recon-images] mkdir failed: ' . $dir);
-
-                return Response::json([
-                    'error' => 'save_failed',
-                    'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
-                ], 503);
-            }
             $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
             $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
             $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
-            $path = $dir . DIRECTORY_SEPARATOR . $filename;
-            if (!TerrainUploadedImage::move((string) $file['tmp_name'], $path)) {
+            $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename);
+            if ($path === null) {
+                error_log('[atak/recon-images] store failed for ' . $filename);
+
                 return Response::json([
                     'error' => 'save_failed',
                     'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
@@ -10935,7 +10926,7 @@ class AtakApiController
                 $unitName = $feedId;
             }
             $data = [
-                'image_path' => 'recon/' . $filename,
+                'image_path' => \App\Support\ReconImageStorage::relativeImagePath($filename),
                 'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
                 'unit_name' => $unitName,
                 'side' => $_POST['side'] ?? 'WEST',
@@ -10959,7 +10950,7 @@ class AtakApiController
             }
             $row = $this->reconImages()->create($tenantId, $data);
             if ($row === []) {
-                @unlink($path);
+                \App\Support\ReconImageStorage::delete($filename);
                 error_log('[atak/recon-images] create failed for ' . $filename);
 
                 return Response::json([
@@ -10967,11 +10958,7 @@ class AtakApiController
                     'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
                 ], 503);
             }
-            try {
-                $row['url'] = user_media_public_url('uploads/recon/' . $filename);
-            } catch (\Throwable) {
-                $row['url'] = '/uploads/recon/' . $filename;
-            }
+            $row['url'] = \App\Support\ReconImageStorage::publicUrl($filename);
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
             try {
@@ -11016,7 +11003,7 @@ class AtakApiController
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
-        $row['url'] = user_media_public_url('uploads/recon/' . basename($row['image_path']));
+        $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
         return Response::json($row);
     }
 
@@ -11112,8 +11099,8 @@ class AtakApiController
                 return Response::json(['error' => 'case_not_found', 'message' => 'Dossier SSE introuvable.'], 404);
             }
             $srcRel = trim((string) ($row['image_path'] ?? ''));
-            $srcAbs = base_path('public/uploads/recon/' . basename($srcRel));
-            if (!is_file($srcAbs)) {
+            $srcAbs = \App\Support\ReconImageStorage::absoluteReadable($srcRel);
+            if ($srcAbs === null) {
                 return Response::json(['error' => 'missing_file', 'message' => 'Le fichier source est introuvable sur le serveur.'], 404);
             }
             $destDir = base_path('public/uploads/sse/evidence');
@@ -11155,7 +11142,7 @@ class AtakApiController
             return Response::json(['error' => 'update_failed', 'message' => 'Impossible de mettre à jour la photo.'], 500);
         }
 
-        $updated['url'] = user_media_public_url('uploads/recon/' . basename((string) ($updated['image_path'] ?? '')));
+        $updated['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($updated['image_path'] ?? '')));
         $updated['device_label'] = $this->reconDeviceLabel((string) ($updated['device_type'] ?? 'CTAB'));
 
         return Response::json(['ok' => true, 'message' => $message, 'photo' => $updated]);

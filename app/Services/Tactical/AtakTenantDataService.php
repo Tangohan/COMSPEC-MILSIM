@@ -439,6 +439,13 @@ final class AtakTenantDataService
                     if ($rel === '') {
                         continue;
                     }
+                    if ($col === 'image_path' || str_contains(str_replace('\\', '/', $rel), 'recon/')) {
+                        $abs = \App\Support\ReconImageStorage::absoluteReadable($rel);
+                        if ($abs !== null && @unlink($abs)) {
+                            $removed++;
+                        }
+                        continue;
+                    }
                     $path = str_starts_with($rel, '/') || preg_match('#^[A-Za-z]:\\\\#', $rel)
                         ? $rel
                         : $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');

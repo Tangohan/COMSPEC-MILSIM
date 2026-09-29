@@ -293,6 +293,19 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(729, '2026-09-28', 'Poste Overwatch : supprimer au survol avec Suppr', 'Sur le théâtre Overwatch Beta, survolez un repère, un tracé ou un croquis : l’élément se met en surbrillance et un bandeau rappelle la touche Suppr. Appuyez sur Suppr (ou Retour arrière) pour le retirer, sans ouvrir le menu contextuel. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Surbrillance de l’élément sous le curseur avec rappel « Suppr »',
+                'Suppression immédiate au clavier sans menu contextuel',
+            ], [], [], ['atak', 'command'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Survolez un marqueur ou un tracé : un anneau rouge et le bandeau « Suppr · … » apparaissent. Appuyez sur Suppr : l’élément disparaît.',
+            ], 'Overwatch Beta'),
+            $pr(728, '2026-09-28', 'Poste : enregistrement durable des photos terrain', 'Les photos remontées depuis le jeu étaient parfois enregistrées en base alors que le fichier n’était plus disponible sur le poste (vignette cassée malgré une adresse correcte). Les clichés sont maintenant écrits de façon fiable, avec un stockage de secours si le dossier public n’est pas accessible. Rechargez le poste (Ctrl+F5), puis renvoyez depuis le terrain les photos encore vides.', [
+                'Enregistrement des photos terrain avec repli de stockage si besoin',
+            ], [], [
+                'Photos listées avec une adresse correcte mais fichier introuvable sur le poste',
+            ], ['atak', 'command'], [
+                'Rechargez le poste (Ctrl+F5). Prenez une nouvelle photo depuis le jeu : elle doit s’afficher immédiatement. Les anciennes vignettes vides ne peuvent pas être reconstruites — renvoyez-les une fois depuis le terrain.',
+            ], 'Overwatch Beta'),
             $pr(727, '2026-09-28', 'Poste : photos terrain de nouveau visibles', 'Les photos remontées depuis le jeu s’affichaient en liste mais l’image restait cassée. Les vignettes pointent maintenant vers la bonne adresse sur le poste. Rechargez Overwatch Beta ou ATAK (Ctrl+F5).', [], [], [
                 'Photos de reconnaissance listées mais image introuvable (carré cassé)',
             ], ['atak', 'command'], [

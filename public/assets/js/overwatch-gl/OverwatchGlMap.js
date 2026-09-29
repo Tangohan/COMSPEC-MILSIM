@@ -561,6 +561,14 @@ window.OverwatchGlMap = (function () {
       var leaf = proj.lngLatToLeaflet(event.lngLat.lng, event.lngLat.lat);
       var el = document.getElementById('ow-coordinate');
       if (el && leaf) el.textContent = ow.gridLabel({ lat: leaf.lat, lng: leaf.lng }) + ' · Direct';
+      if (leaf && typeof ow.syncHoverDelete === 'function') {
+        ow.syncHoverDelete({ lat: leaf.lat, lng: leaf.lng });
+        if (typeof ow.paintHoverDeleteHud === 'function') ow.paintHoverDeleteHud('');
+      }
+    });
+    glMap.getCanvas().addEventListener('mouseleave', function () {
+      var ow = window.OverwatchBeta;
+      if (ow && typeof ow.clearHoverDelete === 'function') ow.clearHoverDelete();
     });
     setHostVisible(true);
   }

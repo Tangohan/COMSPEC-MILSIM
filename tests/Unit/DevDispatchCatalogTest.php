@@ -43,8 +43,8 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(727, (int) $row['number']);
-        self::assertStringContainsString('photos terrain', mb_strtolower((string) $row['title']));
+        self::assertSame(729, (int) $row['number']);
+        self::assertStringContainsString('suppr', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -932,6 +932,21 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertStringContainsString('vignettes', strtolower((string) $owPhotos['activity']));
         self::assertStringNotContainsString('uploads', strtolower((string) $owPhotos['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $owPhotos['activity']));
+        $owPhotosStore = DevDispatchCatalog::find('update', '728');
+        self::assertNotNull($owPhotosStore);
+        self::assertSame('00728', $owPhotosStore['number_pad']);
+        self::assertStringContainsString('photos terrain', strtolower((string) $owPhotosStore['title']));
+        self::assertStringContainsString('enregistrement', strtolower((string) $owPhotosStore['title']));
+        self::assertStringNotContainsString('uploads', strtolower((string) $owPhotosStore['activity']));
+        self::assertStringNotContainsString('storage', strtolower((string) $owPhotosStore['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owPhotosStore['activity']));
+        $owHoverDelete = DevDispatchCatalog::find('update', '729');
+        self::assertNotNull($owHoverDelete);
+        self::assertSame('00729', $owHoverDelete['number_pad']);
+        self::assertStringContainsString('suppr', strtolower((string) $owHoverDelete['title']));
+        self::assertStringContainsString('survol', strtolower((string) $owHoverDelete['title'] . ' ' . $owHoverDelete['activity']));
+        self::assertStringNotContainsString('keydown', strtolower((string) $owHoverDelete['activity']));
+        self::assertStringNotContainsString('json', strtolower((string) $owHoverDelete['activity']));
         $manifestText = DevDispatchCatalog::find('update', '697');
         self::assertNotNull($manifestText);
         self::assertSame('00697', $manifestText['number_pad']);

@@ -585,6 +585,9 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-north{position:absolute;right:12px;top:10px;z-index:6;width:26px;height:26px;display:grid;place-items:center;border:1px solid #27302d;background:#080b0acc;color:var(--athena-text);font-size:11px;font-weight:700}
 .ow-live-measure{position:absolute;left:52px;bottom:48px;z-index:6;background:#080b0acc;border:1px solid #27302d;padding:6px 10px;font-size:12px;font-weight:500;color:#dff9ef;max-width:min(560px,72vw);line-height:1.35}
 .ow-live-measure[hidden]{display:none}
+.ow-live-measure.is-delete{border-color:#8a3a42;color:#ffb4b9;background:#1a0c0ecc}
+.ow-map-stage.is-hover-delete{cursor:pointer}
+.ow-hover-delete-ring{pointer-events:none!important}
 .ow-freeze-banner{background:#3a1418ee;border:1px solid #c45a63;color:#f3c4c7;padding:7px 11px;font-size:12px;font-weight:600;max-width:min(440px,72%);border-radius:4px;pointer-events:none}
 .ow-freeze-banner[hidden]{display:none}
 .ow-marker.is-delayed i,.ow-marker.is-delayed .ow-cs{

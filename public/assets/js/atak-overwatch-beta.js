@@ -70,6 +70,11 @@
   var selected = null;
   var bftSectState = { live: false, offline: false };
   var ctxTarget = null;
+  var hoverDeleteTarget = null;
+  var hoverDeleteRing = null;
+  var hoverStyledLayer = null;
+  var hoverPrevStyle = null;
+  var hoverDeleteKey = '';
   var lastRx = 0;
   var requestStarted = 0;
   var pollMs = 5000;
@@ -3692,6 +3697,9 @@
 
   function setTool(tool, keepDraw) {
     var previous = activeTool;
+    if (tool !== 'cursor' && tool !== 'goto' && typeof clearHoverDelete === 'function') {
+      clearHoverDelete();
+    }
     if (previous === 'po' && tool !== 'po') {
       finishPoSession();
       try { map.doubleClickZoom.enable(); } catch (e) {}
@@ -4884,6 +4892,160 @@
     }
     if (btn) btn.hidden = !show;
     if (editBtn) editBtn.hidden = !(target && target.kind === 'arma');
+  }
+
+  function layerForDeleteTarget(target) {
+    if (!target || target.id == null) return null;
+    var id = String(target.id);
+    var kind = target.kind;
+    if (kind === 'ping') return pingMarkers[id] || null;
+    if (kind === 'marker') return postedMarkers[id] || null;
+    if (kind === 'arma') return armaMarkerLayers[id] || null;
+    if (kind === 'shape') return shapeLayers[id] || null;
+    if (kind === 'draft') return draftLayer || null;
+    if (kind === 'range' && window.OverwatchTools && typeof window.OverwatchTools.getRangeLayer === 'function') {
+      return window.OverwatchTools.getRangeLayer() || null;
+    }
+    if (kind === 'intercept') return window.__owInterceptLine || null;
+    if (kind === 'los') {
+      var found = null;
+      losGroups.forEach(function (group) {
+        if (found) return;
+        var pin = group && group._owPin;
+        if (pin && String(pin.id || 'los') === id) found = group;
+      });
+      return found;
+    }
+    return null;
+  }
+
+  function clearHoverDeletePaint() {
+    if (hoverStyledLayer && hoverPrevStyle && typeof hoverStyledLayer.setStyle === 'function') {
+      try { hoverStyledLayer.setStyle(hoverPrevStyle); } catch (eStyle) {}
+    }
+    hoverStyledLayer = null;
+    hoverPrevStyle = null;
+    if (hoverDeleteRing) {
+      try { map.removeLayer(hoverDeleteRing); } catch (eRing) {}
+      hoverDeleteRing = null;
+    }
+    var stage = document.getElementById('ow-map-stage');
+    if (stage) stage.classList.remove('is-hover-delete');
+  }
+
+  function clearHoverDelete() {
+    hoverDeleteTarget = null;
+    hoverDeleteKey = '';
+    clearHoverDeletePaint();
+    var live = document.getElementById('ow-live-measure');
+    if (live && live.classList.contains('is-delete')) {
+      live.classList.remove('is-delete');
+      live.hidden = true;
+      live.textContent = '';
+    }
+  }
+
+  function paintHoverDelete(target) {
+    clearHoverDeletePaint();
+    if (!target) return;
+    var layer = layerForDeleteTarget(target);
+    var ll = null;
+    if (layer && typeof layer.getLatLng === 'function') {
+      ll = layer.getLatLng();
+    } else if (layer && typeof layer.getBounds === 'function') {
+      try {
+        var b = layer.getBounds();
+        if (b && b.isValid && b.isValid()) ll = b.getCenter();
+      } catch (eB) {}
+    } else if (layer && typeof layer.getLatLngs === 'function') {
+      try {
+        var flat = [];
+        (function walk(rows) {
+          (rows || []).forEach(function (row) {
+            if (row && row.lat != null) flat.push(row);
+            else if (Array.isArray(row)) walk(row);
+          });
+        })(layer.getLatLngs());
+        if (flat.length) ll = L.latLngBounds(flat).getCenter();
+      } catch (eL) {}
+    }
+    if (layer && typeof layer.setStyle === 'function' && layer.options) {
+      hoverStyledLayer = layer;
+      hoverPrevStyle = {
+        color: layer.options.color,
+        weight: layer.options.weight,
+        opacity: layer.options.opacity,
+        fillOpacity: layer.options.fillOpacity,
+        fillColor: layer.options.fillColor,
+        dashArray: layer.options.dashArray
+      };
+      try {
+        layer.setStyle({
+          color: '#ee777f',
+          weight: Math.max(Number(layer.options.weight || 2) + 2, 3),
+          opacity: 1,
+          fillColor: layer.options.fillColor || '#ee777f',
+          fillOpacity: Math.min(0.5, Number(layer.options.fillOpacity || 0.15) + 0.18)
+        });
+      } catch (ePaint) {
+        hoverStyledLayer = null;
+        hoverPrevStyle = null;
+      }
+    }
+    if (ll) {
+      hoverDeleteRing = L.circleMarker(ll, {
+        radius: 14,
+        color: '#ee777f',
+        weight: 2,
+        opacity: 0.95,
+        fillColor: '#ee777f',
+        fillOpacity: 0.12,
+        interactive: false,
+        className: 'ow-hover-delete-ring'
+      }).addTo(map);
+    }
+    var stage = document.getElementById('ow-map-stage');
+    if (stage) stage.classList.add('is-hover-delete');
+  }
+
+  function syncHoverDelete(ll) {
+    if (!ll || (activeTool && activeTool !== 'cursor' && activeTool !== 'goto')) {
+      if (hoverDeleteTarget) clearHoverDelete();
+      return null;
+    }
+    if (dragPending || dragDrawOn || draftPoints.length) {
+      if (hoverDeleteTarget) clearHoverDelete();
+      return null;
+    }
+    var hit = hitDeletable(ll, null);
+    var key = hit ? (String(hit.kind) + ':' + String(hit.id)) : '';
+    if (key === hoverDeleteKey) return hoverDeleteTarget;
+    hoverDeleteKey = key;
+    hoverDeleteTarget = hit;
+    paintHoverDelete(hit);
+    return hit;
+  }
+
+  function paintHoverDeleteHud(extraMeasure) {
+    var live = document.getElementById('ow-live-measure');
+    if (!live) return;
+    if (extraMeasure) {
+      live.classList.remove('is-delete');
+      live.hidden = false;
+      live.textContent = extraMeasure.replace(/^ · /, '');
+      return;
+    }
+    if (hoverDeleteTarget) {
+      live.classList.add('is-delete');
+      live.hidden = false;
+      live.textContent = 'Suppr · ' + String(hoverDeleteTarget.label || 'Élément');
+      return;
+    }
+    if (live.classList.contains('is-delete')) {
+      live.classList.remove('is-delete');
+      live.hidden = true;
+      live.textContent = '';
+    }
   }
 
   function rememberClick(ll) {
@@ -7083,11 +7245,15 @@
       if (effectifsModalEsc && !effectifsModalEsc.hidden) { closeEffectifsModal(); return; }
       togglePalette(false); hideContext(); document.getElementById('ow-drawer').hidden = true; setTool('cursor');
     }
-    if ((event.key === 'Delete' || event.key === 'Backspace') && !document.getElementById('ow-context').hidden && ctxTarget) {
+    if ((event.key === 'Delete' || event.key === 'Backspace')) {
+      var ctxEl = document.getElementById('ow-context');
+      var ctxOpen = !!(ctxEl && !ctxEl.hidden && ctxTarget);
+      var toDrop = ctxOpen ? ctxTarget : hoverDeleteTarget;
+      if (!toDrop) return;
       event.preventDefault();
-      var toDrop = ctxTarget;
-      hideContext();
+      if (ctxOpen) hideContext();
       deleteMapTarget(toDrop);
+      clearHoverDelete();
       return;
     }
     if (event.key === 'm' || event.key === 'M') setTool('measure');
@@ -7111,12 +7277,15 @@
       extra = ' · ' + formatMeters(meters) + ' · ' + Math.round(bearingWorld(draftPoints[0], event.latlng)) + '°';
     }
     document.getElementById('ow-coordinate').textContent = gridLabel(event.latlng) + extra + ' · Direct';
-    var live = document.getElementById('ow-live-measure');
-    if (live) {
-      if (extra) { live.hidden = false; live.textContent = extra.replace(' · ', ''); }
-      else live.hidden = true;
-    }
+    if (!extra) syncHoverDelete(event.latlng);
+    else if (hoverDeleteTarget) clearHoverDelete();
+    paintHoverDeleteHud(extra);
   });
+  (function bindHoverLeave() {
+    var stage = document.getElementById('ow-map-stage');
+    if (!stage) return;
+    stage.addEventListener('mouseleave', function () { clearHoverDelete(); });
+  })();
 
   var rate = document.getElementById('ow-refresh-rate');
   try {
@@ -7435,6 +7604,9 @@
     handleWorldClick: handleWorldClick,
     handleWorldContext: handleWorldContext,
     openContextAt: openContextAt,
+    syncHoverDelete: syncHoverDelete,
+    clearHoverDelete: clearHoverDelete,
+    paintHoverDeleteHud: paintHoverDeleteHud,
     pickUnitAt: pickUnitAt,
     renderPresenceHeat: renderPresenceHeat,
     getPhotos: function () { return photos; },

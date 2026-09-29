@@ -35,4 +35,4 @@ Sans le rewrite Nginx `^~ /public`, le serveur cherche `public/public/uploads/�
 
 ## Statut
 
-Corrigé.
+Partiellement corrigé (URL). Voir aussi `2026-09-28-photos-recon-fichier-absent-disque.md` : même après URL canonique, le fichier peut être absent du disque.

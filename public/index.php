@@ -96,6 +96,17 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
     $candidate = $publicDir . str_replace('/', DIRECTORY_SEPARATOR, $requestPath);
     $realBase = realpath($publicDir);
     $realFile = is_file($candidate) ? realpath($candidate) : false;
+    // Repli : photos écrites sous storage/uploads/… si public/uploads/… est illisible.
+    if (($realFile === false || $realBase === false) && str_starts_with($requestPath, '/uploads/')) {
+        $storageCandidate = $root . DIRECTORY_SEPARATOR . 'storage' . str_replace('/', DIRECTORY_SEPARATOR, $requestPath);
+        $storageBase = realpath($root . DIRECTORY_SEPARATOR . 'storage');
+        $storageReal = is_file($storageCandidate) ? realpath($storageCandidate) : false;
+        if ($storageBase !== false && $storageReal !== false
+            && str_starts_with($storageReal, $storageBase . DIRECTORY_SEPARATOR)) {
+            $realBase = $storageBase;
+            $realFile = $storageReal;
+        }
+    }
     if ($realBase !== false && $realFile !== false && str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR)) {
         $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
         $mimes = [

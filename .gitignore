@@ -14,6 +14,8 @@ config/cdn_libraries.local.php
 !/storage/sessions/.gitkeep
 /storage/uploads/*
 !/storage/uploads/.gitkeep
+!/storage/uploads/recon/
+!/storage/uploads/recon/.gitkeep
 /storage/atak-mod/*
 !/storage/atak-mod/.gitkeep
 /storage/intel/*
@@ -24,6 +26,11 @@ config/cdn_libraries.local.php
 !/storage/map-tiles/.gitkeep
 /storage/snapshots/*
 !/storage/snapshots/.gitignore
+# Photos terrain / intel : hors Git (dossiers créés au déploiement)
+/public/uploads/recon/*
+!/public/uploads/recon/.gitkeep
+/public/uploads/intel/*
+!/public/uploads/intel/.gitkeep
 composer.lock
 
 # --- Exports / dumps de base : jamais dans le dépôt ---
