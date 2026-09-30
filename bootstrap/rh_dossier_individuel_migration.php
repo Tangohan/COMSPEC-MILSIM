@@ -69,6 +69,10 @@ return static function (PDO $pdo): void {
               `request_type` enum('unit_change','specialty_change','job_application','career_wish','assignment','advancement') NOT NULL,
               `target_unit_id` int unsigned DEFAULT NULL,
               `target_job_role_id` int unsigned DEFAULT NULL,
+              `target_kind` varchar(20) DEFAULT NULL,
+              `target_billet_id` int unsigned DEFAULT NULL,
+              `target_opening_id` int unsigned DEFAULT NULL,
+              `target_campaign_id` int unsigned DEFAULT NULL,
               `target_label` varchar(200) DEFAULT NULL,
               `motivation` text,
               `status` enum('pending','approved','rejected','cancelled','applied') NOT NULL DEFAULT 'pending',
@@ -94,6 +98,22 @@ return static function (PDO $pdo): void {
             );
         } catch (Throwable $e) {
             echo '  [ATTENTION] personnel_mobility_requests request_type : ' . $e->getMessage() . "\n";
+        }
+        foreach ([
+            'target_kind' => 'varchar(20) DEFAULT NULL AFTER `target_job_role_id`',
+            'target_billet_id' => 'int unsigned DEFAULT NULL AFTER `target_kind`',
+            'target_opening_id' => 'int unsigned DEFAULT NULL AFTER `target_billet_id`',
+            'target_campaign_id' => 'int unsigned DEFAULT NULL AFTER `target_opening_id`',
+        ] as $col => $ddl) {
+            if ($hasColumn('personnel_mobility_requests', $col)) {
+                continue;
+            }
+            try {
+                $pdo->exec('ALTER TABLE `personnel_mobility_requests` ADD COLUMN `' . $col . '` ' . $ddl);
+                echo "  personnel_mobility_requests.$col : colonne ajoutée.\n";
+            } catch (Throwable $e) {
+                echo '  [ATTENTION] personnel_mobility_requests.' . $col . ' : ' . $e->getMessage() . "\n";
+            }
         }
     }
 

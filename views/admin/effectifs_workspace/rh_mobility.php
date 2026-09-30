@@ -8,6 +8,8 @@ $typeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabels : [];
 $users = is_array($orgUsers ?? null) ? $orgUsers : [];
 $units = is_array($orgUnits ?? null) ? $orgUnits : [];
 $jobRoles = is_array($orgJobRoles ?? null) ? $orgJobRoles : [];
+$targetGroups = is_array($assignmentTargets ?? null) ? $assignmentTargets : [];
+$kindLabels = \App\Services\Personnel\AssignmentTargetCatalog::KIND_LABELS;
 $schemaReady = !empty($mobilitySchemaReady);
 $canManage = !empty($canManage);
 $statusFilter = (string) ($mobilityStatusFilter ?? 'pending');
@@ -108,6 +110,33 @@ $statusTone = [
             </div>
             <div class="eff-rh-field">
                 <span class="eff-rh-field__label">
+                    Poste, AAV ou offre
+                    <?php $rhTip('tip-mob-cible', 'À propos de la cible', 'Poste ORBAT, appel à volontaire (campagne d’avancement ou poste vacant) ou offre publiée.'); ?>
+                </span>
+                <select name="target_ref" aria-label="Poste, AAV ou offre">
+                    <option value="">Aucune</option>
+                    <?php
+                    $cibleGroups = [
+                        'postes' => 'Postes',
+                        'aav' => 'AAV · Appels à volontaire',
+                        'offres' => 'Offres',
+                    ];
+                    foreach ($cibleGroups as $gKey => $gLabel):
+                        $gRows = is_array($targetGroups[$gKey] ?? null) ? $targetGroups[$gKey] : [];
+                        if ($gRows === []) {
+                            continue;
+                        }
+                    ?>
+                        <optgroup label="<?= $h($gLabel) ?>">
+                            <?php foreach ($gRows as $row): ?>
+                                <option value="<?= $h((string) ($row['value'] ?? '')) ?>"><?= $h((string) ($row['label'] ?? '')) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="eff-rh-field">
+                <span class="eff-rh-field__label">
                     Unité d’accueil
                     <?php $rhTip('tip-mob-unit', 'À propos de l’unité', 'Unité visée par le mouvement. Laissez « Aucune » si seule la fonction change.'); ?>
                 </span>
@@ -179,6 +208,10 @@ $statusTone = [
                         $target = trim((string) ($r['target_label'] ?? ''));
                         if ($target === '') {
                             $target = trim((string) ($r['target_unit_name'] ?? ''));
+                        }
+                        $kind = (string) ($r['target_kind'] ?? '');
+                        if ($kind !== '' && isset($kindLabels[$kind])) {
+                            $target = $kindLabels[$kind] . ($target !== '' ? ' · ' . $target : '');
                         }
                         $mot = trim((string) ($r['motivation'] ?? ''));
                         $tone = $statusTone[$st] ?? '';

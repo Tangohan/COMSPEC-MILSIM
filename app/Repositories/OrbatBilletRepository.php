@@ -230,6 +230,40 @@ final class OrbatBilletRepository
     }
 
     /**
+     * Nombre de sièges pourvus (titulaire / intérim) par poste.
+     *
+     * @return array<int, int>
+     */
+    public function filledSeatCountsForTenant(int $tenantId, ?string $asOfDate = null): array
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return [];
+        }
+        $asOf = $asOfDate !== null && preg_match('/^\d{4}-\d{2}-\d{2}/', $asOfDate)
+            ? substr($asOfDate, 0, 10)
+            : date('Y-m-d');
+        $occSql = $this->columnExists('orbat_billet_holders', 'occupancy_type')
+            ? "AND (h.occupancy_type IN ('primary', 'acting') OR (h.occupancy_type IS NULL AND h.holder_role = 'PRIMARY'))"
+            : "AND h.holder_role = 'PRIMARY'";
+        $st = $this->pdo()->prepare(
+            "SELECT h.billet_id, COUNT(*) AS filled
+             FROM orbat_billet_holders h
+             WHERE h.tenant_id = ?
+               AND h.starts_at <= ?
+               AND (h.ends_at IS NULL OR h.ends_at >= ?)
+               {$occSql}
+             GROUP BY h.billet_id"
+        );
+        $st->execute([$tenantId, $asOf, $asOf]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) ($row['billet_id'] ?? 0)] = (int) ($row['filled'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public function assignHolder(int $tenantId, int $billetId, array $data): int

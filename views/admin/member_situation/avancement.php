@@ -12,6 +12,35 @@ $units = is_array($assignmentUnits ?? null) ? $assignmentUnits : [];
 $mobilityReady = !empty($mobilityReady);
 $typeLabels = is_array($mobilityTypeLabels ?? null) ? $mobilityTypeLabels : [];
 $statusLabels = is_array($mobilityStatusLabels ?? null) ? $mobilityStatusLabels : [];
+$targetGroups = is_array($assignmentTargets ?? null) ? $assignmentTargets : ['postes' => [], 'aav' => [], 'offres' => []];
+$kindLabels = \App\Services\Personnel\AssignmentTargetCatalog::KIND_LABELS;
+$renderTargets = static function () use ($h, $targetGroups): void {
+    $hasAny = ($targetGroups['postes'] ?? []) !== [] || ($targetGroups['aav'] ?? []) !== [] || ($targetGroups['offres'] ?? []) !== [];
+    echo '<label>Poste, AAV ou offre';
+    echo '<select name="target_ref">';
+    echo '<option value="">— Choisir —</option>';
+    if (!$hasAny) {
+        echo '<option value="" disabled>Aucun poste, AAV ni offre disponible</option>';
+    } else {
+        $groups = [
+            'postes' => 'Postes',
+            'aav' => 'AAV · Appels à volontaire',
+            'offres' => 'Offres',
+        ];
+        foreach ($groups as $key => $label) {
+            $rows = is_array($targetGroups[$key] ?? null) ? $targetGroups[$key] : [];
+            if ($rows === []) {
+                continue;
+            }
+            echo '<optgroup label="' . $h($label) . '">';
+            foreach ($rows as $row) {
+                echo '<option value="' . $h((string) ($row['value'] ?? '')) . '">' . $h((string) ($row['label'] ?? '')) . '</option>';
+            }
+            echo '</optgroup>';
+        }
+    }
+    echo '</select></label>';
+};
 $via = [
     'initial' => 'Grade initial',
     'anciennete' => 'Ancienneté',
@@ -101,6 +130,7 @@ foreach ($mobilityRequests as $row) {
                 <?php elseif (!empty($next['campaign_id'])): ?>
                     <form method="post" class="adv-form" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $next['campaign_id'] . '/volontaire')) ?>">
                         <?= \App\Core\Csrf::field() ?>
+                        <?php $renderTargets(); ?>
                         <label>
                             Motivation (facultatif)
                             <textarea name="notes" rows="2" maxlength="2000" placeholder="Précisez un poste ou un souhait d’affectation."></textarea>
@@ -112,6 +142,7 @@ foreach ($mobilityRequests as $row) {
                     <form method="post" class="adv-form" action="<?= $h(url('back-office/ma-situation/avancement/demande')) ?>">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="target_label" value="<?= $h((string) ($next['grade_label'] ?? '')) ?>">
+                        <?php $renderTargets(); ?>
                         <label>
                             Motivation
                             <textarea name="notes" rows="2" maxlength="2000" placeholder="Pourquoi demander ce grade maintenant ?"<?= $pendingAdvancement ? ' disabled' : '' ?>></textarea>
@@ -132,7 +163,7 @@ foreach ($mobilityRequests as $row) {
     <section class="adv-panel">
         <p class="adv-kicker">Demandes</p>
         <h2>Demande d’affectation</h2>
-        <p>Unité ou poste visé. L’encadrement traite la demande dans la mobilité interne.</p>
+        <p>Choisissez un poste, un AAV (appel à volontaire) ou une offre. L’encadrement traite la demande dans la mobilité interne.</p>
         <?php if (!$mobilityReady): ?>
             <p>Les demandes d’affectation ne sont pas encore disponibles.</p>
         <?php elseif ($pendingAssignment): ?>
@@ -140,6 +171,7 @@ foreach ($mobilityRequests as $row) {
         <?php else: ?>
             <form method="post" class="adv-form" action="<?= $h(url('back-office/ma-situation/avancement/affectation')) ?>">
                 <?= \App\Core\Csrf::field() ?>
+                <?php $renderTargets(); ?>
                 <?php if ($units !== []): ?>
                     <label>
                         Unité visée
@@ -152,8 +184,8 @@ foreach ($mobilityRequests as $row) {
                     </label>
                 <?php endif; ?>
                 <label>
-                    Poste / libellé
-                    <input type="text" name="target_label" maxlength="200" placeholder="Ex. Chef d’équipe, radio…">
+                    Précision (facultatif)
+                    <input type="text" name="target_label" maxlength="200" placeholder="Complément si la liste ne suffit pas">
                 </label>
                 <label>
                     Motivation
@@ -169,7 +201,11 @@ foreach ($mobilityRequests as $row) {
                 <?php foreach ($mobilityRequests as $row): ?>
                     <li>
                         <strong><?= $h((string) ($typeLabels[$row['request_type'] ?? ''] ?? $row['request_type'] ?? '')) ?></strong>
-                        <span><?= $h((string) ($statusLabels[$row['status'] ?? ''] ?? $row['status'] ?? '')) ?><?php $tl = trim((string) ($row['target_label'] ?? '')); if ($tl !== ''): ?> · <?= $h($tl) ?><?php endif; ?></span>
+                        <span><?= $h((string) ($statusLabels[$row['status'] ?? ''] ?? $row['status'] ?? '')) ?><?php
+                            $kind = (string) ($row['target_kind'] ?? '');
+                            if ($kind !== '' && isset($kindLabels[$kind])): ?> · <?= $h($kindLabels[$kind]) ?><?php endif;
+                            $tl = trim((string) ($row['target_label'] ?? ''));
+                            if ($tl !== ''): ?> · <?= $h($tl) ?><?php endif; ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -210,8 +246,9 @@ foreach ($mobilityRequests as $row) {
             <?php if (!empty($offer['already_volunteered'])): ?>
                 <p>Votre candidature est déjà enregistrée.</p>
             <?php elseif (!empty($offer['is_eligible'])): ?>
-                <form method="post" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
+                <form method="post" class="adv-form" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
                     <?= \App\Core\Csrf::field() ?>
+                    <?php $renderTargets(); ?>
                     <button class="ath-btn ath-btn--solid" type="submit">Me porter volontaire</button>
                 </form>
             <?php endif; ?>
