@@ -1655,7 +1655,24 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     var childRead = (typeof child.readinessScore === "number") ? (child.readinessScore + "% ready") : "n/d";
                     var childStatus = child.adminStatusLabel || getStatusLabel(child.adminStatus || child.status || "active");
                     row.innerHTML = "<div><p class=\"font-black uppercase text-[11px] tracking-[0.14em]\">" + escapeHtml(child.label || "—") + "</p><p class=\"text-xs text-slate-500 font-medium\">" + escapeHtml(child.role || "—") + "</p></div><div class=\"text-right\"><p class=\"text-[10px] font-black uppercase\">" + (child.strength || 0) + " pax</p><p class=\"text-[10px] text-slate-500 font-bold uppercase\">" + childRead + " · " + escapeHtml(childStatus) + "</p></div>";
-                    row.addEventListener("click", function() { selectNode(child); });
+                    row.addEventListener("click", function() {
+                        // Déplier les ancêtres puis recentrer la carte (branches hors viewport)
+                        flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
+                        renderAllViews(filteredTree(currentSearch));
+                        selectNode(child);
+                        window.setTimeout(function() {
+                            var uid = child.unitId || 0;
+                            var card = uid > 0
+                                ? document.querySelector('.orbat-node-card[data-unit-id="' + uid + '"]')
+                                : document.querySelector('.orbat-node-card[data-node-id="' + String(child.id || '') + '"]');
+                            if (card) {
+                                try { card.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }); }
+                                catch (e) { card.scrollIntoView(true); }
+                                card.classList.add("orbat-node-card--focus");
+                                window.setTimeout(function() { card.classList.remove("orbat-node-card--focus"); }, 2200);
+                            }
+                        }, 40);
+                    });
                     childrenBox.appendChild(row);
                 });
             }
