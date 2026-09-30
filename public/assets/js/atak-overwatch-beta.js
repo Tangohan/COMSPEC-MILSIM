@@ -6517,6 +6517,17 @@
     var workspace = document.querySelector('.ow-workspace');
     workspace.classList.toggle('is-comms', name === 'comms');
     workspace.classList.toggle('is-settings', name === 'layers');
+    if (name === 'orbat') {
+      restoreOpsPanels();
+      if (window.OverwatchOrbat && typeof window.OverwatchOrbat.activate === 'function') {
+        window.OverwatchOrbat.activate();
+      }
+      map.invalidateSize();
+      return;
+    }
+    if (window.OverwatchOrbat && typeof window.OverwatchOrbat.deactivate === 'function' && name !== 'orbat') {
+      window.OverwatchOrbat.deactivate();
+    }
     if (name === 'overwatch') { restoreOpsPanels(); document.getElementById('ow-drawer').hidden = true; map.invalidateSize(); return; }
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
     if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }

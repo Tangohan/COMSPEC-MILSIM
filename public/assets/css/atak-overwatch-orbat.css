@@ -1,0 +1,227 @@
+/**
+ * Overwatch Beta — panneau ORBAT (arbre gauche + inspecteur + menu contextuel).
+ */
+.ow-workspace.is-orbat .ow-settings-body { display: none; }
+.ow-orbat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.ow-orbat-panel[hidden] { display: none !important; }
+
+.ow-orbat-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--athena-line, #1c2622);
+  flex: 0 0 auto;
+}
+.ow-orbat-toolbar .ow-search {
+  margin: 0;
+}
+.ow-orbat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ow-orbat-actions .ow-secondary {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ow-orbat-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 8px 16px;
+}
+.ow-orbat-empty {
+  margin: 12px 8px;
+  font-size: 12px;
+  color: var(--athena-muted, #8a9a93);
+  line-height: 1.45;
+}
+.ow-orbat-tree > .ow-secondary,
+.ow-orbat-tree > a.ow-secondary {
+  display: inline-flex;
+  margin: 0 8px 12px;
+  text-decoration: none;
+}
+
+.ow-orbat-node {
+  border: 0;
+  margin: 0 0 2px;
+  background: transparent;
+}
+.ow-orbat-node > summary {
+  list-style: none;
+}
+.ow-orbat-node > summary::-webkit-details-marker { display: none; }
+
+.ow-orbat-sum {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto auto;
+  gap: 6px;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.ow-orbat-sum:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.ow-orbat-node.is-selected > .ow-orbat-sum {
+  background: rgba(11, 138, 92, 0.14);
+  border-color: rgba(11, 138, 92, 0.45);
+}
+.ow-orbat-node.is-gap > .ow-orbat-sum {
+  box-shadow: inset 2px 0 0 #c98a12;
+}
+.ow-orbat-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e8f0ec;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ow-orbat-code {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f948a;
+}
+.ow-orbat-str {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9fb0a8;
+}
+.ow-orbat-warn {
+  color: #d4a017;
+  font-size: 11px;
+}
+.ow-orbat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4a5852;
+  justify-self: center;
+}
+.ow-orbat-dot.is-live { background: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
+.ow-orbat-dot.is-gap { background: #d4a017; }
+.ow-orbat-dot.is-idle { background: #5b676d; }
+
+.ow-orbat-kids {
+  margin: 0 0 0 10px;
+  padding: 0 0 0 8px;
+  border-left: 1px solid rgba(127, 148, 138, 0.28);
+}
+
+.ow-orbat-insp { padding: 0 2px 8px; }
+.ow-orbat-insp-type {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7f948a;
+}
+.ow-orbat-insp-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.ow-orbat-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(212, 160, 23, 0.45);
+  background: rgba(212, 160, 23, 0.1);
+  color: #f0d78c;
+  font-size: 12px;
+}
+.ow-orbat-gap strong { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.ow-orbat-member {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ow-orbat-member:hover { border-color: rgba(11, 138, 92, 0.5); }
+.ow-orbat-member.is-live strong { color: #22c55e; }
+.ow-orbat-member.is-stale strong { color: #d4a017; }
+.ow-orbat-member.is-missing strong { color: #9aa59f; }
+.ow-orbat-member span { font-size: 12px; font-weight: 700; }
+.ow-orbat-member strong { font-size: 10px; letter-spacing: 0.08em; }
+
+.ow-orbat-ctx {
+  position: fixed;
+  z-index: 40;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 6px 0;
+  background: #0c1210;
+  border: 1px solid #2a3832;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  color: #e8f0ec;
+}
+.ow-orbat-ctx[hidden] { display: none !important; }
+.ow-orbat-ctx-title {
+  padding: 6px 12px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a8bdb4;
+  border-bottom: 1px solid #1c2622;
+  margin-bottom: 4px;
+}
+.ow-orbat-ctx button {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.ow-orbat-ctx button:hover { background: rgba(11, 138, 92, 0.16); }
+.ow-orbat-ctx hr {
+  border: 0;
+  border-top: 1px solid #1c2622;
+  margin: 4px 0;
+}
+
+@media (max-width: 900px) {
+  .ow-workspace.is-orbat .ow-settings { transform: none; }
+}

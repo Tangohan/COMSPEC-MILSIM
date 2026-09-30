@@ -7,6 +7,8 @@ $assetVer = platform_app_version();
 $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-beta.css'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-beta.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-orbat.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-orbat.css'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-aerial.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
@@ -61,6 +63,7 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-orbat.css?v=<?= $h($owAsset) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -86,6 +89,7 @@ $icon = static function (string $path): string {
     <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
       <button type="button" class="is-active" data-view="overwatch">Overwatch</button>
+      <button type="button" data-view="orbat">ORBAT</button>
       <button type="button" data-view="comms">Ordre</button>
       <button type="button" data-view="mission">Mission</button>
       <button type="button" data-view="air">Air</button>
@@ -148,6 +152,21 @@ $icon = static function (string $path): string {
         <span class="ow-aside-title">Réglages du poste</span>
         <button type="button" class="ow-collapse" data-ow-collapse-settings title="Rabattre les réglages" aria-expanded="true">‹</button>
       </header>
+      <div class="ow-orbat-panel" id="ow-orbat-panel" hidden>
+        <div class="ow-orbat-toolbar">
+          <label class="ow-search">
+            <span>⌕</span>
+            <input id="ow-orbat-search" type="search" placeholder="Unité, code, indicatif…" autocomplete="off">
+          </label>
+          <div class="ow-orbat-actions">
+            <button type="button" class="ow-secondary" data-orbat-expand>Tout ouvrir</button>
+            <button type="button" class="ow-secondary" data-orbat-collapse>Tout fermer</button>
+            <button type="button" class="ow-secondary" data-orbat-reload>Actualiser</button>
+          </div>
+          <p class="ow-help">ORBAT planifié + observations BFT (callsign / ID militaire). Clic = inspecteur · clic droit = actions.</p>
+        </div>
+        <div id="ow-orbat-tree" class="ow-orbat-tree" aria-label="Arbre ORBAT"></div>
+      </div>
       <div class="ow-settings-body">
         <p class="ow-kicker">Situation</p>
         <div class="ow-stats" id="ow-stats">
@@ -763,6 +782,19 @@ $icon = static function (string $path): string {
     </aside>
   </main>
 
+<div class="ow-orbat-ctx" id="ow-orbat-ctx" hidden role="menu" aria-label="Actions ORBAT">
+  <div class="ow-orbat-ctx-title" data-orbat-ctx-title>Unité</div>
+  <button type="button" data-orbat-ctx="open">Ouvrir la fiche</button>
+  <button type="button" data-orbat-ctx="center">Centrer sur la carte</button>
+  <button type="button" data-orbat-ctx="follow">Suivre sur la carte</button>
+  <hr>
+  <button type="button" data-orbat-ctx="order">Créer un ordre</button>
+  <button type="button" data-orbat-ctx="sitrep">Demander un SITREP</button>
+  <hr>
+  <button type="button" data-orbat-ctx="fiche">Éditeur ORBAT</button>
+  <button type="button" data-orbat-ctx="hide">Masquer / afficher</button>
+</div>
+
   <footer class="ow-footer">
     <b id="ow-footer-link">Liaison</b>
     <span id="ow-latency">Rx —</span>
@@ -787,7 +819,7 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE et au CASEVAC. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
+    <p>À gauche, les fonds, le relief et les couches — ou l’ORBAT (bouton ORBAT en haut) : arbre planifié croisé avec le BFT observé, inspecteur à droite, clic droit pour centrer / suivre / SITREP. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE et au CASEVAC. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
@@ -942,6 +974,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchTileCache.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>
