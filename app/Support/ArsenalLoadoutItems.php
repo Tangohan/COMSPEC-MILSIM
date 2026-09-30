@@ -63,6 +63,70 @@ final class ArsenalLoadoutItems
         return $decoded;
     }
 
+    /**
+     * Titre d’affichage d’une tenue (nom technique nettoyé pour la grille catalogue).
+     */
+    public static function formatWardrobeTitle(string $name): string
+    {
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+        if ($name === '') {
+            return 'Tenue';
+        }
+        $name = preg_replace('/\s*[-–—]\s*/u', ' · ', $name) ?? $name;
+        $name = preg_replace('/\s*·\s*/u', ' · ', $name) ?? $name;
+
+        return $name;
+    }
+
+    /**
+     * Catégories présentes dans le loadout (filtres catalogue).
+     *
+     * @return list<string> clothing|vest|helmet|backpack|accessory
+     */
+    public static function presentKinds(string $payload): array
+    {
+        $loadout = self::parse($payload);
+        if ($loadout === []) {
+            return [];
+        }
+        $kinds = [];
+        if (self::slotHasGear($loadout[3] ?? null, true)) {
+            $kinds[] = 'clothing';
+        }
+        if (self::slotHasGear($loadout[4] ?? null, true)) {
+            $kinds[] = 'vest';
+        }
+        if (self::slotHasGear($loadout[5] ?? null, true)) {
+            $kinds[] = 'backpack';
+        }
+        if (is_string($loadout[6] ?? null) && trim((string) $loadout[6]) !== '') {
+            $kinds[] = 'helmet';
+        }
+        $hasAccessory = (is_string($loadout[7] ?? null) && trim((string) $loadout[7]) !== '')
+            || self::assignedHasGear($loadout[9] ?? null);
+        if ($hasAccessory) {
+            $kinds[] = 'accessory';
+        }
+
+        return $kinds;
+    }
+
+    /**
+     * Libellés du référentiel de types (filtre catalogue).
+     *
+     * @return array<string, string>
+     */
+    public static function kindLabels(): array
+    {
+        return [
+            'clothing' => 'Vêtement',
+            'vest' => 'Gilet / Porte-plaques',
+            'helmet' => 'Casque',
+            'backpack' => 'Sac',
+            'accessory' => 'Accessoire',
+        ];
+    }
+
     public static function displayName(string $class): string
     {
         $class = trim($class);
@@ -246,6 +310,34 @@ final class ArsenalLoadoutItems
         }
 
         return $items;
+    }
+
+    private static function slotHasGear(mixed $slot, bool $container): bool
+    {
+        if ($container) {
+            if (!is_array($slot) || $slot === []) {
+                return false;
+            }
+            $containerClass = $slot[0] ?? '';
+
+            return is_string($containerClass) && trim($containerClass) !== '';
+        }
+
+        return is_string($slot) && trim($slot) !== '';
+    }
+
+    private static function assignedHasGear(mixed $slot): bool
+    {
+        if (!is_array($slot)) {
+            return false;
+        }
+        foreach ($slot as $cls) {
+            if (is_string($cls) && trim($cls) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
