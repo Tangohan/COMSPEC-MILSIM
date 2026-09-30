@@ -2846,3 +2846,146 @@ html.community-landing--lightbox-open {
   }
 }
 
+
+/* --------------------------------------------------------------------------
+ * Signaux publics DSFR — alerte, créneaux, réseaux, CTA sticky
+ * -------------------------------------------------------------------------- */
+.cl-signals {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f6f6f6;
+}
+.cl-signals__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.15rem 0 1.35rem;
+}
+@media (min-width: 900px) {
+  .cl-signals__inner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+}
+.cl-alert {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 18rem;
+  min-width: 0;
+  border: 1px solid #ddd;
+  background: #e8edff;
+}
+.cl-alert--warning { background: #ffe9e6; }
+.cl-alert--success { background: #e6f6eb; }
+.cl-alert__mark {
+  flex: 0 0 4px;
+  background: #0063cb;
+}
+.cl-alert--warning .cl-alert__mark { background: #b34000; }
+.cl-alert--success .cl-alert__mark { background: #18753c; }
+.cl-alert__body { padding: 0.85rem 1rem; min-width: 0; }
+.cl-alert__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #0063cb;
+}
+.cl-alert--warning .cl-alert__kicker { color: #b34000; }
+.cl-alert--success .cl-alert__kicker { color: #18753c; }
+.cl-alert__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #161616;
+}
+.cl-schedule {
+  flex: 0 1 14rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #ddd;
+  border-left: 3px solid #047857;
+  background: #fff;
+}
+.cl-schedule__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #047857;
+}
+.cl-schedule__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #161616;
+  font-weight: 600;
+}
+.cl-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-left: auto;
+}
+.cl-social__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #161616;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.cl-social__link:hover {
+  border-color: #047857;
+  background: #f0fdf6;
+  color: #047857;
+}
+.cl-sticky-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(22, 22, 22, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+.cl-sticky-cta[hidden] { display: none !important; }
+.cl-sticky-cta__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.cl-sticky-cta__kicker {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.cl-sticky-cta__title {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .cl-sticky-cta__copy { min-width: 0; }
+  .cl-sticky-cta__title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 12rem;
+  }
+}
+

@@ -179,6 +179,7 @@ if ($registryCount === 0) {
 
         <div class="cr-chips" role="group" aria-label="Filtrer par recrutement">
           <button type="button" class="cr-chip is-active" data-cr-filter="all" aria-pressed="true">Toutes</button>
+          <button type="button" class="cr-chip" data-cr-filter="featured" aria-pressed="false">À la une</button>
           <button type="button" class="cr-chip" data-cr-filter="open" aria-pressed="false">Recrutement ouvert</button>
           <button type="button" class="cr-chip" data-cr-filter="closed" aria-pressed="false">Recrutement fermé</button>
         </div>
@@ -206,6 +207,10 @@ if ($registryCount === 0) {
           $code = trim((string) ($t['community_code'] ?? ''));
           $logoUrl = trim((string) ($t['logo_url'] ?? ''));
           $locked = !empty($t['registry_locked']);
+          $recruitOpen = array_key_exists('registry_recruitment_open', $t)
+              ? !empty($t['registry_recruitment_open'])
+              : !$locked;
+          $featured = !empty($t['registry_featured']);
           $simpleReg = !empty($t['registry_simple_reg']);
           $excerpt = trim((string) ($t['registry_excerpt'] ?? ''));
           $styleBadgeLabels = is_array($t['registry_style_badge_labels'] ?? null) ? $t['registry_style_badge_labels'] : [];
@@ -224,6 +229,7 @@ if ($registryCount === 0) {
               $gameLabel,
               $excerpt,
               $simpleReg ? 'inscription simple' : 'parcours milsim',
+              $featured ? 'à la une mise en avant' : '',
               implode(' ', array_map('strval', $styleBadgeLabels)),
               implode(' ', array_map('strval', $registryTagLabels)),
               $unitAffiliationLabel,
@@ -233,9 +239,11 @@ if ($registryCount === 0) {
           $delayClass = 'cr-rise cr-rise-d' . min(3, 1 + ($i % 3));
           ?>
         <li
-          class="cr-card <?= $delayClass ?>"
+          class="cr-card <?= $delayClass ?><?= $featured ? ' cr-card--featured' : '' ?>"
           data-cr-card
           data-cr-locked="<?= $locked ? '1' : '0' ?>"
+          data-cr-open="<?= $recruitOpen ? '1' : '0' ?>"
+          data-cr-featured="<?= $featured ? '1' : '0' ?>"
           data-cr-search="<?= htmlspecialchars($searchBlob, ENT_QUOTES, 'UTF-8') ?>"
           data-cr-game="<?= htmlspecialchars(mb_strtolower($gameLabel), ENT_QUOTES, 'UTF-8') ?>"
           data-cr-unit="<?= htmlspecialchars(mb_strtolower($unitAffiliationLabel), ENT_QUOTES, 'UTF-8') ?>"
@@ -251,7 +259,10 @@ if ($registryCount === 0) {
             <div class="cr-card__scrim" aria-hidden="true"></div>
 
             <div class="cr-card__badges">
-              <?php if (!$locked): ?>
+              <?php if ($featured): ?>
+              <span class="cr-pill cr-pill--featured">À la une</span>
+              <?php endif; ?>
+              <?php if ($recruitOpen): ?>
               <span class="cr-pill cr-pill--live"><span class="cr-pulse" aria-hidden="true"></span> Recrutement ouvert</span>
               <?php else: ?>
               <span class="cr-pill cr-pill--warn">Recrutement fermé</span>
@@ -417,12 +428,17 @@ if ($registryCount === 0) {
     var visible = 0;
     cards.forEach(function (card) {
       var locked = card.getAttribute('data-cr-locked') === '1';
+      var open = card.getAttribute('data-cr-open') === '1' || (!locked && card.getAttribute('data-cr-open') === null);
+      var featured = card.getAttribute('data-cr-featured') === '1';
       var blob = card.getAttribute('data-cr-search') || '';
       var cardGame = card.getAttribute('data-cr-game') || '';
       var cardUnit = card.getAttribute('data-cr-unit') || '';
       var cardType = ' ' + (card.getAttribute('data-cr-type') || '') + ' ';
       var cardLang = card.getAttribute('data-cr-lang') || '';
-      var okFilter = filter === 'all' || (filter === 'open' && !locked) || (filter === 'closed' && locked);
+      var okFilter = filter === 'all'
+        || (filter === 'featured' && featured)
+        || (filter === 'open' && open)
+        || (filter === 'closed' && !open);
       var okSearch = !query || blob.indexOf(query) !== -1;
       var okGame = !game || cardGame === game;
       var okUnit = !unit || cardUnit === unit;

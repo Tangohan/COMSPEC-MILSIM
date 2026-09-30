@@ -103,6 +103,8 @@ class TenantRepository
             $row['registry_locale_label'] = (string) ($meta['locale_label'] ?? '');
             $row['registry_locked'] = !empty($community['community_locked']);
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
+            $row['registry_featured'] = !empty($meta['featured']);
+            $row['registry_recruitment_open'] = !empty($meta['recruitment_open']);
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
             $excerpt = $meta['tagline'];
             if ($excerpt === '' && $welcome !== '') {
@@ -117,6 +119,17 @@ class TenantRepository
             unset($row['settings']);
             $out[] = $row;
         }
+
+        // Mise en avant d’abord, puis ordre alphabétique.
+        usort($out, static function (array $a, array $b): int {
+            $fa = !empty($a['registry_featured']) ? 0 : 1;
+            $fb = !empty($b['registry_featured']) ? 0 : 1;
+            if ($fa !== $fb) {
+                return $fa <=> $fb;
+            }
+
+            return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
 
         return $out;
     }

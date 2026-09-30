@@ -134,16 +134,22 @@ $profileChecklist = [
         'Prérequis (page publique)' => $prereqRows !== [] && trim((string) ($prereqRows[0]['label'] ?? '')) !== '',
         'Étapes de recrutement' => $stepRows !== [] && trim((string) ($stepRows[0]['title'] ?? '')) !== '',
         'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
+        'Meta description SEO' => trim((string) ($c['public_meta_description'] ?? '')) !== '',
+        'Accroche registre' => trim((string) ($c['registry_tagline'] ?? '')) !== '' || trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
     ],
     'Visuel' => [
         'Image registre' => $registryCoverUrl !== null && trim((string) $registryCoverUrl) !== '',
         'Badges registre / style de jeu' => $selectedBadges !== [] || $selectedRegistryTags !== [],
         'Doctrine / accès' => trim((string) ($c['public_doctrine'] ?? '')) !== '' || trim((string) ($c['public_access_label'] ?? '')) !== '',
+        'Alerte / créneaux vitrine' => trim((string) ($c['public_highlight_body'] ?? '')) !== '' || trim((string) ($c['public_schedule_body'] ?? '')) !== '',
     ],
     'Liens' => [
         'Canal Discord' => trim((string) ($c['contact_discord_url'] ?? '')) !== '',
         'E-mail de contact' => trim((string) ($c['contact_email'] ?? '')) !== '',
         'Formulaire contact public' => !empty($c['contact_form_enabled']),
+        'Site / YouTube / TeamSpeak' => trim((string) ($c['public_social_website'] ?? '')) !== ''
+            || trim((string) ($c['public_social_youtube'] ?? '')) !== ''
+            || trim((string) ($c['public_social_teamspeak'] ?? '')) !== '',
     ],
     'Événements' => [
         'Module événements activé (vitrine)' => !empty($pm['events']),
@@ -357,6 +363,87 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <input type="checkbox" name="public_roster_enabled" value="1" class="mt-1" <?= !empty($c['public_roster_enabled']) ? 'checked' : '' ?>>
                 <span class="text-sm text-slate-700">Activer le tableau roster public (membres avec opt-in)</span>
             </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="hidden" name="public_sticky_cta_enabled" value="0">
+                <input type="checkbox" name="public_sticky_cta_enabled" value="1" class="mt-1" <?= !array_key_exists('public_sticky_cta_enabled', $c) || !empty($c['public_sticky_cta_enabled']) ? 'checked' : '' ?>>
+                <span class="text-sm text-slate-700">Barre d’action flottante en bas de la vitrine (CTA recrutement)</span>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="hidden" name="registry_featured" value="0">
+                <input type="checkbox" name="registry_featured" value="1" class="mt-1" <?= !empty($c['registry_featured']) ? 'checked' : '' ?>>
+                <span class="text-sm text-slate-700">Mettre en avant dans le registre public (badge + priorité d’affichage)</span>
+            </label>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">SEO &amp; registre</h3>
+                <p class="text-[11px] text-slate-500">Titre et description utilisés pour le partage (réseaux, Google) et l’accroche de la carte registre.</p>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre SEO (optionnel)</label>
+                        <input type="text" name="public_meta_title" value="<?= htmlspecialchars((string) ($c['public_meta_title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. 1er RPIMa — Unité MILSIM">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Accroche registre (court)</label>
+                        <input type="text" name="registry_tagline" value="<?= htmlspecialchars((string) ($c['registry_tagline'] ?? '')) ?>" maxlength="220" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Une phrase pour la carte annuaire">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Meta description SEO</label>
+                    <textarea name="public_meta_description" rows="2" maxlength="320" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="160–220 caractères recommandés pour le référencement et le partage."><?= htmlspecialchars((string) ($c['public_meta_description'] ?? '')) ?></textarea>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Alerte &amp; créneaux (vitrine)</h3>
+                <p class="text-[11px] text-slate-500">Bandeau type alerte DSFR sous le hero, plus une ligne « créneaux » pour les sessions régulières.</p>
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Style d’alerte</label>
+                        <?php $hlStyleSel = in_array(($c['public_highlight_style'] ?? 'info'), ['info', 'warning', 'success'], true) ? (string) $c['public_highlight_style'] : 'info'; ?>
+                        <select name="public_highlight_style" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                            <option value="info" <?= $hlStyleSel === 'info' ? 'selected' : '' ?>>Information</option>
+                            <option value="warning" <?= $hlStyleSel === 'warning' ? 'selected' : '' ?>>Attention</option>
+                            <option value="success" <?= $hlStyleSel === 'success' ? 'selected' : '' ?>>Ouverture / succès</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre de l’alerte</label>
+                        <input type="text" name="public_highlight_title" value="<?= htmlspecialchars((string) ($c['public_highlight_title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Session de recrutement en cours">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte de l’alerte</label>
+                    <textarea name="public_highlight_body" rows="2" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_highlight_body'] ?? '')) ?></textarea>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Libellé créneaux</label>
+                        <input type="text" name="public_schedule_label" value="<?= htmlspecialchars((string) ($c['public_schedule_label'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Créneaux hebdo">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Détail des créneaux</label>
+                        <input type="text" name="public_schedule_body" value="<?= htmlspecialchars((string) ($c['public_schedule_body'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ven. 20h–23h · Dim. ops">
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Réseaux &amp; présence</h3>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Site web</label>
+                        <input type="url" name="public_social_website" value="<?= htmlspecialchars((string) ($c['public_social_website'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Chaîne YouTube</label>
+                        <input type="url" name="public_social_youtube" value="<?= htmlspecialchars((string) ($c['public_social_youtube'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://youtube.com/…">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">TeamSpeak / adresse vocale</label>
+                        <input type="text" name="public_social_teamspeak" value="<?= htmlspecialchars((string) ($c['public_social_teamspeak'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="ts.exemple.net ou ts3server://…">
+                    </div>
+                </div>
             </div>
 
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
