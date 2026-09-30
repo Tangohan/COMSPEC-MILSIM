@@ -25,7 +25,7 @@ $format = static function (string $iso) use ($h): string {
         <p class="adv-kicker">Grade actuel <?= adv_info('Grade actuel', 'Ligne d’historique ouverte : elle n’est jamais réécrite. Un nouveau grade ajoute une ligne et clôture la précédente.') ?></p>
         <?php if ($current === null): ?>
             <h2>Aucun grade enregistré</h2>
-            <p>Le grade détenu apparaît ici dès qu’une ligne d’historique est ouverte.</p>
+            <p>Le grade de la fiche (dossier personnel) est repris ici dès qu’il est renseigné. Sinon, une ligne d’historique s’ouvre à la première attribution.</p>
         <?php else: ?>
             <h2><?= $h((string) ($current['label'] ?? '')) ?></h2>
             <p>Depuis le <?= $format((string) ($current['obtained_at'] ?? '')) ?> · <?= $h($via[(string) ($current['obtained_via'] ?? '')] ?? (string) ($current['obtained_via'] ?? '')) ?></p>

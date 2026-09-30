@@ -174,6 +174,55 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame(2, (int) $active['grade_id']);
     }
 
+    public function testMonAvancementReprendLeGradeDeLaFiche(): void
+    {
+        $pdo = $this->pdo();
+        $pdo->exec('ALTER TABLE users ADD COLUMN grade_id INT');
+        $pdo->exec('ALTER TABLE users ADD COLUMN created_at TEXT');
+        $pdo->exec('CREATE TABLE personnel_profiles (user_id INT, rank_display TEXT)');
+        $pdo->exec('CREATE TABLE grades (id INTEGER PRIMARY KEY, code TEXT, label_long TEXT, label_short TEXT)');
+        $pdo->exec("INSERT INTO grades (id, code, label_long, label_short) VALUES (40, 'PFC', 'Private First Class', 'PFC')");
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, short_label, rank_order, advancement_seniority_enabled, advancement_choice_enabled) VALUES (5, 7, 'PFC', 'Private First Class', 'PFC', 3, 1, 0)");
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status, grade_id, created_at) VALUES (11, 7, 'Jake', 'jake@example.test', 'active', 40, '2024-03-01')");
+        $pdo->exec("INSERT INTO personnel_profiles (user_id, rank_display) VALUES (11, 'Airman First Class')");
+
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+
+        $panel = $workflow->personnelPanel(7, 11, new DateTimeImmutable('2026-09-30'));
+        self::assertSame('Airman First Class', (string) ($panel['current']['label'] ?? ''));
+        self::assertSame('initial', (string) ($panel['current']['obtained_via'] ?? ''));
+        self::assertSame('2024-03-01', (string) ($panel['current']['obtained_at'] ?? ''));
+        self::assertSame(5, (int) ($panel['current']['grade_id'] ?? 0));
+        self::assertCount(1, $panel['history']);
+        $again = $workflow->personnelPanel(7, 11, new DateTimeImmutable('2026-09-30'));
+        self::assertCount(1, $again['history']);
+    }
+
+    public function testMonAvancementAfficheLeTitreDeFicheMemeSansEchelle(): void
+    {
+        $pdo = $this->pdo();
+        $pdo->exec('ALTER TABLE users ADD COLUMN grade_id INT');
+        $pdo->exec('CREATE TABLE personnel_profiles (user_id INT, rank_display TEXT)');
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status, grade_id) VALUES (12, 7, 'Jake', 'jake2@example.test', 'active', 0)");
+        $pdo->exec("INSERT INTO personnel_profiles (user_id, rank_display) VALUES (12, 'Airman First Class')");
+
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+
+        $panel = $workflow->personnelPanel(7, 12, new DateTimeImmutable('2026-09-30'));
+        self::assertSame('Airman First Class', (string) ($panel['current']['label'] ?? ''));
+        self::assertSame([], $panel['history']);
+    }
+
     public function testClassementAutomatiqueEtDetections(): void
     {
         $svc = new AdvancementRankingService();

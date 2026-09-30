@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Advancement;
 
 use App\Repositories\AdvancementRepository;
+use App\Repositories\GradeRepository;
 use DateTimeImmutable;
 use RuntimeException;
+use Throwable;
 
 /**
  * Campagnes au choix et avancement automatique à l'ancienneté.
@@ -407,9 +409,14 @@ final class AdvancementWorkflowService
         if (!$this->repository->tablesReady()) {
             return ['current' => null, 'history' => [], 'offer' => null];
         }
-        $current = $this->repository->activeGrade($tenantId, $personnelId);
+        $this->syncHistoryFromFiche($tenantId, $personnelId, $today);
+        $current = $this->withFicheDisplayLabel(
+            $tenantId,
+            $personnelId,
+            $this->repository->activeGrade($tenantId, $personnelId)
+        );
         $history = $this->repository->historyFor($tenantId, $personnelId);
-        if ($current !== null) {
+        if ($current !== null && empty($current['from_fiche']) && isset($current['rank_order'])) {
             $filiereId = isset($current['filiere_id']) && $current['filiere_id'] !== null && $current['filiere_id'] !== ''
                 ? (int) $current['filiere_id']
                 : null;
@@ -555,5 +562,185 @@ final class AdvancementWorkflowService
         $ts = strtotime($iso);
 
         return $ts !== false ? date('d/m/Y', $ts) : $iso;
+    }
+
+    /**
+     * Si la fiche a un grade (users.grade_id / titre) et qu’aucun historique n’existe,
+     * on réutilise ces données pour ouvrir la première ligne d’avancement.
+     */
+    private function syncHistoryFromFiche(int $tenantId, int $personnelId, DateTimeImmutable $today): void
+    {
+        if ($this->repository->historyFor($tenantId, $personnelId) !== []) {
+            return;
+        }
+        $fiche = $this->ficheGradeSnapshot($tenantId, $personnelId);
+        if ($fiche === null) {
+            return;
+        }
+        try {
+            (new GradeScaleTemplateService($this->repository))->completeForTenant($tenantId);
+        } catch (Throwable) {
+        }
+        $definition = $this->matchFicheToDefinition($tenantId, $fiche);
+        if ($definition === null || !empty($definition['archived_at'])) {
+            return;
+        }
+        $this->repository->insertHistory([
+            'personnel_id' => $personnelId,
+            'grade_id' => (int) $definition['id'],
+            'obtained_at' => $fiche['obtained_at'] ?? $today->format('Y-m-d'),
+            'obtained_via' => self::VIA_INITIAL,
+            'created_by' => $personnelId,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed>|null $current
+     * @return array<string, mixed>|null
+     */
+    private function withFicheDisplayLabel(int $tenantId, int $personnelId, ?array $current): ?array
+    {
+        $fiche = $this->ficheGradeSnapshot($tenantId, $personnelId);
+        $title = trim((string) ($fiche['rank_display'] ?? ''));
+        if ($title === '') {
+            $title = trim((string) ($fiche['label'] ?? ''));
+        }
+        if ($current !== null) {
+            if ($title !== '') {
+                $current['label'] = $title;
+            }
+
+            return $current;
+        }
+        if ($fiche === null || ($title === '' && trim((string) ($fiche['code'] ?? '')) === '')) {
+            return null;
+        }
+
+        return [
+            'label' => $title !== '' ? $title : (string) $fiche['code'],
+            'code' => (string) ($fiche['code'] ?? ''),
+            'obtained_at' => (string) ($fiche['obtained_at'] ?? date('Y-m-d')),
+            'obtained_via' => self::VIA_INITIAL,
+            'from_fiche' => true,
+        ];
+    }
+
+    /**
+     * @return array{grade_id:int, code:string, label:string, rank_display:string, obtained_at:string}|null
+     */
+    private function ficheGradeSnapshot(int $tenantId, int $personnelId): ?array
+    {
+        $pdo = $this->repository->pdo();
+        $gradeId = 0;
+        $obtainedAt = date('Y-m-d');
+        try {
+            $st = $pdo->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
+            $st->execute([$personnelId]);
+            $user = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
+            $gradeId = (int) ($user['grade_id'] ?? 0);
+            $created = substr((string) ($user['created_at'] ?? ''), 0, 10);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $created) === 1) {
+                $obtainedAt = $created;
+            }
+        } catch (Throwable) {
+        }
+        try {
+            $st = $pdo->prepare(
+                'SELECT grade_id FROM user_community_profiles WHERE user_id = ? AND tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$personnelId, $tenantId]);
+            $communityGrade = (int) ($st->fetchColumn() ?: 0);
+            if ($communityGrade > 0) {
+                $gradeId = $communityGrade;
+            }
+        } catch (Throwable) {
+        }
+        $rankDisplay = '';
+        try {
+            $st = $pdo->prepare('SELECT rank_display FROM personnel_profiles WHERE user_id = ? LIMIT 1');
+            $st->execute([$personnelId]);
+            $rankDisplay = trim((string) ($st->fetchColumn() ?: ''));
+        } catch (Throwable) {
+        }
+        $code = '';
+        $label = '';
+        if ($gradeId > 0) {
+            $catalog = $this->catalogGradeById($pdo, $gradeId, $tenantId);
+            if ($catalog !== null) {
+                $code = strtoupper(trim((string) ($catalog['code'] ?? '')));
+                $label = trim((string) ($catalog['label_long'] ?? $catalog['label_short'] ?? $catalog['label'] ?? ''));
+            }
+        }
+        if ($gradeId < 1 && $rankDisplay === '' && $code === '' && $label === '') {
+            return null;
+        }
+
+        return [
+            'grade_id' => $gradeId,
+            'code' => $code,
+            'label' => $label,
+            'rank_display' => $rankDisplay,
+            'obtained_at' => $obtainedAt,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function catalogGradeById(\PDO $pdo, int $gradeId, int $tenantId): ?array
+    {
+        foreach (['grades', 'grades_referentiel'] as $table) {
+            try {
+                $st = $pdo->prepare(
+                    'SELECT id, code, label_long, label_short FROM ' . $table . ' WHERE id = ? LIMIT 1'
+                );
+                $st->execute([$gradeId]);
+                $row = $st->fetch(\PDO::FETCH_ASSOC);
+                if (is_array($row)) {
+                    return $row;
+                }
+            } catch (Throwable) {
+            }
+        }
+        try {
+            return (new GradeRepository())->findById($gradeId, $tenantId);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param array{code?:string, label?:string, rank_display?:string} $fiche
+     * @return array<string, mixed>|null
+     */
+    private function matchFicheToDefinition(int $tenantId, array $fiche): ?array
+    {
+        $code = strtoupper(trim((string) ($fiche['code'] ?? '')));
+        if ($code !== '') {
+            $byCode = $this->repository->findGradeByCode($tenantId, $code);
+            if ($byCode !== null) {
+                return $byCode;
+            }
+        }
+        $needles = [];
+        foreach ([$fiche['rank_display'] ?? '', $fiche['label'] ?? ''] as $raw) {
+            $text = trim((string) $raw);
+            if ($text !== '') {
+                $needles[mb_strtolower($text)] = true;
+            }
+        }
+        if ($needles === []) {
+            return null;
+        }
+        foreach ($this->repository->listGrades($tenantId, false) as $grade) {
+            foreach ([$grade['label'] ?? '', $grade['short_label'] ?? ''] as $raw) {
+                $text = mb_strtolower(trim((string) $raw));
+                if ($text !== '' && isset($needles[$text])) {
+                    return $grade;
+                }
+            }
+        }
+
+        return null;
     }
 }
