@@ -194,6 +194,11 @@
   padding: 0;
   text-decoration: underline;
   text-underline-offset: 2px;
+  font: inherit;
+}
+a.eq-hub__link-btn {
+  display: inline-block;
+  margin-top: 0.35rem;
 }
 
 .eq-hub__toolbar {
