@@ -4,6 +4,9 @@ $wardrobes = $wardrobes ?? [];
 $mineWardrobes = $mineWardrobes ?? [];
 $collections = $collections ?? [];
 $equipmentClasses = $equipmentClasses ?? [];
+$dotationItems = $dotationItems ?? [];
+$canManageCatalog = !empty($canManageCatalog);
+$canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
 $migrationMissing = !empty($migrationMissing);
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
@@ -23,12 +26,14 @@ $visibilityLabel = static function (string $v): string {
 };
 $tenueCount = count($wardrobes);
 $catalogPayload = [
-    'wardrobes' => array_map(static function (array $w) use ($visibilityLabel): array {
+    'wardrobes' => array_map(static function (array $w): array {
         return [
             'id' => (int) ($w['id'] ?? 0),
             'name' => (string) ($w['name'] ?? ''),
             'display_name' => (string) ($w['display_name'] ?? \App\Support\ArsenalLoadoutItems::formatWardrobeTitle((string) ($w['name'] ?? ''))),
+            'description' => (string) ($w['description'] ?? ''),
             'cover_url' => $w['cover_url'] ?? null,
+            'gallery_urls' => array_values(is_array($w['gallery_urls'] ?? null) ? $w['gallery_urls'] : []),
             'collection_id' => $w['collection_id'] ?? null,
             'collection_name' => $w['collection_name'] ?? null,
             'owner_label' => (string) (($w['owner_label'] ?? '') !== '' ? $w['owner_label'] : 'Membre'),
@@ -52,11 +57,39 @@ $catalogPayload = [
             'mine' => !empty($c['mine']),
         ];
     }, $collections),
+    'fiches' => array_map(static function (array $c): array {
+        return [
+            'id' => (int) ($c['id'] ?? 0),
+            'name' => (string) ($c['name'] ?? ''),
+            'slug' => (string) ($c['slug'] ?? ''),
+            'category' => (string) ($c['category'] ?? ''),
+            'description' => (string) ($c['description'] ?? ''),
+            'cover_url' => $c['cover_url'] ?? null,
+        ];
+    }, $equipmentClasses),
+    'dotation' => array_map(static function (array $d): array {
+        return [
+            'id' => (int) ($d['id'] ?? 0),
+            'code' => (string) ($d['code'] ?? ''),
+            'name' => (string) ($d['name'] ?? ''),
+            'category' => (string) ($d['category'] ?? ''),
+            'description' => (string) ($d['description'] ?? ''),
+            'cover_url' => $d['cover_url'] ?? null,
+            'issued_count' => (int) ($d['issued_count'] ?? 0),
+        ];
+    }, $dotationItems),
     'kinds' => $equipmentKindLabels,
+    'canManageCatalog' => $canManageCatalog,
+    'canManageDotation' => $canManageDotation,
     'urls' => [
         'tenue' => url('equipment/tenues/'),
+        'collection' => url('equipment/collections/'),
+        'fiche' => url('equipment/fiches/'),
+        'dotation' => url('equipment/dotation/'),
         'hub' => url('equipment'),
         'storeCollection' => url('equipment/collections'),
+        'storeFiche' => url('equipment/fiches'),
+        'storeDotation' => url('equipment/dotation'),
     ],
     'csrf' => $csrfToken,
     'coverHint' => $coverHint,
@@ -82,6 +115,12 @@ $mineCatalog = array_map(static function (array $w): array {
         <div class="eq-hub__banner-actions">
             <button type="button" class="eq-hub__btn eq-hub__btn--ghost-light" data-eq-open="tenue-help">Nouvelle tenue</button>
             <button type="button" class="eq-hub__btn" data-eq-open="collection-new">Nouvelle collection</button>
+            <?php if ($canManageCatalog): ?>
+            <button type="button" class="eq-hub__btn eq-hub__btn--ghost-light" data-eq-open="fiche-new">Nouvelle fiche</button>
+            <?php endif; ?>
+            <?php if ($canManageDotation): ?>
+            <button type="button" class="eq-hub__btn eq-hub__btn--ghost-light" data-eq-open="dotation-new">Nouvel article</button>
+            <?php endif; ?>
         </div>
     </header>
 
@@ -174,6 +213,13 @@ $mineCatalog = array_map(static function (array $w): array {
             </aside>
 
             <div class="eq-hub__main">
+                <nav class="eq-hub__tabs" aria-label="Sections catalogue" data-eq-tabs>
+                    <button type="button" class="eq-hub__tab is-active" data-eq-tab="tenues" aria-selected="true">Tenues</button>
+                    <button type="button" class="eq-hub__tab" data-eq-tab="fiches" aria-selected="false">Fiches matériel <em><?= count($equipmentClasses) ?></em></button>
+                    <button type="button" class="eq-hub__tab" data-eq-tab="dotation" aria-selected="false">Dotation <em><?= count($dotationItems) ?></em></button>
+                </nav>
+
+                <div data-eq-panel="tenues">
                 <div class="eq-hub__toolbar">
                     <label class="eq-hub__search">
                         <span class="visually-hidden">Rechercher une tenue</span>
@@ -191,7 +237,7 @@ $mineCatalog = array_map(static function (array $w): array {
 
                 <div class="eq-hub__active-filters" data-eq-active-filters hidden></div>
                 <p class="eq-hub__hint" data-eq-edit-collection-wrap hidden>
-                    <a href="#" data-eq-edit-collection class="eq-hub__link-btn">Modifier cette collection</a>
+                    <button type="button" class="eq-hub__link-btn" data-eq-edit-collection>Modifier cette collection</button>
                 </p>
 
                 <h2 class="eq-hub__grid-title">Toutes les tenues</h2>
@@ -242,18 +288,80 @@ $mineCatalog = array_map(static function (array $w): array {
                 </ul>
                 <p class="eq-hub__empty" data-eq-no-results hidden>Aucune tenue ne correspond à ces filtres.</p>
                 <?php endif; ?>
+                </div>
 
-                <?php if ($equipmentClasses !== []): ?>
-                <section class="eq-hub__docs-block">
-                    <h2>Fiches matériel</h2>
-                    <p class="eq-hub__hint">Référentiels et documents associés, en complément des tenues.</p>
-                    <ul class="eq-hub__docs">
+                <div data-eq-panel="fiches" hidden>
+                    <div class="eq-hub__toolbar">
+                        <label class="eq-hub__search">
+                            <span class="visually-hidden">Rechercher une fiche</span>
+                            <input type="search" placeholder="Rechercher une fiche…" data-eq-fiche-search autocomplete="off">
+                        </label>
+                    </div>
+                    <?php if ($equipmentClasses === []): ?>
+                    <p class="eq-hub__empty">Aucune fiche matériel pour le moment.<?= $canManageCatalog ? ' Créez-en une avec « Nouvelle fiche ».' : '' ?></p>
+                    <?php else: ?>
+                    <ul class="eq-hub__grid" data-eq-fiche-grid>
                         <?php foreach ($equipmentClasses as $c): ?>
-                        <li><a href="<?= $h(url('equipment/' . ($c['slug'] ?? ''))) ?>"><?= $h($c['name'] ?? '') ?></a></li>
+                        <li data-eq-fiche-card data-name="<?= $h($lower(($c['name'] ?? '') . ' ' . ($c['category'] ?? '') . ' ' . ($c['description'] ?? ''))) ?>">
+                            <button type="button" class="eq-hub__card" data-eq-fiche-view="<?= (int) $c['id'] ?>">
+                                <span class="eq-hub__media eq-hub__media--portrait">
+                                    <?php if (!empty($c['cover_url'])): ?>
+                                    <img class="eq-hub__img" src="<?= $h($c['cover_url']) ?>" alt="" loading="lazy">
+                                    <?php else: ?>
+                                    <span class="eq-hub__ph" aria-hidden="true">
+                                        <svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="10" width="40" height="52" rx="3" stroke="currentColor" stroke-width="2"/><path d="M22 28h20M22 38h16M22 48h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    </span>
+                                    <?php endif; ?>
+                                    <span class="eq-hub__skeleton" aria-hidden="true"></span>
+                                    <span class="eq-hub__quick">Voir la fiche</span>
+                                </span>
+                                <span class="eq-hub__card-body">
+                                    <strong><?= $h($c['name'] ?? '') ?></strong>
+                                    <span><?= $h(($c['category'] ?? '') !== '' ? $c['category'] : 'Fiche matériel') ?></span>
+                                </span>
+                            </button>
+                        </li>
                         <?php endforeach; ?>
                     </ul>
-                </section>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div data-eq-panel="dotation" hidden>
+                    <div class="eq-hub__toolbar">
+                        <label class="eq-hub__search">
+                            <span class="visually-hidden">Rechercher un article</span>
+                            <input type="search" placeholder="Rechercher un article de dotation…" data-eq-dotation-search autocomplete="off">
+                        </label>
+                    </div>
+                    <?php if ($dotationItems === []): ?>
+                    <p class="eq-hub__empty">Aucun article de dotation.<?= $canManageDotation ? ' Créez-en un avec « Nouvel article ».' : '' ?></p>
+                    <?php else: ?>
+                    <ul class="eq-hub__grid" data-eq-dotation-grid>
+                        <?php foreach ($dotationItems as $d): ?>
+                        <li data-eq-dotation-card data-name="<?= $h($lower(($d['name'] ?? '') . ' ' . ($d['code'] ?? '') . ' ' . ($d['category'] ?? '') . ' ' . ($d['description'] ?? ''))) ?>">
+                            <button type="button" class="eq-hub__card" data-eq-dotation-view="<?= (int) $d['id'] ?>">
+                                <span class="eq-hub__media eq-hub__media--portrait">
+                                    <?php if (!empty($d['cover_url'])): ?>
+                                    <img class="eq-hub__img" src="<?= $h($d['cover_url']) ?>" alt="" loading="lazy">
+                                    <?php else: ?>
+                                    <span class="eq-hub__ph" aria-hidden="true">
+                                        <svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 22h24v36H20z" stroke="currentColor" stroke-width="2"/><path d="M26 30h12M26 40h12M26 50h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    </span>
+                                    <?php endif; ?>
+                                    <span class="eq-hub__skeleton" aria-hidden="true"></span>
+                                    <span class="eq-hub__quick">Voir l’article</span>
+                                </span>
+                                <span class="eq-hub__card-body">
+                                    <strong><?= $h($d['name'] ?? '') ?></strong>
+                                    <span><?= $h(($d['code'] ?? '') !== '' ? $d['code'] : 'Article') ?>
+                                        · <?= (int) ($d['issued_count'] ?? 0) ?> en dotation</span>
+                                </span>
+                            </button>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <?php endif; ?>
@@ -277,6 +385,7 @@ $mineCatalog = array_map(static function (array $w): array {
                 <div class="eq-hub__qv-panel">
                     <h2 id="eq-qv-title" data-eq-qv-title>Tenue</h2>
                     <button type="button" class="eq-hub__badge" data-eq-qv-collection hidden></button>
+                    <p class="eq-hub__qv-desc" data-eq-qv-desc hidden></p>
                     <p class="eq-hub__qv-hint" data-eq-qv-hint></p>
                     <div class="eq-hub__qv-items" data-eq-qv-items></div>
                     <div class="eq-hub__qv-actions">
@@ -290,16 +399,23 @@ $mineCatalog = array_map(static function (array $w): array {
                 <form method="post" enctype="multipart/form-data" class="eq-hub__form" data-eq-qv-form>
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                     <input type="hidden" name="_return" value="hub">
-                    <label>Photo de présentation
+                    <label>Description (visible par tous)
+                        <textarea name="description" rows="3" maxlength="1000" data-eq-qv-description placeholder="Quand porter ce kit, contexte d’emploi, particularités…"></textarea>
+                    </label>
+                    <label>Photo de présentation (principale)
                         <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
                         <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
                     </label>
+                    <label>Photos supplémentaires (galerie, max 5)
+                        <input type="file" name="gallery[]" accept="image/jpeg,image/png,image/webp" multiple>
+                    </label>
+                    <div class="eq-hub__gallery-edit" data-eq-qv-gallery-edit hidden></div>
                     <label>Collection
                         <select name="collection_id" class="bo-select" data-eq-qv-collection-select>
                             <option value="0">Sans collection</option>
                         </select>
                     </label>
-                    <label>Note
+                    <label>Note interne (vous seul)
                         <textarea name="notes" rows="2" maxlength="255" data-eq-qv-notes></textarea>
                     </label>
                     <div class="eq-hub__form-actions">
@@ -394,6 +510,180 @@ $mineCatalog = array_map(static function (array $w): array {
             </form>
         </div>
     </dialog>
+
+    <!-- Éditer collection -->
+    <dialog class="eq-hub__dialog" id="eq-collection-edit" aria-labelledby="eq-col-edit-title">
+        <div class="eq-hub__dialog-shell eq-hub__dialog-shell--wide">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <h2 id="eq-col-edit-title">Modifier la collection</h2>
+            <form method="post" enctype="multipart/form-data" class="eq-hub__form" data-eq-collection-edit-form>
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <div class="eq-hub__form-grid">
+                    <label>Nom
+                        <input type="text" name="name" required maxlength="120" data-eq-col-edit-name>
+                    </label>
+                    <label>Qui peut s’en servir
+                        <select name="visibility" class="bo-select" data-eq-col-edit-visibility>
+                            <option value="personal">Moi seulement</option>
+                            <option value="unit">Mon unité</option>
+                            <option value="tenant">Toute la communauté</option>
+                        </select>
+                    </label>
+                </div>
+                <label>Présentation
+                    <textarea name="description" rows="2" maxlength="500" data-eq-col-edit-description></textarea>
+                </label>
+                <label>Photo de présentation
+                    <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
+                    <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
+                </label>
+                <fieldset class="eq-hub__picker">
+                    <legend>Tenues à inclure <span class="eq-hub__picker-count" data-eq-col-edit-count>0 sélectionnée</span></legend>
+                    <div class="eq-hub__picker-toolbar">
+                        <input type="search" placeholder="Rechercher…" data-eq-col-edit-search autocomplete="off">
+                    </div>
+                    <div class="eq-hub__picker-grid" data-eq-col-edit-grid></div>
+                </fieldset>
+                <div class="eq-hub__form-actions">
+                    <button type="submit" class="eq-hub__btn">Enregistrer</button>
+                </div>
+            </form>
+            <form method="post" class="eq-hub__danger" data-eq-col-edit-delete data-ui-confirm="1" data-ui-confirm-title="Retirer la collection" data-ui-confirm-body="Retirer cette collection ? Les tenues ne sont pas supprimées.">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <button type="submit" class="eq-hub__btn eq-hub__btn--ghost">Retirer la collection</button>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Fiche matériel modal -->
+    <dialog class="eq-hub__dialog" id="eq-fiche-view" aria-labelledby="eq-fiche-title">
+        <div class="eq-hub__dialog-shell">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <div data-eq-fiche-view-panel>
+                <div class="eq-hub__qv" style="grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)">
+                    <div class="eq-hub__qv-stage" data-eq-fiche-stage></div>
+                    <div>
+                        <p class="eq-hub__badge" data-eq-fiche-cat hidden></p>
+                        <h2 id="eq-fiche-title" data-eq-fiche-title>Fiche</h2>
+                        <p class="eq-hub__qv-desc" data-eq-fiche-desc></p>
+                        <div class="eq-hub__qv-actions">
+                            <a class="eq-hub__btn eq-hub__btn--ghost-light" data-eq-fiche-page href="#">Page complète</a>
+                            <button type="button" class="eq-hub__btn eq-hub__btn--ghost" data-eq-fiche-edit hidden>Modifier</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div data-eq-fiche-edit-panel hidden>
+                <h2>Modifier la fiche</h2>
+                <form method="post" enctype="multipart/form-data" class="eq-hub__form" data-eq-fiche-edit-form>
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <label>Nom <input type="text" name="name" required maxlength="255" data-eq-fiche-edit-name></label>
+                    <label>Catégorie <input type="text" name="category" maxlength="100" data-eq-fiche-edit-category placeholder="Radio, protection…"></label>
+                    <label>Description
+                        <textarea name="description" rows="4" data-eq-fiche-edit-description placeholder="Usage, contraintes, doctrine associée…"></textarea>
+                    </label>
+                    <label>Photo
+                        <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
+                        <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
+                    </label>
+                    <div class="eq-hub__form-actions">
+                        <button type="button" class="eq-hub__btn eq-hub__btn--ghost" data-eq-fiche-back>Retour</button>
+                        <button type="submit" class="eq-hub__btn">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <?php if ($canManageCatalog): ?>
+    <dialog class="eq-hub__dialog" id="eq-fiche-new" aria-labelledby="eq-fiche-new-title">
+        <div class="eq-hub__dialog-shell">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <h2 id="eq-fiche-new-title">Nouvelle fiche matériel</h2>
+            <form method="post" action="<?= $h(url('equipment/fiches')) ?>" enctype="multipart/form-data" class="eq-hub__form">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <label>Nom <input type="text" name="name" required maxlength="255" placeholder="Gilet porte-plaques"></label>
+                <label>Catégorie <input type="text" name="category" maxlength="100" placeholder="Protection"></label>
+                <label>Description
+                    <textarea name="description" rows="4" placeholder="Décrivez l’usage, le contexte et les contraintes."></textarea>
+                </label>
+                <label>Photo
+                    <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
+                    <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
+                </label>
+                <button type="submit" class="eq-hub__btn">Créer la fiche</button>
+            </form>
+        </div>
+    </dialog>
+    <?php endif; ?>
+
+    <!-- Dotation modal -->
+    <dialog class="eq-hub__dialog" id="eq-dotation-view" aria-labelledby="eq-dotation-title">
+        <div class="eq-hub__dialog-shell">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <div data-eq-dotation-view-panel>
+                <div class="eq-hub__qv" style="grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)">
+                    <div class="eq-hub__qv-stage" data-eq-dotation-stage></div>
+                    <div>
+                        <p class="eq-hub__badge" data-eq-dotation-code hidden></p>
+                        <h2 id="eq-dotation-title" data-eq-dotation-title>Article</h2>
+                        <p class="eq-hub__qv-desc" data-eq-dotation-desc></p>
+                        <div class="eq-hub__qv-actions">
+                            <a class="eq-hub__btn eq-hub__btn--ghost-light" data-eq-dotation-admin href="#" hidden>Carnet de dotation</a>
+                            <button type="button" class="eq-hub__btn eq-hub__btn--ghost" data-eq-dotation-edit hidden>Modifier</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div data-eq-dotation-edit-panel hidden>
+                <h2>Modifier l’article</h2>
+                <form method="post" enctype="multipart/form-data" class="eq-hub__form" data-eq-dotation-edit-form>
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <div class="eq-hub__form-grid">
+                        <label>Code <input type="text" name="code" required maxlength="40" data-eq-dotation-edit-code></label>
+                        <label>Nom <input type="text" name="name" required maxlength="180" data-eq-dotation-edit-name></label>
+                    </div>
+                    <label>Catégorie <input type="text" name="category" maxlength="80" data-eq-dotation-edit-category></label>
+                    <label>Description
+                        <textarea name="description" rows="4" data-eq-dotation-edit-description placeholder="Description de l’article, consignes d’emploi…"></textarea>
+                    </label>
+                    <label>Photo
+                        <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
+                        <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
+                    </label>
+                    <div class="eq-hub__form-actions">
+                        <button type="button" class="eq-hub__btn eq-hub__btn--ghost" data-eq-dotation-back>Retour</button>
+                        <button type="submit" class="eq-hub__btn">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <?php if ($canManageDotation): ?>
+    <dialog class="eq-hub__dialog" id="eq-dotation-new" aria-labelledby="eq-dotation-new-title">
+        <div class="eq-hub__dialog-shell">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <h2 id="eq-dotation-new-title">Nouvel article de dotation</h2>
+            <form method="post" action="<?= $h(url('equipment/dotation')) ?>" enctype="multipart/form-data" class="eq-hub__form">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <div class="eq-hub__form-grid">
+                    <label>Code <input type="text" name="code" required maxlength="40" placeholder="RAD-001"></label>
+                    <label>Nom <input type="text" name="name" required maxlength="180" placeholder="Radio AN/PRC"></label>
+                </div>
+                <label>Catégorie <input type="text" name="category" maxlength="80" placeholder="Radio"></label>
+                <label>Description
+                    <textarea name="description" rows="4" placeholder="Décrivez l’article et son emploi."></textarea>
+                </label>
+                <label>Photo
+                    <input type="file" name="cover" accept="image/jpeg,image/png,image/webp">
+                    <span class="eq-hub__hint"><?= $h($coverHint) ?></span>
+                </label>
+                <button type="submit" class="eq-hub__btn">Créer l’article</button>
+            </form>
+        </div>
+    </dialog>
+    <?php endif; ?>
 
     <!-- Aide nouvelle tenue -->
     <dialog class="eq-hub__dialog" id="eq-tenue-help" aria-labelledby="eq-tenue-help-title">

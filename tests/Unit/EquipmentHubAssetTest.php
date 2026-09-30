@@ -51,6 +51,12 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('data-eq-sort', $hub);
         self::assertStringContainsString('eq-hub__picker-grid', $hub);
         self::assertStringContainsString('Aperçu rapide', $hub);
+        self::assertStringContainsString('data-eq-tab="fiches"', $hub);
+        self::assertStringContainsString('data-eq-tab="dotation"', $hub);
+        self::assertStringContainsString('name="gallery[]"', $hub);
+        self::assertStringContainsString('name="description"', $hub);
+        self::assertStringContainsString('eq-collection-edit', $hub);
+        self::assertStringContainsString('Nouvelle fiche', $hub);
         self::assertStringNotContainsString('eq-hub__cover-ph">Sans photo', $hub);
         self::assertStringNotContainsString('>Sans photo</span>', $hub);
 
@@ -64,9 +70,19 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('openQuickView', $js);
         self::assertStringContainsString('applyFilters', $js);
         self::assertStringContainsString('format=json', $js);
+        self::assertStringContainsString('openCollectionEdit', $js);
+        self::assertStringContainsString('openFiche', $js);
+        self::assertStringContainsString('openDotation', $js);
+        self::assertStringContainsString('setTab', $js);
 
         self::assertStringContainsString('ArsenalLoadoutItems', $controller);
         self::assertStringContainsString('wantsJson', $controller);
+        self::assertStringContainsString('storeFiche', $controller);
+        self::assertStringContainsString('storeDotationItem', $controller);
+        self::assertStringContainsString('setWardrobeGallery', $repo);
+        self::assertStringContainsString('gallery_json', (string) file_get_contents($root . '/bootstrap/arsenal_wardrobe_migration.php'));
+        self::assertStringContainsString('/equipment/fiches', $routes);
+        self::assertStringContainsString('/equipment/dotation', $routes);
         self::assertStringContainsString('equipment-hub.css', $layout);
         self::assertStringContainsString('equipment-catalog.js', $layout);
         self::assertStringContainsString('storeFromUpload', $storage);
