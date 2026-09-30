@@ -73,6 +73,7 @@ class CommunityController
             'content' => 'community.registry',
             'registryTenants' => $tenants,
             'communityRegistryPage' => true,
+            'meta_description' => 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.',
         ]);
     }
 
@@ -204,8 +205,44 @@ class CommunityController
             }
         }
 
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $seoTitle = '';
+        $seoDesc = '';
+        $ogImage = '';
+        if (is_array($showcaseVm)) {
+            $seoTitle = trim((string) ($showcaseVm['metaTitle'] ?? ''));
+            $seoDesc = trim((string) ($showcaseVm['metaDescription'] ?? ''));
+        }
+        if ($seoTitle === '') {
+            $seoTitle = $tenantName . ' — Fiche publique';
+        }
+        if ($seoDesc === '') {
+            $seoDesc = trim((string) ($communityConfig['public_hero_subtitle'] ?? ''));
+        }
+        if ($seoDesc === '') {
+            $seoDesc = trim((string) ($communityConfig['registry_tagline'] ?? ''));
+        }
+        if ($seoDesc === '' && is_array($showcaseVm)) {
+            $seoDesc = trim((string) ($showcaseVm['heroSubtitle'] ?? ''));
+        }
+        if ($seoDesc === '') {
+            $seoDesc = $tenantName . ' — communauté MILSIM sur Athena. Consultez la fiche publique, le recrutement et les médias.';
+        }
+        if (function_exists('mb_strlen') && mb_strlen($seoDesc) > 320) {
+            $seoDesc = mb_substr($seoDesc, 0, 317) . '…';
+        } elseif (strlen($seoDesc) > 320) {
+            $seoDesc = substr($seoDesc, 0, 317) . '…';
+        }
+        $bannerUrl = trim((string) ($tenantBranding['banner_url'] ?? ''));
+        $logoUrl = trim((string) ($tenantBranding['logo_url'] ?? ''));
+        if ($bannerUrl !== '') {
+            $ogImage = $bannerUrl;
+        } elseif ($logoUrl !== '') {
+            $ogImage = $logoUrl;
+        }
+
         return Response::view('layout.main', [
-            'title' => trim((string) ($tenant['name'] ?? 'Communauté')) . ' — Fiche publique',
+            'title' => $seoTitle,
             'content' => 'community.show',
             'tenant' => $tenant,
             'memberships' => $memberships,
@@ -231,6 +268,8 @@ class CommunityController
             'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
             'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,
+            'meta_description' => $seoDesc,
+            'og_image' => $ogImage,
             'analyticsBeacon' => [
                 'tenantId' => $tid,
                 'category' => AnalyticsEventCategory::TENANT_PUBLIC,

@@ -102,6 +102,36 @@ $modpackSize = $cp['modpackSize'] ?? null;
 $accessLabel = trim((string) ($sv['publicAccessLabel'] ?? ''));
 $recruitSessionLabel = trim((string) ($sv['recruitmentSessionLabel'] ?? ''));
 $foundedYearSetting = trim((string) ($sv['foundedYear'] ?? ''));
+$highlightTitle = trim((string) ($sv['highlightTitle'] ?? ''));
+$highlightBody = trim((string) ($sv['highlightBody'] ?? ''));
+$highlightStyle = in_array(($sv['highlightStyle'] ?? 'info'), ['info', 'warning', 'success'], true)
+    ? (string) $sv['highlightStyle']
+    : 'info';
+$showHighlight = $highlightTitle !== '' || $highlightBody !== '';
+$scheduleLabel = trim((string) ($sv['scheduleLabel'] ?? ''));
+$scheduleBody = trim((string) ($sv['scheduleBody'] ?? ''));
+$showSchedule = $scheduleLabel !== '' || $scheduleBody !== '';
+$socialWebsite = trim((string) ($sv['socialWebsite'] ?? ''));
+$socialYoutube = trim((string) ($sv['socialYoutube'] ?? ''));
+$socialTeamspeak = trim((string) ($sv['socialTeamspeak'] ?? ''));
+$socialDiscord = trim((string) ($sv['socialDiscord'] ?? ($discordUrl ?? '')));
+$stickyCtaEnabled = !array_key_exists('stickyCtaEnabled', $sv) || !empty($sv['stickyCtaEnabled']);
+$socialLinks = [];
+if ($socialDiscord !== '') {
+    $socialLinks[] = ['label' => 'Discord', 'href' => $socialDiscord, 'external' => true];
+}
+if ($socialWebsite !== '') {
+    $socialLinks[] = ['label' => 'Site', 'href' => $socialWebsite, 'external' => true];
+}
+if ($socialYoutube !== '') {
+    $socialLinks[] = ['label' => 'YouTube', 'href' => $socialYoutube, 'external' => true];
+}
+if ($socialTeamspeak !== '') {
+    $tsHref = preg_match('#^(https?|ts3server):#i', $socialTeamspeak)
+        ? $socialTeamspeak
+        : ('ts3server://' . ltrim($socialTeamspeak, '/'));
+    $socialLinks[] = ['label' => 'TeamSpeak', 'href' => $tsHref, 'external' => true];
+}
 
 $pitchPoints = [];
 foreach (is_array($sv['pitch'] ?? null) ? $sv['pitch'] : [] as $pp) {
@@ -612,6 +642,47 @@ if ($showcaseBackUrl === '') {
     </div>
     <?php endif; ?>
   </section>
+
+  <?php if ($showHighlight || $showSchedule || $socialLinks !== []): ?>
+  <div class="cl-signals cl-rise" aria-label="Informations clés">
+    <div class="cl-wrap cl-signals__inner">
+      <?php if ($showHighlight): ?>
+      <aside class="cl-alert cl-alert--<?= htmlspecialchars($highlightStyle, ENT_QUOTES, 'UTF-8') ?>" role="status">
+        <span class="cl-alert__mark" aria-hidden="true"></span>
+        <div class="cl-alert__body">
+          <?php if ($highlightTitle !== ''): ?>
+          <p class="cl-alert__kicker"><?= htmlspecialchars(mb_strtoupper($highlightTitle)) ?></p>
+          <?php endif; ?>
+          <?php if ($highlightBody !== ''): ?>
+          <p class="cl-alert__text"><?= nl2br(htmlspecialchars($highlightBody)) ?></p>
+          <?php endif; ?>
+        </div>
+      </aside>
+      <?php endif; ?>
+
+      <?php if ($showSchedule): ?>
+      <div class="cl-schedule">
+        <p class="cl-schedule__kicker"><?= htmlspecialchars(mb_strtoupper($scheduleLabel !== '' ? $scheduleLabel : 'Créneaux')) ?></p>
+        <?php if ($scheduleBody !== ''): ?>
+        <p class="cl-schedule__text"><?= htmlspecialchars($scheduleBody) ?></p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($socialLinks !== []): ?>
+      <nav class="cl-social" aria-label="Présence en ligne">
+        <?php foreach ($socialLinks as $sl): ?>
+        <a
+          class="cl-social__link"
+          href="<?= htmlspecialchars((string) $sl['href'], ENT_QUOTES, 'UTF-8') ?>"
+          <?php if (!empty($sl['external'])): ?>target="_blank" rel="noopener noreferrer"<?php endif; ?>
+        ><?= htmlspecialchars((string) $sl['label']) ?></a>
+        <?php endforeach; ?>
+      </nav>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php
   $settingsVideoEmbed = $videoUrlSetting !== ''
@@ -1405,9 +1476,21 @@ if ($showcaseBackUrl === '') {
       </div>
     </div>
   </footer>
+
+  <?php if ($stickyCtaEnabled && !$isLocked && !empty($ctaPrimaryHref)): ?>
+  <div class="cl-sticky-cta" data-cl-sticky-cta hidden>
+    <div class="cl-sticky-cta__inner">
+      <div class="cl-sticky-cta__copy">
+        <p class="cl-sticky-cta__kicker"><?= htmlspecialchars(mb_strtoupper($name)) ?></p>
+        <p class="cl-sticky-cta__title"><?= htmlspecialchars((string) ($ctaPrimaryLabel ?? 'Rejoindre')) ?></p>
+      </div>
+      <a href="<?= htmlspecialchars((string) $ctaPrimaryHref) ?>" class="cl-btn cl-btn--accent comspec-analytics-cta" data-comspec-zone="vitrine_sticky" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"><?= htmlspecialchars(mb_strtoupper((string) ($ctaPrimaryLabel ?? 'Rejoindre'))) ?></a>
+    </div>
+  </div>
+  <?php endif; ?>
 </div>
 <script>
-(function () {
+  (function () {
   var btn = document.querySelector('[data-copy-code]');
   if (btn && navigator.clipboard) {
     btn.addEventListener('click', function () {
@@ -1427,6 +1510,18 @@ if ($showcaseBackUrl === '') {
         tr.style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
       });
     });
+  }
+  var sticky = document.querySelector('[data-cl-sticky-cta]');
+  var hero = document.querySelector('.cl-hero');
+  if (sticky && hero && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        sticky.hidden = entry.isIntersecting;
+      });
+    }, { threshold: 0.15 });
+    io.observe(hero);
+  } else if (sticky) {
+    sticky.hidden = false;
   }
 })();
 </script>

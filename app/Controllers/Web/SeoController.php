@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
+use App\Repositories\TenantRepository;
 
 final class SeoController
 {
@@ -50,6 +52,7 @@ final class SeoController
         $today = gmdate('Y-m-d');
         $paths = [
             ['/', 'daily', '1.0'],
+            ['/communities', 'daily', '0.9'],
             ['/a-propos', 'monthly', '0.8'],
             ['/sse', 'monthly', '0.85'],
             ['/contact', 'monthly', '0.7'],
@@ -57,6 +60,7 @@ final class SeoController
             ['/register', 'monthly', '0.6'],
             ['/login', 'monthly', '0.5'],
             ['/join', 'monthly', '0.6'],
+            ['/recrutement', 'monthly', '0.55'],
             ['/mentions-legales', 'yearly', '0.3'],
             ['/donnees-personnelles', 'yearly', '0.3'],
             ['/cookies', 'yearly', '0.3'],
@@ -70,6 +74,22 @@ final class SeoController
         foreach ($paths as [$p, $freq, $prio]) {
             $loc = htmlspecialchars($base . $p, ENT_QUOTES, 'UTF-8');
             $urls[] = "  <url><loc>{$loc}</loc><lastmod>{$today}</lastmod><changefreq>{$freq}</changefreq><priority>{$prio}</priority></url>";
+        }
+
+        try {
+            /** @var TenantRepository $tenants */
+            $tenants = Container::get(TenantRepository::class);
+            foreach ($tenants->listForRegistry() as $row) {
+                $slug = trim((string) ($row['slug'] ?? ''));
+                if ($slug === '') {
+                    continue;
+                }
+                $prio = !empty($row['registry_featured']) ? '0.85' : '0.7';
+                $loc = htmlspecialchars($base . '/c/' . rawurlencode($slug), ENT_QUOTES, 'UTF-8');
+                $urls[] = "  <url><loc>{$loc}</loc><lastmod>{$today}</lastmod><changefreq>weekly</changefreq><priority>{$prio}</priority></url>";
+            }
+        } catch (\Throwable) {
+            // Sitemap partiel si le registre est indisponible.
         }
 
         $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"

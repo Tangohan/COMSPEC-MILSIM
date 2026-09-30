@@ -518,6 +518,25 @@ final class TenantCommunityProfileService
         $c['public_cta_title'] = $this->clip((string) $request->input('public_cta_title', ''), 160);
         $c['public_cta_body'] = $this->clip((string) $request->input('public_cta_body', ''), 500);
 
+        // SEO & mise en avant publique
+        $c['public_meta_title'] = $this->clip((string) $request->input('public_meta_title', ''), 120);
+        $c['public_meta_description'] = $this->clip((string) $request->input('public_meta_description', ''), 320);
+        $c['registry_tagline'] = $this->clip((string) $request->input('registry_tagline', ''), 220);
+        $c['registry_featured'] = (string) $request->input('registry_featured', '0') === '1';
+        $c['public_sticky_cta_enabled'] = (string) $request->input('public_sticky_cta_enabled', '1') !== '0';
+
+        $hlStyle = strtolower(trim((string) $request->input('public_highlight_style', 'info')));
+        $c['public_highlight_style'] = in_array($hlStyle, ['info', 'warning', 'success'], true) ? $hlStyle : 'info';
+        $c['public_highlight_title'] = $this->clip((string) $request->input('public_highlight_title', ''), 120);
+        $c['public_highlight_body'] = $this->clip((string) $request->input('public_highlight_body', ''), 400);
+
+        $c['public_schedule_label'] = $this->clip((string) $request->input('public_schedule_label', ''), 80);
+        $c['public_schedule_body'] = $this->clip((string) $request->input('public_schedule_body', ''), 240);
+
+        $c['public_social_website'] = $this->sanitizeUrl((string) $request->input('public_social_website', ''), 500);
+        $c['public_social_youtube'] = $this->sanitizeUrl((string) $request->input('public_social_youtube', ''), 500);
+        $c['public_social_teamspeak'] = $this->clip((string) $request->input('public_social_teamspeak', ''), 160);
+
         // Conserver clés existantes non gérées par ce formulaire
         foreach ([
             'community_locked', 'welcome_text', 'require_ai_ack',
@@ -848,6 +867,21 @@ final class TenantCommunityProfileService
             'ctaKicker' => trim((string) ($community['public_cta_kicker'] ?? '')),
             'ctaTitle' => trim((string) ($community['public_cta_title'] ?? '')),
             'ctaBody' => trim((string) ($community['public_cta_body'] ?? '')),
+            'metaTitle' => trim((string) ($community['public_meta_title'] ?? '')),
+            'metaDescription' => trim((string) ($community['public_meta_description'] ?? '')),
+            'stickyCtaEnabled' => !array_key_exists('public_sticky_cta_enabled', $community)
+                || !empty($community['public_sticky_cta_enabled']),
+            'highlightStyle' => in_array(($community['public_highlight_style'] ?? 'info'), ['info', 'warning', 'success'], true)
+                ? (string) $community['public_highlight_style']
+                : 'info',
+            'highlightTitle' => trim((string) ($community['public_highlight_title'] ?? '')),
+            'highlightBody' => trim((string) ($community['public_highlight_body'] ?? '')),
+            'scheduleLabel' => trim((string) ($community['public_schedule_label'] ?? '')),
+            'scheduleBody' => trim((string) ($community['public_schedule_body'] ?? '')),
+            'socialWebsite' => trim((string) ($community['public_social_website'] ?? '')),
+            'socialYoutube' => trim((string) ($community['public_social_youtube'] ?? '')),
+            'socialTeamspeak' => trim((string) ($community['public_social_teamspeak'] ?? '')),
+            'socialDiscord' => trim((string) ($community['contact_discord_url'] ?? '')),
         ];
     }
 
@@ -888,22 +922,32 @@ final class TenantCommunityProfileService
                 }
             }
         }
-        $tagline = '';
-        if (($community['presentation_mode'] ?? 'simple') === 'simple') {
-            $t = trim((string) ($community['simple_body'] ?? ''));
-            $tagline = $t !== '' ? mb_substr(preg_replace('/\s+/', ' ', $t), 0, 220) : '';
-        } else {
-            $sections = $community['military_sections'] ?? [];
-            if (is_array($sections) && $sections !== []) {
-                $first = $sections[0];
-                if (is_array($first)) {
-                    $tagline = trim((string) ($first['body'] ?? ''));
-                    $tagline = $tagline !== '' ? mb_substr(preg_replace('/\s+/', ' ', $tagline), 0, 220) : '';
+        $tagline = trim((string) ($community['registry_tagline'] ?? ''));
+        if ($tagline === '') {
+            $tagline = trim((string) ($community['public_hero_subtitle'] ?? ''));
+        }
+        if ($tagline === '') {
+            if (($community['presentation_mode'] ?? 'simple') === 'simple') {
+                $t = trim((string) ($community['simple_body'] ?? ''));
+                $tagline = $t !== '' ? mb_substr(preg_replace('/\s+/', ' ', $t), 0, 220) : '';
+            } else {
+                $sections = $community['military_sections'] ?? [];
+                if (is_array($sections) && $sections !== []) {
+                    $first = $sections[0];
+                    if (is_array($first)) {
+                        $tagline = trim((string) ($first['body'] ?? ''));
+                        $tagline = $tagline !== '' ? mb_substr(preg_replace('/\s+/', ' ', $tagline), 0, 220) : '';
+                    }
                 }
             }
         }
         if ($tagline === '' && !empty($community['game_label'])) {
             $tagline = (string) $community['game_label'];
+        }
+        if ($tagline !== '' && function_exists('mb_strlen') && mb_strlen($tagline) > 220) {
+            $tagline = mb_substr($tagline, 0, 217) . '…';
+        } elseif ($tagline !== '' && strlen($tagline) > 220) {
+            $tagline = substr($tagline, 0, 217) . '…';
         }
 
         $unitAffiliationLabel = self::unitAffiliationSummary($community);
@@ -918,6 +962,10 @@ final class TenantCommunityProfileService
             'unit_affiliation_label' => $unitAffiliationLabel,
             'locale' => $locale,
             'locale_label' => $localeLabel,
+            'featured' => !empty($community['registry_featured']),
+            // Ouvert = communauté non verrouillée (badge vitrine optionnel en plus).
+            'recruitment_open' => empty($community['community_locked']),
+            'meta_description' => trim((string) ($community['public_meta_description'] ?? '')),
         ];
     }
 
