@@ -19,7 +19,7 @@ $level = (string) ($dkMedal['level'] ?? '');
 $drop = (string) ($dkMedal['dropClass'] ?? 'dk-drop-svc');
 $disc = (string) ($dkMedal['discClass'] ?? 'dk-disc-svc');
 $glyph = (string) ($dkMedal['glyph'] ?? 'circle');
-$famLine = $family . ($level !== '' ? ' · ' . $level : '');
+$famLine = DecorationCatalog::familyLine($dkMedal);
 ?>
 <div class="dk-medal-card">
     <div class="dk-bel"></div>

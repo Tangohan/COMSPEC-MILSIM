@@ -246,6 +246,27 @@ final class DecorationCatalog
         return ['catalogIds' => $catalogIds, 'customLines' => $customLines];
     }
 
+    public static function familyLine(array $row): string
+    {
+        $family = (string) ($row['family'] ?? 'GENERIC');
+        $type = (string) ($row['type'] ?? 'ribbon');
+        $level = (string) ($row['level'] ?? '');
+        $glyph = (string) ($row['glyph'] ?? '');
+        if ($type !== 'medal') {
+            return $family;
+        }
+        $extra = match (true) {
+            $family === 'NATO_INSPIRED' => 'couronne stylisée',
+            $glyph === 'circle' => 'disque poli',
+            $level === 'gold' => 'or',
+            $level === 'silver' => 'argent',
+            $level === 'bronze' => 'bronze',
+            default => $level,
+        };
+
+        return $extra !== '' ? $family . ' · ' . $extra : $family;
+    }
+
     public static function glyphSvg(string $glyph, bool $small = false): string
     {
         $glyph = strtolower(trim($glyph));

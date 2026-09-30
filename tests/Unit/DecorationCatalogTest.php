@@ -39,6 +39,8 @@ final class DecorationCatalogTest extends TestCase
         self::assertSame('NATO_INSPIRED', DecorationCatalog::find('rbn_service_multinational_nato')['family']);
         self::assertSame('NATO_INSPIRED', DecorationCatalog::find('med_service_multinational_nato')['family']);
         self::assertSame('GENERIC', DecorationCatalog::find('rbn_service_distingue')['family']);
+        self::assertSame('GENERIC · or', DecorationCatalog::familyLine(DecorationCatalog::find('med_etoile_bravoure') ?? []));
+        self::assertSame('NATO_INSPIRED · couronne stylisée', DecorationCatalog::familyLine(DecorationCatalog::find('med_service_multinational_nato') ?? []));
     }
 
     public function testResolveMatchesIdsNamesAndKeepsCustomFallback(): void
