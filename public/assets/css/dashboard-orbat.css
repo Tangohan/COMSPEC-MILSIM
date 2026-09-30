@@ -1,6 +1,18 @@
 /**
  * Dashboard ORBAT — organigramme RH dépliable avec portraits.
  */
+.dash-orbat .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .dash-orbat {
   --do-ink: #0c1116;
   --do-muted: #5b676d;
@@ -102,6 +114,100 @@
   color: var(--do-ink);
 }
 
+.dash-orbat__btn--accent {
+  background: var(--do-accent);
+  border-color: #097a51;
+  color: #fff;
+}
+
+.dash-orbat__btn--accent:hover {
+  background: #097a51;
+}
+
+.dash-orbat__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--do-line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.dash-orbat__search {
+  position: relative;
+  flex: 1 1 16rem;
+  min-width: 0;
+  max-width: 28rem;
+}
+
+.dash-orbat__search-ico {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  width: 0.95rem;
+  height: 0.95rem;
+  transform: translateY(-50%);
+  color: var(--do-muted);
+  pointer-events: none;
+}
+
+.dash-orbat__search input {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+  border: 1px solid #d0d8dc;
+  background: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--do-ink);
+  outline: none;
+}
+
+.dash-orbat__search input:focus {
+  border-color: #7ec9a8;
+  box-shadow: 0 0 0 3px rgba(11, 138, 92, 0.12);
+}
+
+.dash-orbat__filter-meta {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--do-muted);
+}
+
+.dash-orbat__no-match {
+  margin: 0;
+  padding: 1.25rem 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--do-muted);
+}
+
+.dash-orbat__empty {
+  padding: 2rem 1.25rem 2.25rem;
+  text-align: center;
+}
+
+.dash-orbat__empty-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--do-ink);
+}
+
+.dash-orbat__empty-text {
+  margin: 0.45rem auto 0;
+  max-width: 28rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--do-muted);
+}
+
 .dash-orbat__tree {
   padding: 1rem 0.85rem 1.25rem;
 }
@@ -116,6 +222,86 @@
   border: 1px solid var(--do-line);
   background: var(--do-surface);
   margin: 0 0 0.65rem;
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.dash-orbat__node.is-mine {
+  border-color: #8fd4b5;
+  box-shadow: inset 3px 0 0 var(--do-accent);
+}
+
+.dash-orbat__node.is-pulse {
+  animation: dash-orbat-pulse 1.6s ease 1;
+}
+
+@keyframes dash-orbat-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(11, 138, 92, 0.35), inset 3px 0 0 var(--do-accent); }
+  55% { box-shadow: 0 0 0 10px rgba(11, 138, 92, 0), inset 3px 0 0 var(--do-accent); }
+  100% { box-shadow: inset 3px 0 0 var(--do-accent); }
+}
+
+.dash-orbat__node.is-vacant-cmd > .dash-orbat__summary {
+  background: linear-gradient(90deg, rgba(169, 74, 34, 0.06), transparent 42%);
+}
+
+.dash-orbat__node.is-filtered-out {
+  display: none;
+}
+
+.dash-orbat__mine-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid #bfe9d8;
+  background: var(--do-accent-soft);
+  color: #0b6b47;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.dash-orbat__chip--vacant {
+  background: #fdf0e8;
+  border-color: #f0c9b0;
+  color: #9a4a22;
+  padding-left: 0.55rem;
+}
+
+.dash-orbat__vacant-mini {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: 0 0.55rem;
+  border: 1px dashed #e0b090;
+  background: #fff8f3;
+  color: #9a4a22;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dash-orbat__person--vacant {
+  border-style: dashed;
+  border-color: #e0b090;
+  background: #fff8f3;
+}
+
+.dash-orbat__avatar--vacant {
+  background: #f7e6d8;
+  border-color: #e0b090;
+  border-style: dashed;
+}
+
+.dash-orbat__person--vacant .dash-orbat__person-name {
+  color: #7a3d1c;
+}
+
+.dash-orbat__summary-lead--vacant {
+  justify-self: end;
 }
 
 .dash-orbat__node[data-depth="1"],

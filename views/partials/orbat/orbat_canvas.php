@@ -48,6 +48,16 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         border-color: #fb923c;
         box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.22), 0 12px 30px rgba(15,23,42,0.06);
     }
+    .orbat-node-card.orbat-node-card--focus {
+        border-color: #0b8a5c;
+        box-shadow: 0 0 0 3px rgba(11, 138, 92, 0.28), 0 12px 30px rgba(15,23,42,0.08);
+        animation: orbat-focus-pulse 1.6s ease 1;
+    }
+    @keyframes orbat-focus-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(11, 138, 92, 0.4), 0 12px 30px rgba(15,23,42,0.06); }
+        70% { box-shadow: 0 0 0 12px rgba(11, 138, 92, 0), 0 12px 30px rgba(15,23,42,0.06); }
+        100% { box-shadow: 0 0 0 3px rgba(11, 138, 92, 0.2), 0 12px 30px rgba(15,23,42,0.08); }
+    }
     .orbat-node-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 18px 34px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
@@ -1275,6 +1285,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         }
         card.className = "orbat-node-card" + (isPh ? " orbat-placeholder-card" : "") + healthClass;
         card.dataset.nodeId = node.id;
+        if ((node.unitId || 0) > 0) card.dataset.unitId = String(node.unitId);
         card.style.position = "relative";
         if (node.accentColor && /^#[0-9A-Fa-f]{6}$/.test(node.accentColor)) {
             card.style.borderLeft = "4px solid " + node.accentColor;
@@ -1969,6 +1980,36 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     var pendingStructTypeUnitId = 0;
     var pendingCommanderUnitId = 0;
 
+    function focusUnitFromQuery() {
+        try {
+            var params = new URLSearchParams(window.location.search || "");
+            var raw = params.get("unit") || params.get("unite") || "";
+            var unitId = parseInt(raw, 10) || 0;
+            if (unitId < 1) return false;
+            var node = findNodeByUnitId(rosterData, unitId) || findNodeByUnitId(fullRosterData, unitId);
+            if (!node) return false;
+            flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
+            renderAllViews(JSON.parse(JSON.stringify(rosterData)));
+            selectNode(node);
+            window.setTimeout(function() {
+                var card = document.querySelector('.orbat-node-card[data-unit-id="' + unitId + '"]');
+                if (card) {
+                    try { card.scrollIntoView({ behavior: "smooth", block: "center" }); }
+                    catch (e) { card.scrollIntoView(true); }
+                    card.classList.add("orbat-node-card--focus");
+                    window.setTimeout(function() { card.classList.remove("orbat-node-card--focus"); }, 2200);
+                }
+                var panel = document.getElementById("orbat-detail-panel") || document.getElementById("orbat-edit-panel");
+                if (panel && typeof panel.scrollIntoView === "function") {
+                    try { panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e2) {}
+                }
+            }, 60);
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
     function bootOrbatTree() {
         readAdminStatusFilterFromDom();
         if (fullRosterData) {
@@ -1977,7 +2018,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         flattenNodes(rosterData).forEach(function(n) { collapsedState.set(n.id, false); });
         setOrbatView("tree");
         renderAllViews(JSON.parse(JSON.stringify(rosterData)));
-        selectNode(rosterData);
+        if (!focusUnitFromQuery()) {
+            selectNode(rosterData);
+        }
     }
 
     if (showOrbatEditTools) {

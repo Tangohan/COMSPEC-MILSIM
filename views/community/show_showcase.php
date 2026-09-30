@@ -831,58 +831,98 @@ if ($showcaseBackUrl === '') {
     <?php endif; ?>
 
     <?php if ($showUnits): ?>
-    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title">
-      <div class="cl-section-head">
-        <div>
-          <p class="cl-kicker">Organisation</p>
-          <h2 id="cl-org-title" class="cl-h2"><?= htmlspecialchars($sectionsTitle !== '' ? $sectionsTitle : (count($publicUnits) === 1 ? 'Une unité structurée' : (count($publicUnits) . ' unités, une communauté'))) ?></h2>
-        </div>
-        <p class="cl-section-aside"><?= htmlspecialchars($sectionsLead !== '' ? $sectionsLead : 'Les places ouvertes sont indiquées par unité.') ?></p>
-      </div>
-      <div class="cl-units">
-        <?php foreach ($publicUnits as $unit): ?>
-          <?php
-            $uid = (int) ($unit['id'] ?? 0);
-            $mc = (int) ($unitMemberCounts[$uid] ?? 0);
-            $blurb = trim((string) ($unit['public_blurb'] ?? ''));
-            $code = trim((string) ($unit['code'] ?? ''));
-            $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
-            $cmdId = (int) ($unit['commander_user_id'] ?? 0);
-            $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
-            $capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
-                ? (int) $unit['public_capacity']
-                : null;
-            $openSlotsRaw = $unit['public_open_slots'] ?? null;
-            $openSlotsLabel = null;
-            $slotsTone = 'ok';
-            if ($openSlotsRaw !== null && $openSlotsRaw !== '') {
-                $os = (int) $openSlotsRaw;
-                if ($os === -1) {
-                    $openSlotsLabel = 'Ouvert';
-                    $slotsTone = 'info';
-                } elseif ($os === 0) {
-                    $openSlotsLabel = 'Complet';
-                    $slotsTone = 'warn';
-                } else {
-                    $openSlotsLabel = $os . ' place' . ($os > 1 ? 's' : '');
-                    $slotsTone = $os <= 2 ? 'warn' : 'ok';
-                }
-            }
-            $strengthLabel = $capacity !== null && $capacity > 0
-                ? $mc . ' / ' . $capacity
-                : ($mc . ' membre' . ($mc > 1 ? 's' : ''));
-            $tone = trim((string) ($unit['public_accent_color'] ?? ''));
-            if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
-                $tone = '#0b8a5c';
-                $typeRaw = strtolower((string) ($unit['type'] ?? ''));
-                if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
-                    $tone = '#c98a12';
-                } elseif (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
-                    $tone = '#1e6fbf';
-                }
-            }
+    <?php
+      $publicUnitsById = [];
+      $publicUnitChildIds = [];
+      foreach ($publicUnits as $puRow) {
+          if (!is_array($puRow)) {
+              continue;
+          }
+          $puId = (int) ($puRow['id'] ?? 0);
+          if ($puId < 1) {
+              continue;
+          }
+          $publicUnitsById[$puId] = $puRow;
+          $publicUnitChildIds[$puId] = $publicUnitChildIds[$puId] ?? [];
+      }
+      $publicUnitRoots = [];
+      foreach ($publicUnitsById as $puId => $puRow) {
+          $parentId = (int) ($puRow['parent_id'] ?? 0);
+          if ($parentId > 0 && isset($publicUnitsById[$parentId])) {
+              $publicUnitChildIds[$parentId][] = $puId;
+          } else {
+              $publicUnitRoots[] = $puId;
+          }
+      }
+      $publicOrbatHasTree = false;
+      foreach ($publicUnitChildIds as $childList) {
+          if ($childList !== []) {
+              $publicOrbatHasTree = true;
+              break;
+          }
+      }
+      $renderPublicUnitCard = null;
+      $renderPublicUnitCard = static function (int $unitId, int $depth = 0) use (
+          &$renderPublicUnitCard,
+          $publicUnitsById,
+          $publicUnitChildIds,
+          $unitMemberCounts,
+          $commanderNames,
+          $slug,
+          $publicOrbatHasTree
+      ): void {
+          $unit = $publicUnitsById[$unitId] ?? null;
+          if (!is_array($unit)) {
+              return;
+          }
+          $uid = (int) ($unit['id'] ?? 0);
+          $mc = (int) ($unitMemberCounts[$uid] ?? 0);
+          $blurb = trim((string) ($unit['public_blurb'] ?? ''));
+          $code = trim((string) ($unit['code'] ?? ''));
+          $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
+          $cmdId = (int) ($unit['commander_user_id'] ?? 0);
+          $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
+          $capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
+              ? (int) $unit['public_capacity']
+              : null;
+          $openSlotsRaw = $unit['public_open_slots'] ?? null;
+          $openSlotsLabel = null;
+          $slotsTone = 'ok';
+          if ($openSlotsRaw !== null && $openSlotsRaw !== '') {
+              $os = (int) $openSlotsRaw;
+              if ($os === -1) {
+                  $openSlotsLabel = 'Ouvert';
+                  $slotsTone = 'info';
+              } elseif ($os === 0) {
+                  $openSlotsLabel = 'Complet';
+                  $slotsTone = 'warn';
+              } else {
+                  $openSlotsLabel = $os . ' place' . ($os > 1 ? 's' : '');
+                  $slotsTone = $os <= 2 ? 'warn' : 'ok';
+              }
+          }
+          $strengthLabel = $capacity !== null && $capacity > 0
+              ? $mc . ' / ' . $capacity
+              : ($mc . ' membre' . ($mc > 1 ? 's' : ''));
+          $tone = trim((string) ($unit['public_accent_color'] ?? ''));
+          if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
+              $tone = '#0b8a5c';
+              $typeRaw = strtolower((string) ($unit['type'] ?? ''));
+              if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
+                  $tone = '#c98a12';
+              } elseif (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
+                  $tone = '#1e6fbf';
+              }
+          }
+          $childIds = $publicUnitChildIds[$uid] ?? [];
+          $unitFoundedRaw = trim((string) ($unit['public_founded_on'] ?? ''));
+          $unitFoundedDisp = '';
+          if ($unitFoundedRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $unitFoundedRaw, $ufm)) {
+              $unitFoundedDisp = ((int) $ufm[3]) . '/' . $ufm[2] . '/' . $ufm[1];
+          }
           ?>
-        <article class="cl-unit" style="--cl-unit-tone:<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>">
+      <li class="cl-orbat-node" data-depth="<?= (int) $depth ?>">
+        <article class="cl-unit<?= $depth > 0 ? ' cl-unit--child' : '' ?>" style="--cl-unit-tone:<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>">
           <?php if ($code !== ''): ?>
           <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code)) ?></div>
           <?php else: ?>
@@ -893,6 +933,8 @@ if ($showcaseBackUrl === '') {
           <p class="cl-unit__desc"><?= nl2br(htmlspecialchars($blurb)) ?></p>
           <?php elseif ($cmdName !== ''): ?>
           <p class="cl-unit__desc">Chef d’unité : <?= htmlspecialchars($cmdName) ?></p>
+          <?php elseif ($cmdId < 1): ?>
+          <p class="cl-unit__desc cl-unit__desc--vacant">Responsable non publié</p>
           <?php else: ?>
           <p class="cl-unit__desc">Unité visible sur la page publique.</p>
           <?php endif; ?>
@@ -900,13 +942,6 @@ if ($showcaseBackUrl === '') {
             <span>Effectif</span>
             <span class="cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
           </div>
-          <?php
-            $unitFoundedRaw = trim((string) ($unit['public_founded_on'] ?? ''));
-            $unitFoundedDisp = '';
-            if ($unitFoundedRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $unitFoundedRaw, $ufm)) {
-                $unitFoundedDisp = ((int) $ufm[3]) . '/' . $ufm[2] . '/' . $ufm[1];
-            }
-          ?>
           <?php if ($unitFoundedDisp !== ''): ?>
           <div class="cl-unit__meta">
             <span>Création</span>
@@ -923,8 +958,30 @@ if ($showcaseBackUrl === '') {
           <a class="cl-unit__link" href="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/unite/' . rawurlencode($unitSlugForLink)), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche →</a>
           <?php endif; ?>
         </article>
-        <?php endforeach; ?>
+        <?php if ($childIds !== []): ?>
+        <ul class="cl-orbat-children" aria-label="Sous-unités de <?= htmlspecialchars((string) ($unit['name'] ?? 'unité'), ENT_QUOTES, 'UTF-8') ?>">
+          <?php foreach ($childIds as $childId): ?>
+            <?php $renderPublicUnitCard((int) $childId, $depth + 1); ?>
+          <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+      </li>
+          <?php
+      };
+    ?>
+    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Organisation</p>
+          <h2 id="cl-org-title" class="cl-h2"><?= htmlspecialchars($sectionsTitle !== '' ? $sectionsTitle : (count($publicUnits) === 1 ? 'Une unité structurée' : (count($publicUnits) . ' unités, une communauté'))) ?></h2>
+        </div>
+        <p class="cl-section-aside"><?= htmlspecialchars($sectionsLead !== '' ? $sectionsLead : ($publicOrbatHasTree ? 'Hiérarchie publique des unités et places ouvertes.' : 'Les places ouvertes sont indiquées par unité.')) ?></p>
       </div>
+      <ul class="cl-units<?= $publicOrbatHasTree ? ' cl-units--orbat' : '' ?>"<?= $publicOrbatHasTree ? ' aria-label="Chaîne de commandement publique"' : '' ?>>
+        <?php foreach ($publicUnitRoots as $rootId): ?>
+          <?php $renderPublicUnitCard((int) $rootId, 0); ?>
+        <?php endforeach; ?>
+      </ul>
     </section>
     <?php endif; ?>
 

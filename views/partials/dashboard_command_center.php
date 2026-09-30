@@ -805,8 +805,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         $dashboardEffectifsRows = is_array($dashboard_effectifs_rows ?? null) ? $dashboard_effectifs_rows : [];
         $hasEffectifsTable = $canViewPersonnelDirectory && empty($dashboard_is_default_tenant);
         $dashboardOrbat = is_array($dashboard_orbat ?? null) ? $dashboard_orbat : null;
+        $canViewOrbat = !empty($can_view_orbat) || $dashboardOrbat !== null;
         ?>
-        <?php if ($dashboardOrbat !== null): ?>
+        <?php if ($canViewOrbat): ?>
             <?php require base_path('views/partials/dashboard_orbat.php'); ?>
         <?php endif; ?>
         <?php if ($hasEffectifsTable): ?>
