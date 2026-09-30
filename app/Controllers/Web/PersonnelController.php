@@ -1379,7 +1379,7 @@ class PersonnelController
     }
 
     /**
-     * Téléchargement PDF de l’ORBAT (A3 paysage).
+     * Téléchargement PDF de l’ORBAT (format adaptatif A3→A0 / custom, jamais A4).
      */
     public function orbatPdf(Request $request, array $params = []): Response
     {
@@ -1436,6 +1436,11 @@ class PersonnelController
 
         $service = new \App\Services\Organization\OrbatChartPdfService();
 
+        $paper = strtoupper(trim((string) $request->query('paper', '')));
+        if (!in_array($paper, ['A3', 'A2', 'A1', 'A0'], true)) {
+            $paper = '';
+        }
+
         return $service->buildDocument($rosterData, [
             'unit_label' => $tenantLabel !== '' ? $tenantLabel : trim((string) ($rosterData['label'] ?? 'Organisation')),
             'theater' => trim((string) $request->query('theater', '')),
@@ -1444,6 +1449,7 @@ class PersonnelController
             'include_mission' => (string) $request->query('mission', '1') === '1',
             'include_notes' => (string) $request->query('notes', '0') === '1',
             'include_legend' => (string) $request->query('legend', '1') === '1',
+            'paper' => $paper,
         ]);
     }
 
