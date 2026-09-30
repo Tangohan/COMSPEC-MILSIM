@@ -425,28 +425,24 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Commandement dérivé</p>
-                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Calculé depuis les postes clés pourvus (titulaire / intérim) — pas un champ libre.</p>
                         <div id="detail-command" class="mt-3 space-y-1.5 text-sm"></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Signaux de capacité</p>
-                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Faits objectifs uniquement — aucun jugement du type « non opérationnel ».</p>
                         <div id="detail-signals" class="mt-3 space-y-1.5 text-sm"></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Postes ORBAT</p>
-                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Effectif théorique — y compris postes vacants (distinct des membres présents).</p>
                         <div id="detail-billets" class="mt-3 space-y-1.5 max-h-56 overflow-y-auto text-sm"></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                         <p class="text-[9px] font-black tracking-[0.18em] uppercase text-slate-400">Membres rattachés</p>
-                        <p class="mt-1 text-[10px] text-slate-500 leading-snug">Affectations actives, dossier personnel ou unité principale.</p>
                         <div id="detail-members" class="mt-3 space-y-1.5 max-h-52 overflow-y-auto text-sm"></div>
                     </div>
                     <?php if ($showOrbatEditTools): ?>
                     <div id="orbat-edit-panel" class="hidden rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
                         <p class="text-[10px] font-black uppercase tracking-widest text-emerald-950">Modifier l’unité sélectionnée</p>
-                        <p class="text-[11px] text-emerald-900/85 leading-snug">Choisissez une carte dans l’organigramme (pas la racine « Command »). Les modifications sont envoyées automatiquement après une courte pause.</p>
+                        <p class="text-[11px] text-emerald-900/85 leading-snug">Sélectionnez une unité dans l’organigramme. Les modifications sont enregistrées automatiquement.</p>
                         <div>
                             <label for="orbat-ed-name" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Nom affiché</label>
                             <input id="orbat-ed-name" type="text" maxlength="255" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
@@ -518,7 +514,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                         </div>
                         <div id="orbat-ed-details-block">
                             <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
-                            <p class="mb-2 text-[10px] text-slate-500 leading-snug">Informations de contexte affichées sur la fiche (repères, organisation interne, notes de pilotage).</p>
+                            <p class="mb-2 text-[10px] text-slate-500 leading-snug">Texte affiché sur la fiche de l’unité.</p>
                             <textarea id="orbat-ed-details" rows="4" maxlength="100000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
                         </div>
                         <div id="orbat-chart-media-block" class="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
@@ -1566,7 +1562,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             if ((node.unitId || 0) < 1) {
                 commandBox.innerHTML = "<p class=\"text-xs text-slate-500\">Sélectionnez une unité.</p>";
             } else if (!cmds.length) {
-                commandBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun poste clé pourvu — le commandement n’est pas dérivable.</p>";
+                commandBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun poste clé pourvu.</p>";
             } else {
                 cmds.forEach(function(c) {
                     var p = document.createElement("p");
@@ -1584,7 +1580,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             if ((node.unitId || 0) < 1) {
                 signalsBox.innerHTML = "<p class=\"text-xs text-slate-500\">Sélectionnez une unité.</p>";
             } else if (!sigs.length) {
-                signalsBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun signal objectif pour cette structure.</p>";
+                signalsBox.innerHTML = "<p class=\"text-xs text-slate-500\">Aucun signal pour cette structure.</p>";
             } else {
                 sigs.forEach(function(s) {
                     var sev = s.severity || "medium";
