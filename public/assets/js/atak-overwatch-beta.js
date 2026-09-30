@@ -1119,10 +1119,58 @@
   function natoDash(meta) {
     if (meta.dash) return String(meta.dash);
     var nato = String(meta.nato || '');
-    if (nato === 'phase') return '8 6';
+    if (nato === 'phase' || nato === 'nofire') return '8 6';
     if (nato === 'sector') return '10 4 2 4';
     if (nato === 'highlight') return '6 4';
+    if (nato === 'support_fire' || nato === 'dz') return '6 4';
+    if (nato === 'feba') return null;
+    if (nato === 'flot') return '2 6';
+    if (nato === 'obstacle') return '4 3';
     return null;
+  }
+
+  var SYMBOL_LIB_KEY = 'athena:ow-symbol-library';
+  var pendingStamp = null;
+  function readSymbolLibrary() {
+    try {
+      var raw = localStorage.getItem(SYMBOL_LIB_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (eLib) {
+      return [];
+    }
+  }
+  function writeSymbolLibrary(list) {
+    try {
+      localStorage.setItem(SYMBOL_LIB_KEY, JSON.stringify((list || []).slice(0, 24)));
+    } catch (eWrite) {}
+  }
+  function addSymbolToLibrary(entry) {
+    var list = readSymbolLibrary();
+    list.unshift(entry);
+    writeSymbolLibrary(list);
+    return list;
+  }
+  function removeSymbolFromLibrary(id) {
+    var list = readSymbolLibrary().filter(function (row) { return String(row.id) !== String(id); });
+    writeSymbolLibrary(list);
+    return list;
+  }
+  function clearSymbolLibrary() {
+    writeSymbolLibrary([]);
+    return [];
+  }
+  function armStampPlacement(entry) {
+    if (!entry || !entry.dataUrl) return;
+    pendingStamp = {
+      id: entry.id || '',
+      label: entry.label || 'Image',
+      dataUrl: entry.dataUrl,
+      width: Number(entry.width) || 72,
+      height: Number(entry.height) || 72
+    };
+    setTool('stamp', true);
+    toast('Cliquez la carte pour poser « ' + pendingStamp.label + ' ».');
   }
   function offsetPerp(aw, bw, dist) {
     var dx = bw.x - aw.x;
@@ -1213,7 +1261,7 @@
     return pts;
   }
   function isDrawBarTool(tool) {
-    return /^(draw|arrow|freehand|polygon|highlight|text|measure|axis|attack|phase|sector|assembly|objective)$/.test(tool);
+    return /^(draw|arrow|freehand|polygon|highlight|text|measure|stamp|axis|attack|support_fire|breach|withdraw|delay|phase|sector|feba|flot|obstacle|checkpoint|assembly|objective|lz|dz|minefield|nofire|medical|cbrn)$/.test(tool);
   }
   function syncDrawBar() {
     var bar = document.getElementById('ow-drawbar');
@@ -3134,6 +3182,29 @@
         pin.className = 'ow-bplan-pin';
         pin.innerHTML = '<small>' + escapeHtml(shape.label || 'Plan') + '</small>Plan rattaché';
         layer = L.marker(pll, { icon: L.divIcon({ className: '', html: pin.outerHTML, iconSize: [140, 36], iconAnchor: [70, 36] }) });
+      } else if (meta.image || nato === 'stamp') {
+        var iw = Math.max(24, Math.min(160, Number(meta.width) || 72));
+        var ih = Math.max(24, Math.min(160, Number(meta.height) || 72));
+        var stamp = document.createElement('img');
+        stamp.className = 'ow-map-stamp';
+        stamp.src = String(meta.image || '');
+        stamp.alt = shape.label || 'Image';
+        stamp.width = iw;
+        stamp.height = ih;
+        layer = L.marker(pll, {
+          icon: L.divIcon({
+            className: '',
+            html: stamp.outerHTML,
+            iconSize: [iw, ih],
+            iconAnchor: [Math.round(iw / 2), Math.round(ih / 2)]
+          })
+        });
+      } else if (nato === 'checkpoint') {
+        var cp = document.createElement('div');
+        cp.className = 'ow-map-stamp';
+        cp.style.cssText = 'width:34px;height:34px;display:grid;place-items:center;border:2px solid ' + color + ';transform:rotate(45deg);background:rgba(0,0,0,.35);color:' + color + ';font:700 9px/1 sans-serif';
+        cp.innerHTML = '<span style="transform:rotate(-45deg)">CP</span>';
+        layer = L.marker(pll, { icon: L.divIcon({ className: '', html: cp.outerHTML, iconSize: [34, 34], iconAnchor: [17, 17] }) });
       } else {
         layer = L.circleMarker(pll, { radius: 8, color: color, weight: 2, fillOpacity: 0.5 });
       }
@@ -3147,10 +3218,18 @@
         layer = L.polygon(filledAttackLatLngs(latlngs, 16), {
           color: color, fillColor: color, fillOpacity: 0.92, weight: 1
         });
+      } else if (nato === 'breach') {
+        var breachGroup = L.featureGroup();
+        breachGroup.addLayer(L.polyline(latlngs, { color: color, weight: 3 }));
+        if (latlngs.length >= 2) {
+          var mid = latlngs[Math.floor(latlngs.length / 2)];
+          breachGroup.addLayer(L.circleMarker(mid, { radius: 5, color: color, fillColor: color, fillOpacity: 1, weight: 1 }));
+        }
+        layer = breachGroup;
       } else {
         layer = L.polyline(latlngs, {
           color: color,
-          weight: Number(shape.stroke || (nato === 'arrow' || nato === 'axis' ? 3 : 2)),
+          weight: Number(shape.stroke || (nato === 'arrow' || nato === 'axis' || nato === 'feba' ? 3 : 2)),
           dashArray: dash || undefined
         });
       }
@@ -3158,9 +3237,10 @@
       var ring = geo.coordinates[0] && Array.isArray(geo.coordinates[0][0]) ? geo.coordinates[0] : geo.coordinates;
       latlngs = ring.map(function (p) { return worldToLatLng(p[0], p[1]); });
       var fillStyle = String(meta.fill_style || (meta.hatch ? 'hatch-d' : 'solid'));
-      var hatchClass = fillStyle === 'hatch-h' ? 'ow-hatch-h' : (fillStyle === 'hatch-d' || meta.hatch ? 'ow-hatch-diag' : '');
+      var hatchClass = fillStyle === 'hatch-h' ? 'ow-hatch-h' : (fillStyle === 'hatch-d' || meta.hatch || nato === 'minefield' ? 'ow-hatch-diag' : '');
       var fillOp = fillStyle === 'none' ? 0 : Number(shape.fillOpacity || shape.fill_opacity || meta.fill_opacity || 0.15);
-      if (nato === 'assembly' || nato === 'objective') fillOp = 0;
+      if (nato === 'assembly' || nato === 'objective' || nato === 'lz' || nato === 'dz' || nato === 'medical' || nato === 'cbrn') fillOp = 0;
+      if (nato === 'minefield' || nato === 'nofire') fillOp = Number(meta.fill_opacity || 0.12);
       if (nato === 'highlight') fillOp = Number(meta.fill_opacity || 0.18);
       layer = L.polygon(latlngs, {
         color: color,
@@ -3178,7 +3258,7 @@
     if (meta.interior && type !== 'POLYGON' && type !== 'AOI' && layer.bindTooltip && !layer.getTooltip()) {
       layer.bindTooltip(String(meta.interior), { permanent: true, direction: 'center', className: 'ow-geo-label' });
     }
-    if ((nato === 'arrow' || nato === 'axis' || meta.arrow) && type !== 'POINT' && nato !== 'attack' && latlngs.length >= 2) {
+    if ((nato === 'arrow' || nato === 'axis' || nato === 'support_fire' || nato === 'withdraw' || nato === 'delay' || meta.arrow) && type !== 'POINT' && nato !== 'attack' && nato !== 'breach' && latlngs.length >= 2) {
       var group = L.featureGroup([layer]);
       var head = arrowHeadPolygon(latlngs, color, false);
       if (head) group.addLayer(head);
@@ -3192,7 +3272,7 @@
     layer.addTo(map);
     shapeLayers[id] = layer;
     bindLayerContext(layer, 'shape', id, shape.label || shape.type || 'Tracé');
-    var labelNato = /^(phase|assembly|objective|highlight|sector|axis|attack)$/.test(nato);
+    var labelNato = /^(phase|assembly|objective|highlight|sector|axis|attack|support_fire|breach|withdraw|delay|feba|flot|obstacle|lz|dz|minefield|nofire|medical|cbrn|checkpoint|stamp)$/.test(nato);
     if ((type === 'POINT' || labelNato) && shape.label && layer.bindTooltip && !layer.getTooltip()) {
       layer.bindTooltip(String(shape.label), {
         permanent: labelNato,
@@ -3403,17 +3483,18 @@
       draftLayer = L.polygon(rectLatLngs(draftPoints[0], draftPoints[1]), { color: style.color, dashArray: '4 4' }).addTo(map);
       return;
     }
-    if ((activeTool === 'highlight' || activeTool === 'assembly') && draftPoints.length === 2) {
+    if ((activeTool === 'highlight' || activeTool === 'assembly' || activeTool === 'minefield' || activeTool === 'nofire' || activeTool === 'medical' || activeTool === 'cbrn') && draftPoints.length === 2) {
       var previewColor = activeTool === 'highlight' ? '#f0a63a' : style.color;
+      var previewFill = activeTool === 'highlight' ? 0.18 : (activeTool === 'minefield' || activeTool === 'nofire' ? 0.12 : 0);
       draftLayer = L.polygon(rectLatLngs(draftPoints[0], draftPoints[1]), {
         color: previewColor,
         fillColor: previewColor,
-        fillOpacity: activeTool === 'highlight' ? 0.18 : 0,
-        dashArray: activeTool === 'highlight' ? '6 4' : '4 4'
+        fillOpacity: previewFill,
+        dashArray: activeTool === 'highlight' || activeTool === 'nofire' ? '6 4' : '4 4'
       }).addTo(map);
       return;
     }
-    if (activeTool === 'objective' && draftPoints.length === 2) {
+    if ((activeTool === 'objective' || activeTool === 'lz' || activeTool === 'dz') && draftPoints.length === 2) {
       draftLayer = L.polygon(ellipseLatLngs(draftPoints[0], draftPoints[1]), { color: style.color, fillOpacity: 0, dashArray: '4 4' }).addTo(map);
       return;
     }
@@ -3616,6 +3697,22 @@
       saveShape('LINE', draftPoints.slice(), 'Attaque principale', { confirmed: true, meta: { nato: 'attack', arrow: true, filled: true } });
       return;
     }
+    if (activeTool === 'support_fire' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'Appui-feu', { confirmed: true, meta: { nato: 'support_fire', arrow: true, dash: '6 4' } });
+      return;
+    }
+    if (activeTool === 'breach' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'Brèche', { confirmed: true, meta: { nato: 'breach' } });
+      return;
+    }
+    if (activeTool === 'withdraw' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'Retrait', { confirmed: true, meta: { nato: 'withdraw', arrow: true } });
+      return;
+    }
+    if (activeTool === 'delay' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'Retard', { confirmed: true, meta: { nato: 'delay', arrow: true } });
+      return;
+    }
     if (activeTool === 'phase' && draftPoints.length >= 2) {
       var phaseName = window.prompt('Nom de la ligne de phase', 'PL ') || 'Ligne de phase';
       saveShape('LINE', draftPoints.slice(), phaseName.trim(), { confirmed: true, meta: { nato: 'phase' } });
@@ -3624,6 +3721,18 @@
     if (activeTool === 'sector' && draftPoints.length >= 2) {
       var sectorName = window.prompt('Limite de secteur', '') || 'Limite de secteur';
       saveShape('LINE', draftPoints.slice(), sectorName.trim(), { confirmed: true, meta: { nato: 'sector' } });
+      return;
+    }
+    if (activeTool === 'feba' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'FEBA', { confirmed: true, meta: { nato: 'feba' } });
+      return;
+    }
+    if (activeTool === 'flot' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'FLOT', { confirmed: true, meta: { nato: 'flot' } });
+      return;
+    }
+    if (activeTool === 'obstacle' && draftPoints.length >= 2) {
+      saveShape('LINE', draftPoints.slice(), 'Obstacle', { confirmed: true, meta: { nato: 'obstacle' } });
       return;
     }
     if (activeTool === 'highlight' && draftPoints.length >= 2) {
@@ -3655,6 +3764,42 @@
         confirmed: true,
         fillOpacity: 0,
         meta: { nato: 'objective', fill_style: 'none' }
+      });
+      return;
+    }
+    if ((activeTool === 'lz' || activeTool === 'dz') && draftPoints.length >= 2) {
+      var dropRing = ellipseLatLngs(draftPoints[0], draftPoints[draftPoints.length - 1]);
+      var dropLabel = activeTool === 'lz' ? 'LZ' : 'DZ';
+      var dropName = window.prompt(activeTool === 'lz' ? 'Zone d’atterrissage' : 'Zone de largage', dropLabel + ' ') || dropLabel;
+      saveShape('AOI', dropRing, dropName.trim(), {
+        confirmed: true,
+        fillOpacity: 0,
+        meta: { nato: activeTool, fill_style: 'none' }
+      });
+      return;
+    }
+    if ((activeTool === 'minefield' || activeTool === 'nofire' || activeTool === 'medical' || activeTool === 'cbrn') && draftPoints.length >= 2) {
+      var zoneRing = draftPoints.length === 2 ? rectLatLngs(draftPoints[0], draftPoints[1]) : draftPoints.slice();
+      var zoneDefaults = {
+        minefield: ['Champ de mines', 0.12, 'hatch-d'],
+        nofire: ['Zone interdite au tir', 0.1, 'none'],
+        medical: ['Poste médical', 0, 'none'],
+        cbrn: ['Zone NBC', 0, 'none']
+      };
+      var zd = zoneDefaults[activeTool] || ['Zone', 0.12, 'none'];
+      var zoneName = window.prompt(zd[0], zd[0]) || zd[0];
+      saveShape('AOI', zoneRing, zoneName.trim(), {
+        confirmed: true,
+        fillOpacity: zd[1],
+        meta: { nato: activeTool, fill_style: zd[2], fill_opacity: zd[1] }
+      });
+      return;
+    }
+    if (activeTool === 'checkpoint' && draftPoints.length >= 1) {
+      var cpName = window.prompt('Point de contrôle', 'CP ') || 'CP';
+      saveShape('POINT', [draftPoints[0]], cpName.trim(), {
+        confirmed: true,
+        meta: { nato: 'checkpoint' }
       });
       return;
     }
@@ -3752,12 +3897,15 @@
     if (tool === 'bearing') toast('Maintenez du départ à l’arrivée.');
     if (tool === 'los') toast('Maintenez de l’observateur à la cible.');
     if (tool === 'polygon' || tool === 'aoi') toast('Maintenez pour tracer le contour. Relâchez pour fermer la zone.');
-    if (tool === 'line' || tool === 'route' || tool === 'arrow' || tool === 'axis' || tool === 'attack') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
+    if (tool === 'line' || tool === 'route' || tool === 'arrow' || tool === 'axis' || tool === 'attack' || tool === 'support_fire' || tool === 'breach' || tool === 'withdraw' || tool === 'delay' || tool === 'feba' || tool === 'flot' || tool === 'obstacle') toast('Maintenez pour un segment, ou cliquez des sommets puis double-clic.');
     if (tool === 'phase') toast('Tracez la ligne de phase, puis nommez-la (ex. PL BISON).');
     if (tool === 'sector') toast('Tracez la limite de secteur, puis indiquez les unités.');
     if (tool === 'highlight') toast('Glissez un rectangle : zone surlignée, semi-transparente.');
     if (tool === 'assembly') toast('Glissez le rectangle de la zone de rassemblement.');
-    if (tool === 'objective') toast('Glissez l’ellipse de l’objectif.');
+    if (tool === 'objective' || tool === 'lz' || tool === 'dz') toast('Glissez l’ellipse de la zone.');
+    if (tool === 'minefield' || tool === 'nofire' || tool === 'medical' || tool === 'cbrn') toast('Glissez le rectangle de la zone.');
+    if (tool === 'checkpoint') toast('Cliquez pour poser le point de contrôle.');
+    if (tool === 'stamp') toast(pendingStamp ? ('Cliquez pour poser « ' + pendingStamp.label + ' ».') : 'Choisissez une image dans la bibliothèque.');
     if (tool === 'measure') toast('Cliquez le départ, puis l’arrivée. Distance, cap, grilles et temps s’affichent.');
     if (tool === 'viewshed') toast('Cliquez un opérateur, une caméra ou un point d’observation.');
     if (tool === 'horizon') toast('Cliquez le point depuis lequel lire l’horizon.');
@@ -3801,6 +3949,26 @@
       if (label && label.trim()) saveShape('POINT', [event.latlng], label.trim());
       return;
     }
+    if (activeTool === 'stamp' && pendingStamp) {
+      var stamp = pendingStamp;
+      pendingStamp = null;
+      saveShape('POINT', [event.latlng], stamp.label, {
+        confirmed: true,
+        meta: {
+          nato: 'stamp',
+          image: stamp.dataUrl,
+          width: stamp.width,
+          height: stamp.height,
+          library_id: stamp.id || ''
+        }
+      });
+      return;
+    }
+    if (activeTool === 'checkpoint') {
+      draftPoints = [event.latlng];
+      finishDraft();
+      return;
+    }
     if (activeTool === 'marker') { saveMarker(event.latlng, 'Marqueur'); return; }
     if (activeTool === 'viewshed') {
       if (window.OverwatchGlTactics) window.OverwatchGlTactics.requestViewshed(event.latlng);
@@ -3837,17 +4005,17 @@
       return;
     }
     if (activeTool === 'measure' && !measureFrom) measureFrom = event.latlng;
-    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los' || activeTool === 'slice' || activeTool === 'measure3d' || activeTool === 'highlight' || activeTool === 'assembly' || activeTool === 'objective' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'phase' || activeTool === 'sector') && draftPoints.length >= 2) {
+    if ((activeTool === 'circle' || activeTool === 'rect' || activeTool === 'bearing' || activeTool === 'los' || activeTool === 'slice' || activeTool === 'measure3d' || activeTool === 'highlight' || activeTool === 'assembly' || activeTool === 'objective' || activeTool === 'lz' || activeTool === 'dz' || activeTool === 'minefield' || activeTool === 'nofire' || activeTool === 'medical' || activeTool === 'cbrn' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'support_fire' || activeTool === 'breach' || activeTool === 'withdraw' || activeTool === 'delay' || activeTool === 'phase' || activeTool === 'sector' || activeTool === 'feba' || activeTool === 'flot' || activeTool === 'obstacle') && draftPoints.length >= 2) {
       finishDraft();
       return;
     }
-    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'phase' || activeTool === 'sector') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' || activeTool === 'volume' ? 3 : 2)) {
+    if ((activeTool === 'line' || activeTool === 'route' || activeTool === 'polygon' || activeTool === 'aoi' || activeTool === 'volume' || activeTool === 'split' || activeTool === 'eta' || activeTool === 'profile' || activeTool === 'arrow' || activeTool === 'axis' || activeTool === 'attack' || activeTool === 'support_fire' || activeTool === 'breach' || activeTool === 'withdraw' || activeTool === 'delay' || activeTool === 'phase' || activeTool === 'sector' || activeTool === 'feba' || activeTool === 'flot' || activeTool === 'obstacle') && draftPoints.length >= (activeTool === 'aoi' || activeTool === 'polygon' || activeTool === 'volume' ? 3 : 2)) {
       /* keep collecting until double-click */
     }
   }
 
   function isDragTool(tool) {
-    return /^(circle|rect|freehand|line|route|polygon|aoi|volume|measure|measure3d|bearing|los|eta|profile|slice|arrow|highlight|axis|attack|phase|sector|assembly|objective)$/.test(tool);
+    return /^(circle|rect|freehand|line|route|polygon|aoi|volume|measure|measure3d|bearing|los|eta|profile|slice|arrow|highlight|axis|attack|support_fire|breach|withdraw|delay|phase|sector|feba|flot|obstacle|assembly|objective|lz|dz|minefield|nofire|medical|cbrn)$/.test(tool);
   }
   function liveMeasureHud() {
     var el = document.getElementById('ow-live-measure');
@@ -7573,6 +7741,11 @@
     undoLastShape: undoLastShape,
     redoLastShape: redoLastShape,
     parseShapeMeta: parseShapeMeta,
+    readSymbolLibrary: readSymbolLibrary,
+    addSymbolToLibrary: addSymbolToLibrary,
+    removeSymbolFromLibrary: removeSymbolFromLibrary,
+    clearSymbolLibrary: clearSymbolLibrary,
+    armStampPlacement: armStampPlacement,
     getChatMessages: function () { return chatMessages; },
     getActiveChannel: function () { return activeChannel; },
     worldToLatLng: worldToLatLng,

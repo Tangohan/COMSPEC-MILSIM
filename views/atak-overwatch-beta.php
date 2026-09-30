@@ -530,14 +530,54 @@ $icon = static function (string $path): string {
               <button type="button" class="ow-swatch" data-affil="neutral" style="background:#2ecf9a" title="Neutre"><span>Neutre</span></button>
               <button type="button" class="ow-swatch" data-affil="unknown" style="background:#e8cf4a" title="Inconnu"><span>Inconnu</span></button>
             </div>
-            <div class="ow-otan-cap">Symboles APP-6</div>
-            <div class="ow-otan-grid">
-              <button type="button" class="ow-otan-item" data-draw="axis"><svg viewBox="0 0 40 20"><line x1="3" y1="14" x2="30" y2="4" stroke="#5b9dff" stroke-width="2"/><path d="M30,4 L24,6 L26,11 Z" fill="#5b9dff"/></svg><span>Axe de progression</span></button>
-              <button type="button" class="ow-otan-item" data-draw="attack"><svg viewBox="0 0 40 20"><path d="M3,17 L3,10 L26,6 L34,3 L26,12 L3,10" fill="#5b9dff"/></svg><span>Attaque principale</span></button>
-              <button type="button" class="ow-otan-item" data-draw="phase"><svg viewBox="0 0 40 20"><line x1="2" y1="10" x2="36" y2="10" stroke="#e8cf4a" stroke-width="2" stroke-dasharray="4 2"/></svg><span>Ligne de phase</span></button>
-              <button type="button" class="ow-otan-item" data-draw="sector"><svg viewBox="0 0 40 20"><line x1="20" y1="2" x2="20" y2="18" stroke="#8b93a1" stroke-width="1.6" stroke-dasharray="5 1.5 1 1.5"/><line x1="14" y1="2" x2="26" y2="2" stroke="#8b93a1" stroke-width="1.6"/></svg><span>Limite de secteur</span></button>
-              <button type="button" class="ow-otan-item" data-draw="assembly"><svg viewBox="0 0 40 20"><rect x="5" y="4" width="30" height="12" fill="none" stroke="#5b9dff" stroke-width="1.8"/></svg><span>Zone de rassemblement</span></button>
-              <button type="button" class="ow-otan-item" data-draw="objective"><svg viewBox="0 0 40 20"><ellipse cx="20" cy="10" rx="15" ry="7" fill="none" stroke="#ef5b5b" stroke-width="1.8"/></svg><span>Objectif</span></button>
+            <div class="ow-otan-tabs" role="tablist" aria-label="Catalogue symboles">
+              <button type="button" class="ow-otan-tab is-on" data-otan-tab="manoeuvre" role="tab" aria-selected="true">Manœuvre</button>
+              <button type="button" class="ow-otan-tab" data-otan-tab="zones" role="tab" aria-selected="false">Zones</button>
+              <button type="button" class="ow-otan-tab" data-otan-tab="controle" role="tab" aria-selected="false">Contrôle</button>
+              <button type="button" class="ow-otan-tab" data-otan-tab="library" role="tab" aria-selected="false">Bibliothèque</button>
+            </div>
+            <div class="ow-otan-pane is-on" data-otan-pane="manoeuvre">
+              <div class="ow-otan-grid">
+                <button type="button" class="ow-otan-item" data-draw="axis"><svg viewBox="0 0 40 20"><line x1="3" y1="14" x2="30" y2="4" stroke="#5b9dff" stroke-width="2"/><path d="M30,4 L24,6 L26,11 Z" fill="#5b9dff"/></svg><span>Axe de progression</span></button>
+                <button type="button" class="ow-otan-item" data-draw="attack"><svg viewBox="0 0 40 20"><path d="M3,17 L3,10 L26,6 L34,3 L26,12 L3,10" fill="#5b9dff"/></svg><span>Attaque principale</span></button>
+                <button type="button" class="ow-otan-item" data-draw="support_fire"><svg viewBox="0 0 40 20"><line x1="3" y1="14" x2="28" y2="5" stroke="#5b9dff" stroke-width="2" stroke-dasharray="4 2"/><path d="M28,5 L22,6 L24,11 Z" fill="#5b9dff"/></svg><span>Appui-feu</span></button>
+                <button type="button" class="ow-otan-item" data-draw="breach"><svg viewBox="0 0 40 20"><path d="M6,16 L14,4 L20,12 L26,4 L34,16" fill="none" stroke="#5b9dff" stroke-width="2"/><circle cx="20" cy="10" r="2.5" fill="#5b9dff"/></svg><span>Brèche</span></button>
+                <button type="button" class="ow-otan-item" data-draw="withdraw"><svg viewBox="0 0 40 20"><line x1="34" y1="6" x2="8" y2="14" stroke="#ef5b5b" stroke-width="2"/><path d="M8,14 L14,10 L12,16 Z" fill="#ef5b5b"/></svg><span>Retrait</span></button>
+                <button type="button" class="ow-otan-item" data-draw="delay"><svg viewBox="0 0 40 20"><line x1="4" y1="10" x2="28" y2="10" stroke="#e8cf4a" stroke-width="2"/><path d="M28,10 L22,6 L22,14 Z" fill="#e8cf4a"/><text x="10" y="8" fill="#e8cf4a" font-size="7" font-weight="700">D</text></svg><span>Retard</span></button>
+              </div>
+            </div>
+            <div class="ow-otan-pane" data-otan-pane="zones" hidden>
+              <div class="ow-otan-grid">
+                <button type="button" class="ow-otan-item" data-draw="assembly"><svg viewBox="0 0 40 20"><rect x="5" y="4" width="30" height="12" fill="none" stroke="#5b9dff" stroke-width="1.8"/></svg><span>Zone de rassemblement</span></button>
+                <button type="button" class="ow-otan-item" data-draw="objective"><svg viewBox="0 0 40 20"><ellipse cx="20" cy="10" rx="15" ry="7" fill="none" stroke="#ef5b5b" stroke-width="1.8"/></svg><span>Objectif</span></button>
+                <button type="button" class="ow-otan-item" data-draw="lz"><svg viewBox="0 0 40 20"><circle cx="20" cy="10" r="8" fill="none" stroke="#5b9dff" stroke-width="1.8"/><text x="15" y="13" fill="#5b9dff" font-size="8" font-weight="700">LZ</text></svg><span>Zone d’atterrissage</span></button>
+                <button type="button" class="ow-otan-item" data-draw="dz"><svg viewBox="0 0 40 20"><circle cx="20" cy="10" r="8" fill="none" stroke="#5b9dff" stroke-width="1.8" stroke-dasharray="3 2"/><text x="14" y="13" fill="#5b9dff" font-size="8" font-weight="700">DZ</text></svg><span>Zone de largage</span></button>
+                <button type="button" class="ow-otan-item" data-draw="minefield"><svg viewBox="0 0 40 20"><rect x="4" y="3" width="32" height="14" fill="none" stroke="#ef5b5b" stroke-width="1.6"/><path d="M8,6 L12,14 M16,6 L20,14 M24,6 L28,14 M32,6" stroke="#ef5b5b" stroke-width="1.4"/></svg><span>Champ de mines</span></button>
+                <button type="button" class="ow-otan-item" data-draw="nofire"><svg viewBox="0 0 40 20"><rect x="5" y="4" width="30" height="12" fill="none" stroke="#f0a63a" stroke-width="1.6" stroke-dasharray="3 2"/><line x1="8" y1="6" x2="32" y2="14" stroke="#f0a63a" stroke-width="1.4"/></svg><span>Zone interdite au tir</span></button>
+                <button type="button" class="ow-otan-item" data-draw="medical"><svg viewBox="0 0 40 20"><rect x="8" y="3" width="24" height="14" fill="none" stroke="#ef5b5b" stroke-width="1.6"/><path d="M20,6 v8 M16,10 h8" stroke="#ef5b5b" stroke-width="2"/></svg><span>Poste médical</span></button>
+                <button type="button" class="ow-otan-item" data-draw="cbrn"><svg viewBox="0 0 40 20"><path d="M20,3 L34,17 H6 Z" fill="none" stroke="#e8cf4a" stroke-width="1.6"/><text x="16" y="15" fill="#e8cf4a" font-size="7" font-weight="700">NBC</text></svg><span>Zone NBC / CBRN</span></button>
+              </div>
+            </div>
+            <div class="ow-otan-pane" data-otan-pane="controle" hidden>
+              <div class="ow-otan-grid">
+                <button type="button" class="ow-otan-item" data-draw="phase"><svg viewBox="0 0 40 20"><line x1="2" y1="10" x2="36" y2="10" stroke="#e8cf4a" stroke-width="2" stroke-dasharray="4 2"/></svg><span>Ligne de phase</span></button>
+                <button type="button" class="ow-otan-item" data-draw="sector"><svg viewBox="0 0 40 20"><line x1="20" y1="2" x2="20" y2="18" stroke="#8b93a1" stroke-width="1.6" stroke-dasharray="5 1.5 1 1.5"/><line x1="14" y1="2" x2="26" y2="2" stroke="#8b93a1" stroke-width="1.6"/></svg><span>Limite de secteur</span></button>
+                <button type="button" class="ow-otan-item" data-draw="feba"><svg viewBox="0 0 40 20"><line x1="2" y1="10" x2="36" y2="10" stroke="#ef5b5b" stroke-width="2.2"/><line x1="2" y1="14" x2="36" y2="14" stroke="#ef5b5b" stroke-width="1" stroke-dasharray="2 2"/></svg><span>FEBA</span></button>
+                <button type="button" class="ow-otan-item" data-draw="flot"><svg viewBox="0 0 40 20"><polyline points="2,14 10,6 18,14 26,6 34,14" fill="none" stroke="#5b9dff" stroke-width="2"/></svg><span>FLOT</span></button>
+                <button type="button" class="ow-otan-item" data-draw="obstacle"><svg viewBox="0 0 40 20"><line x1="4" y1="10" x2="36" y2="10" stroke="#8b93a1" stroke-width="1.6"/><path d="M10,6 L14,14 M14,6 L10,14 M20,6 L24,14 M24,6 L20,14 M30,6 L34,14 M34,6 L30,14" stroke="#8b93a1" stroke-width="1.4"/></svg><span>Obstacle</span></button>
+                <button type="button" class="ow-otan-item" data-draw="checkpoint"><svg viewBox="0 0 40 20"><path d="M20,2 L30,10 L20,18 L10,10 Z" fill="none" stroke="#2ecf9a" stroke-width="1.8"/><text x="16" y="13" fill="#2ecf9a" font-size="7" font-weight="700">CP</text></svg><span>Point de contrôle</span></button>
+              </div>
+            </div>
+            <div class="ow-otan-pane" data-otan-pane="library" hidden>
+              <div class="ow-otan-lib-actions">
+                <label class="ow-otan-import">
+                  <input type="file" id="ow-otan-import" accept="image/png,image/jpeg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg" hidden>
+                  Importer une image
+                </label>
+                <button type="button" class="ow-otan-lib-clear" id="ow-otan-lib-clear" title="Vider la bibliothèque">Vider</button>
+              </div>
+              <div class="ow-otan-lib-grid" id="ow-otan-lib-grid" aria-live="polite"></div>
+              <p class="ow-otan-lib-empty" id="ow-otan-lib-empty">Aucune image. Importez un PNG, JPG ou SVG pour le poser sur la carte.</p>
             </div>
           </div>
         </div>
