@@ -97,7 +97,7 @@ foreach ($rows as $row) {
         ucfirst((string) ($row['plan'] ?? 'membre')),
         max(0, min(100, $pct)) . ' %',
         (int) ($row['completed_count'] ?? 0) . ' / ' . (int) ($row['total_count'] ?? 0),
-        (int) ($row['modules_done_count'] ?? 0) . ' / 5',
+        (int) ($row['modules_done_count'] ?? 0) . ' / 4',
         'J+' . (int) ($row['age_days'] ?? 0),
         trim((string) ($row['nudge'] ?? 'RAS')) !== '' ? (string) $row['nudge'] : 'RAS',
     ];
@@ -110,5 +110,5 @@ $athTablePager = null;
 $athTableRowHrefs = null;
 $athTableFoot = $rows === []
     ? 'Aucun membre arrivé dans les 30 derniers jours.'
-    : 'Progression consolidée sur cinq modules : profil, forum, document essentiel, formation, événement.';
+    : 'Progression consolidée sur quatre modules : profil, document essentiel, formation, événement.';
 require base_path('views/partials/ath_table.php');

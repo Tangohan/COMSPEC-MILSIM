@@ -27,6 +27,10 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/carriere'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/avancement/demande'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/avancement/affectation'", $routes);
+        self::assertStringContainsString('requestAdvancement', $routes);
+        self::assertStringContainsString('requestAssignment', $routes);
         self::assertStringContainsString("'/back-office/ma-situation/decorations'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/dotation'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);

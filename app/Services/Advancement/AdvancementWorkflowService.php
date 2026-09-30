@@ -398,16 +398,20 @@ final class AdvancementWorkflowService
     }
 
     /**
-     * @return array{current:?array<string, mixed>, history:list<array<string, mixed>>, offer:?array<string, mixed>}
+     * @return array{
+     *   current:?array<string, mixed>,
+     *   history:list<array<string, mixed>>,
+     *   offer:?array<string, mixed>,
+     *   next:?array<string, mixed>,
+     *   opinions:list<array<string, mixed>>
+     * }
      */
     public function personnelPanel(int $tenantId, int $personnelId, ?DateTimeImmutable $today = null): array
     {
         $today = ($today ?? new DateTimeImmutable('today'))->setTime(0, 0);
-        $current = null;
-        $history = [];
-        $offer = null;
+        $empty = ['current' => null, 'history' => [], 'offer' => null, 'next' => null, 'opinions' => []];
         if (!$this->repository->tablesReady()) {
-            return ['current' => null, 'history' => [], 'offer' => null];
+            return $empty;
         }
         $this->syncHistoryFromFiche($tenantId, $personnelId, $today);
         $current = $this->withFicheDisplayLabel(
@@ -416,33 +420,156 @@ final class AdvancementWorkflowService
             $this->repository->activeGrade($tenantId, $personnelId)
         );
         $history = $this->repository->historyFor($tenantId, $personnelId);
+        $offer = null;
+        $next = null;
         if ($current !== null && empty($current['from_fiche']) && isset($current['rank_order'])) {
             $filiereId = isset($current['filiere_id']) && $current['filiere_id'] !== null && $current['filiere_id'] !== ''
                 ? (int) $current['filiere_id']
                 : null;
-            $next = $this->repository->nextGradeAfter($tenantId, (int) $current['rank_order'], $filiereId);
-            if ($next !== null && !empty($next['advancement_choice_enabled'])) {
-                $campaign = $this->repository->openCampaignForGrade($tenantId, (int) $next['id'], $today->format('Y-m-d'));
-                if ($campaign !== null) {
-                    $target = array_merge($next, [
-                        'grade_label' => $next['label'] ?? '',
-                    ]);
-                    $result = $this->assessPersonnel($tenantId, $personnelId, $target, $today, AdvancementEligibilityService::PATH_CHOICE);
-                    $existing = $this->repository->findCandidacyForPersonnel((int) $campaign['id'], $personnelId);
+            $nextGrade = $this->repository->nextGradeAfter($tenantId, (int) $current['rank_order'], $filiereId);
+            if ($nextGrade !== null) {
+                $next = $this->buildNextGradeCard($tenantId, $personnelId, $nextGrade, $today);
+                if (!empty($next['campaign_id'])) {
                     $offer = [
-                        'campaign_id' => (int) $campaign['id'],
-                        'grade_label' => (string) ($next['label'] ?? ''),
-                        'is_eligible' => $result['is_eligible'],
-                        'eligibility_reason' => $result['eligibility_reason'],
-                        'months_in_grade' => $result['months_in_grade'],
-                        'months_required' => $result['months_required'],
-                        'already_volunteered' => $existing !== null,
+                        'campaign_id' => (int) $next['campaign_id'],
+                        'grade_label' => (string) ($next['grade_label'] ?? ''),
+                        'is_eligible' => !empty($next['choice_eligible']),
+                        'eligibility_reason' => $next['choice_reason'] ?? null,
+                        'months_in_grade' => $next['months_in_grade'] ?? 0,
+                        'months_required' => $next['months_required'] ?? null,
+                        'already_volunteered' => !empty($next['already_volunteered']),
                     ];
                 }
             }
         }
 
-        return ['current' => $current, 'history' => $history, 'offer' => $offer];
+        return [
+            'current' => $current,
+            'history' => $history,
+            'offer' => $offer,
+            'next' => $next,
+            'opinions' => $this->commandOpinions($tenantId, $personnelId),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $nextGrade
+     * @return array<string, mixed>
+     */
+    private function buildNextGradeCard(int $tenantId, int $personnelId, array $nextGrade, DateTimeImmutable $today): array
+    {
+        $qualId = (int) ($nextGrade['required_qualification_id'] ?? 0);
+        if ($qualId > 0 && trim((string) ($nextGrade['required_qualification_label'] ?? $nextGrade['required_qualification_name'] ?? '')) === '') {
+            $names = $this->repository->qualificationNames($tenantId);
+            $nextGrade['required_qualification_label'] = $names[$qualId] ?? 'requise';
+        }
+        $target = array_merge($nextGrade, [
+            'grade_label' => $nextGrade['label'] ?? '',
+        ]);
+        $choiceEnabled = !empty($nextGrade['advancement_choice_enabled']);
+        $seniorityEnabled = !empty($nextGrade['advancement_seniority_enabled']);
+        $choice = $this->assessPersonnel($tenantId, $personnelId, $target, $today, AdvancementEligibilityService::PATH_CHOICE);
+        $seniority = $this->assessPersonnel($tenantId, $personnelId, $target, $today, AdvancementEligibilityService::PATH_SENIORITY);
+        $campaign = $this->repository->openCampaignForGrade($tenantId, (int) $nextGrade['id'], $today->format('Y-m-d'));
+        $existing = $campaign !== null
+            ? $this->repository->findCandidacyForPersonnel((int) $campaign['id'], $personnelId)
+            : null;
+        $dueOn = $choice['due_on'] ?? $seniority['due_on'] ?? null;
+        $conditions = [];
+        foreach (array_merge($seniority['conditions'] ?? [], $choice['conditions'] ?? []) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $key = (string) ($row['key'] ?? '');
+            if ($key === '' || $key === 'voie') {
+                continue;
+            }
+            if (!isset($conditions[$key])) {
+                $conditions[$key] = $row;
+            }
+        }
+        if ($seniorityEnabled) {
+            $conditions['voie_auto'] = [
+                'key' => 'voie_auto',
+                'label' => 'Avancement automatique',
+                'met' => !empty($seniority['is_eligible']),
+                'detail' => !empty($seniority['is_eligible'])
+                    ? 'Les conditions sont réunies : le passage se fait à l’ancienneté, sans demande.'
+                    : trim((string) ($seniority['eligibility_reason'] ?? 'Pas encore automatique.')),
+            ];
+        }
+        if ($choiceEnabled) {
+            $conditions['voie_choix'] = [
+                'key' => 'voie_choix',
+                'label' => 'Avancement au choix',
+                'met' => !empty($choice['is_eligible']),
+                'detail' => !empty($choice['is_eligible'])
+                    ? 'Vous pouvez déposer une demande' . ($campaign !== null ? ' : une campagne est ouverte.' : '.')
+                    : trim((string) ($choice['eligibility_reason'] ?? 'Les conditions au choix ne sont pas réunies.')),
+            ];
+        }
+
+        return [
+            'grade_id' => (int) $nextGrade['id'],
+            'grade_label' => (string) ($nextGrade['label'] ?? ''),
+            'grade_code' => (string) ($nextGrade['code'] ?? ''),
+            'automatic' => $seniorityEnabled,
+            'choice' => $choiceEnabled,
+            'mode' => $this->nextMode($seniorityEnabled, $choiceEnabled),
+            'due_on' => $dueOn,
+            'months_in_grade' => (int) ($choice['months_in_grade'] ?? $seniority['months_in_grade'] ?? 0),
+            'months_required' => $choice['months_required'] ?? $seniority['months_required'] ?? null,
+            'choice_eligible' => !empty($choice['is_eligible']),
+            'seniority_eligible' => !empty($seniority['is_eligible']),
+            'choice_reason' => $choice['eligibility_reason'] ?? null,
+            'seniority_reason' => $seniority['eligibility_reason'] ?? null,
+            'conditions' => array_values($conditions),
+            'campaign_id' => $campaign !== null ? (int) $campaign['id'] : null,
+            'already_volunteered' => $existing !== null,
+        ];
+    }
+
+    private function nextMode(bool $automatic, bool $choice): string
+    {
+        if ($automatic && $choice) {
+            return 'both';
+        }
+        if ($automatic) {
+            return 'automatic';
+        }
+        if ($choice) {
+            return 'choice';
+        }
+
+        return 'none';
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function commandOpinions(int $tenantId, int $personnelId): array
+    {
+        $out = [];
+        foreach ($this->repository->listCandidaciesForPersonnel($tenantId, $personnelId) as $row) {
+            $opinion = trim((string) ($row['commission_opinion'] ?? ''));
+            $decision = trim((string) ($row['decision'] ?? ''));
+            $out[] = [
+                'campaign_id' => (int) ($row['campaign_id'] ?? 0),
+                'year' => (int) ($row['year'] ?? 0),
+                'grade_label' => (string) ($row['grade_label'] ?? ''),
+                'campaign_status' => (string) ($row['campaign_status'] ?? ''),
+                'commission_opinion' => $opinion,
+                'opinion_label' => \App\Support\AdvancementCodes::opinionLabel($opinion !== '' ? $opinion : null),
+                'decision' => $decision,
+                'decision_label' => \App\Support\AdvancementCodes::decisionLabel($decision !== '' ? $decision : null),
+                'volunteered_at' => (string) ($row['volunteered_at'] ?? ''),
+                'notes' => trim((string) ($row['notes'] ?? '')),
+                'is_eligible' => !empty($row['is_eligible']),
+                'pending' => $opinion === '',
+            ];
+        }
+
+        return $out;
     }
 
     /**

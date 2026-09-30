@@ -221,6 +221,66 @@ final class AdvancementEligibilityServiceTest extends TestCase
         $panel = $workflow->personnelPanel(7, 12, new DateTimeImmutable('2026-09-30'));
         self::assertSame('Airman First Class', (string) ($panel['current']['label'] ?? ''));
         self::assertSame([], $panel['history']);
+        self::assertNull($panel['next'] ?? null);
+        self::assertSame([], $panel['opinions'] ?? []);
+    }
+
+    public function testPersonnelPanelMontreProchainGradeConditionsEtMode(): void
+    {
+        $pdo = $this->pdo();
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, short_label, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months) VALUES
+            (1, 7, 'SD2', 'Soldat de 2e classe', 'Sdt 2', 1, 0, 0, NULL),
+            (2, 7, 'SD1', 'Soldat de 1re classe', 'Sdt 1', 2, 1, 1, 12)");
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status) VALUES (21, 7, 'Léa', 'lea@example.test', 'active')");
+        $pdo->exec("INSERT INTO personnel_grade_history (personnel_id, grade_id, obtained_at, obtained_via) VALUES (21, 1, '2026-01-30', 'initial')");
+
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+
+        $panel = $workflow->personnelPanel(7, 21, new DateTimeImmutable('2026-09-30'));
+        $next = $panel['next'] ?? null;
+        self::assertIsArray($next);
+        self::assertSame('Soldat de 1re classe', (string) ($next['grade_label'] ?? ''));
+        self::assertTrue(!empty($next['automatic']));
+        self::assertTrue(!empty($next['choice']));
+        self::assertSame('both', (string) ($next['mode'] ?? ''));
+        self::assertSame('2027-01-30', (string) ($next['due_on'] ?? ''));
+        self::assertFalse(!empty($next['seniority_eligible']));
+        self::assertFalse(!empty($next['choice_eligible']));
+        $keys = array_column($next['conditions'] ?? [], 'key');
+        self::assertContains('temps_de_grade', $keys);
+        self::assertContains('voie_auto', $keys);
+        self::assertContains('voie_choix', $keys);
+    }
+
+    public function testPersonnelPanelMontreAvisCommandement(): void
+    {
+        $pdo = $this->pdo();
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, short_label, rank_order, advancement_seniority_enabled, advancement_choice_enabled) VALUES
+            (1, 7, 'SD2', 'Soldat', 'Sdt', 1, 0, 0),
+            (2, 7, 'CPL', 'Caporal', 'Cpl', 2, 0, 1)");
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status) VALUES (22, 7, 'Marc', 'marc@example.test', 'active')");
+        $pdo->exec("INSERT INTO personnel_grade_history (personnel_id, grade_id, obtained_at, obtained_via) VALUES (22, 1, '2024-01-01', 'initial')");
+        $pdo->exec("INSERT INTO advancement_campaigns (id, tenant_id, grade_id, year, opens_at, closes_at, status) VALUES (9, 7, 2, 2026, '2026-01-01', '2026-12-31', 'en_commission')");
+        $pdo->exec("INSERT INTO advancement_candidacies (campaign_id, personnel_id, volunteered_at, is_eligible, commission_opinion, decision) VALUES (9, 22, '2026-03-01', 1, 'propose', 'inscrit')");
+
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+
+        $panel = $workflow->personnelPanel(7, 22, new DateTimeImmutable('2026-09-30'));
+        self::assertNotEmpty($panel['opinions'] ?? []);
+        self::assertSame('propose', (string) ($panel['opinions'][0]['commission_opinion'] ?? ''));
+        self::assertSame('Proposé', (string) ($panel['opinions'][0]['opinion_label'] ?? ''));
+        self::assertSame('Inscrit', (string) ($panel['opinions'][0]['decision_label'] ?? ''));
+        self::assertSame('Caporal', (string) ($panel['opinions'][0]['grade_label'] ?? ''));
     }
 
     public function testClassementAutomatiqueEtDetections(): void

@@ -66,7 +66,7 @@ return static function (PDO $pdo): void {
               `id` int unsigned NOT NULL AUTO_INCREMENT,
               `tenant_id` int unsigned NOT NULL,
               `user_id` int unsigned NOT NULL,
-              `request_type` enum('unit_change','specialty_change','job_application','career_wish') NOT NULL,
+              `request_type` enum('unit_change','specialty_change','job_application','career_wish','assignment','advancement') NOT NULL,
               `target_unit_id` int unsigned DEFAULT NULL,
               `target_job_role_id` int unsigned DEFAULT NULL,
               `target_label` varchar(200) DEFAULT NULL,
@@ -86,6 +86,15 @@ return static function (PDO $pdo): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         echo "  personnel_mobility_requests : table créée.\n";
+    } else {
+        try {
+            $pdo->exec(
+                "ALTER TABLE `personnel_mobility_requests`
+                 MODIFY `request_type` enum('unit_change','specialty_change','job_application','career_wish','assignment','advancement') NOT NULL"
+            );
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] personnel_mobility_requests request_type : ' . $e->getMessage() . "\n";
+        }
     }
 
     if (!$hasTable('personnel_succession_entries')) {

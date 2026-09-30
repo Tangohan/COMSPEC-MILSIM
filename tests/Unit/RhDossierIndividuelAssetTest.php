@@ -19,8 +19,10 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertContains('evaluation', PersonnelHrDocumentRepository::DOC_TYPES);
         self::assertSame('Charte signée', PersonnelHrDocumentRepository::DOC_TYPE_LABELS['charte']);
 
-        self::assertContains('unit_change', PersonnelMobilityRequestRepository::TYPES);
-        self::assertContains('career_wish', PersonnelMobilityRequestRepository::TYPES);
+        self::assertContains('assignment', PersonnelMobilityRequestRepository::TYPES);
+        self::assertContains('advancement', PersonnelMobilityRequestRepository::TYPES);
+        self::assertSame('Affectation', PersonnelMobilityRequestRepository::TYPE_LABELS['assignment']);
+        self::assertSame('Avancement', PersonnelMobilityRequestRepository::TYPE_LABELS['advancement']);
         self::assertSame('En attente', PersonnelMobilityRequestRepository::STATUS_LABELS['pending']);
         self::assertSame('Souhait d’évolution', PersonnelMobilityRequestRepository::TYPE_LABELS['career_wish']);
 
@@ -48,6 +50,7 @@ final class RhDossierIndividuelAssetTest extends TestCase
         $boot = (string) file_get_contents($root . '/bootstrap/rh_dossier_individuel_migration.php');
         self::assertStringContainsString('original_name', $boot);
         self::assertStringContainsString('ADD COLUMN `original_name`', $boot);
+        self::assertStringContainsString("'assignment','advancement'", $boot);
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
         self::assertStringContainsString('$_FILES[\'document\']', $ctrl);
         self::assertStringContainsString('downloadDocument', $ctrl);

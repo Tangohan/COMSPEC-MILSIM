@@ -201,4 +201,20 @@ final class MemberIntegrationCatalog
     {
         return in_array($status, [self::STEP_COMPLETED, self::STEP_SKIPPED], true);
     }
+
+    /**
+     * L’étape forum n’appartient plus au parcours d’intégration.
+     *
+     * @param array<string, mixed> $step
+     */
+    public static function isForumStep(array $step): bool
+    {
+        $key = mb_strtolower(trim((string) ($step['step_key'] ?? '')));
+        $title = mb_strtolower(trim((string) ($step['title'] ?? '')));
+        $type = mb_strtolower(trim((string) ($step['step_type'] ?? '')));
+
+        return str_contains($key, 'forum')
+            || str_contains($title, 'forum')
+            || $type === 'forum';
+    }
 }

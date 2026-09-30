@@ -13,7 +13,7 @@ use PDO;
 final class PersonnelMobilityRequestRepository
 {
     /** @var list<string> */
-    public const TYPES = ['unit_change', 'specialty_change', 'job_application', 'career_wish'];
+    public const TYPES = ['unit_change', 'specialty_change', 'job_application', 'career_wish', 'assignment', 'advancement'];
 
     /** @var array<string, string> */
     public const TYPE_LABELS = [
@@ -21,6 +21,8 @@ final class PersonnelMobilityRequestRepository
         'specialty_change' => 'Changement de spécialité',
         'job_application' => 'Candidature à un poste',
         'career_wish' => 'Souhait d’évolution',
+        'assignment' => 'Affectation',
+        'advancement' => 'Avancement',
     ];
 
     /** @var array<string, string> */
@@ -165,6 +167,24 @@ final class PersonnelMobilityRequestRepository
         $st->execute([$tenantId]);
 
         return (int) $st->fetchColumn();
+    }
+
+    public function hasPending(int $tenantId, int $userId, ?string $requestType = null): bool
+    {
+        if (!$this->tableExists() || $tenantId < 1 || $userId < 1) {
+            return false;
+        }
+        $sql = "SELECT 1 FROM personnel_mobility_requests WHERE tenant_id = ? AND user_id = ? AND status = 'pending'";
+        $params = [$tenantId, $userId];
+        if ($requestType !== null && in_array($requestType, self::TYPES, true)) {
+            $sql .= ' AND request_type = ?';
+            $params[] = $requestType;
+        }
+        $sql .= ' LIMIT 1';
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+
+        return (bool) $st->fetchColumn();
     }
 
     public function resolve(int $id, int $tenantId, string $status, int $reviewedBy, ?string $note = null): bool

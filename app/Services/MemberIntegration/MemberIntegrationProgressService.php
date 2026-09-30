@@ -43,6 +43,9 @@ final class MemberIntegrationProgressService
             if (!is_array($step)) {
                 continue;
             }
+            if (MemberIntegrationCatalog::isForumStep($step)) {
+                continue;
+            }
             $required = !empty($step['is_required']);
             $status = (string) ($step['status'] ?? MemberIntegrationCatalog::STEP_PENDING);
             $done = MemberIntegrationCatalog::isStepDone($status);

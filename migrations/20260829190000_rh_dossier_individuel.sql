@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `personnel_mobility_requests` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
   `user_id` int unsigned NOT NULL,
-  `request_type` enum('unit_change','specialty_change','job_application','career_wish') NOT NULL,
+  `request_type` enum('unit_change','specialty_change','job_application','career_wish','assignment','advancement') NOT NULL,
   `target_unit_id` int unsigned DEFAULT NULL,
   `target_job_role_id` int unsigned DEFAULT NULL,
   `target_label` varchar(200) DEFAULT NULL,

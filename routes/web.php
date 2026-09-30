@@ -1052,6 +1052,8 @@ return function (Router $router) {
     $router->get('/back-office/ma-situation/qualifications', [MemberSituationController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/avancement', [MemberAdvancementController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/avancement/{campaignId}/volontaire', [MemberAdvancementController::class, 'volunteer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/avancement/demande', [MemberAdvancementController::class, 'requestAdvancement'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/avancement/affectation', [MemberAdvancementController::class, 'requestAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/qualifications/{awardId}/generer-brevet', [MemberSituationController::class, 'generateBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/coffre', [MemberSituationController::class, 'coffre'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
