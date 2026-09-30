@@ -615,6 +615,9 @@ $icon = static function (string $path): string {
           <button type="button" class="ow-bt" data-btool="window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16"/><line x1="4" y1="12" x2="20" y2="12"/></svg>Fenêtre</button>
           <button type="button" class="ow-bt" data-btool="breach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>Point de brèche</button>
           <button type="button" class="ow-bt" data-btool="room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5h14M12 5v14"/></svg>Pièce</button>
+          <button type="button" class="ow-bt" data-btool="erase" title="Cliquer un élément pour le retirer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M8 19l8-14h3l-8 14H8z"/></svg>Effacer</button>
+          <button type="button" class="ow-bt ow-bt-action" id="ow-bplan-undo" title="Annuler le dernier trait (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-1"/></svg>Annuler</button>
+          <button type="button" class="ow-bt ow-bt-action" id="ow-bplan-clear" title="Vider l’étage courant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 14h10l1-14"/></svg>Vider l’étage</button>
         </div>
         <div class="ow-bplan-foot">
           <label class="ow-bplan-name">Rattacher le plan
