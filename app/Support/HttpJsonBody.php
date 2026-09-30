@@ -62,6 +62,18 @@ final class HttpJsonBody
             return '';
         }
 
+        $encoding = strtolower(trim((string) ($_SERVER['HTTP_CONTENT_ENCODING'] ?? '')));
+        if ($encoding !== '' && str_contains($encoding, 'gzip')) {
+            $decoded = @gzdecode($raw);
+            if (!is_string($decoded) || $decoded === '') {
+                return '';
+            }
+            if (strlen($decoded) > $maxBytes) {
+                return '';
+            }
+            $raw = $decoded;
+        }
+
         return $raw;
     }
 }

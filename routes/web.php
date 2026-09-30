@@ -2255,6 +2255,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/units/{id}', [AtakApiController::class, 'unitsDelete']);
     $router->get('/api/atak/personnel', [AtakApiController::class, 'personnelDirectory']);
     $router->post('/api/atak/position', [AtakApiController::class, 'position']);
+    $router->post('/api/atak/telemetry/batch', [AtakApiController::class, 'telemetryBatch']);
+    $router->get('/api/atak/telemetry/events', [AtakApiController::class, 'telemetryEvents']);
+    $router->get('/api/atak/telemetry/comms', [AtakApiController::class, 'telemetryComms']);
+    $router->get('/api/atak/tracks', [AtakApiController::class, 'tracksIndex']);
+    $router->post('/api/atak/tracks/{uid}/confirm', [AtakApiController::class, 'tracksConfirm']);
     $router->post('/api/atak/operator/register', [AtakApiController::class, 'operatorRegister']);
     $router->post('/api/atak/operator/sync', [AtakApiController::class, 'operatorSync']);
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);

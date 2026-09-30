@@ -1,5 +1,5 @@
 /*
-    P2P — réseau local : écran IceMan natif (pas un clone vide).
+    P2P — réseau local : ouvre la tuile AtakP2P (écran IceMan), pas la classe « message » filtrée.
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ATAK_P2P_opening", false]) exitWith {};
@@ -11,7 +11,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_syncAtakApps") then {
     [] call comspec_overwatch_atak_athena_fnc_athena_syncAtakApps;
 };
 
-["message"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+["AtakP2P"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
 [{
     ["message"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
     missionNamespace setVariable ["COMSPEC_ATAK_P2P_opening", false, false];

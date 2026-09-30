@@ -35,6 +35,17 @@ private _fnc_push = {
     if (_exch) then { _hm set ["exch", true]; };
     _q pushBack _hm;
     missionNamespace setVariable ["COMSPEC_CombatQueue", _q, false];
+    if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+        private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_cs isEqualTo "") then { _cs = name player; };
+        ["combat", createHashMapFromArray [
+            ["kind", _t],
+            ["n", _n],
+            ["x", _x],
+            ["y", _y],
+            ["call_sign", _cs]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+    };
 };
 
 switch (_kindNorm) do {
@@ -74,6 +85,17 @@ switch (_kindNorm) do {
                 if (_exch) then { _hm set ["exch", true]; };
                 _q pushBack _hm;
                 missionNamespace setVariable ["COMSPEC_CombatQueue", _q, false];
+                if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+                    private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+                    if (_cs isEqualTo "") then { _cs = name player; };
+                    ["combat", createHashMapFromArray [
+                        ["kind", _t],
+                        ["n", _n],
+                        ["x", _xy select 0],
+                        ["y", _xy select 1],
+                        ["call_sign", _cs]
+                    ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+                };
             }, [], 2.6] call CBA_fnc_waitAndExecute;
         };
     };
@@ -102,6 +124,17 @@ switch (_kindNorm) do {
                 ["y", _xy select 1]
             ]);
             missionNamespace setVariable ["COMSPEC_CombatQueue", _q, false];
+            if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+                private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+                if (_cs isEqualTo "") then { _cs = name player; };
+                ["combat", createHashMapFromArray [
+                    ["kind", "hit"],
+                    ["n", _n],
+                    ["x", _xy select 0],
+                    ["y", _xy select 1],
+                    ["call_sign", _cs]
+                ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+            };
         }, [], 1.2] call CBA_fnc_waitAndExecute;
     };
     case "missile": {

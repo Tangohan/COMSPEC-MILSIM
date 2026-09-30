@@ -5807,6 +5807,239 @@ class AtakApiController
             return $actor;
         }
         $body = $this->jsonBody($request);
+
+        return $this->ingestPositionPayload($tenantId, is_array($actor) ? $actor : [], $body);
+    }
+
+    /**
+     * Lot de télémétrie jeu → Athena (Phase A bus événementiel).
+     * POST /api/atak/telemetry/batch
+     * Les endpoints unitaires restent disponibles en secours.
+     */
+    public function telemetryBatch(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false, 'telemetry');
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $this->recordGameIngest($tenantId, $mapId, false);
+
+        $ingest = new \App\Services\Tactical\AtakTelemetryBatchIngest(
+            $this->atak,
+            new \App\Services\Tactical\AtakTelemetryJournalService(),
+            null,
+            null,
+            $this->activityLog
+        );
+
+        $actorCs = is_array($actor) ? trim((string) ($actor['callsign'] ?? '')) : '';
+        $result = $ingest->ingest(
+            $tenantId,
+            $mapId,
+            $body,
+            function (array $posBody) use ($tenantId, $actor): array {
+                $resp = $this->ingestPositionPayload($tenantId, is_array($actor) ? $actor : [], $posBody);
+                $code = (int) $resp->statusCode();
+                if ($code >= 200 && $code < 300) {
+                    return [
+                        'ok' => true,
+                        'call_sign' => trim((string) ($posBody['call_sign'] ?? $posBody['callsign'] ?? '')),
+                    ];
+                }
+                $payload = json_decode($resp->body(), true);
+                $err = is_array($payload) ? (string) ($payload['error'] ?? $payload['message'] ?? 'position_rejected') : 'position_rejected';
+
+                return ['ok' => false, 'error' => $err, 'http' => $code];
+            },
+            $actorCs !== '' ? $actorCs : null
+        );
+
+        $http = 200;
+        if (($result['accepted'] ?? 0) === 0 && ($result['rejected'] ?? 0) > 0) {
+            $http = 422;
+        }
+
+        return Response::json([
+            'ok' => (bool) ($result['ok'] ?? false),
+            'accepted' => (int) ($result['accepted'] ?? 0),
+            'rejected' => (int) ($result['rejected'] ?? 0),
+            'last_id' => (int) ($result['last_id'] ?? 0),
+            'seq' => $result['seq'] ?? null,
+            'results' => $result['results'] ?? [],
+            'fallback' => [
+                'position' => '/api/atak/position',
+                'vehicles' => '/api/atak/vehicles',
+                'weather' => '/api/atak/weather',
+                'sigint' => '/api/atak/sigint',
+            ],
+        ], $http);
+    }
+
+    /**
+     * Journal télémétrie incrémental (after_id).
+     * GET /api/atak/telemetry/events?after_id=&mapId=&limit=
+     */
+    public function telemetryEvents(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $afterId = max(0, (int) ($request->query('after_id') ?? $request->query('after') ?? 0));
+        $limit = min(500, max(1, (int) ($request->query('limit') ?: 100)));
+        $journal = new \App\Services\Tactical\AtakTelemetryJournalService();
+        $events = $journal->listAfter($tenantId, $mapId, $afterId, $limit);
+
+        return Response::json([
+            'ok' => true,
+            'mapId' => $mapId,
+            'after_id' => $afterId,
+            'last_id' => $journal->latestId($tenantId, $mapId),
+            'events' => $events,
+            'count' => count($events),
+        ]);
+    }
+
+    /**
+     * Journal COMMS (métadonnées TX radio).
+     * GET /api/atak/telemetry/comms?after_id=&mapId=&limit=
+     */
+    public function telemetryComms(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $afterId = max(0, (int) ($request->query('after_id') ?? $request->query('after') ?? 0));
+        $limit = min(300, max(1, (int) ($request->query('limit') ?: 100)));
+        $journal = new \App\Services\Tactical\AtakTelemetryCommsJournal();
+        $events = $journal->listAfter($tenantId, $mapId, $afterId, $limit);
+
+        return Response::json([
+            'ok' => true,
+            'mapId' => $mapId,
+            'after_id' => $afterId,
+            'last_id' => $journal->latestId($tenantId, $mapId),
+            'events' => $events,
+            'count' => count($events),
+        ]);
+    }
+
+    /**
+     * Liste des tracks tactiques (Phase D).
+     * GET /api/atak/tracks?mapId=&layer=&limit=
+     */
+    public function tracksIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $layer = trim((string) ($request->query('layer') ?? ''));
+        $limit = min(300, max(1, (int) ($request->query('limit') ?: 100)));
+        try {
+            $repo = new \App\Repositories\TacticalTrackRepository();
+            $tracks = $repo->listTracks($tenantId, $mapId, $limit, $layer !== '' ? $layer : null);
+        } catch (\Throwable) {
+            $tracks = [];
+        }
+
+        return Response::json([
+            'ok' => true,
+            'mapId' => $mapId,
+            'tracks' => $tracks,
+            'count' => count($tracks),
+            'layers' => [
+                ['value' => 'reality', 'label' => 'Réalité (alliés / BFT)'],
+                ['value' => 'observation', 'label' => 'Observation terrain'],
+                ['value' => 'assessment', 'label' => 'Évaluation confirmée'],
+            ],
+        ]);
+    }
+
+    /**
+     * Confirmation humaine d’un track / BDA (jamais auto depuis le moteur).
+     * POST /api/atak/tracks/{uid}/confirm
+     */
+    public function tracksConfirm(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $uid = trim((string) ($params['uid'] ?? $params['id'] ?? ''));
+        if ($uid === '') {
+            return Response::json(['error' => 'not_found', 'message' => 'Piste introuvable.'], 404);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $status = strtolower(trim((string) ($body['status'] ?? 'confirmed')));
+        $affiliation = isset($body['affiliation']) ? strtoupper(trim((string) $body['affiliation'])) : null;
+        $assessment = isset($body['assessment']) ? strtoupper(trim((string) $body['assessment'])) : null;
+        try {
+            $repo = new \App\Repositories\TacticalTrackRepository();
+            $track = $repo->confirmTrack($tenantId, $mapId, $uid, $status, $affiliation, $assessment);
+        } catch (\Throwable) {
+            $track = null;
+        }
+        if ($track === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Piste introuvable.'], 404);
+        }
+        $actionLabel = $status === 'dismissed'
+            ? 'Piste écartée — '
+            : 'Piste confirmée — ';
+        try {
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_TACTICAL_REPORT,
+                $actionLabel . (string) ($track['label'] ?? $uid),
+                null,
+                [
+                    'track_uid' => $uid,
+                    'status' => $status,
+                    'assessment' => $assessment,
+                    'source' => 'confirm',
+                ]
+            );
+        } catch (\Throwable) {
+        }
+
+        return Response::json(['ok' => true, 'track' => $track]);
+    }
+
+    /**
+     * Pipeline d’upsert position (unité + effets collatéraux).
+     * Réutilisé par POST /position et par le lot télémétrie.
+     *
+     * @param array<string, mixed> $actor
+     * @param array<string, mixed> $body
+     */
+    private function ingestPositionPayload(int $tenantId, array $actor, array $body): Response
+    {
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $this->recordGameIngest($tenantId, $mapId, false);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
@@ -6301,6 +6534,29 @@ class AtakApiController
         $limit = (int) ($request->query('limit') ?: 40);
         $this->logStaleUnitDisconnects($tenantId, $mapId);
         $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        try {
+            $structured = (new \App\Services\Tactical\AtakTelemetryMedicalStore())->listActive($tenantId, $mapId, min($limit, 100));
+            if ($structured !== []) {
+                // Les alertes télémétrie priment sur le doublon chat (même indicatif).
+                $byCs = [];
+                foreach ($structured as $s) {
+                    $k = mb_strtoupper(trim((string) ($s['call_sign'] ?? '')));
+                    if ($k !== '') {
+                        $byCs[$k] = true;
+                    }
+                }
+                $filteredChat = [];
+                foreach ($alerts as $a) {
+                    $k = mb_strtoupper(trim((string) ($a['call_sign'] ?? $a['author'] ?? '')));
+                    if ($k !== '' && isset($byCs[$k])) {
+                        continue;
+                    }
+                    $filteredChat[] = $a;
+                }
+                $alerts = array_merge($filteredChat, $structured);
+            }
+        } catch (\Throwable) {
+        }
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
         $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
         $alerts = MedicalAlertParser::collapseToHighestSeverityPerCallSign($alerts);
@@ -6727,7 +6983,71 @@ class AtakApiController
             ], 403);
         }
 
-        $chatId = (int) ($params['id'] ?? 0);
+        $rawId = trim((string) ($params['id'] ?? ''));
+        $body = $this->jsonBody($request);
+        $status = (string) ($body['status'] ?? $body['triage'] ?? '');
+        if (!MedicalAlertParser::isValidTriageStatus($status)) {
+            return Response::json([
+                'error' => 'invalid_status',
+                'message' => 'Statut de triage non reconnu. Choisissez : À secourir, En cours, Traité, KIA ou Annulé.',
+            ], 400);
+        }
+
+        $user = $this->sessionUserBrief();
+        $by = trim((string) ($body['by'] ?? $body['status_by'] ?? ''));
+        if ($by === '' && $user) {
+            $by = (string) ($user['callsign'] ?: $user['displayName'] ?: '');
+        }
+
+        // Phase B : alerte télémétrie structurée (id telmed_…).
+        if (str_starts_with($rawId, 'telmed_')) {
+            $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+            if ($mapId < 1) {
+                $mapId = self::DEFAULT_MAP_ID;
+            }
+            $store = new \App\Services\Tactical\AtakTelemetryMedicalStore();
+            $alerts = $store->listActive($tenantId, $mapId, 200);
+            $found = null;
+            foreach ($alerts as $a) {
+                if ((string) ($a['id'] ?? '') === $rawId) {
+                    $found = $a;
+                    break;
+                }
+            }
+            if ($found === null) {
+                return Response::json(['error' => 'not_found', 'message' => 'Alerte introuvable.'], 404);
+            }
+            $cs = trim((string) ($found['call_sign'] ?? ''));
+            if ($by === '' && $isGame) {
+                $by = $cs !== '' ? $cs : 'Théâtre';
+            }
+            $store->clearForCallSign($tenantId, $mapId, $cs !== '' ? $cs : $rawId, $status);
+            $triage = [
+                'status' => $status,
+                'status_label' => MedicalAlertParser::triageLabelFr($status),
+                'status_by' => $by,
+                'status_note' => (string) ($body['note'] ?? $body['status_note'] ?? ''),
+                'updated_at' => gmdate('Y-m-d H:i:s'),
+                'is_resolved' => in_array($status, MedicalAlertParser::TRIAGE_RESOLVED, true),
+            ];
+            $found['triage'] = $triage;
+            $this->activityLog?->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_CHAT,
+                'Triage médical — ' . MedicalAlertParser::triageLabelFr($status)
+                    . ' — ' . ($found['summary'] ?? ''),
+                $by !== '' ? $by : $cs
+            );
+
+            return Response::json([
+                'ok' => true,
+                'alert' => $found,
+                'triage' => $triage,
+            ]);
+        }
+
+        $chatId = (int) $rawId;
         if ($chatId < 1) {
             return Response::json(['error' => 'not_found', 'message' => 'Alerte introuvable.'], 404);
         }
@@ -6744,20 +7064,6 @@ class AtakApiController
             ], 400);
         }
 
-        $body = $this->jsonBody($request);
-        $status = (string) ($body['status'] ?? $body['triage'] ?? '');
-        if (!MedicalAlertParser::isValidTriageStatus($status)) {
-            return Response::json([
-                'error' => 'invalid_status',
-                'message' => 'Statut de triage non reconnu. Choisissez : À secourir, En cours, Traité, KIA ou Annulé.',
-            ], 400);
-        }
-
-        $user = $this->sessionUserBrief();
-        $by = trim((string) ($body['by'] ?? $body['status_by'] ?? ''));
-        if ($by === '' && $user) {
-            $by = (string) ($user['callsign'] ?: $user['displayName'] ?: '');
-        }
         if ($by === '' && $isGame) {
             $by = trim((string) ($body['author'] ?? $chatRow['author'] ?? 'Théâtre'));
         }
@@ -6822,7 +7128,26 @@ class AtakApiController
         }
         $byId = $this->medicalTriageRepository->getByChatIds($tenantId, $ids);
         foreach ($alerts as &$a) {
-            $id = (int) ($a['id'] ?? 0);
+            $rawId = (string) ($a['id'] ?? '');
+            // Alertes télémétrie : conserver le triage déjà présent sur l’entrée.
+            if (str_starts_with($rawId, 'telmed_')) {
+                if (!isset($a['triage']) || !is_array($a['triage'])) {
+                    $a['triage'] = [
+                        'status' => 'a_secourir',
+                        'status_label' => MedicalAlertParser::triageLabelFr('a_secourir'),
+                        'status_by' => '',
+                        'status_note' => '',
+                        'updated_at' => '',
+                        'is_resolved' => false,
+                    ];
+                } else {
+                    $st = (string) ($a['triage']['status'] ?? 'a_secourir');
+                    $a['triage']['status_label'] = MedicalAlertParser::triageLabelFr($st);
+                    $a['triage']['is_resolved'] = in_array($st, MedicalAlertParser::TRIAGE_RESOLVED, true);
+                }
+                continue;
+            }
+            $id = (int) $rawId;
             $a['triage'] = $byId[$id] ?? [
                 'status' => 'a_secourir',
                 'status_label' => MedicalAlertParser::triageLabelFr('a_secourir'),

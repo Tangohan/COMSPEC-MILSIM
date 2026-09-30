@@ -7,6 +7,8 @@ if (isNull _group) exitWith {};
 
 uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", _group];
 ["relay"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+_group ctrlShow true;
+_group ctrlEnable true;
 
 private _title = _group controlsGroupCtrl 9910;
 if (isNull _title) then { _title = _group controlsGroupCtrl 9000; };
@@ -47,15 +49,25 @@ uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", _token];
         private _group = uiNamespace getVariable ["COMSPEC_ATAK_Relay_group", controlNull];
         if (isNull _group || {!ctrlShown _group}) exitWith {
             if ((uiNamespace getVariable ["COMSPEC_ATAK_Relay_token", -1]) isEqualTo _token) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", -1];
                 uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", controlNull];
             };
         };
-        private _page = (["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""];
-        if (_page isNotEqualTo "" && {!(_page in ["WaveRelay", "AtakRelay", "COMSPEC_ATAK_Relay", "waverelay", "atakrelay"])}) exitWith {
+        private _page = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
+        if (
+            _page isNotEqualTo ""
+            && {!(_page in ["waverelay", "atakrelay", "comspec_atak_relay"])}
+        ) exitWith {
             if ((uiNamespace getVariable ["COMSPEC_ATAK_Relay_token", -1]) isEqualTo _token) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", -1];
                 uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", controlNull];
             };
+            if (!isNull _group) then {
+                _group ctrlShow false;
+                _group ctrlEnable false;
+            };
+            // Masquer Relais AT quand une autre app est active (BCE n’efface pas toujours les sœurs).
+            [] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
         };
         [] call comspec_overwatch_atak_athena_fnc_athena_updateRelay;
     };

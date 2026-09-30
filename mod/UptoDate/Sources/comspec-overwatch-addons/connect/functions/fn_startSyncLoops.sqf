@@ -100,6 +100,7 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
 }, 1] call CBA_fnc_addPerFrameHandler;
 
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
+[] call comspec_overwatch_connect_fnc_initLogisticsLoop;
 
 [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};

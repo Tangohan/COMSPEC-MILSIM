@@ -221,5 +221,20 @@ if (_kindKey isEqualTo "EAGLE_DOWN") then {
     };
 };
 
+// Bus Phase D — BDA = candidat (jamais DESTROYED auto depuis le moteur).
+if (_kindKey isEqualTo "BDA" && {!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent"}) then {
+    private _tel = createHashMapFromArray [
+        ["t", "bda"],
+        ["x", _pos select 0],
+        ["y", _pos select 1],
+        ["label", "BDA — candidat"],
+        ["text", _payloadTail],
+        ["assessment", "UNKNOWN"],
+        ["requires_confirmation", true],
+        ["affiliation", "UNKNOWN"]
+    ];
+    ["bda", _tel, 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+};
+
 _kindKey
 

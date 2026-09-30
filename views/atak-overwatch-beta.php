@@ -14,6 +14,8 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tracks.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-telemetry.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-support-auto.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-c2.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tacmap.js'),
@@ -302,6 +304,9 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="shapes" checked> Tracés et zones</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tracks"> Trajectoires</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="arma-markers" id="ow-arma-markers" checked> Marqueurs du théâtre</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-obs" checked> Observations terrain</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-assess" checked> Évaluations confirmées</label>
+        <p class="ow-help" id="ow-tactical-tracks-help">Aucune piste d’observation pour le moment.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-places"> Villes et localités</label>
         <p class="ow-help" id="ow-geo-places-help">Aucun relevé de villes reçu pour ce théâtre.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-roads"> Réseau routier</label>
@@ -859,7 +864,7 @@ $icon = static function (string $path): string {
     <p class="ow-kicker">Aide du poste</p>
     <h1 id="ow-guide-title">Overwatch Beta</h1>
     <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches — ou l’ORBAT (bouton ORBAT en haut) : arbre planifié croisé avec le BFT observé, inspecteur à droite, clic droit pour centrer / suivre / SITREP. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE et au CASEVAC. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
+    <p>À gauche, les fonds, le relief et les couches — ou l’ORBAT (bouton ORBAT en haut) : arbre planifié croisé avec le BFT observé, inspecteur à droite, clic droit pour centrer / suivre / SITREP. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE, aux alertes santé du terrain, au soutien logistique et au CASEVAC. Radio affiche la proximité des émissions et leur historique. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
     <h2>Fonds</h2>
     <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
     <h2>Calques</h2>
@@ -937,6 +942,11 @@ $icon = static function (string $path): string {
       <div class="atak-radio-banner" id="atak-radio-banner" hidden></div>
     </div>
     <div class="atak-radio-list" id="atak-radio-list"></div>
+    <div class="ow-comms-history-block">
+      <p class="ow-kicker">Historique des émissions</p>
+      <p class="ow-help">Métadonnées remises par le terrain (indicatif, fréquence, durée). Aucune voix n’est enregistrée.</p>
+      <div id="ow-comms-history"><p class="ow-help">Aucune émission journalisée pour le moment.</p></div>
+    </div>
     <span id="atak-radio-tab-badge" hidden></span>
   </div>
 
@@ -1035,6 +1045,8 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-geo-network.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-gotak.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-ops.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-tracks.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-telemetry.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-c2.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tacmap.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>

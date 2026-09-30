@@ -2727,6 +2727,16 @@
       .then(function () { return loadVehicles(); })
       .then(function () { return loadAirAssets(); })
       .then(function () { return loadTerminals(); })
+      .then(function () {
+        if (window.OverwatchTacticalTracks && typeof window.OverwatchTacticalTracks.refresh === 'function') {
+          return window.OverwatchTacticalTracks.refresh();
+        }
+      })
+      .then(function () {
+        if (window.OverwatchTelemetry && typeof window.OverwatchTelemetry.refreshMedical === 'function') {
+          return window.OverwatchTelemetry.refreshMedical();
+        }
+      })
       .catch(function () { syncStatus(false); });
   }
 
@@ -5851,6 +5861,12 @@
       (jtacRows().slice(0, 3).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.author || row.jtac, 'JTAC')) + '</span><span class="ow-tag">' + escapeHtml(jtacStatusLabel(row.status)) + '</span></div>';
       }).join('') || '<p class="ow-help">Aucune demande d’appui pour le moment.</p>') +
+      '<p class="ow-kicker">Alertes santé (terrain)</p>' +
+      '<p class="ow-help">Urgences remontées depuis le jeu (inconscience, arrêt cardiaque, hors combat). Distinctes du CASEVAC manuel ci-dessous.</p>' +
+      '<div id="ow-med-alerts-host"><p class="ow-help">Chargement…</p></div>' +
+      '<p class="ow-kicker">Soutien (carburant / munitions)</p>' +
+      '<p class="ow-help">Besoins remontés automatiquement depuis le terrain. Vous pouvez enregistrer une demande de ravitaillement.</p>' +
+      '<div id="ow-logistics-host"><p class="ow-help">Chargement…</p></div>' +
       '<p class="ow-kicker">CASEVAC</p>' +
       (medevacs.slice(0, 5).map(function (row) {
         return '<div class="ow-event"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(clean(row.status, 'OPEN')) + '</span></div>';
@@ -6704,6 +6720,9 @@
         restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
+        if (window.OverwatchTelemetry && typeof window.OverwatchTelemetry.onMissionOpened === 'function') {
+          window.OverwatchTelemetry.onMissionOpened();
+        }
       });
       return;
     }
@@ -6733,6 +6752,9 @@
       showOpsPanel('tab-radio', 'Radio', 'Proximité');
       if (window.ATAKRadio && typeof window.ATAKRadio.render === 'function') {
         try { window.ATAKRadio.render(); } catch (e) {}
+      }
+      if (window.OverwatchTelemetry && typeof window.OverwatchTelemetry.onRadioOpened === 'function') {
+        window.OverwatchTelemetry.onRadioOpened();
       }
       return;
     }
@@ -7131,6 +7153,10 @@
       var missionOpen = drawer && !drawer.hidden && drawerTitle && drawerTitle.textContent === 'Mission';
       var airOpen = drawer && !drawer.hidden && drawerTitle && drawerTitle.textContent === 'Air';
       if (squadsOpen || missionOpen) loadGroupTasks();
+      if (missionOpen && window.OverwatchTelemetry && typeof window.OverwatchTelemetry.refreshLogistics === 'function') {
+        window.OverwatchTelemetry.refreshLogistics();
+        window.OverwatchTelemetry.refreshMedical();
+      }
       if (airOpen) {
         loadAirAssets();
         loadNine();

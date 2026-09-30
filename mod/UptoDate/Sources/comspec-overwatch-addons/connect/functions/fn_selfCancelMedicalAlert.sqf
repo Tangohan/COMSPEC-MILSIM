@@ -32,6 +32,13 @@ if (_silent && {(missionNamespace getVariable ["COMSPEC_MedicalSilentClosedId", 
 private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_by isEqualTo "") then { _by = name player; };
 
+if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+    ["med_clear", createHashMapFromArray [
+        ["call_sign", _by],
+        ["reason", "annule"]
+    ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+};
+
 private _raw = ["COMSPECExtension" callExtension ["TriageMedicalAlert", [_alertId, "annule", _by]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
     if (!_silent) then {

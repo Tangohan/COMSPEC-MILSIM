@@ -105,7 +105,29 @@ private _msg = format [
 if !([] call comspec_overwatch_connect_fnc_isReady) then {
     ["WARN", "Medical", "Alerte médicale non transmise au poste — liaison absente"] call comspec_overwatch_connect_fnc_log;
 };
-[player, "CHAT", _msg, "", "INFANTRY", 0.95] call comspec_overwatch_connect_fnc_sendIntel;
+
+// Phase B : événement structuré prioritaire (bus télémétrie).
+private _posASL = getPosASL _unit;
+private _tel = createHashMapFromArray [
+    ["kind", _kindNorm],
+    ["call_sign", _callSign],
+    ["label", _label],
+    ["hr", parseNumber _hr],
+    ["blood", parseNumber _blood],
+    ["grid", _grid],
+    ["x", _posASL select 0],
+    ["y", _posASL select 1],
+    ["z", _posASL select 2]
+];
+private _telOk = false;
+if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+    _telOk = ["med", _tel, 0] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+};
+
+// Secours chat si le bus n’est pas disponible (Athena / extension trop ancienne).
+if (!_telOk) then {
+    [player, "CHAT", _msg, "", "INFANTRY", 0.95] call comspec_overwatch_connect_fnc_sendIntel;
+};
 
 private _alert = createHashMapFromArray [
     ["kind", toUpper _kindNorm],

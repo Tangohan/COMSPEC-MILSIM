@@ -293,6 +293,65 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(746, '2026-09-30', 'Poste Overwatch : santé, soutien et radio du terrain', 'Le poste Overwatch affiche désormais les alertes santé structurées remontées depuis le jeu, le besoin de soutien (carburant et munitions) avec demande de ravitaillement, et l’historique des émissions radio sans enregistrer la voix. Le journal de mission se filtre par thème (sanitaire, contact armé, soutien, radio…). Rechargez le portail (Ctrl+F5). Pack jeu 2.0.57 recommandé.', [
+                'Alertes santé du terrain dans Mission, avec statut de secours',
+                'Tableau de soutien carburant / munitions et demande de ravitaillement',
+                'Historique des émissions dans l’espace Radio',
+                'Journal de mission filtrable par thème',
+            ], [
+                'Les calques d’observation et d’évaluation restent disponibles sur la carte',
+            ], [], ['atak', 'command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Mission : les alertes santé et le soutien doivent se remplir dès qu’un opérateur remonte une situation. Ouvrez Radio pour l’historique des émissions. Plus → Journal pour les filtres.',
+            ], 'Portail Athena · Overwatch'),
+            $pr(745, '2026-09-30', 'Poste : pistes d’observation sur la carte', 'Les observations terrain (SALUTE, reconnaissance, bilans des dégâts, veille radio) apparaissent désormais sur la carte du poste, séparées des unités alliées. Vous pouvez confirmer ou écarter une piste, et pour un bilan des dégâts choisir le niveau observé. Relancez le portail Athena (Ctrl+F5) ; le pack jeu 2.0.57 reste valable.', [
+                'Calques Observations terrain et Évaluations confirmées sur la carte du poste',
+                'Confirmation ou écartement d’une piste depuis le panneau latéral',
+                'Bilan des dégâts : choix du niveau observé avant confirmation',
+            ], [
+                'Les trajectoires alliées (calque Trajectoires) restent distinctes des pistes d’observation',
+            ], [], ['atak', 'command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez le poste Overwatch, calques : Observations terrain. Envoyez un SALUTE ou une note de reco depuis le jeu : la piste doit apparaître. Confirmez-la depuis le panneau.',
+            ], 'Portail Athena · Overwatch'),
+            $pr(744, '2026-09-30', 'Pistes terrain : observation et confirmation', 'Les comptes rendus SALUTE, notes de reconnaissance, bilans des dégâts et signalements radio créent désormais des pistes distinctes de la position alliée. Un bilan des dégâts reste candidat jusqu’à confirmation humaine au poste — jamais marqué détruit automatiquement. Les observations apparaissent aussi dans le rejeu de mission. Relancez Arma après Overwatch avec Extension 2.0.57 · portail Athena à jour.', [
+                'Pistes d’observation séparées du suivi allié (réalité)',
+                'SALUTE, reconnaissance et bilans des dégâts remontés comme candidats',
+                'Confirmation humaine requise avant évaluation définitive',
+                'Signalements radio croisés en piste d’émetteur probable',
+                'Observations visibles dans le rejeu de mission',
+            ], [
+                'Les alertes tactiques existantes continuent d’apparaître dans la messagerie',
+            ], [], ['atak', 'command'], [
+                'Mettez à jour le portail Athena, puis le pack jeu / Extension 2.0.57. Relancez Arma. Envoyez un SALUTE ou une note de reco : une piste d’observation doit apparaître au poste. Un bilan des dégâts reste à confirmer manuellement.',
+            ], 'Overwatch · Extension 2.0.57 · Athena'),
+            $pr(743, '2026-09-30', 'Logistique et radio : remontées automatiques', 'Le poste reçoit désormais un bilan logistique périodique (carburant, munitions, équipage, places libres) sans saisie manuelle. Les émissions radio sont journalisées (indicatif, fréquence, durée) sans enregistrer la voix. Les aéronefs suivis affichent vitesse et état. Relancez Arma après Overwatch avec Extension 2.0.57 · portail Athena à jour.', [
+                'Bilan logistique automatique par véhicule ou opérateur',
+                'Journal des émissions radio (métadonnées uniquement)',
+                'Changements d’état carburant / équipage remontés sans saturer la liaison',
+                'Suivi aérien enrichi (vitesse, dégâts, moteur)',
+            ], [
+                'Le bilan se met à jour à l’embarquement puis régulièrement en mission',
+            ], [], ['atak', 'command'], [
+                'Mettez à jour le portail Athena, puis le pack jeu / Extension 2.0.57. Relancez Arma. Embarquez un véhicule : le poste doit voir le carburant et l’équipage. Passez un PTT : une ligne COMMS apparaît au journal.',
+            ], 'Overwatch · Extension 2.0.57 · Athena'),
+            $pr(742, '2026-09-30', 'Urgences terrain : alertes structurées', 'Les situations critiques (opérateur au sol, arrêt cardiaque, hors combat) remontent maintenant comme alertes structurées vers le poste, sans polluer le canal radio. L’embarquement et le débarquement, ainsi que les échanges de tirs significatifs, apparaissent dans le journal. La cadence de position s’adapte à la vitesse (à pied, véhicule, aéronef). Relancez Arma après Overwatch avec Extension 2.0.57 · portail Athena à jour.', [
+                'Alertes médicales structurées vers le poste (prioritaires sur le message radio)',
+                'Embarquement et débarquement signalés au journal',
+                'Tirs et impacts significatifs remontés sans saturer la liaison',
+                'Cadence de position adaptée à la vitesse et à la qualité de liaison',
+            ], [
+                'Si le bus n’est pas disponible, l’alerte médicale repasse encore par le canal radio',
+            ], [], ['atak', 'command'], [
+                'Mettez à jour le portail Athena, puis le pack jeu / Extension 2.0.57. Relancez Arma complètement. Faites un test d’inconscience ACE : l’alerte doit apparaître au poste ; le canal général ne doit plus se remplir d’« ALERTE MÉDICALE » sauf secours.',
+            ], 'Overwatch · Extension 2.0.57 · Athena'),
+            $pr(741, '2026-09-30', 'Liaison terrain : envois regroupés et calmes', 'Les positions et états remontés depuis le jeu partent désormais par lots ordonnés : les urgences (blessé, liaison perdue) passent en premier, le reste ne se répète plus si rien n’a changé. Le poste continue d’afficher les opérateurs comme avant. Relancez Arma après Overwatch avec Extension 2.0.57 · portail Athena à jour.', [
+                'Regroupement des remontées terrain en un seul envoi quand le poste le permet',
+                'Priorité aux situations critiques avant le reste',
+                'Moins de répétitions quand la position ou l’état n’a pas bougé',
+            ], [
+                'Les routes individuelles restent disponibles si le lot n’est pas pris en charge',
+            ], [], ['atak', 'command'], [
+                'Mettez à jour le portail Athena, puis le pack jeu / Extension 2.0.57. Relancez Arma complètement. Sur le poste, les opérateurs doivent continuer à apparaître ; en cas de souci, l’extension repasse seule sur l’ancien mode d’envoi.',
+            ], 'Overwatch · Extension 2.0.57 · Athena'),
             $pr(736, '2026-09-30', 'Décorations, dotation nominative et dossier de carrière', 'Le back-office gagne un dossier de carrière chronologique, des décorations distinctes des qualifications, une dotation nominative et un score de disponibilité par unité. L’avancement de grade (échelle, campagnes, commission) reste celui déjà en place. Rechargez le portail (Ctrl+F5).', [
                 'Décorations / citations séparées des qualifications',
                 'Carnet de dotation nominative (série, statut, historique)',

@@ -299,6 +299,10 @@
   }
 
   function openLogs() {
+    if (window.OverwatchTelemetry && typeof window.OverwatchTelemetry.openLogs === 'function') {
+      window.OverwatchTelemetry.openLogs();
+      return;
+    }
     var api = ow();
     if (!api) return;
     api.api('/api/atak/activity?mapId=' + encodeURIComponent(api.mapId) + '&limit=40').then(function (payload) {

@@ -1,13 +1,21 @@
 /*
-    Tuile P2P : ne pas initialiser un second écran Messagerie.
-    IceMan n’alimente que la page native « message ».
+    Tuile P2P — Réseau local : écran IceMan ATAK_Message (contacts + fil).
+    Ne pas masquer le groupe : c’est justement la page à alimenter.
 */
-params ["_group"];
+params ["_group", ["_interfaceInit", false], "_isDialog", "_settings"];
+
+["message"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
 
 if (!isNull _group) then {
-    _group ctrlShow false;
-    _group ctrlEnable false;
+    _group ctrlShow true;
+    _group ctrlEnable true;
 };
 
-if (missionNamespace getVariable ["COMSPEC_ATAK_P2P_opening", false]) exitWith {};
-[] call comspec_overwatch_atak_athena_fnc_athena_messageHubOpenP2P;
+// Init native BCE / IceMan (liste contacts + messages).
+if (!isNil "BCE_fnc_ATAK_message_Init") then {
+    [_group, _interfaceInit, _isDialog, _settings] call BCE_fnc_ATAK_message_Init;
+} else {
+    if (!isNil "Iceman_fnc_message_onOpened") then {
+        [_group, _interfaceInit, _isDialog, _settings] call Iceman_fnc_message_onOpened;
+    };
+};

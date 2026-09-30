@@ -121,6 +121,32 @@ private _parsed = [
 ] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "_status", "_detail"];
 
+// Bus Phase D — observation → piste (couche observation).
+if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+    private _trackType = switch (_tag) do {
+        case "vehicle": { "VEHICLE" };
+        case "armed_group": { "INFANTRY" };
+        case "static": { "STATIC" };
+        case "mine": { "MINE" };
+        case "civilian": { "CIVILIAN" };
+        case "infrastructure": { "INFRA" };
+        default { "UNKNOWN" };
+    };
+    private _tel = createHashMapFromArray [
+        ["t", "recon"],
+        ["x", _pos select 0],
+        ["y", _pos select 1],
+        ["z", _pos select 2],
+        ["text", _text],
+        ["tag", _tag],
+        ["conf", _confidence],
+        ["label", _tagLabel],
+        ["track_type", _trackType],
+        ["affiliation", "UNKNOWN"]
+    ];
+    ["recon", _tel, 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+};
+
 if (_ok) then {
     [format ["Note reco transmise (%1).", _tagLabel], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
 } else {

@@ -949,6 +949,21 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-effectifs-table td.is-mono{font-family:var(--ow-mono);font-size:12px}
 .ow-track-line{stroke-linecap:round;stroke-linejoin:round}
 .ow-track-line.is-stale{opacity:.45}
+.ow-tactical-track-wrap{background:transparent;border:0}
+.ow-tactical-track{display:inline-flex;align-items:center;gap:6px;max-width:160px;pointer-events:auto}
+.ow-tactical-track__dot{width:12px;height:12px;border-radius:50%;background:var(--ow-trk,#e7b14d);box-shadow:0 0 0 2px #080b0acc;flex:0 0 auto}
+.ow-tactical-track.is-observation .ow-tactical-track__dot{background:transparent;border:2px dashed var(--ow-trk,#e7b14d);box-shadow:none}
+.ow-tactical-track.is-assessment .ow-tactical-track__dot{border-radius:2px}
+.ow-tactical-track__lbl{display:grid;gap:1px;padding:2px 6px;background:#080b0acc;border:1px solid #27302d;color:#dff9ef;font:500 11px var(--ow-sans);line-height:1.2}
+.ow-tactical-track__lbl small{display:block;color:#c7ceca;font:500 10px var(--ow-sans)}
+.ow-med-alert{flex-wrap:wrap;gap:6px}
+.ow-med-alert .ow-row{width:100%;margin-top:4px}
+.ow-log-medical{border-left:2px solid #e05b63;padding-left:8px}
+.ow-log-combat{border-left:2px solid #e7b14d;padding-left:8px}
+.ow-log-logistics{border-left:2px solid #6ea8fe;padding-left:8px}
+.ow-log-radio{border-left:2px solid #00d69a;padding-left:8px}
+.ow-comms-history-block{margin-top:14px;padding-top:10px;border-top:1px solid #171c1a}
+.ow-nav button .ow-unread{margin-left:6px}
 .ow-gps-map-icon,.ow-air-map-icon{background:transparent;border:0}
 .ow-gps-pin{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #f59e0b;filter:drop-shadow(0 0 1px #000);display:block}
 .ow-gps-label,.ow-air-label{display:block;margin-top:2px;font-size:9px;font-weight:700;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap}

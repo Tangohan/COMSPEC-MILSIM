@@ -203,6 +203,7 @@ class CfgFunctions {
             class onPlayerRespawn {};
             class checkMedicalAlerts {};
             class reportMedicalAlert {};
+            class emitTelemetryEvent {};
             class pushIcemanMedicalAlert {};
             class canTriageMedical {};
             class medicalInboxShow {};
@@ -250,6 +251,7 @@ class CfgFunctions {
             class warnDangerZoneEntry {};
             class pollTacticalZones {};
             class sendLogisticsStatus {};
+            class initLogisticsLoop {};
             class receiveIFFChallenge {};
             class submitIFFResponse {};
             class updateIFFMarkerState {};

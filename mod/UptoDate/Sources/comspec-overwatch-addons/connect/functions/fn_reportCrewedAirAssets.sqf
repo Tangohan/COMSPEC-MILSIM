@@ -141,6 +141,7 @@ if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
         ["vehicle_id", _vehicleId],
         ["alt", _posAsl select 2],
         ["altitude", _posAsl select 2],
+        ["asl_z", _posAsl select 2],
         ["heading", _heading],
         ["pos", [_pos select 0, _pos select 1]],
         ["pos_x", _pos select 0],
@@ -155,8 +156,21 @@ if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
         ["crew_count", count _occ],
         ["ordnance", _ordnance],
         ["bingo_fuel", _playTxt],
+        ["damage", getDammage _x],
+        ["speed", vectorMagnitude velocity _x],
+        ["engine_on", isEngineOn _x],
+        ["can_move", canMove _x],
         ["lastUpdate", floor time]
     ];
+    // Attitude si disponible (pitch / bank)
+    private _vu = vectorUp _x;
+    if ((_vu isEqualType []) && {(count _vu) >= 3}) then {
+        _payload set ["bank", asin ((_vu select 0) max -1 min 1)];
+    };
+    private _vd = vectorDir _x;
+    if ((_vd isEqualType []) && {(count _vd) >= 3}) then {
+        _payload set ["pitch", asin ((_vd select 2) max -1 min 1)];
+    };
 
     private _json = [_payload] call comspec_overwatch_connect_fnc_hashMapToJson;
     if (!(_json isEqualType "") || {_json isEqualTo ""}) then { continue };

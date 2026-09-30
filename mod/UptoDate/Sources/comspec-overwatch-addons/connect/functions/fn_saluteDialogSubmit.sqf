@@ -34,7 +34,27 @@ if ((count _parts) < 1) exitWith {
 };
 
 private _body = _parts joinString "|";
-["SALUTE", _body, getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
+private _pos = getPos player;
+["SALUTE", _body, _pos] call comspec_overwatch_connect_fnc_sendTacticalAlert;
+
+// Bus Phase D — piste OBSERVATION (candidat), en plus du canal alerte.
+if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+    private _tel = createHashMapFromArray [
+        ["t", "salute"],
+        ["x", _pos select 0],
+        ["y", _pos select 1],
+        ["label", "Contact SALUTE"],
+        ["affiliation", "SUSPECTED_HOSTILE"],
+        ["S", _s],
+        ["A", _a],
+        ["L", _l],
+        ["U", _u],
+        ["T", _t],
+        ["E", _e],
+        ["text", _body]
+    ];
+    ["salute", _tel, 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+};
 
 if (!isNull _disp) then {
     _disp closeDisplay 1;

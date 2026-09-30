@@ -150,6 +150,47 @@ private _radioSig = format [
     if (_radioTxFlag) then { "1" } else { "0" }
 ];
 
+// Phase C — journal COMMS : début / fin TX (métadonnées seulement).
+private _prevTx = missionNamespace getVariable ["COMSPEC_RadioTxWasOn", false];
+if (_radioTxFlag && {!_prevTx}) then {
+    missionNamespace setVariable ["COMSPEC_RadioTxWasOn", true, false];
+    missionNamespace setVariable ["COMSPEC_RadioTxStartedAt", diag_tickTime, false];
+    if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+        private _csTx = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_csTx isEqualTo "") then { _csTx = name _unit; };
+        ["comms", createHashMapFromArray [
+            ["action", "tx_start"],
+            ["call_sign", _csTx],
+            ["freq", _radioFreq],
+            ["channel", _radioChannel],
+            ["net", _radioNet],
+            ["radio", _radioId],
+            ["x", _pos select 0],
+            ["y", _pos select 1]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+    };
+};
+if (!_radioTxFlag && {_prevTx}) then {
+    private _started = missionNamespace getVariable ["COMSPEC_RadioTxStartedAt", diag_tickTime];
+    private _dur = (diag_tickTime - _started) max 0;
+    missionNamespace setVariable ["COMSPEC_RadioTxWasOn", false, false];
+    if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+        private _csTx2 = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_csTx2 isEqualTo "") then { _csTx2 = name _unit; };
+        ["comms", createHashMapFromArray [
+            ["action", "tx_end"],
+            ["call_sign", _csTx2],
+            ["freq", _radioFreq],
+            ["channel", _radioChannel],
+            ["net", _radioNet],
+            ["radio", _radioId],
+            ["duration_s", _dur],
+            ["x", _pos select 0],
+            ["y", _pos select 1]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+    };
+};
+
 private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
 private _airborne = false;
 if (_inVeh && {
@@ -237,6 +278,70 @@ private _txUrgent = _radioChanged && {
 private _medUrgent = _medicalChanged && {_health in ["unconscious", "cardiac_arrest"]};
 private _combatQueue = missionNamespace getVariable ["COMSPEC_CombatQueue", []];
 private _combatUrgent = (_combatQueue isEqualType []) && {count _combatQueue > 0};
+
+// Phase B — intervalle adaptatif selon vitesse / posture.
+private _spd = vectorMagnitude velocity _unit;
+if (!(_spd isEqualType 0)) then { _spd = 0; };
+if (!_force) then {
+    private _adaptive = _posMin;
+    if (_airborne) then {
+        _adaptive = 0.4;
+    } else {
+        if (_inVeh) then {
+            if (_spd >= 18) then {
+                _adaptive = 0.6;
+            } else {
+                if (_spd >= 6) then {
+                    _adaptive = 1.0;
+                } else {
+                    _adaptive = (_posMin min 2.5) max 1.0;
+                };
+            };
+        } else {
+            if (_spd < 0.35) then {
+                _adaptive = (_posMin max 8) min 15;
+            } else {
+                if (_spd < 2.2) then {
+                    _adaptive = 3;
+                } else {
+                    _adaptive = 1.75;
+                };
+            };
+        };
+    };
+    if (_medUrgent || _combatUrgent) then {
+        _adaptive = _adaptive min 1.0;
+    };
+    if (_sendBack > 0) then {
+        private _mult = if (_sendBack >= 150) then { 4 } else { 2 };
+        _adaptive = _adaptive * _mult;
+    };
+    _posMin = _adaptive;
+    _heartbeat = (_heartbeat min 30) max 20;
+};
+
+// Phase C — état P2 (fuel / équipage / munitions) en delta, hors du flood position.
+if (_vehChanged || _medicalChanged) then {
+    private _stLast = missionNamespace getVariable ["COMSPEC_StateEmitAt", -1e9];
+    if ((diag_tickTime - _stLast) >= 8) then {
+        missionNamespace setVariable ["COMSPEC_StateEmitAt", diag_tickTime, false];
+        if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+            private _csSt = [] call comspec_overwatch_connect_fnc_getCallsign;
+            if (_csSt isEqualTo "") then { _csSt = name _unit; };
+            ["state", createHashMapFromArray [
+                ["call_sign", _csSt],
+                ["health", _health],
+                ["fuel", _fuel],
+                ["ammo", _ammo],
+                ["in_vehicle", _inVeh],
+                ["vehicle", if (_inVeh) then { typeOf _veh } else { "" }],
+                ["crew_count", if (_inVeh) then { { alive _x } count (crew _veh) } else { 1 }],
+                ["x", _pos select 0],
+                ["y", _pos select 1]
+            ], 2] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+        };
+    };
+};
 
 private _shouldSend = _force || _txUrgent || _medUrgent || _combatUrgent;
 switch (_policy) do {

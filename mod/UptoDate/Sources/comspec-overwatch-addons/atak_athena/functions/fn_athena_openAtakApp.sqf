@@ -31,8 +31,15 @@ if (!isNull _appsGroup) then {
 
 if (!isNull _ctrl && {!isNil "BCE_fnc_ATAK_ChangeTool"}) exitWith {
     [_ctrl] call BCE_fnc_ATAK_ChangeTool;
+    // BCE empile les sous-pages : forcer une seule page COMSPEC / IceMan visible.
+    [{
+        [] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+    }, [], 0.05] call CBA_fnc_waitAndExecute;
     true
 };
 
 ["cTab_Android_dlg", [["showMenu", [_page, true, ["", -1], createHashMap]]], true, true] call cTab_fnc_setSettings;
+[{
+    [] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+}, [], 0.05] call CBA_fnc_waitAndExecute;
 true

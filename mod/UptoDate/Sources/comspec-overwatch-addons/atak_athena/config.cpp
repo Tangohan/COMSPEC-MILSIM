@@ -16,10 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.167;
-        versionStr = "1.0.167";
-        versionAr[] = {1, 0, 165};
-        // Historique : 1.0.164 couches/IFF, 1.0.165 Reco dans le téléphone.
+        version = 1.168;
+        versionStr = "1.0.168";
+        versionAr[] = {1, 0, 168};
+        // Historique : 1.0.167 Relais/P2P, 1.0.168 Relais AT ne reste plus collé + P2P alimenté.
     };
 };
 
@@ -316,8 +316,7 @@ class ATAK_APPs
     {
         text = "<t size='1'>P2P — Réseau local</t>";
         textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-        onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_messageHubOpenP2P";
-        // Ne pas ChangeTool cette tuile : IceMan n’alimente que la page native « message ».
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
         class Menu_Property
         {
             ORDER = 0.05;
@@ -549,7 +548,7 @@ class RscTitles
         {
             text = "<t size='1'>P2P — Réseau local</t>";
             textureNoShortcut = "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\radio_ca.paa";
-            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_messageHubOpenP2P";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
             class Menu_Property
             {
                 ORDER = 0.05;

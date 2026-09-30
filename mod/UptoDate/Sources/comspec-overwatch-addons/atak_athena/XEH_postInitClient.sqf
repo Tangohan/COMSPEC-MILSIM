@@ -42,6 +42,32 @@ private _forceCamCapture = {
     if (isNil "COMSPEC_BCE_screenShotOrig" && {!isNil "BCE_fnc_screenShot"}) then {
         missionNamespace setVariable ["COMSPEC_BCE_screenShotOrig", BCE_fnc_screenShot];
     };
+    // Toute capture BCE (Discord inclus) passe par le helper dossier réel.
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bceScreenShot"
+        && {!isNil "COMSPEC_BCE_screenShotOrig"}
+    ) then {
+        private _wrap = {
+            private _arg = if (_this isEqualType []) then {
+                if ((count _this) > 0) then { _this select 0 } else { "" }
+            } else {
+                if (_this isEqualType "") then { _this } else { "" }
+            };
+            [_arg] call comspec_overwatch_atak_athena_fnc_athena_bceScreenShot
+        };
+        BCE_fnc_screenShot = _wrap;
+        missionNamespace setVariable ["BCE_fnc_screenShot", _wrap];
+        uiNamespace setVariable ["BCE_fnc_screenShot", _wrap];
+    };
+    // Réaligner BCE_PicFilePath_edit vers le Screenshot réel (évite Program Files fantôme).
+    if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
+        private _rawDir = ["COMSPECExtension" callExtension ["GetBceScreenshotDir", []]] call comspec_overwatch_connect_fnc_extResult;
+        if (_rawDir isEqualType "" && {(_rawDir select [0, 3]) isEqualTo "OK|"}) then {
+            private _realShot = trim (_rawDir select [3, (count _rawDir) - 3]);
+            if (_realShot isNotEqualTo "") then {
+                BCE_PicFilePath_edit = _realShot;
+            };
+        };
+    };
 };
 call _forceCamCapture;
 { [_forceCamCapture, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8];
@@ -109,10 +135,10 @@ private _redirectIcemanGroup = {
         _group ctrlShow false;
         _group ctrlEnable false;
     };
-    ["message"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+    ["AtakComms"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
     [] spawn {
         uiSleep 0.2;
-        ["msghub"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+        ["comms"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
         missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", false, false];
     };
 };
@@ -134,10 +160,10 @@ if (!isNil "Iceman_fnc_group_onOpened") then {
             _group ctrlShow false;
             _group ctrlEnable false;
         };
-        ["message"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
+        ["AtakComms"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
         [] spawn {
             uiSleep 0.2;
-            ["msghub"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+            ["comms"] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
             missionNamespace setVariable ["COMSPEC_ATAK_Comms_iceRedirect", false, false];
         };
     };
@@ -550,3 +576,32 @@ private _wrapDrawerApps = {
 };
 call _wrapDrawerApps;
 { [_wrapDrawerApps, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];
+
+// Après chaque ChangeTool : masquer Relais AT / pages COMSPEC non actives (sinon Relais reste collé).
+private _wrapChangeTool = {
+    if (isNil "BCE_fnc_ATAK_ChangeTool") exitWith {};
+    if (isFinal BCE_fnc_ATAK_ChangeTool) exitWith {};
+    if (isNil "COMSPEC_BCE_ChangeToolOrig") then {
+        COMSPEC_BCE_ChangeToolOrig = BCE_fnc_ATAK_ChangeTool;
+    };
+    BCE_fnc_ATAK_ChangeTool = {
+        private _ret = _this call COMSPEC_BCE_ChangeToolOrig;
+        [{
+            if (isNil "comspec_overwatch_atak_athena_fnc_athena_hideForeignPages") exitWith {};
+            [] call comspec_overwatch_atak_athena_fnc_athena_hideForeignPages;
+            private _page = toLower ((["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""]);
+            if (!(_page in ["waverelay", "atakrelay", "comspec_atak_relay"])) then {
+                private _relay = uiNamespace getVariable ["COMSPEC_ATAK_Relay_group", controlNull];
+                if (!isNull _relay) then {
+                    _relay ctrlShow false;
+                    _relay ctrlEnable false;
+                };
+                uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", -1];
+                uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", controlNull];
+            };
+        }, [], 0.05] call CBA_fnc_waitAndExecute;
+        _ret
+    };
+};
+call _wrapChangeTool;
+{ [_wrapChangeTool, [], _x] call CBA_fnc_waitAndExecute; } forEach [1, 3, 8, 15];

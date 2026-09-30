@@ -22,6 +22,24 @@ player addEventHandler ["GetInMan", {
         [] call comspec_overwatch_connect_fnc_hideAceMenu;
     };
 
+    if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+        private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_cs isEqualTo "") then { _cs = name _unit; };
+        private _pos = getPosASL _unit;
+        ["unit", createHashMapFromArray [
+            ["action", "enter"],
+            ["call_sign", _cs],
+            ["role", _role],
+            ["vehicle", getText (configOf _vehicle >> "displayName")],
+            ["vehicle_class", typeOf _vehicle],
+            ["x", _pos select 0],
+            ["y", _pos select 1]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+        // LOGSTAT immédiat à l’embarquement
+        missionNamespace setVariable ["COMSPEC_LogisticsLastSig", "", false];
+        missionNamespace setVariable ["COMSPEC_LogisticsLastAt", -1e9, false];
+    };
+
     private _trackingHandle = _vehicle getVariable ["COMSPEC_TrackingHandle", -1];
     if (_trackingHandle isEqualTo -1) then {
         private _handle = [{
@@ -45,7 +63,25 @@ player addEventHandler ["GetInMan", {
     };
 }];
 
-player addEventHandler ["GetOutMan", {}];
+player addEventHandler ["GetOutMan", {
+    params ["_unit", "_role", "_vehicle", "_turret"];
+    if (isNull _unit || {!local _unit}) exitWith {};
+    if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+    if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
+        private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_cs isEqualTo "") then { _cs = name _unit; };
+        private _pos = getPosASL _unit;
+        private _vehName = if (isNull _vehicle) then { "" } else { getText (configOf _vehicle >> "displayName") };
+        ["unit", createHashMapFromArray [
+            ["action", "exit"],
+            ["call_sign", _cs],
+            ["role", _role],
+            ["vehicle", _vehName],
+            ["x", _pos select 0],
+            ["y", _pos select 1]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+    };
+}];
 
 player addEventHandler ["Killed", {
     params ["_unit"];

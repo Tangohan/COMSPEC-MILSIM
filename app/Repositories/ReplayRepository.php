@@ -277,6 +277,67 @@ class ReplayRepository
             }
         }
 
+        // Phase D — observations / pistes (SALUTE, reco, BDA, SIGINT)
+        if ($this->tableExists('tactical_observations')) {
+            try {
+                $sql = 'SELECT id, obs_uid, kind, layer, actor, pos_x, pos_y, confidence, payload_json, created_at
+                        FROM tactical_observations
+                        WHERE tenant_id = ? AND map_id = ?';
+                $params = [$tenantId, $mapId];
+                if ($from !== null && $from !== '') {
+                    $sql .= ' AND created_at >= ?';
+                    $params[] = $from;
+                }
+                if ($to !== null && $to !== '') {
+                    $sql .= ' AND created_at <= ?';
+                    $params[] = $to;
+                }
+                $sql .= ' ORDER BY created_at ASC LIMIT 500';
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $kind = strtolower(trim((string) ($row['kind'] ?? 'obs')));
+                    $actor = trim((string) ($row['actor'] ?? ''));
+                    $label = match ($kind) {
+                        'salute' => 'Observation SALUTE',
+                        'bda', 'bda_confirm' => 'Bilan des dégâts',
+                        'sigint' => 'Signalement radio',
+                        'recon' => 'Note de reconnaissance',
+                        default => 'Observation terrain',
+                    };
+                    $payload = [];
+                    $rawPayload = $row['payload_json'] ?? '';
+                    if (is_string($rawPayload) && $rawPayload !== '') {
+                        $decoded = json_decode($rawPayload, true);
+                        if (is_array($decoded)) {
+                            $payload = $decoded;
+                        }
+                    }
+                    $detail = trim((string) ($payload['label'] ?? $payload['text'] ?? $payload['tag'] ?? ''));
+                    if ($detail !== '') {
+                        $label .= ' — ' . mb_substr($detail, 0, 48);
+                    } elseif ($actor !== '') {
+                        $label .= ' — ' . $actor;
+                    }
+                    $events[] = [
+                        'type' => 'observation',
+                        'kind' => $kind,
+                        'id' => (int) $row['id'],
+                        'timestamp' => (string) ($row['created_at'] ?? ''),
+                        'label' => $label,
+                        'source' => $actor,
+                        'layer' => $row['layer'] ?? 'observation',
+                        'confidence' => isset($row['confidence']) ? (float) $row['confidence'] : null,
+                        'x' => isset($row['pos_x']) ? (float) $row['pos_x'] : null,
+                        'y' => isset($row['pos_y']) ? (float) $row['pos_y'] : null,
+                        'obsUid' => $row['obs_uid'] ?? null,
+                    ];
+                }
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
         return $this->sortTrimEvents($events, $limit);
     }
 

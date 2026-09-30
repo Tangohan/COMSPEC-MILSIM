@@ -4,7 +4,14 @@
     L’extension de capture du pack annonce parfois un dossier collé
     (« Arma 3 » + « !Workshop » + nom du mod, sans séparateurs). Discord
     ouvre ce chemin et échoue, alors que la photo est bien enregistrée.
-    On passe un dossier existant, puis on répare le chemin renvoyé.
+
+    Plus fréquent : BCE_PicFilePath_edit pointe vers une ancienne install
+    Steam (Program Files…) ou un pack renommé (« FN + CHR + OBJ ») qui
+    n’existe plus sur le disque. La capture « réussit » côté jeu (nom.jpg
+    annoncé) mais aucun fichier n’est écrit → Athena file_not_found.
+
+    On force le dossier Screenshot réel sous !Workshop de l’Arma courant,
+    on répare le chemin renvoyé, et on réalign le réglage BCE pour Discord.
 */
 params [["_fileName", ""]];
 
@@ -47,25 +54,34 @@ if (
     _custom = "";
 };
 
+// Toujours demander le dossier Screenshot réel (DLL). Prioritaire sur le
+// réglage profil, même s’il est bien formé mais pointe vers un disque mort.
 private _dir = "";
-if (_fileName isEqualTo "" && {_custom isEqualTo ""}) then {
-    if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
-        private _raw = ["COMSPECExtension" callExtension ["GetBceScreenshotDir", []]] call comspec_overwatch_connect_fnc_extResult;
-        if (_raw isEqualType "" && {(_raw select [0, 3]) isEqualTo "OK|"}) then {
-            _dir = trim (_raw select [3, (count _raw) - 3]);
-        };
+if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
+    private _raw = ["COMSPECExtension" callExtension ["GetBceScreenshotDir", []]] call comspec_overwatch_connect_fnc_extResult;
+    if (_raw isEqualType "" && {(_raw select [0, 3]) isEqualTo "OK|"}) then {
+        _dir = trim (_raw select [3, (count _raw) - 3]);
     };
 };
 
+if (_dir isNotEqualTo "") then {
+    // Discord + captures BCE natives utilisent ce réglage.
+    BCE_PicFilePath_edit = _dir;
+    _custom = "";
+};
+
 private _stem = _fileName;
-if (_stem isEqualTo "" && {_dir isNotEqualTo ""} && {(_dir find ":") >= 0}) then {
-    private _time = systemTime apply { (["", "0"] select (_x < 10)) + (str _x) };
-    _time resize 6;
-    private _base = _dir;
-    while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
-        _base = _base select [0, (count _base) - 1];
+if (_stem isEqualTo "") then {
+    private _baseDir = if (_dir isNotEqualTo "") then { _dir } else { _custom };
+    if (_baseDir isNotEqualTo "" && {(_baseDir find ":") >= 0}) then {
+        private _time = systemTime apply { (["", "0"] select (_x < 10)) + (str _x) };
+        _time resize 6;
+        private _base = _baseDir;
+        while { (count _base) > 0 && {(_base select [(count _base) - 1, 1]) isEqualTo "\\"} } do {
+            _base = _base select [0, (count _base) - 1];
+        };
+        _stem = format ["%1\\%2", _base, _time joinString "_"];
     };
-    _stem = format ["%1\\%2", _base, _time joinString "_"];
 };
 
 missionNamespace setVariable ["COMSPEC_BCE_ScreenShotInHelper", true, false];
@@ -99,6 +115,20 @@ if (_dirOut isEqualType "" && {_dirOut isNotEqualTo ""}) then {
             if (_leaf isEqualTo "") then { _leaf = _segs select ((count _segs) - 1); };
             _segs deleteAt ((count _segs) - 1);
             _dirOut = _segs joinString "\\";
+        };
+    };
+};
+
+// Si BCE renvoie encore un dossier fantôme, forcer le dossier réel + nom.
+if (_dir isNotEqualTo "" && {_leaf isEqualType ""} && {_leaf isNotEqualTo ""}) then {
+    private _lowOut = toLower _dirOut;
+    private _lowReal = toLower _dir;
+    if (_dirOut isEqualTo "" || {_lowOut isNotEqualTo _lowReal}) then {
+        // Dossier annoncé ≠ dossier réel (souvent Program Files vs F:\).
+        private _chk = ["COMSPECExtension" callExtension ["PathExists", [_dirOut]]] call comspec_overwatch_connect_fnc_extResult;
+        private _ok = (_chk isEqualType "") && {(_chk select [0, 4]) isEqualTo "OK|1"};
+        if (!_ok) then {
+            _dirOut = _dir;
         };
     };
 };

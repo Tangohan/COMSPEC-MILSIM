@@ -7,7 +7,14 @@ private _group = uiNamespace getVariable ["COMSPEC_ATAK_Relay_group", controlNul
 if (isNull _group || {!ctrlShown _group}) exitWith {};
 
 private _page = (["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""];
-if (_page isNotEqualTo "" && {!(_page in ["WaveRelay", "AtakRelay", "COMSPEC_ATAK_Relay", "waverelay", "atakrelay"])}) exitWith {};
+if (_page isNotEqualTo "" && {!(_page in ["WaveRelay", "AtakRelay", "COMSPEC_ATAK_Relay", "waverelay", "atakrelay"])}) exitWith {
+    if (!isNull _group) then {
+        _group ctrlShow false;
+        _group ctrlEnable false;
+    };
+    uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", -1];
+    uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", controlNull];
+};
 
 private _body = _group controlsGroupCtrl 9911;
 if (isNull _body) then { _body = _group controlsGroupCtrl 9021; };

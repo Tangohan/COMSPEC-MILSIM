@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.52";
+    private const string ExtensionVersion = "2.0.57";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -725,7 +725,7 @@ public static partial class Extension
     private static void EnsureDrainTimer()
     {
         LoadQueueFromDisk();
-        var period = Math.Clamp(_drainPeriodMs, 250, 2000);
+        var period = JitteredDrainPeriodMs();
         lock (DrainTimerLock)
         {
             if (_drainTimer == null)
@@ -806,6 +806,7 @@ public static partial class Extension
     {
         if (string.IsNullOrWhiteSpace(url)) return false;
         return url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("/api/atak/telemetry/batch", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
             || url.Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase)
@@ -1361,6 +1362,15 @@ public static partial class Extension
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         lock (QueueDrainLock)
         {
+            // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
+            if (TryDrainTelemetryBatch())
+            {
+                PersistQueueToDisk();
+                // Re-jitter périodique pour désynchroniser les clients.
+                try { EnsureDrainTimer(); } catch { /* ignore */ }
+                return;
+            }
+
             const int maxPerTick = 3;
             var sent = 0;
             var networkPause = IsNetworkBackoffNow();
@@ -1851,6 +1861,10 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
+        if (TryOfferBatchablePost(url, jsonBody))
+            return;
+
         // Positions : toujours coalescer (dernière gagne) puis flush périodique.
         // Un POST immédiat par callExtension ferait exploser la charge avec N joueurs.
         if (IsPositionEndpoint(url))
@@ -2578,6 +2592,21 @@ public static partial class Extension
             return ApplyTelemetryBatch(args.Length > 0 ? args[0] : "");
         }
 
+        if (function == "SetTelemetryMode")
+        {
+            return ApplyTelemetryMode(args.Length > 0 ? args[0] : "");
+        }
+
+        if (function == "GetTelemetryMetrics")
+        {
+            return FormatTelemetryMetrics();
+        }
+
+        if (function == "EmitTelemetry")
+        {
+            return ApplyEmitTelemetry(args);
+        }
+
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
@@ -2590,7 +2619,7 @@ public static partial class Extension
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote,TelemetryBatch,GetTelemetryMetrics,SetTelemetryMode,EmitTelemetry";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -2838,6 +2867,21 @@ public static partial class Extension
                 : "OK|" + SanitizeIdentityField(dir);
         }
 
+        // Existence disque (SQF ne peut pas le savoir) — dossier ou fichier.
+        if (function == "PathExists")
+        {
+            var probe = (args.Length > 0 ? args[0] : null) ?? "";
+            probe = RepairBrokenWorkshopScreenshotPath(probe.Trim().Trim('"').Trim('\'').Replace('/', '\\'));
+            if (string.IsNullOrWhiteSpace(probe)) return "OK|0";
+            try
+            {
+                if (Directory.Exists(probe) || File.Exists(probe))
+                    return "OK|1";
+            }
+            catch { /* ignore */ }
+            return "OK|0";
+        }
+
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
         if (function is "ShowAthenaLinkHelp")
         {
@@ -2865,11 +2909,12 @@ public static partial class Extension
 
         if (function == "GetPendingQueueCount")
         {
-            var n = PendingPosts.Count;
+            var n = PendingPosts.Count + TelemetryQueueDepth();
             lock (CoalescedPositionLock)
             {
                 if (_coalescedPosition is not null) n++;
             }
+            n += PendingMarkersByName.Count;
             return "OK|" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
@@ -8696,6 +8741,7 @@ public static partial class Extension
             return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
 
         path = RepairBrokenWorkshopScreenshotPath(path.Replace('/', '\\'));
+        path = RemapMissingWorkshopScreenshotPath(path);
 
         // Chemin absolu Windows dont le dossier parent n'existe pas → échec immédiat
         // (Photo Library obsolète). Évite 8× Sleep + scan Screenshots qui gèle le jeu.
@@ -8707,11 +8753,20 @@ public static partial class Extension
                 var parent = Path.GetDirectoryName(path);
                 if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent))
                 {
-                    // Dossier annoncé mort (Photo Library / IceMan) : chercher le même nom
-                    // ailleurs, puis la capture la plus récente — y compris %LOCALAPPDATA%\Arma 3.
+                    // Dossier annoncé mort (Photo Library / IceMan / ancien Steam) :
+                    // chercher le même nom ailleurs, puis la capture la plus récente.
                     var orphanName = Path.GetFileName(path);
                     if (!string.IsNullOrWhiteSpace(orphanName))
                     {
+                        var remapped = RemapMissingWorkshopScreenshotPath(
+                            Path.Combine(FindBceScreenshotDir() ?? parent, orphanName));
+                        if (!string.IsNullOrWhiteSpace(remapped)
+                            && !string.Equals(remapped, path, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var remappedFound = TryReadableImageFile(remapped);
+                            if (remappedFound != null)
+                                return remappedFound;
+                        }
                         var byName = FindScreenshotByFileName(orphanName);
                         if (byName != null)
                             return byName;
@@ -9840,64 +9895,226 @@ public static partial class Extension
     }
 
     /// <summary>
+    /// Si le chemin pointe vers un <c>Screenshot</c> Workshop fantôme (ancienne
+    /// bibliothèque Steam / pack « FN + CHR + OBJ » disparu), le réécrit vers le
+    /// dossier Screenshot réel trouvé sous l’install Arma courante.
+    /// </summary>
+    private static string RemapMissingWorkshopScreenshotPath(string path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path;
+            var p = path.Replace('/', '\\');
+            var parent = Path.GetDirectoryName(p);
+            if (string.IsNullOrWhiteSpace(parent) || Directory.Exists(parent))
+                return p;
+            var parentName = Path.GetFileName(parent.TrimEnd('\\')) ?? "";
+            var isShotLeaf = parentName.Equals("Screenshot", StringComparison.OrdinalIgnoreCase)
+                || parentName.Equals("Screenshots", StringComparison.OrdinalIgnoreCase)
+                || parentName.Equals("ATAK_PhotoLibrary", StringComparison.OrdinalIgnoreCase);
+            if (!isShotLeaf) return p;
+            var grand = Directory.GetParent(parent)?.Name ?? "";
+            var looksWorkshop = grand.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
+                || grand.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0
+                || grand.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
+                || grand.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0
+                || grand.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0
+                || parent.IndexOf("!Workshop", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!looksWorkshop) return p;
+            var real = FindBceScreenshotDir();
+            if (string.IsNullOrWhiteSpace(real)) return p;
+            var leaf = Path.GetFileName(p);
+            return string.IsNullOrWhiteSpace(leaf) ? real : Path.Combine(real, leaf);
+        }
+        catch
+        {
+            return path;
+        }
+    }
+
+    /// <summary>
+    /// Racines Arma 3 candidates : cwd + bibliothèques Steam (libraryfolders.vdf).
+    /// </summary>
+    private static IEnumerable<string> EnumerateArmaInstallRoots()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var roots = new List<string>();
+        void Consider(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return;
+            try { p = Path.GetFullPath(p.Trim().Trim('"')); }
+            catch { return; }
+            if (!Directory.Exists(p) || !seen.Add(p)) return;
+            var hasWorkshop = Directory.Exists(Path.Combine(p, "!Workshop"))
+                || Directory.Exists(Path.Combine(p, "!workshop"));
+            var hasExe = File.Exists(Path.Combine(p, "Arma3_x64.exe"))
+                || File.Exists(Path.Combine(p, "arma3.exe"));
+            if (hasWorkshop || hasExe)
+                roots.Add(p);
+        }
+
+        string? cwd = null;
+        try { cwd = Directory.GetCurrentDirectory(); } catch { /* ignore */ }
+        Consider(cwd);
+
+        foreach (var libRoot in EnumerateSteamLibraryRoots())
+            Consider(Path.Combine(libRoot, "steamapps", "common", "Arma 3"));
+
+        return roots;
+    }
+
+    private static IEnumerable<string> EnumerateSteamLibraryRoots()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var candidates = new List<string>();
+        try
+        {
+            var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (!string.IsNullOrWhiteSpace(pf86))
+                candidates.Add(Path.Combine(pf86, "Steam"));
+        }
+        catch { /* ignore */ }
+        try
+        {
+            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!string.IsNullOrWhiteSpace(pf))
+                candidates.Add(Path.Combine(pf, "Steam"));
+        }
+        catch { /* ignore */ }
+        // Bibliothèques secondaires fréquentes (évite de manquer F:\ quand cwd est OK
+        // mais un chemin annoncé pointe ailleurs).
+        foreach (var drive in new[] { "C", "D", "E", "F", "G", "H" })
+        {
+            candidates.Add($@"{drive}:\SteamLibrary");
+            candidates.Add($@"{drive}:\Steam");
+        }
+
+        foreach (var steamRoot in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(steamRoot) || !Directory.Exists(steamRoot)) continue;
+            if (seen.Add(steamRoot))
+                yield return steamRoot;
+
+            var vdf = Path.Combine(steamRoot, "steamapps", "libraryfolders.vdf");
+            if (!File.Exists(vdf)) continue;
+            string text;
+            try { text = File.ReadAllText(vdf); }
+            catch { continue; }
+            foreach (Match m in Regex.Matches(
+                         text,
+                         @"""path""\s+""([^""]+)""",
+                         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            {
+                var lib = (m.Groups[1].Value ?? "").Replace(@"\\", @"\");
+                if (string.IsNullOrWhiteSpace(lib) || !Directory.Exists(lib)) continue;
+                if (seen.Add(lib))
+                    yield return lib;
+            }
+        }
+    }
+
+    /// <summary>
     /// Dossier <c>Screenshot</c> réel du pack BCE / SOAR sous <c>!Workshop</c>.
+    /// Crée <c>Screenshot</c> sous le meilleur pack SOAR s’il manque.
     /// </summary>
     private static string? FindBceScreenshotDir()
     {
         try
         {
-            var cwd = Directory.GetCurrentDirectory();
-            if (string.IsNullOrWhiteSpace(cwd)) return null;
-
             string? best = null;
             var bestScore = -1;
-            foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
-            {
-                var wr = Path.Combine(cwd, workshopRoot);
-                if (!Directory.Exists(wr)) continue;
-                string[] mods;
-                try { mods = Directory.GetDirectories(wr); }
-                catch { continue; }
-                foreach (var modDir in mods)
-                {
-                    string shot;
-                    try
-                    {
-                        shot = Path.Combine(modDir, "Screenshot");
-                        if (!Directory.Exists(shot))
-                            shot = Path.Combine(modDir, "Screenshots");
-                        if (!Directory.Exists(shot))
-                            shot = Path.Combine(modDir, "addons", "ATAK_PhotoLibrary");
-                        if (!Directory.Exists(shot)) continue;
-                        shot = Path.GetFullPath(shot);
-                    }
-                    catch { continue; }
+            string? bestCreateUnder = null;
+            var bestCreateScore = -1;
 
-                    var name = Path.GetFileName(modDir.TrimEnd('\\')) ?? "";
-                    var score = 0;
-                    if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0)
-                        score = 3;
-                    else if (name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0)
-                        score = 2;
-                    else if (name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
-                        || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0)
-                        score = 2;
-                    else if (name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0)
-                        score = 1;
-                    if (score > bestScore)
+            foreach (var armaRoot in EnumerateArmaInstallRoots())
+            {
+                foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
+                {
+                    var wr = Path.Combine(armaRoot, workshopRoot);
+                    if (!Directory.Exists(wr)) continue;
+                    string[] mods;
+                    try { mods = Directory.GetDirectories(wr); }
+                    catch { continue; }
+                    foreach (var modDir in mods)
                     {
-                        bestScore = score;
-                        best = shot;
-                    }
-                    else if (score == bestScore && score == 0 && best == null)
-                    {
-                        best = shot;
+                        var name = Path.GetFileName(modDir.TrimEnd('\\')) ?? "";
+                        var score = ScoreBceScreenshotMod(name);
+                        if (score > bestCreateScore
+                            && (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
+                                || name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0
+                                || name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
+                                || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0
+                                || name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0))
+                        {
+                            bestCreateScore = score;
+                            bestCreateUnder = modDir;
+                        }
+
+                        string shot;
+                        try
+                        {
+                            shot = Path.Combine(modDir, "Screenshot");
+                            if (!Directory.Exists(shot))
+                                shot = Path.Combine(modDir, "Screenshots");
+                            if (!Directory.Exists(shot))
+                                shot = Path.Combine(modDir, "addons", "ATAK_PhotoLibrary");
+                            if (!Directory.Exists(shot)) continue;
+                            shot = Path.GetFullPath(shot);
+                        }
+                        catch { continue; }
+
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            best = shot;
+                        }
+                        else if (score == bestScore && score == 0 && best == null)
+                        {
+                            best = shot;
+                        }
                     }
                 }
             }
-            return best;
+
+            if (best != null)
+                return best;
+
+            // Aucun Screenshot existant : créer sous le meilleur pack SOAR/ATAK.
+            if (!string.IsNullOrWhiteSpace(bestCreateUnder))
+            {
+                try
+                {
+                    var created = Path.Combine(bestCreateUnder, "Screenshot");
+                    Directory.CreateDirectory(created);
+                    return Path.GetFullPath(created);
+                }
+                catch { /* ignore */ }
+            }
+            return null;
         }
         catch { return null; }
+    }
+
+    private static int ScoreBceScreenshotMod(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return 0;
+        // Pack FN (BCE / ATAK) : le dossier réel chez SOAR.
+        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
+            && name.IndexOf(" FN", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 6;
+        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
+            && name.IndexOf("- FN", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 6;
+        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 3;
+        if (name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 2;
+        if (name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 2;
+        if (name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0)
+            return 1;
+        return 0;
     }
 
     /// <summary>

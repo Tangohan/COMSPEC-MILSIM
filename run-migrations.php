@@ -3757,6 +3757,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$tacticalTracksMigrate = require $root . '/bootstrap/tactical_tracks_migration.php';
+try {
+  echo "Migration tactical_tracks (tracks COP Phase D)...\n";
+  $tacticalTracksMigrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] tactical_tracks : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakCopTerrainMigrate = require $root . '/bootstrap/atak_cop_terrain_migration.php';
 try {
   echo "Migration atak_cop_terrain (relief de théâtre et événements d’analyse)...\n";
