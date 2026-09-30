@@ -61,18 +61,15 @@ final class PersonnelMobilityRequestRepository
         ?int $targetJobRoleId,
         ?string $targetLabel,
         ?string $motivation,
-        ?int $requestedBy
+        ?int $requestedBy,
+        array $extra = []
     ): int {
         if (!$this->tableExists()) {
             return 0;
         }
         $requestType = in_array($requestType, self::TYPES, true) ? $requestType : 'career_wish';
-        $st = $this->pdo->prepare(
-            'INSERT INTO personnel_mobility_requests
-             (tenant_id, user_id, request_type, target_unit_id, target_job_role_id, target_label, motivation, status, requested_by, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, \'pending\', ?, NOW())'
-        );
-        $st->execute([
+        $cols = ['tenant_id', 'user_id', 'request_type', 'target_unit_id', 'target_job_role_id', 'target_label', 'motivation', 'status', 'requested_by', 'created_at'];
+        $vals = [
             $tenantId,
             $userId,
             $requestType,
@@ -80,10 +77,48 @@ final class PersonnelMobilityRequestRepository
             $targetJobRoleId && $targetJobRoleId > 0 ? $targetJobRoleId : null,
             $targetLabel !== null && trim($targetLabel) !== '' ? mb_substr(trim($targetLabel), 0, 200) : null,
             $motivation !== null && trim($motivation) !== '' ? trim($motivation) : null,
+            'pending',
             $requestedBy,
-        ]);
+            date('Y-m-d H:i:s'),
+        ];
+        $optional = [
+            'target_kind' => isset($extra['target_kind']) ? mb_substr(trim((string) $extra['target_kind']), 0, 20) : null,
+            'target_billet_id' => isset($extra['target_billet_id']) && (int) $extra['target_billet_id'] > 0 ? (int) $extra['target_billet_id'] : null,
+            'target_opening_id' => isset($extra['target_opening_id']) && (int) $extra['target_opening_id'] > 0 ? (int) $extra['target_opening_id'] : null,
+            'target_campaign_id' => isset($extra['target_campaign_id']) && (int) $extra['target_campaign_id'] > 0 ? (int) $extra['target_campaign_id'] : null,
+        ];
+        foreach ($optional as $col => $val) {
+            if ($val === null || $val === '') {
+                continue;
+            }
+            if (!$this->columnExists($col)) {
+                continue;
+            }
+            $cols[] = $col;
+            $vals[] = $val;
+        }
+        $placeholders = implode(', ', array_fill(0, count($cols), '?'));
+        $st = $this->pdo->prepare(
+            'INSERT INTO personnel_mobility_requests (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
+        );
+        $st->execute($vals);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    private function columnExists(string $column): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_mobility_requests' AND COLUMN_NAME = ? LIMIT 1"
+            );
+            $st->execute([$column]);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function findById(int $id, int $tenantId): ?array

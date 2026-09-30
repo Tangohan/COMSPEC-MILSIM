@@ -25,6 +25,7 @@ use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Services\Effectifs\PersonnelAutoAdvancementService;
 use App\Services\Effectifs\PersonnelHrWorkspaceSettings;
 use App\Services\Effectifs\RhAlertAggregatorService;
+use App\Services\Personnel\AssignmentTargetCatalog;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\EffectifsWorkspaceShellExtras;
@@ -271,6 +272,13 @@ final class RhDossierWorkspaceController
             'orgJobRoles' => $this->jobRoles->tablesExist()
                 ? $this->jobRoles->listRoleOptionsForSelect($tenantId)
                 : [],
+            'assignmentTargets' => (static function (int $tid): array {
+                try {
+                    return (new AssignmentTargetCatalog())->grouped($tid);
+                } catch (\Throwable) {
+                    return ['postes' => [], 'aav' => [], 'offres' => []];
+                }
+            })($tenantId),
             'csrfToken' => Csrf::token(),
             'canManage' => EffectifsLmsAccess::canManageAssignments(Gate::getInstance())
                 || EffectifsLmsAccess::canManageStatus(Gate::getInstance()),
@@ -306,6 +314,32 @@ final class RhDossierWorkspaceController
         $targetJobRoleId = (int) $request->input('target_job_role_id', 0);
         $targetLabel = trim((string) $request->input('target_label', ''));
         $motivation = trim((string) $request->input('motivation', ''));
+        $extra = [];
+        $ref = trim((string) $request->input('target_ref', ''));
+        if ($ref !== '') {
+            try {
+                $resolved = (new AssignmentTargetCatalog())->resolve($tenantId, $ref);
+            } catch (\Throwable) {
+                $resolved = null;
+            }
+            if (is_array($resolved)) {
+                if ($targetUnitId < 1 && !empty($resolved['unit_id'])) {
+                    $targetUnitId = (int) $resolved['unit_id'];
+                }
+                if ($targetJobRoleId < 1 && !empty($resolved['job_role_id'])) {
+                    $targetJobRoleId = (int) $resolved['job_role_id'];
+                }
+                if ($targetLabel === '') {
+                    $targetLabel = (string) ($resolved['label'] ?? '');
+                }
+                $extra = [
+                    'target_kind' => $resolved['kind'] ?? null,
+                    'target_billet_id' => $resolved['billet_id'] ?? null,
+                    'target_opening_id' => $resolved['opening_id'] ?? null,
+                    'target_campaign_id' => $resolved['campaign_id'] ?? null,
+                ];
+            }
+        }
         if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
 
@@ -322,7 +356,8 @@ final class RhDossierWorkspaceController
             $targetJobRoleId > 0 ? $targetJobRoleId : null,
             $targetLabel !== '' ? $targetLabel : null,
             $motivation !== '' ? mb_substr($motivation, 0, 2000) : null,
-            (int) Session::get('user_id')
+            (int) Session::get('user_id'),
+            $extra
         );
         Session::flash($id > 0 ? 'success' : 'error', $id > 0
             ? 'Demande de mobilité enregistrée.'
