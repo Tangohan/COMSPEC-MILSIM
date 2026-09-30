@@ -113,13 +113,12 @@ final class EquipmentHubAssetTest extends TestCase
     public function testLoadoutKindsAndDisplayTitle(): void
     {
         self::assertSame('SOAR · UC 8', ArsenalLoadoutItems::formatWardrobeTitle('SOAR - UC 8'));
-        self::assertSame(
-            ['clothing', 'vest', 'helmet'],
-            ArsenalLoadoutItems::kindLabels() ? array_values(array_intersect(
-                ['clothing', 'vest', 'helmet', 'backpack', 'accessory'],
-                array_keys(ArsenalLoadoutItems::kindLabels())
-            )) : []
-        );
+        $labels = ArsenalLoadoutItems::kindLabels();
+        self::assertArrayHasKey('clothing', $labels);
+        self::assertArrayHasKey('vest', $labels);
+        self::assertArrayHasKey('helmet', $labels);
+        self::assertArrayHasKey('backpack', $labels);
+        self::assertArrayHasKey('accessory', $labels);
         // Loadout minimal : indices 3=tenue, 4=gilet, 6=casque
         $payload = json_encode([
             [], [], [],
