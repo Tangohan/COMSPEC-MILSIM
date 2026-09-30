@@ -459,7 +459,6 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                         <div id="orbat-ed-struct-type-wrap">
                             <label for="orbat-ed-struct-type" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Type de structure</label>
                             <select id="orbat-ed-struct-type" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></select>
-                            <p class="mt-1 text-[10px] text-slate-500 leading-snug">Modifiable après création (unité, équipe, regroupement…).</p>
                         </div>
                         <div id="orbat-ed-admin-status-wrap">
                             <label for="orbat-ed-admin-status" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Statut administratif</label>
@@ -480,7 +479,6 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                             </label>
                             <div>
                                 <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Présentation publique</label>
-                                <p class="mb-2 text-[10px] text-slate-500 leading-snug">Texte visible sur la vitrine et la fiche publique de l’unité (mission, rôle, ambiance).</p>
                                 <textarea id="orbat-ed-mission" rows="3" maxlength="100000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
                             </div>
                             <div class="grid gap-3 sm:grid-cols-2">
