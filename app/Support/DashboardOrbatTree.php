@@ -18,7 +18,9 @@ final class DashboardOrbatTree
      * @return array{
      *   root: array<string, mixed>,
      *   total_units: int,
-     *   total_members: int
+     *   total_members: int,
+     *   viewer_unit_ids: list<int>,
+     *   focus_unit_id: int
      * }|null
      */
     public static function buildForTenant(int $tenantId, int $viewerUserId = 0): ?array
@@ -26,9 +28,16 @@ final class DashboardOrbatTree
         if ($tenantId < 1) {
             return null;
         }
+        $viewerUnitIds = [];
         try {
             $units = \App\Core\Container::get(UnitRepository::class);
             $roster = OrbatRosterPayload::buildForTenant($units, $tenantId, $viewerUserId > 0 ? $viewerUserId : null);
+            if ($viewerUserId > 0) {
+                $viewerUnitIds = array_values(array_filter(
+                    array_map('intval', $units->unitIdsForUser($tenantId, $viewerUserId)),
+                    static fn (int $id): bool => $id > 0
+                ));
+            }
         } catch (Throwable) {
             return null;
         }
@@ -36,18 +45,33 @@ final class DashboardOrbatTree
             return null;
         }
 
+        $viewerLookup = [];
+        foreach ($viewerUnitIds as $vid) {
+            $viewerLookup[$vid] = true;
+        }
+
         $userIds = [];
         self::collectUserIds($roster, $userIds);
         $portraits = self::batchPortraits($tenantId, array_keys($userIds));
-        $root = self::enrichNode($roster, $portraits);
+        $root = self::enrichNode($roster, $portraits, $viewerLookup);
         if ($root === null) {
             return null;
+        }
+
+        $focusUnitId = 0;
+        foreach ($viewerUnitIds as $vid) {
+            if (self::nodeContainsUnit($root, $vid)) {
+                $focusUnitId = $vid;
+                break;
+            }
         }
 
         return [
             'root' => $root,
             'total_units' => self::countUnits($root),
             'total_members' => self::countUniqueMembers($root),
+            'viewer_unit_ids' => $viewerUnitIds,
+            'focus_unit_id' => $focusUnitId,
         ];
     }
 
@@ -178,9 +202,10 @@ final class DashboardOrbatTree
     /**
      * @param array<string, mixed> $node
      * @param array<int, array{label: string, initials: string, photo_url: ?string, role: string}> $portraits
+     * @param array<int, true> $viewerLookup
      * @return array<string, mixed>|null
      */
-    private static function enrichNode(array $node, array $portraits): ?array
+    private static function enrichNode(array $node, array $portraits, array $viewerLookup = []): ?array
     {
         $members = [];
         $seen = [];
@@ -230,7 +255,7 @@ final class DashboardOrbatTree
             if (!is_array($child)) {
                 continue;
             }
-            $enriched = self::enrichNode($child, $portraits);
+            $enriched = self::enrichNode($child, $portraits, $viewerLookup);
             if ($enriched !== null) {
                 $children[] = $enriched;
             }
@@ -238,9 +263,10 @@ final class DashboardOrbatTree
 
         $icon = trim((string) ($node['chartIconUrl'] ?? ''));
         $image = trim((string) ($node['chartImageUrl'] ?? ''));
+        $unitId = (int) ($node['unitId'] ?? 0);
 
         return [
-            'unit_id' => (int) ($node['unitId'] ?? 0),
+            'unit_id' => $unitId,
             'label' => (string) ($node['label'] ?? 'Unité'),
             'code' => (string) ($node['role'] ?? ''),
             'type' => (string) ($node['type'] ?? 'command'),
@@ -250,9 +276,29 @@ final class DashboardOrbatTree
             'icon_url' => $icon !== '' ? $icon : null,
             'image_url' => $image !== '' ? $image : null,
             'commander' => $commander,
+            'commander_vacant' => $commander === null && $unitId > 0,
+            'is_mine' => $unitId > 0 && isset($viewerLookup[$unitId]),
             'members' => $members,
             'children' => $children,
         ];
+    }
+
+    /** @param array<string, mixed> $node */
+    private static function nodeContainsUnit(array $node, int $unitId): bool
+    {
+        if ($unitId < 1) {
+            return false;
+        }
+        if ((int) ($node['unit_id'] ?? 0) === $unitId) {
+            return true;
+        }
+        foreach ($node['children'] ?? [] as $child) {
+            if (is_array($child) && self::nodeContainsUnit($child, $unitId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @param array<string, mixed> $node */

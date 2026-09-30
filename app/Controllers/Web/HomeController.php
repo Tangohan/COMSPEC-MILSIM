@@ -197,6 +197,7 @@ class HomeController
         $dashboardPublishedOpenings = [];
         $dashboardTenantSlug = '';
         $dashboardOrbat = null;
+        $canViewOrbat = false;
         $canManageRecruitmentOffers = false;
         $dashboardElevationCatalog = ['grades' => [], 'roles' => [], 'job_roles' => [], 'units' => []];
         $canRequestSelfElevation = false;
@@ -841,6 +842,7 @@ class HomeController
             'atak_operators_linked_count' => $atakOperatorsLinkedCount,
             'dashboard_effectifs_rows' => $dashboardEffectifsRows,
             'dashboard_orbat' => $dashboardOrbat,
+            'can_view_orbat' => $canViewOrbat,
             'can_view_personnel_directory' => $canViewPersonnelDirectory,
             'can_open_effectifs_workspace' => $canOpenEffectifsWorkspace,
             'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,

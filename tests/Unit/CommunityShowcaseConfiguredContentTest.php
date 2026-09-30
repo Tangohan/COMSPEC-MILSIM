@@ -32,4 +32,17 @@ final class CommunityShowcaseConfiguredContentTest extends TestCase
         self::assertStringNotContainsString("\$aboutBody = trim((string) (\$sv['publicMission'] ?? ''));", $view);
         self::assertStringNotContainsString("\$pitchPoints[] = ['t' => trim(\$sp), 'b' => ''];", $view);
     }
+
+    public function testPublicOrganisationSectionRendersHierarchyFromParentId(): void
+    {
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/community/show_showcase.php');
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/community-vitrine.css');
+
+        self::assertStringContainsString('publicUnitRoots', $view);
+        self::assertStringContainsString('cl-units--orbat', $view);
+        self::assertStringContainsString('cl-orbat-children', $view);
+        self::assertStringContainsString("\$parentId = (int) (\$puRow['parent_id'] ?? 0);", $view);
+        self::assertStringContainsString('.cl-units--orbat', $css);
+        self::assertStringContainsString('.cl-orbat-children', $css);
+    }
 }
