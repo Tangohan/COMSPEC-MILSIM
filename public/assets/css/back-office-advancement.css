@@ -11,6 +11,11 @@
   padding: 1.1rem 1.2rem;
 }
 
+.adv-offer {
+  background: #e5f3ec;
+  border-color: #c9e6d6;
+}
+
 .adv-offer--muted {
   background: #fff;
   border-color: #e4e7ea;
