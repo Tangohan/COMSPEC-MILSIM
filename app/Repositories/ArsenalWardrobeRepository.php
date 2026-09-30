@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
@@ -74,7 +75,7 @@ final class ArsenalWardrobeRepository
         $st = $this->pdo->prepare(
             'SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
                     w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
-                    w.notes, w.cover_image_path, w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
+                    w.payload_text, w.notes, w.cover_image_path, w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
                     c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
                     COALESCE(NULLIF(TRIM(u.callsign), \'\'), NULLIF(TRIM(u.display_name), \'\'), \'Membre\') AS owner_label
              FROM arsenal_wardrobes w
@@ -88,6 +89,10 @@ final class ArsenalWardrobeRepository
         $rows = array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
         foreach ($rows as &$row) {
             $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
+            $payload = (string) ($row['payload_text'] ?? '');
+            $row['kinds'] = ArsenalLoadoutItems::presentKinds($payload);
+            $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
+            unset($row['payload_text']);
         }
         unset($row);
 
@@ -542,6 +547,7 @@ final class ArsenalWardrobeRepository
             : (isset($row['payload_text']) ? strlen((string) $row['payload_text']) : 0);
         $row['owner_label'] = trim((string) ($row['owner_label'] ?? ''));
         $row['mine'] = !empty($row['mine']);
+        $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
         $row['cover_url'] = EquipmentCoverStorage::publicUrl(
             isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
         );

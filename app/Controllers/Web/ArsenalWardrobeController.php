@@ -39,6 +39,7 @@ class ArsenalWardrobeController
         }
         $wardrobes = $this->repo->listAccessibleWardrobes($tenantId, $userId);
         $collections = $this->repo->listCollections($tenantId, $userId);
+        $collections = $this->attachCollectionMosaics($collections, $wardrobes);
         $classes = [];
         try {
             $classes = $this->classes->listForTenant($tenantId);
@@ -88,6 +89,12 @@ class ArsenalWardrobeController
 
             return Response::redirect(url('equipment'));
         }
+
+        $wantEdit = $request->query('edit') === '1' && $ownerId === $userId;
+        if (!$wantEdit) {
+            return Response::redirect(url('equipment') . '?collection=' . $id);
+        }
+
         $all = $this->repo->listAccessibleWardrobes($tenantId, $userId);
         $wardrobes = array_values(array_filter(
             $all,
@@ -105,7 +112,7 @@ class ArsenalWardrobeController
             'collection' => $collection,
             'wardrobes' => $wardrobes,
             'mineWardrobes' => $mine,
-            'canEdit' => (int) ($collection['owner_user_id'] ?? 0) === $userId,
+            'canEdit' => true,
             'csrfToken' => Csrf::token(),
             'flash_success' => Session::getFlash('success'),
             'flash_error' => Session::getFlash('error'),
@@ -122,26 +129,60 @@ class ArsenalWardrobeController
         $id = (int) ($params['id'] ?? 0);
         $row = $id > 0 ? $this->repo->findWardrobe($tenantId, $id) : null;
         if ($row === null) {
+            if ($this->wantsJson($request)) {
+                return Response::json(['ok' => false, 'error' => 'not_found'], 404);
+            }
             Session::flash('error', 'Cette tenue n’existe pas.');
 
             return Response::redirect(url('equipment'));
         }
         $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
-        $collections = $this->repo->listCollections($tenantId, $userId);
         $loadoutItems = ArsenalLoadoutItems::grouped((string) ($row['payload_text'] ?? ''));
+        $kinds = ArsenalLoadoutItems::presentKinds((string) ($row['payload_text'] ?? ''));
         unset($row['payload_text']);
 
-        return Response::view('layout.main', [
-            'content' => 'equipment.tenue',
-            'title' => (string) ($row['name'] ?? 'Tenue'),
-            'equipmentHubPage' => true,
-            'wardrobe' => $row,
-            'loadoutItems' => $loadoutItems,
-            'collections' => $collections,
-            'csrfToken' => Csrf::token(),
-            'flash_success' => Session::getFlash('success'),
-            'flash_error' => Session::getFlash('error'),
-        ]);
+        if ($this->wantsJson($request)) {
+            $collections = $row['mine'] ? $this->repo->listCollections($tenantId, $userId) : [];
+            $gallery = [];
+            if (!empty($row['cover_url'])) {
+                $gallery[] = (string) $row['cover_url'];
+            }
+
+            return Response::json([
+                'ok' => true,
+                'wardrobe' => [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'name' => (string) ($row['name'] ?? ''),
+                    'display_name' => (string) ($row['display_name'] ?? ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''))),
+                    'cover_url' => $row['cover_url'] ?? null,
+                    'gallery' => $gallery,
+                    'collection_id' => $row['collection_id'] ?? null,
+                    'collection_name' => $row['collection_name'] ?? null,
+                    'notes' => $row['mine'] ? (string) ($row['notes'] ?? '') : '',
+                    'public_notes' => !$row['mine'] ? '' : '',
+                    'owner_label' => (string) ($row['owner_label'] ?? ''),
+                    'mine' => !empty($row['mine']),
+                    'can_edit' => !empty($row['mine']),
+                    'kinds' => $kinds,
+                    'loadout_items' => $loadoutItems,
+                    'usage_hint' => 'Cette tenue s’envoie et se récupère depuis l’arsenal en jeu, bandeau Athena en haut de l’écran d’équipement.',
+                ],
+                'collections' => array_map(static function (array $c): array {
+                    return [
+                        'id' => (int) ($c['id'] ?? 0),
+                        'name' => (string) ($c['name'] ?? ''),
+                    ];
+                }, $collections),
+                'csrf' => Csrf::token(),
+                'urls' => [
+                    'update' => url('equipment/tenues/' . $id),
+                    'delete' => url('equipment/tenues/' . $id . '/delete'),
+                ],
+            ]);
+        }
+
+        // Lien direct → catalogue avec quick-view (préserve la logique hub).
+        return Response::redirect(url('equipment') . '?tenue=' . $id);
     }
 
     public function storeCollection(Request $request, array $params = []): Response
@@ -181,7 +222,7 @@ class ArsenalWardrobeController
             }
             Session::flash('success', 'Collection créée.');
             if ((int) ($created['id'] ?? 0) > 0) {
-                return Response::redirect(url('equipment/collections/' . (int) $created['id']));
+                return Response::redirect(url('equipment') . '?collection=' . (int) $created['id']);
             }
         } catch (\Throwable) {
             Session::flash('error', 'Impossible de créer la collection.');
@@ -201,7 +242,7 @@ class ArsenalWardrobeController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('equipment/collections/' . $id));
+            return Response::redirect(url('equipment') . '?collection=' . $id);
         }
         $existing = $this->repo->findCollection($tenantId, $id);
         if ($existing === null || (int) ($existing['owner_user_id'] ?? 0) !== $userId) {
@@ -232,7 +273,7 @@ class ArsenalWardrobeController
             Session::flash('error', 'Impossible d’enregistrer la collection.');
         }
 
-        return Response::redirect(url('equipment/collections/' . $id));
+        return Response::redirect(url('equipment') . '?collection=' . $id);
     }
 
     public function updateWardrobe(Request $request, array $params = []): Response
@@ -246,7 +287,7 @@ class ArsenalWardrobeController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('equipment/tenues/' . $id));
+            return $this->wardrobeMutateRedirect($request, $id);
         }
         $row = $this->repo->findWardrobe($tenantId, $id, $userId);
         if ($row === null) {
@@ -262,14 +303,12 @@ class ArsenalWardrobeController
             Session::flash('error', $cover['error']);
         } elseif ($cover['path'] !== null) {
             $this->repo->setWardrobeCover($tenantId, $userId, $id, $cover['path']);
+            Session::flash('success', 'Photo de présentation enregistrée.');
         } else {
             Session::flash('success', 'Tenue mise à jour.');
         }
-        if ($cover['path'] !== null && $cover['error'] === null) {
-            Session::flash('success', 'Photo de présentation enregistrée.');
-        }
 
-        return Response::redirect(url('equipment/tenues/' . $id));
+        return $this->wardrobeMutateRedirect($request, $id);
     }
 
     public function destroyWardrobe(Request $request, array $params = []): Response
@@ -353,10 +392,66 @@ class ArsenalWardrobeController
             'mineWardrobes' => $mine,
             'collections' => $collections,
             'equipmentClasses' => $classes,
+            'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
             'csrfToken' => Csrf::token(),
             'flash_success' => Session::getFlash('success'),
             'flash_error' => Session::getFlash('error'),
+            'coverHint' => EquipmentCoverStorage::hintText(),
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $collections
+     * @param list<array<string, mixed>> $wardrobes
+     * @return list<array<string, mixed>>
+     */
+    private function attachCollectionMosaics(array $collections, array $wardrobes): array
+    {
+        $byCollection = [];
+        foreach ($wardrobes as $w) {
+            $cid = (int) ($w['collection_id'] ?? 0);
+            if ($cid < 1) {
+                continue;
+            }
+            $url = trim((string) ($w['cover_url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            if (!isset($byCollection[$cid])) {
+                $byCollection[$cid] = [];
+            }
+            if (count($byCollection[$cid]) < 4) {
+                $byCollection[$cid][] = $url;
+            }
+        }
+        foreach ($collections as &$c) {
+            $id = (int) ($c['id'] ?? 0);
+            $c['mosaic'] = $byCollection[$id] ?? [];
+        }
+        unset($c);
+
+        return $collections;
+    }
+
+    private function wantsJson(Request $request): bool
+    {
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+        $xhr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        $format = strtolower(trim((string) $request->query('format', '')));
+
+        return $format === 'json'
+            || str_contains($accept, 'application/json')
+            || $xhr === 'xmlhttprequest';
+    }
+
+    private function wardrobeMutateRedirect(Request $request, int $id): Response
+    {
+        $back = trim((string) $request->input('_return', ''));
+        if ($back === 'hub' || $back === 'catalog') {
+            return Response::redirect(url('equipment') . '?tenue=' . $id);
+        }
+
+        return Response::redirect(url('equipment') . '?tenue=' . $id);
     }
 
     /**

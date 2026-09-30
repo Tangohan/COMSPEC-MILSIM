@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Support\ArsenalLoadoutItems;
 use PHPUnit\Framework\TestCase;
 
 final class EquipmentHubAssetTest extends TestCase
@@ -21,8 +22,11 @@ final class EquipmentHubAssetTest extends TestCase
         $compression = (string) file_get_contents($root . '/app/Services/Media/ImageCompressionService.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/ArsenalWardrobeRepository.php');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
+        $js = (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js');
+        $css = (string) file_get_contents($root . '/public/assets/css/equipment-hub.css');
 
         self::assertFileExists($root . '/public/assets/css/equipment-hub.css');
+        self::assertFileExists($root . '/public/assets/js/equipment-catalog.js');
         self::assertStringContainsString("\$router->get('/equipment', [ArsenalWardrobeController::class, 'index']", $routes);
         self::assertStringContainsString("\$router->get('/equipment/covers/{tenantId}/{file}'", $routes);
         self::assertStringContainsString("\$router->get('/equipment/collections/{id}'", $routes);
@@ -33,19 +37,38 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertNotFalse($coversPos);
         self::assertNotFalse($slugPos);
         self::assertLessThan($slugPos, $coversPos);
+
+        // Catalogue e-commerce : grille, filtres, quick-view, modal collection
         self::assertStringContainsString('enctype="multipart/form-data"', $hub);
         self::assertStringContainsString('Nouvelle collection', $hub);
         self::assertStringContainsString('Photo de présentation', $hub);
         self::assertStringContainsString('name="wardrobe_ids[]"', $hub);
         self::assertStringNotContainsString('tags', $hub);
         self::assertStringContainsString('Qui peut s’en servir', $hub);
+        self::assertStringContainsString('data-eq-catalog', $hub);
+        self::assertStringContainsString('data-eq-quickview', $hub);
+        self::assertStringContainsString('data-eq-search', $hub);
+        self::assertStringContainsString('data-eq-sort', $hub);
+        self::assertStringContainsString('eq-hub__picker-grid', $hub);
+        self::assertStringContainsString('Aperçu rapide', $hub);
+        self::assertStringNotContainsString('eq-hub__cover-ph">Sans photo', $hub);
+        self::assertStringNotContainsString('>Sans photo</span>', $hub);
+
         self::assertStringContainsString('accept="image/jpeg,image/png,image/webp"', $collection);
         self::assertStringContainsString('Photo de présentation', $tenue);
         self::assertStringContainsString('Équipement', $tenue);
         self::assertStringContainsString('loadoutItems', $tenue);
-        self::assertStringContainsString('eq-hub__items', $css = (string) file_get_contents($root . '/public/assets/css/equipment-hub.css'));
+        self::assertStringContainsString('eq-hub__items', $css);
+        self::assertStringContainsString('--eq-accent: #2a9d6f', $css);
+        self::assertStringContainsString('aspect-ratio: 3 / 4', $css);
+        self::assertStringContainsString('openQuickView', $js);
+        self::assertStringContainsString('applyFilters', $js);
+        self::assertStringContainsString('format=json', $js);
+
         self::assertStringContainsString('ArsenalLoadoutItems', $controller);
+        self::assertStringContainsString('wantsJson', $controller);
         self::assertStringContainsString('equipment-hub.css', $layout);
+        self::assertStringContainsString('equipment-catalog.js', $layout);
         self::assertStringContainsString('storeFromUpload', $storage);
         self::assertStringContainsString('ImageCompressionService', $storage);
         self::assertStringContainsString('ensureWritableDir', $storage);
@@ -85,5 +108,33 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertSame(404, $cross->statusCode());
         $missing = \App\Support\EquipmentCoverStorage::streamCover(1, 1, 'c-missing.jpg');
         self::assertSame(404, $missing->statusCode());
+    }
+
+    public function testLoadoutKindsAndDisplayTitle(): void
+    {
+        self::assertSame('SOAR · UC 8', ArsenalLoadoutItems::formatWardrobeTitle('SOAR - UC 8'));
+        self::assertSame(
+            ['clothing', 'vest', 'helmet'],
+            ArsenalLoadoutItems::kindLabels() ? array_values(array_intersect(
+                ['clothing', 'vest', 'helmet', 'backpack', 'accessory'],
+                array_keys(ArsenalLoadoutItems::kindLabels())
+            )) : []
+        );
+        // Loadout minimal : indices 3=tenue, 4=gilet, 6=casque
+        $payload = json_encode([
+            [], [], [],
+            ['U_B_CombatUniform', []],
+            ['V_PlateCarrier1', []],
+            [],
+            'H_HelmetB',
+            '',
+            [],
+            [],
+        ], JSON_UNESCAPED_UNICODE);
+        $kinds = ArsenalLoadoutItems::presentKinds((string) $payload);
+        self::assertContains('clothing', $kinds);
+        self::assertContains('vest', $kinds);
+        self::assertContains('helmet', $kinds);
+        self::assertNotContains('backpack', $kinds);
     }
 }
