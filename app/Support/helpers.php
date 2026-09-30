@@ -575,31 +575,44 @@ if (!function_exists('email_brand_name')) {
 }
 
 if (!function_exists('email_html_accent_hex')) {
+    /**
+     * Accents e-mail — palette Athena / milsim (proche DSFR : nets, institutionnels).
+     */
     function email_html_accent_hex(string $accent): string
     {
         return match ($accent) {
-            'amber' => '#d97706',
-            'emerald' => '#059669',
-            'rose' => '#e11d48',
-            'slate' => '#475569',
-            'indigo' => '#4f46e5',
-            default => '#2563eb',
+            'amber' => '#b45309',
+            'emerald' => '#047857',
+            'rose' => '#b91c1c',
+            'slate' => '#1e293b',
+            'indigo' => '#000091',
+            'blue' => '#000091',
+            default => '#047857',
         };
+    }
+}
+
+if (!function_exists('email_html_font_stack')) {
+    /** Police e-mail : lisible, institutionnelle (Marianne → système). */
+    function email_html_font_stack(): string
+    {
+        return "Marianne,'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif";
     }
 }
 
 if (!function_exists('email_html_button')) {
     /**
-     * Bouton d’action principal (HTML e-mail, styles inline).
+     * Bouton d’action principal (HTML e-mail, styles inline) — angle droit DSFR, accent plein.
      */
     function email_html_button(string $href, string $label, string $accent = 'blue'): string
     {
         $h = htmlspecialchars($href, ENT_QUOTES, 'UTF-8');
         $l = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
         $bg = email_html_accent_hex($accent);
+        $font = email_html_font_stack();
 
-        return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px;"><tr><td>'
-            . '<a href="' . $h . '" style="display:inline-block;padding:14px 28px;background-color:' . $bg . ';color:#ffffff !important;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;line-height:1.2;">' . $l . '</a>'
+        return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 10px;"><tr><td style="border-radius:0;background-color:' . $bg . ';">'
+            . '<a href="' . $h . '" style="display:inline-block;padding:14px 26px;background-color:' . $bg . ';color:#ffffff !important;text-decoration:none;border-radius:0;font-weight:700;font-size:14px;font-family:' . $font . ';line-height:1.2;letter-spacing:0.04em;text-transform:uppercase;">' . $l . '</a>'
             . '</td></tr></table>';
     }
 }
@@ -611,81 +624,126 @@ if (!function_exists('email_html_url_fallback')) {
     function email_html_url_fallback(string $url): string
     {
         $u = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+        $font = email_html_font_stack();
 
-        return '<p style="margin:20px 0 0;font-size:13px;color:#64748b;font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :</p>'
-            . '<p style="margin:8px 0 0;padding:12px 14px;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;word-break:break-all;font-size:12px;color:#0f172a;font-family:Consolas,\'Courier New\',monospace;line-height:1.4;">' . $u . '</p>';
+        return '<p style="margin:22px 0 0;font-size:12px;color:#667078;font-family:' . $font . ';line-height:1.5;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur&nbsp;:</p>'
+            . '<p style="margin:8px 0 0;padding:12px 14px;background-color:#f6f6f6;border:1px solid #ddd;border-left:3px solid #161616;border-radius:0;word-break:break-all;font-size:12px;color:#161616;font-family:Consolas,\'Courier New\',monospace;line-height:1.45;">' . $u . '</p>';
     }
 }
 
 if (!function_exists('email_html_callout')) {
     /**
-     * Encadré informatif (alerte légère, détail).
+     * Encadré informatif — style alerte DSFR (bandeau latéral coloré, fond neutre).
      */
     function email_html_callout(string $innerHtml, string $style = 'info'): string
     {
         $border = match ($style) {
-            'warning' => '#fcd34d',
-            'danger' => '#fecaca',
-            'success' => '#a7f3d0',
-            default => '#bfdbfe',
+            'warning' => '#b34000',
+            'danger' => '#ce0500',
+            'success' => '#18753c',
+            default => '#0063cb',
         };
         $bg = match ($style) {
-            'warning' => '#fffbeb',
-            'danger' => '#fef2f2',
-            'success' => '#ecfdf5',
-            default => '#eff6ff',
+            'warning' => '#ffe9e6',
+            'danger' => '#ffe9e9',
+            'success' => '#e6f6eb',
+            default => '#e8edff',
         };
+        $label = match ($style) {
+            'warning' => 'Attention',
+            'danger' => 'Important',
+            'success' => 'Information',
+            default => 'Information',
+        };
+        $font = email_html_font_stack();
 
-        return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:16px 0;"><tr><td style="padding:14px 16px;background-color:' . $bg . ';border-left:4px solid ' . $border . ';border-radius:0 8px 8px 0;">'
-            . '<div style="font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#334155;">' . $innerHtml . '</div>'
+        return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:20px 0;"><tr>'
+            . '<td style="width:4px;background-color:' . $border . ';font-size:0;line-height:0;">&nbsp;</td>'
+            . '<td style="padding:14px 18px;background-color:' . $bg . ';border:1px solid #ddd;border-left:0;">'
+            . '<p style="margin:0 0 6px;font-family:' . $font . ';font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' . $border . ';">' . $label . '</p>'
+            . '<div style="font-family:' . $font . ';font-size:14px;line-height:1.55;color:#3a3a3a;">' . $innerHtml . '</div>'
             . '</td></tr></table>';
     }
 }
 
 if (!function_exists('email_html_layout')) {
     /**
-     * Enveloppe HTML transactionnelle (tables, styles inline, pré-en-tête).
+     * Enveloppe HTML transactionnelle — Athena milsim / DSFR (épuré, tables, inline).
      *
-     * @param array{accent?: string, footer_note?: string} $options
+     * @param array{accent?: string, footer_note?: string, kicker?: string} $options
      */
     function email_html_layout(string $preheader, string $heading, string $bodyHtml, array $options = []): string
     {
-        $accent = (string) ($options['accent'] ?? 'blue');
+        $accent = (string) ($options['accent'] ?? 'emerald');
         $accentHex = email_html_accent_hex($accent);
         $footerNote = isset($options['footer_note']) ? trim((string) $options['footer_note']) : '';
+        $kicker = isset($options['kicker']) ? trim((string) $options['kicker']) : '';
         $brand = htmlspecialchars(email_brand_name(), ENT_QUOTES, 'UTF-8');
         $pre = htmlspecialchars($preheader, ENT_QUOTES, 'UTF-8');
         $h = htmlspecialchars($heading, ENT_QUOTES, 'UTF-8');
+        $kickerSafe = $kicker !== ''
+            ? htmlspecialchars($kicker, ENT_QUOTES, 'UTF-8')
+            : 'Transmission officielle';
         $footerExtra = $footerNote !== ''
             ? '<br><br>' . nl2br(htmlspecialchars($footerNote, ENT_QUOTES, 'UTF-8'))
             : '';
+        $font = email_html_font_stack();
+        $year = date('Y');
 
-        $wrappedBody = '<div style="font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#334155;">' . $bodyHtml . '</div>';
+        $wrappedBody = '<div style="font-family:' . $font . ';font-size:16px;line-height:1.65;color:#3a3a3a;">' . $bodyHtml . '</div>';
 
         return '<!DOCTYPE html><html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
             . '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
             . '<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
             . '<title>' . $h . '</title>'
-            . '<style type="text/css">p{margin:0 0 16px;}ul{margin:0 0 16px;padding-left:22px;}li{margin:6px 0;}a{color:#2563eb;}strong{color:#0f172a;}</style>'
+            . '<style type="text/css">'
+            . 'body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}'
+            . 'table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}'
+            . 'p{margin:0 0 16px;}ul{margin:0 0 16px;padding-left:22px;}li{margin:6px 0;}'
+            . 'a{color:#000091;}strong{color:#161616;}'
+            . '</style>'
             . '</head>'
-            . '<body style="margin:0;padding:0;background-color:#f1f5f9;-webkit-font-smoothing:antialiased;">'
+            . '<body style="margin:0;padding:0;background-color:#f6f6f6;-webkit-font-smoothing:antialiased;">'
             . '<span style="display:none !important;visibility:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#fff;max-height:0;max-width:0;opacity:0;overflow:hidden;">' . $pre . '</span>'
-            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f1f5f9;"><tr><td align="center" style="padding:28px 16px;">'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f6f6;"><tr><td align="center" style="padding:32px 16px;">'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">'
-            . '<tr><td style="background-color:#ffffff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(15,23,42,0.06);">'
-            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="height:4px;line-height:4px;background-color:' . $accentHex . ';font-size:0;">&nbsp;</td></tr></table>'
+            /* En-tête milsim : void + bande accent */
+            . '<tr><td style="background-color:#161616;border:1px solid #161616;border-bottom:0;">'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">'
-            . '<tr><td style="padding:28px 32px 12px 32px;">'
-            . '<p style="margin:0 0 6px;font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">' . $brand . '</p>'
-            . '<h1 style="margin:0;font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;line-height:1.3;color:#0f172a;letter-spacing:-0.02em;">' . $h . '</h1>'
-            . '</td></tr>'
-            . '<tr><td style="padding:8px 32px 28px 32px;">' . $wrappedBody . '</td></tr>'
-            . '<tr><td style="padding:20px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">'
-            . '<p style="margin:0;font-family:\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.55;color:#64748b;">'
-            . 'Message automatique — merci de ne pas répondre directement à cette adresse.'
-            . $footerExtra
-            . '</p></td></tr></table>'
+            . '<tr><td style="height:3px;line-height:3px;background-color:' . $accentHex . ';font-size:0;">&nbsp;</td></tr>'
+            . '<tr><td style="padding:18px 28px 16px;">'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
+            . '<td style="vertical-align:middle;">'
+            . '<p style="margin:0;font-family:' . $font . ';font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#ffffff;">' . $brand . '</p>'
+            . '<p style="margin:6px 0 0;font-family:' . $font . ';font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);">' . $kickerSafe . '</p>'
+            . '</td>'
+            . '<td align="right" style="vertical-align:middle;width:42px;">'
+            . '<div style="display:inline-block;width:36px;height:36px;border:1px solid rgba(255,255,255,0.28);background-color:#0a0a0a;text-align:center;line-height:36px;font-family:' . $font . ';font-size:14px;font-weight:800;color:' . $accentHex . ';letter-spacing:-0.02em;">A</div>'
+            . '</td>'
+            . '</tr></table>'
             . '</td></tr></table>'
+            . '</td></tr>'
+            /* Corps */
+            . '<tr><td style="background-color:#ffffff;border-left:1px solid #ddd;border-right:1px solid #ddd;">'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">'
+            . '<tr><td style="padding:28px 28px 8px;">'
+            . '<h1 style="margin:0;font-family:' . $font . ';font-size:24px;font-weight:700;line-height:1.25;color:#161616;letter-spacing:-0.02em;">' . $h . '</h1>'
+            . '<div style="margin:14px 0 0;width:48px;height:3px;background-color:' . $accentHex . ';font-size:0;line-height:0;">&nbsp;</div>'
+            . '</td></tr>'
+            . '<tr><td style="padding:20px 28px 32px;">' . $wrappedBody . '</td></tr>'
+            . '</table>'
+            . '</td></tr>'
+            /* Pied */
+            . '<tr><td style="background-color:#eeeeee;border:1px solid #ddd;border-top:0;padding:18px 28px;">'
+            . '<p style="margin:0;font-family:' . $font . ';font-size:11px;line-height:1.55;color:#666666;">'
+            . 'Message automatique — ne pas répondre à cette adresse.'
+            . $footerExtra
+            . '</p>'
+            . '<p style="margin:12px 0 0;font-family:' . $font . ';font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#929292;">'
+            . $brand . ' · ' . $year
+            . '</p>'
+            . '</td></tr>'
+            . '</table>'
             . '</td></tr></table></body></html>';
     }
 }

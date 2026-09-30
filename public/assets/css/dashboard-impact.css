@@ -3089,3 +3089,510 @@ body.dashboard-shell main {
   cursor: pointer;
 }
 
+
+/* --------------------------------------------------------------------------
+ * Zones DSFR — rangement, en-têtes, révélations
+ * -------------------------------------------------------------------------- */
+.dash-zone {
+  --dash-zone-accent: #047857;
+  position: relative;
+  border-bottom: 1px solid #e5e5e5;
+  background: #f6f6f6;
+}
+
+.dash-zone--actions { background: #fff; }
+.dash-zone--catalog { background: #f6f6f6; }
+.dash-zone--activity { background: #fff; }
+.dash-zone--community { background: #f6f6f6; }
+.dash-zone--consigne {
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dash-zone__inner {
+  width: 100%;
+  max-width: 100rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 2rem 1.25rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.dash-zone__inner--tight {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  gap: 0;
+}
+
+.dash-zone__inner--flush {
+  padding-bottom: 0;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .dash-zone__inner {
+    padding: 2.5rem 2rem 2.75rem;
+  }
+  .dash-zone__inner--tight {
+    padding-top: 1.15rem;
+    padding-bottom: 1.15rem;
+  }
+}
+
+.dash-zone__head {
+  position: relative;
+  padding: 0 0 0.85rem;
+  margin: 0 0 0.15rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dash-zone__head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 3.25rem;
+  height: 3px;
+  background: var(--dash-zone-accent);
+}
+
+.dash-zone__head--pad {
+  margin: 0 1.25rem 0.5rem;
+  padding-top: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .dash-zone__head--pad {
+    margin-left: 2rem;
+    margin-right: 2rem;
+  }
+}
+
+.dash-zone__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dash-zone-accent);
+}
+
+.dash-zone__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #161616;
+}
+
+.dash-zone__lead {
+  margin: 0.45rem 0 0;
+  max-width: 40rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #666;
+}
+
+.dash-zone__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.dash-zone__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Consigne — bandeau alerte DSFR */
+.dash-consigne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid #e5e5e5;
+  background: #fff3e0;
+}
+
+.dash-consigne__mark {
+  flex: 0 0 4px;
+  background: #b34000;
+}
+
+.dash-consigne__body {
+  flex: 1 1 14rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+}
+
+.dash-consigne__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b34000;
+}
+
+.dash-consigne__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #161616;
+}
+
+.dash-consigne__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #b34000;
+  border-left: 1px solid rgba(179, 64, 0, 0.18);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dash-consigne__link:hover {
+  background: rgba(179, 64, 0, 0.08);
+  color: #6b2200;
+}
+
+/* Bande d’actions */
+.dash-action-band {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .dash-action-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .dash-action-band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dash-action-tile-shell.dash-org-anomaly-tile {
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-bottom: 0;
+  padding: 0;
+}
+
+.dash-action-tile,
+a.dash-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.05rem 1.05rem;
+  border: 1px solid #e5e5e5;
+  border-left: 3px solid #047857;
+  border-radius: 0;
+  background: #fff;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dash-action-tile:hover,
+.dash-action-tile:focus-visible {
+  outline: none;
+  border-color: #047857;
+  background: #f0fdf6;
+  transform: translateY(-2px);
+}
+
+.dash-action-tile--steam {
+  border-left-color: #1b9ce5;
+  background: linear-gradient(180deg, #f4fafd 0%, #fff 70%);
+}
+
+.dash-action-tile--steam:hover,
+.dash-action-tile--steam:focus-visible {
+  border-color: #1b9ce5;
+  background: #eef7fc;
+}
+
+.dash-action-tile--admin {
+  border-left-color: #000091;
+}
+
+.dash-action-tile--admin:hover,
+.dash-action-tile--admin:focus-visible {
+  border-color: #000091;
+  background: #f0f0ff;
+}
+
+.dash-action-tile__kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.dash-action-tile--steam .dash-action-tile__kicker { color: #0b6e99; }
+.dash-action-tile--admin .dash-action-tile__kicker,
+.dash-site-support-tile .dash-action-tile__kicker { color: #000091; }
+
+.dash-action-tile__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #161616;
+  line-height: 1.25;
+}
+
+.dash-action-tile__hint {
+  display: block;
+  margin: 0.4rem 0 0.75rem;
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #666;
+}
+
+.dash-action-tile__cta {
+  margin-top: auto;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.dash-action-tile--steam .dash-action-tile__cta { color: #0b6e99; }
+.dash-action-tile--admin .dash-action-tile__cta,
+.dash-site-support-tile .dash-action-tile__cta { color: #000091; }
+
+.dash-action-tile-shell .dash-org-anomaly-tile__form {
+  padding: 1rem 1.05rem;
+  border: 1px solid #e5e5e5;
+  border-left: 3px solid #047857;
+  background: #161616;
+  color: #fff;
+}
+
+.dash-action-tile-shell .dash-org-anomaly-tile__form .dash-action-tile__kicker {
+  color: #34d399;
+}
+
+.dash-action-tile-shell .dash-org-anomaly-tile__form .dash-action-tile__title {
+  display: block;
+  margin: 0 0 0.75rem;
+  color: #fff;
+}
+
+.dash-site-support-tile .dash-org-anomaly-tile__form {
+  border-left-color: #000091;
+}
+
+.dash-ops-stack--embedded {
+  background: transparent;
+  border: 0;
+  margin-top: 0.35rem;
+}
+
+.dash-ops-stack__inner--embedded {
+  max-width: none;
+  padding: 0;
+}
+
+.dash-ops-stack--embedded .dash-liaison__card,
+.dash-ops-stack--embedded .dash-rsvp-quick__shell {
+  border-radius: 0;
+}
+
+/* Pins / feedback épurés */
+.dash-pins-grid {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .dash-pins-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.dash-pins-link {
+  display: block;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e5e5e5;
+  border-left: 3px solid #047857;
+  background: #fff;
+  color: #161616;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-pins-link:hover {
+  background: #f0fdf6;
+  border-color: #047857;
+}
+
+.dash-feedback-card {
+  padding: 1.15rem 1.25rem 1.35rem;
+  border-color: #c3ebd5;
+  background: #f3faf6;
+}
+
+.dash-feedback-card--amber {
+  border-color: #f0d7a3;
+  background: #fff8eb;
+}
+
+.dash-feedback-card__title {
+  margin: 0.35rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #161616;
+}
+
+.dash-feedback-card__lead {
+  margin: 0.45rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #666;
+}
+
+.dash-tester-tags {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dash-tester-tags li {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #161616;
+}
+
+/* Reveal on scroll */
+.dash-reveal {
+  opacity: 0;
+  transform: translateY(0.7rem);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--dash-reveal-delay, 0ms),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--dash-reveal-delay, 0ms);
+}
+
+.dash-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dash-hero.dash-reveal {
+  transform: none;
+}
+
+.dash-hero.dash-reveal .dash-hero__title,
+.dash-hero.dash-reveal .dash-hero__grid {
+  opacity: 0;
+  transform: translateY(0.55rem);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dash-hero.dash-reveal.is-revealed .dash-hero__title,
+.dash-hero.dash-reveal.is-revealed .dash-hero__grid {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dash-hero.dash-reveal.is-revealed .dash-hero__grid {
+  transition-delay: 80ms;
+}
+
+.dash-action-band > * {
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.dash-zone--actions.is-revealed .dash-action-band > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 40ms; }
+.dash-zone--actions.is-revealed .dash-action-band > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 90ms; }
+.dash-zone--actions.is-revealed .dash-action-band > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 140ms; }
+.dash-zone--actions.is-revealed .dash-action-band > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 180ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-reveal,
+  .dash-hero.dash-reveal .dash-hero__title,
+  .dash-hero.dash-reveal .dash-hero__grid,
+  .dash-action-band > *,
+  .dash-action-tile {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Guest dashboard zones */
+.dash-guest-zone {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dash-guest-zone__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dash-guest-zone__inner {
+    padding: 3rem 2.5rem;
+  }
+}
+
+/* Action tiles : conserver le pattern mobile (formulaire) / desktop (rail) */
+.dash-action-tile-shell .dash-org-anomaly-tile__open.dash-action-tile {
+  display: none;
+}
+
+.dash-action-tile-shell .dash-org-anomaly-tile__form {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .dash-action-tile-shell .dash-org-anomaly-tile__open.dash-action-tile {
+    display: flex;
+  }
+
+  .dash-action-tile-shell .dash-org-anomaly-tile__form {
+    display: none;
+  }
+}
