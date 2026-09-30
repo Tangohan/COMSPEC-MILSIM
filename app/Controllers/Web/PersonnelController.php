@@ -1359,6 +1359,94 @@ class PersonnelController
         ]);
     }
 
+    /**
+     * Feuille ORBAT imprimable (style FM / mockup ATHENA).
+     */
+    public function orbatExport(Request $request, array $params = []): Response
+    {
+        $built = $this->buildOrbatExportDocument($request);
+        if ($built instanceof Response) {
+            return $built;
+        }
+
+        $html = (new \App\Services\Organization\OrbatChartPdfService())
+            ->renderHtml($built, true);
+
+        return (new Response())
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->header('Cache-Control', 'private, no-store')
+            ->setBody($html);
+    }
+
+    /**
+     * Téléchargement PDF de l’ORBAT (A3 paysage).
+     */
+    public function orbatPdf(Request $request, array $params = []): Response
+    {
+        $built = $this->buildOrbatExportDocument($request);
+        if ($built instanceof Response) {
+            return $built;
+        }
+
+        return (new \App\Services\Organization\OrbatChartPdfService())->pdfResponse($built);
+    }
+
+    /**
+     * @return array<string, mixed>|Response
+     */
+    private function buildOrbatExportDocument(Request $request): array|Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $tid = (int) $tenantId;
+        $gate = Gate::getInstance();
+        if (!$gate->allows('organization.orbat.view')) {
+            Session::flash('error', 'Vous n’avez pas accès à l’organigramme des unités.');
+
+            return Response::redirect(url('dashboard'));
+        }
+        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
+            || $gate->allows('organization.orbat.manage');
+        $viewerId = (int) Session::get('user_id');
+        $rosterData = OrbatRosterPayload::buildForTenant(
+            $this->unitRepository,
+            $tid,
+            $viewerId,
+            $orbatCanManage
+        );
+        if (!is_array($rosterData) || $rosterData === []) {
+            Session::flash('error', 'Aucune structure ORBAT à exporter pour le moment.');
+
+            return Response::redirect(url('orbat'));
+        }
+
+        $tenantLabel = '';
+        try {
+            $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
+            if (is_array($tenant)) {
+                $tenantLabel = function_exists('community_display_name')
+                    ? (string) community_display_name($tenant)
+                    : trim((string) ($tenant['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+            $tenantLabel = '';
+        }
+
+        $service = new \App\Services\Organization\OrbatChartPdfService();
+
+        return $service->buildDocument($rosterData, [
+            'unit_label' => $tenantLabel !== '' ? $tenantLabel : trim((string) ($rosterData['label'] ?? 'Organisation')),
+            'theater' => trim((string) $request->query('theater', '')),
+            'reference' => trim((string) $request->query('ref', 'ORBAT-' . date('Ymd'))),
+            'version' => trim((string) $request->query('version', '1.0')),
+            'include_mission' => (string) $request->query('mission', '1') === '1',
+            'include_notes' => (string) $request->query('notes', '0') === '1',
+            'include_legend' => (string) $request->query('legend', '1') === '1',
+        ]);
+    }
+
     /** Affiche l'éditeur de dossier directement dans le bureau Effectifs. */
     public function editFromEffectifs(Request $request, array $params = []): Response
     {
