@@ -5,189 +5,289 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\AdvancementCampaignRepository;
-use App\Repositories\AdvancementCandidacyRepository;
-use App\Repositories\GradeDefinitionRepository;
-use App\Repositories\GradeFiliereDefinitionRepository;
-use App\Services\Auth\AuthService;
-use App\Services\Personnel\AdvancementEligibilityService;
-use App\Services\Personnel\AdvancementPublicationService;
-use App\Support\AdvancementCodes;
-use App\Support\Api\ApiResponder;
-use DateTimeImmutable;
-use RuntimeException;
+use App\Repositories\AdvancementRepository;
+use App\Services\Advancement\AdvancementWorkflowService;
+use App\Services\Advancement\GradeScaleTemplateService;
+use Throwable;
 
+/**
+ * API REST de l'avancement : mêmes règles que les écrans, réponses JSON.
+ */
 final class AdvancementApiController
 {
+    private ?string $rawBody = null;
+
     public function __construct(
-        private AuthService $auth,
-        private GradeDefinitionRepository $grades,
-        private GradeFiliereDefinitionRepository $filieres,
-        private AdvancementCampaignRepository $campaigns,
-        private AdvancementCandidacyRepository $candidacies,
-        private AdvancementEligibilityService $eligibility,
-        private AdvancementPublicationService $publication,
+        private AdvancementRepository $repository,
+        private AdvancementWorkflowService $workflow,
+        private GradeScaleTemplateService $templates,
     ) {
     }
 
     public function grades(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request);
+        $ctx = $this->admin();
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
 
-        return ApiResponder::success(['grades' => $this->grades->listForTenant($tenantId, true)]);
+        return Response::json(['ok' => true, 'grades' => $this->repository->listGrades($ctx[0], true)]);
+    }
+
+    public function storeGrade(Request $request, array $params = []): Response
+    {
+        $ctx = $this->admin(true);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        try {
+            $data = $this->payload($request);
+            if (trim((string) ($data['code'] ?? '')) === '' || trim((string) ($data['label'] ?? '')) === '') {
+                return Response::json(['ok' => false, 'error' => 'Code et libellé sont requis.'], 422);
+            }
+            $id = $this->repository->saveGrade($ctx[0], $data);
+
+            return Response::json(['ok' => true, 'id' => $id], 201);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function updateGrade(Request $request, array $params = []): Response
+    {
+        $ctx = $this->admin(true);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $existing = $this->repository->findGrade($id, $ctx[0]);
+        if ($existing === null) {
+            return Response::json(['ok' => false, 'error' => 'Grade introuvable.'], 404);
+        }
+        try {
+            $this->repository->saveGrade($ctx[0], array_merge($existing, $this->payload($request)), $id);
+
+            return Response::json(['ok' => true, 'id' => $id]);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function archiveGrade(Request $request, array $params = []): Response
+    {
+        $ctx = $this->admin(true);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $this->repository->archiveGrade((int) ($params['id'] ?? 0), $ctx[0]);
+
+        return Response::json(['ok' => true]);
     }
 
     public function filieres(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request);
+        $ctx = $this->admin();
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
 
-        return ApiResponder::success(['filieres' => $this->filieres->listForTenant($tenantId)]);
+        return Response::json(['ok' => true, 'filieres' => $this->repository->listFilieres($ctx[0])]);
+    }
+
+    public function storeFiliere(Request $request, array $params = []): Response
+    {
+        $ctx = $this->admin(true);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $data = $this->payload($request);
+        try {
+            $id = $this->repository->saveFiliere($ctx[0], [
+                'code' => strtoupper(trim((string) ($data['code'] ?? ''))),
+                'label' => trim((string) ($data['label'] ?? '')),
+                'sort_order' => (int) ($data['sort_order'] ?? 0),
+            ]);
+
+            return Response::json(['ok' => true, 'id' => $id], 201);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function importScale(Request $request, array $params = []): Response
+    {
+        $ctx = $this->admin(true);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $code = (string) ($this->payload($request)['template'] ?? 'generique');
+        $ok = $this->templates->duplicate($ctx[0], $code);
+
+        return Response::json(['ok' => $ok], $ok ? 200 : 422);
     }
 
     public function campaigns(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request);
+        $ctx = $this->admin();
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
 
-        return ApiResponder::success(['campaigns' => $this->campaigns->listForTenant($tenantId)]);
+        return Response::json(['ok' => true, 'campaigns' => $this->repository->listCampaigns($ctx[0])]);
     }
 
-    public function createCampaign(Request $request, array $params = []): Response
+    public function storeCampaign(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request, true);
+        $ctx = $this->admin(true);
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId, $userId] = $ctx;
-        $gradeId = (int) $request->input('grade_id', 0);
-        if ($gradeId < 1) {
-            return ApiResponder::error('validation_failed', 'grade_id obligatoire.', 422);
-        }
-        $id = $this->campaigns->create($tenantId, [
-            'grade_id' => $gradeId,
-            'filiere_id' => (int) $request->input('filiere_id', 0),
-            'year' => (int) $request->input('year', date('Y')),
-            'opens_at' => $request->input('opens_at'),
-            'closes_at' => $request->input('closes_at'),
-            'quota_slots' => $request->input('quota_slots'),
-        ], $userId);
+        $data = $this->payload($request);
+        try {
+            $id = $this->repository->insertCampaign($ctx[0], [
+                'grade_id' => (int) ($data['grade_id'] ?? 0),
+                'filiere_id' => $data['filiere_id'] ?? null,
+                'year' => (int) ($data['year'] ?? date('Y')),
+                'opens_at' => (string) ($data['opens_at'] ?? ''),
+                'closes_at' => (string) ($data['closes_at'] ?? ''),
+                'quota_slots' => $data['quota_slots'] ?? '',
+                'created_by' => $ctx[1],
+            ]);
 
-        return ApiResponder::success(['id' => $id], 201);
+            return Response::json(['ok' => true, 'id' => $id], 201);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 
-    public function volunteer(Request $request, array $params = []): Response
+    public function storeCandidacy(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request, true);
+        $ctx = $this->admin(true);
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId, $userId] = $ctx;
-        $campaignId = (int) ($params['id'] ?? $request->input('campaign_id', 0));
-        $personnelId = (int) $request->input('personnel_id', $userId);
-        $campaign = $this->campaigns->find($tenantId, $campaignId);
-        if ($campaign === null || (string) $campaign['status'] !== AdvancementCodes::CAMPAIGN_OPEN) {
-            return ApiResponder::error('campaign_closed', 'Campagne non ouverte.', 409);
-        }
-        if ($this->candidacies->findForCampaignPersonnel($campaignId, $personnelId) !== null) {
-            return ApiResponder::error('already_exists', 'Candidature déjà déposée.', 409);
-        }
-        $eval = $this->eligibility->evaluate($tenantId, $personnelId, (int) $campaign['grade_id']);
-        $id = $this->candidacies->create($campaignId, $personnelId, [
-            'is_eligible' => $eval['is_eligible'],
-            'eligibility_reason' => $eval['eligibility_reason'],
-            'mobility_requested' => $request->input('mobility_requested') ? 1 : 0,
-            'requested_billet_id' => (int) $request->input('requested_billet_id', 0),
-            'notes' => $request->input('notes'),
-        ]);
+        $data = $this->payload($request);
+        try {
+            $id = $this->workflow->createCandidacy(
+                $ctx[0],
+                (int) ($params['id'] ?? 0),
+                (int) ($data['personnel_id'] ?? 0),
+                $ctx[1],
+                $data
+            );
 
-        return ApiResponder::success(['id' => $id, 'eligibility' => $eval], 201);
+            return Response::json(['ok' => true, 'id' => $id], 201);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 
-    public function toCommission(Request $request, array $params = []): Response
+    public function openCommission(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request, true);
+        $ctx = $this->admin(true);
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
-        $id = (int) ($params['id'] ?? 0);
-        $this->campaigns->setStatus($tenantId, $id, AdvancementCodes::CAMPAIGN_IN_COMMISSION);
+        $data = $this->payload($request);
+        try {
+            $this->workflow->openCommission(
+                $ctx[0],
+                (int) ($params['id'] ?? 0),
+                isset($data['meeting_date']) ? (string) $data['meeting_date'] : null,
+                isset($data['minutes_document_id']) ? (int) $data['minutes_document_id'] : null,
+                is_array($data['members'] ?? null) ? $data['members'] : []
+            );
 
-        return ApiResponder::success(['status' => AdvancementCodes::CAMPAIGN_IN_COMMISSION]);
+            return Response::json(['ok' => true]);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 
     public function publish(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request, true);
+        $ctx = $this->admin(true);
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId, $userId] = $ctx;
         try {
-            $out = $this->publication->publish(
-                $tenantId,
-                (int) ($params['id'] ?? 0),
-                $userId,
-                new DateTimeImmutable('today')
-            );
-        } catch (RuntimeException $e) {
-            return ApiResponder::error('publish_failed', $e->getMessage(), 409);
-        }
+            $out = $this->workflow->publish($ctx[0], (int) ($params['id'] ?? 0), $ctx[1]);
 
-        return ApiResponder::success($out);
+            return Response::json(['ok' => true] + $out);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 
-    public function eligibility(Request $request, array $params = []): Response
+    public function recheck(Request $request, array $params = []): Response
     {
-        $ctx = $this->ctx($request);
+        $ctx = $this->admin(true);
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
-        $personnelId = (int) $request->query('personnel_id', 0);
-        $gradeId = (int) $request->query('grade_id', 0);
-        if ($personnelId < 1 || $gradeId < 1) {
-            return ApiResponder::error('validation_failed', 'personnel_id et grade_id obligatoires.', 422);
-        }
+        try {
+            $n = $this->workflow->recheckCampaign($ctx[0], (int) ($params['id'] ?? 0));
 
-        return ApiResponder::success($this->eligibility->evaluate($tenantId, $personnelId, $gradeId));
+            return Response::json(['ok' => true, 'updated' => $n]);
+        } catch (Throwable $e) {
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
     }
 
-    /** @return array{0: int, 1: int}|Response */
-    private function ctx(Request $request, bool $needCsrf = false): array|Response
+    /**
+     * @return array{0:int,1:int}|Response
+     */
+    private function admin(bool $mutating = false): array|Response
     {
-        $user = $this->auth->user();
-        if (!$user) {
-            return ApiResponder::error('unauthorized', 'Non autorisé.', 401);
-        }
+        $userId = (int) Session::get('user_id');
         $tenantId = (int) Session::get('tenant_id');
-        if ($tenantId < 1) {
-            return ApiResponder::error('tenant_missing', 'Communauté non sélectionnée.', 400);
+        if ($userId < 1 || $tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Authentification requise.'], 401);
         }
-        if ($needCsrf) {
-            $token = (string) $request->input('_csrf_token', '');
-            if ($token === '') {
-                $token = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-            }
-            if (!Csrf::validate($token)) {
-                return ApiResponder::error('csrf_invalid', 'Token CSRF invalide.', 403);
-            }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access') && !$gate->allows('site.support')) {
+            return Response::json(['ok' => false, 'error' => 'Accès refusé.'], 403);
+        }
+        if ($mutating && !$this->csrfOk()) {
+            return Response::json(['ok' => false, 'error' => 'Jeton de session invalide.'], 419);
         }
 
-        return [$tenantId, (int) ($user['id'] ?? 0)];
+        return [$tenantId, $userId];
+    }
+
+    /** @return array<string, mixed> */
+    private function payload(Request $request): array
+    {
+        $json = json_decode($this->rawBody(), true);
+        if (is_array($json)) {
+            return $json;
+        }
+
+        return $request->all();
+    }
+
+    private function rawBody(): string
+    {
+        if ($this->rawBody === null) {
+            $this->rawBody = file_get_contents('php://input') ?: '';
+        }
+
+        return $this->rawBody;
+    }
+
+    private function csrfOk(): bool
+    {
+        $header = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        $json = json_decode($this->rawBody(), true);
+        $body = is_array($json) ? (string) ($json['_csrf_token'] ?? '') : '';
+        if ($body === '') {
+            $body = (string) ($_POST['_csrf_token'] ?? '');
+        }
+
+        return Csrf::validate($header !== '' ? $header : $body);
     }
 }

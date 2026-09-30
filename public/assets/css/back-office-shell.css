@@ -17,7 +17,7 @@
   --ath-accent-bright: #12d18e;
   --ath-accent-dark: #04231a;
   --ath-void: #000000;
-  --ath-sidebar: #000000;
+  --ath-sidebar: #0b0e0f;
   --ath-sidebar-line: #161b1e;
   --ath-sidebar-muted: #8a938e;
   --ath-sidebar-dim: #6b736e;
@@ -215,6 +215,7 @@ body.bo-shell {
 .ath-sidebar__logo {
   width: 30px;
   height: 30px;
+  border-radius: 7px;
   background: #fff;
   color: #0b0e0f;
   font-size: 14px;
@@ -331,7 +332,7 @@ body.bo-shell {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--ath-sidebar-dim);
+  color: var(--ath-sidebar-group);
   white-space: nowrap;
 }
 
@@ -339,12 +340,12 @@ body.bo-shell {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 0 8px;
+  margin: 1px 8px;
   padding: 8px 10px;
   cursor: pointer;
-  border-left: none;
+  border-left: 0;
   border-radius: 8px;
-  color: var(--ath-sidebar-ink, var(--ath-sidebar-muted));
+  color: var(--ath-sidebar-muted);
   text-decoration: none;
   transition: background 0.16s ease, color 0.16s ease;
   border-top: none;
@@ -367,7 +368,7 @@ body.bo-shell {
   background: #171b1d;
   color: #fff;
   font-weight: 600;
-  box-shadow: inset 2px 0 0 var(--ath-accent);
+  box-shadow: inset 2px 0 0 var(--ath-accent, #1f7a4d);
 }
 
 .ath-sidebar__item svg {
@@ -671,6 +672,8 @@ body.bo-shell {
 
 .ath-sidebar.is-collapsed .ath-sidebar__item {
   justify-content: center;
+  width: auto;
+  margin: 1px 6px;
   padding-left: 10px;
   padding-right: 10px;
 }

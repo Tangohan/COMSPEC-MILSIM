@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
+use App\Repositories\AdvancementRepository;
 use App\Repositories\OrbatBilletRepository;
 use App\Repositories\PersonnelAwardRepository;
 use App\Repositories\PersonnelEquipmentAssignmentRepository;
-use App\Repositories\PersonnelGradeHistoryRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Support\AdvancementCodes;
 
@@ -17,7 +17,7 @@ use App\Support\AdvancementCodes;
 final class CareerFileService
 {
     public function __construct(
-        private PersonnelGradeHistoryRepository $grades,
+        private AdvancementRepository $grades,
         private QualificationAwardRepository $qualifications,
         private PersonnelAwardRepository $awards,
         private OrbatBilletRepository $billets,
@@ -33,14 +33,16 @@ final class CareerFileService
     {
         $items = [];
 
-        foreach ($this->grades->listForPersonnel($tenantId, $userId) as $row) {
-            $items[] = [
-                'at' => substr((string) ($row['obtained_at'] ?? ''), 0, 10),
-                'kind' => 'grade',
-                'title' => trim((string) ($row['grade_label'] ?? 'Grade')),
-                'detail' => 'Grade obtenu' . (!empty($row['filiere_label']) ? ' · ' . $row['filiere_label'] : ''),
-                'via' => AdvancementCodes::viaLabel((string) ($row['obtained_via'] ?? '')),
-            ];
+        if ($this->grades->tablesReady()) {
+            foreach ($this->grades->historyFor($tenantId, $userId) as $row) {
+                $items[] = [
+                    'at' => substr((string) ($row['obtained_at'] ?? ''), 0, 10),
+                    'kind' => 'grade',
+                    'title' => trim((string) ($row['label'] ?? $row['grade_label'] ?? 'Grade')),
+                    'detail' => 'Grade obtenu',
+                    'via' => AdvancementCodes::viaLabel((string) ($row['obtained_via'] ?? '')),
+                ];
+            }
         }
 
         try {

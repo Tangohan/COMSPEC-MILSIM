@@ -1074,6 +1074,36 @@ class Container
                 self::get(\App\Services\Personnel\PersonnelProgressionEvaluator::class),
             ),
             \App\Services\Effectifs\PersonnelAutoAdvancementService::class => new \App\Services\Effectifs\PersonnelAutoAdvancementService(),
+            \App\Repositories\AdvancementRepository::class => new \App\Repositories\AdvancementRepository(),
+            \App\Services\Advancement\AdvancementEligibilityService::class => new \App\Services\Advancement\AdvancementEligibilityService(
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Services\Advancement\AdvancementNotifier::class => new \App\Services\Advancement\AdvancementNotifier(),
+            \App\Services\Advancement\AdvancementWorkflowService::class => new \App\Services\Advancement\AdvancementWorkflowService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementEligibilityService::class),
+                self::get(\App\Services\Advancement\AdvancementNotifier::class)
+            ),
+            \App\Services\Advancement\GradeScaleTemplateService::class => new \App\Services\Advancement\GradeScaleTemplateService(
+                self::get(\App\Repositories\AdvancementRepository::class)
+            ),
+            \App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class => new \App\Services\Cron\Jobs\AdvancementSeniorityCronJob(
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
+            ),
+            \App\Controllers\Admin\Organization\AdvancementAdminController::class => new \App\Controllers\Admin\Organization\AdvancementAdminController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+            ),
+            \App\Controllers\Admin\Organization\MemberAdvancementController::class => new \App\Controllers\Admin\Organization\MemberAdvancementController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
+            ),
+            \App\Controllers\Api\AdvancementApiController::class => new \App\Controllers\Api\AdvancementApiController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+            ),
             \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class => new \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob(
                 self::get(\App\Services\Effectifs\PersonnelAutoAdvancementService::class),
             ),
@@ -1267,50 +1297,12 @@ class Container
                 self::get(\App\Services\Rank\RankCatalogService::class),
                 self::get(\App\Services\Rank\RankReferenceValidator::class),
             ),
-            \App\Repositories\GradeFiliereDefinitionRepository::class => new \App\Repositories\GradeFiliereDefinitionRepository(),
-            \App\Repositories\GradeDefinitionRepository::class => new \App\Repositories\GradeDefinitionRepository(),
-            \App\Repositories\PersonnelGradeHistoryRepository::class => new \App\Repositories\PersonnelGradeHistoryRepository(),
-            \App\Repositories\AdvancementCampaignRepository::class => new \App\Repositories\AdvancementCampaignRepository(),
-            \App\Repositories\AdvancementCandidacyRepository::class => new \App\Repositories\AdvancementCandidacyRepository(),
-            \App\Repositories\AdvancementCommissionRepository::class => new \App\Repositories\AdvancementCommissionRepository(),
             \App\Repositories\AwardDefinitionRepository::class => new \App\Repositories\AwardDefinitionRepository(),
             \App\Repositories\PersonnelAwardRepository::class => new \App\Repositories\PersonnelAwardRepository(),
             \App\Repositories\EquipmentItemDefinitionRepository::class => new \App\Repositories\EquipmentItemDefinitionRepository(),
             \App\Repositories\PersonnelEquipmentAssignmentRepository::class => new \App\Repositories\PersonnelEquipmentAssignmentRepository(),
-            \App\Services\Personnel\GradeScaleSeedService::class => new \App\Services\Personnel\GradeScaleSeedService(
-                self::get(\App\Repositories\GradeFiliereDefinitionRepository::class),
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\GradeRepository::class),
-                self::get(\App\Repositories\PersonnelGradeHistoryRepository::class)
-            ),
-            \App\Services\Personnel\AdvancementEligibilityService::class => new \App\Services\Personnel\AdvancementEligibilityService(
-                self::get(\App\Repositories\PersonnelGradeHistoryRepository::class),
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\QualificationAwardRepository::class),
-                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
-            ),
-            \App\Services\Personnel\AdvancementPublicationService::class => new \App\Services\Personnel\AdvancementPublicationService(
-                self::get(\App\Repositories\AdvancementCampaignRepository::class),
-                self::get(\App\Repositories\AdvancementCandidacyRepository::class),
-                self::get(\App\Repositories\PersonnelGradeHistoryRepository::class),
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
-                self::get(UserRepository::class),
-                self::get(\App\Repositories\TenantMessageRepository::class)
-            ),
-            \App\Services\Personnel\AdvancementSeniorityService::class => new \App\Services\Personnel\AdvancementSeniorityService(
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\PersonnelGradeHistoryRepository::class),
-                self::get(\App\Services\Personnel\AdvancementEligibilityService::class),
-                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
-                self::get(UserRepository::class),
-                self::get(\App\Repositories\TenantMessageRepository::class)
-            ),
-            \App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class => new \App\Services\Cron\Jobs\AdvancementSeniorityCronJob(
-                self::get(\App\Services\Personnel\AdvancementSeniorityService::class)
-            ),
             \App\Services\Personnel\CareerFileService::class => new \App\Services\Personnel\CareerFileService(
-                self::get(\App\Repositories\PersonnelGradeHistoryRepository::class),
+                self::get(\App\Repositories\AdvancementRepository::class),
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Repositories\PersonnelAwardRepository::class),
                 self::get(\App\Repositories\OrbatBilletRepository::class),
@@ -1322,23 +1314,6 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
                 self::get(\App\Repositories\UnitRepository::class)
-            ),
-            \App\Controllers\Admin\Organization\AdvancementGradeController::class => new \App\Controllers\Admin\Organization\AdvancementGradeController(
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\GradeFiliereDefinitionRepository::class),
-                self::get(\App\Repositories\QualificationDefinitionRepository::class),
-                self::get(\App\Services\Personnel\GradeScaleSeedService::class)
-            ),
-            \App\Controllers\Admin\Organization\AdvancementCampaignController::class => new \App\Controllers\Admin\Organization\AdvancementCampaignController(
-                self::get(\App\Repositories\AdvancementCampaignRepository::class),
-                self::get(\App\Repositories\AdvancementCandidacyRepository::class),
-                self::get(\App\Repositories\AdvancementCommissionRepository::class),
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\GradeFiliereDefinitionRepository::class),
-                self::get(\App\Services\Personnel\AdvancementEligibilityService::class),
-                self::get(\App\Services\Personnel\AdvancementPublicationService::class),
-                self::get(\App\Repositories\OrbatBilletRepository::class),
-                self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\AwardReferentielController::class => new \App\Controllers\Admin\Organization\AwardReferentielController(
                 self::get(\App\Repositories\AwardDefinitionRepository::class),
@@ -1354,15 +1329,6 @@ class Container
             ),
             \App\Controllers\Admin\Organization\UnitReadinessController::class => new \App\Controllers\Admin\Organization\UnitReadinessController(
                 self::get(\App\Services\Personnel\UnitReadinessService::class)
-            ),
-            \App\Controllers\Api\AdvancementApiController::class => new \App\Controllers\Api\AdvancementApiController(
-                self::get(\App\Services\Auth\AuthService::class),
-                self::get(\App\Repositories\GradeDefinitionRepository::class),
-                self::get(\App\Repositories\GradeFiliereDefinitionRepository::class),
-                self::get(\App\Repositories\AdvancementCampaignRepository::class),
-                self::get(\App\Repositories\AdvancementCandidacyRepository::class),
-                self::get(\App\Services\Personnel\AdvancementEligibilityService::class),
-                self::get(\App\Services\Personnel\AdvancementPublicationService::class)
             ),
             \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
             \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(

@@ -75,6 +75,9 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('bo-doc-sheet__seal--badge', $qualifications);
         self::assertStringContainsString('bo-doc-list-head', $qualifications);
         self::assertStringContainsString('Ouvrir mon coffre', $qualifications);
+        self::assertStringContainsString('Dossier de carrière', $qualifications);
+        self::assertStringContainsString('Mes décorations', $qualifications);
+        self::assertStringContainsString('Mon avancement', $qualifications);
         self::assertStringNotContainsString('Brevet PDF pas encore versé au dossier.', $qualifications);
         self::assertStringNotContainsString("'Communauté'", $qualifications);
         self::assertStringNotContainsString('bo-doc-card__dl', $qualifications);

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services\Cron\Jobs;
 
+use App\Services\Advancement\AdvancementWorkflowService;
 use App\Services\Cron\CronJobInterface;
-use App\Services\Personnel\AdvancementSeniorityService;
 
+/**
+ * Avancement à l'ancienneté : pas de dossier, la ligne d'historique est créée à l'échéance.
+ */
 final class AdvancementSeniorityCronJob implements CronJobInterface
 {
     public function __construct(
-        private AdvancementSeniorityService $seniority,
+        private AdvancementWorkflowService $workflow,
     ) {
     }
 
@@ -26,22 +29,18 @@ final class AdvancementSeniorityCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Attribue automatiquement le grade suivant lorsque le temps de grade et les qualifications requises sont réunis, sans commission.';
+        return 'Attribue le grade suivant lorsque le temps minimum est atteint et que la voie ancienneté est ouverte, puis notifie le personnel.';
     }
 
     public function run(): array
     {
-        $stats = $this->seniority->promoteEligible(null, true);
+        $out = $this->workflow->applySeniorityAll();
+        $promoted = (int) ($out['promoted'] ?? 0);
 
         return [
             'ok' => true,
-            'summary' => sprintf(
-                '%d communauté(s), %d avancement(s) à l’ancienneté, %d dossier(s) non éligible(s).',
-                $stats['tenants'],
-                $stats['promoted'],
-                $stats['skipped']
-            ),
-            'details' => $stats,
+            'summary' => $promoted . ' avancement' . ($promoted > 1 ? 's' : '') . ' à l’ancienneté.',
+            'details' => $out,
         ];
     }
 }

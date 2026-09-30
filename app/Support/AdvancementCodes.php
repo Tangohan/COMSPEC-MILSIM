@@ -33,11 +33,11 @@ final class AdvancementCodes
     public static function campaignLabel(string $status): string
     {
         return match ($status) {
-            self::CAMPAIGN_OPEN => 'Ouverte',
-            self::CAMPAIGN_CLOSED => 'Clôturée',
-            self::CAMPAIGN_IN_COMMISSION => 'En commission',
-            self::CAMPAIGN_PUBLISHED => 'Publiée',
-            self::CAMPAIGN_ARCHIVED => 'Archivée',
+            'ouverte', self::CAMPAIGN_OPEN => 'Ouverte',
+            'cloturee', self::CAMPAIGN_CLOSED => 'Clôturée',
+            'en_commission', self::CAMPAIGN_IN_COMMISSION => 'En commission',
+            'publiee', self::CAMPAIGN_PUBLISHED => 'Publiée',
+            'archivee', self::CAMPAIGN_ARCHIVED => 'Archivée',
             default => $status,
         };
     }
@@ -46,8 +46,8 @@ final class AdvancementCodes
     {
         return match ($via) {
             self::VIA_INITIAL => 'Initial',
-            self::VIA_SENIORITY => 'Ancienneté',
-            self::VIA_CHOICE => 'Choix',
+            self::VIA_SENIORITY, 'anciennete' => 'Ancienneté',
+            self::VIA_CHOICE, 'choix' => 'Choix',
             default => $via,
         };
     }

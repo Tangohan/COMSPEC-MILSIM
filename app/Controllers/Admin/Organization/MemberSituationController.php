@@ -359,7 +359,6 @@ final class MemberSituationController
             'awards' => $enriched,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
-            'advancementBanner' => $this->advancementBanner($tenantId, $userId),
         ]));
     }
 
@@ -374,8 +373,8 @@ final class MemberSituationController
         $gradeHistory = [];
         try {
             $timeline = Container::get(\App\Services\Personnel\CareerFileService::class)->timeline($tenantId, $userId);
-            $gradeHistory = Container::get(\App\Repositories\PersonnelGradeHistoryRepository::class)
-                ->listForPersonnel($tenantId, $userId);
+            $advRepo = Container::get(\App\Repositories\AdvancementRepository::class);
+            $gradeHistory = $advRepo->tablesReady() ? $advRepo->historyFor($tenantId, $userId) : [];
         } catch (\Throwable) {
         }
 
@@ -389,7 +388,6 @@ final class MemberSituationController
             'user' => $user,
             'timeline' => $timeline,
             'gradeHistory' => $gradeHistory,
-            'advancementBanner' => $this->advancementBanner($tenantId, $userId),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));
@@ -444,54 +442,6 @@ final class MemberSituationController
             'user' => $user,
             'assignments' => $rows,
         ]));
-    }
-
-    public function volunteerAdvancement(Request $request, array $params = []): Response
-    {
-        $ctx = $this->requireUser();
-        if ($ctx instanceof Response) {
-            return $ctx;
-        }
-        [, $tenantId, $userId] = $ctx;
-        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(url('back-office/ma-situation/carriere'));
-        }
-        $campaignId = (int) $request->input('campaign_id', 0);
-        try {
-            $campaigns = Container::get(\App\Repositories\AdvancementCampaignRepository::class);
-            $campaign = $campaigns->find($tenantId, $campaignId);
-            if ($campaign === null || (string) ($campaign['status'] ?? '') !== \App\Support\AdvancementCodes::CAMPAIGN_OPEN) {
-                Session::flash('error', 'Campagne non ouverte.');
-
-                return Response::redirect(url('back-office/ma-situation/carriere'));
-            }
-            $cands = Container::get(\App\Repositories\AdvancementCandidacyRepository::class);
-            if ($cands->findForCampaignPersonnel($campaignId, $userId) !== null) {
-                Session::flash('error', 'Vous êtes déjà candidat.');
-
-                return Response::redirect(url('back-office/ma-situation/carriere'));
-            }
-            $eval = Container::get(\App\Services\Personnel\AdvancementEligibilityService::class)
-                ->evaluate($tenantId, $userId, (int) $campaign['grade_id']);
-            $cands->create($campaignId, $userId, [
-                'is_eligible' => $eval['is_eligible'],
-                'eligibility_reason' => $eval['eligibility_reason'],
-                'mobility_requested' => $request->input('mobility_requested') ? 1 : 0,
-                'requested_billet_id' => (int) $request->input('requested_billet_id', 0),
-            ]);
-            Session::flash(
-                'success',
-                $eval['is_eligible']
-                    ? 'Candidature déposée.'
-                    : 'Candidature déposée (non éligible pour l’instant : ' . (string) $eval['eligibility_reason'] . ').'
-            );
-        } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
-        }
-
-        return Response::redirect(url('back-office/ma-situation/carriere'));
     }
 
     public function generateBrevet(Request $request, array $params = []): Response
@@ -576,43 +526,6 @@ final class MemberSituationController
             });
 
         return $response;
-    }
-
-    /**
-     * @return array{campaign: array<string, mixed>, eval: array<string, mixed>}|null
-     */
-    private function advancementBanner(int $tenantId, int $userId): ?array
-    {
-        try {
-            $campaigns = Container::get(\App\Repositories\AdvancementCampaignRepository::class)->listOpenForTenant($tenantId);
-            $history = Container::get(\App\Repositories\PersonnelGradeHistoryRepository::class);
-            $grades = Container::get(\App\Repositories\GradeDefinitionRepository::class);
-            $eligibility = Container::get(\App\Services\Personnel\AdvancementEligibilityService::class);
-            $current = $history->currentForPersonnel($tenantId, $userId);
-            if ($current === null) {
-                return null;
-            }
-            $next = $grades->findImmediateSuccessor($tenantId, $current);
-            if ($next === null) {
-                return null;
-            }
-            foreach ($campaigns as $campaign) {
-                if ((int) ($campaign['grade_id'] ?? 0) !== (int) $next['id']) {
-                    continue;
-                }
-                $eval = $eligibility->evaluate($tenantId, $userId, (int) $next['id']);
-                $eval['already'] = Container::get(\App\Repositories\AdvancementCandidacyRepository::class)
-                    ->findForCampaignPersonnel((int) $campaign['id'], $userId) !== null;
-
-                return ['campaign' => $campaign, 'eval' => $eval, 'next' => $next];
-            }
-            $eval = $eligibility->evaluate($tenantId, $userId, (int) $next['id']);
-            $eval['already'] = false;
-
-            return ['campaign' => null, 'eval' => $eval, 'next' => $next];
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     /**

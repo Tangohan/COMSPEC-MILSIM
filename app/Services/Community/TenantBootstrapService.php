@@ -86,6 +86,11 @@ final class TenantBootstrapService
                     }
                 }
                 TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
+                try {
+                    (new \App\Services\Advancement\GradeScaleTemplateService())
+                        ->seedForNewTenant($tenantId, $gradeSystemCode);
+                } catch (\Throwable) {
+                }
                 (new \App\Services\Personnel\PersonnelJobRoleBootstrapService(
                     new \App\Repositories\PersonnelJobRoleRepository()
                 ))->ensureDefaultsForTenant($pdo, $tenantId);
@@ -299,14 +304,6 @@ final class TenantBootstrapService
                 $phaseRepo->seedDefaultPhases($tenantId);
             } catch (\Throwable $e) {
                 // Parcours RH optionnel : aucune règle n’est créée ici.
-            }
-
-            try {
-                $seedSvc = \App\Core\Container::get(\App\Services\Personnel\GradeScaleSeedService::class);
-                $template = \App\Services\Personnel\GradeScaleSeedService::templateForGradeSystem($gradeSystemCode);
-                $seedSvc->seedForTenant($tenantId, $template, true);
-            } catch (\Throwable $e) {
-                // Échelle de grades communauté : non bloquant si le schéma n’est pas encore migré.
             }
 
             try {

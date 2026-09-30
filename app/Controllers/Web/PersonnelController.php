@@ -948,9 +948,20 @@ class PersonnelController
             }
         }
 
+        $advancementPanel = null;
+        try {
+            $advancementPanel = \App\Core\Container::get(\App\Services\Advancement\AdvancementWorkflowService::class)
+                ->personnelPanel((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $advancementPanel = null;
+        }
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
+            'advancementPanel' => $advancementPanel,
+            'advancementPanelIsSelf' => $isSelf,
+            'backOfficePageCss' => ['personnel-dossier.css', 'back-office-advancement.css'],
             'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
             'boPageGroup' => 'Opérateur',
             'boPageKicker' => 'OPÉRATEUR · DOSSIER',

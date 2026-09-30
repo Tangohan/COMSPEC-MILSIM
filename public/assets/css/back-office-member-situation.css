@@ -591,6 +591,185 @@
   color: #0b5c7a;
 }
 
+/* Cartes qualifications — lecture dossier (icône, méta, validité, pied d'action) */
+.bo-qual-head h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 1.9rem);
+  letter-spacing: -0.02em;
+}
+
+.bo-qual-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #1f7a4d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bo-qual-lede {
+  margin: 0.4rem 0 0;
+  max-width: 56ch;
+  color: #6b7680;
+}
+
+.bo-qual-intro {
+  align-items: flex-start;
+}
+
+.bo-qual-count {
+  text-align: center;
+  border-radius: 10px;
+  background: #fafbfb;
+}
+
+.bo-qual-grid {
+  grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr));
+}
+
+.bo-qual-card {
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bo-qual-card__head {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.4rem;
+}
+
+.bo-qual-card .bo-doc-sheet {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  flex: 1;
+}
+
+.bo-qual-card .bo-doc-sheet::before {
+  display: none;
+}
+
+.bo-qual-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.bo-qual-card__icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.bo-qual-card--rh .bo-qual-card__icon {
+  background: #eaecfb;
+  color: #3b4fb0;
+}
+
+.bo-qual-card--tak .bo-qual-card__icon {
+  background: #e2f4f4;
+  color: #0f7d84;
+}
+
+.bo-qual-card--rh .bo-qual-card__cat {
+  color: #3b4fb0;
+}
+
+.bo-qual-card--tak .bo-qual-card__cat {
+  color: #0f7d84;
+}
+
+.bo-qual-card .bo-doc-sheet__kind {
+  letter-spacing: 0.03em;
+  text-transform: none;
+  font-size: 0.75rem;
+}
+
+.bo-qual-card .bo-doc-sheet__seal {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.bo-qual-card__meta {
+  display: flex;
+  gap: 1.1rem;
+  padding: 0 1rem 0.35rem;
+  font-size: 0.75rem;
+  color: #6b7680;
+}
+
+.bo-qual-card__meta b {
+  display: block;
+  margin-top: 0.1rem;
+  color: #12181b;
+  font-size: 0.84rem;
+}
+
+.bo-qual-card__valid {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 1rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.bo-qual-card__valid small {
+  color: #6b7680;
+  font-weight: 450;
+}
+
+.bo-qual-card__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1f7a4d;
+}
+
+.bo-qual-card__dot.is-warn { background: #a5760b; }
+.bo-qual-card__dot.is-bad { background: #9b1c1c; }
+.bo-qual-card__dot.is-info { background: #3b4fb0; }
+
+.bo-qual-card__ref {
+  margin: 0;
+  padding: 0 1rem 0.6rem;
+  color: #6b7680;
+  font-size: 0.75rem;
+}
+
+.bo-qual-card__foot {
+  margin-top: auto;
+  border-top: 1px solid #e4e7ea;
+  background: #fafbfb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.bo-qual-card__foot-txt {
+  color: #6b7680;
+  font-size: 0.78rem;
+}
+
+.bo-qual-card__generate,
+.bo-qual-card__download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bo-qual-card__generate svg {
+  width: 13px;
+  height: 13px;
+}
+
 .bo-doc-empty {
   display: grid;
   gap: 1rem;
@@ -1034,164 +1213,162 @@
 .bo-unit-empty-mark span:nth-child(2) { width: 78%; margin-left: 12%; }
 .bo-unit-empty-mark span:nth-child(3) { width: 56%; margin-left: 24%; }
 
-/* Qualifications / brevets — maquette opérateur */
-.bo-member-situation--qualif .bo-dossier-hero {
-  border-radius: 14px;
-  align-items: flex-start;
+/* Cartes qualifications — icône, méta, validité, pied d'action */
+.bo-qual-head h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 1.9rem);
+  letter-spacing: -0.02em;
 }
 
-.bo-qual-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.bo-qual-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #1f7a4d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 720px) {
-  .bo-qual-grid {
-    grid-template-columns: 1fr;
-  }
+.bo-qual-lede {
+  margin: 0.4rem 0 0;
+  max-width: 56ch;
+  color: #6b7680;
+}
+
+.bo-qual-count {
+  text-align: center;
+  border-radius: 10px;
+  background: #fafbfb;
 }
 
 .bo-qual-card {
   border-radius: 14px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+.bo-qual-card__head {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.4rem;
+}
+
 .bo-qual-card .bo-doc-sheet {
-  background: #fff;
-  border-bottom: none;
   min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  flex: 1;
 }
 
 .bo-qual-card .bo-doc-sheet::before {
   display: none;
 }
 
-.bo-qual-card__icon-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.bo-qual-card__icon .bo-doc-sheet__seal {
+.bo-qual-card__icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 
-.bo-qual-card.rh .bo-doc-sheet__seal {
-  background: #eaecfb;
-  color: #3b4fb0;
+.bo-qual-card__icon svg {
+  width: 19px;
+  height: 19px;
 }
 
-.bo-qual-card.tak .bo-doc-sheet__seal {
-  background: #e2f4f4;
-  color: #0f7d84;
-}
+.bo-qual-card--rh .bo-qual-card__icon { background: #eaecfb; color: #3b4fb0; }
+.bo-qual-card--tak .bo-qual-card__icon { background: #e2f4f4; color: #0f7d84; }
+.bo-qual-card--rh .bo-qual-card__cat { color: #3b4fb0; }
+.bo-qual-card--tak .bo-qual-card__cat { color: #0f7d84; }
 
-.bo-qual-card.def .bo-doc-sheet__seal {
-  background: #e5f3ec;
-  color: #1f7a4d;
-}
-
-.bo-qual-card__cat {
-  font-size: 11.5px;
-  font-weight: 700;
+.bo-qual-card .bo-doc-sheet__kind {
   letter-spacing: 0.03em;
+  text-transform: none;
+  font-size: 0.75rem;
 }
 
-.bo-qual-card.rh .bo-qual-card__cat { color: #3b4fb0; }
-.bo-qual-card.tak .bo-qual-card__cat { color: #0f7d84; }
-.bo-qual-card.def .bo-qual-card__cat { color: #1f7a4d; }
-
-.bo-qual-card__title {
-  margin: 4px 0 0;
-  font-size: 15.5px;
+.bo-qual-card .bo-doc-sheet__seal {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
 }
 
 .bo-qual-card__meta {
   display: flex;
-  gap: 18px;
-  margin-top: 14px;
-  font-size: 12px;
-  color: var(--ath-muted, #6d7a80);
+  gap: 1.1rem;
+  padding: 0 1rem 0.35rem;
+  font-size: 0.75rem;
+  color: #6b7680;
 }
 
 .bo-qual-card__meta b {
   display: block;
-  color: var(--ath-ink, #12181b);
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 1px;
+  margin-top: 0.1rem;
+  color: #12181b;
+  font-size: 0.84rem;
 }
 
 .bo-qual-card__valid {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 0.4rem;
+  padding: 0.15rem 1rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 650;
 }
 
-.bo-qual-card__valid .dot {
+.bo-qual-card__valid small {
+  color: #6b7680;
+  font-weight: 450;
+}
+
+.bo-qual-card__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #1f7a4d;
-  flex: 0 0 auto;
 }
 
-.bo-qual-card__valid .dot.is-warn { background: #a5760b; }
-.bo-qual-card__valid .dot.is-bad { background: #9b1c1c; }
-.bo-qual-card__valid .dot.is-info { background: #3b4fb0; }
+.bo-qual-card__dot.is-warn { background: #a5760b; }
+.bo-qual-card__dot.is-bad { background: #9b1c1c; }
+.bo-qual-card__dot.is-info { background: #3b4fb0; }
 
-.bo-qual-card__valid small {
-  color: var(--ath-muted, #6d7a80);
-  font-weight: 400;
-  margin-left: 4px;
+.bo-qual-card__ref {
+  margin: 0;
+  padding: 0 1rem 0.6rem;
+  color: #6b7680;
+  font-size: 0.75rem;
 }
 
 .bo-qual-card__foot {
   margin-top: auto;
-  border-top: 1px solid var(--ath-line, #e4e7ea);
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  border-top: 1px solid #e4e7ea;
   background: #fafbfb;
-  flex-wrap: wrap;
-}
-
-.bo-qual-card__foot .foot-txt {
-  font-size: 12px;
-  color: var(--ath-muted, #6d7a80);
-}
-
-.bo-adv-banner {
-  padding: 16px 18px;
-  border: 1px solid var(--ath-line, #e4e7ea);
-  border-radius: 14px;
-  background: #fff;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 0.6rem;
 }
 
-.bo-adv-banner__title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
+.bo-qual-card__foot-txt {
+  color: #6b7680;
+  font-size: 0.78rem;
 }
 
-.bo-adv-banner__meta {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--ath-muted, #6d7a80);
+.bo-qual-card__generate,
+.bo-qual-card__download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bo-qual-card__generate svg {
+  width: 13px;
+  height: 13px;
 }
 
 .bo-career-timeline {
