@@ -965,6 +965,27 @@ class Container
                 self::get(\App\Services\Personnel\PhaseRules\PhaseTransitionService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
+            \App\Repositories\PersonnelPassRepository::class => new \App\Repositories\PersonnelPassRepository(),
+            \App\Services\Personnel\Pass\PassConditionEngine::class => new \App\Services\Personnel\Pass\PassConditionEngine(),
+            \App\Services\Personnel\Pass\PassFactsLoader::class => new \App\Services\Personnel\Pass\PassFactsLoader(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(\App\Repositories\ArmaPlaytimeRepository::class),
+                self::get(\App\Repositories\RoleplayGameSessionRepository::class),
+                self::get(\App\Repositories\PersonnelPassRepository::class),
+            ),
+            \App\Services\Personnel\Pass\PassService::class => new \App\Services\Personnel\Pass\PassService(
+                self::get(\App\Repositories\PersonnelPassRepository::class),
+                self::get(\App\Services\Personnel\Pass\PassConditionEngine::class),
+                self::get(\App\Services\Personnel\Pass\PassFactsLoader::class),
+            ),
+            \App\Controllers\Admin\Organization\PersonnelPassAdminController::class => new \App\Controllers\Admin\Organization\PersonnelPassAdminController(
+                self::get(\App\Repositories\PersonnelPassRepository::class),
+                self::get(\App\Services\Personnel\Pass\PassService::class),
+                self::get(\App\Services\Personnel\Pass\PassConditionEngine::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+            ),
             \App\Repositories\AtakMarkerDetectionRuleRepository::class => new \App\Repositories\AtakMarkerDetectionRuleRepository(),
             \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController::class => new \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController(
                 self::get(\App\Repositories\AtakMarkerDetectionRuleRepository::class),

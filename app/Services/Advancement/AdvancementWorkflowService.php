@@ -63,11 +63,29 @@ final class AdvancementWorkflowService
             }
         }
 
+        $passResult = null;
+        $passId = (int) ($targetGrade['required_pass_id'] ?? 0);
+        if ($passId > 0) {
+            try {
+                /** @var \App\Services\Personnel\Pass\PassService $passService */
+                $passService = \App\Core\Container::get(\App\Services\Personnel\Pass\PassService::class);
+                $eval = $passService->evaluatePassForUser($tenantId, $passId, $personnelId);
+                $passResult = [
+                    'eligible' => !empty($eval['eligible']),
+                    'items' => $eval['items'] ?? [],
+                    'pass_label' => trim((string) (($eval['pass']['label'] ?? '') ?: 'PASS')),
+                ];
+            } catch (Throwable) {
+                $passResult = null;
+            }
+        }
+
         return $this->eligibility->evaluate([
             'current' => $current,
             'target' => $targetGrade,
             'qualification_award' => $award,
             'qualification_level_met' => $levelMet,
+            'pass_result' => $passResult,
         ], $today, $pathway);
     }
 

@@ -259,6 +259,39 @@ final class AdvancementEligibilityService
             ];
         }
 
+        $passResult = is_array($input['pass_result'] ?? null) ? $input['pass_result'] : null;
+        if ($passResult !== null) {
+            $passLabel = trim((string) ($passResult['pass_label'] ?? 'PASS'));
+            $passItems = is_array($passResult['items'] ?? null) ? $passResult['items'] : [];
+            foreach ($passItems as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $conditions[] = [
+                    'key' => 'pass_' . (string) ($item['type'] ?? 'cond'),
+                    'label' => 'PASS · ' . (string) ($item['label'] ?? $passLabel),
+                    'met' => !empty($item['passed']),
+                    'detail' => (string) ($item['reason'] ?? ''),
+                ];
+            }
+            if (empty($passResult['eligible'])) {
+                $empty['eligibility_reason'] = 'PASS « ' . $passLabel . ' » non satisfait.';
+                $empty['conditions'] = $conditions;
+                $empty['months_in_grade'] = $monthsInGrade;
+                $empty['due_on'] = $dueOn;
+
+                return $empty;
+            }
+            if ($passItems === []) {
+                $conditions[] = [
+                    'key' => 'pass',
+                    'label' => 'PASS ' . $passLabel,
+                    'met' => true,
+                    'detail' => 'Aucune condition active sur ce PASS.',
+                ];
+            }
+        }
+
         return [
             'is_eligible' => true,
             'eligibility_reason' => null,

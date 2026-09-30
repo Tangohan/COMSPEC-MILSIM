@@ -3,6 +3,7 @@ require __DIR__ . '/_helpers.php';
 $grade = is_array($grade ?? null) ? $grade : null;
 $filieres = is_array($filieres ?? null) ? $filieres : [];
 $qualifications = is_array($qualifications ?? null) ? $qualifications : [];
+$passes = is_array($passes ?? null) ? $passes : [];
 $isEdit = $grade !== null;
 $action = $isEdit
     ? url('back-office/organisation/grades/' . (int) $grade['id'] . '/update')
@@ -54,6 +55,14 @@ $val = static function (string $key, mixed $default = '') use ($grade): string {
         </label>
         <label>Niveau requis (identifiant, facultatif)
             <input type="number" name="required_qualification_level_id" value="<?= adv_h($val('required_qualification_level_id')) ?>">
+        </label>
+        <label>PASS requis <?= adv_info('PASS', 'Pack de conditions (formation, heures, avis hiérarchique…). Créé dans Organisation → PASS RH.') ?>
+            <select name="required_pass_id" class="adv-search" data-placeholder="Aucun">
+                <option value="">Aucun</option>
+                <?php foreach ($passes as $pass): ?>
+                    <option value="<?= (int) $pass['id'] ?>"<?= (string) $val('required_pass_id') === (string) $pass['id'] ? ' selected' : '' ?>><?= adv_h((string) ($pass['label'] ?? $pass['code'] ?? '')) ?></option>
+                <?php endforeach; ?>
+            </select>
         </label>
         <div class="adv-actions">
             <button class="ath-btn ath-btn--solid" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>

@@ -200,35 +200,69 @@ class RecruitmentOpeningRepository
      */
     public function create(int $tenantId, int $userId, array $data): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO recruitment_openings (
-                tenant_id, unit_id, created_by_user_id, personnel_job_role_id, title, summary, description,
-                requirements_json, employment_contract_label, employment_context_label,
-                personnel_category, arm_domain, clearance_level,
-                candidate_profile_items, technical_notice, mission_lead, responsibility_blocks,
-                status, created_at, updated_at
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'none\', ?, ?, ?, ?, \'draft\', NOW(), NOW()
-            )'
-        );
-        $stmt->execute([
-            $tenantId,
-            (int) $data['unit_id'],
-            $userId,
-            !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
-            (string) $data['title'],
-            $this->nullableString($data['summary'] ?? null),
-            $this->nullableString($data['description'] ?? null),
-            $this->jsonOrNull($data['requirements_json'] ?? null),
-            $this->nullableString($data['employment_contract_label'] ?? null),
-            $this->nullableString($data['employment_context_label'] ?? null),
-            (string) ($data['personnel_category'] ?? 'other'),
-            isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
-            $this->jsonOrNull($data['candidate_profile_items'] ?? null),
-            $this->nullableString($data['technical_notice'] ?? null),
-            $this->nullableString($data['mission_lead'] ?? null),
-            $this->jsonOrNull($data['responsibility_blocks'] ?? null),
-        ]);
+        $hasPass = $this->hasRequiredPassColumn();
+        if ($hasPass) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO recruitment_openings (
+                    tenant_id, unit_id, created_by_user_id, personnel_job_role_id, required_pass_id, title, summary, description,
+                    requirements_json, employment_contract_label, employment_context_label,
+                    personnel_category, arm_domain, clearance_level,
+                    candidate_profile_items, technical_notice, mission_lead, responsibility_blocks,
+                    status, created_at, updated_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'none\', ?, ?, ?, ?, \'draft\', NOW(), NOW()
+                )'
+            );
+            $stmt->execute([
+                $tenantId,
+                (int) $data['unit_id'],
+                $userId,
+                !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
+                !empty($data['required_pass_id']) ? (int) $data['required_pass_id'] : null,
+                (string) $data['title'],
+                $this->nullableString($data['summary'] ?? null),
+                $this->nullableString($data['description'] ?? null),
+                $this->jsonOrNull($data['requirements_json'] ?? null),
+                $this->nullableString($data['employment_contract_label'] ?? null),
+                $this->nullableString($data['employment_context_label'] ?? null),
+                (string) ($data['personnel_category'] ?? 'other'),
+                isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
+                $this->jsonOrNull($data['candidate_profile_items'] ?? null),
+                $this->nullableString($data['technical_notice'] ?? null),
+                $this->nullableString($data['mission_lead'] ?? null),
+                $this->jsonOrNull($data['responsibility_blocks'] ?? null),
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO recruitment_openings (
+                    tenant_id, unit_id, created_by_user_id, personnel_job_role_id, title, summary, description,
+                    requirements_json, employment_contract_label, employment_context_label,
+                    personnel_category, arm_domain, clearance_level,
+                    candidate_profile_items, technical_notice, mission_lead, responsibility_blocks,
+                    status, created_at, updated_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'none\', ?, ?, ?, ?, \'draft\', NOW(), NOW()
+                )'
+            );
+            $stmt->execute([
+                $tenantId,
+                (int) $data['unit_id'],
+                $userId,
+                !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
+                (string) $data['title'],
+                $this->nullableString($data['summary'] ?? null),
+                $this->nullableString($data['description'] ?? null),
+                $this->jsonOrNull($data['requirements_json'] ?? null),
+                $this->nullableString($data['employment_contract_label'] ?? null),
+                $this->nullableString($data['employment_context_label'] ?? null),
+                (string) ($data['personnel_category'] ?? 'other'),
+                isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
+                $this->jsonOrNull($data['candidate_profile_items'] ?? null),
+                $this->nullableString($data['technical_notice'] ?? null),
+                $this->nullableString($data['mission_lead'] ?? null),
+                $this->jsonOrNull($data['responsibility_blocks'] ?? null),
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -238,33 +272,64 @@ class RecruitmentOpeningRepository
      */
     public function update(int $id, int $tenantId, array $data): bool
     {
-        $stmt = $this->pdo->prepare(
-            'UPDATE recruitment_openings SET
-                unit_id = ?, personnel_job_role_id = ?, title = ?, summary = ?, description = ?,
-                requirements_json = ?, employment_contract_label = ?, employment_context_label = ?,
-                personnel_category = ?, arm_domain = ?,
-                candidate_profile_items = ?, technical_notice = ?, mission_lead = ?, responsibility_blocks = ?,
-                updated_at = NOW()
-             WHERE id = ? AND tenant_id = ? AND status = \'draft\''
-        );
-        $stmt->execute([
-            (int) $data['unit_id'],
-            !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
-            (string) $data['title'],
-            $this->nullableString($data['summary'] ?? null),
-            $this->nullableString($data['description'] ?? null),
-            $this->jsonOrNull($data['requirements_json'] ?? null),
-            $this->nullableString($data['employment_contract_label'] ?? null),
-            $this->nullableString($data['employment_context_label'] ?? null),
-            (string) ($data['personnel_category'] ?? 'other'),
-            isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
-            $this->jsonOrNull($data['candidate_profile_items'] ?? null),
-            $this->nullableString($data['technical_notice'] ?? null),
-            $this->nullableString($data['mission_lead'] ?? null),
-            $this->jsonOrNull($data['responsibility_blocks'] ?? null),
-            $id,
-            $tenantId,
-        ]);
+        if ($this->hasRequiredPassColumn()) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE recruitment_openings SET
+                    unit_id = ?, personnel_job_role_id = ?, required_pass_id = ?, title = ?, summary = ?, description = ?,
+                    requirements_json = ?, employment_contract_label = ?, employment_context_label = ?,
+                    personnel_category = ?, arm_domain = ?,
+                    candidate_profile_items = ?, technical_notice = ?, mission_lead = ?, responsibility_blocks = ?,
+                    updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ? AND status = \'draft\''
+            );
+            $stmt->execute([
+                (int) $data['unit_id'],
+                !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
+                !empty($data['required_pass_id']) ? (int) $data['required_pass_id'] : null,
+                (string) $data['title'],
+                $this->nullableString($data['summary'] ?? null),
+                $this->nullableString($data['description'] ?? null),
+                $this->jsonOrNull($data['requirements_json'] ?? null),
+                $this->nullableString($data['employment_contract_label'] ?? null),
+                $this->nullableString($data['employment_context_label'] ?? null),
+                (string) ($data['personnel_category'] ?? 'other'),
+                isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
+                $this->jsonOrNull($data['candidate_profile_items'] ?? null),
+                $this->nullableString($data['technical_notice'] ?? null),
+                $this->nullableString($data['mission_lead'] ?? null),
+                $this->jsonOrNull($data['responsibility_blocks'] ?? null),
+                $id,
+                $tenantId,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE recruitment_openings SET
+                    unit_id = ?, personnel_job_role_id = ?, title = ?, summary = ?, description = ?,
+                    requirements_json = ?, employment_contract_label = ?, employment_context_label = ?,
+                    personnel_category = ?, arm_domain = ?,
+                    candidate_profile_items = ?, technical_notice = ?, mission_lead = ?, responsibility_blocks = ?,
+                    updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ? AND status = \'draft\''
+            );
+            $stmt->execute([
+                (int) $data['unit_id'],
+                !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
+                (string) $data['title'],
+                $this->nullableString($data['summary'] ?? null),
+                $this->nullableString($data['description'] ?? null),
+                $this->jsonOrNull($data['requirements_json'] ?? null),
+                $this->nullableString($data['employment_contract_label'] ?? null),
+                $this->nullableString($data['employment_context_label'] ?? null),
+                (string) ($data['personnel_category'] ?? 'other'),
+                isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
+                $this->jsonOrNull($data['candidate_profile_items'] ?? null),
+                $this->nullableString($data['technical_notice'] ?? null),
+                $this->nullableString($data['mission_lead'] ?? null),
+                $this->jsonOrNull($data['responsibility_blocks'] ?? null),
+                $id,
+                $tenantId,
+            ]);
+        }
 
         return $stmt->rowCount() > 0;
     }
@@ -404,6 +469,11 @@ class RecruitmentOpeningRepository
         );
 
         return $stmt->execute([$topicId, $id, $tenantId]) && $stmt->rowCount() > 0;
+    }
+
+    private function hasRequiredPassColumn(): bool
+    {
+        return $this->hasColumn('required_pass_id');
     }
 
     private function hasColumn(string $name): bool

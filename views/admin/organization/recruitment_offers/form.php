@@ -22,6 +22,7 @@ $opening = $opening ?? null;
 $od = is_array($openingDecoded ?? null) ? $openingDecoded : [];
 $units = is_array($units ?? null) ? $units : [];
 $jobRoles = is_array($jobRoles ?? null) ? $jobRoles : [];
+$passes = is_array($passes ?? null) ? $passes : [];
 $personnelCategories = is_array($personnelCategories ?? null) ? $personnelCategories : [];
 $armDomains = is_array($armDomains ?? null) ? $armDomains : [];
 
@@ -110,6 +111,17 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                     <?php endforeach; ?>
                 </select>
                 <span class="ath-field__help">Issu du référentiel des emplois métier.</span>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">PASS requis</span>
+                <select name="required_pass_id" class="ath-field__select"<?= $disabled ?>>
+                    <option value="">— Aucun —</option>
+                    <?php foreach ($passes as $pass): ?>
+                        <?php $passId = (string) (int) ($pass['id'] ?? 0); ?>
+                    <option value="<?= $h($passId) ?>"<?= $selected('required_pass_id', $passId) ?>><?= $h((string) ($pass['label'] ?? $pass['code'] ?? '')) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="ath-field__help">Conditions regroupées (formation, heures, avis…). Gérées dans Organisation → PASS RH.</span>
             </label>
             <label class="ath-field">
                 <span class="ath-field__label">Titre de l’avis *</span>

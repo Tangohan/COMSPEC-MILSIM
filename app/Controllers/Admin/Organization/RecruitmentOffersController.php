@@ -375,6 +375,14 @@ class RecruitmentOffersController
         $roles = $this->jobRoleRepository->listRolesWithCategory($tenantId);
         $decoded = $opening ? $this->decodeOpeningJson($opening) : null;
 
+        $passChoices = [];
+        try {
+            $passRepo = \App\Core\Container::get(\App\Repositories\PersonnelPassRepository::class);
+            $passChoices = $passRepo->listPasses($tenantId, true, 'post');
+        } catch (\Throwable) {
+            $passChoices = [];
+        }
+
         return Response::view('layout.recruitment_lms', [
             'title' => $opening ? 'Modifier une offre' : 'Nouvelle offre',
             'recruitmentLmsTitle' => $opening ? 'Modifier une offre' : 'Nouvelle offre',
@@ -383,6 +391,7 @@ class RecruitmentOffersController
             'openingDecoded' => $decoded,
             'units' => $units,
             'jobRoles' => $roles,
+            'passes' => $passChoices,
             'personnelCategories' => RecruitmentOpeningPresentation::personnelCategories(),
             'armDomains' => RecruitmentOpeningPresentation::armDomains(),
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
@@ -425,6 +434,7 @@ class RecruitmentOffersController
         return [
             'unit_id' => (int) $request->input('unit_id', 0),
             'personnel_job_role_id' => (int) $request->input('personnel_job_role_id', 0) ?: null,
+            'required_pass_id' => (int) $request->input('required_pass_id', 0) ?: null,
             'title' => trim((string) $request->input('title', '')),
             'summary' => trim((string) $request->input('summary', '')),
             'description' => trim((string) $request->input('description', '')),
@@ -519,6 +529,7 @@ class RecruitmentOffersController
         }
         $req = $out['requirements_json'];
         $out['requirements_lines'] = is_array($req) ? implode("\n", array_map('strval', $req)) : '';
+        $out['required_pass_id'] = (string) (int) ($opening['required_pass_id'] ?? 0);
 
         return $out;
     }
