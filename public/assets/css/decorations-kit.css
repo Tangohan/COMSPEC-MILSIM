@@ -1,0 +1,642 @@
+/*
+  Pack UI "Rubans, médailles & frise de carrière"
+  Formes et motifs génériques, inspired by official U.S. Army / NATO references
+  (see footer sources on the kit page). This is NOT an official reproduction:
+  aucune décoration précise n'est représentée, aucun nom réel n'est utilisé,
+  aucun emblème gouvernemental ou protégé n'est reproduit.
+
+  Rubans et médailles : CSS / SVG uniquement (pas d'image bitmap) —
+  aucun étirement pixelisé à l'agrandissement.
+  Rubans : hauteur fixe 16–18px, largeur fixe 46–52px, grille flex à gap constant.
+  Disques de médaille : boîte carrée stricte + border-radius: 50% (jamais width≠height).
+*/
+
+.dk-kit {
+  --dk-anthracite: #1b1e21;
+  --dk-panel-dark: #22262a;
+  --dk-line-dark: #33393f;
+  --dk-ink-light: #f3f4f5;
+  --dk-muted-blue: #8b96a3;
+  --dk-gold: #c7a33e;
+  --dk-nato-blue: #2456a6;
+  box-sizing: border-box;
+  color: var(--dk-ink-light);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.dk-kit *,
+.dk-kit *::before,
+.dk-kit *::after {
+  box-sizing: border-box;
+}
+
+.dk-kit-page {
+  margin: 0;
+  background: var(--dk-anthracite, #1b1e21);
+  color: var(--dk-ink-light, #f3f4f5);
+  font-family: Inter, system-ui, sans-serif;
+  padding: 0 0 70px;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.dk-hero {
+  padding: 34px 34px 22px;
+  border-bottom: 1px solid var(--dk-line-dark, #33393f);
+}
+
+.dk-hero .dk-eyebrow {
+  color: var(--dk-gold, #c7a33e);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dk-hero h1 {
+  font-size: 26px;
+  margin: 8px 0 10px;
+  color: #fff;
+}
+
+.dk-caution {
+  background: #26221a;
+  border: 1px solid #4a3f22;
+  color: #d9c98f;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 78ch;
+}
+
+.dk-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+.dk-section {
+  margin-top: 40px;
+}
+
+.dk-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.dk-section-head h2 {
+  font-size: 18px;
+  margin: 0;
+  color: #fff;
+}
+
+.dk-tag {
+  font-size: 11px;
+  color: var(--dk-muted-blue, #8b96a3);
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.dk-section-desc {
+  font-size: 12.5px;
+  color: var(--dk-muted-blue, #8b96a3);
+  margin: 6px 0 18px;
+  max-width: 74ch;
+}
+
+.dk-fid {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 5px;
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.dk-fid.dk-fid--generic {
+  background: #2a2f34;
+  color: #9aa4ad;
+}
+
+.dk-fid.dk-fid--nato {
+  background: #152944;
+  color: #7fa8e0;
+}
+
+/* ============ A. RUBANS ============ */
+.dk-ribbon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.dk-ribbon-card {
+  background: var(--dk-panel-dark, #22262a);
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.dk-ribbon-swatch {
+  width: 46px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dk-ribbon-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: #fff;
+}
+
+.dk-ribbon-id {
+  font-size: 10px;
+  color: var(--dk-muted-blue, #8b96a3);
+  margin-top: 1px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.dk-ribbon-desc {
+  font-size: 11px;
+  color: var(--dk-muted-blue, #8b96a3);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.dk-ribbon-dim {
+  font-size: 10px;
+  color: #5f6a74;
+  margin-top: 6px;
+}
+
+.dk-ribbon-hex {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.dk-hexdot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.dk-hexdot--light {
+  box-shadow: inset 0 0 0 1px #ccc;
+}
+
+/* Ribbon patterns — CSS only, no bitmaps */
+.dk-rb-svc {
+  background: repeating-linear-gradient(90deg, #6e1c1c 0 9px, #e8c77e 9px 11px);
+}
+.dk-rb-camp {
+  background: repeating-linear-gradient(90deg, #17335e 0 13px, #fff 13px 15px);
+}
+.dk-rb-cond {
+  background: linear-gradient(90deg, #0f6d72, #0f6d72);
+  position: relative;
+}
+.dk-rb-cond::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  transform: translateX(-50%);
+  background: #f4e3c1;
+}
+.dk-rb-cbt {
+  background: repeating-linear-gradient(90deg, #d4a017 0 4px, #171717 4px 8px);
+}
+.dk-rb-unit {
+  background: #1d3f9e;
+  position: relative;
+}
+.dk-rb-unit::before,
+.dk-rb-unit::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #fff;
+}
+.dk-rb-unit::before {
+  left: 8px;
+}
+.dk-rb-unit::after {
+  right: 8px;
+}
+.dk-rb-qual {
+  background: repeating-linear-gradient(45deg, #2f7d4f 0 5px, #0b3a24 5px 10px);
+}
+.dk-rb-merit {
+  background: linear-gradient(90deg, #8a6a2c, #e3c878, #8a6a2c);
+}
+.dk-rb-svc2 {
+  background: repeating-linear-gradient(90deg, #6b7278 0 3px, #dfe3e6 3px 6px);
+}
+.dk-rb-nato {
+  background: linear-gradient(
+    90deg,
+    #173d73 0 40%,
+    #fff 40% 46%,
+    #173d73 46% 54%,
+    #c1272d 54% 60%,
+    #173d73 60% 100%
+  );
+}
+
+/* ============ B. MEDAILLES ============ */
+.dk-medal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dk-medal-card {
+  background: var(--dk-panel-dark, #22262a);
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 14px;
+  padding: 20px 14px 16px;
+  text-align: center;
+}
+
+.dk-bel {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1.5px solid #c9ccce;
+  margin: 0 auto;
+}
+
+.dk-m-neck {
+  width: 1.5px;
+  height: 6px;
+  background: #8f9498;
+  margin: 0 auto;
+}
+
+.dk-m-ribbon {
+  width: 30px;
+  height: 22px;
+  margin: 0 auto;
+  border-radius: 1px;
+}
+
+.dk-drop-gold {
+  background: repeating-linear-gradient(90deg, #c7a33e 0 6px, #6e1c1c 6px 9px);
+}
+.dk-drop-silver {
+  background: linear-gradient(90deg, #9aa2a8, #dfe3e6, #9aa2a8);
+}
+.dk-drop-bronze {
+  background: repeating-linear-gradient(90deg, #a06a3c 0 5px, #1a1a1a 5px 7px);
+}
+.dk-drop-nato {
+  background: linear-gradient(
+    90deg,
+    #173d73 0 40%,
+    #fff 40% 46%,
+    #173d73 46% 54%,
+    #c1272d 54% 60%,
+    #173d73 60% 100%
+  );
+}
+.dk-drop-svc {
+  background: repeating-linear-gradient(90deg, #6b7278 0 3px, #dfe3e6 3px 6px);
+}
+
+.dk-m-disc {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  margin: 6px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  box-shadow:
+    0 3px 7px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.28),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.dk-m-disc.dk-m-disc--small {
+  width: 34px;
+  height: 34px;
+}
+
+.dk-m-disc svg {
+  width: 28px;
+  height: 28px;
+}
+
+.dk-m-disc.dk-m-disc--small svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dk-disc-gold {
+  background: radial-gradient(circle at 35% 30%, #f0d98a, #a97f28 75%);
+  color: #5c3f10;
+}
+.dk-disc-silver {
+  background: radial-gradient(circle at 35% 30%, #eef1f2, #818a91 75%);
+  color: #3d4247;
+}
+.dk-disc-bronze {
+  background: radial-gradient(circle at 35% 30%, #d79a63, #7c4e21 75%);
+  color: #4a2e10;
+}
+.dk-disc-nato {
+  background: radial-gradient(circle at 35% 30%, #4d7bc4, #173d73 75%);
+  color: #e7edf7;
+}
+.dk-disc-svc {
+  background: radial-gradient(circle at 35% 30%, #e5e8ea, #9ca3a9 75%);
+  color: #454b50;
+}
+
+.dk-m-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 12px;
+  color: #fff;
+}
+
+.dk-m-fam {
+  font-size: 10px;
+  color: var(--dk-muted-blue, #8b96a3);
+  margin-top: 2px;
+}
+
+.dk-size-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dk-size-label {
+  font-size: 9px;
+  color: #5f6a74;
+}
+
+/* ============ C. RACK ============ */
+.dk-rack-panel {
+  background: var(--dk-panel-dark, #22262a);
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.dk-rack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: max-content;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.dk-rack-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.dk-slot {
+  position: relative;
+  width: 52px;
+  height: 18px;
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  overflow: visible;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+}
+
+.dk-slot:hover,
+.dk-slot:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 4px 8px rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+
+.dk-slot.is-selected,
+.dk-slot[aria-pressed="true"] {
+  outline: 2px solid var(--dk-gold, #c7a33e);
+  outline-offset: 2px;
+}
+
+.dk-device {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dk-device svg {
+  width: 8px;
+  height: 8px;
+  color: var(--dk-gold, #c7a33e);
+}
+
+.dk-device-num {
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--dk-gold, #c7a33e);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.dk-rack-caption {
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--dk-muted-blue, #8b96a3);
+  margin-top: 16px;
+}
+
+.dk-device-note {
+  font-size: 10.5px;
+  color: #8b7c4a;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.dk-device-note code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+/* ============ D. DONNÉES ============ */
+.dk-code-panel {
+  background: #101315;
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 12px;
+  padding: 16px 18px;
+  overflow-x: auto;
+}
+
+.dk-code-panel pre {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #c7d0d8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  white-space: pre;
+}
+
+.dk-code-panel .dk-k {
+  color: #7fa8e0;
+}
+.dk-code-panel .dk-s {
+  color: #9fd8a4;
+}
+.dk-code-panel .dk-c {
+  color: #5f6a74;
+}
+
+.dk-single-display {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  background: var(--dk-panel-dark, #22262a);
+  border: 1px solid var(--dk-line-dark, #33393f);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.dk-refs {
+  margin-top: 44px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dk-line-dark, #33393f);
+  font-size: 10.5px;
+  color: #5f6a74;
+  line-height: 1.7;
+}
+
+/* Picker (formulaire clair) */
+.dk-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dk-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e3e6e9;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  color: #14181b;
+}
+
+.dk-picker-item:hover {
+  border-color: #c7a33e;
+}
+
+.dk-picker-item:has(input:checked),
+.dk-picker-item.is-checked {
+  border-color: #c7a33e;
+  background: #fbf7ea;
+}
+
+.dk-picker-item input {
+  margin: 0;
+}
+
+.dk-picker-item .dk-ribbon-swatch {
+  width: 46px;
+  height: 16px;
+}
+
+.dk-picker-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dk-picker-meta strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dk-picker-meta span {
+  font-size: 10px;
+  color: #6b7480;
+}
+
+/* Fiche personnel : panneau sombre encastré */
+.dk-file-block {
+  background: #1b1e21;
+  border: 1px solid #33393f;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  color: #f3f4f5;
+}
+
+.dk-file-block .dk-caution {
+  max-width: none;
+  margin-bottom: 16px;
+}
+
+.dk-file-block h2 {
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .dk-wrap {
+    padding: 0 18px;
+  }
+  .dk-ribbon-grid,
+  .dk-medal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dk-single-display {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .dk-hero {
+    padding: 22px 18px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dk-ribbon-grid,
+  .dk-medal-grid {
+    grid-template-columns: 1fr;
+  }
+}

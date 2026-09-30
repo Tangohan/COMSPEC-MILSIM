@@ -293,18 +293,25 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(735, '2026-09-30', 'Avancement, dossier de carrière et cartes de brevets', 'Le back-office gagne une échelle de grades par communauté, deux voies d’avancement (ancienneté automatique / choix avec commission), un dossier de carrière chronologique, des décorations distinctes des qualifications, une dotation nominative et un score de disponibilité par unité. Mes qualifications reprend la présentation des cartes (catégorie, validité, générer ou télécharger le brevet). Rechargez le portail (Ctrl+F5).', [
-                'Échelle de grades scopée à la communauté, duplicable à la création',
-                'Campagnes d’avancement au choix, commission et publication irréversible',
-                'Avancement à l’ancienneté automatique (cron) avec notification',
+            $pr(736, '2026-09-30', 'Décorations, dotation nominative et dossier de carrière', 'Le back-office gagne un dossier de carrière chronologique, des décorations distinctes des qualifications, une dotation nominative et un score de disponibilité par unité. L’avancement de grade (échelle, campagnes, commission) reste celui déjà en place. Rechargez le portail (Ctrl+F5).', [
                 'Décorations / citations séparées des qualifications',
                 'Carnet de dotation nominative (série, statut, historique)',
                 'Dossier de carrière unifié et score de disponibilité par unité',
             ], [
-                'Aside back-office plus lisible (groupes, item actif, densité type maquette)',
-                'Cartes Mes qualifications : validité, icône de catégorie, pied générer / télécharger',
+                'Liens Ma situation : dossier de carrière, décorations, dotation',
+                'Timeline de carrière : grades, postes, qualifications, décorations, matériel',
             ], [], ['command'], [
-                'Rechargez le portail (Ctrl+F5). Organisation > Grades pour l’échelle, Personnel > Avancement pour les campagnes, Ma situation > Mes qualifications pour les brevets.',
+                'Rechargez le portail (Ctrl+F5). Organisation > Décorations et Dotation, Ma situation > Dossier de carrière.',
+            ], 'Portail Athena'),
+            $pr(735, '2026-09-30', 'Rubans et médailles : pack visuel générique', 'Le dossier personnel affiche désormais un rack de rubans et des médailles en CSS/SVG (pas d’image bitmap). Chaque motif est GENERIC ou NATO_INSPIRED, avec isOfficialReference à non. Ce n’est pas une reproduction officielle. Rechargez le portail (Ctrl+F5).', [
+                'Neuf rubans et six médailles génériques, avec fiche (id, couleurs, motif, dimensions)',
+                'Rack interactif : survol, sélection or, dispositifs génériques (étoile, chiffre)',
+                'Deux tailles de médaille (34 px carte / 62 px fiche) sur le même disque',
+            ], [
+                'Saisie des décorations du dossier : catalogue à cocher + mentions libres',
+                'Pack UI v2 consultable depuis la fiche (Rubans & médailles)',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez une fiche, onglet Portrait : le rack apparaît si des décorations sont enregistrées. Le bandeau de prudence rappelle qu’il ne s’agit pas d’attributions réelles.',
             ], 'Portail Athena'),
             $pr(734, '2026-09-29', 'Mes qualifications : brevet et validité', 'Sur Mes qualifications, chaque titre affiche désormais sa validité (permanente ou échéance), l’insigne ou la catégorie, et un bouton pour générer ou télécharger le brevet PDF quand la qualification est obtenue. Le libellé de page reprend « Mes qualifications », comme dans le menu. Rechargez le portail (Ctrl+F5).', [
                 'Bouton Générer le brevet sur chaque qualification obtenue sans PDF',

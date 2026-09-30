@@ -55,6 +55,12 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
 $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
 $nicknames = is_array($nicknames ?? null) ? $nicknames : [];
 $medalRackItems = is_array($medalRackItems ?? null) ? $medalRackItems : [];
+$medalRackSplit = is_array($medalRackSplit ?? null)
+    ? $medalRackSplit
+    : \App\Support\DecorationCatalog::splitStored($medalRackItems);
+$medalRackCatalogIds = is_array($medalRackSplit['catalogIds'] ?? null) ? $medalRackSplit['catalogIds'] : [];
+$medalRackCustomLines = is_array($medalRackSplit['customLines'] ?? null) ? $medalRackSplit['customLines'] : [];
+$decorationCatalog = is_array($decorationCatalog ?? null) ? $decorationCatalog : \App\Support\DecorationCatalog::all();
 $extraCallsignSlots = isset($extraCallsignSlots) ? max(5, (int) $extraCallsignSlots) : (function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5);
 $extraCallsigns = is_array($extraCallsigns ?? null) ? $extraCallsigns : [];
 while (count($extraCallsigns) < $extraCallsignSlots) {
@@ -62,7 +68,7 @@ while (count($extraCallsigns) < $extraCallsignSlots) {
 }
 $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
-$medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
+$medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackCustomLines));
 $advancedEditActive = !empty($advancedEditActive);
 $canApplyOrbatImmediately = !empty($canApplyOrbatImmediately);
 $pendingOrbatCorrection = !empty($pendingOrbatCorrection);
@@ -1120,9 +1126,34 @@ $editValidTabIds = implode(',', array_map(
               <label for="deployable" class="text-sm font-semibold text-slate-800">Déployable</label>
             </div>
             <div class="md:col-span-2">
-              <label for="medal_rack_text" class="mb-1 block text-xs font-bold text-slate-600">Décorations et placards</label>
-              <textarea name="medal_rack_text" id="medal_rack_text" rows="4" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Un élément par ligne&#10;Ex. Croix de la Valeur militaire&#10;Placard commémoratif - opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
-              <p class="mt-1 text-[11px] text-slate-500">Base déclarative pour préparer la fiche visuelle des décorations, sans imposer encore un format graphique figé.</p>
+              <p class="mb-1 block text-xs font-bold text-slate-600">Décorations et placards</p>
+              <p class="mb-3 text-[11px] text-slate-500">Choisissez un motif générique du catalogue (GENERIC / NATO_INSPIRED). Les formes ne sont pas des reproductions officielles. <a href="<?= htmlspecialchars(url('personnel/kit-rubans-medailles'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline">Voir le pack visuel</a>.</p>
+              <div class="dk-picker" role="group" aria-label="Catalogue de rubans et médailles">
+                <?php foreach ($decorationCatalog as $dec):
+                    if (!is_array($dec)) {
+                        continue;
+                    }
+                    $decId = (string) ($dec['id'] ?? '');
+                    if ($decId === '') {
+                        continue;
+                    }
+                    $checked = in_array($decId, $medalRackCatalogIds, true);
+                    $pattern = (string) ($dec['patternClass'] ?? 'dk-rb-svc2');
+                    $fid = ((string) ($dec['family'] ?? 'GENERIC')) === 'NATO_INSPIRED' ? 'NATO_INSPIRED' : 'GENERIC';
+                    ?>
+                <label class="dk-picker-item">
+                  <input type="checkbox" name="medal_rack_catalog[]" value="<?= htmlspecialchars($decId, ENT_QUOTES, 'UTF-8') ?>" <?= $checked ? 'checked' : '' ?>>
+                  <span class="dk-ribbon-swatch <?= htmlspecialchars($pattern, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
+                  <span class="dk-picker-meta">
+                    <strong><?= htmlspecialchars((string) ($dec['name'] ?? $decId), ENT_QUOTES, 'UTF-8') ?></strong>
+                    <span><?= htmlspecialchars($fid . ' · ' . $decId, ENT_QUOTES, 'UTF-8') ?></span>
+                  </span>
+                </label>
+                <?php endforeach; ?>
+              </div>
+              <label for="medal_rack_text" class="mb-1 mt-3 block text-xs font-bold text-slate-600">Mentions libres (une par ligne)</label>
+              <textarea name="medal_rack_text" id="medal_rack_text" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Placard commémoratif — opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
+              <p class="mt-1 text-[11px] text-slate-500">Les mentions libres s’affichent avec un ruban générique de repli. Elles ne correspondent à aucune décoration réelle.</p>
             </div>
           </div>
         </section>

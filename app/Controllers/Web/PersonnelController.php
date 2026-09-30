@@ -320,6 +320,17 @@ class PersonnelController
         ]);
     }
 
+    public function decorationsKit(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$user || !$tenantId) {
+            return Response::redirect(url('login'));
+        }
+
+        return Response::view('personnel.decorations_kit');
+    }
+
     public function personnelIndex(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();
@@ -1587,6 +1598,9 @@ class PersonnelController
             'extraCallsigns' => $extraCallsigns,
             'extraCallsignSlots' => $extraCallsignSlots,
             'medalRackItems' => $medalRackItems,
+            'decorationCatalog' => \App\Support\DecorationCatalog::all(),
+            'medalRackSplit' => \App\Support\DecorationCatalog::splitStored($medalRackItems),
+            'loadDecorationsKit' => true,
             'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
             'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
             'seniorityPrePlatformDate' => Container::get(\App\Services\Personnel\SeniorityPrePlatformService::class)
@@ -1595,7 +1609,7 @@ class PersonnelController
             'canStaffEdit' => $this->canStaffEditPersonnel(),
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
-            'backOfficePageCss' => ['personnel-dossier.css'],
+            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css'],
             'canManageVisibility' => $canManageVisibility,
             'personnelVisibility' => $editVisMeta,
             'personnelVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['visibility_level'], 'personnel'),
@@ -1825,7 +1839,12 @@ class PersonnelController
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ),
             'medal_rack_json' => json_encode(
-                $this->normalizeMultilineList((string) $request->input('medal_rack_text'), 24, 160),
+                \App\Support\DecorationCatalog::mergeRackInput(
+                    is_array($request->input('medal_rack_catalog')) ? $request->input('medal_rack_catalog') : [],
+                    (string) $request->input('medal_rack_text'),
+                    24,
+                    160
+                ),
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ),
             'primary_unit_id' => $primaryUnitId,

@@ -373,6 +373,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         }
     }
 }
+$medalRackResolved = \App\Support\DecorationCatalog::resolveLines($medalRackItems);
 $rpTimelineStatusFr = static function (?string $s): string {
     return match (trim((string) $s)) {
         'planned' => 'Prévu',
@@ -749,6 +750,7 @@ if ($personnelFileIsRhFull) {
             <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']) . '#edit-portrait', ENT_QUOTES, 'UTF-8') ?>">Portrait</a>
             <?php endif; ?>
             <a href="<?= url('orbat') ?>">Organigramme</a>
+            <a href="<?= url('personnel/kit-rubans-medailles') ?>">Rubans &amp; médailles</a>
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
@@ -897,12 +899,32 @@ if ($personnelFileIsRhFull) {
                                 <ul class="mt-2 space-y-1 text-xs text-slate-700">
                                     <li><span class="font-semibold text-slate-900"><?= count($assignments) ?></span> affectation(s) active(s)</li>
                                     <li><span class="font-semibold text-slate-900"><?= count($qualifications) ?></span> qualification(s)</li>
+                                    <li><span class="font-semibold text-slate-900"><?= count($medalRackResolved) ?></span> décoration(s)</li>
                                     <li><span class="font-semibold text-slate-900"><?= count($lmsEnrollmentsForPersonnel) ?></span> parcours suivi(s)</li>
                                     <li><span class="font-semibold text-slate-900"><?= count($trainingCertificates) ?></span> attestation(s)</li>
                                 </ul>
                             </div>
                         </div>
                     </section>
+                    <?php if ($medalRackResolved !== []): ?>
+                    <section class="dk-file-block dk-kit" aria-labelledby="personnel-decorations-title">
+                        <div class="dk-section-head">
+                            <h2 id="personnel-decorations-title">Décorations</h2>
+                            <span class="dk-tag"><?= count($medalRackResolved) ?> élément<?= count($medalRackResolved) > 1 ? 's' : '' ?></span>
+                        </div>
+                        <div class="dk-caution">
+                            <?= htmlspecialchars(\App\Support\DecorationCatalog::CAUTION, ENT_QUOTES, 'UTF-8') ?>
+                        </div>
+                        <?php
+                            $dkItems = $medalRackResolved;
+                            $dkShowDemoDevices = false;
+                            $dkShowDetail = true;
+                            $dkCaption = 'Survolez un ruban — cliquez pour l’état « sélectionné ».';
+                            require base_path('views/partials/personnel/decoration_rack.php');
+                        ?>
+                        <p class="dk-refs" style="margin-top:18px;padding-top:12px;"><?= htmlspecialchars(\App\Support\DecorationCatalog::FOOTER, ENT_QUOTES, 'UTF-8') ?></p>
+                    </section>
+                    <?php endif; ?>
                     <?php if ($privatePersonnelIdentity && is_array($latestEnlistment) && $latestEnlistment !== []): ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Dernière candidature recrutement</h2>

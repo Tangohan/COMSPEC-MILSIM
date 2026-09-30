@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Ne crée plus aucun document. Sert uniquement au nettoyage ciblé
  * ({@see bootstrap/doctrine_demo_cleanup.php}) : paires référence + titre
- * (et slug dérivé) issues de l’ancien seed, hors SIC/ATAK/2026-001.
+ * (et slug dérivé) issues de l’ancien seed, hors SIC/ATAK et DRH/PERS officiels.
  *
  * @return array{
  *     remove: list<array{reference: string, title: string, slug: string}>,
@@ -27,5 +27,6 @@ return [
     ],
     'keep' => [
         ['reference' => 'SIC/ATAK/2026-001', 'title' => 'Doctrine d’emploi d’ATAK / Overwatch Athena', 'slug' => 'sic-atak-2026-001'],
+        ['reference' => 'DRH/PERS/2026-001', 'title' => 'Doctrine d’emploi RH — Recrutement et Avancement', 'slug' => 'drh-pers-2026-001'],
     ],
 ];
