@@ -122,6 +122,8 @@ $orbatChildren = array_values(array_filter([
     ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
     ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => str_starts_with($p, 'back-office/referentiels/qualifications')],
+    ['label' => 'Grades', 'href' => url('back-office/organisation/grades'), 'active' => str_starts_with($p, 'back-office/organisation/grades')],
+    ['label' => 'Avancement', 'href' => url('back-office/rh/avancement'), 'active' => str_starts_with($p, 'back-office/rh/avancement')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([
@@ -212,7 +214,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'personnel',
-            'label' => 'PERSONNEL',
+            'label' => 'MA SITUATION',
             'items' => [
                 ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => $opFicheActive],
                 ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
@@ -224,6 +226,12 @@ if ($isOperatorBoNav) {
                     'badge' => $opQualifBadge,
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
+                ],
+                [
+                    'label' => 'Mon avancement',
+                    'href' => url('back-office/ma-situation/avancement'),
+                    'icon' => 'path',
+                    'active' => str_starts_with($p, 'back-office/ma-situation/avancement'),
                 ],
                 ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => $opSuiviActive],
                 [

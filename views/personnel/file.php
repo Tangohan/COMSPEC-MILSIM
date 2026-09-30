@@ -684,6 +684,7 @@ if ($personnelFileIsRhFull) {
     $personnelFileNoticesIncludeRhSwitcher = false;
     $personnelFileNoticesIncludeOperatorTabs = false;
     require base_path('views/partials/personnel/file_page_notices.php');
+    require base_path('views/partials/personnel/advancement_panel.php');
     ?>
 
     <?php if (!empty($visibilityPreviewAs)): ?>
