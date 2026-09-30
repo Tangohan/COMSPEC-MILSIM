@@ -135,6 +135,7 @@ $bootstrapFiles = [
     'qualification_referentiel_migration.php',
     'advancement_grade_migration.php',
     'rank_catalog_migration.php',
+    'personnel_career_advancement_migration.php',
     'arma_playtime_migration.php',
     'roleplay_game_sessions_migration.php',
     'personnel_phase_rules_migration.php',
@@ -289,6 +290,7 @@ run_personnel_capability_axes_migration($pdo);
 run_qualification_referentiel_migration($pdo);
 run_advancement_grade_migration($pdo);
 run_rank_catalog_migration($pdo);
+run_personnel_career_advancement_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_roleplay_game_sessions_migration($pdo);
 run_personnel_phase_rules_migration($pdo);

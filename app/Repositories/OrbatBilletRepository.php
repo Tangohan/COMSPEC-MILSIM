@@ -53,6 +53,34 @@ final class OrbatBilletRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveForTenant(int $tenantId, int $limit = 400): array
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(800, $limit));
+        $sql = 'SELECT b.id, b.unit_id, b.code, b.title, b.authorized_slots, u.name AS unit_name
+                FROM orbat_billets b
+                LEFT JOIN units u ON u.id = b.unit_id
+                WHERE b.tenant_id = ?';
+        if ($this->columnExists('orbat_billets', 'status')) {
+            $sql .= " AND COALESCE(b.status, 'active') = 'active'";
+        } else {
+            $sql .= ' AND b.is_active = 1';
+        }
+        if ($this->columnExists('orbat_billets', 'archived_at')) {
+            $sql .= ' AND b.archived_at IS NULL';
+        }
+        $sql .= ' ORDER BY u.name ASC, b.title ASC LIMIT ' . $limit;
+        $st = $this->pdo()->prepare($sql);
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function findById(int $tenantId, int $billetId): ?array
     {
         if (!$this->schemaReady() || $billetId < 1) {

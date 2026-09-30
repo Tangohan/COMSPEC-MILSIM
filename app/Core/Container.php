@@ -1297,6 +1297,39 @@ class Container
                 self::get(\App\Services\Rank\RankCatalogService::class),
                 self::get(\App\Services\Rank\RankReferenceValidator::class),
             ),
+            \App\Repositories\AwardDefinitionRepository::class => new \App\Repositories\AwardDefinitionRepository(),
+            \App\Repositories\PersonnelAwardRepository::class => new \App\Repositories\PersonnelAwardRepository(),
+            \App\Repositories\EquipmentItemDefinitionRepository::class => new \App\Repositories\EquipmentItemDefinitionRepository(),
+            \App\Repositories\PersonnelEquipmentAssignmentRepository::class => new \App\Repositories\PersonnelEquipmentAssignmentRepository(),
+            \App\Services\Personnel\CareerFileService::class => new \App\Services\Personnel\CareerFileService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Repositories\PersonnelAwardRepository::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Repositories\PersonnelEquipmentAssignmentRepository::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Services\Personnel\UnitReadinessService::class => new \App\Services\Personnel\UnitReadinessService(
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Repositories\UnitRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\AwardReferentielController::class => new \App\Controllers\Admin\Organization\AwardReferentielController(
+                self::get(\App\Repositories\AwardDefinitionRepository::class),
+                self::get(\App\Repositories\PersonnelAwardRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\EquipmentReferentielController::class => new \App\Controllers\Admin\Organization\EquipmentReferentielController(
+                self::get(\App\Repositories\EquipmentItemDefinitionRepository::class),
+                self::get(\App\Repositories\PersonnelEquipmentAssignmentRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\UnitReadinessController::class => new \App\Controllers\Admin\Organization\UnitReadinessController(
+                self::get(\App\Services\Personnel\UnitReadinessService::class)
+            ),
             \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
             \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(
                 self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),

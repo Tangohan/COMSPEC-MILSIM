@@ -293,6 +293,16 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(736, '2026-09-30', 'Décorations, dotation nominative et dossier de carrière', 'Le back-office gagne un dossier de carrière chronologique, des décorations distinctes des qualifications, une dotation nominative et un score de disponibilité par unité. L’avancement de grade (échelle, campagnes, commission) reste celui déjà en place. Rechargez le portail (Ctrl+F5).', [
+                'Décorations / citations séparées des qualifications',
+                'Carnet de dotation nominative (série, statut, historique)',
+                'Dossier de carrière unifié et score de disponibilité par unité',
+            ], [
+                'Liens Ma situation : dossier de carrière, décorations, dotation',
+                'Timeline de carrière : grades, postes, qualifications, décorations, matériel',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Organisation > Décorations et Dotation, Ma situation > Dossier de carrière.',
+            ], 'Portail Athena'),
             $pr(735, '2026-09-30', 'Rubans et médailles : pack visuel générique', 'Le dossier personnel affiche désormais un rack de rubans et des médailles en CSS/SVG (pas d’image bitmap). Chaque motif est GENERIC ou NATO_INSPIRED, avec isOfficialReference à non. Ce n’est pas une reproduction officielle. Rechargez le portail (Ctrl+F5).', [
                 'Neuf rubans et six médailles génériques, avec fiche (id, couleurs, motif, dimensions)',
                 'Rack interactif : survol, sélection or, dispositifs génériques (étoile, chiffre)',

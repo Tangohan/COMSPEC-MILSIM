@@ -54,6 +54,9 @@ $iconDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
     <div class="bo-member-situation__actions bo-dossier-hero__actions">
         <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/coffre')) ?>">Ouvrir mon coffre</a>
         <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=formation') ?>">Voir dans ma fiche</a>
+        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/carriere')) ?>">Dossier de carrière</a>
+        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/decorations')) ?>">Mes décorations</a>
+        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/avancement')) ?>">Mon avancement</a>
     </div>
 
     <?php if ($awards === []): ?>

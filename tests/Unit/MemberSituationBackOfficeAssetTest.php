@@ -26,6 +26,9 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/ma-situation/evenements'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/carriere'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/decorations'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/dotation'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);
 
         self::assertStringContainsString("str_starts_with(\$path, '/back-office/ma-situation')", $middleware);
@@ -44,6 +47,8 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('Mes qualifications', $nav);
         self::assertStringContainsString('Mon coffre', $nav);
         self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
+        self::assertStringContainsString('Dossier de carrière', $nav);
+        self::assertStringContainsString('back-office/ma-situation/carriere', $nav);
         self::assertStringContainsString('Mon unité', $nav);
         self::assertStringContainsString('back-office/ma-situation/evenements', $nav);
         self::assertStringContainsString('back-office/ma-situation/ma-fiche', $nav);
@@ -70,6 +75,9 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('bo-doc-sheet__seal--badge', $qualifications);
         self::assertStringContainsString('bo-doc-list-head', $qualifications);
         self::assertStringContainsString('Ouvrir mon coffre', $qualifications);
+        self::assertStringContainsString('Dossier de carrière', $qualifications);
+        self::assertStringContainsString('Mes décorations', $qualifications);
+        self::assertStringContainsString('Mon avancement', $qualifications);
         self::assertStringNotContainsString('Brevet PDF pas encore versé au dossier.', $qualifications);
         self::assertStringNotContainsString("'Communauté'", $qualifications);
         self::assertStringNotContainsString('bo-doc-card__dl', $qualifications);

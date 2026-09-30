@@ -362,6 +362,88 @@ final class MemberSituationController
         ]));
     }
 
+    public function carriere(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$user, $tenantId, $userId] = $ctx;
+        $timeline = [];
+        $gradeHistory = [];
+        try {
+            $timeline = Container::get(\App\Services\Personnel\CareerFileService::class)->timeline($tenantId, $userId);
+            $advRepo = Container::get(\App\Repositories\AdvancementRepository::class);
+            $gradeHistory = $advRepo->tablesReady() ? $advRepo->historyFor($tenantId, $userId) : [];
+        } catch (\Throwable) {
+        }
+
+        return Response::view('layout.main', $this->boShell([
+            'title' => 'Dossier de carrière',
+            'content' => 'admin.member_situation.carriere',
+            'boPageTitle' => 'Dossier de carrière',
+            'boPageKicker' => 'OPÉRATEUR · CARRIÈRE',
+            'boPageSubtitle' => 'Timeline unique : postes, qualifications, décorations et grades.',
+            'backOfficePageCss' => ['back-office-member-situation.css'],
+            'user' => $user,
+            'timeline' => $timeline,
+            'gradeHistory' => $gradeHistory,
+            'success' => Session::getFlash('success'),
+            'error' => Session::getFlash('error'),
+        ]));
+    }
+
+    public function decorations(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$user, $tenantId, $userId] = $ctx;
+        $rows = [];
+        try {
+            $rows = Container::get(\App\Repositories\PersonnelAwardRepository::class)->listForPersonnel($tenantId, $userId);
+        } catch (\Throwable) {
+        }
+
+        return Response::view('layout.main', $this->boShell([
+            'title' => 'Mes décorations',
+            'content' => 'admin.member_situation.decorations',
+            'boPageTitle' => 'Mes décorations',
+            'boPageKicker' => 'OPÉRATEUR · DÉCORATIONS',
+            'boPageSubtitle' => 'Citations et décorations enregistrées sur votre dossier — distinctes des qualifications.',
+            'backOfficePageCss' => ['back-office-member-situation.css'],
+            'user' => $user,
+            'awards' => $rows,
+        ]));
+    }
+
+    public function dotation(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$user, $tenantId, $userId] = $ctx;
+        $rows = [];
+        try {
+            $rows = Container::get(\App\Repositories\PersonnelEquipmentAssignmentRepository::class)
+                ->listForPersonnel($tenantId, $userId);
+        } catch (\Throwable) {
+        }
+
+        return Response::view('layout.main', $this->boShell([
+            'title' => 'Ma dotation',
+            'content' => 'admin.member_situation.dotation',
+            'boPageTitle' => 'Ma dotation',
+            'boPageKicker' => 'OPÉRATEUR · DOTATION',
+            'boPageSubtitle' => 'Matériel attribué à votre nom, avec numéro de série et statut.',
+            'backOfficePageCss' => ['back-office-member-situation.css'],
+            'user' => $user,
+            'assignments' => $rows,
+        ]));
+    }
+
     public function generateBrevet(Request $request, array $params = []): Response
     {
         $ctx = $this->requireUser();
@@ -493,6 +575,17 @@ final class MemberSituationController
             && trim((string) ($award['certificate_document_path'] ?? '')) === '';
         $award['is_permanent_flag'] = !empty($award['is_permanent'])
             || trim((string) ($award['expires_at'] ?? '')) === '';
+
+        $cat = mb_strtolower(trim((string) ($award['category_name'] ?? '')), 'UTF-8');
+        $code = mb_strtolower(trim((string) ($award['definition_code'] ?? '')), 'UTF-8');
+        $hay = $cat . ' ' . $code;
+        if (str_contains($hay, 'atak') || str_contains($hay, 'liaison') || str_contains($hay, 'overwatch') || str_contains($hay, 'tact')) {
+            $award['card_tone'] = 'tak';
+        } elseif (str_contains($hay, 'recrut') || str_contains($hay, 'rh') || str_contains($hay, 'bureau') || str_contains($hay, 'candidat')) {
+            $award['card_tone'] = 'rh';
+        } else {
+            $award['card_tone'] = 'def';
+        }
 
         return $award;
     }

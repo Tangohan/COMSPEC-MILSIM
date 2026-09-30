@@ -77,9 +77,21 @@ $axesReady = !empty($stats['axes_schema_ready']);
             <p class="text-sm font-black text-slate-700">Parcours &amp; étapes</p>
             <p class="mt-1 text-xs text-slate-500">Éditeur visuel + conditions ALL/ANY — prochain lot<?= $schemaReady ? ' (tables prêtes)' : '' ?>.</p>
         </div>
-        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-5">
-            <p class="text-sm font-black text-slate-700">Demandes &amp; validations</p>
-            <p class="mt-1 text-xs text-slate-500">Workflow multi-niveaux, promotion board, waivers, date d’effet différée<?= $canValidate ? '' : '' ?>.</p>
-        </div>
+        <a href="<?= $h(url('back-office/rh/avancement')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
+            <p class="text-sm font-black text-slate-900">Avancement de grade</p>
+            <p class="mt-1 text-xs text-slate-600">Campagnes au choix, commission, publication du tableau — distinct de l’ancienneté automatique.</p>
+        </a>
+        <a href="<?= $h(url('back-office/organisation/grades')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
+            <p class="text-sm font-black text-slate-900">Échelle de grades</p>
+            <p class="mt-1 text-xs text-slate-600">Référentiel de la communauté, filières, temps mini et qualification requise.</p>
+        </a>
+        <a href="<?= $h(url('back-office/referentiels/decorations')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
+            <p class="text-sm font-black text-slate-900">Décorations</p>
+            <p class="mt-1 text-xs text-slate-600">Ce que l’on reconnaît avoir fait — distinct des qualifications.</p>
+        </a>
+        <a href="<?= $h(url('back-office/organisation/disponibilite')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
+            <p class="text-sm font-black text-slate-900">Disponibilité d’unité</p>
+            <p class="mt-1 text-xs text-slate-600">Score agrégé : pourvu/autorisé, quals à jour, dernière activité.</p>
+        </a>
     </section>
 </div>
