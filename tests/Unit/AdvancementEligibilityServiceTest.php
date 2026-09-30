@@ -217,13 +217,19 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertContains('SD2', $codes);
         self::assertContains('COL', $codes);
         self::assertContains('GAR', $codes);
-        self::assertContains('ASP', $codes);
+        self::assertContains('SL', $codes);
+        self::assertNotContains('ASP', $codes);
+        self::assertNotContains('GAV', $codes);
         self::assertGreaterThanOrEqual(19, count($codes));
 
-        self::assertTrue($scales->duplicate(8, 'us_army_enlisted'));
+        self::assertTrue($scales->duplicate(8, 'us_classic'));
         $us = array_column($repo->listGrades(8, true), 'code');
         self::assertContains('SGM', $us);
+        self::assertContains('PVT', $us);
+        self::assertContains('GEN', $us);
         self::assertNotContains('SGM', $codes);
+        self::assertNotContains('WO1', $us);
+        self::assertNotContains('SPC', $us);
     }
 
     public function testEnsurePourUneCommunauteExistanteResteIdempotent(): void
@@ -235,36 +241,40 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertTrue($scales->ensureForTenant(9, 'generique'));
         $first = $repo->listGrades(9, true);
         self::assertNotEmpty($first);
-        self::assertFalse($scales->ensureForTenant(9, 'us_army_enlisted'));
+        self::assertFalse($scales->ensureForTenant(9, 'us_classic'));
         self::assertCount(count($first), $repo->listGrades(9, true));
     }
 
     public function testLesModelesCouvrentTouteLaHierarchie(): void
     {
         $scales = new GradeScaleTemplateService(new AdvancementRepository($this->pdo()));
-        $fr = array_column($scales->templates()['fr_classic']['grades'], 'code');
-        $us = array_column($scales->templates()['us_classic']['grades'], 'code');
-        $gd = array_column($scales->templates()['gendarmerie']['grades'], 'code');
+        $templates = $scales->templates();
+        $fr = array_column($templates['fr_classic']['grades'], 'code');
+        $us = array_column($templates['us_classic']['grades'], 'code');
 
+        self::assertSame(['fr_classic', 'us_classic', 'generique'], array_keys($templates));
+        self::assertArrayNotHasKey('gendarmerie', $templates);
+        self::assertArrayNotHasKey('us_army_enlisted', $templates);
         self::assertSame('fr_classic', $scales->templateForSystem('FR_CLASSIC'));
         self::assertSame('us_classic', $scales->templateForSystem('US_CLASSIC'));
         self::assertContains('SD2', $fr);
         self::assertContains('CCH', $fr);
         self::assertContains('SCH', $fr);
-        self::assertContains('ASP', $fr);
+        self::assertContains('SL', $fr);
         self::assertContains('COL', $fr);
         self::assertContains('GAR', $fr);
-        self::assertContains('SPC', $us);
-        self::assertContains('1SG', $us);
-        self::assertContains('CW5', $us);
+        self::assertNotContains('ASP', $fr);
+        self::assertNotContains('GAV', $fr);
+        self::assertContains('PVT', $us);
+        self::assertContains('CPL', $us);
+        self::assertContains('SGM', $us);
         self::assertContains('GEN', $us);
-        self::assertContains('GAV', $gd);
-        self::assertContains('MDL', $gd);
-        self::assertContains('CEN', $gd);
-        self::assertContains('GAR', $gd);
+        self::assertNotContains('SPC', $us);
+        self::assertNotContains('1SG', $us);
+        self::assertNotContains('CW5', $us);
     }
 
-    public function testCompleteAjouteLesGradesManquantsSansEcraser(): void
+    public function testCompleteSansReferentielNeMelangePasUneEchelleExistante(): void
     {
         $pdo = $this->pdo();
         $repo = new AdvancementRepository($pdo);
@@ -289,13 +299,68 @@ final class AdvancementEligibilityServiceTest extends TestCase
         ]);
 
         $added = $scales->completeForTenant(3, 'FR_CLASSIC');
-        self::assertGreaterThan(10, $added);
+        self::assertSame(0, $added);
         $codes = array_column($repo->listGrades(3, true), 'code');
-        self::assertContains('GND', $codes);
-        self::assertContains('MAJ', $codes);
-        self::assertContains('SD2', $codes);
-        self::assertContains('COL', $codes);
+        self::assertSame(['GND', 'MAJ'], $codes);
         self::assertSame(0, $scales->completeForTenant(3, 'FR_CLASSIC'));
+    }
+
+    public function testArchiveLesGradesHorsReferentielInutilises(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $gnd = $repo->saveGrade(5, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+        $maj = $repo->saveGrade(5, [
+            'code' => 'MAJ',
+            'label' => 'Major',
+            'short_label' => 'MAJ',
+            'rank_order' => 2,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+        ]);
+        $pdo->prepare('INSERT INTO personnel_grade_history (personnel_id, grade_id, obtained_at, obtained_via) VALUES (1, ?, ?, ?)')
+            ->execute([$maj, '2024-01-01', 'initial']);
+
+        self::assertSame(1, $scales->archiveUnusedGradesNotIn(5, ['MAJ', 'SD2']));
+        $gndRow = $repo->findGrade($gnd, 5);
+        $majRow = $repo->findGrade($maj, 5);
+        self::assertNotEmpty($gndRow['archived_at'] ?? null);
+        self::assertEmpty($majRow['archived_at'] ?? null);
+    }
+
+    public function testCompleteProjetteLeReferentielUnique(): void
+    {
+        $pdo = $this->pdo();
+        $this->seedCatalog($pdo);
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $gnd = $repo->saveGrade(4, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+
+        $added = $scales->completeForTenant(4, 'FR_CLASSIC');
+        self::assertSame(3, $added);
+        $codes = array_column($repo->listGrades(4, false), 'code');
+        sort($codes);
+        self::assertSame(['SD2', 'SGT', 'SL'], $codes);
+        $leftover = $repo->findGrade($gnd, 4);
+        self::assertNotEmpty($leftover['archived_at'] ?? null);
+        self::assertSame(0, $scales->completeForTenant(4, 'FR_CLASSIC'));
     }
 
     public function testLeDepotNeReecritPasLaVoieDObtention(): void
@@ -335,5 +400,24 @@ final class AdvancementEligibilityServiceTest extends TestCase
         $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY)');
 
         return $pdo;
+    }
+
+    private function seedCatalog(PDO $pdo): void
+    {
+        $pdo->exec('CREATE TABLE grade_categories (id INTEGER PRIMARY KEY, code TEXT, label TEXT, sort_order INT)');
+        $pdo->exec('CREATE TABLE grade_systems (id INTEGER PRIMARY KEY, code TEXT, label TEXT)');
+        $pdo->exec('CREATE TABLE grades (
+            id INTEGER PRIMARY KEY, grade_system_id INT, grade_category_id INT, code TEXT,
+            label_short TEXT, label_long TEXT, label_otan TEXT, sort_order INT, is_commissioned INT, is_active INT
+        )');
+        $pdo->exec("INSERT INTO grade_categories (id, code, label, sort_order) VALUES
+            (1, 'OFFICIER', 'Officier', 10),
+            (2, 'SOUS_OFFICIER', 'Sous-officier', 20),
+            (3, 'MDR', 'Militaire du rang', 30)");
+        $pdo->exec("INSERT INTO grade_systems (id, code, label) VALUES (1, 'FR_CLASSIC', 'FR')");
+        $pdo->exec("INSERT INTO grades (id, grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active) VALUES
+            (1, 1, 3, 'SD2', 'Sdt 2', 'Soldat de 2e classe', 'OR-1', 34, 0, 1),
+            (2, 1, 2, 'SGT', 'Sgt', 'Sergent', 'OR-5', 25, 0, 1),
+            (3, 1, 1, 'SL', 'Slt', 'Sous-lieutenant', 'OF-1', 11, 1, 1)");
     }
 }

@@ -21,6 +21,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Référentiel des grades</h1>
         <div class="flex items-center gap-3">
+            <a href="<?= url('back-office/organisation/grades') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Règles d’avancement →</a>
             <a href="<?= url('back-office/referentiels/grades/catalogue') ?>" class="text-sm font-medium text-emerald-800 underline hover:text-emerald-950">Catalogue OTAN / audit →</a>
             <a href="<?= url('back-office/referentiels/competences') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Matrice de compétences →</a>
             <a href="<?= url('back-office/referentiels/grades/create') ?>?tab=<?= rawurlencode($tab === 'us' ? 'us' : 'fr') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
@@ -32,6 +33,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
     <?php endif; ?>
+    <p class="mb-6 text-sm text-slate-600">Référentiel unique : FR_CLASSIC et US_CLASSIC. L’avancement de chaque communauté projette ces grades, il ne duplique pas une autre échelle.</p>
 
     <nav class="flex flex-wrap gap-2 border-b border-slate-200 mb-6">
         <a href="<?= url('back-office/referentiels/grades') . $gradesQuerySuffix('fr', $gradeCategoryFilterId) ?>" class="px-4 py-2 text-sm font-medium <?= $tab === 'fr' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades français</a>

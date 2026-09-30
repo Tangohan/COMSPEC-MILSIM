@@ -48,5 +48,14 @@ final class AdvancementSystemAssetTest extends TestCase
         self::assertStringContainsString('bo-qual-card', $qualifications);
         self::assertStringContainsString('Générer le brevet', $qualifications);
         self::assertStringContainsString('Expire dans', $qualifications);
+
+        $gradesIndex = (string) file_get_contents($root . '/views/admin/advancement/grades_index.php');
+        $scaleService = (string) file_get_contents($root . '/app/Services/Advancement/GradeScaleTemplateService.php');
+        self::assertStringContainsString('Référentiel unique', $gradesIndex);
+        self::assertStringNotContainsString('Dupliquer une échelle', $gradesIndex);
+        self::assertStringNotContainsString('Nouveau grade', $gradesIndex);
+        self::assertStringNotContainsString("'gendarmerie'", $scaleService);
+        self::assertStringNotContainsString("'us_army_enlisted'", $scaleService);
+        self::assertStringContainsString('back-office/referentiels/grades', (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
     }
 }

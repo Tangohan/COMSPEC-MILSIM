@@ -198,6 +198,27 @@ final class AdvancementRepository
         $st->execute([$id, $tenantId]);
     }
 
+    public function restoreGrade(int $id, int $tenantId): void
+    {
+        $st = $this->pdo->prepare(
+            'UPDATE grade_definitions SET archived_at = NULL WHERE id = ? AND tenant_id = ?'
+        );
+        $st->execute([$id, $tenantId]);
+    }
+
+    public function gradeIsReferenced(int $gradeId): bool
+    {
+        $hist = $this->pdo->prepare('SELECT 1 FROM personnel_grade_history WHERE grade_id = ? LIMIT 1');
+        $hist->execute([$gradeId]);
+        if ($hist->fetchColumn()) {
+            return true;
+        }
+        $camp = $this->pdo->prepare('SELECT 1 FROM advancement_campaigns WHERE grade_id = ? LIMIT 1');
+        $camp->execute([$gradeId]);
+
+        return (bool) $camp->fetchColumn();
+    }
+
     /**
      * @param list<int> $orderedIds
      */

@@ -22,7 +22,8 @@ $format = static function (string $iso): string {
         <p>Ouvrez une campagne pour le grade visé, collectez les candidatures, réunissez la commission, puis publiez le tableau.</p>
         <div class="adv-actions">
             <a class="ath-btn ath-btn--solid" href="<?= adv_h(url('back-office/rh/avancement/create')) ?>">Nouvelle campagne</a>
-            <a class="ath-btn" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Référentiel des grades</a>
+            <a class="ath-btn" href="<?= adv_h(url('back-office/referentiels/grades')) ?>">Référentiel des grades</a>
+            <a class="ath-btn" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
         </div>
     </section>
     <div class="adv-table-wrap">

@@ -40,15 +40,14 @@ final class AdvancementAdminController
         $added = $this->templates->completeForTenant($tenantId);
         if ($added > 0) {
             $message = $before === 0
-                ? 'Échelle initialisée pour cette communauté (' . $added . ' grades).'
-                : $added . ' grade(s) manquant(s) ajouté(s) pour compléter l’échelle.';
+                ? 'Échelle alignée sur le référentiel unique (' . $added . ' grades).'
+                : $added . ' grade(s) du référentiel ajouté(s) à l’échelle d’avancement.';
             Session::flash('success', $message);
         }
 
-        return $this->page('Grades', 'ORGANISATION · GRADES', 'Échelle de grades de la communauté. Un grade déjà attribué s’archive, il ne se supprime pas.', 'admin.advancement.grades_index', [
+        return $this->page('Règles d’avancement', 'ORGANISATION · GRADES', 'Projection du référentiel unique : ancienneté, choix, temps mini. Les grades se gèrent dans Référentiels → Grades.', 'admin.advancement.grades_index', [
             'grades' => $this->repository->listGrades($tenantId, true),
             'filieres' => $this->repository->listFilieres($tenantId),
-            'templates' => $this->templates->templates(),
             'personnel' => $this->repository->listPersonnel($tenantId),
             'gradeOrder' => $this->workflow->detectGradeOrder($tenantId),
         ]);
@@ -60,13 +59,9 @@ final class AdvancementAdminController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
+        Session::flash('success', 'Les grades se créent dans le référentiel unique, pas dans une échelle parallèle.');
 
-        return $this->page('Nouveau grade', 'ORGANISATION · GRADES', 'Le code reste stable même si le libellé change.', 'admin.advancement.grade_form', [
-            'grade' => null,
-            'filieres' => $this->repository->listFilieres($tenantId),
-            'qualifications' => $this->repository->listQualifications($tenantId),
-        ]);
+        return Response::redirect(url('back-office/referentiels/grades'));
     }
 
     public function gradeStore(Request $request, array $params = []): Response
@@ -206,9 +201,13 @@ final class AdvancementAdminController
             return $ctx;
         }
         [$tenantId] = $ctx;
-        $code = (string) $request->input('template', 'generique');
-        $ok = $this->templates->duplicate($tenantId, $code);
-        Session::flash($ok ? 'success' : 'error', $ok ? 'Échelle dupliquée dans la communauté.' : 'Modèle inconnu ou tables absentes.');
+        $added = $this->templates->completeForTenant($tenantId);
+        Session::flash(
+            'success',
+            $added > 0
+                ? 'Échelle alignée sur le référentiel unique (' . $added . ' grade(s) ajouté(s)).'
+                : 'Échelle déjà alignée sur le référentiel unique.'
+        );
 
         return Response::redirect(url('back-office/organisation/grades'));
     }

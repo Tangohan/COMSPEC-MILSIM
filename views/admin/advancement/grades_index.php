@@ -2,7 +2,6 @@
 require __DIR__ . '/_helpers.php';
 $grades = is_array($grades ?? null) ? $grades : [];
 $filieres = is_array($filieres ?? null) ? $filieres : [];
-$templates = is_array($templates ?? null) ? $templates : [];
 $personnel = is_array($personnel ?? null) ? $personnel : [];
 $gradeOrder = is_array($gradeOrder ?? null) ? $gradeOrder : ['order' => [], 'detections' => []];
 $detections = is_array($gradeOrder['detections'] ?? null) ? $gradeOrder['detections'] : [];
@@ -18,38 +17,25 @@ foreach ($grades as $grade) {
 <div class="adv-page" data-adv-page="grades">
     <?php require __DIR__ . '/_flash.php'; ?>
     <div class="adv-actions">
-        <a class="ath-btn ath-btn--solid" href="<?= adv_h(url('back-office/organisation/grades/create')) ?>">Nouveau grade</a>
+        <a class="ath-btn ath-btn--solid" href="<?= adv_h(url('back-office/referentiels/grades')) ?>">Référentiel des grades</a>
         <a class="ath-btn" href="<?= adv_h(url('back-office/rh/avancement')) ?>">Campagnes d’avancement</a>
     </div>
 
     <section class="adv-panel">
-        <h2>Dupliquer une échelle <?= adv_info('Échelle', 'Copie propre à la communauté. Les grades déjà créés ne sont pas écrasés : seuls les codes manquants s’ajoutent.') ?></h2>
-        <form method="post" action="<?= adv_h(url('back-office/organisation/grades/importer')) ?>" class="adv-inline">
-            <?= \App\Core\Csrf::field() ?>
-            <select name="template" class="adv-search" data-placeholder="Choisir un modèle">
-                <?php foreach ($templates as $code => $tpl): ?>
-                    <option value="<?= adv_h((string) $code) ?>"><?= adv_h((string) ($tpl['label'] ?? $code)) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <button class="ath-btn" type="submit">Dupliquer</button>
-        </form>
+        <h2>Référentiel unique <?= adv_info('Référentiel', 'Un seul catalogue : FR_CLASSIC et US_CLASSIC. Cette page ne duplique pas une autre échelle : elle projette les grades du référentiel pour régler ancienneté, choix et temps mini.') ?></h2>
+        <p class="adv-muted">Les codes et libellés se gèrent dans le référentiel. Ici, seulement les règles d’avancement de la communauté.</p>
     </section>
 
     <section class="adv-panel">
-        <h2>Filières <?= adv_info('Filières', 'L’avancement se calcule dans une même filière : militaire du rang, sous-officier, officier… Un caporal n’est pas comparé à un lieutenant.') ?></h2>
-        <form method="post" action="<?= adv_h(url('back-office/organisation/grades/filieres')) ?>" class="adv-inline">
-            <?= \App\Core\Csrf::field() ?>
-            <input name="code" placeholder="Code" required maxlength="64">
-            <input name="label" placeholder="Libellé" required maxlength="150">
-            <input name="sort_order" type="number" value="0" aria-label="Ordre d’affichage des filières">
-            <button class="ath-btn" type="submit">Ajouter</button>
-        </form>
+        <h2>Filières <?= adv_info('Filières', 'Elles viennent des catégories du référentiel (militaire du rang, sous-officier, officier…). L’avancement se calcule dans une même filière.') ?></h2>
         <?php if ($filieres !== []): ?>
             <ul class="adv-chips">
                 <?php foreach ($filieres as $filiere): ?>
                     <li><?= adv_h((string) ($filiere['label'] ?? '')) ?> <span><?= adv_h((string) ($filiere['code'] ?? '')) ?></span></li>
                 <?php endforeach; ?>
             </ul>
+        <?php else: ?>
+            <p class="adv-muted">Aucune filière : le référentiel n’a pas encore été projeté.</p>
         <?php endif; ?>
     </section>
 
@@ -94,12 +80,12 @@ foreach ($grades as $grade) {
                         <td><?= adv_h((string) ($grade['required_qualification_name'] ?? '')) ?: '—' ?></td>
                         <td><?= $archived ? 'Archivé' : 'Actif' ?></td>
                         <td class="adv-row-actions">
-                            <a href="<?= adv_h(url('back-office/organisation/grades/' . (int) $grade['id'] . '/edit')) ?>">Modifier</a>
+                            <a href="<?= adv_h(url('back-office/organisation/grades/' . (int) $grade['id'] . '/edit')) ?>">Règles</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if ($grades === []): ?>
-                    <tr><td colspan="10" class="adv-muted">Aucun grade. Dupliquez une échelle ci-dessus ou créez un grade.</td></tr>
+                    <tr><td colspan="10" class="adv-muted">Aucun grade. Ouvrez le référentiel unique pour vérifier FR_CLASSIC / US_CLASSIC, puis rechargez cette page.</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>
