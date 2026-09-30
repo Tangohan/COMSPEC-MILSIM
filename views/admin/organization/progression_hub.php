@@ -77,6 +77,10 @@ $axesReady = !empty($stats['axes_schema_ready']);
             <p class="text-sm font-black text-slate-700">Parcours &amp; étapes</p>
             <p class="mt-1 text-xs text-slate-500">Éditeur visuel + conditions ALL/ANY — prochain lot<?= $schemaReady ? ' (tables prêtes)' : '' ?>.</p>
         </div>
+        <a href="<?= $h(url('back-office/organisation/passes')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
+            <p class="text-sm font-black text-slate-900">PASS RH</p>
+            <p class="mt-1 text-xs text-slate-600">Packs de conditions (formation, heures, grade, avis) pour postes, avancement et notations.</p>
+        </a>
         <a href="<?= $h(url('back-office/rh/avancement')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
             <p class="text-sm font-black text-slate-900">Avancement de grade</p>
             <p class="mt-1 text-xs text-slate-600">Campagnes au choix, commission, publication du tableau — distinct de l’ancienneté automatique.</p>

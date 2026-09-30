@@ -65,6 +65,7 @@ final class AdvancementAdminController
             'grade' => null,
             'filieres' => $this->repository->listFilieres($tenantId),
             'qualifications' => $this->repository->listQualifications($tenantId),
+            'passes' => $this->listAdvancementPasses($tenantId),
         ]);
     }
 
@@ -103,6 +104,7 @@ final class AdvancementAdminController
             'grade' => $grade,
             'filieres' => $this->repository->listFilieres($tenantId),
             'qualifications' => $this->repository->listQualifications($tenantId),
+            'passes' => $this->listAdvancementPasses($tenantId),
         ]);
     }
 
@@ -592,7 +594,20 @@ final class AdvancementAdminController
             'min_time_in_previous_grade_months' => $request->input('min_time_in_previous_grade_months', ''),
             'required_qualification_id' => $qualId,
             'required_qualification_level_id' => (int) $request->input('required_qualification_level_id', 0),
+            'required_pass_id' => (int) $request->input('required_pass_id', 0),
         ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function listAdvancementPasses(int $tenantId): array
+    {
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\PersonnelPassRepository::class);
+
+            return $repo->listPasses($tenantId, true, 'advancement');
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

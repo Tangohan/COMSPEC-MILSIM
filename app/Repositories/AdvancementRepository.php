@@ -158,34 +158,68 @@ final class AdvancementRepository
                 : null,
             'required_qualification_id' => !empty($data['required_qualification_id']) ? (int) $data['required_qualification_id'] : null,
             'required_qualification_level_id' => !empty($data['required_qualification_level_id']) ? (int) $data['required_qualification_level_id'] : null,
+            'required_pass_id' => !empty($data['required_pass_id']) ? (int) $data['required_pass_id'] : null,
         ];
+        $hasPassCol = $this->hasColumn('grade_definitions', 'required_pass_id');
         if ($id !== null && $id > 0) {
-            $st = $this->pdo->prepare(
-                'UPDATE grade_definitions
-                 SET code = ?, label = ?, short_label = ?, filiere_id = ?, rank_order = ?,
-                     advancement_seniority_enabled = ?, advancement_choice_enabled = ?,
-                     min_time_in_previous_grade_months = ?, required_qualification_id = ?, required_qualification_level_id = ?
-                 WHERE id = ? AND tenant_id = ?'
-            );
-            $st->execute([
-                $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
-                $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
-                $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
-                $id, $tenantId,
-            ]);
+            if ($hasPassCol) {
+                $st = $this->pdo->prepare(
+                    'UPDATE grade_definitions
+                     SET code = ?, label = ?, short_label = ?, filiere_id = ?, rank_order = ?,
+                         advancement_seniority_enabled = ?, advancement_choice_enabled = ?,
+                         min_time_in_previous_grade_months = ?, required_qualification_id = ?, required_qualification_level_id = ?,
+                         required_pass_id = ?
+                     WHERE id = ? AND tenant_id = ?'
+                );
+                $st->execute([
+                    $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
+                    $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
+                    $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
+                    $fields['required_pass_id'],
+                    $id, $tenantId,
+                ]);
+            } else {
+                $st = $this->pdo->prepare(
+                    'UPDATE grade_definitions
+                     SET code = ?, label = ?, short_label = ?, filiere_id = ?, rank_order = ?,
+                         advancement_seniority_enabled = ?, advancement_choice_enabled = ?,
+                         min_time_in_previous_grade_months = ?, required_qualification_id = ?, required_qualification_level_id = ?
+                     WHERE id = ? AND tenant_id = ?'
+                );
+                $st->execute([
+                    $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
+                    $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
+                    $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
+                    $id, $tenantId,
+                ]);
+            }
 
             return $id;
         }
-        $st = $this->pdo->prepare(
-            'INSERT INTO grade_definitions
-             (tenant_id, code, label, short_label, filiere_id, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months, required_qualification_id, required_qualification_level_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $st->execute([
-            $tenantId, $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
-            $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
-            $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
-        ]);
+        if ($hasPassCol) {
+            $st = $this->pdo->prepare(
+                'INSERT INTO grade_definitions
+                 (tenant_id, code, label, short_label, filiere_id, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months, required_qualification_id, required_qualification_level_id, required_pass_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $st->execute([
+                $tenantId, $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
+                $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
+                $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
+                $fields['required_pass_id'],
+            ]);
+        } else {
+            $st = $this->pdo->prepare(
+                'INSERT INTO grade_definitions
+                 (tenant_id, code, label, short_label, filiere_id, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months, required_qualification_id, required_qualification_level_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $st->execute([
+                $tenantId, $fields['code'], $fields['label'], $fields['short_label'], $fields['filiere_id'], $fields['rank_order'],
+                $fields['advancement_seniority_enabled'], $fields['advancement_choice_enabled'],
+                $fields['min_time_in_previous_grade_months'], $fields['required_qualification_id'], $fields['required_qualification_level_id'],
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -387,11 +421,12 @@ final class AdvancementRepository
     /** @return array<string, mixed>|null */
     public function findCampaign(int $id, int $tenantId): ?array
     {
+        $passCol = $this->hasColumn('grade_definitions', 'required_pass_id') ? ', g.required_pass_id' : '';
         $st = $this->pdo->prepare(
             'SELECT c.*, g.label AS grade_label, g.short_label AS grade_short_label, g.code AS grade_code,
                     g.rank_order AS grade_rank_order, g.filiere_id AS grade_filiere_id,
                     g.min_time_in_previous_grade_months, g.required_qualification_id, g.required_qualification_level_id,
-                    g.advancement_choice_enabled, g.advancement_seniority_enabled
+                    g.advancement_choice_enabled, g.advancement_seniority_enabled' . $passCol . '
              FROM advancement_campaigns c
              INNER JOIN grade_definitions g ON g.id = c.grade_id AND g.tenant_id = c.tenant_id
              WHERE c.id = ? AND c.tenant_id = ?
@@ -829,6 +864,27 @@ final class AdvancementRepository
         } catch (Throwable) {
             return [];
         }
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+            $cache[$key] = (bool) $st->fetchColumn();
+        } catch (Throwable) {
+            $cache[$key] = false;
+        }
+
+        return $cache[$key];
     }
 
     private function candidacyHasExceptional(): bool

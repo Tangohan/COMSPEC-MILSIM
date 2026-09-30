@@ -139,6 +139,11 @@ return [
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Structure & recrutement'],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'css' => ['back-office-seniority.css']],
         ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Parcours, validations, qualifications et règles d’indicatifs.'],
+        ['path' => 'back-office/organisation/passes', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · PASS', 'title' => 'PASS RH', 'subtitle' => 'Packs de conditions pour postes ouverts, avancement et notations.', 'quick' => [
+            ['label' => 'Nouveau PASS', 'href' => 'back-office/organisation/passes/create'],
+            ['label' => 'Avancement', 'href' => 'back-office/rh/avancement'],
+            ['label' => 'Offres', 'href' => 'back-office/recruitment/offers'],
+        ]],
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Règles d’indicatifs', 'subtitle' => 'Séquences transactionnelles, plages réservées et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes'],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes'],
