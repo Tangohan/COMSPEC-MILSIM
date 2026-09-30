@@ -8,7 +8,7 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Seeds rank_catalog (FR ARMY + Gendarmerie partielle) et audit/réparation contrôlée.
+ * Seeds rank_catalog (FR ARMY + Gendarmerie) et audit/réparation contrôlée.
  */
 final class RankCatalogService
 {
@@ -82,7 +82,9 @@ final class RankCatalogService
 
         /* Gendarmerie — OTAN nul si non certain (ne pas inventer). */
         $gendarmerie = [
+            ['Gendarme adjoint volontaire', 'GAV', 'ENLISTED', null, 10],
             ['Gendarme', 'Gend.', 'ENLISTED', null, 20],
+            ['Maréchal des logis', 'MDL', 'NCO', null, 50],
             ['Maréchal des logis-chef', 'MDC', 'NCO', null, 55],
             ['Adjudant', 'Adj', 'NCO', null, 70],
             ['Adjudant-chef', 'Adc', 'SENIOR_NCO', null, 80],
@@ -96,6 +98,8 @@ final class RankCatalogService
             ['Colonel', 'Col', 'OFFICER', null, 160],
             ['Général de brigade', 'Gén. bde', 'GENERAL_OFFICER', null, 170],
             ['Général de division', 'Gén. div.', 'GENERAL_OFFICER', null, 180],
+            ['Général de corps d’armée', 'Gén. c. a.', 'GENERAL_OFFICER', null, 190],
+            ['Général d’armée', 'Gén. armée', 'GENERAL_OFFICER', null, 200],
         ];
         foreach ($gendarmerie as $row) {
             [$name, $short, $cat, $nato, $order] = $row;

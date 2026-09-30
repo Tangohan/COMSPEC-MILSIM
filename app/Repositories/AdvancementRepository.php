@@ -198,6 +198,27 @@ final class AdvancementRepository
         $st->execute([$id, $tenantId]);
     }
 
+    public function restoreGrade(int $id, int $tenantId): void
+    {
+        $st = $this->pdo->prepare(
+            'UPDATE grade_definitions SET archived_at = NULL WHERE id = ? AND tenant_id = ?'
+        );
+        $st->execute([$id, $tenantId]);
+    }
+
+    public function gradeIsReferenced(int $gradeId): bool
+    {
+        $hist = $this->pdo->prepare('SELECT 1 FROM personnel_grade_history WHERE grade_id = ? LIMIT 1');
+        $hist->execute([$gradeId]);
+        if ($hist->fetchColumn()) {
+            return true;
+        }
+        $camp = $this->pdo->prepare('SELECT 1 FROM advancement_campaigns WHERE grade_id = ? LIMIT 1');
+        $camp->execute([$gradeId]);
+
+        return (bool) $camp->fetchColumn();
+    }
+
     /**
      * @param list<int> $orderedIds
      */
@@ -506,6 +527,33 @@ final class AdvancementRepository
     /** @param array<string, mixed> $row */
     public function updateCandidacyReview(int $id, array $row): void
     {
+        if ($this->candidacyHasExceptional()) {
+            $st = $this->pdo->prepare(
+                'UPDATE advancement_candidacies
+                 SET preference_rank = ?, commission_opinion = ?, decision = ?, decided_at = ?, notes = ?,
+                     mobility_requested = ?, requested_billet_id = ?,
+                     exceptional_override = ?, exceptional_reason = ?, exceptional_by = ?, exceptional_at = ?
+                 WHERE id = ?'
+            );
+            $forced = !empty($row['exceptional_override']);
+            $reason = trim((string) ($row['exceptional_reason'] ?? ''));
+            $st->execute([
+                isset($row['preference_rank']) && $row['preference_rank'] !== '' ? (int) $row['preference_rank'] : null,
+                ($row['commission_opinion'] ?? '') !== '' ? (string) $row['commission_opinion'] : null,
+                ($row['decision'] ?? '') !== '' ? (string) $row['decision'] : null,
+                ($row['decided_at'] ?? '') !== '' ? (string) $row['decided_at'] : null,
+                $row['notes'] ?? null,
+                !empty($row['mobility_requested']) ? 1 : 0,
+                !empty($row['requested_billet_id']) ? (int) $row['requested_billet_id'] : null,
+                $forced ? 1 : 0,
+                $forced && $reason !== '' ? $reason : null,
+                $forced && !empty($row['exceptional_by']) ? (int) $row['exceptional_by'] : null,
+                $forced ? (string) ($row['exceptional_at'] ?? date('Y-m-d H:i:s')) : null,
+                $id,
+            ]);
+
+            return;
+        }
         $st = $this->pdo->prepare(
             'UPDATE advancement_candidacies
              SET preference_rank = ?, commission_opinion = ?, decision = ?, decided_at = ?, notes = ?,
@@ -522,6 +570,19 @@ final class AdvancementRepository
             !empty($row['requested_billet_id']) ? (int) $row['requested_billet_id'] : null,
             $id,
         ]);
+    }
+
+    /**
+     * @param array<int, int> $ranksById
+     */
+    public function updatePreferenceRanks(int $campaignId, array $ranksById): void
+    {
+        $st = $this->pdo->prepare(
+            'UPDATE advancement_candidacies SET preference_rank = ? WHERE id = ? AND campaign_id = ?'
+        );
+        foreach ($ranksById as $id => $rank) {
+            $st->execute([(int) $rank, (int) $id, $campaignId]);
+        }
     }
 
     /** @return array<string, mixed>|null */
@@ -740,5 +801,21 @@ final class AdvancementRepository
         } catch (Throwable) {
             return [];
         }
+    }
+
+    private function candidacyHasExceptional(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        try {
+            $this->pdo->query('SELECT exceptional_override FROM advancement_candidacies LIMIT 0');
+            $ready = true;
+        } catch (Throwable) {
+            $ready = false;
+        }
+
+        return $ready;
     }
 }

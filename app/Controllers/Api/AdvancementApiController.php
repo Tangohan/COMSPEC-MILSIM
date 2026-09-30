@@ -124,10 +124,9 @@ final class AdvancementApiController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        $code = (string) ($this->payload($request)['template'] ?? 'generique');
-        $ok = $this->templates->duplicate($ctx[0], $code);
+        $added = $this->templates->completeForTenant($ctx[0]);
 
-        return Response::json(['ok' => $ok], $ok ? 200 : 422);
+        return Response::json(['ok' => true, 'added' => $added]);
     }
 
     public function campaigns(Request $request, array $params = []): Response

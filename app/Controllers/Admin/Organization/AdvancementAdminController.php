@@ -36,12 +36,20 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Grades', 'ORGANISATION · GRADES', 'L’échelle de grades n’est pas encore installée.', 'admin.advancement.unavailable', []);
         }
+        $before = count($this->repository->listGrades($tenantId, true));
+        $added = $this->templates->completeForTenant($tenantId);
+        if ($added > 0) {
+            $message = $before === 0
+                ? 'Référentiel de la communauté initialisé (' . $added . ' grades repris du catalogue).'
+                : $added . ' grade(s) du catalogue ajouté(s). Les grades déjà présents ont été réutilisés.';
+            Session::flash('success', $message);
+        }
 
-        return $this->page('Grades', 'ORGANISATION · GRADES', 'Échelle de grades de la communauté. Un grade déjà attribué s’archive, il ne se supprime pas.', 'admin.advancement.grades_index', [
+        return $this->page('Grades', 'ORGANISATION · GRADES', 'Référentiel de la communauté : catalogue partagé réutilisé, grades et règles d’avancement propres à vous.', 'admin.advancement.grades_index', [
             'grades' => $this->repository->listGrades($tenantId, true),
             'filieres' => $this->repository->listFilieres($tenantId),
-            'templates' => $this->templates->templates(),
             'personnel' => $this->repository->listPersonnel($tenantId),
+            'gradeOrder' => $this->workflow->detectGradeOrder($tenantId),
         ]);
     }
 
@@ -53,7 +61,7 @@ final class AdvancementAdminController
         }
         [$tenantId] = $ctx;
 
-        return $this->page('Nouveau grade', 'ORGANISATION · GRADES', 'Le code reste stable même si le libellé change.', 'admin.advancement.grade_form', [
+        return $this->page('Nouveau grade', 'ORGANISATION · GRADES', 'Grade propre à la communauté. Le code reste stable même si le libellé change.', 'admin.advancement.grade_form', [
             'grade' => null,
             'filieres' => $this->repository->listFilieres($tenantId),
             'qualifications' => $this->repository->listQualifications($tenantId),
@@ -149,6 +157,19 @@ final class AdvancementAdminController
         return Response::redirect(url('back-office/organisation/grades'));
     }
 
+    public function gradeAutoOrder(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guardPost('back-office/organisation/grades');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $out = $this->workflow->autoOrderGrades($tenantId);
+        Session::flash('success', 'Ordre réaligné automatiquement (' . $out['reordered'] . ' grades). Les détections restent visibles sous le tableau.');
+
+        return Response::redirect(url('back-office/organisation/grades'));
+    }
+
     public function filiereStore(Request $request, array $params = []): Response
     {
         $ctx = $this->guardPost('back-office/organisation/grades');
@@ -184,9 +205,13 @@ final class AdvancementAdminController
             return $ctx;
         }
         [$tenantId] = $ctx;
-        $code = (string) $request->input('template', 'generique');
-        $ok = $this->templates->duplicate($tenantId, $code);
-        Session::flash($ok ? 'success' : 'error', $ok ? 'Échelle dupliquée dans la communauté.' : 'Modèle inconnu ou tables absentes.');
+        $added = $this->templates->completeForTenant($tenantId);
+        Session::flash(
+            'success',
+            $added > 0
+                ? 'Catalogue réutilisé : ' . $added . ' grade(s) ajouté(s). Les grades déjà présents sont conservés.'
+                : 'Aucun grade manquant : le référentiel de la communauté est à jour.'
+        );
 
         return Response::redirect(url('back-office/organisation/grades'));
     }
@@ -224,6 +249,7 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Avancement', 'RH · AVANCEMENT', 'Les tables d’avancement ne sont pas encore installées.', 'admin.advancement.unavailable', []);
         }
+        $this->templates->ensureForTenant($tenantId);
 
         return $this->page('Avancement', 'RH · AVANCEMENT', 'Campagnes au choix, par année, grade et filière.', 'admin.advancement.campaigns_index', [
             'campaigns' => $this->repository->listCampaigns($tenantId),
@@ -237,6 +263,7 @@ final class AdvancementAdminController
             return $ctx;
         }
         [$tenantId] = $ctx;
+        $this->templates->ensureForTenant($tenantId);
 
         return $this->page('Nouvelle campagne', 'RH · AVANCEMENT', 'Le quota limite le nombre de promus au moment de la publication.', 'admin.advancement.campaign_form', [
             'grades' => $this->repository->listGrades($tenantId, false),
@@ -291,7 +318,7 @@ final class AdvancementAdminController
 
             return Response::redirect(url('back-office/rh/avancement'));
         }
-        $rows = $this->repository->listCandidacies((int) $campaign['id']);
+        $rows = $this->workflow->decorateCandidacies($tenantId, $campaign, $this->repository->listCandidacies((int) $campaign['id']));
         $ranked = 0;
         foreach ($rows as $row) {
             if ($row['preference_rank'] !== null && $row['preference_rank'] !== '') {
@@ -305,6 +332,7 @@ final class AdvancementAdminController
             'rankedTotal' => $ranked,
             'personnel' => $this->repository->listPersonnel($tenantId),
             'billets' => $this->repository->listBillets($tenantId),
+            'detections' => $this->workflow->detectCandidacies($tenantId, $campaign, $rows),
         ]);
     }
 
@@ -377,14 +405,18 @@ final class AdvancementAdminController
         if ($campaign === null) {
             return Response::redirect(url('back-office/rh/avancement'));
         }
+        $commission = $this->repository->findCommission((int) $campaign['id']);
+        $rows = $this->workflow->decorateCandidacies($tenantId, $campaign, $this->repository->listCandidacies((int) $campaign['id']));
+        $members = is_array($commission['members'] ?? null) ? $commission['members'] : [];
 
-        return $this->page('Commission', 'RH · AVANCEMENT', 'L’avis et la décision se saisissent ici. Le poste visé informe la commission, il n’est pas réservé.', 'admin.advancement.commission', [
+        return $this->page('Commission', 'RH · AVANCEMENT', 'L’avis et la décision se saisissent ici. Un passage exceptionnel reste possible, avec motif.', 'admin.advancement.commission', [
             'campaign' => $campaign,
-            'candidacies' => $this->repository->listCandidacies((int) $campaign['id']),
-            'commission' => $this->repository->findCommission((int) $campaign['id']),
+            'candidacies' => $rows,
+            'commission' => $commission,
             'personnel' => $this->repository->listPersonnel($tenantId),
             'documents' => $this->repository->listDocuments($tenantId),
             'billets' => $this->repository->listBillets($tenantId),
+            'detections' => $this->workflow->detectCandidacies($tenantId, $campaign, $rows, $members),
         ]);
     }
 
@@ -415,7 +447,7 @@ final class AdvancementAdminController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
+        [$tenantId, $userId] = $ctx;
         $posted = $request->input('candidacy', []);
         $rows = [];
         if (is_array($posted)) {
@@ -447,9 +479,30 @@ final class AdvancementAdminController
                 $rows,
                 (string) $request->input('meeting_date', ''),
                 (int) $request->input('minutes_document_id', 0),
-                $members
+                $members,
+                $userId
             );
             Session::flash('success', 'Commission enregistrée.');
+        } catch (Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect(url('back-office/rh/avancement/' . $id . '/commission'));
+    }
+
+    public function commissionAutoRank(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $ctx = $this->guardPost('back-office/rh/avancement/' . $id . '/commission');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $commission = $this->repository->findCommission($id);
+        $members = is_array($commission['members'] ?? null) ? $commission['members'] : [];
+        try {
+            $out = $this->workflow->autoRankCandidacies($tenantId, $id, $members);
+            Session::flash('success', 'Classement recalculé : éligibles d’abord, puis ancienneté et date de candidature (' . count($out['ranks']) . ' rangs).');
         } catch (Throwable $e) {
             Session::flash('error', $e->getMessage());
         }

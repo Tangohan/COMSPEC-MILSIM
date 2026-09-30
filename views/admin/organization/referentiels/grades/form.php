@@ -5,9 +5,16 @@ $categories = $categories ?? [];
 $isEdit = $grade !== null;
 $returnTab = ($returnTab ?? 'fr') === 'us' ? 'us' : 'fr';
 $flashError = \App\Core\Session::getFlash('error');
+$tenantOwned = !empty($tenantOwned);
+$catalogLocked = $isEdit;
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le grade' : 'Nouveau grade' ?></h1>
+    <?php if ($tenantOwned): ?>
+    <p class="mb-4 text-sm text-slate-600"><?= $isEdit
+        ? 'Les libellés et la visibilité s’appliquent à cette communauté. Le catalogue partagé (codes FR/US) est réutilisé, pas recopié.'
+        : 'Ce grade sera propre à la communauté. Le catalogue FR/US des autres communautés n’est pas modifié.' ?></p>
+    <?php endif; ?>
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
     <?php endif; ?>
@@ -15,25 +22,31 @@ $flashError = \App\Core\Session::getFlash('error');
         <?= \App\Core\Csrf::field() ?>
         <div>
             <label for="grade_system_id" class="block text-sm font-medium text-slate-700">Système de grade</label>
-            <select id="grade_system_id" name="grade_system_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="grade_system_id" name="grade_system_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($systems as $s): ?>
                 <option value="<?= (int) $s['id'] ?>" <?= ($grade['grade_system_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= htmlspecialchars($s['label']) ?> (<?= htmlspecialchars($s['code']) ?>)</option>
                 <?php endforeach; ?>
             </select>
+            <?php if ($catalogLocked): ?>
+            <input type="hidden" name="grade_system_id" value="<?= (int) ($grade['grade_system_id'] ?? 0) ?>">
+            <?php endif; ?>
         </div>
         <div>
             <label for="grade_category_id" class="block text-sm font-medium text-slate-700">Catégorie</label>
-            <select id="grade_category_id" name="grade_category_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
+            <select id="grade_category_id" name="grade_category_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($categories as $c): ?>
                 <option value="<?= (int) $c['id'] ?>" <?= ($grade['grade_category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['label']) ?> (<?= htmlspecialchars($c['code']) ?>)</option>
                 <?php endforeach; ?>
             </select>
+            <?php if ($catalogLocked): ?>
+            <input type="hidden" name="grade_category_id" value="<?= (int) ($grade['grade_category_id'] ?? 0) ?>">
+            <?php endif; ?>
         </div>
         <div>
             <label for="code" class="block text-sm font-medium text-slate-700">Code</label>
-            <input type="text" id="code" name="code" value="<?= htmlspecialchars($grade['code'] ?? '') ?>" required maxlength="50" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" placeholder="ex. CNE">
+            <input type="text" id="code" name="code" value="<?= htmlspecialchars($grade['code'] ?? '') ?>" required maxlength="50" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" placeholder="ex. CNE" <?= $catalogLocked ? 'readonly' : '' ?>>
         </div>
         <div>
             <label for="label_short" class="block text-sm font-medium text-slate-700">Libellé court</label>
@@ -58,7 +71,7 @@ $flashError = \App\Core\Session::getFlash('error');
         <?php if ($isEdit): ?>
         <div class="flex items-center gap-2">
             <input type="checkbox" id="is_active" name="is_active" value="1" <?= !empty($grade['is_active']) ? 'checked' : '' ?> class="rounded border-slate-300">
-            <label for="is_active" class="text-sm text-slate-700">Actif</label>
+            <label for="is_active" class="text-sm text-slate-700">Visible dans cette communauté</label>
         </div>
         <?php endif; ?>
         <div class="flex gap-3 pt-4">

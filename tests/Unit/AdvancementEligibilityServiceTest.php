@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Repositories\AdvancementRepository;
 use App\Services\Advancement\AdvancementEligibilityService;
 use App\Services\Advancement\AdvancementNotifier;
+use App\Services\Advancement\AdvancementRankingService;
 use App\Services\Advancement\AdvancementWorkflowService;
 use App\Services\Advancement\GradeScaleTemplateService;
 use DateTimeImmutable;
@@ -142,6 +143,64 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame('2026-09-30', $active['obtained_at']);
     }
 
+    public function testPublicationExceptionnellePasseOutreLeTempsDeGrade(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months) VALUES (1, 7, 'GND', 'Gendarme', 1, 1, 0, 0)");
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months) VALUES (2, 7, 'MDL', 'Maréchal des logis', 2, 0, 1, 12)");
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status) VALUES (4, 7, 'Tanguy', 'tanguy@example.test', 'active')");
+        $pdo->exec("INSERT INTO personnel_grade_history (id, personnel_id, grade_id, obtained_at, obtained_via) VALUES (10, 4, 1, '2026-09-30', 'initial')");
+        $pdo->exec("INSERT INTO advancement_campaigns (id, tenant_id, grade_id, year, opens_at, closes_at, status) VALUES (3, 7, 2, 2026, '2026-01-01', '2026-12-31', 'en_commission')");
+        $pdo->exec("INSERT INTO advancement_candidacies (id, campaign_id, personnel_id, is_eligible, decision) VALUES (8, 3, 4, 1, 'inscrit')");
+
+        try {
+            $workflow->publish(7, 3, 4, new DateTimeImmutable('2026-09-30'));
+            self::fail('La publication sans motif exceptionnel doit échouer.');
+        } catch (RuntimeException $e) {
+            self::assertStringContainsString('n’est plus éligible', $e->getMessage());
+        }
+
+        $pdo->exec("UPDATE advancement_candidacies SET exceptional_override = 1, exceptional_reason = 'Besoin opérationnel du groupement' WHERE id = 8");
+        $out = $workflow->publish(7, 3, 4, new DateTimeImmutable('2026-09-30'));
+        self::assertSame(1, $out['promoted']);
+        $active = $repo->activeGrade(7, 4);
+        self::assertSame('exception', $active['obtained_via']);
+        self::assertSame(2, (int) $active['grade_id']);
+    }
+
+    public function testClassementAutomatiqueEtDetections(): void
+    {
+        $svc = new AdvancementRankingService();
+        $out = $svc->proposeCandidacyOrder([
+            ['id' => 1, 'display_name' => 'Junior', 'is_eligible' => 0, 'months_in_grade' => 40, 'volunteered_at' => '2026-01-01'],
+            ['id' => 2, 'display_name' => 'Ancien', 'is_eligible' => 1, 'months_in_grade' => 20, 'volunteered_at' => '2026-01-02'],
+            ['id' => 3, 'display_name' => 'Récent', 'is_eligible' => 1, 'months_in_grade' => 8, 'volunteered_at' => '2026-01-01'],
+        ]);
+        self::assertSame(1, $out['ranks'][2]);
+        self::assertSame(2, $out['ranks'][3]);
+        self::assertSame(3, $out['ranks'][1]);
+
+        $hits = $svc->detectCandidacies([
+            ['id' => 1, 'display_name' => 'Ada', 'preference_rank' => 1, 'is_eligible' => 1, 'decision' => 'inscrit'],
+            ['id' => 2, 'display_name' => 'Bob', 'preference_rank' => 1, 'is_eligible' => 0, 'decision' => 'inscrit'],
+        ]);
+        $codes = array_column($hits, 'code');
+        self::assertContains('rang_double', $codes);
+        self::assertContains('ineligible_listed', $codes);
+
+        $grades = $svc->proposeGradeOrder([
+            ['id' => 1, 'code' => 'COL', 'label' => 'Colonel', 'filiere_id' => 3, 'rank_order' => 1],
+            ['id' => 2, 'code' => 'SL', 'label' => 'Sous-lieutenant', 'filiere_id' => 3, 'rank_order' => 2],
+        ]);
+        self::assertSame([2, 1], $grades['order']);
+    }
+
     public function testDuplicationDEchelleEstPropreALaCommunaute(): void
     {
         $pdo = $this->pdo();
@@ -155,11 +214,178 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame(7, (int) $grades[0]['tenant_id']);
         $codes = array_column($grades, 'code');
         self::assertContains('MAJ', $codes);
+        self::assertContains('SD2', $codes);
+        self::assertContains('COL', $codes);
+        self::assertContains('GAR', $codes);
+        self::assertContains('SL', $codes);
+        self::assertNotContains('ASP', $codes);
+        self::assertNotContains('GAV', $codes);
+        self::assertGreaterThanOrEqual(19, count($codes));
 
-        self::assertTrue($scales->duplicate(8, 'us_army_enlisted'));
+        self::assertTrue($scales->duplicate(8, 'us_classic'));
         $us = array_column($repo->listGrades(8, true), 'code');
         self::assertContains('SGM', $us);
+        self::assertContains('PVT', $us);
+        self::assertContains('GEN', $us);
         self::assertNotContains('SGM', $codes);
+        self::assertNotContains('WO1', $us);
+        self::assertNotContains('SPC', $us);
+    }
+
+    public function testEnsurePourUneCommunauteExistanteResteIdempotent(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        self::assertTrue($scales->ensureForTenant(9, 'generique'));
+        $first = $repo->listGrades(9, true);
+        self::assertNotEmpty($first);
+        self::assertFalse($scales->ensureForTenant(9, 'us_classic'));
+        self::assertCount(count($first), $repo->listGrades(9, true));
+    }
+
+    public function testLesModelesCouvrentTouteLaHierarchie(): void
+    {
+        $scales = new GradeScaleTemplateService(new AdvancementRepository($this->pdo()));
+        $templates = $scales->templates();
+        $fr = array_column($templates['fr_classic']['grades'], 'code');
+        $us = array_column($templates['us_classic']['grades'], 'code');
+
+        self::assertSame(['fr_classic', 'us_classic', 'generique'], array_keys($templates));
+        self::assertArrayNotHasKey('gendarmerie', $templates);
+        self::assertArrayNotHasKey('us_army_enlisted', $templates);
+        self::assertSame('fr_classic', $scales->templateForSystem('FR_CLASSIC'));
+        self::assertSame('us_classic', $scales->templateForSystem('US_CLASSIC'));
+        self::assertContains('SD2', $fr);
+        self::assertContains('CCH', $fr);
+        self::assertContains('SCH', $fr);
+        self::assertContains('SL', $fr);
+        self::assertContains('COL', $fr);
+        self::assertContains('GAR', $fr);
+        self::assertNotContains('ASP', $fr);
+        self::assertNotContains('GAV', $fr);
+        self::assertContains('PVT', $us);
+        self::assertContains('CPL', $us);
+        self::assertContains('SGM', $us);
+        self::assertContains('GEN', $us);
+        self::assertNotContains('SPC', $us);
+        self::assertNotContains('1SG', $us);
+        self::assertNotContains('CW5', $us);
+    }
+
+    public function testCompleteSansReferentielNeMelangePasUneEchelleExistante(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $repo->saveFiliere(3, ['code' => 'cadre', 'label' => 'Cadre', 'sort_order' => 1]);
+        $repo->saveGrade(3, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+        $repo->saveGrade(3, [
+            'code' => 'MAJ',
+            'label' => 'Major',
+            'short_label' => 'MAJ',
+            'rank_order' => 2,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+        ]);
+
+        $added = $scales->completeForTenant(3, 'FR_CLASSIC');
+        self::assertSame(0, $added);
+        $codes = array_column($repo->listGrades(3, true), 'code');
+        self::assertSame(['GND', 'MAJ'], $codes);
+        self::assertSame(0, $scales->completeForTenant(3, 'FR_CLASSIC'));
+    }
+
+    public function testArchiveLesGradesHorsReferentielInutilises(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $gnd = $repo->saveGrade(5, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+        $maj = $repo->saveGrade(5, [
+            'code' => 'MAJ',
+            'label' => 'Major',
+            'short_label' => 'MAJ',
+            'rank_order' => 2,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+        ]);
+        $pdo->prepare('INSERT INTO personnel_grade_history (personnel_id, grade_id, obtained_at, obtained_via) VALUES (1, ?, ?, ?)')
+            ->execute([$maj, '2024-01-01', 'initial']);
+
+        self::assertSame(1, $scales->archiveUnusedGradesNotIn(5, ['MAJ', 'SD2']));
+        $gndRow = $repo->findGrade($gnd, 5);
+        $majRow = $repo->findGrade($maj, 5);
+        self::assertNotEmpty($gndRow['archived_at'] ?? null);
+        self::assertEmpty($majRow['archived_at'] ?? null);
+    }
+
+    public function testCompleteProjetteLeReferentielUnique(): void
+    {
+        $pdo = $this->pdo();
+        $this->seedCatalog($pdo);
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $gnd = $repo->saveGrade(4, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+
+        $added = $scales->completeForTenant(4, 'FR_CLASSIC');
+        self::assertSame(3, $added);
+        $codes = array_column($repo->listGrades(4, false), 'code');
+        sort($codes);
+        self::assertSame(['GND', 'SD2', 'SGT', 'SL'], $codes);
+        $leftover = $repo->findGrade($gnd, 4);
+        self::assertSame('Gendarme', (string) ($leftover['label'] ?? ''));
+        self::assertEmpty($leftover['archived_at'] ?? null);
+        self::assertSame(0, $scales->completeForTenant(4, 'FR_CLASSIC'));
+    }
+
+    public function testCompleteReutiliseUnGradeDejaPresent(): void
+    {
+        $pdo = $this->pdo();
+        $this->seedCatalog($pdo);
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $repo->saveGrade(6, [
+            'code' => 'SD2',
+            'label' => 'Bleu de la commu',
+            'short_label' => 'Bleu',
+            'rank_order' => 9,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+            'min_time_in_previous_grade_months' => 3,
+        ]);
+
+        self::assertSame(2, $scales->completeForTenant(6, 'FR_CLASSIC'));
+        $sd2 = $repo->findGradeByCode(6, 'SD2');
+        self::assertSame('Bleu de la commu', (string) ($sd2['label'] ?? ''));
+        self::assertSame(9, (int) ($sd2['rank_order'] ?? 0));
+        self::assertSame(3, (int) ($sd2['min_time_in_previous_grade_months'] ?? 0));
     }
 
     public function testLeDepotNeReecritPasLaVoieDObtention(): void
@@ -191,12 +417,32 @@ final class AdvancementEligibilityServiceTest extends TestCase
         $pdo->exec('CREATE TABLE advancement_candidacies (
             id INTEGER PRIMARY KEY AUTOINCREMENT, campaign_id INT, personnel_id INT, volunteered_at TEXT,
             is_eligible INT, eligibility_reason TEXT, preference_rank INT, commission_opinion TEXT, decision TEXT,
-            decided_at TEXT, mobility_requested INT, requested_billet_id INT, notes TEXT, created_by INT
+            decided_at TEXT, mobility_requested INT, requested_billet_id INT, notes TEXT, created_by INT,
+            exceptional_override INT DEFAULT 0, exceptional_reason TEXT, exceptional_by INT, exceptional_at TEXT
         )');
         $pdo->exec('CREATE TABLE advancement_commissions (id INTEGER PRIMARY KEY AUTOINCREMENT, campaign_id INT, meeting_date TEXT, minutes_document_id INT)');
         $pdo->exec('CREATE TABLE advancement_commission_members (id INTEGER PRIMARY KEY AUTOINCREMENT, commission_id INT, personnel_id INT, role TEXT)');
         $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY)');
 
         return $pdo;
+    }
+
+    private function seedCatalog(PDO $pdo): void
+    {
+        $pdo->exec('CREATE TABLE grade_categories (id INTEGER PRIMARY KEY, code TEXT, label TEXT, sort_order INT)');
+        $pdo->exec('CREATE TABLE grade_systems (id INTEGER PRIMARY KEY, code TEXT, label TEXT)');
+        $pdo->exec('CREATE TABLE grades (
+            id INTEGER PRIMARY KEY, grade_system_id INT, grade_category_id INT, code TEXT,
+            label_short TEXT, label_long TEXT, label_otan TEXT, sort_order INT, is_commissioned INT, is_active INT
+        )');
+        $pdo->exec("INSERT INTO grade_categories (id, code, label, sort_order) VALUES
+            (1, 'OFFICIER', 'Officier', 10),
+            (2, 'SOUS_OFFICIER', 'Sous-officier', 20),
+            (3, 'MDR', 'Militaire du rang', 30)");
+        $pdo->exec("INSERT INTO grade_systems (id, code, label) VALUES (1, 'FR_CLASSIC', 'FR')");
+        $pdo->exec("INSERT INTO grades (id, grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active) VALUES
+            (1, 1, 3, 'SD2', 'Sdt 2', 'Soldat de 2e classe', 'OR-1', 34, 0, 1),
+            (2, 1, 2, 'SGT', 'Sgt', 'Sergent', 'OR-5', 25, 0, 1),
+            (3, 1, 1, 'SL', 'Slt', 'Sous-lieutenant', 'OF-1', 11, 1, 1)");
     }
 }

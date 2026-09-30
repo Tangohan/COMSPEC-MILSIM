@@ -122,7 +122,7 @@ $orbatChildren = array_values(array_filter([
     ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
     ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => str_starts_with($p, 'back-office/referentiels/qualifications')],
-    ['label' => 'Grades', 'href' => url('back-office/organisation/grades'), 'active' => str_starts_with($p, 'back-office/organisation/grades')],
+    ['label' => 'Grades', 'href' => url('back-office/referentiels/grades'), 'active' => str_starts_with($p, 'back-office/referentiels/grades') || str_starts_with($p, 'back-office/organisation/grades')],
     ['label' => 'Avancement', 'href' => url('back-office/rh/avancement'), 'active' => str_starts_with($p, 'back-office/rh/avancement')],
     ['label' => 'Décorations', 'href' => url('back-office/referentiels/decorations'), 'active' => str_starts_with($p, 'back-office/referentiels/decorations')],
     ['label' => 'Dotation', 'href' => url('back-office/referentiels/dotation'), 'active' => str_starts_with($p, 'back-office/referentiels/dotation')],
@@ -351,7 +351,7 @@ if ($isOperatorBoNav) {
                     'label' => 'Organisation',
                     'href' => url('back-office/organisation-effectifs'),
                     'icon' => 'orbat',
-                    'active' => $navOrbatActive || !empty($boNavCatalog) || str_starts_with($p, 'back-office/organisation/grades') || str_starts_with($p, 'back-office/referentiels/decorations') || str_starts_with($p, 'back-office/referentiels/dotation') || str_starts_with($p, 'back-office/organisation/disponibilite'),
+                    'active' => $navOrbatActive || !empty($boNavCatalog) || str_starts_with($p, 'back-office/organisation/grades') || str_starts_with($p, 'back-office/referentiels/grades') || str_starts_with($p, 'back-office/referentiels/decorations') || str_starts_with($p, 'back-office/referentiels/dotation') || str_starts_with($p, 'back-office/organisation/disponibilite'),
                     'children' => $orbatChildren,
                 ],
                 [

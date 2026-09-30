@@ -115,6 +115,18 @@ class GradeRepository
     }
 
     /**
+     * Catalogue d’un système avec les adaptations de la communauté, y compris les grades désactivés chez elle.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listBySystemCodeForTenantAdmin(string $systemCode, int $tenantId, ?int $gradeCategoryId = null): array
+    {
+        $rows = $this->listBySystemCodeAndCategoryId($systemCode, $gradeCategoryId);
+
+        return $this->applyTenantOverrides($tenantId, $rows, true);
+    }
+
+    /**
      * Tous les grades actifs (FR et US), avec les libellés éventuellement adaptés à la communauté.
      * Pour les formulaires où la doctrine se choisit d’abord.
      *
@@ -134,26 +146,31 @@ class GradeRepository
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
      */
-    private function applyTenantOverrides(int $tenantId, array $rows): array
+    private function applyTenantOverrides(int $tenantId, array $rows, bool $keepDisabled = false): array
     {
         $overrideRepo = new TenantGradeOverrideRepository();
         if (!$overrideRepo->tableExists()) {
+            foreach ($rows as &$row) {
+                $row['is_enabled'] = 1;
+                $row['has_override'] = false;
+            }
+            unset($row);
+
             return $rows;
         }
-        $stmt = $this->pdo->prepare(
-            'SELECT grade_id, label_short_override, label_long_override, sort_order_override, is_enabled
-             FROM tenant_grade_overrides WHERE tenant_id = ?'
-        );
-        $stmt->execute([$tenantId]);
-        $over = [];
-        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $over[(int) $r['grade_id']] = $r;
-        }
+        $over = $overrideRepo->listByTenant($tenantId);
         $out = [];
         foreach ($rows as $g) {
             $id = (int) $g['id'];
+            $g['catalog_label_short'] = $g['label_short'] ?? '';
+            $g['catalog_label_long'] = $g['label_long'] ?? '';
+            $g['has_override'] = isset($over[$id]);
+            $g['is_enabled'] = 1;
             if (isset($over[$id]) && (int) ($over[$id]['is_enabled'] ?? 1) === 0) {
-                continue;
+                $g['is_enabled'] = 0;
+                if (!$keepDisabled) {
+                    continue;
+                }
             }
             if (isset($over[$id])) {
                 $o = $over[$id];

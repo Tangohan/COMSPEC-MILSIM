@@ -224,7 +224,9 @@ function seed_rank_catalog_defaults(PDO $pdo): void
     }
 
     $gendarmerie = [
+        ['Gendarme adjoint volontaire', 'GAV', 'ENLISTED', 10],
         ['Gendarme', 'Gend.', 'ENLISTED', 20],
+        ['Maréchal des logis', 'MDL', 'NCO', 50],
         ['Maréchal des logis-chef', 'MDC', 'NCO', 55],
         ['Adjudant', 'Adj', 'NCO', 70],
         ['Adjudant-chef', 'Adc', 'SENIOR_NCO', 80],
@@ -238,6 +240,8 @@ function seed_rank_catalog_defaults(PDO $pdo): void
         ['Colonel', 'Col', 'OFFICER', 160],
         ['Général de brigade', 'Gén. bde', 'GENERAL_OFFICER', 170],
         ['Général de division', 'Gén. div.', 'GENERAL_OFFICER', 180],
+        ['Général de corps d’armée', 'Gén. c. a.', 'GENERAL_OFFICER', 190],
+        ['Général d’armée', 'Gén. armée', 'GENERAL_OFFICER', 200],
     ];
     foreach ($gendarmerie as $row) {
         [$name, $short, $cat, $order] = $row;

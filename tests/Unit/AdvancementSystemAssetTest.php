@@ -29,11 +29,18 @@ final class AdvancementSystemAssetTest extends TestCase
 
         self::assertStringContainsString("'/back-office/organisation/grades'", $routes);
         self::assertStringContainsString("'/back-office/rh/avancement'", $routes);
+        self::assertStringContainsString("'/back-office/rh/avancement/{id}/commission/classer'", $routes);
+        self::assertStringContainsString("'/back-office/organisation/grades/ordre-auto'", $routes);
+        self::assertStringContainsString('exceptional_override', $migration);
         self::assertStringContainsString("'/api/avancement/campagnes/{id}/publier'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/avancement'", $routes);
         self::assertStringContainsString('AdvancementEligibilityService::class', $container);
         self::assertStringContainsString('AdvancementSeniorityCronJob::class', $container);
         self::assertStringContainsString('seedForNewTenant', $bootstrap);
+        self::assertStringContainsString('ensureForTenant', (string) file_get_contents($root . '/app/Services/Advancement/GradeScaleTemplateService.php'));
+        self::assertStringContainsString('completeForTenant', (string) file_get_contents($root . '/app/Controllers/Admin/Organization/AdvancementAdminController.php'));
+        self::assertStringContainsString('ensureForTenant', (string) file_get_contents($root . '/app/Controllers/Admin/Organization/AdvancementAdminController.php'));
+        self::assertStringContainsString('ensureForAllTenants', $runner);
 
         self::assertStringContainsString('Mon avancement', $nav);
         self::assertStringContainsString('MA SITUATION', $nav);
@@ -41,5 +48,15 @@ final class AdvancementSystemAssetTest extends TestCase
         self::assertStringContainsString('bo-qual-card', $qualifications);
         self::assertStringContainsString('Générer le brevet', $qualifications);
         self::assertStringContainsString('Expire dans', $qualifications);
+
+        $gradesIndex = (string) file_get_contents($root . '/views/admin/advancement/grades_index.php');
+        $scaleService = (string) file_get_contents($root . '/app/Services/Advancement/GradeScaleTemplateService.php');
+        self::assertStringContainsString('Catalogue partagé', $gradesIndex);
+        self::assertStringNotContainsString('Dupliquer une échelle', $gradesIndex);
+        self::assertStringContainsString('Nouveau grade', $gradesIndex);
+        self::assertStringContainsString('Compléter depuis le catalogue', $gradesIndex);
+        self::assertStringNotContainsString("'gendarmerie'", $scaleService);
+        self::assertStringNotContainsString("'us_army_enlisted'", $scaleService);
+        self::assertStringContainsString('back-office/referentiels/grades', (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
     }
 }
