@@ -3209,7 +3209,7 @@ if ($atakMapConfig) {
           <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif, rôle, notes…" />
           <button type="button" class="btn-live active" id="atak-filter-live" title="Contacts vus dans les quinze dernières minutes, y compris hors liaison">Récents</button>
           <button type="button" class="btn-all" id="atak-filter-all">Tous</button>
-          <button type="button" class="btn-all" id="atak-filter-wave" title="Afficher uniquement les opérateurs Wave Relay">Wave</button>
+          <button type="button" class="btn-all" id="atak-filter-wave" title="Afficher uniquement les contacts équipés Wave Relay" aria-label="Filtrer Wave Relay">Wave</button>
         </div>
         <div class="atak-ft-filter-row">
           <label class="atak-ft-filter-label" for="atak-ft-filter">Équipe de feu

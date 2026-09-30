@@ -738,10 +738,10 @@ $icon = static function (string $path): string {
               <option value="friendly">Amis</option>
               <option value="hostile">Hostiles</option>
               <option value="unknown">Inconnus</option>
-              <option value="wave">Wave</option>
+              <option value="wave">Wave Relay</option>
             </select></span>
           </label>
-          <button type="button" class="ow-tag" id="ow-filter-wave" title="Uniquement Wave Relay" aria-pressed="false">Wave</button>
+          <button type="button" class="ow-tag" id="ow-filter-wave" title="Afficher uniquement les contacts équipés Wave Relay" aria-label="Filtrer Wave Relay" aria-pressed="false">Wave</button>
         </div>
         <div id="ow-contact-list" class="ow-bft-body" aria-live="polite"></div>
         <div class="ow-effectifs" id="ow-effectifs">
