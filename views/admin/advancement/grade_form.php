@@ -19,22 +19,19 @@ $val = static function (string $key, mixed $default = '') use ($grade): string {
     <?php require __DIR__ . '/_flash.php'; ?>
     <form method="post" action="<?= adv_h($action) ?>" class="adv-form">
         <?= \App\Core\Csrf::field() ?>
-        <p class="adv-muted">Code, libellé et filière viennent du référentiel unique. Ici on ne règle que l’avancement.</p>
-        <label>Code <?= adv_info('Code', 'Identifiant du référentiel (SD2, SGT, COL…). On ne le crée pas ici.') ?>
-            <input name="code" required maxlength="64" value="<?= adv_h($val('code')) ?>" <?= $isEdit ? 'readonly' : '' ?>>
+        <p class="adv-muted">Grade de la communauté : vous pouvez adapter les libellés. Un code déjà présent (SD2, SGT…) est réutilisé, pas dupliqué.</p>
+        <label>Code <?= adv_info('Code', 'Identifiant stable (SD2, SGT, COL…). On le garde même si le libellé change.') ?>
+            <input name="code" required maxlength="64" value="<?= adv_h($val('code')) ?>">
         </label>
-        <label>Libellé<input name="label" required maxlength="150" value="<?= adv_h($val('label')) ?>" <?= $isEdit ? 'readonly' : '' ?>></label>
-        <label>Libellé court<input name="short_label" maxlength="40" value="<?= adv_h($val('short_label')) ?>" <?= $isEdit ? 'readonly' : '' ?>></label>
-        <label>Filière <?= adv_info('Filière', 'Catégorie du référentiel. L’avancement au choix et à l’ancienneté ne saute pas d’une filière à l’autre.') ?>
-            <select name="filiere_id" class="adv-search" data-placeholder="Aucune" <?= $isEdit ? 'disabled' : '' ?>>
+        <label>Libellé<input name="label" required maxlength="150" value="<?= adv_h($val('label')) ?>"></label>
+        <label>Libellé court<input name="short_label" maxlength="40" value="<?= adv_h($val('short_label')) ?>"></label>
+        <label>Filière <?= adv_info('Filière', 'L’avancement au choix et à l’ancienneté ne saute pas d’une filière à l’autre.') ?>
+            <select name="filiere_id" class="adv-search" data-placeholder="Aucune">
                 <option value="">Aucune</option>
                 <?php foreach ($filieres as $filiere): ?>
                     <option value="<?= (int) $filiere['id'] ?>"<?= (string) $val('filiere_id') === (string) $filiere['id'] ? ' selected' : '' ?>><?= adv_h((string) $filiere['label']) ?></option>
                 <?php endforeach; ?>
             </select>
-            <?php if ($isEdit): ?>
-                <input type="hidden" name="filiere_id" value="<?= adv_h($val('filiere_id')) ?>">
-            <?php endif; ?>
         </label>
         <label>Ordre <?= adv_info('Ordre', '1 = plus junior dans la filière. L’éligibilité exige que le grade actuel soit exactement l’ordre précédent.') ?>
             <input type="number" name="rank_order" min="1" value="<?= adv_h($val('rank_order', '1')) ?>">

@@ -357,10 +357,35 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame(3, $added);
         $codes = array_column($repo->listGrades(4, false), 'code');
         sort($codes);
-        self::assertSame(['SD2', 'SGT', 'SL'], $codes);
+        self::assertSame(['GND', 'SD2', 'SGT', 'SL'], $codes);
         $leftover = $repo->findGrade($gnd, 4);
-        self::assertNotEmpty($leftover['archived_at'] ?? null);
+        self::assertSame('Gendarme', (string) ($leftover['label'] ?? ''));
+        self::assertEmpty($leftover['archived_at'] ?? null);
         self::assertSame(0, $scales->completeForTenant(4, 'FR_CLASSIC'));
+    }
+
+    public function testCompleteReutiliseUnGradeDejaPresent(): void
+    {
+        $pdo = $this->pdo();
+        $this->seedCatalog($pdo);
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $repo->saveGrade(6, [
+            'code' => 'SD2',
+            'label' => 'Bleu de la commu',
+            'short_label' => 'Bleu',
+            'rank_order' => 9,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+            'min_time_in_previous_grade_months' => 3,
+        ]);
+
+        self::assertSame(2, $scales->completeForTenant(6, 'FR_CLASSIC'));
+        $sd2 = $repo->findGradeByCode(6, 'SD2');
+        self::assertSame('Bleu de la commu', (string) ($sd2['label'] ?? ''));
+        self::assertSame(9, (int) ($sd2['rank_order'] ?? 0));
+        self::assertSame(3, (int) ($sd2['min_time_in_previous_grade_months'] ?? 0));
     }
 
     public function testLeDepotNeReecritPasLaVoieDObtention(): void

@@ -6,6 +6,8 @@ $categories = $categories ?? [];
 $gcfRaw = $gradeCategoryFilterId ?? null;
 $gradeCategoryFilterId = ($gcfRaw !== null && (int) $gcfRaw > 0) ? (int) $gcfRaw : null;
 $gradeDisplayService = $gradeDisplayService ?? null;
+$tenantExtras = is_array($tenantExtras ?? null) ? $tenantExtras : [];
+$tenantSystemCode = strtoupper(trim((string) ($tenantSystemCode ?? 'FR_CLASSIC')));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $gradesQuerySuffix = static function (string $t, ?int $catId): string {
@@ -33,7 +35,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
     <?php endif; ?>
-    <p class="mb-6 text-sm text-slate-600">Référentiel unique : FR_CLASSIC et US_CLASSIC. L’avancement de chaque communauté projette ces grades, il ne duplique pas une autre échelle.</p>
+    <p class="mb-6 text-sm text-slate-600">Catalogue partagé FR_CLASSIC / US_CLASSIC. Cette communauté réutilise ces grades, les adapte (libellés, visibilité) et peut en ajouter sans modifier les autres communautés. Système actuel : <strong><?= htmlspecialchars($tenantSystemCode, ENT_QUOTES, 'UTF-8') ?></strong>.</p>
 
     <nav class="flex flex-wrap gap-2 border-b border-slate-200 mb-6">
         <a href="<?= url('back-office/referentiels/grades') . $gradesQuerySuffix('fr', $gradeCategoryFilterId) ?>" class="px-4 py-2 text-sm font-medium <?= $tab === 'fr' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades français</a>
@@ -83,9 +85,9 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
         </thead>
         <tbody>
             <?php foreach ($gradesFr as $g): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <tr class="border-b border-slate-100 hover:bg-slate-50 <?= empty($g['is_enabled']) ? 'opacity-50' : '' ?>">
                 <td class="p-3 font-mono text-sm"><?= htmlspecialchars($g['code']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?></td>
+                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?><?php if (!empty($g['has_override'])): ?> <span class="text-xs text-emerald-700">communauté</span><?php endif; ?></td>
                 <td class="p-3"><?= htmlspecialchars($g['label_long']) ?></td>
                 <td class="p-3"><?= htmlspecialchars($g['label_otan'] ?? '—') ?></td>
                 <td class="p-3 text-slate-600"><?= htmlspecialchars($g['category_label'] ?? '') ?></td>
@@ -99,7 +101,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
                 </td>
                 <td class="p-3">
                     <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
-                    <?php if (!empty($g['is_active'])): ?>
+                    <?php if (!empty($g['is_enabled'])): ?>
                     · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
@@ -131,9 +133,9 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
         </thead>
         <tbody>
             <?php foreach ($gradesUs as $g): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <tr class="border-b border-slate-100 hover:bg-slate-50 <?= empty($g['is_enabled']) ? 'opacity-50' : '' ?>">
                 <td class="p-3 font-mono text-sm"><?= htmlspecialchars($g['code']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?></td>
+                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?><?php if (!empty($g['has_override'])): ?> <span class="text-xs text-emerald-700">communauté</span><?php endif; ?></td>
                 <td class="p-3"><?= htmlspecialchars($g['label_long']) ?></td>
                 <td class="p-3"><?= htmlspecialchars($g['label_otan'] ?? '—') ?></td>
                 <td class="p-3 text-slate-600"><?= htmlspecialchars($g['category_label'] ?? '') ?></td>
@@ -147,7 +149,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
                 </td>
                 <td class="p-3">
                     <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
-                    <?php if (!empty($g['is_active'])): ?>
+                    <?php if (!empty($g['is_enabled'])): ?>
                     · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
@@ -161,6 +163,37 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <?php if (empty($gradesUs)): ?>
     <p class="text-slate-500">Aucun grade américain.</p>
     <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($tenantExtras !== [] && ($tab === 'fr' || $tab === 'us')): ?>
+    <section class="mt-10">
+        <h2 class="text-lg font-black text-slate-900 mb-3">Grades propres à la communauté</h2>
+        <p class="text-sm text-slate-600 mb-4">Ajoutés ici, ils n’existent que pour cette communauté. L’historique et l’avancement les réutilisent.</p>
+        <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
+                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Libellé</th>
+                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Filière</th>
+                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Statut</th>
+                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($tenantExtras as $extra): ?>
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="p-3 font-mono text-sm"><?= htmlspecialchars((string) ($extra['code'] ?? '')) ?></td>
+                    <td class="p-3"><?= htmlspecialchars((string) ($extra['label'] ?? '')) ?></td>
+                    <td class="p-3 text-slate-600"><?= htmlspecialchars((string) ($extra['filiere_label'] ?? '—')) ?></td>
+                    <td class="p-3"><?= !empty($extra['archived_at']) ? 'Archivé' : 'Actif' ?></td>
+                    <td class="p-3">
+                        <a href="<?= url('back-office/organisation/grades/' . (int) ($extra['id'] ?? 0) . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
     <?php endif; ?>
 
     <?php if ($tab === 'otan'): ?>

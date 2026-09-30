@@ -16,6 +16,8 @@ final class GradeReferentielAssetTest extends TestCase
 
         self::assertStringContainsString("query('tab', 'fr')", $controller);
         self::assertStringNotContainsString("input('tab')", $controller);
+        self::assertStringContainsString('listBySystemCodeForTenantAdmin', $controller);
+        self::assertStringContainsString('TenantGradeOverrideRepository', $controller);
         self::assertStringContainsString("indexUrl(\$returnTab)", $controller);
         self::assertStringContainsString("indexUrl(\$this->tabForSystemId(\$systemId))", $controller);
         self::assertStringContainsString("indexUrl(\$this->tabForGrade(\$grade))", $controller);

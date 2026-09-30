@@ -83,11 +83,11 @@ $axesReady = !empty($stats['axes_schema_ready']);
         </a>
         <a href="<?= $h(url('back-office/referentiels/grades')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
             <p class="text-sm font-black text-slate-900">Référentiel des grades</p>
-            <p class="mt-1 text-xs text-slate-600">Catalogue unique FR / US. L’avancement projette ces grades, il ne duplique pas une autre échelle.</p>
+            <p class="mt-1 text-xs text-slate-600">Catalogue FR/US partagé, adapté à la communauté : libellés, visibilité, grades en plus.</p>
         </a>
         <a href="<?= $h(url('back-office/organisation/grades')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
             <p class="text-sm font-black text-slate-900">Règles d’avancement</p>
-            <p class="mt-1 text-xs text-slate-600">Ancienneté, choix, temps mini et qualification — sans second catalogue de grades.</p>
+            <p class="mt-1 text-xs text-slate-600">Ancienneté, choix, temps mini — sur les grades déjà en place, sans les écraser.</p>
         </a>
         <a href="<?= $h(url('back-office/referentiels/decorations')) ?>" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 transition">
             <p class="text-sm font-black text-slate-900">Décorations</p>

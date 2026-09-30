@@ -9,8 +9,8 @@ use App\Repositories\TenantRepository;
 use Throwable;
 
 /**
- * Projette le référentiel unique (FR_CLASSIC / US_CLASSIC) dans grade_definitions
- * pour les flags d’avancement. Une communauté n’a pas son propre catalogue de grades.
+ * Catalogue partagé FR/US, puis copie par communauté : chaque tenant réutilise
+ * ses grades (codes, libellés, historique) et peut en ajouter.
  */
 final class GradeScaleTemplateService
 {
@@ -133,8 +133,8 @@ final class GradeScaleTemplateService
     }
 
     /**
-     * Aligne l’échelle d’avancement sur le référentiel unique.
-     * N’invente pas de grades hors catalogue. N’écrase pas les flags d’avancement.
+     * Complète l’échelle de la communauté à partir du catalogue partagé.
+     * Réutilise les grades déjà présents (code, libellés, historique). N’archive rien.
      */
     public function completeForTenant(int $tenantId, string $gradeSystemCode = ''): int
     {
@@ -147,8 +147,6 @@ final class GradeScaleTemplateService
         $before = count($this->repository->listGrades($tenantId, true));
         $catalogCodes = $this->copyFromCommunityCatalog($tenantId, $gradeSystemCode);
         if ($catalogCodes !== []) {
-            $this->archiveUnusedGradesNotIn($tenantId, $catalogCodes);
-
             return max(0, count($this->repository->listGrades($tenantId, true)) - $before);
         }
         if ($this->repository->listGrades($tenantId, true) !== []) {
@@ -350,21 +348,6 @@ final class GradeScaleTemplateService
                     $inserted = true;
                     $idsInOrder[] = $id;
                     continue;
-                }
-                $this->repository->saveGrade($tenantId, [
-                    'code' => $code,
-                    'label' => $label,
-                    'short_label' => $short,
-                    'filiere_id' => $filiereId,
-                    'rank_order' => (int) ($existing['rank_order'] ?? $rankOrder),
-                    'advancement_seniority_enabled' => $existing['advancement_seniority_enabled'] ?? 0,
-                    'advancement_choice_enabled' => $existing['advancement_choice_enabled'] ?? 0,
-                    'min_time_in_previous_grade_months' => $existing['min_time_in_previous_grade_months'] ?? null,
-                    'required_qualification_id' => $existing['required_qualification_id'] ?? null,
-                    'required_qualification_level_id' => $existing['required_qualification_level_id'] ?? null,
-                ], (int) $existing['id']);
-                if (!empty($existing['archived_at'])) {
-                    $this->repository->restoreGrade((int) $existing['id'], $tenantId);
                 }
                 $idsInOrder[] = (int) $existing['id'];
             }

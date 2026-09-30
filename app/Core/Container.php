@@ -1283,11 +1283,16 @@ class Container
             ),
             \App\Repositories\GradeCategoryRepository::class => new \App\Repositories\GradeCategoryRepository(),
             \App\Repositories\GradeSystemRepository::class => new \App\Repositories\GradeSystemRepository(),
+            \App\Repositories\TenantGradeOverrideRepository::class => new \App\Repositories\TenantGradeOverrideRepository(),
             \App\Controllers\Admin\Organization\GradeReferentielController::class => new \App\Controllers\Admin\Organization\GradeReferentielController(
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Repositories\GradeCategoryRepository::class),
                 self::get(\App\Repositories\GradeSystemRepository::class),
-                self::get(\App\Services\GradeDisplayService::class)
+                self::get(\App\Services\GradeDisplayService::class),
+                self::get(\App\Repositories\TenantRepository::class),
+                self::get(\App\Repositories\TenantGradeOverrideRepository::class),
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
             ),
             \App\Services\Rank\RankReferenceValidator::class => new \App\Services\Rank\RankReferenceValidator(),
             \App\Services\Rank\RankCatalogService::class => new \App\Services\Rank\RankCatalogService(
