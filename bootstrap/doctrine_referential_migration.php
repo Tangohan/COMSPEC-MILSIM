@@ -64,6 +64,11 @@ return function (PDO $pdo): void {
     if (is_callable($atakSeed)) {
         $atakSeed($pdo);
     }
+
+    $rhSeed = require dirname(__DIR__) . '/bootstrap/doctrine_rh_employment_seed.php';
+    if (is_callable($rhSeed)) {
+        $rhSeed($pdo);
+    }
 };
 
 function seedDefaultDoctrineCatalog(PDO $pdo): void
