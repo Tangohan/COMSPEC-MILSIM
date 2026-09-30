@@ -225,7 +225,22 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php if ($medalRackItems !== []): ?>
             <div>
                 <dt>Décorations</dt>
-                <dd><?= htmlspecialchars(implode(' · ', $medalRackItems), ENT_QUOTES, 'UTF-8') ?></dd>
+                <dd>
+                    <?php
+                    $medalRackResolved = \App\Support\DecorationCatalog::resolveLines($medalRackItems);
+                    $names = array_map(static fn (array $item): string => (string) ($item['name'] ?? ''), $medalRackResolved);
+                    echo htmlspecialchars(implode(' · ', array_filter($names)), ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <div class="dk-kit" style="margin-top:12px;">
+                        <?php
+                        $dkItems = $medalRackResolved;
+                        $dkShowDemoDevices = false;
+                        $dkShowDetail = false;
+                        $dkCaption = '';
+                        require base_path('views/partials/personnel/decoration_rack.php');
+                        ?>
+                    </div>
+                </dd>
             </div>
             <?php endif; ?>
         </dl>
