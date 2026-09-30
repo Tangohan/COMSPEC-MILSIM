@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Repositories\AdvancementRepository;
 use App\Services\Advancement\AdvancementEligibilityService;
 use App\Services\Advancement\AdvancementNotifier;
+use App\Services\Advancement\AdvancementRankingService;
 use App\Services\Advancement\AdvancementWorkflowService;
 use App\Services\Advancement\GradeScaleTemplateService;
 use DateTimeImmutable;
@@ -142,6 +143,64 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame('2026-09-30', $active['obtained_at']);
     }
 
+    public function testPublicationExceptionnellePasseOutreLeTempsDeGrade(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $workflow = new AdvancementWorkflowService($repo, new AdvancementEligibilityService(), new class extends AdvancementNotifier {
+            public function notify(int $tenantId, int $personnelId, int $actorId, string $subject, string $body): void
+            {
+            }
+        });
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months) VALUES (1, 7, 'GND', 'Gendarme', 1, 1, 0, 0)");
+        $pdo->exec("INSERT INTO grade_definitions (id, tenant_id, code, label, rank_order, advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months) VALUES (2, 7, 'MDL', 'Maréchal des logis', 2, 0, 1, 12)");
+        $pdo->exec("INSERT INTO users (id, tenant_id, display_name, email, status) VALUES (4, 7, 'Tanguy', 'tanguy@example.test', 'active')");
+        $pdo->exec("INSERT INTO personnel_grade_history (id, personnel_id, grade_id, obtained_at, obtained_via) VALUES (10, 4, 1, '2026-09-30', 'initial')");
+        $pdo->exec("INSERT INTO advancement_campaigns (id, tenant_id, grade_id, year, opens_at, closes_at, status) VALUES (3, 7, 2, 2026, '2026-01-01', '2026-12-31', 'en_commission')");
+        $pdo->exec("INSERT INTO advancement_candidacies (id, campaign_id, personnel_id, is_eligible, decision) VALUES (8, 3, 4, 1, 'inscrit')");
+
+        try {
+            $workflow->publish(7, 3, 4, new DateTimeImmutable('2026-09-30'));
+            self::fail('La publication sans motif exceptionnel doit échouer.');
+        } catch (RuntimeException $e) {
+            self::assertStringContainsString('n’est plus éligible', $e->getMessage());
+        }
+
+        $pdo->exec("UPDATE advancement_candidacies SET exceptional_override = 1, exceptional_reason = 'Besoin opérationnel du groupement' WHERE id = 8");
+        $out = $workflow->publish(7, 3, 4, new DateTimeImmutable('2026-09-30'));
+        self::assertSame(1, $out['promoted']);
+        $active = $repo->activeGrade(7, 4);
+        self::assertSame('exception', $active['obtained_via']);
+        self::assertSame(2, (int) $active['grade_id']);
+    }
+
+    public function testClassementAutomatiqueEtDetections(): void
+    {
+        $svc = new AdvancementRankingService();
+        $out = $svc->proposeCandidacyOrder([
+            ['id' => 1, 'display_name' => 'Junior', 'is_eligible' => 0, 'months_in_grade' => 40, 'volunteered_at' => '2026-01-01'],
+            ['id' => 2, 'display_name' => 'Ancien', 'is_eligible' => 1, 'months_in_grade' => 20, 'volunteered_at' => '2026-01-02'],
+            ['id' => 3, 'display_name' => 'Récent', 'is_eligible' => 1, 'months_in_grade' => 8, 'volunteered_at' => '2026-01-01'],
+        ]);
+        self::assertSame(1, $out['ranks'][2]);
+        self::assertSame(2, $out['ranks'][3]);
+        self::assertSame(3, $out['ranks'][1]);
+
+        $hits = $svc->detectCandidacies([
+            ['id' => 1, 'display_name' => 'Ada', 'preference_rank' => 1, 'is_eligible' => 1, 'decision' => 'inscrit'],
+            ['id' => 2, 'display_name' => 'Bob', 'preference_rank' => 1, 'is_eligible' => 0, 'decision' => 'inscrit'],
+        ]);
+        $codes = array_column($hits, 'code');
+        self::assertContains('rang_double', $codes);
+        self::assertContains('ineligible_listed', $codes);
+
+        $grades = $svc->proposeGradeOrder([
+            ['id' => 1, 'code' => 'COL', 'label' => 'Colonel', 'filiere_id' => 3, 'rank_order' => 1],
+            ['id' => 2, 'code' => 'SL', 'label' => 'Sous-lieutenant', 'filiere_id' => 3, 'rank_order' => 2],
+        ]);
+        self::assertSame([2, 1], $grades['order']);
+    }
+
     public function testDuplicationDEchelleEstPropreALaCommunaute(): void
     {
         $pdo = $this->pdo();
@@ -268,7 +327,8 @@ final class AdvancementEligibilityServiceTest extends TestCase
         $pdo->exec('CREATE TABLE advancement_candidacies (
             id INTEGER PRIMARY KEY AUTOINCREMENT, campaign_id INT, personnel_id INT, volunteered_at TEXT,
             is_eligible INT, eligibility_reason TEXT, preference_rank INT, commission_opinion TEXT, decision TEXT,
-            decided_at TEXT, mobility_requested INT, requested_billet_id INT, notes TEXT, created_by INT
+            decided_at TEXT, mobility_requested INT, requested_billet_id INT, notes TEXT, created_by INT,
+            exceptional_override INT DEFAULT 0, exceptional_reason TEXT, exceptional_by INT, exceptional_at TEXT
         )');
         $pdo->exec('CREATE TABLE advancement_commissions (id INTEGER PRIMARY KEY AUTOINCREMENT, campaign_id INT, meeting_date TEXT, minutes_document_id INT)');
         $pdo->exec('CREATE TABLE advancement_commission_members (id INTEGER PRIMARY KEY AUTOINCREMENT, commission_id INT, personnel_id INT, role TEXT)');

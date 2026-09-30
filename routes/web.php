@@ -1312,6 +1312,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/grades/importer', [AdvancementAdminController::class, 'importScale'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/initial', [AdvancementAdminController::class, 'assignInitial'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/ordre', [AdvancementAdminController::class, 'gradeReorder'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/ordre-auto', [AdvancementAdminController::class, 'gradeAutoOrder'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/{id}/edit', [AdvancementAdminController::class, 'gradeEdit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/{id}/update', [AdvancementAdminController::class, 'gradeUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/{id}/archive', [AdvancementAdminController::class, 'gradeArchive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1326,6 +1327,7 @@ return function (Router $router) {
     $router->post('/back-office/rh/avancement/{id}/commission', [AdvancementAdminController::class, 'openCommission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/rh/avancement/{id}/commission', [AdvancementAdminController::class, 'commission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/commission/enregistrer', [AdvancementAdminController::class, 'commissionSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/commission/classer', [AdvancementAdminController::class, 'commissionAutoRank'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/publier', [AdvancementAdminController::class, 'publish'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/api/avancement/grades', [AdvancementApiController::class, 'grades'], [AuthMiddleware::class]);

@@ -23,6 +23,7 @@ final class AdvancementWorkflowService
     public const VIA_INITIAL = 'initial';
     public const VIA_SENIORITY = 'anciennete';
     public const VIA_CHOICE = 'choix';
+    public const VIA_EXCEPTION = 'exception';
 
     public const DECISION_LISTED = 'inscrit';
     public const DECISION_NOT = 'non_inscrit';
@@ -31,8 +32,10 @@ final class AdvancementWorkflowService
         private AdvancementRepository $repository,
         private AdvancementEligibilityService $eligibility,
         private ?AdvancementNotifier $notifier = null,
+        private ?AdvancementRankingService $ranking = null,
     ) {
         $this->notifier ??= new AdvancementNotifier();
+        $this->ranking ??= new AdvancementRankingService();
     }
 
     /**
@@ -129,9 +132,9 @@ final class AdvancementWorkflowService
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param list<array{personnel_id:int, role:string}> $members
      */
-    public function saveCommissionReview(int $tenantId, int $campaignId, array $rows, ?string $meetingDate = null, ?int $minutesDocumentId = null, array $members = []): void
+    public function saveCommissionReview(int $tenantId, int $campaignId, array $rows, ?string $meetingDate = null, ?int $minutesDocumentId = null, array $members = [], int $actorId = 0): void
     {
         $campaign = $this->requireCampaign($tenantId, $campaignId);
         if ((string) $campaign['status'] !== self::STATUS_COMMISSION) {
@@ -152,6 +155,11 @@ final class AdvancementWorkflowService
             if (!in_array($opinion, ['', 'propose', 'non_propose'], true)) {
                 $opinion = '';
             }
+            $forced = !empty($row['exceptional_override']);
+            $reason = trim((string) ($row['exceptional_reason'] ?? ''));
+            if ($forced && $reason === '') {
+                throw new RuntimeException('Un passage exceptionnel exige un motif pour ' . trim((string) ($existing['display_name'] ?? 'le candidat')) . '.');
+            }
             $this->repository->updateCandidacyReview($id, [
                 'preference_rank' => $row['preference_rank'] ?? '',
                 'commission_opinion' => $opinion,
@@ -160,6 +168,10 @@ final class AdvancementWorkflowService
                 'notes' => $row['notes'] ?? ($existing['notes'] ?? null),
                 'mobility_requested' => !empty($row['mobility_requested']) || !empty($existing['mobility_requested']),
                 'requested_billet_id' => $row['requested_billet_id'] ?? ($existing['requested_billet_id'] ?? null),
+                'exceptional_override' => $forced,
+                'exceptional_reason' => $reason,
+                'exceptional_by' => $actorId > 0 ? $actorId : ($row['exceptional_by'] ?? null),
+                'exceptional_at' => $forced ? date('Y-m-d H:i:s') : null,
             ]);
         }
         if ($meetingDate !== null || $minutesDocumentId !== null || $members !== []) {
@@ -185,9 +197,13 @@ final class AdvancementWorkflowService
                 continue;
             }
             $fresh = $this->repository->findCandidacy((int) $row['id']) ?? $row;
-            if (empty($fresh['is_eligible'])) {
+            $forced = $this->ranker()->isForced($fresh);
+            if (empty($fresh['is_eligible']) && !$forced) {
                 $name = trim((string) ($row['display_name'] ?? $row['callsign'] ?? 'personnel'));
-                throw new RuntimeException('Inscription impossible : ' . $name . ' n’est plus éligible (' . (string) ($fresh['eligibility_reason'] ?? 'critère non rempli') . ').');
+                throw new RuntimeException('Inscription impossible : ' . $name . ' n’est plus éligible (' . (string) ($fresh['eligibility_reason'] ?? 'critère non rempli') . '). Cochez le passage exceptionnel et saisissez un motif, ou retirez l’inscription.');
+            }
+            if ($forced) {
+                $fresh['_via'] = self::VIA_EXCEPTION;
             }
             $listed[] = $fresh;
         }
@@ -211,7 +227,7 @@ final class AdvancementWorkflowService
                     'personnel_id' => $personnelId,
                     'grade_id' => (int) $campaign['grade_id'],
                     'obtained_at' => $date,
-                    'obtained_via' => self::VIA_CHOICE,
+                    'obtained_via' => (string) ($row['_via'] ?? self::VIA_CHOICE),
                     'candidacy_id' => (int) $row['id'],
                     'created_by' => $actorId,
                 ]);
@@ -222,12 +238,15 @@ final class AdvancementWorkflowService
 
         $gradeLabel = trim((string) ($campaign['grade_label'] ?? 'grade visé'));
         foreach ($listed as $row) {
+            $forced = ((string) ($row['_via'] ?? '')) === self::VIA_EXCEPTION;
             $this->notifier->notify(
                 $tenantId,
                 (int) $row['personnel_id'],
                 $actorId,
                 'Tableau d’avancement publié',
-                'Vous êtes inscrit au tableau d’avancement au grade de ' . $gradeLabel . ' (voie choix). Le poste demandé, s’il y en a un, n’est pas attribué par cette publication.'
+                $forced
+                    ? 'Vous êtes inscrit exceptionnellement au tableau d’avancement au grade de ' . $gradeLabel . '. Motif : ' . trim((string) ($row['exceptional_reason'] ?? 'décision de commission')) . '.'
+                    : 'Vous êtes inscrit au tableau d’avancement au grade de ' . $gradeLabel . ' (voie choix). Le poste demandé, s’il y en a un, n’est pas attribué par cette publication.'
             );
         }
 
@@ -420,6 +439,81 @@ final class AdvancementWorkflowService
     }
 
     /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function decorateCandidacies(int $tenantId, array $campaign, array $rows, ?DateTimeImmutable $today = null): array
+    {
+        foreach ($rows as &$row) {
+            $result = $this->assessPersonnel($tenantId, (int) $row['personnel_id'], $campaign, $today, AdvancementEligibilityService::PATH_CHOICE);
+            $row['months_in_grade'] = $result['months_in_grade'];
+            $row['months_required'] = $result['months_required'];
+            $row['due_on'] = $result['due_on'];
+            $row['live_eligible'] = $result['is_eligible'];
+            $row['live_reason'] = $result['eligibility_reason'];
+            $row['is_forced'] = $this->ranker()->isForced($row);
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $members
+     * @return array{ranks: array<int, int>, detections: list<array{code:string, level:string, message:string}>}
+     */
+    public function autoRankCandidacies(int $tenantId, int $campaignId, array $members = []): array
+    {
+        $campaign = $this->requireCampaign($tenantId, $campaignId);
+        $rows = $this->decorateCandidacies($tenantId, $campaign, $this->repository->listCandidacies($campaignId));
+        $quota = isset($campaign['quota_slots']) && $campaign['quota_slots'] !== null && $campaign['quota_slots'] !== ''
+            ? (int) $campaign['quota_slots']
+            : null;
+        $out = $this->ranker()->proposeCandidacyOrder($rows, $members, $quota);
+        if ($out['ranks'] !== []) {
+            $this->repository->updatePreferenceRanks($campaignId, $out['ranks']);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $members
+     * @return list<array{code:string, level:string, message:string}>
+     */
+    public function detectCandidacies(int $tenantId, array $campaign, array $rows, array $members = []): array
+    {
+        $quota = isset($campaign['quota_slots']) && $campaign['quota_slots'] !== null && $campaign['quota_slots'] !== ''
+            ? (int) $campaign['quota_slots']
+            : null;
+        $proposed = $this->ranker()->proposeCandidacyOrder($rows, $members, $quota);
+
+        return $this->ranker()->detectCandidacies($rows, $members, $quota, $proposed['ranks']);
+    }
+
+    /**
+     * @return array{reordered:int, detections: list<array{code:string, level:string, message:string}>}
+     */
+    public function autoOrderGrades(int $tenantId): array
+    {
+        $grades = $this->repository->listGrades($tenantId, true);
+        $proposal = $this->ranker()->proposeGradeOrder($grades);
+        if ($proposal['order'] !== []) {
+            $this->repository->reorderGrades($tenantId, $proposal['order']);
+        }
+
+        return ['reordered' => count($proposal['order']), 'detections' => $proposal['detections']];
+    }
+
+    /**
+     * @return array{order: list<int>, detections: list<array{code:string, level:string, message:string}>}
+     */
+    public function detectGradeOrder(int $tenantId): array
+    {
+        return $this->ranker()->proposeGradeOrder($this->repository->listGrades($tenantId, true));
+    }
+
+    /**
      * Une campagne joint le grade visé sous d'autres alias : on les ramène au vocabulaire du calcul.
      *
      * @param array<string, mixed> $grade
@@ -449,6 +543,11 @@ final class AdvancementWorkflowService
         }
 
         return $campaign;
+    }
+
+    private function ranker(): AdvancementRankingService
+    {
+        return $this->ranking ??= new AdvancementRankingService();
     }
 
     private function formatFr(string $iso): string

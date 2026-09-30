@@ -1,4 +1,5 @@
 <?php
+require dirname(__DIR__) . '/advancement/_helpers.php';
 $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
 $panel = is_array($panel ?? null) ? $panel : [];
 $current = is_array($panel['current'] ?? null) ? $panel['current'] : null;
@@ -8,6 +9,7 @@ $via = [
     'initial' => 'Grade initial',
     'anciennete' => 'Ancienneté',
     'choix' => 'Choix',
+    'exception' => 'Passage exceptionnel',
 ];
 $format = static function (string $iso) use ($h): string {
     $ts = strtotime(substr($iso, 0, 10));
@@ -20,7 +22,7 @@ $format = static function (string $iso) use ($h): string {
     <?php if (!empty($error)): ?><p class="adv-flash adv-flash--bad"><?= $h($error) ?></p><?php endif; ?>
 
     <section class="adv-panel">
-        <p class="adv-kicker">Grade actuel</p>
+        <p class="adv-kicker">Grade actuel <?= adv_info('Grade actuel', 'Ligne d’historique ouverte : elle n’est jamais réécrite. Un nouveau grade ajoute une ligne et clôture la précédente.') ?></p>
         <?php if ($current === null): ?>
             <h2>Aucun grade enregistré</h2>
             <p>Le grade détenu apparaît ici dès qu’une ligne d’historique est ouverte.</p>
@@ -50,7 +52,7 @@ $format = static function (string $iso) use ($h): string {
     <?php endif; ?>
 
     <section class="adv-panel">
-        <h2>Historique</h2>
+        <h2>Historique <?= adv_info('Historique', 'Chaque promotion (initial, ancienneté, choix ou exception) reste une ligne. On corrige en ajoutant, pas en écrasant.') ?></h2>
         <?php if ($history === []): ?>
             <p>Aucune ligne pour l’instant.</p>
         <?php else: ?>

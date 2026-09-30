@@ -50,6 +50,7 @@ final class AdvancementAdminController
             'filieres' => $this->repository->listFilieres($tenantId),
             'templates' => $this->templates->templates(),
             'personnel' => $this->repository->listPersonnel($tenantId),
+            'gradeOrder' => $this->workflow->detectGradeOrder($tenantId),
         ]);
     }
 
@@ -153,6 +154,19 @@ final class AdvancementAdminController
         }
         $this->repository->reorderGrades($tenantId, array_map('intval', $order));
         Session::flash('success', 'Ordre hiérarchique enregistré.');
+
+        return Response::redirect(url('back-office/organisation/grades'));
+    }
+
+    public function gradeAutoOrder(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guardPost('back-office/organisation/grades');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $out = $this->workflow->autoOrderGrades($tenantId);
+        Session::flash('success', 'Ordre réaligné automatiquement (' . $out['reordered'] . ' grades). Les détections restent visibles sous le tableau.');
 
         return Response::redirect(url('back-office/organisation/grades'));
     }
@@ -301,7 +315,7 @@ final class AdvancementAdminController
 
             return Response::redirect(url('back-office/rh/avancement'));
         }
-        $rows = $this->repository->listCandidacies((int) $campaign['id']);
+        $rows = $this->workflow->decorateCandidacies($tenantId, $campaign, $this->repository->listCandidacies((int) $campaign['id']));
         $ranked = 0;
         foreach ($rows as $row) {
             if ($row['preference_rank'] !== null && $row['preference_rank'] !== '') {
@@ -315,6 +329,7 @@ final class AdvancementAdminController
             'rankedTotal' => $ranked,
             'personnel' => $this->repository->listPersonnel($tenantId),
             'billets' => $this->repository->listBillets($tenantId),
+            'detections' => $this->workflow->detectCandidacies($tenantId, $campaign, $rows),
         ]);
     }
 
@@ -387,14 +402,18 @@ final class AdvancementAdminController
         if ($campaign === null) {
             return Response::redirect(url('back-office/rh/avancement'));
         }
+        $commission = $this->repository->findCommission((int) $campaign['id']);
+        $rows = $this->workflow->decorateCandidacies($tenantId, $campaign, $this->repository->listCandidacies((int) $campaign['id']));
+        $members = is_array($commission['members'] ?? null) ? $commission['members'] : [];
 
-        return $this->page('Commission', 'RH · AVANCEMENT', 'L’avis et la décision se saisissent ici. Le poste visé informe la commission, il n’est pas réservé.', 'admin.advancement.commission', [
+        return $this->page('Commission', 'RH · AVANCEMENT', 'L’avis et la décision se saisissent ici. Un passage exceptionnel reste possible, avec motif.', 'admin.advancement.commission', [
             'campaign' => $campaign,
-            'candidacies' => $this->repository->listCandidacies((int) $campaign['id']),
-            'commission' => $this->repository->findCommission((int) $campaign['id']),
+            'candidacies' => $rows,
+            'commission' => $commission,
             'personnel' => $this->repository->listPersonnel($tenantId),
             'documents' => $this->repository->listDocuments($tenantId),
             'billets' => $this->repository->listBillets($tenantId),
+            'detections' => $this->workflow->detectCandidacies($tenantId, $campaign, $rows, $members),
         ]);
     }
 
@@ -425,7 +444,7 @@ final class AdvancementAdminController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        [$tenantId] = $ctx;
+        [$tenantId, $userId] = $ctx;
         $posted = $request->input('candidacy', []);
         $rows = [];
         if (is_array($posted)) {
@@ -457,9 +476,30 @@ final class AdvancementAdminController
                 $rows,
                 (string) $request->input('meeting_date', ''),
                 (int) $request->input('minutes_document_id', 0),
-                $members
+                $members,
+                $userId
             );
             Session::flash('success', 'Commission enregistrée.');
+        } catch (Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect(url('back-office/rh/avancement/' . $id . '/commission'));
+    }
+
+    public function commissionAutoRank(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $ctx = $this->guardPost('back-office/rh/avancement/' . $id . '/commission');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $commission = $this->repository->findCommission($id);
+        $members = is_array($commission['members'] ?? null) ? $commission['members'] : [];
+        try {
+            $out = $this->workflow->autoRankCandidacies($tenantId, $id, $members);
+            Session::flash('success', 'Classement recalculé : éligibles d’abord, puis ancienneté et date de candidature (' . count($out['ranks']) . ' rangs).');
         } catch (Throwable $e) {
             Session::flash('error', $e->getMessage());
         }

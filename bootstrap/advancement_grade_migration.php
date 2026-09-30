@@ -103,6 +103,10 @@ function run_advancement_grade_migration(PDO $pdo): void
                 mobility_requested TINYINT(1) NOT NULL DEFAULT 0,
                 requested_billet_id INT UNSIGNED DEFAULT NULL,
                 notes TEXT DEFAULT NULL,
+                exceptional_override TINYINT(1) NOT NULL DEFAULT 0,
+                exceptional_reason TEXT DEFAULT NULL,
+                exceptional_by INT UNSIGNED DEFAULT NULL,
+                exceptional_at DATETIME DEFAULT NULL,
                 created_by INT UNSIGNED DEFAULT NULL,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_adv_candidacy (campaign_id, personnel_id),
@@ -163,6 +167,24 @@ function run_advancement_grade_migration(PDO $pdo): void
                 CONSTRAINT adv_comm_member_commission_fk FOREIGN KEY (commission_id) REFERENCES advancement_commissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT adv_comm_member_personnel_fk FOREIGN KEY (personnel_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    }
+
+    $hasColumn = static function (string $table, string $column) use ($pdo): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
+    if ($hasTable('advancement_candidacies') && !$hasColumn('advancement_candidacies', 'exceptional_override')) {
+        $pdo->exec(
+            'ALTER TABLE advancement_candidacies
+             ADD COLUMN exceptional_override TINYINT(1) NOT NULL DEFAULT 0,
+             ADD COLUMN exceptional_reason TEXT DEFAULT NULL,
+             ADD COLUMN exceptional_by INT UNSIGNED DEFAULT NULL,
+             ADD COLUMN exceptional_at DATETIME DEFAULT NULL'
         );
     }
 }
