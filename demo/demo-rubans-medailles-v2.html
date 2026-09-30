@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pack UI — Rubans &amp; médailles (v2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  Pack UI "Rubans, médailles & frise de carrière"
+  inspired by official U.S. Army / NATO references.
+  This is not an official reproduction.
+  Formes et motifs génériques, inspirés dans leurs proportions générales
+  par des références publiques U.S. Army / OTAN (voir rappel en pied de page).
+  Ceci n'est PAS une reproduction officielle : aucune décoration précise
+  n'est représentée, aucun nom réel n'est utilisé, aucun emblème
+  gouvernemental ou protégé n'est reproduit.
+*/
+:root{
+  --anthracite:#1b1e21; --panel-dark:#22262a; --line-dark:#33393f;
+  --ink-light:#f3f4f5; --muted-blue:#8b96a3;
+  --gold:#c7a33e; --nato-blue:#2456a6; --burgundy:#7a1f2b;
+  --panel:#f4f5f6; --card:#ffffff; --line:#e3e6e9; --ink:#14181b; --muted:#6b7480;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--anthracite);color:var(--ink-light);font-family:'Inter',system-ui,sans-serif;}
+body{padding:0 0 70px;padding-top:env(safe-area-inset-top,0px);}
+code,pre{font-family:'JetBrains Mono',monospace;}
+
+.hero{padding:34px 34px 22px;border-bottom:1px solid var(--line-dark);}
+.hero .eyebrow{color:var(--gold);font-size:11.5px;font-weight:700;letter-spacing:.1em;}
+.hero h1{font-size:26px;margin:8px 0 10px;}
+.caution{
+  background:#26221a;border:1px solid #4a3f22;color:#d9c98f;border-radius:10px;
+  padding:11px 14px;font-size:12px;line-height:1.5;max-width:78ch;
+}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 30px;}
+section{margin-top:40px;}
+.section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.section-head h2{font-size:18px;margin:0;color:#fff;}
+.section-head .tag{font-size:11px;color:var(--muted-blue);border:1px solid var(--line-dark);border-radius:999px;padding:2px 9px;}
+.section-desc{font-size:12.5px;color:var(--muted-blue);margin:6px 0 18px;max-width:74ch;}
+
+.fid{
+  font-size:9.5px;font-weight:700;letter-spacing:.04em;border-radius:5px;padding:2px 6px;display:inline-block;
+}
+.fid.generic{background:#2a2f34;color:#9aa4ad;}
+.fid.nato{background:#152944;color:#7fa8e0;}
+
+/* ============ A. RUBANS ============ */
+.ribbon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.ribbon-card{background:var(--panel-dark);border:1px solid var(--line-dark);border-radius:12px;padding:14px;}
+.ribbon-swatch{
+  width:52px;height:18px;border-radius:2px;overflow:hidden;position:relative;flex:0 0 auto;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);
+}
+.ribbon-name{font-size:12.5px;font-weight:700;margin-top:10px;color:#fff;}
+.ribbon-id{font-size:10px;color:var(--muted-blue);margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.ribbon-desc{font-size:11px;color:var(--muted-blue);margin-top:6px;line-height:1.4;}
+.ribbon-meta{font-size:10px;color:#8b96a3;margin-top:6px;font-family:'JetBrains Mono',monospace;}
+.ribbon-dim{font-size:10px;color:#5f6a74;margin-top:6px;}
+.ribbon-hex{display:flex;gap:4px;margin-top:8px;}
+.hexdot{width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);}
+
+/* Ribbon patterns — hauteurs et largeurs fixes, jamais d'image bitmap */
+.rb-svc{background:repeating-linear-gradient(90deg,#6e1c1c 0 9px,#e8c77e 9px 11px);}
+.rb-camp{background:repeating-linear-gradient(90deg,#17335e 0 13px,#fff 13px 15px);}
+.rb-cond{background:linear-gradient(90deg,#0f6d72,#0f6d72);}
+.rb-cond::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:5px;transform:translateX(-50%);background:#f4e3c1;}
+.rb-cbt{background:repeating-linear-gradient(90deg,#d4a017 0 4px,#171717 4px 8px);}
+.rb-unit{background:#1d3f9e;}
+.rb-unit::before,.rb-unit::after{content:"";position:absolute;top:0;bottom:0;width:4px;background:#fff;}
+.rb-unit::before{left:8px;} .rb-unit::after{right:8px;}
+.rb-qual{background:repeating-linear-gradient(45deg,#2f7d4f 0 5px,#0b3a24 5px 10px);}
+.rb-merit{background:linear-gradient(90deg,#8a6a2c,#e3c878,#8a6a2c);}
+.rb-svc2{background:repeating-linear-gradient(90deg,#6b7278 0 3px,#dfe3e6 3px 6px);}
+.rb-nato{background:linear-gradient(90deg,#173d73 0 40%,#fff 40% 46%,#173d73 46% 54%,#c1272d 54% 60%,#173d73 60% 100%);}
+
+/* ============ B. MEDAILLES ============ */
+.medal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.medal-card{background:var(--panel-dark);border:1px solid var(--line-dark);border-radius:14px;padding:20px 14px 16px;text-align:center;}
+.bel{width:5px;height:5px;border-radius:50%;border:1.5px solid #c9ccce;margin:0 auto;}
+.m-neck{width:1.5px;height:6px;background:#8f9498;margin:0 auto;}
+.m-ribbon{width:30px;height:22px;margin:0 auto;border-radius:1px;position:relative;overflow:hidden;}
+.m-drop-gold{background:repeating-linear-gradient(90deg,#c7a33e 0 6px,#6e1c1c 6px 9px);}
+.m-drop-silver{background:linear-gradient(90deg,#9aa2a8,#dfe3e6,#9aa2a8);}
+.m-drop-bronze{background:repeating-linear-gradient(90deg,#a06a3c 0 5px,#1a1a1a 5px 7px);}
+.m-drop-nato{background:linear-gradient(90deg,#173d73 0 40%,#fff 40% 46%,#173d73 46% 54%,#c1272d 54% 60%,#173d73 60% 100%);}
+.m-drop-svc{background:repeating-linear-gradient(90deg,#6b7278 0 3px,#dfe3e6 3px 6px);}
+.m-disc{
+  width:62px;height:62px;min-width:62px;min-height:62px;aspect-ratio:1/1;
+  border-radius:50%;margin:6px auto 0;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  box-shadow:0 3px 7px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.25);
+}
+.m-disc.small{width:34px;height:34px;min-width:34px;min-height:34px;}
+.m-disc svg{width:28px;height:28px;display:block;}
+.m-disc.small svg{width:16px;height:16px;}
+.disc-gold{background:radial-gradient(circle at 35% 30%,#f0d98a,#a97f28 75%);color:#5c3f10;}
+.disc-silver{background:radial-gradient(circle at 35% 30%,#eef1f2,#818a91 75%);color:#3d4247;}
+.disc-bronze{background:radial-gradient(circle at 35% 30%,#d79a63,#7c4e21 75%);color:#4a2e10;}
+.disc-nato{background:radial-gradient(circle at 35% 30%,#4d7bc4,#173d73 75%);color:#e7edf7;}
+.disc-svc{background:radial-gradient(circle at 35% 30%,#e5e8ea,#9ca3a9 75%);color:#454b50;}
+.m-name{font-size:12.5px;font-weight:700;margin-top:12px;color:#fff;}
+.m-fam{font-size:10px;color:var(--muted-blue);margin-top:2px;}
+.medal-card .ribbon-id,.medal-card .ribbon-meta,.medal-card .ribbon-dim{text-align:center;}
+.medal-card .ribbon-hex{justify-content:center;}
+.size-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;}
+.size-label{font-size:9px;color:#5f6a74;}
+
+/* ============ C. RACK ============ */
+.rack-panel{background:var(--panel-dark);border:1px solid var(--line-dark);border-radius:14px;padding:22px;}
+.rack{display:flex;flex-direction:column;gap:6px;width:max-content;margin:0 auto;}
+.rack-row{display:flex;gap:4px;justify-content:center;align-items:center;}
+.slot{
+  position:relative;flex:0 0 52px;width:52px;height:18px;border-radius:2px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.slot:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 4px 8px rgba(0,0,0,.35);}
+.slot:focus-visible{outline:2px solid #7fa8e0;outline-offset:3px;}
+.slot.selected{outline:2px solid var(--gold);outline-offset:2px;}
+.device{
+  position:absolute;top:-5px;left:50%;transform:translateX(-50%);
+  width:9px;height:9px;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.device svg{width:8px;height:8px;color:var(--gold);}
+.device-num{
+  font-size:8px;font-weight:800;line-height:1;color:var(--gold);
+  text-shadow:0 0 1px #000, 0 1px 0 #000;
+}
+.rack-caption{text-align:center;font-size:10.5px;color:var(--muted-blue);margin-top:16px;}
+.device-note{font-size:10.5px;color:#8b7c4a;margin-top:10px;text-align:center;}
+
+/* ============ D. DONNÉES ============ */
+.code-panel{background:#101315;border:1px solid var(--line-dark);border-radius:12px;padding:16px 18px;overflow-x:auto;}
+.code-panel pre{margin:0;font-size:11px;line-height:1.6;color:#c7d0d8;}
+.code-panel .k{color:#7fa8e0;} .code-panel .s{color:#9fd8a4;} .code-panel .c{color:#5f6a74;}
+
+/* ============ Single medal + ribbon display ============ */
+.single-display{display:flex;align-items:center;gap:26px;background:var(--panel-dark);border:1px solid var(--line-dark);border-radius:14px;padding:24px;}
+
+footer.refs{margin-top:44px;padding-top:18px;border-top:1px solid var(--line-dark);font-size:10.5px;color:#5f6a74;line-height:1.7;}
+
+@media (max-width:720px){
+  .wrap{padding:0 18px;}
+  .ribbon-grid,.medal-grid{grid-template-columns:1fr 1fr;}
+  .single-display{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">ATHENA · UI KIT · v2</div>
+  <h1>Rubans, médailles &amp; frise de carrière</h1>
+  <div class="caution">
+    Modèles graphiques inspirés de références U.S. Army et OTAN. Les noms, formes et motifs sont utilisés ici à des fins de démonstration UI et ne constituent pas des reproductions officielles ni une preuve d'attribution.
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===================== A. RUBANS ===================== -->
+  <section>
+    <div class="section-head"><h2>A. Rubans</h2><span class="tag">9 modèles</span></div>
+    <p class="section-desc">Chaque ruban est un motif CSS pur (pas d'image), redimensionnable sans perte. Dans le rack, tous partagent la même boîte : 52×18&nbsp;px, grille flex, écart constant. La plage recommandée reste 46–52&nbsp;px × 16–18&nbsp;px.</p>
+
+    <div class="ribbon-grid">
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-svc"></div>
+        <div class="ribbon-name">Service distingué</div>
+        <div class="ribbon-id">rbn_service_distingue</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Bandes verticales rouge sombre / or, catégorie générique "service distingué".</div>
+        <div class="ribbon-meta">vertical-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#6e1c1c"></span><span class="hexdot" style="background:#e8c77e"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-camp"></div>
+        <div class="ribbon-name">Campagne extérieure</div>
+        <div class="ribbon-id">rbn_campagne_exterieure</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Bandes verticales bleu marine / blanc, catégorie générique "campagne ou service extérieur".</div>
+        <div class="ribbon-meta">vertical-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#17335e"></span><span class="hexdot" style="background:#fff;box-shadow:inset 0 0 0 1px #ccc"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-cond"></div>
+        <div class="ribbon-name">Conduite / service</div>
+        <div class="ribbon-id">rbn_conduite_service</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Bleu-vert uni avec liseré central, catégorie générique "bonne conduite".</div>
+        <div class="ribbon-meta">center-stripe</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#0f6d72"></span><span class="hexdot" style="background:#f4e3c1"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-cbt"></div>
+        <div class="ribbon-name">Action de combat</div>
+        <div class="ribbon-id">rbn_action_combat</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Rayures jaune/noir, catégorie générique "décoration liée au combat".</div>
+        <div class="ribbon-meta">vertical-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#d4a017"></span><span class="hexdot" style="background:#171717"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-unit"></div>
+        <div class="ribbon-name">Unité citée</div>
+        <div class="ribbon-id">rbn_unite_citee</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Bleu royal à liserés blancs, catégorie générique "citation collective d'unité".</div>
+        <div class="ribbon-meta">edge-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#1d3f9e"></span><span class="hexdot" style="background:#fff;box-shadow:inset 0 0 0 1px #ccc"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-qual"></div>
+        <div class="ribbon-name">Qualification spéciale</div>
+        <div class="ribbon-id">rbn_qualification_speciale</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Vert à diagonales noires, catégorie générique "qualification spécialisée".</div>
+        <div class="ribbon-meta">diagonal-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#2f7d4f"></span><span class="hexdot" style="background:#0b3a24"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-merit"></div>
+        <div class="ribbon-name">Mérite</div>
+        <div class="ribbon-id">rbn_merite</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Dégradé bronze/or horizontal, catégorie générique "décoration de mérite".</div>
+        <div class="ribbon-meta">horizontal-gradient</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#8a6a2c"></span><span class="hexdot" style="background:#e3c878"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-svc2"></div>
+        <div class="ribbon-name">Ancienneté de service</div>
+        <div class="ribbon-id">rbn_anciennete_service</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="ribbon-desc">Fines rayures gris argenté, catégorie générique "ancienneté".</div>
+        <div class="ribbon-meta">fine-stripes</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#6b7278"></span><span class="hexdot" style="background:#dfe3e6;box-shadow:inset 0 0 0 1px #ccc"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+
+      <div class="ribbon-card">
+        <div class="ribbon-swatch rb-nato"></div>
+        <div class="ribbon-name">Service multinational</div>
+        <div class="ribbon-id">rbn_service_multinational_nato</div>
+        <span class="fid nato">NATO_INSPIRED</span>
+        <div class="ribbon-desc">Bleu OTAN avec bandes blanches et rouges — traité comme "NATO-inspired", pas la reproduction d'une mission précise.</div>
+        <div class="ribbon-meta">nato-bands</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#173d73"></span><span class="hexdot" style="background:#fff;box-shadow:inset 0 0 0 1px #ccc"></span><span class="hexdot" style="background:#c1272d"></span></div>
+        <div class="ribbon-dim">52×18 px</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== B. MEDAILLES ===================== -->
+  <section>
+    <div class="section-head"><h2>B. Médailles</h2><span class="tag">6 modèles</span></div>
+    <p class="section-desc">Disque métallique + bordure + relief + ombre douce + bélière + ruban séparé. Deux tailles construites sur le même disque carré (border-radius: 50&nbsp;%) : carte UI (34&nbsp;px) et fiche détaillée (62&nbsp;px).</p>
+
+    <div class="medal-grid">
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-gold"></div>
+        <div class="m-disc disc-gold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.8 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.9l-6.2 3.4L7 14.2 2 9.3l7.2-.7z"/></svg></div>
+        <div class="m-name">Étoile de bravoure</div>
+        <div class="ribbon-id">med_etoile_bravoure</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="m-fam">or · five-point-star</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#c7a33e"></span><span class="hexdot" style="background:#6e1c1c"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-gold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.8 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.9l-6.2 3.4L7 14.2 2 9.3l7.2-.7z"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-gold"></div>
+        <div class="m-disc disc-gold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+        <div class="m-name">Croix du mérite</div>
+        <div class="ribbon-id">med_croix_merite_or</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="m-fam">or · cross-pattee</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#c7a33e"></span><span class="hexdot" style="background:#6e1c1c"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-gold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-silver"></div>
+        <div class="m-disc disc-silver"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+        <div class="m-name">Croix du mérite</div>
+        <div class="ribbon-id">med_croix_merite_argent</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="m-fam">argent · cross-pattee</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#9aa2a8"></span><span class="hexdot" style="background:#dfe3e6;box-shadow:inset 0 0 0 1px #ccc"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-silver"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-bronze"></div>
+        <div class="m-disc disc-bronze"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+        <div class="m-name">Croix du mérite</div>
+        <div class="ribbon-id">med_croix_merite_bronze</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="m-fam">bronze · cross-pattee</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#a06a3c"></span><span class="hexdot" style="background:#1a1a1a"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-bronze"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-nato"></div>
+        <div class="m-disc disc-nato">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 15c1-4 2-7 6-7s5 3 6 7"/><path d="M12 4v3"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="m-name">Service multinational</div>
+        <div class="ribbon-id">med_service_multinational_nato</div>
+        <span class="fid nato">NATO_INSPIRED</span>
+        <div class="m-fam">couronne stylisée · stylised-wreath</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#173d73"></span><span class="hexdot" style="background:#c1272d"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-nato"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 15c1-4 2-7 6-7s5 3 6 7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+
+      <div class="medal-card">
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-svc"></div>
+        <div class="m-disc disc-svc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg></div>
+        <div class="m-name">Médaille de service</div>
+        <div class="ribbon-id">med_medaille_service</div>
+        <span class="fid generic">GENERIC</span>
+        <div class="m-fam">disque poli · plain-disc</div>
+        <div class="ribbon-hex"><span class="hexdot" style="background:#6b7278"></span><span class="hexdot" style="background:#dfe3e6;box-shadow:inset 0 0 0 1px #ccc"></span></div>
+        <div class="ribbon-dim">62×62 px fiche · 34×34 px carte</div>
+        <div class="size-row">
+          <div class="m-disc small disc-svc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg></div>
+          <span class="size-label">34px carte</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== affichage médaille + ruban ===================== -->
+  <section>
+    <div class="section-head"><h2>Affichage médaille + ruban</h2><span class="tag">exemple</span></div>
+    <div class="single-display">
+      <div>
+        <div class="bel"></div><div class="m-neck"></div>
+        <div class="m-ribbon m-drop-gold"></div>
+        <div class="m-disc disc-gold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9,9 L7.2,2.8 L16.8,2.8 L15,9 L21.2,7.2 L21.2,16.8 L15,15 L16.8,21.2 L7.2,21.2 L9,15 L2.8,16.8 L2.8,7.2 Z"/></svg></div>
+      </div>
+      <div>
+        <div class="m-name" style="font-size:15px;">Croix du mérite — échelon or</div>
+        <div class="m-fam" style="margin-top:4px;">GENERIC · med_croix_merite_or · attribuée le 18/09/2026</div>
+        <div class="ribbon-meta">cross-pattee · isOfficialReference: false</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== C. RACK ===================== -->
+  <section>
+    <div class="section-head"><h2>C. Rack de rubans</h2><span class="tag">8 décorations, ordre protocolaire</span></div>
+    <p class="section-desc">3 rubans par ligne, tri configurable de gauche à droite / haut en bas. États hover (survol) et sélectionné. Dispositifs (étoile, chiffre, feuille de chêne) en overlay, génériques.</p>
+    <div class="rack-panel">
+      <div class="rack" id="ribbon-rack">
+        <div class="rack-row">
+          <div class="slot rb-svc selected" data-id="rbn_service_distingue" data-name="Service distingué" role="button" tabindex="0" aria-pressed="true" aria-label="Service distingué">
+            <span class="device" title="Dispositif générique : étoile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.8 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.9l-6.2 3.4L7 14.2 2 9.3l7.2-.7z"/></svg></span>
+          </div>
+          <div class="slot rb-merit" data-id="rbn_merite" data-name="Mérite" role="button" tabindex="0" aria-pressed="false" aria-label="Mérite"></div>
+          <div class="slot rb-unit" data-id="rbn_unite_citee" data-name="Unité citée" role="button" tabindex="0" aria-pressed="false" aria-label="Unité citée"></div>
+        </div>
+        <div class="rack-row">
+          <div class="slot rb-cbt" data-id="rbn_action_combat" data-name="Action de combat" role="button" tabindex="0" aria-pressed="false" aria-label="Action de combat"></div>
+          <div class="slot rb-nato" data-id="rbn_service_multinational_nato" data-name="Service multinational" role="button" tabindex="0" aria-pressed="false" aria-label="Service multinational">
+            <span class="device device-num" title="Dispositif générique : chiffre">2</span>
+          </div>
+          <div class="slot rb-cond" data-id="rbn_conduite_service" data-name="Conduite / service" role="button" tabindex="0" aria-pressed="false" aria-label="Conduite / service"></div>
+        </div>
+        <div class="rack-row">
+          <div class="slot rb-qual" data-id="rbn_qualification_speciale" data-name="Qualification spéciale" role="button" tabindex="0" aria-pressed="false" aria-label="Qualification spéciale">
+            <span class="device" title="Dispositif générique : feuille"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1.6 2.4 2.2 4.2 2.2 6.4 1.7-.7 3.4-.8 5 .4-1.6.9-2.6 2.4-2.7 4.2 1.6.1 3.1.8 4.1 2.2-2.3.2-4 .9-5.1 2.4.1-1.8-.6-3.4-2.1-4.4-1.5 1-2.2 2.6-2.1 4.4-1.1-1.5-2.8-2.2-5.1-2.4 1-1.4 2.5-2.1 4.1-2.2-.1-1.8-1.1-3.3-2.7-4.2 1.6-1.2 3.3-1.1 5-.4C9.8 6.2 10.4 4.4 12 2z"/></svg></span>
+          </div>
+          <div class="slot rb-svc2" data-id="rbn_anciennete_service" data-name="Ancienneté de service" role="button" tabindex="0" aria-pressed="false" aria-label="Ancienneté de service"></div>
+        </div>
+      </div>
+      <div class="rack-caption" id="rack-status">Sélection : Service distingué — survolez un ruban, cliquez pour le contour or</div>
+      <div class="device-note">Les dispositifs affichés (étoile, chiffre, feuille) sont génériques et ne représentent aucune attribution réelle. <code>isOfficialReference: false</code></div>
+    </div>
+  </section>
+
+  <!-- ===================== D. DONNÉES ===================== -->
+  <section>
+    <div class="section-head"><h2>D. Table de données</h2><span class="tag">15 entrées</span></div>
+    <p class="section-desc">Neuf rubans et six médailles. Chaque fiche porte l'identifiant, la famille, les couleurs, le motif, les dimensions et <code>isOfficialReference: false</code>.</p>
+    <div class="code-panel"><pre>[
+  {
+    <span class="k">id</span>: <span class="s">"rbn_service_distingue"</span>,
+    <span class="k">name</span>: <span class="s">"Service distingué"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"service"</span>,
+    <span class="k">colors</span>: [<span class="s">"#6e1c1c"</span>, <span class="s">"#e8c77e"</span>],
+    <span class="k">pattern</span>: <span class="s">"vertical-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Bandes verticales, catégorie service distingué"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_campagne_exterieure"</span>,
+    <span class="k">name</span>: <span class="s">"Campagne extérieure"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"campaign"</span>,
+    <span class="k">colors</span>: [<span class="s">"#17335e"</span>, <span class="s">"#ffffff"</span>],
+    <span class="k">pattern</span>: <span class="s">"vertical-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Bandes verticales bleu marine / blanc, campagne ou service extérieur"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_conduite_service"</span>,
+    <span class="k">name</span>: <span class="s">"Conduite / service"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"conduct"</span>,
+    <span class="k">colors</span>: [<span class="s">"#0f6d72"</span>, <span class="s">"#f4e3c1"</span>],
+    <span class="k">pattern</span>: <span class="s">"center-stripe"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Bleu-vert uni avec liseré central, catégorie bonne conduite"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_action_combat"</span>,
+    <span class="k">name</span>: <span class="s">"Action de combat"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"combat"</span>,
+    <span class="k">colors</span>: [<span class="s">"#d4a017"</span>, <span class="s">"#171717"</span>],
+    <span class="k">pattern</span>: <span class="s">"vertical-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Rayures jaune/noir, décoration liée au combat"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_unite_citee"</span>,
+    <span class="k">name</span>: <span class="s">"Unité citée"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"unit"</span>,
+    <span class="k">colors</span>: [<span class="s">"#1d3f9e"</span>, <span class="s">"#ffffff"</span>],
+    <span class="k">pattern</span>: <span class="s">"edge-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Bleu royal à liserés blancs, citation collective d'unité"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_qualification_speciale"</span>,
+    <span class="k">name</span>: <span class="s">"Qualification spéciale"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"qualification"</span>,
+    <span class="k">colors</span>: [<span class="s">"#2f7d4f"</span>, <span class="s">"#0b3a24"</span>],
+    <span class="k">pattern</span>: <span class="s">"diagonal-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Vert à diagonales sombres, qualification spécialisée"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_merite"</span>,
+    <span class="k">name</span>: <span class="s">"Mérite"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"merit"</span>,
+    <span class="k">colors</span>: [<span class="s">"#8a6a2c"</span>, <span class="s">"#e3c878"</span>],
+    <span class="k">pattern</span>: <span class="s">"horizontal-gradient"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Dégradé bronze/or horizontal, décoration de mérite"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_anciennete_service"</span>,
+    <span class="k">name</span>: <span class="s">"Ancienneté de service"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"seniority"</span>,
+    <span class="k">colors</span>: [<span class="s">"#6b7278"</span>, <span class="s">"#dfe3e6"</span>],
+    <span class="k">pattern</span>: <span class="s">"fine-stripes"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Fines rayures gris argenté, catégorie ancienneté"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"rbn_service_multinational_nato"</span>,
+    <span class="k">name</span>: <span class="s">"Service multinational"</span>,
+    <span class="k">family</span>: <span class="s">"NATO_INSPIRED"</span>,
+    <span class="k">type</span>: <span class="s">"ribbon"</span>,
+    <span class="k">level</span>: <span class="s">"service"</span>,
+    <span class="k">colors</span>: [<span class="s">"#173d73"</span>, <span class="s">"#ffffff"</span>, <span class="s">"#c1272d"</span>],
+    <span class="k">pattern</span>: <span class="s">"nato-bands"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 52, <span class="k">height</span>: 18, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Bleu OTAN, bandes blanches/rouges — inspiration générale, pas une mission précise"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://www.nato.int/en/about-us/official-texts-and-resources"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_etoile_bravoure"</span>,
+    <span class="k">name</span>: <span class="s">"Étoile de bravoure"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"gold"</span>,
+    <span class="k">colors</span>: [<span class="s">"#c7a33e"</span>, <span class="s">"#6e1c1c"</span>],
+    <span class="k">pattern</span>: <span class="s">"five-point-star"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Étoile à cinq branches, échelon or, forme héraldique générique"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/FAQs/FaqsInsignia.aspx?SectionID=104"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_croix_merite_or"</span>,
+    <span class="k">name</span>: <span class="s">"Croix du mérite"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"gold"</span>,
+    <span class="k">colors</span>: [<span class="s">"#c7a33e"</span>, <span class="s">"#6e1c1c"</span>],
+    <span class="k">pattern</span>: <span class="s">"cross-pattee"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Croix pattée, échelon or, forme héraldique générique"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/FAQs/FaqsInsignia.aspx?SectionID=104"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_croix_merite_argent"</span>,
+    <span class="k">name</span>: <span class="s">"Croix du mérite"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"silver"</span>,
+    <span class="k">colors</span>: [<span class="s">"#9aa2a8"</span>, <span class="s">"#dfe3e6"</span>],
+    <span class="k">pattern</span>: <span class="s">"cross-pattee"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Croix pattée, échelon argent, même disque que l'échelon or"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/FAQs/FaqsInsignia.aspx?SectionID=104"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_croix_merite_bronze"</span>,
+    <span class="k">name</span>: <span class="s">"Croix du mérite"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"bronze"</span>,
+    <span class="k">colors</span>: [<span class="s">"#a06a3c"</span>, <span class="s">"#1a1a1a"</span>],
+    <span class="k">pattern</span>: <span class="s">"cross-pattee"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Croix pattée, échelon bronze, même disque que les autres échelons"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/FAQs/FaqsInsignia.aspx?SectionID=104"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_service_multinational_nato"</span>,
+    <span class="k">name</span>: <span class="s">"Service multinational"</span>,
+    <span class="k">family</span>: <span class="s">"NATO_INSPIRED"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"service"</span>,
+    <span class="k">colors</span>: [<span class="s">"#173d73"</span>, <span class="s">"#ffffff"</span>, <span class="s">"#c1272d"</span>],
+    <span class="k">pattern</span>: <span class="s">"stylised-wreath"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Couronne stylisée sur disque bleu OTAN, non-officiel"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://www.nato.int/en/news-and-events/articles/news/2012/11/19/ims-civilians-awarded-the-non-article-5-medal-for-service-in-afghanistan"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  },
+  {
+    <span class="k">id</span>: <span class="s">"med_medaille_service"</span>,
+    <span class="k">name</span>: <span class="s">"Médaille de service"</span>,
+    <span class="k">family</span>: <span class="s">"GENERIC"</span>,
+    <span class="k">type</span>: <span class="s">"medal"</span>,
+    <span class="k">level</span>: <span class="s">"service"</span>,
+    <span class="k">colors</span>: [<span class="s">"#6b7278"</span>, <span class="s">"#dfe3e6"</span>],
+    <span class="k">pattern</span>: <span class="s">"plain-disc"</span>,
+    <span class="k">dimensions</span>: { <span class="k">width</span>: 62, <span class="k">height</span>: 62, <span class="k">card</span>: 34, <span class="k">unit</span>: <span class="s">"px"</span> },
+    <span class="k">description</span>: <span class="s">"Disque poli sans emblème, catégorie service"</span>,
+    <span class="k">referenceUrl</span>: <span class="s">"https://tioh.army.mil/"</span>,
+    <span class="k">isOfficialReference</span>: <span class="k">false</span>
+  }
+]</pre></div>
+  </section>
+
+  <footer class="refs">
+    Proportions générales informées par, sans reproduire : U.S. Army Institute of Heraldry (tioh.army.mil), U.S. Army veteran medals (veteranmedals.army.mil), NATO official texts (nato.int). Aucun emblème gouvernemental ni logo protégé n'est reproduit dans ce pack.
+  </footer>
+
+</div>
+<script>
+(function () {
+  var rack = document.getElementById('ribbon-rack');
+  var status = document.getElementById('rack-status');
+  if (!rack) return;
+
+  function selectSlot(slot) {
+    rack.querySelectorAll('.slot').forEach(function (other) {
+      other.classList.remove('selected');
+      other.setAttribute('aria-pressed', 'false');
+    });
+    slot.classList.add('selected');
+    slot.setAttribute('aria-pressed', 'true');
+    if (status) {
+      status.textContent = 'Sélection : ' + (slot.getAttribute('data-name') || slot.getAttribute('data-id'));
+    }
+  }
+
+  rack.querySelectorAll('.slot').forEach(function (slot) {
+    slot.addEventListener('click', function () { selectSlot(slot); });
+    slot.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectSlot(slot);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
