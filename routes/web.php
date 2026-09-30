@@ -669,6 +669,12 @@ return function (Router $router) {
     $router->post('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'updateWardrobe'], [AuthMiddleware::class]);
     $router->post('/equipment/tenues/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'showWardrobe'], [AuthMiddleware::class]);
+    $router->post('/equipment/fiches', [ArsenalWardrobeController::class, 'storeFiche'], [AuthMiddleware::class]);
+    $router->post('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'updateFiche'], [AuthMiddleware::class]);
+    $router->get('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'showFiche'], [AuthMiddleware::class]);
+    $router->post('/equipment/dotation', [ArsenalWardrobeController::class, 'storeDotationItem'], [AuthMiddleware::class]);
+    $router->post('/equipment/dotation/{id}', [ArsenalWardrobeController::class, 'updateDotationItem'], [AuthMiddleware::class]);
+    $router->get('/equipment/dotation/{id}', [ArsenalWardrobeController::class, 'showDotationItem'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);

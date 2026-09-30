@@ -101,4 +101,16 @@ return static function (PDO $pdo): void {
     if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'cover_image_path')) {
         $pdo->exec('ALTER TABLE arsenal_wardrobes ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER notes');
     }
+    if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'description')) {
+        $pdo->exec('ALTER TABLE arsenal_wardrobes ADD COLUMN description VARCHAR(1000) DEFAULT NULL AFTER notes');
+    }
+    if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'gallery_json')) {
+        $pdo->exec('ALTER TABLE arsenal_wardrobes ADD COLUMN gallery_json JSON DEFAULT NULL AFTER cover_image_path');
+    }
+    if ($tableExists('equipment_classes') && !$columnExists('equipment_classes', 'cover_image_path')) {
+        $pdo->exec('ALTER TABLE equipment_classes ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER description');
+    }
+    if ($tableExists('equipment_item_definitions') && !$columnExists('equipment_item_definitions', 'cover_image_path')) {
+        $pdo->exec('ALTER TABLE equipment_item_definitions ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER description');
+    }
 };

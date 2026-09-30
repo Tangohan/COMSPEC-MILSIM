@@ -75,7 +75,8 @@ final class ArsenalWardrobeRepository
         $st = $this->pdo->prepare(
             'SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
                     w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
-                    w.payload_text, w.notes, w.cover_image_path, w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
+                    w.payload_text, w.notes, w.description, w.cover_image_path, w.gallery_json,
+                    w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
                     c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
                     COALESCE(NULLIF(TRIM(u.callsign), \'\'), NULLIF(TRIM(u.display_name), \'\'), \'Membre\') AS owner_label
              FROM arsenal_wardrobes w
@@ -517,6 +518,46 @@ final class ArsenalWardrobeRepository
         return $st->rowCount() > 0;
     }
 
+    public function updateWardrobeDescription(int $tenantId, int $userId, int $id, ?string $description): bool
+    {
+        $description = $description !== null && trim($description) !== ''
+            ? substr(trim($description), 0, 1000)
+            : null;
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET description = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$description, $id, $tenantId, $userId]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * @param list<string> $paths Relative storage paths
+     */
+    public function setWardrobeGallery(int $tenantId, int $userId, int $id, array $paths): bool
+    {
+        $clean = [];
+        foreach ($paths as $path) {
+            $path = trim((string) $path);
+            if ($path === '' || str_contains($path, '..') || !str_starts_with(str_replace('\\', '/', $path), 'uploads/equipment/')) {
+                continue;
+            }
+            $clean[] = $path;
+            if (count($clean) >= 5) {
+                break;
+            }
+        }
+        $json = $clean === [] ? null : json_encode(array_values($clean), JSON_UNESCAPED_UNICODE);
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET gallery_json = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$json, $id, $tenantId, $userId]);
+
+        return $st->rowCount() > 0;
+    }
+
     private function findBySlug(int $tenantId, int $userId, string $slug): ?array
     {
         $slugEq = SqlText::equals($this->pdo, 'slug');
@@ -548,9 +589,34 @@ final class ArsenalWardrobeRepository
         $row['owner_label'] = trim((string) ($row['owner_label'] ?? ''));
         $row['mine'] = !empty($row['mine']);
         $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
+        $row['description'] = trim((string) ($row['description'] ?? ''));
         $row['cover_url'] = EquipmentCoverStorage::publicUrl(
             isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
         );
+        $galleryPaths = [];
+        $rawGallery = $row['gallery_json'] ?? null;
+        if (is_string($rawGallery) && $rawGallery !== '') {
+            $decoded = json_decode($rawGallery, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $path) {
+                    if (is_string($path) && trim($path) !== '') {
+                        $galleryPaths[] = trim($path);
+                    }
+                }
+            }
+        } elseif (is_array($rawGallery)) {
+            foreach ($rawGallery as $path) {
+                if (is_string($path) && trim($path) !== '') {
+                    $galleryPaths[] = trim($path);
+                }
+            }
+        }
+        $row['gallery_paths'] = $galleryPaths;
+        $row['gallery_urls'] = array_values(array_filter(array_map(
+            static fn (string $p): ?string => EquipmentCoverStorage::publicUrl($p),
+            $galleryPaths
+        )));
+        unset($row['gallery_json']);
 
         return $row;
     }

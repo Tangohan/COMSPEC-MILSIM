@@ -24,6 +24,7 @@
     availIn: false,
     sort: 'name',
     openTenueId: null,
+    tab: 'tenues',
   };
 
   var grid = root.querySelector('[data-eq-grid]');
@@ -34,9 +35,18 @@
   var sortSelect = root.querySelector('[data-eq-sort]');
   var clearBtn = root.querySelector('[data-eq-clear-filters]');
   var activeFilters = root.querySelector('[data-eq-active-filters]');
+  var filtersAside = root.querySelector('.eq-hub__filters');
   var qvDialog = document.getElementById('eq-quickview');
   var colDialog = document.getElementById('eq-collection-new');
+  var colEditDialog = document.getElementById('eq-collection-edit');
   var helpDialog = document.getElementById('eq-tenue-help');
+  var ficheDialog = document.getElementById('eq-fiche-view');
+  var ficheNewDialog = document.getElementById('eq-fiche-new');
+  var dotationDialog = document.getElementById('eq-dotation-view');
+  var dotationNewDialog = document.getElementById('eq-dotation-new');
+  var qvDesc = root.querySelector('[data-eq-qv-desc]');
+  var qvDescription = root.querySelector('[data-eq-qv-description]');
+  var qvGalleryEdit = root.querySelector('[data-eq-qv-gallery-edit]');
 
   function parseJsonScript(id) {
     var el = document.getElementById(id);
@@ -76,9 +86,28 @@
     else params.delete('tenue');
     if (state.q) params.set('q', state.q);
     else params.delete('q');
+    if (state.tab && state.tab !== 'tenues') params.set('tab', state.tab);
+    else params.delete('tab');
+    params.delete('edit_collection');
     var qs = params.toString();
     var next = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
     window.history.replaceState({}, '', next);
+  }
+
+  function setTab(tab) {
+    state.tab = tab === 'fiches' || tab === 'dotation' ? tab : 'tenues';
+    root.querySelectorAll('[data-eq-tab]').forEach(function (btn) {
+      var on = btn.getAttribute('data-eq-tab') === state.tab;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    root.querySelectorAll('[data-eq-panel]').forEach(function (panel) {
+      panel.hidden = panel.getAttribute('data-eq-panel') !== state.tab;
+    });
+    if (filtersAside) {
+      filtersAside.setAttribute('data-eq-filters-for', state.tab);
+    }
+    syncUrl();
   }
 
   function updateCount(visible) {
@@ -118,10 +147,10 @@
       }
       if (owned) {
         editWrap.hidden = false;
-        var hubBase = String((catalog.urls && catalog.urls.hub) || '/equipment').replace(/\/?$/, '');
-        editLink.href = hubBase + '/collections/' + owned.id + '?edit=1';
+        editLink.setAttribute('data-eq-edit-collection-id', String(owned.id));
       } else {
         editWrap.hidden = true;
+        editLink.removeAttribute('data-eq-edit-collection-id');
       }
     }
     if (!on) return;
@@ -281,6 +310,8 @@
       var which = btn.getAttribute('data-eq-open');
       if (which === 'collection-new') openDialog(colDialog);
       if (which === 'tenue-help') openDialog(helpDialog);
+      if (which === 'fiche-new') openDialog(ficheNewDialog);
+      if (which === 'dotation-new') openDialog(dotationNewDialog);
     });
   });
 
@@ -291,7 +322,7 @@
     });
   });
 
-  [qvDialog, colDialog, helpDialog].forEach(function (dlg) {
+  [qvDialog, colDialog, colEditDialog, helpDialog, ficheDialog, ficheNewDialog, dotationDialog, dotationNewDialog].forEach(function (dlg) {
     if (!dlg) return;
     dlg.addEventListener('click', function (e) {
       if (e.target === dlg) closeDialog(dlg);
@@ -302,6 +333,12 @@
         syncUrl();
         showQvView();
       }
+    });
+  });
+
+  root.querySelectorAll('[data-eq-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setTab(btn.getAttribute('data-eq-tab'));
     });
   });
 
@@ -468,6 +505,40 @@
       });
     }
     if (qvNotes) qvNotes.value = w.notes || '';
+    if (qvDescription) qvDescription.value = w.description || '';
+    if (qvGalleryEdit) {
+      qvGalleryEdit.innerHTML = '';
+      var paths = Array.isArray(w.gallery_paths) ? w.gallery_paths : [];
+      var urls = Array.isArray(w.gallery) ? w.gallery.slice(w.cover_url ? 1 : 0) : [];
+      if (!paths.length) {
+        qvGalleryEdit.hidden = true;
+      } else {
+        qvGalleryEdit.hidden = false;
+        paths.forEach(function (path, i) {
+          var label = document.createElement('label');
+          var img = document.createElement('img');
+          img.src = urls[i] || '';
+          img.alt = '';
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.name = 'remove_gallery[]';
+          cb.value = path;
+          cb.hidden = true;
+          var span = document.createElement('span');
+          span.textContent = 'Retirer';
+          label.appendChild(img);
+          label.appendChild(cb);
+          label.appendChild(span);
+          label.addEventListener('click', function (e) {
+            e.preventDefault();
+            cb.checked = !cb.checked;
+            label.style.opacity = cb.checked ? '0.45' : '1';
+            span.textContent = cb.checked ? 'Retiré' : 'Retirer';
+          });
+          qvGalleryEdit.appendChild(label);
+        });
+      }
+    }
     var csrfInputs = root.querySelectorAll('[data-eq-qv-form] input[name="_csrf_token"], [data-eq-qv-delete] input[name="_csrf_token"]');
     csrfInputs.forEach(function (inp) {
       if (payload.csrf) inp.value = payload.csrf;
@@ -507,6 +578,11 @@
         var w = res.body.wardrobe || {};
         if (qvTitle) qvTitle.textContent = w.display_name || w.name || 'Tenue';
         if (qvHint) qvHint.textContent = w.usage_hint || '';
+        if (qvDesc) {
+          var desc = (w.description || '').trim();
+          qvDesc.hidden = !desc;
+          qvDesc.textContent = desc;
+        }
         renderGallery(w.gallery && w.gallery.length ? w.gallery : w.cover_url ? [w.cover_url] : []);
         renderLoadout(w.loadout_items || []);
         if (qvCollection) {
@@ -611,9 +687,295 @@
     });
   }
 
+  /* ---- Collection edit modal ---- */
+  function openCollectionEdit(id) {
+    id = parseInt(id, 10);
+    if (!id || !colEditDialog) return;
+    var base = (catalog.urls && catalog.urls.collection) || '/equipment/collections/';
+    var url = base.replace(/\/?$/, '/') + id + '?format=json';
+    openDialog(colEditDialog);
+    fetch(url, {
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (body) {
+        if (!body || !body.ok) return;
+        var c = body.collection || {};
+        var form = root.querySelector('[data-eq-collection-edit-form]');
+        var del = root.querySelector('[data-eq-col-edit-delete]');
+        if (form) form.action = (body.urls && body.urls.update) || '';
+        if (del) del.action = (body.urls && body.urls.delete) || '';
+        var nameEl = root.querySelector('[data-eq-col-edit-name]');
+        var descEl = root.querySelector('[data-eq-col-edit-description]');
+        var visEl = root.querySelector('[data-eq-col-edit-visibility]');
+        if (nameEl) nameEl.value = c.name || '';
+        if (descEl) descEl.value = c.description || '';
+        if (visEl) visEl.value = c.visibility || 'personal';
+        var selected = {};
+        (c.selected_ids || []).forEach(function (sid) {
+          selected[String(sid)] = true;
+        });
+        var gridEl = root.querySelector('[data-eq-col-edit-grid]');
+        var countEl2 = root.querySelector('[data-eq-col-edit-count]');
+        if (!gridEl) return;
+        gridEl.innerHTML = '';
+        (body.mine_wardrobes || []).forEach(function (w) {
+          var label = document.createElement('label');
+          label.className = 'eq-hub__pick';
+          label.setAttribute('data-eq-col-edit-pick', '1');
+          label.setAttribute('data-name', String(w.display_name || w.name || '').toLowerCase());
+          var input = document.createElement('input');
+          input.type = 'checkbox';
+          input.name = 'wardrobe_ids[]';
+          input.value = String(w.id);
+          input.hidden = true;
+          input.checked = !!selected[String(w.id)];
+          var media = document.createElement('span');
+          media.className = 'eq-hub__media eq-hub__media--pick';
+          if (w.cover_url) {
+            var img = document.createElement('img');
+            img.className = 'eq-hub__img is-loaded';
+            img.src = w.cover_url;
+            img.alt = '';
+            media.appendChild(img);
+          } else {
+            media.innerHTML = '<span class="eq-hub__ph" aria-hidden="true"></span>';
+          }
+          var mark = document.createElement('span');
+          mark.className = 'eq-hub__pick-mark';
+          mark.setAttribute('aria-hidden', 'true');
+          mark.textContent = '✓';
+          media.appendChild(mark);
+          var nm = document.createElement('span');
+          nm.className = 'eq-hub__pick-name';
+          nm.textContent = w.display_name || w.name || 'Tenue';
+          label.appendChild(input);
+          label.appendChild(media);
+          label.appendChild(nm);
+          label.classList.toggle('is-selected', input.checked);
+          label.addEventListener('click', function (e) {
+            e.preventDefault();
+            input.checked = !input.checked;
+            label.classList.toggle('is-selected', input.checked);
+            if (countEl2) {
+              var n = gridEl.querySelectorAll('input:checked').length;
+              countEl2.textContent = n + ' sélectionnée' + (n > 1 ? 's' : '');
+            }
+          });
+          gridEl.appendChild(label);
+        });
+        if (countEl2) {
+          var n0 = gridEl.querySelectorAll('input:checked').length;
+          countEl2.textContent = n0 + ' sélectionnée' + (n0 > 1 ? 's' : '');
+        }
+        root.querySelectorAll('[data-eq-collection-edit-form] input[name="_csrf_token"], [data-eq-col-edit-delete] input[name="_csrf_token"]').forEach(function (inp) {
+          if (body.csrf) inp.value = body.csrf;
+        });
+      });
+  }
+
+  var editColBtn = root.querySelector('[data-eq-edit-collection]');
+  if (editColBtn) {
+    editColBtn.addEventListener('click', function () {
+      var id = editColBtn.getAttribute('data-eq-edit-collection-id');
+      if (id) openCollectionEdit(id);
+    });
+  }
+  var colEditSearch = root.querySelector('[data-eq-col-edit-search]');
+  if (colEditSearch) {
+    colEditSearch.addEventListener(
+      'input',
+      debounce(function () {
+        var q = (colEditSearch.value || '').trim().toLowerCase();
+        root.querySelectorAll('[data-eq-col-edit-pick]').forEach(function (pick) {
+          pick.hidden = !!(q && (pick.getAttribute('data-name') || '').indexOf(q) === -1);
+        });
+      }, 100)
+    );
+  }
+
+  /* ---- Fiches / Dotation ---- */
+  function setStageMedia(el, url) {
+    if (!el) return;
+    if (url) {
+      el.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="">';
+    } else {
+      el.innerHTML =
+        '<span class="eq-hub__ph eq-hub__ph--lg" aria-hidden="true"><svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="10" width="40" height="52" rx="3" stroke="currentColor" stroke-width="2"/></svg></span>';
+    }
+  }
+
+  function openFiche(id) {
+    id = parseInt(id, 10);
+    if (!id || !ficheDialog) return;
+    var base = (catalog.urls && catalog.urls.fiche) || '/equipment/fiches/';
+    openDialog(ficheDialog);
+    var view = root.querySelector('[data-eq-fiche-view-panel]');
+    var edit = root.querySelector('[data-eq-fiche-edit-panel]');
+    if (view) view.hidden = false;
+    if (edit) edit.hidden = true;
+    fetch(base.replace(/\/?$/, '/') + id, {
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (body) {
+        if (!body || !body.ok) return;
+        var f = body.fiche || {};
+        var title = root.querySelector('[data-eq-fiche-title]');
+        var desc = root.querySelector('[data-eq-fiche-desc]');
+        var cat = root.querySelector('[data-eq-fiche-cat]');
+        var page = root.querySelector('[data-eq-fiche-page]');
+        var editBtn = root.querySelector('[data-eq-fiche-edit]');
+        if (title) title.textContent = f.name || 'Fiche';
+        if (desc) desc.textContent = f.description || 'Aucune description pour le moment.';
+        if (cat) {
+          cat.hidden = !f.category;
+          cat.textContent = f.category || '';
+        }
+        setStageMedia(root.querySelector('[data-eq-fiche-stage]'), f.cover_url);
+        if (page) page.href = (body.urls && body.urls.page) || '#';
+        if (editBtn) editBtn.hidden = !f.can_edit;
+        var form = root.querySelector('[data-eq-fiche-edit-form]');
+        if (form && body.urls) form.action = body.urls.update || '';
+        var n = root.querySelector('[data-eq-fiche-edit-name]');
+        var c = root.querySelector('[data-eq-fiche-edit-category]');
+        var d = root.querySelector('[data-eq-fiche-edit-description]');
+        if (n) n.value = f.name || '';
+        if (c) c.value = f.category || '';
+        if (d) d.value = f.description || '';
+        root.querySelectorAll('[data-eq-fiche-edit-form] input[name="_csrf_token"]').forEach(function (inp) {
+          if (body.csrf) inp.value = body.csrf;
+        });
+      });
+  }
+
+  function openDotation(id) {
+    id = parseInt(id, 10);
+    if (!id || !dotationDialog) return;
+    var base = (catalog.urls && catalog.urls.dotation) || '/equipment/dotation/';
+    openDialog(dotationDialog);
+    var view = root.querySelector('[data-eq-dotation-view-panel]');
+    var edit = root.querySelector('[data-eq-dotation-edit-panel]');
+    if (view) view.hidden = false;
+    if (edit) edit.hidden = true;
+    fetch(base.replace(/\/?$/, '/') + id, {
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (body) {
+        if (!body || !body.ok) return;
+        var item = body.item || {};
+        var title = root.querySelector('[data-eq-dotation-title]');
+        var desc = root.querySelector('[data-eq-dotation-desc]');
+        var code = root.querySelector('[data-eq-dotation-code]');
+        var admin = root.querySelector('[data-eq-dotation-admin]');
+        var editBtn = root.querySelector('[data-eq-dotation-edit]');
+        if (title) title.textContent = item.name || 'Article';
+        if (desc) desc.textContent = item.description || 'Aucune description pour le moment.';
+        if (code) {
+          code.hidden = !item.code;
+          code.textContent = item.code || '';
+        }
+        setStageMedia(root.querySelector('[data-eq-dotation-stage]'), item.cover_url);
+        if (admin) {
+          admin.hidden = !item.admin_url || !item.can_edit;
+          if (item.admin_url) admin.href = item.admin_url;
+        }
+        if (editBtn) editBtn.hidden = !item.can_edit;
+        var form = root.querySelector('[data-eq-dotation-edit-form]');
+        if (form && body.urls) form.action = body.urls.update || '';
+        var codeEl = root.querySelector('[data-eq-dotation-edit-code]');
+        var nameEl = root.querySelector('[data-eq-dotation-edit-name]');
+        var catEl = root.querySelector('[data-eq-dotation-edit-category]');
+        var descEl = root.querySelector('[data-eq-dotation-edit-description]');
+        if (codeEl) codeEl.value = item.code || '';
+        if (nameEl) nameEl.value = item.name || '';
+        if (catEl) catEl.value = item.category || '';
+        if (descEl) descEl.value = item.description || '';
+        root.querySelectorAll('[data-eq-dotation-edit-form] input[name="_csrf_token"]').forEach(function (inp) {
+          if (body.csrf) inp.value = body.csrf;
+        });
+      });
+  }
+
+  root.querySelectorAll('[data-eq-fiche-view]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openFiche(btn.getAttribute('data-eq-fiche-view'));
+    });
+  });
+  root.querySelectorAll('[data-eq-dotation-view]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openDotation(btn.getAttribute('data-eq-dotation-view'));
+    });
+  });
+
+  var ficheEditBtn = root.querySelector('[data-eq-fiche-edit]');
+  var ficheBack = root.querySelector('[data-eq-fiche-back]');
+  if (ficheEditBtn) {
+    ficheEditBtn.addEventListener('click', function () {
+      var view = root.querySelector('[data-eq-fiche-view-panel]');
+      var edit = root.querySelector('[data-eq-fiche-edit-panel]');
+      if (view) view.hidden = true;
+      if (edit) edit.hidden = false;
+    });
+  }
+  if (ficheBack) {
+    ficheBack.addEventListener('click', function () {
+      var view = root.querySelector('[data-eq-fiche-view-panel]');
+      var edit = root.querySelector('[data-eq-fiche-edit-panel]');
+      if (view) view.hidden = false;
+      if (edit) edit.hidden = true;
+    });
+  }
+  var dotEditBtn = root.querySelector('[data-eq-dotation-edit]');
+  var dotBack = root.querySelector('[data-eq-dotation-back]');
+  if (dotEditBtn) {
+    dotEditBtn.addEventListener('click', function () {
+      var view = root.querySelector('[data-eq-dotation-view-panel]');
+      var edit = root.querySelector('[data-eq-dotation-edit-panel]');
+      if (view) view.hidden = true;
+      if (edit) edit.hidden = false;
+    });
+  }
+  if (dotBack) {
+    dotBack.addEventListener('click', function () {
+      var view = root.querySelector('[data-eq-dotation-view-panel]');
+      var edit = root.querySelector('[data-eq-dotation-edit-panel]');
+      if (view) view.hidden = false;
+      if (edit) edit.hidden = true;
+    });
+  }
+
+  function bindSimpleSearch(inputSel, cardSel) {
+    var input = root.querySelector(inputSel);
+    if (!input) return;
+    input.addEventListener(
+      'input',
+      debounce(function () {
+        var q = (input.value || '').trim().toLowerCase();
+        root.querySelectorAll(cardSel).forEach(function (card) {
+          card.hidden = !!(q && (card.getAttribute('data-name') || '').indexOf(q) === -1);
+        });
+      }, 100)
+    );
+  }
+  bindSimpleSearch('[data-eq-fiche-search]', '[data-eq-fiche-card]');
+  bindSimpleSearch('[data-eq-dotation-search]', '[data-eq-dotation-card]');
+
   /* ---- Init from URL ---- */
   (function initFromUrl() {
     var params = new URLSearchParams(window.location.search);
+    var tab = params.get('tab');
+    setTab(tab || 'tenues');
     var col = params.get('collection');
     if (col) state.collections[String(col)] = true;
     var q = params.get('q');
@@ -624,6 +986,17 @@
     applyFilters();
     var tenue = params.get('tenue');
     if (tenue) openQuickView(tenue);
+    if (params.get('edit_collection') === '1' && col) openCollectionEdit(col);
+    var fiche = params.get('fiche');
+    if (fiche) {
+      setTab('fiches');
+      openFiche(fiche);
+    }
+    var dot = params.get('dotation');
+    if (dot) {
+      setTab('dotation');
+      openDotation(dot);
+    }
   })();
 
   bindMedia(root);

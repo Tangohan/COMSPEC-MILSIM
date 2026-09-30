@@ -6,6 +6,8 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\AdvancementCodes;
+use App\Support\EquipmentCoverStorage;
+use App\Support\SilentSchemaMigration;
 use PDO;
 use Throwable;
 
@@ -29,6 +31,7 @@ final class EquipmentItemDefinitionRepository
         if (!$this->schemaReady()) {
             return [];
         }
+        $this->ensureExtras();
         $sql = 'SELECT d.*,
                        (SELECT COUNT(*) FROM personnel_equipment_assignments a
                          WHERE a.definition_id = d.id AND a.status = \'' . AdvancementCodes::EQUIP_ISSUED . '\') AS issued_count
@@ -40,18 +43,19 @@ final class EquipmentItemDefinitionRepository
         $st = $this->pdo->prepare($sql);
         $st->execute([$tenantId]);
 
-        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return array_map([$this, 'mapDefinition'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
     public function find(int $tenantId, int $id): ?array
     {
+        $this->ensureExtras();
         $st = $this->pdo->prepare(
             'SELECT * FROM equipment_item_definitions WHERE tenant_id = ? AND id = ? LIMIT 1'
         );
         $st->execute([$tenantId, $id]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
-        return $row ?: null;
+        return $row ? $this->mapDefinition($row) : null;
     }
 
     public function findByCode(int $tenantId, string $code): ?array
@@ -68,10 +72,11 @@ final class EquipmentItemDefinitionRepository
     /** @param array<string, mixed> $data */
     public function create(int $tenantId, array $data, ?int $actorId): int
     {
+        $this->ensureExtras();
         $st = $this->pdo->prepare(
             'INSERT INTO equipment_item_definitions
-                (tenant_id, code, name, category, description, created_at, updated_at, created_by)
-             VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?)'
+                (tenant_id, code, name, category, description, cover_image_path, created_at, updated_at, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)'
         );
         $st->execute([
             $tenantId,
@@ -79,6 +84,7 @@ final class EquipmentItemDefinitionRepository
             trim((string) ($data['name'] ?? '')),
             ($c = trim((string) ($data['category'] ?? ''))) === '' ? null : $c,
             ($d = trim((string) ($data['description'] ?? ''))) === '' ? null : $d,
+            $data['cover_image_path'] ?? null,
             $actorId,
         ]);
 
@@ -88,18 +94,46 @@ final class EquipmentItemDefinitionRepository
     /** @param array<string, mixed> $data */
     public function update(int $tenantId, int $id, array $data): void
     {
+        $this->ensureExtras();
+        $current = $this->find($tenantId, $id);
+        $cover = array_key_exists('cover_image_path', $data)
+            ? $data['cover_image_path']
+            : ($current['cover_image_path'] ?? null);
         $st = $this->pdo->prepare(
             'UPDATE equipment_item_definitions
-             SET code = ?, name = ?, category = ?, description = ?, updated_at = NOW()
+             SET code = ?, name = ?, category = ?, description = ?, cover_image_path = ?, updated_at = NOW()
              WHERE tenant_id = ? AND id = ? AND archived_at IS NULL'
         );
         $st->execute([
-            strtoupper(trim((string) ($data['code'] ?? ''))),
-            trim((string) ($data['name'] ?? '')),
-            ($c = trim((string) ($data['category'] ?? ''))) === '' ? null : $c,
-            ($d = trim((string) ($data['description'] ?? ''))) === '' ? null : $d,
+            strtoupper(trim((string) ($data['code'] ?? ($current['code'] ?? '')))),
+            trim((string) ($data['name'] ?? ($current['name'] ?? ''))),
+            ($c = trim((string) ($data['category'] ?? ($current['category'] ?? '')))) === '' ? null : $c,
+            ($d = trim((string) ($data['description'] ?? ($current['description'] ?? '')))) === '' ? null : $d,
+            $cover,
             $tenantId,
             $id,
+        ]);
+        if (
+            array_key_exists('cover_image_path', $data)
+            && $current !== null
+            && ($data['cover_image_path'] ?? null) !== ($current['cover_image_path'] ?? null)
+        ) {
+            EquipmentCoverStorage::delete(isset($current['cover_image_path']) ? (string) $current['cover_image_path'] : null);
+        }
+    }
+
+    public function setCover(int $tenantId, int $id, ?string $path): void
+    {
+        $current = $this->find($tenantId, $id);
+        if ($current === null) {
+            return;
+        }
+        $this->update($tenantId, $id, [
+            'code' => $current['code'] ?? '',
+            'name' => $current['name'] ?? '',
+            'category' => $current['category'] ?? null,
+            'description' => $current['description'] ?? null,
+            'cover_image_path' => $path,
         ]);
     }
 
@@ -124,5 +158,29 @@ final class EquipmentItemDefinitionRepository
         } catch (Throwable) {
             return false;
         }
+    }
+
+    private function ensureExtras(): void
+    {
+        try {
+            SilentSchemaMigration::run(base_path('bootstrap/equipment_catalog_extras_migration.php'), $this->pdo);
+        } catch (Throwable) {
+            // ignore
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function mapDefinition(array $row): array
+    {
+        $row['id'] = (int) ($row['id'] ?? 0);
+        $row['issued_count'] = (int) ($row['issued_count'] ?? 0);
+        $row['cover_url'] = EquipmentCoverStorage::publicUrl(
+            isset($row['cover_image_path']) ? (string) $row['cover_image_path'] : null
+        );
+
+        return $row;
     }
 }

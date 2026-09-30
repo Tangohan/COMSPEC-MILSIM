@@ -60,6 +60,7 @@ class EquipmentController
         return Response::view('layout.main', [
             'content' => 'equipment.show',
             'title' => $class['name'],
+            'equipmentHubPage' => true,
             'equipmentClass' => $class,
             'linkedDocuments' => $linkedDocuments,
         ]);
