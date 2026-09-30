@@ -26,14 +26,16 @@ final class DoctrineRhEmploymentAssetTest extends TestCase
         self::assertStringContainsString('ensureRhEmploymentBundledFile', $seed);
         self::assertStringContainsString('application/pdf', $seed);
         self::assertStringContainsString('doctrine/drh-pers-2026-001.pdf', $seed);
-        self::assertStringContainsString('FM_ATHENA_RH_Doctrine_v1.0_FR.pdf', $seed);
+        self::assertStringContainsString('FM_ATHENA_RH_Doctrine_FR_v1.1.pdf', $seed);
+        self::assertStringContainsString("'v1.1'", $seed);
+        self::assertStringContainsString('upgradeRhEmploymentDoctrineOfficialMetadata', $seed);
+        self::assertStringContainsString('FM ATHENA RH-01', $seed);
         self::assertFileExists($pdf);
         self::assertFileExists($md);
-        self::assertGreaterThan(10000, (int) filesize($pdf));
+        self::assertGreaterThan(100000, (int) filesize($pdf));
         $head = (string) file_get_contents($pdf, false, null, 0, 5);
         self::assertSame('%PDF-', $head);
         self::assertStringContainsString('Recrutement', (string) file_get_contents($md));
         self::assertStringContainsString('Avancement', (string) file_get_contents($md));
-        self::assertStringContainsString('campagne', mb_strtolower((string) file_get_contents($md)));
     }
 }

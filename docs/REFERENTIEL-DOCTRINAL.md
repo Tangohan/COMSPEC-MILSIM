@@ -111,7 +111,7 @@ Fichier SQL : `migrations/20260902120000_doctrine_referential.sql`
 
 `doctrine_atak_employment_seed.php` ajoute idempotemment la doctrine **SIC/ATAK/2026-001** (*Doctrine d’emploi d’ATAK / Overwatch Athena*). Le fichier officiel est le manuel PDF v1.1. Si un stub de démonstration existe déjà (résumé « Document de démonstration » ou fichier `storage/documents/demo/`), le manuel officiel est substitué sans créer de prises en compte. Un ancien pointeur Markdown est remplacé par ce PDF.
 
-`doctrine_rh_employment_seed.php` ajoute idempotemment la doctrine **DRH/PERS/2026-001** (*Doctrine d’emploi RH — Recrutement et Avancement*). Manuel PDF v1.0, **lecture et prise en compte obligatoires**, diffusion **tous les membres**. Même logique d’upgrade stub → PDF que pour ATAK.
+`doctrine_rh_employment_seed.php` ajoute idempotemment la doctrine **DRH/PERS/2026-001** (*Doctrine d’emploi RH — Recrutement et Avancement*). Manuel officiel **FM ATHENA RH-01** PDF v1.1, **lecture et prise en compte obligatoires**, diffusion **tous les membres**. Même logique d’upgrade stub → PDF que pour ATAK ; une ancienne v1.0 au pointeur officiel est alignée sur v1.1.
 
 Déploiement : `php run-migrations.php` (ou `setup-database.php`). Un rechargement de page ne suffit pas. Seeds isolés : `php bootstrap/run_doctrine_atak_seed.php`, `php bootstrap/run_doctrine_rh_seed.php`.
 
