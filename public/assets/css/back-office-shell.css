@@ -17,7 +17,7 @@
   --ath-accent-bright: #12d18e;
   --ath-accent-dark: #04231a;
   --ath-void: #000000;
-  --ath-sidebar: #000000;
+  --ath-sidebar: #0b0e0f;
   --ath-sidebar-line: #161b1e;
   --ath-sidebar-muted: #8a938e;
   --ath-sidebar-dim: #6b736e;
@@ -213,12 +213,13 @@ body.bo-shell {
 }
 
 .ath-sidebar__logo {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   background: #fff;
-  color: #000;
-  font-size: 17px;
-  font-weight: 900;
+  color: #0b0e0f;
+  font-size: 14px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,9 +328,9 @@ body.bo-shell {
 }
 
 .ath-sidebar__group-label {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--ath-sidebar-group);
   white-space: nowrap;
 }
@@ -337,10 +338,12 @@ body.bo-shell {
 .ath-sidebar__item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: 9px;
+  margin: 1px 8px;
+  padding: 8px 10px;
   cursor: pointer;
-  border-left: 3px solid transparent;
+  border-left: 0;
+  border-radius: 8px;
   color: var(--ath-sidebar-muted);
   text-decoration: none;
   transition: background 0.16s ease, color 0.16s ease;
@@ -348,11 +351,11 @@ body.bo-shell {
   border-right: none;
   border-bottom: none;
   background: transparent;
-  width: 100%;
+  width: calc(100% - 16px);
   text-align: left;
   font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .ath-sidebar__item:hover {
@@ -361,9 +364,10 @@ body.bo-shell {
 }
 
 .ath-sidebar__item.is-active {
-  background: var(--ath-sidebar-active);
+  background: #171b1d;
   color: #fff;
-  border-left-color: var(--ath-accent-bright);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ath-accent, #1f7a4d);
 }
 
 .ath-sidebar__item svg {
@@ -667,6 +671,8 @@ body.bo-shell {
 
 .ath-sidebar.is-collapsed .ath-sidebar__item {
   justify-content: center;
+  width: auto;
+  margin: 1px 6px;
   padding-left: 10px;
   padding-right: 10px;
 }

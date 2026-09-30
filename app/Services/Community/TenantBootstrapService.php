@@ -86,6 +86,11 @@ final class TenantBootstrapService
                     }
                 }
                 TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
+                try {
+                    (new \App\Services\Advancement\GradeScaleTemplateService())
+                        ->seedForNewTenant($tenantId, $gradeSystemCode);
+                } catch (\Throwable) {
+                }
                 (new \App\Services\Personnel\PersonnelJobRoleBootstrapService(
                     new \App\Repositories\PersonnelJobRoleRepository()
                 ))->ensureDefaultsForTenant($pdo, $tenantId);

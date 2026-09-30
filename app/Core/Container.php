@@ -625,6 +625,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -1073,6 +1074,36 @@ class Container
                 self::get(\App\Services\Personnel\PersonnelProgressionEvaluator::class),
             ),
             \App\Services\Effectifs\PersonnelAutoAdvancementService::class => new \App\Services\Effectifs\PersonnelAutoAdvancementService(),
+            \App\Repositories\AdvancementRepository::class => new \App\Repositories\AdvancementRepository(),
+            \App\Services\Advancement\AdvancementEligibilityService::class => new \App\Services\Advancement\AdvancementEligibilityService(
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Services\Advancement\AdvancementNotifier::class => new \App\Services\Advancement\AdvancementNotifier(),
+            \App\Services\Advancement\AdvancementWorkflowService::class => new \App\Services\Advancement\AdvancementWorkflowService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementEligibilityService::class),
+                self::get(\App\Services\Advancement\AdvancementNotifier::class)
+            ),
+            \App\Services\Advancement\GradeScaleTemplateService::class => new \App\Services\Advancement\GradeScaleTemplateService(
+                self::get(\App\Repositories\AdvancementRepository::class)
+            ),
+            \App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class => new \App\Services\Cron\Jobs\AdvancementSeniorityCronJob(
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
+            ),
+            \App\Controllers\Admin\Organization\AdvancementAdminController::class => new \App\Controllers\Admin\Organization\AdvancementAdminController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+            ),
+            \App\Controllers\Admin\Organization\MemberAdvancementController::class => new \App\Controllers\Admin\Organization\MemberAdvancementController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
+            ),
+            \App\Controllers\Api\AdvancementApiController::class => new \App\Controllers\Api\AdvancementApiController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+            ),
             \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class => new \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob(
                 self::get(\App\Services\Effectifs\PersonnelAutoAdvancementService::class),
             ),
