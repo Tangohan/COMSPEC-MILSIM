@@ -24,11 +24,17 @@ final class GradeScaleTemplateService
     public function templateForSystem(string $gradeSystemCode): string
     {
         $code = strtoupper(trim($gradeSystemCode));
-        if (str_contains($code, 'US')) {
-            return 'us_army_enlisted';
+        if ($code === '') {
+            return 'generique';
         }
-        if (str_contains($code, 'FR') || str_contains($code, 'GD') || str_contains($code, 'GEND')) {
+        if (str_contains($code, 'US')) {
+            return 'us_classic';
+        }
+        if (str_contains($code, 'GD') || str_contains($code, 'GEND')) {
             return 'gendarmerie';
+        }
+        if (str_contains($code, 'FR')) {
+            return 'fr_classic';
         }
 
         return 'generique';
@@ -40,50 +46,143 @@ final class GradeScaleTemplateService
     public function templates(): array
     {
         return [
-            'generique' => [
-                'label' => 'Échelle générique',
+            'fr_classic' => [
+                'label' => 'Échelle française complète (MdR → généraux)',
                 'filieres' => [
-                    ['code' => 'general', 'label' => 'Cadre général'],
+                    ['code' => 'mdr', 'label' => 'Militaire du rang'],
+                    ['code' => 'sous_officier', 'label' => 'Sous-officier'],
+                    ['code' => 'officier', 'label' => 'Officier'],
+                    ['code' => 'civil', 'label' => 'Civil'],
+                    ['code' => 'hors_grade', 'label' => 'Hors grade'],
                 ],
                 'grades' => [
-                    $this->grade('REC', 'Recrue', 'Recrue', 1, true, false, 0),
-                    $this->grade('OPE', 'Opérateur', 'Opé.', 2, true, false, 6),
-                    $this->grade('CPL', 'Chef d’équipe', 'Cpl', 3, true, true, 12),
-                    $this->grade('SGT', 'Chef de groupe', 'Sgt', 4, true, true, 18),
-                    $this->grade('ADJ', 'Adjudant', 'Adj', 5, false, true, 24),
-                    $this->grade('LTN', 'Lieutenant', 'Ltn', 6, false, true, 24),
+                    $this->grade('SD2', 'Soldat de 2e classe', 'Sdt 2', 1, true, false, 0, null, 'mdr'),
+                    $this->grade('SD1', 'Soldat de 1re classe', 'Sdt 1', 2, true, false, 6, null, 'mdr'),
+                    $this->grade('CPL', 'Caporal', 'Cpl', 3, true, false, 6, null, 'mdr'),
+                    $this->grade('CCH', 'Caporal-chef', 'Cch', 4, true, true, 12, null, 'mdr'),
+                    $this->grade('SGT', 'Sergent', 'Sgt', 1, true, true, 12, null, 'sous_officier'),
+                    $this->grade('SCH', 'Sergent-chef', 'Sch', 2, true, true, 18, null, 'sous_officier'),
+                    $this->grade('ADJ', 'Adjudant', 'Adj', 3, true, true, 24, null, 'sous_officier'),
+                    $this->grade('ADC', 'Adjudant-chef', 'Adc', 4, false, true, 24, null, 'sous_officier'),
+                    $this->grade('MAJ', 'Major', 'Major', 5, false, true, 24, null, 'sous_officier'),
+                    $this->grade('ASP', 'Aspirant', 'Asp', 1, false, true, 12, null, 'officier'),
+                    $this->grade('SL', 'Sous-lieutenant', 'Slt', 2, false, true, 12, null, 'officier'),
+                    $this->grade('LT', 'Lieutenant', 'Lt', 3, false, true, 18, null, 'officier'),
+                    $this->grade('CNE', 'Capitaine', 'Cne', 4, false, true, 24, null, 'officier'),
+                    $this->grade('CDT', 'Commandant', 'Cdt', 5, false, true, 24, null, 'officier'),
+                    $this->grade('LCL', 'Lieutenant-colonel', 'Lcl', 6, false, true, 36, null, 'officier'),
+                    $this->grade('COL', 'Colonel', 'Col', 7, false, true, 36, null, 'officier'),
+                    $this->grade('GBR', 'Général de brigade', 'Gén. bde', 8, false, true, 36, null, 'officier'),
+                    $this->grade('GDV', 'Général de division', 'Gén. div.', 9, false, true, 36, null, 'officier'),
+                    $this->grade('GCA', 'Général de corps d’armée', 'Gén. c. a.', 10, false, true, 36, null, 'officier'),
+                    $this->grade('GAR', 'Général d’armée', 'Gén. armée', 11, false, true, 36, null, 'officier'),
+                    $this->grade('CIV', 'Personnel civil', 'Civil', 1, false, false, 0, null, 'civil'),
+                    $this->grade('HG', 'Sans grade militaire', 'Hors grade', 1, false, false, 0, null, 'hors_grade'),
+                ],
+            ],
+            'us_classic' => [
+                'label' => 'Échelle US complète (enlisted → généraux)',
+                'filieres' => [
+                    ['code' => 'enlisted', 'label' => 'Enlisted'],
+                    ['code' => 'nco', 'label' => 'NCO'],
+                    ['code' => 'warrant', 'label' => 'Warrant Officer'],
+                    ['code' => 'officer', 'label' => 'Officer'],
+                    ['code' => 'civil', 'label' => 'Civilian'],
+                    ['code' => 'hors_grade', 'label' => 'No grade'],
+                ],
+                'grades' => [
+                    $this->grade('PVT', 'Private', 'PVT', 1, true, false, 0, null, 'enlisted'),
+                    $this->grade('PV2', 'Private Second Class', 'PV2', 2, true, false, 6, null, 'enlisted'),
+                    $this->grade('PFC', 'Private First Class', 'PFC', 3, true, false, 12, null, 'enlisted'),
+                    $this->grade('SPC', 'Specialist', 'SPC', 4, true, false, 18, null, 'enlisted'),
+                    $this->grade('CPL', 'Corporal', 'CPL', 5, true, true, 18, null, 'enlisted'),
+                    $this->grade('SGT', 'Sergeant', 'SGT', 1, true, true, 18, null, 'nco'),
+                    $this->grade('SSG', 'Staff Sergeant', 'SSG', 2, true, true, 24, null, 'nco'),
+                    $this->grade('SFC', 'Sergeant First Class', 'SFC', 3, false, true, 24, null, 'nco'),
+                    $this->grade('MSG', 'Master Sergeant', 'MSG', 4, false, true, 36, null, 'nco'),
+                    $this->grade('1SG', 'First Sergeant', '1SG', 5, false, true, 36, null, 'nco'),
+                    $this->grade('SGM', 'Sergeant Major', 'SGM', 6, false, true, 36, null, 'nco'),
+                    $this->grade('CSM', 'Command Sergeant Major', 'CSM', 7, false, true, 36, null, 'nco'),
+                    $this->grade('WO1', 'Warrant Officer 1', 'WO1', 1, false, true, 24, null, 'warrant'),
+                    $this->grade('CW2', 'Chief Warrant Officer 2', 'CW2', 2, false, true, 24, null, 'warrant'),
+                    $this->grade('CW3', 'Chief Warrant Officer 3', 'CW3', 3, false, true, 36, null, 'warrant'),
+                    $this->grade('CW4', 'Chief Warrant Officer 4', 'CW4', 4, false, true, 36, null, 'warrant'),
+                    $this->grade('CW5', 'Chief Warrant Officer 5', 'CW5', 5, false, true, 36, null, 'warrant'),
+                    $this->grade('2LT', 'Second Lieutenant', '2LT', 1, false, true, 12, null, 'officer'),
+                    $this->grade('1LT', 'First Lieutenant', '1LT', 2, false, true, 18, null, 'officer'),
+                    $this->grade('CPT', 'Captain', 'CPT', 3, false, true, 24, null, 'officer'),
+                    $this->grade('MAJ', 'Major', 'MAJ', 4, false, true, 24, null, 'officer'),
+                    $this->grade('LTC', 'Lieutenant Colonel', 'LTC', 5, false, true, 36, null, 'officer'),
+                    $this->grade('COL', 'Colonel', 'COL', 6, false, true, 36, null, 'officer'),
+                    $this->grade('BG', 'Brigadier General', 'BG', 7, false, true, 36, null, 'officer'),
+                    $this->grade('MG', 'Major General', 'MG', 8, false, true, 36, null, 'officer'),
+                    $this->grade('LTG', 'Lieutenant General', 'LTG', 9, false, true, 36, null, 'officer'),
+                    $this->grade('GEN', 'General', 'GEN', 10, false, true, 36, null, 'officer'),
+                    $this->grade('CIV', 'Civilian (non-military)', 'Civilian', 1, false, false, 0, null, 'civil'),
+                    $this->grade('HG', 'No military grade', 'No grade', 1, false, false, 0, null, 'hors_grade'),
+                ],
+            ],
+            'gendarmerie' => [
+                'label' => 'Gendarmerie (hommes du rang → généraux)',
+                'filieres' => [
+                    ['code' => 'rangs', 'label' => 'Hommes du rang'],
+                    ['code' => 'sous_officiers', 'label' => 'Sous-officiers'],
+                    ['code' => 'officiers', 'label' => 'Officiers'],
+                ],
+                'grades' => [
+                    $this->grade('GAV', 'Gendarme adjoint volontaire', 'GAV', 1, true, false, 0, null, 'rangs'),
+                    $this->grade('GND', 'Gendarme', 'GND', 2, true, false, 12, null, 'rangs'),
+                    $this->grade('MDL', 'Maréchal des logis', 'MDL', 3, true, true, 18, null, 'rangs'),
+                    $this->grade('MDC', 'Maréchal des logis-chef', 'MDC', 4, true, true, 24, null, 'rangs'),
+                    $this->grade('ADJ', 'Adjudant', 'ADJ', 1, true, true, 24, null, 'sous_officiers'),
+                    $this->grade('ADC', 'Adjudant-chef', 'ADC', 2, false, true, 24, null, 'sous_officiers'),
+                    $this->grade('MAJ', 'Major', 'MAJ', 3, false, true, 24, null, 'sous_officiers'),
+                    $this->grade('ASP', 'Aspirant', 'Asp', 1, false, true, 12, null, 'officiers'),
+                    $this->grade('SLT', 'Sous-lieutenant', 'Slt', 2, false, true, 12, null, 'officiers'),
+                    $this->grade('LTN', 'Lieutenant', 'Ltn', 3, false, true, 18, null, 'officiers'),
+                    $this->grade('CNE', 'Capitaine', 'Cne', 4, false, true, 24, null, 'officiers'),
+                    $this->grade('CEN', 'Chef d’escadron', 'Cen', 5, false, true, 24, null, 'officiers'),
+                    $this->grade('LCL', 'Lieutenant-colonel', 'Lcl', 6, false, true, 36, null, 'officiers'),
+                    $this->grade('COL', 'Colonel', 'Col', 7, false, true, 36, null, 'officiers'),
+                    $this->grade('GBR', 'Général de brigade', 'Gén. bde', 8, false, true, 36, null, 'officiers'),
+                    $this->grade('GDV', 'Général de division', 'Gén. div.', 9, false, true, 36, null, 'officiers'),
+                    $this->grade('GCA', 'Général de corps d’armée', 'Gén. c. a.', 10, false, true, 36, null, 'officiers'),
+                    $this->grade('GAR', 'Général d’armée', 'Gén. armée', 11, false, true, 36, null, 'officiers'),
                 ],
             ],
             'us_army_enlisted' => [
-                'label' => 'US Army enlisted',
+                'label' => 'US Army enlisted seulement',
                 'filieres' => [
                     ['code' => 'enlisted', 'label' => 'Enlisted'],
                 ],
                 'grades' => [
-                    $this->grade('PV1', 'Private', 'PV1', 1, true, false, 0),
-                    $this->grade('PV2', 'Private', 'PV2', 2, true, false, 6),
-                    $this->grade('PFC', 'Private First Class', 'PFC', 3, true, false, 12),
-                    $this->grade('SPC', 'Specialist', 'SPC', 4, true, false, 18),
-                    $this->grade('SGT', 'Sergeant', 'SGT', 5, true, true, 24),
-                    $this->grade('SSG', 'Staff Sergeant', 'SSG', 6, false, true, 36),
-                    $this->grade('SFC', 'Sergeant First Class', 'SFC', 7, false, true, 36),
-                    $this->grade('MSG', 'Master Sergeant', 'MSG', 8, false, true, 36),
-                    $this->grade('SGM', 'Sergeant Major', 'SGM', 9, false, true, 36),
+                    $this->grade('PV1', 'Private', 'PV1', 1, true, false, 0, null, 'enlisted'),
+                    $this->grade('PV2', 'Private', 'PV2', 2, true, false, 6, null, 'enlisted'),
+                    $this->grade('PFC', 'Private First Class', 'PFC', 3, true, false, 12, null, 'enlisted'),
+                    $this->grade('SPC', 'Specialist', 'SPC', 4, true, false, 18, null, 'enlisted'),
+                    $this->grade('SGT', 'Sergeant', 'SGT', 5, true, true, 24, null, 'enlisted'),
+                    $this->grade('SSG', 'Staff Sergeant', 'SSG', 6, false, true, 36, null, 'enlisted'),
+                    $this->grade('SFC', 'Sergeant First Class', 'SFC', 7, false, true, 36, null, 'enlisted'),
+                    $this->grade('MSG', 'Master Sergeant', 'MSG', 8, false, true, 36, null, 'enlisted'),
+                    $this->grade('SGM', 'Sergeant Major', 'SGM', 9, false, true, 36, null, 'enlisted'),
                 ],
             ],
-            'gendarmerie' => [
-                'label' => 'Gendarmerie',
+            'generique' => [
+                'label' => 'Échelle générique milsim',
                 'filieres' => [
-                    ['code' => 'cadre', 'label' => 'Cadre général'],
-                    ['code' => 'aero', 'label' => 'Aéronautique'],
-                    ['code' => 'spe', 'label' => 'Spécialiste'],
+                    ['code' => 'general', 'label' => 'Cadre général'],
                 ],
                 'grades' => [
-                    $this->grade('GND', 'Gendarme', 'GND', 1, true, false, 0),
-                    $this->grade('MDL', 'Maréchal des logis', 'MDL', 2, true, true, 12),
-                    $this->grade('ADJ', 'Adjudant', 'ADJ', 3, true, true, 24),
-                    $this->grade('ADC', 'Adjudant-chef', 'ADC', 4, false, true, 24),
-                    $this->grade('MAJ', 'Major', 'MAJ', 5, false, true, 24, 'CEFEO'),
+                    $this->grade('REC', 'Recrue', 'Recrue', 1, true, false, 0, null, 'general'),
+                    $this->grade('OPE', 'Opérateur', 'Opé.', 2, true, false, 6, null, 'general'),
+                    $this->grade('CPL', 'Chef d’équipe', 'Cpl', 3, true, true, 12, null, 'general'),
+                    $this->grade('SGT', 'Chef de groupe', 'Sgt', 4, true, true, 18, null, 'general'),
+                    $this->grade('ADJ', 'Adjudant', 'Adj', 5, false, true, 24, null, 'general'),
+                    $this->grade('LTN', 'Lieutenant', 'Ltn', 6, false, true, 24, null, 'general'),
+                    $this->grade('CNE', 'Capitaine', 'Cne', 7, false, true, 24, null, 'general'),
+                    $this->grade('CDT', 'Commandant', 'Cdt', 8, false, true, 36, null, 'general'),
+                    $this->grade('LCL', 'Lieutenant-colonel', 'Lcl', 9, false, true, 36, null, 'general'),
+                    $this->grade('COL', 'Colonel', 'Col', 10, false, true, 36, null, 'general'),
                 ],
             ],
         ];
@@ -95,9 +194,24 @@ final class GradeScaleTemplateService
     }
 
     /**
-     * Communautés déjà créées : la table d’avancement est vide tant qu’on n’a pas
-     * dupliqué une échelle. Recopie le référentiel de la communauté, sinon un modèle.
+     * Ajoute les grades manquants (référentiel communauté, sinon modèle complet).
+     * N’écrase jamais un grade déjà présent.
      */
+    public function completeForTenant(int $tenantId, string $gradeSystemCode = ''): int
+    {
+        if ($tenantId < 1 || !$this->repository->tablesReady()) {
+            return 0;
+        }
+        $before = count($this->repository->listGrades($tenantId, true));
+        $this->copyFromCommunityCatalog($tenantId);
+        if (trim($gradeSystemCode) === '') {
+            $gradeSystemCode = $this->tenantGradeSystemCode($tenantId);
+        }
+        $this->duplicate($tenantId, $this->templateForSystem($gradeSystemCode));
+
+        return max(0, count($this->repository->listGrades($tenantId, true)) - $before);
+    }
+
     public function ensureForTenant(int $tenantId, string $gradeSystemCode = ''): bool
     {
         if ($tenantId < 1 || !$this->repository->tablesReady()) {
@@ -106,14 +220,8 @@ final class GradeScaleTemplateService
         if ($this->repository->listGrades($tenantId, true) !== []) {
             return false;
         }
-        if ($this->copyFromCommunityCatalog($tenantId)) {
-            return true;
-        }
-        if (trim($gradeSystemCode) === '') {
-            $gradeSystemCode = $this->tenantGradeSystemCode($tenantId);
-        }
 
-        return $this->duplicate($tenantId, $this->templateForSystem($gradeSystemCode));
+        return $this->completeForTenant($tenantId, $gradeSystemCode) > 0;
     }
 
     public function ensureForAllTenants(): int
@@ -128,7 +236,7 @@ final class GradeScaleTemplateService
         }
         $n = 0;
         foreach ($ids as $id) {
-            if ($this->ensureForTenant((int) $id)) {
+            if ($this->completeForTenant((int) $id) > 0) {
                 $n++;
             }
         }
@@ -146,23 +254,7 @@ final class GradeScaleTemplateService
             return false;
         }
         $template = $templates[$templateCode];
-        $filiereIds = [];
-        $sort = 1;
-        foreach ($template['filieres'] as $filiere) {
-            $existing = null;
-            foreach ($this->repository->listFilieres($tenantId) as $row) {
-                if ((string) $row['code'] === (string) $filiere['code']) {
-                    $existing = (int) $row['id'];
-                    break;
-                }
-            }
-            $filiereIds[(string) $filiere['code']] = $existing ?? $this->repository->saveFiliere($tenantId, [
-                'code' => $filiere['code'],
-                'label' => $filiere['label'],
-                'sort_order' => $sort,
-            ]);
-            $sort++;
-        }
+        $filiereIds = $this->ensureFilieres($tenantId, $template['filieres']);
         $primaryFiliere = (int) (reset($filiereIds) ?: 0);
         foreach ($template['grades'] as $grade) {
             if ($this->repository->findGradeByCode($tenantId, (string) $grade['code']) !== null) {
@@ -176,11 +268,13 @@ final class GradeScaleTemplateService
                     $qualId = (int) $qual['id'];
                 }
             }
+            $filiereCode = (string) ($grade['filiere'] ?? '');
+            $filiereId = $filiereIds[$filiereCode] ?? $primaryFiliere;
             $this->repository->saveGrade($tenantId, [
                 'code' => $grade['code'],
                 'label' => $grade['label'],
                 'short_label' => $grade['short_label'],
-                'filiere_id' => $primaryFiliere > 0 ? $primaryFiliere : null,
+                'filiere_id' => $filiereId > 0 ? $filiereId : null,
                 'rank_order' => $grade['rank_order'],
                 'advancement_seniority_enabled' => $grade['advancement_seniority_enabled'],
                 'advancement_choice_enabled' => $grade['advancement_choice_enabled'],
@@ -190,6 +284,35 @@ final class GradeScaleTemplateService
         }
 
         return true;
+    }
+
+    /**
+     * @param list<array{code:string, label:string}> $filieres
+     * @return array<string, int>
+     */
+    private function ensureFilieres(int $tenantId, array $filieres): array
+    {
+        $existing = [];
+        foreach ($this->repository->listFilieres($tenantId) as $row) {
+            $existing[(string) $row['code']] = (int) $row['id'];
+        }
+        $ids = [];
+        $sort = count($existing) + 1;
+        foreach ($filieres as $filiere) {
+            $code = (string) $filiere['code'];
+            if (isset($existing[$code])) {
+                $ids[$code] = $existing[$code];
+                continue;
+            }
+            $ids[$code] = $this->repository->saveFiliere($tenantId, [
+                'code' => $code,
+                'label' => $filiere['label'],
+                'sort_order' => $sort,
+            ]);
+            $sort++;
+        }
+
+        return $ids;
     }
 
     private function copyFromCommunityCatalog(int $tenantId): bool
@@ -202,50 +325,78 @@ final class GradeScaleTemplateService
         if ($rows === []) {
             return false;
         }
-        $filiereIds = [];
-        $sortFiliere = 1;
-        $order = 0;
-        $copied = 0;
-        $total = count($rows);
+        $grouped = [];
         foreach ($rows as $row) {
             if (isset($row['is_enabled']) && (int) $row['is_enabled'] === 0) {
-                continue;
-            }
-            $code = strtoupper(trim((string) ($row['code'] ?? '')));
-            if ($code === '') {
-                $code = 'G' . (int) ($row['id'] ?? 0);
-            }
-            if ($this->repository->findGradeByCode($tenantId, $code) !== null) {
                 continue;
             }
             $catCode = strtolower(trim((string) ($row['category_code'] ?? 'general')));
             if ($catCode === '') {
                 $catCode = 'general';
             }
-            if (!isset($filiereIds[$catCode])) {
-                $filiereIds[$catCode] = $this->repository->saveFiliere($tenantId, [
-                    'code' => substr($catCode, 0, 40),
-                    'label' => trim((string) ($row['category_label'] ?? 'Cadre général')) ?: 'Cadre général',
-                    'sort_order' => $sortFiliere,
-                ]);
-                $sortFiliere++;
+            $grouped[$catCode][] = $row;
+        }
+        $filiereDefs = [];
+        foreach ($grouped as $catCode => $catRows) {
+            $label = trim((string) ($catRows[0]['category_label'] ?? 'Cadre général')) ?: 'Cadre général';
+            $filiereDefs[] = ['code' => substr($catCode, 0, 40), 'label' => $label];
+        }
+        $filiereIds = $this->ensureFilieres($tenantId, $filiereDefs);
+        $copied = 0;
+        foreach ($grouped as $catCode => $catRows) {
+            usort($catRows, fn (array $a, array $b): int => $this->progressionKey($a) <=> $this->progressionKey($b));
+            $idsInOrder = [];
+            foreach ($catRows as $index => $row) {
+                $code = strtoupper(trim((string) ($row['code'] ?? '')));
+                if ($code === '') {
+                    $code = 'G' . (int) ($row['id'] ?? 0);
+                }
+                $code = substr($code, 0, 64);
+                $existing = $this->repository->findGradeByCode($tenantId, $code);
+                $filiereId = $filiereIds[$catCode] ?? null;
+                if ($existing === null) {
+                    $id = $this->repository->saveGrade($tenantId, [
+                        'code' => $code,
+                        'label' => trim((string) ($row['label_long'] ?? $row['label'] ?? $code)) ?: $code,
+                        'short_label' => trim((string) ($row['label_short'] ?? '')) ?: null,
+                        'filiere_id' => $filiereId,
+                        'rank_order' => $index + 1,
+                        'advancement_seniority_enabled' => empty($row['is_commissioned']),
+                        'advancement_choice_enabled' => !empty($row['is_commissioned']) || $index >= 2,
+                        'min_time_in_previous_grade_months' => $index === 0 ? 0 : min(36, ($index + 1) * 6),
+                    ]);
+                    $copied++;
+                    $idsInOrder[] = $id;
+                } elseif ($filiereId !== null && (int) ($existing['filiere_id'] ?? 0) === (int) $filiereId) {
+                    $idsInOrder[] = (int) $existing['id'];
+                }
             }
-            $order++;
-            $isCommissioned = !empty($row['is_commissioned']);
-            $this->repository->saveGrade($tenantId, [
-                'code' => substr($code, 0, 64),
-                'label' => trim((string) ($row['label_long'] ?? $row['label'] ?? $code)) ?: $code,
-                'short_label' => trim((string) ($row['label_short'] ?? '')) ?: null,
-                'filiere_id' => $filiereIds[$catCode],
-                'rank_order' => (int) ($row['sort_order'] ?? $order),
-                'advancement_seniority_enabled' => !$isCommissioned,
-                'advancement_choice_enabled' => $isCommissioned || $order > (int) ceil($total / 2),
-                'min_time_in_previous_grade_months' => $order <= 1 ? 0 : min(36, $order * 6),
-            ]);
-            $copied++;
+            if ($idsInOrder !== []) {
+                $this->repository->reorderGrades($tenantId, $idsInOrder);
+            }
         }
 
         return $copied > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function progressionKey(array $row): int
+    {
+        $otan = strtoupper(trim((string) ($row['label_otan'] ?? '')));
+        if (preg_match('/^(?:OR|OF|E|O)-(\d+)/', $otan, $m)) {
+            $prefix = str_starts_with($otan, 'OF') || str_starts_with($otan, 'O-') ? 100 : 0;
+
+            return $prefix + (int) $m[1];
+        }
+        $order = (int) ($row['sort_order'] ?? 0);
+        $cat = strtoupper((string) ($row['category_code'] ?? ''));
+        if (in_array($cat, ['SOUS_OFFICIER', 'MDR'], true)) {
+            return 1000 - $order;
+        }
+
+        return $order;
     }
 
     private function tenantGradeSystemCode(int $tenantId): string
@@ -271,6 +422,7 @@ final class GradeScaleTemplateService
         bool $choice,
         int $months,
         ?string $qualificationCode = null,
+        string $filiere = 'general',
     ): array {
         return [
             'code' => $code,
@@ -281,6 +433,7 @@ final class GradeScaleTemplateService
             'advancement_choice_enabled' => $choice,
             'min_time_in_previous_grade_months' => $months,
             'required_qualification_code' => $qualificationCode,
+            'filiere' => $filiere,
         ];
     }
 }

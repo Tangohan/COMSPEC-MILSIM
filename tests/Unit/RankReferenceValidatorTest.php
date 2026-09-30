@@ -90,7 +90,9 @@ final class RankReferenceValidatorTest extends TestCase
         self::assertStringContainsString('personnel_rank_history', $migration);
         self::assertStringContainsString('rank_migration_audit', $migration);
         self::assertStringContainsString("'OF-5'", $migration);
-        self::assertStringContainsString('GENDARMERIE', $migration);
+        self::assertStringContainsString('Gendarme adjoint volontaire', $migration);
+        self::assertStringContainsString('Maréchal des logis', $migration);
+        self::assertStringContainsString('Général d’armée', $migration);
 
         $run = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
         self::assertStringContainsString('rank_catalog_migration.php', $run);

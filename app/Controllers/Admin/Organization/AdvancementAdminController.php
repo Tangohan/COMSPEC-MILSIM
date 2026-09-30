@@ -36,8 +36,13 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Grades', 'ORGANISATION · GRADES', 'L’échelle de grades n’est pas encore installée.', 'admin.advancement.unavailable', []);
         }
-        if ($this->templates->ensureForTenant($tenantId)) {
-            Session::flash('success', 'Échelle initialisée pour cette communauté (référentiel existant ou modèle).');
+        $before = count($this->repository->listGrades($tenantId, true));
+        $added = $this->templates->completeForTenant($tenantId);
+        if ($added > 0) {
+            $message = $before === 0
+                ? 'Échelle initialisée pour cette communauté (' . $added . ' grades).'
+                : $added . ' grade(s) manquant(s) ajouté(s) pour compléter l’échelle.';
+            Session::flash('success', $message);
         }
 
         return $this->page('Grades', 'ORGANISATION · GRADES', 'Échelle de grades de la communauté. Un grade déjà attribué s’archive, il ne se supprime pas.', 'admin.advancement.grades_index', [

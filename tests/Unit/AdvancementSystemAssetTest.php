@@ -35,6 +35,7 @@ final class AdvancementSystemAssetTest extends TestCase
         self::assertStringContainsString('AdvancementSeniorityCronJob::class', $container);
         self::assertStringContainsString('seedForNewTenant', $bootstrap);
         self::assertStringContainsString('ensureForTenant', (string) file_get_contents($root . '/app/Services/Advancement/GradeScaleTemplateService.php'));
+        self::assertStringContainsString('completeForTenant', (string) file_get_contents($root . '/app/Controllers/Admin/Organization/AdvancementAdminController.php'));
         self::assertStringContainsString('ensureForTenant', (string) file_get_contents($root . '/app/Controllers/Admin/Organization/AdvancementAdminController.php'));
         self::assertStringContainsString('ensureForAllTenants', $runner);
 

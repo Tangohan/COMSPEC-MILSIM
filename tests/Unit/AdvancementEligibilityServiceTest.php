@@ -155,6 +155,11 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame(7, (int) $grades[0]['tenant_id']);
         $codes = array_column($grades, 'code');
         self::assertContains('MAJ', $codes);
+        self::assertContains('SD2', $codes);
+        self::assertContains('COL', $codes);
+        self::assertContains('GAR', $codes);
+        self::assertContains('ASP', $codes);
+        self::assertGreaterThanOrEqual(19, count($codes));
 
         self::assertTrue($scales->duplicate(8, 'us_army_enlisted'));
         $us = array_column($repo->listGrades(8, true), 'code');
@@ -173,6 +178,65 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertNotEmpty($first);
         self::assertFalse($scales->ensureForTenant(9, 'us_army_enlisted'));
         self::assertCount(count($first), $repo->listGrades(9, true));
+    }
+
+    public function testLesModelesCouvrentTouteLaHierarchie(): void
+    {
+        $scales = new GradeScaleTemplateService(new AdvancementRepository($this->pdo()));
+        $fr = array_column($scales->templates()['fr_classic']['grades'], 'code');
+        $us = array_column($scales->templates()['us_classic']['grades'], 'code');
+        $gd = array_column($scales->templates()['gendarmerie']['grades'], 'code');
+
+        self::assertSame('fr_classic', $scales->templateForSystem('FR_CLASSIC'));
+        self::assertSame('us_classic', $scales->templateForSystem('US_CLASSIC'));
+        self::assertContains('SD2', $fr);
+        self::assertContains('CCH', $fr);
+        self::assertContains('SCH', $fr);
+        self::assertContains('ASP', $fr);
+        self::assertContains('COL', $fr);
+        self::assertContains('GAR', $fr);
+        self::assertContains('SPC', $us);
+        self::assertContains('1SG', $us);
+        self::assertContains('CW5', $us);
+        self::assertContains('GEN', $us);
+        self::assertContains('GAV', $gd);
+        self::assertContains('MDL', $gd);
+        self::assertContains('CEN', $gd);
+        self::assertContains('GAR', $gd);
+    }
+
+    public function testCompleteAjouteLesGradesManquantsSansEcraser(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        $repo->saveFiliere(3, ['code' => 'cadre', 'label' => 'Cadre', 'sort_order' => 1]);
+        $repo->saveGrade(3, [
+            'code' => 'GND',
+            'label' => 'Gendarme',
+            'short_label' => 'GND',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+        $repo->saveGrade(3, [
+            'code' => 'MAJ',
+            'label' => 'Major',
+            'short_label' => 'MAJ',
+            'rank_order' => 2,
+            'advancement_seniority_enabled' => 0,
+            'advancement_choice_enabled' => 1,
+        ]);
+
+        $added = $scales->completeForTenant(3, 'FR_CLASSIC');
+        self::assertGreaterThan(10, $added);
+        $codes = array_column($repo->listGrades(3, true), 'code');
+        self::assertContains('GND', $codes);
+        self::assertContains('MAJ', $codes);
+        self::assertContains('SD2', $codes);
+        self::assertContains('COL', $codes);
+        self::assertSame(0, $scales->completeForTenant(3, 'FR_CLASSIC'));
     }
 
     public function testLeDepotNeReecritPasLaVoieDObtention(): void
