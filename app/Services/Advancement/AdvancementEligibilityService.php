@@ -65,7 +65,7 @@ final class AdvancementEligibilityService
      *     advancement_choice_enabled?:bool, advancement_seniority_enabled?:bool}
      *   qualification_award: ?array<string, mixed>
      *   qualification_level_met?: bool
-     * @return array{is_eligible:bool, eligibility_reason:?string, months_in_grade:int, months_required:?int, due_on:?string}
+     * @return array{is_eligible:bool, eligibility_reason:?string, months_in_grade:int, months_required:?int, due_on:?string, conditions:list<array{key:string,label:string,met:bool,detail:string}>}
      */
     public function evaluate(array $input, ?DateTimeImmutable $today = null, string $pathway = self::PATH_CHOICE): array
     {
@@ -80,43 +80,83 @@ final class AdvancementEligibilityService
             $requiredMonths = 0;
         }
 
+        $conditions = [];
         $empty = [
             'is_eligible' => false,
             'eligibility_reason' => null,
             'months_in_grade' => 0,
             'months_required' => $requiredMonths,
             'due_on' => null,
+            'conditions' => [],
         ];
 
+        $pathwayOpen = true;
         if ($pathway === self::PATH_CHOICE && array_key_exists('advancement_choice_enabled', $target) && empty($target['advancement_choice_enabled'])) {
+            $pathwayOpen = false;
             $empty['eligibility_reason'] = 'Ce grade n’est pas ouvert à la voie choix.';
-
-            return $empty;
-        }
-        if ($pathway === self::PATH_SENIORITY && array_key_exists('advancement_seniority_enabled', $target) && empty($target['advancement_seniority_enabled'])) {
+        } elseif ($pathway === self::PATH_SENIORITY && array_key_exists('advancement_seniority_enabled', $target) && empty($target['advancement_seniority_enabled'])) {
+            $pathwayOpen = false;
             $empty['eligibility_reason'] = 'Ce grade n’est pas ouvert à l’ancienneté.';
+        }
+        $conditions[] = [
+            'key' => 'voie',
+            'label' => $pathway === self::PATH_SENIORITY ? 'Voie automatique (ancienneté)' : 'Voie au choix',
+            'met' => $pathwayOpen,
+            'detail' => $pathwayOpen
+                ? ($pathway === self::PATH_SENIORITY ? 'Avancement automatique dès que les conditions sont réunies.' : 'Demande ou campagne au choix.')
+                : (string) $empty['eligibility_reason'],
+        ];
+        if (!$pathwayOpen) {
+            $empty['conditions'] = $conditions;
 
             return $empty;
         }
         if ($current === null) {
+            $conditions[] = [
+                'key' => 'grade_actuel',
+                'label' => 'Grade actuel',
+                'met' => false,
+                'detail' => 'Aucun grade actuel enregistré.',
+            ];
             $empty['eligibility_reason'] = 'Aucun grade actuel enregistré.';
+            $empty['conditions'] = $conditions;
 
             return $empty;
         }
+        $conditions[] = [
+            'key' => 'grade_actuel',
+            'label' => 'Grade actuel',
+            'met' => true,
+            'detail' => trim((string) ($current['label'] ?? 'enregistré')),
+        ];
 
         $currentFiliere = $current['filiere_id'] ?? null;
         $targetFiliere = $target['filiere_id'] ?? null;
         $currentFiliere = $currentFiliere === null || $currentFiliere === '' ? null : (int) $currentFiliere;
         $targetFiliere = $targetFiliere === null || $targetFiliere === '' ? null : (int) $targetFiliere;
         if ($currentFiliere !== $targetFiliere) {
+            $conditions[] = [
+                'key' => 'filiere',
+                'label' => 'Filière',
+                'met' => false,
+                'detail' => 'La filière du grade actuel ne correspond pas à celle du grade visé.',
+            ];
             $empty['eligibility_reason'] = 'La filière du grade actuel ne correspond pas à celle du grade visé.';
+            $empty['conditions'] = $conditions;
 
             return $empty;
         }
 
         $expectedOrder = (int) ($target['rank_order'] ?? 0) - 1;
         if ((int) ($current['rank_order'] ?? 0) !== $expectedOrder) {
+            $conditions[] = [
+                'key' => 'echelon',
+                'label' => 'Grade précédent',
+                'met' => false,
+                'detail' => 'Le grade actuel ne précède pas ' . $targetLabel . '.',
+            ];
             $empty['eligibility_reason'] = 'Le grade actuel ne précède pas ' . $targetLabel . '.';
+            $empty['conditions'] = $conditions;
 
             return $empty;
         }
@@ -142,16 +182,37 @@ final class AdvancementEligibilityService
 
         if ($requiredMonths !== null && $requiredMonths > 0) {
             if ($obtainedRaw === '' || $dueOn === null) {
+                $conditions[] = [
+                    'key' => 'temps_de_grade',
+                    'label' => 'Temps de grade',
+                    'met' => false,
+                    'detail' => 'Date d’obtention du grade actuel inconnue.',
+                ];
                 $empty['eligibility_reason'] = 'Date d’obtention du grade actuel inconnue.';
+                $empty['conditions'] = $conditions;
 
                 return $empty;
             }
             $due = new DateTimeImmutable($dueOn);
             if ($today < $due) {
-                $empty['eligibility_reason'] = 'Temps de grade insuffisant : ' . $monthsInGrade . ' mois sur ' . $requiredMonths . ' requis';
+                $detail = 'Temps de grade insuffisant : ' . $monthsInGrade . ' mois sur ' . $requiredMonths . ' requis';
+                $conditions[] = [
+                    'key' => 'temps_de_grade',
+                    'label' => 'Temps de grade',
+                    'met' => false,
+                    'detail' => $detail . ' · échéance le ' . $dueOn,
+                ];
+                $empty['eligibility_reason'] = $detail;
+                $empty['conditions'] = $conditions;
 
                 return $empty;
             }
+            $conditions[] = [
+                'key' => 'temps_de_grade',
+                'label' => 'Temps de grade',
+                'met' => true,
+                'detail' => $monthsInGrade . ' mois sur ' . $requiredMonths . ' requis' . ($dueOn !== null ? ' · acquis au ' . $dueOn : ''),
+            ];
         }
 
         $requiredQualificationId = isset($target['required_qualification_id']) && $target['required_qualification_id'] !== ''
@@ -164,7 +225,14 @@ final class AdvancementEligibilityService
             }
             $award = is_array($input['qualification_award'] ?? null) ? $input['qualification_award'] : null;
             if ($award === null || !$this->temporal->isEffectivelyActive($award, $today)) {
+                $conditions[] = [
+                    'key' => 'qualification',
+                    'label' => 'Qualification ' . $qualLabel,
+                    'met' => false,
+                    'detail' => 'Qualification ' . $qualLabel . ' manquante',
+                ];
                 $empty['eligibility_reason'] = 'Qualification ' . $qualLabel . ' manquante';
+                $empty['conditions'] = $conditions;
 
                 return $empty;
             }
@@ -172,10 +240,23 @@ final class AdvancementEligibilityService
                 ? (int) $target['required_qualification_level_id']
                 : 0;
             if ($requiredLevel > 0 && empty($input['qualification_level_met'])) {
+                $conditions[] = [
+                    'key' => 'qualification',
+                    'label' => 'Qualification ' . $qualLabel,
+                    'met' => false,
+                    'detail' => 'Niveau de qualification requis non atteint pour ' . $qualLabel . '.',
+                ];
                 $empty['eligibility_reason'] = 'Niveau de qualification requis non atteint pour ' . $qualLabel . '.';
+                $empty['conditions'] = $conditions;
 
                 return $empty;
             }
+            $conditions[] = [
+                'key' => 'qualification',
+                'label' => 'Qualification ' . $qualLabel,
+                'met' => true,
+                'detail' => 'Détenue et active.',
+            ];
         }
 
         return [
@@ -184,6 +265,7 @@ final class AdvancementEligibilityService
             'months_in_grade' => $monthsInGrade,
             'months_required' => $requiredMonths,
             'due_on' => $dueOn,
+            'conditions' => $conditions,
         ];
     }
 }

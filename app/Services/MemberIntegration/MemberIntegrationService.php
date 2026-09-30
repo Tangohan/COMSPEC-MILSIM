@@ -100,6 +100,9 @@ final class MemberIntegrationService
         }
         $started = date('Y-m-d H:i:s');
         foreach ($stepsTpl as $tplStep) {
+            if (MemberIntegrationCatalog::isForumStep($tplStep)) {
+                continue;
+            }
             $dueDays = isset($tplStep['due_after_days']) ? (int) $tplStep['due_after_days'] : 0;
             $dueAt = $dueDays > 0
                 ? (new DateTimeImmutable('+' . $dueDays . ' days'))->format('Y-m-d H:i:s')
@@ -260,6 +263,23 @@ final class MemberIntegrationService
     ): void {
         $status = (string) ($step['status'] ?? '');
         if (MemberIntegrationCatalog::isStepDone($status) || $status === MemberIntegrationCatalog::STEP_CANCELLED) {
+            return;
+        }
+        if (MemberIntegrationCatalog::isForumStep($step)) {
+            $this->integrations->updateStep($tenantId, (int) $step['id'], [
+                'status' => MemberIntegrationCatalog::STEP_SKIPPED,
+                'completed_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->integrations->addEvent(
+                $tenantId,
+                (int) $integration['id'],
+                'step_skipped',
+                MemberIntegrationCatalog::VISIBILITY_STAFF,
+                'Étape forum retirée du parcours d’intégration.',
+                $actorUserId,
+                (int) $step['id']
+            );
+
             return;
         }
         $type = (string) ($step['step_type'] ?? '');

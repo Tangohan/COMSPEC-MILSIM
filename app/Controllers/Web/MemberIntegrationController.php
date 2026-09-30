@@ -41,7 +41,10 @@ final class MemberIntegrationController
         }
         $user = $this->users->findById($userId, $tenantId) ?? [];
         $steps = $row ? $this->integrations->listSteps($tenantId, (int) $row['id']) : [];
-        $visibleSteps = array_values(array_filter($steps, static fn (array $s): bool => !empty($s['is_member_visible'])));
+        $visibleSteps = array_values(array_filter(
+            $steps,
+            static fn (array $s): bool => !empty($s['is_member_visible']) && !MemberIntegrationCatalog::isForumStep($s)
+        ));
         $events = $row
             ? $this->integrations->listEvents($tenantId, (int) $row['id'], MemberIntegrationCatalog::VISIBILITY_MEMBER)
             : [];

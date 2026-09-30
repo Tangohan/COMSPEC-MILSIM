@@ -59,4 +59,24 @@ final class MemberIntegrationProgressServiceTest extends TestCase
         self::assertFalse($out['can_complete']);
         self::assertSame(0, $out['progress_percent']);
     }
+
+    public function testForumStepIsIgnoredInProgress(): void
+    {
+        $svc = new MemberIntegrationProgressService();
+        $out = $svc->compute([
+            ['is_required' => 1, 'status' => MemberIntegrationCatalog::STEP_PENDING, 'step_key' => 'presentation_forum', 'title' => 'Présentation sur le forum'],
+            ['is_required' => 1, 'status' => MemberIntegrationCatalog::STEP_COMPLETED, 'step_key' => 'dossier_personnel'],
+        ]);
+        self::assertSame(100, $out['progress_percent']);
+        self::assertSame(1, $out['required_total']);
+        self::assertTrue($out['can_complete']);
+        self::assertTrue(MemberIntegrationCatalog::isForumStep([
+            'step_key' => 'presentation_forum',
+            'title' => 'Présentation sur le forum',
+        ]));
+        self::assertFalse(MemberIntegrationCatalog::isForumStep([
+            'step_key' => 'dossier_personnel',
+            'title' => 'Compléter le dossier personnel',
+        ]));
+    }
 }

@@ -55,8 +55,8 @@ final class AdvancementCodes
     public static function opinionLabel(?string $opinion): string
     {
         return match ($opinion) {
-            self::OPINION_PROPOSED => 'Proposé',
-            self::OPINION_NOT_PROPOSED => 'Non proposé',
+            self::OPINION_PROPOSED, 'propose' => 'Proposé',
+            self::OPINION_NOT_PROPOSED, 'non_propose' => 'Non proposé',
             default => '—',
         };
     }
@@ -64,8 +64,8 @@ final class AdvancementCodes
     public static function decisionLabel(?string $decision): string
     {
         return match ($decision) {
-            self::DECISION_INSCRIBED => 'Inscrit',
-            self::DECISION_NOT_INSCRIBED => 'Non inscrit',
+            self::DECISION_INSCRIBED, 'inscrit' => 'Inscrit',
+            self::DECISION_NOT_INSCRIBED, 'non_inscrit' => 'Non inscrit',
             default => '—',
         };
     }

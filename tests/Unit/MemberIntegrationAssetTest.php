@@ -224,4 +224,21 @@ final class MemberIntegrationAssetTest extends TestCase
         $boot = (string) file_get_contents($this->root() . '/app/Services/Community/TenantBootstrapService.php');
         self::assertStringContainsString('ensureDefaultRecruitTemplate', $boot);
     }
+
+    public function testIntegrationDropsForumStep(): void
+    {
+        $onboarding = (string) file_get_contents($this->root() . '/app/Services/Community/MemberOnboardingService.php');
+        self::assertStringNotContainsString('presentation_forum', $onboarding);
+        self::assertStringNotContainsString('isForumStepDone', $onboarding);
+        self::assertStringContainsString('profil_complet', $onboarding);
+        self::assertStringContainsString('document_essentiel_lu', $onboarding);
+
+        $svc = (string) file_get_contents($this->root() . '/app/Services/MemberIntegration/MemberIntegrationService.php');
+        self::assertStringContainsString('isForumStep', $svc);
+        self::assertStringContainsString('STEP_SKIPPED', $svc);
+
+        $staff = (string) file_get_contents($this->root() . '/views/admin/organization/onboarding_members.php');
+        self::assertStringContainsString('quatre modules', $staff);
+        self::assertStringNotContainsString('forum, document essentiel', $staff);
+    }
 }

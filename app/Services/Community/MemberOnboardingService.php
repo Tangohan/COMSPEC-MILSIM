@@ -8,7 +8,7 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Onboarding membre transverse (profil/forum/document/formation/événement) sans persistance dédiée.
+ * Onboarding membre transverse (profil/document/formation/événement) sans persistance dédiée.
  */
 final class MemberOnboardingService
 {
@@ -41,14 +41,12 @@ final class MemberOnboardingService
         $plan = $this->resolvePlanByRole($roleSlugs);
 
         $profileDone = $this->isProfileStepDone($userId);
-        $forumDone = $this->isForumStepDone($userId, $tenantId);
         $docDone = $this->isDocumentStepDone($userId, $tenantId);
         $trainingDone = $this->isTrainingStepDone($userId, $tenantId);
         $eventDone = $this->isEventStepDone($userId, $tenantId);
 
         $steps = [
             ['key' => 'profil_complet', 'label' => 'Profil complété', 'module' => 'Profil / RH', 'done' => $profileDone, 'critical' => true, 'href' => url('account/preferences')],
-            ['key' => 'presentation_forum', 'label' => 'Présentation sur le forum', 'module' => 'Forum', 'done' => $forumDone, 'critical' => false, 'href' => url('forum')],
             ['key' => 'document_essentiel_lu', 'label' => 'Document essentiel validé', 'module' => 'Documents', 'done' => $docDone, 'critical' => true, 'href' => url('account/charte-formations')],
             ['key' => 'formation_entree_completee', 'label' => 'Formation d’entrée terminée', 'module' => 'Formations', 'done' => $trainingDone, 'critical' => true, 'href' => url('formations/mes-formations')],
             ['key' => 'evenement_rejoint', 'label' => 'Événement rejoint', 'module' => 'Événements', 'done' => $eventDone, 'critical' => false, 'href' => url('evenements')],
@@ -234,29 +232,6 @@ final class MemberOnboardingService
         }
 
         return $filled >= 3;
-    }
-
-    private function isForumStepDone(int $userId, int $tenantId): bool
-    {
-        if ($userId < 1 || $tenantId < 1) {
-            return false;
-        }
-        if ($this->hasTable('forum_topics')) {
-            $st = $this->pdo->prepare('SELECT 1 FROM forum_topics WHERE tenant_id = ? AND user_id = ? LIMIT 1');
-            $st->execute([$tenantId, $userId]);
-            if ($st->fetchColumn()) {
-                return true;
-            }
-        }
-        if ($this->hasTable('forum_posts')) {
-            $st = $this->pdo->prepare('SELECT 1 FROM forum_posts WHERE tenant_id = ? AND user_id = ? LIMIT 1');
-            $st->execute([$tenantId, $userId]);
-            if ($st->fetchColumn()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function isDocumentStepDone(int $userId, int $tenantId): bool

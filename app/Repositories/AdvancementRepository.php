@@ -492,6 +492,34 @@ final class AdvancementRepository
         return $row ?: null;
     }
 
+    /**
+     * Candidatures (avis de commandement compris) d’un personnel, toutes campagnes.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listCandidaciesForPersonnel(int $tenantId, int $personnelId): array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $personnelId < 1) {
+            return [];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT c.*, camp.year, camp.status AS campaign_status, camp.opens_at, camp.closes_at,
+                        camp.published_at, g.label AS grade_label, g.code AS grade_code
+                 FROM advancement_candidacies c
+                 INNER JOIN advancement_campaigns camp ON camp.id = c.campaign_id AND camp.tenant_id = ?
+                 INNER JOIN grade_definitions g ON g.id = camp.grade_id AND g.tenant_id = camp.tenant_id
+                 WHERE c.personnel_id = ?
+                 ORDER BY c.volunteered_at DESC, c.id DESC'
+            );
+            $st->execute([$tenantId, $personnelId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
     /** @param array<string, mixed> $row */
     public function insertCandidacy(array $row): int
     {
