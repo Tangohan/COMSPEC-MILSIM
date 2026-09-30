@@ -550,6 +550,7 @@ return function (Router $router) {
     $router->post('/account/charte-formations/accept', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/personnel', [PersonnelController::class, 'personnelIndex'], [AuthMiddleware::class]);
     $router->get('/personnel/me', [PersonnelController::class, 'me'], [AuthMiddleware::class]);
+    $router->get('/personnel/kit-rubans-medailles', [PersonnelController::class, 'decorationsKit'], [AuthMiddleware::class]);
     $router->get('/mon-integration', [MemberIntegrationController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/mon-integration/repondre', [MemberIntegrationController::class, 'respondLogged'], [AuthMiddleware::class]);
     $router->get('/mon-integration/rendez-vous/{id}/calendrier', [MemberIntegrationController::class, 'calendar'], [AuthMiddleware::class]);

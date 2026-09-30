@@ -293,6 +293,16 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(735, '2026-09-30', 'Rubans et médailles : pack visuel générique', 'Le dossier personnel affiche désormais un rack de rubans et des médailles en CSS/SVG (pas d’image bitmap). Chaque motif est GENERIC ou NATO_INSPIRED, avec isOfficialReference à non. Ce n’est pas une reproduction officielle. Rechargez le portail (Ctrl+F5).', [
+                'Neuf rubans et six médailles génériques, avec fiche (id, couleurs, motif, dimensions)',
+                'Rack interactif : survol, sélection or, dispositifs génériques (étoile, chiffre)',
+                'Deux tailles de médaille (34 px carte / 62 px fiche) sur le même disque',
+            ], [
+                'Saisie des décorations du dossier : catalogue à cocher + mentions libres',
+                'Pack UI v2 consultable depuis la fiche (Rubans & médailles)',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez une fiche, onglet Portrait : le rack apparaît si des décorations sont enregistrées. Le bandeau de prudence rappelle qu’il ne s’agit pas d’attributions réelles.',
+            ], 'Portail Athena'),
             $pr(734, '2026-09-29', 'Mes qualifications : brevet et validité', 'Sur Mes qualifications, chaque titre affiche désormais sa validité (permanente ou échéance), l’insigne ou la catégorie, et un bouton pour générer ou télécharger le brevet PDF quand la qualification est obtenue. Le libellé de page reprend « Mes qualifications », comme dans le menu. Rechargez le portail (Ctrl+F5).', [
                 'Bouton Générer le brevet sur chaque qualification obtenue sans PDF',
                 'Téléchargement du brevet depuis la carte une fois le PDF établi',
