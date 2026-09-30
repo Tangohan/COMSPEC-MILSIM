@@ -750,6 +750,7 @@
           renderSymbolLibrary();
           toast('Image ajoutée à la bibliothèque.');
           if (api.armStampPlacement) api.armStampPlacement(entry);
+          closeOtan();
         });
       });
     }
@@ -780,7 +781,10 @@
         if (!card || !api.readSymbolLibrary || !api.armStampPlacement) return;
         var id = card.getAttribute('data-lib-place');
         var row = api.readSymbolLibrary().filter(function (item) { return String(item.id) === String(id); })[0];
-        if (row) api.armStampPlacement(row);
+        if (row) {
+          api.armStampPlacement(row);
+          closeOtan();
+        }
       });
     }
     setOtanTab('manoeuvre');
