@@ -127,6 +127,26 @@ class OrganizationAdminMiddleware
                 || $gate->allows('admin.permissions.manage')
             )) {
                 $scopedOrgAccess = true;
+            } elseif ((str_starts_with($path, '/back-office/organisation/grades') || str_starts_with($path, '/back-office/rh/avancement')) && (
+                $gate->allows('personnel.advancement.manage')
+                || $gate->allows('personnel.grades.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/referentiels/decorations') && (
+                $gate->allows('personnel.awards.manage')
+                || $gate->allows('personnel.badges.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/referentiels/dotation') && (
+                $gate->allows('personnel.equipment.manage')
+                || $gate->allows('personnel.assignments.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/organisation/disponibilite') && (
+                $gate->allows('personnel.progression.view')
+                || $gate->allows('organization.orbat.view')
+            )) {
+                $scopedOrgAccess = true;
             }
         }
         if (!$scopedOrgAccess) {

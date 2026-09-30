@@ -293,6 +293,19 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(735, '2026-09-30', 'Avancement, dossier de carrière et cartes de brevets', 'Le back-office gagne une échelle de grades par communauté, deux voies d’avancement (ancienneté automatique / choix avec commission), un dossier de carrière chronologique, des décorations distinctes des qualifications, une dotation nominative et un score de disponibilité par unité. Mes qualifications reprend la présentation des cartes (catégorie, validité, générer ou télécharger le brevet). Rechargez le portail (Ctrl+F5).', [
+                'Échelle de grades scopée à la communauté, duplicable à la création',
+                'Campagnes d’avancement au choix, commission et publication irréversible',
+                'Avancement à l’ancienneté automatique (cron) avec notification',
+                'Décorations / citations séparées des qualifications',
+                'Carnet de dotation nominative (série, statut, historique)',
+                'Dossier de carrière unifié et score de disponibilité par unité',
+            ], [
+                'Aside back-office plus lisible (groupes, item actif, densité type maquette)',
+                'Cartes Mes qualifications : validité, icône de catégorie, pied générer / télécharger',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Organisation > Grades pour l’échelle, Personnel > Avancement pour les campagnes, Ma situation > Mes qualifications pour les brevets.',
+            ], 'Portail Athena'),
             $pr(734, '2026-09-29', 'Mes qualifications : brevet et validité', 'Sur Mes qualifications, chaque titre affiche désormais sa validité (permanente ou échéance), l’insigne ou la catégorie, et un bouton pour générer ou télécharger le brevet PDF quand la qualification est obtenue. Le libellé de page reprend « Mes qualifications », comme dans le menu. Rechargez le portail (Ctrl+F5).', [
                 'Bouton Générer le brevet sur chaque qualification obtenue sans PDF',
                 'Téléchargement du brevet depuis la carte une fois le PDF établi',

@@ -122,6 +122,10 @@ $orbatChildren = array_values(array_filter([
     ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
     ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => str_starts_with($p, 'back-office/referentiels/qualifications')],
+    ['label' => 'Grades', 'href' => url('back-office/organisation/grades'), 'active' => str_starts_with($p, 'back-office/organisation/grades')],
+    ['label' => 'Décorations', 'href' => url('back-office/referentiels/decorations'), 'active' => str_starts_with($p, 'back-office/referentiels/decorations')],
+    ['label' => 'Dotation', 'href' => url('back-office/referentiels/dotation'), 'active' => str_starts_with($p, 'back-office/referentiels/dotation')],
+    ['label' => 'Disponibilité', 'href' => url('back-office/organisation/disponibilite'), 'active' => str_starts_with($p, 'back-office/organisation/disponibilite')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $communityChildren = array_values(array_filter([
@@ -212,7 +216,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'personnel',
-            'label' => 'PERSONNEL',
+            'label' => 'MA SITUATION',
             'items' => [
                 ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => $opFicheActive],
                 ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
@@ -225,12 +229,24 @@ if ($isOperatorBoNav) {
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
                 ],
+                ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carriere')],
+                ['label' => 'Décorations', 'href' => url('back-office/ma-situation/decorations'), 'icon' => 'shield', 'active' => str_starts_with($p, 'back-office/ma-situation/decorations')],
+                ['label' => 'Ma dotation', 'href' => url('back-office/ma-situation/dotation'), 'icon' => 'gear', 'active' => str_starts_with($p, 'back-office/ma-situation/dotation')],
                 ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => $opSuiviActive],
                 [
                     'label' => 'Mon coffre',
                     'href' => url('back-office/ma-situation/coffre'),
                     'icon' => 'cert',
                     'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
+                ],
+                [
+                    'label' => 'Mes démarches',
+                    'href' => url('back-office/ma-situation/mes-demarches'),
+                    'icon' => 'path',
+                    'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh'),
+                    'badge' => $opDemarchesBadge,
+                    'warn' => $opDemarchesBadge !== null,
+                    'notif' => $opDemarchesBadge !== null,
                 ],
                 ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'users', 'active' => $opMonCompteActive],
             ],
@@ -328,8 +344,14 @@ if ($isOperatorBoNav) {
                     'label' => 'Organisation',
                     'href' => url('back-office/organisation-effectifs'),
                     'icon' => 'orbat',
-                    'active' => $navOrbatActive || !empty($boNavCatalog),
+                    'active' => $navOrbatActive || !empty($boNavCatalog) || str_starts_with($p, 'back-office/organisation/grades') || str_starts_with($p, 'back-office/referentiels/decorations') || str_starts_with($p, 'back-office/referentiels/dotation') || str_starts_with($p, 'back-office/organisation/disponibilite'),
                     'children' => $orbatChildren,
+                ],
+                [
+                    'label' => 'Avancement',
+                    'href' => url('back-office/rh/avancement'),
+                    'icon' => 'path',
+                    'active' => str_starts_with($p, 'back-office/rh/avancement'),
                 ],
                 [
                     'label' => 'Corrections RH',

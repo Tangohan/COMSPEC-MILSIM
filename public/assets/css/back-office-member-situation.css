@@ -1033,3 +1033,207 @@
 .bo-unit-empty-mark span:nth-child(1) { width: 100%; }
 .bo-unit-empty-mark span:nth-child(2) { width: 78%; margin-left: 12%; }
 .bo-unit-empty-mark span:nth-child(3) { width: 56%; margin-left: 24%; }
+
+/* Qualifications / brevets — maquette opérateur */
+.bo-member-situation--qualif .bo-dossier-hero {
+  border-radius: 14px;
+  align-items: flex-start;
+}
+
+.bo-qual-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .bo-qual-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bo-qual-card {
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bo-qual-card .bo-doc-sheet {
+  background: #fff;
+  border-bottom: none;
+  min-height: 0;
+}
+
+.bo-qual-card .bo-doc-sheet::before {
+  display: none;
+}
+
+.bo-qual-card__icon-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bo-qual-card__icon .bo-doc-sheet__seal {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+}
+
+.bo-qual-card.rh .bo-doc-sheet__seal {
+  background: #eaecfb;
+  color: #3b4fb0;
+}
+
+.bo-qual-card.tak .bo-doc-sheet__seal {
+  background: #e2f4f4;
+  color: #0f7d84;
+}
+
+.bo-qual-card.def .bo-doc-sheet__seal {
+  background: #e5f3ec;
+  color: #1f7a4d;
+}
+
+.bo-qual-card__cat {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.bo-qual-card.rh .bo-qual-card__cat { color: #3b4fb0; }
+.bo-qual-card.tak .bo-qual-card__cat { color: #0f7d84; }
+.bo-qual-card.def .bo-qual-card__cat { color: #1f7a4d; }
+
+.bo-qual-card__title {
+  margin: 4px 0 0;
+  font-size: 15.5px;
+}
+
+.bo-qual-card__meta {
+  display: flex;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-qual-card__meta b {
+  display: block;
+  color: var(--ath-ink, #12181b);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.bo-qual-card__valid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.bo-qual-card__valid .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1f7a4d;
+  flex: 0 0 auto;
+}
+
+.bo-qual-card__valid .dot.is-warn { background: #a5760b; }
+.bo-qual-card__valid .dot.is-bad { background: #9b1c1c; }
+.bo-qual-card__valid .dot.is-info { background: #3b4fb0; }
+
+.bo-qual-card__valid small {
+  color: var(--ath-muted, #6d7a80);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.bo-qual-card__foot {
+  margin-top: auto;
+  border-top: 1px solid var(--ath-line, #e4e7ea);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fafbfb;
+  flex-wrap: wrap;
+}
+
+.bo-qual-card__foot .foot-txt {
+  font-size: 12px;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-adv-banner {
+  padding: 16px 18px;
+  border: 1px solid var(--ath-line, #e4e7ea);
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bo-adv-banner__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bo-adv-banner__meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-career-timeline {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--ath-line, #e4e7ea);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.bo-career-item {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ath-line, #e4e7ea);
+}
+
+.bo-career-item:last-child { border-bottom: none; }
+
+.bo-career-item__date {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-career-item__kind {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1f7a4d;
+}
+
+.bo-career-item h3 {
+  margin: 2px 0 0;
+  font-size: 15px;
+}
+
+.bo-career-item p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ath-muted, #6d7a80);
+}

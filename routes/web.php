@@ -152,6 +152,12 @@ use App\Controllers\Admin\Organization\CompetencyMatrixController;
 use App\Controllers\Admin\Organization\GradeReferentielController;
 use App\Controllers\Admin\Organization\QualificationReferentielController;
 use App\Controllers\Admin\Organization\RankCatalogAdminController;
+use App\Controllers\Admin\Organization\AdvancementGradeController;
+use App\Controllers\Admin\Organization\AdvancementCampaignController;
+use App\Controllers\Admin\Organization\AwardReferentielController;
+use App\Controllers\Admin\Organization\EquipmentReferentielController;
+use App\Controllers\Admin\Organization\UnitReadinessController;
+use App\Controllers\Api\AdvancementApiController;
 use App\Controllers\Admin\Organization\PersonnelJobRoleAdminController;
 use App\Controllers\Admin\Organization\HrCharterDocumentAdminController;
 use App\Controllers\Admin\Organization\RecruitmentOffersController;
@@ -1046,6 +1052,10 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/qualifications/{awardId}/generer-brevet', [MemberSituationController::class, 'generateBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/coffre', [MemberSituationController::class, 'coffre'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/carriere', [MemberSituationController::class, 'carriere'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/decorations', [MemberSituationController::class, 'decorations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/dotation', [MemberSituationController::class, 'dotation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/avancement/candidater', [MemberSituationController::class, 'volunteerAdvancement'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1318,6 +1328,51 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/{id}/champs/{fieldId}/supprimer', [QualificationReferentielController::class, 'deleteCustomField'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits', [QualificationReferentielController::class, 'storePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits/{grantId}/supprimer', [QualificationReferentielController::class, 'deletePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/organisation/grades', [AdvancementGradeController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/grades/create', [AdvancementGradeController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/store', [AdvancementGradeController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/filieres', [AdvancementGradeController::class, 'storeFiliere'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/seed', [AdvancementGradeController::class, 'seed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/reorder', [AdvancementGradeController::class, 'reorder'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/grades/{id}/edit', [AdvancementGradeController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/{id}/update', [AdvancementGradeController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/grades/{id}/archive', [AdvancementGradeController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/rh/avancement', [AdvancementCampaignController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/rh/avancement/create', [AdvancementCampaignController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/store', [AdvancementCampaignController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/rh/avancement/{id}', [AdvancementCampaignController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/candidatures', [AdvancementCampaignController::class, 'addCandidacy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/recheck', [AdvancementCampaignController::class, 'recheck'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/commissionner', [AdvancementCampaignController::class, 'toCommission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/rh/avancement/{id}/commission', [AdvancementCampaignController::class, 'commission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/commission/avis', [AdvancementCampaignController::class, 'saveCommissionRow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/commission/membres', [AdvancementCampaignController::class, 'addCommissionMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/publier', [AdvancementCampaignController::class, 'publish'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/referentiels/decorations', [AwardReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/decorations', [AwardReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/decorations/attribuer', [AwardReferentielController::class, 'grant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/decorations/{id}/archive', [AwardReferentielController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/referentiels/dotation', [EquipmentReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation', [EquipmentReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation/attribuer', [EquipmentReferentielController::class, 'assign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/dotation/{id}', [EquipmentReferentielController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation/{id}/archive', [EquipmentReferentielController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation/attributions/{id}/statut', [EquipmentReferentielController::class, 'changeStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/back-office/organisation/disponibilite', [UnitReadinessController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+
+    $router->get('/api/advancement/grades', [AdvancementApiController::class, 'grades'], [AuthMiddleware::class]);
+    $router->get('/api/advancement/filieres', [AdvancementApiController::class, 'filieres'], [AuthMiddleware::class]);
+    $router->get('/api/advancement/campaigns', [AdvancementApiController::class, 'campaigns'], [AuthMiddleware::class]);
+    $router->post('/api/advancement/campaigns', [AdvancementApiController::class, 'createCampaign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/advancement/campaigns/{id}/volunteer', [AdvancementApiController::class, 'volunteer'], [AuthMiddleware::class]);
+    $router->post('/api/advancement/campaigns/{id}/commission', [AdvancementApiController::class, 'toCommission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/advancement/campaigns/{id}/publish', [AdvancementApiController::class, 'publish'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/advancement/eligibility', [AdvancementApiController::class, 'eligibility'], [AuthMiddleware::class]);
     $router->get('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/competences/{id}', [CompetencyMatrixController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

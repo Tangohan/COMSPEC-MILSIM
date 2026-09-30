@@ -26,6 +26,9 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/ma-situation/evenements'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/carriere'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/decorations'", $routes);
+        self::assertStringContainsString("'/back-office/ma-situation/dotation'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);
 
         self::assertStringContainsString("str_starts_with(\$path, '/back-office/ma-situation')", $middleware);
@@ -44,6 +47,8 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('Mes qualifications', $nav);
         self::assertStringContainsString('Mon coffre', $nav);
         self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
+        self::assertStringContainsString('Dossier de carrière', $nav);
+        self::assertStringContainsString('back-office/ma-situation/carriere', $nav);
         self::assertStringContainsString('Mon unité', $nav);
         self::assertStringContainsString('back-office/ma-situation/evenements', $nav);
         self::assertStringContainsString('back-office/ma-situation/ma-fiche', $nav);

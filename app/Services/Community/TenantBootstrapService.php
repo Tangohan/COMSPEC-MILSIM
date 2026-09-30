@@ -302,6 +302,14 @@ final class TenantBootstrapService
             }
 
             try {
+                $seedSvc = \App\Core\Container::get(\App\Services\Personnel\GradeScaleSeedService::class);
+                $template = \App\Services\Personnel\GradeScaleSeedService::templateForGradeSystem($gradeSystemCode);
+                $seedSvc->seedForTenant($tenantId, $template, true);
+            } catch (\Throwable $e) {
+                // Échelle de grades communauté : non bloquant si le schéma n’est pas encore migré.
+            }
+
+            try {
                 $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
                 $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
                 // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
