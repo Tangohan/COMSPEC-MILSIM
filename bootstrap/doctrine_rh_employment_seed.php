@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Doctrine d'emploi RH — Recrutement et Avancement — seed idempotent par tenant.
- * Fichier officiel : PDF v1.0 (manuel FM_ATHENA_RH).
+ * Fichier officiel : PDF v1.1 (manuel FM_ATHENA_RH_Doctrine_FR).
  */
 
 require_once dirname(__DIR__) . '/app/Support/SqlText.php';
@@ -46,14 +46,14 @@ function rhEmploymentOfficialFile(): array
     $full = dirname(__DIR__) . '/storage/documents/' . $relative;
     $checksum = is_file($full)
         ? (hash_file('sha256', $full) ?: '')
-        : hash('sha256', 'DRH/PERS/2026-001v1.0');
+        : hash('sha256', 'DRH/PERS/2026-001v1.1');
 
     return [
         'relative' => $relative,
         'full' => $full,
         'mime' => 'application/pdf',
-        'original' => 'FM_ATHENA_RH_Doctrine_v1.0_FR.pdf',
-        'label' => 'v1.0',
+        'original' => 'FM_ATHENA_RH_Doctrine_FR_v1.1.pdf',
+        'label' => 'v1.1',
         'checksum' => $checksum,
         'size' => is_file($full) ? (int) filesize($full) : 0,
     ];
@@ -62,7 +62,7 @@ function rhEmploymentOfficialFile(): array
 function rhEmploymentOfficialSummary(): string
 {
     return <<<'TXT'
-Fixe les règles d’emploi du module RH Athena pour le recrutement (offres, candidatures, instruction) et l’avancement de grade (échelles, campagnes, commission, publication). Prise en compte obligatoire pour tous les membres de l’organisation.
+FM ATHENA RH-01 — Doctrine de recrutement, administration, carrière, instruction et disponibilité. Fixe le cadre RH Athena (besoin, candidature, incorporation, affectation, progression, qualification, disponibilité). Prise en compte obligatoire pour tous les membres de l’organisation.
 TXT;
 }
 
@@ -92,6 +92,7 @@ function seedRhEmploymentDoctrine(PDO $pdo, int $tenantId): void
     if ($existingId > 0) {
         upgradeRhEmploymentDoctrineIfDemoPlaceholder($pdo, $tenantId, $existingId);
         upgradeRhEmploymentDoctrineToOfficialPdf($pdo, $tenantId, $existingId);
+        upgradeRhEmploymentDoctrineOfficialMetadata($pdo, $tenantId, $existingId);
         ensureRhEmploymentBundledFile($pdo, $tenantId, $existingId);
         ensureRhEmploymentMandatoryAudience($pdo, $tenantId, $existingId);
 
@@ -134,7 +135,7 @@ function seedRhEmploymentDoctrine(PDO $pdo, int $tenantId): void
             'INSERT INTO document_versions (
                 document_id, version_number, version_major, version_minor, version_label,
                 file_path, original_name, checksum, mime_type, size, is_current, published_at, change_summary, created_at
-             ) VALUES (?, 1, 1, 0, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
+             ) VALUES (?, 1, 1, 1, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
         );
         $insVer->execute([
             $docId,
@@ -144,14 +145,14 @@ function seedRhEmploymentDoctrine(PDO $pdo, int $tenantId): void
             $file['checksum'],
             $file['mime'],
             $file['size'] > 0 ? $file['size'] : null,
-            'Publication du manuel PDF v1.0 — doctrine d’emploi RH Recrutement / Avancement.',
+            'Publication du manuel PDF v1.1 — FM ATHENA RH-01 Recrutement / Avancement.',
         ]);
     } catch (\Throwable) {
         $insVer = $pdo->prepare(
             'INSERT INTO document_versions (
                 document_id, version_number, version_major, version_minor, version_label,
                 file_path, checksum, mime_type, is_current, published_at, change_summary, created_at
-             ) VALUES (?, 1, 1, 0, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
+             ) VALUES (?, 1, 1, 1, ?, ?, ?, ?, 1, NOW(), ?, NOW())'
         );
         $insVer->execute([
             $docId,
@@ -159,7 +160,7 @@ function seedRhEmploymentDoctrine(PDO $pdo, int $tenantId): void
             $file['relative'],
             $file['checksum'],
             $file['mime'],
-            'Publication du manuel PDF v1.0 — doctrine d’emploi RH Recrutement / Avancement.',
+            'Publication du manuel PDF v1.1 — FM ATHENA RH-01 Recrutement / Avancement.',
         ]);
     }
 
@@ -313,7 +314,7 @@ function upgradeRhEmploymentDoctrineIfDemoPlaceholder(PDO $pdo, int $tenantId, i
 }
 
 /**
- * Remplace le Markdown livré par le manuel PDF v1.0.
+ * Remplace le Markdown livré par le manuel PDF v1.1.
  * Ne touche pas à un dépôt déjà fait par un responsable (autre PDF).
  */
 function upgradeRhEmploymentDoctrineToOfficialPdf(PDO $pdo, int $tenantId, int $documentId): void
@@ -351,16 +352,69 @@ function upgradeRhEmploymentDoctrineToOfficialPdf(PDO $pdo, int $tenantId, int $
 }
 
 /**
+ * Aligne checksum / libellé / résumé sur le manuel PDF v1.1 si le pointeur
+ * officiel est déjà en place (ex. ancienne v1.0 générée).
+ */
+function upgradeRhEmploymentDoctrineOfficialMetadata(PDO $pdo, int $tenantId, int $documentId): void
+{
+    if ($documentId < 1 || $tenantId < 1) {
+        return;
+    }
+
+    $file = rhEmploymentOfficialFile();
+    if (!is_file($file['full'])) {
+        return;
+    }
+
+    $st = $pdo->prepare(
+        'SELECT id, file_path, mime_type, checksum, version_label, original_name
+         FROM document_versions WHERE document_id = ? AND is_current = 1 LIMIT 1'
+    );
+    $st->execute([$documentId]);
+    $ver = $st->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($ver)) {
+        return;
+    }
+
+    $rel = str_replace('\\', '/', ltrim(trim((string) ($ver['file_path'] ?? '')), '/'));
+    $mime = strtolower(trim((string) ($ver['mime_type'] ?? '')));
+    $isOfficialPointer = $rel === $file['relative']
+        || str_ends_with($rel, '/drh-pers-2026-001.pdf');
+    if (!$isOfficialPointer || $mime !== 'application/pdf') {
+        return;
+    }
+
+    $sameChecksum = trim((string) ($ver['checksum'] ?? '')) === $file['checksum'];
+    $sameLabel = trim((string) ($ver['version_label'] ?? '')) === $file['label'];
+    $sameName = trim((string) ($ver['original_name'] ?? '')) === $file['original'];
+    if ($sameChecksum && $sameLabel && $sameName) {
+        return;
+    }
+
+    applyRhEmploymentOfficialPdfToCurrentVersion($pdo, $documentId, $file);
+    $summary = rhEmploymentOfficialSummary();
+    try {
+        $pdo->prepare(
+            'UPDATE documents SET description = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
+        )->execute([$summary, $documentId, $tenantId]);
+        $pdo->prepare(
+            'UPDATE document_doctrines SET summary = ?, updated_at = NOW() WHERE document_id = ? AND tenant_id = ?'
+        )->execute([$summary, $documentId, $tenantId]);
+    } catch (\Throwable) {
+    }
+}
+
+/**
  * @param array{relative: string, original: string, checksum: string, mime: string, size: int, label: string} $file
  */
 function applyRhEmploymentOfficialPdfToCurrentVersion(PDO $pdo, int $documentId, array $file): void
 {
-    $change = 'Manuel PDF v1.0 — doctrine d’emploi RH Recrutement / Avancement.';
+    $change = 'Manuel PDF v1.1 — FM ATHENA RH-01 Recrutement / Avancement.';
     try {
         $pdo->prepare(
             'UPDATE document_versions
              SET file_path = ?, original_name = ?, checksum = ?, mime_type = ?, size = ?,
-                 version_label = ?, version_minor = 0, change_summary = ?
+                 version_label = ?, version_minor = 1, change_summary = ?
              WHERE document_id = ? AND is_current = 1'
         )->execute([
             $file['relative'],
@@ -433,7 +487,7 @@ function ensureRhEmploymentBundledFile(PDO $pdo, int $tenantId, int $documentId)
         return;
     }
 
-    $destRel = $tenantId . '/' . $documentId . '/v1.0.pdf';
+    $destRel = $tenantId . '/' . $documentId . '/v1.1.pdf';
     $destFull = dirname(__DIR__) . '/storage/documents/' . $destRel;
     $dir = dirname($destFull);
     if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
