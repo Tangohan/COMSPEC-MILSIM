@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Cron\Jobs;
 
 use App\Services\Cron\CronJobInterface;
-use App\Services\Effectifs\PersonnelAutoAdvancementService;
+use App\Services\Advancement\SeniorityAdvancementService;
 
 final class PersonnelAutoAdvancementCronJob implements CronJobInterface
 {
     public function __construct(
-        private PersonnelAutoAdvancementService $advancement,
+        private SeniorityAdvancementService $advancement,
     ) {}
 
     public function key(): string
@@ -25,28 +25,25 @@ final class PersonnelAutoAdvancementCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Propose ou applique les avancements de grade selon l’ancienneté, uniquement si la communauté l’a activé.';
+        return 'Attribue les grades à l’échéance statutaire depuis l’historique et les qualifications valides.';
     }
 
     public function run(): array
     {
-        $stats = $this->advancement->evaluateAllActiveTenants(true);
+        $stats = $this->advancement->run();
         $summary = sprintf(
-            '%d communauté(s), %d dossier(s) éligible(s), %d proposition(s), %d avancement(s) appliqué(s).',
-            $stats['tenants'],
-            $stats['eligible'],
-            $stats['proposed'],
-            $stats['applied']
+            '%d dossier(s) évalué(s), %d avancement(s) appliqué(s), %d ignoré(s).',
+            $stats['evaluated'],
+            $stats['promoted'],
+            $stats['skipped']
         );
 
         return [
             'ok' => true,
             'summary' => $summary,
             'details' => [
-                'tenants' => $stats['tenants'],
-                'eligible' => $stats['eligible'],
-                'proposed' => $stats['proposed'],
-                'applied' => $stats['applied'],
+                'evaluated' => $stats['evaluated'],
+                'promoted' => $stats['promoted'],
                 'skipped' => $stats['skipped'],
             ],
         ];

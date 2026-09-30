@@ -414,6 +414,12 @@
   align-items: flex-start;
 }
 
+.bo-dossier-hero__side {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: end;
+}
+
 .bo-doc-card__form {
   display: inline;
   margin: 0;
@@ -563,8 +569,29 @@
 .bo-doc-card__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.45rem;
   margin-top: 0.2rem;
+}
+
+.bo-doc-card__pdf-state {
+  margin-right: auto;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.bo-doc-card {
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(12, 17, 22, 0.03);
+}
+
+.bo-doc-card--rh {
+  box-shadow: inset 3px 0 0 #3b4fb0, 0 1px 2px rgba(12, 17, 22, 0.03);
+}
+
+.bo-doc-card--tak {
+  box-shadow: inset 3px 0 0 #0f7d84, 0 1px 2px rgba(12, 17, 22, 0.03);
 }
 
 .bo-member-situation__badge.is-ok {

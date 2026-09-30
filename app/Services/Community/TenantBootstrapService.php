@@ -98,6 +98,7 @@ final class TenantBootstrapService
             }
 
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
+            $this->duplicateAdvancementGradeScale($pdo, $tenantId, $newUserId, $gradeSystemCode, $gradeId);
 
             TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
             TenantSeedHelper::ensureRolesOrgCourse($pdo, $tenantId, $newUserId);
@@ -350,6 +351,81 @@ final class TenantBootstrapService
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Duplique un modèle global dans le référentiel d’avancement du tenant.
+     * Tolérant pour les installations où la migration d’avancement n’est pas encore jouée.
+     */
+    private function duplicateAdvancementGradeScale(
+        PDO $pdo,
+        int $tenantId,
+        int $founderUserId,
+        string $gradeSystemCode,
+        int $legacyFounderGradeId
+    ): void {
+        try {
+            $exists = $pdo->query(
+                "SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grade_definitions' LIMIT 1"
+            );
+            if (!$exists || !$exists->fetchColumn()) {
+                return;
+            }
+            $table = 'grades';
+            $hasModernGrades = $pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1"
+            );
+            if (!$hasModernGrades || !$hasModernGrades->fetchColumn()) {
+                $table = 'grades_referentiel';
+            }
+            $filiere = $pdo->prepare(
+                'INSERT INTO grade_filiere_definitions (tenant_id, code, label, sort_order)
+                 VALUES (?, "GENERAL", "Filière générale", 10)'
+            );
+            $filiere->execute([$tenantId]);
+            $filiereId = (int) $pdo->lastInsertId();
+            $source = $pdo->prepare(
+                'SELECT g.* FROM ' . $table . ' g
+                 JOIN grade_systems s ON s.id = g.grade_system_id
+                 WHERE s.code = ? AND g.is_active = 1 ORDER BY g.sort_order, g.id'
+            );
+            $source->execute([$gradeSystemCode]);
+            $insert = $pdo->prepare(
+                'INSERT INTO grade_definitions
+                 (tenant_id, code, label, short_label, filiere_id, rank_order,
+                  advancement_seniority_enabled, advancement_choice_enabled, min_time_in_previous_grade_months)
+                 VALUES (?, ?, ?, ?, ?, ?, 0, 1, 12)'
+            );
+            $initialNewGradeId = 0;
+            foreach ($source->fetchAll(PDO::FETCH_ASSOC) ?: [] as $grade) {
+                $insert->execute([
+                    $tenantId,
+                    (string) $grade['code'],
+                    (string) $grade['label_long'],
+                    (string) $grade['label_short'],
+                    $filiereId,
+                    (int) $grade['sort_order'],
+                ]);
+                $newId = (int) $pdo->lastInsertId();
+                if ((int) $grade['id'] === $legacyFounderGradeId) {
+                    $initialNewGradeId = $newId;
+                }
+                if ($initialNewGradeId === 0) {
+                    $initialNewGradeId = $newId;
+                }
+            }
+            if ($initialNewGradeId > 0) {
+                $pdo->prepare(
+                    'INSERT INTO personnel_grade_history
+                     (personnel_id, tenant_id, grade_id, obtained_at, obtained_via, created_by)
+                     VALUES (?, ?, ?, CURRENT_DATE, "initial", ?)'
+                )->execute([$founderUserId, $tenantId, $initialNewGradeId, $founderUserId]);
+            }
+        } catch (\Throwable) {
+            // La création de communauté reste compatible avec les déploiements en migration progressive.
         }
     }
 

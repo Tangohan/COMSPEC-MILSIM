@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRealismRepository;
+use App\Repositories\AdvancementRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\UserRepository;
@@ -24,6 +25,8 @@ use App\Services\Personnel\OperatorDocumentVaultService;
 use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationTemporalStatusService;
+use App\Services\Advancement\AdvancementEligibilityService;
+use App\Services\Advancement\AdvancementService;
 use App\Support\QualificationAdminStatus;
 
 /**
@@ -42,6 +45,9 @@ final class MemberSituationController
         private ?QualificationCertificatePdfService $certificates = null,
         private ?QualificationTemporalStatusService $temporal = null,
         private ?QualificationBadgeStorageService $badges = null,
+        private ?AdvancementRepository $advancement = null,
+        private ?AdvancementEligibilityService $advancementEligibility = null,
+        private ?AdvancementService $advancementService = null,
     ) {
         $this->authService ??= Container::get(AuthService::class);
         $this->realism ??= Container::get(AtakRealismRepository::class);
@@ -53,6 +59,9 @@ final class MemberSituationController
         $this->certificates ??= Container::get(QualificationCertificatePdfService::class);
         $this->temporal ??= Container::get(QualificationTemporalStatusService::class);
         $this->badges ??= Container::get(QualificationBadgeStorageService::class);
+        $this->advancement ??= Container::get(AdvancementRepository::class);
+        $this->advancementEligibility ??= Container::get(AdvancementEligibilityService::class);
+        $this->advancementService ??= Container::get(AdvancementService::class);
     }
 
     public function liaisonAtak(Request $request, array $params = []): Response
@@ -360,6 +369,70 @@ final class MemberSituationController
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));
+    }
+
+    public function advancement(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$user, $tenantId, $userId] = $ctx;
+        $campaigns = [];
+        foreach ($this->advancement->openCampaignsForPersonnel($tenantId, $userId) as $campaign) {
+            $campaign['eligibility'] = $this->advancementEligibility->evaluate(
+                $tenantId,
+                $userId,
+                (int) $campaign['grade_id']
+            );
+            $campaigns[] = $campaign;
+        }
+
+        return Response::view('layout.main', $this->boShell([
+            'title' => 'Mon avancement',
+            'content' => 'admin.member_situation.advancement',
+            'boPageTitle' => 'Mon avancement',
+            'boPageKicker' => 'OPÉRATEUR · CARRIÈRE',
+            'boPageSubtitle' => 'Votre historique de grade et les campagnes ouvertes qui vous concernent.',
+            'backOfficePageCss' => ['back-office-member-situation.css', 'advancement.css'],
+            'user' => $user,
+            'gradeHistory' => $this->advancement->gradeHistory($tenantId, $userId),
+            'campaigns' => $campaigns,
+            'success' => Session::getFlash('success'),
+            'error' => Session::getFlash('error'),
+        ]));
+    }
+
+    public function volunteerForAdvancement(Request $request, array $params = []): Response
+    {
+        $ctx = $this->requireUser();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [, $tenantId, $userId] = $ctx;
+        if (!Csrf::validate($request)) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/ma-situation/avancement'));
+        }
+        try {
+            $this->advancementService->apply(
+                $tenantId,
+                (int) ($params['campaignId'] ?? 0),
+                $userId,
+                [
+                    'mobility_requested' => $request->input('mobility_requested'),
+                    'requested_billet_id' => $request->input('requested_billet_id'),
+                    'notes' => $request->input('notes'),
+                ],
+                $userId
+            );
+            Session::flash('success', 'Votre candidature a été enregistrée.');
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect(url('back-office/ma-situation/avancement'));
     }
 
     public function generateBrevet(Request $request, array $params = []): Response

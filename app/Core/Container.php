@@ -1001,6 +1001,31 @@ class Container
             \App\Repositories\QualificationReferentielRepository::class => new \App\Repositories\QualificationReferentielRepository(),
             \App\Repositories\QualificationAwardRepository::class => new \App\Repositories\QualificationAwardRepository(),
             \App\Services\Personnel\QualificationTemporalStatusService::class => new \App\Services\Personnel\QualificationTemporalStatusService(),
+            \App\Repositories\AdvancementRepository::class => new \App\Repositories\AdvancementRepository(),
+            \App\Services\Advancement\AdvancementEligibilityService::class => new \App\Services\Advancement\AdvancementEligibilityService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+            ),
+            \App\Services\Advancement\AdvancementService::class => new \App\Services\Advancement\AdvancementService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementEligibilityService::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+            ),
+            \App\Services\Advancement\SeniorityAdvancementService::class => new \App\Services\Advancement\SeniorityAdvancementService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementEligibilityService::class),
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\AdvancementController::class => new \App\Controllers\Admin\Organization\AdvancementController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementService::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+            ),
+            \App\Controllers\Api\AdvancementApiController::class => new \App\Controllers\Api\AdvancementApiController(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementService::class),
+            ),
             \App\Services\Personnel\QualificationPermissionGrantService::class => new \App\Services\Personnel\QualificationPermissionGrantService(
                 self::get(\App\Repositories\QualificationReferentielRepository::class)
             ),
@@ -1072,9 +1097,8 @@ class Container
             \App\Services\Cron\Jobs\PersonnelProgressionCronJob::class => new \App\Services\Cron\Jobs\PersonnelProgressionCronJob(
                 self::get(\App\Services\Personnel\PersonnelProgressionEvaluator::class),
             ),
-            \App\Services\Effectifs\PersonnelAutoAdvancementService::class => new \App\Services\Effectifs\PersonnelAutoAdvancementService(),
             \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class => new \App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob(
-                self::get(\App\Services\Effectifs\PersonnelAutoAdvancementService::class),
+                self::get(\App\Services\Advancement\SeniorityAdvancementService::class),
             ),
             \App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class => new \App\Services\Cron\Jobs\PersonnelCapabilityCronJob(
                 self::get(\App\Services\Personnel\OperationalCapabilityService::class),

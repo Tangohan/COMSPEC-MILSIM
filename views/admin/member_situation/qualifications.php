@@ -35,9 +35,12 @@ foreach ($awards as $row) {
                 Vos titres enregistrés sur le dossier. Vous pouvez générer ou télécharger le brevet PDF de chaque qualification obtenue.
             </p>
         </div>
-        <div class="bo-member-situation__actions bo-dossier-hero__actions">
-            <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/coffre')) ?>">Ouvrir mon coffre</a>
-            <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=formation') ?>">Voir dans ma fiche</a>
+        <div class="bo-dossier-hero__side">
+            <div class="bo-dossier-hero__stats"><div><strong><?= (int) $count ?></strong><span>Qualifications</span></div><div><strong><?= (int) $withCert ?></strong><span>Brevets PDF</span></div></div>
+            <div class="bo-member-situation__actions bo-dossier-hero__actions">
+                <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/coffre')) ?>">Ouvrir mon coffre</a>
+                <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=formation') ?>">Voir dans ma fiche</a>
+            </div>
         </div>
     </header>
 
@@ -129,8 +132,9 @@ foreach ($awards as $row) {
                     $orgParts[] = $category;
                 }
                 $orgLine = implode(' · ', $orgParts);
+                $cardTone = str_contains(mb_strtolower($category . ' ' . $name), 'atak') ? 'tak' : 'rh';
                 ?>
-                <article class="bo-doc-card">
+                <article class="bo-doc-card bo-doc-card--<?= $h($cardTone) ?>">
                     <div class="bo-doc-sheet">
                         <div class="bo-doc-sheet__top">
                             <?php if ($badgeUrl !== ''): ?>
@@ -162,6 +166,7 @@ foreach ($awards as $row) {
                     </div>
                     <div class="bo-doc-card__body bo-doc-card__body--actions">
                         <div class="bo-doc-card__actions">
+                            <span class="bo-doc-card__pdf-state"><?= $hasCert ? 'Brevet PDF disponible' : 'Brevet PDF non généré' ?></span>
                             <?php if ($hasCert && $id > 0): ?>
                                 <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/qualifications/' . $id . '/brevet')) ?>">Télécharger le brevet</a>
                             <?php elseif ($canGenerate && $id > 0): ?>
