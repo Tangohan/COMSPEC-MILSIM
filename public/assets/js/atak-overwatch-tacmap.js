@@ -620,13 +620,100 @@
     });
   }
 
-  function bind() {
-    document.querySelectorAll('#ow-drawbar [data-draw]').forEach(function (btn) {
-      btn.addEventListener('click', function (event) {
-        event.preventDefault();
-        pickDraw(btn.getAttribute('data-draw'), true);
-      });
+  function setOtanTab(tab) {
+    var id = tab || 'manoeuvre';
+    document.querySelectorAll('[data-otan-tab]').forEach(function (btn) {
+      var on = btn.getAttribute('data-otan-tab') === id;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    document.querySelectorAll('[data-otan-pane]').forEach(function (pane) {
+      var on = pane.getAttribute('data-otan-pane') === id;
+      pane.hidden = !on;
+      pane.classList.toggle('is-on', on);
+    });
+    if (id === 'library') renderSymbolLibrary();
+  }
+
+  function renderSymbolLibrary() {
+    var grid = $('ow-otan-lib-grid');
+    var empty = $('ow-otan-lib-empty');
+    if (!grid) return;
+    var api = ow();
+    var list = api.readSymbolLibrary ? api.readSymbolLibrary() : [];
+    grid.innerHTML = '';
+    list.forEach(function (row) {
+      if (!row || !row.dataUrl) return;
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'ow-otan-lib-card';
+      card.title = row.label || 'Image';
+      card.setAttribute('data-lib-place', String(row.id || ''));
+      card.innerHTML = '<img alt="" src="' + String(row.dataUrl).replace(/"/g, '&quot;') + '">' +
+        '<span class="ow-otan-lib-del" data-lib-del="' + String(row.id || '').replace(/"/g, '&quot;') + '" title="Retirer">×</span>';
+      grid.appendChild(card);
+    });
+    if (empty) empty.hidden = list.length > 0;
+  }
+
+  function compressImageFile(file, cb) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var src = String(reader.result || '');
+      if (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name || '')) {
+        cb({
+          id: 'img-' + Date.now().toString(36),
+          label: (file.name || 'Image').replace(/\.[^.]+$/, '').slice(0, 40) || 'Image',
+          dataUrl: src,
+          width: 80,
+          height: 80
+        });
+        return;
+      }
+      var img = new Image();
+      img.onload = function () {
+        var max = 256;
+        var w = img.naturalWidth || img.width || max;
+        var h = img.naturalHeight || img.height || max;
+        var scale = Math.min(1, max / Math.max(w, h));
+        var cw = Math.max(24, Math.round(w * scale));
+        var ch = Math.max(24, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var c = canvas.getContext('2d');
+        if (!c) {
+          cb(null);
+          return;
+        }
+        c.drawImage(img, 0, 0, cw, ch);
+        var out = canvas.toDataURL('image/png');
+        cb({
+          id: 'img-' + Date.now().toString(36),
+          label: (file.name || 'Image').replace(/\.[^.]+$/, '').slice(0, 40) || 'Image',
+          dataUrl: out,
+          width: Math.min(96, cw),
+          height: Math.min(96, ch)
+        });
+      };
+      img.onerror = function () { cb(null); };
+      img.src = src;
+    };
+    reader.onerror = function () { cb(null); };
+    reader.readAsDataURL(file);
+  }
+
+  function bind() {
+    var drawbar = $('ow-drawbar');
+    if (drawbar) {
+      drawbar.addEventListener('click', function (event) {
+        var drawBtn = event.target.closest('[data-draw]');
+        if (!drawBtn || !drawbar.contains(drawBtn)) return;
+        event.preventDefault();
+        pickDraw(drawBtn.getAttribute('data-draw'), true);
+      });
+    }
     var otanBtn = $('ow-otan-btn');
     if (otanBtn) otanBtn.addEventListener('click', function (event) {
       event.preventDefault();
@@ -635,6 +722,68 @@
     document.querySelectorAll('[data-affil]').forEach(function (btn) {
       btn.addEventListener('click', function () { setAffiliation(btn.getAttribute('data-affil')); });
     });
+    document.querySelectorAll('[data-otan-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setOtanTab(btn.getAttribute('data-otan-tab'));
+      });
+    });
+    var importInput = $('ow-otan-import');
+    if (importInput) {
+      importInput.addEventListener('change', function () {
+        var file = importInput.files && importInput.files[0];
+        importInput.value = '';
+        if (!file) return;
+        if (file.size > 2.5 * 1024 * 1024) {
+          toast('Image trop lourde (max. 2,5 Mo).');
+          return;
+        }
+        compressImageFile(file, function (entry) {
+          if (!entry) {
+            toast('Import impossible.');
+            return;
+          }
+          var api = ow();
+          if (api.addSymbolToLibrary) api.addSymbolToLibrary(entry);
+          setOtanTab('library');
+          renderSymbolLibrary();
+          toast('Image ajoutée à la bibliothèque.');
+          if (api.armStampPlacement) api.armStampPlacement(entry);
+        });
+      });
+    }
+    var clearLib = $('ow-otan-lib-clear');
+    if (clearLib) {
+      clearLib.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var api = ow();
+        if (api.clearSymbolLibrary) api.clearSymbolLibrary();
+        renderSymbolLibrary();
+        toast('Bibliothèque vidée.');
+      });
+    }
+    var libGrid = $('ow-otan-lib-grid');
+    if (libGrid) {
+      libGrid.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var del = event.target.closest('[data-lib-del]');
+        var api = ow();
+        if (del) {
+          if (api.removeSymbolFromLibrary) api.removeSymbolFromLibrary(del.getAttribute('data-lib-del'));
+          renderSymbolLibrary();
+          return;
+        }
+        var card = event.target.closest('[data-lib-place]');
+        if (!card || !api.readSymbolLibrary || !api.armStampPlacement) return;
+        var id = card.getAttribute('data-lib-place');
+        var row = api.readSymbolLibrary().filter(function (item) { return String(item.id) === String(id); })[0];
+        if (row) api.armStampPlacement(row);
+      });
+    }
+    setOtanTab('manoeuvre');
     var bplanBtn = $('ow-btn-bplan');
     if (bplanBtn) bplanBtn.addEventListener('click', function () {
       setBplanOpen($('ow-bplan').hidden);

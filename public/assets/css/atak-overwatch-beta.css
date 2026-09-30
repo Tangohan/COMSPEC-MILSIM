@@ -817,13 +817,20 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 }
 .ow-otan-btn:hover,.ow-otan-btn.is-open{background:#161b19;color:var(--athena-text)}
 .ow-otan-flyout{
-  position:absolute;top:38px;left:50%;transform:translateX(-50%);width:230px;
+  position:absolute;top:38px;left:50%;transform:translateX(-50%);width:320px;max-height:min(70vh,420px);overflow:auto;
   background:#101413;border:1px solid var(--athena-line-2);border-radius:9px;padding:8px;
   z-index:14;box-shadow:0 10px 26px rgba(0,0,0,.45)
 }
 .ow-otan-flyout[hidden]{display:none!important}
 .ow-otan-cap{font-size:9.5px;letter-spacing:.05em;color:var(--athena-muted);text-transform:uppercase;padding:2px 4px 6px}
 .ow-otan-affil{display:flex;gap:10px;padding:0 4px 8px}
+.ow-otan-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:0 2px 8px}
+.ow-otan-tab{
+  border:1px solid var(--athena-line-2);background:#0d1110;color:var(--athena-muted);
+  font-size:10px;font-weight:700;padding:4px 8px;border-radius:999px;cursor:pointer
+}
+.ow-otan-tab.is-on{border-color:var(--athena-green);color:var(--athena-green);background:rgba(0,214,154,.08)}
+.ow-otan-pane[hidden]{display:none!important}
 .ow-swatch{
   width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer;padding:0;position:relative
 }
@@ -842,6 +849,30 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-otan-item:hover{border-color:var(--athena-green)}
 .ow-otan-item svg{width:26px;height:14px;flex:0 0 auto}
 .ow-otan-item span{font-size:9.5px;color:var(--athena-muted);line-height:1.2}
+.ow-otan-lib-actions{display:flex;align-items:center;gap:8px;padding:0 2px 8px}
+.ow-otan-import{
+  display:inline-flex;align-items:center;justify-content:center;flex:1;height:30px;border-radius:6px;
+  border:1px solid var(--athena-green);background:rgba(0,214,154,.1);color:var(--athena-green);
+  font-size:11px;font-weight:700;cursor:pointer
+}
+.ow-otan-lib-clear{
+  height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--athena-line-2);
+  background:#0d1110;color:var(--athena-muted);font-size:10px;font-weight:700;cursor:pointer
+}
+.ow-otan-lib-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ow-otan-lib-card{
+  position:relative;aspect-ratio:1;border:1px solid var(--athena-line-2);border-radius:7px;
+  background:#0d1110;overflow:hidden;cursor:pointer;padding:0
+}
+.ow-otan-lib-card img{width:100%;height:100%;object-fit:contain;display:block;background:#0a0d0c}
+.ow-otan-lib-card:hover{border-color:var(--athena-green)}
+.ow-otan-lib-del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;border:0;border-radius:4px;
+  background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1;cursor:pointer
+}
+.ow-otan-lib-empty{font-size:10.5px;color:var(--athena-muted);padding:8px 4px 2px;margin:0;line-height:1.35}
+.ow-otan-lib-empty[hidden]{display:none!important}
+.ow-map-stamp{display:block;border:1px solid rgba(255,255,255,.2);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.35);background:rgba(0,0,0,.2)}
 .ow-export-btn{
   display:flex;align-items:center;gap:6px;background:var(--athena-green);color:#062017;font-weight:700;
   font-size:11.5px;padding:0 12px;height:30px;border:0;border-radius:6px;cursor:pointer;margin-left:4px;white-space:nowrap

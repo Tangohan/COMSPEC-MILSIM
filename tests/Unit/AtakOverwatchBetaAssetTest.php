@@ -353,6 +353,13 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="ow-bplan"', $view);
         self::assertStringContainsString('id="ow-export-modal"', $view);
         self::assertStringContainsString('Symboles OTAN', $view);
+        self::assertStringContainsString('data-otan-tab="library"', $view);
+        self::assertStringContainsString('id="ow-otan-import"', $view);
+        self::assertStringContainsString('data-draw="support_fire"', $view);
+        self::assertStringContainsString('data-draw="minefield"', $view);
+        self::assertStringContainsString('data-draw="checkpoint"', $view);
+        self::assertStringContainsString('armStampPlacement', $overwatchJs);
+        self::assertStringContainsString('readSymbolLibrary', $overwatchJs);
         self::assertStringContainsString('data-tool="draw"', $view);
         self::assertStringContainsString('atak-overwatch-tacmap.js', $view);
         $tacmapJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-tacmap.js');
@@ -360,6 +367,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('generatePdf', $tacmapJs);
         self::assertStringContainsString('consumeMapClick', $tacmapJs);
         self::assertStringContainsString('attachSceneBuilding', $tacmapJs);
+        self::assertStringContainsString('compressImageFile', $tacmapJs);
+        self::assertStringContainsString('renderSymbolLibrary', $tacmapJs);
         self::assertStringContainsString('id="ow-bplan-source"', $view);
         self::assertStringContainsString('Un bâtiment désigné en jeu', $view);
         self::assertStringContainsString('Une construction relevée', $view);
