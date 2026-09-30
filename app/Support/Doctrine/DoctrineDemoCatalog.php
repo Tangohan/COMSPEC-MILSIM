@@ -12,6 +12,8 @@ final class DoctrineDemoCatalog
 {
     public const ATAK_REFERENCE = 'SIC/ATAK/2026-001';
 
+    public const RH_REFERENCE = 'DRH/PERS/2026-001';
+
     /**
      * @return array{
      *     remove: list<array{reference: string, title: string, slug: string}>,
@@ -53,6 +55,7 @@ final class DoctrineDemoCatalog
             $refs[] = strtoupper($row['reference']);
         }
         $refs[] = self::ATAK_REFERENCE;
+        $refs[] = self::RH_REFERENCE;
 
         return array_values(array_unique($refs));
     }

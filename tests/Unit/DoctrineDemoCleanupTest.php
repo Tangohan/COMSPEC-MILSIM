@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class DoctrineDemoCleanupTest extends TestCase
 {
-    public function testCatalogStopsSeedingAndKeepsOnlyAtak(): void
+    public function testCatalogStopsSeedingAndKeepsOfficialDoctrines(): void
     {
         $path = dirname(__DIR__, 2) . '/bootstrap/doctrine_demo_seed.php';
         $catalog = require $path;
@@ -17,9 +17,11 @@ final class DoctrineDemoCleanupTest extends TestCase
         self::assertIsArray($catalog);
         self::assertFalse(is_callable($catalog));
         self::assertCount(8, $catalog['remove']);
-        self::assertCount(1, $catalog['keep']);
+        self::assertCount(2, $catalog['keep']);
         self::assertSame('SIC/ATAK/2026-001', $catalog['keep'][0]['reference']);
         self::assertSame('Doctrine d’emploi d’ATAK / Overwatch Athena', $catalog['keep'][0]['title']);
+        self::assertSame('DRH/PERS/2026-001', $catalog['keep'][1]['reference']);
+        self::assertSame('Doctrine d’emploi RH — Recrutement et Avancement', $catalog['keep'][1]['title']);
 
         $removeRefs = array_column($catalog['remove'], 'reference');
         self::assertContains('EM/DOCTR/2026-001', $removeRefs);
@@ -31,6 +33,7 @@ final class DoctrineDemoCleanupTest extends TestCase
         self::assertContains('MED/SAN/2026-006', $removeRefs);
         self::assertContains('REN/PROC/2026-011', $removeRefs);
         self::assertNotContains('SIC/ATAK/2026-001', $removeRefs);
+        self::assertNotContains('DRH/PERS/2026-001', $removeRefs);
     }
 
     public function testCleanupTargetsOnlyKnownDemoPairs(): void
@@ -62,6 +65,11 @@ final class DoctrineDemoCleanupTest extends TestCase
             'sic-atak-2026-001'
         ));
         self::assertFalse(DoctrineDemoCatalog::isRemoveTarget(
+            'DRH/PERS/2026-001',
+            'Doctrine d’emploi RH — Recrutement et Avancement',
+            'drh-pers-2026-001'
+        ));
+        self::assertFalse(DoctrineDemoCatalog::isRemoveTarget(
             'EM/DOCTR/2026-001',
             'Notre doctrine maison',
             'notre-doctrine-maison'
@@ -82,6 +90,7 @@ final class DoctrineDemoCleanupTest extends TestCase
             'jtac-cas-librairie'
         ));
         self::assertTrue(DoctrineDemoCatalog::isKeptReference('SIC/ATAK/2026-001'));
+        self::assertTrue(DoctrineDemoCatalog::isKeptReference('DRH/PERS/2026-001'));
     }
 
     public function testCleanupBootstrapIsWiredAndDoesNotInsert(): void
@@ -89,16 +98,21 @@ final class DoctrineDemoCleanupTest extends TestCase
         $cleanup = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_demo_cleanup.php');
         $migration = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_referential_migration.php');
         $atak = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_atak_employment_seed.php');
+        $rh = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_rh_employment_seed.php');
 
         self::assertStringContainsString('DoctrineDemoCatalog::isRemoveTarget', $cleanup);
         self::assertStringContainsString("doctrine_status = 'archived'", $cleanup);
         self::assertStringNotContainsString('INSERT INTO documents', $cleanup);
         self::assertStringContainsString('doctrine_demo_cleanup', $migration);
         self::assertStringContainsString('doctrine_atak_employment_seed', $migration);
+        self::assertStringContainsString('doctrine_rh_employment_seed', $migration);
         self::assertStringNotContainsString('seedTenantDemo', $migration);
         self::assertStringContainsString('SIC/ATAK/2026-001', $atak);
         self::assertStringContainsString('upgradeAtakEmploymentDoctrineIfDemoPlaceholder', $atak);
         self::assertStringContainsString('upgradeAtakEmploymentDoctrineToOfficialPdf', $atak);
+        self::assertStringContainsString('DRH/PERS/2026-001', $rh);
+        self::assertStringContainsString('ensureRhEmploymentMandatoryAudience', $rh);
+        self::assertStringContainsString('upgradeRhEmploymentDoctrineIfDemoPlaceholder', $rh);
     }
 
     public function testDemoPlaceholderFingerprint(): void
@@ -110,6 +124,10 @@ final class DoctrineDemoCleanupTest extends TestCase
         self::assertFalse(DoctrineDemoCatalog::looksLikeDemoPlaceholder(
             'Fixe les règles d’emploi du terminal tactique Overwatch',
             'doctrine/sic-atak-2026-001.pdf'
+        ));
+        self::assertFalse(DoctrineDemoCatalog::looksLikeDemoPlaceholder(
+            'Fixe les règles d’emploi du module RH Athena pour le recrutement',
+            'doctrine/drh-pers-2026-001.pdf'
         ));
     }
 }

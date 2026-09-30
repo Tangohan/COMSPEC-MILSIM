@@ -28,10 +28,13 @@ final class DoctrineReferentialAssetTest extends TestCase
         self::assertStringContainsString('Je certifie avoir pris connaissance', $showView);
         self::assertStringContainsString('listPendingActionsForUser', $compliance);
         $atakSeed = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_atak_employment_seed.php');
+        $rhSeed = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_rh_employment_seed.php');
         $referentialMigration = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_referential_migration.php');
         $demoCatalog = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/doctrine_demo_seed.php');
         self::assertStringContainsString('SIC/ATAK/2026-001', $atakSeed);
+        self::assertStringContainsString('DRH/PERS/2026-001', $rhSeed);
         self::assertStringContainsString('doctrine_atak_employment_seed', $referentialMigration);
+        self::assertStringContainsString('doctrine_rh_employment_seed', $referentialMigration);
         self::assertStringContainsString('doctrine_demo_cleanup', $referentialMigration);
         self::assertStringNotContainsString('INSERT INTO documents', $demoCatalog);
         self::assertStringNotContainsString('seedTenantDemo', $referentialMigration);
