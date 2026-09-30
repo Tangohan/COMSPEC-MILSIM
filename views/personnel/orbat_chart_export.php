@@ -190,27 +190,35 @@ $unitCount = (int) ($totals['unit_count'] ?? count($flatUnits));
   .connector-root:after{content:"";position:absolute;left:5%;right:5%;top:18px;border-top:2px solid #222}
   .groups{
     display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;
-    gap:18px 14px;padding:0 28px 16px;
+    gap:22px 28px;padding:0 28px 16px;
   }
-  .group{position:relative;text-align:center;padding:0 4px;flex:1 1 220px;min-width:180px;max-width:100%}
+  /* min-content : la branche s’élargit pour ses frères horizontaux (pas de pile verticale forcée) */
+  .group{position:relative;text-align:center;padding:0 8px;flex:0 0 auto;min-width:max-content}
   .group:before{content:"";position:absolute;left:50%;top:-24px;height:24px;border-left:2px solid #222}
   .echelon{font-weight:900;font-size:17px;letter-spacing:2px;height:20px}
   .group-title{font-weight:900;font-size:15px;margin-top:5px}
   .group-meta{font-size:12px;line-height:1.35;margin-top:3px}
   .group .sym{margin:0 auto}
   .group-desc{font-size:12px;line-height:1.35;min-height:24px;margin-top:6px;color:var(--muted)}
-  .child-connector{height:24px;position:relative;margin:8px 12px 0}
+  .child-connector{height:24px;position:relative;margin:8px 8px 0}
   .child-connector:before{content:"";position:absolute;left:50%;height:11px;border-left:1.6px solid #222}
-  .child-connector:after{content:"";position:absolute;left:8%;right:8%;top:11px;border-top:1.6px solid #222}
-  .children{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 6px;align-items:flex-start}
-  .child{position:relative;text-align:center;font-size:11px;flex:1 1 110px;min-width:100px;max-width:220px}
+  .child-connector:after{content:"";position:absolute;left:6%;right:6%;top:11px;border-top:1.6px solid #222}
+  /* Grille en colonnes : frères toujours côte à côte (évite l’empilement flex imbriqué) */
+  .children{
+    display:grid;grid-auto-flow:column;grid-auto-columns:minmax(100px,max-content);
+    justify-content:center;align-items:start;gap:10px 14px;width:max-content;margin:0 auto;
+  }
+  .children.cols-5,.children.cols-6,.children.cols-7,.children.cols-8{
+    grid-auto-flow:row;grid-template-columns:repeat(4,minmax(100px,max-content));
+  }
+  .child{position:relative;text-align:center;font-size:11px;min-width:100px}
   .child:before{content:"";position:absolute;left:50%;top:-13px;height:13px;border-left:1.6px solid #222}
   .child .sym{margin:0 auto 4px}
   .child-code{font-weight:900;font-size:11px;margin-bottom:2px}
-  .child-name{font-weight:900;font-size:12px;line-height:1.05}
+  .child-name{font-weight:900;font-size:12px;line-height:1.05;max-width:140px;margin:0 auto}
   .child-meta{font-size:11px;line-height:1.25;margin-top:3px}
   .child.depth-2 .sym,.child.depth-3 .sym,.child.depth-4 .sym{width:44px;height:28px}
-  .child.depth-2,.child.depth-3,.child.depth-4{font-size:10px;min-width:90px}
+  .child.depth-2,.child.depth-3,.child.depth-4{font-size:10px;min-width:96px}
   .bottom-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;padding:12px 26px 14px}
   .strength{border:1px solid var(--line)}
   .strength td:first-child{font-weight:800}
