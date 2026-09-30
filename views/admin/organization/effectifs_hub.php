@@ -287,11 +287,6 @@ $athKpis = [
         <div class="bo-eff-hub__intro-copy">
             <span class="bo-eff-hub__eyebrow">Centre de pilotage · <?= $h((string) ($communityName ?? 'Communauté')) ?></span>
             <h2 id="bo-eff-hub-intro-title">Organisez les personnes, les unités et les responsabilités</h2>
-            <p>
-                Cette page est le point de départ de votre organisation. Elle ne contient pas les fiches nominatives&nbsp;:
-                elle vous guide vers le bon espace selon que vous souhaitez <strong>gérer un membre</strong>,
-                <strong>dessiner la hiérarchie</strong> ou <strong>définir les règles communes</strong>.
-            </p>
             <div class="bo-eff-hub__intro-actions">
                 <a href="<?= $h($effectifsUrl) ?>" class="ath-btn ath-btn--solid">Gérer les membres</a>
                 <?php if ($canStructureRecruitmentHub): ?>

@@ -716,30 +716,21 @@ if ($personnelFileIsRhFull) {
 
     <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
 
-        <p class="personnel-file-hub__intro">
-            Cette fiche se lit en cinq rubriques : la personne, son unité, ses formations, le suivi (parcours et échéances), puis le dossier. La rubrique ouverte est conservée après un changement d’écran.
-        </p>
-
         <nav class="personnel-file-hub-tabs" role="tablist" aria-label="Rubriques de la fiche">
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('resume')" :class="tab === 'resume' && 'is-active'" :aria-selected="tab === 'resume'">
                 Portrait
-                <span class="personnel-file-hub-tab__hint">Qui est la personne</span>
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('ops')" :class="tab === 'ops' && 'is-active'" :aria-selected="tab === 'ops'">
                 Unité
-                <span class="personnel-file-hub-tab__hint">Poste, affectations, ancienneté</span>
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('formation')" :class="tab === 'formation' && 'is-active'" :aria-selected="tab === 'formation'">
                 Parcours
-                <span class="personnel-file-hub-tab__hint">Formations, habilitations, dotation</span>
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('historique')" :class="tab === 'historique' && 'is-active'" :aria-selected="tab === 'historique'">
                 Suivi
-                <span class="personnel-file-hub-tab__hint">Parcours, échéances et historique</span>
             </button>
             <button type="button" role="tab" class="personnel-file-hub-tab" @click="setTab('administratif')" :class="tab === 'administratif' && 'is-active'" :aria-selected="tab === 'administratif'">
                 Dossier
-                <span class="personnel-file-hub-tab__hint">Coordonnées et informations enregistrées</span>
             </button>
         </nav>
         <div class="personnel-file-hub-actions">

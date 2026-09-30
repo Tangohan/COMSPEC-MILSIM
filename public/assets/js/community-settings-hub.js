@@ -32,12 +32,12 @@
     'org-profil': 'profil'
   };
   var hints = {
-    identite: 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    vitrine: 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    portail: 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    profil: 'Enregistre le cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
-    inscription: 'Enregistre le parcours d’arrivée, le contact des candidats et le dossier.',
-    accueil: 'Chaque photo et le défilement s’enregistrent avec les boutons de cette rubrique.'
+    identite: 'Nom, logo, représentation, vitrine, portail et cycle.',
+    vitrine: 'Nom, logo, représentation, vitrine, portail et cycle.',
+    portail: 'Nom, logo, représentation, vitrine, portail et cycle.',
+    profil: 'Cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
+    inscription: 'Parcours d’arrivée, contact des candidats et dossier.',
+    accueil: 'Photos et défilement : boutons de cette rubrique.'
   };
   var submitFor = {
     identite: 'bo-community-settings-form',

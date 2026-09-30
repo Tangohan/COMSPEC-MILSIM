@@ -75,13 +75,6 @@ $viaLabel = static function (string $k): string {
 $periodLabel = $fmtDate($periodStartRaw) . ' – ' . $fmtDate($periodEndRaw);
 ?>
 <div class="max-w-7xl w-full space-y-8" style="--rw-athena: #059669;">
-        <div class="lms-infobanner" role="note">
-            <span class="lms-infobanner__icon" aria-hidden="true">
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            </span>
-            <p><strong>Tableau de bord candidatures.</strong> Synthèse calculée à partir des dossiers de cette communauté — pour compléter la <a href="<?= htmlspecialchars(recruitment_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-[#059669] hover:underline">vue d’ensemble</a>.</p>
-        </div>
-
         <header class="lms-panel relative overflow-hidden rounded-[2rem] border border-emerald-200/70 p-6 md:p-8">
             <div class="absolute top-0 left-0 h-[3px] w-full bg-gradient-to-r from-[#059669] via-emerald-400/70 to-transparent" aria-hidden="true"></div>
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

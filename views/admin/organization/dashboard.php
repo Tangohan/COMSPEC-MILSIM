@@ -401,95 +401,6 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         $kpiRowCount = is_array($kpis) ? count($kpis) : 0;
         ?>
 
-        <section
-            class="org-dash__intro"
-            id="org-dash-intro"
-            data-org-intro
-            data-org-intro-persist="pilotage"
-            data-org-intro-default="open"
-            aria-labelledby="org-dash-intro-heading"
-        >
-            <div class="org-dash__intro-bar">
-                <div class="org-dash__intro-copy">
-                    <p class="org-dash__kicker">Mode d’emploi</p>
-                    <h2 id="org-dash-intro-heading" class="org-dash__section-title">Comment utiliser ce centre de pilotage</h2>
-                </div>
-                <button
-                    type="button"
-                    class="org-dash__intro-toggle"
-                    data-org-intro-toggle
-                    aria-expanded="true"
-                    aria-controls="org-dash-intro-panel"
-                >
-                    <span data-org-intro-label>Masquer</span>
-                    <i data-org-intro-meta aria-hidden="true">−</i>
-                </button>
-            </div>
-            <div id="org-dash-intro-panel" class="org-dash__intro-panel" data-org-intro-panel>
-                <div class="org-dash__intro-body">
-                    <p>
-                        Cette page regroupe l’essentiel pour piloter
-                        <?php if ($tenantName !== ''): ?>
-                            <strong><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong>
-                        <?php else: ?>
-                            <strong>votre communauté</strong>
-                        <?php endif; ?>
-                        : effectifs, invitations, formations, recrutement et modération.
-                        Les chiffres et listes ci-dessous sont des instantanés ; pour agir, utilisez les raccourcis ou les onglets dédiés.
-                    </p>
-                    <ul>
-                        <li><strong>Synthèse</strong> — indicateurs chiffrés, profils à compléter, alertes formation et accès rapides aux tâches fréquentes.</li>
-                        <li><strong>RH &amp; recrutement</strong> — candidatures, mouvements d’affectation et profils à compléter, en vue tableur.</li>
-                        <li><strong>Surveillance</strong> — invitations expirées, formations à échéance, mesures de modération et journal d’activité.</li>
-                    </ul>
-                    <p class="org-dash__intro-note">
-                        Astuce : le menu latéral liste toutes les rubriques ; cette page sert de tableau de bord, pas de remplacement des écrans métier.
-                    </p>
-                </div>
-            </div>
-        </section>
-        <script>
-        (function () {
-          var root = document.getElementById('org-dash-intro');
-          if (!root || root.getAttribute('data-org-intro-bound') === '1') return;
-          root.setAttribute('data-org-intro-bound', '1');
-
-          var toggle = root.querySelector('[data-org-intro-toggle]');
-          var panel = root.querySelector('[data-org-intro-panel]');
-          var meta = root.querySelector('[data-org-intro-meta]');
-          var label = root.querySelector('[data-org-intro-label]');
-          if (!toggle || !panel) return;
-
-          var persistKey = 'athena_org_dash_intro_open_' + (root.getAttribute('data-org-intro-persist') || 'default');
-          var defOpen = root.getAttribute('data-org-intro-default') !== 'closed';
-
-          function apply(open) {
-            root.classList.toggle('is-open', open);
-            root.classList.toggle('is-collapsed', !open);
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) {
-              panel.removeAttribute('hidden');
-            } else {
-              panel.setAttribute('hidden', '');
-            }
-            if (meta) meta.textContent = open ? '−' : '+';
-            if (label) label.textContent = open ? 'Masquer' : 'Afficher';
-            try { localStorage.setItem(persistKey, open ? '1' : '0'); } catch (e) {}
-          }
-
-          var stored = null;
-          try { stored = localStorage.getItem(persistKey); } catch (e) {}
-          if (stored === '1') apply(true);
-          else if (stored === '0') apply(false);
-          else apply(defOpen);
-
-          toggle.addEventListener('click', function (e) {
-            e.preventDefault();
-            apply(toggle.getAttribute('aria-expanded') !== 'true');
-          });
-        })();
-        </script>
-
         <?php require base_path('views/partials/org_dashboard_profile_gaps.php'); ?>
 
         <section class="org-dash__section" aria-labelledby="org-kpi-heading">
@@ -497,7 +408,6 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 <div>
                     <p class="org-dash__kicker">Section 01</p>
                     <h2 id="org-kpi-heading" class="org-dash__section-title">Indicateurs stratégiques</h2>
-                    <p class="org-dash__section-lead">Vue tableur des effectifs, accès, formations et modération — chaque ligne mène vers l’écran utile.</p>
                 </div>
             </div>
 
@@ -573,7 +483,6 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 <div>
                     <p class="org-dash__kicker">Section 02</p>
                     <h2 id="org-training-feed-heading" class="org-dash__section-title">Formations — alertes récentes</h2>
-                    <p class="org-dash__section-lead">Inscriptions à valider, parcours terminés et demandes d’aide sur un module — à traiter juste après les indicateurs.</p>
                 </div>
                 <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Assignations →</a>
             </div>
@@ -662,7 +571,6 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 <div>
                     <p class="org-dash__kicker">Section 03</p>
                     <h2 id="org-roleplay-heading" class="org-dash__section-title">Suivi roleplay</h2>
-                    <p class="org-dash__section-lead">Échéances du dossier à venir et en retard, pour garder un oeil rapide sur les suivis prioritaires.</p>
                 </div>
                 <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Suivi complet →</a>
             </div>
@@ -764,7 +672,6 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 <div>
                     <p class="org-dash__kicker">Section 04</p>
                     <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Raccourcis</h2>
-                    <p class="org-dash__section-lead">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
                 </div>
             </div>
             <div class="org-dash__grid org-dash__grid--actions">
