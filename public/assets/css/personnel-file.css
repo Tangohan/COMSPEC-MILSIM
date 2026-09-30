@@ -467,14 +467,6 @@ body:has(.personnel-file--gate) .portal-footer {
   }
 }
 
-.personnel-file-hub__intro {
-  margin: 0 0 0.85rem;
-  max-width: 42rem;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: #475569;
-}
-
 .personnel-file-hub [x-cloak] {
   display: none !important;
 }
@@ -521,19 +513,6 @@ body:has(.personnel-file--gate) .portal-footer {
   color: #fff;
 }
 
-.personnel-file-hub-tab.is-active .personnel-file-hub-tab__hint,
-.personnel-file-hub-tab[aria-selected="true"] .personnel-file-hub-tab__hint {
-  color: #cbd5e1;
-}
-
-.personnel-file-hub-tab__hint {
-  display: block;
-  margin-top: 0.12rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  opacity: 0.78;
-}
-
 .personnel-file-hub-actions {
   display: flex;
   flex-wrap: wrap;
@@ -551,12 +530,6 @@ body:has(.personnel-file--gate) .portal-footer {
 .personnel-file-hub-actions a:hover {
   color: #064e3b;
   text-decoration: underline;
-}
-
-@media (max-width: 700px) {
-  .personnel-file-hub-tab__hint {
-    display: none;
-  }
 }
 
 @media (max-width: 639px) {

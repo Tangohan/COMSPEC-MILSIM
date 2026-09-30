@@ -83,15 +83,6 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
         <div class="bo-imm__hero-copy">
             <span class="bo-imm__eyebrow">Roleplay · Arrivée dans l’unité</span>
             <h2 id="bo-imm-hero-title">Suivre l’arrivée d’un membre, pas le jeu</h2>
-            <p>
-                Cette page décide <strong>comment votre communauté suit un nouveau membre</strong> :
-                étapes du parcours, filière choisie, tuteur, et ce qui rend un dossier « prêt ».
-                Une fois enregistré, le staff voit ces choix sur chaque fiche et dans le bureau de suivi.
-            </p>
-            <p>
-                Ce n’est pas ici que l’on règle l’immersion en session : les pannes de liaison et les aides de jeu
-                se configurent ailleurs, pour ATAK et Overwatch.
-            </p>
             <div class="bo-imm__hero-actions">
                 <a href="<?= $h($followupUrl) ?>" class="ath-btn ath-btn--solid">Ouvrir le bureau de suivi</a>
                 <a href="<?= $h($deadlinesUrl) ?>" class="ath-btn">Voir les échéances</a>

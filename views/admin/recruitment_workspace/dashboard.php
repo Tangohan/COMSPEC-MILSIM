@@ -48,13 +48,6 @@ $enlistmentStatusLabel = static function (string $st): string {
 };
 ?>
 <div class="max-w-6xl w-full space-y-8">
-        <div class="lms-infobanner" role="note">
-            <span class="lms-infobanner__icon" aria-hidden="true">
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </span>
-            <p><strong>Vue d’ensemble.</strong> Les actions de traitement des dossiers se font depuis la <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="text-sky-700 font-semibold hover:underline">file des candidatures</a>.</p>
-        </div>
-
                 <header class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
                     <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/80 via-sky-500/20 to-transparent" aria-hidden="true"></div>
                     <p class="text-[9px] font-black tracking-[0.45em] text-sky-600 uppercase mb-3">Pilotage recrutement</p>

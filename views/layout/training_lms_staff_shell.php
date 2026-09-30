@@ -39,12 +39,6 @@ $headHtml = ob_get_clean();
 
             <main class="p-5 md:p-8 lg:p-10 space-y-8">
                 <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
-                <div class="lms-infobanner" role="note">
-                    <span class="lms-infobanner__icon" aria-hidden="true">
-                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </span>
-                    <p><strong>Pilotage.</strong> Espace réservé à l’encadrement formation de la communauté. Utilisez le menu sombre pour naviguer, ou les raccourcis groupés ci-dessous. Le <a href="<?= htmlspecialchars($lmsBase) ?>/formations" class="text-emerald-700 font-semibold hover:underline">catalogue public</a> reste accessible aux membres.</p>
-                </div>
                 <?php
                 $contentPath = str_replace('.', '/', (string) $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');

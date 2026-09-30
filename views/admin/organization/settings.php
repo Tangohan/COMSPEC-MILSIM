@@ -152,33 +152,29 @@ if (!in_array($hubTab, ['identite', 'vitrine', 'inscription', 'accueil', 'portai
     $hubTab = 'identite';
 }
 $hubTabs = [
-    'identite' => ['label' => 'Identité', 'hint' => 'Nom, logo, représentation'],
-    'vitrine' => ['label' => 'Vitrine', 'hint' => 'Textes publics et visibilité'],
-    'inscription' => ['label' => 'Inscription', 'hint' => 'Candidature et accueil'],
-    'accueil' => ['label' => 'Accueil', 'hint' => 'Photos après connexion'],
-    'portail' => ['label' => 'Portail', 'hint' => 'Menus et marque'],
-    'profil' => ['label' => 'Profil', 'hint' => 'Cycle et type de communauté'],
+    'identite' => 'Identité',
+    'vitrine' => 'Vitrine',
+    'inscription' => 'Inscription',
+    'accueil' => 'Accueil',
+    'portail' => 'Portail',
+    'profil' => 'Profil',
 ];
 $hubInscriptionUrl = $formAction . (str_contains($formAction, '?') ? '&' : '?') . 'onglet=inscription#coordonnees';
 $hubSubmitForm = $hubTab === 'inscription' ? 'bo-inscription-settings-form' : 'bo-community-settings-form';
 $hubSaveHints = [
-    'identite' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    'vitrine' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    'portail' => 'Enregistre le nom, le logo, la représentation, la vitrine, le portail et le cycle.',
-    'profil' => 'Enregistre le cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
-    'inscription' => 'Enregistre le parcours d’arrivée, le contact des candidats et le dossier.',
-    'accueil' => 'Chaque photo et le défilement s’enregistrent avec les boutons de cette rubrique.',
+    'identite' => 'Nom, logo, représentation, vitrine, portail et cycle.',
+    'vitrine' => 'Nom, logo, représentation, vitrine, portail et cycle.',
+    'portail' => 'Nom, logo, représentation, vitrine, portail et cycle.',
+    'profil' => 'Cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
+    'inscription' => 'Parcours d’arrivée, contact des candidats et dossier.',
+    'accueil' => 'Photos et défilement : boutons de cette rubrique.',
 ];
 $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
 ?>
 <div class="bo-community-settings bo-settings-hub" data-settings-hub data-active-tab="<?= $h($hubTab) ?>">
 
-    <p class="bo-settings-hub__intro">
-        Tous les réglages de la communauté sont regroupés ici. Choisissez une rubrique : l’écran reste sur celle-ci après un enregistrement. Le bouton Enregistrer reste visible en bas de page.
-    </p>
-
     <div class="bo-settings-hub-tabs" role="tablist" aria-label="Rubriques des paramètres">
-        <?php foreach ($hubTabs as $tabKey => $tabMeta): ?>
+        <?php foreach ($hubTabs as $tabKey => $tabLabel): ?>
             <button
                 type="button"
                 class="bo-settings-hub-tab<?= $hubTab === $tabKey ? ' is-active' : '' ?>"
@@ -188,8 +184,7 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
                 aria-selected="<?= $hubTab === $tabKey ? 'true' : 'false' ?>"
                 tabindex="<?= $hubTab === $tabKey ? '0' : '-1' ?>"
             >
-                <?= $h((string) $tabMeta['label']) ?>
-                <span class="bo-settings-hub-tab__hint"><?= $h((string) $tabMeta['hint']) ?></span>
+                <?= $h((string) $tabLabel) ?>
             </button>
         <?php endforeach; ?>
     </div>
