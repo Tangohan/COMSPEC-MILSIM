@@ -291,8 +291,8 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         require base_path('views/partials/navbar_info_banners.php');
         ?>
 
-        <!-- Hero sombre (réf. Caverne) — catalogue immédiatement après -->
-        <section class="dash-hero" id="dash-tour-hero" aria-labelledby="dash-hero-title">
+        <!-- Hero sombre — briefing du jour -->
+        <section class="dash-hero dash-reveal" id="dash-tour-hero" aria-labelledby="dash-hero-title" data-dash-reveal>
             <div class="dash-hero__shell">
                 <h1 id="dash-hero-title" class="dash-hero__title">Dashboard</h1>
 
@@ -367,64 +367,150 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         require base_path('views/partials/dashboard_popup_modal.php');
         ?>
 
-        <section class="dash-org-anomaly-tile" id="signaler-anomalie" aria-labelledby="dash-org-anomaly-title">
-            <div class="dash-org-anomaly-tile__shell">
-                <button
-                    type="button"
-                    class="dash-org-anomaly-tile__open"
-                    data-dash-rail-open-external="org-anomaly"
-                    aria-controls="dash-rail-nested-org-anomaly"
-                >
-                    <span class="dash-org-anomaly-tile__kicker">Gestion</span>
-                    <strong id="dash-org-anomaly-title" class="dash-org-anomaly-tile__title">Signaler une anomalie</strong>
-                    <em class="dash-org-anomaly-tile__hint">Tout dysfonctionnement, erreur ou irrégularité à transmettre à la gestion de l’organisation.</em>
-                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
-                </button>
-                <div class="dash-org-anomaly-tile__form">
-                    <p class="dash-org-anomaly-tile__kicker">Gestion</p>
-                    <h2 class="dash-org-anomaly-tile__title">Signaler une anomalie</h2>
-                    <?php require base_path('views/partials/dashboard_org_anomaly_form.php'); ?>
-                </div>
-            </div>
-        </section>
-
-        <?php if (!empty($canAdmin)): ?>
-        <section class="dash-org-anomaly-tile dash-site-support-tile" id="contacter-admin-site" aria-labelledby="dash-site-support-title">
-            <div class="dash-org-anomaly-tile__shell">
-                <button
-                    type="button"
-                    class="dash-org-anomaly-tile__open"
-                    data-dash-rail-open-external="site-support"
-                    aria-controls="dash-rail-nested-site-support"
-                >
-                    <span class="dash-org-anomaly-tile__kicker">Administration site</span>
-                    <strong id="dash-site-support-title" class="dash-org-anomaly-tile__title">Contacter l’administration du site</strong>
-                    <em class="dash-org-anomaly-tile__hint">Compte fantôme, dysfonctionnement, problème RH ou toute demande transversale aux admins du site.</em>
-                    <span class="dash-org-anomaly-tile__cta">Ouvrir le formulaire</span>
-                </button>
-                <div class="dash-org-anomaly-tile__form">
-                    <p class="dash-org-anomaly-tile__kicker">Administration site</p>
-                    <h2 class="dash-org-anomaly-tile__title">Contacter l’administration du site</h2>
-                    <?php require base_path('views/partials/dashboard_site_support_form.php'); ?>
+        <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
+        <section class="dash-zone dash-zone--consigne dash-reveal" aria-label="Consigne du jour" data-dash-reveal>
+            <div class="dash-zone__inner dash-zone__inner--tight">
+                <div class="dash-consigne">
+                    <div class="dash-consigne__mark" aria-hidden="true"></div>
+                    <div class="dash-consigne__body">
+                        <p class="dash-consigne__kicker">Consigne</p>
+                        <p class="dash-consigne__text"><?= htmlspecialchars((string) $mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <a href="<?= htmlspecialchars((string) $mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="dash-consigne__link">Voir<span aria-hidden="true"> →</span></a>
                 </div>
             </div>
         </section>
         <?php endif; ?>
 
-        <?php if (!$dashSteamLinked): ?>
-        <section class="dash-steam-tile" id="connexion-steam" aria-labelledby="dash-steam-title">
-            <div class="dash-steam-tile__shell">
-                <a class="dash-steam-tile__open" href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>">
-                    <span class="dash-steam-tile__kicker">Liaison</span>
-                    <strong id="dash-steam-title" class="dash-steam-tile__title">Connexion Steam</strong>
-                    <em class="dash-steam-tile__hint">
-                        Associez votre compte Steam pour être reconnu en jeu. Steam s’ouvre, vous vous connectez, puis vous revenez ici.
-                    </em>
-                    <span class="dash-steam-tile__cta">Se connecter avec Steam</span>
-                </a>
+        <?php
+        $showLiaisonStrip = $canViewAtakOperators;
+        $showRsvpQuick = is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0;
+        ?>
+        <section class="dash-zone dash-zone--actions dash-reveal" aria-labelledby="dash-zone-actions-title" data-dash-reveal>
+            <div class="dash-zone__inner">
+                <header class="dash-zone__head">
+                    <p class="dash-zone__kicker">Priorités</p>
+                    <h2 id="dash-zone-actions-title" class="dash-zone__title">Actions &amp; liaisons</h2>
+                    <p class="dash-zone__lead">Les démarches urgentes et le suivi opérationnel du jour.</p>
+                </header>
+
+                <div class="dash-action-band">
+                    <?php if (!$dashSteamLinked): ?>
+                    <a class="dash-action-tile dash-action-tile--steam" id="connexion-steam" href="<?= htmlspecialchars(url('account/steam/connect'), ENT_QUOTES, 'UTF-8') ?>">
+                        <span class="dash-action-tile__kicker">Liaison</span>
+                        <strong class="dash-action-tile__title" id="dash-steam-title">Connexion Steam</strong>
+                        <em class="dash-action-tile__hint">Associez votre compte Steam pour être reconnu en jeu.</em>
+                        <span class="dash-action-tile__cta">Se connecter</span>
+                    </a>
+                    <?php endif; ?>
+
+                    <div class="dash-action-tile-shell dash-org-anomaly-tile" id="signaler-anomalie">
+                        <button
+                            type="button"
+                            class="dash-action-tile dash-org-anomaly-tile__open"
+                            data-dash-rail-open-external="org-anomaly"
+                            aria-controls="dash-rail-nested-org-anomaly"
+                        >
+                            <span class="dash-action-tile__kicker">Gestion</span>
+                            <strong class="dash-action-tile__title" id="dash-org-anomaly-title">Signaler une anomalie</strong>
+                            <em class="dash-action-tile__hint">Dysfonctionnement, erreur ou irrégularité à transmettre à l’organisation.</em>
+                            <span class="dash-action-tile__cta">Ouvrir le formulaire</span>
+                        </button>
+                        <div class="dash-org-anomaly-tile__form">
+                            <p class="dash-action-tile__kicker">Gestion</p>
+                            <strong class="dash-action-tile__title">Signaler une anomalie</strong>
+                            <?php require base_path('views/partials/dashboard_org_anomaly_form.php'); ?>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($canAdmin)): ?>
+                    <div class="dash-action-tile-shell dash-org-anomaly-tile dash-site-support-tile" id="contacter-admin-site">
+                        <button
+                            type="button"
+                            class="dash-action-tile dash-action-tile--admin dash-org-anomaly-tile__open"
+                            data-dash-rail-open-external="site-support"
+                            aria-controls="dash-rail-nested-site-support"
+                        >
+                            <span class="dash-action-tile__kicker">Administration site</span>
+                            <strong class="dash-action-tile__title" id="dash-site-support-title">Contacter l’administration</strong>
+                            <em class="dash-action-tile__hint">Compte fantôme, dysfonctionnement ou demande transversale.</em>
+                            <span class="dash-action-tile__cta">Ouvrir le formulaire</span>
+                        </button>
+                        <div class="dash-org-anomaly-tile__form">
+                            <p class="dash-action-tile__kicker">Administration site</p>
+                            <strong class="dash-action-tile__title">Contacter l’administration</strong>
+                            <?php require base_path('views/partials/dashboard_site_support_form.php'); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($showLiaisonStrip || $showRsvpQuick): ?>
+                <div class="dash-ops-stack dash-ops-stack--embedded">
+                    <div class="dash-ops-stack__inner dash-ops-stack__inner--embedded">
+                        <?php if ($showLiaisonStrip): ?>
+                        <section class="dash-liaison" id="dash-tour-liaison" aria-labelledby="dash-atak-operators-heading">
+                            <p id="dash-atak-operators-heading" class="cc-section-label dash-ops-stack__label">Liaison tactique</p>
+                            <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-liaison__card">
+                                <div class="dash-liaison__copy">
+                                    <p class="cc-kicker cc-kicker--primary">État-major</p>
+                                    <h3 class="dash-liaison__title">Effectifs en liaison</h3>
+                                    <p class="dash-liaison__hint">
+                                        Consultez le tableur des opérateurs actuellement connectés à la carte tactique.
+                                    </p>
+                                </div>
+                                <div class="dash-liaison__aside">
+                                    <?php if ($atakOperatorsLinkedCount !== null): ?>
+                                    <div class="dash-liaison__stat" aria-label="<?= (int) $atakOperatorsLinkedCount ?> opérateurs en liaison">
+                                        <span class="dash-liaison__stat-label">En liaison</span>
+                                        <span class="dash-liaison__stat-value"><?= (int) $atakOperatorsLinkedCount ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                    <span class="dash-liaison__cta">
+                                        Ouvrir le tableur
+                                        <span aria-hidden="true">→</span>
+                                    </span>
+                                </div>
+                            </a>
+                        </section>
+                        <?php endif; ?>
+
+                        <?php if ($showRsvpQuick): ?>
+                        <section class="dash-rsvp-quick" id="dash-tour-rsvp" aria-labelledby="dash-rsvp-quick-heading">
+                            <div class="dash-rsvp-quick__shell">
+                                <div class="dash-rsvp-quick__info">
+                                    <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
+                                    <h3 id="dash-rsvp-quick-heading" class="dash-rsvp-quick__title">
+                                        <?= htmlspecialchars((string) ($mbOp['title'] ?? 'Prochaine manœuvre'), ENT_QUOTES, 'UTF-8') ?>
+                                    </h3>
+                                    <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
+                                    <p class="dash-rsvp-quick__meta">
+                                        <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
+                                        <?php
+                                        $rsvpQuickLabel = (string) ($mbOp['rsvp_label'] ?? '');
+                                        if ($rsvpQuickLabel === '') {
+                                            $rsvpQuickLabel = 'Réponse non renseignée';
+                                        }
+                                        ?>
+                                        · <span data-rsvp-meta-label data-event-id="<?= (int) $mbOp['id'] ?>"><?= htmlspecialchars($rsvpQuickLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </p>
+                                </div>
+                                <div class="dash-rsvp-quick__actions">
+                                    <?php
+                                    $rsvpEventId = (int) $mbOp['id'];
+                                    $rsvpCurrentStatus = (string) ($mbOp['rsvp_status'] ?? '');
+                                    $rsvpCompact = false;
+                                    require base_path('views/partials/dashboard_rsvp_buttons.php');
+                                    ?>
+                                </div>
+                            </div>
+                        </section>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </section>
-        <?php endif; ?>
 
         <?php
         $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
@@ -433,85 +519,26 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         ?>
 
         <?php if (!empty($can_publish_dashboard_articles)): ?>
-        <div class="dash-hub-stack" aria-label="Publications">
+        <div class="dash-hub-stack dash-reveal" aria-label="Publications" data-dash-reveal>
             <?php require base_path('views/partials/dashboard_quick_articles.php'); ?>
         </div>
         <?php endif; ?>
 
-        <?php
-        $showLiaisonStrip = $canViewAtakOperators;
-        $showRsvpQuick = is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0;
-        ?>
-        <?php if ($showLiaisonStrip || $showRsvpQuick): ?>
-        <div class="dash-ops-stack">
-            <div class="dash-ops-stack__inner">
-                <?php if ($showLiaisonStrip): ?>
-                <section class="dash-liaison" id="dash-tour-liaison" aria-labelledby="dash-atak-operators-heading">
-                    <p id="dash-atak-operators-heading" class="cc-section-label dash-ops-stack__label">Liaison tactique</p>
-                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-liaison__card">
-                        <div class="dash-liaison__copy">
-                            <p class="cc-kicker cc-kicker--primary">État-major</p>
-                            <h2 class="dash-liaison__title">Effectifs en liaison</h2>
-                            <p class="dash-liaison__hint">
-                                Consultez le tableur des opérateurs actuellement connectés à la carte tactique.
-                            </p>
-                        </div>
-                        <div class="dash-liaison__aside">
-                            <?php if ($atakOperatorsLinkedCount !== null): ?>
-                            <div class="dash-liaison__stat" aria-label="<?= (int) $atakOperatorsLinkedCount ?> opérateurs en liaison">
-                                <span class="dash-liaison__stat-label">En liaison</span>
-                                <span class="dash-liaison__stat-value"><?= (int) $atakOperatorsLinkedCount ?></span>
-                            </div>
-                            <?php endif; ?>
-                            <span class="dash-liaison__cta">
-                                Ouvrir le tableur
-                                <span aria-hidden="true">→</span>
-                            </span>
-                        </div>
-                    </a>
-                </section>
-                <?php endif; ?>
-
-                <?php if ($showRsvpQuick): ?>
-                <section class="dash-rsvp-quick" id="dash-tour-rsvp" aria-labelledby="dash-rsvp-quick-heading">
-                    <div class="dash-rsvp-quick__shell">
-                        <div class="dash-rsvp-quick__info">
-                            <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
-                            <h2 id="dash-rsvp-quick-heading" class="dash-rsvp-quick__title">
-                                <?= htmlspecialchars((string) ($mbOp['title'] ?? 'Prochaine manœuvre'), ENT_QUOTES, 'UTF-8') ?>
-                            </h2>
-                            <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
-                            <p class="dash-rsvp-quick__meta">
-                                <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
-                                <?php
-                                $rsvpQuickLabel = (string) ($mbOp['rsvp_label'] ?? '');
-                                if ($rsvpQuickLabel === '') {
-                                    $rsvpQuickLabel = 'Réponse non renseignée';
-                                }
-                                ?>
-                                · <span data-rsvp-meta-label data-event-id="<?= (int) $mbOp['id'] ?>"><?= htmlspecialchars($rsvpQuickLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                            </p>
-                        </div>
-                        <div class="dash-rsvp-quick__actions">
-                            <?php
-                            $rsvpEventId = (int) $mbOp['id'];
-                            $rsvpCurrentStatus = (string) ($mbOp['rsvp_status'] ?? '');
-                            $rsvpCompact = false;
-                            require base_path('views/partials/dashboard_rsvp_buttons.php');
-                            ?>
-                        </div>
-                    </div>
-                </section>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php if (!empty($showcase_training_feature) || !empty($showcase_kit_feature)): ?>
+        <div class="dash-zone dash-zone--catalog dash-reveal" data-dash-reveal>
+            <div class="dash-zone__inner dash-zone__inner--flush">
+                <header class="dash-zone__head dash-zone__head--pad">
+                    <p class="dash-zone__kicker">Ressources</p>
+                    <h2 class="dash-zone__title">Catalogue</h2>
+                    <p class="dash-zone__lead">Formations et tenues mises en avant par votre unité.</p>
+                </header>
         <?php endif; ?>
 
         <?php if (!empty($showcase_training_feature)): ?>
         <section class="dash-showcase" id="dash-tour-formations" aria-labelledby="dash-showcase-heading" <?php if (!empty($showcase_items)): ?>x-data="trainingShowcase"<?php endif; ?>>
             <div class="dash-showcase__head">
                 <div>
-                    <p class="dash-showcase__kicker">Catalogue</p>
+                    <p class="dash-showcase__kicker">Instruction</p>
                     <h2 id="dash-showcase-heading" class="dash-showcase__title">Nos formations<span class="dash-showcase__dot">.</span></h2>
                 </div>
                 <?php if (!empty($showcase_items)): ?>
@@ -676,22 +703,23 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         </section>
         <?php endif; ?>
 
-        <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
-        <div class="border-b border-amber-200/80 bg-amber-50">
-            <div class="dash-apps-full flex flex-wrap items-center justify-between gap-2 py-2.5 !pb-2.5 !pt-2.5">
-                <p class="text-sm text-amber-950"><span class="font-bold">Consigne ·</span> <?= htmlspecialchars((string) $mbExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
-                <a href="<?= htmlspecialchars((string) $mbPinsA, ENT_QUOTES, 'UTF-8') ?>" class="text-[11px] font-bold uppercase tracking-wider text-amber-900 hover:underline">Voir →</a>
+        <?php if (!empty($showcase_training_feature) || !empty($showcase_kit_feature)): ?>
             </div>
         </div>
         <?php endif; ?>
 
-        <section class="dash-apps-full" id="dash-tour-activity" aria-labelledby="dash-activity-heading">
-            <p id="dash-activity-heading" class="cc-section-label dash-apps-full__label">Votre activité</p>
+        <section class="dash-zone dash-zone--activity dash-reveal" id="dash-tour-activity" aria-labelledby="dash-activity-heading" data-dash-reveal>
+            <div class="dash-zone__inner">
+                <header class="dash-zone__head">
+                    <p class="dash-zone__kicker">Suivi</p>
+                    <h2 id="dash-activity-heading" class="dash-zone__title">Votre activité</h2>
+                    <p class="dash-zone__lead">Formations en cours, candidatures et effectifs de l’unité.</p>
+                </header>
             <div class="cc-card overflow-hidden">
                 <div class="cc-card__head">
                     <div>
                         <p class="cc-kicker cc-kicker--primary">Instruction</p>
-                        <h2 class="cc-card__title">Formations prioritaires</h2>
+                        <h3 class="cc-card__title">Formations prioritaires</h3>
                     </div>
                     <a href="<?= url('formations/mes-formations') ?>" class="cc-card__link" data-lms-module-entry="formation">Mes parcours</a>
                 </div>
@@ -780,12 +808,11 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                     </div>
                 <?php endif; ?>
             </div>
-        </section>
 
         <?php if ($hasEnlistments): ?>
-        <section class="dash-apps-full !pt-0">
+        <div class="dash-zone__block">
             <?php require base_path('views/partials/dashboard_enlistments.php'); ?>
-        </section>
+        </div>
         <?php endif; ?>
 
         <?php
@@ -794,10 +821,10 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         $hasApplicationsTable = $myApplicationsAll !== [] || ($showStaff && $staffApplicationsAll !== []);
         ?>
         <?php if ($hasApplicationsTable): ?>
-        <section class="dash-apps-full !pt-0" id="dash-tour-applications" aria-labelledby="dash-applications-heading">
+        <div class="dash-zone__block" id="dash-tour-applications" aria-labelledby="dash-applications-heading">
             <p id="dash-applications-heading" class="cc-section-label dash-apps-full__label">Candidatures</p>
             <?php require base_path('views/partials/dashboard_applications_table.php'); ?>
-        </section>
+        </div>
         <?php endif; ?>
 
         <?php
@@ -810,13 +837,22 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <?php require base_path('views/partials/dashboard_orbat.php'); ?>
         <?php endif; ?>
         <?php if ($hasEffectifsTable): ?>
-        <section class="dash-apps-full !pt-0" id="dash-tour-effectifs" aria-labelledby="dash-effectifs-heading">
+        <div class="dash-zone__block" id="dash-tour-effectifs" aria-labelledby="dash-effectifs-heading">
             <p id="dash-effectifs-heading" class="cc-section-label dash-apps-full__label">Effectifs</p>
             <?php require base_path('views/partials/dashboard_effectifs_table.php'); ?>
-        </section>
+        </div>
         <?php endif; ?>
+            </div>
+        </section>
 
-        <div class="cc-shell space-y-10 py-8 md:py-10">
+        <section class="dash-zone dash-zone--community dash-reveal" aria-labelledby="dash-zone-community-title" data-dash-reveal>
+            <div class="dash-zone__inner">
+                <header class="dash-zone__head">
+                    <p class="dash-zone__kicker">Unité</p>
+                    <h2 id="dash-zone-community-title" class="dash-zone__title">Communauté</h2>
+                    <p class="dash-zone__lead">Salons, épingles et démarches liées à votre espace.</p>
+                </header>
+            <div class="dash-zone__stack">
             <?php $followedChannels = (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
                 ? []
                 : (is_array($followed_channels ?? null) ? $followed_channels : []); ?>
@@ -825,7 +861,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <div class="cc-card__head">
                     <div>
                         <p class="cc-kicker cc-kicker--primary">Salons</p>
-                        <h2 id="dash-channels-heading" class="cc-card__title">Mes salons suivis</h2>
+                        <h3 id="dash-channels-heading" class="cc-card__title">Mes salons suivis</h3>
                     </div>
                     <a href="<?= url('forum') ?>" class="cc-card__link">Ouvrir le forum</a>
                 </div>
@@ -868,16 +904,16 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <section id="dashboard-community-pins" class="cc-card scroll-mt-24 overflow-hidden">
                 <div class="cc-card__head">
                     <div>
-                        <p class="cc-kicker cc-kicker--primary">Communauté</p>
-                        <h2 class="cc-card__title">Épingles</h2>
+                        <p class="cc-kicker cc-kicker--primary">Raccourcis</p>
+                        <h3 class="cc-card__title">Épingles</h3>
                     </div>
                     <?php if (\App\Authorization\DashboardPinsAccess::canManage()): ?>
                         <a href="<?= url('back-office/dashboard-pins') ?>" class="cc-card__link">Gérer</a>
                     <?php endif; ?>
                 </div>
-                <div class="grid gap-2 p-3 sm:grid-cols-2">
+                <div class="dash-pins-grid">
                     <?php foreach ($linkPins as $pin): ?>
-                            <a href="<?= htmlspecialchars((string) ($pin['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-sm font-bold text-slate-800 transition hover:border-emerald-300 hover:bg-white hover:text-emerald-900">
+                            <a href="<?= htmlspecialchars((string) ($pin['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="dash-pins-link">
                                 <?= htmlspecialchars((string) ($pin['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                             </a>
                     <?php endforeach; ?>
@@ -888,28 +924,30 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <?php
             $previewFeedbackUrl = url(ltrim(\App\Services\DemoNda\DemoNdaGateService::FEEDBACK_PATH, '/'));
             ?>
-            <section class="cc-card border-emerald-200 bg-emerald-50/40 p-5" aria-labelledby="dash-preview-feedback-heading">
-                <p id="dash-preview-feedback-heading" class="cc-kicker text-emerald-800">Preview Athena</p>
-                <h2 class="mt-1.5 text-base font-black tracking-tight text-slate-900">Votre avis compte</h2>
-                <p class="mt-1.5 text-sm text-slate-600">Cette version évolue. Dites-nous ce qui est clair, ce qui bloque, et si les trois niveaux d’accès suffisent.</p>
+            <section class="cc-card dash-feedback-card" aria-labelledby="dash-preview-feedback-heading">
+                <p id="dash-preview-feedback-heading" class="cc-kicker cc-kicker--primary">Preview Athena</p>
+                <h3 class="dash-feedback-card__title">Votre avis compte</h3>
+                <p class="dash-feedback-card__lead">Cette version évolue. Dites-nous ce qui est clair, ce qui bloque, et si les trois niveaux d’accès suffisent.</p>
                 <a href="<?= htmlspecialchars($previewFeedbackUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-card__link mt-3 inline-flex">Ouvrir le questionnaire</a>
             </section>
 
             <?php if (is_array($dashboard_tester_program) && !empty($dashboard_tester_program['communities'])): ?>
-            <section class="cc-card border-amber-200 bg-amber-50/40 p-5" aria-labelledby="dash-tester-heading">
-                <p id="dash-tester-heading" class="cc-kicker text-amber-800">Programme de préqualification</p>
-                <h2 class="mt-1.5 text-base font-black tracking-tight text-slate-900">Accès anticipé</h2>
-                <p class="mt-1.5 text-sm text-slate-600">Vous participez à la validation de modules pour votre communauté.</p>
-                <ul class="mt-3 flex flex-wrap gap-2">
+            <section class="cc-card dash-feedback-card dash-feedback-card--amber" aria-labelledby="dash-tester-heading">
+                <p id="dash-tester-heading" class="cc-kicker">Programme de préqualification</p>
+                <h3 class="dash-feedback-card__title">Accès anticipé</h3>
+                <p class="dash-feedback-card__lead">Vous participez à la validation de modules pour votre communauté.</p>
+                <ul class="dash-tester-tags">
                     <?php foreach ($dashboard_tester_program['communities'] as $tc): ?>
-                        <li class="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold text-amber-950"><?= htmlspecialchars((string) ($tc['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                        <li><?= htmlspecialchars((string) ($tc['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
                     <?php endforeach; ?>
                 </ul>
             </section>
             <?php endif; ?>
 
             <?php require base_path('views/partials/dashboard_rh_parcours.php'); ?>
-        </div>
+            </div>
+            </div>
+        </section>
 
         <!-- Modal situation tactique -->
         <div
