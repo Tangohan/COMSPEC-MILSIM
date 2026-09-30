@@ -276,6 +276,8 @@ $renderNode = static function (array $node, int $depth = 0) use (&$renderNode, $
                 <?php endif; ?>
                 <button type="button" class="dash-orbat__btn dash-orbat__btn--ghost" data-dash-orbat-expand>Tout ouvrir</button>
                 <button type="button" class="dash-orbat__btn dash-orbat__btn--ghost" data-dash-orbat-collapse>Tout fermer</button>
+                <a class="dash-orbat__btn dash-orbat__btn--ghost" href="<?= $h(url('orbat/export')) ?>">Exporter PDF</a>
+                <a class="dash-orbat__btn dash-orbat__btn--ghost" href="<?= $h(url('orbat/export')) ?>">Exporter PDF</a>
                 <a class="dash-orbat__btn dash-orbat__btn--solid" href="<?= $h(url('orbat') . ($focusUnitId > 0 ? '?unit=' . $focusUnitId : '')) ?>">ORBAT complet</a>
             </div>
         </header>

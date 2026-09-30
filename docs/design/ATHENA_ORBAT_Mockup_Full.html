@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ATHENA MILSIM — ORBAT</title>
+<style>
+  :root{
+    --ink:#101820;
+    --muted:#5b6268;
+    --line:#21282e;
+    --soft:#eef1f3;
+    --paper:#ffffff;
+    --header:#1e2932;
+    --blue:#bcd8f0;
+    --blue2:#dcecf8;
+    --green:#cbe8a3;
+    --yellow:#f8e979;
+    --orange:#f4ba79;
+    --gray:#d7dadd;
+    --red:#d86a61;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#dfe3e6;color:var(--ink);font-family:"Arial Narrow","Liberation Sans Narrow",Arial,sans-serif}
+  body{padding:18px}
+  .toolbar{
+    max-width:1580px;margin:0 auto 12px;display:flex;gap:8px;flex-wrap:wrap;
+    align-items:center;background:#fff;border:1px solid #b9c0c5;padding:9px 10px;
+    box-shadow:0 1px 4px rgba(0,0,0,.09)
+  }
+  .toolbar button,.toolbar label{
+    border:1px solid #9ca6ad;background:#f7f8f9;color:#182128;padding:7px 10px;
+    font-size:13px;font-weight:700;cursor:pointer
+  }
+  .toolbar button:hover,.toolbar label:hover{background:#edf1f3}
+  .toolbar .primary{background:#1e2932;color:#fff;border-color:#1e2932}
+  .toolbar .spacer{flex:1}
+  .toolbar input[type="checkbox"]{vertical-align:middle;margin-right:5px}
+
+  .sheet{
+    width:1580px; min-height:1117px; margin:0 auto;background:var(--paper);
+    border:1px solid #111; box-shadow:0 6px 24px rgba(0,0,0,.16);
+    padding:0; position:relative;
+  }
+
+  .topline{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:start;
+    border-bottom:2px solid var(--line);min-height:94px
+  }
+  .brand{padding:16px 20px 10px}
+  .brand h1{font-size:25px;line-height:1;margin:0 0 3px;font-weight:900;letter-spacing:.1px}
+  .brand h2{font-size:19px;line-height:1.05;margin:0;font-weight:900}
+  .brand h3{font-size:14px;line-height:1.2;margin:3px 0 0;font-weight:800}
+  .classif{
+    margin-top:0;padding:9px 23px;background:#141c24;color:white;
+    font-size:16px;font-weight:900;letter-spacing:.8px;white-space:nowrap
+  }
+  .docref{padding:14px 18px;text-align:right;font-size:16px;font-weight:800;line-height:1.35}
+
+  .meta-row{
+    display:grid;grid-template-columns:1.2fr 1fr .78fr;gap:26px;
+    padding:18px 22px 10px;align-items:start
+  }
+  .meta-table{font-size:16px;line-height:1.55}
+  .meta-table b{display:inline-block;min-width:118px}
+  [contenteditable="true"]{outline:none}
+  [contenteditable="true"]:focus{background:#fff7c8;box-shadow:0 0 0 1px #d3b646 inset}
+
+  .summary{
+    border:1px solid var(--line);align-self:start
+  }
+  .box-title{
+    background:var(--header);color:#fff;font-weight:900;padding:7px 10px;
+    font-size:16px;letter-spacing:.35px
+  }
+  .summary table,.strength table{border-collapse:collapse;width:100%;font-size:14px}
+  .summary td,.summary th,.strength td,.strength th{
+    border:1px solid #858c91;padding:5px 7px
+  }
+  .summary th,.strength th{background:#f2f3f4;font-weight:800}
+
+  .root-wrap{text-align:center;padding-top:0}
+  .root-node{display:inline-flex;align-items:center;gap:16px;padding:0 12px 10px}
+  .root-text{text-align:left}
+  .root-text .name{font-weight:900;font-size:18px}
+  .root-text .sub{font-size:14px}
+  .root-label{font-size:20px;font-weight:900;margin-bottom:3px}
+  .root-rank{font-weight:900;font-size:14px;margin-top:4px}
+  .root-role{font-size:14px}
+
+  .sym{
+    width:86px;height:52px;border:2px solid #111;background:var(--blue);
+    display:grid;place-items:center;position:relative
+  }
+  .sym.small{width:58px;height:37px}
+  .sym:before,.sym:after{
+    content:"";position:absolute;width:98%;height:2px;background:#111;left:1%;top:50%;
+    transform-origin:center
+  }
+  .sym.cross:before{transform:rotate(33deg)}
+  .sym.cross:after{transform:rotate(-33deg)}
+  .sym.hq:before,.sym.hq:after{display:none}
+  .sym .hqtxt{font-size:24px;font-weight:900}
+  .sym.support{background:var(--green)}
+  .sym.support:before,.sym.support:after{display:none}
+  .sym.support .circle{width:29px;height:29px;border:2px solid #111;border-radius:50%}
+  .sym.air{background:var(--blue)}
+  .sym.air:before,.sym.air:after{display:none}
+  .sym.air .plane{font-size:31px;line-height:1}
+  .sym.fire{background:var(--yellow)}
+  .sym.fire:before,.sym.fire:after{display:none}
+  .sym.engineer{background:var(--orange)}
+  .sym.engineer:before,.sym.engineer:after{display:none}
+  .sym.log{background:var(--gray)}
+  .sym.log:before,.sym.log:after{display:none}
+  .sym.isr{background:var(--blue)}
+  .sym.isr:before{transform:rotate(45deg)}
+  .sym.isr:after{transform:rotate(-45deg)}
+
+  .connector-root{height:42px;position:relative;margin:0 106px}
+  .connector-root:before{
+    content:"";position:absolute;left:50%;top:0;height:18px;border-left:2px solid #222
+  }
+  .connector-root:after{
+    content:"";position:absolute;left:5%;right:5%;top:18px;border-top:2px solid #222
+  }
+
+  .groups{
+    display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;
+    gap:10px;padding:0 48px 10px;align-items:start
+  }
+  .group{position:relative;text-align:center;padding:0 2px}
+  .group:before{
+    content:"";position:absolute;left:50%;top:-24px;height:24px;border-left:2px solid #222
+  }
+  .echelon{font-weight:900;font-size:17px;letter-spacing:2px;height:20px}
+  .group-title{font-weight:900;font-size:18px;margin-top:5px}
+  .group-meta{font-size:14px;line-height:1.35;margin-top:3px}
+  .group .sym{margin:0 auto}
+  .group-desc{font-size:14px;line-height:1.35;min-height:40px;margin-top:6px}
+
+  .child-connector{
+    height:29px;position:relative;margin:8px 26px 0
+  }
+  .child-connector:before{
+    content:"";position:absolute;left:50%;height:13px;border-left:1.6px solid #222
+  }
+  .child-connector:after{
+    content:"";position:absolute;left:8%;right:8%;top:13px;border-top:1.6px solid #222
+  }
+  .children{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .child{position:relative;text-align:center;font-size:11px}
+  .child:before{
+    content:"";position:absolute;left:50%;top:-16px;height:16px;border-left:1.6px solid #222
+  }
+  .child .sym{margin:0 auto 4px}
+  .child-code{font-weight:900;font-size:11px;margin-bottom:2px}
+  .child-name{font-weight:900;font-size:12px;line-height:1.05}
+  .child-meta{font-size:11px;line-height:1.25;margin-top:3px}
+
+  .bottom-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:12px 26px 14px
+  }
+  .strength{border:1px solid var(--line)}
+  .strength td:first-child{font-weight:800}
+  .strength tfoot td{font-weight:900;background:#f3f4f5}
+  .status-dot{
+    display:inline-block;width:11px;height:11px;border-radius:50%;
+    background:#4bb26a;border:1px solid #1e5c32;vertical-align:middle
+  }
+
+  .optional{
+    border:1px solid var(--line);margin:0 26px 12px
+  }
+  .optional .content{padding:9px 11px;font-size:13px;line-height:1.4}
+  .optional-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .legend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:12px}
+  .legend-item{display:flex;align-items:center;gap:7px}
+  .mini-sym{width:34px;height:21px}
+
+  .footer{
+    border-top:2px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1fr;
+    padding:8px 20px;font-size:13px;font-weight:800
+  }
+  .footer div:nth-child(2){text-align:center}
+  .footer div:nth-child(3){text-align:right}
+
+  .hidden{display:none!important}
+
+  @media print{
+    @page{size:A3 landscape;margin:8mm}
+    html,body{background:white;padding:0}
+    .toolbar{display:none!important}
+    .sheet{box-shadow:none;border:1px solid #111;margin:0;width:100%;min-height:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="primary" id="printBtn">Imprimer / PDF</button>
+  <button id="editBtn">Mode édition : ON</button>
+  <button id="resetBtn">Réinitialiser</button>
+  <span class="spacer"></span>
+  <label><input type="checkbox" data-toggle="mission"> Mission</label>
+  <label><input type="checkbox" data-toggle="notes"> Notes</label>
+  <label><input type="checkbox" data-toggle="legend"> Légende</label>
+  <label><input type="checkbox" data-toggle="unitSize"> Taille d’unité</label>
+</div>
+
+<main class="sheet" id="sheet">
+  <header class="topline">
+    <div class="brand">
+      <h1>ATHENA MILSIM</h1>
+      <h2>ORGANIZATION CHART (ORBAT)</h2>
+      <h3>TABLEAU D’ORGANISATION ET D’ÉQUIPEMENT</h3>
+    </div>
+    <div class="classif">UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>
+    <div class="docref">
+      <div>FM ATHENA RH-01</div>
+      <div>ANNEXE B</div>
+      <div>FIGURE B-1</div>
+    </div>
+  </header>
+
+  <section class="meta-row">
+    <div class="meta-table">
+      <div><b>UNITÉ :</b> <span contenteditable="true">Task Force PHOENIX</span></div>
+      <div><b>THÉÂTRE :</b> <span contenteditable="true">Altis</span></div>
+      <div><b>DATE D’EFFET :</b> <span contenteditable="true">15 APR 2025</span></div>
+      <div><b>RÉFÉRENCE :</b> <span contenteditable="true">ORBAT-TF-PHX-001</span></div>
+      <div><b>VERSION :</b> <span contenteditable="true">1.0</span></div>
+    </div>
+
+    <div class="root-wrap">
+      <div class="root-node">
+        <div>
+          <div class="root-label">TF</div>
+          <div class="sym cross"></div>
+          <div class="root-rank" contenteditable="true">TF HQ</div>
+          <div class="root-rank" contenteditable="true">COL</div>
+          <div class="root-role" contenteditable="true">Commandant de Task Force</div>
+        </div>
+        <div class="root-text">
+          <div class="name" contenteditable="true">TASK FORCE PHOENIX</div>
+          <div class="sub" contenteditable="true">(± 142 pers.)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="box-title">COMPOSITION GÉNÉRALE</div>
+      <table>
+        <tbody>
+          <tr><td>Effectif total (théorique)</td><td contenteditable="true">142</td></tr>
+          <tr><td>Effectif présent (T/O)</td><td contenteditable="true">136</td></tr>
+          <tr><td>Taux de disponibilité</td><td contenteditable="true">96 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="connector-root"></div>
+
+  <section class="groups" id="groups"></section>
+
+  <section class="bottom-grid">
+    <div class="strength">
+      <div class="box-title">SYNTHÈSE EFFECTIFS</div>
+      <table>
+        <thead>
+          <tr>
+            <th>ÉLÉMENT</th><th>THÉORIQUE</th><th>PRÉSENT</th><th>DISPONIBILITÉ</th>
+          </tr>
+        </thead>
+        <tbody id="strengthBody"></tbody>
+        <tfoot>
+          <tr>
+            <td>TOTAL TF PHOENIX</td><td contenteditable="true">142</td>
+            <td contenteditable="true">136</td><td contenteditable="true">96 %</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="optional mission hidden" data-optional="mission">
+      <div class="box-title">MISSION</div>
+      <div class="content" contenteditable="true">
+        Conduire les opérations de la Task Force conformément aux directives du commandement.
+      </div>
+    </div>
+  </section>
+
+  <section class="optional notes hidden" data-optional="notes">
+    <div class="box-title">NOTES</div>
+    <div class="content" contenteditable="true">
+      1. Effectifs selon tableau d’organisation en vigueur.<br>
+      2. Les indisponibilités sont suivies par le bureau S-1.<br>
+      3. Les rattachements temporaires sont indiqués sur ordre.
+    </div>
+  </section>
+
+  <section class="optional legend hidden" data-optional="legend">
+    <div class="box-title">LÉGENDE — SYMBOLES OPÉRATIONNELS</div>
+    <div class="content legend-grid">
+      <div class="legend-item"><span class="sym mini-sym cross"></span><span>Combat / manœuvre</span></div>
+      <div class="legend-item"><span class="sym mini-sym hq"><span class="hqtxt" style="font-size:12px">HQ</span></span><span>Commandement</span></div>
+      <div class="legend-item"><span class="sym mini-sym support"><span class="circle" style="width:12px;height:12px"></span></span><span>Soutien</span></div>
+      <div class="legend-item"><span class="sym mini-sym air"><span class="plane" style="font-size:15px">✈</span></span><span>Aviation</span></div>
+    </div>
+  </section>
+
+  <section class="optional unit-size hidden" data-optional="unitSize">
+    <div class="box-title">TAILLE D’UNITÉ</div>
+    <div class="content">
+      <div class="optional-grid">
+        <div>• Équipe : environ 4 à 12 personnels</div>
+        <div>• Section : environ 12 à 40 personnels</div>
+        <div>• Détachement : environ 20 à 60 personnels</div>
+        <div>• Task Force : structure variable selon mission</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>FM ATHENA RH-01</div>
+    <div>UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>
+    <div>ANNEXE B-1 — PAGE 1/1</div>
+  </footer>
+</main>
+
+<script>
+const DATA = [
+  {
+    echelon:"III", type:"hq", title:"ÉTAT-MAJOR", strength:"14 pers.", rank:"COL",
+    desc:"S-1 / S-2 / S-3 / S-4 / S-6<br>Cellule C2 / LNO",
+    children:[]
+  },
+  {
+    echelon:"II", type:"combat", title:"SOTG RECON", strength:"32 pers.", rank:"LTC",
+    desc:"Reconnaissance spéciale<br>Observation avancée",
+    children:[
+      {code:"1-1",name:"Équipe ALPHA",count:"10 pers.",role:"Team Leader",rank:"CPT",type:"combat"},
+      {code:"1-2",name:"Équipe BRAVO",count:"10 pers.",role:"Team Leader",rank:"CPT",type:"combat"},
+      {code:"1-3",name:"Équipe CHARLIE",count:"12 pers.",role:"Team Leader",rank:"CPT",type:"combat"}
+    ]
+  },
+  {
+    echelon:"II", type:"combat", title:"SOTG DIRECT ACTION", strength:"36 pers.", rank:"LTC",
+    desc:"Actions directes<br>Contre-terrorisme",
+    children:[
+      {code:"2-1",name:"Équipe DAGGER",count:"12 pers.",role:"Team Leader",rank:"CPT",type:"combat"},
+      {code:"2-2",name:"Équipe VIPER",count:"12 pers.",role:"Team Leader",rank:"CPT",type:"combat"},
+      {code:"2-3",name:"Équipe RAZOR",count:"12 pers.",role:"Team Leader",rank:"CPT",type:"combat"}
+    ]
+  },
+  {
+    echelon:"●", type:"support", title:"SOTG SUPPORT", strength:"28 pers.", rank:"MAJ",
+    desc:"Appui feu / Mobilité<br>Soutien opérationnel",
+    children:[
+      {code:"3-1",name:"Section APPUI FEU",count:"10 pers.",role:"PL",rank:"LT",type:"fire"},
+      {code:"3-2",name:"Section GÉNIE",count:"8 pers.",role:"PL",rank:"LT",type:"engineer"},
+      {code:"3-3",name:"Section LOGISTIQUE",count:"10 pers.",role:"PL",rank:"LT",type:"log"}
+    ]
+  },
+  {
+    echelon:"●", type:"air", title:"DÉTACHEMENT AÉRIEN", strength:"18 pers.", rank:"MAJ",
+    desc:"Appui aérien / MEDEVAC<br>Transport / ISR",
+    children:[
+      {code:"4-1",name:"Flight ALPHA",count:"6 pers.",role:"Lead Pilot",rank:"CPT",type:"air"},
+      {code:"4-2",name:"Flight BRAVO",count:"6 pers.",role:"Lead Pilot",rank:"CPT",type:"air"},
+      {code:"4-3",name:"Cellule ISR",count:"6 pers.",role:"Chief Operator",rank:"CPT",type:"isr"}
+    ]
+  }
+];
+
+function symbol(type, small=false){
+  const c = ["sym", small ? "small" : ""];
+  let inner = "";
+  if(type==="combat") c.push("cross");
+  if(type==="hq"){ c.push("hq"); inner='<span class="hqtxt">HQ</span>'; }
+  if(type==="support"){ c.push("support"); inner='<span class="circle"></span>'; }
+  if(type==="air"){ c.push("air"); inner='<span class="plane">✈</span>'; }
+  if(type==="fire"){ c.push("fire"); inner='<span style="font-size:22px;font-weight:900">↔</span>'; }
+  if(type==="engineer"){ c.push("engineer"); inner='<span style="font-size:22px">△</span>'; }
+  if(type==="log"){ c.push("log"); inner='<span style="font-size:22px;font-weight:900">▰</span>'; }
+  if(type==="isr") c.push("isr");
+  return `<div class="${c.filter(Boolean).join(" ")}">${inner}</div>`;
+}
+
+function childHtml(c){
+  return `
+    <div class="child">
+      <div class="child-code" contenteditable="true">${c.code}</div>
+      ${symbol(c.type,true)}
+      <div class="child-name" contenteditable="true">${c.name}</div>
+      <div class="child-meta">
+        <div contenteditable="true">${c.count}</div>
+        <div contenteditable="true">${c.role}</div>
+        <div contenteditable="true">${c.rank}</div>
+      </div>
+    </div>`;
+}
+
+function groupHtml(g){
+  const children = g.children.length
+    ? `<div class="child-connector"></div><div class="children">${g.children.map(childHtml).join("")}</div>` : "";
+  return `
+    <article class="group">
+      <div class="echelon" contenteditable="true">${g.echelon}</div>
+      ${symbol(g.type)}
+      <div class="group-title" contenteditable="true">${g.title}</div>
+      <div class="group-meta">
+        <div contenteditable="true">${g.strength}</div>
+        <div contenteditable="true">${g.rank}</div>
+      </div>
+      <div class="group-desc" contenteditable="true">${g.desc}</div>
+      ${children}
+    </article>`;
+}
+
+document.getElementById("groups").innerHTML = DATA.map(groupHtml).join("");
+
+document.getElementById("strengthBody").innerHTML = DATA.map((g,i)=>{
+  const theoretical=[14,32,36,28,18][i];
+  const present=[14,31,34,27,17][i];
+  const pct=Math.round((present/theoretical)*100);
+  const label=i===0 ? "TF HQ" : g.title;
+  return `<tr>
+    <td contenteditable="true">${label}</td>
+    <td contenteditable="true">${theoretical}</td>
+    <td contenteditable="true">${present}</td>
+    <td contenteditable="true">${pct} %</td>
+  </tr>`;
+}).join("");
+
+let editMode = true;
+const editBtn = document.getElementById("editBtn");
+editBtn.addEventListener("click", ()=>{
+  editMode = !editMode;
+  document.querySelectorAll('[contenteditable]').forEach(el=>el.contentEditable = editMode ? "true" : "false");
+  editBtn.textContent = "Mode édition : " + (editMode ? "ON" : "OFF");
+});
+
+document.querySelectorAll('[data-toggle]').forEach(cb=>{
+  cb.addEventListener("change", ()=>{
+    const key = cb.dataset.toggle;
+    const section = document.querySelector(`[data-optional="${key}"]`);
+    if(section) section.classList.toggle("hidden", !cb.checked);
+  });
+});
+
+document.getElementById("printBtn").addEventListener("click", ()=>window.print());
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Réinitialiser le mockup ORBAT ?")){
+    localStorage.removeItem("athena_orbat_mockup");
+    location.reload();
+  }
+});
+
+function saveState(){
+  const editable=[...document.querySelectorAll('[contenteditable]')].map(el=>el.innerHTML);
+  const toggles=[...document.querySelectorAll('[data-toggle]')].map(x=>({k:x.dataset.toggle,v:x.checked}));
+  localStorage.setItem("athena_orbat_mockup", JSON.stringify({editable,toggles}));
+}
+function loadState(){
+  const raw=localStorage.getItem("athena_orbat_mockup");
+  if(!raw) return;
+  try{
+    const s=JSON.parse(raw);
+    const els=[...document.querySelectorAll('[contenteditable]')];
+    (s.editable||[]).forEach((v,i)=>{ if(els[i]) els[i].innerHTML=v; });
+    (s.toggles||[]).forEach(t=>{
+      const cb=document.querySelector(`[data-toggle="${t.k}"]`);
+      if(cb){ cb.checked=!!t.v; cb.dispatchEvent(new Event("change")); }
+    });
+  }catch(e){}
+}
+document.addEventListener("input", ()=>{ clearTimeout(window.__saveT); window.__saveT=setTimeout(saveState,300); });
+document.querySelectorAll('[data-toggle]').forEach(cb=>cb.addEventListener("change",saveState));
+loadState();
+</script>
+</body>
+</html>

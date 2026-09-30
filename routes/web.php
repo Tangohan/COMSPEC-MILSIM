@@ -592,6 +592,8 @@ return function (Router $router) {
     $router->post('/personnel/{id}/bilans', [PersonnelController::class, 'storeStageBilan'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/phase', [PersonnelPhaseAdminController::class, 'applyMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
+    $router->get('/orbat/export', [PersonnelController::class, 'orbatExport'], [AuthMiddleware::class]);
+    $router->get('/orbat/pdf', [PersonnelController::class, 'orbatPdf'], [AuthMiddleware::class]);
     $router->get('/api/orbat/roster', [OrbatApiController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/api/orbat/structure-options', [OrbatApiController::class, 'structureOptions'], [AuthMiddleware::class]);
     $router->post('/api/orbat/chart-type', [OrbatApiController::class, 'chartType'], [AuthMiddleware::class]);
