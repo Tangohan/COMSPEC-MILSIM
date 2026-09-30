@@ -94,6 +94,9 @@ $personLabel = static function (array $row) use ($h): string {
                         </td>
                     </tr>
                 <?php endforeach; ?>
+                <?php if ($grades === []): ?>
+                    <tr><td colspan="10" class="adv-muted">Aucun grade. Dupliquez une échelle ci-dessus ou créez un grade.</td></tr>
+                <?php endif; ?>
                 </tbody>
             </table>
         </div>

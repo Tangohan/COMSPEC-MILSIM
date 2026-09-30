@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Advancement;
 
 use App\Repositories\AdvancementRepository;
+use App\Repositories\GradeRepository;
+use App\Repositories\TenantRepository;
+use Throwable;
 
 /**
  * Duplique une échelle type dans la communauté. Chaque tenant a sa copie :
@@ -88,14 +91,49 @@ final class GradeScaleTemplateService
 
     public function seedForNewTenant(int $tenantId, string $gradeSystemCode): bool
     {
+        return $this->ensureForTenant($tenantId, $gradeSystemCode);
+    }
+
+    /**
+     * Communautés déjà créées : la table d’avancement est vide tant qu’on n’a pas
+     * dupliqué une échelle. Recopie le référentiel de la communauté, sinon un modèle.
+     */
+    public function ensureForTenant(int $tenantId, string $gradeSystemCode = ''): bool
+    {
         if ($tenantId < 1 || !$this->repository->tablesReady()) {
             return false;
         }
         if ($this->repository->listGrades($tenantId, true) !== []) {
             return false;
         }
+        if ($this->copyFromCommunityCatalog($tenantId)) {
+            return true;
+        }
+        if (trim($gradeSystemCode) === '') {
+            $gradeSystemCode = $this->tenantGradeSystemCode($tenantId);
+        }
 
         return $this->duplicate($tenantId, $this->templateForSystem($gradeSystemCode));
+    }
+
+    public function ensureForAllTenants(): int
+    {
+        if (!$this->repository->tablesReady()) {
+            return 0;
+        }
+        try {
+            $ids = $this->repository->pdo()->query('SELECT id FROM tenants ORDER BY id ASC')->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+        } catch (Throwable) {
+            return 0;
+        }
+        $n = 0;
+        foreach ($ids as $id) {
+            if ($this->ensureForTenant((int) $id)) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     public function duplicate(int $tenantId, string $templateCode): bool
@@ -152,6 +190,73 @@ final class GradeScaleTemplateService
         }
 
         return true;
+    }
+
+    private function copyFromCommunityCatalog(int $tenantId): bool
+    {
+        try {
+            $rows = (new GradeRepository())->listForTenant($tenantId);
+        } catch (Throwable) {
+            return false;
+        }
+        if ($rows === []) {
+            return false;
+        }
+        $filiereIds = [];
+        $sortFiliere = 1;
+        $order = 0;
+        $copied = 0;
+        $total = count($rows);
+        foreach ($rows as $row) {
+            if (isset($row['is_enabled']) && (int) $row['is_enabled'] === 0) {
+                continue;
+            }
+            $code = strtoupper(trim((string) ($row['code'] ?? '')));
+            if ($code === '') {
+                $code = 'G' . (int) ($row['id'] ?? 0);
+            }
+            if ($this->repository->findGradeByCode($tenantId, $code) !== null) {
+                continue;
+            }
+            $catCode = strtolower(trim((string) ($row['category_code'] ?? 'general')));
+            if ($catCode === '') {
+                $catCode = 'general';
+            }
+            if (!isset($filiereIds[$catCode])) {
+                $filiereIds[$catCode] = $this->repository->saveFiliere($tenantId, [
+                    'code' => substr($catCode, 0, 40),
+                    'label' => trim((string) ($row['category_label'] ?? 'Cadre général')) ?: 'Cadre général',
+                    'sort_order' => $sortFiliere,
+                ]);
+                $sortFiliere++;
+            }
+            $order++;
+            $isCommissioned = !empty($row['is_commissioned']);
+            $this->repository->saveGrade($tenantId, [
+                'code' => substr($code, 0, 64),
+                'label' => trim((string) ($row['label_long'] ?? $row['label'] ?? $code)) ?: $code,
+                'short_label' => trim((string) ($row['label_short'] ?? '')) ?: null,
+                'filiere_id' => $filiereIds[$catCode],
+                'rank_order' => (int) ($row['sort_order'] ?? $order),
+                'advancement_seniority_enabled' => !$isCommissioned,
+                'advancement_choice_enabled' => $isCommissioned || $order > (int) ceil($total / 2),
+                'min_time_in_previous_grade_months' => $order <= 1 ? 0 : min(36, $order * 6),
+            ]);
+            $copied++;
+        }
+
+        return $copied > 0;
+    }
+
+    private function tenantGradeSystemCode(int $tenantId): string
+    {
+        try {
+            $settings = (new TenantRepository())->getSettings($tenantId);
+
+            return trim((string) ($settings['grade_system_code'] ?? ''));
+        } catch (Throwable) {
+            return '';
+        }
     }
 
     /**

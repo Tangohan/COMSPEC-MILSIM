@@ -162,6 +162,19 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertNotContains('SGM', $codes);
     }
 
+    public function testEnsurePourUneCommunauteExistanteResteIdempotent(): void
+    {
+        $pdo = $this->pdo();
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+
+        self::assertTrue($scales->ensureForTenant(9, 'generique'));
+        $first = $repo->listGrades(9, true);
+        self::assertNotEmpty($first);
+        self::assertFalse($scales->ensureForTenant(9, 'us_army_enlisted'));
+        self::assertCount(count($first), $repo->listGrades(9, true));
+    }
+
     public function testLeDepotNeReecritPasLaVoieDObtention(): void
     {
         $source = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/AdvancementRepository.php');

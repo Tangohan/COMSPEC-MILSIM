@@ -36,6 +36,9 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Grades', 'ORGANISATION · GRADES', 'L’échelle de grades n’est pas encore installée.', 'admin.advancement.unavailable', []);
         }
+        if ($this->templates->ensureForTenant($tenantId)) {
+            Session::flash('success', 'Échelle initialisée pour cette communauté (référentiel existant ou modèle).');
+        }
 
         return $this->page('Grades', 'ORGANISATION · GRADES', 'Échelle de grades de la communauté. Un grade déjà attribué s’archive, il ne se supprime pas.', 'admin.advancement.grades_index', [
             'grades' => $this->repository->listGrades($tenantId, true),
@@ -224,6 +227,7 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Avancement', 'RH · AVANCEMENT', 'Les tables d’avancement ne sont pas encore installées.', 'admin.advancement.unavailable', []);
         }
+        $this->templates->ensureForTenant($tenantId);
 
         return $this->page('Avancement', 'RH · AVANCEMENT', 'Campagnes au choix, par année, grade et filière.', 'admin.advancement.campaigns_index', [
             'campaigns' => $this->repository->listCampaigns($tenantId),
@@ -237,6 +241,7 @@ final class AdvancementAdminController
             return $ctx;
         }
         [$tenantId] = $ctx;
+        $this->templates->ensureForTenant($tenantId);
 
         return $this->page('Nouvelle campagne', 'RH · AVANCEMENT', 'Le quota limite le nombre de promus au moment de la publication.', 'admin.advancement.campaign_form', [
             'grades' => $this->repository->listGrades($tenantId, false),
