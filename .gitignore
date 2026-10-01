@@ -31,6 +31,9 @@ config/cdn_libraries.local.php
 !/public/uploads/recon/.gitkeep
 /public/uploads/intel/*
 !/public/uploads/intel/.gitkeep
+# Logos / covers / favicons communauté (uploadés via back-office) : hors Git
+/public/assets/img/communities/*
+!/public/assets/img/communities/.gitkeep
 composer.lock
 
 # --- Exports / dumps de base : jamais dans le dépôt ---
