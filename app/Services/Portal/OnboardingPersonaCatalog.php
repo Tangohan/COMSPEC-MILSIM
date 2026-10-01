@@ -19,7 +19,7 @@ final class OnboardingPersonaCatalog
                 'description' => __('home.persona_member_description'),
                 'steps' => [
                     ['label' => 'Vérifier ma fiche', 'description' => 'Complétez votre identité opérationnelle et vos informations visibles.', 'href' => url('personnel/me')],
-                    ['label' => 'Voir ce qui m’attend', 'description' => 'Regroupez messages, dossiers et notifications à traiter aujourd’hui.', 'href' => url('aujourdhui')],
+                    ['label' => 'Voir ce qui m’attend', 'description' => 'Regroupez messages, dossiers et notifications à traiter aujourd’hui.', 'href' => url('mon-service')],
                     ['label' => 'Consulter les prochains rendez-vous', 'description' => 'Retrouvez les événements et confirmez votre participation.', 'href' => url('evenements')],
                 ],
             ],
@@ -28,7 +28,7 @@ final class OnboardingPersonaCatalog
                 'eyebrow' => __('home.persona_command_eyebrow'),
                 'description' => __('home.persona_command_description'),
                 'steps' => [
-                    ['label' => 'Ouvrir le briefing du jour', 'description' => 'Identifiez les dossiers et messages qui attendent une décision.', 'href' => url('aujourdhui')],
+                    ['label' => 'Ouvrir le briefing du jour', 'description' => 'Identifiez les dossiers et messages qui attendent une décision.', 'href' => url('mon-service')],
                     ['label' => 'Contrôler les effectifs', 'description' => 'Consultez l’organisation, les affectations et les disponibilités.', 'href' => url('back-office/ressources/effectifs')],
                     ['label' => 'Configurer les accès', 'description' => 'Vérifiez les rôles et permissions avant d’inviter votre équipe.', 'href' => url('back-office/roles')],
                 ],

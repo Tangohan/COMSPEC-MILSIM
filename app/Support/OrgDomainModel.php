@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Modèle métier Athena ORBAT — six objets stables.
+ * Modèle métier Athena ORBAT — objets stables.
  *
  * PERSONNEL ↔ AFFECTATION ↔ POSTE ↔ STRUCTURE
- * + QUALIFICATION + HISTORIQUE
+ * + QUALIFICATION + HISTORIQUE + DUTY_MISSION + WORKFLOW
  *
+ * Grade ≠ poste ≠ duty mission ≠ qualification ≠ rôle technique Athena.
  * Statut, confidentialité, dates d’effet et permissions sont transversaux.
+ *
+ * @see docs/architecture/2026-10-01-org-duty-workbench.md
  */
 final class OrgDomainModel
 {
@@ -20,6 +23,8 @@ final class OrgDomainModel
     public const STRUCTURE = 'structure';
     public const QUALIFICATION = 'qualification';
     public const HISTORY = 'history';
+    public const DUTY_MISSION = 'duty_mission';
+    public const WORKFLOW = 'workflow';
 
     public const CORE = [
         self::PERSONNEL,
@@ -35,6 +40,8 @@ final class OrgDomainModel
         self::STRUCTURE,
         self::QUALIFICATION,
         self::HISTORY,
+        self::DUTY_MISSION,
+        self::WORKFLOW,
     ];
 
     public static function label(string $object): string
@@ -46,6 +53,8 @@ final class OrgDomainModel
             self::STRUCTURE => 'Structure',
             self::QUALIFICATION => 'Qualification',
             self::HISTORY => 'Historique',
+            self::DUTY_MISSION => 'Duty mission',
+            self::WORKFLOW => 'Workflow',
             default => $object,
         };
     }
@@ -59,6 +68,8 @@ final class OrgDomainModel
             self::STRUCTURE => 'Unité / équipe : rattachement, statut admin, visibilité, postes et effectifs.',
             self::QUALIFICATION => 'Compétences détenues ou exigées par un poste — jamais confondues avec le grade.',
             self::HISTORY => 'Journal de carrière, snapshots ORBAT, audit des mouvements sensibles.',
+            self::DUTY_MISSION => 'Organisation opérationnelle temporaire (indicatif, expire en fin d’opération).',
+            self::WORKFLOW => 'Tâches, rapports, demandes et validations — souvent adressés au poste, pas à la personne.',
             default => '',
         };
     }

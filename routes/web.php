@@ -491,7 +491,12 @@ return function (Router $router) {
     $router->get('/tactical/{uuid}', [OperationWorkspaceController::class, 'tactical'], [AuthMiddleware::class]);
     $router->get('/centre-actions', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/aujourdhui', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/mon-service', [ActionCenterController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/aujourdhui/rsvp', [ActionCenterController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/mon-service/rsvp', [ActionCenterController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/mon-service/tache/{id}/accuser', [ActionCenterController::class, 'acknowledgeTask'], [AuthMiddleware::class]);
+    $router->post('/mon-service/tache/{id}/demarrer', [ActionCenterController::class, 'startTask'], [AuthMiddleware::class]);
+    $router->post('/mon-service/tache/{id}/terminer', [ActionCenterController::class, 'completeTask'], [AuthMiddleware::class]);
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
