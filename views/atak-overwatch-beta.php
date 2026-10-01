@@ -136,6 +136,9 @@ $icon = static function (string $path): string {
       <span class="ow-green" id="ow-status-word">Liaison</span>
     </span>
     <div class="ow-statusbar-right">
+      <button type="button" class="ow-rec-btn" id="ow-rec-btn" data-ow-rec aria-pressed="false" title="Démarrer l’enregistrement du replay à partir de maintenant">
+        <i aria-hidden="true"></i><span data-ow-rec-label>REC</span>
+      </button>
       <label class="ow-mini ow-sync-rate ow-select">Sync
         <select id="ow-refresh-rate" aria-label="Fréquence de synchronisation">
           <option value="3000">3 s</option>
@@ -712,6 +715,12 @@ $icon = static function (string $path): string {
         </div>
         <div class="ow-wx" id="ow-wx" hidden></div>
         <div class="ow-scene-load" id="ow-scene-load" hidden>Chargement du relevé…</div>
+        <div class="ow-rec-banner" id="ow-rec-banner" hidden role="status" aria-live="polite">
+          <span class="ow-rec-banner__dot" aria-hidden="true"></span>
+          <span id="ow-rec-banner-text">REC · Enregistrement en cours</span>
+          <button type="button" id="ow-rec-stop" data-ow-rec-stop>Arrêter</button>
+        </div>
+        <div class="ow-medical-banner atak-medical-banner" id="atak-medical-banner" role="alert" aria-live="assertive" hidden></div>
         <div class="ow-freeze-banner" id="ow-freeze-banner" hidden></div>
       </div>
       <div class="ow-timeline" id="ow-timeline" hidden>
@@ -1050,9 +1059,11 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-ops.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tracks.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-telemetry.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-rec.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-c2.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tacmap.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-sounds.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-p2.js?v=<?= $h($assetVer) ?>"></script>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>

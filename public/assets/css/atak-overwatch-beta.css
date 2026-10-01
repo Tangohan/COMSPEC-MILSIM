@@ -66,7 +66,7 @@ button{cursor:pointer}
 .ow-statusbar b{color:var(--athena-text);font-weight:500}
 .ow-statusbar .ow-mono{color:var(--athena-text)}
 .ow-green{color:var(--athena-text);font-weight:600}
-.ow-statusbar-right{margin-left:auto}
+.ow-statusbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .ow-mini,.ow-sync-rate{border:1px solid var(--athena-line-2);background:#0a0c0c;color:var(--athena-muted);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
 
 .ow-select{position:relative;display:inline-flex;align-items:center;min-width:0}
@@ -590,6 +590,68 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-hover-delete-ring{pointer-events:none!important}
 .ow-freeze-banner{background:#3a1418ee;border:1px solid #c45a63;color:#f3c4c7;padding:7px 11px;font-size:12px;font-weight:600;max-width:min(440px,72%);border-radius:4px;pointer-events:none}
 .ow-freeze-banner[hidden]{display:none}
+
+.ow-rec-btn{
+  display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 10px;
+  border:1px solid #5a2a2e;background:#1a0d0f;color:#f3c4c7;border-radius:4px;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase
+}
+.ow-rec-btn>i{width:8px;height:8px;border-radius:50%;background:#e05b63;box-shadow:0 0 0 0 rgba(224,91,99,.55)}
+.ow-rec-btn.is-recording{
+  border-color:#e05b63;background:#3a1418;color:#ffe3e5;
+  animation:ow-rec-pulse 1.4s ease-in-out infinite
+}
+.ow-rec-btn.is-recording>i{animation:ow-rec-dot 1.1s ease-in-out infinite}
+.ow-rec-btn:hover{border-color:#e05b63;color:#fff}
+@keyframes ow-rec-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(224,91,99,0)}
+  50%{box-shadow:0 0 0 3px rgba(224,91,99,.18)}
+}
+@keyframes ow-rec-dot{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.35;transform:scale(.85)}
+}
+
+.ow-rec-banner{
+  display:flex;align-items:center;gap:8px;max-width:min(520px,86vw);
+  background:#2a1014f0;border:1px solid #e05b63;color:#ffe3e5;
+  padding:7px 10px;border-radius:4px;font-size:12px;font-weight:600
+}
+.ow-rec-banner[hidden]{display:none!important}
+.ow-rec-banner__dot{
+  width:8px;height:8px;border-radius:50%;background:#ff4d57;flex:0 0 auto;
+  animation:ow-rec-dot 1.1s ease-in-out infinite
+}
+.ow-rec-banner #ow-rec-banner-text{min-width:0;line-height:1.35}
+.ow-rec-banner button{
+  margin-left:auto;height:24px;padding:0 9px;border:1px solid #c45a63;
+  background:#4a1820;color:#ffe3e5;border-radius:3px;font-size:11px;font-weight:700;flex:0 0 auto
+}
+.ow-rec-banner button:hover{background:#5c1f28}
+
+.ow-medical-banner,.atak-medical-banner{
+  max-width:min(520px,86vw);
+  background:linear-gradient(90deg,rgba(127,29,29,.96),rgba(153,27,27,.92));
+  border:1px solid rgba(248,113,113,.55);color:#fee2e2;
+  padding:7px 11px;border-radius:4px;font-size:12px;font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.35)
+}
+.ow-medical-banner[hidden],.atak-medical-banner[hidden]{display:none!important}
+.ow-medical-banner.is-death,.atak-medical-banner.is-death{border-color:#fb7185}
+.ow-medical-banner-inner,.atak-medical-banner-inner{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0
+}
+.ow-medical-banner-inner>strong,.atak-medical-banner-inner>strong{
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;flex:0 0 auto
+}
+.ow-medical-badge,.atak-medical-badge{
+  display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;
+  background:rgba(254,226,226,.18);border:1px solid rgba(254,202,202,.45);
+  font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase
+}
+.ow-medical-banner-msg,.atak-medical-banner-msg{
+  min-width:0;font-weight:600;line-height:1.35
+}
 .ow-marker.is-delayed i,.ow-marker.is-delayed .ow-cs{
   border-style:dashed;
   border-color:#c9784a;

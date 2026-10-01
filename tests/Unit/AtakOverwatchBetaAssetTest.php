@@ -405,5 +405,20 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         $markerRepo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/AtakDataRepository.php');
         self::assertStringContainsString('findSuppressedTwin', $markerRepo);
         self::assertStringContainsString('suppressMarkerRow', $markerRepo);
+        self::assertStringContainsString('data-ow-rec', $view);
+        self::assertStringContainsString('id="ow-rec-banner"', $view);
+        self::assertStringContainsString('id="atak-medical-banner"', $view);
+        self::assertStringContainsString('atak-overwatch-rec.js', $view);
+        self::assertStringContainsString('atak-sounds.js', $view);
+        $recJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-rec.js');
+        self::assertStringContainsString('window.OverwatchRec', $recJs);
+        self::assertStringContainsString('startRecording', $recJs);
+        self::assertStringContainsString('ow-rec-banner', $recJs);
+        self::assertStringContainsString('OverwatchRec.onSample', $overwatchJs);
+        $telemetryJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-telemetry.js');
+        self::assertStringContainsString('paintMedicalBanner', $telemetryJs);
+        self::assertStringContainsString('MORT / KIA', $telemetryJs);
+        self::assertStringContainsString('.ow-rec-btn', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
+        self::assertStringContainsString('.ow-medical-banner', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
     }
 }

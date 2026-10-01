@@ -468,12 +468,20 @@
 
   function applyReplay(pct) {
     var source = document.getElementById('ow-replay-source');
-    if (source && source.value === 'mission') return;
+    var sourceVal = source ? String(source.value || 'session') : 'session';
+    if (sourceVal === 'mission') return;
     var api = ow();
     if (!api) return;
     var live = document.getElementById('ow-replay-live');
     var samples = api.getTrackSamples();
-    var ids = Object.keys(samples);
+    if (sourceVal.indexOf('clip:') === 0 && window.OverwatchRec && window.OverwatchRec.getClipSamples) {
+      samples = window.OverwatchRec.getClipSamples(sourceVal) || {};
+    } else if (window.OverwatchRec && window.OverwatchRec.isRecording && window.OverwatchRec.isRecording() && window.OverwatchRec.getActiveSamples) {
+      // Pendant un REC, la frise peut aussi lire le buffer d’enregistrement.
+      var active = window.OverwatchRec.getActiveSamples();
+      if (active && Object.keys(active).length) samples = active;
+    }
+    var ids = Object.keys(samples || {});
     if (pct >= 99) {
       if (live) live.textContent = 'LIVE';
       clearReplayGhosts();
@@ -482,10 +490,12 @@
       return;
     }
     if (!ids.length) {
-      toast('Aucun déplacement enregistré pour le moment.');
+      toast(sourceVal.indexOf('clip:') === 0
+        ? 'Ce clip ne contient pas encore de trajectoires.'
+        : 'Aucun déplacement enregistré pour le moment.');
       return;
     }
-    if (live) live.textContent = 'REPLAY';
+    if (live) live.textContent = sourceVal.indexOf('clip:') === 0 ? 'CLIP' : 'REPLAY';
     var minT = Infinity;
     var maxT = 0;
     ids.forEach(function (id) {
@@ -507,7 +517,7 @@
       var d = new Date(target);
       nowEl.textContent = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
-    try { window.dispatchEvent(new CustomEvent('overwatch:replay', { detail: { live: false, pct: pct, t: target } })); } catch (e1) {}
+    try { window.dispatchEvent(new CustomEvent('overwatch:replay', { detail: { live: false, pct: pct, t: target, source: sourceVal } })); } catch (e1) {}
   }
 
   function bindPrefs() {
@@ -549,6 +559,12 @@
     var scrub = document.getElementById('ow-replay-scrub');
     if (scrub) {
       scrub.addEventListener('input', function () { applyReplay(Number(scrub.value) || 0); });
+    }
+    var sourceSel = document.getElementById('ow-replay-source');
+    if (sourceSel) {
+      sourceSel.addEventListener('change', function () {
+        if (scrub) applyReplay(Number(scrub.value) || 0);
+      });
     }
     document.addEventListener('click', function (event) {
       if (!event.target.closest('[data-ow-replay]')) return;
