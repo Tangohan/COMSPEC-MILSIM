@@ -80,15 +80,25 @@ jobs:
             fi
             chown -R www-data:www-data storage
             mkdir -p public/uploads/recon public/uploads/intel storage/uploads/recon
+            mkdir -p public/assets/img/communities
             # PHP-FPM écrit les photos : le parent doit être www-data (sinon mkdir recon échoue
             # quand le dépôt a été cloné/tiré en root → arbre root:root).
             if [ -d public/uploads ]; then
               chown -R www-data:www-data public/uploads
               find public/uploads -type d -exec chmod 775 {} \;
             fi
+            # Logos / covers communauté : mêmes droits (hors Git, survivre au recree d’arbre)
+            if [ -d public/assets/img/communities ]; then
+              chown -R www-data:www-data public/assets/img/communities
+              find public/assets/img/communities -type d -exec chmod 775 {} \;
+              find public/assets/img/communities -type f -exec chmod 644 {} \;
+            fi
             chown -R www-data:www-data storage/uploads 2>/dev/null || true
             if [ -d /var/www/athena.ttrd.fr.git-broke/public/uploads ]; then
               echo "NOTE: uploads encore présents sous athena.ttrd.fr.git-broke — voir docs/bugs/2026-09-28-photos-recon-git-broke-orphelins.md"
+            fi
+            if [ -d /var/www/athena.ttrd.fr.git-broke/public/assets/img/communities ]; then
+              echo "NOTE: logos communauté encore sous athena.ttrd.fr.git-broke — voir docs/bugs/2026-10-01-community-logos-git-broke-orphelins.md"
             fi
             if command -v systemctl >/dev/null 2>&1; then
               systemctl reload php8.4-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
