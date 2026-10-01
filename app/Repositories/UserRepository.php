@@ -2466,6 +2466,7 @@ class UserRepository
         $hasTenantMemberNumber = $this->hasTenantMemberNumberColumn();
         $term = '%' . $q . '%';
         $pack = $this->technicalAccountExclusionPredicate('u');
+        $jobRole = $this->primaryJobRoleJoinFragments('u', $tenantId);
         $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
         $tmnSelect = $hasTenantMemberNumber ? 'u.tenant_member_number' : 'NULL AS tenant_member_number';
         $athenaFilter = $hasAthenaIdentifier
@@ -2474,8 +2475,15 @@ class UserRepository
         $tmnFilter = $hasTenantMemberNumber
             ? "OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)"
             : '';
+        $jobRoleFilter = $jobRole['join'] !== ''
+            ? "OR (pjr.name IS NOT NULL AND TRIM(pjr.name) <> '' AND pjr.name LIKE ?)
+                 OR (pjrole.role_detail IS NOT NULL AND TRIM(pjrole.role_detail) <> '' AND pjrole.role_detail LIKE ?)"
+            : '';
         $stmt = $this->pdo()->prepare(
-            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url FROM users u
+            'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', ' . $tmnSelect . ', u.avatar_url, '
+            . $jobRole['select_as_job_role_display'] . '
+             FROM users u
+             ' . $jobRole['join'] . '
              WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
              AND ' . $pack['sql'] . '
              AND (
@@ -2484,6 +2492,7 @@ class UserRepository
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND ' . SqlText::like($this->pdo(), 'u.profile_slug') . ')
                  ' . $athenaFilter . '
                  ' . $tmnFilter . '
+                 ' . $jobRoleFilter . '
              )
              ORDER BY u.display_name ASC
              LIMIT ?'
@@ -2493,6 +2502,10 @@ class UserRepository
             $params[] = $term;
         }
         if ($hasTenantMemberNumber) {
+            $params[] = $term;
+        }
+        if ($jobRole['join'] !== '') {
+            $params[] = $term;
             $params[] = $term;
         }
         $params[] = $limit;

@@ -1647,6 +1647,9 @@ return function (Router $router) {
     $router->get('/admin/modpacks', [AdminModpackController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/modpacks/create', [AdminModpackController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/store', [AdminModpackController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/modpacks/upload/init', [AdminModpackController::class, 'uploadInit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/modpacks/upload/chunk', [AdminModpackController::class, 'uploadChunk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/modpacks/upload/finalize', [AdminModpackController::class, 'uploadFinalize'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

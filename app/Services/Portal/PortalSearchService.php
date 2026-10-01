@@ -148,10 +148,12 @@ final class PortalSearchService
                 $slug = trim((string) ($u['profile_slug'] ?? ''));
                 $pathSeg = $slug !== '' ? $slug : (string) $id;
                 $callsign = trim((string) ($u['callsign'] ?? ''));
+                $jobRole = trim((string) ($u['job_role_display'] ?? $u['primary_role'] ?? ''));
+                $subtitleBits = array_values(array_filter([$callsign, $jobRole], static fn (string $b): bool => $b !== ''));
                 $personnel[] = [
                     'id' => $id,
                     'title' => (string) ($u['display_name'] ?? 'Membre'),
-                    'subtitle' => $callsign,
+                    'subtitle' => implode(' · ', $subtitleBits),
                     'href' => url('personnel/' . rawurlencode($pathSeg)),
                 ];
             }
@@ -201,11 +203,14 @@ final class PortalSearchService
             if ($id < 1) {
                 continue;
             }
+            $starts = trim((string) ($row['starts_at'] ?? ''));
+            $locBit = trim($loc);
+            $subtitleBits = array_values(array_filter([$starts, $locBit], static fn (string $b): bool => $b !== ''));
             $out[] = [
                 'id' => $id,
                 'title' => $title,
-                'subtitle' => (string) ($row['starts_at'] ?? ''),
-                'href' => url('manoeuvres'),
+                'subtitle' => implode(' · ', $subtitleBits),
+                'href' => url('evenements') . '#event-' . $id,
             ];
             if (count($out) >= self::PER_SCOPE) {
                 break;

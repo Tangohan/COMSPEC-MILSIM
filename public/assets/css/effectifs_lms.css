@@ -1806,6 +1806,13 @@ div.eff-role-grid {
     color: #0f172a;
 }
 
+.eff-access-group__desc {
+    margin: 0 0 0.55rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #64748b;
+}
+
 .eff-access-group ul {
     list-style: none;
     margin: 0;

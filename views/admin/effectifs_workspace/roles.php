@@ -81,13 +81,19 @@ $selectedName = (string) ($selected['name'] ?? '');
                     </label>
                     <label>
                         À quoi il sert
-                        <textarea name="description" rows="2" maxlength="500"><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Accès lecture forum + documents pour les nouveaux intégrés."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                     </label>
                 </div>
-                <p class="eff-access-editor__hint">Cochez uniquement ce que les titulaires de ce niveau peuvent faire. L’administration du site n’apparaît jamais ici.</p>
+                <p class="eff-access-editor__hint">
+                    La description aide les responsables à comprendre le niveau. Cochez uniquement ce que les titulaires peuvent faire.
+                    Les emplois du dossier (radio, médic…) restent à part — ils ne donnent aucun droit ici.
+                </p>
                 <?php foreach ($groups as $group): ?>
                 <section class="eff-access-group">
                     <h2><?= htmlspecialchars((string) ($group['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
+                    <?php if (trim((string) ($group['description'] ?? '')) !== ''): ?>
+                    <p class="eff-access-group__desc"><?= htmlspecialchars((string) $group['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
                     <ul>
                         <?php foreach ($group['items'] as $item):
                             $pid = (int) ($item['id'] ?? 0);

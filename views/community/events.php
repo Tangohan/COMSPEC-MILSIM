@@ -506,7 +506,7 @@ $eventCount = count($events);
                                 || !empty($eventSlotsByEvent[$eid]);
                             $searchHay = mb_strtolower($title . ' ' . $location . ' ' . implode(' ', array_map([CommunityEventDetails::class, 'tagLabel'], $tags)));
                             ?>
-                        <tr data-event-row data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>" data-event-id="<?= $eid ?>">
+                        <tr id="event-<?= $eid ?>" data-event-row data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>" data-event-id="<?= $eid ?>">
                             <td class="max-w-sm">
                                 <span class="events-sheets__badge <?= $tMeta['badge'] ?>"><?= htmlspecialchars($tMeta['label']) ?></span>
                                 <div class="mt-1 font-semibold text-slate-900"><?= htmlspecialchars($title) ?></div>

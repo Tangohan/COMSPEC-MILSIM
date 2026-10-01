@@ -48,6 +48,18 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
+    /* Shells privés (BO / admin plateforme / formation) : ne pas indexer. */
+    if (
+        (!isset($seo_robots) || trim((string) $seo_robots) === '')
+        && (
+            !empty($usesAdminSidebarShell)
+            || !empty($isBackOfficeShell)
+            || !empty($isPlatformAdminShell)
+            || !empty($isFormationWorkspace)
+        )
+    ) {
+        $seo_robots = 'noindex,nofollow';
+    }
     require base_path('views/partials/seo_meta.php');
 ?>
     <link rel="manifest" href="<?= htmlspecialchars($baseUrl) ?>/manifest.webmanifest">

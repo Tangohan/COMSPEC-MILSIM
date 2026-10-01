@@ -1,0 +1,133 @@
+/* Admin modpacks — zone d’upload & progression */
+.mp-admin {
+  --mp-ink: #0f172a;
+  --mp-muted: #64748b;
+  --mp-line: #e2e8f0;
+  --mp-accent: #0f766e;
+  --mp-accent-soft: #ecfdf5;
+  --mp-danger: #b91c1c;
+  --mp-warn-bg: #fffbeb;
+  --mp-warn-ink: #92400e;
+}
+.mp-admin__lead {
+  margin: 0 0 1.25rem;
+  color: var(--mp-muted);
+  font-size: 0.925rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+.mp-admin__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--mp-muted);
+  line-height: 1.4;
+}
+.mp-admin__dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-height: 7.5rem;
+  padding: 1.15rem 1.25rem;
+  border: 1.5px dashed #94a3b8;
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, 0.04), transparent 55%),
+    #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.mp-admin__dropzone:hover,
+.mp-admin__dropzone:focus-visible {
+  border-color: var(--mp-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+.mp-admin__dropzone.is-dragover {
+  border-color: var(--mp-accent);
+  background: var(--mp-accent-soft);
+}
+.mp-admin__dropzone.has-file {
+  border-style: solid;
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+.mp-admin__drop-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--mp-ink);
+}
+.mp-admin__drop-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--mp-muted);
+}
+.mp-admin__file-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #115e59;
+}
+.mp-admin__clear {
+  margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mp-danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.mp-admin__progress {
+  margin-top: 0.75rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.mp-admin__progress-bar {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
+  transition: width 0.18s ease;
+}
+.mp-admin__status {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mp-muted);
+}
+.mp-admin__status.is-error {
+  color: var(--mp-danger);
+  font-weight: 600;
+}
+.mp-admin__callout {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fde68a;
+  background: var(--mp-warn-bg);
+  color: var(--mp-warn-ink);
+  font-size: 0.825rem;
+  line-height: 1.5;
+}
+.mp-admin__split {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 720px) {
+  .mp-admin__split--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.mp-admin input[type="file"].mp-admin__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

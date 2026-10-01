@@ -121,11 +121,14 @@ $assignUrl = $catalogUrl . '?vue=attributions';
                         </select>
                     </label>
                     <label>
-                        Description
-                        <textarea name="description" rows="2" maxlength="500"><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        Description de la fonction
+                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Opérateur radio — assure les liaisons net et le suivi des fréquences."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                     </label>
                 </div>
-                <p class="eff-access-editor__hint">Ce libellé apparaît sur le dossier. Il n’ouvre aucun droit sur le portail. Pour l’attribuer, ouvrez l’onglet « Qui tient quel emploi » ou la fiche du membre.</p>
+                <p class="eff-access-editor__hint">
+                    Nom + description apparaissent sur le dossier et dans la recherche portail (trouver un « radio », un « médic »…).
+                    Cela n’ouvre aucun droit d’accès. Pour attribuer l’emploi, utilisez l’onglet « Qui tient quel emploi » ou la fiche du membre.
+                </p>
                 <?php
                 $holders = $holdersByRole[$selectedId] ?? [];
                 ?>
