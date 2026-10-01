@@ -18,6 +18,7 @@ final class EnlistmentIdentityFormCleanupTest extends TestCase
         self::assertStringNotContainsString('guest-rp-detail', $view);
         self::assertStringNotContainsString('optionnel si le champ unique', $view);
         self::assertStringNotContainsString('ce-rp-box', $view);
+        self::assertStringNotContainsString('Identité portée par la candidature', $view);
     }
 
     public function testControllerRequiresCharacterFirstLast(): void

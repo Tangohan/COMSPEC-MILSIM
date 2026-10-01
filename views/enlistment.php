@@ -624,8 +624,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
 
                         <div id="enlist-guest-identity" class="<?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
                             <input type="hidden" name="identity_kind" value="rp">
-                            <p class="ce-panel__title">Identité portée par la candidature</p>
-                            <p class="ce-help" style="margin-bottom:0">Le dossier porte sur votre personnage (univers fictionnel).</p>
                         </div>
                     </section>
 
