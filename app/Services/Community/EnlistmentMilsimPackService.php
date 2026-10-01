@@ -243,8 +243,8 @@ final class EnlistmentMilsimPackService
     public static function defaultFieldLabels(): array
     {
         return [
-            'full_name' => ['label' => 'Nom et prénom (dossier)', 'placeholder' => 'ex. Jonathan King', 'widget' => 'text', 'options' => []],
-            'legal_full_name' => ['label' => 'Nom réel pour le contact (si personnage)', 'placeholder' => 'Nom pour être recontacté — optionnel si déjà indiqué ailleurs', 'widget' => 'text', 'options' => []],
+            'full_name' => ['label' => 'Prénom et nom du personnage', 'placeholder' => 'ex. Jake Gyllenhaal', 'widget' => 'text', 'options' => []],
+            'legal_full_name' => ['label' => 'Nom réel pour le contact (si besoin)', 'placeholder' => 'Nom pour être recontacté — optionnel', 'widget' => 'text', 'options' => []],
             'age' => ['label' => 'Âge', 'placeholder' => 'Âge minimum requis par la communauté', 'widget' => 'text', 'options' => []],
             'timezone' => ['label' => 'Fuseau horaire', 'placeholder' => 'Choisissez votre pays / ville', 'widget' => 'select', 'options' => []],
             'weekly_availability' => ['label' => 'Disponibilités dans la semaine', 'placeholder' => 'Jours et créneaux habituels', 'widget' => 'text', 'options' => []],
