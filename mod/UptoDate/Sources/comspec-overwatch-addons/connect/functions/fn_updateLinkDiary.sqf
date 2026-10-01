@@ -21,7 +21,7 @@ private _codeHint = if (_state isEqualTo "linked" && {count _key > 0}) then {
 player createDiarySubject ["Athena", "Athena ATAK"];
 
 private _body = format [
-    "Connected to <font color='#7dffb3'>%1</font><br/><br/>%2<br/><br/>Sur le site : ATAK → <font color='#7dffb3'>Connexion en jeu</font> pour générer un code.<br/>En jeu : téléphone ATAK → <font color='#7dffb3'>Compte Athena</font>, ou action <font color='#7dffb3'>Connecter mon téléphone</font> pour le QR.",
+    "Connected to <font color='#7dffb3'>%1</font><br/><br/>%2<br/><br/>Sur le site : carte ATAK → <font color='#7dffb3'>Appairer</font> → Générer un code.<br/>En jeu : ACE → COMSPEC Athena → <font color='#7dffb3'>Connexion Athena</font> (ou téléphone ATAK → Compte Athena) → Lier le jeu. QR téléphone : action <font color='#7dffb3'>Connecter mon téléphone</font>.",
     _label,
     _codeHint
 ];

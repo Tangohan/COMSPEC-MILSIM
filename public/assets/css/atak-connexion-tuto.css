@@ -1,0 +1,354 @@
+/**
+ * Tutoriel joueur — Connexion en jeu
+ */
+.at-cx {
+  --cx-ink: #0f172a;
+  --cx-muted: #64748b;
+  --cx-line: #e2e8f0;
+  --cx-mint: #047857;
+  --cx-mint-bg: #ecfdf5;
+  --cx-amber: #b45309;
+  --cx-amber-bg: #fffbeb;
+  --cx-card: #ffffff;
+  color: var(--cx-ink);
+  background: #f8fafc;
+  padding-bottom: 3rem;
+}
+
+.at-cx__hero {
+  border-bottom: 1px solid var(--cx-line);
+  background:
+    radial-gradient(640px 260px at 88% -30%, rgba(4, 120, 87, 0.12), transparent 55%),
+    linear-gradient(180deg, #fff, #f8fafc);
+}
+
+.at-cx__hero,
+.at-cx__body {
+  width: min(46rem, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.at-cx__hero {
+  padding: 2.1rem 0 1.6rem;
+}
+
+.at-cx__eyebrow {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cx-mint);
+}
+
+.at-cx__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.at-cx__lead {
+  margin: 0 0 1.15rem;
+  max-width: 38rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.at-cx__hero-actions,
+.at-cx__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.at-cx__body {
+  padding-top: 1.5rem;
+}
+
+.at-cx__section {
+  margin: 0 0 1.75rem;
+  padding: 1.25rem 1.2rem;
+  background: var(--cx-card);
+  border: 1px solid var(--cx-line);
+  border-radius: 0.9rem;
+}
+
+.at-cx__section h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.at-cx__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.at-cx__section p,
+.at-cx__section li {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.at-cx__section p {
+  margin: 0 0 0.75rem;
+}
+
+.at-cx__section ul {
+  margin: 0.35rem 0 0.75rem;
+  padding-left: 1.2rem;
+}
+
+.at-cx__section a {
+  color: var(--cx-mint);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.at-cx__callout {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #bbf7d0;
+  background: var(--cx-mint-bg);
+  color: #064e3b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.at-cx__callout--ok {
+  border-color: #a7f3d0;
+}
+
+.at-cx__warn-inline {
+  margin: 0.85rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  background: var(--cx-amber-bg);
+  border: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.at-cx__muted {
+  color: var(--cx-muted) !important;
+  font-size: 0.88rem !important;
+}
+
+.at-cx__tag {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--cx-mint-bg);
+  color: var(--cx-mint);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.at-cx__table-wrap {
+  overflow-x: auto;
+  margin: 0.5rem 0 0;
+}
+
+.at-cx__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.at-cx__table th,
+.at-cx__table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.65rem 0.55rem;
+  border-bottom: 1px solid var(--cx-line);
+  line-height: 1.45;
+}
+
+.at-cx__table th {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cx-muted);
+}
+
+.at-cx__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: cxstep;
+}
+
+.at-cx__steps > li {
+  position: relative;
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 0.9rem 0.85rem 3.1rem;
+  border: 1px solid var(--cx-line);
+  border-radius: 0.75rem;
+  background: #fafbfc;
+  counter-increment: cxstep;
+}
+
+.at-cx__steps > li::before {
+  content: counter(cxstep);
+  position: absolute;
+  left: 0.75rem;
+  top: 0.9rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: var(--cx-ink);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.at-cx__substeps {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.at-cx__substeps li {
+  margin-bottom: 0.25rem;
+}
+
+.at-cx__server {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #94a3b8;
+  background: #f1f5f9;
+}
+
+.at-cx__server-label {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cx-muted);
+}
+
+.at-cx__server-endpoint {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.at-cx__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none !important;
+  border: 1px solid transparent;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.at-cx__btn--primary {
+  background: var(--cx-ink);
+  color: #fff !important;
+}
+
+.at-cx__btn--mint {
+  background: var(--cx-mint);
+  color: #fff !important;
+}
+
+.at-cx__btn--ghost {
+  background: #fff;
+  border-color: var(--cx-line);
+  color: var(--cx-ink) !important;
+}
+
+.at-cx__btn:hover {
+  filter: brightness(1.05);
+}
+
+.at-cx kbd {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid #cbd5e1;
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+  background: #f8fafc;
+  font-size: 0.8em;
+  font-family: inherit;
+}
+
+.at-cx__admin {
+  margin: 0 0 1.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cx-line);
+  border-radius: 0.75rem;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.at-cx__admin summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cx-ink);
+}
+
+.at-cx__admin[open] summary {
+  margin-bottom: 0.65rem;
+}
+
+.at-cx__admin ol {
+  padding-left: 1.2rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.at-cx__footer {
+  padding: 0.5rem 0 1rem;
+  font-size: 0.88rem;
+  color: var(--cx-muted);
+}
+
+.at-cx__footer a {
+  color: #334155;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.at-cx__footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .at-cx__steps > li {
+    padding-left: 0.9rem;
+    padding-top: 2.6rem;
+  }
+
+  .at-cx__steps > li::before {
+    top: 0.7rem;
+  }
+}

@@ -163,14 +163,20 @@ $steps = [
             </div>
             <div class="at-first-link__step-body">
                 <p class="at-first-link__copy">
-                    Générez un code ici (ou sur la carte via <strong>Appairer</strong>). Dans Arma, ouvrez le téléphone,
-                    application <strong>Athena</strong>, puis collez uniquement ce code. Ne collez pas l’adresse du site dans le champ code.
+                    Générez un code ici (ou sur la carte via <strong>Appairer</strong>). En jeu, ouvrez
+                    <strong>Connexion Athena</strong>, puis collez <em>uniquement</em> ce code.
+                    Ne collez pas l’adresse du site dans le champ code.
                 </p>
                 <ol class="at-first-link__checklist" style="list-style:decimal;padding-left:1.2rem;">
-                    <li style="display:list-item;">Lancez Arma avec Overwatch activé.</li>
-                    <li style="display:list-item;">Ouvrez le téléphone ATAK → application <strong>Athena</strong>.</li>
-                    <li style="display:list-item;">Collez le code généré ci-dessous, puis validez (Lier).</li>
-                    <li style="display:list-item;">Si le compte est déjà reconnu : bouton <strong>Entrer</strong> pour rouvrir le canal poste.</li>
+                    <li style="display:list-item;">Lancez Arma avec Overwatch activé (après CBA).</li>
+                    <li style="display:list-item;">
+                        Ouvrez <strong>Connexion Athena</strong> :
+                        ACE → <strong>COMSPEC Athena</strong> → <strong>Connexion Athena</strong>,
+                        ou téléphone ATAK → application / Compte Athena,
+                        ou hub Overwatch → Connexion Athena.
+                    </li>
+                    <li style="display:list-item;">Choisissez <strong>Lier le jeu (code Appairer)</strong> si proposé, collez le code, validez (<strong>Lier</strong>).</li>
+                    <li style="display:list-item;">Si le compte est déjà reconnu : bouton <strong>Entrer</strong> pour ouvrir le canal poste.</li>
                 </ol>
 
                 <p class="at-first-link__copy" style="margin-top:0.9rem;margin-bottom:0.35rem;">
@@ -179,13 +185,17 @@ $steps = [
                 <ul class="at-first-link__checklist">
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span><strong>Steam</strong> — si votre Steam est déjà sur la fiche, essayez le bouton Steam dans Athena.</span>
+                        <span><strong>Steam</strong> — si votre Steam est déjà sur la fiche, bouton <em>Connexion avec Steam</em> dans Connexion Athena.</span>
                     </li>
                     <li>
                         <span class="at-first-link__mark" aria-hidden="true"></span>
-                        <span><strong>E-mail / mot de passe</strong> — connexion Athena dans le même panneau du téléphone.</span>
+                        <span><strong>E-mail / mot de passe</strong> — même écran Connexion Athena.</span>
                     </li>
                 </ul>
+                <p class="at-first-link__copy" style="margin-top:0.75rem;">
+                    Tutoriel détaillé (labels exacts, codes à ne pas confondre) :
+                    <a href="<?= htmlspecialchars($tutoUrl, ENT_QUOTES, 'UTF-8') ?>">Connexion en jeu</a>.
+                </p>
 
                 <?php if ($portalUrl !== ''): ?>
                 <p class="at-first-link__copy" style="margin-top:0.85rem;margin-bottom:0;">

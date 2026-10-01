@@ -689,9 +689,17 @@ class AtakController
             return $block;
         }
 
+        $tenantId = (int) Session::get('tenant_id');
+        $config = $tenantId > 0 ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
+
         return Response::view('layout.main', [
             'content' => 'atak-tuto',
-            'title' => 'Guide — Connexion ATAK / Overwatch',
+            'title' => 'Connexion en jeu — tutoriel joueur',
+            'armaServerHost' => is_array($config) ? (string) ($config['arma_server_host'] ?? '') : '',
+            'armaServerPort' => is_array($config) && isset($config['arma_server_port']) && $config['arma_server_port'] !== null && $config['arma_server_port'] !== ''
+                ? (string) (int) $config['arma_server_port']
+                : '',
+            'armaServerInstructions' => is_array($config) ? (string) ($config['instructions'] ?? '') : '',
         ]);
     }
 

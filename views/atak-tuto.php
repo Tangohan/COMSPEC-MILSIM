@@ -1,134 +1,310 @@
 <?php
 declare(strict_types=1);
 
-$baseUrl = rtrim(url(''), '/');
+$baseUrl = rtrim((string) url(''), '/');
 $firstLinkUrl = url('atak/premiere-liaison');
 $atakUrl = url('atak');
 $modUrl = url('atak/mod');
 $guideUrl = url('atak/mod/guide');
+$accountUrl = url('account/preferences');
 $adminConfigUrl = url('admin/atak-config');
 $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organization') || can('admin.access'));
+
+$armaHost = trim((string) ($armaServerHost ?? ''));
+$armaPort = trim((string) ($armaServerPort ?? ''));
+$armaInstructions = trim((string) ($armaServerInstructions ?? ''));
+$hasArmaServer = $armaHost !== '';
+$armaEndpoint = $hasArmaServer
+    ? ($armaPort !== '' ? $armaHost . ':' . $armaPort : $armaHost)
+    : '';
 ?>
-<div class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Guide — Connexion ATAK / Overwatch</h1>
-    <p class="text-sm text-slate-600 mb-6">
-        Comment installer le pack, appairer votre compte et (pour l’équipe technique) générer la clé d’accès communauté.
-    </p>
+<link href="<?= htmlspecialchars(asset_url('assets/css/atak-connexion-tuto.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
-    <nav class="mb-8 pb-4 border-b border-slate-200 flex flex-wrap gap-x-3 gap-y-2 text-sm">
-        <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Première liaison (parcours guidé)</a>
-        <span class="text-slate-300">·</span>
-        <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Carte ATAK</a>
-        <span class="text-slate-300">·</span>
-        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Télécharger le pack</a>
-        <span class="text-slate-300">·</span>
-        <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Guide du pack</a>
-    </nav>
+<article class="at-cx">
+    <header class="at-cx__hero">
+        <p class="at-cx__eyebrow">Tutoriel joueur · Overwatch</p>
+        <h1 class="at-cx__title">Connexion en jeu</h1>
+        <p class="at-cx__lead">
+            Relier votre compte Athena à Arma pour apparaître sur la carte partagée.
+            Ce guide décrit uniquement le parcours membre — pas la configuration serveur.
+        </p>
+        <div class="at-cx__hero-actions">
+            <a class="at-cx__btn at-cx__btn--primary" href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Parcours guidé Première liaison</a>
+            <a class="at-cx__btn at-cx__btn--ghost" href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir la carte → Appairer</a>
+        </div>
+    </header>
 
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 mb-8 text-sm text-emerald-950 leading-relaxed">
-        <strong>Pour les membres :</strong> suivez d’abord
-        <a class="underline font-semibold" href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.
-        Le chemin normal est <strong>compte + pack + code Appairer</strong>. Vous n’avez en général pas besoin de coller une clé technique dans Arma.
-    </div>
+    <div class="at-cx__body">
 
-    <div class="prose prose-slate max-w-none space-y-10">
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">1. Ce qu’il faut distinguer</h2>
-            <ul class="list-disc pl-6 text-slate-700 space-y-2 text-sm">
-                <li><strong>Code Appairer</strong> — généré sur le portail (carte → Appairer, ou Première liaison). À coller dans le téléphone Athena en jeu. Valable environ 30 minutes, usage unique. C’est le chemin recommandé pour les membres.</li>
-                <li><strong>Clé d’accès communauté</strong> — générée une fois par un administrateur. Elle autorise la liaison jeu pour toute la communauté. Avec Appairer, elle est transmise automatiquement : les membres n’ont pas à la recopier.</li>
-                <li><strong>Code terminal</strong> — menu <em>Associer ce terminal</em> en jeu, à coller dans Valider un terminal sur le poste (pas le code Appairer Overwatch, ni le code Liaison téléphone).</li>
-                <li><strong>Code liaison téléphone</strong> — écran Liaison téléphone en jeu : à saisir sur la page mobile Athena dans le navigateur du téléphone réel.</li>
-            </ul>
+        <aside class="at-cx__callout at-cx__callout--ok">
+            <strong>En une phrase :</strong> sur le site vous générez un code <em>Appairer</em> ;
+            en jeu vous l’ouvrez via <em>Connexion Athena</em>, vous collez <strong>uniquement ce code</strong>,
+            puis vous validez avec <em>Lier</em> (ou <em>Entrer</em> si le compte est déjà reconnu).
+        </aside>
+
+        <section class="at-cx__section" id="a-quoi-ca-sert">
+            <h2>1. À quoi ça sert</h2>
+            <p>
+                Sans liaison, vous jouez « orphelin » : le poste ne vous voit pas, votre indicatif Athena
+                n’apparaît pas, et le téléphone Athena ne parle pas au TOC.
+            </p>
+            <p>
+                Avec la liaison : position sur la carte, messagerie, ordres et outils liés à votre compte.
+                C’est une étape <strong>avant</strong> (ou au début) de l’activité — pas un réglage Zeus.
+            </p>
         </section>
 
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">2. Membres — se connecter en 4 étapes</h2>
-            <ol class="list-decimal pl-6 text-slate-700 space-y-3 text-sm">
+        <section class="at-cx__section" id="ne-pas-confondre">
+            <h2>2. Quatre codes différents — ne les mélangez pas</h2>
+            <div class="at-cx__table-wrap">
+                <table class="at-cx__table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Où le prendre</th>
+                            <th>Où le coller</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Code Appairer</strong> <span class="at-cx__tag">recommandé</span></td>
+                            <td>Carte ATAK → <strong>Appairer</strong> → Générer un code<br><span class="at-cx__muted">(ou Première liaison)</span></td>
+                            <td>En jeu → <strong>Connexion Athena</strong> → <strong>Lier le jeu (code Appairer)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Code « Associer ce terminal »</strong></td>
+                            <td>Menu en jeu <em>Associer ce terminal</em></td>
+                            <td>Sur le site, fenêtre Appairer → <em>Valider ce terminal</em></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Code liaison téléphone</strong></td>
+                            <td>Écran <em>Liaison téléphone</em> / Connecter mon téléphone en jeu</td>
+                            <td>Navigateur du téléphone réel (page Athena mobile) — <strong>pas</strong> dans Appairer</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Clé d’accès communauté</strong></td>
+                            <td>Générée par un admin</td>
+                            <td>Pas pour vous en général : Appairer la transmet tout seul</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="at-cx__warn-inline">
+                Ne collez <strong>jamais</strong> l’adresse du site (<code><?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?></code>)
+                dans le champ du code Appairer.
+            </p>
+        </section>
+
+        <section class="at-cx__section" id="parcours">
+            <h2>3. Le parcours recommandé (joueurs)</h2>
+
+            <ol class="at-cx__steps">
                 <li>
-                    <strong>Compte</strong> — Dans vos préférences : identifiant Steam + nom ou indicatif.
+                    <h3>Préparer le compte Athena</h3>
+                    <p>
+                        Dans <a href="<?= htmlspecialchars($accountUrl, ENT_QUOTES, 'UTF-8') ?>">Mes préférences</a> :
+                        renseignez votre <strong>identifiant Steam</strong> et un <strong>nom ou indicatif</strong>.
+                        Sans ça, le jeu peut vous rattacher au mauvais profil (ou à rien).
+                    </p>
                 </li>
                 <li>
-                    <strong>Pack</strong> —
-                    <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-900 underline">Téléchargez Overwatch</a>,
-                    activez-le après CBA, quittez Arma complètement après chaque mise à jour.
+                    <h3>Installer le pack Overwatch</h3>
+                    <p>
+                        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>">Téléchargez le pack</a> de votre communauté.
+                        Au lanceur Arma : activez <strong>CBA</strong>, puis <strong>Overwatch</strong> (après CBA).
+                        Après chaque mise à jour du pack : quittez Arma <em>complètement</em>, puis relancez.
+                    </p>
+                    <p class="at-cx__muted">Détail installation : <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>">guide du pack</a>.</p>
                 </li>
                 <li>
-                    <strong>Appairer</strong> —
-                    Sur la <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-900 underline">carte ATAK</a>,
-                    cliquez <strong>Appairer</strong> → <strong>Générer un code</strong> → Copier.
-                    En jeu : téléphone → application <strong>Athena</strong> → coller uniquement le code (pas l’adresse du site) → Lier.
-                    Si le compte est déjà reconnu, appuyez sur <strong>Entrer</strong>.
+                    <h3>Générer le code sur le site</h3>
+                    <p>
+                        Ouvrez la <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">carte ATAK</a> → bouton
+                        <strong>Appairer</strong> (en haut) → <strong>Générer un code</strong> → <strong>Copier</strong>.
+                    </p>
+                    <ul>
+                        <li>Le code est <strong>usage unique</strong> et expire en environ <strong>30 minutes</strong>.</li>
+                        <li>Générez-le juste avant de le coller en jeu.</li>
+                        <li>Alternative : le bouton dans <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.</li>
+                    </ul>
                 </li>
                 <li>
-                    <strong>Contrôle</strong> — Revenez sur la carte : votre indicatif doit apparaître sous une minute (bougez un peu en jeu).
+                    <h3>Ouvrir « Connexion Athena » en jeu</h3>
+                    <p>Trois façons équivalentes (prenez celle qui s’affiche chez vous) :</p>
+                    <ul>
+                        <li>
+                            <strong>Menu ACE</strong> (interaction sur soi) →
+                            <strong>COMSPEC Athena</strong> → <strong>Connexion Athena</strong>
+                        </li>
+                        <li>
+                            <strong>Téléphone ATAK</strong> → menu d’applications →
+                            <strong>Athena</strong> / <strong>Compte Athena</strong> / <strong>Connexion Athena</strong>
+                        </li>
+                        <li>
+                            <strong>Hub Overwatch</strong> → bouton <strong>Connexion Athena</strong>
+                        </li>
+                    </ul>
+                    <p class="at-cx__muted">
+                        Raccourcis utiles : messagerie souvent en <kbd>Ctrl</kbd>+<kbd>K</kbd> ;
+                        le téléphone peut aussi s’ouvrir via ACE → <em>Ouvrir téléphone ATAK</em>.
+                    </p>
+                </li>
+                <li>
+                    <h3>Coller le code et lier</h3>
+                    <ol class="at-cx__substeps">
+                        <li>Si l’écran propose plusieurs boutons : choisissez <strong>Lier le jeu (code Appairer)</strong>.</li>
+                        <li>Collez <strong>uniquement le code</strong> (pas l’URL du site).</li>
+                        <li>Validez avec <strong>Lier</strong>.</li>
+                        <li>Quand le compte est reconnu : appuyez sur <strong>Entrer</strong> pour ouvrir le canal poste.</li>
+                    </ol>
+                </li>
+                <li>
+                    <h3>Contrôler sur la carte</h3>
+                    <p>
+                        Revenez sur la <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">carte ATAK</a>.
+                        Votre indicatif doit apparaître sous une minute — bougez un peu en jeu.
+                        Sinon : nouveau code, quittez Arma complètement, réessayez.
+                    </p>
                 </li>
             </ol>
-            <p class="text-sm text-slate-600 mt-3">
-                Variantes : bouton <strong>Steam</strong> ou connexion e-mail / mot de passe dans le même panneau Athena, si votre communauté les utilise.
-            </p>
-            <p class="mt-4">
-                <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 hover:bg-emerald-700">
-                    Ouvrir le parcours Première liaison
-                </a>
+
+            <p class="at-cx__cta-row">
+                <a class="at-cx__btn at-cx__btn--mint" href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Faire ça pas à pas (Première liaison)</a>
             </p>
         </section>
 
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">3. Réglage avancé (si Appairer ne suffit pas)</h2>
-            <p class="text-slate-700 text-sm mb-2">
-                Dans le téléphone : <strong>Paramètres</strong> → rubrique <strong>Liaison au poste</strong> :
+        <?php if ($hasArmaServer || $armaInstructions !== ''): ?>
+        <section class="at-cx__section" id="serveur-arma">
+            <h2>4. Rejoindre la session Arma (si votre communauté l’indique)</h2>
+            <p>
+                La liaison Athena (code Appairer) n’est <strong>pas</strong> l’adresse du serveur multi-joueur.
+                Ce sont deux choses séparées : d’abord vous rejoignez la session Arma, ensuite vous appairerez le compte.
             </p>
-            <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li><strong>Adresse du portail</strong> — en général <code class="bg-slate-100 px-1 rounded text-xs"><?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?></code></li>
-                <li><strong>Clé d’accès communauté</strong> — uniquement si un admin vous l’a communiquée (sinon laissez vide si déjà mémorisée)</li>
-                <li><strong>Identifiant de communauté</strong> — utile si plusieurs communautés partagent la même adresse</li>
-            </ul>
-            <p class="text-slate-700 text-sm mt-2">
-                Puis <strong>Enregistrer la liaison</strong>. Les mêmes valeurs existent aussi dans Options → Extensions (CBA).
-            </p>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">4. Administrateurs — générer la clé d’accès</h2>
-            <p class="text-slate-700 text-sm mb-2">
-                Une clé communauté active est nécessaire pour que Appairer et la liaison jeu fonctionnent pleinement.
-            </p>
-            <ol class="list-decimal pl-6 text-slate-700 space-y-2 text-sm">
-                <li>Ouvrez <strong>Configuration ATAK</strong> (back-office).</li>
-                <li>Section <strong>Accès mod Overwatch</strong> → <strong>Générer une clé d’accès</strong> (ou Régénérer).</li>
-                <li>Copiez immédiatement la clé affichée (elle ne sera plus montrée en entier ensuite).</li>
-                <li>Publiez aussi le pack Overwatch pour les membres.</li>
-                <li>Indiquez aux membres le parcours <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="underline">Première liaison</a> — pas de collage manuel de clé pour chacun.</li>
-            </ol>
-            <?php if ($canAdmin): ?>
-            <p class="mt-4">
-                <a href="<?= htmlspecialchars($adminConfigUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-4 py-2.5 hover:bg-slate-50">
-                    Ouvrir Configuration ATAK
-                </a>
-            </p>
+            <?php if ($hasArmaServer): ?>
+            <div class="at-cx__server">
+                <p class="at-cx__server-label">Serveur indiqué par votre communauté</p>
+                <p class="at-cx__server-endpoint" id="at-cx-server"><?= htmlspecialchars($armaEndpoint, ENT_QUOTES, 'UTF-8') ?></p>
+                <button type="button" class="at-cx__btn at-cx__btn--ghost" data-at-cx-copy="at-cx-server">Copier</button>
+            </div>
             <?php endif; ?>
-            <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                <strong>Attention :</strong> régénérer la clé invalide l’ancienne. Les opérateurs déjà liés via Appairer devront souvent générer un nouveau code et se reconnecter.
+            <?php if ($armaInstructions !== ''): ?>
+            <div class="at-cx__callout"><?= nl2br(htmlspecialchars($armaInstructions, ENT_QUOTES, 'UTF-8')) ?></div>
+            <?php endif; ?>
+            <ul>
+                <li>Lanceur Arma → Multijoueur → Distant / Favoris → coller l’hôte (et le port si fourni).</li>
+                <li>Activez le même pack Overwatch (+ CBA) que pour la session.</li>
+                <li>Une fois en jeu : faites l’étape Appairer ci-dessus.</li>
+            </ul>
+        </section>
+        <?php endif; ?>
+
+        <section class="at-cx__section" id="variantes">
+            <h2><?= ($hasArmaServer || $armaInstructions !== '') ? '5' : '4' ?>. Variantes (si votre communauté les autorise)</h2>
+            <ul>
+                <li>
+                    <strong>Steam</strong> — si votre Steam est déjà sur la fiche Athena, le bouton
+                    <em>Connexion avec Steam</em> dans Connexion Athena peut suffire (sans code).
+                </li>
+                <li>
+                    <strong>E-mail / mot de passe</strong> — même écran Connexion Athena :
+                    <em>Se connecter</em>, ou code temporaire par e-mail.
+                </li>
+            </ul>
+            <p>
+                Même après Steam ou e-mail, si le canal poste n’est pas ouvert : bouton <strong>Entrer</strong>.
+                En cas de doute, le code Appairer reste le chemin le plus fiable.
+            </p>
+        </section>
+
+        <section class="at-cx__section" id="depannage">
+            <h2><?= ($hasArmaServer || $armaInstructions !== '') ? '6' : '5' ?>. Dépannage rapide</h2>
+            <div class="at-cx__table-wrap">
+                <table class="at-cx__table">
+                    <thead>
+                        <tr><th>Symptôme</th><th>Quoi faire</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Code refusé / expiré</td>
+                            <td>Générer un <strong>nouveau</strong> code Appairer ; coller tout de suite ; ne pas coller l’URL</td>
+                        </tr>
+                        <tr>
+                            <td>Invisible sur la carte</td>
+                            <td>Canal ouvert (Entrer) ; bouger un peu ; attendre ~1 min ; pack à jour</td>
+                        </tr>
+                        <tr>
+                            <td>Mauvais nom / pseudo Steam</td>
+                            <td>Vérifier Steam + indicatif dans les préférences, puis nouvel Appairer</td>
+                        </tr>
+                        <tr>
+                            <td>Rien ne s’ouvre en jeu</td>
+                            <td>ACE → COMSPEC Athena → Connexion Athena ; ou ouvrir le téléphone ATAK</td>
+                        </tr>
+                        <tr>
+                            <td>Pack qui ne charge pas</td>
+                            <td>Overwatch <em>après</em> CBA ; quitter Arma complètement après maj</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
-        <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">5. Dépannage rapide</h2>
-            <ul class="list-disc pl-6 text-slate-700 space-y-2 text-sm">
-                <li><strong>Code refusé / liaison impossible</strong> — générez un nouveau code, quittez Arma complètement, vérifiez Steam sur le compte.</li>
-                <li><strong>Invisible sur la carte</strong> — canal poste ouvert (Athena prêt / Entrer), bougez un peu, attendez jusqu’à une minute.</li>
-                <li><strong>Adresse collée dans le champ code</strong> — le champ code n’accepte que le code Appairer, jamais l’URL du site.</li>
-                <li><strong>Pack ancien</strong> — rechargez le pack de la communauté, quittez Arma, relancez.</li>
-            </ul>
-        </section>
-    </div>
+        <details class="at-cx__admin">
+            <summary>Pour l’équipe technique (admins) — clé communauté</summary>
+            <p>
+                Une clé d’accès communauté active est nécessaire pour que Appairer fonctionne pleinement.
+                Les membres n’ont en général <strong>pas</strong> à la coller : le code Appairer la configure.
+            </p>
+            <ol>
+                <li>Configuration ATAK → section Accès mod Overwatch → Générer une clé.</li>
+                <li>Publier aussi le pack Overwatch pour les membres.</li>
+                <li>Indiquer aux joueurs ce tutoriel ou <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.</li>
+            </ol>
+            <?php if ($canAdmin): ?>
+            <p><a class="at-cx__btn at-cx__btn--ghost" href="<?= htmlspecialchars($adminConfigUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir Configuration ATAK</a></p>
+            <?php endif; ?>
+            <p class="at-cx__muted">Régénérer la clé invalide l’ancienne : les opérateurs déjà liés devront souvent se reconnecter avec un nouveau code.</p>
+        </details>
 
-    <p class="mt-10 text-sm text-slate-500">
-        <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Première liaison</a>
-        ·
-        <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Carte ATAK</a>
-        ·
-        <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline font-medium">Tableau de bord</a>
-    </p>
-</div>
+        <footer class="at-cx__footer">
+            <a href="<?= htmlspecialchars($firstLinkUrl, ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>
+            ·
+            <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">Carte ATAK</a>
+            ·
+            <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>">Télécharger le pack</a>
+            ·
+            <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>">Guide du pack</a>
+            ·
+            <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">Tableau de bord</a>
+        </footer>
+    </div>
+</article>
+
+<script>
+(function () {
+  var btn = document.querySelector('[data-at-cx-copy]');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var id = btn.getAttribute('data-at-cx-copy');
+    var el = id ? document.getElementById(id) : null;
+    var text = el ? (el.textContent || '').trim() : '';
+    if (!text) return;
+    var label = btn.textContent;
+    var done = function () {
+      btn.textContent = 'Copié';
+      setTimeout(function () { btn.textContent = label; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done();
+      });
+    }
+  });
+})();
+</script>

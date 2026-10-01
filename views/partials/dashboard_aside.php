@@ -301,7 +301,7 @@ $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperato
         : null,
     ['label' => 'Première liaison', 'href' => url('atak/premiere-liaison'), 'hint' => 'Mise en service'],
     ['label' => 'Configuration', 'href' => url('atak/setup'), 'hint' => 'Paramètres'],
-    ['label' => 'Tutoriel', 'href' => url('atak/tuto'), 'hint' => 'Prise en main'],
+    ['label' => 'Connexion en jeu', 'href' => url('atak/tuto'), 'hint' => 'Tutoriel joueur'],
 ]), 'atak');
 
 // Accès direct volontairement visible dans l’aside : la beta ne doit pas être cachée

@@ -25,19 +25,26 @@
     <p>Chemin recommandé :</p>
     <ol>
         <li>Sur le portail, ouvrez la carte ATAK → <strong>Appairer</strong> → <strong>Générer un code</strong> (ou le parcours <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>).</li>
-        <li>En jeu : téléphone → application <strong>Athena</strong> → coller <strong>uniquement le code</strong> (pas l’adresse du site) → Lier.</li>
-        <li>Si le compte est déjà reconnu : bouton <strong>Entrer</strong> pour rouvrir le canal poste.</li>
+        <li>
+            En jeu, ouvrez <strong>Connexion Athena</strong> :
+            ACE → <strong>COMSPEC Athena</strong> → <strong>Connexion Athena</strong>,
+            ou téléphone ATAK → Athena / Compte Athena,
+            ou hub Overwatch → Connexion Athena.
+        </li>
+        <li>Choisissez <strong>Lier le jeu (code Appairer)</strong> si proposé, collez <strong>uniquement le code</strong> (pas l’URL du site) → Lier.</li>
+        <li>Si le compte est déjà reconnu : bouton <strong>Entrer</strong> pour ouvrir le canal poste.</li>
     </ol>
     <p>Variantes utiles :</p>
     <ul>
-        <li><strong>Steam</strong> déjà renseigné sur votre fiche — bouton Steam dans Athena.</li>
-        <li><strong>E-mail / mot de passe</strong> — même panneau Athena.</li>
+        <li><strong>Steam</strong> déjà renseigné sur votre fiche — bouton <em>Connexion avec Steam</em>.</li>
+        <li><strong>E-mail / mot de passe</strong> — même écran Connexion Athena.</li>
     </ul>
     <p>
         La <strong>clé d’accès communauté</strong> est générée par un administrateur.
         Avec Appairer, elle est transmise automatiquement : vous n’avez en général pas à la coller.
         Réglage avancé si besoin : Paramètres Athena → <strong>Liaison au poste</strong>.
-        Détails : <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>">guide connexion</a>.
+        Tutoriel joueur complet (codes à ne pas confondre) :
+        <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>">Connexion en jeu</a>.
     </p>
 
     <h3>Vérifier que tout fonctionne</h3>

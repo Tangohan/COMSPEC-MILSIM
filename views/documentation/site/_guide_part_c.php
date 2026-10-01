@@ -275,13 +275,13 @@
     <p>
         Parcours guidé&nbsp;:
         <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>
-        · guide détaillé&nbsp;:
-        <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>">Connexion &amp; clé d’accès</a>.
+        · tutoriel joueur&nbsp;:
+        <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>">Connexion en jeu</a>.
     </p>
     <ol class="site-docs__steps">
         <li><strong>Préparer le compte</strong> — Identifiant Steam et nom / indicatif dans vos préférences.</li>
         <li><strong>Installer le pack</strong> — Overwatch après CBA, puis quitter Arma complètement après chaque mise à jour.</li>
-        <li><strong>Appairer</strong> — Sur la carte, générer un code ; en jeu, téléphone → Athena → coller uniquement le code → Lier (puis Entrer si besoin).</li>
+        <li><strong>Appairer</strong> — Sur la carte, générer un code ; en jeu, <strong>Connexion Athena</strong> (ACE → COMSPEC Athena, ou téléphone) → Lier le jeu (puis Entrer si besoin).</li>
         <li><strong>Confirmer sur la carte</strong> — Vérifier que votre marqueur / indicatif apparaît avant l’activité.</li>
     </ol>
     <p>

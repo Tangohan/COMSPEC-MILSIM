@@ -426,7 +426,7 @@ if ($atakMapConfig) {
             <span class="atak-os-metric-value" id="atak-metric-theatre-value">En attente</span>
           </li>
         </ul>
-        <p class="atak-os-strip-hint">Liaison jeu : <strong>Connexion en jeu</strong> → code → téléphone ATAK (<strong>Desktop</strong> → <strong>Connexion Athena</strong>) ou touche <strong>K</strong>.</p>
+        <p class="atak-os-strip-hint">Liaison jeu : <strong>Appairer</strong> → Générer un code → en jeu <strong>Connexion Athena</strong> (ACE → COMSPEC Athena, ou téléphone) → <strong>Lier le jeu</strong> / <strong>Entrer</strong>. <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Tutoriel joueur</a>.</p>
       </div>
       <div class="atak-tx-strip" role="status" aria-live="polite" aria-label="Canaux de transmission">
         <p class="atak-tx-strip-lead">Transmission</p>
@@ -503,7 +503,7 @@ if ($atakMapConfig) {
           <span class="atak-pill atak-pill--muted" id="atak-device-pair-pill">Valable 30 min</span>
           <span class="atak-pill atak-pill--muted" id="atak-me-link-pill" hidden>—</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code ici. Dans Arma : téléphone → application <strong>Athena</strong> → coller <strong>uniquement ce code</strong> (pas l’adresse du site) → Lier. Si le compte est déjà reconnu, appuyez sur <strong>Entrer</strong>. <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Première liaison</a> · <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Guide</a>.</p>
+        <p class="atak-game-link-hint">Générez un code ici. En jeu : <strong>Connexion Athena</strong> (ACE → COMSPEC Athena, ou téléphone ATAK) → <strong>Lier le jeu (code Appairer)</strong> → coller <strong>uniquement ce code</strong> (pas l’URL du site). Compte déjà reconnu → <strong>Entrer</strong>. <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Première liaison</a> · <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" style="color:inherit;text-decoration:underline">Tutoriel joueur</a>.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Code à saisir dans Arma</p>
@@ -558,7 +558,7 @@ if ($atakMapConfig) {
           <a href="<?= url('overwatch') ?>">Overwatch</a>
           <a href="<?= url('soutenir-atak') ?>">Soutenir ATAK</a>
           <a href="<?= url('atak/premiere-liaison') ?>">Première liaison</a>
-          <a href="<?= url('atak/tuto') ?>">Guide connexion</a>
+          <a href="<?= url('atak/tuto') ?>">Tutoriel joueur</a>
           <a href="<?= url('equipment') ?>">Mes tenues</a>
           <?php if ($canAccessAdminAtakConfig): ?>
           <a href="<?= url('admin/atak-config') ?>">Configuration admin</a>
@@ -607,7 +607,7 @@ if ($atakMapConfig) {
         <?php else: ?>
         <p>Aucun serveur Arma configuré pour la communauté.</p>
         <?php endif; ?>
-        <p><a href="<?= url('atak/tuto') ?>">Guide du mod Arma</a></p>
+        <p><a href="<?= url('atak/tuto') ?>">Tutoriel connexion en jeu</a></p>
         <?php if ($canAccessAdminAtakConfig): ?>
         <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
         <?php endif; ?>
@@ -1015,7 +1015,7 @@ if ($atakMapConfig) {
       <?php endif; ?>
       <div class="atak-game-config-footer">
         <a href="<?= url('atak/setup') ?>" class="atak-game-config-link">Assistant Mod Arma (installation, config, vérification)</a>
-        <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Guide complet — Tuto mod Arma</a>
+        <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Tutoriel joueur — Connexion en jeu</a>
         <a href="<?= url('soutenir-atak') ?>" class="atak-game-config-link">Soutenir le financement ATAK</a>
       </div>
     </div>
