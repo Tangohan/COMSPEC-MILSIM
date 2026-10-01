@@ -77,4 +77,34 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('uploadChunked', $js);
         self::assertStringContainsString('setBodyStream', $download);
     }
+
+    public function testPortalSearchCoversAllScopesAndJobRoles(): void
+    {
+        $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/portal_search.js');
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/portal/search.php');
+        $service = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Portal/PortalSearchService.php');
+        $users = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+
+        self::assertStringContainsString('scope-events', $view);
+        self::assertStringContainsString('scope-training', $view);
+        self::assertStringContainsString('scope-commands', $view);
+        self::assertStringContainsString("scopes.events", $js);
+        self::assertStringContainsString('Personnel & fonctions', $js);
+        self::assertStringContainsString("#event-", $service);
+        self::assertStringContainsString("url('evenements')", $service);
+        self::assertStringContainsString('job_role_display', $users);
+        self::assertStringContainsString('pjr.name LIKE ?', $users);
+    }
+
+    public function testAccessAndFunctionDescriptionsAreEnriched(): void
+    {
+        $profiles = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Rbac/CommunityAccessProfiles.php');
+        $roles = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/roles.php');
+        $fonctions = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/fonctions.php');
+
+        self::assertStringContainsString('function moduleDescription', $profiles);
+        self::assertStringContainsString('eff-access-group__desc', $roles);
+        self::assertStringContainsString('Description de la fonction', $fonctions);
+        self::assertStringContainsString('recherche portail', $fonctions);
+    }
 }

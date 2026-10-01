@@ -39,8 +39,8 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                         Recherche portail
                     </h1>
                     <p class="mt-4 max-w-2xl text-sm leading-6 text-slate-200">
-                        Accédez rapidement à l’ensemble des contenus du portail depuis un point d’entrée unique.
-                        Les résultats se mettent à jour pendant la saisie (après 2 caractères).
+                        Documents, forum, personnel (y compris par fonction), événements, formations et raccourcis —
+                        un seul point d’entrée. Les résultats se mettent à jour pendant la saisie (après 2 caractères).
                     </p>
                 </div>
 
@@ -60,7 +60,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                     id="global-search"
                                     name="q"
                                     type="search"
-                                    placeholder="<?= $canSearchForum ? 'Document, membre, sujet de forum…' : 'Document, membre…' ?>"
+                                    placeholder="Document, radio, manœuvre, formation…"
                                     value="<?= htmlspecialchars($q) ?>"
                                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-14 pr-36 py-4 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
                                     autocomplete="off"
@@ -78,7 +78,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                             <p id="portal-search-empty-hint" class="mt-3 text-sm text-slate-500<?= $q !== '' ? ' hidden' : '' ?>">
                                 Astuce : <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-xs text-slate-700">Ctrl</kbd>
                                 + <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-xs text-slate-700">K</kbd>
-                                ouvre cette page depuis n’importe où.
+                                ouvre la palette ou cette page. Cherchez aussi une fonction (radio, médic…).
                             </p>
                             <div id="portal-search-status" class="mt-3 min-h-[1.25rem] text-sm" role="status"></div>
                         </div>
@@ -86,7 +86,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                         <fieldset>
                             <legend class="sr-only">Sources de recherche</legend>
                             <p class="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-slate-500">Périmètre</p>
-                            <div class="grid gap-3 sm:grid-cols-3">
+                            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                 <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
                                     <input
                                         id="scope-documents"
@@ -116,7 +116,34 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                         <?= $canSearchPersonnel ? 'checked' : '' ?>
                                         <?= $canSearchPersonnel ? '' : 'disabled' ?>
                                     >
-                                    <span>Personnel</span>
+                                    <span>Personnel &amp; fonctions</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
+                                    <input
+                                        id="scope-events"
+                                        type="checkbox"
+                                        checked
+                                        class="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                    >
+                                    <span>Événements</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
+                                    <input
+                                        id="scope-training"
+                                        type="checkbox"
+                                        checked
+                                        class="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                    >
+                                    <span>Formations</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
+                                    <input
+                                        id="scope-commands"
+                                        type="checkbox"
+                                        checked
+                                        class="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                    >
+                                    <span>Raccourcis</span>
                                 </label>
                             </div>
                             <?php if (!$canSearchDocuments || !$canSearchPersonnel): ?>
@@ -139,7 +166,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                     <h2 class="text-xs font-black uppercase tracking-[0.28em] text-slate-500">Résultats</h2>
                     <p id="portal-search-live" class="mt-2 text-2xl font-black tabular-nums text-slate-900" aria-live="polite"></p>
                     <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                        Les liens ouvrent directement la fiche document<?= $canSearchForum ? ', le sujet du forum' : '' ?> ou la fiche personnel.
+                        Les liens ouvrent directement la ressource : document, sujet, fiche (avec fonction), événement, formation ou page du portail.
                     </p>
                 </div>
                 <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 p-6">
@@ -147,11 +174,11 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                     <ul class="mt-4 space-y-3 text-sm text-slate-700">
                         <li class="flex gap-2">
                             <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-sky-700 shadow-sm ring-1 ring-slate-200" aria-hidden="true">1</span>
-                            <span>Cochez les modules à interroger avant ou après la saisie.</span>
+                            <span>Cochez les sources avant ou après la saisie.</span>
                         </li>
                         <li class="flex gap-2">
                             <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-sky-700 shadow-sm ring-1 ring-slate-200" aria-hidden="true">2</span>
-                            <span>Échap dans le champ vide la requête.</span>
+                            <span>Échap vide le champ. Cherchez « radio » pour trouver les titulaires de la fonction.</span>
                         </li>
                     </ul>
                 </div>

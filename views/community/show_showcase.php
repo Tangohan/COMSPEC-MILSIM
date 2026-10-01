@@ -50,25 +50,38 @@ $mods = is_array($sv['publicModules'] ?? null) ? $sv['publicModules'] : [];
 $publicMission = trim((string) ($sv['publicMission'] ?? ''));
 $publicDoctrine = trim((string) ($sv['publicDoctrine'] ?? ''));
 $contactIntro = trim((string) ($cp['contactIntro'] ?? ''));
-$publicModuleLabels = [
-    'forum' => 'Forum communautaire',
-    'documents' => 'Documents',
-    'events' => 'Événements',
-    'roster' => 'Effectifs publics',
-    'training' => 'Formations',
-    'analytics' => 'Analytique',
+$publicModuleCatalog = [
+    'forum' => [
+        'label' => 'Forum communautaire',
+        'desc' => 'Briefings, discussions et annonces ouvertes aux visiteurs ou aux membres selon la configuration.',
+    ],
+    'documents' => [
+        'label' => 'Documents',
+        'desc' => 'Doctrine, consignes et ressources partagées une fois intégré à la communauté.',
+    ],
+    'events' => [
+        'label' => 'Événements',
+        'desc' => 'Manœuvres, sessions et rendez-vous à venir — consultez l’agenda public ci-dessous.',
+    ],
+    'roster' => [
+        'label' => 'Effectifs publics',
+        'desc' => 'Aperçu des opérateurs qui ont choisi d’apparaître sur la fiche publique.',
+    ],
+    'training' => [
+        'label' => 'Formations',
+        'desc' => 'Parcours et modules pour monter en compétence après l’intégration.',
+    ],
 ];
-$enabledPublicModules = array_filter(
-    $publicModuleLabels,
-    static function (string $label, string $key) use ($mods): bool {
-        if ($key === 'forum' && function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
-            return false;
-        }
-
-        return !empty($mods[$key]);
-    },
-    ARRAY_FILTER_USE_BOTH
-);
+$enabledPublicModules = [];
+foreach ($publicModuleCatalog as $moduleKey => $moduleMeta) {
+    if ($moduleKey === 'forum' && function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
+        continue;
+    }
+    if (empty($mods[$moduleKey])) {
+        continue;
+    }
+    $enabledPublicModules[$moduleKey] = $moduleMeta;
+}
 
 $heroHeadline = trim((string) ($sv['heroHeadline'] ?? ''));
 if ($heroHeadline === '') {
@@ -868,21 +881,43 @@ if ($showcaseBackUrl === '') {
       <div class="cl-section-head">
         <div>
           <p class="cl-kicker">Portail Athena</p>
-          <h2 id="cl-modules-title" class="cl-h2">Modules disponibles</h2>
+          <h2 id="cl-modules-title" class="cl-h2">Features &amp; accès</h2>
         </div>
-        <p class="cl-section-aside">Les services activés par la communauté.</p>
+        <p class="cl-section-aside">Ce que la communauté met à disposition — et comment y accéder.</p>
       </div>
-      <div class="cl-chips" aria-label="Modules publics activés">
-        <?php foreach ($enabledPublicModules as $moduleKey => $moduleLabel): ?>
-          <?php if ($moduleKey === 'forum' && $showForumCta): ?>
-          <a class="cl-chip" href="<?= htmlspecialchars($forumUrl) ?>"><?= htmlspecialchars($moduleLabel) ?></a>
-          <?php elseif ($moduleKey === 'events' && $showAgenda): ?>
-          <a class="cl-chip" href="#agenda"><?= htmlspecialchars($moduleLabel) ?></a>
-          <?php elseif ($moduleKey === 'roster' && $showRoster): ?>
-          <a class="cl-chip" href="#roster"><?= htmlspecialchars($moduleLabel) ?></a>
-          <?php else: ?>
-          <span class="cl-chip"><?= htmlspecialchars($moduleLabel) ?></span>
+      <div class="cl-feature-grid" aria-label="Modules et accès publics">
+        <?php foreach ($enabledPublicModules as $moduleKey => $moduleMeta):
+          $moduleLabel = (string) ($moduleMeta['label'] ?? '');
+          $moduleDesc = (string) ($moduleMeta['desc'] ?? '');
+          $moduleHref = null;
+          $moduleCta = 'En savoir plus';
+          if ($moduleKey === 'forum' && $showForumCta) {
+              $moduleHref = $forumUrl;
+              $moduleCta = 'Ouvrir le forum';
+          } elseif ($moduleKey === 'events' && $showAgenda) {
+              $moduleHref = '#agenda';
+              $moduleCta = 'Voir l’agenda';
+          } elseif ($moduleKey === 'roster' && $showRoster) {
+              $moduleHref = '#roster';
+              $moduleCta = 'Voir les effectifs';
+          } elseif ($moduleKey === 'documents' || $moduleKey === 'training') {
+              $moduleHref = !$isLocked ? $enlistUrl : '#contact';
+              $moduleCta = !$isLocked
+                  ? ($primaryCta === 'candidater' ? 'Candidater pour y accéder' : 'Rejoindre pour y accéder')
+                  : 'Nous contacter';
+          }
+          ?>
+        <article class="cl-feature-card">
+          <h3 class="cl-feature-card__title"><?= htmlspecialchars($moduleLabel) ?></h3>
+          <?php if ($moduleDesc !== ''): ?>
+          <p class="cl-feature-card__desc"><?= htmlspecialchars($moduleDesc) ?></p>
           <?php endif; ?>
+          <?php if ($moduleHref !== null): ?>
+          <a class="cl-feature-card__link" href="<?= htmlspecialchars($moduleHref) ?>"><?= htmlspecialchars($moduleCta) ?></a>
+          <?php else: ?>
+          <p class="cl-feature-card__meta">Accessible aux membres</p>
+          <?php endif; ?>
+        </article>
         <?php endforeach; ?>
       </div>
     </section>
@@ -1236,7 +1271,11 @@ if ($showcaseBackUrl === '') {
             <div class="p-6 bg-slate-50 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col items-stretch justify-center gap-2.5 min-w-[200px] cl-openings__actions">
               <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--light cl-btn--block">Voir la fiche</a>
               <?php if (!$isLocked): ?>
-              <a href="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent cl-btn--block comspec-analytics-cta" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
+              <?php
+                $openingCtaLabel = ($primaryCta === 'rejoindre') ? 'Rejoindre' : 'Candidater';
+                $openingCtaKind = ($primaryCta === 'rejoindre') ? 'rejoindre' : 'candidater';
+              ?>
+              <a href="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent cl-btn--block comspec-analytics-cta" data-comspec-zone="liste_postes" data-comspec-cta="<?= htmlspecialchars($openingCtaKind, ENT_QUOTES, 'UTF-8') ?>" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>"><?= htmlspecialchars($openingCtaLabel) ?></a>
               <?php endif; ?>
             </div>
           </div>

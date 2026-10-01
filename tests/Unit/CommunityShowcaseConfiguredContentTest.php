@@ -20,7 +20,9 @@ final class CommunityShowcaseConfiguredContentTest extends TestCase
         self::assertStringContainsString('id="modules"', $view);
         self::assertStringContainsString('id="commandement"', $view);
         self::assertStringContainsString('aria-label="Spécialités"', $view);
-        self::assertStringContainsString('aria-label="Modules publics activés"', $view);
+        self::assertStringContainsString('aria-label="Modules et accès publics"', $view);
+        self::assertStringContainsString('cl-feature-grid', $view);
+        self::assertStringContainsString('cl-feature-card__desc', $view);
         self::assertStringContainsString("if (\$contactIntro !== '')", $view);
     }
 

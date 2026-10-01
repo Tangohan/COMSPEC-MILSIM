@@ -2907,7 +2907,9 @@ class EffectifsWorkspaceController
         foreach ($buckets as $mod => $items) {
             usort($items, static fn (array $x, array $y): int => strcmp((string) $x['name'], (string) $y['name']));
             $out[] = [
+                'module' => $mod,
                 'label' => CommunityAccessProfiles::moduleLabel($mod),
+                'description' => CommunityAccessProfiles::moduleDescription($mod),
                 'items' => $items,
             ];
         }

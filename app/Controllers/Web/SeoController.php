@@ -7,6 +7,7 @@ namespace App\Controllers\Web;
 use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
+use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 
@@ -83,6 +84,13 @@ final class SeoController
             $tenants = Container::get(TenantRepository::class);
             /** @var UnitRepository $units */
             $units = Container::get(UnitRepository::class);
+            $openings = null;
+            try {
+                /** @var RecruitmentOpeningRepository $openings */
+                $openings = Container::get(RecruitmentOpeningRepository::class);
+            } catch (\Throwable) {
+                $openings = null;
+            }
 
             foreach ($tenants->listForRegistry() as $row) {
                 $slug = trim((string) ($row['slug'] ?? ''));
@@ -116,6 +124,26 @@ final class SeoController
                     }
                 } catch (\Throwable) {
                     // Unités absentes / schéma partiel : continuer le sitemap.
+                }
+
+                if ($openings !== null) {
+                    try {
+                        foreach ($openings->listPublishedForTenant($tid) as $opening) {
+                            $avisSlug = trim((string) ($opening['public_page_slug'] ?? ''));
+                            if ($avisSlug === '') {
+                                continue;
+                            }
+                            $avisMod = $this->normalizeLastmod($opening['updated_at'] ?? $opening['published_at'] ?? null) ?? $lastmod;
+                            $urls[] = $this->urlEntry(
+                                $base . '/c/' . $enc . '/avis/' . rawurlencode($avisSlug),
+                                $avisMod,
+                                'weekly',
+                                '0.65'
+                            );
+                        }
+                    } catch (\Throwable) {
+                        // Avis indisponibles : continuer.
+                    }
                 }
             }
         } catch (\Throwable) {

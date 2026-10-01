@@ -104,6 +104,30 @@ final class CommunityAccessProfiles
         };
     }
 
+    /** Courte description visiteuse / admin des familles d’accès. */
+    public static function moduleDescription(string $module): string
+    {
+        return match (strtolower(trim($module))) {
+            'personnel' => 'Fiches, grades, affectations et annuaire — ce n’est pas l’emploi (radio, médic…).',
+            'admin' => 'Pilotage de la communauté : paramètres, membres et outils d’organisation.',
+            'forum' => 'Lire et publier sur le forum communautaire.',
+            'documents' => 'Consulter ou publier la doctrine et les consignes.',
+            'training' => 'Suivre ou administrer les parcours de formation.',
+            'operations' => 'Manœuvres, pointages et cycle opérationnel.',
+            'atak' => 'Terminaux terrain, liaison et données ATAK.',
+            'finances' => 'Suivi budgétaire et cotisations (si activé).',
+            'intel' => 'Renseignement et fiches associées.',
+            'cooperation' => 'Échanges et partenariats avec d’autres unités.',
+            'interteam' => 'Missions et coordination entre unités.',
+            'organization' => 'Structure, ORBAT et réglages d’organisation.',
+            'dashboard' => 'Vue d’ensemble et raccourcis du portail.',
+            'comms' => 'Canaux et outils de communication.',
+            'media' => 'Galerie et publications média.',
+            'courrier' => 'Courrier interne et notifications écrites.',
+            default => 'Autres droits non classés dans une famille principale.',
+        };
+    }
+
     /**
      * @return list<string>
      */
@@ -156,7 +180,7 @@ final class CommunityAccessProfiles
                 'key' => self::MEMBER,
                 'slug' => self::SLUG_MEMBER,
                 'name' => 'Membre',
-                'description' => 'Accès courant : forum, documents standards, formations en consultation, annuaire, fiche, back-office personnel et données ATAK.',
+                'description' => 'Accès courant du portail : forum, documents, formations en lecture, annuaire, sa fiche et les outils ATAK de base. Ne confère pas la gestion des effectifs.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 1,
@@ -165,7 +189,7 @@ final class CommunityAccessProfiles
                 'key' => self::HR,
                 'slug' => self::SLUG_HR,
                 'name' => 'Ressources humaines',
-                'description' => 'Pilotage des effectifs : dossiers, grades, affectations, recrutement et intégration.',
+                'description' => 'Pilotage des personnes : dossiers, grades, affectations, emplois du dossier, recrutement et intégration. Distinct du rôle Gestionnaire.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 1,
@@ -174,7 +198,7 @@ final class CommunityAccessProfiles
                 'key' => self::MANAGER,
                 'slug' => self::SLUG_MANAGER,
                 'name' => 'Gestionnaire',
-                'description' => 'Responsable de la communauté : paramètres, accès, et l’ensemble des outils d’organisation.',
+                'description' => 'Responsable de la communauté : paramètres, niveaux d’accès, vitrine publique et ensemble des outils d’organisation.',
                 'role_layer' => 'community',
                 'is_system' => 1,
                 'is_locked' => 1,
