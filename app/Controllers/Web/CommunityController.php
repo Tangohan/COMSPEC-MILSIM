@@ -68,12 +68,51 @@ class CommunityController
     {
         $tenants = $this->tenantRepository->listForRegistry();
 
+        $registryDesc = 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.';
+        $registryUrl = rtrim((string) url('communities'), '/');
+        $itemListElements = [];
+        $pos = 1;
+        foreach ($tenants as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($slug === '' || $name === '') {
+                continue;
+            }
+            $itemListElements[] = [
+                '@type' => 'ListItem',
+                'position' => $pos++,
+                'url' => url('c/' . rawurlencode($slug)),
+                'name' => $name,
+            ];
+            if ($pos > 50) {
+                break;
+            }
+        }
+
         return Response::view('layout.main', [
             'title' => 'Communautés & unités',
             'content' => 'community.registry',
             'registryTenants' => $tenants,
             'communityRegistryPage' => true,
-            'meta_description' => 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.',
+            'meta_description' => $registryDesc,
+            'seo_json_ld' => [
+                [
+                    '@type' => 'CollectionPage',
+                    'name' => 'Communautés & unités — Athena',
+                    'description' => $registryDesc,
+                    'url' => $registryUrl,
+                    'isPartOf' => [
+                        '@type' => 'WebSite',
+                        'name' => 'Athena Comspec',
+                        'url' => rtrim((string) url(''), '/'),
+                    ],
+                    'mainEntity' => [
+                        '@type' => 'ItemList',
+                        'numberOfItems' => count($tenants),
+                        'itemListElement' => $itemListElements,
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -241,6 +280,17 @@ class CommunityController
             $ogImage = $logoUrl;
         }
 
+        $pageUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')));
+        $seoJsonLd = $this->buildCommunityPublicJsonLd(
+            $tenantName,
+            $seoDesc,
+            $pageUrl,
+            $ogImage,
+            $logoUrl,
+            is_array($showcaseVm) ? $showcaseVm : [],
+            $communityProfile
+        );
+
         return Response::view('layout.main', [
             'title' => $seoTitle,
             'content' => 'community.show',
@@ -270,6 +320,8 @@ class CommunityController
             'tenantBranding' => $tenantBranding,
             'meta_description' => $seoDesc,
             'og_image' => $ogImage,
+            'og_image_alt' => $tenantName . ' — Athena',
+            'seo_json_ld' => $seoJsonLd,
             'analyticsBeacon' => [
                 'tenantId' => $tid,
                 'category' => AnalyticsEventCategory::TENANT_PUBLIC,
@@ -342,8 +394,26 @@ class CommunityController
             ['unit_id' => $uid]
         );
 
+        $unitName = trim((string) ($unit['name'] ?? 'Unité'));
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $unitBlurb = trim((string) ($unit['public_blurb'] ?? ''));
+        $unitDesc = $unitBlurb !== ''
+            ? $unitBlurb
+            : ($unitName . ' — unité publique de ' . $tenantName . ' sur Athena.');
+        if (function_exists('mb_strlen') && mb_strlen($unitDesc) > 320) {
+            $unitDesc = mb_substr($unitDesc, 0, 317) . '…';
+        } elseif (strlen($unitDesc) > 320) {
+            $unitDesc = substr($unitDesc, 0, 317) . '…';
+        }
+        $ogImage = trim((string) ($tenantBranding['banner_url'] ?? ''));
+        if ($ogImage === '') {
+            $ogImage = trim((string) ($tenantBranding['logo_url'] ?? ''));
+        }
+        $unitUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')) . '/unite/' . rawurlencode((string) ($unit['slug'] ?? '')));
+        $communityUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')));
+
         return Response::view('layout.main', [
-            'title' => trim((string) ($unit['name'] ?? 'Unité')) . ' — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'title' => $unitName . ' — ' . $tenantName,
             'content' => 'community.unit_show',
             'tenant' => $tenant,
             'unit' => $unit,
@@ -356,6 +426,39 @@ class CommunityController
             'tenantBranding' => $tenantBranding,
             'unitIsPreview' => empty($unit['show_on_public_page']) && $isStaffViewer,
             'communityShowcasePage' => true,
+            'meta_description' => $unitDesc,
+            'og_image' => $ogImage,
+            'og_image_alt' => $unitName . ' — ' . $tenantName,
+            'seo_json_ld' => [
+                [
+                    '@type' => 'WebPage',
+                    'name' => $unitName . ' — ' . $tenantName,
+                    'description' => $unitDesc,
+                    'url' => $unitUrl,
+                    'isPartOf' => [
+                        '@type' => 'WebPage',
+                        'name' => $tenantName,
+                        'url' => $communityUrl,
+                    ],
+                    'about' => [
+                        '@type' => 'Organization',
+                        'name' => $unitName,
+                        'parentOrganization' => [
+                            '@type' => 'Organization',
+                            'name' => $tenantName,
+                            'url' => $communityUrl,
+                        ],
+                    ],
+                    'breadcrumb' => [
+                        '@type' => 'BreadcrumbList',
+                        'itemListElement' => [
+                            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Communautés', 'item' => url('communities')],
+                            ['@type' => 'ListItem', 'position' => 2, 'name' => $tenantName, 'item' => $communityUrl],
+                            ['@type' => 'ListItem', 'position' => 3, 'name' => $unitName, 'item' => $unitUrl],
+                        ],
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -389,8 +492,17 @@ class CommunityController
             ['media_feed' => true]
         );
 
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $mediaDesc = 'Galerie médias publique de ' . $tenantName . ' sur Athena — photos, vidéos et moments de la communauté.';
+        $ogImage = trim((string) ($tenantBranding['banner_url'] ?? ''));
+        if ($ogImage === '') {
+            $ogImage = trim((string) ($tenantBranding['logo_url'] ?? ''));
+        }
+        $mediaUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')) . '/medias');
+        $communityUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')));
+
         return Response::view('layout.main', [
-            'title' => 'Médias — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'title' => 'Médias — ' . $tenantName,
             'content' => 'community.media_feed',
             'tenant' => $tenant,
             'mediaFeedItems' => $items,
@@ -399,6 +511,30 @@ class CommunityController
             'tenantBranding' => $tenantBranding,
             /* Charge community-landing.css + masque la nav bas (même shell que la vitrine). */
             'communityShowcasePage' => true,
+            'meta_description' => $mediaDesc,
+            'og_image' => $ogImage,
+            'og_image_alt' => 'Médias — ' . $tenantName,
+            'seo_json_ld' => [
+                [
+                    '@type' => 'CollectionPage',
+                    'name' => 'Médias — ' . $tenantName,
+                    'description' => $mediaDesc,
+                    'url' => $mediaUrl,
+                    'isPartOf' => [
+                        '@type' => 'WebPage',
+                        'name' => $tenantName,
+                        'url' => $communityUrl,
+                    ],
+                    'breadcrumb' => [
+                        '@type' => 'BreadcrumbList',
+                        'itemListElement' => [
+                            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Communautés', 'item' => url('communities')],
+                            ['@type' => 'ListItem', 'position' => 2, 'name' => $tenantName, 'item' => $communityUrl],
+                            ['@type' => 'ListItem', 'position' => 3, 'name' => 'Médias', 'item' => $mediaUrl],
+                        ],
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -434,8 +570,17 @@ class CommunityController
             ['reels_feed' => true]
         );
 
+        $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+        $reelsDesc = 'Fil média vertical de ' . $tenantName . ' sur Athena — parcours rapide des publications publiques.';
+        $ogImage = trim((string) ($tenantBranding['banner_url'] ?? ''));
+        if ($ogImage === '') {
+            $ogImage = trim((string) ($tenantBranding['logo_url'] ?? ''));
+        }
+        $reelsUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')) . '/reels');
+        $communityUrl = url('c/' . rawurlencode((string) ($tenant['slug'] ?? '')));
+
         return Response::view('layout.main', [
-            'title' => 'Fil média — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'title' => 'Fil média — ' . $tenantName,
             'content' => 'community.reels_feed',
             'tenant' => $tenant,
             'reelsFeedItems' => $items,
@@ -445,6 +590,22 @@ class CommunityController
             'communityShowcasePage' => true,
             'communityReelsPage' => true,
             'showPortalFooter' => false,
+            'meta_description' => $reelsDesc,
+            'og_image' => $ogImage,
+            'og_image_alt' => 'Fil média — ' . $tenantName,
+            'seo_json_ld' => [
+                [
+                    '@type' => 'CollectionPage',
+                    'name' => 'Fil média — ' . $tenantName,
+                    'description' => $reelsDesc,
+                    'url' => $reelsUrl,
+                    'isPartOf' => [
+                        '@type' => 'WebPage',
+                        'name' => $tenantName,
+                        'url' => $communityUrl,
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -595,8 +756,23 @@ class CommunityController
             );
         }
 
+        $openingTitle = trim((string) ($opening['title'] ?? 'Avis'));
+        $tenantName = trim((string) ($tenant['name'] ?? ''));
+        $openingSummary = trim((string) ($opening['summary'] ?? $opening['short_description'] ?? $opening['description'] ?? ''));
+        if ($openingSummary === '') {
+            $openingSummary = $openingTitle . ' — avis de recrutement de ' . $tenantName . ' sur Athena.';
+        }
+        if (function_exists('mb_strlen') && mb_strlen($openingSummary) > 320) {
+            $openingSummary = mb_substr($openingSummary, 0, 317) . '…';
+        } elseif (strlen($openingSummary) > 320) {
+            $openingSummary = substr($openingSummary, 0, 317) . '…';
+        }
+        $avisSlug = trim((string) ($opening['public_page_slug'] ?? $avis));
+        $openingUrl = url('c/' . rawurlencode($slug) . '/avis/' . rawurlencode($avisSlug));
+        $communityUrl = url('c/' . rawurlencode($slug));
+
         return Response::view('layout.main', [
-            'title' => trim((string) ($opening['title'] ?? 'Avis')) . ' — ' . trim((string) ($tenant['name'] ?? '')),
+            'title' => $openingTitle . ' — ' . $tenantName,
             'content' => 'community.recruitment_opening_show',
             'tenant' => $tenant,
             'opening' => $opening,
@@ -605,6 +781,26 @@ class CommunityController
             'printMode' => $print,
             'communityRecruitmentOpeningPage' => true,
             'communityLocked' => $communityLocked,
+            'meta_description' => $openingSummary,
+            'og_image_alt' => $openingTitle . ' — ' . $tenantName,
+            'seo_json_ld' => [
+                [
+                    '@type' => 'JobPosting',
+                    'title' => $openingTitle,
+                    'description' => $openingSummary,
+                    'url' => $openingUrl,
+                    'hiringOrganization' => [
+                        '@type' => 'Organization',
+                        'name' => $tenantName,
+                        'url' => $communityUrl,
+                    ],
+                    'identifier' => [
+                        '@type' => 'PropertyValue',
+                        'name' => $tenantName,
+                        'value' => $avisSlug,
+                    ],
+                ],
+            ],
             'analyticsBeacon' => $oid > 0 ? [
                 'tenantId' => $tid,
                 'category' => AnalyticsEventCategory::RECRUITMENT,
@@ -1874,5 +2070,104 @@ class CommunityController
         }
 
         return url('communities');
+    }
+
+    /**
+     * Schema.org pour la fiche publique communauté (Organization + WebPage + FAQ éventuelle).
+     *
+     * @param array<string, mixed> $showcaseVm
+     * @param array<string, mixed>|null $communityProfile
+     * @return list<array<string, mixed>>
+     */
+    private function buildCommunityPublicJsonLd(
+        string $tenantName,
+        string $seoDesc,
+        string $pageUrl,
+        string $ogImage,
+        string $logoUrl,
+        array $showcaseVm,
+        ?array $communityProfile
+    ): array {
+        $org = [
+            '@type' => 'Organization',
+            'name' => $tenantName,
+            'url' => $pageUrl,
+            'description' => $seoDesc,
+        ];
+        $logo = $logoUrl !== '' ? $logoUrl : $ogImage;
+        if ($logo !== '') {
+            $org['logo'] = $logo;
+            $org['image'] = $ogImage !== '' ? $ogImage : $logo;
+        }
+        $discord = trim((string) ($communityProfile['discordUrl'] ?? ''));
+        if ($discord !== '') {
+            $org['sameAs'] = [$discord];
+        }
+
+        $webPage = [
+            '@type' => 'WebPage',
+            'name' => $tenantName . ' — Fiche publique',
+            'description' => $seoDesc,
+            'url' => $pageUrl,
+            'isPartOf' => [
+                '@type' => 'WebSite',
+                'name' => 'Athena Comspec',
+                'url' => rtrim((string) url(''), '/'),
+            ],
+            'about' => $org,
+            'primaryImageOfPage' => $ogImage !== '' ? $ogImage : null,
+            'breadcrumb' => [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => 'Communautés',
+                        'item' => url('communities'),
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => $tenantName,
+                        'item' => $pageUrl,
+                    ],
+                ],
+            ],
+        ];
+        if ($webPage['primaryImageOfPage'] === null) {
+            unset($webPage['primaryImageOfPage']);
+        }
+
+        $graphs = [$org, $webPage];
+
+        $faqItems = is_array($showcaseVm['faq'] ?? null) ? $showcaseVm['faq'] : [];
+        $faqEntities = [];
+        foreach ($faqItems as $fi) {
+            if (!is_array($fi)) {
+                continue;
+            }
+            $q = trim((string) ($fi['q'] ?? ''));
+            $a = trim((string) ($fi['a'] ?? ''));
+            if ($q === '' || $a === '') {
+                continue;
+            }
+            $faqEntities[] = [
+                '@type' => 'Question',
+                'name' => $q,
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $a,
+                ],
+            ];
+        }
+        if ($faqEntities !== []) {
+            $graphs[] = [
+                '@type' => 'FAQPage',
+                'mainEntity' => $faqEntities,
+                'url' => $pageUrl . '#faq',
+            ];
+        }
+
+        return $graphs;
     }
 }

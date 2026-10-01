@@ -11,8 +11,11 @@ $formatSize = function ($bytes) {
 };
 ?>
 <div class="max-w-4xl mx-auto px-6 py-12">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Modpacks</h1>
+    <div class="flex items-center justify-between mb-2 gap-4 flex-wrap">
+        <div>
+            <h1 class="text-2xl font-black text-slate-900">Modpacks</h1>
+            <p class="mt-1 text-sm text-slate-500">Archives pour vos membres (jusqu’à 2 Go, envoi par morceaux côté admin).</p>
+        </div>
         <a href="<?= url('admin/modpacks/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau modpack</a>
     </div>
     <?php if (\App\Core\Session::get('success')): ?>

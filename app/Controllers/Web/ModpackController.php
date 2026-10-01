@@ -84,10 +84,31 @@ class ModpackController
         if (!is_file($fullPath)) {
             return (new Response())->setStatusCode(404)->setBody('Fichier absent.');
         }
+        $size = (int) filesize($fullPath);
+        $filename = basename((string) $modpack['file_path']);
         $response = new Response();
         $response->header('Content-Type', 'application/octet-stream');
-        $response->header('Content-Disposition', 'attachment; filename="' . basename($modpack['file_path']) . '"');
-        $response->setBody((string) file_get_contents($fullPath));
+        $response->header('Content-Disposition', 'attachment; filename="' . str_replace('"', '', $filename) . '"');
+        $response->header('Content-Length', (string) $size);
+        $response->header('Accept-Ranges', 'bytes');
+        $response->header('X-Content-Type-Options', 'nosniff');
+        $response->setBodyStream(static function () use ($fullPath): void {
+            $fh = fopen($fullPath, 'rb');
+            if ($fh === false) {
+                return;
+            }
+            while (!feof($fh)) {
+                $chunk = fread($fh, 8192);
+                if ($chunk === false) {
+                    break;
+                }
+                echo $chunk;
+                if (function_exists('flush')) {
+                    flush();
+                }
+            }
+            fclose($fh);
+        });
         return $response;
     }
 

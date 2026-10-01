@@ -314,9 +314,9 @@ $forumUrl = url('c/' . $slug . '/forum');
 $mediasUrl = url('c/' . rawurlencode((string) $slug) . '/medias');
 $reelsUrl = url('c/' . rawurlencode((string) $slug) . '/reels');
 
-/* CTA hero / nav : toujours un libellé FR lisible (jamais bouton vide). */
+/* CTA hero / nav : libellés distincts (rejoindre ≠ candidater ≠ contacter). */
 $ctaPrimaryLabel = match ($primaryCta) {
-    'rejoindre' => 'Déposer une candidature',
+    'rejoindre' => 'Rejoindre',
     'candidater' => 'Candidater',
     'contacter' => 'Nous contacter',
     default => null,
@@ -329,7 +329,7 @@ $ctaPrimaryHref = match ($primaryCta) {
 if ($ctaPrimaryLabel === null || $ctaPrimaryHref === null) {
     if (!$isLocked) {
         $primaryCta = $publicAudience === 'platform' ? 'candidater' : 'rejoindre';
-        $ctaPrimaryLabel = $primaryCta === 'candidater' ? 'Candidater' : 'Postuler';
+        $ctaPrimaryLabel = $primaryCta === 'candidater' ? 'Candidater' : 'Rejoindre';
         $ctaPrimaryHref = $enlistUrl;
     } elseif ($hasContactCta) {
         $primaryCta = 'contacter';
@@ -337,7 +337,7 @@ if ($ctaPrimaryLabel === null || $ctaPrimaryHref === null) {
         $ctaPrimaryHref = '#contact';
     } elseif ($showForumCta) {
         $primaryCta = 'forum';
-        $ctaPrimaryLabel = 'Rejoindre le forum';
+        $ctaPrimaryLabel = 'Voir le forum';
         $ctaPrimaryHref = $forumUrl;
     } else {
         $primaryCta = 'medias';
@@ -347,10 +347,19 @@ if ($ctaPrimaryLabel === null || $ctaPrimaryHref === null) {
 }
 $ctaPrimaryLabel = trim((string) $ctaPrimaryLabel);
 if ($ctaPrimaryLabel === '') {
-    $ctaPrimaryLabel = !$isLocked ? 'Postuler' : 'En savoir plus';
+    $ctaPrimaryLabel = !$isLocked ? 'Rejoindre' : 'En savoir plus';
 }
+$ctaPrimaryHint = match ((string) $primaryCta) {
+    'rejoindre' => 'Accès membres : code communauté ou inscription.',
+    'candidater' => 'Déposez une candidature pour intégrer l’unité.',
+    'contacter' => 'Écrivez à l’état-major sans engagement.',
+    'forum' => 'Échanges ouverts sur le forum de la communauté.',
+    'medias' => 'Parcourez les publications publiques.',
+    default => '',
+};
 $navCtaLabel = match ((string) $primaryCta) {
-    'rejoindre', 'candidater' => 'Candidater',
+    'rejoindre' => 'Rejoindre',
+    'candidater' => 'Candidater',
     'contacter' => 'Contacter',
     'forum' => 'Forum',
     'medias' => 'Médias',
@@ -616,10 +625,12 @@ if ($showcaseBackUrl === '') {
 
         <div class="cl-hero__actions">
           <a href="<?= htmlspecialchars((string) $ctaPrimaryHref) ?>" class="cl-btn cl-btn--accent comspec-analytics-cta" data-comspec-zone="vitrine_hero" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"><?= htmlspecialchars(mb_strtoupper((string) $ctaPrimaryLabel)) ?></a>
-          <?php if ($discordUrl !== ''): ?>
+          <?php if (in_array((string) $primaryCta, ['rejoindre', 'candidater'], true) && $hasContactCta): ?>
+          <a href="#contact" class="cl-btn cl-btn--ghost comspec-analytics-cta" data-comspec-zone="vitrine_hero" data-comspec-cta="contacter">Nous contacter</a>
+          <?php elseif ($discordUrl !== ''): ?>
           <a href="<?= htmlspecialchars($discordUrl) ?>" target="_blank" rel="noopener noreferrer" class="cl-btn cl-btn--ghost">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14c1 1.4 6 1.4 7 0M9.5 10.5v.01M14.5 10.5v.01"/></svg>
-            Rejoindre le Discord
+            Discord
           </a>
           <?php elseif ($showMedia && (string) $primaryCta !== 'medias'): ?>
           <a href="#medias" class="cl-btn cl-btn--ghost">Voir les médias</a>
@@ -627,6 +638,9 @@ if ($showcaseBackUrl === '') {
           <a href="<?= htmlspecialchars($forumUrl) ?>" class="cl-btn cl-btn--ghost">Voir le forum</a>
           <?php endif; ?>
         </div>
+        <?php if ($ctaPrimaryHint !== ''): ?>
+        <p class="cl-hero__cta-hint"><?= htmlspecialchars($ctaPrimaryHint) ?></p>
+        <?php endif; ?>
       </div>
     </div>
     <?php if ($heroFacts !== []): ?>
