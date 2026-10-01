@@ -2354,6 +2354,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/sigint', [AtakApiController::class, 'sigintStore']);
     $router->get('/api/atak/sigint', [AtakApiController::class, 'sigintIndex']);
     $router->get('/api/atak/sigint/zones', [AtakApiController::class, 'sigintZones']);
+    // Fieldwatch Lot 1 — hits RF passifs (Wi‑Fi / BLE simulés)
+    $router->post('/api/atak/rf-hits', [AtakApiController::class, 'rfHitsStore']);
+    $router->get('/api/atak/rf-hits', [AtakApiController::class, 'rfHitsIndex']);
     $router->get('/api/intel/photos', [AtakApiController::class, 'intelPhotosIndex']);
     $router->post('/api/intel/photos', [AtakApiController::class, 'intelPhotosStore']);
     $router->post('/api/atak/flight-manifest', [AtakApiController::class, 'flightManifestStore']);

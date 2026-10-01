@@ -79,6 +79,7 @@ Arma→API, API→Arma, API→Web, Web→API, bidirectional.
 | CAP-ACR-001 | ACRE2 deep COMMS / SIGINT | ACRE | PLANNED | — | Spec only | Soft detect | — | `acre-comms-atak-sse-sigint.md` |
 | CAP-TFR-001 | TFAR as SIGINT product | TFAR | PLANNED | — | — | Soft detect | — | |
 | CAP-SGI-001 | SIGINT reports / bearing | sigint | FIELDED | Arma→API→Web | `/api/atak/sigint` list + zones | `SendSigint` DLL | Yes list + map | Bearing reports on identification tab |
+| CAP-RF-001 | Fieldwatch RF hits (Wi‑Fi/BLE sim) | rf | FIELDED | Arma→API→Web | `/api/atak/rf-hits` list + markers | `SendRfHit` DLL + Zeus emitters | Yes Overwatch Veille RF | Passiveulated passive scan; not real phone radios |
 | CAP-IFF-001 | IFF | iff | FIELDED | bidirectional | `/api/iff` tenant-bound | `IFF.*` | Yes | Challenge/response; no default tenant 1 |
 | CAP-GEO-001 | Geo network / route plan | geo | FIELDED | Arma→API→Web | geo APIs | `Geo.Ingest` | Yes | |
 | CAP-TRN-001 | Terrain chunks / LOS | terrain | FIELDED | Arma→API→Web | terrain APIs | `Terrain.Chunk` | 3D/LOS tools | |

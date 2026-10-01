@@ -2514,6 +2514,172 @@ class AtakDataRepository
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Fieldwatch Lot 1 — détection RF passive.
+     *
+     * @param array<string, mixed>|null $payload
+     * @return array<string, mixed>
+     */
+    public function addRfHit(
+        int $tenantId,
+        int $mapId,
+        string $emitterUid,
+        string $label,
+        string $band,
+        string $signatureId,
+        float $posX,
+        float $posY,
+        ?float $signalDbm,
+        string $sensorCallsign,
+        ?array $payload = null,
+    ): array {
+        $emitterUid = trim($emitterUid);
+        if ($emitterUid === '') {
+            $emitterUid = 'rf_' . substr(sha1($label . '|' . $posX . '|' . $posY), 0, 12);
+        }
+        $label = trim($label);
+        if ($label === '') {
+            $label = $emitterUid;
+        }
+        $band = strtolower(trim($band));
+        if ($band === '') {
+            $band = 'unknown';
+        }
+        $signatureId = trim($signatureId);
+        $sensorCallsign = trim($sensorCallsign);
+        $payloadJson = null;
+        if (is_array($payload) && $payload !== []) {
+            $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $payloadJson = is_string($encoded) ? $encoded : null;
+        }
+        $this->pdo()->prepare(
+            'INSERT INTO atak_rf_hits
+                (tenant_id, map_id, emitter_uid, label, band, signature_id, pos_x, pos_y, signal_dbm, sensor_callsign, payload)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        )->execute([
+            $tenantId,
+            $mapId,
+            mb_substr($emitterUid, 0, 96),
+            mb_substr($label, 0, 255),
+            mb_substr($band, 0, 32),
+            mb_substr($signatureId, 0, 64),
+            $posX,
+            $posY,
+            $signalDbm,
+            mb_substr($sensorCallsign, 0, 128),
+            $payloadJson,
+        ]);
+        $id = (int) $this->pdo()->lastInsertId();
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_rf_hits WHERE id = ?');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $this->normalizeRfHitRow($row) : [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getRfHits(int $tenantId, int $mapId, int $limit = 80): array
+    {
+        $limit = max(1, min($limit, 200));
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, emitter_uid, label, band, signature_id, pos_x, pos_y, signal_dbm, sensor_callsign, payload, created_at
+             FROM atak_rf_hits
+             WHERE tenant_id = ? AND map_id = ?
+             ORDER BY created_at DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $mapId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $out[] = $this->normalizeRfHitRow($row);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Dernier hit par émetteur (calque carte).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getRfHitMarkers(int $tenantId, int $mapId, int $limit = 80): array
+    {
+        $limit = max(1, min($limit, 200));
+        $fetch = max($limit * 4, 120);
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, emitter_uid, label, band, signature_id, pos_x, pos_y, signal_dbm, sensor_callsign, payload, created_at
+             FROM atak_rf_hits
+             WHERE tenant_id = ? AND map_id = ?
+             ORDER BY created_at DESC
+             LIMIT ' . $fetch
+        );
+        $stmt->execute([$tenantId, $mapId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $counts = [];
+        $latest = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $uid = trim((string) ($row['emitter_uid'] ?? ''));
+            if ($uid === '') {
+                $uid = 'rf_' . (string) ($row['id'] ?? uniqid('', true));
+            }
+            $counts[$uid] = ($counts[$uid] ?? 0) + 1;
+            if (!isset($latest[$uid])) {
+                $norm = $this->normalizeRfHitRow($row);
+                $norm['emitter_uid'] = $uid;
+                $latest[$uid] = $norm;
+            }
+        }
+        $out = [];
+        foreach ($latest as $uid => $norm) {
+            $norm['hits'] = (int) ($counts[$uid] ?? 1);
+            $out[] = $norm;
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeRfHitRow(array $row): array
+    {
+        if (isset($row['payload']) && is_string($row['payload']) && $row['payload'] !== '') {
+            $decoded = json_decode($row['payload'], true);
+            $row['payload'] = is_array($decoded) ? $decoded : null;
+        } elseif (!isset($row['payload']) || $row['payload'] === '' || $row['payload'] === null) {
+            $row['payload'] = null;
+        }
+        if (isset($row['pos_x'])) {
+            $row['pos_x'] = (float) $row['pos_x'];
+        }
+        if (isset($row['pos_y'])) {
+            $row['pos_y'] = (float) $row['pos_y'];
+        }
+        if (array_key_exists('signal_dbm', $row) && $row['signal_dbm'] !== null && $row['signal_dbm'] !== '') {
+            $row['signal_dbm'] = (float) $row['signal_dbm'];
+        } else {
+            $row['signal_dbm'] = null;
+        }
+
+        return $row;
+    }
+
     /** @return list<array<string, mixed>> */
     public function getSigintReports(int $tenantId, int $mapId, int $limit = 40): array
     {

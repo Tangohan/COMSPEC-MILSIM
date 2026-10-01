@@ -577,6 +577,9 @@ class CfgFunctions {
             class syncAtakRelays {};
             class isNearLiveRelay {};
             class reportRelaySigint {};
+            class moduleRfEmitter {};
+            class placeRfEmitter {};
+            class scanRfNearby {};
             class moduleApplyRoleplayZone {};
             class createRoleplayZoneFromZeus {};
             class registerZenRoleplayModules {};
@@ -878,6 +881,9 @@ class CfgVehicles
 
     // Relais ATAK (mât détruisible)
     #include "modules\module_atak_relay.hpp"
+
+    // Émetteur RF Fieldwatch (Wi‑Fi / BLE simulés)
+    #include "modules\module_rf_emitter.hpp"
     
     // Modules Zeus pour gestion des relais en jeu
     class COMSPEC_ModuleScanRelays: Module_F {

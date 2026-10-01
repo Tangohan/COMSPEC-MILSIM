@@ -9,6 +9,7 @@
   var progressLayers = [];
   var relayLayers = [];
   var dfLayers = [];
+  var rfLayers = [];
   var sitrepPins = [];
   var geoNet = null;
   var geoGroup = null;
@@ -138,6 +139,7 @@
     renderFollowChip();
     renderRelays();
     renderDf();
+    renderRfHits();
     renderMarkerIntel();
     injectHatch();
   }
@@ -1670,6 +1672,77 @@
     }).catch(function () {});
   }
 
+  function rfBandLabel(band) {
+    var b = String(band || 'unknown').toLowerCase();
+    if (b === 'wifi') return 'Wi‑Fi';
+    if (b === 'ble') return 'BLE';
+    if (b === 'tracker') return 'Tracker';
+    if (b === 'camera') return 'Caméra';
+    if (b === 'phone') return 'Téléphone';
+    return 'RF';
+  }
+
+  function rfBandColor(band) {
+    var b = String(band || 'unknown').toLowerCase();
+    if (b === 'wifi') return '#3d9cf0';
+    if (b === 'ble') return '#7c6af0';
+    if (b === 'tracker') return '#e7b14d';
+    if (b === 'camera') return '#e05b63';
+    if (b === 'phone') return '#00d69a';
+    return '#8fb4c8';
+  }
+
+  function renderRfHits() {
+    var api = ow();
+    if (!api) return;
+    clearGroup(rfLayers);
+    var layerOn = document.getElementById('ow-rf-layer');
+    if (layerOn && !layerOn.checked) {
+      var hostOff = document.getElementById('ow-rf-list');
+      if (hostOff && !hostOff.dataset.owRfBound) {
+        hostOff.innerHTML = '<p class="ow-help">Calque RF masqué.</p>';
+      }
+      return;
+    }
+    api.api('/api/atak/rf-hits?mode=markers&mapId=' + encodeURIComponent(api.mapId) + '&limit=80').then(function (payload) {
+      var rows = Array.isArray(payload) ? payload : (payload && payload.hits) || [];
+      var host = document.getElementById('ow-rf-list');
+      if (host) {
+        host.innerHTML = rows.map(function (r) {
+          var rssi = r.signal_dbm != null && r.signal_dbm !== '' ? (Math.round(Number(r.signal_dbm)) + ' dBm') : '—';
+          var hits = r.hits != null ? (' · ' + r.hits + ' hit' + (Number(r.hits) > 1 ? 's' : '')) : '';
+          return '<button type="button" class="ow-event ow-rf-item" data-x="' + esc(r.pos_x) + '" data-y="' + esc(r.pos_y) + '">' +
+            '<span>' + esc(r.label || r.emitter_uid || 'Émetteur') + '</span>' +
+            '<strong>' + esc(rfBandLabel(r.band)) + ' · ' + esc(rssi) + hits + '</strong></button>';
+        }).join('') || '<p class="ow-help">Aucune détection RF pour le moment. Posez un émetteur Zeus et scannez avec Fieldwatch en jeu.</p>';
+        if (!host.dataset.owRfBound) {
+          host.dataset.owRfBound = '1';
+          host.addEventListener('click', function (ev) {
+            var btn = ev.target.closest('.ow-rf-item');
+            if (!btn) return;
+            var x = Number(btn.getAttribute('data-x'));
+            var y = Number(btn.getAttribute('data-y'));
+            if (!isFinite(x) || !isFinite(y)) return;
+            var ll = api.worldToLatLng(x, y);
+            if (ll) api.map.setView(ll, Math.max(api.map.getZoom(), 3));
+          });
+        }
+      }
+      rows.forEach(function (r) {
+        var ll = api.worldToLatLng(Number(r.pos_x), Number(r.pos_y));
+        if (!ll) return;
+        var color = rfBandColor(r.band);
+        var ring = Math.max(25, Math.min(90, 40 + Math.abs(Number(r.signal_dbm || -70)) * 0.4));
+        rfLayers.push(L.polygon(circleByRadius(ll, ring, 28), {
+          color: color, weight: 1, dashArray: '3 5', fillOpacity: 0.1, interactive: false
+        }).addTo(api.map));
+        rfLayers.push(L.circleMarker(ll, {
+          radius: 5, color: color, weight: 1.5, fillColor: color, fillOpacity: 0.85
+        }).bindTooltip(esc((r.label || 'RF') + ' · ' + rfBandLabel(r.band)), { direction: 'top', opacity: 0.9 }).addTo(api.map));
+      });
+    }).catch(function () {});
+  }
+
   function bindReplay() {
     var play = document.getElementById('ow-replay-play');
     var speed = document.getElementById('ow-replay-speed');
@@ -1697,7 +1770,7 @@
       var box = document.getElementById('ow-follow');
       if (box) { box.checked = false; box.dispatchEvent(new Event('change')); }
     });
-    ['ow-look-arrow', 'ow-predict', 'ow-progress-trail', 'ow-relays-layer'].forEach(function (id) {
+    ['ow-look-arrow', 'ow-predict', 'ow-progress-trail', 'ow-relays-layer', 'ow-rf-layer'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { afterRenderMap(); });
     });

@@ -965,6 +965,25 @@ $atakLiveTables = [
         PRIMARY KEY (id), KEY tenant_map (tenant_id, map_id),
         CONSTRAINT atak_sigint_reports_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    'atak_rf_hits' => "CREATE TABLE atak_rf_hits (
+        id bigint unsigned NOT NULL AUTO_INCREMENT,
+        tenant_id int unsigned NOT NULL,
+        map_id int unsigned NOT NULL DEFAULT 1,
+        emitter_uid varchar(96) NOT NULL,
+        label varchar(255) NOT NULL DEFAULT '',
+        band varchar(32) NOT NULL DEFAULT 'unknown',
+        signature_id varchar(64) NOT NULL DEFAULT '',
+        pos_x double NOT NULL DEFAULT 0,
+        pos_y double NOT NULL DEFAULT 0,
+        signal_dbm double DEFAULT NULL,
+        sensor_callsign varchar(128) NOT NULL DEFAULT '',
+        payload json DEFAULT NULL,
+        created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_atak_rf_hits_map (tenant_id, map_id, created_at),
+        KEY idx_atak_rf_hits_emitter (tenant_id, map_id, emitter_uid),
+        CONSTRAINT atak_rf_hits_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     'atak_last_activity' => "CREATE TABLE atak_last_activity (
         tenant_id int unsigned NOT NULL,
         map_id int unsigned NOT NULL DEFAULT 1,
@@ -3781,6 +3800,15 @@ try {
   $atakOverwatchOpsMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_overwatch_ops : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakRfHitsLot1Migrate = require $root . '/bootstrap/atak_rf_hits_lot1_migration.php';
+try {
+  echo "Migration atak_rf_hits_lot1 (Fieldwatch — hits RF passifs)...\n";
+  $atakRfHitsLot1Migrate($pdo);
+} catch (Throwable $e) {
+  echo '  [ATTENTION] atak_rf_hits_lot1 : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

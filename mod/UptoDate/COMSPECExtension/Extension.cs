@@ -7364,6 +7364,28 @@ public static partial class Extension
                 return;
             }
 
+            // Fieldwatch Lot 1 — hit RF passif (Wi‑Fi / BLE simulés)
+            // args: emitter_uid, label, band, signature_id, pos_x, pos_y, signal_dbm, sensor_callsign [, mac]
+            if (function == "SendRfHit" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 6)
+            {
+                var uid = EscapeJson(args[0] ?? "");
+                var label = EscapeJson(args[1] ?? "RF");
+                var band = EscapeJson(args[2] ?? "unknown");
+                var signature = EscapeJson(args[3] ?? "");
+                var x = args[4] ?? "0";
+                var y = args[5] ?? "0";
+                var rssi = args.Length > 6 ? (args[6] ?? "") : "";
+                var sensor = EscapeJson(args.Length > 7 ? (args[7] ?? "") : "");
+                var mac = EscapeJson(args.Length > 8 ? (args[8] ?? "") : "");
+                var rssiFrag = "";
+                if (!string.IsNullOrEmpty(rssi) && double.TryParse(rssi, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var dbm))
+                    rssiFrag = $",\"signal_dbm\":{dbm.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}";
+                var macFrag = !string.IsNullOrEmpty(mac) ? $",\"mac\":\"{mac}\"" : "";
+                var payload = $"{{\"mapId\":{CurrentMapId()},\"emitter_uid\":\"{uid}\",\"label\":\"{label}\",\"band\":\"{band}\",\"signature_id\":\"{signature}\",\"pos_x\":{x},\"pos_y\":{y}{rssiFrag},\"sensor_callsign\":\"{sensor}\"{macFrag}}}";
+                EnqueueOrSend(_baseUrl + "/api/atak/rf-hits", payload);
+                return;
+            }
+
             if (function == "UpdateRelay" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 6)
             {
                 var uid = EscapeJson(args[0] ?? "");
