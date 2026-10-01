@@ -32,7 +32,7 @@ final class EnlistmentIdentityFormCleanupTest extends TestCase
     public function testFieldGridAlignmentCssUsesCeField(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/community-enlistment.css');
-        self::assertStringContainsString('min-height: 3rem', $css);
+        self::assertStringContainsString('min-height: 2.75rem', $css);
         self::assertStringContainsString('.ce-label-optional', $css);
         self::assertStringContainsString('#ce-identity-meta-grid', $css);
     }

@@ -1567,11 +1567,18 @@
 
 .ce-field > .ce-label {
   margin-bottom: 0 !important;
-  min-height: 2.1rem;
+  /* Réserve ~2 lignes (labels longs type micro / date optionnelle). */
+  min-height: 2.75rem;
   display: flex;
   align-items: flex-end;
   gap: 0.35rem;
   flex-wrap: wrap;
+}
+
+/* Les hints optionnels ne doivent pas décaler un input voisin dans la grille. */
+.ce-field > .ce-label-hint {
+  margin: 0;
+  min-height: 0;
 }
 
 .ce-label-optional {
