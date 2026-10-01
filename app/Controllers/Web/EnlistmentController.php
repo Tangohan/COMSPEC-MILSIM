@@ -454,26 +454,26 @@ class EnlistmentController
                 'form_mode' => $isCompactAccount ? 'compact' : 'full',
             ];
         } else {
-            // Identité réelle désactivée : candidature invitée = personnage uniquement.
-            $fullName = trim((string) $request->input('full_name'));
-            if ($fullName === '') {
-                Session::flash('enlistment_error', 'Merci d’indiquer un nom pour la candidature.');
+            // Identité unique : prénom + nom du personnage (plus de champ « nom unique » legacy).
+            $guestFn = trim((string) $request->input('guest_rp_first_name'));
+            $guestLn = trim((string) $request->input('guest_rp_last_name'));
+            $legacyFull = trim((string) $request->input('full_name'));
+            if ($guestFn === '' && $guestLn === '' && $legacyFull !== '') {
+                $guestFn = $legacyFull;
+                $guestLn = '';
+                if (str_contains($legacyFull, ' ')) {
+                    $pos = strpos($legacyFull, ' ');
+                    $guestFn = trim(substr($legacyFull, 0, $pos));
+                    $guestLn = trim(substr($legacyFull, $pos));
+                }
+            }
+            if ($guestFn === '' && $guestLn === '') {
+                Session::flash('enlistment_error', 'Merci d’indiquer le prénom et le nom du personnage.');
 
                 return Response::redirect(url('enlistment/error'));
             }
-            $guestFn = trim((string) $request->input('guest_rp_first_name'));
-            $guestLn = trim((string) $request->input('guest_rp_last_name'));
             $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
             $guestNat = trim((string) $request->input('guest_rp_nationality'));
-            if ($guestFn === '' && $guestLn === '' && $fullName !== '') {
-                $guestFn = $fullName;
-                $guestLn = '';
-                if (str_contains($fullName, ' ')) {
-                    $pos = strpos($fullName, ' ');
-                    $guestFn = trim(substr($fullName, 0, $pos));
-                    $guestLn = trim(substr($fullName, $pos));
-                }
-            }
             $pseudoPreset = [
                 'payload_version' => RecruitmentPresetPayloadService::PAYLOAD_VERSION,
                 'rp' => [
@@ -490,20 +490,8 @@ class EnlistmentController
             $snap['identity_kind'] = 'rp';
             $snap['legal_contact_name'] = null;
             $payload['recruitment_rp_snapshot'] = $snap;
-            $nameForSplit = $fullName;
-            $first = $nameForSplit;
-            $last = '';
-            if ($nameForSplit !== '' && str_contains($nameForSplit, ' ')) {
-                $pos = strpos($nameForSplit, ' ');
-                $first = substr($nameForSplit, 0, $pos);
-                $last = trim(substr($nameForSplit, $pos));
-            }
-            if ($first === '' && trim((string) $request->input('first_name')) !== '') {
-                $first = trim((string) $request->input('first_name'));
-                $last = trim((string) $request->input('last_name'));
-            }
-            $payload['first_name'] = $first ?: '—';
-            $payload['last_name'] = $last ?: '—';
+            $payload['first_name'] = $guestFn !== '' ? $guestFn : '—';
+            $payload['last_name'] = $guestLn !== '' ? $guestLn : '—';
             $payload['email'] = trim((string) $request->input('email'));
             $payload['callsign'] = null;
         }
@@ -993,6 +981,10 @@ class EnlistmentController
         $canUseAccount = false;
         $prefill = [
             'full_name' => '',
+            'guest_rp_first_name' => '',
+            'guest_rp_last_name' => '',
+            'guest_rp_birth_date' => '',
+            'guest_rp_nationality' => '',
             'email' => '',
             'age' => '',
             'timezone' => '',
@@ -1019,9 +1011,12 @@ class EnlistmentController
                 $profile = $this->userProfileRepository->getByUserId($uid);
                 [$fn, $ln] = $this->resolveNamePartsFromAccount($user, $profile);
                 if ($fn !== '—' || $ln !== '—') {
-                    $prefill['full_name'] = trim($fn . ' ' . $ln);
+                    $prefill['guest_rp_first_name'] = $fn !== '—' ? $fn : '';
+                    $prefill['guest_rp_last_name'] = $ln !== '—' ? $ln : '';
+                    $prefill['full_name'] = trim($prefill['guest_rp_first_name'] . ' ' . $prefill['guest_rp_last_name']);
                 } else {
                     $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
+                    $prefill['guest_rp_first_name'] = $prefill['full_name'];
                 }
                 try {
                     $recruitmentPresets = $this->recruitmentPresetRepository->listForUser($uid);
@@ -1154,6 +1149,9 @@ class EnlistmentController
     {
         $limits = [
             'full_name' => 200,
+            'guest_rp_first_name' => 100,
+            'guest_rp_last_name' => 100,
+            'guest_rp_nationality' => 100,
             'email' => 254,
             'timezone' => 64,
             'weekly_availability' => 300,
@@ -1183,6 +1181,10 @@ class EnlistmentController
             if ($a >= 16 && $a <= 99) {
                 $out['age'] = (string) $a;
             }
+        }
+        $bd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->query('guest_rp_birth_date', ''));
+        if ($bd !== '') {
+            $out['guest_rp_birth_date'] = $bd;
         }
 
         return $out;

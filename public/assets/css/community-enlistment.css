@@ -1541,7 +1541,10 @@
 .ce-field-grid > .space-y-2 + .space-y-2,
 .ce-field-grid > .ce-field + .ce-field,
 .ce-field-grid > .ce-span-2 + .ce-field,
-.ce-field-grid > .ce-field + .ce-span-2 {
+.ce-field-grid > .ce-field + .ce-span-2,
+.ce-field-grid > .ce-field + .ce-span-2,
+.ce .ce-field-grid > .ce-field + .ce-field,
+.ce .ce-field-grid > .space-y-2 + .space-y-2 {
   margin-top: 0;
 }
 
@@ -1563,7 +1566,36 @@
 }
 
 .ce-field > .ce-label {
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
+  /* Réserve ~2 lignes (labels longs type micro / date optionnelle). */
+  min-height: 2.75rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Les hints optionnels ne doivent pas décaler un input voisin dans la grille. */
+.ce-field > .ce-label-hint {
+  margin: 0;
+  min-height: 0;
+}
+
+.ce-label-optional {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #94a3b8;
+}
+
+#ce-identity-meta-grid {
+  margin-top: 1.1rem;
+}
+
+#enlist-guest-names.hidden + #ce-identity-meta-grid,
+#enlist-guest-names[style*="display: none"] + #ce-identity-meta-grid,
+#enlist-guest-names[style*="display:none"] + #ce-identity-meta-grid {
+  margin-top: 0;
 }
 
 .ce-field-stack {
@@ -1701,11 +1733,12 @@
 }
 
 .ce-rp-box {
+  /* Conservé pour d’anciennes vues / email ; plus utilisé sur le formulaire candidature. */
   margin-top: 0.25rem;
   padding: 1rem;
   border-radius: 0.85rem;
-  border: 1px solid #d1fae5;
-  background: #f0fdf4;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .ce-commit-row {
@@ -1825,15 +1858,26 @@
 .ce select.input-field,
 .ce textarea.input-field {
   width: 100%;
+  box-sizing: border-box;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   padding: 0.85rem 0.95rem;
   color: #0f172a;
   font-size: 0.9rem;
+  line-height: 1.25;
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
   font-family: inherit;
+}
+
+.ce input.input-field:not([type="checkbox"]):not([type="radio"]),
+.ce select.input-field {
+  min-height: 3rem;
+  height: 3rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 2.9rem;
 }
 
 .ce .input-field::placeholder {
@@ -1845,8 +1889,14 @@
   box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.06);
 }
 
-.ce select.input-field {
+.ce select.input-field,
+.ce input[type="date"].input-field,
+.ce input[type="number"].input-field {
   appearance: none;
+  -webkit-appearance: none;
+}
+
+.ce select.input-field {
   background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
   background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
   background-size: 6px 6px, 6px 6px;

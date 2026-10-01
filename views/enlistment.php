@@ -28,8 +28,28 @@ $enlistSlug = trim((string) ($tenant['slug'] ?? 'default'));
 $enlistmentContext = $enlistmentContext ?? [];
 $canUseAccount = !empty($enlistmentContext['canUseAccount']);
 $prefill = array_merge([
-    'full_name' => '', 'email' => '', 'age' => '', 'timezone' => '', 'weekly_availability' => '',
+    'full_name' => '',
+    'guest_rp_first_name' => '',
+    'guest_rp_last_name' => '',
+    'guest_rp_birth_date' => '',
+    'guest_rp_nationality' => '',
+    'email' => '',
+    'age' => '',
+    'timezone' => '',
+    'weekly_availability' => '',
 ], is_array($enlistmentContext['prefill'] ?? null) ? $enlistmentContext['prefill'] : []);
+if (trim((string) ($prefill['guest_rp_first_name'] ?? '')) === '' && trim((string) ($prefill['guest_rp_last_name'] ?? '')) === '') {
+    $legacyFull = trim((string) ($prefill['full_name'] ?? ''));
+    if ($legacyFull !== '') {
+        if (str_contains($legacyFull, ' ')) {
+            $pos = strpos($legacyFull, ' ');
+            $prefill['guest_rp_first_name'] = trim(substr($legacyFull, 0, $pos));
+            $prefill['guest_rp_last_name'] = trim(substr($legacyFull, $pos));
+        } else {
+            $prefill['guest_rp_first_name'] = $legacyFull;
+        }
+    }
+}
 $prefillAvailabilitySelected = [];
 if ($availabilitySlots !== [] && trim((string) ($prefill['weekly_availability'] ?? '')) !== '') {
     $prefillAvailabilitySelected = \App\Services\Community\EnlistmentMilsimPackService::filterCandidateSlotSelection(
@@ -91,8 +111,12 @@ $formAnchor = '#candidature';
 $logoLetter = mb_strtoupper(mb_substr(trim((string) ($p['logo_letter'] ?? 'A')) ?: mb_substr($tenantName, 0, 1) ?: 'A', 0, 1));
 $heroLead = trim((string) ($p['preamble_lead'] ?? ''));
 $roeItems = is_array($p['roe_items'] ?? null) ? array_values(array_filter($p['roe_items'], static fn ($r) => is_string($r) && trim($r) !== '')) : [];
-$cssHref = url('assets/css/community-enlistment.css');
-$jsHref = url('assets/js/community-enlistment.js');
+$cssPath = base_path('public/assets/css/community-enlistment.css');
+$jsPath = base_path('public/assets/js/community-enlistment.js');
+$cssVer = is_file($cssPath) ? (string) filemtime($cssPath) : '1';
+$jsVer = is_file($jsPath) ? (string) filemtime($jsPath) : '1';
+$cssHref = url('assets/css/community-enlistment.css') . '?v=' . rawurlencode($cssVer);
+$jsHref = url('assets/js/community-enlistment.js') . '?v=' . rawurlencode($jsVer);
 $candidatePrefix = trim((string) ($p['candidate_prefix'] ?? 'Rejoindre'));
 $submittedAtLabel = '';
 if ($existingCandidature !== null && trim((string) ($existingCandidature['submitted_at'] ?? '')) !== '') {
@@ -604,55 +628,46 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
 
                         <div id="enlist-guest-identity" class="<?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
                             <input type="hidden" name="identity_kind" value="rp">
-                            <p class="ce-panel__title">Identité portée par la candidature</p>
-                            <p class="ce-help" style="margin-bottom:0">Le dossier porte sur votre personnage (univers fictionnel).</p>
                         </div>
                     </section>
 
                     <section class="ce-form-section" id="ce-sec-identity">
                         <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_1']) ?></h3>
                         <div id="enlist-guest-names" class="ce-field-grid <?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
-                            <div class="space-y-2 ce-span-2">
-                                <label id="label-full-name" class="ce-label">Nom du personnage</label>
-                                <input type="text" name="full_name" id="input-full-name" class="input-field track-field guest-req-field" placeholder="<?= htmlspecialchars($fld('full_name')['placeholder']) ?>"
-                                    value="<?= htmlspecialchars($prefill['full_name']) ?>"
-                                    autocomplete="off">
+                            <div class="ce-field">
+                                <label class="ce-label" for="guest_rp_first_name">Prénom du personnage</label>
+                                <input type="text" name="guest_rp_first_name" id="guest_rp_first_name" class="input-field track-field guest-req-field" maxlength="100" autocomplete="off" placeholder="ex. Jake"
+                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                             </div>
-                            <div id="guest-rp-detail" class="ce-span-2 ce-rp-box space-y-4">
-                                <p class="ce-panel__title">Identité personnage (optionnel si le champ unique ci-dessus suffit)</p>
-                                <div class="ce-field-grid">
-                                    <div class="space-y-2">
-                                        <label class="ce-label">Prénom (personnage)</label>
-                                        <input type="text" name="guest_rp_first_name" class="input-field track-field" maxlength="100" autocomplete="off">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="ce-label">Nom (personnage)</label>
-                                        <input type="text" name="guest_rp_last_name" class="input-field track-field" maxlength="100" autocomplete="off">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="ce-label">Date de naissance (personnage)</label>
-                                        <input type="date" name="guest_rp_birth_date" class="input-field track-field" autocomplete="off">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="ce-label">Nationalité (personnage)</label>
-                                        <input type="text" name="guest_rp_nationality" class="input-field track-field" maxlength="100" autocomplete="off">
-                                    </div>
-                                </div>
+                            <div class="ce-field">
+                                <label class="ce-label" for="guest_rp_last_name">Nom du personnage</label>
+                                <input type="text" name="guest_rp_last_name" id="guest_rp_last_name" class="input-field track-field guest-req-field" maxlength="100" autocomplete="off" placeholder="ex. Gyllenhaal"
+                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                             </div>
-                            <div class="space-y-2 ce-span-2">
-                                <label class="ce-label"><?= htmlspecialchars($fld('email')['label']) ?></label>
+                            <div class="ce-field">
+                                <label class="ce-label" for="guest_rp_birth_date">Date de naissance <span class="ce-label-optional">(optionnel)</span></label>
+                                <input type="date" name="guest_rp_birth_date" id="guest_rp_birth_date" class="input-field track-field" autocomplete="off"
+                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_birth_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                            </div>
+                            <div class="ce-field">
+                                <label class="ce-label" for="guest_rp_nationality">Nationalité <span class="ce-label-optional">(optionnel)</span></label>
+                                <input type="text" name="guest_rp_nationality" id="guest_rp_nationality" class="input-field track-field" maxlength="100" autocomplete="off" placeholder="ex. Française"
+                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_nationality'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                            </div>
+                            <div class="ce-field ce-span-2">
+                                <label class="ce-label" for="input-email"><?= htmlspecialchars($fld('email')['label']) ?></label>
                                 <input type="email" name="email" id="input-email" class="input-field track-field guest-req-field" placeholder="<?= htmlspecialchars($fld('email')['placeholder']) ?>"
                                     value="<?= htmlspecialchars($prefill['email']) ?>"
                                     autocomplete="email">
                             </div>
                         </div>
-                        <div class="enlist-full-only ce-field-grid" style="margin-top:1.1rem">
-                            <div class="space-y-2">
-                                <label class="ce-label"><?= htmlspecialchars($fld('age')['label']) ?></label>
-                                <input type="number" name="age" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('age')['placeholder']) ?>" min="16" max="99"
+                        <div class="enlist-full-only ce-field-grid" id="ce-identity-meta-grid">
+                            <div class="ce-field">
+                                <label class="ce-label" for="enlist-age"><?= htmlspecialchars($fld('age')['label']) ?></label>
+                                <input type="number" name="age" id="enlist-age" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('age')['placeholder']) ?>" min="16" max="99"
                                     value="<?= htmlspecialchars($prefill['age']) ?>">
                             </div>
-                            <div class="space-y-2">
+                            <div class="ce-field">
                                 <label class="ce-label" for="enlist-timezone"><?= htmlspecialchars($fld('timezone')['label']) ?></label>
                                 <select name="timezone" id="enlist-timezone" class="input-field track-field">
                                     <option value="">Sélectionner</option>
@@ -666,11 +681,11 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="space-y-2 ce-span-2">
+                            <div class="ce-field ce-span-2">
                                 <label class="ce-label"><?= htmlspecialchars($fld('weekly_availability')['label']) ?></label>
                                 <?php if ($availabilitySlots !== []): ?>
-                                    <div class="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                                        <p class="text-[11px] text-slate-500">Cochez les créneaux qui vous correspondent.</p>
+                                    <div class="ce-slot-box">
+                                        <p class="ce-help" style="margin:0">Cochez les créneaux qui vous correspondent.</p>
                                         <?php foreach ($availabilitySlots as $slot): ?>
                                             <?php
                                             $slotId = (string) ($slot['id'] ?? '');
@@ -680,17 +695,17 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                                             }
                                             $slotChecked = in_array($slotLabel, $prefillAvailabilitySelected, true);
                                             ?>
-                                            <label class="flex items-start gap-2.5 text-sm text-slate-800">
+                                            <label class="ce-check">
                                                 <input type="checkbox"
                                                        name="availability_slot[]"
                                                        value="<?= htmlspecialchars($slotId !== '' ? $slotId : $slotLabel, ENT_QUOTES, 'UTF-8') ?>"
-                                                       class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 track-field"
+                                                       class="track-field"
                                                        <?= $slotChecked ? 'checked' : '' ?>>
                                                 <span><?= htmlspecialchars($slotLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                             </label>
                                         <?php endforeach; ?>
                                     </div>
-                                    <input type="text" name="weekly_availability_notes" class="input-field track-field mt-2" maxlength="300" placeholder="Précisions optionnelles (fuseau, exceptions…)">
+                                    <input type="text" name="weekly_availability_notes" class="input-field track-field" maxlength="300" placeholder="Précisions optionnelles (fuseau, exceptions…)">
                                 <?php else: ?>
                                     <input type="text" name="weekly_availability" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('weekly_availability')['placeholder']) ?>"
                                         value="<?= htmlspecialchars($prefill['weekly_availability']) ?>">
@@ -950,9 +965,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
             var btnAcc = document.getElementById('enlist-btn-flow-account');
             var btnGuest = document.getElementById('enlist-btn-flow-guest');
             var btnExpand = document.getElementById('enlist-btn-expand-full');
-            var guestRpDetail = document.getElementById('guest-rp-detail');
-            var labelFull = document.getElementById('label-full-name');
-            var LABEL_RP = 'Nom du personnage';
 
             function setGuestFieldsRequired(isGuest) {
                 document.querySelectorAll('.guest-req-field').forEach(function(el) {
@@ -982,12 +994,7 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
             }
 
             function syncIdentityKind() {
-                if (guestRpDetail) {
-                    guestRpDetail.classList.remove('hidden');
-                }
-                if (labelFull) {
-                    labelFull.textContent = LABEL_RP;
-                }
+                // Identité unique = prénom + nom du personnage (plus de champ « nom unique » legacy).
             }
 
             function setFlow(f) {
