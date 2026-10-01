@@ -111,8 +111,12 @@ $formAnchor = '#candidature';
 $logoLetter = mb_strtoupper(mb_substr(trim((string) ($p['logo_letter'] ?? 'A')) ?: mb_substr($tenantName, 0, 1) ?: 'A', 0, 1));
 $heroLead = trim((string) ($p['preamble_lead'] ?? ''));
 $roeItems = is_array($p['roe_items'] ?? null) ? array_values(array_filter($p['roe_items'], static fn ($r) => is_string($r) && trim($r) !== '')) : [];
-$cssHref = url('assets/css/community-enlistment.css');
-$jsHref = url('assets/js/community-enlistment.js');
+$cssPath = base_path('public/assets/css/community-enlistment.css');
+$jsPath = base_path('public/assets/js/community-enlistment.js');
+$cssVer = is_file($cssPath) ? (string) filemtime($cssPath) : '1';
+$jsVer = is_file($jsPath) ? (string) filemtime($jsPath) : '1';
+$cssHref = url('assets/css/community-enlistment.css') . '?v=' . rawurlencode($cssVer);
+$jsHref = url('assets/js/community-enlistment.js') . '?v=' . rawurlencode($jsVer);
 $candidatePrefix = trim((string) ($p['candidate_prefix'] ?? 'Rejoindre'));
 $submittedAtLabel = '';
 if ($existingCandidature !== null && trim((string) ($existingCandidature['submitted_at'] ?? '')) !== '') {
