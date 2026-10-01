@@ -871,9 +871,11 @@ final class TenantCommunityProfileService
             'metaDescription' => trim((string) ($community['public_meta_description'] ?? '')),
             'stickyCtaEnabled' => !array_key_exists('public_sticky_cta_enabled', $community)
                 || !empty($community['public_sticky_cta_enabled']),
-            'highlightStyle' => in_array(($community['public_highlight_style'] ?? 'info'), ['info', 'warning', 'success'], true)
-                ? (string) $community['public_highlight_style']
-                : 'info',
+            'highlightStyle' => in_array(
+                ($highlightStyle = strtolower(trim((string) ($community['public_highlight_style'] ?? 'info')))),
+                ['info', 'warning', 'success'],
+                true
+            ) ? $highlightStyle : 'info',
             'highlightTitle' => trim((string) ($community['public_highlight_title'] ?? '')),
             'highlightBody' => trim((string) ($community['public_highlight_body'] ?? '')),
             'scheduleLabel' => trim((string) ($community['public_schedule_label'] ?? '')),
