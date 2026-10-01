@@ -120,8 +120,9 @@ final class OrbatBilletRepository
             'stable_code' => $this->newUuid(),
             'org_callsign' => ($t = trim((string) ($data['org_callsign'] ?? ''))) === '' ? null : mb_substr($t, 0, 80),
             'function_label' => ($t = trim((string) ($data['function_label'] ?? ''))) === '' ? null : mb_substr($t, 0, 150),
-            'status' => in_array((string) ($data['status'] ?? 'active'), ['active', 'frozen', 'deleted'], true)
-                ? (string) $data['status'] : 'active',
+            'capability_template' => ($t = trim((string) ($data['capability_template'] ?? ''))) === '' ? null : mb_substr($t, 0, 64),
+            'status' => in_array(($status = (string) ($data['status'] ?? 'active')), ['active', 'frozen', 'deleted'], true)
+                ? $status : 'active',
             'sort_order' => (int) ($data['sort_order'] ?? 0),
             'is_key_post' => !empty($data['is_key_post']) ? 1 : 0,
             'key_post_kind' => ($t = trim((string) ($data['key_post_kind'] ?? ''))) === '' ? null : mb_substr($t, 0, 40),

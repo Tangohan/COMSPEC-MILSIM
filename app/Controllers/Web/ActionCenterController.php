@@ -13,12 +13,16 @@ use App\Repositories\CommunityEventRepository;
 use App\Repositories\UserRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Portal\MemberServiceContextService;
 use App\Services\Portal\UnifiedActionDigestService;
+use App\Services\Workflow\WorkTaskService;
 
 final class ActionCenterController
 {
     public function __construct(
         private UnifiedActionDigestService $digest,
+        private MemberServiceContextService $memberService,
+        private WorkTaskService $workTasks,
         private UserRepository $userRepository,
         private CommunityEventRepository $eventRepository,
         private CommunityEventAttendanceService $attendance,
@@ -48,17 +52,81 @@ final class ActionCenterController
             $gate,
             $showStaffRecruitment
         );
+        $serviceContext = $this->memberService->build($tenantId, $userId, $roleSlug);
+        $taskCount = count($serviceContext['tasks'] ?? []);
+        $digestPayload['total_attention'] = (int) ($digestPayload['total_attention'] ?? 0) + $taskCount;
 
         return Response::view('layout.main', [
-            'title' => 'Aujourd’hui — Athena',
+            'title' => 'Mon service — Athena',
             'content' => 'portal.action_center',
             'action_center_digest' => $digestPayload,
+            'mon_service' => $serviceContext,
         ]);
+    }
+
+    public function acknowledgeTask(Request $request, array $params = []): Response
+    {
+        $returnUrl = url('mon-service');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($returnUrl);
+        }
+        $tenantId = (int) Session::get('tenant_id', 0);
+        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
+        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->acknowledge($tenantId, $taskId)) {
+            Session::flash('error', 'Tâche introuvable ou déjà traitée.');
+
+            return Response::redirect($returnUrl);
+        }
+        Session::flash('success', 'Tâche accusée réception.');
+
+        return Response::redirect($returnUrl);
+    }
+
+    public function startTask(Request $request, array $params = []): Response
+    {
+        $returnUrl = url('mon-service');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($returnUrl);
+        }
+        $tenantId = (int) Session::get('tenant_id', 0);
+        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
+        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->start($tenantId, $taskId)) {
+            Session::flash('error', 'Impossible de démarrer cette tâche.');
+
+            return Response::redirect($returnUrl);
+        }
+        Session::flash('success', 'Tâche en cours.');
+
+        return Response::redirect($returnUrl);
+    }
+
+    public function completeTask(Request $request, array $params = []): Response
+    {
+        $returnUrl = url('mon-service');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($returnUrl);
+        }
+        $tenantId = (int) Session::get('tenant_id', 0);
+        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
+        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->complete($tenantId, $taskId)) {
+            Session::flash('error', 'Impossible de clôturer cette tâche.');
+
+            return Response::redirect($returnUrl);
+        }
+        Session::flash('success', 'Tâche terminée.');
+
+        return Response::redirect($returnUrl);
     }
 
     public function rsvp(Request $request, array $params = []): Response
     {
-        $returnUrl = url('aujourdhui') . '#agenda-et-echeances';
+        $returnUrl = url('mon-service') . '#agenda-et-echeances';
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 

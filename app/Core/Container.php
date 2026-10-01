@@ -1627,6 +1627,29 @@ class Container
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
+            \App\Repositories\WorkTaskRepository::class => new \App\Repositories\WorkTaskRepository(),
+            \App\Repositories\MissionDutyAssignmentRepository::class => new \App\Repositories\MissionDutyAssignmentRepository(),
+            \App\Repositories\DutyRosterRepository::class => new \App\Repositories\DutyRosterRepository(),
+            \App\Services\Workflow\WorkTaskService::class => new \App\Services\Workflow\WorkTaskService(
+                self::get(\App\Repositories\WorkTaskRepository::class),
+                self::get(\App\Repositories\DutyRosterRepository::class),
+            ),
+            \App\Services\Organization\MissionDutyService::class => new \App\Services\Organization\MissionDutyService(
+                self::get(\App\Repositories\MissionDutyAssignmentRepository::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+            ),
+            \App\Services\Organization\MilsimOrgTemplateService::class => new \App\Services\Organization\MilsimOrgTemplateService(
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Services\Organization\OrbatBilletService::class),
+            ),
+            \App\Services\Portal\MemberServiceContextService::class => new \App\Services\Portal\MemberServiceContextService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\OrbatBilletRepository::class),
+                self::get(\App\Services\Organization\MissionDutyService::class),
+                self::get(\App\Services\Workflow\WorkTaskService::class),
+            ),
             \App\Services\Portal\BackOfficeSidebarBadgeService::class => new \App\Services\Portal\BackOfficeSidebarBadgeService(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\ForumReportRepository::class),
@@ -1638,6 +1661,8 @@ class Container
             ),
             \App\Controllers\Web\ActionCenterController::class => new \App\Controllers\Web\ActionCenterController(
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),
+                self::get(\App\Services\Portal\MemberServiceContextService::class),
+                self::get(\App\Services\Workflow\WorkTaskService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
