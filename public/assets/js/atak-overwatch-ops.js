@@ -1443,12 +1443,24 @@
     if (base.slice(-4) !== '/api') base += '/api';
     geoNet = window.AtakGeoNetwork.create(base, api.mapId, geoGroup);
     geoNet.loadCoverage().then(function (cov) {
-      var places = cov && (cov.places_count || cov.place_count || 0);
-      var roads = cov && (cov.roads_count || cov.road_count || 0);
+      var places = Number(cov && (cov.places_count || cov.place_count || cov.places || 0)) || 0;
+      var roads = Number(cov && (cov.roads_count || cov.road_count || cov.roads || 0)) || 0;
       var ph = document.getElementById('ow-geo-places-help');
       var rh = document.getElementById('ow-geo-roads-help');
       if (ph) ph.textContent = places ? (places + ' localités relevées pour ce théâtre.') : 'Aucun relevé de villes reçu pour ce théâtre.';
       if (rh) rh.textContent = roads ? (roads + ' tronçons relevés pour ce théâtre.') : 'Aucun relevé de routes reçu pour ce théâtre.';
+      // Si le théâtre a déjà un relevé, activer les calques (sauf préférence déjà mémorisée).
+      var remembered = false;
+      try {
+        remembered = !!localStorage.getItem('athena:ow-geo-prefs');
+      } catch (ePref) {}
+      if (!remembered) {
+        var plc = document.getElementById('ow-geo-places');
+        var rdc = document.getElementById('ow-geo-roads');
+        if (plc && places > 0) plc.checked = true;
+        if (rdc && roads > 0) rdc.checked = true;
+      }
+      refreshGeo();
     });
     restoreGeoPrefs();
     ['ow-geo-places', 'ow-geo-roads', 'ow-geo-remember', 'ow-geo-labels'].forEach(function (id) {
@@ -1459,6 +1471,38 @@
       });
     });
     api.map.on('moveend', refreshGeo);
+    // Relevé en cours côté jeu : rafraîchir la couverture pour faire apparaître villes/routes.
+    setInterval(function () {
+      if (!geoNet) return;
+      geoNet.loadCoverage().then(function (cov) {
+        if (!cov) return;
+        var places = Number(cov.places_count || cov.place_count || cov.places || 0) || 0;
+        var roads = Number(cov.roads_count || cov.road_count || cov.roads || 0) || 0;
+        var ph = document.getElementById('ow-geo-places-help');
+        var rh = document.getElementById('ow-geo-roads-help');
+        if (ph && places) ph.textContent = places + ' localités relevées pour ce théâtre.';
+        if (rh && roads) rh.textContent = roads + ' tronçons relevés pour ce théâtre.';
+        var plc = document.getElementById('ow-geo-places');
+        var rdc = document.getElementById('ow-geo-roads');
+        var changed = false;
+        if (plc && places > 0 && !plc.checked) {
+          try {
+            var raw = JSON.parse(localStorage.getItem('athena:ow-geo-prefs') || '{}');
+            if (!raw || raw.places !== false) { plc.checked = true; changed = true; }
+          } catch (e2) { plc.checked = true; changed = true; }
+        }
+        if (rdc && roads > 0 && !rdc.checked) {
+          try {
+            var raw2 = JSON.parse(localStorage.getItem('athena:ow-geo-prefs') || '{}');
+            if (!raw2 || raw2.roads !== false) { rdc.checked = true; changed = true; }
+          } catch (e3) { rdc.checked = true; changed = true; }
+        }
+        if (changed || places || roads) {
+          lastGeoKey = '';
+          refreshGeo();
+        }
+      });
+    }, 20000);
   }
 
   function restoreGeoPrefs() {

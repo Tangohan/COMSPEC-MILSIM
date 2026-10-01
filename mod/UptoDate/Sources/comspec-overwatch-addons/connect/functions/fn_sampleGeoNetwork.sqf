@@ -134,6 +134,49 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
         [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
     };
 
+    private _flushGeo = {
+        params ["_placesPart", "_roadsPart"];
+        if (_placesPart isEqualTo [] && {_roadsPart isEqualTo []}) exitWith {};
+        private _json = format [
+            "{""mapId"":%1,""places"":[%2],""roads"":[%3]}",
+            _mapId,
+            if (_placesPart isEqualTo []) then {""} else {_placesPart joinString ","},
+            if (_roadsPart isEqualTo []) then {""} else {_roadsPart joinString ","}
+        ];
+        "COMSPECExtension" callExtension ["Geo.Ingest", [_json]];
+    };
+
+    // Envoyer les villes tout de suite — ne pas attendre la fin du scan routes
+    // (sinon le poste reste à 0/N lieux pendant plusieurs minutes).
+    if ((count _places) > 0) then {
+        private _batchPlaces = [];
+        {
+            _batchPlaces pushBack _x;
+            if ((count _batchPlaces) >= 80) then {
+                [_batchPlaces, []] call _flushGeo;
+                _batchPlaces = [];
+                sleep 0.05;
+            };
+        } forEach _places;
+        if ((count _batchPlaces) > 0) then {
+            [_batchPlaces, []] call _flushGeo;
+        };
+        missionNamespace setVariable [
+            "COMSPEC_TheaterCurrent",
+            format ["Villes transmises (%1) — scan des routes…", count _places],
+            false
+        ];
+        [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
+    };
+
+    private _roadPending = [];
+    private _fncFlushRoads = {
+        if ((count _roadPending) < 1) exitWith {};
+        [[], _roadPending] call _flushGeo;
+        _roadPending = [];
+        sleep 0.05;
+    };
+
     if (_doRoads) then {
         private _tile = 512;
         private _tiles = ceil (_world / _tile);
@@ -163,10 +206,15 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
                         if (_roadSeen getOrDefault [_key, false]) then { continue };
                         _roadSeen set [_key, true];
                         private _id = format ["rd:%1:%2", _worldName, _key];
-                        _roads pushBack format [
+                        private _seg = format [
                             "{""id"":""%1"",""ax"":%2,""ay"":%3,""bx"":%4,""by"":%5,""class"":""%6""}",
                             _id, _pos select 0, _pos select 1, _p2 select 0, _p2 select 1, _cls
                         ];
+                        _roads pushBack _seg;
+                        _roadPending pushBack _seg;
+                        if ((count _roadPending) >= 120) then {
+                            [] call _fncFlushRoads;
+                        };
                     } forEach _neighbors;
                 } forEach _roadsHere;
                 sleep 0.01;
@@ -174,44 +222,16 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
                 missionNamespace setVariable ["COMSPEC_TheaterRoads", count _roads, false];
                 missionNamespace setVariable ["COMSPEC_TheaterCurrent", format ["Routes — bande %1 / %2 · %3 segments", _ty + 1, _tiles, count _roads], false];
                 [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
+                // Flush par bande pour que le poste voie le réseau au fur et à mesure.
+                if ((count _roadPending) > 0) then {
+                    [] call _fncFlushRoads;
+                };
             };
         };
     };
 
-    private _flushGeo = {
-        params ["_placesPart", "_roadsPart"];
-        if (_placesPart isEqualTo [] && {_roadsPart isEqualTo []}) exitWith {};
-        private _json = format [
-            "{""mapId"":%1,""places"":[%2],""roads"":[%3]}",
-            _mapId,
-            if (_placesPart isEqualTo []) then {""} else {_placesPart joinString ","},
-            if (_roadsPart isEqualTo []) then {""} else {_roadsPart joinString ","}
-        ];
-        "COMSPECExtension" callExtension ["Geo.Ingest", [_json]];
-    };
-
-    private _batchPlaces = [];
-    private _batchRoads = [];
-    {
-        _batchPlaces pushBack _x;
-        if ((count _batchPlaces) >= 80) then {
-            [_batchPlaces, []] call _flushGeo;
-            _batchPlaces = [];
-            sleep 0.05;
-        };
-    } forEach _places;
-
-    {
-        _batchRoads pushBack _x;
-        if ((count _batchRoads) >= 120) then {
-            [[], _batchRoads] call _flushGeo;
-            _batchRoads = [];
-            sleep 0.05;
-        };
-    } forEach _roads;
-
-    if ((count _batchPlaces) > 0 || {(count _batchRoads) > 0}) then {
-        [_batchPlaces, _batchRoads] call _flushGeo;
+    if ((count _roadPending) > 0) then {
+        [] call _fncFlushRoads;
     };
 
     private _abortedGeo = missionNamespace getVariable ["COMSPEC_TheaterAbort", false];

@@ -293,6 +293,18 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(747, '2026-09-30', 'Plan de bâtiment : effacer un trait ou un étage', 'Dans Plan de bâtiment, vous pouvez désormais retirer un mur, une porte, une fenêtre, un point de brèche ou un libellé de pièce. Annulez le dernier trait, videz l’étage, ou retirez un niveau ajouté. Rechargez Overwatch Beta (Ctrl+F5).', [
+                'Outil Effacer : clic sur un élément du plan pour le retirer',
+                'Annuler le dernier trait (bouton ou Ctrl+Z / Suppr)',
+                'Vider l’étage courant',
+                'Retirer un étage ajouté (croix sur l’onglet ; le rez-de-chaussée reste)',
+            ], [
+                'Clic droit sur le plan retire aussi l’élément le plus proche',
+            ], [
+                'Impossible de supprimer un trait une fois posé sur le plan',
+            ], ['atak'], [
+                'Rechargez Overwatch Beta (Ctrl+F5). Ouvrez Plan de bâtiment, posez un mur, puis utilisez Effacer ou Annuler. Sur un étage ajouté, la croix retire le niveau.',
+            ], 'Overwatch Beta'),
             $pr(746, '2026-09-30', 'Poste Overwatch : santé, soutien et radio du terrain', 'Le poste Overwatch affiche désormais les alertes santé structurées remontées depuis le jeu, le besoin de soutien (carburant et munitions) avec demande de ravitaillement, et l’historique des émissions radio sans enregistrer la voix. Le journal de mission se filtre par thème (sanitaire, contact armé, soutien, radio…). Rechargez le portail (Ctrl+F5). Pack jeu 2.0.57 recommandé.', [
                 'Alertes santé du terrain dans Mission, avec statut de secours',
                 'Tableau de soutien carburant / munitions et demande de ravitaillement',

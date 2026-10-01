@@ -66,10 +66,18 @@
     panel.hidden = !open;
     if (btn) btn.classList.toggle('is-active', open);
     if (open) {
+      syncFloorRemoveButtons();
       sizeCanvas();
       redrawPlan();
       refreshAttachUi();
+      syncEraseCursor();
     }
+  }
+
+  function syncEraseCursor() {
+    canvas = $('ow-bplan-canvas');
+    if (!canvas) return;
+    canvas.classList.toggle('is-erase', btool === 'erase');
   }
 
   function setExportOpen(open) {
@@ -149,12 +157,117 @@
     };
   }
 
+  function distPointSeg(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1;
+    var dy = y2 - y1;
+    var len2 = dx * dx + dy * dy;
+    if (len2 < 1) return Math.hypot(px - x1, py - y1);
+    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  }
+
+  function nearestStrokeIndex(p, maxDist) {
+    var list = currentStrokes();
+    var best = -1;
+    var bestD = maxDist == null ? 14 : maxDist;
+    list.forEach(function (s, i) {
+      var d = Infinity;
+      if (s.tool === 'wall' || s.tool === 'door' || s.tool === 'window') {
+        d = distPointSeg(p.x, p.y, s.x1, s.y1, s.x2, s.y2);
+      } else if (s.tool === 'breach') {
+        d = Math.hypot(p.x - s.x, p.y - s.y);
+      } else if (s.tool === 'room') {
+        d = Math.hypot(p.x - s.x, p.y - (s.y - 4));
+      }
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    });
+    return best;
+  }
+
+  function undoStroke() {
+    var list = currentStrokes();
+    if (!list.length) {
+      toast('Rien à annuler sur cet étage.');
+      return;
+    }
+    list.pop();
+    redrawPlan();
+  }
+
+  function clearFloor() {
+    var list = currentStrokes();
+    if (!list.length) {
+      toast('Cet étage est déjà vide.');
+      return;
+    }
+    if (!window.confirm('Vider tout le tracé de cet étage ?')) return;
+    floors[floorKey] = [];
+    redrawPlan();
+  }
+
+  function eraseAt(p, quiet) {
+    var idx = nearestStrokeIndex(p, 16);
+    if (idx < 0) {
+      if (!quiet) toast('Aucun élément sous le curseur.');
+      return;
+    }
+    currentStrokes().splice(idx, 1);
+    redrawPlan();
+  }
+
+  function removeFloor(key) {
+    if (key === 'rdc') {
+      toast('Le rez-de-chaussée ne peut pas être retiré. Videz-le si besoin.');
+      return;
+    }
+    var keys = Object.keys(floors);
+    if (keys.length <= 1) {
+      toast('Il doit rester au moins un niveau.');
+      return;
+    }
+    if (!window.confirm('Supprimer ce niveau et son tracé ?')) return;
+    delete floors[key];
+    delete floorNames[key];
+    var btn = document.querySelector('[data-floor="' + key + '"]');
+    if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+    if (floorKey === key) selectFloor('rdc');
+    else redrawPlan();
+  }
+
+  function syncFloorRemoveButtons() {
+    document.querySelectorAll('#ow-bplan-floors [data-floor]').forEach(function (btn) {
+      if (btn.id === 'ow-bplan-add-floor') return;
+      var key = btn.getAttribute('data-floor');
+      var existing = btn.querySelector('.ow-floor-remove');
+      if (key === 'rdc') {
+        if (existing) existing.remove();
+        return;
+      }
+      if (existing) return;
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'ow-floor-remove';
+      x.setAttribute('data-floor-remove', key);
+      x.setAttribute('aria-label', 'Supprimer ce niveau');
+      x.title = 'Supprimer ce niveau';
+      x.textContent = '×';
+      btn.appendChild(x);
+    });
+  }
+
   function bindPlanCanvas() {
     canvas = $('ow-bplan-canvas');
     if (!canvas) return;
     canvas.addEventListener('mousedown', function (event) {
       if (event.button !== 0) return;
       var p = canvasPoint(event);
+      if (btool === 'erase') {
+        eraseAt(p);
+        return;
+      }
       if (btool === 'breach') {
         currentStrokes().push({ tool: 'breach', x: p.x, y: p.y });
         redrawPlan();
@@ -167,6 +280,10 @@
         return;
       }
       draft = { tool: btool, x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+    });
+    canvas.addEventListener('contextmenu', function (event) {
+      event.preventDefault();
+      eraseAt(canvasPoint(event), true);
     });
     canvas.addEventListener('mousemove', function (event) {
       if (!draft) return;
@@ -202,13 +319,15 @@
     btn.setAttribute('data-floor', key);
     btn.textContent = label;
     host.insertBefore(btn, addBtn);
+    syncFloorRemoveButtons();
     selectFloor(key);
   }
 
   function selectFloor(key) {
     if (key === 'add') return;
     floorKey = key;
-    document.querySelectorAll('[data-floor]').forEach(function (btn) {
+    document.querySelectorAll('#ow-bplan-floors [data-floor]').forEach(function (btn) {
+      if (btn.id === 'ow-bplan-add-floor') return;
       btn.classList.toggle('is-active', btn.getAttribute('data-floor') === key);
     });
     redrawPlan();
@@ -798,6 +917,13 @@
     if (addFloorBtn) addFloorBtn.addEventListener('click', addFloor);
     var floorsEl = document.getElementById('ow-bplan-floors');
     if (floorsEl) floorsEl.addEventListener('click', function (event) {
+      var removeBtn = event.target.closest('[data-floor-remove]');
+      if (removeBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        removeFloor(removeBtn.getAttribute('data-floor-remove'));
+        return;
+      }
       var btn = event.target.closest('[data-floor]');
       if (!btn || btn.id === 'ow-bplan-add-floor') return;
       selectFloor(btn.getAttribute('data-floor'));
@@ -808,8 +934,15 @@
         document.querySelectorAll('[data-btool]').forEach(function (other) {
           other.classList.toggle('is-active', other === btn);
         });
+        syncEraseCursor();
       });
     });
+    var undoBtn = $('ow-bplan-undo');
+    if (undoBtn) undoBtn.addEventListener('click', undoStroke);
+    var clearBtn = $('ow-bplan-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearFloor);
+    syncFloorRemoveButtons();
+    syncEraseCursor();
     var savePlan = $('ow-bplan-save');
     if (savePlan) savePlan.addEventListener('click', function () {
       var api = ow();
@@ -850,13 +983,28 @@
       if (!event.target.closest('#ow-drawbar .ow-drawbar-otan')) closeOtan();
     });
     document.addEventListener('keydown', function (event) {
+      var plan = $('ow-bplan');
+      var planOpen = plan && !plan.hidden;
+      var tag = (event.target && event.target.tagName) ? event.target.tagName.toLowerCase() : '';
+      var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || !!(event.target && event.target.isContentEditable);
+      if (planOpen && !typing && (event.key === 'z' || event.key === 'Z') && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        undoStroke();
+        return;
+      }
+      if (planOpen && !typing && (event.key === 'Backspace' || event.key === 'Delete')) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        undoStroke();
+        return;
+      }
       if (event.key !== 'Escape') return;
       var modal = $('ow-export-modal');
       if (modal && !modal.hidden) { event.stopImmediatePropagation(); setExportOpen(false); return; }
       var fly = $('ow-otan-flyout');
       if (fly && !fly.hidden) { event.stopImmediatePropagation(); closeOtan(); return; }
-      var plan = $('ow-bplan');
-      if (plan && !plan.hidden) { event.stopImmediatePropagation(); setBplanOpen(false); }
+      if (planOpen) { event.stopImmediatePropagation(); setBplanOpen(false); }
     }, true);
   }
 

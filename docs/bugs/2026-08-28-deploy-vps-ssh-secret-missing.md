@@ -48,4 +48,4 @@ Ne jamais pousser depuis le VPS.
 
 ## Statut
 
-identifié — diagnostic workflow posé ; secret GitHub encore à créer
+Toujours bloquant en production (2026-09-30) : `gh secret list` ne contient que `FTP_*`. Runs Deploy VPS récents (ex. `36769506114`, `36769137623`) échouent en ~7 s à l’étape **Verify VPS SSH secret** avec `VPS_SSH_KEY` vide. Aucun `git pull` n’a lieu sur le VPS tant que le secret n’est pas créé.
