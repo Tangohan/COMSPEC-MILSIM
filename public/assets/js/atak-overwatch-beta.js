@@ -2435,6 +2435,11 @@
     var live = !(unit && isDisconnected(unit));
     trackSamples[id].push({ ll: location, t: Date.now(), live: live });
     if (trackSamples[id].length > 240) trackSamples[id].shift();
+    if (window.OverwatchRec && typeof window.OverwatchRec.onSample === 'function') {
+      try {
+        window.OverwatchRec.onSample(id, location, { live: live, unit: unit || null });
+      } catch (recErr) {}
+    }
     var progress = document.getElementById('ow-progress-trail');
     var skipLine = !!(progress && progress.checked && selected && unitId(selected) === id);
     var color = trackColorForUnit(unit || {});

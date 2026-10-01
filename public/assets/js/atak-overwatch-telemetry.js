@@ -101,7 +101,93 @@
     lastEmergency = emergency;
   }
 
+  function paintMedicalBanner() {
+    var banner =
+      document.getElementById('atak-medical-banner') ||
+      document.getElementById('ow-medical-banner') ||
+      document.getElementById('overwatch-medical-banner');
+    if (!banner) return;
+    var data = medicalCache;
+    var alerts = data && Array.isArray(data.alerts) ? data.alerts : [];
+    var units = data && Array.isArray(data.criticalUnits) ? data.criticalUnits : [];
+    function isDeathLike(row) {
+      if (!row) return false;
+      if (row.triage && row.triage.is_resolved) return false;
+      var status = String((row.triage && row.triage.status) || '').toLowerCase();
+      if (status === 'traite' || status === 'annule') return false;
+      var k = String(row.kind || row.type || row.health || row.status || '').toLowerCase();
+      var label = String(row.label || row.summary || row.body || row.status_label || '').toLowerCase();
+      if (
+        k === 'cardiac_arrest' ||
+        k === 'cardiac-arrest' ||
+        k === 'death' ||
+        k === 'dead' ||
+        k === 'kia' ||
+        k === 'killed'
+      ) {
+        return true;
+      }
+      if (
+        label.indexOf('arrêt cardiaque') >= 0 ||
+        label.indexOf('arret cardiaque') >= 0 ||
+        /\bkia\b/.test(label) ||
+        /\bmort\b/.test(label) ||
+        label.indexOf('hors combat') >= 0 ||
+        label.indexOf('rythme à zéro') >= 0 ||
+        label.indexOf('rythme a zero') >= 0
+      ) {
+        return true;
+      }
+      return String(row.severity || '') === 'critical' && (k === 'unconscious' || label.indexOf('inconscient') >= 0);
+    }
+    var deathAlerts = alerts.filter(isDeathLike);
+    var deathUnits = units.filter(isDeathLike);
+    var emergency = Number((data && data.counts && data.counts.emergency) || 0);
+    if (!deathAlerts.length && !deathUnits.length && emergency <= 0) {
+      banner.hidden = true;
+      banner.innerHTML = '';
+      banner.classList.remove('is-death');
+      return;
+    }
+    var names = [];
+    deathAlerts.forEach(function (a) {
+      var cs = clean(a.call_sign || a.author || a.unit, '');
+      if (cs && names.indexOf(cs) < 0) names.push(cs);
+    });
+    deathUnits.forEach(function (u) {
+      var cs = clean(u.call_sign || u.author || u.unit, '');
+      if (cs && names.indexOf(cs) < 0) names.push(cs);
+    });
+    var count = Math.max(deathAlerts.length + deathUnits.length, emergency, names.length || 0);
+    var msg =
+      count <= 1
+        ? 'Urgence santé / mort au combat signalée'
+        : count + ' urgences santé / morts au combat';
+    if (names.length) msg += ' — ' + names.slice(0, 4).join(', ') + (names.length > 4 ? '…' : '');
+    var fingerprint = count + ':' + names.join('|');
+    var shouldCue = fingerprint !== (banner.getAttribute('data-ow-med-fp') || '');
+    banner.setAttribute('data-ow-med-fp', fingerprint);
+    banner.hidden = false;
+    banner.classList.add('is-death');
+    banner.innerHTML =
+      '<div class="ow-medical-banner-inner">' +
+      '<strong>ALERTE</strong>' +
+      '<span class="ow-medical-badge">MORT / KIA</span>' +
+      '<span class="ow-medical-banner-msg">' +
+      esc(msg) +
+      '</span>' +
+      '</div>';
+    if (shouldCue) {
+      try {
+        if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+          window.ATAKSounds.playEvent('death');
+        }
+      } catch (eSound) {}
+    }
+  }
+
   function paintMedicalHost() {
+    paintMedicalBanner();
     var host = document.getElementById('ow-med-alerts-host');
     if (!host) return;
     var data = medicalCache;
