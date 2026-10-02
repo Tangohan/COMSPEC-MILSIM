@@ -1,0 +1,154 @@
+/**
+ * Mode nuit du back-office — ajustements manuels.
+ * Chargé après back-office-dark.generated.css (conversion automatique de toutes
+ * les feuilles du back-office, voir tools/build-bo-dark-css.py).
+ * Actif uniquement avec html[data-bo-theme="dark"].
+ */
+
+html[data-bo-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Fond général et texte de base */
+html[data-bo-theme="dark"] body.bo-shell,
+html[data-bo-theme="dark"] body.ath-bo-shell {
+  background: #0d1110 !important;
+  color: #dbe0de;
+}
+html[data-bo-theme="dark"] .ath-main,
+html[data-bo-theme="dark"] .ath-main__body {
+  background: #0d1110;
+  color: #dbe0de;
+}
+
+/* Jetons du shell (repris par la plupart des composants) */
+html[data-bo-theme="dark"] .ath-shell,
+html[data-bo-theme="dark"] .bo-shell {
+  --ath-ink: #e6ebe8;
+  --ath-muted: #9aa6a1;
+  --ath-subtle: #7f8b86;
+  --ath-line: #26302c;
+  --ath-line-soft: #1b2320;
+  --ath-bg: #0d1110;
+  --ath-surface: #141a18;
+  --ath-row-hover: #17211d;
+  --ath-table-head: #18201d;
+  --ath-warn-bg: #2a2212;
+  --ath-warn-bd: #4d3c17;
+  --ath-danger-bg: #2c1616;
+  --ath-info-bg: #13202e;
+}
+
+/* Barre du haut */
+html[data-bo-theme="dark"] .ath-topbar {
+  background: rgba(13, 17, 16, 0.92);
+  border-color: #1f2825;
+}
+
+/* Champs de formulaire (y compris ceux stylés par Tailwind ou en ligne) */
+html[data-bo-theme="dark"] .ath-main__body :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea) {
+  background-color: #111715;
+  border-color: #2c3733;
+  color: #e6ebe8;
+}
+html[data-bo-theme="dark"] .ath-main__body :where(input, textarea)::placeholder { color: #6f7b76; }
+html[data-bo-theme="dark"] .ath-main__body :where(input, select, textarea):focus {
+  border-color: #12d18e;
+}
+html[data-bo-theme="dark"] .ath-main__body :where(input, select, textarea):disabled {
+  background-color: #0f1412 !important;
+  color: #aab5b0 !important;
+  -webkit-text-fill-color: #aab5b0;
+}
+html[data-bo-theme="dark"] .ath-main__body option { background: #141a18; color: #e6ebe8; }
+
+/* Tableaux */
+html[data-bo-theme="dark"] .ath-main__body :where(table) { color: #dbe0de; }
+html[data-bo-theme="dark"] .ath-main__body :where(th) { background-color: #18201d; color: #b9c4bf; }
+html[data-bo-theme="dark"] .ath-main__body :where(td, th) { border-color: #232c29; }
+html[data-bo-theme="dark"] .ath-main__body :where(tbody tr:hover) { background-color: #16201c; }
+
+/* Liens et code */
+html[data-bo-theme="dark"] .ath-main__body :where(a:not([class])) { color: #4fd3a2; }
+html[data-bo-theme="dark"] .ath-main__body :where(code, kbd, pre) { background: #18201d; color: #e6ebe8; }
+html[data-bo-theme="dark"] .ath-main__body :where(hr) { border-color: #232c29; }
+
+/* Les ombres portées pensées pour un fond clair deviennent des halos : on les adoucit */
+html[data-bo-theme="dark"] .ath-main__body :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl) {
+  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Les images, portraits et cartes gardent leurs couleurs d’origine */
+html[data-bo-theme="dark"] .ath-main__body :where(img, video, canvas, .leaflet-container) { color-scheme: light; }
+
+/* Barres de défilement */
+html[data-bo-theme="dark"] * { scrollbar-color: #2c3733 transparent; }
+
+/* Composants refaits récemment : jetons dédiés */
+html[data-bo-theme="dark"] .personnel-file,
+html[data-bo-theme="dark"] .dm {
+  --pf-ink: #e6ebe8; --pf-text: #c9d2ce; --pf-muted: #9aa6a1; --pf-line: #26302c; --pf-line-soft: #1d2522;
+  --pf-bg-soft: #171e1b; --pf-green-soft: #12291f; --pf-amber-soft: #2a2212; --pf-red-soft: #2c1616; --pf-blue-soft: #13202e;
+  --pf-green-dark: #4fd3a2; --pf-amber: #f0b35b; --pf-red: #f08585; --pf-blue: #7fb4ee;
+  --dm-ink: #e6ebe8; --dm-text: #c9d2ce; --dm-muted: #9aa6a1; --dm-line: #26302c; --dm-line-soft: #1d2522;
+  --dm-soft: #171e1b; --dm-green-soft: #12291f; --dm-amber-soft: #2a2212; --dm-red-soft: #2c1616; --dm-blue-soft: #13202e;
+  --dm-green-dark: #4fd3a2; --dm-amber: #f0b35b; --dm-red: #f08585; --dm-blue: #7fb4ee;
+}
+html[data-bo-theme="dark"] .pf-card,
+html[data-bo-theme="dark"] .dm-card,
+html[data-bo-theme="dark"] .dm-quick__item,
+html[data-bo-theme="dark"] .pf-deadline,
+html[data-bo-theme="dark"] .pf-btn,
+html[data-bo-theme="dark"] .dm-btn:not(.dm-btn--primary),
+html[data-bo-theme="dark"] .personnel-file-hub-tabs,
+html[data-bo-theme="dark"] .personnel-file-hub-actions a {
+  background: #141a18;
+}
+html[data-bo-theme="dark"] .pf-parcours { background: radial-gradient(90% 120% at 100% 0%, rgba(18, 209, 142, 0.1) 0%, rgba(18, 209, 142, 0) 60%), #141a18; }
+html[data-bo-theme="dark"] .pf-ring__track { stroke: #1d2a25; }
+html[data-bo-theme="dark"] .pf-timeline__dot,
+html[data-bo-theme="dark"] .pd-history li::before { background: #141a18; }
+
+/* ——— Interrupteur jour / nuit (barre du haut) ——— */
+.ath-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 8px;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.ath-theme-toggle:hover { transform: translateY(-1px); border-color: #12d18e; }
+.ath-theme-toggle svg { width: 17px; height: 17px; }
+.ath-theme-toggle .ath-theme-toggle__moon { display: none; }
+html[data-bo-theme="dark"] .ath-theme-toggle .ath-theme-toggle__sun { display: none; }
+html[data-bo-theme="dark"] .ath-theme-toggle .ath-theme-toggle__moon { display: block; }
+
+/* Transition douce lors du changement de thème (pas au chargement) */
+html.ath-theme-switching,
+html.ath-theme-switching * {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.ath-theme-switching,
+  html.ath-theme-switching * { transition: none !important; }
+}
+
+/* Pastilles d’alerte de la barre du haut (couleurs posées en ligne) */
+html[data-bo-theme="dark"] .ath-topbar__alert {
+  background: #141a18 !important;
+  border-color: #2c3733 !important;
+}
+html[data-bo-theme="dark"] .ath-topbar__alert-label { filter: brightness(2.2) saturate(0.8); }
+html[data-bo-theme="dark"] .ath-topbar__search,
+html[data-bo-theme="dark"] .ath-topbar__portal {
+  background: #141a18;
+  border-color: #26302c;
+  color: #c9d2ce;
+}
+html[data-bo-theme="dark"] .ath-topbar__search input { background: transparent !important; color: #e6ebe8; }
