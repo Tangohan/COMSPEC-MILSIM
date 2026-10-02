@@ -58,3 +58,4 @@ $tabs = [
         ?>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/jnet_spaces.js?r=202610022300')) ?>" defer></script>

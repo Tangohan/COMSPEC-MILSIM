@@ -153,7 +153,7 @@ final class JnetSpaceService
             $since = time() - 86400;
             $data['flow'] = array_slice($this->decorate($tree, $flow, $viewerUserId, $spaceId), 0, 30);
             $data['flowFilter'] = $kindFilter;
-            $data['commands'] = $this->commandGroups($tree, $byUserId, $ops, $lastActivity);
+            $data['unitTree'] = $this->unitTree($tree, JnetSpaceTree::ORG, $byUserId, $ops, $lastActivity, 1);
             $data['orgStats'] = [
                 'units' => count($tree->unitIds()),
                 'members' => count($personnel),
@@ -187,6 +187,7 @@ final class JnetSpaceService
             $data['internal'] = array_slice($this->decorate($tree, $internal, $viewerUserId, $spaceId), 0, 15);
             $data['sentUp'] = array_slice($this->decorate($tree, $up, $viewerUserId, $spaceId), 0, 12);
             $data['members'] = $this->membersOf($tree->node($spaceId)['members'] ?? [], $byUserId);
+            $data['subTree'] = $this->unitTree($tree, $spaceId, $byUserId, $ops, $lastActivity, 1);
         }
 
         return $data;
@@ -540,30 +541,25 @@ final class JnetSpaceService
     }
 
     /**
-     * Unités groupées par tête d'arbre, pour la vue d'ensemble de l'Organisation.
+     * Arbre des unités sous un espace, pour la vue d'ensemble : chaque nœud porte sa carte et ses enfants.
      *
      * @param array<int, array<string, mixed>> $byUserId
      * @param list<array<string, mixed>> $ops
      * @param array<int, string> $lastActivity
      * @return list<array<string, mixed>>
      */
-    private function commandGroups(JnetSpaceTree $tree, array $byUserId, array $ops, array $lastActivity): array
+    private function unitTree(JnetSpaceTree $tree, int $parentId, array $byUserId, array $ops, array $lastActivity, int $level): array
     {
-        $groups = [];
-        foreach ($tree->childrenOf(JnetSpaceTree::ORG) as $topId) {
-            $ids = array_merge([$topId], $tree->descendants($topId));
-            $cards = array_map(fn (int $id): array => $this->unitCard($tree, $id, $byUserId, $ops, $lastActivity), $ids);
-            $strength = $this->strengthOf($tree->memberIdsInSubtree($topId), $byUserId);
-            $groups[] = [
-                'id' => $topId,
-                'label' => (string) ($tree->node($topId)['label'] ?? ''),
-                'unitCount' => count($ids),
-                'members' => $strength['total'],
-                'units' => $cards,
-            ];
+        $out = [];
+        foreach ($tree->childrenOf($parentId) as $id) {
+            $card = $this->unitCard($tree, $id, $byUserId, $ops, $lastActivity);
+            $card['level'] = $level;
+            $card['children'] = $this->unitTree($tree, $id, $byUserId, $ops, $lastActivity, $level + 1);
+            $card['descendantCount'] = count($tree->descendants($id));
+            $out[] = $card;
         }
 
-        return $groups;
+        return $out;
     }
 
     /**

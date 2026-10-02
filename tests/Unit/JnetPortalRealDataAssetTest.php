@@ -111,4 +111,31 @@ final class JnetPortalRealDataAssetTest extends TestCase
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `jnet_exchange_targets`', $migration);
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `jnet_exchange_reads`', $migration);
     }
+
+    public function testSpacesAreGuidedReadableAndGiveLoadingFeedback(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $home = (string) file_get_contents($root . '/views/jnet/home.php');
+        $space = (string) file_get_contents($root . '/views/jnet/space.php');
+        $embed = (string) file_get_contents($root . '/views/jnet/_bo_content.php');
+        $guide = (string) file_get_contents($root . '/views/jnet/_guide.php');
+        $js = (string) file_get_contents($root . '/public/assets/js/jnet_spaces.js');
+        $dashboard = (string) file_get_contents($root . '/app/Services/Jnet/JnetDashboardService.php');
+
+        // Hiérarchie : arbre des unités, plus de grille plate.
+        self::assertStringContainsString('_unit_tree.php', $home);
+        self::assertStringContainsString('_unit_tree.php', $space);
+        self::assertStringNotContainsString("\$commands", $home);
+
+        // Guide sur les deux écrans.
+        self::assertStringContainsString('_guide.php', $home);
+        self::assertStringContainsString('_guide.php', $space);
+        self::assertStringContainsString('Comment fonctionne JNET', $guide);
+
+        // Retour de chargement et un seul chargement de l'ORBAT par requête.
+        self::assertStringContainsString('jnet_spaces.js', $embed);
+        self::assertStringContainsString('jn-progress', $js);
+        self::assertStringContainsString('aria-busy', $js);
+        self::assertStringContainsString('private array $memo', $dashboard);
+    }
 }

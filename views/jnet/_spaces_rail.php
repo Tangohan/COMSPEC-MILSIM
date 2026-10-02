@@ -21,7 +21,7 @@ $rail = is_array($spacesRail ?? null) ? $spacesRail : [];
                    style="--jn-depth: <?= $depth ?>;<?= $accent !== '' ? ' --jn-unit: ' . $h($accent) . ';' : '' ?>"
                    <?= !empty($s['active']) ? 'aria-current="page"' : '' ?>>
                     <span class="jn-rail__swatch" aria-hidden="true"></span>
-                    <span class="jn-rail__label"><?= $h((string) $s['label']) ?></span>
+                    <span class="jn-rail__label" title="<?= $h((string) $s['label']) ?>"><?= $h((string) $s['label']) ?></span>
                     <?php if (!empty($s['mine'])): ?>
                         <span class="jn-rail__mine" title="Votre unité">●</span>
                     <?php endif; ?>
