@@ -19,7 +19,9 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         $tools = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-tools.js');
         $terrain = (string) file_get_contents($root . '/public/assets/js/atak-terrain-tools.js');
 
-        self::assertStringContainsString('family=Inter', $view);
+        self::assertStringContainsString('family=IBM+Plex+Sans', $view);
+        self::assertStringContainsString('atak-overwatch-refresh.css', $view);
+        self::assertStringContainsString('function ensureFont', $tools);
         self::assertStringContainsString('ATAK_MARKER_ICONS_CDN', $view);
         self::assertStringContainsString('ow-brand-word">ATHENA', $view);
         self::assertStringContainsString('id="ow-stat-traffic"', $view);

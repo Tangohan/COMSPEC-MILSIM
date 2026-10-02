@@ -112,7 +112,7 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('id="ow-disclaimer"', $view);
         self::assertStringContainsString('atak-map-crs.js', $view);
         self::assertStringContainsString('data-view="comms"', $view);
-        self::assertStringContainsString('data-view="comms">Ordre</button>', $view);
+        self::assertStringContainsString('tchat opérationnel">Transmissions</button>', $view);
         self::assertStringContainsString('data-view="air">Air</button>', $view);
         self::assertStringContainsString("'/api/atak/air-assets?mapId='", $overwatchJs);
         self::assertStringContainsString('function airHtml', $overwatchJs);

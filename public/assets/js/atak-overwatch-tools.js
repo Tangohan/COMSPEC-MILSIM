@@ -12,7 +12,7 @@
   var photoLayers = [];
   var scaleCtl = null;
   var chrome = {
-    uiFont: 'inter',
+    uiFont: 'plex',
     labelFont: 'mono',
     uiSize: '13',
     grid: false,
@@ -50,9 +50,29 @@
     try { localStorage.setItem(CHROME_KEY, JSON.stringify(chrome)); } catch (e) {}
   }
 
+  // Polices optionnelles : téléchargées seulement si l’utilisateur les choisit.
+  var FONT_FILES = {
+    inter: 'Inter:wght@400;500;600;700',
+    grotesk: 'Space+Grotesk:wght@500;600;700',
+    noto: 'Noto+Sans:wght@400;500;600',
+    source: 'Source+Sans+3:wght@400;500;600'
+  };
+  var fontsRequested = {};
+  function ensureFont(key) {
+    var family = FONT_FILES[key];
+    if (!family || fontsRequested[key]) return;
+    fontsRequested[key] = true;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + family + '&display=swap';
+    document.head.appendChild(link);
+  }
+
   function applyFonts() {
     var root = document.documentElement;
-    var ui = FONTS[chrome.uiFont] || FONTS.inter;
+    ensureFont(chrome.uiFont);
+    ensureFont(chrome.labelFont);
+    var ui = FONTS[chrome.uiFont] || FONTS.plex;
     var labels = FONTS[chrome.labelFont] || FONTS.mono;
     root.style.setProperty('--ow-sans', ui);
     if (chrome.uiFont === 'grotesk') root.style.setProperty('--ow-display', FONTS.grotesk);

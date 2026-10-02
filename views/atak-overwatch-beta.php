@@ -61,11 +61,12 @@ $icon = static function (string $path): string {
   <link rel="icon" href="<?= $h($base) ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-orbat.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-refresh.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-refresh.css')) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -90,28 +91,28 @@ $icon = static function (string $path): string {
   <header class="ow-topbar">
     <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
-      <button type="button" class="is-active" data-view="overwatch">Overwatch</button>
-      <button type="button" data-view="orbat">ORBAT</button>
-      <button type="button" data-view="comms">Ordre</button>
-      <button type="button" data-view="mission">Mission</button>
-      <button type="button" data-view="air">Air</button>
-      <button type="button" data-view="network">Réseau</button>
-      <button type="button" data-view="layers">Calques</button>
-      <button type="button" data-view="intel">Renseignement</button>
-      <button type="button" data-view="radio">Radio</button>
-      <button type="button" data-view="iff">IFF</button>
-      <button type="button" data-view="pings">Pings</button>
-      <button type="button" data-view="tools">Outils</button>
+      <button type="button" class="is-active" data-view="overwatch" title="La carte et la situation en direct">Overwatch</button>
+      <button type="button" data-view="orbat" title="L’organigramme prévu, comparé aux positions réellement reçues">ORBAT</button>
+      <button type="button" data-view="comms" title="Canaux, contacts, groupes et tchat opérationnel">Transmissions</button>
+      <button type="button" data-view="mission" title="Bilan, comptes rendus SALUTE, santé, logistique et CASEVAC">Mission</button>
+      <button type="button" class="ow-nav-secondary" data-view="air" title="Aéronefs, manifestes et demandes d’appui aérien (JTAC)">Air</button>
+      <button type="button" class="ow-nav-secondary" data-view="network" title="Relais posés, terminaux ATAK et état satellite">Réseau</button>
+      <button type="button" data-view="layers" title="Fonds de carte, relief et couches affichées">Calques</button>
+      <button type="button" data-view="intel" title="Observations, évaluations et dossiers de renseignement">Renseignement</button>
+      <button type="button" class="ow-nav-secondary" data-view="radio" title="Qui émet près d’un opérateur, et sur quel réseau">Radio</button>
+      <button type="button" class="ow-nav-secondary" data-view="iff" title="Identification ami / ennemi des contacts">Identification</button>
+      <button type="button" class="ow-nav-secondary" data-view="pings" title="Les signalements rapides posés sur la carte">Pings</button>
+      <button type="button" data-view="tools" title="Mesure, visée, relief et autres outils de carte">Outils</button>
     </nav>
     <div class="ow-more">
-      <button type="button" data-ow-more>Plus</button>
+      <button type="button" data-ow-more aria-haspopup="true" aria-expanded="false" aria-controls="ow-more-menu">Plus</button>
       <div class="ow-more-menu" id="ow-more-menu" hidden>
-        <button type="button" data-view="air">Air</button>
-        <button type="button" data-view="network">Réseau</button>
-        <button type="button" data-view="radio">Radio</button>
-        <button type="button" data-view="iff">Identification</button>
-        <button type="button" data-view="pings">Pings</button>
-        <button type="button" data-ow-replay>Replay</button>
+        <button type="button" class="ow-more-secondary" data-view="air">Air</button>
+        <button type="button" class="ow-more-secondary" data-view="network">Réseau</button>
+        <button type="button" class="ow-more-secondary" data-view="radio">Radio</button>
+        <button type="button" class="ow-more-secondary" data-view="iff">Identification</button>
+        <button type="button" class="ow-more-secondary" data-view="pings">Pings</button>
+        <button type="button" data-ow-replay>Rejouer la mission</button>
         <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>
         <button type="button" data-ow-goto>Aller à une grille</button>
@@ -119,12 +120,13 @@ $icon = static function (string $path): string {
         <button type="button" data-ow-panel="osint">Notes de terrain</button>
         <button type="button" data-ow-panel="logs">Journal</button>
         <button type="button" data-ow-compact>Carte seule</button>
-        <button type="button" data-command>Palette de commandes</button>
+        <button type="button" data-command>Palette de commandes <kbd>⌘K</kbd></button>
+        <button type="button" data-ow-help>Aide et raccourcis <kbd>?</kbd></button>
       </div>
     </div>
-    <button type="button" class="ow-help-btn" data-ow-help title="Aide du poste">?</button>
-    <button type="button" class="ow-command" data-command>⌘ K</button>
-    <div class="ow-session"><i></i><span><strong><?= $h($operator) ?></strong><small id="ow-link-label">Connexion…</small></span></div>
+    <button type="button" class="ow-help-btn" data-ow-help title="Aide et raccourcis clavier (touche ?)" aria-label="Ouvrir l’aide">?</button>
+    <button type="button" class="ow-command" data-command title="Palette de commandes : chercher une unité, un outil, une action" aria-label="Ouvrir la palette de commandes">⌘ K</button>
+    <div class="ow-session"><i></i><span><strong><?= $h($operator) ?></strong><small id="ow-link-label">Connexion en cours…</small></span></div>
   </header>
 
   <div class="ow-statusbar">
@@ -139,7 +141,7 @@ $icon = static function (string $path): string {
       <button type="button" class="ow-rec-btn" id="ow-rec-btn" data-ow-rec aria-pressed="false" title="Démarrer l’enregistrement du replay à partir de maintenant">
         <i aria-hidden="true"></i><span data-ow-rec-label>REC</span>
       </button>
-      <label class="ow-mini ow-sync-rate ow-select">Sync
+      <label class="ow-mini ow-sync-rate ow-select" title="Fréquence à laquelle le poste demande les nouvelles positions">Actualisation
         <select id="ow-refresh-rate" aria-label="Fréquence de synchronisation">
           <option value="3000">3 s</option>
           <option value="8000">8 s</option>
@@ -168,7 +170,7 @@ $icon = static function (string $path): string {
             <button type="button" class="ow-secondary" data-orbat-collapse>Tout fermer</button>
             <button type="button" class="ow-secondary" data-orbat-reload>Actualiser</button>
           </div>
-          <p class="ow-help">ORBAT planifié + observations BFT (callsign / ID militaire). Clic = inspecteur · clic droit = actions.</p>
+          <p class="ow-help">L’organigramme prévu, comparé aux positions réellement reçues des joueurs. Cliquez une unité pour l’inspecter ; clic droit pour la centrer, la suivre ou demander un point de situation.</p>
         </div>
         <div id="ow-orbat-tree" class="ow-orbat-tree" aria-label="Arbre ORBAT"></div>
       </div>
@@ -178,13 +180,13 @@ $icon = static function (string $path): string {
           <div class="ow-stat"><b id="ow-stat-contacts">0</b><span>Contacts</span></div>
           <div class="ow-stat"><b id="ow-stat-shapes">0</b><span>Tracés</span></div>
           <div class="ow-stat"><b id="ow-stat-photos">0</b><span>Photos</span></div>
-          <div class="ow-stat"><b id="ow-stat-traffic">—</b><span>Débit jeu</span></div>
+          <div class="ow-stat"><b id="ow-stat-traffic">—</b><span>Données reçues</span></div>
         </div>
-        <p class="ow-help">Remontée jeu → serveur de la communauté. Distinct de la latence du poste (pied de page).</p>
+        <p class="ow-help">Volume envoyé par le jeu au serveur de la communauté. Le délai d’affichage de ce poste est indiqué en bas de l’écran.</p>
         <div id="ow-traffic-panel" class="ow-traffic-panel">
           <svg class="ow-spark" id="ow-traffic-spark" viewBox="0 0 280 72" aria-hidden="true"></svg>
-          <div class="ow-event"><span>Depuis la dernière synchro</span><strong id="ow-traffic-since">Aucune remontée</strong></div>
-          <div class="ow-event"><span>Volume 15 min</span><strong id="ow-traffic-window">0 Mo</strong></div>
+          <div class="ow-event"><span>Depuis la dernière actualisation</span><strong id="ow-traffic-since">Aucune remontée</strong></div>
+          <div class="ow-event"><span>Sur les 15 dernières minutes</span><strong id="ow-traffic-window">0 Mo</strong></div>
           <div class="ow-event"><span>Dont photos</span><strong id="ow-traffic-photos">0 Mo</strong></div>
           <div class="ow-event"><span>Opérateurs en liaison</span><strong id="ow-traffic-ops">—</strong></div>
           <div class="ow-event"><span>Repères carte</span><strong id="ow-traffic-markers">—</strong></div>
@@ -193,10 +195,10 @@ $icon = static function (string $path): string {
         <p class="ow-kicker">Fond de carte</p>
         <fieldset class="ow-looks" id="atak-settings-fond">
           <legend>Calques Atlas</legend>
-          <p class="ow-help">Carte du jeu (topographique) ou photo aérienne. Les contacts restent en place.</p>
+          <p class="ow-help">Choisissez la carte du jeu ou la photo aérienne. Les contacts ne bougent pas quand vous changez de fond.</p>
           <div id="atak-fond-calques-list"></div>
           <p class="ow-kicker">Fonds dans ce navigateur</p>
-          <p class="ow-help">Télécharge plan et photos du théâtre pour les garder sous la main. Ensuite, zoomer ne redemande plus tout au poste.</p>
+          <p class="ow-help">Enregistre la carte et les photos de ce théâtre dans votre navigateur. Le zoom devient instantané, même avec une connexion lente.</p>
           <button type="button" class="ow-secondary" id="ow-tiles-prefetch">Télécharger les fonds du théâtre</button>
           <button type="button" class="ow-secondary" id="ow-tiles-prefetch-cancel" hidden>Arrêter le téléchargement</button>
           <p class="ow-help" id="ow-tiles-prefetch-status" aria-live="polite"></p>
@@ -229,11 +231,11 @@ $icon = static function (string $path): string {
               <option value="tactical">Tactique 3D</option>
             </select>
           </label>
-          <p class="ow-help">À plat : photo ou plan, sans volumes. 2D immersif : emprises des constructions collées à la photo, comme un relevé de toits. Relief et Tactique 3D dressent le sol et les volumes.</p>
+          <p class="ow-help"><b>À plat</b> : la carte seule. <b>2D immersif</b> : les bâtiments dessinés au sol, vus du dessus. <b>Relief 3D</b> et <b>Tactique 3D</b> : le terrain et les bâtiments en volume.</p>
           <label class="ow-toggle" for="atak-scene-buildings"><input type="checkbox" id="atak-scene-buildings" checked> Bâtiments, forêts et obstacles</label>
-          <p class="ow-help">En 2D immersif, chaque construction du relevé apparaît en emprise au sol, collée à la photo. Un clic ouvre la fiche (marquer, objectif, étage). En Relief 3D, les volumes se dressent. À plat, cette case n’a pas d’effet.</p>
+          <p class="ow-help">Cliquez un bâtiment pour ouvrir sa fiche : le marquer, en faire un objectif, voir ses étages. Sans effet en vue « À plat ».</p>
           <label class="ow-toggle" for="atak-scene-quality"><input type="checkbox" id="atak-scene-quality"> Qualité du relevé (cartographie)</label>
-          <p class="ow-help">Éteint par défaut. Vert : données complètes. Orange : dimensions approximées. Gris : position seulement. Rouge : géométrie à vérifier.</p>
+          <p class="ow-help">Colore chaque bâtiment selon la fiabilité de ses données : vert complet, orange dimensions estimées, gris position seule, rouge à vérifier.</p>
           <div class="ow-opt">
             <label class="ow-row" for="atak-symbol-occlusion">Symboles derrière un obstacle
               <select id="atak-symbol-occlusion">
@@ -316,12 +318,12 @@ $icon = static function (string $path): string {
         <p class="ow-help" id="ow-geo-roads-help">Aucun relevé de routes reçu pour ce théâtre.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-relays-layer" checked> Relais ATAK</label>
         <p class="ow-help" id="ow-relays-help">Aucun relais posé en jeu pour le moment.</p>
-        <p class="ow-help" id="ow-relay-mode-help">Par défaut, le téléphone transmet sans relais.</p>
+        <p class="ow-help" id="ow-relay-mode-help">Le téléphone transmet sans avoir besoin d’un relais. Un responsable peut rendre les relais obligatoires dans les réglages ATAK de la communauté.</p>
         <p class="ow-kicker">Veille radio</p>
         <div id="ow-df-list"><p class="ow-help">Aucun émetteur relevé pour le moment.</p></div>
         <p class="ow-kicker">Fieldwatch — veille RF</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-rf-layer" checked> Détections RF (Wi‑Fi / BLE)</label>
-        <p class="ow-help">Hits passifs remontés depuis l’app Fieldwatch en jeu. Zeus pose les émetteurs ; le téléphone scanne à proximité.</p>
+        <p class="ow-help">Les signaux Wi‑Fi et Bluetooth captés par l’application Fieldwatch en jeu. Le Zeus place les émetteurs ; le téléphone du joueur les détecte en passant à proximité.</p>
         <div id="ow-rf-list"><p class="ow-help">Aucune détection RF pour le moment.</p></div>
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-links" checked> Relier les membres d’un même groupe</label>
         <label class="ow-row">Épaisseur des liens
@@ -331,17 +333,17 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-dist"> Distances sur les liens de groupe</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-follow"> Suivre le contact sélectionné</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-look-arrow"> Flèche d’orientation</label>
-        <p class="ow-help">Pointe du contact ouvert : orientation du personnage en jeu, pas la caméra. La longueur reste lisible quel que soit le zoom.</p>
+        <p class="ow-help">Indique où regarde le personnage du contact sélectionné (pas sa caméra).</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-predict"> Anticiper les trajectoires</label>
-        <p class="ow-help">Vecteur pointillé pour chaque contact en mouvement, à partir du cap et de la vitesse déjà transmis. Rien n’est inventé si ces données manquent.</p>
+        <p class="ow-help">Une flèche pointillée montre où va chaque contact en mouvement, d’après son cap et sa vitesse. Sans ces données, rien n’est affiché.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-progress-trail"> Tracé de progression</label>
-        <p class="ow-help">Chemin déjà parcouru par le contact ouvert, d’après les positions reçues sur ce poste. Le tracé s’allonge au fur et à mesure.</p>
-        <label class="ow-toggle"><input type="checkbox" id="atak-unit-trails" checked> Tracés unitaires (qualité)</label>
-        <label class="ow-toggle"><input type="checkbox" id="atak-ghost-trails"> Tracés fantômes (hors liaison)</label>
-        <p class="ow-help">Les tracés qualité reprennent le camp, la perte de liaison et les fantômes. Les fantômes n’apparaissent que pour les contacts hors liaison.</p>
+        <p class="ow-help">Le chemin déjà parcouru par le contact sélectionné depuis l’ouverture de cette page.</p>
+        <label class="ow-toggle"><input type="checkbox" id="atak-unit-trails" checked> Tracés des unités</label>
+        <label class="ow-toggle"><input type="checkbox" id="atak-ghost-trails-offline"> Dernière trace des contacts perdus</label>
+        <p class="ow-help">Quand un contact perd la liaison, son dernier trajet connu reste affiché en pointillé.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-label-grid"> Grille sous l’indicatif</label>
-        <label class="ow-toggle"><input type="checkbox" id="ow-po-markers" checked> Points d’objectif (libellé PO) — rayon 20 m</label>
-        <p class="ow-help">Un marqueur nommé PO, PO 1 ou PO-2 devient un point d’objectif. Dès qu’un téléphone ATAK entre dans les 20 mètres, le point est confirmé atteint.</p>
+        <label class="ow-toggle"><input type="checkbox" id="ow-po-markers" checked> Points d’objectif (PO)</label>
+        <p class="ow-help">Nommez un marqueur « PO », « PO 1 » ou « PO-2 » pour en faire un point d’objectif. Il passe à « atteint » dès qu’un joueur équipé d’ATAK arrive à moins de 20 m.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-rally-markers" checked> Points de ralliement — rayon 50 m</label>
         <p class="ow-help">Un point de ralliement est un lieu de regroupement. L’anneau vert de 50 mètres apparaît au poste et en jeu. Les opérateurs présents dans le rayon sont indiqués, sans rien inventer.</p>
         <p class="ow-kicker">Anneaux de portée</p>
@@ -373,8 +375,8 @@ $icon = static function (string $path): string {
         <p class="ow-kicker">Personnalisation</p>
         <label class="ow-row">Police de l’interface
           <span class="ow-select"><select id="ow-ui-font">
-            <option value="inter" selected>Inter</option>
-            <option value="plex">Plex Sans</option>
+            <option value="plex" selected>Plex Sans (par défaut)</option>
+            <option value="inter">Inter</option>
             <option value="grotesk">Space Grotesk</option>
             <option value="noto">Noto Sans</option>
             <option value="source">Source Sans</option>
@@ -428,11 +430,11 @@ $icon = static function (string $path): string {
           <input type="range" id="ow-draw-width" min="1" max="8" value="2">
         </label>
         <p class="ow-kicker">Géolocalisation</p>
-        <p class="ow-help">Préférences de ce poste uniquement. Elles n’inventent pas de villes ou de routes si le théâtre n’en a pas encore remonté.</p>
+        <p class="ow-help">Réglages propres à ce poste. Les villes et routes n’apparaissent que si le jeu les a déjà transmises.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-remember" checked> Mémoriser les calques villes et routes</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-labels" checked> Afficher les noms des localités</label>
         <p class="ow-kicker">Liaison ATAK</p>
-        <p class="ow-help" id="ow-relay-mode-help">Par défaut, la liaison du téléphone n’exige pas de relais. Un responsable peut activer le passage obligatoire par antenne dans les réglages ATAK de la communauté.</p>
+        <p class="ow-help">Les alertes ci-dessous sonnent uniquement sur ce poste.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geofence" checked> Alerte entrée / sortie de zone</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-c2-alerts" checked> Alerte sonore proche d’un objectif</label>
         <label class="ow-row">Distance d’alerte
@@ -750,7 +752,7 @@ $icon = static function (string $path): string {
     </section>
 
     <aside class="ow-chat" id="ow-chat" aria-label="Tchat opérationnel">
-      <header><span>●</span> Ordre <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
+      <header><span>●</span> Transmissions <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
       <div class="ow-tabs" role="tablist">
         <button type="button" class="is-active" data-chat-tab="channels">Canaux <span class="ow-unread" data-unread-tab="channels" hidden></span></button>
         <button type="button" data-chat-tab="contacts">Contacts</button>
@@ -858,40 +860,109 @@ $icon = static function (string $path): string {
 
   <footer class="ow-footer">
     <b id="ow-footer-link">Liaison</b>
-    <span id="ow-latency">Rx —</span>
-    <span id="ow-bft-count">BFT 0</span>
+    <span id="ow-latency" title="Délai depuis la dernière réception de données">Rx —</span>
+    <span id="ow-bft-count" title="Contacts amis suivis en direct (Blue Force Tracking)">BFT 0</span>
     <span id="ow-map-name"><?= $h(ucfirst($slug)) ?></span>
     <span id="ow-weather-chip">Météo —</span>
-    <span id="ow-cache-label" title="État des fonds de carte">Fonds</span>
+    <span id="ow-cache-label" title="Fonds de carte enregistrés dans ce navigateur">Fonds</span>
     <span class="ow-footer-end">Overwatch Beta</span>
   </footer>
 </div>
 
 <div class="ow-palette" id="ow-palette" hidden>
   <div>
-    <input id="ow-command-input" placeholder="Rechercher une unité, une commande, un outil…">
+    <input id="ow-command-input" placeholder="Rechercher une unité, une commande, un outil…" aria-label="Rechercher une unité, une commande ou un outil" autocomplete="off">
     <div id="ow-palette-results"></div>
     <p>↑↓ naviguer · Entrée exécuter · Échap fermer</p>
   </div>
 </div>
 
 <div class="ow-guide" id="ow-guide" hidden>
-  <div class="ow-guide-card" role="dialog" aria-labelledby="ow-guide-title">
-    <p class="ow-kicker">Aide du poste</p>
-    <h1 id="ow-guide-title">Overwatch Beta</h1>
-    <h2>Colonnes</h2>
-    <p>À gauche, les fonds, le relief et les couches — ou l’ORBAT (bouton ORBAT en haut) : arbre planifié croisé avec le BFT observé, inspecteur à droite, clic droit pour centrer / suivre / SITREP. Le chevron rabat ce panneau. À droite, Ordre regroupe les canaux, les contacts, les groupes (tâches et alerte plein écran) et le support. Mission sert au bilan, au SALUTE, aux alertes santé du terrain, au soutien logistique et au CASEVAC. Radio affiche la proximité des émissions et leur historique. Replay et journal sont aussi dans Plus, en haut. Les outils de tracé rarement utilisés sont derrière la flèche du rail, avec leur nom. L’espace Air rassemble les aéronefs, les manifestes (consultation et création depuis le poste) et les demandes JTAC. L’espace Réseau liste les relais posés, les terminaux ATAK et l’état satellitaire lorsqu’un catalogue est fourni.</p>
-    <h2>Fonds</h2>
-    <p>Choisissez la carte du jeu ou la photo aérienne. La lecture couleur ou noir et blanc ne change pas le calque, seulement le contraste.</p>
-    <h2>Calques</h2>
-    <p>Ombrage, pentes et chaleur de présence s’ajoutent au fond. À plat, la carte reste un plan sans volumes. En 2D immersif, les constructions du relevé apparaissent en emprise au sol, collées à la photo, comme un relevé de toits. En Relief 3D, le sol se relève et les volumes se dressent. Le masque de visibilité, l’horizon et la coupe verticale se trouvent derrière la flèche des outils. 2D / 3D affiche les deux lectures côte à côte.</p>
-    <h2>Dessin</h2>
-    <p>Le crayon du rail ouvre la barre de tracé au-dessus de la carte : flèche, croquis, zone, surligneur, texte, symboles OTAN (ami, ennemi, neutre, inconnu) et plan de bâtiment. Maintenez le clic pour tracer, relâchez pour poser. Exporter PDF prépare une feuille de briefing (carte, légende, fil). Échap ou Sélection pour quitter. Clic droit : SALUTE, 9-line, CASEVAC, ou supprimer un tracé.</p>
-    <h2>Réglages</h2>
-    <p>Police, taille, grille, lecture nocturne et photos sur la carte se règlent à gauche. Chaque choix reste sur ce poste.</p>
-    <h2>Fil</h2>
-    <p>Les messages sont groupés par auteur. La barre colorée indique l’urgence. Une pastille signale les messages non lus. Vous pouvez retirer les vôtres, ou vider le fil pour tout le poste.</p>
-    <button type="button" class="ow-primary" id="ow-guide-ok">Fermer l’aide</button>
+  <div class="ow-guide-card" role="dialog" aria-modal="true" aria-labelledby="ow-guide-title">
+    <header class="ow-guide-head">
+      <div>
+        <p class="ow-kicker">Aide</p>
+        <h1 id="ow-guide-title">Prendre en main Overwatch</h1>
+        <p class="ow-guide-lead">Overwatch montre la mission en cours depuis le poste de commandement. Tout ce que vous réglez ici reste sur ce poste et ne change rien pour les joueurs.</p>
+      </div>
+      <button type="button" class="ow-guide-close" data-ow-guide-close aria-label="Fermer l’aide">×</button>
+    </header>
+
+    <div class="ow-guide-body">
+      <section class="ow-guide-section">
+        <h2>Démarrer en trois gestes</h2>
+        <ol class="ow-guide-steps">
+          <li><b>Repérez vos joueurs.</b> Les contacts apparaissent dès qu’un joueur équipé d’ATAK est en liaison. Le pied de page indique combien sont suivis (<span class="ow-mono">BFT</span>).</li>
+          <li><b>Cliquez un contact</b> pour ouvrir sa fiche ; clic droit sur la carte pour poser un repère, mesurer ou transmettre un compte rendu.</li>
+          <li><b>Parlez à vos équipes</b> depuis l’espace <b>Transmissions</b> : canaux, groupes et alertes plein écran.</li>
+        </ol>
+      </section>
+
+      <section class="ow-guide-section">
+        <h2>Les espaces de travail</h2>
+        <dl class="ow-guide-grid">
+          <dt>Overwatch</dt><dd>La carte et la situation en direct.</dd>
+          <dt>ORBAT</dt><dd>L’organigramme prévu, comparé aux positions réellement reçues.</dd>
+          <dt>Transmissions</dt><dd>Canaux, contacts, groupes, tchat et alertes plein écran.</dd>
+          <dt>Mission</dt><dd>Bilan, comptes rendus SALUTE, santé, logistique et évacuations (CASEVAC).</dd>
+          <dt>Calques</dt><dd>Fond de carte, relief, vue 3D et couches affichées.</dd>
+          <dt>Renseignement</dt><dd>Observations du terrain et évaluations confirmées.</dd>
+          <dt>Air · Réseau · Radio</dt><dd>Aéronefs et appui aérien, relais et terminaux, émissions radio. Sur petit écran, ces espaces sont dans <b>Plus</b>.</dd>
+          <dt>Plus</dt><dd>Rejouer la mission, exporter le bilan, bloc-notes, journal, carte seule.</dd>
+        </dl>
+      </section>
+
+      <section class="ow-guide-section">
+        <h2>Dessiner sur la carte</h2>
+        <p>Le crayon du rail de gauche ouvre la barre de tracé : flèche, croquis, zone, texte et symboles OTAN (ami, ennemi, neutre, inconnu). Maintenez le clic pour tracer, relâchez pour poser. <kbd>Échap</kbd> revient à la sélection. <b>Exporter en PDF</b> prépare une feuille de briefing avec la carte et la légende.</p>
+      </section>
+
+      <section class="ow-guide-section">
+        <h2>Raccourcis clavier</h2>
+        <dl class="ow-guide-keys">
+          <dt><kbd>⌘</kbd> <kbd>K</kbd></dt><dd>Palette de commandes : chercher une unité, un outil, une action</dd>
+          <dt><kbd>?</kbd></dt><dd>Ouvrir ou fermer cette aide</dd>
+          <dt><kbd>M</kbd></dt><dd>Mesurer une distance</dd>
+          <dt><kbd>B</kbd></dt><dd>Distance et cap entre deux points</dd>
+          <dt><kbd>V</kbd></dt><dd>Visée : ce qui est visible depuis un point</dd>
+          <dt><kbd>P</kbd></dt><dd>Poser un point d’objectif (20 m)</dd>
+          <dt><kbd>R</kbd></dt><dd>Poser un point de ralliement (50 m)</dd>
+          <dt><kbd>O</kbd></dt><dd>Tracer une zone circulaire</dd>
+          <dt><kbd>F</kbd></dt><dd>Suivre le contact sélectionné</dd>
+          <dt><kbd>U</kbd></dt><dd>Annuler le dernier tracé</dd>
+          <dt><kbd>Suppr</kbd></dt><dd>Supprimer l’élément survolé</dd>
+          <dt><kbd>Échap</kbd></dt><dd>Fermer un panneau, revenir à la sélection</dd>
+        </dl>
+      </section>
+
+      <section class="ow-guide-section">
+        <h2>Lexique</h2>
+        <dl class="ow-guide-grid">
+          <dt>BFT</dt><dd>Blue Force Tracking : la position des joueurs amis, transmise en continu.</dd>
+          <dt>ORBAT</dt><dd>Ordre de bataille : qui est dans quelle unité, sous quel chef.</dd>
+          <dt>SALUTE</dt><dd>Compte rendu d’observation : effectif, activité, lieu, unité, heure, équipement.</dd>
+          <dt>9-line</dt><dd>Demande d’évacuation médicale ou d’appui en neuf rubriques.</dd>
+          <dt>CASEVAC</dt><dd>Évacuation d’un blessé.</dd>
+          <dt>JTAC</dt><dd>Contrôleur qui guide l’appui aérien.</dd>
+          <dt>PO</dt><dd>Point d’objectif : il passe à « atteint » quand un joueur arrive à moins de 20 m.</dd>
+        </dl>
+      </section>
+
+      <section class="ow-guide-section">
+        <h2>Ça ne marche pas ?</h2>
+        <ul class="ow-guide-faq">
+          <li><b>Aucun contact sur la carte</b> : aucun joueur n’est en liaison ATAK pour le moment, ou votre rôle ne vous autorise pas à les voir.</li>
+          <li><b>« Connexion en cours… » ne disparaît pas</b> : rechargez la page. Si le problème persiste, le serveur de la communauté est peut-être en maintenance.</li>
+          <li><b>La carte est lente</b> : dans <b>Calques</b>, téléchargez les fonds du théâtre, ou repassez la vue en « À plat ».</li>
+          <li><b>Un réglage a disparu</b> : les réglages sont enregistrés dans ce navigateur. Un autre navigateur ou une navigation privée repart des valeurs par défaut.</li>
+        </ul>
+      </section>
+    </div>
+
+    <footer class="ow-guide-foot">
+      <span class="ow-help">Astuce : survolez un bouton pour voir à quoi il sert.</span>
+      <button type="button" class="ow-primary" id="ow-guide-ok">J’ai compris</button>
+    </footer>
   </div>
 </div>
 
@@ -927,8 +998,9 @@ $icon = static function (string $path): string {
   <div class="ow-disclaimer-card" role="dialog" aria-modal="true" aria-labelledby="ow-disclaimer-title">
     <p class="ow-kicker">Athena / Overwatch</p>
     <h1 id="ow-disclaimer-title">Espace de travail en accès anticipé</h1>
-    <p>Cette carte de poste affiche uniquement la situation autorisée pour votre compte, transmise par la liaison de la communauté. Ce n’est pas le téléphone emporté en jeu.</p>
-    <p>Les positions, messages et photos viennent de la mission en cours. Un rôle plus restreint ne verra pas davantage ici qu’au poste habituel.</p>
+    <p>Overwatch affiche la mission en cours vue depuis le poste de commandement : positions, messages et photos transmis par les joueurs équipés d’ATAK.</p>
+    <p>Vous ne voyez que ce que votre rôle autorise, exactement comme sur le poste habituel. Cet outil est en test : certaines fonctions peuvent changer ou manquer.</p>
+    <p class="ow-help">Besoin d’un repère ? Appuyez sur <kbd>?</kbd> à tout moment pour ouvrir l’aide.</p>
     <label class="ow-toggle"><input type="checkbox" id="ow-disclaimer-hide"> Ne plus afficher cet avertissement</label>
     <button type="button" class="ow-primary" id="ow-disclaimer-ok">Entrer dans Overwatch</button>
   </div>

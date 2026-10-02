@@ -484,7 +484,7 @@
       window.location.href = String(window.ATAK_API_BASE || '').replace(/\/$/, '') + '/orbat?unit=' + (ent.unitId || '');
     }
     if (action === 'sitrep' && beta && typeof beta.toast === 'function') {
-      beta.toast('Demande SITREP — ' + ent.name + ' (canal Ordre).');
+      beta.toast('Point de situation demandé à ' + ent.name + ' (canal Transmissions).');
       if (typeof beta.openView === 'function') beta.openView('comms');
     }
     if (action === 'order' && beta && typeof beta.toast === 'function') {

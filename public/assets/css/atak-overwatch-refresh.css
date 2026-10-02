@@ -1,0 +1,298 @@
+/**
+ * Overwatch Beta — couche de modernisation (chargée après atak-overwatch-beta.css).
+ * Garde le thème sombre tactique ; ajoute une typo cohérente avec le back-office,
+ * des transitions douces, un guide d’aide structuré et des focus clavier visibles.
+ * Toutes les animations sont coupées si l’utilisateur demande moins de mouvement.
+ */
+
+:root {
+  --ow-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --ow-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --ow-title: "Barlow Semi Condensed", "IBM Plex Sans", sans-serif;
+  --ow-ease: cubic-bezier(0.2, 0.8, 0.25, 1);
+  --ow-focus: #00d69a;
+}
+
+/* ——— Focus clavier visible ——— */
+.ow-shell :where(button, a, input, select, textarea, summary):focus-visible,
+.ow-guide :where(button, a):focus-visible,
+.ow-palette input:focus-visible,
+.ow-disclaimer :where(button, input):focus-visible {
+  outline: 2px solid var(--ow-focus);
+  outline-offset: 2px;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid #2f3a36;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #0f1312;
+  color: #dfe5e2;
+  font-family: var(--ow-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* ——— Barre du haut ——— */
+.ow-brand-word {
+  font-family: var(--ow-title) !important;
+  font-variant-caps: normal !important;
+  font-size: 16px !important;
+  letter-spacing: 0.1em !important;
+}
+.ow-brand > b { border-radius: 6px; transition: transform 0.2s var(--ow-ease); }
+.ow-brand:hover > b { transform: rotate(-6deg) scale(1.05); }
+
+.ow-nav { overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.ow-nav::-webkit-scrollbar { display: none; }
+.ow-nav button {
+  position: relative;
+  white-space: nowrap;
+  font-size: 12.5px;
+  border-bottom: 0 !important;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.ow-nav button::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--athena-green);
+  transform: scaleX(0);
+  transition: transform 0.25s var(--ow-ease);
+}
+.ow-nav button.is-active::after { transform: scaleX(1); }
+
+/* Onglets secondaires : dans la barre sur grand écran, dans « Plus » sinon (plus de doublon). */
+@media (max-width: 1400px) {
+  .ow-nav .ow-nav-secondary { display: none; }
+}
+
+.ow-more-menu {
+  min-width: 240px !important;
+  transform-origin: top right;
+  animation: owRefreshPop 0.16s var(--ow-ease) both;
+}
+.ow-more-menu button { display: flex !important; align-items: center; justify-content: space-between; gap: 10px; }
+.ow-more-menu .ow-more-secondary { display: none !important; }
+@media (max-width: 1400px) {
+  .ow-more-menu .ow-more-secondary { display: flex !important; }
+}
+.ow-more-menu kbd { height: 18px; font-size: 10px; }
+
+.ow-help-btn,
+.ow-command,
+.ow-topbar .ow-more > button {
+  border-radius: 6px;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.ow-help-btn:hover,
+.ow-command:hover { color: #fff; border-color: #395047; transform: translateY(-1px); }
+.ow-help-btn { color: var(--athena-green); }
+
+.ow-session > i { transition: background 0.3s ease; }
+.ow-session.is-live > i { animation: owRefreshLive 2.4s ease-out infinite; }
+
+/* ——— Panneaux ——— */
+.ow-kicker {
+  font-family: var(--ow-title);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9aa6a1;
+}
+.ow-help { color: #8b9792; }
+.ow-help b { color: #c9d1cd; font-weight: 600; }
+
+.ow-stat {
+  border-radius: 8px;
+  transition: border-color 0.2s ease, transform 0.2s var(--ow-ease);
+}
+.ow-stat:hover { border-color: #2e3b36; transform: translateY(-1px); }
+.ow-stat b { font-family: var(--ow-title); font-size: 22px; letter-spacing: 0; }
+
+.ow-primary,
+.ow-secondary {
+  border-radius: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.ow-primary:hover,
+.ow-secondary:hover { transform: translateY(-1px); }
+.ow-secondary:hover { border-color: #395047; color: #fff; }
+
+.ow-toggle { transition: color 0.15s ease; }
+.ow-toggle:hover { color: #fff; }
+.ow-toggle input[type="checkbox"],
+.ow-looks input[type="radio"] { accent-color: var(--athena-green); }
+.ow-shell input[type="range"] { accent-color: var(--athena-green); }
+
+.ow-drawer:not([hidden]),
+.atak-dossier:not([hidden]),
+.ow-bplan:not([hidden]) { animation: owRefreshSlideIn 0.28s var(--ow-ease) both; }
+
+/* ——— Boîtes de dialogue ——— */
+.ow-palette > div,
+.ow-disclaimer-card,
+.ow-effectifs-modal-card { animation: owRefreshPop 0.22s var(--ow-ease) both; }
+.ow-palette:not([hidden]),
+.ow-disclaimer:not([hidden]),
+.ow-guide:not([hidden]) { animation: owRefreshFade 0.2s ease both; backdrop-filter: blur(3px); }
+
+.ow-disclaimer-card h1,
+.ow-guide-card h1 {
+  font-family: var(--ow-title);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+/* ——— Guide d’aide ——— */
+.ow-guide-card {
+  width: min(760px, 100%);
+  max-height: min(86vh, 820px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  animation: owRefreshPop 0.24s var(--ow-ease) both;
+}
+.ow-guide-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--athena-line);
+}
+.ow-guide-head > div { flex: 1; }
+.ow-guide-head .ow-kicker { margin: 0; padding: 0; border: 0; color: var(--athena-green); }
+.ow-guide-card h1 { margin: 4px 0 8px; }
+.ow-guide-lead { font-size: 14px !important; color: #b8c1bd !important; margin: 0 !important; max-width: 600px; }
+.ow-guide-close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid #27302d;
+  border-radius: 8px;
+  background: #0d1110;
+  color: #c5cbc8;
+  font-size: 20px;
+  line-height: 1;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.ow-guide-close:hover { color: #fff; border-color: #395047; }
+.ow-guide-body { overflow-y: auto; padding: 8px 24px 20px; }
+.ow-guide-section { padding: 16px 0; border-bottom: 1px solid #151b19; }
+.ow-guide-section:last-child { border-bottom: 0; }
+.ow-guide-card h2 {
+  margin: 0 0 10px;
+  font-family: var(--ow-title);
+  font-size: 17px;
+  font-weight: 700;
+  color: #eef2f0;
+}
+.ow-guide-section p { font-size: 13.5px; }
+.ow-guide-steps { margin: 0; padding: 0; list-style: none; counter-reset: owstep; display: grid; gap: 10px; }
+.ow-guide-steps li {
+  counter-increment: owstep;
+  position: relative;
+  padding: 10px 12px 10px 46px;
+  border: 1px solid #1c2421;
+  border-radius: 8px;
+  background: #0c100f;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #c5cbc8;
+}
+.ow-guide-steps li::before {
+  content: counter(owstep);
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 214, 154, 0.12);
+  color: var(--athena-green);
+  font-family: var(--ow-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ow-guide-steps b,
+.ow-guide-faq b,
+.ow-guide-section p b { color: #eef2f0; font-weight: 600; }
+.ow-guide-grid,
+.ow-guide-keys {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.ow-guide-grid dt { font-weight: 600; color: #eef2f0; }
+.ow-guide-grid dd,
+.ow-guide-keys dd { margin: 0; color: #b8c1bd; }
+.ow-guide-keys { grid-template-columns: repeat(2, minmax(90px, max-content) 1fr); align-items: center; }
+.ow-guide-keys dt { display: flex; gap: 4px; }
+.ow-guide-faq { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13.5px; color: #b8c1bd; line-height: 1.5; }
+.ow-guide-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--athena-line);
+  background: #070908;
+}
+.ow-guide-foot .ow-help { margin: 0; }
+.ow-guide-foot .ow-primary { height: 38px; padding: 0 18px; width: auto; margin: 0; }
+
+@media (max-width: 720px) {
+  .ow-guide { padding: 0; place-items: stretch; }
+  .ow-guide-card { max-height: 100vh; border-radius: 0; }
+  .ow-guide-keys { grid-template-columns: minmax(80px, max-content) 1fr; }
+  .ow-guide-foot .ow-help { display: none; }
+}
+
+/* ——— Animations ——— */
+@keyframes owRefreshFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes owRefreshPop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes owRefreshSlideIn {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes owRefreshLive {
+  0% { box-shadow: 0 0 0 0 rgba(0, 214, 154, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(0, 214, 154, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 214, 154, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ow-shell *,
+  .ow-guide *,
+  .ow-palette *,
+  .ow-disclaimer *,
+  .ow-guide,
+  .ow-palette,
+  .ow-disclaimer {
+    animation: none !important;
+    transition: none !important;
+  }
+}

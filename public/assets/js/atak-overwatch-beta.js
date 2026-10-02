@@ -5843,8 +5843,8 @@
       '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
       '<div class="ow-event"><span>Photos</span><strong>' + photos.length + '</strong></div>') +
       '<p class="ow-kicker">Ordres et alertes</p>' +
-      '<p class="ow-help">Les tâches de groupe et l’alerte plein écran se préparent dans Ordre → Groupes, à côté du fil.</p>' +
-      '<button type="button" class="ow-secondary" data-ow-group-task>Ouvrir Ordre → Groupes</button>' +
+      '<p class="ow-help">Les tâches de groupe et l’alerte plein écran se préparent dans Transmissions › Groupes, à côté du fil.</p>' +
+      '<button type="button" class="ow-secondary" data-ow-group-task>Ouvrir Transmissions › Groupes</button>' +
       '<p class="ow-kicker">Replay et bilan</p>' +
       '<p class="ow-help">Rejouez les trajectoires déjà reçues, puis exportez le bilan de mission (carte annotée et fil d’ordres).</p>' +
       '<div class="ow-form-actions"><button type="button" class="ow-secondary" data-ow-replay>Ouvrir le replay</button>' +
@@ -6814,7 +6814,7 @@
     ['Aller à une grille', 'Carte', function () { setTool('goto'); }],
     ['Anneaux de portée', 'Carte', function () { setTool('range'); }],
     ['Bloc-notes du poste', 'Mission', function () { window.dispatchEvent(new CustomEvent('overwatch:panel', { detail: { panel: 'notes' } })); }],
-    ['Ouvrir le tchat opérationnel', 'Ordre', function () { openView('comms'); }],
+    ['Ouvrir le tchat opérationnel', 'Transmissions', function () { openView('comms'); }],
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
     ['Ouvrir Air', 'Air', function () { openView('air'); }],
     ['Ouvrir le réseau', 'Réseau', function () { openView('network'); }],
@@ -6845,7 +6845,7 @@
     ['Poser un point à atteindre', 'Carte', function () { setTool('po'); }],
     ['Poser un point de ralliement', 'Carte', function () { setTool('rally'); }],
     ['Transmettre une tâche de groupe', 'Mission', function () { openSquadTaskForm(''); }],
-    ['Envoyer une alerte plein écran', 'Ordre', function () { openFullscreenAlertForm(''); }],
+    ['Envoyer une alerte plein écran', 'Transmissions', function () { openFullscreenAlertForm(''); }],
     ['Suivre le contact', 'Contacts', function () { followOn = true; var box = document.getElementById('ow-follow'); if (box) box.checked = true; toast('Suivi activé. Ouvrez un contact.'); }],
     ['Annuler le dernier tracé', 'Carte', function () { undoLastShape(); }]
   ];
@@ -7096,14 +7096,15 @@
 
   function syncTrailPrefsFromUi() {
     var trails = document.getElementById('atak-unit-trails');
-    var ghost = document.getElementById('atak-ghost-trails');
+    // Case « dernière trace des contacts perdus » (distincte de « Traces de déplacement »).
+    var ghost = document.getElementById('atak-ghost-trails-offline');
     patchDisplayPrefs({
       showUnitTrails: !trails || trails.checked,
       showUnitGhostTrails: !!(ghost && ghost.checked),
       showSseGhostTracks: !!(ghost && ghost.checked)
     });
   }
-  ['atak-unit-trails', 'atak-ghost-trails'].forEach(function (id) {
+  ['atak-unit-trails', 'atak-ghost-trails-offline'].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('change', syncTrailPrefsFromUi);
@@ -7449,8 +7450,11 @@
   document.addEventListener('keydown', function (event) {
     var tag = String((event.target && event.target.tagName) || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (event.target && event.target.isContentEditable) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); togglePalette(palette.hidden); }
     if (event.key === 'Escape') {
+      var guideEsc = document.getElementById('ow-guide');
+      if (guideEsc && !guideEsc.hidden) { guideEsc.hidden = true; return; }
       var effectifsModalEsc = document.getElementById('ow-effectifs-modal');
       if (effectifsModalEsc && !effectifsModalEsc.hidden) { closeEffectifsModal(); return; }
       togglePalette(false); hideContext(); document.getElementById('ow-drawer').hidden = true; setTool('cursor');
@@ -7464,6 +7468,13 @@
       if (ctxOpen) hideContext();
       deleteMapTarget(toDrop);
       clearHoverDelete();
+      return;
+    }
+    // Les raccourcis à une lettre ne doivent pas détourner Ctrl+R, Ctrl+F, Ctrl+P, Ctrl+V…
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key === '?') {
+      var guideKey = document.getElementById('ow-guide');
+      if (guideKey) guideKey.hidden = !guideKey.hidden;
       return;
     }
     if (event.key === 'm' || event.key === 'M') setTool('measure');
@@ -7650,6 +7661,7 @@
     moreBtn.addEventListener('click', function (event) {
       event.stopPropagation();
       moreMenu.hidden = !moreMenu.hidden;
+      moreBtn.setAttribute('aria-expanded', moreMenu.hidden ? 'false' : 'true');
     });
   }
 
@@ -7666,7 +7678,10 @@
     });
   }
   document.addEventListener('click', function (event) {
-    if (moreMenu && !event.target.closest('[data-ow-more]')) moreMenu.hidden = true;
+    if (moreMenu && !event.target.closest('[data-ow-more]')) {
+      moreMenu.hidden = true;
+      if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false');
+    }
     if (railExtra && railMore && !event.target.closest('.ow-rail')) {
       if (!railExtra.querySelector('[data-tool].is-active')) {
         railExtra.hidden = true;
@@ -7686,6 +7701,9 @@
   });
   var guideOk = document.getElementById('ow-guide-ok');
   if (guideOk) guideOk.addEventListener('click', function () { openGuide(false); });
+  document.querySelectorAll('[data-ow-guide-close]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openGuide(false); });
+  });
   var guide = document.getElementById('ow-guide');
   if (guide) guide.addEventListener('click', function (event) { if (event.target === guide) openGuide(false); });
 
