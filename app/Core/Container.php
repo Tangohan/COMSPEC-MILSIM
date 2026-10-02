@@ -1030,7 +1030,8 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Repositories\QualificationReferentielRepository::class),
                 self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
-                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Repositories\UserRepository::class)
             ),
             \App\Services\Personnel\QualificationStatusTransitionService::class => new \App\Services\Personnel\QualificationStatusTransitionService(
                 self::get(\App\Repositories\QualificationAwardRepository::class),

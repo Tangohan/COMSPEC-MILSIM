@@ -345,7 +345,7 @@ final class MemberSituationController
             if (!is_array($award)) {
                 continue;
             }
-            $enriched[] = $this->enrichAwardForOperatorView($award);
+            $enriched[] = $this->enrichAwardForOperatorView($award, $user);
         }
 
         return Response::view('layout.main', $this->boShell([
@@ -476,8 +476,27 @@ final class MemberSituationController
         }
 
         try {
+            $hadCert = trim((string) ($award['certificate_document_path'] ?? '')) !== '';
             $res = $this->certificates->generate($tenantId, $awardId, $userId);
-            Session::flash('success', 'Brevet généré (n° ' . $res['certificate_number'] . ').');
+            $holder = trim((string) ($res['holder_name'] ?? ''));
+            $number = (string) ($res['certificate_number'] ?? '');
+            if ($hadCert) {
+                Session::flash(
+                    'success',
+                    'Brevet mis à jour'
+                    . ($holder !== '' ? ' au nom de ' . $holder : '')
+                    . ($number !== '' ? ' (n° ' . $number . ')' : '')
+                    . '.'
+                );
+            } else {
+                Session::flash(
+                    'success',
+                    'Brevet généré'
+                    . ($holder !== '' ? ' au nom de ' . $holder : '')
+                    . ($number !== '' ? ' (n° ' . $number . ')' : '')
+                    . '.'
+                );
+            }
 
             return Response::redirect(url('back-office/ma-situation/qualifications/' . $awardId . '/brevet'));
         } catch (\Throwable $e) {
@@ -530,9 +549,10 @@ final class MemberSituationController
 
     /**
      * @param array<string, mixed> $award
+     * @param array<string, mixed> $user
      * @return array<string, mixed>
      */
-    private function enrichAwardForOperatorView(array $award): array
+    private function enrichAwardForOperatorView(array $award, array $user = []): array
     {
         $badgeRel = trim((string) ($award['level_badge_path'] ?? ''));
         if ($badgeRel === '') {
@@ -571,8 +591,10 @@ final class MemberSituationController
             (string) ($award['admin_status'] ?? $award['status'] ?? '')
         );
         $award['admin_status_normalized'] = $admin;
-        $award['can_generate_brevet'] = $admin === QualificationAdminStatus::OBTAINED
-            && trim((string) ($award['certificate_document_path'] ?? '')) === '';
+        $hasCert = trim((string) ($award['certificate_document_path'] ?? '')) !== '';
+        $award['can_generate_brevet'] = $admin === QualificationAdminStatus::OBTAINED && !$hasCert;
+        $award['can_regenerate_brevet'] = $admin === QualificationAdminStatus::OBTAINED && $hasCert;
+        $award['holder_name'] = QualificationCertificatePdfService::pickHolderName($user);
         $award['is_permanent_flag'] = !empty($award['is_permanent'])
             || trim((string) ($award['expires_at'] ?? '')) === '';
 

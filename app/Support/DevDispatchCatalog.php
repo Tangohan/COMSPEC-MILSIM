@@ -293,6 +293,27 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(749, '2026-10-02', 'Mon coffre : lecture plus claire', 'Mon coffre présente désormais vos pièces en liste, regroupées par dossier RH, brevets et formations. Chaque ligne affiche le titre, la date et un accès direct, sans les anciennes cartes qui imitaient un certificat. Rechargez le portail (Ctrl+F5).', [
+                'Liste de pièces par rubrique, avec compteur',
+                'Ouverture de la pièce depuis la ligne correspondante',
+            ], [
+                'Présentation allégée : plus de cartes type certificat',
+                'Compteurs RH, brevets et formations conservés en tête de page',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Mon coffre : les pièces doivent se lire comme une liste, pas comme une galerie de certificats.',
+            ], 'Portail Athena'),
+            $pr(748, '2026-10-02', 'Mes qualifications : version d’essai et nom sur le brevet', 'Sur Mes qualifications, un bandeau indique que la page est encore en version d’essai. Chaque brevet porte désormais votre pseudo de communauté. Si un document déjà établi affiche encore un numéro de compte, mettez-le à jour depuis la carte. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau Version d’essai en tête de Mes qualifications',
+                'Le brevet est établi au nom du pseudo de communauté',
+                'Bouton Mettre à jour le brevet pour recalculer un document déjà établi',
+            ], [
+                'Cartes plus lisibles : insigne, validité, nom porté sur le brevet',
+                'Compteurs Valides et Brevets à côté du nombre de qualifications',
+            ], [
+                'Brevet portant « Membre » suivi d’un numéro de compte à la place du pseudo',
+            ], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Mes qualifications : le bandeau Version d’essai est visible, et chaque carte indique le nom qui figurera sur le brevet.',
+            ], 'Portail Athena'),
             $pr(747, '2026-09-30', 'Plan de bâtiment : effacer un trait ou un étage', 'Dans Plan de bâtiment, vous pouvez désormais retirer un mur, une porte, une fenêtre, un point de brèche ou un libellé de pièce. Annulez le dernier trait, videz l’étage, ou retirez un niveau ajouté. Rechargez Overwatch Beta (Ctrl+F5).', [
                 'Outil Effacer : clic sur un élément du plan pour le retirer',
                 'Annuler le dernier trait (bouton ou Ctrl+Z / Suppr)',

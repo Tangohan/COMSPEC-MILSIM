@@ -21,8 +21,8 @@ final class DevDispatchCatalogTest extends TestCase
 
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(535, $byKind['update']);
-        self::assertCount(541, $all);
+        self::assertSame(537, $byKind['update']);
+        self::assertCount(543, $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -43,8 +43,8 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(736, (int) $row['number']);
-        self::assertStringContainsString('carrière', mb_strtolower((string) $row['title']));
+        self::assertSame(749, (int) $row['number']);
+        self::assertStringContainsString('coffre', mb_strtolower((string) $row['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
+use App\Core\Container;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationReferentielRepository;
+use App\Repositories\UserRepository;
 use App\Support\QualificationAdminStatus;
 use DateTimeImmutable;
 use RuntimeException;
@@ -17,11 +19,29 @@ final class QualificationCertificatePdfService
         private QualificationReferentielRepository $referentiel,
         private QualificationBadgeStorageService $badges,
         private QualificationTemporalStatusService $temporal,
+        private ?UserRepository $users = null,
     ) {
     }
 
     /**
-     * @return array{path: string, relative: string, certificate_number: string}
+     * Pseudo de communauté (nom affiché, sinon indicatif). Jamais un numéro de compte.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function pickHolderName(array $row): string
+    {
+        foreach (['display_name', 'callsign'] as $key) {
+            $value = trim((string) ($row[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return 'Opérateur';
+    }
+
+    /**
+     * @return array{path: string, relative: string, certificate_number: string, holder_name: string}
      */
     public function generate(int $tenantId, int $awardId, ?int $actorId = null): array
     {
@@ -67,7 +87,7 @@ final class QualificationCertificatePdfService
             }
         }
 
-        $holder = $this->resolveHolder((int) $award['user_id']);
+        $holder = $this->resolveHolder((int) $award['user_id'], $tenantId);
         $tenantName = $this->resolveTenantName($tenantId);
         $isPermanent = !empty($award['is_permanent']) || empty($award['expires_at']);
         $badgePath = $award['level_badge_path'] ?? null;
@@ -128,6 +148,7 @@ final class QualificationCertificatePdfService
             'path' => $absolute,
             'relative' => $relative,
             'certificate_number' => $number,
+            'holder_name' => $holder['name'],
         ];
     }
 
@@ -207,40 +228,67 @@ final class QualificationCertificatePdfService
     }
 
     /**
-     * Identité affichée sur le brevet : nom du personnage (comme sur la fiche), sinon indicatif.
-     * La table users n’a ni prénom/nom civils ni username : l’ancienne requête échouait
-     * systématiquement et le brevet affichait « Membre #ID ».
+     * Identité affichée sur le brevet : pseudo de communauté, sinon indicatif.
      *
      * @return array{name: string, grade: string, callsign: string}
      */
-    private function resolveHolder(int $userId): array
+    private function resolveHolder(int $userId, int $tenantId): array
     {
-        $out = ['name' => 'Membre #' . $userId, 'grade' => '', 'callsign' => ''];
+        $out = ['name' => 'Opérateur', 'grade' => '', 'callsign' => ''];
         try {
-            $pdo = \App\Core\Database::getPdo();
-            $st = $pdo->prepare(
-                'SELECT u.display_name, u.callsign, g.name AS grade_name
-                 FROM users u
-                 LEFT JOIN grades g ON g.id = u.grade_id
-                 WHERE u.id = ? LIMIT 1'
-            );
-            $st->execute([$userId]);
-            $u = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
-            $display = trim((string) ($u['display_name'] ?? ''));
-            $callsign = trim((string) ($u['callsign'] ?? ''));
-            $out['grade'] = trim((string) ($u['grade_name'] ?? ''));
+            $users = $this->users ?? Container::get(UserRepository::class);
+            $row = $users->findById($userId);
+            if (!is_array($row)) {
+                return $out;
+            }
+            if ($tenantId > 0) {
+                $row = $users->overlayCommunityProfile($row, $tenantId);
+            }
+            $callsign = trim((string) ($row['callsign'] ?? ''));
             $out['callsign'] = $callsign;
-            if ($display !== '') {
-                $out['name'] = $display;
-            } elseif ($callsign !== '') {
-                $out['name'] = $callsign;
+            $out['name'] = self::pickHolderName($row);
+            if ($out['name'] === $callsign) {
                 $out['callsign'] = '';
             }
+            $out['grade'] = $this->resolveGradeLabel($row);
         } catch (\Throwable) {
             // Garde la valeur de repli.
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function resolveGradeLabel(array $row): string
+    {
+        $gradeId = (int) ($row['grade_id'] ?? 0);
+        if ($gradeId < 1) {
+            return '';
+        }
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $st = $pdo->prepare(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades'
+                   AND COLUMN_NAME IN ('label_long', 'name') LIMIT 2"
+            );
+            $st->execute();
+            $cols = $st->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+            if (in_array('label_long', $cols, true)) {
+                $q = $pdo->prepare('SELECT label_long FROM grades WHERE id = ? LIMIT 1');
+            } elseif (in_array('name', $cols, true)) {
+                $q = $pdo->prepare('SELECT name FROM grades WHERE id = ? LIMIT 1');
+            } else {
+                return '';
+            }
+            $q->execute([$gradeId]);
+
+            return trim((string) ($q->fetchColumn() ?: ''));
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private function resolveTenantName(int $tenantId): string

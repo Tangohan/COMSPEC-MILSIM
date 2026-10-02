@@ -555,7 +555,13 @@ final class QualificationReferentielController
         return $this->withTenantPost($request, function (int $tenantId) use ($awardId) {
             try {
                 $res = $this->certificates->generate($tenantId, $awardId, $this->actorId());
-                Session::flash('success', 'Brevet généré (n° ' . $res['certificate_number'] . ').');
+                $holder = trim((string) ($res['holder_name'] ?? ''));
+                Session::flash(
+                    'success',
+                    'Brevet généré'
+                    . ($holder !== '' ? ' au nom de ' . $holder : '')
+                    . ' (n° ' . $res['certificate_number'] . ').'
+                );
                 $download = url('back-office/referentiels/qualifications/brevets/' . $awardId . '/telecharger');
 
                 return Response::redirect($download);

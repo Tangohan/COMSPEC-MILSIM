@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationPermissionGrantService;
 use App\Services\Personnel\QualificationTemporalStatusService;
 use App\Support\QualificationAdminStatus;
@@ -99,6 +100,28 @@ final class QualificationReferentielTest extends TestCase
         self::assertStringContainsString('docs/qualification-certificate-templates/template_moderne_vierge.pdf', $index);
         self::assertStringContainsString('docs/qualification-certificate-templates/template_classique_vierge.pdf', $form);
         self::assertStringContainsString('docs/qualification-certificate-templates/template_moderne_vierge.pdf', $form);
+    }
+
+    public function testCertificateHolderNamePrefersCommunityPseudo(): void
+    {
+        self::assertSame('Ghost', QualificationCertificatePdfService::pickHolderName([
+            'display_name' => 'Ghost',
+            'callsign' => 'GHOST-1',
+            'first_name' => 'Jean',
+            'last_name' => 'Dupont',
+            'username' => 'jdupont',
+        ]));
+        self::assertSame('GHOST-1', QualificationCertificatePdfService::pickHolderName([
+            'display_name' => '  ',
+            'callsign' => 'GHOST-1',
+        ]));
+        self::assertSame('Opérateur', QualificationCertificatePdfService::pickHolderName([
+            'first_name' => 'Jean',
+            'last_name' => 'Dupont',
+            'username' => 'jdupont',
+            'id' => 42,
+        ]));
+        self::assertSame('Opérateur', QualificationCertificatePdfService::pickHolderName([]));
     }
 
     public function testMigrationRegistersQualificationReferentiel(): void
