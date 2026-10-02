@@ -5,10 +5,11 @@ $active = (string) ($effectifsNav ?? 'roster');
 $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $total = (int) ($counts['total'] ?? 0);
 $activeCount = (int) ($counts['active'] ?? 0);
-$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhAlertTotalCount ?? 0) + (int) ($phaseAutoErrorCount ?? 0);
+$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhInboxActionCount ?? $rhAlertTotalCount ?? 0) + (int) ($phaseAutoErrorCount ?? 0);
 $innerContent = (string) ($effectifsContent ?? 'admin.effectifs_workspace.roster');
 
 $tabs = [
+    ['rh_inbox', 'À traiter', 'a-traiter', (int) ($rhInboxActionCount ?? 0)],
     ['roster', 'Tableur', '', 0],
     ['roles', 'Accès', 'roles', 0],
     ['fonctions', 'Emplois', 'fonctions', 0],
@@ -33,11 +34,13 @@ $tabs = [
             <h1 id="bo-eff-title">Effectifs</h1>
             <p><?= $active === 'roster'
                 ? 'Le tableur rassemble les dossiers de la communauté : qui est là, où il est affecté, quel accès il a, et ce qu’il reste à compléter.'
-                : 'Dossiers des membres : tableur, accès, emplois et suivi.' ?></p>
+                : ($active === 'rh_inbox'
+                    ? 'Boîte de travail RH : corrections, élévations, échéances et dossiers incomplets — le système propose, vous décidez.'
+                    : 'Dossiers des membres : tableur, accès, emplois et suivi.') ?></p>
             <p class="bo-eff-head__meta" aria-label="État des effectifs">
                 <span><strong><?= $activeCount ?></strong> actifs</span>
                 <span><strong><?= $total ?></strong> dossiers</span>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $attentionCount > 0 ? 'is-alert' : '' ?>">
+                <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $attentionCount > 0 ? 'is-alert' : '' ?>">
                     <strong><?= $attentionCount ?></strong> à traiter
                 </a>
             </p>

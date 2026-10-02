@@ -14,6 +14,7 @@ use App\Repositories\PersonnelCareerEventRepository;
 use App\Repositories\TenantDecorationMotifRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\DecorationMotifStorageService;
+use App\Services\Personnel\PersonnelServiceHistoryWriter;
 use App\Support\DecorationCatalog;
 use RuntimeException;
 use Throwable;
@@ -27,7 +28,11 @@ final class AwardReferentielController
         private PersonnelCareerEventRepository $careerEvents,
         private TenantDecorationMotifRepository $motifs,
         private DecorationMotifStorageService $motifStorage,
+        private ?PersonnelServiceHistoryWriter $serviceHistoryWriter = null,
     ) {
+        $this->serviceHistoryWriter ??= new PersonnelServiceHistoryWriter(
+            new \App\Repositories\PersonnelServiceHistoryRepository()
+        );
     }
 
     public function index(Request $request, array $params = []): Response
@@ -112,16 +117,33 @@ final class AwardReferentielController
 
             return Response::redirect(url('back-office/referentiels/decorations'));
         }
+        $awardedAt = (string) $request->input('awarded_at', date('Y-m-d'));
+        $citation = trim((string) $request->input('citation_text', ''));
+        $authority = trim((string) $request->input('authority', ''));
         $this->awards->create($tenantId, [
             'personnel_id' => $personnelId,
             'definition_id' => $definitionId,
-            'citation_text' => $request->input('citation_text'),
-            'authority' => $request->input('authority'),
-            'awarded_at' => $request->input('awarded_at', date('Y-m-d')),
+            'citation_text' => $citation,
+            'authority' => $authority,
+            'awarded_at' => $awardedAt,
         ], (int) Session::get('user_id'));
         $this->careerEvents->record($tenantId, $personnelId, 'decoration_awarded', (int) Session::get('user_id'), [
             'definition_id' => $definitionId,
         ]);
+        $defName = 'Décoration';
+        try {
+            $def = $this->definitions->find($tenantId, $definitionId);
+            $defName = trim((string) ($def['name'] ?? $def['short_name'] ?? $defName)) ?: $defName;
+        } catch (Throwable) {
+        }
+        $this->serviceHistoryWriter->recordAward(
+            $personnelId,
+            $defName,
+            $citation,
+            $awardedAt,
+            (int) Session::get('user_id'),
+            $authority !== '' ? $authority : null
+        );
         Session::flash('success', 'Citation enregistrée.');
 
         return Response::redirect(url('back-office/referentiels/decorations'));

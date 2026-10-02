@@ -1778,7 +1778,8 @@ class PersonnelController
             'canStaffEdit' => $this->canStaffEditPersonnel(),
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
-            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css'],
+            'orbatCorrectionHistory' => $this->buildOrbatCorrectionHistory($tenantId, $uid),
+            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css', 'back-office-corrections.css'],
             'canManageVisibility' => $canManageVisibility,
             'personnelVisibility' => $editVisMeta,
             'personnelVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['visibility_level'], 'personnel'),
@@ -2658,6 +2659,55 @@ class PersonnelController
     private function canStaffEditPersonnel(): bool
     {
         return Gate::getInstance()->allows('personnel.profile.update');
+    }
+
+    /**
+     * Historique des demandes de correction (unité / rôle / grade), enrichi pour l’affichage.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function buildOrbatCorrectionHistory(int $tenantId, int $targetUserId): array
+    {
+        if ($tenantId < 1 || $targetUserId < 1) {
+            return [];
+        }
+        try {
+            $repo = Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class);
+            $service = Container::get(\App\Services\Personnel\PersonnelCorrectionRequestService::class);
+            $rows = $repo->listForTarget($tenantId, $targetUserId, 12);
+            $out = [];
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+                $before = is_array($row['before'] ?? null) ? $row['before'] : [];
+                $orbatKeys = array_flip(\App\Services\Personnel\PersonnelCorrectionRequestService::ORBAT_KEYS);
+                $hasOrbat = false;
+                foreach (array_keys($proposed) as $key) {
+                    if (isset($orbatKeys[(string) $key])) {
+                        $hasOrbat = true;
+                        break;
+                    }
+                }
+                if (!$hasOrbat) {
+                    continue;
+                }
+                $row['diff_lines'] = $service->diffLinesForDisplay($proposed, $before, $tenantId);
+                $row['is_orbat'] = true;
+                $reqName = trim((string) ($row['requester_display_name'] ?? ''));
+                $reqCs = trim((string) ($row['requester_callsign'] ?? ''));
+                $row['requester_label'] = $reqName !== '' ? $reqName : ($reqCs !== '' ? $reqCs : 'Membre');
+                $resName = trim((string) ($row['resolver_display_name'] ?? ''));
+                $resCs = trim((string) ($row['resolver_callsign'] ?? ''));
+                $row['resolver_label'] = $resName !== '' ? $resName : ($resCs !== '' ? $resCs : '');
+                $out[] = $row;
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function canViewSensitivePersonnel(): bool

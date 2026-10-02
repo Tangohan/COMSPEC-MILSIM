@@ -57,6 +57,7 @@ final class RhDossierWorkspaceController
         private ?MemberIntegrationRepository $integrations = null,
         private ?MemberIntegrationTemplateRepository $integrationTemplates = null,
         private ?PersonnelAutoAdvancementService $autoAdvancement = null,
+        private ?\App\Services\Effectifs\RhActionInboxService $actionInbox = null,
     ) {
         $this->elevationRequests ??= new ElevationRequestRepository();
         $this->qualifications ??= new PersonnelQualificationRepository();
@@ -68,6 +69,14 @@ final class RhDossierWorkspaceController
         $this->integrations ??= new MemberIntegrationRepository();
         $this->integrationTemplates ??= new MemberIntegrationTemplateRepository();
         $this->autoAdvancement ??= new PersonnelAutoAdvancementService();
+        $this->actionInbox ??= new \App\Services\Effectifs\RhActionInboxService(
+            new \App\Repositories\PersonnelCorrectionRequestRepository(),
+            new ElevationRequestRepository(),
+            $this->rhAlerts,
+            new \App\Services\Personnel\PersonnelProfileGapScanService(),
+            $this->qualifications,
+            $this->mobility,
+        );
     }
 
     public function documents(Request $request, array $params = []): Response
@@ -552,6 +561,26 @@ final class RhDossierWorkspaceController
         ]);
     }
 
+    public function inbox(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
+        $inactivity = (int) ($hr['inactivity_days'] ?? RhAlertAggregatorService::INACTIVITY_DAYS);
+        $absence = (int) ($hr['absence_days'] ?? RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
+        $inbox = $this->actionInbox->build($tenantId, $inactivity, $absence);
+
+        return $this->shell('admin.effectifs_workspace.rh_inbox', [
+            'title' => 'À traiter',
+            'effectifsNav' => 'rh_inbox',
+            'rhActionInbox' => $inbox,
+            'rhInboxActionCount' => (int) ($inbox['total'] ?? 0),
+        ]);
+    }
+
     public function roleplay(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -775,6 +804,17 @@ final class RhDossierWorkspaceController
             )['total'] ?? 0);
         } catch (\Throwable) {
         }
+        $rhInboxTotal = 0;
+        try {
+            $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
+            $rhInboxTotal = (int) ($this->actionInbox->build(
+                $tenantId,
+                (int) ($hr['inactivity_days'] ?? null),
+                (int) ($hr['absence_days'] ?? null)
+            )['total'] ?? 0);
+        } catch (\Throwable) {
+            $rhInboxTotal = $rhAlertTotal;
+        }
         $extras = EffectifsWorkspaceShellExtras::counts($tenantId);
 
         return Response::view('layout.main', array_merge([
@@ -797,6 +837,7 @@ final class RhDossierWorkspaceController
             'personnelDuplicateScan' => $dupScan,
             'mobilityPendingCount' => $mobilityPending,
             'rhAlertTotalCount' => $rhAlertTotal,
+            'rhInboxActionCount' => $rhInboxTotal,
             'roleplayDueCount' => $extras['roleplayDueCount'],
             'integrationOpenCount' => $extras['integrationOpenCount'],
             'phaseGateCount' => $extras['phaseGateCount'],

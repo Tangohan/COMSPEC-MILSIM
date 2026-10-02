@@ -10,10 +10,14 @@ $success = trim((string) ($success ?? ''));
 $error = trim((string) ($error ?? ''));
 $kindLabel = static fn (string $k): string => match ($k) {
     'grade' => 'Grade',
+    'promotion' => 'Promotion',
     'qualification' => 'Qualification',
     'award' => 'Décoration',
-    'billet' => 'Poste',
+    'billet', 'assignment' => 'Affectation',
+    'deployment' => 'Opération',
     'equipment' => 'Dotation',
+    'discipline' => 'Discipline',
+    'note' => 'Note',
     default => $k,
 };
 ?>
@@ -25,7 +29,7 @@ $kindLabel = static fn (string $k): string => match ($k) {
         <div>
             <p class="bo-dossier-hero__kicker">Dossier individuel</p>
             <h2 class="bo-dossier-hero__title">Dossier de carrière</h2>
-            <p class="bo-dossier-hero__lead">Vue chronologique unique : grades, postes, qualifications, décorations et dotation.</p>
+            <p class="bo-dossier-hero__lead">Vue chronologique unique : grades, affectations, qualifications, décorations, journal de service et dotation.</p>
         </div>
     </header>
 

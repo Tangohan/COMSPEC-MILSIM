@@ -10,6 +10,8 @@ declare(strict_types=1);
  * @var string $orbatFieldAttr
  * @var bool $pendingOrbatCorrection
  * @var bool $canApplyOrbatImmediately
+ * @var list<array<string, mixed>> $orbatCorrectionHistory
+ * @var array<string, mixed>|null $targetUser
  * @var list<array<string, mixed>> $personnelAssignments
  * @var list<array<string, mixed>> $currentUnitAssignments
  * @var list<array<string, mixed>> $units
@@ -32,7 +34,38 @@ declare(strict_types=1);
 $orbatStaffMode = !empty($orbatStaffMode);
 $orbatFrozen = !empty($orbatFrozen);
 $orbatFieldAttr = $orbatFrozen ? ' disabled' : '';
+$orbatCorrectionHistory = is_array($orbatCorrectionHistory ?? null) ? $orbatCorrectionHistory : [];
+$targetUserId = (int) (($targetUser['id'] ?? 0));
+$openOrbatRequests = [];
+foreach ($orbatCorrectionHistory as $histRow) {
+    if (!is_array($histRow)) {
+        continue;
+    }
+    if (trim((string) ($histRow['status'] ?? '')) === 'pending') {
+        $openOrbatRequests[] = $histRow;
+    }
+}
 $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
+$statusFr = static function (string $status): string {
+    return match ($status) {
+        'pending' => 'En attente',
+        'approved' => 'Confirmée',
+        'rejected' => 'Refusée',
+        'cancelled' => 'Annulée',
+        default => $status,
+    };
+};
+$formatWhen = static function (mixed $raw): string {
+    $raw = trim((string) $raw);
+    if ($raw === '') {
+        return '';
+    }
+    try {
+        return (new DateTimeImmutable($raw))->format('d/m/Y à H:i');
+    } catch (Throwable) {
+        return $raw;
+    }
+};
 ?>
 <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
   <div class="pd-orbat-hero">
@@ -67,19 +100,130 @@ $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUO
   </div>
 
   <div class="space-y-6 p-6">
-    <?php if ($pendingOrbatCorrection): ?>
+    <?php if ($openOrbatRequests !== []): ?>
+    <section class="pd-orbat-block pd-orbat-block--pending" aria-labelledby="pd-orbat-pending-title">
+      <header class="pd-orbat-block__head">
+        <h3 id="pd-orbat-pending-title">Demande en attente</h3>
+        <p>Voici ce que vous avez proposé. Un responsable confirmera ou refusera. Vous pouvez annuler tant que la demande n’est pas traitée.</p>
+      </header>
+      <?php foreach ($openOrbatRequests as $openReq):
+          $openId = (int) ($openReq['id'] ?? 0);
+          $openWhen = $formatWhen($openReq['created_at'] ?? '');
+          $openNote = trim((string) ($openReq['note'] ?? ''));
+          $openDiff = is_array($openReq['diff_lines'] ?? null) ? $openReq['diff_lines'] : [];
+          $openRequester = trim((string) ($openReq['requester_label'] ?? 'Vous'));
+          ?>
+      <article class="pd-orbat-request">
+        <div class="pd-orbat-request__meta">
+          <span class="pd-orbat-badge pd-orbat-badge--warn">En attente</span>
+          <?php if ($openWhen !== ''): ?>
+          <span>Déposée le <?= $h($openWhen) ?></span>
+          <?php endif; ?>
+          <span>Par <?= $h($openRequester) ?></span>
+        </div>
+        <?php if ($openDiff !== []): ?>
+        <ul class="pd-orbat-request__diff">
+          <?php foreach ($openDiff as $line): ?>
+          <li><?= $h((string) $line) ?></li>
+          <?php endforeach; ?>
+        </ul>
+        <?php else: ?>
+        <p class="text-xs text-slate-600">Aucun détail de modification n’a été conservé pour cette demande.</p>
+        <?php endif; ?>
+        <?php if ($openNote !== ''): ?>
+        <p class="pd-orbat-request__note"><strong>Message :</strong> <?= $h($openNote) ?></p>
+        <?php endif; ?>
+        <?php if (!$orbatStaffMode && $openId > 0 && $targetUserId > 0): ?>
+        <div class="pd-orbat-request__actions">
+          <button
+            type="submit"
+            form="orbat-cancel-<?= (int) $openId ?>"
+            class="pd-orbat-btn pd-orbat-btn--danger"
+            onclick="return confirm('Annuler cette demande ? Vous pourrez en envoyer une nouvelle ensuite.');"
+          >Annuler la demande</button>
+        </div>
+        <?php elseif ($orbatStaffMode): ?>
+        <p class="mt-2 text-xs"><a class="font-semibold underline" href="<?= $h(url('back-office/personnel/corrections')) ?>">Traiter dans les demandes de correction</a></p>
+        <?php endif; ?>
+      </article>
+      <?php endforeach; ?>
+    </section>
+    <?php elseif ($orbatFrozen): ?>
     <div class="pd-orbat-banner pd-orbat-banner--warn" role="status">
       <p class="pd-orbat-banner__title">Une demande est déjà en attente</p>
-      <p>Un responsable doit d’abord confirmer ou refuser la demande en cours. <?= $orbatStaffMode ? 'Vous pouvez la traiter depuis les demandes de correction.' : 'Vous ne pouvez pas en envoyer une autre tant qu’elle n’est pas traitée.' ?></p>
-      <?php if ($orbatStaffMode): ?>
-      <p class="mt-2"><a class="font-semibold underline" href="<?= $h(url('back-office/personnel/corrections')) ?>">Ouvrir les demandes de correction</a></p>
-      <?php endif; ?>
+      <p>Un responsable doit d’abord confirmer ou refuser la demande en cours. Vous ne pouvez pas en envoyer une autre tant qu’elle n’est pas traitée.</p>
     </div>
     <?php elseif (!$orbatStaffMode): ?>
     <div class="pd-orbat-banner pd-orbat-banner--info" role="note">
       <p class="pd-orbat-banner__title">Validation Ressources humaines</p>
       <p>Changer l’unité, l’emploi, le grade ou la date d’engagement envoie une demande. Rien n’est écrit sur le dossier tant qu’un responsable n’a pas confirmé.</p>
     </div>
+    <?php endif; ?>
+
+    <?php if ($orbatCorrectionHistory !== []): ?>
+    <section class="pd-orbat-block" aria-labelledby="pd-orbat-history-title">
+      <header class="pd-orbat-block__head">
+        <h3 id="pd-orbat-history-title">Historique des demandes</h3>
+        <p>Les dernières demandes sur cette fiche (en attente, confirmées, refusées ou annulées).</p>
+      </header>
+      <div class="pd-orbat-table-wrap">
+        <table class="pd-orbat-table">
+          <thead>
+            <tr>
+              <th scope="col">Statut</th>
+              <th scope="col">Déposée</th>
+              <th scope="col">Changements</th>
+              <th scope="col">Décision</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($orbatCorrectionHistory as $hist):
+                if (!is_array($hist)) {
+                    continue;
+                }
+                $st = trim((string) ($hist['status'] ?? ''));
+                $whenFr = $formatWhen($hist['created_at'] ?? '');
+                $resolvedFr = $formatWhen($hist['resolved_at'] ?? '');
+                $diffLines = is_array($hist['diff_lines'] ?? null) ? $hist['diff_lines'] : [];
+                $resolver = trim((string) ($hist['resolver_label'] ?? ''));
+                $badgeClass = match ($st) {
+                    'pending' => 'pd-orbat-badge--warn',
+                    'approved' => '',
+                    'rejected' => 'pd-orbat-badge--danger',
+                    'cancelled' => 'pd-orbat-badge--muted',
+                    default => 'pd-orbat-badge--muted',
+                };
+                ?>
+            <tr class="<?= $st === 'pending' ? 'is-primary' : '' ?>">
+              <td><span class="pd-orbat-badge <?= $h($badgeClass) ?>"><?= $h($statusFr($st)) ?></span></td>
+              <td class="pd-orbat-table__date"><?= $h($whenFr !== '' ? $whenFr : '—') ?></td>
+              <td>
+                <?php if ($diffLines !== []): ?>
+                <ul class="pd-orbat-mini-diff">
+                  <?php foreach (array_slice($diffLines, 0, 4) as $line): ?>
+                  <li><?= $h((string) $line) ?></li>
+                  <?php endforeach; ?>
+                  <?php if (count($diffLines) > 4): ?>
+                  <li>… et <?= count($diffLines) - 4 ?> autre<?= count($diffLines) - 4 > 1 ? 's' : '' ?></li>
+                  <?php endif; ?>
+                </ul>
+                <?php else: ?>
+                <span class="text-slate-500">—</span>
+                <?php endif; ?>
+              </td>
+              <td class="pd-orbat-table__date">
+                <?php if ($resolvedFr !== ''): ?>
+                  <?= $h($resolvedFr) ?><?= $resolver !== '' ? ' · ' . $h($resolver) : '' ?>
+                <?php else: ?>
+                  —
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
     <?php endif; ?>
 
     <div class="pd-orbat-grid2">

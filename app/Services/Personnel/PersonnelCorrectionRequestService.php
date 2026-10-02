@@ -148,7 +148,9 @@ final class PersonnelCorrectionRequestService
         private PersonnelJobRoleRepository $jobRoles,
         private UnitRepository $units,
         private GradeRepository $grades,
+        private ?PersonnelServiceHistoryWriter $serviceHistoryWriter = null,
     ) {
+        $this->serviceHistoryWriter ??= new PersonnelServiceHistoryWriter(new \App\Repositories\PersonnelServiceHistoryRepository());
     }
 
     /** @return array<string, string> */
@@ -392,11 +394,18 @@ final class PersonnelCorrectionRequestService
         if ($decision === 'approved') {
             $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
             $targetUserId = (int) $row['target_user_id'];
-            $payload = $this->normalizeProposed($proposed, $this->currentSnapshot($targetUserId));
+            $beforeSnap = $this->currentSnapshot($targetUserId);
+            $payload = $this->normalizeProposed($proposed, $beforeSnap);
             if ($payload === []) {
-                return ['ok' => false, 'message' => 'Aucune champ valide à appliquer.'];
+                return ['ok' => false, 'message' => 'Aucun champ valide à appliquer.'];
             }
             $this->applyApprovedPayload($tenantId, $targetUserId, $payload);
+            $this->serviceHistoryWriter->recordCorrectionApplied(
+                $targetUserId,
+                $this->diffLinesForDisplay($payload, $beforeSnap, $tenantId),
+                $resolverUserId,
+                $resolutionNote !== '' ? $resolutionNote : null
+            );
         }
 
         if (!$this->requests->resolve($requestId, $tenantId, $decision, $resolverUserId, $resolutionNote)) {
@@ -411,6 +420,35 @@ final class PersonnelCorrectionRequestService
                 ? 'Correction confirmée — la fiche a été mise à jour.'
                 : 'Demande refusée — la fiche n’a pas été modifiée.',
         ];
+    }
+
+    /**
+     * Le membre (cible ou auteur) annule sa propre demande en attente.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function cancelByMember(int $tenantId, int $requestId, int $actorUserId): array
+    {
+        if ($tenantId < 1 || $requestId < 1 || $actorUserId < 1) {
+            return ['ok' => false, 'message' => 'Contexte invalide.'];
+        }
+        $row = $this->requests->findById($requestId, $tenantId);
+        if ($row === null) {
+            return ['ok' => false, 'message' => 'Demande introuvable.'];
+        }
+        if (($row['status'] ?? '') !== 'pending') {
+            return ['ok' => false, 'message' => 'Cette demande a déjà été traitée.'];
+        }
+        $targetId = (int) ($row['target_user_id'] ?? 0);
+        $requesterId = (int) ($row['requested_by'] ?? 0);
+        if ($actorUserId !== $targetId && $actorUserId !== $requesterId) {
+            return ['ok' => false, 'message' => 'Vous ne pouvez annuler que votre propre demande.'];
+        }
+        if (!$this->requests->resolve($requestId, $tenantId, 'cancelled', $actorUserId, 'Annulée par le demandeur.')) {
+            return ['ok' => false, 'message' => 'Impossible d’annuler cette demande.'];
+        }
+
+        return ['ok' => true, 'message' => 'Demande annulée. Vous pouvez en proposer une nouvelle.'];
     }
 
     /**
@@ -446,6 +484,12 @@ final class PersonnelCorrectionRequestService
         }
 
         $this->applyApprovedPayload($tenantId, $targetUserId, $proposed);
+        $this->serviceHistoryWriter->recordCorrectionApplied(
+            $targetUserId,
+            $this->diffLinesForDisplay($proposed, $before, $tenantId),
+            $actorUserId,
+            $note !== '' ? $note : 'Correction directe'
+        );
         $this->requests->cancelPendingForTarget(
             $tenantId,
             $targetUserId,

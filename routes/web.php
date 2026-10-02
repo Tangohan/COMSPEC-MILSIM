@@ -566,6 +566,7 @@ return function (Router $router) {
     $router->get('/personnel/me/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'form'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'submit'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/correction/{requestId}/annuler', [\App\Controllers\Web\PersonnelCorrectionController::class, 'cancelOwn'], [AuthMiddleware::class]);
     $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/appliquer', [\App\Controllers\Web\PersonnelCorrectionController::class, 'applyDirect'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
@@ -1557,6 +1558,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'succession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'storeSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/vivier/{id}/retirer', [RhDossierWorkspaceController::class, 'deactivateSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/a-traiter', [RhDossierWorkspaceController::class, 'inbox'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/alertes', [RhDossierWorkspaceController::class, 'alerts'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roleplay', [RhDossierWorkspaceController::class, 'roleplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/integration', [RhDossierWorkspaceController::class, 'integration'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

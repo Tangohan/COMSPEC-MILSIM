@@ -910,6 +910,7 @@ class Container
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Services\Personnel\PersonnelServiceHistoryWriter::class),
             ),
             \App\Controllers\Web\PersonnelCorrectionController::class => new \App\Controllers\Web\PersonnelCorrectionController(
                 self::get(AuthService::class),
@@ -1335,7 +1336,19 @@ class Container
                 self::get(\App\Repositories\PersonnelAwardRepository::class),
                 self::get(\App\Repositories\OrbatBilletRepository::class),
                 self::get(\App\Repositories\PersonnelEquipmentAssignmentRepository::class),
-                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Repositories\PersonnelServiceHistoryRepository::class)
+            ),
+            \App\Services\Personnel\PersonnelServiceHistoryWriter::class => new \App\Services\Personnel\PersonnelServiceHistoryWriter(
+                self::get(\App\Repositories\PersonnelServiceHistoryRepository::class)
+            ),
+            \App\Services\Effectifs\RhActionInboxService::class => new \App\Services\Effectifs\RhActionInboxService(
+                self::get(\App\Repositories\PersonnelCorrectionRequestRepository::class),
+                self::get(\App\Repositories\ElevationRequestRepository::class),
+                self::get(\App\Services\Effectifs\RhAlertAggregatorService::class),
+                self::get(\App\Services\Personnel\PersonnelProfileGapScanService::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\PersonnelMobilityRequestRepository::class)
             ),
             \App\Services\Personnel\UnitReadinessService::class => new \App\Services\Personnel\UnitReadinessService(
                 self::get(\App\Repositories\OrbatBilletRepository::class),
@@ -1349,7 +1362,8 @@ class Container
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PersonnelCareerEventRepository::class),
                 self::get(\App\Repositories\TenantDecorationMotifRepository::class),
-                self::get(\App\Services\Personnel\DecorationMotifStorageService::class)
+                self::get(\App\Services\Personnel\DecorationMotifStorageService::class),
+                self::get(\App\Services\Personnel\PersonnelServiceHistoryWriter::class)
             ),
             \App\Controllers\Admin\Organization\EquipmentReferentielController::class => new \App\Controllers\Admin\Organization\EquipmentReferentielController(
                 self::get(\App\Repositories\EquipmentItemDefinitionRepository::class),
@@ -1408,6 +1422,7 @@ class Container
                 self::get(\App\Services\Effectifs\RhAlertAggregatorService::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
                 self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                actionInbox: self::get(\App\Services\Effectifs\RhActionInboxService::class),
             ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\OrganizationVisibilityHistoryRepository::class => new \App\Repositories\OrganizationVisibilityHistoryRepository(),
@@ -1818,6 +1833,7 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PermissionRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                self::get(\App\Services\Personnel\PersonnelServiceHistoryWriter::class),
             ),
             \App\Repositories\ElevationRequestRepository::class => new \App\Repositories\ElevationRequestRepository(),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),

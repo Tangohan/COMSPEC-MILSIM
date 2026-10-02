@@ -278,6 +278,37 @@ final class PersonnelCorrectionController
         return Response::redirect(url('back-office/personnel/corrections'));
     }
 
+    /** POST /personnel/{id}/correction/{requestId}/annuler — le membre annule sa demande. */
+    public function cancelOwn(Request $request, array $params = []): Response
+    {
+        $ctx = $this->authContext();
+        if ($ctx === null) {
+            return Response::redirect(url('login'));
+        }
+        [$tenantId, $viewer] = $ctx;
+        $targetId = (int) ($params['id'] ?? 0);
+        $requestId = (int) ($params['requestId'] ?? 0);
+        $redirect = $this->editOrbatRedirect($targetId, (int) $viewer['id']);
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($redirect);
+        }
+        $result = $this->correctionService->cancelByMember($tenantId, $requestId, (int) $viewer['id']);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect($redirect);
+    }
+
+    private function editOrbatRedirect(int $targetId, int $viewerId): string
+    {
+        if ($targetId > 0 && $targetId === $viewerId) {
+            return url('back-office/ma-situation/ma-fiche/modifier') . '#edit-orbat';
+        }
+
+        return url('personnel/' . max(1, $targetId) . '/edit') . '#edit-orbat';
+    }
+
     /** @return array{0: int, 1: array<string, mixed>}|null */
     private function authContext(): ?array
     {
