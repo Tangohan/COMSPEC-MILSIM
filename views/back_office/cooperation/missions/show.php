@@ -56,7 +56,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
 
 ?>
 <div class="max-w-5xl mx-auto px-6 py-10 space-y-10">
-    <header class="space-y-6">
+    <header id="coop-header" class="space-y-6" data-coop-region>
         <div>
             <a href="<?= htmlspecialchars(cooperation_mission_index_url(), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour à la liste</a>
             <?php $cooperationProgressShowAction = false; require base_path('views/back_office/cooperation/missions/_nav.php'); ?>
@@ -104,13 +104,13 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
                 <p class="mt-1 text-xs text-emerald-900">Acceptez pour rejoindre cette coopération, ou refusez si votre unité ne peut pas s’engager.</p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/accept'), ENT_QUOTES, 'UTF-8') ?>">
+                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/accept'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax>
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Accepter</button>
                 </form>
                 <details class="coop-decline">
                     <summary class="cursor-pointer list-none rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Refuser…</summary>
-                    <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/decline'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 w-full max-w-md space-y-2 rounded-xl border border-slate-200 bg-white p-4"
+                    <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/decline'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax class="mt-3 w-full max-w-md space-y-2 rounded-xl border border-slate-200 bg-white p-4"
                           data-ui-confirm="1" data-ui-confirm-title="Refuser l’invitation ?"
                           data-ui-confirm-body="Votre unité ne participera pas à cette coopération. L’unité support est prévenue (avec votre motif s’il est renseigné) et pourra vous réinviter plus tard.">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
@@ -137,13 +137,13 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
             'href' => (string) $progNext['href'],
             'accent' => (string) ($progNext['tone'] ?? 'emerald'),
         ]];
-        echo '<div class="-mt-10">';
+        echo '<div id="coop-next" class="-mt-10" data-coop-region>';
         require base_path('views/partials/ui/next_steps_block.php');
         echo '</div>';
     endif;
     ?>
 
-    <section id="participants" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+    <section id="participants" data-coop-region class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Unités engagées</h2>
         <p class="mt-2 text-sm text-slate-600">Suivi des invitations, des réponses et des autorisations de partage de chaque unité.</p>
 
@@ -217,7 +217,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
                 <td data-label="Actions">
                     <div class="coop-parts__actions">
                         <?php if ($st === 'invited' && $role !== 'lead'): ?>
-                        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remind'), ENT_QUOTES, 'UTF-8') ?>">
+                        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remind'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax>
                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="partner_tenant_id" value="<?= $pTid ?>">
                             <button type="submit" class="coop-parts__btn"<?= $remindRecent ? ' disabled title="Déjà relancée le ' . htmlspecialchars($fmtDt($remindAt), ENT_QUOTES, 'UTF-8') . ' (une relance par 24 h)"' : '' ?>>Relancer</button>
@@ -235,7 +235,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
                         <?php if ($canRemoveThis): ?>
                         <details>
                             <summary class="coop-parts__btn coop-parts__btn--danger"><?= $st === 'invited' ? 'Retirer l’invitation' : 'Retirer' ?></summary>
-                            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remove-partner'), ENT_QUOTES, 'UTF-8') ?>" class="coop-parts__pop space-y-2"
+                            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remove-partner'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax class="coop-parts__pop space-y-2"
                                   data-ui-confirm="1"
                                   data-ui-confirm-title="<?= $st === 'invited' ? 'Retirer l’invitation ?' : 'Retirer cette unité ?' ?>"
                                   data-ui-confirm-body="<?= htmlspecialchars($st === 'invited'
@@ -261,7 +261,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
 
         <?php if ($pilotActions && !empty($invitationRule['allowed'])): ?>
         <?php $reinforcement = !empty($invitationRule['reinforcement']); ?>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/invite'), ENT_QUOTES, 'UTF-8') ?>" class="mt-8 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-6"
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/invite'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax class="mt-8 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-6"
               <?php if ($reinforcement): ?>data-ui-confirm="1" data-ui-confirm-title="Inviter une unité en renfort ?" data-ui-confirm-body="La coopération est déjà en cours. L’unité invitée rejoindra l’espace commun après avoir accepté et validé son autorisation de partage."<?php endif; ?>>
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <?php if ($reinforcement): ?>
@@ -309,7 +309,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
     </section>
 
     <?php if ($canPilot && $canManage): ?>
-    <section id="conduite" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
+    <section id="conduite" data-coop-region class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
         <?php $isSuspended = !empty($cooperationProgress['suspended']); ?>
         <?php if (!$isTerminal && $status === 'active'): ?>
         <div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border <?= $isSuspended ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-slate-50' ?> px-4 py-3">
@@ -439,7 +439,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
         <?php endif; ?>
 
         <?php if ($operationalStage === 'execution' && !$conductLocked): ?>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/sitrep'), ENT_QUOTES, 'UTF-8') ?>" class="border-t border-slate-100 pt-8 grid gap-4">
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/sitrep'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax class="border-t border-slate-100 pt-8 grid gap-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Ajouter un point de situation</h3>
             <div>
@@ -477,7 +477,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
     <?php endif; ?>
 
     <?php if ($canPilot && $canManage && ($missionMembers !== [] || $userPicker !== [])): ?>
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
+    <section id="coop-roles" data-coop-region class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
         <div>
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Rôles sur cette coopération</h2>
             <p class="mt-2 text-sm text-slate-600">Désignations propres à ce dossier (indépendantes du rôle communautaire).</p>
@@ -499,7 +499,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
         </ul>
         <?php endif; ?>
         <?php if ($userPicker !== []): ?>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/assign-member'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-6">
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/assign-member'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax class="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-6">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1" for="member_user_id">Membre</label>

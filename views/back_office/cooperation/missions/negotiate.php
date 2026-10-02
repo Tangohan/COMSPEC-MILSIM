@@ -47,7 +47,23 @@ $labels = [
     </div>
 
     <?php if ($status !== 'pending'): ?>
-    <p class="text-sm text-slate-600 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">La négociation structurée s’applique lorsque la coopération est en attente de validation des unités. Une fois lancée, utilisez l’espace commun et la chronologie.</p>
+    <?php
+    $ui_empty_title = $status === 'draft' ? 'Pas encore de négociation' : 'Négociation terminée';
+    $ui_empty_description = $status === 'draft'
+        ? 'Les unités invitées pourront proposer des ajustements (calendrier, périmètre, partage…) dès l’envoi des invitations.'
+        : 'La coopération est lancée ou clôturée : les échanges se poursuivent sur l’espace commun et dans le journal.';
+    $ui_empty_primary_label = $status === 'draft' ? 'Inviter des unités' : 'Ouvrir l’espace commun';
+    $ui_empty_primary_href = $status === 'draft' ? cooperation_mission_show_url($sid) . '#participants' : cooperation_mission_exchange_url($sid);
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
+    <?php elseif (!$counterPending && !$partnerCanCounter): ?>
+    <?php
+    $ui_empty_title = 'Aucune contre-proposition en cours';
+    $ui_empty_description = 'Les unités invitées peuvent proposer des ajustements avant le lancement ; ils apparaîtront ici pour décision.';
+    $ui_empty_primary_label = '';
+    $ui_empty_primary_href = '';
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php endif; ?>
 
     <?php if ($counterPending && $canPilot && $canManage && $cp !== []): ?>

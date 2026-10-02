@@ -311,3 +311,15 @@ html[data-bo-theme="dark"] [data-coop-advance]:disabled { background: #26302c !i
 .coop-cbx__help { flex-basis: 100%; margin: 0; padding: 0 6px; font-size: 12px; color: var(--ath-muted, #5b6762); }
 .coop-cbx__help:empty { display: none; }
 html[data-bo-theme="dark"] .coop-cbx__chip { background: #12291f; color: #6ee7b7; }
+
+/* ——— Boutons en cours d’envoi ——— */
+.is-loading { position: relative; color: transparent !important; pointer-events: none; }
+.is-loading::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.45); border-top-color: #fff; border-radius: 50%;
+  animation: coop-spin 0.7s linear infinite;
+}
+.coop-parts__btn.is-loading::after, .coop-cbx ~ * .is-loading::after { border-color: rgba(12, 17, 22, 0.25); border-top-color: #0c1116; }
+form[aria-busy="true"] { cursor: progress; }
+@keyframes coop-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .is-loading::after { animation-duration: 2s; } }

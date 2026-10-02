@@ -25,7 +25,13 @@ $canManage = !empty($interteamCanManage);
     </div>
 
     <?php if ($events === []): ?>
-    <p class="text-sm text-slate-600">Aucun événement enregistré pour l’instant.</p>
+    <?php
+    $ui_empty_title = 'Le journal est encore vide';
+    $ui_empty_description = 'Chaque étape (invitation, réponse, lancement, réunion, autorisation…) s’inscrira ici automatiquement, avec son auteur et sa date.';
+    $ui_empty_primary_label = 'Revenir à la synthèse';
+    $ui_empty_primary_href = cooperation_mission_show_url($sid);
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php else: ?>
     <?php $filterLabels = CooperationDictionary::timelineFilterLabels(); ?>
     <div class="flex flex-wrap gap-2 mb-4" id="coop-timeline-filters" role="tablist" aria-label="Filtrer le journal">

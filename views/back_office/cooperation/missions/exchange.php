@@ -47,7 +47,13 @@ if (!empty($grants)) {
     <?php elseif ($status === 'active'): ?>
     <p class="text-sm text-slate-600">L’espace commun sera disponible une fois le fil créé (lancement de la coopération).</p>
     <?php else: ?>
-    <p class="text-sm text-slate-600">L’espace commun s’ouvre lorsque la coopération est lancée.</p>
+    <?php
+    $ui_empty_title = 'L’espace commun n’est pas encore ouvert';
+    $ui_empty_description = 'Il s’ouvre au lancement de la coopération : un fil commun est alors créé sur le brief de l’unité support, et chaque unité valide son autorisation de partage.';
+    $ui_empty_primary_label = 'Voir ce qu’il reste à faire';
+    $ui_empty_primary_href = cooperation_mission_show_url($sid);
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php endif; ?>
 
     <?php if (!$isLead && $myGrantCount > 0 && $status === 'active'): ?>
@@ -58,7 +64,7 @@ if (!empty($grants)) {
     <?php endif; ?>
 
     <?php if ($isLead && $canManage && $status === 'active'): ?>
-    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section id="coop-grants" data-coop-region class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Autorisations d’accès à l’espace commun</h2>
         <p class="mt-2 text-xs text-slate-600 leading-relaxed">Ajoutez un accès vers un autre espace d’échange du brief de l’unité support. Le fil principal reste disponible pour toutes les unités actives.</p>
         <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grant-topic'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -100,7 +106,7 @@ if (!empty($grants)) {
                     $gtLabel = CooperationDictionary::forumGrantTypeLabel($gt);
                     echo htmlspecialchars($gtLabel . ' — unité « ' . (string) ($g['consumer_tenant_name'] ?? '') . ' »', ENT_QUOTES, 'UTF-8');
                 ?></span>
-                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" data-ui-confirm="1" data-ui-confirm-title="Retirer cette autorisation ?" data-ui-confirm-body="L’unité destinataire ne verra plus cet espace d’échange dans son brief. Le fil principal de la coopération reste accessible.">
+                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax data-ui-confirm="1" data-ui-confirm-title="Retirer cette autorisation ?" data-ui-confirm-body="L’unité destinataire ne verra plus cet espace d’échange dans son brief. Le fil principal de la coopération reste accessible.">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="text-xs font-semibold text-rose-700 hover:text-rose-900">Retirer</button>
                 </form>

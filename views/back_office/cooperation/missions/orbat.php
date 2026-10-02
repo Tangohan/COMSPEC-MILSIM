@@ -98,6 +98,16 @@ $status = (string) ($m['status'] ?? '');
     </section>
     <?php endif; ?>
 
+    <?php if ($orbatBlocks === []): ?>
+    <?php
+    $ui_empty_title = 'Aucune structure à afficher';
+    $ui_empty_description = 'L’organigramme des unités apparaît ici dès qu’au moins une unité partenaire a accepté la coopération.';
+    $ui_empty_primary_label = '';
+    $ui_empty_primary_href = '';
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
+    <?php endif; ?>
+
     <?php if ($orbatBlocks !== []): ?>
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Structure (ORBAT) des unités engagées</h2>

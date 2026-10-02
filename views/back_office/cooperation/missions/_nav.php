@@ -90,6 +90,9 @@ $childToGroup = ['edit' => 'proposal', 'negotiate' => 'proposal', 'exchange' => 
 $activeGroup = $childToGroup[$active] ?? $active;
 ?>
 <?php require base_path('views/back_office/cooperation/missions/_progress.php'); ?>
+<?php if (empty($GLOBALS['__coopAjaxAssets'])): $GLOBALS['__coopAjaxAssets'] = true; ?>
+<script defer src="<?= $h(asset_url('assets/js/cooperation/ajax-actions.js')) ?>"></script>
+<?php endif; ?>
 <nav class="coop-tabs" aria-label="Sections de la coopération">
     <ul class="coop-tabs__list">
         <?php foreach ($groups as $g): ?>

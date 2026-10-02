@@ -312,6 +312,7 @@
   function init() {
     document.querySelectorAll('select[data-coop-combobox]').forEach(enhance);
   }
+  window.coopComboboxInit = init;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();

@@ -1062,7 +1062,89 @@ class InterteamMissionWebController
         return 'comspec-coop-' . substr(hash_hmac('sha256', (string) $missionId, $secret), 0, 24);
     }
 
+    /*
+     * Actions courtes : réponse JSON si le client la demande (amélioration progressive),
+     * sinon redirection + message flash comme avant. Les règles et contrôles sont identiques.
+     */
     public function invite(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleInvite($request, $params));
+    }
+
+    public function accept(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleAccept($request, $params));
+    }
+
+    public function decline(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleDecline($request, $params));
+    }
+
+    public function remindPartner(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleRemindPartner($request, $params));
+    }
+
+    public function removePartner(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleRemovePartner($request, $params));
+    }
+
+    public function revokeGrant(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleRevokeGrant($request, $params));
+    }
+
+    public function addSitrep(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleAddSitrep($request, $params));
+    }
+
+    public function assignMissionMember(Request $request, array $params = []): Response
+    {
+        return $this->ajaxify($this->handleAssignMissionMember($request, $params));
+    }
+
+    /** Champ à signaler à côté de l’erreur (réponse JSON). */
+    private ?string $errorField = null;
+
+    private function wantsJson(): bool
+    {
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+        $xrw = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+
+        return str_contains($accept, 'application/json') || $xrw === 'xmlhttprequest';
+    }
+
+    /**
+     * Convertit « flash + redirection » en JSON {ok, variant, message, warning, redirect, field}.
+     */
+    private function ajaxify(Response $response): Response
+    {
+        if (!$this->wantsJson()) {
+            return $response;
+        }
+        $error = Session::getFlash('error');
+        $success = Session::getFlash('success');
+        $warning = Session::getFlash('warning');
+        $ok = $error === null || $error === '';
+        $message = (string) ($ok ? ($success ?? $warning ?? '') : $error);
+        $payload = [
+            'ok' => $ok,
+            'variant' => $ok ? ($success !== null ? 'success' : 'warning') : 'error',
+            'message' => $message,
+            'warning' => $ok && $success !== null && $warning !== null ? (string) $warning : null,
+            'redirect' => $response->headerValue('Location'),
+            'field' => $ok ? null : $this->errorField,
+        ];
+        $json = Response::json($payload, $ok ? 200 : 422);
+        $json->header('Cache-Control', 'no-store');
+
+        return $json;
+    }
+
+    private function handleInvite(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
@@ -1103,6 +1185,7 @@ class InterteamMissionWebController
         }
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $v): bool => $v > 0)));
         if ($ids === []) {
+            $this->errorField = 'partner_tenant_ids';
             Session::flash('error', 'Choisissez au moins une unité à inviter.');
 
             return Response::redirect(cooperation_mission_show_url($id));
@@ -1160,7 +1243,7 @@ class InterteamMissionWebController
         return [$invited, $skipped];
     }
 
-    public function accept(Request $request, array $params = []): Response
+    private function handleAccept(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
@@ -1198,7 +1281,7 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_show_url($id));
     }
 
-    public function decline(Request $request, array $params = []): Response
+    private function handleDecline(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
@@ -1240,7 +1323,7 @@ class InterteamMissionWebController
     /**
      * Retrait d’une unité (invitation en attente ou unité engagée) par le pilotage.
      */
-    public function removePartner(Request $request, array $params = []): Response
+    private function handleRemovePartner(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -1417,7 +1500,7 @@ class InterteamMissionWebController
     /**
      * Relance manuelle d’une unité dont l’invitation est sans réponse (une fois par 24 h et par unité).
      */
-    public function remindPartner(Request $request, array $params = []): Response
+    private function handleRemindPartner(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -1602,7 +1685,7 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_show_url($id));
     }
 
-    public function addSitrep(Request $request, array $params = []): Response
+    private function handleAddSitrep(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
@@ -1632,6 +1715,7 @@ class InterteamMissionWebController
         }
         $summary = trim((string) $request->input('sitrep_summary', ''));
         if ($summary === '') {
+            $this->errorField = 'sitrep_summary';
             Session::flash('error', 'Le contenu du point de situation est obligatoire.');
 
             return Response::redirect(cooperation_mission_show_url($id));
@@ -1696,7 +1780,7 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_exchange_url($id));
     }
 
-    public function revokeGrant(Request $request, array $params = []): Response
+    private function handleRevokeGrant(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');
@@ -1936,7 +2020,7 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_show_url($newId));
     }
 
-    public function assignMissionMember(Request $request, array $params = []): Response
+    private function handleAssignMissionMember(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Jeton de sécurité invalide.');

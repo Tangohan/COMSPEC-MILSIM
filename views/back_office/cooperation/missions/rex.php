@@ -19,7 +19,13 @@ $canReadConsolidatedRex = !empty($interteamCanReadConsolidatedRex);
     </div>
 
     <?php if ($status !== 'archived'): ?>
-    <p class="text-sm text-slate-600 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">Le formulaire de retour d’expérience est disponible lorsque la coopération est clôturée.</p>
+    <?php
+    $ui_empty_title = 'Pas encore de retour d’expérience';
+    $ui_empty_description = 'Le formulaire s’ouvre à la clôture de la coopération : chaque unité y consigne ce qui a fonctionné, les difficultés et ses recommandations.';
+    $ui_empty_primary_label = 'Voir la progression';
+    $ui_empty_primary_href = cooperation_mission_show_url($sid);
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php else: ?>
         <?php
         $row = is_array($rex) ? $rex : [];

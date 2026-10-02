@@ -18,7 +18,7 @@ $showAction = ($cooperationProgressShowAction ?? true) !== false;
 $next = is_array($prog['next_action'] ?? null) ? $prog['next_action'] : null;
 $steps = is_array($prog['steps'] ?? null) ? $prog['steps'] : [];
 ?>
-<section class="coop-progress" aria-labelledby="coop-progress-heading">
+<section id="coop-progress" class="coop-progress" aria-labelledby="coop-progress-heading" data-coop-region>
     <div class="coop-progress__head">
         <div class="min-w-0">
             <p id="coop-progress-heading" class="coop-progress__title"><?= $h((string) $prog['heading']) ?></p>

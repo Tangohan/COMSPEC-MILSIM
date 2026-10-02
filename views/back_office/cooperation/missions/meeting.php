@@ -69,6 +69,18 @@ $jitsiSrc = $jitsiEnabled && $jitsiRoom !== '' && $jitsiDomain !== '' && $status
     </section>
     <?php endif; ?>
 
+    <?php if ($meetings === []): ?>
+    <?php
+    $ui_empty_title = 'Aucune réunion planifiée';
+    $ui_empty_description = $status === 'active'
+        ? ($canPilot && $canManage ? 'Planifiez la première réunion de coordination : intitulé, ordre du jour et horaire alimentent le journal.' : 'L’unité support planifiera les réunions de coordination ; elles apparaîtront ici.')
+        : 'Les réunions se planifient une fois la coopération lancée.';
+    $ui_empty_primary_label = '';
+    $ui_empty_primary_href = '';
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
+    <?php endif; ?>
+
     <?php if ($meetings !== []): ?>
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Réunions enregistrées</h2>
