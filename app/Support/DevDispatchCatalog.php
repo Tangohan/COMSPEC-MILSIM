@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(754, '2026-10-02', 'JNET : un espace par unité et des échanges dans la chaîne', 'L’extranet devient l’espace commun de l’organisation et de chaque unité de l’ORBAT. Chaque unité a son espace : ce qu’elle reçoit du commandement, son fil interne et ce qu’elle remonte à l’échelon supérieur. L’espace commun montre la situation de toutes les unités et le flux des échanges. Le thème suit le back-office, en clair comme en mode nuit. Rechargez le portail (Ctrl+F5).', [
+                'Espace JNET par unité (/jnet/u/…), avec fil d’échelons et rail « Mes espaces »',
+                'Échanges typés (ordre, compte rendu, renseignement, document, information) diffusés à l’unité, à son échelon supérieur ou à ses subordonnés',
+                'Accusé de lecture sur les ordres (« lu par x / y »)',
+                'Situation des unités et flux commun filtrable sur l’espace commun',
+            ], [
+                'Couleur et insigne de chaque unité repris de la fiche ORBAT',
+                'Nouveau thème JNET aligné sur la charte du back-office (clair et mode nuit)',
+            ], [], ['command', 'personnel'], [
+                'Appliquez les migrations (table jnet_exchanges). Ouvrez JNET → Espace commun, puis votre unité dans « Mes espaces ». Publiez un ordre vers une sous-unité : ses membres le voient dans « Reçu » et peuvent accuser réception. Une unité latérale ne le voit pas.',
+            ], 'Portail Athena'),
             $pr(753, '2026-10-02', 'Carrière et boîte de travail RH', 'Le dossier de carrière regroupe désormais le journal de service avec les grades, affectations, qualifications et décorations. Dans le bureau Effectifs, l’onglet À traiter rassemble les décisions en attente : corrections, élévations, échéances et dossiers incomplets. Le système propose ; le responsable décide. Rechargez le portail (Ctrl+F5).', [
                 'Timeline de carrière unifiée (journal de service inclus)',
                 'Onglet Effectifs « À traiter » avec file d’actions',

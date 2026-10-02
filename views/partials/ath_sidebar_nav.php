@@ -235,7 +235,7 @@ $atakResChildren = [
 ];
 
 $jnetChildren = [
-    ['label' => 'Tableau d’unité', 'href' => url('jnet'), 'active' => $boNavJnetHome],
+    ['label' => 'Espace commun', 'href' => url('jnet'), 'active' => $boNavJnetHome],
     ['label' => 'Fiche d’unité', 'href' => url('jnet/unite'), 'active' => $boNavJnetUnit],
     ['label' => 'Personnel', 'href' => url('jnet/personnel'), 'active' => $boNavJnetPersonnel],
     ['label' => 'Opérations', 'href' => url('jnet/operations'), 'active' => $boNavJnetOps],

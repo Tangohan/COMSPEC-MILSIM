@@ -13,6 +13,7 @@ use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Jnet\JnetDashboardService;
 use App\Services\Jnet\JnetMessagingService;
+use App\Services\Jnet\JnetSpaceService;
 use App\Services\Rbac\RbacService;
 use App\Support\PortalAccessChoice;
 
@@ -26,6 +27,7 @@ final class JnetPortalController
         private ?TenantMessageRepository $messageRepository = null,
         private ?JnetDashboardService $jnet = null,
         private ?JnetMessagingService $messaging = null,
+        private ?JnetSpaceService $spaces = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -34,6 +36,7 @@ final class JnetPortalController
         $this->messageRepository ??= new TenantMessageRepository();
         $this->jnet ??= new JnetDashboardService();
         $this->messaging ??= new JnetMessagingService();
+        $this->spaces ??= new JnetSpaceService($this->jnet);
     }
 
     public function home(Request $request, array $params = []): Response
@@ -43,8 +46,93 @@ final class JnetPortalController
             return $ctx;
         }
         $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
+        $kind = (string) $request->query('type', '');
+        $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], 0, $kind) ?? [];
 
-        return $this->render('home', 'Tableau d’unité', $dash, 'home');
+        return $this->render('home', 'Espace commun', array_merge($dash, $space), 'home');
+    }
+
+    /** Espace d’une unité de l’ORBAT : reçu du commandement, fil interne, remonté vers l’échelon supérieur. */
+    public function unitSpace(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $unitId = (int) ($params['id'] ?? 0);
+        if ($unitId <= 0) {
+            return Response::redirect(url('jnet'));
+        }
+        $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], $unitId);
+        if ($space === null) {
+            Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
+
+            return Response::redirect(url('jnet'));
+        }
+
+        return $this->render('space', (string) ($space['space']['label'] ?? 'Unité'), $space, 'home');
+    }
+
+    /** Publication d’un échange depuis un espace (0 = Organisation). */
+    public function postExchange(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $spaceId = max(0, (int) ($params['id'] ?? 0));
+        $back = $this->spaces->spaceUrl($spaceId);
+        if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré, l’échange n’a pas été publié.');
+
+            return Response::redirect($back);
+        }
+        $error = $this->spaces->post(
+            $ctx['tenant_id'],
+            $ctx['user_id'],
+            $spaceId,
+            (string) $request->input('kind', 'info'),
+            (string) $request->input('title', ''),
+            (string) $request->input('body', ''),
+            (string) $request->input('link', ''),
+            array_map('intval', (array) $request->input('targets', []))
+        );
+        if ($error !== null) {
+            Session::flash('error', $error);
+            Session::flash('jnet_exchange_draft', [
+                'kind' => (string) $request->input('kind', 'info'),
+                'title' => (string) $request->input('title', ''),
+                'body' => (string) $request->input('body', ''),
+                'link' => (string) $request->input('link', ''),
+            ]);
+        } else {
+            Session::flash('success', 'Échange publié.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    /** Accusé de lecture d’un échange. */
+    public function acknowledgeExchange(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $back = (string) $request->input('back', '');
+        if ($back === '' || !JnetSpaceService::isInternalLink($back)) {
+            $back = url('jnet');
+        }
+        if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré, réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->spaces->acknowledge($ctx['tenant_id'], $ctx['user_id'], (int) ($params['id'] ?? 0))) {
+            Session::flash('error', 'Échange introuvable.');
+        }
+
+        return Response::redirect($back);
     }
 
     public function unit(Request $request, array $params = []): Response
@@ -582,11 +670,12 @@ final class JnetPortalController
             'boPageGroup' => 'Unité',
             'boPageKicker' => 'UNITÉ · EXTRANET',
             'boPageTitle' => $title,
-            'boPageSubtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.',
+            'boPageSubtitle' => 'Espace commun de l’organisation et de chaque unité : situation, échanges, opérations et renseignement.',
             'boPageQuick' => [],
             'backOfficePageCss' => [
                 'jnet_portal.css',
                 'jnet_bo_embed.css',
+                'jnet_spaces.css',
             ],
             'activeNav' => $nav,
             'jnetTenantName' => $tenantName,

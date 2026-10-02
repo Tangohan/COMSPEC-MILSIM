@@ -69,4 +69,46 @@ final class JnetPortalRealDataAssetTest extends TestCase
         self::assertStringContainsString('.jnet-linklist', $css);
         self::assertStringContainsString('.jnet-shortcut', $embedCss);
     }
+
+    public function testSpacesAndExchangesAreWired(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        $controller = (string) file_get_contents($root . '/app/Controllers/Web/JnetPortalController.php');
+        $space = (string) file_get_contents($root . '/views/jnet/space.php');
+        $composer = (string) file_get_contents($root . '/views/jnet/_exchange_composer.php');
+        $exchange = (string) file_get_contents($root . '/views/jnet/_exchange.php');
+        $css = (string) file_get_contents($root . '/public/assets/css/jnet_spaces.css');
+        $migration = (string) file_get_contents($root . '/migrations/jnet_exchanges.sql');
+
+        self::assertStringContainsString("'/jnet/u/{id}'", $routes);
+        self::assertStringContainsString("'/jnet/u/{id}/echanges'", $routes);
+        self::assertStringContainsString("'/jnet/echanges/{id}/lu'", $routes);
+
+        self::assertStringContainsString('function unitSpace', $controller);
+        self::assertStringContainsString('function postExchange', $controller);
+        self::assertStringContainsString('function acknowledgeExchange', $controller);
+        foreach (['postExchange', 'acknowledgeExchange'] as $action) {
+            $start = strpos($controller, 'function ' . $action);
+            self::assertNotFalse($start);
+            $body = substr($controller, (int) $start, 900);
+            self::assertStringContainsString('Csrf::validate', $body, $action . ' doit valider le jeton CSRF.');
+        }
+        self::assertStringContainsString('jnet_spaces.css', $controller);
+
+        self::assertStringContainsString('Reçu', $space);
+        self::assertStringContainsString('Dans l’unité', $space);
+        self::assertStringContainsString('Remonté', $space);
+        self::assertStringContainsString('Csrf::field()', $composer);
+        self::assertStringContainsString('Csrf::field()', $exchange);
+
+        // Le thème suit les jetons du back-office (clair / nuit) : pas de fond sombre codé en dur.
+        self::assertStringContainsString('var(--ath-surface', $css);
+        self::assertStringContainsString('--jn-unit', $css);
+        self::assertStringNotContainsString('border-radius: 0.75rem', $css);
+
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `jnet_exchanges`', $migration);
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `jnet_exchange_targets`', $migration);
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `jnet_exchange_reads`', $migration);
+    }
 }
