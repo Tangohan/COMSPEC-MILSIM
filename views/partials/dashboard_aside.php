@@ -93,6 +93,11 @@ $icon = static function (string $key): string {
         'backoffice' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path stroke-linecap="round" d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>',
         'admin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M12 8v4.5M12 15.2h.01"/></svg>',
         'profile' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.2" r="3.4"/><path stroke-linecap="round" d="M4.8 19.5c.9-3.4 3.8-5.4 7.2-5.4s6.3 2 7.2 5.4"/></svg>',
+        'forum' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5h11a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H9l-4 3v-3H4A1.5 1.5 0 0 1 2.5 13V7A1.5 1.5 0 0 1 4 5.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 9.5H20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-1v2.5l-3.4-2.5H11a1.5 1.5 0 0 1-1.5-1.5V16"/></svg>',
+        'messages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17h-1A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5Z"/><path stroke-linecap="round" d="M7.5 9.5h9M7.5 12.5h5.5"/></svg>',
+        'trainings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 9 12 4.5 21.5 9 12 13.5 2.5 9Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 11v4.5c0 1.4 2.5 3 5.5 3s5.5-1.6 5.5-3V11M21.5 9v5"/></svg>',
+        'effectifs' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3"/><path stroke-linecap="round" d="M3.5 19.5c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="16.8" cy="9.2" r="2.4"/><path stroke-linecap="round" d="M16.2 14.6c2.3.1 3.9 1.7 4.3 4.4"/></svg>',
+        'support' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.4v.6"/><path stroke-linecap="round" d="M12 16.6h.01"/></svg>',
         'anomaly' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 21 19.5H3L12 3.8Z"/><path stroke-linecap="round" d="M12 9.5v4.4M12 16.6h.01"/></svg>',
     ];
 
@@ -210,7 +215,7 @@ if ($canAdmin) {
         'default',
         null,
         [],
-        'anomaly',
+        'support',
         $siteSupportExtra
     );
 }
@@ -223,11 +228,11 @@ if ($canForum && $forumNavOpen) {
         $canForumCreate
             ? ['label' => 'Publier un sujet', 'href' => url('forum/new-topic'), 'hint' => 'Démarrer une discussion']
             : null,
-    ]));
+    ]), 'forum');
 } elseif ($forumNavOpen === false) {
     $navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
         ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
-    ]));
+    ]), 'messages');
 }
 
 $navTiles[] = $tile(
@@ -247,7 +252,8 @@ $navTiles[] = $tile(
         $canTrainingManage
             ? ['label' => 'Créer un entraînement', 'href' => url('formations/creer'), 'hint' => 'Publication', 'lms_module' => 'formation']
             : null,
-    ])
+    ]),
+    'trainings'
 );
 
 $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default', null, $links([
@@ -260,7 +266,7 @@ $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default'
     ['label' => 'Mon intégration', 'href' => url('mon-integration'), 'hint' => 'Étapes d’arrivée et rendez-vous', 'lms_module' => 'effectifs'],
     ['label' => 'Mon personnage (RP)', 'href' => url('roleplay'), 'hint' => 'Identité RP, suivi, bilans', 'lms_module' => 'effectifs'],
     ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances', 'lms_module' => 'effectifs'],
-]));
+]), 'effectifs');
 
 $navTiles[] = $tile(
     'events',
@@ -476,7 +482,8 @@ $accountLinks[] = ['label' => 'Mes données', 'href' => url('account/donnees'), 
 $accountLinks[] = ['label' => 'Tutoriels', 'href' => url('personnel/tutorials'), 'hint' => 'Guides'];
 
 $accountTiles = [
-    $tile('profile', 'Mon compte', 'Identité et préférences', 'accent', null, $links($accountLinks), 'profile', $accountExtraHtml),
+    $tile('profile', 'Mon compte', 'Identité et préférences', 'accent', null, $links($accountLinks), 'profile', $accountExtraHtml)
+        + ['avatar' => ['src' => $acctAvatarSrc ? (string) $acctAvatarSrc : '', 'initials' => (string) $acctInitials, 'name' => $acctDisplayName]],
 ];
 
 $renderLinks = static function (array $item) use ($h): void {
@@ -536,24 +543,36 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
             aria-controls="<?= $h($nestedId) ?>"
             <?php if ($disabled): ?>disabled aria-disabled="true"<?php endif; ?>
         >
-            <?php if ($iconMarkup !== ''): ?>
+            <?php $avatar = is_array($item['avatar'] ?? null) ? $item['avatar'] : null; ?>
+            <?php if ($avatar !== null): ?>
+                <span class="dash-rail__tile-avatar" aria-hidden="true">
+                    <?php if ($avatar['src'] !== ''): ?>
+                        <img src="<?= $h($avatar['src']) ?>" alt="" loading="lazy" data-img-fallback="avatar" data-img-initials="<?= $h($avatar['initials']) ?>">
+                    <?php else: ?>
+                        <?= $h($avatar['initials']) ?>
+                    <?php endif; ?>
+                </span>
+            <?php elseif ($iconMarkup !== ''): ?>
                 <span class="dash-rail__tile-icon" aria-hidden="true"><?= $iconMarkup ?></span>
             <?php else: ?>
                 <b class="dash-rail__idx"><?= $h($idxLabel) ?></b>
             <?php endif; ?>
             <span class="dash-rail__copy">
-                <strong class="dash-rail__label"><?= $h($label) ?></strong>
-                <em class="dash-rail__hint"><?= $h((string) $item['hint']) ?></em>
+                <strong class="dash-rail__label"><?= $avatar !== null ? $h((string) $avatar['name']) : $h($label) ?></strong>
+                <em class="dash-rail__hint"><?= $avatar !== null ? $h($label) : $h((string) $item['hint']) ?></em>
             </span>
-            <?php if ($active): ?>
-                <i class="dash-rail__meta dash-rail__meta--actif">Actif</i>
-            <?php elseif (is_string($badge) && $badge !== ''): ?>
-                <i class="dash-rail__meta dash-rail__meta--badge" aria-label="<?= $h($badge . ' élément(s)') ?>"><?= $h($badge) ?></i>
-            <?php elseif ($disabled): ?>
-                <i class="dash-rail__meta dash-rail__meta--soon">Bientôt</i>
-            <?php else: ?>
-                <i class="dash-rail__meta dash-rail__meta--empty" aria-hidden="true">—</i>
-            <?php endif; ?>
+            <span class="dash-rail__end">
+                <?php if ($active): ?>
+                    <i class="dash-rail__meta dash-rail__meta--actif"><span class="sr-only">Rubrique active</span></i>
+                <?php elseif (is_string($badge) && $badge !== ''): ?>
+                    <i class="dash-rail__meta dash-rail__meta--badge" aria-label="<?= $h($badge . ' élément(s)') ?>"><?= $h($badge) ?></i>
+                <?php elseif ($disabled): ?>
+                    <i class="dash-rail__meta dash-rail__meta--soon">Bientôt</i>
+                <?php endif; ?>
+                <?php if (!$disabled): ?>
+                    <svg class="dash-rail__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                <?php endif; ?>
+            </span>
         </button>
         <div
             class="dash-rail__nested"
@@ -585,9 +604,12 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         <div class="dash-rail__panel">
             <div class="dash-rail__view dash-rail__view--root" data-dash-rail-root>
                 <div class="dash-rail__brand">
-                    <p class="dash-rail__eyebrow">Athena / Commandement</p>
-                    <h2 class="dash-rail__title">Tableau de bord</h2>
-                    <p class="dash-rail__unit"><?= $h($unitLabel) ?></p>
+                    <span class="dash-rail__brand-mark" aria-hidden="true">A</span>
+                    <span class="dash-rail__brand-text">
+                        <p class="dash-rail__eyebrow">Athena · Commandement</p>
+                        <h2 class="dash-rail__title">Tableau de bord</h2>
+                        <p class="dash-rail__unit"><?= $h($unitLabel) ?></p>
+                    </span>
                 </div>
 
                 <nav class="dash-rail__nav" aria-label="Rubriques">
@@ -629,7 +651,6 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                         <span class="dash-rail__foot-meta">Portail membre</span>
                         <span class="dash-rail__foot-live"><?= $h($statutLabel) ?></span>
                     </div>
-                    <p class="dash-rail__foot-hint">Survolez le rail · Cliquez une tuile pour ouvrir son panneau</p>
                 </div>
             </div>
 

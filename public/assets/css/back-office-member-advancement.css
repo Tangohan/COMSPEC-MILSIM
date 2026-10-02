@@ -1,0 +1,200 @@
+/**
+ * Ma situation › Mon avancement — parcours de grade, conditions, demandes, avis, historique.
+ */
+
+.mav { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.mav-flash { margin: 0; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+.mav-flash--ok { background: #e3f7ee; color: #0b6e4a; border: 1px solid #b8e8d2; }
+.mav-flash--bad { background: #fdecec; color: #a32222; border: 1px solid #f5c6c6; }
+
+/* ——— Résumé ——— */
+.mav-summary { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 1024px) { .mav-summary { grid-template-columns: 1fr; } }
+
+.mav-hero {
+  display: flex; flex-direction: column; gap: 18px; padding: 26px 28px; border-radius: 16px; overflow: hidden;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(18, 209, 142, 0.22) 0%, rgba(18, 209, 142, 0) 55%),
+    #0c1a15;
+  color: #fff;
+  animation: mav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mav-hero__kicker { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #6ee7b7; }
+.mav-hero .adv-info__i { background: rgba(255, 255, 255, 0.14); color: #fff; }
+
+.mav-ladder { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 14px; }
+@media (max-width: 560px) {
+  .mav-ladder { grid-template-columns: 1fr; }
+  .mav-ladder__arrow { transform: rotate(90deg); justify-self: start; margin-left: 18px; }
+}
+.mav-ladder__arrow { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: #6ee7b7; }
+.mav-ladder__arrow svg { width: 18px; height: 18px; }
+
+.mav-rung { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.mav-rung__badge {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 58px; height: 58px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06); color: #fff;
+  font-size: 15px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.mav-rung--next .mav-rung__badge { background: #12d18e; border-color: #12d18e; color: #04130d; }
+.mav-rung--next.is-empty .mav-rung__badge { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.5); }
+.mav-rung__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mav-rung__label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55); }
+.mav-rung__name { font-size: clamp(19px, 2.2vw, 24px); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; color: #fff; overflow-wrap: anywhere; }
+.mav-rung__meta { font-size: 13px; line-height: 1.4; color: rgba(255, 255, 255, 0.72); }
+
+.mav-progress { display: flex; flex-direction: column; gap: 8px; }
+.mav-progress__head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
+.mav-progress__head strong { color: #fff; font-variant-numeric: tabular-nums; }
+.mav-progress__bar { height: 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.mav-progress__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0b8a5c, #12d18e); transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.mav-progress__due { margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
+
+.mav-state { margin: 0; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; line-height: 1.45; background: rgba(255, 255, 255, 0.07); color: rgba(255, 255, 255, 0.86); }
+.mav-state--ok { background: rgba(18, 209, 142, 0.16); color: #a7f3d0; }
+.mav-state--warn { background: rgba(251, 191, 36, 0.14); color: #fde68a; }
+.mav-state--info { background: rgba(96, 165, 250, 0.14); color: #bfdbfe; }
+
+.mav-hero__foot { display: flex; }
+.mav-hero__cta {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 10px;
+  background: #12d18e; color: #04130d; font-size: 14px; font-weight: 800; text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.mav-hero__cta:hover { background: #3ee0a8; transform: translateY(-1px); }
+
+.mav-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.mav-stat {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px 18px;
+  border: 1px solid var(--ath-line, #e3e8ea); border-radius: 14px; background: var(--ath-surface, #fff);
+  animation: mav-in 0.4s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mav-stat__label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ath-muted, #5b6762); }
+.mav-stat__value { font-size: 28px; font-weight: 800; line-height: 1.1; color: var(--ath-ink, #0c1116); font-variant-numeric: tabular-nums; }
+.mav-stat__note { font-size: 12.5px; line-height: 1.45; color: var(--ath-muted, #5b6762); }
+
+/* ——— Cartes ——— */
+.mav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1024px) { .mav-grid { grid-template-columns: 1fr; } }
+
+.mav-card {
+  display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 22px 24px;
+  border: 1px solid var(--ath-line, #e3e8ea); border-radius: 16px; background: var(--ath-surface, #fff);
+}
+@media (max-width: 560px) { .mav-card { padding: 18px 16px; } }
+.mav-card--accent { border-color: #b8e8d2; background: #f3fbf7; }
+.mav-card__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
+.mav-card__kicker { margin: 0 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #0b8a5c; }
+.mav-card__title { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; line-height: 1.25; letter-spacing: -0.01em; color: var(--ath-ink, #0c1116); }
+.mav-lead { margin: -4px 0 0; font-size: 14px; line-height: 1.55; color: var(--ath-muted, #5b6762); }
+.mav-subtitle { margin: 6px 0 0; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ath-muted, #5b6762); }
+
+.mav-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.mav-pill--ok { background: #e3f7ee; color: #0b6e4a; }
+.mav-pill--warn { background: #fff4e0; color: #8a5a06; }
+.mav-pill--bad { background: #fdecec; color: #a32222; }
+.mav-pill--muted { background: #eef1f2; color: #4b5753; }
+
+/* Conditions */
+.mav-conditions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.mav-cond { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; background: #fbfaf6; }
+.mav-cond.is-met { background: #f3fbf7; border-color: #cdeedd; }
+.mav-cond__icon { flex-shrink: 0; display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 999px; background: #fff4e0; color: #b7791f; }
+.mav-cond.is-met .mav-cond__icon { background: #12d18e; color: #04130d; }
+.mav-cond__icon svg { width: 17px; height: 17px; }
+.mav-cond__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mav-cond__text strong { font-size: 14px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.mav-cond__text span { font-size: 13px; line-height: 1.45; color: var(--ath-muted, #5b6762); }
+
+/* Formulaires */
+.mav-action { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--ath-line, #e3e8ea); scroll-margin-top: 80px; }
+.mav-action__title { margin: 0; font-size: 16px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.mav-form { display: flex; flex-direction: column; gap: 14px; }
+.mav-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+@media (max-width: 640px) { .mav-form__grid { grid-template-columns: 1fr; } }
+.mav-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mav-field--wide { grid-column: 1 / -1; }
+.mav-field label { font-size: 13px; font-weight: 700; color: var(--ath-ink, #0c1116); }
+.mav-opt { font-weight: 500; color: var(--ath-muted, #5b6762); }
+.mav-field select,
+.mav-field input,
+.mav-field textarea {
+  width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid #d5ddd9; border-radius: 10px;
+  background: #fff; color: var(--ath-ink, #0c1116); font: inherit; font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mav-field textarea { resize: vertical; line-height: 1.5; }
+.mav-field select:focus,
+.mav-field input:focus,
+.mav-field textarea:focus { outline: none; border-color: #0b8a5c; box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.2); }
+.mav-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ath-ink, #0c1116); }
+.mav-check input { width: 18px; height: 18px; accent-color: #0b8a5c; }
+.mav-form__foot { display: flex; justify-content: flex-end; }
+@media (max-width: 560px) { .mav-form__foot .ath-btn { width: 100%; justify-content: center; } }
+
+.mav-disclosure { border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; background: #fafcfb; }
+.mav-disclosure > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 16px; cursor: pointer;
+  font-size: 14px; font-weight: 800; color: #0b6e4a; list-style: none;
+}
+.mav-disclosure > summary::-webkit-details-marker { display: none; }
+.mav-disclosure > summary::after { content: '+'; font-size: 18px; line-height: 1; }
+.mav-disclosure[open] > summary::after { content: '−'; }
+.mav-disclosure > .mav-form { padding: 4px 16px 16px; }
+
+.mav-note { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ath-muted, #5b6762); }
+.mav-note--info { padding: 10px 14px; border-radius: 10px; background: #eef5fd; color: #1e4e8c; }
+
+/* Listes */
+.mav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.mav-list__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--ath-line-soft, #f1f4f5); }
+.mav-list__item:first-child { border-top: 0; padding-top: 2px; }
+.mav-list__item--stack { align-items: flex-start; }
+.mav-list__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mav-list__text strong { font-size: 14px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.mav-list__text span { font-size: 13px; line-height: 1.45; color: var(--ath-muted, #5b6762); overflow-wrap: anywhere; }
+.mav-quote { padding-left: 10px; border-left: 3px solid var(--ath-line, #e3e8ea); font-style: italic; }
+
+.mav-empty { margin: 0; font-size: 14px; color: var(--ath-muted, #5b6762); }
+.mav-empty--box { display: flex; flex-direction: column; gap: 4px; padding: 22px; border: 1px dashed #d5ddd9; border-radius: 12px; text-align: center; }
+.mav-empty--box strong { color: var(--ath-ink, #0c1116); font-size: 14px; }
+
+/* Historique */
+.mav-history { list-style: none; margin: 0; padding: 0; position: relative; }
+.mav-history::before { content: ''; position: absolute; left: 7px; top: 10px; bottom: 10px; width: 2px; background: var(--ath-line, #e3e8ea); }
+.mav-history__item { position: relative; display: flex; align-items: center; gap: 14px; padding: 10px 0; }
+.mav-history__dot { position: relative; z-index: 1; flex-shrink: 0; width: 16px; height: 16px; border-radius: 999px; border: 3px solid var(--ath-surface, #fff); background: #b9c4bf; box-shadow: 0 0 0 1px #d5ddd9; }
+.mav-history__item.is-current .mav-history__dot { background: #12d18e; box-shadow: 0 0 0 4px rgba(18, 209, 142, 0.2); }
+.mav-history__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.mav-history__body strong { font-size: 14.5px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.mav-history__body span { font-size: 13px; color: var(--ath-muted, #5b6762); }
+
+@keyframes mav-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mav-hero, .mav-stat { animation: none; }
+  .mav-progress__bar span { transition: none; }
+}
+
+/* ——— Mode nuit : fonds clairs → sombres, couleurs inchangées ——— */
+html[data-bo-theme="dark"] .mav-flash--ok { background: #12291f; border-color: #1f4a37; color: #6ee7b7; }
+html[data-bo-theme="dark"] .mav-flash--bad { background: #2c1616; border-color: #4d2323; color: #f08585; }
+html[data-bo-theme="dark"] .mav-card--accent { background: #10211a; border-color: #1f4a37; }
+html[data-bo-theme="dark"] .mav-card__kicker { color: #4fd3a2; }
+html[data-bo-theme="dark"] .mav-cond { background: #171c1a; }
+html[data-bo-theme="dark"] .mav-cond.is-met { background: #10211a; border-color: #1f4a37; }
+html[data-bo-theme="dark"] .mav-cond__icon { background: #2a2212; color: #f0b35b; }
+html[data-bo-theme="dark"] .mav-cond.is-met .mav-cond__icon { background: #12d18e; color: #04130d; }
+html[data-bo-theme="dark"] .mav-field select,
+html[data-bo-theme="dark"] .mav-field input,
+html[data-bo-theme="dark"] .mav-field textarea { background: #111715; border-color: #2c3733; color: #e6ebe8; }
+html[data-bo-theme="dark"] .mav-disclosure { background: #121816; }
+html[data-bo-theme="dark"] .mav-disclosure > summary { color: #4fd3a2; }
+html[data-bo-theme="dark"] .mav-note--info { background: #13202e; color: #a9c9ef; }
+html[data-bo-theme="dark"] .mav-pill--ok { background: #12291f; color: #6ee7b7; }
+html[data-bo-theme="dark"] .mav-pill--warn { background: #2a2212; color: #f0c27a; }
+html[data-bo-theme="dark"] .mav-pill--bad { background: #2c1616; color: #f08585; }
+html[data-bo-theme="dark"] .mav-pill--muted { background: #1d2522; color: #aab5b0; }
+html[data-bo-theme="dark"] .mav-empty--box { border-color: #2c3733; }
+html[data-bo-theme="dark"] .mav-history__dot { border-color: #141a18; background: #4b5753; box-shadow: 0 0 0 1px #2c3733; }

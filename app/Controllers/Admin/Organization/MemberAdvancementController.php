@@ -77,7 +77,7 @@ final class MemberAdvancementController
             'boPageKicker' => 'OPÉRATEUR · AVANCEMENT',
             'boPageTitle' => 'Mon avancement',
             'boPageSubtitle' => 'Prochain grade, conditions, demandes d’affectation ou d’avancement, avis de commandement.',
-            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-advancement.css'],
+            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-advancement.css', 'back-office-member-advancement.css'],
             'panel' => $panel,
             'mobilityRequests' => $mobilityRows,
             'mobilityReady' => $mobilityReady,

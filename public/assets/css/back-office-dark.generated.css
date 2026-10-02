@@ -2269,6 +2269,161 @@ html[data-bo-theme="dark"] .bo-media__danger-label {
   color: #e56c6c;
 }
 
+/* ——— back-office-member-advancement.css ——— */
+html[data-bo-theme="dark"] .mav-flash--ok {
+  background: #191f1c;
+  color: #61efbc;
+  border: 1px solid #2f3f38;
+}
+html[data-bo-theme="dark"] .mav-flash--bad {
+  background: #2c1919;
+  color: #e17070;
+  border: 1px solid #3a2b2b;
+}
+html[data-bo-theme="dark"] .mav-rung--next .mav-rung__badge {
+  color: #e3e8e6;
+}
+html[data-bo-theme="dark"] .mav-hero__cta {
+  color: #e3e8e6;
+}
+html[data-bo-theme="dark"] .mav-stat {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .mav-stat__label {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-stat__value {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-stat__note {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-card {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .mav-card--accent {
+  border-color: #2f3f38;
+  background: #151917;
+}
+html[data-bo-theme="dark"] .mav-card__kicker {
+  color: #5ef2bd;
+}
+html[data-bo-theme="dark"] .mav-card__title {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-lead {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-subtitle {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-pill--ok {
+  background: #191f1c;
+  color: #61efbc;
+}
+html[data-bo-theme="dark"] .mav-pill--warn {
+  background: #2e271a;
+  color: #f8be59;
+}
+html[data-bo-theme="dark"] .mav-pill--bad {
+  background: #2c1919;
+  color: #e17070;
+}
+html[data-bo-theme="dark"] .mav-pill--muted {
+  background: #181d1b;
+  color: #c0ccc6;
+}
+html[data-bo-theme="dark"] .mav-cond {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: #141916;
+}
+html[data-bo-theme="dark"] .mav-cond.is-met {
+  background: #151917;
+  border-color: #2b3a33;
+}
+html[data-bo-theme="dark"] .mav-cond__icon {
+  background: #2e271a;
+  color: #e6b46b;
+}
+html[data-bo-theme="dark"] .mav-cond.is-met .mav-cond__icon {
+  color: #e3e8e6;
+}
+html[data-bo-theme="dark"] .mav-cond__text strong {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-cond__text span {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-action {
+  border-top: 1px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .mav-action__title {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-field label {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-opt {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-field select, html[data-bo-theme="dark"] .mav-field input, html[data-bo-theme="dark"] .mav-field textarea {
+  border: 1px solid #2f3934;
+  background: #111513;
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-check {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-disclosure {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: #131715;
+}
+html[data-bo-theme="dark"] .mav-disclosure > summary {
+  color: #61efbc;
+}
+html[data-bo-theme="dark"] .mav-note {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-note--info {
+  background: #19212b;
+  color: #70a1e0;
+}
+html[data-bo-theme="dark"] .mav-list__item {
+  border-top: 1px solid var(--ath-line-soft, #28312d);
+}
+html[data-bo-theme="dark"] .mav-list__text strong {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-list__text span {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-quote {
+  border-left: 3px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .mav-empty {
+  color: var(--ath-muted, #b9c5bf);
+}
+html[data-bo-theme="dark"] .mav-empty--box {
+  border: 1px dashed #2f3934;
+}
+html[data-bo-theme="dark"] .mav-empty--box strong {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-history::before {
+  background: var(--ath-line, #1c2320);
+}
+html[data-bo-theme="dark"] .mav-history__dot {
+  border: 3px solid var(--ath-surface, #252d29);
+}
+html[data-bo-theme="dark"] .mav-history__body strong {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .mav-history__body span {
+  color: var(--ath-muted, #b9c5bf);
+}
+
 /* ——— back-office-member-events.css ——— */
 html[data-bo-theme="dark"] .mev-next__count {
   color: #e3e8e6;

@@ -1519,6 +1519,152 @@ a.dash-cc-row:hover,
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* --------------------------------------------------------------------------
+ * Aside — refonte : lignes compactes, libellés en casse normale, icône pour
+ * chaque rubrique, chevron d’ouverture, rubrique active marquée d’un filet.
+ * Surcharge le bloc ci-dessus (même structure, mêmes hooks JS).
+ * -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .dash-rail .dash-rail__panel { padding: 1rem 0.75rem 1rem; }
+
+  .dash-rail .dash-rail__brand {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin: 0 0 0.6rem; padding: 0.15rem 0.25rem 0.95rem;
+  }
+  .dash-rail .dash-rail__brand-mark {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 2.4rem; height: 2.4rem; border-radius: 0.6rem;
+    background: #fff; color: #050505; font-size: 1.05rem; font-weight: 900;
+  }
+  .dash-rail .dash-rail__brand-text { display: flex; flex-direction: column; min-width: 0; }
+  .dash-rail .dash-rail__eyebrow { margin: 0 0 0.15rem; font-size: 0.625rem; letter-spacing: 0.16em; }
+  .dash-rail .dash-rail__title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; text-transform: none; }
+  .dash-rail .dash-rail__unit { margin-top: 0.15rem; font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .dash-rail .dash-rail__nav { gap: 0.15rem; }
+  .dash-rail .dash-rail__section {
+    margin: 0.95rem 0 0.35rem; padding: 0 0.6rem;
+    font-size: 0.625rem; letter-spacing: 0.16em; color: rgba(255, 255, 255, 0.38);
+  }
+  .dash-rail .dash-rail__section:first-child { margin-top: 0.1rem; }
+  .dash-rail .dash-rail__section--bo { color: rgba(251, 146, 60, 0.8); }
+  .dash-rail .dash-rail__section--admin { color: rgba(248, 113, 113, 0.85); }
+
+  .dash-rail .dash-rail__tile {
+    position: relative;
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    padding: 0.5rem 0.6rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background: transparent;
+    box-shadow: none;
+  }
+  .dash-rail .dash-rail__tile:hover:not(:disabled),
+  .dash-rail .dash-rail__tile:focus-visible {
+    border: 0;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+  .dash-rail .dash-rail__tile:focus-visible { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.7); }
+  .dash-rail .dash-rail__tile.is-active {
+    border: 0;
+    background: rgba(5, 150, 105, 0.16);
+    box-shadow: none;
+  }
+  .dash-rail .dash-rail__tile.is-active::before {
+    content: ''; position: absolute; left: -0.75rem; top: 0.45rem; bottom: 0.45rem; width: 3px;
+    border-radius: 0 3px 3px 0; background: var(--dash-rail-mint, #34d399);
+  }
+  .dash-rail .dash-rail__tile.is-open,
+  .dash-rail .dash-rail__item.is-nested-open .dash-rail__tile {
+    border: 0; background: rgba(5, 150, 105, 0.2); box-shadow: none;
+  }
+
+  /* Variantes : seule la pastille d’icône porte la couleur, plus de cadres pleins. */
+  .dash-rail .dash-rail__tile--accent,
+  .dash-rail .dash-rail__tile--bo,
+  .dash-rail .dash-rail__tile--admin { border: 0; background: transparent; }
+  .dash-rail .dash-rail__tile--bo:hover:not(:disabled),
+  .dash-rail .dash-rail__tile--bo:focus-visible,
+  .dash-rail .dash-rail__tile--bo.is-open { border: 0; background: rgba(249, 115, 22, 0.12); box-shadow: none; }
+  .dash-rail .dash-rail__tile--admin:hover:not(:disabled),
+  .dash-rail .dash-rail__tile--admin:focus-visible,
+  .dash-rail .dash-rail__tile--admin.is-open { border: 0; background: rgba(220, 38, 38, 0.12); box-shadow: none; }
+
+  .dash-rail .dash-rail__tile-icon,
+  .dash-rail .dash-rail__idx {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.1rem; height: 2.1rem; padding: 0.45rem; border-radius: 0.55rem;
+    background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.78);
+    transition: background 0.16s ease, color 0.16s ease;
+  }
+  .dash-rail .dash-rail__idx { padding: 0; font-size: 0.625rem; letter-spacing: 0.08em; }
+  .dash-rail .dash-rail__tile:hover .dash-rail__tile-icon,
+  .dash-rail .dash-rail__tile.is-active .dash-rail__tile-icon,
+  .dash-rail .dash-rail__tile.is-open .dash-rail__tile-icon { background: rgba(5, 150, 105, 0.28); color: #6ee7b7; }
+  .dash-rail .dash-rail__tile--accent .dash-rail__tile-icon { background: rgba(5, 150, 105, 0.22); color: #6ee7b7; }
+  .dash-rail .dash-rail__tile--bo .dash-rail__tile-icon { background: rgba(249, 115, 22, 0.16); color: #fdba74; }
+  .dash-rail .dash-rail__tile--admin .dash-rail__tile-icon { background: rgba(220, 38, 38, 0.18); color: #fca5a5; }
+
+  .dash-rail .dash-rail__tile-avatar {
+    display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+    width: 2.1rem; height: 2.1rem; border-radius: 999px;
+    background: #12d18e; color: #04130d; font-size: 0.75rem; font-weight: 900;
+  }
+  .dash-rail .dash-rail__tile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .dash-rail .dash-rail__label {
+    font-size: 0.875rem; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1.25;
+    color: rgba(255, 255, 255, 0.92); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dash-rail .dash-rail__tile.is-active .dash-rail__label { color: #fff; }
+  .dash-rail .dash-rail__hint {
+    margin-top: 0.1rem; font-size: 0.75rem; line-height: 1.3; color: rgba(255, 255, 255, 0.46);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .dash-rail .dash-rail__end { display: inline-flex; align-items: center; gap: 0.35rem; justify-self: end; }
+  .dash-rail .dash-rail__chevron {
+    width: 1rem; height: 1rem; color: rgba(255, 255, 255, 0.28);
+    transition: transform 0.16s ease, color 0.16s ease;
+  }
+  .dash-rail .dash-rail__tile:hover .dash-rail__chevron,
+  .dash-rail .dash-rail__tile:focus-visible .dash-rail__chevron { color: rgba(255, 255, 255, 0.7); transform: translateX(2px); }
+  .dash-rail .dash-rail__meta--actif {
+    width: 0.45rem; height: 0.45rem; padding: 0; border-radius: 999px; background: var(--dash-rail-mint, #34d399);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+  }
+  .dash-rail .dash-rail__meta--badge {
+    min-width: 1.4rem; padding: 0.12rem 0.45rem; border: 0;
+    background: #12d18e; color: #04130d; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0;
+  }
+  .dash-rail .dash-rail__tile--bo .dash-rail__meta--badge { border: 0; background: #fb923c; color: #1c0d02; }
+
+  /* Panneau détail */
+  .dash-rail .dash-rail__back { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: none; border-radius: 0.5rem; }
+  .dash-rail .dash-rail__drill-title { text-transform: none; letter-spacing: -0.01em; }
+  .dash-rail .dash-rail__links { gap: 0.15rem; }
+  .dash-rail .dash-rail__link {
+    padding: 0.6rem 0.7rem; border: 0; border-radius: 0.55rem; background: transparent;
+  }
+  .dash-rail .dash-rail__link:hover,
+  .dash-rail .dash-rail__link:focus-visible { border: 0; background: rgba(255, 255, 255, 0.06); box-shadow: none; }
+  .dash-rail .dash-rail__link:focus-visible { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.7); }
+  .dash-rail .dash-rail__link-label { font-size: 0.875rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+  .dash-rail .dash-rail__link-hint { font-size: 0.75rem; color: rgba(255, 255, 255, 0.46); }
+
+  /* Pied */
+  .dash-rail .dash-rail__foot { padding: 0.8rem 0.6rem 0; }
+  .dash-rail .dash-rail__foot-row { margin-top: 0.35rem; }
+  .dash-rail .dash-rail__foot-meta { font-size: 0.75rem; letter-spacing: 0; text-transform: none; }
+  .dash-rail .dash-rail__foot-live {
+    display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0.55rem; border-radius: 999px;
+    background: rgba(5, 150, 105, 0.18); font-size: 0.6875rem; letter-spacing: 0.04em;
+  }
+  .dash-rail .dash-rail__foot-live::before { content: ''; width: 0.4rem; height: 0.4rem; border-radius: 999px; background: currentColor; }
+}
+
 /* overflow-x:hidden/clip sur body/main clippe le rail fixed — forcer visible */
 body.dashboard-shell,
 body.dashboard-shell.overflow-x-hidden,
