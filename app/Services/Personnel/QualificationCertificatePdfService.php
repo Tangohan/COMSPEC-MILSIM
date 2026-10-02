@@ -67,7 +67,9 @@ final class QualificationCertificatePdfService
             }
         }
 
-        $holderName = $this->resolveHolderName((int) $award['user_id']);
+        $holder = $this->resolveHolder((int) $award['user_id']);
+        $tenantName = $this->resolveTenantName($tenantId);
+        $isPermanent = !empty($award['is_permanent']) || empty($award['expires_at']);
         $badgePath = $award['level_badge_path'] ?? null;
         if ($badgePath === null || $badgePath === '') {
             $badgePath = $award['definition_badge_path'] ?? null;
@@ -77,20 +79,24 @@ final class QualificationCertificatePdfService
 
         $viewData = [
             'award' => $award,
-            'holder_name' => $holderName,
+            'holder_name' => $holder['name'],
+            'holder_grade' => $holder['grade'],
+            'holder_callsign' => $holder['callsign'],
+            'tenant_name' => $tenantName,
+            'is_permanent' => $isPermanent,
             'certificate_number' => $number,
             'badge_path' => $badgeAbs,
             'category_name' => (string) ($award['category_name'] ?? ''),
             'qualification_name' => (string) ($award['definition_name'] ?? $award['qualification_name'] ?? ''),
             'level_name' => (string) ($award['level_name'] ?? $award['level'] ?? ''),
-            'issuer_name' => (string) ($award['issuer_name'] ?? ''),
+            'issuer_name' => trim((string) ($award['issuer_name'] ?? '')) !== '' ? (string) $award['issuer_name'] : $tenantName,
             'obtained_at' => $this->formatDate($award['obtained_at'] ?? null),
             'expires_at' => $this->formatDate($award['expires_at'] ?? null),
             'temporal_label' => $temporal['label'] !== '' ? $temporal['label'] : 'Valide',
             'generated_at' => (new DateTimeImmutable())->format('d/m/Y H:i'),
             'layout' => $layoutCode,
-            'primary_hex' => '#0f172a',
-            'accent_hex' => $layoutCode === 'moderne' ? '#059669' : '#334155',
+            'primary_hex' => $layoutCode === 'moderne' ? '#1f3a7a' : '#14213d',
+            'accent_hex' => $layoutCode === 'moderne' ? '#1f3a7a' : '#a8843b',
         ];
 
         $html = $this->renderLayout($layoutCode, $viewData);
@@ -194,34 +200,59 @@ final class QualificationCertificatePdfService
             'isHtml5ParserEnabled' => true,
         ]);
         $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
         return (string) $dompdf->output();
     }
 
-    private function resolveHolderName(int $userId): string
+    /**
+     * Identité affichée sur le brevet : nom du personnage (comme sur la fiche), sinon indicatif.
+     * La table users n’a ni prénom/nom civils ni username : l’ancienne requête échouait
+     * systématiquement et le brevet affichait « Membre #ID ».
+     *
+     * @return array{name: string, grade: string, callsign: string}
+     */
+    private function resolveHolder(int $userId): array
     {
+        $out = ['name' => 'Membre #' . $userId, 'grade' => '', 'callsign' => ''];
         try {
             $pdo = \App\Core\Database::getPdo();
             $st = $pdo->prepare(
-                'SELECT display_name, username, first_name, last_name FROM users WHERE id = ? LIMIT 1'
+                'SELECT u.display_name, u.callsign, g.name AS grade_name
+                 FROM users u
+                 LEFT JOIN grades g ON g.id = u.grade_id
+                 WHERE u.id = ? LIMIT 1'
             );
             $st->execute([$userId]);
             $u = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
-            $fn = trim((string) ($u['first_name'] ?? ''));
-            $ln = trim((string) ($u['last_name'] ?? ''));
-            if ($fn !== '' || $ln !== '') {
-                return trim($fn . ' ' . $ln);
-            }
             $display = trim((string) ($u['display_name'] ?? ''));
+            $callsign = trim((string) ($u['callsign'] ?? ''));
+            $out['grade'] = trim((string) ($u['grade_name'] ?? ''));
+            $out['callsign'] = $callsign;
             if ($display !== '') {
-                return $display;
+                $out['name'] = $display;
+            } elseif ($callsign !== '') {
+                $out['name'] = $callsign;
+                $out['callsign'] = '';
             }
-
-            return (string) ($u['username'] ?? ('Membre #' . $userId));
         } catch (\Throwable) {
-            return 'Membre #' . $userId;
+            // Garde la valeur de repli.
+        }
+
+        return $out;
+    }
+
+    private function resolveTenantName(int $tenantId): string
+    {
+        try {
+            $st = \App\Core\Database::getPdo()->prepare('SELECT name FROM tenants WHERE id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+            $name = trim((string) ($st->fetchColumn() ?: ''));
+
+            return $name !== '' ? $name : 'ATHENA';
+        } catch (\Throwable) {
+            return 'ATHENA';
         }
     }
 

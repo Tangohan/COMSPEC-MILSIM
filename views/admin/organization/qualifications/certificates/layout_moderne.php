@@ -1,106 +1,127 @@
 <?php
-/** @var string $holder_name */
-/** @var string $certificate_number */
-/** @var string|null $badge_path */
-/** @var string $category_name */
-/** @var string $qualification_name */
-/** @var string $level_name */
-/** @var string $issuer_name */
-/** @var string $obtained_at */
-/** @var string $expires_at */
-/** @var string $temporal_label */
-/** @var string $generated_at */
-/** @var string $primary_hex */
-/** @var string $accent_hex */
-
-$primary = htmlspecialchars($primary_hex ?? '#0f172a');
-$accent = htmlspecialchars($accent_hex ?? '#059669');
-$cat = strtoupper(htmlspecialchars($category_name !== '' ? $category_name : 'QUALIFICATION'));
-$badgeSrc = $badge_path && is_file($badge_path)
-    ? 'data:' . (str_ends_with(strtolower($badge_path), '.svg') ? 'image/svg+xml' : 'image/png') . ';base64,' . base64_encode((string) file_get_contents($badge_path))
-    : '';
+/**
+ * Brevet — gabarit « moderne » (A4 paysage, bandeau latéral).
+ * Compatible Dompdf : positions absolues et tableaux, unités en points.
+ *
+ * @var array $award
+ * @var string $holder_name
+ * @var string $certificate_number
+ */
+require __DIR__ . '/_prepare.php';
+$blue = '#1f3a7a';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <style>
-  @page { margin: 0; }
-  body { font-family: DejaVu Sans, sans-serif; color: <?= $primary ?>; margin: 0; font-size: 12px; }
-  .top { background: <?= $primary ?>; color: #f8fafc; padding: 36px 40px 28px; }
-  .brand { font-size: 28px; font-weight: 700; letter-spacing: 0.18em; }
-  .sub { margin-top: 6px; font-size: 10px; letter-spacing: 0.22em; opacity: 0.8; text-transform: uppercase; }
-  .body { padding: 36px 40px; }
-  .row { width: 100%; }
-  .row td { vertical-align: top; }
-  .cat { display: inline-block; background: <?= $accent ?>; color: #fff; padding: 6px 14px; font-size: 10px; letter-spacing: 0.18em; font-weight: 700; }
-  .badge { text-align: right; }
-  .badge img { width: 88px; height: 88px; }
-  .badge-ph { width: 88px; height: 88px; border: 1px dashed #94a3b8; display: inline-block; text-align: center; line-height: 88px; color: #94a3b8; font-size: 10px; }
-  h1 { font-size: 13px; letter-spacing: 0.28em; color: #64748b; margin: 36px 0 10px; }
-  .qual { font-size: 26px; font-weight: 700; margin: 0 0 6px; }
-  .level { color: #64748b; margin-bottom: 28px; }
-  .awarded { color: #64748b; margin-bottom: 6px; }
-  .holder { font-size: 24px; font-weight: 700; margin-bottom: 36px; border-bottom: 2px solid <?= $accent ?>; display: inline-block; padding-bottom: 6px; }
-  .grid { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  .grid td { width: 50%; padding: 14px 12px; border-top: 1px solid #e2e8f0; }
-  .lbl { font-size: 9px; letter-spacing: 0.16em; color: #64748b; text-transform: uppercase; }
-  .val { font-size: 14px; font-weight: 700; margin-top: 6px; }
-  .gen { margin-top: 48px; font-size: 9px; color: #94a3b8; text-align: center; }
+  @page { margin: 0; size: A4 landscape; }
+  * { margin: 0; padding: 0; }
+  body { font-family: Helvetica, Arial, sans-serif; color: #1b2433; font-size: 10pt; }
+  .page { position: relative; width: 842pt; height: 595pt; overflow: hidden; }
+
+  /* Bandeau latéral */
+  .band { position: absolute; left: 0; top: 0; width: 168pt; height: 595pt; background: <?= $blue ?>; color: #fff; }
+  .band-stripe { position: absolute; left: 168pt; top: 0; width: 4pt; height: 595pt; background: #c9a24a; }
+  .brand { position: absolute; left: 28pt; top: 40pt; width: 120pt; }
+  .brand-name { font-size: 15pt; font-weight: bold; letter-spacing: 1.5pt; }
+  .brand-sub { margin-top: 4pt; font-size: 7pt; line-height: 1.35; color: #c9d4ee; text-transform: uppercase; letter-spacing: 0.6pt; }
+  .tenant { margin-top: 14pt; padding-top: 10pt; border-top: 0.75pt solid #3d5799; font-size: 8.5pt; font-weight: bold; color: #ffffff; line-height: 1.3; }
+
+  .seal { position: absolute; left: 39pt; top: 214pt; width: 90pt; height: 90pt; border: 2pt solid #ffffff; border-radius: 45pt; background: #ffffff; text-align: center; }
+  .seal img { width: 64pt; height: 64pt; margin-top: 13pt; }
+  .seal-code { padding-top: 34pt; font-size: 12pt; font-weight: bold; color: <?= $blue ?>; letter-spacing: 1pt; }
+  .seal-ring { position: absolute; left: 33pt; top: 208pt; width: 102pt; height: 102pt; border: 0.75pt solid #6f86c2; border-radius: 51pt; }
+  .seal-caption { position: absolute; left: 14pt; top: 322pt; width: 140pt; text-align: center; font-size: 7pt; color: #c9d4ee; letter-spacing: 0.8pt; text-transform: uppercase; }
+
+  .category { position: absolute; left: 14pt; bottom: 40pt; width: 140pt; text-align: center; font-size: 9pt; font-weight: bold; letter-spacing: 1pt; line-height: 1.3; }
+
+  /* Contenu */
+  .main { position: absolute; left: 212pt; top: 46pt; width: 586pt; }
+  .kicker { font-size: 8.5pt; letter-spacing: 1.6pt; color: #4b5873; text-transform: uppercase; }
+  .kicker-rule { width: 84pt; height: 1.5pt; background: <?= $blue ?>; margin-top: 6pt; }
+  .qual { margin-top: 22pt; font-size: 26pt; font-weight: bold; color: #13203d; line-height: 1.12; }
+  .level { margin-top: 6pt; font-size: 12pt; color: #5b6880; }
+  .awarded { margin-top: 26pt; font-size: 10pt; color: #5b6880; }
+  .holder { margin-top: 4pt; font-size: 22pt; font-weight: bold; color: <?= $blue ?>; }
+  .holder-line { margin-top: 3pt; font-size: 10pt; color: #4b5873; }
+
+  .fields { position: absolute; left: 212pt; top: 300pt; width: 586pt; border-collapse: collapse; }
+  .fields td { width: 50%; padding: 0 22pt 0 0; vertical-align: top; }
+  .field { padding: 10pt 0 8pt; border-bottom: 0.75pt dashed #b9c2d3; }
+  .lbl { font-size: 7pt; letter-spacing: 1pt; color: #6b7690; text-transform: uppercase; }
+  .val { margin-top: 4pt; font-size: 12pt; font-weight: bold; color: #13203d; }
+  .val-mono { font-family: Courier, monospace; font-size: 11.5pt; }
+
+  .sign { position: absolute; right: 44pt; top: 424pt; width: 210pt; text-align: center; }
+  .sign-line { border-top: 0.75pt solid #8592ab; margin-bottom: 5pt; }
+  .sign-label { font-size: 8pt; color: #5b6880; }
+  .sign-tenant { font-size: 8.5pt; font-weight: bold; color: #13203d; margin-top: 2pt; }
+
+  .footer { position: absolute; left: 212pt; top: 520pt; width: 586pt; border-top: 0.75pt solid #dfe4ec; padding-top: 12pt; }
+  .footer td { vertical-align: middle; }
+  .status { display: inline-block; padding: 5pt 14pt; border-radius: 4pt; font-size: 8.5pt; font-weight: bold; }
+  .gen { text-align: right; font-size: 7pt; color: #8a94a8; line-height: 1.5; }
 </style>
 </head>
 <body>
-  <div class="top">
-    <div class="brand">ATHENA</div>
-    <div class="sub">Plateforme de gestion d’unité</div>
+<div class="page">
+  <div class="band">
+    <div class="brand">
+      <div class="brand-name">ATHENA</div>
+      <div class="brand-sub">Plateforme de gestion d’unité</div>
+      <div class="tenant"><?= $b['tenant'] ?></div>
+    </div>
+    <div class="seal-ring"></div>
+    <div class="seal">
+      <?php if ($b['badge_src'] !== ''): ?>
+        <img src="<?= $b['badge_src'] ?>" alt="Insigne">
+      <?php else: ?>
+        <div class="seal-code"><?= $b['badge_code'] ?></div>
+      <?php endif; ?>
+    </div>
+    <div class="seal-caption">Insigne de qualification</div>
+    <div class="category"><?= $b['category'] ?></div>
   </div>
-  <div class="body">
-    <table class="row">
-      <tr>
-        <td><span class="cat"><?= $cat ?></span></td>
-        <td class="badge">
-          <?php if ($badgeSrc !== ''): ?>
-            <img src="<?= $badgeSrc ?>" alt="Insigne">
-          <?php else: ?>
-            <div class="badge-ph">INSIGNE</div>
-          <?php endif; ?>
-        </td>
-      </tr>
-    </table>
-    <h1>CERTIFICAT DE QUALIFICATION</h1>
-    <div class="qual"><?= htmlspecialchars($qualification_name) ?></div>
-    <div class="level"><?= htmlspecialchars($level_name !== '' ? $level_name : '—') ?></div>
+  <div class="band-stripe"></div>
+
+  <div class="main">
+    <div class="kicker">Certificat de qualification</div>
+    <div class="kicker-rule"></div>
+    <div class="qual"><?= $b['qualification'] ?></div>
+    <?php if ($b['level'] !== ''): ?>
+    <div class="level">Niveau : <?= $b['level'] ?></div>
+    <?php endif; ?>
     <div class="awarded">Décerné à</div>
-    <div class="holder"><?= htmlspecialchars($holder_name) ?></div>
-    <table class="grid">
-      <tr>
-        <td>
-          <div class="lbl">Organisme émetteur</div>
-          <div class="val"><?= htmlspecialchars($issuer_name !== '' ? $issuer_name : '—') ?></div>
-        </td>
-        <td>
-          <div class="lbl">Date d’obtention</div>
-          <div class="val"><?= htmlspecialchars($obtained_at) ?></div>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <div class="lbl">Validité</div>
-          <div class="val"><?= htmlspecialchars($expires_at) ?></div>
-        </td>
-        <td>
-          <div class="lbl">N° de brevet</div>
-          <div class="val"><?= htmlspecialchars($certificate_number) ?></div>
-        </td>
-      </tr>
-      <tr>
-        <td colspan="2">
-          <div class="lbl">Statut</div>
-          <div class="val"><?= htmlspecialchars($temporal_label) ?></div>
-        </td>
-      </tr>
-    </table>
-    <div class="gen">Généré par ATHENA le <?= htmlspecialchars($generated_at) ?></div>
+    <div class="holder"><?= $b['holder'] ?></div>
+    <?php if ($b['holder_line'] !== ''): ?>
+    <div class="holder-line"><?= $b['holder_line'] ?></div>
+    <?php endif; ?>
   </div>
+
+  <table class="fields">
+    <tr>
+      <td><div class="field"><div class="lbl">Organisme émetteur</div><div class="val"><?= $b['issuer'] ?></div></div></td>
+      <td><div class="field"><div class="lbl">Date d’obtention</div><div class="val"><?= $b['obtained'] ?></div></div></td>
+    </tr>
+    <tr>
+      <td><div class="field"><div class="lbl">Validité</div><div class="val"><?= $b['validity'] ?></div></div></td>
+      <td><div class="field"><div class="lbl">N° de brevet</div><div class="val val-mono"><?= $b['number'] ?></div></div></td>
+    </tr>
+  </table>
+
+  <div class="sign">
+    <div class="sign-line"></div>
+    <div class="sign-label">Signature de l’autorité émettrice</div>
+    <div class="sign-tenant"><?= $b['issuer'] ?></div>
+  </div>
+
+  <table class="footer">
+    <tr>
+      <td><span class="status" style="background: <?= $b['status_bg'] ?>; color: <?= $b['status_fg'] ?>;"><?= $b['status'] ?></span></td>
+      <td class="gen">Brevet n° <?= $b['number'] ?> — délivré par <?= $b['tenant'] ?><br>Généré par ATHENA le <?= $b['generated'] ?></td>
+    </tr>
+  </table>
+</div>
 </body>
 </html>
