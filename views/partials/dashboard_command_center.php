@@ -445,7 +445,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         ?>
         <nav class="dash-quick dash-reveal" id="dash-quick" aria-labelledby="dash-quick-title" data-dash-reveal>
             <div class="dash-quick__inner">
-                <h2 id="dash-quick-title" class="dash-quick__title">Accès rapide</h2>
+                <h2 id="dash-quick-title" class="dash-quick__title">Votre espace<span class="dash-quick__dot" aria-hidden="true">.</span></h2>
                 <ul class="dash-quick__grid">
                     <?php foreach ($dashQuickLinks as $quick): ?>
                     <li>
@@ -455,6 +455,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                 <strong><?= htmlspecialchars((string) $quick['label'], ENT_QUOTES, 'UTF-8') ?></strong>
                                 <em><?= htmlspecialchars((string) $quick['hint'], ENT_QUOTES, 'UTF-8') ?></em>
                             </span>
+                            <span class="dash-quick__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
                         </a>
                     </li>
                     <?php endforeach; ?>
