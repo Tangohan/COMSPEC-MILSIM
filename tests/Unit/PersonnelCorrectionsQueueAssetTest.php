@@ -16,7 +16,7 @@ final class PersonnelCorrectionsQueueAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/back-office-corrections.css');
 
         self::assertStringContainsString("'path' => 'back-office/personnel/corrections'", $pages);
-        self::assertStringContainsString('Corrections RH', $pages);
+        self::assertStringContainsString('Corrections de fiches', $pages);
         self::assertStringContainsString('back-office-corrections.css', $pages);
         self::assertStringContainsString('rh-corr__empty', $view);
         self::assertStringContainsString('Confirmer', $view);

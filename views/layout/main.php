@@ -250,7 +250,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <style>
       [x-cloak]{display:none!important}
       body.bo-shell {
-        font-family: Archivo, Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+        font-family: 'IBM Plex Sans', Archivo, system-ui, -apple-system, Segoe UI, sans-serif;
       }
       /* Shell admin : largeur aside bornée pour ne pas écraser la colonne contenu */
       #back-office-sidebar,
@@ -309,8 +309,11 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/back-office-refresh.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php elseif (!empty($isPlatformAdminShell)): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <?php endif; ?>

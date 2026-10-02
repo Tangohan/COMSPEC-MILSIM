@@ -256,6 +256,13 @@ require __DIR__ . '/ath_sidebar_nav.php';
         </button>
     </div>
 
+    <?php if (empty($isOperatorBoNav)): ?>
+    <div class="ath-sidebar__filter">
+        <label for="ath-menu-search" class="ath-sr-only">Filtrer le menu</label>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+        <input id="ath-menu-search" type="search" placeholder="Filtrer le menu…" autocomplete="off" spellcheck="false">
+    </div>
+    <?php endif; ?>
     <div class="ath-sidebar__nav" id="ath-sidebar-nav">
         <?php foreach ($athNavGroups as $navGroup): ?>
             <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>">

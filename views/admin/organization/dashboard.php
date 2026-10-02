@@ -199,27 +199,26 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
 <div class="ath-dash-page">
     <?php if ($discordInviteMissing): ?>
     <div class="ath-banner-warn ath-rise" role="alert">
-        <div class="ath-banner-warn__kicker">Recrutement Discord</div>
-        <div class="ath-banner-warn__text">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</div>
-        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Renseigner le lien</a>
+        <div class="ath-banner-warn__kicker">Les candidats ne peuvent pas rejoindre votre Discord</div>
+        <div class="ath-banner-warn__text">Le recrutement passe par Discord, mais aucun lien d’invitation n’est enregistré. Ajoutez-le pour que le formulaire d’inscription y envoie les candidats.</div>
+        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Ajouter le lien</a>
     </div>
     <?php endif; ?>
     <?php if ($missingMediaCount > 0): ?>
     <div class="ath-banner-warn ath-rise" role="alert">
-        <div class="ath-banner-warn__kicker">Photos après migration</div>
+        <div class="ath-banner-warn__kicker"><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos de profil ont été perdues' : '1 photo de profil a été perdue' ?> lors de la migration</div>
         <div class="ath-banner-warn__text">
-            <?= (int) $missingMediaCount ?> compte(s) ont une photo ou un portrait référencé en base alors que le fichier n’est plus sur le serveur.
-            Demandez un re-téléversement (Mon compte → Image / Portrait).
+            Demandez aux membres concernés de la remettre en ligne depuis Mon compte › Image / Portrait.
         </div>
-        <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Voir les comptes concernés</a>
+        <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Voir les membres concernés</a>
     </div>
     <?php endif; ?>
     <?php if ($setupBanner !== null): ?>
     <div class="ath-banner-warn ath-rise" role="status">
-        <div class="ath-banner-warn__kicker">Configuration initiale · <?= (int) ($setupBanner['percent'] ?? 0) ?> %</div>
-        <div class="ath-banner-warn__text">Finalisez les réglages essentiels : logo, contact, inscription et modules publics.</div>
+        <div class="ath-banner-warn__kicker">Configuration de la communauté · <?= (int) ($setupBanner['percent'] ?? 0) ?> % terminée</div>
+        <div class="ath-banner-warn__text">Il reste quelques réglages essentiels : logo, contact, mode d’inscription et modules visibles par le public. Comptez cinq minutes.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-            <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid">Continuer</a>
+            <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid">Reprendre la configuration</a>
             <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
                 <?= \App\Core\Csrf::field() ?>
                 <button type="submit" class="ath-btn">Plus tard</button>
@@ -281,12 +280,12 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <div class="org-dash__setup org-dash__setup--warn" role="alert">
             <div class="org-dash__setup-inner">
                 <div class="org-dash__setup-copy">
-                    <p class="org-dash__setup-kicker">Photos après migration</p>
-                    <p class="org-dash__setup-title"><?= (int) $missingMediaCount ?> photo(s) à re-téléverser</p>
-                    <p class="org-dash__setup-lead">Des chemins d’images restent en base alors que les fichiers ne sont plus sur le serveur. Demandez aux membres de recharger leur photo via Mon compte → Image / Portrait.</p>
+                    <p class="org-dash__setup-kicker">Photos de profil</p>
+                    <p class="org-dash__setup-title"><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos perdues lors de la migration' : '1 photo perdue lors de la migration' ?></p>
+                    <p class="org-dash__setup-lead">Les fichiers n’existent plus sur le serveur. Demandez aux membres concernés de les remettre en ligne depuis Mon compte › Image / Portrait.</p>
                 </div>
                 <div class="org-dash__setup-actions">
-                    <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Voir les comptes</a>
+                    <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Voir les membres concernés</a>
                 </div>
             </div>
         </div>
@@ -406,8 +405,8 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <section class="org-dash__section" aria-labelledby="org-kpi-heading">
             <div class="org-dash__section-head">
                 <div>
-                    <p class="org-dash__kicker">Section 01</p>
-                    <h2 id="org-kpi-heading" class="org-dash__section-title">Indicateurs stratégiques</h2>
+                    <p class="org-dash__kicker">En un coup d’œil</p>
+                    <h2 id="org-kpi-heading" class="org-dash__section-title">Chiffres clés</h2>
                 </div>
             </div>
 
@@ -417,8 +416,8 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
             <div class="bo-sheet-panel">
                 <div class="bo-sheet-toolbar">
                     <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Tableau de bord chiffré</h3>
-                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $kpiRowCount ?> indicateur(s) · actualisé à l’ouverture de la page.</p>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Indicateurs</h3>
+                        <p class="mt-0.5 text-xs text-slate-500">Mis à jour à chaque ouverture de la page.</p>
                     </div>
                     <a href="<?= url('back-office/users') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Effectifs</a>
                 </div>
@@ -481,18 +480,18 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <section class="org-dash__section" aria-labelledby="org-training-feed-heading">
             <div class="org-dash__section-head">
                 <div>
-                    <p class="org-dash__kicker">Section 02</p>
-                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Formations — alertes récentes</h2>
+                    <p class="org-dash__kicker">Formations</p>
+                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Ce qui demande votre attention</h2>
                 </div>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Assignations →</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Voir les inscriptions →</a>
             </div>
             <div class="bo-sheet-panel">
                 <div class="bo-sheet-toolbar">
                     <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Fil formation</h3>
-                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $trainingFeedCount ?> alerte(s) récente(s).</p>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Alertes récentes</h3>
+                        <p class="mt-0.5 text-xs text-slate-500"><?= $trainingFeedCount === 0 ? 'Aucune alerte.' : ((int) $trainingFeedCount . ($trainingFeedCount > 1 ? ' alertes récentes.' : ' alerte récente.')) ?></p>
                     </div>
-                    <a href="<?= htmlspecialchars(training_lms_admin_url(), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Espace formation</a>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url(), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Ouvrir l’espace formation</a>
                 </div>
                 <?php if ($orgTrainingFeedErr): ?>
                     <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
@@ -511,7 +510,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                         </thead>
                         <tbody>
                         <?php if ($orgTrainingFeedErr): ?>
-                            <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Alertes formation temporairement indisponibles.</td></tr>
+                            <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les alertes de formation. Rechargez la page dans un instant.</td></tr>
                         <?php elseif ($orgTrainingFeed === []): ?>
                             <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune alerte récente liée aux formations.</td></tr>
                         <?php else: ?>
@@ -569,16 +568,16 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <section class="org-dash__section" aria-labelledby="org-roleplay-heading">
             <div class="org-dash__section-head">
                 <div>
-                    <p class="org-dash__kicker">Section 03</p>
-                    <h2 id="org-roleplay-heading" class="org-dash__section-title">Suivi roleplay</h2>
+                    <p class="org-dash__kicker">Roleplay</p>
+                    <h2 id="org-roleplay-heading" class="org-dash__section-title">Échéances à venir</h2>
                 </div>
-                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Suivi complet →</a>
+                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Voir tout le suivi →</a>
             </div>
             <div class="bo-sheet-panel" x-data="{ filter: 'all' }">
                 <div class="bo-sheet-toolbar">
                     <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Timeline dossier roleplay</h3>
-                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $roleplayTimelineCount ?> échéance(s) sur les 3 prochaines semaines.</p>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Calendrier des dossiers</h3>
+                        <p class="mt-0.5 text-xs text-slate-500"><?= $roleplayTimelineCount === 0 ? 'Rien de prévu' : ((int) $roleplayTimelineCount . ($roleplayTimelineCount > 1 ? ' échéances' : ' échéance')) ?> sur les 3 prochaines semaines.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-1.5">
                         <button
@@ -620,7 +619,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                         </thead>
                         <tbody>
                         <?php if ($orgRoleplayTimelineErr): ?>
-                            <tr><td colspan="7" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Le suivi roleplay est temporairement indisponible.</td></tr>
+                            <tr><td colspan="7" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger le suivi roleplay. Rechargez la page dans un instant.</td></tr>
                         <?php elseif ($orgRoleplayTimelineRows === []): ?>
                             <tr><td colspan="7" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune échéance roleplay proche ou en retard pour le moment.</td></tr>
                         <?php else: ?>
@@ -670,8 +669,8 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
             <div class="org-dash__section-head">
                 <div>
-                    <p class="org-dash__kicker">Section 04</p>
-                    <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Raccourcis</h2>
+                    <p class="org-dash__kicker">Accès rapides</p>
+                    <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Que voulez-vous faire ?</h2>
                 </div>
             </div>
             <div class="org-dash__grid org-dash__grid--actions">
@@ -682,9 +681,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Effectifs</span>
                         </div>
                         <h3 class="org-dash__action-title">Nouveau membre</h3>
-                        <p class="org-dash__action-text">Créer un compte et préparer l’arrivée d’un opérateur.</p>
+                        <p class="org-dash__action-text">Créer son compte et préparer son arrivée dans l’unité.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Ajouter un membre →</span>
                 </a>
                 <a href="<?= url('back-office/groups/create') ?>" class="org-dash__action">
                     <div>
@@ -693,9 +692,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Structure</span>
                         </div>
                         <h3 class="org-dash__action-title">Nouveau groupe</h3>
-                        <p class="org-dash__action-text">Organiser une sous-unité ou une cellule.</p>
+                        <p class="org-dash__action-text">Regrouper des membres en sous-unité ou en cellule.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Créer un groupe →</span>
                 </a>
                 <a href="<?= url('back-office/teams/create') ?>" class="org-dash__action">
                     <div>
@@ -704,9 +703,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Équipes</span>
                         </div>
                         <h3 class="org-dash__action-title">Nouvelle équipe</h3>
-                        <p class="org-dash__action-text">Constituer une équipe pour une mission ou un créneau.</p>
+                        <p class="org-dash__action-text">Former une équipe pour une mission ou un créneau.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Créer une équipe →</span>
                 </a>
                 <?php if ($canInv): ?>
                 <a href="<?= url('back-office/invitations') ?>" class="org-dash__action">
@@ -716,9 +715,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Accès</span>
                         </div>
                         <h3 class="org-dash__action-title">Invitations</h3>
-                        <p class="org-dash__action-text">Inviter par e-mail et suivre les liens envoyés.</p>
+                        <p class="org-dash__action-text">Envoyer une invitation par e-mail et voir qui l’a acceptée.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Gérer les invitations →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canMemberModeration): ?>
@@ -729,9 +728,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Modération</span>
                         </div>
                         <h3 class="org-dash__action-title">Restrictions</h3>
-                        <p class="org-dash__action-text">Sanctions, limitations et suivi des comptes concernés.</p>
+                        <p class="org-dash__action-text">Sanctions et limitations en cours, membre par membre.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Voir les restrictions →</span>
                 </a>
                 <?php endif; ?>
                 <a href="<?= url('back-office/centre-operations') ?>" class="org-dash__action">
@@ -740,10 +739,10 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-mark org-dash__action-mark--mint" aria-hidden="true">⌁</span>
                             <span class="org-dash__action-tag">Opérations</span>
                         </div>
-                        <h3 class="org-dash__action-title">Ops admin</h3>
-                        <p class="org-dash__action-text">File actionnable, playbooks incidents, audit et objectifs.</p>
+                        <h3 class="org-dash__action-title">Centre d’opérations</h3>
+                        <p class="org-dash__action-text">Les demandes à traiter, les incidents en cours et l’historique des actions.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Ouvrir le centre →</span>
                 </a>
                 <a href="<?= url('back-office/tableau-operationnel') ?>" class="org-dash__action">
                     <div>
@@ -752,9 +751,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Opérations</span>
                         </div>
                         <h3 class="org-dash__action-title">Tableau opérationnel</h3>
-                        <p class="org-dash__action-text">Vue consolidée des fiches, readiness et planning.</p>
+                        <p class="org-dash__action-text">Disponibilités, préparation des membres et planning sur un seul écran.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Ouvrir le tableau →</span>
                 </a>
                 <?php if (!empty($orgIntegrationsPlanAllowed)): ?>
                 <a href="<?= url('back-office/integrations') ?>" class="org-dash__action">
@@ -764,9 +763,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Connexions</span>
                         </div>
                         <h3 class="org-dash__action-title">Intégrations</h3>
-                        <p class="org-dash__action-text">Services liés et paramètres d’interopérabilité.</p>
+                        <p class="org-dash__action-text">Relier Discord et les autres services de votre communauté.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Gérer les intégrations →</span>
                 </a>
                 <?php endif; ?>
                 <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
@@ -777,9 +776,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Conformité</span>
                         </div>
                         <h3 class="org-dash__action-title">Export dossier</h3>
-                        <p class="org-dash__action-text">Assembler les pièces utiles à un contrôle ou une revue.</p>
+                        <p class="org-dash__action-text">Rassembler en un fichier les pièces demandées lors d’un contrôle.</p>
                     </div>
-                    <span class="org-dash__action-foot">Ouvrir →</span>
+                    <span class="org-dash__action-foot">Préparer l’export →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canSeniorityBoTile): ?>
@@ -790,9 +789,9 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                             <span class="org-dash__action-tag">Effectifs</span>
                         </div>
                         <h3 class="org-dash__action-title">Ancienneté</h3>
-                        <p class="org-dash__action-text">Indicateurs visibles sur les fiches et dans Mes démarches.</p>
+                        <p class="org-dash__action-text">Choisir comment l’ancienneté s’affiche sur les fiches des membres.</p>
                     </div>
-                    <span class="org-dash__action-foot">Configurer →</span>
+                    <span class="org-dash__action-foot">Régler l’ancienneté →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canTenantTechModules): ?>
@@ -895,7 +894,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
             <div class="bo-sheet-toolbar">
                 <div>
                     <h3 id="org-rh-enlist-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Candidatures</h3>
-                    <p class="mt-0.5 text-xs text-slate-500"><?= (int) $rhEnlistCount ?> dossier(s) récents · répartition par état ci-dessus.</p>
+                    <p class="mt-0.5 text-xs text-slate-500"><?= $rhEnlistCount === 0 ? 'Aucune candidature récente.' : ((int) $rhEnlistCount . ($rhEnlistCount > 1 ? ' candidatures récentes.' : ' candidature récente.')) ?></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
                     <?php
@@ -934,7 +933,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                     </thead>
                     <tbody>
                     <?php if ($orgEnlistmentErr): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Candidatures temporairement indisponibles.</td></tr>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les candidatures. Vos données ne sont pas perdues : rechargez la page dans un instant.</td></tr>
                     <?php elseif (empty($orgEnlistmentRecent)): ?>
                         <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune candidature enregistrée pour le moment.</td></tr>
                     <?php else: ?>
@@ -973,7 +972,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
             <div class="bo-sheet-toolbar">
                 <div>
                     <h3 id="org-rh-journal-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Fil RH &amp; affectations</h3>
-                    <p class="mt-0.5 text-xs text-slate-500"><?= (int) $rhJournalCount ?> mouvement(s) · rôles, comptes, groupes, invitations.</p>
+                    <p class="mt-0.5 text-xs text-slate-500"><?= $rhJournalCount === 0 ? 'Aucun changement récent' : ((int) $rhJournalCount . ($rhJournalCount > 1 ? ' changements récents' : ' changement récent')) ?> : rôles, comptes, groupes et invitations.</p>
                 </div>
                 <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Journal complet</a>
             </div>
@@ -994,7 +993,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                     </thead>
                     <tbody>
                     <?php if ($rhErr): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Fil RH temporairement indisponible.</td></tr>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les derniers changements RH. Rechargez la page dans un instant.</td></tr>
                     <?php elseif (empty($rhRows)): ?>
                         <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucun mouvement RH récent.</td></tr>
                     <?php else: ?>
@@ -1088,7 +1087,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                     </thead>
                     <tbody>
                     <?php if ($rhAlertSheet === []): ?>
-                        <tr><td colspan="5" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune alerte effectifs — les profils actifs sont complets.</td></tr>
+                        <tr><td colspan="5" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Tous les profils actifs sont complets. Rien à faire ici.</td></tr>
                     <?php else: ?>
                         <?php foreach ($rhAlertSheet as $i => $arow): ?>
                             <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars((string) $arow['kind'], ENT_QUOTES, 'UTF-8') ?>'">
@@ -1301,7 +1300,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                     </thead>
                     <tbody>
                     <?php if ($activityError): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Journal temporairement indisponible.</td></tr>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger le journal. Rechargez la page dans un instant.</td></tr>
                     <?php elseif (empty($rows)): ?>
                         <tr>
                             <td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">

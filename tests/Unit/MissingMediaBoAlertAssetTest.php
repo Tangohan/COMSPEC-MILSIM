@@ -22,7 +22,7 @@ final class MissingMediaBoAlertAssetTest extends TestCase
         self::assertStringContainsString('Photos / portraits à re-téléverser', $ops);
         self::assertStringContainsString('MissingUserMediaScanner', $dashCtrl);
         self::assertStringContainsString('missingMediaCount', $dashCtrl);
-        self::assertStringContainsString('Photos après migration', $dashView);
+        self::assertStringContainsString('lors de la migration', $dashView);
         self::assertStringContainsString('Photo à re-téléverser', $memberAlerts);
     }
 }

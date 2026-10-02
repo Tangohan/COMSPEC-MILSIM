@@ -97,7 +97,7 @@
         rows(pages, 'Pages') +
         rows(pers, 'Membres') +
         rows(docs, 'Documents') +
-        rows(events, 'Manœuvres');
+        rows(events, 'Événements');
     }
 
     function run() {
