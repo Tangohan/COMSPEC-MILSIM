@@ -21,6 +21,7 @@ use App\Services\Cooperation\CooperationAnnouncementDispatcher;
 use App\Services\Cooperation\CooperationAnnouncementEvents;
 use App\Services\Cooperation\CooperationCatalogService;
 use App\Services\Cooperation\CooperationConsentDefaults;
+use App\Services\Cooperation\CooperationTransitionRules;
 use App\Services\Cooperation\CooperationWorkflowService;
 use App\Services\Interteam\InterteamCoopForumService;
 use App\Support\CooperationDictionary;
@@ -670,7 +671,9 @@ class InterteamMissionWebController
         $canPilot = $this->interteamRepository->tenantCanPilotMission($missionId, $tenantId);
         $canManage = $canPilot && $this->canManageInterteam();
         $canRespond = $this->canRespondInterteam();
-        $partnerPicker = $canPilot ? $this->tenantRepository->listBasicExcluding($tenantId) : [];
+        $partnerPicker = $canPilot
+            ? CooperationTransitionRules::invitablePicker($this->tenantRepository->listBasicExcluding($tenantId), $participants, $tenantId)
+            : [];
         $status = (string) ($mission['status'] ?? '');
         $grants = ($status === 'active')
             ? $this->interteamRepository->listGrantsForMission($missionId)
@@ -726,6 +729,9 @@ class InterteamMissionWebController
             'interteamCanPilot' => $canPilot,
             'interteamCanRespond' => $canRespond,
             'interteamPartnerPicker' => $partnerPicker,
+            'interteamInvitationRule' => CooperationTransitionRules::invitation($mission),
+            'interteamLaunchReadiness' => CooperationTransitionRules::launchReadiness($mission, $participants, $counterPending),
+            'interteamIsTerminal' => CooperationTransitionRules::isTerminal($mission),
             'interteamTopicChoices' => $topicChoices,
             'interteamEvents' => $events,
             'interteamMeetings' => $meetings,
@@ -955,28 +961,76 @@ class InterteamMissionWebController
         }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
         if (!$this->interteamRepository->tenantCanPilotMission($id, $tenantId) || !$this->canManageInterteam()) {
             Session::flash('error', 'Action non autorisée.');
 
             return Response::redirect(cooperation_mission_index_url());
         }
-        $partnerId = (int) $request->input('partner_tenant_id', 0);
-        if ($partnerId <= 0 || $partnerId === $tenantId) {
-            Session::flash('error', 'Unité partenaire invalide.');
+        $mission = $this->interteamRepository->findById($id);
+        if (!$mission) {
+            return Response::redirect(cooperation_mission_index_url());
+        }
+        $rule = CooperationTransitionRules::invitation($mission);
+        if (!$rule['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($rule['reason']));
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
-        $this->interteamRepository->invitePartner($id, $partnerId);
-        $this->interteamRepository->markProposalSentIfDraft($id);
-        $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'partner_invited', ['partner_tenant_id' => $partnerId]);
-        $this->cooperationAnnouncementDispatcher->dispatch(
-            CooperationAnnouncementEvents::INVITATION_SENT,
-            $id,
-            (int) Session::get('user_id'),
-            $tenantId,
-            ['invited_tenant_id' => $partnerId]
-        );
-        Session::flash('success', 'Invitation enregistrée. L’autre unité peut accepter depuis son back-office.');
+        if ($rule['reinforcement'] && (string) $request->input('confirm_reinforcement', '') !== '1') {
+            Session::flash('error', 'La coopération est en cours : confirmez qu’il s’agit d’un renfort pour inviter une nouvelle unité.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+
+        // Une ou plusieurs unités (sélection multiple) ; « partner_tenant_id » reste accepté seul.
+        $raw = $request->input('partner_tenant_ids', null);
+        $ids = is_array($raw) ? $raw : [];
+        $single = (int) $request->input('partner_tenant_id', 0);
+        if ($single > 0) {
+            $ids[] = $single;
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $v): bool => $v > 0)));
+        if ($ids === []) {
+            Session::flash('error', 'Choisissez au moins une unité à inviter.');
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $ids = array_slice($ids, 0, 20);
+
+        $participants = $this->interteamRepository->listParticipants($id);
+        $invited = [];
+        $skipped = [];
+        foreach ($ids as $partnerId) {
+            $check = CooperationTransitionRules::canInviteTenant($partnerId, $tenantId, $participants);
+            $tenantRow = $this->tenantRepository->findById($partnerId);
+            $name = (string) ($tenantRow['name'] ?? ('Unité #' . $partnerId));
+            if (!$check['allowed'] || !$tenantRow) {
+                $skipped[] = $name . ' (' . mb_strtolower(rtrim(CooperationTransitionRules::reasonLabel($tenantRow ? $check['reason'] : 'invalid_tenant'), '.')) . ')';
+                continue;
+            }
+            $this->interteamRepository->invitePartner($id, $partnerId);
+            $this->interteamRepository->logEvent($id, $userId, $tenantId, 'partner_invited', [
+                'partner_tenant_id' => $partnerId,
+                'reinforcement' => $rule['reinforcement'],
+            ]);
+            $this->cooperationAnnouncementDispatcher->dispatch(
+                CooperationAnnouncementEvents::INVITATION_SENT,
+                $id,
+                $userId,
+                $tenantId,
+                ['invited_tenant_id' => $partnerId]
+            );
+            $invited[] = $name;
+        }
+        if ($invited !== []) {
+            $this->interteamRepository->markProposalSentIfDraft($id);
+            Session::flash('success', (count($invited) > 1 ? 'Invitations envoyées à ' : 'Invitation envoyée à ') . implode(', ', $invited)
+                . '. Chaque unité peut accepter ou refuser depuis son back-office.');
+        }
+        if ($skipped !== []) {
+            Session::flash($invited === [] ? 'error' : 'warning', 'Non invitée' . (count($skipped) > 1 ? 's' : '') . ' : ' . implode(' ; ', $skipped) . '.');
+        }
 
         return Response::redirect(cooperation_mission_show_url($id));
     }
@@ -995,6 +1049,15 @@ class InterteamMissionWebController
             Session::flash('error', 'Action non autorisée.');
 
             return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $mission = $this->interteamRepository->findById($id);
+        $check = $mission
+            ? CooperationTransitionRules::canRespondToInvitation($mission, $tenantId, $this->interteamRepository->listParticipants($id))
+            : ['allowed' => false, 'reason' => 'not_invited'];
+        if (!$check['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($check['reason']));
+
+            return Response::redirect($mission ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
         }
         $this->interteamRepository->setParticipantStatus($id, $tenantId, 'active');
         $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'partner_accepted', []);
@@ -1025,18 +1088,135 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
+        $mission = $this->interteamRepository->findById($id);
+        $check = $mission
+            ? CooperationTransitionRules::canRespondToInvitation($mission, $tenantId, $this->interteamRepository->listParticipants($id))
+            : ['allowed' => false, 'reason' => 'not_invited'];
+        if (!$check['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($check['reason']));
+
+            return Response::redirect($mission ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
+        }
+        $reason = mb_substr(trim((string) $request->input('decline_reason', '')), 0, 1000);
         $this->interteamRepository->setParticipantStatus($id, $tenantId, 'declined');
-        $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'partner_declined', []);
+        $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'partner_declined', $reason !== '' ? ['reason' => $reason] : []);
         $this->cooperationAnnouncementDispatcher->dispatch(
             CooperationAnnouncementEvents::PARTNER_DECLINED,
             $id,
             (int) Session::get('user_id'),
             $tenantId,
-            []
+            $reason !== '' ? ['reason' => $reason] : []
         );
-        Session::flash('success', 'Invitation refusée.');
+        Session::flash('success', 'Invitation refusée. L’unité support en est informée' . ($reason !== '' ? ', avec votre motif.' : '.'));
 
         return Response::redirect(cooperation_mission_index_url());
+    }
+
+    /**
+     * Retrait d’une unité (invitation en attente ou unité engagée) par le pilotage.
+     */
+    public function removePartner(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Jeton de sécurité invalide.');
+
+            return Response::redirect($id > 0 ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$this->interteamRepository->tenantCanPilotMission($id, $tenantId) || !$this->canManageInterteam()) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(cooperation_mission_index_url());
+        }
+        $mission = $this->interteamRepository->findById($id);
+        if (!$mission) {
+            return Response::redirect(cooperation_mission_index_url());
+        }
+        $targetTid = (int) $request->input('partner_tenant_id', 0);
+        $participants = $this->interteamRepository->listParticipants($id);
+        $check = CooperationTransitionRules::canRemovePartner($mission, $targetTid, $tenantId, $participants);
+        if (!$check['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($check['reason']));
+
+            return Response::redirect(cooperation_mission_show_url($id));
+        }
+        $reason = mb_substr(trim((string) $request->input('remove_reason', '')), 0, 1000);
+        $this->interteamRepository->setParticipantStatus($id, $targetTid, 'left');
+        $revoked = $this->interteamRepository->deleteGrantsForConsumer($id, $targetTid);
+        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'partner_removed', array_filter([
+            'partner_tenant_id' => $targetTid,
+            'previous_status' => $check['was'],
+            'grants_revoked' => $revoked,
+            'reason' => $reason,
+        ], static fn ($v) => $v !== '' && $v !== 0));
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::PARTNER_REMOVED,
+            $id,
+            $userId,
+            $tenantId,
+            ['partner_tenant_id' => $targetTid, 'reason' => $reason]
+        );
+        $p = CooperationTransitionRules::participantFor($targetTid, $participants);
+        $name = (string) ($p['tenant_name'] ?? 'L’unité');
+        Session::flash('success', $check['was'] === 'invited'
+            ? 'Invitation retirée : ' . $name . ' ne fait plus partie des unités sollicitées.'
+            : $name . ' a été retirée de la coopération' . ($revoked > 0 ? ' ; ses accès partagés au brief sont fermés.' : '.'));
+
+        return Response::redirect(cooperation_mission_show_url($id));
+    }
+
+    /**
+     * Annulation d’une proposition non lancée (phase « cancelled »), motif obligatoire.
+     */
+    public function cancelProposal(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Jeton de sécurité invalide.');
+
+            return Response::redirect($id > 0 ? cooperation_mission_archive_url($id) : cooperation_mission_index_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$this->interteamRepository->tenantCanPilotMission($id, $tenantId) || !$this->canManageInterteam()) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect(cooperation_mission_index_url());
+        }
+        $mission = $this->interteamRepository->findById($id);
+        if (!$mission) {
+            return Response::redirect(cooperation_mission_index_url());
+        }
+        $motive = mb_substr(trim((string) $request->input('cancel_motive', '')), 0, 500);
+        $check = CooperationTransitionRules::canCancelProposal($mission, $motive);
+        if (!$check['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($check['reason']));
+
+            return Response::redirect(cooperation_mission_archive_url($id));
+        }
+        // Unités à prévenir : celles qui étaient invitées ou avaient déjà accepté.
+        $notify = [];
+        foreach ($this->interteamRepository->listParticipants($id) as $p) {
+            if ((string) ($p['role'] ?? '') !== 'lead' && in_array((string) ($p['status'] ?? ''), ['invited', 'active'], true)) {
+                $notify[] = (int) ($p['tenant_id'] ?? 0);
+            }
+        }
+        $this->interteamRepository->updateClosureMeta($id, ['closure_motive' => $motive]);
+        $this->coopForumService->closeMission($id);
+        $this->interteamRepository->markCancelled($id);
+        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'proposal_cancelled', ['reason' => $motive]);
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::PROPOSAL_CANCELLED,
+            $id,
+            $userId,
+            $tenantId,
+            ['reason' => $motive, 'notify_tenant_ids' => $notify]
+        );
+        Session::flash('success', 'Proposition annulée. Les unités sollicitées en sont informées ; le dossier reste consultable dans la liste.');
+
+        return Response::redirect(cooperation_mission_show_url($id));
     }
 
     public function activate(Request $request, array $params = []): Response
@@ -1055,20 +1235,25 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_index_url());
         }
-        if (!$this->interteamRepository->hasPartnerInvited($id)) {
-            Session::flash('error', 'Ajoutez au moins une unité partenaire avant de lancer la coopération.');
-
-            return Response::redirect(cooperation_mission_show_url($id));
+        $mission = $this->interteamRepository->findById($id);
+        if (!$mission) {
+            return Response::redirect(cooperation_mission_index_url());
         }
-        if ($this->interteamRepository->counterProposalPending($id)) {
-            Session::flash('error', 'Une contre-proposition est en attente de votre réponse. Traitez-la dans l’onglet Négociation avant de lancer la coopération.');
+        $ready = CooperationTransitionRules::launchReadiness(
+            $mission,
+            $this->interteamRepository->listParticipants($id),
+            $this->interteamRepository->counterProposalPending($id)
+        );
+        if (!$ready['ok']) {
+            $msg = CooperationTransitionRules::reasonLabel($ready['reason']);
+            if ($ready['reason'] === 'invitations_pending' && $ready['pending'] !== []) {
+                $msg .= ' En attente : ' . implode(', ', $ready['pending']) . '.';
+            }
+            Session::flash('error', $msg);
 
-            return Response::redirect(cooperation_mission_negotiate_url($id));
-        }
-        if (!$this->interteamRepository->allPartnersAccepted($id)) {
-            Session::flash('error', 'Toutes les unités invitées doivent d’abord accepter.');
-
-            return Response::redirect(cooperation_mission_show_url($id));
+            return Response::redirect($ready['reason'] === 'counter_proposal_pending'
+                ? cooperation_mission_negotiate_url($id)
+                : cooperation_mission_show_url($id));
         }
         $this->interteamRepository->updateMissionStatus($id, 'active');
         $missionRow = $this->interteamRepository->findById($id);
@@ -1077,10 +1262,14 @@ class InterteamMissionWebController
             $snap = $this->cooperationWorkflow->buildActivationSnapshot($missionRow, $hostTid);
             $this->cooperationWorkflow->persistActivationSnapshot($id, $snap);
         }
-        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'mission_activated', []);
+        $this->interteamRepository->logEvent($id, $userId, $tenantId, 'mission_activated', [
+            'accepted' => $ready['accepted'],
+            'ignored' => $ready['ignored'],
+        ]);
         $this->coopForumService->ensureCooperativeSpace($id);
         $this->cooperationAnnouncementDispatcher->dispatch(CooperationAnnouncementEvents::MISSION_ACTIVATED, $id, $userId, $tenantId, []);
-        Session::flash('success', 'La coopération est en cours. Un fil commun a été préparé sur le brief de l’unité hôte ; les partages complémentaires restent possibles.');
+        Session::flash('success', 'La coopération est en cours avec ' . implode(', ', $ready['accepted']) . '. Un fil commun a été préparé sur le brief de l’unité support.'
+            . ($ready['ignored'] !== [] ? ' Non engagées (refus ou retrait) : ' . implode(', ', $ready['ignored']) . '.' : ''));
 
         return Response::redirect(cooperation_mission_show_url($id));
     }
@@ -1244,7 +1433,11 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_show_url($mid));
         }
-        $this->interteamRepository->deleteGrant($grantId);
+        if (!$this->interteamRepository->deleteGrant($grantId, $mid)) {
+            Session::flash('error', 'Cette autorisation n’existe pas sur cette coopération (déjà retirée ?).');
+
+            return Response::redirect(cooperation_mission_exchange_url($mid));
+        }
         $this->interteamRepository->logEvent($mid, (int) Session::get('user_id'), $tenantId, 'grant_revoked', ['grant_id' => $grantId]);
         Session::flash('success', 'Autorisation d’accès retirée.');
 
@@ -1265,6 +1458,13 @@ class InterteamMissionWebController
             Session::flash('error', 'Action non autorisée.');
 
             return Response::redirect(cooperation_mission_index_url());
+        }
+        $missionRow = $this->interteamRepository->findById($id);
+        $canClose = $missionRow ? CooperationTransitionRules::canClose($missionRow) : ['allowed' => false, 'reason' => 'mission_terminal'];
+        if (!$canClose['allowed']) {
+            Session::flash('error', CooperationTransitionRules::reasonLabel($canClose['reason']));
+
+            return Response::redirect(cooperation_mission_archive_url($id));
         }
         $motive = mb_substr(trim((string) $request->input('closure_motive', '')), 0, 500);
         $summary = trim((string) $request->input('closure_summary', ''));
@@ -1309,48 +1509,49 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_index_url());
         }
-        $liaison = trim((string) $request->input('liaison_notes', ''));
-        $atak1 = trim((string) $request->input('atak_endpoint_primary', ''));
-        $atak2 = trim((string) $request->input('atak_endpoint_partner', ''));
-        $replay = trim((string) $request->input('meeting_replay_url', ''));
-        if (strlen($liaison) > 20000) {
-            $liaison = substr($liaison, 0, 20000);
-        }
-        if (strlen($replay) > 500) {
-            $replay = substr($replay, 0, 500);
-        }
-        if (strlen($atak1) > 255) {
-            $atak1 = substr($atak1, 0, 255);
-        }
-        if (strlen($atak2) > 255) {
-            $atak2 = substr($atak2, 0, 255);
-        }
-        $atakL1 = mb_substr(trim((string) $request->input('atak_primary_label', '')), 0, 160);
-        $atakL2 = mb_substr(trim((string) $request->input('atak_partner_label', '')), 0, 160);
-        $atakBascule = trim((string) $request->input('atak_bascule_notes', ''));
-        if (strlen($atakBascule) > 20000) {
-            $atakBascule = mb_substr($atakBascule, 0, 20000);
-        }
-        $atakSync = mb_substr(trim((string) $request->input('atak_sync_status', '')), 0, 32);
-        $needs = [];
-        foreach (['chef_mission', 'jtac', 'medic', 'pilote', 'analyste', 'radio', 'instructeur', 'logisticien'] as $nk) {
-            if ($request->input('need_' . $nk) === '1' || $request->input('need_' . $nk) === 'on') {
-                $needs[] = $nk;
+        // Mise à jour partielle : seuls les champs présents dans le formulaire envoyé sont modifiés.
+        // (La page Réunion n’envoie que le lien de compte rendu, la page Structures le reste :
+        // auparavant chaque enregistrement effaçait les champs de l’autre page.)
+        $limits = [
+            'liaison_notes' => 20000,
+            'atak_endpoint_primary' => 255,
+            'atak_endpoint_partner' => 255,
+            'meeting_replay_url' => 500,
+            'atak_primary_label' => 160,
+            'atak_partner_label' => 160,
+            'atak_bascule_notes' => 20000,
+            'atak_sync_status' => 32,
+        ];
+        $fields = [];
+        foreach ($limits as $key => $max) {
+            $raw = $request->input($key, null);
+            if ($raw === null || is_array($raw)) {
+                continue;
             }
+            $val = mb_substr(trim((string) $raw), 0, $max);
+            $fields[$key] = $val !== '' ? $val : null;
         }
-        $needsJson = $needs !== [] ? json_encode($needs, JSON_UNESCAPED_UNICODE) : null;
-        $this->interteamRepository->updateMissionMeta($id, [
-            'liaison_notes' => $liaison !== '' ? $liaison : null,
-            'atak_endpoint_primary' => $atak1 !== '' ? $atak1 : null,
-            'atak_endpoint_partner' => $atak2 !== '' ? $atak2 : null,
-            'meeting_replay_url' => $replay !== '' ? $replay : null,
-            'atak_primary_label' => $atakL1 !== '' ? $atakL1 : null,
-            'atak_partner_label' => $atakL2 !== '' ? $atakL2 : null,
-            'atak_bascule_notes' => $atakBascule !== '' ? $atakBascule : null,
-            'atak_sync_status' => $atakSync !== '' ? $atakSync : null,
-            'competency_needs_json' => $needsJson,
-        ]);
+        if ((string) $request->input('needs_submitted', '') === '1') {
+            $needs = [];
+            foreach (array_keys(CooperationDictionary::competencyNeedLabels()) as $nk) {
+                if ($request->input('need_' . $nk) === '1' || $request->input('need_' . $nk) === 'on') {
+                    $needs[] = $nk;
+                }
+            }
+            $fields['competency_needs_json'] = $needs !== [] ? json_encode($needs, JSON_UNESCAPED_UNICODE) : null;
+        }
+        if ($fields === []) {
+            Session::flash('error', 'Aucune information à enregistrer.');
+
+            return Response::redirect(cooperation_mission_orbat_url($id));
+        }
+        $this->interteamRepository->updateMissionMeta($id, $fields);
         $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'mission_meta_updated', []);
+        if (array_keys($fields) === ['meeting_replay_url']) {
+            Session::flash('success', 'Lien de compte rendu enregistré.');
+
+            return Response::redirect(cooperation_mission_meeting_url($id));
+        }
         Session::flash('success', 'Informations de coordination enregistrées.');
 
         return Response::redirect(cooperation_mission_orbat_url($id));

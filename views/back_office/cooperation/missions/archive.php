@@ -7,6 +7,8 @@ $canPilot = !empty($interteamCanPilot);
 $csrf = $csrfToken ?? \App\Core\Csrf::token();
 $sid = (int) ($m['id'] ?? 0);
 $status = (string) ($m['status'] ?? '');
+$isTerminal = !empty($interteamIsTerminal);
+$phase = \App\Support\CooperationDictionary::effectivePhase($m);
 ?>
 <div class="max-w-4xl mx-auto px-6 py-10 space-y-8">
     <div>
@@ -21,11 +23,13 @@ $status = (string) ($m['status'] ?? '');
         <p class="mt-2 text-xs text-indigo-900/90">Prochaine étape : formulaire par unité, synthèse consolidée et capitalisation (voir feuille de route produit).</p>
     </section>
 
-    <?php if ($canPilot && $canManage && in_array($status, ['draft', 'active'], true)): ?>
+    <?php if ($canPilot && $canManage && !$isTerminal && in_array($status, ['draft', 'active'], true)): ?>
     <section class="rounded-xl border border-rose-200 bg-rose-50/50 p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-rose-900">Clôturer la coopération</h2>
         <p class="mt-2 text-xs text-rose-900/90">Les accès partagés au brief sont retirés et le fil commun est clos. Cette action est définitive côté partages.</p>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/close'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-4 max-w-xl" onsubmit="return confirm('Clôturer cette coopération ?');">
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/close'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-4 max-w-xl"
+              data-ui-confirm="1" data-ui-confirm-title="Clôturer la coopération ?"
+              data-ui-confirm-body="La clôture retire tous les accès partagés au brief et ferme le fil commun. Les unités pourront ensuite rédiger leur retour d’expérience. Cette action est définitive.">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <div>
                 <label class="block text-xs font-bold text-rose-900/80 mb-1">Motif de clôture</label>
@@ -46,6 +50,23 @@ $status = (string) ($m['status'] ?? '');
             <button type="submit" class="rounded-xl bg-rose-800 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-900">Clôturer</button>
         </form>
     </section>
+    <?php elseif ($canPilot && $canManage && $status === 'pending' && !$isTerminal): ?>
+    <section class="rounded-xl border border-rose-200 bg-rose-50/50 p-6 shadow-sm">
+        <h2 class="text-sm font-black uppercase tracking-wider text-rose-900">Annuler la proposition</h2>
+        <p class="mt-2 text-xs text-rose-900/90">La coopération n’a pas été lancée. L’annulation clôt les invitations en cours ; les unités sollicitées sont prévenues avec votre motif. Le dossier reste consultable et peut être dupliqué.</p>
+        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/cancel'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-4 max-w-xl"
+              data-ui-confirm="1" data-ui-confirm-title="Annuler la proposition ?"
+              data-ui-confirm-body="Les invitations en attente sont closes et chaque unité sollicitée reçoit votre motif. La proposition ne pourra plus être lancée (vous pourrez la dupliquer).">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <div>
+                <label for="cancel_motive" class="block text-xs font-bold text-rose-900/80 mb-1">Motif de l’annulation <span class="font-normal">(obligatoire, transmis aux unités)</span></label>
+                <input id="cancel_motive" type="text" name="cancel_motive" required minlength="3" maxlength="500" class="w-full rounded-lg border border-rose-200 px-3 py-2 text-sm bg-white" placeholder="Ex. : exercice reporté, effectifs insuffisants…">
+            </div>
+            <button type="submit" class="rounded-xl bg-rose-800 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-900">Annuler la proposition</button>
+        </form>
+    </section>
+    <?php elseif ($phase === 'cancelled'): ?>
+    <p class="text-sm text-slate-600">Cette proposition a été annulée<?= trim((string) ($m['closure_motive'] ?? '')) !== '' ? ' — motif : ' . htmlspecialchars((string) $m['closure_motive'], ENT_QUOTES, 'UTF-8') : '' ?>. Vous pouvez la dupliquer depuis la synthèse pour repartir de son cadrage.</p>
     <?php elseif ($status === 'archived'): ?>
     <p class="text-sm text-slate-600">Cette coopération est clôturée. Les interactions sont figées ; le retour d’expérience pourra encore être complété ultérieurement.</p>
     <?php else: ?>

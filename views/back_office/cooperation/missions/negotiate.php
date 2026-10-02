@@ -73,7 +73,7 @@ $labels = [
                 <input type="hidden" name="decision" value="accept">
                 <button type="submit" class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Intégrer et poursuivre</button>
             </form>
-            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/counter-proposal/respond'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Refuser cette contre-proposition ?');">
+            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/counter-proposal/respond'), ENT_QUOTES, 'UTF-8') ?>" data-ui-confirm="1" data-ui-confirm-title="Refuser la contre-proposition ?" data-ui-confirm-body="Le cadrage actuel est conservé. L’unité partenaire est prévenue et pourra transmettre une nouvelle contre-proposition.">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="decision" value="decline">
                 <button type="submit" class="rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-900 hover:bg-rose-50">Refuser</button>

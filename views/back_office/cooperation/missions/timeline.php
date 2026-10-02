@@ -40,11 +40,16 @@ $canManage = !empty($interteamCanManage);
             <?php
                 $et = (string) ($ev['event_type'] ?? '');
                 $cat = CooperationDictionary::timelineEventCategory($et);
+                $evPayload = json_decode((string) ($ev['payload_json'] ?? ''), true);
+                $evDetail = CooperationDictionary::eventDetail($et, is_array($evPayload) ? $evPayload : []);
             ?>
             <li class="border-b border-slate-100 pb-2 coop-timeline-item" data-event-type="<?= htmlspecialchars($et, ENT_QUOTES, 'UTF-8') ?>" data-timeline-cat="<?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>">
                 <span class="text-xs text-slate-500"><?= htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                 <span class="font-semibold text-slate-800 ml-2"><?= htmlspecialchars((string) ($ev['actor_display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                 <span class="text-slate-600"> — <?= htmlspecialchars(CooperationDictionary::eventTypeLabel($et), ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($evDetail !== ''): ?>
+                <p class="mt-1 text-xs text-slate-500"><?= htmlspecialchars($evDetail, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
             </li>
             <?php endforeach; ?>
         </ul>

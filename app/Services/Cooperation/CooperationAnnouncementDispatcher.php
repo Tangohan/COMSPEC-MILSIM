@@ -262,6 +262,7 @@ final class CooperationAnnouncementDispatcher
         $roleLabel = trim((string) ($extra['role_label'] ?? ''));
         $stageLabel = trim((string) ($extra['stage_label'] ?? ''));
         $memberName = trim((string) ($extra['member_display_name'] ?? ''));
+        $reason = trim((string) ($extra['reason'] ?? ''));
 
         return [
             'titre_cooperation' => (string) ($mission['title'] ?? ''),
@@ -275,6 +276,7 @@ final class CooperationAnnouncementDispatcher
             'role_attribue' => $roleLabel !== '' ? $roleLabel : 'un rôle',
             'etape_conduite' => $stageLabel !== '' ? $stageLabel : 'mise à jour',
             'membre_designe' => $memberName,
+            'motif' => $reason !== '' ? 'Motif : ' . $reason : '',
         ];
     }
 
@@ -337,8 +339,24 @@ final class CooperationAnnouncementDispatcher
             CooperationAnnouncementEvents::COUNTER_PROPOSAL_ACCEPTED,
             CooperationAnnouncementEvents::COUNTER_PROPOSAL_DECLINED => $partner > 0 ? [$partner] : [],
             CooperationAnnouncementEvents::OPERATIONAL_STAGE_UPDATED => $this->participantTenantIds($mid, true),
+            CooperationAnnouncementEvents::PARTNER_REMOVED => $partner > 0 ? [$partner] : [],
+            CooperationAnnouncementEvents::PROPOSAL_CANCELLED => $this->tenantIdsFromExtra($extra, 'notify_tenant_ids'),
             default => [],
         };
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     * @return list<int>
+     */
+    private function tenantIdsFromExtra(array $extra, string $key): array
+    {
+        $raw = $extra[$key] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
     }
 
     /** @return list<int> */

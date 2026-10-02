@@ -98,7 +98,7 @@ if (!empty($grants)) {
                     $gtLabel = CooperationDictionary::forumGrantTypeLabel($gt);
                     echo htmlspecialchars($gtLabel . ' — unité « ' . (string) ($g['consumer_tenant_name'] ?? '') . ' »', ENT_QUOTES, 'UTF-8');
                 ?></span>
-                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Retirer cette autorisation ?');">
+                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" data-ui-confirm="1" data-ui-confirm-title="Retirer cette autorisation ?" data-ui-confirm-body="L’unité destinataire ne verra plus cet espace d’échange dans son brief. Le fil principal de la coopération reste accessible.">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="text-xs font-semibold text-rose-700 hover:text-rose-900">Retirer</button>
                 </form>

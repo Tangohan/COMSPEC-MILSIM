@@ -105,8 +105,39 @@ final class CooperationDictionary
             'meeting_scheduled' => 'Réunion planifiée ou ajoutée au journal',
             'rex_submitted' => 'Retour d’expérience enregistré',
             'decision_published' => 'Décision publiée sur l’espace commun',
+            'partner_removed' => 'Unité retirée de la coopération',
+            'proposal_cancelled' => 'Proposition annulée',
+            'invitation_reminder' => 'Relance de l’invitation',
+            'mission_member_assigned' => 'Rôle de coopération attribué',
+            'operational_stage_updated' => 'Étape de conduite mise à jour',
+            'sitrep_logged' => 'Point de situation enregistré',
+            'mission_suspended' => 'Coopération suspendue',
+            'mission_resumed' => 'Coopération reprise',
+            'preparation_started' => 'Préparation engagée',
             default => 'Événement',
         };
+    }
+
+    /**
+     * Précision affichée sous un événement de la chronologie (motif de refus, d’annulation…).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public static function eventDetail(string $eventType, array $payload): string
+    {
+        $reason = trim((string) ($payload['reason'] ?? $payload['motive'] ?? ''));
+        $prefix = match ($eventType) {
+            'partner_declined' => 'Motif du refus',
+            'partner_removed' => 'Motif du retrait',
+            'proposal_cancelled' => 'Motif de l’annulation',
+            'mission_suspended' => 'Motif de la suspension',
+            default => '',
+        };
+        if ($prefix === '' || $reason === '') {
+            return '';
+        }
+
+        return $prefix . ' : ' . $reason;
     }
 
     /** Catégorie pour filtrer la chronologie (clé technique). */
@@ -116,10 +147,12 @@ final class CooperationDictionary
             'topic_shared', 'grant_revoked', 'consent_verified' => 'access',
             'meeting_started', 'meeting_scheduled' => 'meetings',
             'mission_activated', 'mission_closed', 'counter_proposal_accepted', 'counter_proposal_declined',
-            'partner_accepted', 'partner_declined', 'co_lead_promoted', 'decision_published' => 'decisions',
+            'partner_accepted', 'partner_declined', 'co_lead_promoted', 'decision_published',
+            'partner_removed', 'proposal_cancelled', 'mission_suspended', 'mission_resumed',
+            'operational_stage_updated', 'preparation_started' => 'decisions',
             'counter_proposal_submitted', 'proposal_deadline_elapsed', 'mission_proposal_updated',
-            'partner_invited' => 'negotiation',
-            'mission_meta_updated', 'coop_forum_opened' => 'coordination',
+            'partner_invited', 'invitation_reminder' => 'negotiation',
+            'mission_meta_updated', 'coop_forum_opened', 'mission_member_assigned', 'sitrep_logged' => 'coordination',
             'coop_forum_reply' => 'messages',
             'rex_submitted' => 'rex',
             default => 'other',

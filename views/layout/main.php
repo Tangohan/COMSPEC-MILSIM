@@ -428,6 +428,10 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
     <?php endif; ?>
+    <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)): ?>
+    <?php /* Modale des confirmations data-ui-confirm (hors back-office, fournie par header_portal). */ ?>
+    <?php require base_path('views/partials/ui/confirm_dialog.php'); ?>
+    <?php endif; ?>
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>

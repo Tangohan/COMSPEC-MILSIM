@@ -364,14 +364,55 @@ class InterteamMissionRepository
         $this->pdo->prepare($sql)->execute($params);
     }
 
+    /**
+     * Invite (ou réinvite) une unité. Une unité ayant refusé ou ayant été retirée repasse en « invitation
+     * en attente » avec le rôle partenaire ; une invitation en cours ou une unité engagée reste inchangée.
+     * L’ordre des affectations compte : MySQL évalue les colonnes de gauche à droite.
+     */
     public function invitePartner(int $missionId, int $partnerTenantId): void
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO interteam_mission_participants (mission_id, tenant_id, role, status, invited_at, responded_at)
              VALUES (?, ?, \'partner\', \'invited\', NOW(), NULL)
-             ON DUPLICATE KEY UPDATE status = IF(status = \'declined\', \'invited\', status), invited_at = NOW(), responded_at = NULL'
+             ON DUPLICATE KEY UPDATE
+                role = IF(status IN (\'declined\', \'left\') AND role <> \'lead\', \'partner\', role),
+                invited_at = IF(status IN (\'declined\', \'left\'), NOW(), invited_at),
+                responded_at = IF(status IN (\'declined\', \'left\'), NULL, responded_at),
+                status = IF(status IN (\'declined\', \'left\'), \'invited\', status)'
         );
         $stmt->execute([$missionId, $partnerTenantId]);
+    }
+
+    /**
+     * Retire les autorisations d’accès au brief accordées à une unité (retrait de la coopération).
+     */
+    public function deleteGrantsForConsumer(int $missionId, int $consumerTenantId): int
+    {
+        if (!$this->tableExists() || $missionId <= 0 || $consumerTenantId <= 0) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE mission_id = ? AND consumer_tenant_id = ?');
+        $stmt->execute([$missionId, $consumerTenantId]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Annulation d’une proposition (avant lancement) : status archived + phase cancelled.
+     */
+    public function markCancelled(int $missionId): void
+    {
+        if (!$this->tableExists() || $missionId <= 0) {
+            return;
+        }
+        if ($this->columnExists('interteam_missions', 'cooperation_phase')) {
+            $this->pdo->prepare(
+                "UPDATE interteam_missions SET status = 'archived', cooperation_phase = 'cancelled', updated_at = NOW() WHERE id = ? LIMIT 1"
+            )->execute([$missionId]);
+
+            return;
+        }
+        $this->updateMissionStatus($missionId, 'archived');
     }
 
     public function setParticipantStatus(int $missionId, int $tenantId, string $status): void
@@ -404,10 +445,18 @@ class InterteamMissionRepository
         $stmt->execute([$missionId, $grantType, $resourceId, $homeTenantId, $consumerTenantId]);
     }
 
-    public function deleteGrant(int $grantId): void
+    /**
+     * Supprime une autorisation, uniquement si elle appartient bien à la coopération indiquée.
+     */
+    public function deleteGrant(int $grantId, int $missionId): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE id = ? LIMIT 1');
-        $stmt->execute([$grantId]);
+        if ($grantId <= 0 || $missionId <= 0) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE id = ? AND mission_id = ? LIMIT 1');
+        $stmt->execute([$grantId, $missionId]);
+
+        return $stmt->rowCount() > 0;
     }
 
     /**
@@ -811,7 +860,16 @@ class InterteamMissionRepository
                     }
                 }
             }
-            if ($status === 'archived' && $this->rexTableExists() && $this->findRexForTenant($mid, $tenantId) === null) {
+            if ($status !== 'archived' && $status !== '') {
+                foreach ($this->listParticipants($mid) as $p) {
+                    if ((int) ($p['tenant_id'] ?? 0) === $tenantId && ($p['status'] ?? '') === 'invited') {
+                        $out[] = ['mission_id' => $mid, 'title' => (string) ($m['title'] ?? ''), 'reason' => 'Invitation à accepter ou refuser'];
+                        break;
+                    }
+                }
+            }
+            $isCancelled = CooperationDictionary::effectivePhase($m) === 'cancelled';
+            if ($status === 'archived' && !$isCancelled && $this->rexTableExists() && $this->findRexForTenant($mid, $tenantId) === null) {
                 $parts = $this->listParticipants($mid);
                 foreach ($parts as $p) {
                     if ((int) ($p['tenant_id'] ?? 0) === $tenantId && ($p['status'] ?? '') === 'active') {

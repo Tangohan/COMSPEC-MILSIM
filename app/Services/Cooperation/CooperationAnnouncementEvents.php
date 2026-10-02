@@ -35,6 +35,10 @@ final class CooperationAnnouncementEvents
 
     public const OPERATIONAL_STAGE_UPDATED = 'coop_operational_stage_updated';
 
+    public const PARTNER_REMOVED = 'coop_partner_removed';
+
+    public const PROPOSAL_CANCELLED = 'coop_proposal_cancelled';
+
     /** @return array<string, string> key => libellé interface */
     public static function labels(): array
     {
@@ -52,6 +56,8 @@ final class CooperationAnnouncementEvents
             self::COUNTER_PROPOSAL_ACCEPTED => 'Contre-proposition acceptée',
             self::COUNTER_PROPOSAL_DECLINED => 'Contre-proposition refusée',
             self::OPERATIONAL_STAGE_UPDATED => 'Changement d’étape de conduite',
+            self::PARTNER_REMOVED => 'Une communauté a été retirée de la coopération',
+            self::PROPOSAL_CANCELLED => 'La proposition de coopération est annulée',
         ];
     }
 
@@ -113,6 +119,18 @@ final class CooperationAnnouncementEvents
                 'subject' => 'Étape mise à jour — {titre_cooperation}',
                 'body' => "L’étape de conduite de « {titre_cooperation} » est maintenant : {etape_conduite}.\n\n{lien_synthese}",
             ],
+            self::PARTNER_DECLINED => [
+                'subject' => 'Invitation refusée — {titre_cooperation}',
+                'body' => "{unite_destinataire} a refusé de participer à « {titre_cooperation} ».\n{motif}\n\nVoir les participants : {lien_synthese}",
+            ],
+            self::PARTNER_REMOVED => [
+                'subject' => 'Retrait de la coopération — {titre_cooperation}',
+                'body' => "{unite_support} a retiré votre communauté de la coopération « {titre_cooperation} ». Vos accès partagés à cette coopération sont fermés.\n{motif}",
+            ],
+            self::PROPOSAL_CANCELLED => [
+                'subject' => 'Proposition annulée — {titre_cooperation}',
+                'body' => "{unite_support} a annulé la proposition de coopération « {titre_cooperation} ».\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
             default => [
                 'subject' => $label . ' — {titre_cooperation}',
                 'body' => $label . " pour « {titre_cooperation} ».\n\nVoir la synthèse : {lien_synthese}",
@@ -139,6 +157,18 @@ final class CooperationAnnouncementEvents
             self::COUNTER_PROPOSAL_SUBMITTED => [
                 'subject' => 'Contre-proposition reçue — {titre_cooperation}',
                 'body' => "{unite_destinataire} a transmis une contre-proposition pour « {titre_cooperation} ».\n\nTraiter : {lien_negociation}",
+            ],
+            self::PARTNER_DECLINED => [
+                'subject' => 'Invitation refusée — {titre_cooperation}',
+                'body' => "Bonjour,\n\n{unite_destinataire} a refusé de participer à la coopération « {titre_cooperation} ».\n{motif}\n\nVous pouvez lancer sans elle si d’autres unités ont accepté, ou inviter une autre unité : {lien_synthese}",
+            ],
+            self::PARTNER_REMOVED => [
+                'subject' => 'Votre communauté a été retirée de « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a retiré votre communauté de la coopération « {titre_cooperation} ». Les accès partagés liés à cette coopération sont fermés.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::PROPOSAL_CANCELLED => [
+                'subject' => 'Proposition annulée — {titre_cooperation}',
+                'body' => "Bonjour,\n\n{unite_support} a annulé la proposition de coopération « {titre_cooperation} » à laquelle votre communauté était invitée.\n{motif}\n\nAucune action n’est attendue de votre part.",
             ],
             default => null,
         };
