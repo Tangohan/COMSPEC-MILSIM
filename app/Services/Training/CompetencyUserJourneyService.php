@@ -63,7 +63,7 @@ final class CompetencyUserJourneyService
             if ($mid < 1) {
                 continue;
             }
-            if (($r['progress_status'] ?? '') === 'COMPLETED') {
+            if (\App\Repositories\CompetencyModuleRepository::effectiveStatus((string) ($r['progress_status'] ?? ''), $r['expires_at'] ?? null, time()) === 'COMPLETED') {
                 $completedByModule[$mid] = true;
             }
         }
@@ -86,6 +86,8 @@ final class CompetencyUserJourneyService
             if ($rawStatus === '') {
                 $rawStatus = 'NOT_STARTED';
             }
+            // Une validation dont l'échéance est passée devient « à renouveler » sans attendre une tâche planifiée.
+            $rawStatus = \App\Repositories\CompetencyModuleRepository::effectiveStatus($rawStatus, $row['expires_at'] ?? null, $now);
 
             $stats['by_phase'][$type]['total']++;
             if ($rawStatus === 'COMPLETED') {
@@ -113,6 +115,9 @@ final class CompetencyUserJourneyService
                 'delivery_mode' => (string) ($row['delivery_mode'] ?? ''),
                 'is_mandatory' => (int) ($row['is_mandatory'] ?? 0) === 1,
                 'progress_status' => $rawStatus,
+                'description' => trim((string) ($row['module_description'] ?? '')),
+                'duration_min' => isset($row['duration_min']) && $row['duration_min'] !== null ? (int) $row['duration_min'] : null,
+                'validated_at_display' => !empty($row['validated_at']) && strtotime((string) $row['validated_at']) ? date('d/m/Y', (int) strtotime((string) $row['validated_at'])) : null,
                 'expires_at_display' => $expiresDisplay,
                 'recurrence_hint' => $recurrenceHint,
                 'blocked_by_prereq' => $blocked,

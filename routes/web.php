@@ -1965,6 +1965,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/formation/competences/pole-formation', [TrainingCompetencyController::class, 'poleFormationDashboard'], $trainingResMw);
     $router->get('/formation/competences/validation', [TrainingCompetencyController::class, 'validationCertificationDashboard'], $trainingResMw);
     $router->get('/formation/competences/sections', [TrainingCompetencyController::class, 'sectionsDashboard'], $trainingResMw);
+    $router->get('/formation/competences/modules', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'index'], $trainingResMw);
+    $router->post('/formation/competences/modules', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'save'], $trainingResMw);
+    $router->post('/formation/competences/modules/{id}', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'save'], $trainingResMw);
+    $router->post('/formation/competences/modules/{id}/activation', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'toggle'], $trainingResMw);
+    $router->get('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'tracking'], $trainingResMw);
+    $router->post('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'record'], $trainingResMw);
 
     $router->get('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->post('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);

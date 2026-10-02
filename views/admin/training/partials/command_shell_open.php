@@ -30,6 +30,14 @@ $navGroups = [
         ],
     ],
     [
+        'label' => 'Compétences',
+        'items' => [
+            ['href' => training_lms_admin_url('competences/modules'), 'label' => 'Modules ALPHA → DELTA', 'class' => trim($is('competences'))],
+            ['href' => training_lms_admin_url('competences/commandement'), 'label' => 'Groupes de suivi', 'class' => ''],
+            ['href' => training_lms_admin_url('competences/validation'), 'label' => 'Validations', 'class' => ''],
+        ],
+    ],
+    [
         'label' => 'Documents',
         'items' => array_values(array_filter([
             ['href' => training_lms_admin_url('charte-rh'), 'label' => 'Charte RH', 'class' => trim($is('charter'))],

@@ -18,6 +18,7 @@ if ($isStaffSidebar) {
         $trainingAdminNav === 'enrollments' => 'enrollments',
         $trainingAdminNav === 'search' => 'search',
         $trainingAdminNav === 'groups' => 'groups',
+        $trainingAdminNav === 'competences' => 'competences',
         $trainingAdminNav === 'dashboard' || $trainingAdminNav === '' => 'staff_hub',
         default => '',
     };
@@ -77,6 +78,7 @@ $modulesMeta = $totalModules > 0 ? (string) $totalModules : '—';
         $renderTile(training_lms_admin_url('enrollments'), '04', 'Inscriptions', 'Suivi des apprenants', 'Suivi', $tileClass('enrollments'));
         $renderTile(training_lms_admin_url('recherche'), '05', 'Recherche', 'Formations, docs, certificats', 'Chercher', $tileClass('search'));
         $renderTile(training_lms_admin_url('groupes'), '06', 'Groupes', 'Cohortes de membres suivant un même parcours', '—', $tileClass('groups'));
+        $renderTile(training_lms_admin_url('competences/modules'), '07', 'Compétences', 'Modules ALPHA → DELTA et validations', 'Suivi', $tileClass('competences'));
         ?>
         <?php else: ?>
         <?php
@@ -85,8 +87,9 @@ $modulesMeta = $totalModules > 0 ? (string) $totalModules : '—';
         $renderTile($lmsBase . '/formations/mes-formations', '03', 'Mes formations', 'Inscriptions et progression', 'Suivi', $tileClass('mine'));
         $renderTile($lmsBase . '/formations/sessions', '04', 'Sessions', 'Rendez-vous et cycles planifiés', '—', $tileClass('sessions'));
         $renderTile($lmsBase . '/formations/sessions#qualifications', '05', 'Qualifications', 'Préparation et attestations', 'Grille', $tileClass('qualifications'));
-        $renderTile(training_lms_admin_url('publications'), '06', 'Publications', 'Annonces et contenus diffusés', 'Éditer', $tileClass('publications'));
-        $renderTile(training_lms_admin_url('pages-html'), '07', 'Pages pédagogiques', 'Supports et pages de parcours', 'Éditer', $tileClass('docs_html'));
+        $renderTile($lmsBase . '/formations/competences', '06', 'Mes compétences', 'Parcours ALPHA → DELTA', 'Suivi', $tileClass('competences'));
+        $renderTile(training_lms_admin_url('publications'), '07', 'Publications', 'Annonces et contenus diffusés', 'Éditer', $tileClass('publications'));
+        $renderTile(training_lms_admin_url('pages-html'), '08', 'Pages pédagogiques', 'Supports et pages de parcours', 'Éditer', $tileClass('docs_html'));
         ?>
         <?php endif; ?>
     </nav>

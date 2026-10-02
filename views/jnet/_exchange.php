@@ -28,7 +28,14 @@ $link = (string) ($ex['link'] ?? '');
         <p class="jn-ex__body"><?= nl2br($h($body)) ?></p>
     <?php endif; ?>
     <footer class="jn-ex__foot">
-        <span>par <b><?= $h((string) ($ex['author'] ?? '')) ?></b></span>
+        <?php
+        $authorPhoto = $ex['authorPhoto'] ?? null;
+        $authorHref = (string) ($ex['authorHref'] ?? '');
+        ?>
+        <<?= $authorHref !== '' ? 'a href="' . $h($authorHref) . '"' : 'span' ?> class="jn-ex__author">
+            <span class="jn-ex__face" aria-hidden="true"><?php if (is_string($authorPhoto) && $authorPhoto !== ''): ?><img src="<?= $h($authorPhoto) ?>" alt=""><?php else: ?><?= $h((string) ($ex['authorInitials'] ?? '')) ?><?php endif; ?></span>
+            <b><?= $h((string) ($ex['author'] ?? '')) ?></b>
+        </<?= $authorHref !== '' ? 'a' : 'span' ?>>
         <?php if ($link !== ''): ?>
             <a class="jn-ex__link" href="<?= $h(url($link)) ?>">Ouvrir le lien</a>
         <?php endif; ?>
