@@ -4,10 +4,10 @@ Génère public/assets/css/back-office-dark.generated.css : le mode nuit du back
 
 Principe : on relit les feuilles du back-office (et les utilitaires Tailwind de couleur)
 et, pour chaque règle qui pose une couleur, on réécrit cette couleur pour un fond sombre :
-  - fonds clairs   → surfaces sombres (même teinte, saturation réduite) ;
-  - textes sombres → textes clairs (même teinte : un texte vert reste vert) ;
-  - bordures claires → filets sombres ;
-  - couleurs franches et déjà sombres (boutons, barre latérale) → inchangées.
+  - fonds blancs et clairs → surfaces sombres (c’est le seul vrai changement) ;
+  - textes gris / noirs    → gris clairs ; textes colorés très foncés → même teinte éclaircie ;
+  - bordures claires       → filets sombres ;
+  - tout le reste (boutons, badges, barre latérale, accents, textes colorés) → inchangé.
 Chaque sélecteur est préfixé par html[data-bo-theme="dark"] : sans ce réglage, rien ne change.
 
 Relancer après toute modification d'une feuille du back-office :
@@ -94,46 +94,61 @@ NEUTRAL_HUE, NEUTRAL_SAT = 0.42, 0.10
 
 
 def remap(tok: str, kind: str) -> str:
-    """kind ∈ bg | text | border."""
+    """kind ∈ bg | text | border.
+
+    Principe volontairement sobre : seuls les fonds clairs deviennent sombres. Les couleurs
+    franches (boutons, badges, barre latérale, textes colorés lisibles) ne bougent pas ; les
+    textes sombres sont éclaircis juste ce qu’il faut pour rester lisibles sur le fond nuit.
+    """
     try:
         r, g, b, a = parse_color(tok)
     except (ValueError, IndexError):
         return tok
     h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
     chroma = (max(r, g, b) - min(r, g, b)) / 255
-    neutral = chroma < 0.16 and s < 0.6  # gris, ardoises (slate), blancs cassés — pas les teintes d’alerte
-    if neutral:
-        h, s = NEUTRAL_HUE, NEUTRAL_SAT
+    # Blancs, gris, ardoises (y compris les quasi-noirs bleutés type slate-950) — pas les pastels d’alerte.
+    neutral = chroma < 0.12 and (l < 0.5 or s < 0.6)
     # Reflets et filets blancs très transparents : déjà adaptés à un fond sombre.
     if a is not None and a < 0.5 and l > 0.85:
         return tok
     if kind == "bg":
-        if l < 0.62:
-            return tok  # couleurs franches (boutons) ou déjà sombres
-        if a is not None and a < 0.999:
-            nl = 0.10 + (1 - l) * 0.5
-            return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, nl, s * (1 if neutral else 0.45))), max(a, 0.35) if l > 0.9 else a)
-        nl = 0.085 + (1 - l) * 0.55
-        ns = s if neutral else min(s, 0.55) * 0.5
-        return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, nl, ns)), a)
-    if kind == "text":
-        if l > 0.55:
-            return tok  # déjà clair (texte sur bouton coloré)
+        if l < 0.8:
+            return tok  # couleurs franches (boutons, bandeaux) ou déjà sombres : inchangées
         if neutral:
-            nl = 0.93 - l * 0.55
-            return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, nl, 0.08)), a)
-        nl = max(0.68, 0.86 - l * 0.3)
-        return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, nl, min(1, s * 0.85))), a)
+            nl = 0.075 + (1 - l) * 0.5
+            out = colorsys.hls_to_rgb(NEUTRAL_HUE, nl, NEUTRAL_SAT)
+        else:
+            # Fond pastel (alerte, encart) : même teinte, version sombre discrète.
+            nl = 0.12 + (1 - l) * 0.35
+            out = colorsys.hls_to_rgb(h, nl, min(s, 0.6) * 0.45)
+        alpha = a if a is None or a >= 0.999 else (max(a, 0.35) if l > 0.9 else a)
+        return fmt(*(v * 255 for v in out), alpha)
+    if kind == "text":
+        if neutral:
+            if l >= 0.6:
+                return tok
+            nl = 0.92 - l * 0.45  # noir → blanc cassé, gris moyen → gris clair
+            return fmt(*(v * 255 for v in colorsys.hls_to_rgb(NEUTRAL_HUE, nl, NEUTRAL_SAT)), a)
+        if l >= 0.55:
+            return tok  # texte coloré déjà lisible : même couleur qu’en mode jour
+        # Texte coloré foncé (marine, vert sapin, bleu soutenu) : même teinte, éclairci juste assez.
+        return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, max(0.66, l + 0.2), s)), a)
     # border
-    if l < 0.6:
+    if l < 0.75:
         return tok
-    nl = 0.17 + (1 - l) * 0.35
-    return fmt(*(v * 255 for v in colorsys.hls_to_rgb(h, nl, s if neutral else min(s, 0.3) * 0.5)), a)
+    nl = 0.16 + (1 - l) * 0.3
+    return fmt(*(v * 255 for v in colorsys.hls_to_rgb(NEUTRAL_HUE if neutral else h, nl, NEUTRAL_SAT if neutral else min(s, 0.3) * 0.5)), a)
+
+
+# Variables « de marque » : jamais converties (barre latérale, fonds noirs, accents).
+BRAND_VAR = re.compile(r"sidebar|void|accent|brand|primary|mint|emerald|focus|rail")
 
 
 def var_kind(name: str, value: str) -> str | None:
     """Rôle d'une variable CSS d'après son nom (et sa valeur)."""
     n = name.lower()
+    if BRAND_VAR.search(n):
+        return None
     m = COLOR_RE.search(value)
     if not m:
         return None
@@ -148,17 +163,19 @@ def var_kind(name: str, value: str) -> str | None:
         return "text"
     if any(k in n for k in ("bg", "surface", "soft", "panel", "card", "paper", "head", "hover", "row", "tint", "light")):
         return "bg"
-    # Variables de couleur « de marque » : on ne touche qu'aux teintes très claires (fonds).
+    # Autres variables : seules les teintes très claires (fonds) sont converties.
     if l > 0.85:
         return "bg"
-    if s < 0.18 and l < 0.5:
-        return "text"
     return None
 
 
 def transform_decl(prop: str, value: str) -> str | None:
     p = prop.strip().lower()
     if p.startswith("--"):
+        if p in ("--tw-ring-color", "--tw-ring-offset-color"):
+            kind = "border"
+            out = COLOR_RE.sub(lambda m: remap(m.group(0), kind), value)
+            return out if out != value else None
         if p.startswith("--tw-") and p not in ("--tw-gradient-from", "--tw-gradient-to", "--tw-gradient-stops"):
             # Variables d'opacité Tailwind, ombres… : seules les couleurs de dégradé comptent.
             if not any(k in p for k in ("bg-opacity", "text-opacity", "border-opacity")):
@@ -247,20 +264,33 @@ def prefix_selector(sel: str) -> str | None:
     return ", ".join(parts) if parts else None
 
 
-def process(css: str, *, tailwind: bool = False) -> list[str]:
+def process(css: str, *, tailwind: bool = False, view: bool = False) -> list[str]:
     rules = []
     for prelude, body in parse_blocks(css):
         if prelude.startswith("@"):
             low = prelude.lower()
             if low.startswith("@media") and "print" not in low:
-                inner = process(body, tailwind=tailwind)
+                inner = process(body, tailwind=tailwind, view=view)
                 if inner:
                     rules.append(prelude + " {\n" + "\n".join(inner) + "\n}")
             elif low.startswith("@supports"):
-                inner = process(body, tailwind=tailwind)
+                inner = process(body, tailwind=tailwind, view=view)
                 if inner:
                     rules.append(prelude + " {\n" + "\n".join(inner) + "\n}")
             continue  # @keyframes, @font-face, @page…
+        # La barre latérale est déjà sombre en mode jour : elle reste identique.
+        if "ath-sidebar" in prelude:
+            continue
+        # Règles déjà écrites pour le mode nuit dans la feuille source : laissées telles quelles.
+        if "data-bo-theme" in prelude:
+            continue
+        if view:
+            # Styles de vue : seuls les sélecteurs ciblant une classe ou un id sont repris
+            # (un « p » ou « h1 » nu déborderait sur toutes les pages en mode nuit).
+            kept = [x.strip() for x in prelude.split(",") if re.search(r"[.#]", x)]
+            if not kept:
+                continue
+            prelude = ", ".join(kept)
         if tailwind:
             sels = [s.strip() for s in prelude.split(",")]
             if not all(TW_COLOR_UTIL.match(s) for s in sels):
@@ -294,6 +324,21 @@ def main() -> int:
         rules = process(path.read_text(encoding="utf-8", errors="replace"))
         if rules:
             chunks.append(f"\n/* ——— {name} ——— */")
+            chunks.extend(rules)
+    # Styles écrits directement dans les vues (<style> des pages du back-office) : sans eux,
+    # des tableaux ou encarts restaient blancs en mode nuit.
+    style_re = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
+    for view in sorted((ROOT / "views").rglob("*.php")):
+        rel = view.relative_to(ROOT).as_posix()
+        if rel.startswith(("views/emails/", "views/email/", "views/errors/")):
+            continue
+        text = view.read_text(encoding="utf-8", errors="replace")
+        blocks = [b for b in style_re.findall(text) if "<?" not in b]
+        rules = []
+        for b in blocks:
+            rules.extend(process(b, view=True))
+        if rules:
+            chunks.append(f"\n/* ——— {rel} (<style> de la vue) ——— */")
             chunks.extend(rules)
     tw = CSS / "tailwind.css"
     if tw.is_file():

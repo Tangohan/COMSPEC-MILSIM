@@ -25,6 +25,7 @@ html[data-bo-theme="dark"] .ath-main__body {
 html[data-bo-theme="dark"] .ath-shell,
 html[data-bo-theme="dark"] .bo-shell {
   --ath-ink: #e6ebe8;
+  --ath-ink-2: #c9d2ce;
   --ath-muted: #9aa6a1;
   --ath-subtle: #7f8b86;
   --ath-line: #26302c;
