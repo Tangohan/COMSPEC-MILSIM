@@ -206,6 +206,10 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if (!empty($personnelFilePage) && is_file(base_path('public/assets/css/personnel-file.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/personnel-file-refresh.css'))): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php endif; ?>
     <?php if ((!empty($personnelFilePage) || !empty($loadDecorationsKit)) && is_file(base_path('public/assets/css/decorations-kit.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/decorations-kit.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">

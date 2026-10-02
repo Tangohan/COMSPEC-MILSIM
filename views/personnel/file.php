@@ -612,6 +612,29 @@ if ($personnelFileIsRhFull) {
                     <?php endif; ?>
                 </p>
                 <?php endif; ?>
+                <?php
+                $heroFu = is_array($memberFollowup ?? null) && !empty($memberFollowup['visible']) ? $memberFollowup : [];
+                $heroStats = [];
+                if ($accountCreatedDisplay !== null) {
+                    $heroStats[] = ['Membre depuis', (string) $accountCreatedDisplay];
+                }
+                if (is_array($seniorityGlobal) && !empty($seniorityGlobal['formatted'])) {
+                    $heroStats[] = ['Ancienneté', (string) $seniorityGlobal['formatted']];
+                }
+                if (is_array($heroFu['phase'] ?? null) && !empty($heroFu['phase']['label'])) {
+                    $heroStats[] = ['Étape', (string) $heroFu['phase']['label']];
+                }
+                if (isset($heroFu['progress']) && $heroFu['progress'] !== null) {
+                    $heroStats[] = ['Progression', max(0, min(100, (int) $heroFu['progress'])) . ' %'];
+                }
+                ?>
+                <?php if ($heroStats !== []): ?>
+                <dl class="personnel-file-hero__stats">
+                    <?php foreach ($heroStats as [$hsLabel, $hsValue]): ?>
+                    <div><dt><?= htmlspecialchars($hsLabel, ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($hsValue, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                    <?php endforeach; ?>
+                </dl>
+                <?php endif; ?>
                 <div class="personnel-file-hero__badges">
                     <?php if ($privatePersonnelIdentity): ?>
                     <?php $rawAccountStatus = (string) ($targetUser['status'] ?? ''); ?>
@@ -745,7 +768,6 @@ if ($personnelFileIsRhFull) {
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
-            <a href="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id']) . '?onglet=suivi', ENT_QUOTES, 'UTF-8') ?>" @click.prevent="setTab('historique')">Mon suivi</a>
             <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
             <?php endif; ?>
         </div>
@@ -1556,36 +1578,81 @@ if ($personnelFileIsRhFull) {
                 </section>
                 </div>
 
-                <div class="space-y-5" x-show="tab === 'historique'" x-cloak>
+                <div class="pf-suivi" x-show="tab === 'historique'" x-cloak>
+                <?php
+                $pfMonthYear = static function (int $ts): string {
+                    $months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+                    return ucfirst($months[(int) date('n', $ts) - 1]) . ' ' . date('Y', $ts);
+                };
+                ?>
                 <?php
                 $suiviCompletMode = 'full';
                 $suiviCompletUseAlpineTab = false;
+                $suiviCompletPart = 'top';
+                require base_path('views/partials/personnel/file_suivi_complet.php');
+                ?>
+                <div class="pf-suivi-grid">
+                <div class="pf-suivi-main">
+                <!-- Carrière : historique de service -->
+                <section class="pf-card" aria-labelledby="pf-career-title">
+                    <h2 id="pf-career-title" class="pf-card__title">Historique de service</h2>
+                    <p class="pf-card__sub">Engagement, affectations, promotions et décorations, du plus récent au plus ancien.</p>
+                    <?php if (!empty($serviceHistory)): ?>
+                    <ol class="pf-timeline pf-timeline--career">
+                        <?php foreach ($serviceHistory as $event):
+                            $evTypeLabel = $serviceHistoryEventTypeFr((string) ($event['event_type'] ?? ''));
+                            $evReason = trim((string) ($event['reason_label'] ?? ''));
+                            $evTs = strtotime((string) ($event['event_date'] ?? 'now'));
+                            ?>
+                        <li class="pf-timeline__item is-ok">
+                            <span class="pf-timeline__dot" aria-hidden="true"></span>
+                            <div class="pf-timeline__body">
+                                <div class="pf-timeline__meta">
+                                    <time datetime="<?= htmlspecialchars(date('Y-m-d', $evTs ?: time()), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($pfMonthYear($evTs ?: time()), ENT_QUOTES, 'UTF-8') ?></time>
+                                    <?php if ($evTypeLabel !== '' && $evTypeLabel !== 'Événement'): ?>
+                                    <span class="pf-tag"><?= htmlspecialchars($evTypeLabel) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="pf-timeline__title"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
+                                <?php if ($evReason !== ''): ?><p class="pf-timeline__text">Motif : <?= htmlspecialchars($evReason, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                                <?php if (!empty($event['description'])): ?><p class="pf-timeline__text"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
+                            </div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <?php else: ?>
+                    <p class="pf-empty">Aucun événement de carrière n’est encore enregistré : l’engagement, les affectations et les promotions apparaîtront ici.</p>
+                    <?php endif; ?>
+                </section>
+                <?php
+                $suiviCompletPart = 'timeline';
                 require base_path('views/partials/personnel/file_suivi_complet.php');
                 ?>
                 <?php if ($personnelOrgHistorySection): ?>
-                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>
-                    <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">Modifications enregistrées par l’organisation (grade, rôles, statut du compte, coordonnées visibles sur la fiche, etc.).</p>
+                <section class="pf-card" aria-labelledby="pf-orglog-title">
+                    <h2 id="pf-orglog-title" class="pf-card__title">Journal du dossier</h2>
+                    <p class="pf-card__sub">Ce que l’organisation a modifié sur la fiche : grade, rôles, statut du compte, coordonnées.</p>
                     <?php if ($personnelOrgHistorySchemaReady && $personnelOrgHistory !== []): ?>
-                    <div class="space-y-3">
+                    <ol class="pf-timeline pf-timeline--compact">
                         <?php foreach ($personnelOrgHistory as $oh):
                             $ohTs = strtotime((string) ($oh['created_at'] ?? ''));
                             $ohWhen = $ohTs ? date('d/m/Y à H:i', $ohTs) : '—';
                             $ohActor = isset($oh['actor_label']) && is_string($oh['actor_label']) && trim($oh['actor_label']) !== '' ? trim((string) $oh['actor_label']) : null;
                             ?>
-                        <div class="flex gap-4 border-l-2 border-indigo-200 pl-4 py-2">
-                            <span class="text-[10px] font-semibold tabular-nums text-slate-500 shrink-0 w-[7.5rem] sm:w-36"><?= htmlspecialchars($ohWhen) ?></span>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-slate-900 leading-snug"><?= htmlspecialchars((string) ($oh['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        <li class="pf-timeline__item is-info">
+                            <span class="pf-timeline__dot" aria-hidden="true"></span>
+                            <div class="pf-timeline__body">
+                                <div class="pf-timeline__meta"><time><?= htmlspecialchars($ohWhen) ?></time></div>
+                                <p class="pf-timeline__title"><?= htmlspecialchars((string) ($oh['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php if ($ohActor !== null): ?>
-                                <p class="text-[10px] text-slate-500 mt-1">Par <?= htmlspecialchars($ohActor, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="pf-timeline__foot"><span>Par <b><?= htmlspecialchars($ohActor, ENT_QUOTES, 'UTF-8') ?></b></span></p>
                                 <?php endif; ?>
                             </div>
-                        </div>
+                        </li>
                         <?php endforeach; ?>
-                    </div>
+                    </ol>
                     <?php else: ?>
-                    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
+                    <div class="pf-empty">
                         <?php if (!$personnelOrgHistorySchemaReady): ?>
                         Le journal du dossier sera disponible après l’initialisation de l’historique de l’organisation.
                         <?php else: ?>
@@ -1596,53 +1663,31 @@ if ($personnelFileIsRhFull) {
                 </section>
                 <?php endif; ?>
 
-                <!-- Historique de service -->
-                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Historique de service</h2>
-                    <?php if (!empty($serviceHistory)): ?>
-                    <div class="space-y-4">
-                        <?php foreach ($serviceHistory as $event):
-                            $evTypeLabel = $serviceHistoryEventTypeFr((string) ($event['event_type'] ?? ''));
-                            $evReason = trim((string) ($event['reason_label'] ?? ''));
-                            ?>
-                        <div class="flex gap-4 border-l-2 border-emerald-200 pl-4 py-2">
-                            <span class="text-[10px] font-semibold tabular-nums text-slate-500 shrink-0 w-16"><?= date('m/Y', strtotime((string) ($event['event_date'] ?? 'now'))) ?></span>
-                            <div>
-                                <?php if ($evTypeLabel !== '' && $evTypeLabel !== 'Événement'): ?>
-                                <p class="text-[9px] font-black uppercase tracking-wider text-emerald-800/90 mb-1"><?= htmlspecialchars($evTypeLabel) ?></p>
-                                <?php endif; ?>
-                                <p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
-                                <?php if ($evReason !== ''): ?><p class="mt-1 text-[11px] font-semibold text-emerald-900/80">Motif : <?= htmlspecialchars($evReason, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                                <?php if (!empty($event['description'])): ?><p class="text-xs text-slate-600 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php else: ?>
-                    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
-                        Aucun événement d’ancienneté ou de carrière n’est encore enregistré dans ce dossier.
-                    </div>
-                    <?php endif; ?>
-                </section>
-
+                </div>
+                <aside class="pf-suivi-side" aria-label="Fiche de suivi et notes">
+                <?php
+                $suiviCompletPart = 'side';
+                require base_path('views/partials/personnel/file_suivi_complet.php');
+                $suiviCompletPart = '';
+                ?>
                 <!-- Notes de commandement -->
                 <?php if ($canViewCommandNotes): ?>
-                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4 flex items-center gap-3">
-                        <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                        Notes de commandement <?= $canEditNotes ? '(éditable)' : '' ?>
-                    </h2>
+                <section class="pf-card pf-card--restricted" aria-labelledby="pf-cmdnotes-title">
+                    <h2 id="pf-cmdnotes-title" class="pf-card__title">Notes de commandement</h2>
+                    <p class="pf-card__sub">Réservées au commandement<?= $canEditNotes ? ' — vous pouvez les modifier.' : '.' ?></p>
                     <?php if ($canEditNotes): ?>
                     <form method="post" action="<?= url('personnel/' . (int)$targetUser['id'] . '/notes') ?>" class="space-y-3">
                         <?= \App\Core\Csrf::field() ?>
-                        <textarea name="admin_notes" rows="4" class="w-full text-sm text-slate-700 border border-slate-200 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500/30 focus:border-[#059669]" placeholder="Notes internes (visible par vous et les admins)"><?= $adminNotes ? htmlspecialchars($adminNotes) : '' ?></textarea>
-                        <button type="submit" class="inline-flex min-h-[2.25rem] items-center rounded-lg bg-[#059669] px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-700">Enregistrer</button>
+                        <textarea name="admin_notes" rows="4" class="pf-textarea" aria-label="Notes de commandement" placeholder="Notes internes, visibles par vous et les administrateurs"><?= $adminNotes ? htmlspecialchars($adminNotes) : '' ?></textarea>
+                        <button type="submit" class="pf-btn pf-btn--primary">Enregistrer les notes</button>
                     </form>
                     <?php else: ?>
-                    <p class="text-xs text-slate-500 font-medium leading-relaxed italic"><?= $adminNotes ? nl2br(htmlspecialchars($adminNotes)) : '— Aucune note enregistrée.' ?></p>
+                    <?php if ($adminNotes): ?><p class="pf-quote"><?= nl2br(htmlspecialchars($adminNotes)) ?></p><?php else: ?><p class="pf-muted">Aucune note pour le moment.</p><?php endif; ?>
                     <?php endif; ?>
                 </section>
                 <?php endif; ?>
+                </aside>
+                </div>
                 </div>
 
                 <div class="space-y-8" x-show="tab === 'administratif'" x-cloak>

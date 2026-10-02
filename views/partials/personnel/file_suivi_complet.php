@@ -39,6 +39,219 @@ $statusFr = $rpTimelineStatusFr ?? static function (?string $s): string {
     };
 };
 $sectionId = $isFull ? 'suivi-complet' : 'suivi-complet-apercu';
+$part = (string) ($suiviCompletPart ?? '');
+if ($isFull && $part !== '') {
+    $progress = $fu['progress'] !== null ? max(0, min(100, (int) $fu['progress'])) : null;
+    if ($part === 'top'):
+?>
+<section id="<?= $h($sectionId) ?>" class="pf-card pf-parcours<?= !empty($fu['attention']) ? ' is-attention' : '' ?>"<?php if (!empty($fu['show_parcours'])): ?> data-parcours-anchor="1"<?php endif; ?> aria-labelledby="pf-parcours-title">
+    <div class="pf-parcours__head">
+        <div class="pf-parcours__intro">
+            <p class="pf-eyebrow">Suivi du dossier</p>
+            <h2 id="pf-parcours-title" class="pf-title">
+                <?php if ($phase !== null): ?>
+                    <?= $h((string) $phase['label']) ?>
+                <?php else: ?>
+                    Arrivée dans l’unité
+                <?php endif; ?>
+            </h2>
+            <p class="pf-lead">
+                <?php if ($phase === null): ?>
+                    Étape d’arrivée, tuteur et dates importantes du dossier.
+                <?php elseif (!empty($phase['is_last'])): ?>
+                    Dernière étape du parcours atteinte.
+                <?php elseif (!empty($phase['next_label'])): ?>
+                    Prochaine étape : <strong><?= $h((string) $phase['next_label']) ?></strong>
+                    <?= ($phase['effect'] ?? '') === 'automatic' ? '— le passage se fera tout seul une fois les conditions remplies.' : '— un responsable validera le passage une fois les conditions remplies.' ?>
+                <?php endif; ?>
+            </p>
+        </div>
+        <?php if ($progress !== null): ?>
+        <div class="pf-ring" style="--pf-progress: <?= $progress ?>" role="img" aria-label="Progression du parcours : <?= $progress ?> %">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="pf-ring__track" cx="60" cy="60" r="52"></circle>
+                <circle class="pf-ring__value" cx="60" cy="60" r="52" pathLength="100"></circle>
+            </svg>
+            <div class="pf-ring__label"><b><?= $progress ?><small>%</small></b><span>progression</span></div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($probation !== null): ?>
+    <p class="pf-note"><strong><?= $h((string) $probation['label']) ?></strong> — jusqu’au <?= $h((string) $probation['ends_label']) ?>.</p>
+    <?php endif; ?>
+
+    <?php if ($phase !== null): ?>
+    <div id="parcours-rh" class="pf-conditions">
+        <?php $items = is_array($phase['items'] ?? null) ? $phase['items'] : []; ?>
+        <?php
+        $passedCount = 0;
+        foreach ($items as $it) {
+            if (!empty($it['passed'])) {
+                $passedCount++;
+            }
+        }
+        ?>
+        <div class="pf-conditions__head">
+            <h3 class="pf-subtitle">Conditions pour passer à l’étape suivante</h3>
+            <?php if ($items !== []): ?>
+            <span class="pf-count"><?= $passedCount ?> / <?= count($items) ?> remplies</span>
+            <?php endif; ?>
+        </div>
+        <?php if (!empty($phase['is_last'])): ?>
+        <p class="pf-muted">Vous êtes à la dernière étape prévue pour ce parcours.</p>
+        <?php elseif ($items === []): ?>
+        <p class="pf-muted">Aucune condition n’est encore définie pour cette étape. Le passage reste bloqué tant que le parcours n’est pas configuré.</p>
+        <?php else: ?>
+        <ul class="pf-checklist">
+            <?php foreach ($items as $it): ?>
+            <li class="<?= !empty($it['passed']) ? 'is-ok' : 'is-todo' ?>">
+                <span class="pf-checklist__mark" aria-hidden="true"><?= !empty($it['passed']) ? '✓' : '' ?></span>
+                <span><?= $h((string) ($it['reason'] ?? $it['label'] ?? '')) ?></span>
+                <span class="pf-sr"><?= !empty($it['passed']) ? '(remplie)' : '(à remplir)' ?></span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+        <?php if ($phaseCheck && !empty($phaseCheck['next']) && (!empty($canStaffEdit) || !empty($canEditProfile))): ?>
+        <form method="post" action="<?= $h(url('personnel/' . $uid . '/phase')) ?>" class="pf-actions">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" name="phase_mode" value="manual" class="pf-btn pf-btn--primary" <?= empty($phaseCheck['evaluation']['eligible']) ? 'disabled title="Toutes les conditions ne sont pas encore remplies"' : '' ?>>
+                Passer à <?= $h((string) ($phaseCheck['next']['label'] ?? 'l’étape suivante')) ?>
+            </button>
+            <?php if (function_exists('can') && (can('personnel.progression.override') || can('admin.organization') || can('admin.access'))): ?>
+            <input type="text" name="override_reason" maxlength="500" placeholder="Motif du passage forcé" aria-label="Motif du passage forcé" class="pf-input">
+            <button type="submit" name="phase_mode" value="override" class="pf-btn pf-btn--warn">Forcer le passage</button>
+            <?php endif; ?>
+        </form>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($deadlines !== []): ?>
+    <div class="pf-deadlines">
+        <h3 class="pf-subtitle">Prochaines échéances</h3>
+        <div class="pf-deadlines__grid">
+            <?php foreach ($deadlines as $card):
+                $dateLabel = (string) (($card['date_label'] ?? null) ?: ($card['fallback'] ?? '—'));
+                $overdue = !empty($card['overdue']);
+                $done = empty($card['date_label']);
+                ?>
+            <article class="pf-deadline<?= $overdue ? ' is-overdue' : ($done ? ' is-done' : '') ?>">
+                <p class="pf-deadline__title"><?= $h((string) ($card['title'] ?? '')) ?></p>
+                <p class="pf-deadline__date"><?= $h($dateLabel) ?></p>
+                <?php if ($overdue): ?>
+                <p class="pf-deadline__state">Échéance dépassée</p>
+                <?php elseif (!empty($card['note'])): ?>
+                <p class="pf-deadline__note"><?= $h((string) $card['note']) ?></p>
+                <?php endif; ?>
+            </article>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+</section>
+<?php
+    elseif ($part === 'side'):
+        $facts = [
+            'Étape' => (string) ($fu['stage'] ?? ''),
+            'Statut' => (string) ($fu['status'] ?? ''),
+            'Filière' => (string) ($fu['track'] ?? ''),
+            'Fonction' => (string) ($fu['function'] ?? ''),
+            'Profil de recrutement' => (string) ($fu['origin_label'] ?? ''),
+            'Tuteur' => (string) ($fu['tutor_label'] ?? ''),
+        ];
+?>
+<?php if (!empty($fu['show_immersion'])): ?>
+<section class="pf-card" aria-labelledby="pf-facts-title">
+    <h2 id="pf-facts-title" class="pf-card__title">Fiche de suivi</h2>
+    <dl class="pf-facts">
+        <?php foreach ($facts as $label => $value): ?>
+        <div><dt><?= $h($label) ?></dt><dd><?= trim($value) !== '' ? $h($value) : '<span class="pf-muted">Non renseigné</span>' ?></dd></div>
+        <?php endforeach; ?>
+    </dl>
+</section>
+<?php endif; ?>
+<?php if ($elig['checks'] !== []): ?>
+<section class="pf-card pf-ready<?= !empty($elig['eligible']) ? ' is-ok' : ' is-todo' ?>" aria-labelledby="pf-ready-title">
+    <h2 id="pf-ready-title" class="pf-card__title"><?= !empty($elig['eligible']) ? 'Dossier prêt pour le suivi' : 'Dossier à compléter' ?></h2>
+    <ul class="pf-checklist pf-checklist--compact">
+        <?php foreach ($elig['checks'] as $check): ?>
+        <li class="<?= !empty($check['ok']) ? 'is-ok' : 'is-warn' ?>">
+            <span class="pf-checklist__mark" aria-hidden="true"><?= !empty($check['ok']) ? '✓' : '!' ?></span>
+            <span><?= $h((string) ($check['label'] ?? 'Critère')) ?></span>
+        </li>
+        <?php endforeach; ?>
+    </ul>
+</section>
+<?php endif; ?>
+<?php if (($fu['notes'] ?? '') !== ''): ?>
+<section class="pf-card" aria-labelledby="pf-followup-notes-title">
+    <h2 id="pf-followup-notes-title" class="pf-card__title">Notes de suivi</h2>
+    <p class="pf-quote"><?= nl2br($h((string) $fu['notes'])) ?></p>
+</section>
+<?php endif; ?>
+<?php
+    elseif ($part === 'timeline'):
+        if ($timelineEvents === [] && $phaseJournal === []) {
+            return;
+        }
+?>
+<section class="pf-card" aria-labelledby="pf-followup-log-title">
+    <h2 id="pf-followup-log-title" class="pf-card__title">Journal du suivi</h2>
+    <p class="pf-card__sub">Entretiens, objectifs et changements d’étape.</p>
+    <ol class="pf-timeline">
+        <?php foreach ($timelineEvents as $ev):
+            $evDate = !empty($ev['event_date']) ? date('d/m/Y', strtotime((string) $ev['event_date'])) : (!empty($ev['created_at']) ? date('d/m/Y', strtotime((string) $ev['created_at'])) : '—');
+            $dueDate = !empty($ev['due_date']) ? date('d/m/Y', strtotime((string) $ev['due_date'])) : null;
+            $statusRaw = (string) ($ev['status'] ?? 'planned');
+            $isOverdue = $dueDate !== null && !in_array($statusRaw, ['completed', 'cancelled'], true) && strtotime((string) $ev['due_date']) < strtotime(date('Y-m-d'));
+            $tone = $isOverdue ? 'danger' : match ($statusRaw) {
+                'completed' => 'ok',
+                'blocked' => 'danger',
+                'cancelled' => 'muted',
+                default => 'warn',
+            };
+            $actor = trim((string) ($ev['actor_display_name'] ?? '')) ?: trim((string) ($ev['actor_callsign'] ?? ''));
+            $delta = isset($ev['progress_delta']) && $ev['progress_delta'] !== null && $ev['progress_delta'] !== '' ? (int) $ev['progress_delta'] : null;
+            ?>
+        <li class="pf-timeline__item is-<?= $h($tone) ?>">
+            <span class="pf-timeline__dot" aria-hidden="true"></span>
+            <div class="pf-timeline__body">
+                <div class="pf-timeline__meta">
+                    <time><?= $h($evDate) ?></time>
+                    <span class="pf-tag"><?= $h(ucfirst((string) ($ev['event_type'] ?? 'événement'))) ?></span>
+                    <span class="pf-pill is-<?= $h($tone) ?>"><?= $isOverdue ? 'En retard' : $h($statusFr($statusRaw)) ?></span>
+                </div>
+                <p class="pf-timeline__title"><?= $h((string) ($ev['title'] ?? 'Événement')) ?></p>
+                <?php if (!empty($ev['detail'])): ?><p class="pf-timeline__text"><?= nl2br($h((string) $ev['detail'])) ?></p><?php endif; ?>
+                <p class="pf-timeline__foot">
+                    <?php if ($dueDate !== null): ?><span>Échéance <b class="<?= $isOverdue ? 'is-danger' : '' ?>"><?= $h($dueDate) ?></b></span><?php endif; ?>
+                    <?php if ($delta !== null): ?><span>Progression <b><?= $delta >= 0 ? '+' : '' ?><?= $delta ?></b></span><?php endif; ?>
+                    <?php if ($actor !== ''): ?><span>Par <b><?= $h($actor) ?></b></span><?php endif; ?>
+                </p>
+            </div>
+        </li>
+        <?php endforeach; ?>
+        <?php foreach ($phaseJournal as $tr): ?>
+        <li class="pf-timeline__item is-ok">
+            <span class="pf-timeline__dot" aria-hidden="true"></span>
+            <div class="pf-timeline__body">
+                <div class="pf-timeline__meta">
+                    <time><?= $h(date('d/m/Y', strtotime((string) ($tr['created_at'] ?? 'now')))) ?></time>
+                    <span class="pf-tag">Changement d’étape</span>
+                </div>
+                <p class="pf-timeline__title"><?= $h((string) ($tr['from_label'] ?? '—')) ?> → <?= $h((string) ($tr['to_label'] ?? '—')) ?></p>
+                <?php if (!empty($tr['override_reason'])): ?><p class="pf-timeline__text">Passage forcé — motif : <?= $h((string) $tr['override_reason']) ?></p><?php endif; ?>
+            </div>
+        </li>
+        <?php endforeach; ?>
+    </ol>
+</section>
+<?php
+    endif;
+    return;
+}
 ?>
 <section id="<?= $h($sectionId) ?>" class="rounded-3xl border <?= !empty($fu['attention']) ? 'border-amber-200' : 'border-emerald-200' ?> bg-white p-6 shadow-sm md:p-8"<?php if ($isFull && !empty($fu['show_parcours'])): ?> data-parcours-anchor="1"<?php endif; ?>>
     <div class="flex flex-wrap items-start justify-between gap-4">
