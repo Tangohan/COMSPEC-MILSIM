@@ -293,6 +293,19 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(756, '2026-10-02', 'Compétences : les organisations créent leurs modules et valident leurs membres', 'Le parcours compétences ALPHA → DELTA n’était alimenté par aucun écran : aucune organisation ne pouvait créer de module ni enregistrer une validation. Le pilotage des formations gagne une rubrique Compétences : créer et modifier les modules par phase, fixer les prérequis et le renouvellement, puis valider les membres module par module. La page « Mon parcours compétences » est refaite : progression globale, frise des phases, modules avec statut, prérequis et échéances. Rechargez le portail (Ctrl+F5).', [
+                'Pilotage des formations → Compétences : modules ALPHA, BRAVO, CHARLIE, DELTA',
+                'Prérequis entre modules (boucles refusées) et renouvellement en jours',
+                'Suivi par module : validation groupée des membres, validé par, échéance',
+                'Entrée « Mes compétences » dans le catalogue des formations',
+            ], [
+                'Mon parcours compétences : progression globale, frise des phases, détail de chaque module',
+                'Une validation dont l’échéance est passée passe d’elle-même « à renouveler »',
+            ], [
+                'Le parcours compétences restait toujours vide faute d’écran pour créer les modules',
+            ], ['personnel'], [
+                'Ouvrez le pilotage des formations → Compétences, créez un module ALPHA puis un module BRAVO qui en dépend. Ouvrez « Suivi des membres », cochez des membres et validez : ils voient le module validé sur Mon parcours compétences.',
+            ], 'Portail Athena'),
             $pr(755, '2026-10-02', 'JNET plus lisible : arbre des unités, guide et chargement', 'La situation des unités se lit désormais comme un arbre : chaque unité sous son échelon, avec ses disponibles et son activité, et des branches à déplier. Un guide explique les espaces, les échanges et qui voit quoi. Une barre de chargement s’affiche quand on change d’espace, et la page se charge plus vite. Rechargez le portail (Ctrl+F5).', [
                 'Guide « Comment fonctionne JNET », repliable et mémorisé',
                 'Barre de chargement et état « Publication… » sur les boutons',

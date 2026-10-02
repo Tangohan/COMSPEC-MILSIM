@@ -46,6 +46,7 @@ class CompetencyUserProgressRepository
                     m.module_type,
                     m.delivery_mode,
                     m.description AS module_description,
+                    m.duration_min,
                     tm.is_mandatory,
                     tm.custom_order,
                     tm.recurrence_override_type,
