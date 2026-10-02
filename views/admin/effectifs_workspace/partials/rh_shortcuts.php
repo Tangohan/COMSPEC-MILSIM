@@ -5,6 +5,12 @@ $current = (string) ($rhShortcutCurrent ?? '');
 $h = $h ?? static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $items = [
     [
+        'id' => 'a-traiter',
+        'href' => effectifs_workspace_url('a-traiter'),
+        'title' => 'À traiter',
+        'hint' => 'Décisions RH en attente',
+    ],
+    [
         'id' => 'documents',
         'href' => effectifs_workspace_url('documents-rh'),
         'title' => 'Documents RH',

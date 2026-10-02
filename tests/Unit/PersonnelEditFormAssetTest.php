@@ -99,6 +99,14 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('pd-orbat-hero', $orbat);
         self::assertStringContainsString('pd-orbat-table', $orbat);
         self::assertStringContainsString('orbatFrozen', $orbat);
+        self::assertStringContainsString('Demande en attente', $orbat);
+        self::assertStringContainsString('Historique des demandes', $orbat);
+        self::assertStringContainsString('Annuler la demande', $orbat);
+        self::assertStringContainsString('form="orbat-cancel-', $orbat);
+        self::assertStringContainsString('id="orbat-cancel-', $edit);
+        self::assertStringContainsString('/correction/', $edit);
+        self::assertStringContainsString('orbatCorrectionHistory', $controller);
+        self::assertStringContainsString('buildOrbatCorrectionHistory', $controller);
         self::assertStringContainsString('canApplyOrbatImmediately', $edit);
         self::assertStringContainsString('canApplyOrbatImmediately', $controller);
         self::assertStringContainsString('proposedDiff', $controller);
@@ -106,6 +114,17 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringContainsString('hasPendingForTarget', $controller);
         self::assertStringContainsString('filterOptionsForMemberDossier', $controller);
         self::assertStringContainsString('function canApplyOrbatImmediately', $access);
+
+        $cancelCtrl = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelCorrectionController.php');
+        $service = (string) file_get_contents($root . '/app/Services/Personnel/PersonnelCorrectionRequestService.php');
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        $cssRefresh = (string) file_get_contents($root . '/public/assets/css/personnel-edit-refresh.css');
+        self::assertStringContainsString('function cancelOwn', $cancelCtrl);
+        self::assertStringContainsString('cancelByMember', $cancelCtrl);
+        self::assertStringContainsString('function cancelByMember', $service);
+        self::assertStringContainsString("'/personnel/{id}/correction/{requestId}/annuler'", $routes);
+        self::assertStringContainsString('.pd-orbat-request', $cssRefresh);
+        self::assertStringContainsString('.pd-orbat-btn--danger', $cssRefresh);
     }
 
     public function testJobRolePersistenceSupportsLegacyPivotTablesAndReportsFailures(): void

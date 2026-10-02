@@ -34,7 +34,11 @@ class ElevationApprovalService
         private PersonnelProfileRepository $personnelProfileRepository,
         private PermissionRepository $permissionRepository,
         private ?PersonnelStructureChangeNotificationService $structureChangeNotification = null,
+        private ?\App\Services\Personnel\PersonnelServiceHistoryWriter $serviceHistoryWriter = null,
     ) {
+        $this->serviceHistoryWriter ??= new \App\Services\Personnel\PersonnelServiceHistoryWriter(
+            new \App\Repositories\PersonnelServiceHistoryRepository()
+        );
     }
 
     public const ROLE_APPLY_REPLACE = 'replace';
@@ -513,6 +517,19 @@ class ElevationApprovalService
         if (in_array('permissions', $applied, true)) {
             $parts[] = count($permissionIds) . ' droit' . (count($permissionIds) > 1 ? 's' : '') . ' d’accès spécifique' . (count($permissionIds) > 1 ? 's' : '');
         }
+
+        $this->serviceHistoryWriter->recordElevation(
+            $targetUserId,
+            $applied,
+            [
+                'grade' => $labels['grade'] ?? null,
+                'role' => $labels['role'] ?? null,
+                'job_role' => $labels['job_role'] ?? null,
+                'unit' => $labels['unit'] ?? null,
+            ],
+            $actorUserId,
+            'Élévation acceptée'
+        );
 
         return [
             'ok' => true,

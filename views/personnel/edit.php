@@ -1016,6 +1016,21 @@ $editValidTabIds = implode(',', array_map(
           <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">Annuler</a>
         </div>
     </form>
+    <?php
+    $orbatCancelForms = is_array($orbatCorrectionHistory ?? null) ? $orbatCorrectionHistory : [];
+    foreach ($orbatCancelForms as $cancelRow):
+        if (!is_array($cancelRow) || trim((string) ($cancelRow['status'] ?? '')) !== 'pending') {
+            continue;
+        }
+        $cancelId = (int) ($cancelRow['id'] ?? 0);
+        if ($cancelId < 1) {
+            continue;
+        }
+        ?>
+    <form id="orbat-cancel-<?= $cancelId ?>" method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/correction/' . $cancelId . '/annuler'), ENT_QUOTES, 'UTF-8') ?>">
+      <?= \App\Core\Csrf::field() ?>
+    </form>
+    <?php endforeach; ?>
     <?php if (!empty($canManageMemberNumber)): ?>
     <form id="personnel-member-number-form" method="post" action="<?= htmlspecialchars(url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/member-number'), ENT_QUOTES, 'UTF-8') ?>">
       <?= \App\Core\Csrf::field() ?>

@@ -36,6 +36,10 @@ $navClass = static function (string $id) use ($active): string {
 
         <p class="eff-section-label">Pilotage</p>
         <nav class="eff-rail-nav" aria-label="Sections du bureau effectifs">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_inbox'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>00</b>
+                <span>À traiter<?= (int) ($rhInboxActionCount ?? 0) > 0 ? ' <i class="eff-nav-badge">' . (int) $rhInboxActionCount . '</i>' : '' ?><em>Décisions RH requises</em></span>
+            </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('roster'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>01</b>
                 <span>Tableur effectifs<em>Liste complète et actions rapides</em></span>

@@ -2383,6 +2383,19 @@ class EffectifsWorkspaceController
                 $rhAlertTotal = 0;
             }
         }
+        $rhInboxTotal = $extra['rhInboxActionCount'] ?? null;
+        if ($rhInboxTotal === null) {
+            try {
+                $hr = \App\Services\Effectifs\PersonnelHrWorkspaceSettings::forTenant($tenantId);
+                $rhInboxTotal = (int) (\App\Core\Container::get(\App\Services\Effectifs\RhActionInboxService::class)->build(
+                    $tenantId,
+                    (int) ($hr['inactivity_days'] ?? null),
+                    (int) ($hr['absence_days'] ?? null)
+                )['total'] ?? 0);
+            } catch (\Throwable) {
+                $rhInboxTotal = (int) $rhAlertTotal + (int) $elevationOpen + (int) $mobilityPending;
+            }
+        }
         $chainMissing = $extra['commandChainMissingCount'] ?? null;
         if ($chainMissing === null) {
             try {
@@ -2408,6 +2421,7 @@ class EffectifsWorkspaceController
             'personnelDuplicateScan' => $dupScan,
             'mobilityPendingCount' => $mobilityPending,
             'rhAlertTotalCount' => $rhAlertTotal,
+            'rhInboxActionCount' => $rhInboxTotal,
             'commandChainMissingCount' => $chainMissing,
             'roleplayDueCount' => $extras['roleplayDueCount'],
             'integrationOpenCount' => $extras['integrationOpenCount'],

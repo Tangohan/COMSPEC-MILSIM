@@ -322,6 +322,71 @@
   color: #475569;
   background: #e2e8f0;
 }
+.pd-orbat-badge--warn {
+  color: #92400e;
+  background: #fde68a;
+}
+.pd-orbat-badge--danger {
+  color: #9f1239;
+  background: #fecdd3;
+}
+.pd-orbat-block--pending {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.pd-orbat-request {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #fcd34d;
+  background: #fff;
+}
+.pd-orbat-request__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #78350f;
+}
+.pd-orbat-request__diff {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #0f172a;
+}
+.pd-orbat-request__diff li + li { margin-top: 0.25rem; }
+.pd-orbat-request__note {
+  margin: 0.65rem 0 0;
+  font-size: 0.75rem;
+  color: #78350f;
+}
+.pd-orbat-request__actions { margin-top: 0.85rem; }
+.pd-orbat-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pd-orbat-btn--danger {
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: #fda4af;
+}
+.pd-orbat-btn--danger:hover { background: #ffe4e6; }
+.pd-orbat-mini-diff {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #334155;
+}
+.pd-orbat-mini-diff li + li { margin-top: 0.15rem; }
 .pd-orbat-empty {
   margin: 0;
   padding: 0.85rem 1rem;

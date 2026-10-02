@@ -293,6 +293,24 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(753, '2026-10-02', 'Carrière et boîte de travail RH', 'Le dossier de carrière regroupe désormais le journal de service avec les grades, affectations, qualifications et décorations. Dans le bureau Effectifs, l’onglet À traiter rassemble les décisions en attente : corrections, élévations, échéances et dossiers incomplets. Le système propose ; le responsable décide. Rechargez le portail (Ctrl+F5).', [
+                'Timeline de carrière unifiée (journal de service inclus)',
+                'Onglet Effectifs « À traiter » avec file d’actions',
+                'Écriture automatique du journal lors d’une élévation, d’une décoration ou d’une correction confirmée',
+            ], [
+                'Le compteur « à traiter » du bureau pointe vers la boîte de travail RH',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Ma situation → Carrière pour la frise. Dans Effectifs, ouvrez À traiter pour la file d’actions.',
+            ], 'Portail Athena'),
+            $pr(752, '2026-10-02', 'Unité & rôle : voir et annuler une demande', 'Sur Modifier ma fiche → Unité & rôle, une demande en attente s’affiche avec le détail des changements proposés. Vous pouvez l’annuler vous-même tant qu’elle n’est pas traitée. Un tableau rappelle l’historique des demandes (confirmées, refusées ou annulées). Rechargez le portail (Ctrl+F5).', [
+                'Panneau « Demande en attente » avec le détail des changements',
+                'Bouton pour annuler sa propre demande en cours',
+                'Tableau d’historique des demandes Unité & rôle',
+            ], [
+                'Formulaire d’affectation toujours verrouillé tant qu’une demande est ouverte',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Avec une demande en attente, ouvrez Unité & rôle : vous devez voir le détail, pouvoir annuler, et consulter l’historique.',
+            ], 'Portail Athena'),
             $pr(751, '2026-10-02', 'Unité & rôle : situation claire, demande distincte', 'Sur Modifier ma fiche, l’onglet Unité & rôle présente d’abord votre situation (unité, place, emploi, grade). Hors encadrement, vous proposez un changement : ce n’est pas une gestion directe. Si une demande est déjà en attente, le formulaire d’affectation est verrouillé. Le tableau des affectations est plus lisible. Rechargez le portail (Ctrl+F5).', [
                 'En-tête avec résumé de la situation actuelle',
                 'Sections séparées : grade, affectations, emploi',
