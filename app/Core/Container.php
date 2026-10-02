@@ -2599,6 +2599,11 @@ class Container
                 self::get(\App\Services\Cooperation\CooperationCatalogService::class),
                 self::get(\App\Services\Cooperation\CooperationAnnouncementDispatcher::class)
             ),
+            \App\Controllers\Web\CooperationSearchApiController::class => new \App\Controllers\Web\CooperationSearchApiController(
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Web\OperationalBoardController::class => new \App\Controllers\Web\OperationalBoardController(
                 self::get(\App\Repositories\PlanningEntryRepository::class),
                 self::get(UserRepository::class),

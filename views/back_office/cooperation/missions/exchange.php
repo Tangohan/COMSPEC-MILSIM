@@ -73,8 +73,9 @@ if (!empty($grants)) {
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">Unité destinataire</label>
-                <select name="consumer_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" required>
+                <label for="consumer_tenant_id" class="block text-xs font-bold text-slate-500 mb-1">Unité destinataire</label>
+                <select id="consumer_tenant_id" name="consumer_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" required
+                        data-coop-combobox data-source="local" data-placeholder="Rechercher une unité engagée…">
                     <option value="">— Choisir —</option>
                     <?php foreach ($participants as $p): ?>
                     <?php if (in_array(($p['role'] ?? ''), ['partner', 'co_lead'], true) && ($p['status'] ?? '') === 'active'): ?>
@@ -87,6 +88,7 @@ if (!empty($grants)) {
                 <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ajouter l’autorisation</button>
             </div>
         </form>
+        <?php require base_path('views/back_office/cooperation/missions/_combobox_assets.php'); ?>
 
         <?php if (!empty($grants)): ?>
         <h3 class="mt-8 text-xs font-black uppercase tracking-wider text-slate-500">Autorisations actives</h3>

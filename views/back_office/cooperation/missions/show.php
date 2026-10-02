@@ -269,16 +269,21 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
             <?php endif; ?>
             <div class="flex-1 min-w-[200px]">
                 <label for="partner_tenant_id" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1"><?= $reinforcement ? 'Inviter une unité en renfort' : 'Inviter une unité partenaire' ?></label>
-                <select id="partner_tenant_id" name="partner_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" required data-coop-tenant-picker>
+                <select id="partner_tenant_id" name="partner_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" required
+                        data-coop-combobox data-source="remote" data-required="1"
+                        data-endpoint="<?= htmlspecialchars(url('back-office/cooperation/api/tenants/search'), ENT_QUOTES, 'UTF-8') ?>"
+                        data-mission-id="<?= (int) $sid ?>" data-multiple-name="partner_tenant_ids[]" data-fallback-name="partner_tenant_id"
+                        data-placeholder="Rechercher une ou plusieurs unités…">
                     <option value="">— Choisir —</option>
                     <?php foreach ($partners as $t): ?>
                     <option value="<?= (int) ($t['id'] ?? 0) ?>"<?= empty($t['selectable']) ? ' disabled' : '' ?>><?= htmlspecialchars((string) ($t['name'] ?? '') . (!empty($t['state_label']) ? ' — ' . $t['state_label'] : ''), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
-                <p class="mt-1 text-xs text-slate-500">Les unités déjà invitées ou engagées sont grisées. Une unité ayant refusé ou retirée peut être réinvitée.</p>
+                <p class="mt-1 text-xs text-slate-500">Plusieurs unités peuvent être invitées en une fois. Celles déjà invitées ou engagées ne sont pas sélectionnables ; une unité ayant refusé ou retirée peut être réinvitée.</p>
             </div>
-            <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Envoyer l’invitation</button>
+            <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Envoyer les invitations</button>
         </form>
+        <?php require base_path('views/back_office/cooperation/missions/_combobox_assets.php'); ?>
         <?php endif; ?>
 
         <?php if ($pilotActions && in_array($status, ['draft', 'pending'], true)): ?>
@@ -498,7 +503,10 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1" for="member_user_id">Membre</label>
-                <select id="member_user_id" name="member_user_id" class="rounded-lg border border-slate-200 px-3 py-2.5 text-sm min-w-[200px]" required>
+                <select id="member_user_id" name="member_user_id" class="rounded-lg border border-slate-200 px-3 py-2.5 text-sm min-w-[200px]" required
+                        data-coop-combobox data-source="remote"
+                        data-endpoint="<?= htmlspecialchars(url('back-office/cooperation/api/members/search'), ENT_QUOTES, 'UTF-8') ?>"
+                        data-mission-id="<?= (int) $sid ?>" data-placeholder="Rechercher un membre de votre unité…">
                     <option value="">— Choisir —</option>
                     <?php foreach ($userPicker as $u): ?>
                     <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
@@ -515,6 +523,7 @@ $isPartner = ($myParticipant['role'] ?? '') === 'partner';
             </div>
             <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Désigner</button>
         </form>
+        <?php require base_path('views/back_office/cooperation/missions/_combobox_assets.php'); ?>
         <?php endif; ?>
     </section>
     <?php endif; ?>

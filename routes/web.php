@@ -1806,6 +1806,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/cooperation/announcements/edit', [CooperationAnnouncementsWebController::class, 'edit'], $interteamMw);
     $router->post('/back-office/cooperation/announcements/save', [CooperationAnnouncementsWebController::class, 'save'], $interteamMw);
     $router->post('/back-office/cooperation/announcements/revert', [CooperationAnnouncementsWebController::class, 'revert'], $interteamMw);
+    $router->get('/back-office/cooperation/api/tenants/search', [\App\Controllers\Web\CooperationSearchApiController::class, 'tenants'], $interteamMw);
+    $router->get('/back-office/cooperation/api/members/search', [\App\Controllers\Web\CooperationSearchApiController::class, 'members'], $interteamMw);
     $router->get('/back-office/cooperation/missions', [InterteamMissionWebController::class, 'index'], $interteamMw);
     $router->get('/back-office/cooperation/missions/create', [InterteamMissionWebController::class, 'create'], $interteamMw);
     $router->post('/back-office/cooperation/missions', [InterteamMissionWebController::class, 'store'], $interteamMw);

@@ -25,6 +25,7 @@ use App\Services\Cooperation\CooperationProgress;
 use App\Services\Cooperation\CooperationTransitionRules;
 use App\Services\Cooperation\CooperationWorkflowService;
 use App\Services\Interteam\InterteamCoopForumService;
+use App\Support\CooperationAccess;
 use App\Support\CooperationDictionary;
 
 class InterteamMissionWebController
@@ -2255,31 +2256,12 @@ class InterteamMissionWebController
 
     private function canManageInterteam(): bool
     {
-        if (!function_exists('can')) {
-            return false;
-        }
-        $gate = Gate::getInstance();
-
-        return can('interteam.missions.manage')
-            || can('cooperation.missions.manage')
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access')
-            || $gate->allows('admin.system');
+        return CooperationAccess::canManage();
     }
 
     private function canRespondInterteam(): bool
     {
-        if (!function_exists('can')) {
-            return false;
-        }
-        $gate = Gate::getInstance();
-
-        return can('interteam.missions.respond')
-            || can('cooperation.missions.respond')
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access')
-            || $gate->allows('admin.system')
-            || $this->canManageInterteam();
+        return CooperationAccess::canRespond();
     }
 
     private function uniqueSlugFromTitle(string $title): string
