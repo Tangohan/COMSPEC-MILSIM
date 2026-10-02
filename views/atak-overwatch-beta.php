@@ -753,32 +753,32 @@ $icon = static function (string $path): string {
 
     <aside class="ow-chat" id="ow-chat" aria-label="Tchat opérationnel">
       <header><span>●</span> Transmissions <b id="ow-comms-unread" class="ow-unread" hidden></b></header>
-      <div class="ow-tabs" role="tablist">
-        <button type="button" class="is-active" data-chat-tab="channels">Canaux <span class="ow-unread" data-unread-tab="channels" hidden></span></button>
-        <button type="button" data-chat-tab="contacts">Contacts</button>
-        <button type="button" data-chat-tab="squads">Groupes</button>
-        <button type="button" data-chat-tab="support">Support <span class="ow-unread" data-unread-tab="support" hidden></span></button>
+      <div class="ow-tabs" role="tablist" aria-label="Transmissions">
+        <button type="button" class="is-active" data-chat-tab="channels" title="Discuter sur les canaux de mission">Canaux <span class="ow-unread" data-unread-tab="channels" hidden></span></button>
+        <button type="button" data-chat-tab="contacts" title="Tous les contacts suivis et leur état de liaison">Contacts</button>
+        <button type="button" data-chat-tab="squads" title="Groupes sur la carte, tâches et alertes plein écran">Groupes</button>
+        <button type="button" data-chat-tab="support" title="Signaler un problème technique">Support <span class="ow-unread" data-unread-tab="support" hidden></span></button>
       </div>
       <div class="ow-chat-main" data-chat-panel="channels">
-        <label class="ow-search"><span>⌕</span><input id="ow-channel-filter" type="search" placeholder="Canal ou indicatif…"></label>
-        <label class="ow-search"><span>⌕</span><input id="ow-comms-search" type="search" placeholder="Rechercher dans le fil…"></label>
-        <div id="ow-channel-list" class="ow-channel-list"></div>
+        <label class="ow-search ow-channel-filter-wrap" hidden><span aria-hidden="true">⌕</span><input id="ow-channel-filter" type="search" placeholder="Filtrer les canaux…" aria-label="Filtrer les canaux"></label>
+        <div id="ow-channel-list" class="ow-channel-list" role="group" aria-label="Canaux"></div>
+        <label class="ow-search ow-comms-search-wrap"><span aria-hidden="true">⌕</span><input id="ow-comms-search" type="search" placeholder="Rechercher dans les messages…" aria-label="Rechercher dans les messages du canal"></label>
         <div class="ow-fil-head">
           <div class="ow-fil-title"><span class="dot"></span> Fil</div>
           <div class="ow-fil-actions">
-            <button type="button" class="ow-fil-action" id="ow-chat-purge">Vider le fil</button>
-            <label class="ow-fil-toggle" title="Afficher le texte tel qu’il a été reçu"><input type="checkbox" id="ow-chat-raw"> Source</label>
+            <button type="button" class="ow-fil-action" id="ow-chat-purge" title="Efface tous les messages de ce canal, pour tout le poste">Vider le canal</button>
+            <label class="ow-fil-toggle" title="Afficher chaque message tel qu’il a été reçu du jeu, avec ses codes"><input type="checkbox" id="ow-chat-raw"> Texte brut</label>
           </div>
         </div>
         <div id="ow-chat-purge-box" class="ow-confirm" hidden></div>
-        <div id="ow-chat-log" class="ow-fil" aria-live="polite"></div>
-        <div class="ow-fil-legend">
+        <div id="ow-chat-log" class="ow-fil" aria-live="polite"><p class="ow-fil-empty">Chargement des messages…</p></div>
+        <div class="ow-fil-legend" aria-label="Couleur de la barre : urgence du message">
           <span><i style="background:var(--prio-routine)"></i>Routine</span>
           <span><i style="background:var(--prio-priority)"></i>Priorité</span>
           <span><i style="background:var(--prio-flash)"></i>Urgent</span>
         </div>
         <form class="ow-chat-compose" id="ow-chat-form">
-          <input id="ow-chat-input" maxlength="500" placeholder="Message sur le canal actif…" autocomplete="off">
+          <input id="ow-chat-input" maxlength="500" placeholder="Écrire sur #Général…" autocomplete="off" aria-label="Votre message">
           <button type="submit">Envoyer</button>
         </form>
       </div>
@@ -815,18 +815,18 @@ $icon = static function (string $path): string {
         </div>
       </div>
       <div class="ow-chat-main" data-chat-panel="squads" hidden>
-        <p class="ow-help">Les opérateurs d’un même groupe sont reliés sur la carte. Cliquez un groupe pour le cadrer.</p>
+        <p class="ow-help">Les membres d’un même groupe sont reliés sur la carte. Cliquez un groupe pour centrer la carte dessus, ou préparez-lui une tâche.</p>
         <div id="ow-group-task-host"></div>
         <div id="ow-fs-alert-host"></div>
         <div class="ow-section-label">Groupes sur la carte</div>
         <div id="ow-squad-list" class="ow-contact-list" aria-live="polite"></div>
       </div>
       <div class="ow-chat-main" data-chat-panel="support" hidden>
-        <p class="ow-help">Assistance technique, séparée des canaux de mission. Le poste surveille aussi les crashs et les écarts de version Overwatch.</p>
+        <p class="ow-help">Un souci technique ? Écrivez-le ici : ce canal est séparé de la mission. Le poste signale aussi tout seul les plantages et les versions du mod qui ne correspondent pas.</p>
         <div id="ow-support-auto" class="ow-support-auto" aria-live="polite"></div>
         <div id="ow-support-log" class="ow-fil"></div>
         <form class="ow-chat-compose" id="ow-support-form">
-          <input id="ow-support-input" maxlength="500" placeholder="Décrire le problème…" autocomplete="off">
+          <input id="ow-support-input" maxlength="500" placeholder="Que se passe-t-il ? Ex. : la carte ne se charge plus" autocomplete="off" aria-label="Décrire le problème">
           <button type="submit">Signaler</button>
         </form>
       </div>
@@ -1141,6 +1141,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-sounds.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-p2.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-settings.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-settings.js')) ?>"></script>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
     <pattern id="ow-hatch-diag" patternUnits="userSpaceOnUse" width="8" height="8">

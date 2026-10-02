@@ -2927,6 +2927,23 @@
     }).catch(function () {});
   }
 
+  var CHANNEL_HINTS = {
+    general: 'Toute la mission',
+    groupe: 'Votre groupe',
+    commandement: 'Chefs et état-major',
+    jtac: 'Appui aérien',
+    air: 'Équipages aériens'
+  };
+  function channelHint(key) { return CHANNEL_HINTS[key] || 'Canal de mission'; }
+
+  function syncActiveChannelChrome() {
+    var label = channelLabel(activeChannel);
+    var title = document.querySelector('.ow-fil-title');
+    if (title) title.innerHTML = '<span class="dot"></span> Fil <b class="ow-fil-channel">#' + escapeHtml(label) + '</b>';
+    var input = document.getElementById('ow-chat-input');
+    if (input) input.placeholder = 'Écrire sur #' + label + '…';
+  }
+
   function renderChannels() {
     var filter = (document.getElementById('ow-channel-filter').value || '').toLowerCase();
     var rows = channels.filter(function (ch) {
@@ -2939,20 +2956,23 @@
         return { channel_key: key, label: channelLabel(key) };
       });
     }
+    var filterWrap = document.querySelector('.ow-channel-filter-wrap');
+    if (filterWrap) filterWrap.hidden = channels.length <= 6 && !filter;
     document.getElementById('ow-channel-list').innerHTML = rows.map(function (ch) {
       var key = String(ch.channel_key || ch.key || 'general');
       var unread = key === activeChannel ? 0 : Number(unreadByChannel[key] || 0);
       var right = unread > 0
         ? '<em class="ow-unread" aria-label="' + unread + ' messages non lus">' + escapeHtml(unreadLabel(unread)) + '</em>'
-        : '<em class="online is-live">Direct</em>';
+        : '';
       return '<button type="button" class="ow-channel' + (key === activeChannel ? ' is-active' : '') + '" data-channel="' +
-        escapeHtml(key) + '">' + channelIcon(key) +
+        escapeHtml(key) + '" title="' + escapeHtml(channelHint(key)) + '" aria-pressed="' + (key === activeChannel ? 'true' : 'false') + '">' + channelIcon(key) +
         '<span><div class="cname">' + escapeHtml(ch.label || channelLabel(key)) +
         '</div><div class="cmeta">' + escapeHtml(key === activeChannel && chatMessages.length
           ? (parseCommsBody(chatMessages[chatMessages.length - 1].body).text || String(chatMessages[chatMessages.length - 1].body || '')).slice(0, 42)
-          : 'Canal mission') +
+          : channelHint(key)) +
         '</div></span>' + right + '</button>';
     }).join('');
+    syncActiveChannelChrome();
   }
 
   function parseMessageBadges(body) {
@@ -2972,8 +2992,12 @@
   function renderChatLog(targetId, rows) {
     var host = document.getElementById(targetId);
     if (!host) return;
+    // Rester en bas seulement si le lecteur y était déjà (ou au premier affichage / changement de canal).
+    var stick = !host.childElementCount || host.dataset.owChannel !== String(activeChannel) ||
+      (host.scrollHeight - host.scrollTop - host.clientHeight) < 48;
+    var q = '';
     if (targetId === 'ow-chat-log') {
-      var q = String((document.getElementById('ow-comms-search') || {}).value || '').trim().toLowerCase();
+      q = String((document.getElementById('ow-comms-search') || {}).value || '').trim().toLowerCase();
       if (q) {
         rows = rows.filter(function (row) {
           var parsed = parseCommsBody(row.body);
@@ -3009,8 +3033,9 @@
       var groupKey = author + '|' + net;
       if (groupKey !== lastGroupKey) {
         html += (lastGroupKey ? '</div></div>' : '') +
-          '<div class="ow-msg-group"><div class="ow-group-head"><span class="ow-author">' + escapeHtml(author) +
-          '</span>' + (net ? '<span class="ow-net-tag ' + (net === 'GROUPE' ? 'groupe' : 'squad') + '">' + escapeHtml(net === 'GROUPE' ? 'Groupe' : 'Squad') + '</span>' : '') +
+          '<div class="ow-msg-group' + (isOwnChatRow(row) ? ' is-own' : '') + '"><div class="ow-group-head"><span class="ow-author">' + escapeHtml(author) +
+          (isOwnChatRow(row) ? '<span class="ow-own-tag">vous</span>' : '') +
+          '</span>' + (net ? '<span class="ow-net-tag ' + (net === 'GROUPE' ? 'groupe' : 'squad') + '">' + escapeHtml(net === 'GROUPE' ? 'Groupe' : 'Escouade') + '</span>' : '') +
           '<span class="ow-group-time">' + escapeHtml(fmtClock(real)) + '</span></div><div class="ow-rows">';
         lastGroupKey = groupKey;
       }
@@ -3028,8 +3053,14 @@
         '</div>' + ownDel + '<div class="ow-raw-preview">' + escapeHtml(raw) + '</div></div>';
     });
     if (lastGroupKey) html += '</div></div>';
-    host.innerHTML = html || '<p class="ow-fil-empty">Aucun message pour le moment.</p>';
-    host.scrollTop = host.scrollHeight;
+    var empty = q
+      ? '<p class="ow-fil-empty">Aucun message ne contient « ' + escapeHtml(q) + ' ».</p>'
+      : (targetId === 'ow-support-log'
+        ? '<p class="ow-fil-empty">Aucun signalement. Décrivez ci-dessous ce qui ne fonctionne pas : l’équipe technique vous répondra ici.</p>'
+        : '<p class="ow-fil-empty">Aucun message sur ce canal pour le moment. Écrivez le premier ci-dessous.</p>');
+    host.innerHTML = html || empty;
+    host.dataset.owChannel = String(activeChannel);
+    if (stick) host.scrollTop = host.scrollHeight;
   }
 
   function loadChannels() {
@@ -3052,7 +3083,12 @@
         }
         markChannelRead(channel, rows);
         return rows;
-      }).catch(function () {});
+      }).catch(function () {
+        var host = document.getElementById(channel === 'support' ? 'ow-support-log' : 'ow-chat-log');
+        if (host && !host.querySelector('.ow-msg-group')) {
+          host.innerHTML = '<p class="ow-fil-empty">Messages indisponibles pour l’instant : la liaison ne répond pas. Le poste réessaie tout seul.</p>';
+        }
+      });
   }
 
   function dropChatLocal(id) {
@@ -3084,15 +3120,27 @@
     if (!host) return;
     var label = channelLabel(activeChannel);
     host.hidden = false;
-    host.innerHTML = '<p>Effacer l’historique de <strong>' + escapeHtml(label) + '</strong> pour tout le poste et les opérateurs ?</p>' +
-      '<p class="ow-help">Cette action est définitive.</p>' +
+    host.innerHTML = '<p>Effacer tous les messages de <strong>#' + escapeHtml(label) + '</strong> ?</p>' +
+      '<p class="ow-help">L’historique disparaît pour tout le monde, joueurs compris. Impossible d’annuler.</p>' +
       '<div class="ow-form-actions">' +
-      '<button type="button" class="ow-primary" id="ow-purge-channel">Vider ce canal</button>' +
-      '<button type="button" class="ow-fil-action" id="ow-purge-all">Tous les canaux</button>' +
-      '<button type="button" class="ow-fil-action" id="ow-purge-no">Annuler</button></div>';
+      '<button type="button" class="ow-fil-action" id="ow-purge-no">Annuler</button>' +
+      '<button type="button" class="ow-danger" id="ow-purge-channel">Effacer #' + escapeHtml(label) + '</button>' +
+      '<button type="button" class="ow-fil-action ow-fil-action--quiet" id="ow-purge-all">Tous les canaux…</button></div>';
     document.getElementById('ow-purge-no').addEventListener('click', function () { host.hidden = true; host.innerHTML = ''; });
     document.getElementById('ow-purge-channel').addEventListener('click', function () { runChatPurge('EFFACER_CANAL'); });
-    document.getElementById('ow-purge-all').addEventListener('click', function () { runChatPurge('EFFACER_TOUT'); });
+    var allBtn = document.getElementById('ow-purge-all');
+    allBtn.addEventListener('click', function () {
+      // Deuxième clic obligatoire : l’effacement de tous les canaux est bien plus lourd.
+      if (allBtn.dataset.armed !== '1') {
+        allBtn.dataset.armed = '1';
+        allBtn.className = 'ow-danger';
+        allBtn.textContent = 'Confirmer : effacer tous les canaux';
+        return;
+      }
+      runChatPurge('EFFACER_TOUT');
+    });
+    var noBtn = document.getElementById('ow-purge-no');
+    if (noBtn) noBtn.focus();
   }
 
   function runChatPurge(confirmToken) {
@@ -3116,7 +3164,7 @@
       toast((payload && payload.message) || 'Historique effacé.');
     }).catch(function (err) {
       var code = String(err && err.message || '');
-      toast(code === '403' || code === '401' ? 'Seul le poste peut vider l’historique.' : 'Impossible de vider l’historique.');
+      toast(code === '403' || code === '401' ? 'Seul un responsable du poste peut effacer l’historique.' : 'L’historique n’a pas pu être effacé. Réessayez.');
     });
   }
 
@@ -7423,21 +7471,46 @@
   document.querySelectorAll('[data-chat-tab]').forEach(function (button) {
     button.addEventListener('click', function () { switchChatTab(button.dataset.chatTab); });
   });
-  document.getElementById('ow-chat-form').addEventListener('submit', function (event) {
-    event.preventDefault();
-    var input = document.getElementById('ow-chat-input');
-    if (!input) return;
-    sendChat(activeChannel, input.value).then(function () {
-      input.value = '';
-    }).catch(function () {
-      toast('Message non envoyé.');
+  function bindComposer(formId, inputId, channelFn, failText) {
+    var form = document.getElementById(formId);
+    var input = document.getElementById(inputId);
+    if (!form || !input) return;
+    var button = form.querySelector('button[type="submit"]');
+    var counter = document.createElement('span');
+    counter.className = 'ow-compose-count';
+    counter.setAttribute('aria-live', 'polite');
+    form.insertBefore(counter, button);
+    var busy = false;
+    function refresh() {
+      var len = input.value.length;
+      var max = Number(input.getAttribute('maxlength') || 500);
+      counter.textContent = len > max - 100 ? (max - len) + ' caractères restants' : '';
+      if (button) button.disabled = busy || !input.value.trim();
+    }
+    input.addEventListener('input', refresh);
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (busy || !input.value.trim()) return;
+      busy = true;
+      form.classList.add('is-sending');
+      refresh();
+      sendChat(channelFn(), input.value).then(function () {
+        input.value = '';
+      }).catch(function () {
+        toast(failText);
+      }).then(function () {
+        busy = false;
+        form.classList.remove('is-sending');
+        refresh();
+        input.focus();
+      });
     });
-  });
-  document.getElementById('ow-support-form').addEventListener('submit', function (event) {
-    event.preventDefault();
-    var input = document.getElementById('ow-support-input');
-    sendChat('support', input.value).then(function () { input.value = ''; });
-  });
+    refresh();
+  }
+  bindComposer('ow-chat-form', 'ow-chat-input', function () { return activeChannel; },
+    'Message non envoyé : la liaison ne répond pas. Votre texte est conservé, réessayez.');
+  bindComposer('ow-support-form', 'ow-support-input', function () { return 'support'; },
+    'Signalement non envoyé. Votre texte est conservé, réessayez dans un instant.');
   document.querySelectorAll('[data-command]').forEach(function (button) {
     button.addEventListener('click', function () { togglePalette(true); });
   });
