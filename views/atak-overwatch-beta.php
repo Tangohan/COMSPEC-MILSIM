@@ -319,6 +319,10 @@ $icon = static function (string $path): string {
         <p class="ow-help" id="ow-relay-mode-help">Par défaut, le téléphone transmet sans relais.</p>
         <p class="ow-kicker">Veille radio</p>
         <div id="ow-df-list"><p class="ow-help">Aucun émetteur relevé pour le moment.</p></div>
+        <p class="ow-kicker">Fieldwatch — veille RF</p>
+        <label class="ow-toggle"><input type="checkbox" id="ow-rf-layer" checked> Détections RF (Wi‑Fi / BLE)</label>
+        <p class="ow-help">Hits passifs remontés depuis l’app Fieldwatch en jeu. Zeus pose les émetteurs ; le téléphone scanne à proximité.</p>
+        <div id="ow-rf-list"><p class="ow-help">Aucune détection RF pour le moment.</p></div>
         <label class="ow-toggle"><input type="checkbox" id="ow-squad-links" checked> Relier les membres d’un même groupe</label>
         <label class="ow-row">Épaisseur des liens
           <input type="range" id="ow-squad-width" min="0.5" max="2.5" step="0.25" value="0.75">

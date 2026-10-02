@@ -497,6 +497,36 @@ DLL command `Ping` is extension liveness, not this HTTP route (both exist).
 
 ---
 
+## ICD-RF-001 — Fieldwatch RF hits (Lot 1)
+
+| Field | Value |
+| ----- | ----- |
+| Interface ID | ICD-RF-001 |
+| Endpoint | `POST /api/atak/rf-hits` · `GET /api/atak/rf-hits` |
+| DLL | `SendRfHit` |
+| Status | EXPERIMENTAL |
+
+```json
+{
+  "mapId": 1,
+  "emitter_uid": "rf_cam_12",
+  "label": "IPCam-Lobby",
+  "band": "wifi",
+  "signature_id": "wifi_ipcam",
+  "pos_x": 15820.0,
+  "pos_y": 17100.0,
+  "signal_dbm": -62,
+  "sensor_callsign": "ALPHA-1",
+  "ssid": "IPCam-Lobby",
+  "mac": "AA:BB:CC:12:34:56"
+}
+```
+
+`GET /api/atak/rf-hits?mode=markers` returns the latest hit per `emitter_uid` (map layer).  
+`band` values: `wifi`, `ble`, `tracker`, `camera`, `phone`, `unknown`.
+
+---
+
 ## ICD-GAME-001 — Operations tactical snapshot
 
 | Field | Value |

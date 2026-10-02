@@ -2394,6 +2394,18 @@ if ($atakMapConfig) {
             <p class="atak-panel-hint">Aucun relèvement pour le moment.</p>
           </div>
         </div>
+        <div class="atak-sigint-panel">
+          <div class="atak-panel-strip">
+            <span class="atak-panel-strip-title">Fieldwatch — veille RF</span>
+            <div class="atak-panel-strip-actions">
+              <button type="button" class="atak-ops-btn" id="atak-rf-refresh" title="Actualiser">Actualiser</button>
+            </div>
+          </div>
+          <p class="atak-panel-hint">Détections Wi‑Fi / BLE simulées depuis l’app Fieldwatch en jeu. Cliquez une entrée pour centrer la carte.</p>
+          <div id="atak-rf-list" class="atak-sigint-list">
+            <p class="atak-panel-hint">Aucune détection RF pour le moment.</p>
+          </div>
+        </div>
       </div>
       <div class="atak-tabs-content" id="tab-situation" role="tabpanel">
         <div class="atak-sitrep-panel">
@@ -3333,6 +3345,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-salute.js"></script>
   <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sigint.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-rf-hits.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
@@ -3885,6 +3898,9 @@ if ($atakMapConfig) {
         }
         if (tab === 'identification' && window.ATAKSIGINT && typeof window.ATAKSIGINT.refresh === 'function') {
           window.ATAKSIGINT.refresh();
+        }
+        if (tab === 'identification' && window.ATAKRFHITS && typeof window.ATAKRFHITS.refresh === 'function') {
+          window.ATAKRFHITS.refresh();
         }
         if (tab === 'situation' && window.ATAKSitrep && typeof window.ATAKSitrep.onTabActivated === 'function') {
           window.ATAKSitrep.onTabActivated();

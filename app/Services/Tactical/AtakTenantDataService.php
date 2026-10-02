@@ -34,6 +34,7 @@ final class AtakTenantDataService
         'atak_nine_line',
         'atak_designator_targets',
         'atak_sigint_reports',
+        'atak_rf_hits',
         'atak_last_activity',
         'atak_air_assets',
         'atak_map_shapes',

@@ -23,6 +23,8 @@ private _html = [
     "<t color='#E8F2FA'>Si vous voyez le pseudo de jeu (ex. NewPI) au lieu du prénom et du nom Athena : compte non connecté en jeu. Appuyez sur Entrer, ou Appairer / e-mail / Steam. Steam n’est pas obligatoire. Quand c’est bon, le vrai nom apparaît et le bandeau passe à Connecté.</t><br/><br/>",
     "<t color='#7CFF9A' size='1.05'>Relais AT</t><br/>",
     "<t color='#E8F2FA'>L’application Relais AT montre le mât le plus proche : nom, grille, débit, fiabilité, places, puissance, adresse réseau, passerelle et certificat. Un mât détruit passe hors service. Les mâts se posent dans l’éditeur (Modules COMSPEC) ou via Zeus.</t><br/><br/>",
+    "<t color='#7CFF9A' size='1.05'>Fieldwatch</t><br/>",
+    "<t color='#E8F2FA'>Scan RF passif (Wi‑Fi / BLE simulés). Zeus pose des émetteurs ; l’app Fieldwatch liste ce qui est à portée et remonte les hits au poste (calque Veille RF).</t><br/><br/>",
     "<t color='#7CFF9A' size='1.05'>Appui aérien et manifeste</t><br/>",
     "<t color='#E8F2FA'>Depuis le tiroir, Appui aérien envoie une demande au poste. Le manifeste reprend l’appareil, les personnes à bord, l’emport, les capteurs et le canevas d’attaque. Vous vérifiez, puis transmettez. Les deux restent dans le téléphone.</t>"
 ] joinString "";

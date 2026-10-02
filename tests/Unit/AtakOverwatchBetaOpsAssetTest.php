@@ -30,6 +30,8 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('id="ow-progress-trail"', $view);
         self::assertStringContainsString('id="ow-geo-places"', $view);
         self::assertStringContainsString('id="ow-df-list"', $view);
+        self::assertStringContainsString('id="ow-rf-list"', $view);
+        self::assertStringContainsString('id="ow-rf-layer"', $view);
         self::assertStringNotContainsString('Catalogue satellites', $view);
         self::assertStringNotContainsString('data-ctx="ring250"', $view);
 
@@ -66,6 +68,8 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('/api/atak/relays/', $ops);
         self::assertStringContainsString('Clic droit pour le retirer', $ops);
         self::assertStringContainsString('/api/atak/sigint/zones', $ops);
+        self::assertStringContainsString('renderRfHits', $ops);
+        self::assertStringContainsString('/api/atak/rf-hits?mode=markers', $ops);
         self::assertStringContainsString('/api/replay/mission/', $ops);
         self::assertStringContainsString('circleByRadius', $ops);
 

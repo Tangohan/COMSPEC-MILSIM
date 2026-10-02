@@ -10705,6 +10705,83 @@ class AtakApiController
         return Response::json($rows);
     }
 
+    /**
+     * Fieldwatch Lot 1 — POST hit RF passif (Wi‑Fi / BLE simulés).
+     */
+    public function rfHitsStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? self::DEFAULT_MAP_ID);
+        $emitterUid = (string) ($body['emitter_uid'] ?? $body['uid'] ?? '');
+        $label = (string) ($body['label'] ?? $body['call_sign'] ?? $body['callsign'] ?? $body['ssid'] ?? 'RF');
+        $band = (string) ($body['band'] ?? $body['type'] ?? 'unknown');
+        $signatureId = (string) ($body['signature_id'] ?? $body['signature'] ?? '');
+        $posX = (float) ($body['pos_x'] ?? $body['pos'][0] ?? 0);
+        $posY = (float) ($body['pos_y'] ?? $body['pos'][1] ?? 0);
+        $signalDbm = isset($body['signal_dbm']) || isset($body['rssi'])
+            ? (float) ($body['signal_dbm'] ?? $body['rssi'])
+            : null;
+        $sensor = (string) ($body['sensor_callsign'] ?? $body['sensor'] ?? $body['author'] ?? '');
+        $payload = null;
+        if (isset($body['payload']) && is_array($body['payload'])) {
+            $payload = $body['payload'];
+        } else {
+            $extra = [];
+            foreach (['ssid', 'mac', 'vendor', 'channel', 'kind', 'note'] as $key) {
+                if (isset($body[$key]) && $body[$key] !== '' && $body[$key] !== null) {
+                    $extra[$key] = $body[$key];
+                }
+            }
+            if ($extra !== []) {
+                $payload = $extra;
+            }
+        }
+        $row = $this->atak->addRfHit(
+            $tenantId,
+            $mapId,
+            $emitterUid,
+            $label,
+            $band,
+            $signatureId,
+            $posX,
+            $posY,
+            $signalDbm,
+            $sensor,
+            $payload
+        );
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_RF_HIT,
+            'Détection RF — ' . $label,
+            $sensor !== '' ? $sensor : (string) $label
+        );
+
+        return Response::json($row, 201);
+    }
+
+    public function rfHitsIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $limit = min((int) ($request->query('limit') ?: 80), 200);
+        $mode = strtolower(trim((string) ($request->query('mode') ?? 'list')));
+        if ($mode === 'markers' || $mode === 'latest') {
+            return Response::json($this->atak->getRfHitMarkers($tenantId, $mapId, $limit));
+        }
+
+        return Response::json($this->atak->getRfHits($tenantId, $mapId, $limit));
+    }
+
     public function intelPhotosIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

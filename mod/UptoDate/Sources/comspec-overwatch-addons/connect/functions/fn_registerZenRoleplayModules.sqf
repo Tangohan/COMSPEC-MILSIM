@@ -125,4 +125,45 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
     "\A3\ui_f\data\map\markers\military\flag_CA.paa"
 ] call zen_custom_modules_fnc_register;
 
+[
+    "COMSPEC Roleplay",
+    "Émetteur RF Fieldwatch",
+    {
+        params ["_pos", "_obj"];
+        if (!(_pos isEqualType []) || {count _pos < 2}) then { _pos = [0, 0, 0]; };
+        if (!isNull _obj) then { _pos = getPosATL _obj; };
+        [
+            "Émetteur RF Fieldwatch",
+            [
+                ["EDIT", ["Nom / SSID", "Nom affiché dans Fieldwatch."], ["IPCam-Lobby"]],
+                ["COMBO", ["Bande", "Type d’émission simulée."], [
+                    ["wifi", "ble", "tracker", "camera", "phone"],
+                    ["Wi‑Fi", "Bluetooth LE", "Tracker", "Caméra IP", "Téléphone"],
+                    0
+                ]],
+                ["EDIT", ["Signature", "Identifiant de catalogue."], ["wifi_ipcam"]],
+                ["SLIDER", ["Portée scan (m)", "Distance max de détection."], [10, 300, 80, 0]],
+                ["SLIDER", ["Puissance (dBm)", "Puissance à la source."], [-20, 20, 10, 0]],
+                ["EDIT", ["MAC simulée", "Vide = générée."], [""]]
+            ],
+            {
+                params ["_values", "_args"];
+                _values params ["_label", "_band", "_sig", "_range", "_power", "_mac"];
+                _args params ["_pos"];
+                if (!(_label isEqualType "") || {_label isEqualTo ""}) then { _label = "RF Emitter"; };
+                if (!(_band isEqualType "") || {_band isEqualTo ""}) then { _band = "wifi"; };
+                private _meta = createHashMap;
+                _meta set ["band", _band];
+                _meta set ["signature_id", _sig];
+                _meta set ["power_dbm", _power];
+                _meta set ["mac", _mac];
+                [_pos, _range, _label, _meta] call comspec_overwatch_connect_fnc_placeRfEmitter;
+            },
+            {},
+            [_pos]
+        ] call zen_dialog_fnc_create;
+    },
+    "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa"
+] call zen_custom_modules_fnc_register;
+
 missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesRegistered", true];
