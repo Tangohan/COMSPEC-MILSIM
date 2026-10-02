@@ -296,7 +296,9 @@ final class DevDispatchCatalog
             $pr(755, '2026-10-02', 'JNET plus lisible : arbre des unités, guide et chargement', 'La situation des unités se lit désormais comme un arbre : chaque unité sous son échelon, avec ses disponibles et son activité, et des branches à déplier. Un guide explique les espaces, les échanges et qui voit quoi. Une barre de chargement s’affiche quand on change d’espace, et la page se charge plus vite. Rechargez le portail (Ctrl+F5).', [
                 'Guide « Comment fonctionne JNET », repliable et mémorisé',
                 'Barre de chargement et état « Publication… » sur les boutons',
+                'Photo d’opérateur de l’auteur sur chaque échange',
             ], [
+                'Les visages JNET affichent la photo d’opérateur du dossier, plus la photo de compte',
                 'Situation des unités en arbre aligné, au lieu d’une grille de cartes au même niveau',
                 'Fil d’échelons sur une seule ligne, noms complets dans « Mes espaces »',
                 'Formulaire d’échange replié derrière « Publier un échange », avec des libellés clairs',

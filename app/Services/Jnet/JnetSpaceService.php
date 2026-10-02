@@ -151,7 +151,7 @@ final class JnetSpaceService
                 $flow = array_values(array_filter($flow, static fn (array $e): bool => $e['kind'] === $kindFilter));
             }
             $since = time() - 86400;
-            $data['flow'] = array_slice($this->decorate($tree, $flow, $viewerUserId, $spaceId), 0, 30);
+            $data['flow'] = array_slice($this->decorate($tree, $flow, $viewerUserId, $spaceId, $byUserId), 0, 30);
             $data['flowFilter'] = $kindFilter;
             $data['unitTree'] = $this->unitTree($tree, JnetSpaceTree::ORG, $byUserId, $ops, $lastActivity, 1);
             $data['orgStats'] = [
@@ -183,9 +183,9 @@ final class JnetSpaceService
                     default => $down[] = $e,
                 };
             }
-            $data['received'] = array_slice($this->decorate($tree, $down, $viewerUserId, $spaceId), 0, 12);
-            $data['internal'] = array_slice($this->decorate($tree, $internal, $viewerUserId, $spaceId), 0, 15);
-            $data['sentUp'] = array_slice($this->decorate($tree, $up, $viewerUserId, $spaceId), 0, 12);
+            $data['received'] = array_slice($this->decorate($tree, $down, $viewerUserId, $spaceId, $byUserId), 0, 12);
+            $data['internal'] = array_slice($this->decorate($tree, $internal, $viewerUserId, $spaceId, $byUserId), 0, 15);
+            $data['sentUp'] = array_slice($this->decorate($tree, $up, $viewerUserId, $spaceId, $byUserId), 0, 12);
             $data['members'] = $this->membersOf($tree->node($spaceId)['members'] ?? [], $byUserId);
             $data['subTree'] = $this->unitTree($tree, $spaceId, $byUserId, $ops, $lastActivity, 1);
         }
@@ -349,9 +349,10 @@ final class JnetSpaceService
 
     /**
      * @param list<array<string, mixed>> $rows
+     * @param array<int, array<string, mixed>> $byUserId fiches personnel (photo d'opérateur, indicatif)
      * @return list<array<string, mixed>>
      */
-    private function decorate(JnetSpaceTree $tree, array $rows, int $viewerUserId, int $spaceId): array
+    private function decorate(JnetSpaceTree $tree, array $rows, int $viewerUserId, int $spaceId, array $byUserId = []): array
     {
         $ids = array_map(static fn (array $r): int => (int) $r['id'], $rows);
         $readers = $this->exchanges->readersFor($ids);
@@ -393,6 +394,9 @@ final class JnetSpaceService
                 ],
                 'to' => array_map(fn (int $t): array => $this->spaceRef($tree, $t), $r['targets']),
                 'author' => $author !== '' ? $author : 'Membre',
+                'authorPhoto' => $byUserId[(int) $r['author_user_id']]['photo'] ?? null,
+                'authorInitials' => (string) ($byUserId[(int) $r['author_user_id']]['initials'] ?? mb_strtoupper(mb_substr($author !== '' ? $author : 'M', 0, 2))),
+                'authorHref' => isset($byUserId[(int) $r['author_user_id']]) ? url('jnet/personnel/' . (int) $r['author_user_id']) : '',
                 'requiresAck' => (bool) $r['requires_ack'],
                 'audience' => count($audience),
                 'readCount' => $readCount,

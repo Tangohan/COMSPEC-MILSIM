@@ -1508,3 +1508,43 @@ textarea.jn-input { resize: vertical; }
 @media (max-width: 640px) {
   .jnet-embed.jnet-embed .jn-compose .jn-composer__row { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ——— Auteur d'un échange (photo d'opérateur) ——— */
+
+.jnet-embed.jnet-embed .jn-ex__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--jn-ink-2);
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed a.jn-ex__author:hover b { text-decoration: underline; }
+
+.jnet-embed.jnet-embed .jn-ex__face {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--jn-line-soft);
+  font: 700 0.62rem/1 var(--jn-font);
+  color: var(--jn-ink-2);
+}
+
+.jnet-embed.jnet-embed .jn-ex__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jnet-embed.jnet-embed .jn-avatar {
+  overflow: visible;
+}
+
+.jnet-embed.jnet-embed .jn-avatar img {
+  display: block;
+}

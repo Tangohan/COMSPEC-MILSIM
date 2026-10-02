@@ -1121,13 +1121,10 @@ final class JnetDashboardService
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
         $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? ''));
         $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? ''));
-        $avatar = null;
-        if (function_exists('user_media_public_url')) {
-            $avatar = user_media_public_url($row['avatar_url'] ?? null);
-            if ($avatar === null && !empty($row['character_portrait_path'])) {
-                $avatar = user_media_public_url((string) $row['character_portrait_path']);
-            }
-        }
+        // Photo d'opérateur (portrait du dossier) uniquement : règle du portail, la photo de compte n'est pas utilisée.
+        $avatar = function_exists('personnel_operator_portrait_url')
+            ? personnel_operator_portrait_url($row)
+            : (trim((string) ($row['character_portrait_path'] ?? '')) !== '' ? (string) $row['character_portrait_path'] : null);
         $deployable = $row['deployable'] ?? null;
         $duty = 'active';
         if ($deployable === 0 || $deployable === '0' || $deployable === false) {
