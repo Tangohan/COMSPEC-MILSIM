@@ -773,14 +773,44 @@ class InterteamMissionRepository
         return $row ?: null;
     }
 
+    /**
+     * Consentement validé et non expiré (consent_expires_at, si la colonne existe).
+     */
     public function hasVerifiedConsent(int $missionId, int $userId): bool
     {
+        return $this->consentStatus($missionId, $userId)['state'] === 'valid';
+    }
+
+    /**
+     * État du consentement d’un utilisateur sur une coopération.
+     *
+     * @return array{state: string, until: ?string, keys: list<string>, justification: string}
+     *         state : none (jamais validé) | valid | expired
+     */
+    public function consentStatus(int $missionId, int $userId): array
+    {
         $row = $this->findConsent($missionId, $userId);
-        if (!$row) {
-            return false;
+        $keys = [];
+        $justification = '';
+        if ($row) {
+            $sel = json_decode((string) ($row['selections_json'] ?? ''), true);
+            if (is_array($sel) && is_array($sel['keys'] ?? null)) {
+                $keys = array_values(array_filter(array_map('strval', $sel['keys'])));
+            }
+            $justification = (string) ($row['justification_sensitive'] ?? '');
+        }
+        if (!$row || empty($row['otp_verified_at'])) {
+            return ['state' => 'none', 'until' => null, 'keys' => $keys, 'justification' => $justification];
+        }
+        $until = isset($row['consent_expires_at']) && $row['consent_expires_at'] !== null ? (string) $row['consent_expires_at'] : null;
+        if ($until !== null) {
+            $ts = strtotime($until);
+            if ($ts !== false && $ts <= time()) {
+                return ['state' => 'expired', 'until' => $until, 'keys' => $keys, 'justification' => $justification];
+            }
         }
 
-        return !empty($row['otp_verified_at']);
+        return ['state' => 'valid', 'until' => $until, 'keys' => $keys, 'justification' => $justification];
     }
 
     /**

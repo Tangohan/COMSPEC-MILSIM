@@ -273,6 +273,51 @@ final class CooperationDictionary
         };
     }
 
+    /**
+     * Familles de données regroupées pour le parcours d’autorisation de partage.
+     *
+     * @return array<string, array{label: string, description: string, keys: list<string>}>
+     */
+    public static function dataSharingFamilyGroups(): array
+    {
+        return [
+            'operational' => [
+                'label' => 'Opérationnel',
+                'description' => 'Ce qui sert à coordonner l’action commune.',
+                'keys' => ['brief', 'liaison', 'map', 'readiness', 'material', 'org_structure'],
+            ],
+            'personnel' => [
+                'label' => 'Personnel',
+                'description' => 'Informations sur les personnes engagées.',
+                'keys' => ['identity', 'competency', 'qualification', 'cert_excerpt'],
+            ],
+            'documents' => [
+                'label' => 'Documents',
+                'description' => 'Pièces écrites et traces des réunions.',
+                'keys' => ['documents', 'minutes', 'meeting'],
+            ],
+        ];
+    }
+
+    /** @return list<string> toutes les familles connues (ordre d’affichage) */
+    public static function dataSharingFamilyKeys(): array
+    {
+        $keys = [];
+        foreach (self::dataSharingFamilyGroups() as $g) {
+            foreach ($g['keys'] as $k) {
+                $keys[] = $k;
+            }
+        }
+
+        return $keys;
+    }
+
+    /** Familles sensibles : une justification est exigée pour les partager. */
+    public static function isSensitiveDataFamily(string $key): bool
+    {
+        return in_array($key, ['identity', 'qualification', 'cert_excerpt'], true);
+    }
+
     public static function exchangeLockModeLabel(string $mode): string
     {
         return match ($mode) {

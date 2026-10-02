@@ -77,6 +77,24 @@ class EmailTokenRepository
         $this->pdo->prepare('UPDATE email_tokens SET consumed_at = NOW() WHERE id = ?')->execute([$id]);
     }
 
+    /**
+     * Dernier jeton encore valide (non consommé, non expiré) pour un utilisateur et un usage.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findLatestPendingForUserPurpose(int $userId, string $purpose): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, created_at, expires_at, metadata FROM email_tokens
+             WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND expires_at > NOW()
+             ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([$userId, $purpose]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     /** Dernier envoi (tout jeton, même consommé) pour le délai entre renvois. */
     public function getLatestTokenCreatedAtForUserPurpose(int $userId, string $purpose): ?\DateTimeImmutable
     {

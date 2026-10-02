@@ -34,8 +34,20 @@ if (!empty($grants)) {
         <p class="mt-2 text-sm text-slate-600">Fil coordonné sur le brief de l’unité support et autorisations d’accès complémentaires vers d’autres espaces d’échange.</p>
     </div>
 
-    <?php if (!$consentDone && $status === 'active'): ?>
-    <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Pour lire ou écrire sur le fil partagé, validez votre <a class="font-semibold underline" href="<?= htmlspecialchars(cooperation_mission_consent_url($sid), ENT_QUOTES, 'UTF-8') ?>">autorisation de partage</a> (code par e-mail).</p>
+    <?php $viewerConsent = is_array($cooperationViewerConsent ?? null) ? $cooperationViewerConsent : ['state' => $consentDone ? 'valid' : 'none', 'until' => null]; ?>
+    <?php if ($viewerConsent['state'] !== 'valid' && $status === 'active'): ?>
+    <div class="coop-consent-state coop-consent-state--expired flex flex-wrap items-center justify-between gap-3" role="alert">
+        <p class="m-0">
+            <?php if ($viewerConsent['state'] === 'expired'): ?>
+            <strong>Votre autorisation de partage a expiré.</strong> Le fil commun est en lecture seule pour vous tant que vous ne l’avez pas renouvelée.
+            <?php else: ?>
+            <strong>Autorisation de partage à valider.</strong> Elle est nécessaire pour lire et écrire sur le fil commun (code à six chiffres envoyé par e-mail).
+            <?php endif; ?>
+        </p>
+        <a class="coop-progress__action-btn" href="<?= htmlspecialchars(cooperation_mission_consent_url($sid), ENT_QUOTES, 'UTF-8') ?>"><?= $viewerConsent['state'] === 'expired' ? 'Renouveler mon autorisation' : 'Valider mon autorisation' ?></a>
+    </div>
+    <?php elseif ($status === 'active' && !empty($viewerConsent['until'])): ?>
+    <p class="text-xs text-slate-500">Votre autorisation de partage est valide jusqu’au <?= htmlspecialchars(date('d/m/Y à H:i', (int) strtotime((string) $viewerConsent['until'])), ENT_QUOTES, 'UTF-8') ?>.</p>
     <?php endif; ?>
 
     <?php if ($coopTopicUrl !== '' && $status === 'active'): ?>

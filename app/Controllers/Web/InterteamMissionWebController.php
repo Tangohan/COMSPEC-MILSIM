@@ -867,6 +867,9 @@ class InterteamMissionWebController
             'interteamSitreps' => $sitreps,
             'cooperationProgress' => $progress,
             'cooperationConsentByTenant' => $this->interteamRepository->consentSummaryByTenant($missionId),
+            'cooperationViewerConsent' => $this->interteamRepository->consentsTableExists()
+                ? $this->interteamRepository->consentStatus($missionId, $userId)
+                : ['state' => 'valid', 'until' => null, 'keys' => [], 'justification' => ''],
             'cooperationLastReminderByTenant' => $canManage ? $this->interteamRepository->lastInvitationReminderByTenant($missionId, 48) : [],
             'interteamCorrectiveActionsText' => $this->notesJsonToText($mission['corrective_actions_json'] ?? null),
             'interteamLinkedResourcesText' => $this->notesJsonToText($mission['linked_resources_json'] ?? null),
@@ -2132,6 +2135,12 @@ class InterteamMissionWebController
 
         $typo = isset($mission['cooperation_typology']) ? (string) $mission['cooperation_typology'] : null;
         $workspace = $this->buildMissionWorkspace($id, $tenantId, $userId) ?? [];
+        // Code en attente pour cette coopération : le parcours s’ouvre directement sur l’étape 2.
+        $pendingOtp = $this->emailTokenRepository->findLatestPendingForUserPurpose($userId, EmailTokenPurpose::INTERTEAM_CONSENT_OTP);
+        $pendingMeta = $pendingOtp ? (json_decode((string) ($pendingOtp['metadata'] ?? ''), true) ?: []) : [];
+        $otpSentAt = ($pendingOtp && (int) ($pendingMeta['mission_id'] ?? 0) === $id) ? strtotime((string) $pendingOtp['created_at']) : false;
+        $consentStatus = $this->interteamRepository->consentStatus($id, $userId);
+        $forceStep1 = (string) $request->query('etape', '') === '1';
 
         return Response::view('layout.main', $workspace + [
             'content' => 'back_office.cooperation.missions.consent',
@@ -2140,6 +2149,11 @@ class InterteamMissionWebController
             'interteamConsentReturn' => $return,
             'cooperationMissionNavActive' => 'consent',
             'cooperationSuggestedShareKeys' => CooperationConsentDefaults::suggestedKeysForTypology($typo !== '' ? $typo : null),
+            'cooperationConsentStatus' => $consentStatus,
+            'cooperationConsentStep' => ($otpSentAt !== false && !$forceStep1) ? 2 : 1,
+            'cooperationConsentResendIn' => $otpSentAt !== false ? max(0, self::OTP_RESEND_SEC - (time() - $otpSentAt)) : 0,
+            'cooperationConsentTtlHours' => CooperationConsentDefaults::consentTtlHours(),
+            'cooperationConsentOtpTtlMinutes' => self::OTP_TTL_MIN,
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -2160,19 +2174,38 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_index_url());
         }
-        $keys = $this->consentKeysFromRequest($request);
-        if ($keys === []) {
-            Session::flash('error', 'Cochez au moins une autorisation pour continuer.');
+        // Seules les unités engagées (participation confirmée) demandent un code.
+        $engaged = false;
+        foreach ($this->interteamRepository->listParticipants($id) as $p) {
+            if ((int) ($p['tenant_id'] ?? 0) === $tenantId && ($p['status'] ?? '') === 'active') {
+                $engaged = true;
+            }
+        }
+        if (!$engaged) {
+            Session::flash('error', 'Accès refusé.');
 
-            return Response::redirect(cooperation_mission_consent_url($id) . $this->consentReturnQuery($request));
+            return Response::redirect(cooperation_mission_index_url());
         }
-        $this->interteamRepository->upsertConsentDraft($id, $userId, $tenantId, $keys);
-        $justification = trim((string) $request->input('justification_sensitive', ''));
-        if ($justification !== '' && strlen($justification) > 4000) {
-            $justification = mb_substr($justification, 0, 4000);
+        $resend = (string) $request->input('resend', '') === '1';
+        $previous = $this->interteamRepository->consentStatus($id, $userId);
+        $keys = $resend ? $previous['keys'] : $this->consentKeysFromRequest($request);
+        if ($keys === []) {
+            Session::flash('error', 'Cochez au moins une famille de données pour continuer.');
+
+            return Response::redirect(cooperation_mission_consent_url($id) . $this->consentReturnQuery($request, ['etape' => '1']));
         }
-        if ($justification !== '') {
-            $this->interteamRepository->updateConsentJustification($id, $userId, $justification);
+        $justification = $resend
+            ? trim($previous['justification'])
+            : mb_substr(trim((string) $request->input('justification_sensitive', '')), 0, 4000);
+        $sensitive = array_values(array_filter($keys, [CooperationDictionary::class, 'isSensitiveDataFamily']));
+        if ($sensitive !== [] && mb_strlen($justification) < 10) {
+            Session::flash('error', 'Vous partagez des données sensibles (' . implode(', ', array_map([CooperationDictionary::class, 'dataSharingFamilyLabel'], $sensitive)) . ') : justifiez ce partage en quelques mots (10 caractères au moins).');
+
+            return Response::redirect(cooperation_mission_consent_url($id) . $this->consentReturnQuery($request, ['etape' => '1']));
+        }
+        if (!$resend) {
+            $this->interteamRepository->upsertConsentDraft($id, $userId, $tenantId, $keys);
+            $this->interteamRepository->updateConsentJustification($id, $userId, $sensitive !== [] ? $justification : null);
         }
         $last = $this->emailTokenRepository->getLatestTokenCreatedAtForUserPurpose($userId, EmailTokenPurpose::INTERTEAM_CONSENT_OTP);
         if ($last !== null && (time() - $last->getTimestamp()) < self::OTP_RESEND_SEC) {
@@ -2226,14 +2259,16 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_consent_url($id) . $rq);
     }
 
-    private function consentReturnQuery(Request $request): string
+    /** @param array<string, string> $extra */
+    private function consentReturnQuery(Request $request, array $extra = []): string
     {
+        $q = $extra;
         $return = trim((string) $request->input('return', ''));
-        if ($return === '' || !str_starts_with($return, '/')) {
-            return '';
+        if ($return !== '' && str_starts_with($return, '/') && !str_starts_with($return, '//')) {
+            $q['return'] = $return;
         }
 
-        return '?return=' . rawurlencode($return);
+        return $q !== [] ? '?' . http_build_query($q) : '';
     }
 
     public function consentVerifyOtp(Request $request, array $params = []): Response
@@ -2281,7 +2316,9 @@ class InterteamMissionWebController
         $this->interteamRepository->recordOtpAttempt($id, $userId, 'ok', $ipPrefix);
         $this->interteamRepository->markConsentOtpVerified($id, $userId);
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'consent_verified', []);
-        Session::flash('success', 'Autorisation confirmée. Vous pouvez accéder aux échanges partagés.');
+        $after = $this->interteamRepository->consentStatus($id, $userId);
+        $untilTs = $after['until'] !== null ? strtotime($after['until']) : false;
+        Session::flash('success', 'Autorisation confirmée' . ($untilTs !== false ? ' jusqu’au ' . date('d/m/Y à H:i', $untilTs) : '') . '. Vous pouvez accéder aux échanges partagés.');
         $return = trim((string) $request->input('return', ''));
         if ($return !== '' && str_starts_with($return, '/')) {
             return Response::redirect(url(ltrim($return, '/')));
@@ -2293,7 +2330,7 @@ class InterteamMissionWebController
     /** @return list<string> */
     private function consentKeysFromRequest(Request $request): array
     {
-        $allowed = ['brief', 'liaison', 'competency', 'identity', 'org_structure', 'qualification', 'readiness', 'material', 'map', 'documents', 'minutes', 'meeting', 'cert_excerpt'];
+        $allowed = CooperationDictionary::dataSharingFamilyKeys();
         $out = [];
         foreach ($allowed as $k) {
             if ($request->input('share_' . $k) === '1' || $request->input('share_' . $k) === 'on') {
