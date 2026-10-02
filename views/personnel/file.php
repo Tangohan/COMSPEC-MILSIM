@@ -373,7 +373,10 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         }
     }
 }
-$medalRackResolved = \App\Support\DecorationCatalog::resolveLines($medalRackItems);
+$medalRackResolved = \App\Support\DecorationCatalog::resolveLines(
+    $medalRackItems,
+    (int) (\App\Core\Session::get('tenant_id') ?? 0) ?: null
+);
 $rpTimelineStatusFr = static function (?string $s): string {
     return match (trim((string) $s)) {
         'planned' => 'Prévu',

@@ -375,7 +375,9 @@ class PersonnelController
             return Response::redirect(url('login'));
         }
 
-        return Response::view('personnel.decorations_kit');
+        return Response::view('personnel.decorations_kit', [
+            'decorationTenantId' => $tenantId,
+        ]);
     }
 
     public function personnelIndex(Request $request, array $params = []): Response
@@ -1765,8 +1767,8 @@ class PersonnelController
             'extraCallsigns' => $extraCallsigns,
             'extraCallsignSlots' => $extraCallsignSlots,
             'medalRackItems' => $medalRackItems,
-            'decorationCatalog' => \App\Support\DecorationCatalog::all(),
-            'medalRackSplit' => \App\Support\DecorationCatalog::splitStored($medalRackItems),
+            'decorationCatalog' => \App\Support\DecorationCatalog::all($tenantId),
+            'medalRackSplit' => \App\Support\DecorationCatalog::splitStored($medalRackItems, $tenantId),
             'loadDecorationsKit' => true,
             'advancedEditActive' => $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid),
             'advancedEditGrant' => ($isSelf && function_exists('user_advanced_fiche_edit_grant')) ? user_advanced_fiche_edit_grant($uid) : null,
@@ -2010,7 +2012,8 @@ class PersonnelController
                     is_array($request->input('medal_rack_catalog')) ? $request->input('medal_rack_catalog') : [],
                     (string) $request->input('medal_rack_text'),
                     24,
-                    160
+                    160,
+                    $tenantId
                 ),
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ),
@@ -2165,28 +2168,39 @@ class PersonnelController
         }
         if (!$canApplyOrbat) {
             $correctionService = Container::get(PersonnelCorrectionRequestService::class);
-            $orbatDiff = array_intersect_key(
-                $correctionService->proposedDiff((int) $target['id'], $orbatInput),
-                array_flip(PersonnelCorrectionRequestService::ORBAT_KEYS)
-            );
-            if ($orbatDiff !== []) {
-                $noteParts = array_values(array_filter([
-                    $assignmentReason,
-                    $jobRoleReason,
-                ], static fn ($v): bool => is_string($v) && trim($v) !== ''));
-                $result = $correctionService->submit(
-                    $tenantId,
-                    $currentUserId,
-                    (int) $target['id'],
-                    $orbatInput,
-                    implode(' · ', $noteParts)
-                );
-                $orbatQueued = !empty($result['ok']);
-                $orbatNotice = (string) ($result['message'] ?? '');
+            // Évite d’envoyer une fausse demande (champs désactivés absents du POST) tant qu’une demande est déjà en cours.
+            $pendingExists = Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
+                ->hasPendingForTarget($tenantId, (int) $target['id']);
+            if ($pendingExists) {
+                $orbatNotice = 'Une demande d’affectation est déjà en attente. Le reste du dossier a été enregistré.';
                 $data['primary_unit_id'] = $existingProfile['primary_unit_id'] ?? null;
                 $data['rank_display'] = $existingProfile['rank_display'] ?? null;
                 $data['rank_display_override'] = $existingProfile['rank_display_override'] ?? null;
                 $data['enlistment_date'] = $existingProfile['enlistment_date'] ?? null;
+            } else {
+                $orbatDiff = array_intersect_key(
+                    $correctionService->proposedDiff((int) $target['id'], $orbatInput),
+                    array_flip(PersonnelCorrectionRequestService::ORBAT_KEYS)
+                );
+                if ($orbatDiff !== []) {
+                    $noteParts = array_values(array_filter([
+                        $assignmentReason,
+                        $jobRoleReason,
+                    ], static fn ($v): bool => is_string($v) && trim($v) !== ''));
+                    $result = $correctionService->submit(
+                        $tenantId,
+                        $currentUserId,
+                        (int) $target['id'],
+                        $orbatInput,
+                        implode(' · ', $noteParts)
+                    );
+                    $orbatQueued = !empty($result['ok']);
+                    $orbatNotice = (string) ($result['message'] ?? '');
+                    $data['primary_unit_id'] = $existingProfile['primary_unit_id'] ?? null;
+                    $data['rank_display'] = $existingProfile['rank_display'] ?? null;
+                    $data['rank_display_override'] = $existingProfile['rank_display_override'] ?? null;
+                    $data['enlistment_date'] = $existingProfile['enlistment_date'] ?? null;
+                }
             }
             $applyOrbatNow = false;
         }

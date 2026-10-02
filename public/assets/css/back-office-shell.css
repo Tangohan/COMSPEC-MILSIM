@@ -5120,6 +5120,7 @@ body:not(.ath-shell) .pjr-assign-slot {
 .bo-adv__form-grid label, .bo-adv__stack label, .bo-adv__form > label {
   display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ath-muted, #6d7a80);
 }
+.bo-adv__label { display: block; font-size: 12px; font-weight: 600; color: var(--ath-muted, #6d7a80); }
 .bo-adv input[type="text"], .bo-adv input[type="number"], .bo-adv input[type="date"],
 .bo-adv select, .bo-adv textarea, .bo-adv__textarea {
   width: 100%;

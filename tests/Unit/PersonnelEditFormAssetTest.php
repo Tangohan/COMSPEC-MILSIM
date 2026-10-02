@@ -12,6 +12,7 @@ final class PersonnelEditFormAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+        $orbat = (string) file_get_contents($root . '/views/partials/personnel/edit_orbat_section.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
         $css = (string) file_get_contents($root . '/public/assets/css/personnel-dossier.css');
 
@@ -29,8 +30,8 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringNotContainsString("input('deployable', 1)", $controller);
         self::assertStringContainsString('name="deployable" value="0"', $edit);
 
-        self::assertStringContainsString("unit_assignments[' + idx + '][is_primary]", $edit);
-        self::assertStringContainsString("job_roles[' + idx + '][is_primary]", $edit);
+        self::assertStringContainsString("unit_assignments[' + idx + '][is_primary]", $orbat);
+        self::assertStringContainsString("job_roles[' + idx + '][is_primary]", $orbat);
         self::assertStringContainsString('ensureSinglePrimaryFlag', $controller);
         self::assertStringContainsString('(int) $origIdx === $primaryAssignmentIdx', $controller);
         self::assertStringContainsString('(int) $origIdx === $primaryIdx', $controller);
@@ -54,14 +55,15 @@ final class PersonnelEditFormAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+        $orbat = (string) file_get_contents($root . '/views/partials/personnel/edit_orbat_section.php');
         $css = (string) file_get_contents($root . '/public/assets/css/personnel-dossier.css');
 
         self::assertStringContainsString('foreach ($editNavGroups as $grp)', $edit);
         self::assertStringContainsString('pd-tabs__group-label', $edit);
-        self::assertStringContainsString('x-model.debounce.150ms="unitQuery"', $edit);
-        self::assertStringContainsString('filteredUnitOptions(row.unit_id)', $edit);
-        self::assertStringContainsString('x-model.debounce.150ms="roleQuery"', $edit);
-        self::assertStringContainsString('filteredJobRoleOptions(row.role_id)', $edit);
+        self::assertStringContainsString('x-model.debounce.150ms="unitQuery"', $orbat);
+        self::assertStringContainsString('filteredUnitOptions(row.unit_id)', $orbat);
+        self::assertStringContainsString('x-model.debounce.150ms="roleQuery"', $orbat);
+        self::assertStringContainsString('filteredJobRoleOptions(row.role_id)', $orbat);
         self::assertStringContainsString('opt.search || opt.label || opt.name', $edit);
         self::assertStringContainsString('$knownValue($up[\'first_name\']', $edit);
         self::assertStringContainsString('.pd-tabs__group-label', $css);
@@ -87,14 +89,21 @@ final class PersonnelEditFormAssetTest extends TestCase
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
         $access = (string) file_get_contents($root . '/app/Support/EffectifsLmsAccess.php');
 
-        self::assertStringContainsString('name="grade_id"', $edit);
-        self::assertStringContainsString('name="enlistment_date"', $edit);
-        self::assertStringContainsString('Depuis', $edit);
-        self::assertStringContainsString('Validation Ressources humaines', $edit);
+        $orbat = (string) file_get_contents($root . '/views/partials/personnel/edit_orbat_section.php');
+
+        self::assertStringContainsString('edit_orbat_section.php', $edit);
+        self::assertStringContainsString('name="grade_id"', $orbat);
+        self::assertStringContainsString('name="enlistment_date"', $orbat);
+        self::assertStringContainsString('Depuis', $orbat);
+        self::assertStringContainsString('Validation Ressources humaines', $orbat);
+        self::assertStringContainsString('pd-orbat-hero', $orbat);
+        self::assertStringContainsString('pd-orbat-table', $orbat);
+        self::assertStringContainsString('orbatFrozen', $orbat);
         self::assertStringContainsString('canApplyOrbatImmediately', $edit);
         self::assertStringContainsString('canApplyOrbatImmediately', $controller);
         self::assertStringContainsString('proposedDiff', $controller);
         self::assertStringContainsString('$applyOrbatNow', $controller);
+        self::assertStringContainsString('hasPendingForTarget', $controller);
         self::assertStringContainsString('filterOptionsForMemberDossier', $controller);
         self::assertStringContainsString('function canApplyOrbatImmediately', $access);
     }

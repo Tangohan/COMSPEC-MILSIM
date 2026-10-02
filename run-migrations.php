@@ -157,6 +157,7 @@ $bootstrapFiles = [
     'personnel_profile_extended_details_migration.php',
     'personnel_profile_rp_identity_migration.php',
     'personnel_personal_dossier_enhancements_migration.php',
+    'tenant_decoration_motifs_migration.php',
     'user_deletion_request_migration.php',
     'user_community_identity_migration.php',
     'user_advanced_edit_grants_migration.php',
@@ -312,6 +313,7 @@ run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
 run_personnel_personal_dossier_enhancements_migration($pdo);
+run_tenant_decoration_motifs_migration($pdo);
 run_user_deletion_request_migration($pdo);
 run_user_community_identity_migration($pdo, static function (string $m) use ($migrationFlush): void {
     echo '  ' . $m . "\n";

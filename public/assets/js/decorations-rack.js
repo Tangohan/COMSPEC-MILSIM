@@ -1,6 +1,6 @@
 /**
  * Rack de rubans interactif (hover / sélection).
- * Inspired by official U.S. Army / NATO references — not an official reproduction.
+ * Motifs illustratifs — pas une reproduction officielle.
  */
 (function () {
   'use strict';
@@ -44,20 +44,30 @@
     var drop = detail.querySelector('[data-dk-detail-drop]');
     var disc = detail.querySelector('[data-dk-detail-disc]');
     var name = slot.getAttribute('data-dk-name') || '';
-    var family = slot.getAttribute('data-dk-family') || 'GENERIC';
-    var level = slot.getAttribute('data-dk-level') || '';
-    var id = slot.getAttribute('data-dk-id') || '';
+    var detailLine = slot.getAttribute('data-dk-detail') || '';
     var type = slot.getAttribute('data-dk-type') || 'ribbon';
     var glyph = slot.getAttribute('data-dk-glyph') || '';
     var discClass = slot.getAttribute('data-dk-disc') || 'dk-disc-svc';
     var dropClass = slot.getAttribute('data-dk-drop') || '';
     var pattern = slot.getAttribute('data-dk-pattern') || '';
+    var image = slot.getAttribute('data-dk-image') || '';
+    var customBg = slot.getAttribute('data-dk-custom-bg') || '';
     if (nameEl) nameEl.textContent = name;
-    if (famEl) {
-      famEl.textContent = family + (level ? ' · ' + level : '') + (id ? ' · ' + id : '');
-    }
+    if (famEl) famEl.textContent = detailLine;
     if (drop) {
-      drop.className = 'dk-m-ribbon' + (dropClass ? ' ' + dropClass : pattern ? ' ' + pattern : '');
+      if (image) {
+        drop.className = 'dk-m-ribbon dk-rb-image';
+        drop.style.backgroundImage = 'url(\'' + image.replace(/'/g, '\\\'') + '\')';
+        drop.style.background = '';
+      } else if (customBg) {
+        drop.className = 'dk-m-ribbon';
+        drop.style.backgroundImage = '';
+        drop.style.background = customBg;
+      } else {
+        drop.className = 'dk-m-ribbon' + (dropClass ? ' ' + dropClass : pattern ? ' ' + pattern : '');
+        drop.style.backgroundImage = '';
+        drop.style.background = '';
+      }
     }
     if (disc) {
       disc.className = 'dk-m-disc ' + discClass;

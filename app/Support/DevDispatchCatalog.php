@@ -293,6 +293,29 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(751, '2026-10-02', 'Unité & rôle : situation claire, demande distincte', 'Sur Modifier ma fiche, l’onglet Unité & rôle présente d’abord votre situation (unité, place, emploi, grade). Hors encadrement, vous proposez un changement : ce n’est pas une gestion directe. Si une demande est déjà en attente, le formulaire d’affectation est verrouillé. Le tableau des affectations est plus lisible. Rechargez le portail (Ctrl+F5).', [
+                'En-tête avec résumé de la situation actuelle',
+                'Sections séparées : grade, affectations, emploi',
+                'Hors encadrement : libellés « Proposer » et verrou si demande en cours',
+                'Tableau des affectations avec distinction principale / complémentaire',
+            ], [
+                'Message plus clair sur la validation Ressources humaines',
+            ], [
+                'Impression de pouvoir gérer l’affectation sans être dans l’encadrement',
+            ], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Ouvrez Modifier ma fiche → Unité & rôle : vous devez voir le résumé en tête, puis des blocs séparés. Avec une demande en attente, le formulaire d’affectation doit être grisé.',
+            ], 'Portail Athena'),
+            $pr(750, '2026-10-02', 'Placards et motifs : catalogue enrichi et création', 'Le catalogue de rubans et médailles du dossier s’enrichit de nouveaux motifs. L’encadrement peut aussi créer des motifs propres à la communauté, avec un aperçu en direct et la possibilité d’importer une image. Les libellés techniques ont disparu de la sélection sur la fiche. Rechargez le portail (Ctrl+F5).', [
+                'Nouveaux motifs de rubans et de médailles dans le catalogue',
+                'Création de motifs personnalisés depuis Décorations (référentiels)',
+                'Import d’une image pour un placard ou une médaille de la communauté',
+                'Aperçu du motif pendant la création',
+            ], [
+                'Sélection sur la fiche : libellés clairs, sans codes techniques',
+                'Page des modèles récente pour consulter le catalogue élargi',
+            ], [], ['command'], [
+                'Rechargez le portail (Ctrl+F5). Sur une fiche, ouvrez Portrait : les décorations se choisissent par nom. Dans Référentiels → Décorations, créez un motif et vérifiez qu’il apparaît ensuite sur la fiche.',
+            ], 'Portail Athena'),
             $pr(749, '2026-10-02', 'Mon coffre : lecture plus claire', 'Mon coffre présente désormais vos pièces en liste, regroupées par dossier RH, brevets et formations. Chaque ligne affiche le titre, la date et un accès direct, sans les anciennes cartes qui imitaient un certificat. Rechargez le portail (Ctrl+F5).', [
                 'Liste de pièces par rubrique, avec compteur',
                 'Ouverture de la pièce depuis la ligne correspondante',
