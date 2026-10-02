@@ -35,7 +35,7 @@ $famLine = DecorationCatalog::familyLine($dkMedal);
         <div class="dk-m-disc dk-m-disc--small <?= htmlspecialchars($disc, ENT_QUOTES, 'UTF-8') ?>">
             <?= DecorationCatalog::glyphSvg($glyph, true) ?>
         </div>
-        <span class="dk-size-label">34px carte</span>
+        <span class="dk-size-label">Taille carte</span>
     </div>
     <?php endif; ?>
 </div>

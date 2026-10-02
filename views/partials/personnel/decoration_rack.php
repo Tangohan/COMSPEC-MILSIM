@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Support\DecorationCatalog;
 
 /**
- * Rack de rubans interactif (CSS/SVG, pas de bitmap).
+ * Rack de rubans interactif (CSS/SVG, image optionnelle pour motifs perso).
  *
  * @var list<array<string, mixed>> $dkItems
  * @var bool $dkShowDemoDevices
@@ -69,26 +69,37 @@ $glyphsJson = [
                     $drop = (string) ($item['dropClass'] ?? '');
                     $disc = (string) ($item['discClass'] ?? '');
                     $glyph = (string) ($item['glyph'] ?? '');
+                    $swatchInline = DecorationCatalog::swatchStyle($item);
+                    $detail = DecorationCatalog::detailLine($item);
                     $device = $dkShowDemoDevices
                         ? ($demoDevices[$id] ?? null)
                         : ($item['device'] ?? null);
                     $isSelected = $id !== '' && $id === $firstId;
-                    $label = $name !== '' ? $name : $id;
+                    $label = $name !== '' ? $name : 'Décoration';
+                    $slotClass = $swatchInline !== '' && str_starts_with($swatchInline, 'background-image')
+                        ? 'dk-slot dk-rb-image'
+                        : ($swatchInline !== '' ? 'dk-slot' : 'dk-slot ' . $pattern);
+                    $slotStyle = $swatchInline !== '' ? ' style="' . $swatchInline . '"' : '';
+                    $imageUrl = DecorationCatalog::imageUrl($item);
                     ?>
                 <button
                     type="button"
-                    class="dk-slot <?= htmlspecialchars($pattern, ENT_QUOTES, 'UTF-8') ?><?= $isSelected ? ' is-selected' : '' ?>"
+                    class="<?= htmlspecialchars($slotClass, ENT_QUOTES, 'UTF-8') ?><?= $isSelected ? ' is-selected' : '' ?>"
                     aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
                     aria-pressed="<?= $isSelected ? 'true' : 'false' ?>"
                     data-dk-id="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-family="<?= htmlspecialchars($family, ENT_QUOTES, 'UTF-8') ?>"
+                    data-dk-detail="<?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-type="<?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-level="<?= htmlspecialchars($level, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-pattern="<?= htmlspecialchars($pattern, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-drop="<?= htmlspecialchars($drop, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-disc="<?= htmlspecialchars($disc, ENT_QUOTES, 'UTF-8') ?>"
                     data-dk-glyph="<?= htmlspecialchars($glyph, ENT_QUOTES, 'UTF-8') ?>"
+                    data-dk-image="<?= htmlspecialchars((string) ($imageUrl ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                    data-dk-custom-bg="<?= htmlspecialchars((string) ($item['customBackground'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                    <?= $slotStyle ?>
                 >
                     <?php if (is_string($device) && $device !== ''): ?>
                     <span class="dk-device"><?= DecorationCatalog::deviceSvg($device) ?></span>
@@ -102,7 +113,7 @@ $glyphsJson = [
         <div class="dk-rack-caption"><?= htmlspecialchars($dkCaption, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
         <?php if ($dkShowDemoDevices): ?>
-        <div class="dk-device-note"><?= htmlspecialchars(DecorationCatalog::DEVICE_NOTE, ENT_QUOTES, 'UTF-8') ?> <code>isOfficialReference: false</code></div>
+        <div class="dk-device-note"><?= htmlspecialchars(DecorationCatalog::DEVICE_NOTE, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
         <?php if ($dkShowDetail && $dkItems !== []):
             $sel = $dkItems[0];
@@ -111,15 +122,18 @@ $glyphsJson = [
             $selDisc = (string) ($sel['discClass'] ?? 'dk-disc-svc');
             $selGlyph = (string) ($sel['glyph'] ?? '');
             $selName = (string) ($sel['name'] ?? '');
-            $selFam = (string) ($sel['family'] ?? 'GENERIC');
-            $selLevel = (string) ($sel['level'] ?? '');
-            $selId = (string) ($sel['id'] ?? '');
+            $selDetail = DecorationCatalog::detailLine($sel);
+            $selImage = DecorationCatalog::imageUrl($sel);
+            $selDropClass = $selImage !== null ? 'dk-m-ribbon dk-rb-image' : 'dk-m-ribbon ' . $selDrop;
+            $selDropStyle = $selImage !== null
+                ? ' style="background-image:url(\'' . htmlspecialchars($selImage, ENT_QUOTES, 'UTF-8') . '\')"'
+                : '';
             ?>
         <div class="dk-single-display" data-dk-detail style="margin-top:18px;">
             <div>
                 <div class="dk-bel"></div>
                 <div class="dk-m-neck"></div>
-                <div class="dk-m-ribbon <?= htmlspecialchars($selDrop, ENT_QUOTES, 'UTF-8') ?>" data-dk-detail-drop></div>
+                <div class="<?= htmlspecialchars($selDropClass, ENT_QUOTES, 'UTF-8') ?>" data-dk-detail-drop<?= $selDropStyle ?>></div>
                 <div class="dk-m-disc <?= htmlspecialchars($selDisc, ENT_QUOTES, 'UTF-8') ?>" data-dk-detail-disc>
                     <?php if ($selType === 'medal' && $selGlyph !== ''): ?>
                         <?= DecorationCatalog::glyphSvg($selGlyph) ?>
@@ -128,7 +142,7 @@ $glyphsJson = [
             </div>
             <div>
                 <div class="dk-m-name" data-dk-detail-name style="font-size:15px;"><?= htmlspecialchars($selName, ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="dk-m-fam" data-dk-detail-fam style="margin-top:4px;"><?= htmlspecialchars($selFam . ($selLevel !== '' ? ' · ' . $selLevel : '') . ($selId !== '' ? ' · ' . $selId : ''), ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="dk-m-fam" data-dk-detail-fam style="margin-top:4px;"><?= htmlspecialchars($selDetail, ENT_QUOTES, 'UTF-8') ?></div>
             </div>
         </div>
         <?php endif; ?>

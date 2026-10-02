@@ -1325,6 +1325,8 @@ class Container
             ),
             \App\Repositories\AwardDefinitionRepository::class => new \App\Repositories\AwardDefinitionRepository(),
             \App\Repositories\PersonnelAwardRepository::class => new \App\Repositories\PersonnelAwardRepository(),
+            \App\Repositories\TenantDecorationMotifRepository::class => new \App\Repositories\TenantDecorationMotifRepository(),
+            \App\Services\Personnel\DecorationMotifStorageService::class => new \App\Services\Personnel\DecorationMotifStorageService(),
             \App\Repositories\EquipmentItemDefinitionRepository::class => new \App\Repositories\EquipmentItemDefinitionRepository(),
             \App\Repositories\PersonnelEquipmentAssignmentRepository::class => new \App\Repositories\PersonnelEquipmentAssignmentRepository(),
             \App\Services\Personnel\CareerFileService::class => new \App\Services\Personnel\CareerFileService(
@@ -1345,7 +1347,9 @@ class Container
                 self::get(\App\Repositories\AwardDefinitionRepository::class),
                 self::get(\App\Repositories\PersonnelAwardRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\PersonnelCareerEventRepository::class)
+                self::get(\App\Repositories\PersonnelCareerEventRepository::class),
+                self::get(\App\Repositories\TenantDecorationMotifRepository::class),
+                self::get(\App\Services\Personnel\DecorationMotifStorageService::class)
             ),
             \App\Controllers\Admin\Organization\EquipmentReferentielController::class => new \App\Controllers\Admin\Organization\EquipmentReferentielController(
                 self::get(\App\Repositories\EquipmentItemDefinitionRepository::class),

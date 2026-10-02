@@ -11,7 +11,9 @@ $currentUnitAssignments = $currentUnitAssignments ?? $personnelAssignments;
 $dossierPresets = $dossierPresets ?? [];
 $jobRolesEnabled = $jobRolesEnabled ?? false;
 $jobRoleOptions = $jobRoleOptions ?? [];
+$currentJobRoles = is_array($currentJobRoles ?? null) ? $currentJobRoles : [];
 $jobRoleSlugToId = $jobRoleSlugToId ?? [];
+$maxJobRolesPerMember = (int) ($maxJobRolesPerMember ?? 3);
 $maxUnitAssignmentsPerMember = (int) ($maxUnitAssignmentsPerMember ?? 8);
 $forumQuickMode = $forumQuickMode ?? '';
 $forumFocus = $forumFocus ?? '';
@@ -55,12 +57,13 @@ $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $r
 $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
 $nicknames = is_array($nicknames ?? null) ? $nicknames : [];
 $medalRackItems = is_array($medalRackItems ?? null) ? $medalRackItems : [];
+$decorationTenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0) ?: null;
 $medalRackSplit = is_array($medalRackSplit ?? null)
     ? $medalRackSplit
-    : \App\Support\DecorationCatalog::splitStored($medalRackItems);
+    : \App\Support\DecorationCatalog::splitStored($medalRackItems, $decorationTenantId);
 $medalRackCatalogIds = is_array($medalRackSplit['catalogIds'] ?? null) ? $medalRackSplit['catalogIds'] : [];
 $medalRackCustomLines = is_array($medalRackSplit['customLines'] ?? null) ? $medalRackSplit['customLines'] : [];
-$decorationCatalog = is_array($decorationCatalog ?? null) ? $decorationCatalog : \App\Support\DecorationCatalog::all();
+$decorationCatalog = is_array($decorationCatalog ?? null) ? $decorationCatalog : \App\Support\DecorationCatalog::all($decorationTenantId);
 $extraCallsignSlots = isset($extraCallsignSlots) ? max(5, (int) $extraCallsignSlots) : (function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5);
 $extraCallsigns = is_array($extraCallsigns ?? null) ? $extraCallsigns : [];
 while (count($extraCallsigns) < $extraCallsignSlots) {
@@ -87,8 +90,46 @@ $lockBanner = static function (string $what) use ($memberLocked, $correctionUrl)
 };
 $canApplyOrbatImmediately = !empty($canApplyOrbatImmediately);
 $pendingOrbatCorrection = !empty($pendingOrbatCorrection);
+$orbatStaffMode = $canApplyOrbatImmediately;
+$orbatFrozen = !$orbatStaffMode && $pendingOrbatCorrection;
+$orbatFieldAttr = $orbatFrozen ? ' disabled' : '';
 $grades = is_array($grades ?? null) ? $grades : [];
 $currentGradeId = (int) ($targetUser['grade_id'] ?? ($currentGrade['id'] ?? 0));
+$primaryAssignmentLabel = '—';
+$primaryRoleLabel = '—';
+foreach (is_array($personnelAssignments ?? null) ? $personnelAssignments : [] as $paRow) {
+    if (!empty($paRow['is_primary'])) {
+        $primaryAssignmentLabel = trim((string) ($paRow['unit_name'] ?? '')) ?: '—';
+        $primaryRoleLabel = trim((string) ($paRow['role_name'] ?? '')) ?: '—';
+        break;
+    }
+}
+if ($primaryAssignmentLabel === '—' && is_array($personnelAssignments ?? null) && $personnelAssignments !== []) {
+    $primaryAssignmentLabel = trim((string) ($personnelAssignments[0]['unit_name'] ?? '')) ?: '—';
+    $primaryRoleLabel = trim((string) ($personnelAssignments[0]['role_name'] ?? '')) ?: '—';
+}
+$primaryJobLabel = '—';
+$jobRoleLabelById = [];
+foreach (is_array($jobRoleOptions ?? null) ? $jobRoleOptions : [] as $opt) {
+    $oid = (int) ($opt['id'] ?? 0);
+    if ($oid > 0) {
+        $jobRoleLabelById[$oid] = trim((string) ($opt['label'] ?? $opt['name'] ?? '')) ?: ('Emploi #' . $oid);
+    }
+}
+foreach (is_array($currentJobRoles ?? null) ? $currentJobRoles : [] as $jr) {
+    $rid = (int) ($jr['role_id'] ?? 0);
+    if ($rid < 1) {
+        continue;
+    }
+    $lab = $jobRoleLabelById[$rid] ?? ('Emploi #' . $rid);
+    if (!empty($jr['is_primary']) || $primaryJobLabel === '—') {
+        $primaryJobLabel = $lab;
+        if (!empty($jr['is_primary'])) {
+            break;
+        }
+    }
+}
+$gradeLabelSummary = $gradeLabel !== '' ? $gradeLabel : '—';
 $tzOptions = \App\Services\Admin\PlatformUserProfileService::timezoneOptions();
 $langOptions = \App\Services\Admin\PlatformUserProfileService::interfaceLanguageOptions();
 $familyOptions = \App\Services\Admin\PlatformUserProfileService::familySituationOptions();
@@ -137,7 +178,7 @@ $editNavGroups = [
     [
         'title' => 'Affectation',
         'items' => [
-            ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
+            ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true, 'locked' => !empty($pendingOrbatCorrection) && empty($canApplyOrbatImmediately)],
             ['id' => 'edit-habilitation', 'label' => 'Matricules', 'show' => true],
             ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled']), 'locked' => $memberLocked],
         ],
@@ -307,7 +348,7 @@ $editValidTabIds = implode(',', array_map(
                 : 'L’identité s’enregistre tout de suite. Une affectation, un emploi ou un grade part en demande, sauf si vous êtes Ressources humaines ou Gestionnaire.' ?></span>
             <span x-cloak x-show="dirty" class="pd-savebar__status--dirty">Modifications non enregistrées</span>
           </p>
-          <button type="submit" class="pd-btn pd-btn--primary"><?= $canApplyOrbatImmediately ? 'Enregistrer les modifications' : 'Enregistrer / envoyer pour validation' ?></button>
+          <button type="submit" class="pd-btn pd-btn--primary"><?= $canApplyOrbatImmediately ? 'Enregistrer les modifications' : ($orbatFrozen ? 'Enregistrer le reste du dossier' : 'Enregistrer · envoyer la demande d’affectation') ?></button>
         </div>
         <div class="pd-card__body">
 
@@ -524,273 +565,7 @@ $editValidTabIds = implode(',', array_map(
         </div>
 
         <div x-cloak x-show="['edit-orbat','edit-habilitation','edit-suivi-immersion'].includes(tab)">
-        <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
-          <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
-            <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
-            <p class="mt-1.5 max-w-3xl text-xs leading-relaxed text-cyan-900/85">Deux informations distinctes : l’équipe d’une part, la fonction de l’autre. L’affectation principale et l’emploi principal servent de référence sur la fiche, l’organigramme et le forum.</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <div class="rounded-xl border border-cyan-200/80 bg-white/80 px-4 py-3">
-                <p class="text-[10px] font-black uppercase tracking-wider text-cyan-800">Affectation — l’équipe</p>
-                <p class="mt-1.5 text-xs leading-relaxed text-cyan-950/90">Indique <strong>dans quelle unité</strong> la personne est rattachée. La place dans l’équipe (membre, chef, adjoint…) se renseigne à part. Cochez l’affectation principale : c’est elle qui place la personne dans l’organigramme.</p>
-              </div>
-              <div class="rounded-xl border border-cyan-200/80 bg-white/80 px-4 py-3">
-                <p class="text-[10px] font-black uppercase tracking-wider text-cyan-800">Emploi — la fonction</p>
-                <p class="mt-1.5 text-xs leading-relaxed text-cyan-950/90">Indique <strong>ce que la personne fait</strong>, pas où elle est. L’emploi n’ouvre aucun droit d’accès. Cochez l’emploi principal : c’est celui qui apparaît sur la fiche, l’organigramme et le forum.</p>
-              </div>
-            </div>
-          </div>
-          <div class="space-y-4 p-6">
-            <?php if ($pendingOrbatCorrection): ?>
-            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
-              <p class="font-bold">Une demande est déjà en attente</p>
-              <p class="mt-1">Un responsable doit d’abord confirmer ou refuser la demande en cours avant d’en envoyer une autre sur l’affectation.</p>
-              <?php if ($canApplyOrbatImmediately): ?>
-              <p class="mt-2"><a class="font-semibold underline" href="<?= htmlspecialchars(url('back-office/personnel/corrections'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir les demandes de correction</a></p>
-              <?php endif; ?>
-            </div>
-            <?php elseif (!$canApplyOrbatImmediately): ?>
-            <div class="rounded-xl border border-cyan-200 bg-cyan-50/80 px-4 py-3 text-xs text-cyan-950">
-              <p class="font-bold">Validation Ressources humaines</p>
-              <p class="mt-1">Changer l’unité, l’emploi, le grade ou la date d’engagement envoie une demande. Rien n’est écrit tant qu’un responsable Ressources humaines ou Gestionnaire n’a pas confirmé.</p>
-            </div>
-            <?php endif; ?>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <label for="grade_id" class="mb-1 block text-xs font-bold text-slate-600">Grade attribué</label>
-                <select name="grade_id" id="grade_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                  <option value="">— Aucun —</option>
-                  <?php foreach ($grades as $g): ?>
-                  <?php
-                    $gid = (int) ($g['id'] ?? 0);
-                    if ($gid < 1) {
-                        continue;
-                    }
-                    $glab = trim((string) ($g['label_long'] ?? $g['label_short'] ?? $g['name'] ?? $g['code'] ?? ''));
-                    if ($glab === '') {
-                        $glab = 'Grade #' . $gid;
-                    }
-                  ?>
-                  <option value="<?= $gid ?>"<?= $currentGradeId === $gid ? ' selected' : '' ?>><?= htmlspecialchars($glab, ENT_QUOTES, 'UTF-8') ?></option>
-                  <?php endforeach; ?>
-                </select>
-                <p class="mt-1 text-[11px] text-slate-500">Grade officiel du dossier, distinct du titre affiché ci-dessous.</p>
-              </div>
-              <div>
-                <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’engagement</label>
-                <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars(substr(trim((string) ($p['enlistment_date'] ?? '')), 0, 10), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <p class="mt-1 text-[11px] text-slate-500">Date de prise d’armes dans la communauté, utilisée pour l’ancienneté.</p>
-              </div>
-              <div>
-                <label for="rank_display" class="mb-1 block text-xs font-bold text-slate-600">Grade ou titre affiché</label>
-                <input type="text" name="rank_display" id="rank_display" value="<?= htmlspecialchars((string) ($p['rank_display'] ?? '')) ?>" placeholder="Sous-lieutenant, Chief…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                <?php if ($gradeLabel !== ''): ?>
-                <p class="mt-1 text-[11px] text-slate-500">Grade attribué : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
-                <?php endif; ?>
-                <p class="mt-1 text-[11px] text-slate-500">Affiché en haut du site à la place du libellé de communauté, s’il est renseigné.</p>
-              </div>
-              <div>
-                <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé</label>
-                <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="O-5, OF-4…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                <p class="mt-1 text-[11px] text-slate-500">Remplace le code affiché à côté du grade en haut du site (par exemple O-5 à la place de OF-4).</p>
-              </div>
-            </div>
-
-            <?php if (!empty($personnelAssignments)): ?>
-            <div class="overflow-x-auto rounded-xl border border-slate-200">
-              <table class="min-w-full text-left text-xs">
-                <thead class="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-600">
-                  <tr>
-                    <th class="px-3 py-2">Unité</th>
-                    <th class="px-3 py-2">Place dans l’équipe</th>
-                    <th class="px-3 py-2">Depuis</th>
-                    <th class="px-3 py-2">Principal</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <?php foreach ($personnelAssignments as $pa): ?>
-                  <?php
-                    $startedRaw = trim((string) ($pa['started_at'] ?? $pa['assigned_at'] ?? ''));
-                    $startedFr = '—';
-                    if ($startedRaw !== '') {
-                        try {
-                            $startedFr = (new DateTimeImmutable($startedRaw))->format('d/m/Y');
-                        } catch (Throwable) {
-                            $startedFr = $startedRaw;
-                        }
-                    }
-                  ?>
-                  <tr class="bg-white">
-                    <td class="px-3 py-2 font-semibold text-slate-900"><?= htmlspecialchars((string) ($pa['unit_name'] ?? '—')) ?></td>
-                    <td class="px-3 py-2 text-slate-700"><?= htmlspecialchars((string) ($pa['role_name'] ?? '—')) ?></td>
-                    <td class="px-3 py-2 text-slate-600"><?= htmlspecialchars($startedFr, ENT_QUOTES, 'UTF-8') ?></td>
-                    <td class="px-3 py-2"><?= !empty($pa['is_primary']) ? '<span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-900">Oui</span>' : '—' ?></td>
-                  </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-            <?php else: ?>
-            <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune affectation active. Ajoutez au moins une unité ci-dessous si la personne doit apparaître dans l’organigramme.</p>
-            <?php endif; ?>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="md:col-span-2">
-                <?php
-                $unitAssignmentsSeed = [];
-                foreach ($currentUnitAssignments as $idx => $assignmentRow) {
-                    $unitAssignmentsSeed[] = [
-                        'unit_id' => (int) ($assignmentRow['unit_id'] ?? 0),
-                        'role_name' => (string) ($assignmentRow['role_name'] ?? ''),
-                        'is_primary' => !empty($assignmentRow['is_primary']),
-                    ];
-                }
-                if ($unitAssignmentsSeed === [] && !empty($p['primary_unit_id'])) {
-                    $unitAssignmentsSeed[] = [
-                        'unit_id' => (int) $p['primary_unit_id'],
-                        'role_name' => '',
-                        'is_primary' => true,
-                    ];
-                }
-                $unitOptionsJson = htmlspecialchars(json_encode(array_map(static function (array $u): array {
-                    return [
-                        'id' => (int) ($u['id'] ?? 0),
-                        'name' => (string) ($u['name'] ?? ''),
-                    ];
-                }, $units), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
-                $currentUnitAssignmentsJson = htmlspecialchars(json_encode($unitAssignmentsSeed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
-                ?>
-                <div x-data="personnelUnitAssignmentsEditor(<?= $currentUnitAssignmentsJson ?>, <?= $unitOptionsJson ?>, <?= (int) $maxUnitAssignmentsPerMember ?>)" class="space-y-3">
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <label class="mb-1 block text-xs font-bold text-slate-600">Affectations d’unité</label>
-                      <p class="text-[11px] text-slate-500">Choisissez l’équipe. Une personne peut avoir plusieurs affectations (détachement, double casquette). Une seule est principale : c’est l’unité de référence sur la fiche et l’organigramme.</p>
-                    </div>
-                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="rows.length < maxRows">Ajouter une affectation</button>
-                  </div>
-                  <?php if (empty($units)): ?>
-                  <p class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                    Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
-                  </p>
-                  <?php endif; ?>
-                  <?php if (!empty($units)): ?>
-                  <label class="relative block">
-                    <span class="sr-only">Rechercher une unité</span>
-                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
-                    <input type="search" x-model.debounce.150ms="unitQuery" placeholder="Rechercher une unité…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
-                  </label>
-                  <?php endif; ?>
-                  <input type="hidden" name="primary_unit_id" :value="primaryUnitId()">
-                  <template x-for="(row, idx) in rows" :key="row.key">
-                    <div class="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-4">
-                      <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                        <label class="flex shrink-0 items-center gap-2 text-xs font-bold text-slate-700">
-                          <input type="hidden" :name="'unit_assignments[' + idx + '][is_primary]'" :value="primaryIdx === idx ? '1' : '0'">
-                          <input type="radio" name="unit_assignments_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
-                          Affectation principale
-                        </label>
-                        <div class="min-w-[220px] flex-1">
-                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Unité</label>
-                          <select :name="'unit_assignments[' + idx + '][unit_id]'" x-model.number="row.unit_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                            <option value="0">— Aucune —</option>
-                            <template x-for="unit in filteredUnitOptions(row.unit_id)" :key="unit.id">
-                              <option :value="unit.id" x-text="unit.name"></option>
-                            </template>
-                          </select>
-                        </div>
-                        <div class="min-w-[220px] flex-1">
-                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Place dans l’équipe</label>
-                          <input type="text" :name="'unit_assignments[' + idx + '][role_name]'" x-model="row.role_name" maxlength="120" placeholder="Ex. Membre, chef d’équipe, adjoint…" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                        </div>
-                        <button type="button" class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="rows.length > 1">Retirer</button>
-                      </div>
-                    </div>
-                  </template>
-                </div>
-              </div>
-              <div class="md:col-span-2 space-y-3" id="job_roles_editor">
-                <?php if ($jobRolesEnabled): ?>
-                <?php
-                $jobRoleOptionsJson = htmlspecialchars(json_encode($jobRoleOptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
-                $currentJobRolesJson = htmlspecialchars(json_encode($currentJobRoles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
-                ?>
-                <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
-                  <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-600">Emploi</label>
-                      <p class="mt-1 text-[11px] text-slate-500">Choisissez la fonction tenue. Si la liste reprend le nom d’une unité, c’est tout de même une fonction de dossier, pas un second rattachement d’équipe.</p>
-                    </div>
-                    <label class="relative block sm:w-80">
-                      <span class="sr-only">Rechercher une fonction</span>
-                      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>
-                      <input type="search" x-model.debounce.150ms="roleQuery" placeholder="Rechercher une fonction…" autocomplete="off" class="w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
-                    </label>
-                  </div>
-                  <div class="space-y-2">
-                    <template x-for="(row, idx) in roles" :key="row.key">
-                      <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
-                        <label class="flex shrink-0 items-center gap-1.5 text-[10px] font-bold text-slate-600">
-                          <input type="hidden" :name="'job_roles[' + idx + '][is_primary]'" :value="primaryIdx === idx ? '1' : '0'">
-                          <input type="radio" name="job_roles_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
-                          Emploi principal
-                        </label>
-                        <div class="min-w-[220px] flex-1">
-                          <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
-                          <select :name="'job_roles[' + idx + '][role_id]'" x-model.number="row.role_id" class="w-full rounded-lg border border-cyan-200 bg-white px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
-                            <option value="0">— Non renseigné —</option>
-                            <template x-for="opt in filteredJobRoleOptions(row.role_id)" :key="opt.id">
-                              <option :value="opt.id" x-text="opt.label"></option>
-                            </template>
-                          </select>
-                          <p x-show="roleQuery && matchingRoleCount() === 0" class="mt-1 text-[10px] font-semibold text-amber-700">Aucune fonction correspondante.</p>
-                        </div>
-                        <div class="min-w-[160px] flex-1">
-                          <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
-                          <input type="text" :name="'job_roles[' + idx + '][detail]'" x-model="row.detail" maxlength="150" placeholder="Optionnel" class="w-full rounded-lg border border-cyan-200 px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
-                        </div>
-                        <button type="button" class="shrink-0 rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="roles.length > 1">Retirer</button>
-                      </div>
-                    </template>
-                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length < maxRoles">Ajouter un emploi</button>
-                  </div>
-                  <p class="mt-1 text-[11px] text-slate-600">L’emploi coché « Emploi principal » apparaît sur la fiche, l’organigramme et le forum. Les autres sont des emplois complémentaires. L’emploi décrit la fonction, pas un droit d’accès.</p>
-                </div>
-                <?php else: ?>
-                <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Le catalogue d’emplois n’est pas encore disponible dans cette communauté.</p>
-                <?php endif; ?>
-              </div>
-            </div>
-            <?php if (!empty($dossierPresets)): ?>
-            <div class="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4">
-              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900">Modèles de fonction</p>
-              <p class="mt-1 text-xs text-emerald-950/90">Remplit l’emploi ci-dessus et des suggestions d’équipement. L’équipe se choisit toujours à part. <a href="<?= htmlspecialchars(url('personnel/tutorials')) ?>" class="font-bold underline">Guide</a>.</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <?php foreach ($dossierPresets as $pr): ?>
-                <button type="button" class="personnel-preset-btn rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-left text-[11px] font-bold text-emerald-950 shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50" data-preset-id="<?= htmlspecialchars((string) ($pr['id'] ?? '')) ?>" title="<?= htmlspecialchars((string) ($pr['description'] ?? '')) ?>">
-                  <?= htmlspecialchars((string) ($pr['label'] ?? '')) ?>
-                </button>
-                <?php endforeach; ?>
-              </div>
-            </div>
-            <?php endif; ?>
-            <p class="text-[11px] text-slate-500">
-              <a href="<?= htmlspecialchars(url('orbat')) ?>" class="font-semibold text-cyan-800 underline-offset-2 hover:underline">Voir l’organigramme</a>
-              — Vue d’ensemble des unités. Les affectations détaillées peuvent aussi être gérées par les Ressources humaines.
-            </p>
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <label for="assignment_change_reason" class="mb-1 block text-xs font-bold text-slate-600">Motif du changement d’affectation</label>
-                <input type="text" name="assignment_change_reason" id="assignment_change_reason" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255" placeholder="Ex. Renfort section Alfa, rotation trimestrielle">
-                <p class="mt-1 text-[11px] text-slate-500">Ajoute un motif lisible dans l’historique si l’unité principale change.</p>
-              </div>
-              <div>
-                <label for="job_role_change_reason" class="mb-1 block text-xs font-bold text-slate-600">Motif du changement de fonction</label>
-                <input type="text" name="job_role_change_reason" id="job_role_change_reason" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255" placeholder="Ex. Validation stage leader, besoin de cellule appui">
-                <p class="mt-1 text-[11px] text-slate-500">Ajoute un motif lisible dans l’historique si la fonction principale change.</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <?php require base_path('views/partials/personnel/edit_orbat_section.php'); ?>
 
         <section id="edit-habilitation" x-show="tab === 'edit-habilitation'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
@@ -1150,7 +925,7 @@ $editValidTabIds = implode(',', array_map(
             </div>
             <div class="md:col-span-2">
               <p class="mb-1 block text-xs font-bold text-slate-600">Décorations et placards</p>
-              <p class="mb-3 text-[11px] text-slate-500">Choisissez un motif générique du catalogue (GENERIC / NATO_INSPIRED). Les formes ne sont pas des reproductions officielles. <a href="<?= htmlspecialchars(url('personnel/kit-rubans-medailles'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline">Voir le pack visuel</a>.</p>
+              <p class="mb-3 text-[11px] text-slate-500">Choisissez un motif dans le catalogue. Ces formes sont illustratives et ne correspondent à aucune décoration officielle. <a href="<?= htmlspecialchars(url('personnel/kit-rubans-medailles'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline">Voir les modèles</a>.</p>
               <div class="dk-picker" role="group" aria-label="Catalogue de rubans et médailles">
                 <?php foreach ($decorationCatalog as $dec):
                     if (!is_array($dec)) {
@@ -1162,21 +937,27 @@ $editValidTabIds = implode(',', array_map(
                     }
                     $checked = in_array($decId, $medalRackCatalogIds, true);
                     $pattern = (string) ($dec['patternClass'] ?? 'dk-rb-svc2');
-                    $fid = ((string) ($dec['family'] ?? 'GENERIC')) === 'NATO_INSPIRED' ? 'NATO_INSPIRED' : 'GENERIC';
+                    $swatchInline = \App\Support\DecorationCatalog::swatchStyle($dec);
+                    $familyLabel = \App\Support\DecorationCatalog::familyLabel((string) ($dec['family'] ?? 'GENERIC'));
+                    $typeLabel = ((string) ($dec['type'] ?? 'ribbon')) === 'medal' ? 'Médaille' : 'Ruban';
+                    $swatchClass = $swatchInline !== '' && str_starts_with($swatchInline, 'background-image')
+                        ? 'dk-ribbon-swatch dk-rb-image'
+                        : ($swatchInline !== '' ? 'dk-ribbon-swatch' : 'dk-ribbon-swatch ' . $pattern);
+                    $swatchStyle = $swatchInline !== '' ? ' style="' . $swatchInline . '"' : '';
                     ?>
                 <label class="dk-picker-item">
                   <input type="checkbox" name="medal_rack_catalog[]"<?= $lockAttr ?> value="<?= htmlspecialchars($decId, ENT_QUOTES, 'UTF-8') ?>" <?= $checked ? 'checked' : '' ?>>
-                  <span class="dk-ribbon-swatch <?= htmlspecialchars($pattern, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
+                  <span class="<?= htmlspecialchars($swatchClass, ENT_QUOTES, 'UTF-8') ?>"<?= $swatchStyle ?> aria-hidden="true"></span>
                   <span class="dk-picker-meta">
-                    <strong><?= htmlspecialchars((string) ($dec['name'] ?? $decId), ENT_QUOTES, 'UTF-8') ?></strong>
-                    <span><?= htmlspecialchars($fid . ' · ' . $decId, ENT_QUOTES, 'UTF-8') ?></span>
+                    <strong><?= htmlspecialchars((string) ($dec['name'] ?? 'Décoration'), ENT_QUOTES, 'UTF-8') ?></strong>
+                    <span><?= htmlspecialchars($familyLabel . ' · ' . $typeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                   </span>
                 </label>
                 <?php endforeach; ?>
               </div>
               <label for="medal_rack_text" class="mb-1 mt-3 block text-xs font-bold text-slate-600">Mentions libres (une par ligne)</label>
               <textarea name="medal_rack_text" id="medal_rack_text"<?= $lockAttr ?> rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Placard commémoratif — opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
-              <p class="mt-1 text-[11px] text-slate-500">Les mentions libres s’affichent avec un ruban générique de repli. Elles ne correspondent à aucune décoration réelle.</p>
+              <p class="mt-1 text-[11px] text-slate-500">Les mentions libres s’affichent avec un ruban de repli. Elles ne correspondent à aucune décoration réelle.</p>
             </div>
           </div>
         </section>

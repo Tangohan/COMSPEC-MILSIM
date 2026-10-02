@@ -9,19 +9,19 @@ use PHPUnit\Framework\TestCase;
 
 final class DecorationCatalogTest extends TestCase
 {
-    public function testCatalogHasFifteenGenericEntriesAndNoOfficialFlag(): void
+    public function testCatalogHasExpandedGenericEntriesAndNoOfficialFlag(): void
     {
         $all = DecorationCatalog::all();
-        self::assertCount(15, $all);
-        self::assertCount(9, DecorationCatalog::ribbons());
-        self::assertCount(6, DecorationCatalog::medals());
+        self::assertCount(26, $all);
+        self::assertCount(17, DecorationCatalog::ribbons());
+        self::assertCount(9, DecorationCatalog::medals());
 
         $ids = [];
         foreach ($all as $row) {
             self::assertNotSame('', $row['id']);
             self::assertArrayNotHasKey($row['id'], $ids);
             $ids[$row['id']] = true;
-            self::assertContains($row['family'], ['GENERIC', 'NATO_INSPIRED']);
+            self::assertContains($row['family'], ['GENERIC', 'NATO_INSPIRED', 'CUSTOM']);
             self::assertContains($row['type'], ['ribbon', 'medal']);
             self::assertFalse($row['isOfficialReference']);
             self::assertNotSame('', $row['pattern']);
@@ -33,14 +33,20 @@ final class DecorationCatalogTest extends TestCase
             self::assertSame(34, $row['medalCardPx']);
             self::assertSame(62, $row['medalFichePx']);
             self::assertGreaterThan(0, count($row['colors']));
+            self::assertArrayHasKey('imageUrl', $row);
         }
 
         self::assertNotNull(DecorationCatalog::find('rbn_service_multinational_nato'));
         self::assertSame('NATO_INSPIRED', DecorationCatalog::find('rbn_service_multinational_nato')['family']);
         self::assertSame('NATO_INSPIRED', DecorationCatalog::find('med_service_multinational_nato')['family']);
         self::assertSame('GENERIC', DecorationCatalog::find('rbn_service_distingue')['family']);
-        self::assertSame('GENERIC · or', DecorationCatalog::familyLine(DecorationCatalog::find('med_etoile_bravoure') ?? []));
-        self::assertSame('NATO_INSPIRED · couronne stylisée', DecorationCatalog::familyLine(DecorationCatalog::find('med_service_multinational_nato') ?? []));
+        self::assertSame('Catalogue · or', DecorationCatalog::familyLine(DecorationCatalog::find('med_etoile_bravoure') ?? []));
+        self::assertSame('Multinationale · couronne stylisée', DecorationCatalog::familyLine(DecorationCatalog::find('med_service_multinational_nato') ?? []));
+        self::assertSame('Catalogue', DecorationCatalog::familyLabel('GENERIC'));
+        self::assertSame('Créée par l’organisation', DecorationCatalog::familyLabel('CUSTOM'));
+        self::assertNotNull(DecorationCatalog::find('rbn_honneur_pourpre'));
+        self::assertNotNull(DecorationCatalog::find('rbn_sauvetage'));
+        self::assertNotNull(DecorationCatalog::find('med_medaille_honneur'));
     }
 
     public function testResolveMatchesIdsNamesAndKeepsCustomFallback(): void
@@ -71,14 +77,13 @@ final class DecorationCatalogTest extends TestCase
         self::assertSame(['rbn_merite', 'rbn_action_combat', 'Mention libre'], $merged);
     }
 
-    public function testCautionBannerIsTheAgreedWording(): void
+    public function testCautionBannerIsHumanFacing(): void
     {
-        self::assertSame(
-            'Modèles graphiques inspirés de références U.S. Army et OTAN. Les noms, formes et motifs sont utilisés ici à des fins de démonstration UI et ne constituent pas des reproductions officielles ni une preuve d\'attribution.',
-            DecorationCatalog::CAUTION
-        );
-        self::assertStringContainsString('tioh.army.mil', DecorationCatalog::FOOTER);
-        self::assertStringContainsString('nato.int', DecorationCatalog::FOOTER);
+        self::assertStringContainsString('représentations génériques', DecorationCatalog::CAUTION);
+        self::assertStringNotContainsString('GENERIC', DecorationCatalog::CAUTION);
+        self::assertStringNotContainsString('NATO_INSPIRED', DecorationCatalog::CAUTION);
+        self::assertStringNotContainsString('tioh.army.mil', DecorationCatalog::FOOTER);
+        self::assertStringNotContainsString('nato.int', DecorationCatalog::FOOTER);
         self::assertStringNotContainsString('official reproduction', strtolower(DecorationCatalog::CAUTION));
     }
 
@@ -88,6 +93,17 @@ final class DecorationCatalogTest extends TestCase
             $svg = DecorationCatalog::glyphSvg($glyph);
             self::assertStringContainsString('<svg', $svg);
             self::assertStringNotContainsString('<img', $svg);
+        }
+    }
+
+    public function testPatternChoicesAreHumanLabeled(): void
+    {
+        self::assertArrayHasKey('dk-rb-honor', DecorationCatalog::PATTERN_CHOICES);
+        self::assertSame('Pourpre et argent', DecorationCatalog::PATTERN_CHOICES['dk-rb-honor']);
+        foreach (DecorationCatalog::PATTERN_CHOICES as $class => $label) {
+            self::assertMatchesRegularExpression('/^dk-[a-z0-9_-]+$/i', $class);
+            self::assertStringNotContainsString('GENERIC', $label);
+            self::assertStringNotContainsString('_', $label);
         }
     }
 }

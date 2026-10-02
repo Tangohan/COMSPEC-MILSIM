@@ -227,7 +227,10 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
                 <dt>Décorations</dt>
                 <dd>
                     <?php
-                    $medalRackResolved = \App\Support\DecorationCatalog::resolveLines($medalRackItems);
+                    $medalRackResolved = \App\Support\DecorationCatalog::resolveLines(
+                        $medalRackItems,
+                        (int) (\App\Core\Session::get('tenant_id') ?? 0) ?: null
+                    );
                     $names = array_map(static fn (array $item): string => (string) ($item['name'] ?? ''), $medalRackResolved);
                     echo htmlspecialchars(implode(' · ', array_filter($names)), ENT_QUOTES, 'UTF-8');
                     ?>

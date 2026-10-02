@@ -11,7 +11,7 @@ namespace App\Support;
  * decoration is depicted, no real award name is used, no government or
  * protected emblem is reproduced.
  *
- * @phpstan-type DecorationFamily 'GENERIC'|'NATO_INSPIRED'
+ * @phpstan-type DecorationFamily 'GENERIC'|'NATO_INSPIRED'|'CUSTOM'
  * @phpstan-type DecorationType 'ribbon'|'medal'
  * @phpstan-type DecorationRow array{
  *     id: string,
@@ -35,7 +35,8 @@ namespace App\Support;
  *     rackWidthPx: int,
  *     rackHeightPx: int,
  *     medalCardPx: int,
- *     medalFichePx: int
+ *     medalFichePx: int,
+ *     imageUrl: ?string
  * }
  * @phpstan-type ResolvedDecoration array{
  *     id: string,
@@ -60,6 +61,7 @@ namespace App\Support;
  *     rackHeightPx: int,
  *     medalCardPx: int,
  *     medalFichePx: int,
+ *     imageUrl: ?string,
  *     isCustom: bool,
  *     rawLabel: string,
  *     device: ?string
@@ -67,20 +69,46 @@ namespace App\Support;
  */
 final class DecorationCatalog
 {
-    public const CAUTION = 'Modèles graphiques inspirés de références U.S. Army et OTAN. Les noms, formes et motifs sont utilisés ici à des fins de démonstration UI et ne constituent pas des reproductions officielles ni une preuve d\'attribution.';
+    public const CAUTION = 'Ces motifs sont des représentations génériques destinées au dossier. Ils ne correspondent à aucune décoration officielle et ne prouvent pas une attribution réelle.';
 
-    public const FOOTER = 'Proportions générales informées par, sans reproduire : U.S. Army Institute of Heraldry (tioh.army.mil), U.S. Army veteran medals (veteranmedals.army.mil), NATO official texts (nato.int). Aucun emblème gouvernemental ni logo protégé n\'est reproduit dans ce pack.';
+    public const FOOTER = 'Les formes s’inspirent librement de traditions héraldiques courantes, sans reproduire d’emblème officiel ni de décoration nominative existante.';
 
-    public const DEVICE_NOTE = 'Les dispositifs affichés (étoile, chiffre) sont génériques et ne représentent aucune attribution réelle.';
+    public const DEVICE_NOTE = 'Les dispositifs affichés (étoile, chiffre) sont purement illustratifs.';
+
+    /** Motifs CSS proposés dans l’éditeur (valeur technique → libellé métier). */
+    public const PATTERN_CHOICES = [
+        'dk-rb-svc' => 'Rouge et or',
+        'dk-rb-camp' => 'Bleu marine et blanc',
+        'dk-rb-cond' => 'Bleu-vert à liseré',
+        'dk-rb-cbt' => 'Jaune et noir',
+        'dk-rb-unit' => 'Bleu royal',
+        'dk-rb-qual' => 'Vert à diagonales',
+        'dk-rb-merit' => 'Bronze et or',
+        'dk-rb-svc2' => 'Gris argenté',
+        'dk-rb-nato' => 'Bleu multinational',
+        'dk-rb-honor' => 'Pourpre et argent',
+        'dk-rb-rescue' => 'Orange et bleu',
+        'dk-rb-recon' => 'Olive et sable',
+        'dk-rb-air' => 'Ciel et blanc',
+        'dk-rb-night' => 'Noir et or',
+        'dk-rb-support' => 'Vert olive',
+        'dk-rb-civil' => 'Bleu-vert, blanc et ambre',
+        'dk-rb-collective' => 'Blanc à bande bleue',
+    ];
 
     /**
      * @return list<DecorationRow>
      */
-    public static function all(): array
+    public static function all(?int $tenantId = null): array
     {
         $rows = [];
         foreach (self::definitions() as $row) {
             $rows[] = $row;
+        }
+        if ($tenantId !== null && $tenantId > 0) {
+            foreach (self::tenantMotifs($tenantId) as $row) {
+                $rows[] = $row;
+            }
         }
 
         return $rows;
@@ -89,29 +117,29 @@ final class DecorationCatalog
     /**
      * @return list<DecorationRow>
      */
-    public static function ribbons(): array
+    public static function ribbons(?int $tenantId = null): array
     {
-        return array_values(array_filter(self::all(), static fn (array $row): bool => $row['type'] === 'ribbon'));
+        return array_values(array_filter(self::all($tenantId), static fn (array $row): bool => $row['type'] === 'ribbon'));
     }
 
     /**
      * @return list<DecorationRow>
      */
-    public static function medals(): array
+    public static function medals(?int $tenantId = null): array
     {
-        return array_values(array_filter(self::all(), static fn (array $row): bool => $row['type'] === 'medal'));
+        return array_values(array_filter(self::all($tenantId), static fn (array $row): bool => $row['type'] === 'medal'));
     }
 
     /**
      * @return DecorationRow|null
      */
-    public static function find(string $id): ?array
+    public static function find(string $id, ?int $tenantId = null): ?array
     {
         $id = trim($id);
         if ($id === '') {
             return null;
         }
-        foreach (self::definitions() as $row) {
+        foreach (self::all($tenantId) as $row) {
             if ($row['id'] === $id) {
                 return $row;
             }
@@ -124,7 +152,7 @@ final class DecorationCatalog
      * @param list<string> $lines
      * @return list<ResolvedDecoration>
      */
-    public static function resolveLines(array $lines): array
+    public static function resolveLines(array $lines, ?int $tenantId = null): array
     {
         $out = [];
         $seen = [];
@@ -143,7 +171,7 @@ final class DecorationCatalog
                     $device = $deviceRaw;
                 }
             }
-            $hit = self::match($lookup);
+            $hit = self::match($lookup, $tenantId);
             if ($hit !== null) {
                 $key = $hit['id'];
                 if (isset($seen[$key])) {
@@ -175,12 +203,12 @@ final class DecorationCatalog
      * @param list<mixed> $catalogIds
      * @return list<string>
      */
-    public static function mergeRackInput(array $catalogIds, string $customText, int $maxItems = 24, int $maxLen = 160): array
+    public static function mergeRackInput(array $catalogIds, string $customText, int $maxItems = 24, int $maxLen = 160, ?int $tenantId = null): array
     {
         $ids = [];
         foreach ($catalogIds as $rawId) {
             $id = trim((string) $rawId);
-            if (self::find($id) === null) {
+            if (self::find($id, $tenantId) === null) {
                 continue;
             }
             if (!in_array($id, $ids, true)) {
@@ -199,7 +227,7 @@ final class DecorationCatalog
             } elseif (strlen($value) > $maxLen) {
                 $value = substr($value, 0, $maxLen);
             }
-            if (self::find($value) !== null) {
+            if (self::find($value, $tenantId) !== null) {
                 if (!in_array($value, $ids, true)) {
                     $ids[] = $value;
                 }
@@ -221,7 +249,7 @@ final class DecorationCatalog
      * @param list<string> $stored
      * @return array{catalogIds: list<string>, customLines: list<string>}
      */
-    public static function splitStored(array $stored): array
+    public static function splitStored(array $stored, ?int $tenantId = null): array
     {
         $catalogIds = [];
         $customLines = [];
@@ -234,7 +262,7 @@ final class DecorationCatalog
             if (str_contains($value, '|')) {
                 $lookup = trim((string) explode('|', $value, 2)[0]);
             }
-            if (self::find($lookup) !== null) {
+            if (self::find($lookup, $tenantId) !== null) {
                 if (!in_array($lookup, $catalogIds, true)) {
                     $catalogIds[] = $lookup;
                 }
@@ -246,25 +274,72 @@ final class DecorationCatalog
         return ['catalogIds' => $catalogIds, 'customLines' => $customLines];
     }
 
-    public static function familyLine(array $row): string
+    /** Libellé métier d’une famille (jamais le code technique brut). */
+    public static function familyLabel(string $family): string
     {
-        $family = (string) ($row['family'] ?? 'GENERIC');
+        return match ($family) {
+            'NATO_INSPIRED' => 'Multinationale',
+            'CUSTOM' => 'Créée par l’organisation',
+            default => 'Catalogue',
+        };
+    }
+
+    public static function detailLine(array $row): string
+    {
+        $parts = [self::familyLabel((string) ($row['family'] ?? 'GENERIC'))];
         $type = (string) ($row['type'] ?? 'ribbon');
         $level = (string) ($row['level'] ?? '');
         $glyph = (string) ($row['glyph'] ?? '');
-        if ($type !== 'medal') {
-            return $family;
+        if ($type === 'medal') {
+            $extra = match (true) {
+                ($row['family'] ?? '') === 'NATO_INSPIRED' => 'couronne stylisée',
+                $glyph === 'circle' => 'disque poli',
+                $level === 'gold' => 'or',
+                $level === 'silver' => 'argent',
+                $level === 'bronze' => 'bronze',
+                $level !== '' => $level,
+                default => '',
+            };
+            if ($extra !== '') {
+                $parts[] = $extra;
+            }
+        } elseif ($type === 'ribbon') {
+            $parts[] = 'Ruban';
         }
-        $extra = match (true) {
-            $family === 'NATO_INSPIRED' => 'couronne stylisée',
-            $glyph === 'circle' => 'disque poli',
-            $level === 'gold' => 'or',
-            $level === 'silver' => 'argent',
-            $level === 'bronze' => 'bronze',
-            default => $level,
-        };
 
-        return $extra !== '' ? $family . ' · ' . $extra : $family;
+        return implode(' · ', $parts);
+    }
+
+    public static function familyLine(array $row): string
+    {
+        return self::detailLine($row);
+    }
+
+    public static function imageUrl(array $row): ?string
+    {
+        $url = trim((string) ($row['imageUrl'] ?? ''));
+
+        return $url !== '' ? $url : null;
+    }
+
+    /** Style inline background (image ou dégradé de couleurs personnalisées). */
+    public static function swatchStyle(array $row): string
+    {
+        $imageUrl = self::imageUrl($row);
+        if ($imageUrl !== null) {
+            return 'background-image:url(\'' . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') . '\')';
+        }
+        $custom = trim((string) ($row['customBackground'] ?? ''));
+        if ($custom !== '') {
+            return 'background:' . $custom;
+        }
+
+        return '';
+    }
+
+    public static function isTenantMotif(string $id): bool
+    {
+        return str_starts_with(trim($id), 'motif:');
     }
 
     public static function glyphSvg(string $glyph, bool $small = false): string
@@ -294,14 +369,14 @@ final class DecorationCatalog
     /**
      * @return DecorationRow|null
      */
-    private static function match(string $raw): ?array
+    private static function match(string $raw, ?int $tenantId = null): ?array
     {
         $raw = trim($raw);
         if ($raw === '') {
             return null;
         }
         $folded = self::fold($raw);
-        foreach (self::definitions() as $row) {
+        foreach (self::all($tenantId) as $row) {
             if ($row['id'] === $raw || self::fold($row['id']) === $folded) {
                 return $row;
             }
@@ -316,6 +391,86 @@ final class DecorationCatalog
         }
 
         return null;
+    }
+
+    /**
+     * @return list<DecorationRow>
+     */
+    private static function tenantMotifs(int $tenantId): array
+    {
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\TenantDecorationMotifRepository::class);
+            $storage = \App\Core\Container::get(\App\Services\Personnel\DecorationMotifStorageService::class);
+            $rows = [];
+            foreach ($repo->listForTenant($tenantId, false) as $motif) {
+                $idNum = (int) ($motif['id'] ?? 0);
+                if ($idNum < 1) {
+                    continue;
+                }
+                $type = ((string) ($motif['motif_type'] ?? 'ribbon')) === 'medal' ? 'medal' : 'ribbon';
+                $patternClass = trim((string) ($motif['pattern_class'] ?? ''));
+                if ($patternClass === '' || !isset(self::PATTERN_CHOICES[$patternClass])) {
+                    $patternClass = $type === 'medal' ? 'dk-rb-svc2' : 'dk-rb-svc2';
+                }
+                $imagePath = trim((string) ($motif['image_path'] ?? ''));
+                $imageUrl = $imagePath !== '' ? $storage->publicUrl($imagePath) : null;
+                $colors = [];
+                $decoded = json_decode((string) ($motif['colors_json'] ?? ''), true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $hex) {
+                        $hex = strtoupper(trim((string) $hex));
+                        if (preg_match('/^#[0-9A-F]{6}$/', $hex)) {
+                            $colors[] = $hex;
+                        }
+                    }
+                }
+                if ($colors === []) {
+                    $colors = ['#6b7278', '#dfe3e6'];
+                }
+                // Couleurs choisies → dégradé inline si aucune image n’est fournie.
+                $customStyle = null;
+                if (($imageUrl === null || $imageUrl === '') && count($colors) >= 2) {
+                    $stops = [];
+                    $n = count($colors);
+                    foreach ($colors as $i => $hex) {
+                        $from = (int) floor(($i / $n) * 100);
+                        $to = (int) floor((($i + 1) / $n) * 100);
+                        $stops[] = $hex . ' ' . $from . '% ' . $to . '%';
+                    }
+                    $customStyle = 'linear-gradient(90deg, ' . implode(', ', $stops) . ')';
+                }
+                $rows[] = [
+                    'id' => 'motif:' . $idNum,
+                    'name' => (string) ($motif['name'] ?? 'Motif personnalisé'),
+                    'family' => 'CUSTOM',
+                    'type' => $type,
+                    'level' => (string) ($motif['level_label'] ?? ($type === 'medal' ? 'service' : 'custom')),
+                    'colors' => $colors,
+                    'pattern' => 'tenant-custom',
+                    'patternClass' => $patternClass,
+                    'dropClass' => trim((string) ($motif['drop_class'] ?? '')) ?: ($type === 'medal' ? 'dk-drop-svc' : ''),
+                    'discClass' => trim((string) ($motif['disc_class'] ?? '')) ?: ($type === 'medal' ? 'dk-disc-svc' : ''),
+                    'glyph' => trim((string) ($motif['glyph'] ?? '')) ?: ($type === 'medal' ? 'circle' : ''),
+                    'description' => trim((string) ($motif['description'] ?? '')) ?: 'Motif créé par l’organisation.',
+                    'referenceUrl' => '',
+                    'isOfficialReference' => false,
+                    'sort' => 1000 + (int) ($motif['sort_order'] ?? 0),
+                    'aliases' => [],
+                    'cardWidthPx' => 46,
+                    'cardHeightPx' => 16,
+                    'rackWidthPx' => 52,
+                    'rackHeightPx' => 18,
+                    'medalCardPx' => 34,
+                    'medalFichePx' => 62,
+                    'imageUrl' => $imageUrl !== '' ? $imageUrl : null,
+                    'customBackground' => $customStyle,
+                ];
+            }
+
+            return $rows;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -483,9 +638,9 @@ final class DecorationCatalog
                 ['#173d73', '#ffffff', '#c1272d'],
                 'nato-bands',
                 'dk-rb-nato',
-                'Bleu OTAN avec bandes blanches et rouges — traité comme « NATO-inspired », pas la reproduction d’une mission précise.',
+                'Bleu multinational avec bandes blanches et rouges — motif générique, pas la reproduction d’une mission précise.',
                 90,
-                'https://www.nato.int/en/about-us/official-texts-and-resources'
+                ''
             ),
             self::medal(
                 'med_etoile_bravoure',
@@ -557,10 +712,10 @@ final class DecorationCatalog
                 'dk-drop-nato',
                 'dk-disc-nato',
                 'wreath',
-                'Couronne stylisée sur disque bleu OTAN, non-officiel.',
+                'Couronne stylisée sur disque bleu, motif générique multinational.',
                 140,
                 [],
-                'https://www.nato.int/en/news-and-events/articles/news/2012/11/19/ims-civilians-awarded-the-non-article-5-medal-for-service-in-afghanistan'
+                ''
             ),
             self::medal(
                 'med_medaille_service',
@@ -575,6 +730,136 @@ final class DecorationCatalog
                 'circle',
                 'Disque poli, catégorie générique « médaille de service ».',
                 150
+            ),
+            self::ribbon(
+                'rbn_honneur_pourpre',
+                'Honneur',
+                'GENERIC',
+                'honor',
+                ['#5b2a6e', '#e8e4ef'],
+                'purple-silver',
+                'dk-rb-honor',
+                'Pourpre à liserés argentés, catégorie générique « honneur ».',
+                160
+            ),
+            self::ribbon(
+                'rbn_sauvetage',
+                'Sauvetage',
+                'GENERIC',
+                'rescue',
+                ['#d97706', '#1e3a5f'],
+                'orange-navy',
+                'dk-rb-rescue',
+                'Orange et bleu marine, catégorie générique « sauvetage ».',
+                170
+            ),
+            self::ribbon(
+                'rbn_reconnaissance',
+                'Reconnaissance',
+                'GENERIC',
+                'recon',
+                ['#556b2f', '#c2b280'],
+                'olive-sand',
+                'dk-rb-recon',
+                'Olive et sable, catégorie générique « reconnaissance ».',
+                180
+            ),
+            self::ribbon(
+                'rbn_soutien_aerien',
+                'Soutien aérien',
+                'GENERIC',
+                'air',
+                ['#5b9bd5', '#ffffff'],
+                'sky-white',
+                'dk-rb-air',
+                'Ciel et blanc, catégorie générique « soutien aérien ».',
+                190
+            ),
+            self::ribbon(
+                'rbn_operations_nocturnes',
+                'Opérations nocturnes',
+                'GENERIC',
+                'night',
+                ['#111111', '#c7a33e'],
+                'black-gold',
+                'dk-rb-night',
+                'Noir et or, catégorie générique « opérations nocturnes ».',
+                200
+            ),
+            self::ribbon(
+                'rbn_soutien_logistique',
+                'Soutien logistique',
+                'GENERIC',
+                'support',
+                ['#4a5d23', '#a3b18a'],
+                'olive-support',
+                'dk-rb-support',
+                'Vert olive, catégorie générique « soutien logistique ».',
+                210
+            ),
+            self::ribbon(
+                'rbn_engagement_civil',
+                'Engagement civil',
+                'GENERIC',
+                'civil',
+                ['#0e7490', '#ffffff', '#f59e0b'],
+                'teal-white-amber',
+                'dk-rb-civil',
+                'Bleu-vert, blanc et ambre, catégorie générique « engagement civil ».',
+                220
+            ),
+            self::ribbon(
+                'rbn_mention_collective',
+                'Mention collective',
+                'GENERIC',
+                'unit',
+                ['#f8fafc', '#1e40af', '#f8fafc'],
+                'white-blue-white',
+                'dk-rb-collective',
+                'Blanc à bande centrale bleue, catégorie générique « mention collective ».',
+                230
+            ),
+            self::medal(
+                'med_medaille_campagne',
+                'Médaille de campagne',
+                'GENERIC',
+                'campaign',
+                ['#17335e', '#ffffff'],
+                'campaign-disc',
+                'dk-rb-camp',
+                'dk-drop-svc',
+                'dk-disc-svc',
+                'circle',
+                'Disque de campagne, forme héraldique générique.',
+                240
+            ),
+            self::medal(
+                'med_medaille_honneur',
+                'Médaille d’honneur',
+                'GENERIC',
+                'gold',
+                ['#5b2a6e', '#e8e4ef'],
+                'honor-star',
+                'dk-rb-honor',
+                'dk-drop-gold',
+                'dk-disc-gold',
+                'star',
+                'Étoile d’honneur, échelon or, forme héraldique générique.',
+                250
+            ),
+            self::medal(
+                'med_etoile_service',
+                'Étoile de service',
+                'GENERIC',
+                'silver',
+                ['#9aa2a8', '#dfe3e6'],
+                'service-star',
+                'dk-rb-svc2',
+                'dk-drop-silver',
+                'dk-disc-silver',
+                'star',
+                'Étoile de service, échelon argent, forme héraldique générique.',
+                260
             ),
         ];
 
@@ -595,7 +880,7 @@ final class DecorationCatalog
         string $patternClass,
         string $description,
         int $sort,
-        string $referenceUrl = 'https://tioh.army.mil/'
+        string $referenceUrl = ''
     ): array {
         return self::row(
             $id,
@@ -635,7 +920,7 @@ final class DecorationCatalog
         string $description,
         int $sort,
         array $aliases = [],
-        string $referenceUrl = 'https://tioh.army.mil/FAQs/FaqsInsignia.aspx?SectionID=104'
+        string $referenceUrl = ''
     ): array {
         return self::row(
             $id,
@@ -681,7 +966,11 @@ final class DecorationCatalog
         return [
             'id' => $id,
             'name' => $name,
-            'family' => $family === 'NATO_INSPIRED' ? 'NATO_INSPIRED' : 'GENERIC',
+            'family' => match ($family) {
+                'NATO_INSPIRED' => 'NATO_INSPIRED',
+                'CUSTOM' => 'CUSTOM',
+                default => 'GENERIC',
+            },
             'type' => $type === 'medal' ? 'medal' : 'ribbon',
             'level' => $level,
             'colors' => $colors,
@@ -701,6 +990,7 @@ final class DecorationCatalog
             'rackHeightPx' => 18,
             'medalCardPx' => 34,
             'medalFichePx' => 62,
+            'imageUrl' => null,
         ];
     }
 }
