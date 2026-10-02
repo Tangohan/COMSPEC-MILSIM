@@ -140,7 +140,7 @@ final class JnetPortalRealDataAssetTest extends TestCase
 
         // Photo d'opérateur (portrait du dossier), jamais la photo de compte.
         self::assertStringContainsString('personnel_operator_portrait_url', $dashboard);
-        self::assertStringNotContainsString("user_media_public_url($row['avatar_url']", $dashboard);
+        self::assertStringNotContainsString('user_media_public_url($row[\'avatar_url\']', $dashboard);
         self::assertStringContainsString('jn-ex__face', (string) file_get_contents($root . '/views/jnet/_exchange.php'));
     }
 }
