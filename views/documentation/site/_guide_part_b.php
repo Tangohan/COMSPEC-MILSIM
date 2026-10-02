@@ -427,37 +427,36 @@
 
     <h3>Fonctionnement</h3>
     <p>
-        La logique générale d’un dossier suit un enchaînement d’étapes, même si le détail des boutons peut varier légèrement selon votre rôle :
+        Chaque dossier avance en <strong>cinq étapes</strong>, affichées en haut de chaque écran sous la forme « Étape n sur 5 », avec un badge d’état
+        et un encadré <strong>Prochaine action</strong> qui indique qui doit agir et comment :
     </p>
     <ol class="site-docs__steps">
-        <li><strong>Proposition</strong> — L’unité à l’initiative rédige un titre clair, choisit une typologie (entraînement conjoint, appui, échange
-            d’information…) et, si besoin, une date limite de réponse et des conditions suspensives (points à lever avant de considérer la coopération
-            comme prête à avancer).</li>
-        <li><strong>Invitations et acceptation</strong> — Les communautés partenaires sont invitées ; chacune accepte, refuse ou formule une
-            contre-proposition. Tant que les parties requises n’ont pas toutes accepté, le dossier ne peut pas avancer vers l’ouverture de l’espace
-            commun.</li>
-        <li><strong>Autorisation de partage (consentement personnel)</strong> — Chaque participant concerné confirme explicitement, pour son propre
-            compte, les familles d’informations qu’il accepte de partager dans ce cadre (brief, organigramme, qualifications, documents de séance…). Pour
-            les partages jugés sensibles, une courte justification peut être demandée.</li>
-        <li><strong>Confirmation par code de courriel</strong> — Un code à usage limité dans le temps est envoyé sur l’adresse du compte : il doit être
-            saisi sur la page indiquée pour valider l’autorisation de partage. En cas d’échec répété, respectez le délai affiché avant de redemander un
-            code.</li>
-        <li><strong>Activation</strong> — Le dossier passe en « coopération en cours ». Un instantané de contexte peut être enregistré (participants,
-            grandes lignes de la proposition, éléments de structure déjà saisis) pour servir de référence en cas de différend ultérieur sur ce qui avait
-            été acté au départ.</li>
-        <li><strong>Espace commun</strong> — Le fil de discussion partagé devient disponible, avec un message d’accueil récapitulant l’objet, les unités
-            engagées et les règles de bon usage.</li>
-        <li><strong>Réunion</strong> — Planification d’un rendez-vous (titre, ordre du jour, date, participants attendus), puis enregistrement dans le
-            journal une fois tenue, avec lien vers un compte rendu si votre unité en fournit un.</li>
-        <li><strong>Clôture</strong> — Motif, bilan synthétique et niveau de conservation des éléments selon les choix proposés par le pilote du dossier.</li>
-        <li><strong>Retour d’expérience (REX)</strong> — Après clôture, chaque communauté remplit un formulaire structuré (réussites, difficultés,
-            recommandations) ; les personnes habilitées peuvent consulter une vue consolidée regroupant les contributions de toutes les unités.</li>
+        <li><strong>Cadrage</strong> — L’unité à l’initiative crée le dossier avec l’assistant en trois temps (l’essentiel, les partenaires, la
+            relecture) : titre, typologie, priorité, date limite de réponse, besoins et conditions suspensives.</li>
+        <li><strong>Invitations &amp; négociation</strong> — Les unités invitées (plusieurs à la fois si besoin) acceptent, refusent — un motif peut
+            accompagner le refus — ou formulent une contre-proposition. Le pilote peut <strong>relancer</strong> une unité sans réponse (une fois par
+            24 h), <strong>retirer</strong> une unité ou <strong>annuler</strong> la proposition avec un motif obligatoire. Un refus ne bloque pas : le
+            lancement est possible dès qu’au moins une unité a accepté et qu’aucune réponse n’est attendue.</li>
+        <li><strong>Préparation</strong> — Au lancement, l’espace commun s’ouvre. Chaque responsable donne son <strong>autorisation de partage</strong> en
+            deux temps : il coche les familles de données (opérationnel, personnel, documents) — une justification est obligatoire pour les données
+            marquées « Sensible » — puis saisit le code à six chiffres reçu par courriel. L’autorisation est valable un temps limité et se renouvelle
+            depuis le même écran.</li>
+        <li><strong>Exécution</strong> — Conduite de l’opération : changement d’étape de conduite (confirmé dans une fenêtre dédiée), points de situation,
+            réunions, structures et liaisons. Le pilote peut <strong>suspendre</strong> la coopération (espace commun en lecture seule) puis la
+            reprendre.</li>
+        <li><strong>Clôture &amp; REX</strong> — Motif, bilan et niveau de conservation, puis retour d’expérience de chaque communauté et vue
+            consolidée pour les rôles habilités.</li>
     </ol>
     <p>
-        Le <strong>journal</strong> consigne, de façon horodatée, chaque événement marquant : invitations, validations, ouvertures, messages notables liés
-        au processus. Il permet à tout participant de se resynchroniser sans relire l’intégralité du fil de discussion.
+        Une coopération <strong>annulée</strong> ou <strong>clôturée</strong> passe en lecture seule : son journal et ses documents restent consultables.
+        Le <strong>journal</strong> consigne, de façon horodatée, chaque événement marquant (invitations, réponses et motifs, relances, retraits,
+        changements d’étape…) pour se resynchroniser sans relire tout le fil.
     </p>
-    <h4>Onglets disponibles pendant la coopération en cours</h4>
+    <h4>Onglets d’un dossier</h4>
+    <p>
+        Six onglets regroupent les écrans ; ceux qui ne servent pas encore à l’étape courante sont grisés, avec la raison au survol (par exemple
+        « L’espace commun s’ouvre au lancement »). Les anciennes adresses des écrans restent valides.
+    </p>
     <div class="site-docs__table-wrap">
         <table class="site-docs__table">
             <thead>
@@ -469,47 +468,50 @@
             <tbody>
                 <tr>
                     <td>Synthèse</td>
-                    <td>Vue d’ensemble : état, partenaires, raccourcis vers les autres onglets, actions possibles pour votre rôle</td>
+                    <td>Progression, prochaine action, tableau des participants (statut, réponse, autorisation de partage, relance, retrait), conduite</td>
                 </tr>
                 <tr>
-                    <td>Proposition</td>
-                    <td>Ajustement des paramètres initiaux tant que le cadre le permet</td>
-                </tr>
-                <tr>
-                    <td>Négociation</td>
-                    <td>Suivi des contre-propositions en cours ou passées</td>
+                    <td>Proposition &amp; négociation</td>
+                    <td>Cadrage (pilotes) et suivi des contre-propositions</td>
                 </tr>
                 <tr>
                     <td>Espace commun</td>
-                    <td>Fil de discussion partagé et, le cas échéant, visioconférence temporaire</td>
+                    <td>Fil partagé, accès au brief, verrouillage, et votre autorisation de partage</td>
                 </tr>
                 <tr>
-                    <td>Autorisation de partage</td>
-                    <td>Retour sur l’écran de consentement pour mettre à jour ou renouveler votre accord</td>
-                </tr>
-                <tr>
-                    <td>Chronologie</td>
-                    <td>Journal détaillé avec filtrage par type d’événement, export possible pour archivage interne</td>
-                </tr>
-                <tr>
-                    <td>Réunion</td>
+                    <td>Réunions</td>
                     <td>Planification, compte rendu, lien vers une rediffusion si disponible</td>
                 </tr>
                 <tr>
                     <td>Structures &amp; liaisons</td>
-                    <td>Points de contact, coordination cartographique en langage courant, besoins de compétences déclarés à titre indicatif</td>
+                    <td>Points de contact, coordination cartographique, besoins de compétences déclarés à titre indicatif</td>
                 </tr>
                 <tr>
-                    <td>Clôture</td>
-                    <td>Motif, bilan, niveau de conservation des éléments</td>
-                </tr>
-                <tr>
-                    <td>Retour d’expérience</td>
-                    <td>Formulaire par communauté puis vue consolidée pour les rôles habilités</td>
+                    <td>Journal &amp; REX</td>
+                    <td>Chronologie filtrable et exportable, retours d’expérience, clôture ou annulation</td>
                 </tr>
             </tbody>
         </table>
     </div>
+    <h4>Notifications et relances</h4>
+    <p>
+        Les responsables habilités des unités concernées et les membres désignés nommément sur le dossier sont prévenus dans le portail et, pour les
+        événements qui appellent une action, par courriel. Chaque courriel rappelle la coopération, l’unité émettrice, <strong>ce qui est attendu de
+        vous</strong> et l’échéance, avec un bouton qui ouvre directement le bon écran.
+    </p>
+    <ul>
+        <li><strong>Invitation, relance</strong> : accepter ou refuser. Une relance automatique part <strong>deux jours avant la date limite</strong> de
+            réponse ; une unité ne reçoit jamais plus d’une relance par 24 h, manuelle ou automatique.</li>
+        <li><strong>Refus, retrait, annulation, suspension</strong> : le motif saisi est repris dans le message.</li>
+        <li><strong>Lancement</strong> : donner votre autorisation de partage. <strong>Expiration proche</strong> : un avis part dans les 12 h qui
+            précèdent la fin de votre autorisation.</li>
+        <li><strong>Changement d’étape de conduite</strong> et <strong>point de situation</strong> : informations aux unités engagées ; le point de
+            situation est facultatif et peut être coupé par l’administration.</li>
+    </ul>
+    <p>
+        Les textes des messages sont modifiables par les administrateurs dans la gestion des annonces de coopération ; désactiver un gabarit coupe
+        l’envoi correspondant. Chacun peut aussi refuser les courriels de coopération dans ses préférences de notification.
+    </p>
     <p>
         Outre l’appartenance à une communauté <strong>support</strong> ou <strong>partenaire</strong>, des <strong>rôles au sein du dossier</strong>
         peuvent être attribués nommément à des membres (référent, lecture seule, rédacteur, observateur, officier de liaison…). Ces rôles ne remplacent
@@ -533,8 +535,14 @@
         unité.
     </p>
     <p>
-        Pour <strong>répondre à une invitation</strong> : ouvrez le dossier depuis votre propre liste, examinez la proposition, puis acceptez, refusez ou
-        formulez une contre-proposition argumentée si le cadre initial ne convient pas entièrement.
+        Pour <strong>répondre à une invitation</strong> : ouvrez le dossier depuis votre propre liste (le filtre « Action requise » les fait remonter),
+        examinez la proposition, puis acceptez, refusez — en indiquant si possible un motif — ou formulez une contre-proposition argumentée si le cadre
+        initial ne convient pas entièrement.
+    </p>
+    <p>
+        Pour <strong>piloter les invitations</strong> : dans le tableau des participants de la synthèse, relancez une unité sans réponse, retirez une
+        unité (ses accès partagés sont fermés et elle est prévenue) ou invitez-en d’autres en les recherchant par leur nom. Si la coopération n’a plus
+        lieu d’être, annulez la proposition depuis l’onglet Journal &amp; REX en précisant le motif : les unités invitées en sont informées.
     </p>
     <p>
         Pour <strong>autoriser le partage</strong> : ouvrez l’écran dédié, cochez les familles d’informations que vous acceptez de partager, complétez la

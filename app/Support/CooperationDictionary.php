@@ -105,8 +105,40 @@ final class CooperationDictionary
             'meeting_scheduled' => 'Réunion planifiée ou ajoutée au journal',
             'rex_submitted' => 'Retour d’expérience enregistré',
             'decision_published' => 'Décision publiée sur l’espace commun',
+            'partner_removed' => 'Unité retirée de la coopération',
+            'proposal_cancelled' => 'Proposition annulée',
+            'invitation_reminder' => 'Relance de l’invitation',
+            'mission_member_assigned' => 'Rôle de coopération attribué',
+            'operational_stage_updated' => 'Étape de conduite mise à jour',
+            'sitrep_logged' => 'Point de situation enregistré',
+            'mission_suspended' => 'Coopération suspendue',
+            'mission_resumed' => 'Coopération reprise',
+            'preparation_started' => 'Préparation engagée',
+            'consent_expiring' => 'Avis d’expiration d’une autorisation de partage',
             default => 'Événement',
         };
+    }
+
+    /**
+     * Précision affichée sous un événement de la chronologie (motif de refus, d’annulation…).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public static function eventDetail(string $eventType, array $payload): string
+    {
+        $reason = trim((string) ($payload['reason'] ?? $payload['motive'] ?? ''));
+        $prefix = match ($eventType) {
+            'partner_declined' => 'Motif du refus',
+            'partner_removed' => 'Motif du retrait',
+            'proposal_cancelled' => 'Motif de l’annulation',
+            'mission_suspended' => 'Motif de la suspension',
+            default => '',
+        };
+        if ($prefix === '' || $reason === '') {
+            return '';
+        }
+
+        return $prefix . ' : ' . $reason;
     }
 
     /** Catégorie pour filtrer la chronologie (clé technique). */
@@ -116,10 +148,12 @@ final class CooperationDictionary
             'topic_shared', 'grant_revoked', 'consent_verified' => 'access',
             'meeting_started', 'meeting_scheduled' => 'meetings',
             'mission_activated', 'mission_closed', 'counter_proposal_accepted', 'counter_proposal_declined',
-            'partner_accepted', 'partner_declined', 'co_lead_promoted', 'decision_published' => 'decisions',
+            'partner_accepted', 'partner_declined', 'co_lead_promoted', 'decision_published',
+            'partner_removed', 'proposal_cancelled', 'mission_suspended', 'mission_resumed',
+            'operational_stage_updated', 'preparation_started' => 'decisions',
             'counter_proposal_submitted', 'proposal_deadline_elapsed', 'mission_proposal_updated',
-            'partner_invited' => 'negotiation',
-            'mission_meta_updated', 'coop_forum_opened' => 'coordination',
+            'partner_invited', 'invitation_reminder' => 'negotiation',
+            'mission_meta_updated', 'coop_forum_opened', 'mission_member_assigned', 'sitrep_logged', 'consent_expiring' => 'coordination',
             'coop_forum_reply' => 'messages',
             'rex_submitted' => 'rex',
             default => 'other',
@@ -238,6 +272,51 @@ final class CooperationDictionary
             'cert_excerpt' => 'Extraits de certifications',
             default => 'Autre donnée listée',
         };
+    }
+
+    /**
+     * Familles de données regroupées pour le parcours d’autorisation de partage.
+     *
+     * @return array<string, array{label: string, description: string, keys: list<string>}>
+     */
+    public static function dataSharingFamilyGroups(): array
+    {
+        return [
+            'operational' => [
+                'label' => 'Opérationnel',
+                'description' => 'Ce qui sert à coordonner l’action commune.',
+                'keys' => ['brief', 'liaison', 'map', 'readiness', 'material', 'org_structure'],
+            ],
+            'personnel' => [
+                'label' => 'Personnel',
+                'description' => 'Informations sur les personnes engagées.',
+                'keys' => ['identity', 'competency', 'qualification', 'cert_excerpt'],
+            ],
+            'documents' => [
+                'label' => 'Documents',
+                'description' => 'Pièces écrites et traces des réunions.',
+                'keys' => ['documents', 'minutes', 'meeting'],
+            ],
+        ];
+    }
+
+    /** @return list<string> toutes les familles connues (ordre d’affichage) */
+    public static function dataSharingFamilyKeys(): array
+    {
+        $keys = [];
+        foreach (self::dataSharingFamilyGroups() as $g) {
+            foreach ($g['keys'] as $k) {
+                $keys[] = $k;
+            }
+        }
+
+        return $keys;
+    }
+
+    /** Familles sensibles : une justification est exigée pour les partager. */
+    public static function isSensitiveDataFamily(string $key): bool
+    {
+        return in_array($key, ['identity', 'qualification', 'cert_excerpt'], true);
     }
 
     public static function exchangeLockModeLabel(string $mode): string

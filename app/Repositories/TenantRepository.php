@@ -448,6 +448,47 @@ class TenantRepository
      *
      * @return list<array{id: int, name: string, slug: string}>
      */
+    /**
+     * Recherche de communautés par nom (sélecteurs de coopération) : champs publics uniquement.
+     *
+     * @return list<array{id: int, name: string, slug: string, tenant_type: ?string, logo_url: ?string}>
+     */
+    public function searchBasicExcluding(string $query, int $excludeTenantId, int $limit = 15): array
+    {
+        $q = trim($query);
+        if (mb_strlen($q) < 2) {
+            return [];
+        }
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+        $limit = max(1, min(30, $limit));
+        try {
+            $stmt = $this->pdo()->prepare(
+                "SELECT id, name, slug, tenant_type, logo_url FROM tenants
+                 WHERE id != ? AND id > 1 AND (name LIKE ? OR slug LIKE ?)
+                 ORDER BY (name LIKE ?) DESC, name ASC LIMIT {$limit}"
+            );
+            $stmt->execute([$excludeTenantId, $like, $like, $q . '%']);
+        } catch (\Throwable) {
+            $stmt = $this->pdo()->prepare(
+                "SELECT id, name, slug, NULL AS tenant_type, NULL AS logo_url FROM tenants
+                 WHERE id != ? AND id > 1 AND (name LIKE ? OR slug LIKE ?) ORDER BY name ASC LIMIT {$limit}"
+            );
+            $stmt->execute([$excludeTenantId, $like, $like]);
+        }
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[] = [
+                'id' => (int) $r['id'],
+                'name' => (string) $r['name'],
+                'slug' => (string) $r['slug'],
+                'tenant_type' => $r['tenant_type'] !== null ? (string) $r['tenant_type'] : null,
+                'logo_url' => $r['logo_url'] !== null && trim((string) $r['logo_url']) !== '' ? (string) $r['logo_url'] : null,
+            ];
+        }
+
+        return $out;
+    }
+
     public function listBasicExcluding(int $excludeTenantId): array
     {
         $stmt = $this->pdo()->prepare(

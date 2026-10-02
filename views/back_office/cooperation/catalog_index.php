@@ -51,7 +51,7 @@ $csrf = $csrfToken ?? \App\Core\Csrf::token();
                             <td class="px-4 py-3 text-slate-600"><?= (int) ($r['sort_order'] ?? 0) ?></td>
                             <td class="px-4 py-3 text-right space-x-2">
                                 <a href="<?= url('back-office/cooperation/catalog/' . $id . '/edit') ?>" class="text-sm font-semibold text-blue-700 hover:underline">Modifier</a>
-                                <form method="post" action="<?= url('back-office/cooperation/catalog/' . $id . '/delete') ?>" class="inline" onsubmit="return confirm('Supprimer cette entrée locale ?');">
+                                <form method="post" action="<?= url('back-office/cooperation/catalog/' . $id . '/delete') ?>" class="inline" data-ui-confirm="1" data-ui-confirm-title="Supprimer cette entrée ?" data-ui-confirm-body="Cette entrée locale du catalogue est supprimée définitivement.">
                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                                     <button type="submit" class="text-sm font-semibold text-rose-700 hover:underline">Supprimer</button>
                                 </form>

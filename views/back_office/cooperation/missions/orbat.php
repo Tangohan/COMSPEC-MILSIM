@@ -37,6 +37,7 @@ $status = (string) ($m['status'] ?? '');
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Coordination opérationnelle</h2>
         <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/meta'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="needs_submitted" value="1">
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Points de contact, fréquences, rendez-vous</label>
                 <textarea name="liaison_notes" rows="4" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Fréquences, contacts encadrement, horaires de coordination…"><?= htmlspecialchars((string) ($m['liaison_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
@@ -95,6 +96,16 @@ $status = (string) ($m['status'] ?? '');
             <?php endforeach; ?>
         </ul>
     </section>
+    <?php endif; ?>
+
+    <?php if ($orbatBlocks === []): ?>
+    <?php
+    $ui_empty_title = 'Aucune structure à afficher';
+    $ui_empty_description = 'L’organigramme des unités apparaît ici dès qu’au moins une unité partenaire a accepté la coopération.';
+    $ui_empty_primary_label = '';
+    $ui_empty_primary_href = '';
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php endif; ?>
 
     <?php if ($orbatBlocks !== []): ?>

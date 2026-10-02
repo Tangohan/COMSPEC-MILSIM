@@ -1,0 +1,350 @@
+/**
+ * Coopération inter-unités — en-tête de progression, tableau des participants, onglets.
+ * Chargé sur toutes les pages /back-office/cooperation/* (config/back_office_pages.php).
+ * Inspiré des motifs « indicateur d’étapes », « badge », « tag » et « callout » du DSFR,
+ * réalisé avec les jetons ATHENA (pas de charte de l’État).
+ */
+
+/* ——— Indicateur d’étapes ——— */
+.coop-progress {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 14px;
+  background: var(--ath-surface, #fff);
+}
+.coop-progress__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.coop-progress__title { margin: 0; font-size: 15px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.coop-progress__next { margin: 2px 0 0; font-size: 12.5px; color: var(--ath-muted, #5b6762); }
+
+.coop-progress__steps { margin-top: 12px; }
+.coop-progress__steps .ds-stepper {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.coop-progress__steps .ds-stepper__item {
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ath-subtle, #7a857f);
+}
+.coop-progress__steps .ds-stepper__item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ath-line, #e3e8ea);
+}
+.coop-progress__steps .ds-stepper__item--done { color: var(--ath-ink-2, #2c3833); }
+.coop-progress__steps .ds-stepper__item--done::before { background: #0b8a5c; }
+.coop-progress__steps .ds-stepper__item--active { color: var(--ath-ink, #0c1116); font-weight: 800; }
+.coop-progress__steps .ds-stepper__item--active::before { background: linear-gradient(90deg, #0b8a5c 50%, var(--ath-line, #e3e8ea) 50%); }
+.coop-progress__steps.is-suspended .ds-stepper__item--active::before { background: linear-gradient(90deg, #d97706 50%, var(--ath-line, #e3e8ea) 50%); }
+.coop-progress__steps.is-cancelled .ds-stepper__item--active::before { background: #e11d48; }
+.coop-progress__steps .ds-stepper__num { display: none; }
+@media (max-width: 640px) {
+  /* Petits écrans : seule l’étape en cours garde son libellé (le titre donne « Étape n sur 5 »). */
+  .coop-progress__steps .ds-stepper__item:not(.ds-stepper__item--active) > span:not(.ds-stepper__num) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .coop-progress__steps .ds-stepper__item--active { grid-column: span 1; }
+}
+
+.coop-progress__blocked {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid #d97706;
+  border-radius: 0 8px 8px 0;
+  background: #fff8eb;
+  font-size: 13px;
+  color: #7a4a05;
+}
+
+.coop-progress__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #bfe8d4;
+  background: #effaf4;
+}
+.coop-progress__action--amber { border-color: #f2d49a; background: #fff8eb; }
+.coop-progress__action--slate { border-color: var(--ath-line, #e3e8ea); background: var(--ath-bg, #f6f8f7); }
+.coop-progress__action-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ath-muted, #5b6762); }
+.coop-progress__action-text { margin: 2px 0 0; font-size: 13.5px; color: var(--ath-ink, #0c1116); }
+.coop-progress__action-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: #0c1116;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.coop-progress__action-btn:hover { background: #0b8a5c; }
+
+/* ——— Tableau des participants (cartes sous 720 px) ——— */
+.coop-parts { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.coop-parts th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #5b6762);
+}
+.coop-parts td { padding: 10px; border-bottom: 1px solid var(--ath-line-soft, #eef1f2); vertical-align: top; }
+.coop-parts tr:last-child td { border-bottom: 0; }
+.coop-parts__unit { font-weight: 700; color: var(--ath-ink, #0c1116); }
+.coop-parts__muted { color: var(--ath-subtle, #7a857f); font-size: 12.5px; }
+.coop-parts__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.coop-parts__actions details { position: relative; }
+.coop-parts__btn {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px;
+  border: 1px solid var(--ath-line, #d5ddd9); border-radius: 7px; background: var(--ath-surface, #fff);
+  font-size: 12px; font-weight: 700; color: var(--ath-ink, #0c1116); cursor: pointer; list-style: none;
+}
+.coop-parts__btn::-webkit-details-marker { display: none; }
+.coop-parts__btn:hover { border-color: #12d18e; }
+.coop-parts__btn--danger { color: #b42318; }
+.coop-parts__btn--danger:hover { border-color: #e48a8a; }
+.coop-parts__btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.coop-parts__pop {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + 6px); width: 18rem;
+  padding: 12px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 10px;
+  background: var(--ath-surface, #fff); box-shadow: 0 16px 32px -16px rgba(12, 17, 22, 0.35);
+}
+@media (max-width: 720px) {
+  .coop-parts thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .coop-parts, .coop-parts tbody, .coop-parts tr, .coop-parts td { display: block; width: 100%; }
+  .coop-parts tr { margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; }
+  .coop-parts td { padding: 4px 0; border: 0; }
+  .coop-parts td[data-label]::before {
+    content: attr(data-label) " : ";
+    font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ath-muted, #5b6762);
+  }
+  .coop-parts__pop { position: static; width: auto; margin-top: 6px; }
+}
+
+/* ——— Mode nuit ——— */
+html[data-bo-theme="dark"] .coop-progress__blocked { background: #2a2212; color: #f0c27a; }
+html[data-bo-theme="dark"] .coop-progress__action { background: #12291f; border-color: #1f4a37; }
+html[data-bo-theme="dark"] .coop-progress__action--amber { background: #2a2212; border-color: #4d3c17; }
+html[data-bo-theme="dark"] .coop-progress__action-btn { background: #12d18e; color: #04130d; }
+
+/* ——— Onglets de la coopération (défilables sur mobile) ——— */
+.coop-tabs { margin: 0 0 24px; border-bottom: 1px solid var(--ath-line, #e3e8ea); }
+.coop-tabs__list, .coop-tabs__sub {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.coop-tabs__list > li, .coop-tabs__sub > li { flex: 0 0 auto; }
+.coop-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-bottom: 3px solid transparent;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ath-muted, #5b6762);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.coop-tabs__tab:hover { color: var(--ath-ink, #0c1116); }
+.coop-tabs__tab.is-active { color: var(--ath-ink, #0c1116); border-bottom-color: #0b8a5c; }
+.coop-tabs__tab.is-disabled, .coop-tabs__subtab.is-disabled { color: var(--ath-subtle, #a9b3b7); cursor: not-allowed; }
+.coop-tabs__tab:focus-visible, .coop-tabs__subtab:focus-visible { outline: 2px solid #12d18e; outline-offset: -2px; border-radius: 6px; }
+.coop-tabs__sub { padding: 8px 0 10px; gap: 6px; }
+.coop-tabs__subtab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ath-ink-2, #2c3833);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.coop-tabs__subtab.is-active { background: #0c1116; border-color: #0c1116; color: #fff; }
+html[data-bo-theme="dark"] .coop-tabs__subtab.is-active { background: #12d18e; border-color: #12d18e; color: #04130d; }
+
+/* ——— Messages sous champ (motif « message d’erreur » du DSFR) ——— */
+.fr-message { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ath-muted, #5b6762); }
+.fr-message--error { color: #b42318; font-weight: 600; }
+.fr-message--error::before { content: "⚠ "; }
+.fr-message--valid { color: #0b6e4a; }
+.fr-message--valid::before { content: "✓ "; }
+.fr-input--error { border-color: #b42318 !important; box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12); }
+html[data-bo-theme="dark"] .fr-message--error { color: #f08585; }
+html[data-bo-theme="dark"] .fr-message--valid { color: #6ee7b7; }
+
+/* ——— Liste des coopérations ——— */
+.coop-list__tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.coop-list__filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.coop-tag {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px;
+  border: 1px solid var(--ath-line, #d5ddd9); border-radius: 999px; background: var(--ath-surface, #fff);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ath-ink-2, #2c3833); cursor: pointer;
+}
+.coop-tag:hover { border-color: #12d18e; }
+.coop-tag.is-active { background: #0c1116; border-color: #0c1116; color: #fff; }
+.coop-tag--todo:not(.is-active) { border-color: #f2c37a; color: #8a5a06; }
+.coop-tag__n { font-size: 11.5px; font-weight: 700; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.coop-list__search input {
+  width: 16rem; max-width: 100%; min-height: 36px; padding: 0 12px;
+  border: 1px solid var(--ath-line, #d5ddd9); border-radius: 9px; background: var(--ath-surface, #fff); font-size: 13.5px;
+}
+.coop-list__search input:focus { outline: none; border-color: #12d18e; box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.15); }
+@media (max-width: 640px) { .coop-list__search, .coop-list__search input { width: 100%; } }
+.coop-list__items { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.coop-row[hidden] { display: none; }
+.coop-row__link {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 14px 16px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; background: var(--ath-surface, #fff);
+  text-decoration: none; color: inherit; transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.coop-row__link:hover { border-color: #12d18e; transform: translateY(-1px); }
+.coop-row__link:focus-visible { outline: 2px solid #12d18e; outline-offset: 2px; }
+.coop-row__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 22rem; }
+.coop-row__title { font-size: 15px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.coop-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.coop-row__step { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ath-muted, #5b6762); }
+.coop-row__dots { display: inline-flex; gap: 3px; }
+.coop-row__dots span { width: 14px; height: 5px; border-radius: 999px; background: var(--ath-line, #e3e8ea); }
+.coop-row__dots span.is-done { background: #0b8a5c; }
+.coop-row__dots span.is-active { background: linear-gradient(90deg, #0b8a5c 50%, var(--ath-line, #e3e8ea) 50%); }
+.coop-row__units { font-size: 12.5px; color: var(--ath-subtle, #7a857f); }
+.coop-row__side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+@media (max-width: 640px) { .coop-row__side { align-items: flex-start; } }
+.coop-row__todo {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 999px;
+  background: #fff4e0; color: #8a5a06; font-size: 12px; font-weight: 800;
+}
+.coop-row__deadline { font-size: 12px; color: var(--ath-muted, #5b6762); }
+.coop-row__deadline.is-late { color: #b42318; font-weight: 700; }
+.coop-list__empty { margin: 12px 0 0; padding: 18px; border: 1px dashed var(--ath-line, #d5ddd9); border-radius: 12px; text-align: center; font-size: 14px; color: var(--ath-muted, #5b6762); }
+html[data-bo-theme="dark"] .coop-tag.is-active { background: #12d18e; border-color: #12d18e; color: #04130d; }
+html[data-bo-theme="dark"] .coop-row__todo { background: #2a2212; color: #f0b35b; }
+
+/* ——— Assistant de création ——— */
+.coop-wizard { display: flex; flex-direction: column; gap: 18px; }
+.coop-wizard__step { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 20px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 14px; background: var(--ath-surface, #fff); min-width: 0; }
+.coop-wizard__step[hidden] { display: none; }
+.coop-wizard__legend { float: left; width: 100%; margin-bottom: 4px; font-size: 15px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.coop-wizard.is-enhanced .coop-wizard__legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.coop-wizard__units { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 6px; max-height: 22rem; overflow-y: auto; margin: 0; padding: 2px; list-style: none; }
+.coop-wizard__units li[hidden] { display: none; }
+.coop-wizard__unit { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 9px; font-size: 13.5px; cursor: pointer; }
+.coop-wizard__unit:has(input:checked) { border-color: #0b8a5c; background: #effaf4; }
+.coop-wizard__unit input { accent-color: #0b8a5c; }
+.coop-wizard__recap { display: grid; gap: 10px; margin: 0; }
+.coop-wizard__recap div { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 10px; }
+.coop-wizard__recap dt { font-size: 12.5px; font-weight: 700; color: var(--ath-muted, #5b6762); }
+.coop-wizard__recap dd { margin: 0; font-size: 14px; color: var(--ath-ink, #0c1116); }
+@media (max-width: 560px) { .coop-wizard__recap div { grid-template-columns: 1fr; gap: 2px; } }
+.coop-wizard__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.coop-wizard__btn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.coop-wizard__btn[hidden] { display: none; }
+.coop-wizard__btn--ghost { border: 1px solid var(--ath-line, #d5ddd9); background: var(--ath-surface, #fff); color: var(--ath-ink, #0c1116); }
+.coop-wizard__btn--ghost:hover { border-color: #12d18e; }
+.coop-wizard__btn--primary { border: 0; background: #0c1116; color: #fff; }
+.coop-wizard__btn--primary:hover { background: #0b8a5c; }
+html[data-bo-theme="dark"] .coop-wizard__unit:has(input:checked) { background: #12291f; }
+html[data-bo-theme="dark"] .coop-wizard__btn--primary { background: #12d18e; color: #04130d; }
+
+/* Bouton de passage d’étape désactivé tant que le prérequis n’est pas rempli */
+[data-coop-advance]:disabled { background: #cbd5e1 !important; color: #475569 !important; cursor: not-allowed; }
+html[data-bo-theme="dark"] [data-coop-advance]:disabled { background: #26302c !important; color: #7f8b86 !important; }
+
+/* ——— Combobox de recherche (unités, membres) ——— */
+.coop-cbx { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 42px; padding: 4px 6px;
+  border: 1px solid var(--ath-line, #d5ddd9); border-radius: 9px; background: var(--ath-surface, #fff); }
+.coop-cbx:focus-within { border-color: #12d18e; box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.15); }
+.coop-cbx__chips { display: contents; list-style: none; margin: 0; padding: 0; }
+.coop-cbx__chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px;
+  background: #e3f7ee; color: #0b6e4a; font-size: 12.5px; font-weight: 700; }
+.coop-cbx__chip-x { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 0; border-radius: 50%;
+  background: transparent; color: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.coop-cbx__chip-x:hover, .coop-cbx__chip-x:focus-visible { background: rgba(11, 110, 74, 0.15); outline: none; }
+.coop-cbx__input { flex: 1 1 10rem; min-width: 8rem; min-height: 32px; border: 0 !important; background: transparent !important; box-shadow: none !important;
+  font: inherit; font-size: 14px; color: var(--ath-ink, #0c1116); padding: 0 6px; }
+.coop-cbx__input:focus { outline: none; }
+.coop-cbx__list { position: absolute; z-index: 30; left: -1px; right: -1px; top: calc(100% + 4px); max-height: 18rem; overflow-y: auto; margin: 0; padding: 4px;
+  list-style: none; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 10px; background: var(--ath-surface, #fff);
+  box-shadow: 0 18px 36px -18px rgba(12, 17, 22, 0.4); }
+.coop-cbx__opt { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 7px; cursor: pointer; }
+.coop-cbx__opt.is-active { background: var(--ath-row-hover, #effaf4); outline: 2px solid #12d18e; outline-offset: -2px; }
+.coop-cbx__opt[aria-selected="true"] .coop-cbx__name::before { content: "✓ "; color: #0b8a5c; }
+.coop-cbx__opt[aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }
+.coop-cbx__name { font-size: 14px; font-weight: 600; color: var(--ath-ink, #0c1116); }
+.coop-cbx__meta { font-size: 12px; color: var(--ath-muted, #5b6762); }
+.coop-cbx__empty, .coop-cbx__loading { padding: 10px; font-size: 13px; color: var(--ath-muted, #5b6762); }
+.coop-cbx__help { flex-basis: 100%; margin: 0; padding: 0 6px; font-size: 12px; color: var(--ath-muted, #5b6762); }
+.coop-cbx__help:empty { display: none; }
+html[data-bo-theme="dark"] .coop-cbx__chip { background: #12291f; color: #6ee7b7; }
+
+/* ——— Boutons en cours d’envoi ——— */
+.is-loading { position: relative; color: transparent !important; pointer-events: none; }
+.is-loading::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.45); border-top-color: #fff; border-radius: 50%;
+  animation: coop-spin 0.7s linear infinite;
+}
+.coop-parts__btn.is-loading::after, .coop-cbx ~ * .is-loading::after { border-color: rgba(12, 17, 22, 0.25); border-top-color: #0c1116; }
+form[aria-busy="true"] { cursor: progress; }
+@keyframes coop-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .is-loading::after { animation-duration: 2s; } }
+
+/* ——— Autorisation de partage ——— */
+.coop-consent { display: flex; flex-direction: column; gap: 16px; max-width: 46rem; }
+.coop-consent--code { padding: 20px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 14px; background: var(--ath-surface, #fff); }
+.coop-consent__group { margin: 0; padding: 16px 18px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; background: var(--ath-surface, #fff); min-width: 0; }
+.coop-consent__legend { padding: 0 6px; font-size: 14px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.coop-consent__group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.coop-consent__group-desc { margin: 0; font-size: 12.5px; color: var(--ath-muted, #5b6762); }
+.coop-consent__all { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--ath-ink-2, #2c3833); cursor: pointer; }
+.coop-consent__items { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: 6px; }
+.coop-consent__item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--ath-line-soft, #eef1f2); border-radius: 9px; font-size: 13.5px; color: var(--ath-ink-2, #2c3833); cursor: pointer; }
+.coop-consent__item:has(input:checked) { border-color: #0b8a5c; background: #effaf4; }
+.coop-consent__item input, .coop-consent__all input { margin-top: 2px; accent-color: #0b8a5c; }
+.coop-consent__sensitive { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: #fdecec; color: #a32222; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.coop-consent__justif[hidden] { display: none; }
+.coop-consent-state { margin: 0 0 16px; padding: 12px 14px; border-left: 4px solid; border-radius: 0 10px 10px 0; font-size: 13.5px; }
+.coop-consent-state--valid { border-color: #0b8a5c; background: #effaf4; color: #0b4d35; }
+.coop-consent-state--expired { border-color: #d97706; background: #fff8eb; color: #7a4a05; }
+.coop-otp { width: 11rem; min-height: 48px; padding: 0 14px; border: 1px solid var(--ath-line, #d5ddd9); border-radius: 10px; font-size: 24px; font-weight: 700; letter-spacing: 0.35em; font-variant-numeric: tabular-nums; }
+.coop-otp:focus { outline: none; border-color: #12d18e; box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.15); }
+html[data-bo-theme="dark"] .coop-consent__item:has(input:checked) { background: #12291f; }
+html[data-bo-theme="dark"] .coop-consent__sensitive { background: #2c1616; color: #f08585; }
+html[data-bo-theme="dark"] .coop-consent-state--valid { background: #12291f; color: #a7f3d0; }
+html[data-bo-theme="dark"] .coop-consent-state--expired { background: #2a2212; color: #f0c27a; }
+[data-resend-btn]:disabled { color: var(--ath-subtle, #94a3b8) !important; text-decoration: none !important; cursor: not-allowed; }

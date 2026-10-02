@@ -35,6 +35,21 @@ final class CooperationAnnouncementEvents
 
     public const OPERATIONAL_STAGE_UPDATED = 'coop_operational_stage_updated';
 
+    public const PARTNER_REMOVED = 'coop_partner_removed';
+
+    public const PROPOSAL_CANCELLED = 'coop_proposal_cancelled';
+
+    public const INVITATION_REMINDER = 'coop_invitation_reminder';
+
+    public const MISSION_SUSPENDED = 'coop_mission_suspended';
+
+    public const MISSION_RESUMED = 'coop_mission_resumed';
+
+    public const CONSENT_EXPIRING = 'coop_consent_expiring';
+
+    /** Optionnel : gabarit courriel livré désactivé ; notification portail désactivable par l’administration. */
+    public const SITREP_ADDED = 'coop_sitrep_added';
+
     /** @return array<string, string> key => libellé interface */
     public static function labels(): array
     {
@@ -52,7 +67,25 @@ final class CooperationAnnouncementEvents
             self::COUNTER_PROPOSAL_ACCEPTED => 'Contre-proposition acceptée',
             self::COUNTER_PROPOSAL_DECLINED => 'Contre-proposition refusée',
             self::OPERATIONAL_STAGE_UPDATED => 'Changement d’étape de conduite',
+            self::PARTNER_REMOVED => 'Une communauté a été retirée de la coopération',
+            self::PROPOSAL_CANCELLED => 'La proposition de coopération est annulée',
+            self::INVITATION_REMINDER => 'Relance d’une invitation sans réponse',
+            self::MISSION_SUSPENDED => 'La coopération est suspendue',
+            self::MISSION_RESUMED => 'La coopération reprend',
+            self::CONSENT_EXPIRING => 'Autorisation de partage bientôt expirée',
+            self::SITREP_ADDED => 'Nouveau point de situation (optionnel)',
         ];
+    }
+
+    /**
+     * Événements facultatifs : fréquents, ils sont livrés désactivés en courriel et peuvent être
+     * coupés entièrement en désactivant leurs gabarits.
+     *
+     * @return list<string>
+     */
+    public static function optionalKeys(): array
+    {
+        return [self::SITREP_ADDED];
     }
 
     /** @return list<string> */
@@ -113,6 +146,38 @@ final class CooperationAnnouncementEvents
                 'subject' => 'Étape mise à jour — {titre_cooperation}',
                 'body' => "L’étape de conduite de « {titre_cooperation} » est maintenant : {etape_conduite}.\n\n{lien_synthese}",
             ],
+            self::PARTNER_DECLINED => [
+                'subject' => 'Invitation refusée — {titre_cooperation}',
+                'body' => "{unite_destinataire} a refusé de participer à « {titre_cooperation} ».\n{motif}\n\nVoir les participants : {lien_synthese}",
+            ],
+            self::PARTNER_REMOVED => [
+                'subject' => 'Retrait de la coopération — {titre_cooperation}',
+                'body' => "{unite_support} a retiré votre communauté de la coopération « {titre_cooperation} ». Vos accès partagés à cette coopération sont fermés.\n{motif}",
+            ],
+            self::PROPOSAL_CANCELLED => [
+                'subject' => 'Proposition annulée — {titre_cooperation}',
+                'body' => "{unite_support} a annulé la proposition de coopération « {titre_cooperation} ».\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::INVITATION_REMINDER => [
+                'subject' => 'Réponse attendue — {titre_cooperation}',
+                'body' => "{unite_support} attend votre réponse à l’invitation « {titre_cooperation} »{echeance_texte}.\n\nAccepter ou refuser : {lien_synthese}",
+            ],
+            self::MISSION_SUSPENDED => [
+                'subject' => 'Coopération suspendue — {titre_cooperation}',
+                'body' => "{unite_support} a suspendu « {titre_cooperation} » : l’espace commun est en lecture seule jusqu’à la reprise.\n{motif}",
+            ],
+            self::MISSION_RESUMED => [
+                'subject' => 'Reprise — {titre_cooperation}',
+                'body' => "La coopération « {titre_cooperation} » reprend : l’espace commun est de nouveau ouvert.\n\n{lien_espace_commun}",
+            ],
+            self::CONSENT_EXPIRING => [
+                'subject' => 'Autorisation à renouveler — {titre_cooperation}',
+                'body' => "Votre autorisation de partage pour « {titre_cooperation} » expire le {fin_autorisation}. Renouvelez-la pour garder l’accès à l’espace commun.\n\n{lien_autorisation}",
+            ],
+            self::SITREP_ADDED => [
+                'subject' => 'Point de situation — {titre_cooperation}',
+                'body' => "Nouveau point de situation sur « {titre_cooperation} » : {resume_sitrep}\n\n{lien_synthese}",
+            ],
             default => [
                 'subject' => $label . ' — {titre_cooperation}',
                 'body' => $label . " pour « {titre_cooperation} ».\n\nVoir la synthèse : {lien_synthese}",
@@ -139,6 +204,38 @@ final class CooperationAnnouncementEvents
             self::COUNTER_PROPOSAL_SUBMITTED => [
                 'subject' => 'Contre-proposition reçue — {titre_cooperation}',
                 'body' => "{unite_destinataire} a transmis une contre-proposition pour « {titre_cooperation} ».\n\nTraiter : {lien_negociation}",
+            ],
+            self::PARTNER_DECLINED => [
+                'subject' => 'Invitation refusée — {titre_cooperation}',
+                'body' => "Bonjour,\n\n{unite_destinataire} a refusé de participer à la coopération « {titre_cooperation} ».\n{motif}\n\nVous pouvez lancer sans elle si d’autres unités ont accepté, ou inviter une autre unité : {lien_synthese}",
+            ],
+            self::PARTNER_REMOVED => [
+                'subject' => 'Votre communauté a été retirée de « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a retiré votre communauté de la coopération « {titre_cooperation} ». Les accès partagés liés à cette coopération sont fermés.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::PROPOSAL_CANCELLED => [
+                'subject' => 'Proposition annulée — {titre_cooperation}',
+                'body' => "Bonjour,\n\n{unite_support} a annulé la proposition de coopération « {titre_cooperation} » à laquelle votre communauté était invitée.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::INVITATION_REMINDER => [
+                'subject' => 'Réponse attendue : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a invité votre communauté à la coopération « {titre_cooperation} » et attend votre réponse{echeance_texte}.\n\nCe qui est attendu de vous : accepter ou refuser l’invitation (un motif peut accompagner le refus).\n\nRépondre : {lien_synthese}",
+            ],
+            self::MISSION_SUSPENDED => [
+                'subject' => 'Coopération suspendue : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a suspendu la coopération « {titre_cooperation} ». L’espace commun passe en lecture seule jusqu’à la reprise.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::INVITATION_SENT => [
+                'subject' => 'Invitation à la coopération « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} invite votre communauté à rejoindre la coopération « {titre_cooperation} »{echeance_texte}.\n\nConsultez la proposition puis acceptez ou refusez l’invitation depuis le portail.",
+            ],
+            self::MISSION_ACTIVATED => [
+                'subject' => 'Coopération lancée : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\nLa coopération « {titre_cooperation} » est lancée. Pour accéder à l’espace commun, chaque responsable donne son autorisation de partage (code reçu par e-mail).",
+            ],
+            self::CONSENT_EXPIRING => [
+                'subject' => 'Votre autorisation de partage expire bientôt — {titre_cooperation}',
+                'body' => "Bonjour,\n\nVotre autorisation de partage pour la coopération « {titre_cooperation} » expire le {fin_autorisation}. Sans renouvellement, l’espace commun repassera en lecture seule pour vous.",
             ],
             default => null,
         };

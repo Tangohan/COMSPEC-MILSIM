@@ -21,6 +21,7 @@ final class CronSchedule
         'atak_report_routing_escalations' => 5,
         'sse_sync_maintenance' => 15,
         'attendance_reminders' => 30,
+        'cooperation_reminders' => 60,
         'training_expire' => 60,
         'qualification_expiry_scan' => 60,
         'personnel_progression_evaluate' => 60,

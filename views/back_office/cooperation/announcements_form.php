@@ -31,7 +31,7 @@ if ($ch === 'forum') {
     <?php if ($e): ?><p class="text-red-600 text-sm mt-4"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 
     <?php if ($hasLocal): ?>
-    <form method="post" action="<?= url('back-office/cooperation/announcements/revert') ?>" class="mt-4 inline" onsubmit="return confirm('Revenir aux textes par défaut du site pour ce canal ?');">
+    <form method="post" action="<?= url('back-office/cooperation/announcements/revert') ?>" class="mt-4 inline" data-ui-confirm="1" data-ui-confirm-title="Revenir aux textes par défaut ?" data-ui-confirm-body="Votre version personnalisée de ce canal est supprimée : les messages utiliseront de nouveau le texte par défaut du site.">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="event_key" value="<?= htmlspecialchars($ek, ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="channel" value="<?= htmlspecialchars($ch, ENT_QUOTES, 'UTF-8') ?>">

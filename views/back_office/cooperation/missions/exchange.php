@@ -34,8 +34,20 @@ if (!empty($grants)) {
         <p class="mt-2 text-sm text-slate-600">Fil coordonné sur le brief de l’unité support et autorisations d’accès complémentaires vers d’autres espaces d’échange.</p>
     </div>
 
-    <?php if (!$consentDone && $status === 'active'): ?>
-    <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Pour lire ou écrire sur le fil partagé, validez votre <a class="font-semibold underline" href="<?= htmlspecialchars(cooperation_mission_consent_url($sid), ENT_QUOTES, 'UTF-8') ?>">autorisation de partage</a> (code par e-mail).</p>
+    <?php $viewerConsent = is_array($cooperationViewerConsent ?? null) ? $cooperationViewerConsent : ['state' => $consentDone ? 'valid' : 'none', 'until' => null]; ?>
+    <?php if ($viewerConsent['state'] !== 'valid' && $status === 'active'): ?>
+    <div class="coop-consent-state coop-consent-state--expired flex flex-wrap items-center justify-between gap-3" role="alert">
+        <p class="m-0">
+            <?php if ($viewerConsent['state'] === 'expired'): ?>
+            <strong>Votre autorisation de partage a expiré.</strong> Le fil commun est en lecture seule pour vous tant que vous ne l’avez pas renouvelée.
+            <?php else: ?>
+            <strong>Autorisation de partage à valider.</strong> Elle est nécessaire pour lire et écrire sur le fil commun (code à six chiffres envoyé par e-mail).
+            <?php endif; ?>
+        </p>
+        <a class="coop-progress__action-btn" href="<?= htmlspecialchars(cooperation_mission_consent_url($sid), ENT_QUOTES, 'UTF-8') ?>"><?= $viewerConsent['state'] === 'expired' ? 'Renouveler mon autorisation' : 'Valider mon autorisation' ?></a>
+    </div>
+    <?php elseif ($status === 'active' && !empty($viewerConsent['until'])): ?>
+    <p class="text-xs text-slate-500">Votre autorisation de partage est valide jusqu’au <?= htmlspecialchars(date('d/m/Y à H:i', (int) strtotime((string) $viewerConsent['until'])), ENT_QUOTES, 'UTF-8') ?>.</p>
     <?php endif; ?>
 
     <?php if ($coopTopicUrl !== '' && $status === 'active'): ?>
@@ -47,7 +59,13 @@ if (!empty($grants)) {
     <?php elseif ($status === 'active'): ?>
     <p class="text-sm text-slate-600">L’espace commun sera disponible une fois le fil créé (lancement de la coopération).</p>
     <?php else: ?>
-    <p class="text-sm text-slate-600">L’espace commun s’ouvre lorsque la coopération est lancée.</p>
+    <?php
+    $ui_empty_title = 'L’espace commun n’est pas encore ouvert';
+    $ui_empty_description = 'Il s’ouvre au lancement de la coopération : un fil commun est alors créé sur le brief de l’unité support, et chaque unité valide son autorisation de partage.';
+    $ui_empty_primary_label = 'Voir ce qu’il reste à faire';
+    $ui_empty_primary_href = cooperation_mission_show_url($sid);
+    require base_path('views/partials/ui/empty_state.php');
+    ?>
     <?php endif; ?>
 
     <?php if (!$isLead && $myGrantCount > 0 && $status === 'active'): ?>
@@ -58,7 +76,7 @@ if (!empty($grants)) {
     <?php endif; ?>
 
     <?php if ($isLead && $canManage && $status === 'active'): ?>
-    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section id="coop-grants" data-coop-region class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Autorisations d’accès à l’espace commun</h2>
         <p class="mt-2 text-xs text-slate-600 leading-relaxed">Ajoutez un accès vers un autre espace d’échange du brief de l’unité support. Le fil principal reste disponible pour toutes les unités actives.</p>
         <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grant-topic'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -73,8 +91,9 @@ if (!empty($grants)) {
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">Unité destinataire</label>
-                <select name="consumer_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" required>
+                <label for="consumer_tenant_id" class="block text-xs font-bold text-slate-500 mb-1">Unité destinataire</label>
+                <select id="consumer_tenant_id" name="consumer_tenant_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" required
+                        data-coop-combobox data-source="local" data-placeholder="Rechercher une unité engagée…">
                     <option value="">— Choisir —</option>
                     <?php foreach ($participants as $p): ?>
                     <?php if (in_array(($p['role'] ?? ''), ['partner', 'co_lead'], true) && ($p['status'] ?? '') === 'active'): ?>
@@ -87,6 +106,7 @@ if (!empty($grants)) {
                 <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ajouter l’autorisation</button>
             </div>
         </form>
+        <?php require base_path('views/back_office/cooperation/missions/_combobox_assets.php'); ?>
 
         <?php if (!empty($grants)): ?>
         <h3 class="mt-8 text-xs font-black uppercase tracking-wider text-slate-500">Autorisations actives</h3>
@@ -98,7 +118,7 @@ if (!empty($grants)) {
                     $gtLabel = CooperationDictionary::forumGrantTypeLabel($gt);
                     echo htmlspecialchars($gtLabel . ' — unité « ' . (string) ($g['consumer_tenant_name'] ?? '') . ' »', ENT_QUOTES, 'UTF-8');
                 ?></span>
-                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Retirer cette autorisation ?');">
+                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/grants/' . (int) ($g['id'] ?? 0) . '/revoke'), ENT_QUOTES, 'UTF-8') ?>" data-coop-ajax data-ui-confirm="1" data-ui-confirm-title="Retirer cette autorisation ?" data-ui-confirm-body="L’unité destinataire ne verra plus cet espace d’échange dans son brief. Le fil principal de la coopération reste accessible.">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="text-xs font-semibold text-rose-700 hover:text-rose-900">Retirer</button>
                 </form>

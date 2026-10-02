@@ -39,11 +39,14 @@ final class InterteamCooperationConsentMiddleware
         if ($mid <= 0) {
             return $next($request);
         }
-        if ($repo->hasVerifiedConsent($mid, $userId)) {
+        $consent = $repo->consentStatus($mid, $userId);
+        if ($consent['state'] === 'valid') {
             return $next($request);
         }
         $return = '/' . ltrim($path, '/');
-        Session::flash('warning', 'Pour accéder à cet échange inter-unités, confirmez d’abord votre autorisation de partage (code envoyé par e-mail).');
+        Session::flash('warning', $consent['state'] === 'expired'
+            ? 'Votre autorisation de partage pour cette coopération a expiré : renouvelez-la (nouveau code par e-mail) pour écrire sur cet échange.'
+            : 'Pour accéder à cet échange inter-unités, confirmez d’abord votre autorisation de partage (code envoyé par e-mail).');
 
         return Response::redirect(cooperation_mission_consent_url($mid) . '?return=' . rawurlencode($return));
     }
