@@ -383,6 +383,7 @@ class PersonnelController
         return Response::view('layout.main', [
             'content' => 'personnel.directory',
             'title' => 'Annuaire des profils',
+            'backOfficePageCss' => ['personnel-directory.css'],
             'query' => $query,
             'results' => $results,
             'rolesByUserId' => $rolesByUserId,
