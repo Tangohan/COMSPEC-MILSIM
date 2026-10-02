@@ -156,6 +156,45 @@ class PersonnelController
     }
 
     /** Segment d’URL pour les redirections (slug préféré). */
+    /**
+     * Champs de la fiche gérés par l’encadrement : un membre ne peut pas les modifier
+     * sur sa propre fiche (les champs rp_* du suivi d’immersion sont aussi verrouillés).
+     */
+    private const STAFF_ONLY_PROFILE_KEYS = [
+        'readiness_score',
+        'deployable',
+        'operator_status',
+        'operator_tags',
+        'equipment_class',
+        'kit_assigned',
+        'radio_assigned',
+        'vehicle_authorized',
+        'medal_rack_json',
+        'clearance_level',
+        'command_notes',
+    ];
+
+    /** Journal du dossier (modifications faites par l’organisation), avec le nom de l’auteur. */
+    private function loadOrgHistory(int $tenantId, int $uid, int $limit): array
+    {
+        $histRows = $this->personnelOrgHistoryRepository->listForUser($tenantId, $uid, $limit);
+        foreach ($histRows as &$hRow) {
+            $hRow['actor_label'] = null;
+            $aid = isset($hRow['actor_user_id']) ? (int) $hRow['actor_user_id'] : 0;
+            if ($aid > 0) {
+                $au = $this->userRepository->findById($aid, $tenantId);
+                if ($au) {
+                    $dn = trim((string) ($au['display_name'] ?? ''));
+                    $cs = trim((string) ($au['callsign'] ?? ''));
+                    $hRow['actor_label'] = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Référent');
+                }
+            }
+        }
+        unset($hRow);
+
+        return $histRows;
+    }
+
     private function personPathSegment(array $userRow): string
     {
         $slug = trim((string) ($userRow['profile_slug'] ?? ''));
@@ -163,10 +202,18 @@ class PersonnelController
         return $slug !== '' ? $slug : (string) ($userRow['id'] ?? '');
     }
 
+    /** Formulaire d’édition : sa propre fiche se modifie dans le back-office. */
+    private function personnelEditUrl(array $target, bool $isSelf): string
+    {
+        return $isSelf
+            ? url('back-office/ma-situation/ma-fiche/modifier')
+            : url('personnel/' . $this->personPathSegment($target) . '/edit');
+    }
+
     /** URL de retour vers la fiche (optionnellement vue RH). */
     private function personnelShowRedirectUrl(array $target, bool $isSelf, ?string $viewMode = null): string
     {
-        $base = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
+        $base = $isSelf ? url('back-office/ma-situation/ma-fiche') : url('personnel/' . $this->personPathSegment($target));
         if ($viewMode === 'rh') {
             return $base . '?view=rh';
         }
@@ -870,21 +917,7 @@ class PersonnelController
         $personnelOrgHistorySection = ($isSelf || $canStaffView);
         $personnelOrgHistorySchemaReady = $personnelOrgHistorySection && $this->personnelOrgHistoryRepository->schemaReady();
         if ($personnelOrgHistorySchemaReady) {
-            $histRows = $this->personnelOrgHistoryRepository->listForUser((int) $tenantId, $uid, 25);
-            foreach ($histRows as &$hRow) {
-                $hRow['actor_label'] = null;
-                $aid = isset($hRow['actor_user_id']) ? (int) $hRow['actor_user_id'] : 0;
-                if ($aid > 0) {
-                    $au = $this->userRepository->findById($aid, (int) $tenantId);
-                    if ($au) {
-                        $dn = trim((string) ($au['display_name'] ?? ''));
-                        $cs = trim((string) ($au['callsign'] ?? ''));
-                        $hRow['actor_label'] = $dn !== '' ? $dn : ($cs !== '' ? $cs : 'Référent');
-                    }
-                }
-            }
-            unset($hRow);
-            $personnelOrgHistory = $histRows;
+            $personnelOrgHistory = $this->loadOrgHistory((int) $tenantId, $uid, 25);
         }
 
         $qualificationIssuerLabels = [];
@@ -1101,9 +1134,9 @@ class PersonnelController
         Session::flash('success', 'Matricule attribué.');
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
-            $redirect = url('personnel/' . $this->personPathSegment($target) . '/edit');
+            $redirect = $this->personnelEditUrl($target, $isSelf);
         } else {
-            $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
+            $redirect = $isSelf ? url('back-office/ma-situation/ma-fiche') : url('personnel/' . $this->personPathSegment($target));
         }
         return Response::redirect($redirect);
     }
@@ -1147,7 +1180,7 @@ class PersonnelController
         );
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+            return Response::redirect($this->personnelEditUrl($target, $isSelf));
         }
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
@@ -1198,7 +1231,7 @@ class PersonnelController
         );
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+            return Response::redirect($this->personnelEditUrl($target, (int) Session::get('user_id') === (int) $target['id']));
         }
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
@@ -1471,6 +1504,19 @@ class PersonnelController
         return $this->edit($request, $params);
     }
 
+    /** Édition de sa propre fiche dans le back-office (Ma situation › Ma fiche › Modifier). */
+    public function editSelfBackOffice(Request $request, array $params = []): Response
+    {
+        $currentUser = $this->authService->user();
+        if (!$currentUser) {
+            return Response::redirect(url('login'));
+        }
+        $params['id'] = (string) $currentUser['id'];
+        $params['_bo'] = true;
+
+        return $this->edit($request, $params);
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();
@@ -1499,6 +1545,14 @@ class PersonnelController
             $memberUrl = effectifs_workspace_url('membres/' . (int) $target['id']);
 
             return Response::redirect($returnToEffectifs ? $memberUrl . '#modifier-dossier' : $memberUrl);
+        }
+        $inBackOffice = !empty($params['_bo']);
+        // Sa propre fiche se modifie désormais dans le back-office ; les anciennes adresses
+        // (/personnel/me/edit, /personnel/{id}/edit) y renvoient en gardant les paramètres.
+        if ($isSelf && !$fromEffectifs && !$inBackOffice) {
+            $qs = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_QUERY);
+
+            return Response::redirect(url('back-office/ma-situation/ma-fiche/modifier') . ($qs !== '' ? '?' . $qs : ''));
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -1641,9 +1695,27 @@ class PersonnelController
         $canManageVisibility = $editVisCaps->managePersonnelVisibility || $editVisCaps->bypassAll;
         $editVisMeta = $this->personnelVisibilityMeta(is_array($personnelProfile) ? $personnelProfile : null);
 
+        $editOrgHistory = [];
+        if ($this->personnelOrgHistoryRepository->schemaReady()) {
+            try {
+                $editOrgHistory = $this->loadOrgHistory($tenantId, $uid, 15);
+            } catch (\Throwable) {
+                $editOrgHistory = [];
+            }
+        }
+        $canStaffEditNow = $this->canStaffEditPersonnel();
+        $advancedEditNow = $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid);
+
         return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
-            'title' => 'Éditer le dossier',
+            'title' => 'Modifier ma fiche',
+            'isBackOfficeShell' => $inBackOffice,
+            'boPageGroup' => 'Opérateur',
+            'boPageKicker' => 'MA SITUATION · MA FICHE',
+            'boPageTitle' => 'Modifier ma fiche',
+            'boPageSubtitle' => 'Votre personnage, votre portrait et vos préférences. Ce que gère l’encadrement est affiché en lecture seule.',
+            'editOrgHistory' => $editOrgHistory,
+            'editMemberLocked' => $isSelf && !$canStaffEditNow && !$advancedEditNow,
             'effectifsNav' => 'roster',
             'effectifsEditContext' => $fromEffectifs,
             'effectifsEmbedded' => $embeddedInEffectifs,
@@ -1704,7 +1776,7 @@ class PersonnelController
             'canStaffEdit' => $this->canStaffEditPersonnel(),
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
-            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css'],
+            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css'],
             'canManageVisibility' => $canManageVisibility,
             'personnelVisibility' => $editVisMeta,
             'personnelVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['visibility_level'], 'personnel'),
@@ -1844,7 +1916,7 @@ class PersonnelController
                 $unitRow = $this->unitRepository->findById($unitId, $tenantId);
                 if (!$unitRow) {
                     Session::flash('error', 'Une unité sélectionnée est introuvable pour cette communauté.');
-                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                    return Response::redirect($this->personnelEditUrl($target, $isSelf));
                 }
                 $unitAssignmentsParsed[] = [
                     'unit_id' => $unitId,
@@ -1861,7 +1933,7 @@ class PersonnelController
                 $unitRow = $this->unitRepository->findById($primaryUnitId, $tenantId);
                 if (!$unitRow) {
                     Session::flash('error', 'Unité sélectionnée introuvable pour cette communauté.');
-                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                    return Response::redirect($this->personnelEditUrl($target, $isSelf));
                 }
                 $unitAssignmentsParsed[] = [
                     'unit_id' => $primaryUnitId,
@@ -2025,7 +2097,8 @@ class PersonnelController
             $data['rp_followup_notes'] = trim((string) $request->input('rp_followup_notes')) ?: null;
             $data['rp_eligibility_snapshot_json'] = json_encode($snap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
-        if ($isSelf || $canStaffEdit) {
+        // Les notes de commandement sont réservées à l’encadrement (ou au mode d’édition avancée).
+        if ($canStaffEdit || $advancedEditActive) {
             $notes = trim((string) $request->input('command_notes'));
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
@@ -2118,6 +2191,23 @@ class PersonnelController
             $applyOrbatNow = false;
         }
 
+        // Un membre qui modifie sa propre fiche, sans droit d’encadrement ni édition avancée,
+        // ne peut pas changer ce que gère l’encadrement : ces champs gardent leur valeur
+        // actuelle, quoi que contienne la requête (le formulaire les affiche verrouillés).
+        $memberLocked = $isSelf && !$canStaffEdit && !$advancedEditActive;
+        if ($memberLocked) {
+            foreach (array_keys($data) as $lockedKey) {
+                if (!in_array($lockedKey, self::STAFF_ONLY_PROFILE_KEYS, true) && !str_starts_with($lockedKey, 'rp_')) {
+                    continue;
+                }
+                if (array_key_exists($lockedKey, $existingProfile)) {
+                    $data[$lockedKey] = $existingProfile[$lockedKey];
+                } else {
+                    unset($data[$lockedKey]);
+                }
+            }
+        }
+
         $structureBefore = $this->structureChangeNotification->snapshot($tenantId, (int) $target['id']);
         $this->personnelProfileRepository->update((int) $target['id'], $data);
         if ($roleplayFollowupConfig['enabled']) {
@@ -2179,7 +2269,7 @@ class PersonnelController
                     );
                 }
             }
-            $manualTitle = trim((string) $request->input('rp_timeline_title'));
+            $manualTitle = $memberLocked ? '' : trim((string) $request->input('rp_timeline_title'));
             if ($manualTitle !== '') {
                 $manualType = trim((string) $request->input('rp_timeline_type'));
                 if ($manualType === '') {
@@ -2243,7 +2333,7 @@ class PersonnelController
                 error_log('Échec de sauvegarde des rôles métier du dossier #' . (int) $target['id'] . ' : ' . $e->getMessage());
                 Session::flash('error', 'Le dossier a été enregistré, mais les rôles métier n’ont pas pu être sauvegardés. Exécutez les migrations puis réessayez.');
 
-                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                return Response::redirect($this->personnelEditUrl($target, $isSelf));
             }
         }
 
@@ -2274,7 +2364,7 @@ class PersonnelController
             }
         } catch (\Throwable) {
             Session::flash('error', 'Le dossier a été enregistré, mais la synchronisation ORBAT / affectation a échoué. Réessayez ou contactez un administrateur.');
-            return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+            return Response::redirect($this->personnelEditUrl($target, $isSelf));
         }
 
         if ($applyOrbatNow && $request->input('grade_id') !== null) {
@@ -2416,7 +2506,7 @@ class PersonnelController
             )) {
                 Session::flash('error', 'Le rôle affiché sur le forum doit correspondre à un rôle réellement attribué à ce compte (communauté ou plateforme).');
 
-                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                return Response::redirect($this->personnelEditUrl($target, $isSelf));
             }
             $displayUpsert['forum_visible_role_id'] = $forumVisibleRoleId;
             $this->displaySettingsRepository->upsert((int) $target['id'], $displayUpsert);
@@ -2430,7 +2520,7 @@ class PersonnelController
                 if ($prefId !== null && $prefId > 0 && !$this->userRepository->userHasTenantRole((int) $target['id'], $prefId)) {
                     Session::flash('error', 'Le rôle choisi doit faire partie de vos rôles dans cette communauté.');
 
-                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                    return Response::redirect($this->personnelEditUrl($target, $isSelf));
                 }
                 $this->userRepository->setPreferredDisplayRoleId((int) $target['id'], $tenantId, $prefId);
             }
@@ -2450,7 +2540,7 @@ class PersonnelController
             if ($preResult === 'invalid_date') {
                 Session::flash('error', 'La date d’ancienneté antérieure à la plateforme n’est pas valide.');
 
-                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                return Response::redirect($this->personnelEditUrl($target, $isSelf));
             }
         }
 

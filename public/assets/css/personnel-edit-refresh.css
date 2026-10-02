@@ -1,0 +1,104 @@
+/**
+ * Modifier ma fiche — verrous, champs en lecture seule et historique.
+ * Chargé après personnel-dossier.css (classes pd-*).
+ */
+
+/* Note globale et bandeaux de section */
+.pd-lock-note {
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border: 1px solid #d5ddd9;
+  border-left: 3px solid #5b6762;
+  border-radius: 10px;
+  background: #f6f8f7;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #2c3833;
+}
+
+.pd-lock {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 24px 0;
+  padding: 12px 14px;
+  border: 1px dashed #c3cec9;
+  border-radius: 10px;
+  background: #f6f8f7;
+  color: #3f4a46;
+}
+.pd-lock svg { flex: 0 0 auto; margin-top: 2px; color: #5b6762; }
+.pd-lock p { margin: 0; font-size: 13px; line-height: 1.5; }
+.pd-lock b { color: #0c1116; font-weight: 600; }
+.pd-lock a { color: #0b6e4a; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+.pd-field-lock { font-weight: 500; color: #7a857f; }
+.pd-tabs__lock { display: inline-block; margin-left: 4px; vertical-align: -1px; opacity: 0.7; }
+
+/* Champs désactivés : lisibles, clairement non modifiables */
+.pd-page input:disabled,
+.pd-page select:disabled,
+.pd-page textarea:disabled {
+  background: #f3f5f4 !important;
+  border-style: dashed !important;
+  border-color: #cfd8d4 !important;
+  color: #2c3833 !important;
+  -webkit-text-fill-color: #2c3833;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.pd-page input[type="checkbox"]:disabled { opacity: 0.6; }
+.pd-page .dk-picker-item:has(input:disabled) { cursor: not-allowed; opacity: 0.85; }
+
+.pd-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.pd-fieldset:disabled { opacity: 0.95; }
+
+/* Historique des modifications */
+.pd-history { list-style: none; margin: 0; padding: 0; position: relative; }
+.pd-history::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: #e2e7e5;
+}
+.pd-history li { position: relative; padding: 0 0 14px 26px; }
+.pd-history li:last-child { padding-bottom: 0; }
+.pd-history li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #1b5fa3;
+  background: #fff;
+}
+.pd-history time { display: block; font-size: 12px; font-weight: 600; color: #5b6762; font-variant-numeric: tabular-nums; }
+.pd-history p { margin: 2px 0 0; font-size: 14px; font-weight: 500; color: #0c1116; }
+.pd-history small { display: block; margin-top: 2px; font-size: 12px; color: #5b6762; }
+.pd-history-empty {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed #e2e7e5;
+  border-radius: 10px;
+  background: #f6f8f7;
+  text-align: center;
+  font-size: 13.5px;
+  color: #5b6762;
+}
+
+/* Dans le back-office : l’en-tête de page du shell suffit, on allège celui du formulaire */
+.ath-main__body .pd-header { padding-top: 0; }
+.ath-main__body .pd-header__eyebrow,
+.ath-main__body .pd-header__title,
+.ath-main__body .pd-header__sub { display: none; }
+.ath-main__body .pd-header__actions { margin-left: 0; }
+
+/* Un exemple de saisie ne doit pas passer pour une valeur dans un champ verrouillé */
+.pd-page input:disabled::placeholder,
+.pd-page textarea:disabled::placeholder { color: transparent; -webkit-text-fill-color: transparent; }

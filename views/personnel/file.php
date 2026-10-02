@@ -758,8 +758,8 @@ if ($personnelFileIsRhFull) {
         </nav>
         <div class="personnel-file-hub-actions">
             <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
-            <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>">Modifier le dossier</a>
-            <a href="<?= url('personnel/' . (int) $targetUser['id'] . '/edit') ?>#edit-portrait">Portrait</a>
+            <a href="<?= url('back-office/ma-situation/ma-fiche/modifier') ?>">Modifier ma fiche</a>
+            <a href="<?= url('back-office/ma-situation/ma-fiche/modifier') ?>#edit-portrait">Portrait</a>
             <?php elseif ($canEditProfile && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']) . '#edit-portrait', ENT_QUOTES, 'UTF-8') ?>">Portrait</a>
             <?php endif; ?>

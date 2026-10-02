@@ -1060,6 +1060,7 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/ma-fiche/modifier', [PersonnelController::class, 'editSelfBackOffice'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/mes-demarches', [MemberSituationController::class, 'mesDemarches'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/unite', [MemberSituationController::class, 'unite'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/evenements', [MemberSituationController::class, 'evenements'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -70,6 +70,21 @@ $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 $nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
 $medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackCustomLines));
 $advancedEditActive = !empty($advancedEditActive);
+// Membre sur sa propre fiche, sans droit d’encadrement : ce que gère l’encadrement est en lecture seule
+// (le serveur ignore de toute façon ces champs, voir PersonnelController::STAFF_ONLY_PROFILE_KEYS).
+$memberLocked = !empty($editMemberLocked);
+$lockAttr = $memberLocked ? ' disabled aria-describedby="pd-lock-note"' : '';
+$editOrgHistory = is_array($editOrgHistory ?? null) ? $editOrgHistory : [];
+$correctionUrl = url('personnel/' . (int) ($targetUser['id'] ?? 0) . '/correction');
+$lockBanner = static function (string $what) use ($memberLocked, $correctionUrl): string {
+    if (!$memberLocked) {
+        return '';
+    }
+
+    return '<div class="pd-lock" role="note"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+        . '<p><b>' . htmlspecialchars($what, ENT_QUOTES, 'UTF-8') . ' : géré par l’encadrement.</b> Vous pouvez consulter ces informations. Une erreur ? '
+        . '<a href="' . htmlspecialchars($correctionUrl, ENT_QUOTES, 'UTF-8') . '">Demander une correction</a>.</p></div>';
+};
 $canApplyOrbatImmediately = !empty($canApplyOrbatImmediately);
 $pendingOrbatCorrection = !empty($pendingOrbatCorrection);
 $grades = is_array($grades ?? null) ? $grades : [];
@@ -124,16 +139,17 @@ $editNavGroups = [
         'items' => [
             ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
             ['id' => 'edit-habilitation', 'label' => 'Matricules', 'show' => true],
-            ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
+            ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled']), 'locked' => $memberLocked],
         ],
     ],
     [
-        'title' => 'Affichage &amp; suite',
+        'title' => 'Affichage & suite',
         'items' => [
             ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
-            ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
+            ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true, 'locked' => $memberLocked],
             ['id' => 'edit-visibilite', 'label' => 'Visibilité', 'show' => !empty($canManageVisibility)],
-            ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
+            ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => !$memberLocked],
+            ['id' => 'edit-historique', 'label' => 'Historique', 'show' => true],
         ],
     ],
 ];
@@ -188,6 +204,9 @@ $editValidTabIds = implode(',', array_map(
     <div class="pd-alert pd-alert--err" role="alert"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
+    <?php if ($memberLocked): ?>
+    <p class="pd-lock-note" id="pd-lock-note">Les champs grisés sont gérés par l’encadrement : vous les voyez, mais seul un responsable peut les changer. Les changements d’unité, de grade ou d’emploi sont envoyés en demande de correction.</p>
+    <?php endif; ?>
     <div class="pd-progress" role="group" aria-label="Complétude du dossier">
       <div class="pd-progress__meta">
         <p class="pd-progress__label">Complétude</p>
@@ -213,7 +232,7 @@ $editValidTabIds = implode(',', array_map(
               class="pd-tabs__btn"
               :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? 'is-active' : ''"
               @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'"
-            ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
+            ><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?><?php if (!empty($ni['locked'])): ?> <svg class="pd-tabs__lock" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" role="img" aria-label="lecture seule"><title>Lecture seule : géré par l’encadrement</title><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><?php endif; ?></button>
             <?php endforeach; ?>
           </div>
         </div>
@@ -483,8 +502,8 @@ $editValidTabIds = implode(',', array_map(
                   <input type="number" name="weight_kg" id="weight_kg" value="<?= htmlspecialchars((string) ($p['weight_kg'] ?? '')) ?>" min="20" max="300" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                 </div>
                 <div>
-                  <label for="operator_status" class="mb-1 block text-xs font-bold text-slate-600">Statut opérateur</label>
-                  <select name="operator_status" id="operator_status" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                  <label for="operator_status" class="mb-1 block text-xs font-bold text-slate-600">Statut opérateur<?= $memberLocked ? ' <span class="pd-field-lock">· encadrement</span>' : '' ?></label>
+                  <select name="operator_status" id="operator_status"<?= $lockAttr ?> class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                     <?php
                     $opStCur = trim((string) ($p['operator_status'] ?? ''));
                     foreach ($keepSelectOption($operatorStatusOptions, $opStCur) as $osv => $osl) {
@@ -495,8 +514,8 @@ $editValidTabIds = implode(',', array_map(
                   </select>
                 </div>
                 <div class="md:col-span-2">
-                  <label for="operator_tags" class="mb-1 block text-xs font-bold text-slate-600">Spécialités</label>
-                  <input type="text" name="operator_tags" id="operator_tags" value="<?= htmlspecialchars((string) ($p['operator_tags'] ?? '')) ?>" placeholder="Ex. Breacher / Team Lead / Squad Lead" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                  <label for="operator_tags" class="mb-1 block text-xs font-bold text-slate-600">Spécialités<?= $memberLocked ? ' <span class="pd-field-lock">· encadrement</span>' : '' ?></label>
+                  <input type="text" name="operator_tags" id="operator_tags"<?= $lockAttr ?> value="<?= htmlspecialchars((string) ($p['operator_tags'] ?? '')) ?>" placeholder="Ex. Breacher / Team Lead / Squad Lead" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
                 </div>
               </div>
             </div>
@@ -861,6 +880,8 @@ $editValidTabIds = implode(',', array_map(
             <h2 class="mt-2 text-base font-black tracking-tight text-emerald-950 sm:text-lg">Tutorat, filière et jalons</h2>
             <p class="mt-2 max-w-3xl text-xs leading-relaxed text-emerald-900/85">Parcours, dates et notes staff. Les listes déroulantes « étape » et « filière » sont définies dans la configuration de la communauté.</p>
           </div>
+          <?= $lockBanner('Le suivi d’immersion') ?>
+          <fieldset class="pd-fieldset"<?= $memberLocked ? ' disabled' : '' ?>>
           <div class="space-y-8 p-6 sm:p-8">
             <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:p-6">
               <h3 class="border-b border-slate-200/80 pb-3 text-xs font-black uppercase tracking-wider text-slate-700">Parcours &amp; place dans l’unité</h3>
@@ -987,11 +1008,12 @@ $editValidTabIds = implode(',', array_map(
               </div>
             </div>
           </div>
+          </fieldset>
         </section>
         <?php endif; ?>
         </div>
 
-        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-visibilite','edit-notes'].includes(tab)">
+        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-visibilite','edit-notes','edit-historique'].includes(tab)">
         <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
@@ -1099,30 +1121,31 @@ $editValidTabIds = implode(',', array_map(
             <h2 class="text-base font-black tracking-tight text-slate-900">Équipement / dotation</h2>
             <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Classe, kit et matériels assignés au personnage.</p>
           </div>
+          <?= $lockBanner('La dotation, le statut déployable et les décorations') ?>
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
               <label for="equipment_class" class="mb-1 block text-xs font-bold text-slate-600">Classe d’équipement</label>
-              <input type="text" name="equipment_class" id="equipment_class" value="<?= htmlspecialchars($p['equipment_class'] ?? '') ?>" placeholder="Rifleman Light…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+              <input type="text" name="equipment_class" id="equipment_class"<?= $lockAttr ?> value="<?= htmlspecialchars($p['equipment_class'] ?? '') ?>" placeholder="Rifleman Light…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
             </div>
             <div>
               <label for="kit_assigned" class="mb-1 block text-xs font-bold text-slate-600">Kit assigné</label>
-              <input type="text" name="kit_assigned" id="kit_assigned" value="<?= htmlspecialchars($p['kit_assigned'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+              <input type="text" name="kit_assigned" id="kit_assigned"<?= $lockAttr ?> value="<?= htmlspecialchars($p['kit_assigned'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
             </div>
             <div>
               <label for="radio_assigned" class="mb-1 block text-xs font-bold text-slate-600">Radio</label>
-              <input type="text" name="radio_assigned" id="radio_assigned" value="<?= htmlspecialchars($p['radio_assigned'] ?? '') ?>" placeholder="PRC-152…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+              <input type="text" name="radio_assigned" id="radio_assigned"<?= $lockAttr ?> value="<?= htmlspecialchars($p['radio_assigned'] ?? '') ?>" placeholder="PRC-152…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
             </div>
             <div>
               <label for="vehicle_authorized" class="mb-1 block text-xs font-bold text-slate-600">Véhicule autorisé</label>
-              <input type="text" name="vehicle_authorized" id="vehicle_authorized" value="<?= htmlspecialchars($p['vehicle_authorized'] ?? '') ?>" placeholder="MRAP, Utility…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+              <input type="text" name="vehicle_authorized" id="vehicle_authorized"<?= $lockAttr ?> value="<?= htmlspecialchars($p['vehicle_authorized'] ?? '') ?>" placeholder="MRAP, Utility…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
             </div>
             <div>
               <label for="weapon_specialty" class="mb-1 block text-xs font-bold text-slate-600">Spécialité armement</label>
               <input type="text" name="weapon_specialty" id="weapon_specialty" value="<?= htmlspecialchars($p['weapon_specialty'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
             </div>
             <div class="flex items-center gap-3 md:col-span-2">
-              <input type="hidden" name="deployable" value="0">
-              <input type="checkbox" name="deployable" id="deployable" value="1" <?= ($p['deployable'] ?? 1) ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-emerald-600">
+              <input type="hidden" name="deployable" value="0"<?= $memberLocked ? ' disabled' : '' ?>>
+              <input type="checkbox" name="deployable" id="deployable" value="1"<?= $lockAttr ?> <?= ($p['deployable'] ?? 1) ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-emerald-600">
               <label for="deployable" class="text-sm font-semibold text-slate-800">Déployable</label>
             </div>
             <div class="md:col-span-2">
@@ -1142,7 +1165,7 @@ $editValidTabIds = implode(',', array_map(
                     $fid = ((string) ($dec['family'] ?? 'GENERIC')) === 'NATO_INSPIRED' ? 'NATO_INSPIRED' : 'GENERIC';
                     ?>
                 <label class="dk-picker-item">
-                  <input type="checkbox" name="medal_rack_catalog[]" value="<?= htmlspecialchars($decId, ENT_QUOTES, 'UTF-8') ?>" <?= $checked ? 'checked' : '' ?>>
+                  <input type="checkbox" name="medal_rack_catalog[]"<?= $lockAttr ?> value="<?= htmlspecialchars($decId, ENT_QUOTES, 'UTF-8') ?>" <?= $checked ? 'checked' : '' ?>>
                   <span class="dk-ribbon-swatch <?= htmlspecialchars($pattern, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                   <span class="dk-picker-meta">
                     <strong><?= htmlspecialchars((string) ($dec['name'] ?? $decId), ENT_QUOTES, 'UTF-8') ?></strong>
@@ -1152,7 +1175,7 @@ $editValidTabIds = implode(',', array_map(
                 <?php endforeach; ?>
               </div>
               <label for="medal_rack_text" class="mb-1 mt-3 block text-xs font-bold text-slate-600">Mentions libres (une par ligne)</label>
-              <textarea name="medal_rack_text" id="medal_rack_text" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Placard commémoratif — opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
+              <textarea name="medal_rack_text" id="medal_rack_text"<?= $lockAttr ?> rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Placard commémoratif — opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
               <p class="mt-1 text-[11px] text-slate-500">Les mentions libres s’affichent avec un ruban générique de repli. Elles ne correspondent à aucune décoration réelle.</p>
             </div>
           </div>
@@ -1167,6 +1190,7 @@ $editValidTabIds = implode(',', array_map(
         ?>
         </div>
 
+        <?php if (!$memberLocked): ?>
         <section id="edit-notes" x-show="tab === 'edit-notes'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-slate-900">Notes de commandement</h2>
@@ -1174,6 +1198,32 @@ $editValidTabIds = implode(',', array_map(
           </div>
           <div class="p-6">
             <textarea name="command_notes" id="command_notes" rows="5" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20" placeholder="Notes internes…"><?= htmlspecialchars($p['command_notes'] ?? '') ?></textarea>
+          </div>
+        </section>
+        <?php endif; ?>
+
+        <section id="edit-historique" x-show="tab === 'edit-historique'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm" aria-labelledby="pd-history-title">
+          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
+            <h2 id="pd-history-title" class="text-base font-black tracking-tight text-slate-900">Historique des modifications</h2>
+            <p class="mt-1.5 text-xs text-slate-600">Ce que l’organisation a modifié sur cette fiche : grade, rôles, statut du compte, coordonnées. Rien n’est effacé : chaque enregistrement s’ajoute à la liste.</p>
+          </div>
+          <div class="p-6">
+            <?php if ($editOrgHistory === []): ?>
+            <p class="pd-history-empty">Aucune modification consignée pour le moment.</p>
+            <?php else: ?>
+            <ol class="pd-history">
+              <?php foreach ($editOrgHistory as $oh):
+                  $ohTs = strtotime((string) ($oh['created_at'] ?? ''));
+                  $ohActor = trim((string) ($oh['actor_label'] ?? ''));
+                  ?>
+              <li>
+                <time><?= htmlspecialchars($ohTs ? date('d/m/Y à H:i', $ohTs) : '—', ENT_QUOTES, 'UTF-8') ?></time>
+                <p><?= htmlspecialchars((string) ($oh['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if ($ohActor !== ''): ?><small>Par <?= htmlspecialchars($ohActor, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
+              </li>
+              <?php endforeach; ?>
+            </ol>
+            <?php endif; ?>
           </div>
         </section>
         </div>
