@@ -193,6 +193,43 @@ $heroCopy = $heroCopyBits !== []
     ? implode(' · ', $heroCopyBits)
     : ('Situation du ' . $todayLabel . ' — aucune alerte opérationnelle.');
 
+// Salutation et briefing structuré (affichés dans le hero)
+$dashFirstName = trim((string) (preg_split('/\s+/u', trim($displayName)) ?: [''])[0]);
+if ($dashFirstName === '' || str_contains($dashFirstName, '@')) {
+    $dashFirstName = $roleHint;
+}
+$dashHour = (int) date('G');
+$dashGreeting = ($dashHour >= 18 || $dashHour < 5) ? 'Bonsoir' : 'Bonjour';
+$heroBriefItems = [];
+if (is_array($mbOp) && !empty($mbOp['title'])) {
+    $heroBriefItems[] = [
+        'k' => 'Manœuvre',
+        'v' => (string) $mbOp['title'],
+        'meta' => $nextOpDays === null ? 'Date à confirmer' : ($nextOpDays === 0 ? 'Aujourd’hui' : ($nextOpDays === 1 ? 'Demain' : 'Dans ' . $nextOpDays . ' jours')),
+        'tone' => $nextOpDays !== null && $nextOpDays <= 1 ? 'hot' : 'ok',
+    ];
+} else {
+    $heroBriefItems[] = ['k' => 'Manœuvre', 'v' => 'Aucune manœuvre planifiée', 'meta' => '', 'tone' => 'idle'];
+}
+if ($trainCount > 0) {
+    $topTrainHero = $mbTrain[0] ?? null;
+    $heroBriefItems[] = [
+        'k' => 'Formation',
+        'v' => is_array($topTrainHero) && !empty($topTrainHero['title']) ? (string) $topTrainHero['title'] : ($trainCount . ' en cours'),
+        'meta' => (is_array($topTrainHero) && isset($topTrainHero['progress_pct']) ? max(0, min(100, (int) $topTrainHero['progress_pct'])) . ' %' : '')
+            . ($trainCount > 1 ? ' · ' . ($trainCount - 1) . ' autre' . ($trainCount > 2 ? 's' : '') : ''),
+        'tone' => 'ok',
+    ];
+} else {
+    $heroBriefItems[] = ['k' => 'Formation', 'v' => 'Aucune formation en cours', 'meta' => '', 'tone' => 'idle'];
+}
+if ($showStaff && $staffCount > 0) {
+    $heroBriefItems[] = ['k' => 'Recrutement', 'v' => $staffCount . ' candidature' . ($staffCount > 1 ? 's' : '') . ' à traiter', 'meta' => '', 'tone' => 'hot'];
+}
+if ($myCount > 0) {
+    $heroBriefItems[] = ['k' => 'Mes dossiers', 'v' => $myCount . ' en attente de réponse', 'meta' => '', 'tone' => 'ok'];
+}
+
 $initials = function_exists('user_display_initials')
     ? user_display_initials($displayName)
     : mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $displayName) ?: 'A', 0, 1));
@@ -294,7 +331,10 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <!-- Hero sombre — briefing du jour -->
         <section class="dash-hero dash-reveal" id="dash-tour-hero" aria-labelledby="dash-hero-title" data-dash-reveal>
             <div class="dash-hero__shell">
-                <h1 id="dash-hero-title" class="dash-hero__title">Dashboard</h1>
+                <div class="dash-hero__head">
+                    <p class="dash-hero__date"><?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    <h1 id="dash-hero-title" class="dash-hero__title"><?= htmlspecialchars($dashGreeting . ', ' . $dashFirstName, ENT_QUOTES, 'UTF-8') ?><span class="dash-hero__title-dot" aria-hidden="true">.</span></h1>
+                </div>
 
                 <div class="dash-hero__media<?= $heroHasImage ? '' : ' dash-hero__media--fallback' ?>">
                     <?php if ($heroHasImage): ?>
@@ -347,7 +387,18 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         </div>
                     </div>
                     <div class="dash-hero__col dash-hero__col--copy">
-                        <p class="dash-hero__copy"><?= htmlspecialchars($heroCopy, ENT_QUOTES, 'UTF-8') ?></p>
+                        <ul class="dash-hero__brief" aria-label="Briefing du jour">
+                            <?php foreach ($heroBriefItems as $briefItem): ?>
+                            <li class="dash-hero__brief-item dash-hero__brief-item--<?= htmlspecialchars((string) $briefItem['tone'], ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="dash-hero__brief-k"><?= htmlspecialchars((string) $briefItem['k'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="dash-hero__brief-v"><?= htmlspecialchars((string) $briefItem['v'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ((string) $briefItem['meta'] !== ''): ?>
+                                <span class="dash-hero__brief-meta"><?= htmlspecialchars((string) $briefItem['meta'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <p class="dash-hero__copy sr-only"><?= htmlspecialchars($heroCopy, ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
             </div>
@@ -383,15 +434,44 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <?php endif; ?>
 
         <?php
+        $dashQuickLinks = [
+            ['href' => url('back-office/ma-situation/ma-fiche'), 'label' => 'Ma fiche', 'hint' => 'Dossier, parcours et historique', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+            ['href' => url('back-office/ma-situation/mes-demarches'), 'label' => 'Mes démarches', 'hint' => 'Absence, évolution, mutation', 'icon' => 'M9 12h6M9 16h6M9 8h2M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z'],
+            ['href' => url('back-office/ma-situation/evenements'), 'label' => 'Agenda', 'hint' => 'Manœuvres et présences', 'icon' => 'M3 10h18M8 3v4M16 3v4M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z'],
+            ['href' => url('back-office/ma-situation/qualifications'), 'label' => 'Qualifications', 'hint' => 'Brevets et échéances', 'icon' => 'M12 15a6 6 0 100-12 6 6 0 000 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7'],
+            ['href' => url('back-office/ma-situation/avancement'), 'label' => 'Avancement', 'hint' => 'Grade et prochaines étapes', 'icon' => 'M5 15l7-7 7 7M5 20l7-7 7 7'],
+            ['href' => url('boite-reception'), 'label' => 'Messagerie', 'hint' => 'Échanges avec l’encadrement', 'icon' => 'M4 6h16v12H4zM4 7l8 6 8-6'],
+        ];
+        ?>
+        <nav class="dash-quick dash-reveal" id="dash-quick" aria-labelledby="dash-quick-title" data-dash-reveal>
+            <div class="dash-quick__inner">
+                <h2 id="dash-quick-title" class="dash-quick__title">Accès rapide</h2>
+                <ul class="dash-quick__grid">
+                    <?php foreach ($dashQuickLinks as $quick): ?>
+                    <li>
+                        <a class="dash-quick__item" href="<?= htmlspecialchars((string) $quick['href'], ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="dash-quick__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="<?= htmlspecialchars((string) $quick['icon'], ENT_QUOTES, 'UTF-8') ?>"/></svg></span>
+                            <span class="dash-quick__text">
+                                <strong><?= htmlspecialchars((string) $quick['label'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                <em><?= htmlspecialchars((string) $quick['hint'], ENT_QUOTES, 'UTF-8') ?></em>
+                            </span>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </nav>
+
+        <?php
         $showLiaisonStrip = $canViewAtakOperators;
         $showRsvpQuick = is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0;
         ?>
         <section class="dash-zone dash-zone--actions dash-reveal" aria-labelledby="dash-zone-actions-title" data-dash-reveal>
             <div class="dash-zone__inner">
                 <header class="dash-zone__head">
-                    <p class="dash-zone__kicker">Priorités</p>
-                    <h2 id="dash-zone-actions-title" class="dash-zone__title">Actions &amp; liaisons</h2>
-                    <p class="dash-zone__lead">Les démarches urgentes et le suivi opérationnel du jour.</p>
+                    <p class="dash-zone__kicker">À faire</p>
+                    <h2 id="dash-zone-actions-title" class="dash-zone__title">Actions du jour</h2>
+                    <p class="dash-zone__lead">Ce qui attend une réponse de votre part, et les liaisons en cours.</p>
                 </header>
 
                 <div class="dash-action-band">
