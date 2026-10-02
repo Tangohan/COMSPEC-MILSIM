@@ -1,13 +1,13 @@
 <?php
 /**
- * JNET — Espace commun de l’organisation : situation des unités, flux d’échanges, opérations.
+ * JNET — Espace commun de l’organisation : arbre des unités, flux d’échanges, opérations.
  * Aucun contenu de démonstration : chaque bloc affiche un état vide honnête.
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $space = is_array($space ?? null) ? $space : ['id' => 0, 'label' => (string) ($unitName ?? 'Organisation'), 'isOrg' => true];
 $orgStats = is_array($orgStats ?? null) ? $orgStats : ['units' => 0, 'members' => 0, 'available' => 0, 'ops' => 0, 'exchanges24h' => 0];
 $posture = is_array($posture ?? null) ? $posture : ['key' => (string) ($opsStatus ?? 'GREEN'), 'label' => (string) ($opsStatusLabel ?? 'Posture verte')];
-$commands = is_array($commands ?? null) ? $commands : [];
+$unitTree = is_array($unitTree ?? null) ? $unitTree : [];
 $flow = is_array($flow ?? null) ? $flow : [];
 $flowFilter = (string) ($flowFilter ?? '');
 $exchangeKinds = is_array($exchangeKinds ?? null) ? $exchangeKinds : [];
@@ -23,17 +23,16 @@ $motto = trim((string) ($unitMotto ?? ''));
 $prioKey = static fn (array $t): string => preg_replace('/[^a-z]/', '', strtolower((string) ($t['priority_key'] ?? $t['priority'] ?? 'low'))) ?: 'low';
 $exBack = url('jnet');
 $label = (string) ($space['label'] ?? 'Organisation');
-$monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label) ?: 'O', 0, 2));
+$guideContext = 'org';
 ?>
 <div class="jn-layout">
     <?php require base_path('views/jnet/_spaces_rail.php'); ?>
 
     <div class="jn-main">
-        <section class="jn-head" aria-labelledby="jn-space-title">
+        <section class="jn-head jn-head--org" aria-labelledby="jn-space-title">
             <div class="jn-head__id">
-                <span class="jn-emblem" aria-hidden="true"><?= $h($monogram) ?></span>
                 <div>
-                    <p class="jn-kicker">Échelon organisation</p>
+                    <p class="jn-kicker">Espace commun · toute l’organisation</p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
                     <?php if ($motto !== ''): ?><p class="jn-head__motto"><?= $h($motto) ?></p><?php endif; ?>
                 </div>
@@ -47,67 +46,53 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
             </dl>
         </section>
 
-        <?php if ($quickLinks !== []): ?>
-            <nav class="jnet-shortcuts jn-shortcuts" aria-label="Accès directs">
-                <?php foreach ($quickLinks as $link): ?>
-                    <a class="jnet-shortcut" href="<?= $h((string) ($link['href'] ?? '#')) ?>">
-                        <strong><?= $h((string) ($link['label'] ?? '')) ?></strong>
-                        <span><?= $h((string) ($link['desc'] ?? '')) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </nav>
-        <?php endif; ?>
+        <?php require base_path('views/jnet/_guide.php'); ?>
 
         <section class="jn-section" id="jn-units" aria-labelledby="jn-units-title">
             <div class="jn-section__head">
-                <h2 id="jn-units-title">Situation des unités</h2>
-                <a class="jn-link" href="<?= $h(url('jnet/unite')) ?>">Organigramme →</a>
+                <div>
+                    <h2 id="jn-units-title">Situation des unités</h2>
+                    <p class="jn-section__lead">Cliquez sur une unité pour ouvrir son espace. Les flèches déplient les sous-unités.</p>
+                </div>
+                <a class="jn-link" href="<?= $h(url('jnet/unite')) ?>">Organigramme complet →</a>
             </div>
-            <?php if ($commands === []): ?>
+            <?php if ($unitTree === []): ?>
                 <div class="jn-empty">
                     <p><strong>L’organigramme n’est pas encore renseigné.</strong></p>
                     <p>Chaque unité de la chaîne de commandement aura ici son propre espace.</p>
                     <p><a class="jn-btn" href="<?= $h(effectifs_workspace_url('chaine')) ?>">Ouvrir la chaîne de commandement</a></p>
                 </div>
+            <?php else: ?>
+                <?php $treeNodes = $unitTree; require base_path('views/jnet/_unit_tree.php'); ?>
             <?php endif; ?>
-            <?php foreach ($commands as $g): ?>
-                <div class="jn-group">
-                    <p class="jn-group__head">
-                        <strong><?= $h((string) $g['label']) ?></strong>
-                        <span><?= (int) $g['unitCount'] ?> unité<?= (int) $g['unitCount'] > 1 ? 's' : '' ?> · <?= (int) $g['members'] ?> membre<?= (int) $g['members'] > 1 ? 's' : '' ?></span>
-                    </p>
-                    <div class="jn-cards">
-                        <?php foreach ((array) $g['units'] as $u): ?>
-                            <?php require base_path('views/jnet/_unit_card.php'); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
         </section>
 
         <div class="jn-split">
             <section class="jn-section" aria-labelledby="jn-flow-title">
                 <div class="jn-section__head">
-                    <h2 id="jn-flow-title">Flux commun</h2>
-                    <nav class="jn-filters" aria-label="Filtrer le flux">
-                        <a href="<?= $h(url('jnet')) ?>" class="jn-filter<?= $flowFilter === '' ? ' is-active' : '' ?>">Tout</a>
-                        <?php foreach ($exchangeKinds as $key => $kindLabel): ?>
-                            <a href="<?= $h(url('jnet?type=' . rawurlencode((string) $key))) ?>" class="jn-filter<?= $flowFilter === $key ? ' is-active' : '' ?>"><?= $h($kindLabel) ?></a>
-                        <?php endforeach; ?>
-                    </nav>
+                    <div>
+                        <h2 id="jn-flow-title">Flux commun</h2>
+                        <p class="jn-section__lead">Les échanges de toutes les unités que vous êtes autorisé à voir.</p>
+                    </div>
                 </div>
+                <nav class="jn-filters" aria-label="Filtrer le flux">
+                    <a href="<?= $h(url('jnet') . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === '' ? ' is-active' : '' ?>"<?= $flowFilter === '' ? ' aria-current="true"' : '' ?>>Tout</a>
+                    <?php foreach ($exchangeKinds as $key => $kindLabel): ?>
+                        <a href="<?= $h(url('jnet?type=' . rawurlencode((string) $key)) . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === $key ? ' is-active' : '' ?>"<?= $flowFilter === $key ? ' aria-current="true"' : '' ?>><?= $h($kindLabel) ?></a>
+                    <?php endforeach; ?>
+                </nav>
                 <?php if (!empty($canPost)): ?>
-                    <?php require base_path('views/jnet/_exchange_composer.php'); ?>
+                    <?php $composeLabel = 'Publier pour toute l’organisation'; require base_path('views/jnet/_exchange_composer.php'); ?>
                 <?php endif; ?>
                 <?php if (empty($exchangesReady)): ?>
                     <div class="jn-empty">
                         <p><strong>Les échanges entre espaces ne sont pas encore activés.</strong></p>
-                        <p>Un administrateur doit appliquer les migrations (table <code>jnet_exchanges</code>).</p>
+                        <p>Un administrateur doit appliquer les migrations.</p>
                     </div>
                 <?php elseif ($flow === []): ?>
                     <div class="jn-empty">
-                        <p><strong>Aucun échange pour le moment.</strong></p>
-                        <p>Ordres, comptes rendus et renseignements publiés dans les espaces d’unité apparaissent ici, selon votre place dans la chaîne de commandement.</p>
+                        <p><strong><?= $flowFilter !== '' ? 'Aucun échange de ce type.' : 'Aucun échange pour le moment.' ?></strong></p>
+                        <p>Ouvrez l’espace de votre unité dans l’arbre ci-dessus et publiez le premier : il apparaîtra ici pour l’encadrement concerné.</p>
                     </div>
                 <?php else: ?>
                     <div class="jn-stack">
@@ -170,6 +155,20 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
                         </ul>
                     <?php endif; ?>
                 </section>
+
+                <?php if ($quickLinks !== []): ?>
+                    <section class="jn-section" aria-labelledby="jn-quick-title">
+                        <div class="jn-section__head"><h2 id="jn-quick-title">Accès rapides</h2></div>
+                        <nav class="jnet-shortcuts jn-quick" aria-labelledby="jn-quick-title">
+                            <?php foreach ($quickLinks as $link): ?>
+                                <a class="jn-quick__item" href="<?= $h((string) ($link['href'] ?? '#')) ?>">
+                                    <strong><?= $h((string) ($link['label'] ?? '')) ?></strong>
+                                    <span><?= $h((string) ($link['desc'] ?? '')) ?></span>
+                                </a>
+                            <?php endforeach; ?>
+                        </nav>
+                    </section>
+                <?php endif; ?>
             </aside>
         </div>
 

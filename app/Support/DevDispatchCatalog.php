@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(755, '2026-10-02', 'JNET plus lisible : arbre des unités, guide et chargement', 'La situation des unités se lit désormais comme un arbre : chaque unité sous son échelon, avec ses disponibles et son activité, et des branches à déplier. Un guide explique les espaces, les échanges et qui voit quoi. Une barre de chargement s’affiche quand on change d’espace, et la page se charge plus vite. Rechargez le portail (Ctrl+F5).', [
+                'Guide « Comment fonctionne JNET », repliable et mémorisé',
+                'Barre de chargement et état « Publication… » sur les boutons',
+            ], [
+                'Situation des unités en arbre aligné, au lieu d’une grille de cartes au même niveau',
+                'Fil d’échelons sur une seule ligne, noms complets dans « Mes espaces »',
+                'Formulaire d’échange replié derrière « Publier un échange », avec des libellés clairs',
+                'Chargement de l’organigramme et du personnel une seule fois par page',
+            ], [], ['command', 'personnel'], [
+                'Ouvrez JNET → Espace commun : dépliez l’arbre, ouvrez une unité, puis « Publier un échange ».',
+            ], 'Portail Athena'),
             $pr(754, '2026-10-02', 'JNET : un espace par unité et des échanges dans la chaîne', 'L’extranet devient l’espace commun de l’organisation et de chaque unité de l’ORBAT. Chaque unité a son espace : ce qu’elle reçoit du commandement, son fil interne et ce qu’elle remonte à l’échelon supérieur. L’espace commun montre la situation de toutes les unités et le flux des échanges. Le thème suit le back-office, en clair comme en mode nuit. Rechargez le portail (Ctrl+F5).', [
                 'Espace JNET par unité (/jnet/u/…), avec fil d’échelons et rail « Mes espaces »',
                 'Échanges typés (ordre, compte rendu, renseignement, document, information) diffusés à l’unité, à son échelon supérieur ou à ses subordonnés',

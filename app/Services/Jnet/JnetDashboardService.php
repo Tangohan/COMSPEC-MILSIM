@@ -35,6 +35,9 @@ final class JnetDashboardService
      */
     private const OPERATIONAL_ENTRY_TYPES = ['mission', 'manifestation'];
 
+    /** @var array<string, mixed> Mémo par requête : la page commune et l’espace partagent ORBAT, personnel et opérations. */
+    private array $memo = [];
+
     public function __construct(
         private ?UserRepository $users = null,
         private ?TenantRepository $tenants = null,
@@ -619,6 +622,16 @@ final class JnetDashboardService
      */
     public function loadPersonnelCards(int $tenantId): array
     {
+        $key = 'personnel:' . $tenantId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->loadPersonnelCardsUncached($tenantId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function loadPersonnelCardsUncached(int $tenantId): array
+    {
         try {
             $raw = $this->users->listForTenant($tenantId, null, 'active', null, 120, 0);
         } catch (\Throwable) {
@@ -789,6 +802,16 @@ final class JnetDashboardService
      */
     public function loadOperations(int $tenantId): array
     {
+        $key = 'ops:' . $tenantId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->loadOperationsUncached($tenantId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function loadOperationsUncached(int $tenantId): array
+    {
         $out = [];
         try {
             $rows = $this->planning->listForBoard($tenantId, [
@@ -908,6 +931,16 @@ final class JnetDashboardService
     }
 
     private function loadOrbat(int $tenantId, int $viewerUserId): ?array
+    {
+        $key = 'orbat:' . $tenantId . ':' . $viewerUserId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->loadOrbatUncached($tenantId, $viewerUserId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function loadOrbatUncached(int $tenantId, int $viewerUserId): ?array
     {
         try {
             return OrbatRosterPayload::buildForTenant($this->units, $tenantId, $viewerUserId);
