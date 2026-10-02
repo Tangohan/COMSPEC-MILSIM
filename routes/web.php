@@ -1830,6 +1830,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/cooperation/missions/{id}/activate', [InterteamMissionWebController::class, 'activate'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/remove-partner', [InterteamMissionWebController::class, 'removePartner'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/cancel', [InterteamMissionWebController::class, 'cancelProposal'], $interteamMw);
+    $router->post('/back-office/cooperation/missions/{id}/suspend', [InterteamMissionWebController::class, 'suspend'], $interteamMw);
+    $router->post('/back-office/cooperation/missions/{id}/resume', [InterteamMissionWebController::class, 'resume'], $interteamMw);
+    $router->post('/back-office/cooperation/missions/{id}/remind', [InterteamMissionWebController::class, 'remindPartner'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/operational-stage', [InterteamMissionWebController::class, 'updateOperationalStage'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/sitrep', [InterteamMissionWebController::class, 'addSitrep'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/grant-topic', [InterteamMissionWebController::class, 'grantTopic'], $interteamMw);

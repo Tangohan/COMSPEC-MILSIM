@@ -19,6 +19,7 @@ $tabs = [
     ['archive', 'Clôture', cooperation_mission_archive_url($mid)],
 ];
 ?>
+<?php require base_path('views/back_office/cooperation/missions/_progress.php'); ?>
 <nav class="flex flex-wrap gap-2 border-b border-slate-200 pb-4 mb-6" aria-label="Sections de la coopération">
     <?php foreach ($tabs as [$key, $label, $href]): ?>
         <?php $isOn = $active === $key; ?>

@@ -135,11 +135,40 @@ final class CooperationTransitionRulesTest extends TestCase
         self::assertSame('mission_terminal', R::canClose($this->mission('archived', 'closed'))['reason']);
     }
 
+    public function testSuspendResumeAndConduct(): void
+    {
+        $active = $this->mission('active', 'preparing');
+        self::assertSame('motive_required', R::canSuspend($active, '')['reason']);
+        self::assertTrue(R::canSuspend($active, 'Incident serveur')['allowed']);
+        self::assertSame('not_launched', R::canSuspend($this->mission('pending', 'proposed'), 'Report')['reason']);
+        $suspended = $this->mission('active', 'suspended') + ['operational_stage' => 'execution'];
+        self::assertSame('already_suspended', R::canSuspend($suspended, 'Encore')['reason']);
+        $resume = R::canResume($suspended);
+        self::assertTrue($resume['allowed']);
+        self::assertSame('active', $resume['phase']);
+        self::assertSame('preparing', R::canResume($this->mission('active', 'suspended') + ['operational_stage' => 'command_validation'])['phase']);
+        self::assertSame('not_suspended', R::canResume($active)['reason']);
+        self::assertSame('suspended', R::canConduct($suspended)['reason']);
+        self::assertTrue(R::canConduct($active)['allowed']);
+    }
+
+    public function testReminderIsLimitedToOnePerDayAndToPendingInvitations(): void
+    {
+        $m = $this->mission('pending', 'proposed');
+        $parts = $this->withLead($this->part(20, 'invited'), $this->part(30, 'active'));
+        $now = strtotime('2026-10-02 12:00:00');
+        self::assertTrue(R::canRemind($m, 20, $parts, null, $now)['allowed']);
+        self::assertSame('reminder_too_soon', R::canRemind($m, 20, $parts, '2026-10-02 08:00:00', $now)['reason']);
+        self::assertTrue(R::canRemind($m, 20, $parts, '2026-10-01 11:00:00', $now)['allowed']);
+        self::assertSame('no_pending_invitation', R::canRemind($m, 30, $parts, null, $now)['reason']);
+    }
+
     public function testEveryReasonHasAReadableMessage(): void
     {
         foreach (['mission_terminal', 'already_active', 'invalid_tenant', 'already_invited', 'already_engaged', 'not_invited',
             'no_pending_invitation', 'counter_proposal_pending', 'invitations_pending', 'no_partner_accepted', 'cannot_remove_lead',
-            'cannot_remove_self', 'already_out', 'motive_required', 'use_cancel'] as $reason) {
+            'cannot_remove_self', 'already_out', 'motive_required', 'use_cancel', 'not_launched', 'already_suspended',
+            'not_suspended', 'suspended', 'reminder_too_soon'] as $reason) {
             self::assertNotSame(R::reasonLabel('unknown'), R::reasonLabel($reason), $reason);
         }
     }

@@ -68,7 +68,7 @@ $canManage = $canManage || $gate->allows('admin.organization') || $gate->allows(
         <li class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
             <div>
                 <p class="font-bold text-slate-900"><?= htmlspecialchars((string) ($m['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="text-xs text-slate-500 mt-1">État : <span class="font-semibold text-slate-700"><?= htmlspecialchars(cooperation_mission_display_label($m), ENT_QUOTES, 'UTF-8') ?></span></p>
+                <p class="text-xs text-slate-500 mt-1 flex items-center gap-2">État : <?php $stBadge = \App\Services\Cooperation\CooperationProgress::stateBadge($m); $ui_badge_label = $stBadge['label']; $ui_badge_variant = $stBadge['variant']; require base_path('views/partials/ui/badge.php'); ?></p>
             </div>
             <a href="<?= htmlspecialchars(cooperation_mission_show_url((int) ($m['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950">Ouvrir →</a>
         </li>

@@ -277,6 +277,7 @@ final class CooperationAnnouncementDispatcher
             'etape_conduite' => $stageLabel !== '' ? $stageLabel : 'mise à jour',
             'membre_designe' => $memberName,
             'motif' => $reason !== '' ? 'Motif : ' . $reason : '',
+            'echeance_texte' => $deadline !== '' ? ' avant le ' . $deadline : '',
         ];
     }
 
@@ -341,6 +342,9 @@ final class CooperationAnnouncementDispatcher
             CooperationAnnouncementEvents::OPERATIONAL_STAGE_UPDATED => $this->participantTenantIds($mid, true),
             CooperationAnnouncementEvents::PARTNER_REMOVED => $partner > 0 ? [$partner] : [],
             CooperationAnnouncementEvents::PROPOSAL_CANCELLED => $this->tenantIdsFromExtra($extra, 'notify_tenant_ids'),
+            CooperationAnnouncementEvents::INVITATION_REMINDER => $partner > 0 ? [$partner] : [],
+            CooperationAnnouncementEvents::MISSION_SUSPENDED,
+            CooperationAnnouncementEvents::MISSION_RESUMED => $this->participantTenantIds($mid, true),
             default => [],
         };
     }

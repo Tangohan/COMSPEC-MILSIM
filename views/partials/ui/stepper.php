@@ -19,9 +19,9 @@ $steps = is_array($steps ?? null) ? $steps : [];
             $cls .= ' ds-stepper__item--active';
         }
         ?>
-        <li class="<?= htmlspecialchars($cls, ENT_QUOTES, 'UTF-8') ?>">
+        <li class="<?= htmlspecialchars($cls, ENT_QUOTES, 'UTF-8') ?>"<?= $active ? ' aria-current="step"' : '' ?>>
             <span class="ds-stepper__num" aria-hidden="true"><?= $done ? '✓' : (string) ($i + 1) ?></span>
-            <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+            <span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?><?php if ($done || $active): ?><span class="sr-only"> (<?= $done ? 'terminée' : 'en cours' ?>)</span><?php endif; ?></span>
         </li>
     <?php endforeach; ?>
 </ol>

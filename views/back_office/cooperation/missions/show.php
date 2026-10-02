@@ -53,13 +53,6 @@ foreach ($participants as $p) {
 $myStatus = (string) ($myParticipant['status'] ?? '');
 $isPartner = ($myParticipant['role'] ?? '') === 'partner';
 
-$statusTone = match ($status) {
-    'active' => 'bg-emerald-100 text-emerald-900 ring-emerald-200',
-    'pending' => 'bg-amber-100 text-amber-950 ring-amber-200',
-    'draft' => 'bg-slate-100 text-slate-800 ring-slate-200',
-    'archived' => 'bg-slate-200 text-slate-700 ring-slate-300',
-    default => 'bg-slate-100 text-slate-800 ring-slate-200',
-};
 
 $card = static function (string $title, string $desc, string $href, string $accent = 'slate'): void {
     $ring = match ($accent) {
@@ -79,7 +72,7 @@ $card = static function (string $title, string $desc, string $href, string $acce
     <header class="space-y-6">
         <div>
             <a href="<?= htmlspecialchars(cooperation_mission_index_url(), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour à la liste</a>
-            <?php require base_path('views/back_office/cooperation/missions/_nav.php'); ?>
+            <?php $cooperationProgressShowAction = false; require base_path('views/back_office/cooperation/missions/_nav.php'); ?>
         </div>
 
         <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-6 py-8 sm:px-8 text-white shadow-sm">
@@ -88,7 +81,7 @@ $card = static function (string $title, string $desc, string $href, string $acce
                     <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Synthèse de coopération</p>
                     <h1 class="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-white break-words"><?= htmlspecialchars((string) ($m['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
                     <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset <?= htmlspecialchars($statusTone, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($phaseLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php $stBadge = \App\Services\Cooperation\CooperationProgress::stateBadge($m); $ui_badge_label = $stBadge['label']; $ui_badge_variant = $stBadge['variant']; require base_path('views/partials/ui/badge.php'); ?>
                         <?php if ($typoLabel !== ''): ?>
                         <span class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/15"><?= htmlspecialchars($typoLabel, ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endif; ?>
@@ -118,7 +111,7 @@ $card = static function (string $title, string $desc, string $href, string $acce
         <p class="text-sm text-rose-950 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">Une contre-proposition attend votre décision. <a class="font-semibold underline" href="<?= htmlspecialchars(cooperation_mission_negotiate_url($sid), ENT_QUOTES, 'UTF-8') ?>">Traiter dans Négociation</a></p>
         <?php endif; ?>
         <?php if ($isPartner && $myStatus === 'invited' && $canRespond): ?>
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div id="invitation" class="scroll-mt-24 rounded-xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <p class="text-sm font-bold text-emerald-950">Invitation en attente</p>
                 <p class="mt-1 text-xs text-emerald-900">Acceptez pour rejoindre cette coopération, ou refusez si votre unité ne peut pas s’engager.</p>
@@ -144,47 +137,140 @@ $card = static function (string $title, string $desc, string $href, string $acce
         <?php endif; ?>
     </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+    <?php
+    $progNext = is_array($cooperationProgress['next_action'] ?? null) ? $cooperationProgress['next_action'] : null;
+    if ($progNext !== null && (string) ($progNext['href'] ?? '') !== ''):
+        $next_steps_title = 'Prochaine action';
+        $next_steps_intro = !empty($progNext['actor_is_viewer'])
+            ? 'C’est à votre unité d’agir.'
+            : 'En attente de : ' . (string) $progNext['actor'] . '.';
+        $next_steps = [[
+            'label' => (string) $progNext['label'],
+            'description' => (string) $progNext['description'],
+            'href' => (string) $progNext['href'],
+            'accent' => (string) ($progNext['tone'] ?? 'emerald'),
+        ]];
+        echo '<div class="-mt-10">';
+        require base_path('views/partials/ui/next_steps_block.php');
+        echo '</div>';
+    endif;
+    ?>
+
+    <section id="participants" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Unités engagées</h2>
-        <p class="mt-2 text-sm text-slate-600">Communautés participantes et état de leur engagement.</p>
-        <ul class="mt-6 divide-y divide-slate-100">
+        <p class="mt-2 text-sm text-slate-600">Suivi des invitations, des réponses et des autorisations de partage de chaque unité.</p>
+
+        <?php
+        $consentByTenant = is_array($cooperationConsentByTenant ?? null) ? $cooperationConsentByTenant : [];
+        $lastReminder = is_array($cooperationLastReminderByTenant ?? null) ? $cooperationLastReminderByTenant : [];
+        $fmtDt = static function (?string $raw): string {
+            $ts = $raw !== null && trim($raw) !== '' ? strtotime($raw) : false;
+
+            return $ts !== false ? date('d/m/Y H:i', $ts) : '—';
+        };
+        $stateVariant = static fn (string $st): string => match ($st) {
+            'active' => 'success',
+            'invited' => 'warning',
+            'declined' => 'danger',
+            default => 'neutral',
+        };
+        ?>
+        <?php if ($participants === []): ?>
+        <p class="mt-6 text-sm text-slate-500">Aucune unité enregistrée pour le moment.</p>
+        <?php else: ?>
+        <div class="mt-6">
+        <table class="coop-parts">
+            <caption class="sr-only">Unités engagées et état de leur participation</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Unité</th>
+                    <th scope="col">Rôle</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Invitée le</th>
+                    <th scope="col">Réponse le</th>
+                    <th scope="col">Autorisation de partage</th>
+                    <?php if ($pilotActions): ?><th scope="col">Actions</th><?php endif; ?>
+                </tr>
+            </thead>
+            <tbody>
             <?php foreach ($participants as $p): ?>
             <?php
                 $pTid = (int) ($p['tenant_id'] ?? 0);
                 $role = (string) ($p['role'] ?? '');
                 $st = (string) ($p['status'] ?? '');
-                $roleLabel = CooperationDictionary::participantRoleLabel($role);
-                $stLabel = CooperationDictionary::participantStateLabel($st);
+                $pName = (string) ($p['tenant_name'] ?? '');
+                $consent = $consentByTenant[$pTid] ?? null;
+                if ($st !== 'active' || !in_array($status, ['active', 'archived'], true)) {
+                    // Le partage n’est demandé qu’après le lancement.
+                    $consentLabel = '—';
+                    $consentVariant = 'neutral';
+                } elseif ($consent !== null && $consent['valid'] > 0) {
+                    $consentLabel = $consent['valid_until'] !== null ? 'Valide jusqu’au ' . $fmtDt($consent['valid_until']) : 'Validée';
+                    $consentVariant = 'success';
+                } elseif ($consent !== null && $consent['expired'] > 0) {
+                    $consentLabel = 'Expirée';
+                    $consentVariant = 'warning';
+                } else {
+                    $consentLabel = 'Non faite';
+                    $consentVariant = 'neutral';
+                }
                 $canRemoveThis = $pilotActions && $role !== 'lead' && $pTid !== $sessionTenantId && in_array($st, ['invited', 'active'], true);
+                $remindAt = $lastReminder[$pTid] ?? null;
+                $remindRecent = $remindAt !== null && strtotime($remindAt) !== false && (time() - strtotime($remindAt)) < 86400;
+                $canPromote = $isLead && $canManage && !$isTerminal && $role === 'partner' && $st === 'active';
             ?>
-            <li class="py-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                <span class="font-semibold text-slate-900<?= in_array($st, ['declined', 'left'], true) ? ' line-through decoration-slate-400' : '' ?>"><?= htmlspecialchars((string) ($p['tenant_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                <span class="flex flex-wrap items-center gap-3">
-                    <span class="text-slate-600"><?= htmlspecialchars($roleLabel . ' — ' . $stLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php if ($canRemoveThis): ?>
-                    <details class="relative">
-                        <summary class="cursor-pointer list-none text-xs font-semibold text-rose-700 hover:text-rose-900"><?= $st === 'invited' ? 'Retirer l’invitation' : 'Retirer l’unité' ?></summary>
-                        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remove-partner'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-72 space-y-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg"
-                              data-ui-confirm="1"
-                              data-ui-confirm-title="<?= $st === 'invited' ? 'Retirer l’invitation ?' : 'Retirer cette unité ?' ?>"
-                              data-ui-confirm-body="<?= htmlspecialchars($st === 'invited'
-                                  ? (string) ($p['tenant_name'] ?? '') . ' ne pourra plus répondre à cette invitation. Vous pourrez la réinviter plus tard.'
-                                  : (string) ($p['tenant_name'] ?? '') . ' quitte la coopération : ses accès partagés au brief sont fermés et elle est prévenue. Vous pourrez la réinviter plus tard.', ENT_QUOTES, 'UTF-8') ?>">
+            <tr>
+                <td data-label="Unité"><span class="coop-parts__unit<?= in_array($st, ['declined', 'left'], true) ? ' line-through decoration-slate-400' : '' ?>"><?= htmlspecialchars($pName, ENT_QUOTES, 'UTF-8') ?></span><?= $pTid === $sessionTenantId ? ' <span class="coop-parts__muted">(vous)</span>' : '' ?></td>
+                <td data-label="Rôle"><?= htmlspecialchars(CooperationDictionary::participantRoleLabel($role), ENT_QUOTES, 'UTF-8') ?></td>
+                <td data-label="État"><?php $ui_badge_label = CooperationDictionary::participantStateLabel($st); $ui_badge_variant = $stateVariant($st); require base_path('views/partials/ui/badge.php'); ?></td>
+                <td data-label="Invitée le" class="coop-parts__muted"><?= htmlspecialchars($role === 'lead' ? '—' : $fmtDt($p['invited_at'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                <td data-label="Réponse le" class="coop-parts__muted"><?= htmlspecialchars($role === 'lead' || $st === 'invited' ? '—' : $fmtDt($p['responded_at'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                <td data-label="Autorisation"><?php if ($consentLabel === '—'): ?><span class="coop-parts__muted">—</span><?php else: $ui_badge_label = $consentLabel; $ui_badge_variant = $consentVariant; require base_path('views/partials/ui/badge.php'); endif; ?></td>
+                <?php if ($pilotActions): ?>
+                <td data-label="Actions">
+                    <div class="coop-parts__actions">
+                        <?php if ($st === 'invited' && $role !== 'lead'): ?>
+                        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remind'), ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="partner_tenant_id" value="<?= $pTid ?>">
-                            <label class="block text-xs font-bold text-slate-600" for="remove_reason_<?= $pTid ?>">Motif <span class="font-normal text-slate-500">(facultatif, transmis à l’unité)</span></label>
-                            <input id="remove_reason_<?= $pTid ?>" type="text" name="remove_reason" maxlength="1000" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
-                            <button type="submit" class="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Retirer</button>
+                            <button type="submit" class="coop-parts__btn"<?= $remindRecent ? ' disabled title="Déjà relancée le ' . htmlspecialchars($fmtDt($remindAt), ENT_QUOTES, 'UTF-8') . ' (une relance par 24 h)"' : '' ?>>Relancer</button>
                         </form>
-                    </details>
-                    <?php endif; ?>
-                </span>
-            </li>
+                        <?php endif; ?>
+                        <?php if ($canPromote): ?>
+                        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/promote-co-lead'), ENT_QUOTES, 'UTF-8') ?>"
+                              data-ui-confirm="1" data-ui-confirm-title="Désigner co-pilote ?"
+                              data-ui-confirm-body="<?= htmlspecialchars($pName . ' pourra inviter des unités, lancer et conduire la coopération avec vous.', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="co_lead_tenant_id" value="<?= $pTid ?>">
+                            <button type="submit" class="coop-parts__btn">Co-pilote</button>
+                        </form>
+                        <?php endif; ?>
+                        <?php if ($canRemoveThis): ?>
+                        <details>
+                            <summary class="coop-parts__btn coop-parts__btn--danger"><?= $st === 'invited' ? 'Retirer l’invitation' : 'Retirer' ?></summary>
+                            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/remove-partner'), ENT_QUOTES, 'UTF-8') ?>" class="coop-parts__pop space-y-2"
+                                  data-ui-confirm="1"
+                                  data-ui-confirm-title="<?= $st === 'invited' ? 'Retirer l’invitation ?' : 'Retirer cette unité ?' ?>"
+                                  data-ui-confirm-body="<?= htmlspecialchars($st === 'invited'
+                                      ? $pName . ' ne pourra plus répondre à cette invitation. Vous pourrez la réinviter plus tard.'
+                                      : $pName . ' quitte la coopération : ses accès partagés au brief sont fermés et elle est prévenue. Vous pourrez la réinviter plus tard.', ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="partner_tenant_id" value="<?= $pTid ?>">
+                                <label class="block text-xs font-bold text-slate-600" for="remove_reason_<?= $pTid ?>">Motif <span class="font-normal text-slate-500">(facultatif, transmis à l’unité)</span></label>
+                                <input id="remove_reason_<?= $pTid ?>" type="text" name="remove_reason" maxlength="1000" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
+                                <button type="submit" class="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Retirer</button>
+                            </form>
+                        </details>
+                        <?php endif; ?>
+                    </div>
+                </td>
+                <?php endif; ?>
+            </tr>
             <?php endforeach; ?>
-            <?php if ($participants === []): ?>
-            <li class="py-4 text-sm text-slate-500">Aucune unité enregistrée pour le moment.</li>
-            <?php endif; ?>
-        </ul>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
 
         <?php if ($pilotActions && !empty($invitationRule['allowed'])): ?>
         <?php $reinforcement = !empty($invitationRule['reinforcement']); ?>
@@ -209,7 +295,7 @@ $card = static function (string $title, string $desc, string $href, string $acce
         <?php endif; ?>
 
         <?php if ($pilotActions && in_array($status, ['draft', 'pending'], true)): ?>
-        <div class="mt-6 border-t border-slate-100 pt-6">
+        <div id="lancement" class="scroll-mt-24 mt-6 border-t border-slate-100 pt-6">
             <?php if (!empty($launchReady['ok'])): ?>
             <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/activate'), ENT_QUOTES, 'UTF-8') ?>"
                   data-ui-confirm="1" data-ui-confirm-title="Lancer la coopération ?"
@@ -231,9 +317,38 @@ $card = static function (string $title, string $desc, string $href, string $acce
     </section>
 
     <?php if ($canPilot && $canManage): ?>
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
+    <section id="conduite" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-8">
+        <?php $isSuspended = !empty($cooperationProgress['suspended']); ?>
+        <?php if (!$isTerminal && $status === 'active'): ?>
+        <div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border <?= $isSuspended ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-slate-50' ?> px-4 py-3">
+            <p class="text-sm <?= $isSuspended ? 'text-amber-950' : 'text-slate-700' ?>">
+                <?= $isSuspended
+                    ? '<strong>Coopération suspendue.</strong> L’espace commun est en lecture seule ; la conduite et les points de situation sont gelés.'
+                    : 'Besoin de geler temporairement la coopération (incident, report) ? La suspension met l’espace commun en lecture seule.' ?>
+            </p>
+            <?php if ($isSuspended): ?>
+            <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/resume'), ENT_QUOTES, 'UTF-8') ?>"
+                  data-ui-confirm="1" data-ui-confirm-title="Reprendre la coopération ?" data-ui-confirm-body="L’espace commun redevient accessible en écriture et la conduite peut reprendre. Les unités engagées sont prévenues.">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                <button type="submit" class="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800">Reprendre</button>
+            </form>
+            <?php else: ?>
+            <details class="relative">
+                <summary class="cursor-pointer list-none rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Suspendre…</summary>
+                <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/suspend'), ENT_QUOTES, 'UTF-8') ?>" class="coop-parts__pop space-y-2"
+                      data-ui-confirm="1" data-ui-confirm-title="Suspendre la coopération ?" data-ui-confirm-body="L’espace commun passe en lecture seule et la conduite est gelée jusqu’à la reprise. Les unités engagées reçoivent votre motif.">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                    <label for="suspend_motive" class="block text-xs font-bold text-slate-600">Motif (obligatoire, transmis aux unités)</label>
+                    <input id="suspend_motive" type="text" name="suspend_motive" required minlength="3" maxlength="500" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
+                    <button type="submit" class="rounded-lg bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800">Suspendre</button>
+                </form>
+            </details>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
         <div>
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Conduite de la coopération</h2>
+
             <p class="mt-2 text-sm text-slate-600">Avancez étape par étape : préparation, validation, exécution, bilan, puis actions correctives.</p>
             <p class="mt-4 text-sm text-slate-700">Étape actuelle :
                 <strong class="text-slate-900"><?= htmlspecialchars((string) ($operationalChoices[$operationalStage] ?? 'Non définie'), ENT_QUOTES, 'UTF-8') ?></strong>
@@ -381,24 +496,7 @@ $card = static function (string $title, string $desc, string $href, string $acce
     </section>
     <?php endif; ?>
 
-    <?php if ($isLead && $canManage && !empty($participants)): ?>
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Co-pilotage</h2>
-        <p class="mt-2 text-sm text-slate-600">Désignez une unité partenaire déjà confirmée pour qu’elle puisse inviter et lancer avec vous.</p>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/promote-co-lead'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6 flex flex-wrap items-end gap-3">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-            <select name="co_lead_tenant_id" class="rounded-lg border border-slate-200 px-3 py-2.5 text-sm min-w-[220px]" required>
-                <option value="">— Choisir une unité partenaire —</option>
-                <?php foreach ($participants as $p): ?>
-                <?php if (($p['role'] ?? '') === 'partner' && ($p['status'] ?? '') === 'active'): ?>
-                <option value="<?= (int) ($p['tenant_id'] ?? 0) ?>"><?= htmlspecialchars((string) ($p['tenant_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                <?php endif; ?>
-                <?php endforeach; ?>
-            </select>
-            <button type="submit" class="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-900">Désigner co-pilote</button>
-        </form>
-    </section>
-    <?php endif; ?>
+    <?php /* Co-pilotage : action « Co-pilote » du tableau des unités engagées. */ ?>
 
     <section>
         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800 mb-5">Accès rapide</h2>

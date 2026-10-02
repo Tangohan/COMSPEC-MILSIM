@@ -1,0 +1,151 @@
+/**
+ * Coopération inter-unités — en-tête de progression, tableau des participants, onglets.
+ * Chargé sur toutes les pages /back-office/cooperation/* (config/back_office_pages.php).
+ * Inspiré des motifs « indicateur d’étapes », « badge », « tag » et « callout » du DSFR,
+ * réalisé avec les jetons ATHENA (pas de charte de l’État).
+ */
+
+/* ——— Indicateur d’étapes ——— */
+.coop-progress {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 14px;
+  background: var(--ath-surface, #fff);
+}
+.coop-progress__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.coop-progress__title { margin: 0; font-size: 15px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.coop-progress__next { margin: 2px 0 0; font-size: 12.5px; color: var(--ath-muted, #5b6762); }
+
+.coop-progress__steps { margin-top: 12px; }
+.coop-progress__steps .ds-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.coop-progress__steps .ds-stepper__item {
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ath-subtle, #7a857f);
+}
+.coop-progress__steps .ds-stepper__item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ath-line, #e3e8ea);
+}
+.coop-progress__steps .ds-stepper__item--done { color: var(--ath-ink-2, #2c3833); }
+.coop-progress__steps .ds-stepper__item--done::before { background: #0b8a5c; }
+.coop-progress__steps .ds-stepper__item--active { color: var(--ath-ink, #0c1116); font-weight: 800; }
+.coop-progress__steps .ds-stepper__item--active::before { background: linear-gradient(90deg, #0b8a5c 50%, var(--ath-line, #e3e8ea) 50%); }
+.coop-progress__steps.is-suspended .ds-stepper__item--active::before { background: linear-gradient(90deg, #d97706 50%, var(--ath-line, #e3e8ea) 50%); }
+.coop-progress__steps.is-cancelled .ds-stepper__item--active::before { background: #e11d48; }
+.coop-progress__steps .ds-stepper__num { display: none; }
+@media (max-width: 640px) {
+  /* Petits écrans : seule l’étape en cours garde son libellé (le titre donne « Étape n sur 5 »). */
+  .coop-progress__steps .ds-stepper__item:not(.ds-stepper__item--active) > span:not(.ds-stepper__num) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .coop-progress__steps .ds-stepper__item--active { grid-column: span 1; }
+}
+
+.coop-progress__blocked {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid #d97706;
+  border-radius: 0 8px 8px 0;
+  background: #fff8eb;
+  font-size: 13px;
+  color: #7a4a05;
+}
+
+.coop-progress__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #bfe8d4;
+  background: #effaf4;
+}
+.coop-progress__action--amber { border-color: #f2d49a; background: #fff8eb; }
+.coop-progress__action--slate { border-color: var(--ath-line, #e3e8ea); background: var(--ath-bg, #f6f8f7); }
+.coop-progress__action-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ath-muted, #5b6762); }
+.coop-progress__action-text { margin: 2px 0 0; font-size: 13.5px; color: var(--ath-ink, #0c1116); }
+.coop-progress__action-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: #0c1116;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.coop-progress__action-btn:hover { background: #0b8a5c; }
+
+/* ——— Tableau des participants (cartes sous 720 px) ——— */
+.coop-parts { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.coop-parts th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #5b6762);
+}
+.coop-parts td { padding: 10px; border-bottom: 1px solid var(--ath-line-soft, #eef1f2); vertical-align: top; }
+.coop-parts tr:last-child td { border-bottom: 0; }
+.coop-parts__unit { font-weight: 700; color: var(--ath-ink, #0c1116); }
+.coop-parts__muted { color: var(--ath-subtle, #7a857f); font-size: 12.5px; }
+.coop-parts__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.coop-parts__actions details { position: relative; }
+.coop-parts__btn {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px;
+  border: 1px solid var(--ath-line, #d5ddd9); border-radius: 7px; background: var(--ath-surface, #fff);
+  font-size: 12px; font-weight: 700; color: var(--ath-ink, #0c1116); cursor: pointer; list-style: none;
+}
+.coop-parts__btn::-webkit-details-marker { display: none; }
+.coop-parts__btn:hover { border-color: #12d18e; }
+.coop-parts__btn--danger { color: #b42318; }
+.coop-parts__btn--danger:hover { border-color: #e48a8a; }
+.coop-parts__btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.coop-parts__pop {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + 6px); width: 18rem;
+  padding: 12px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 10px;
+  background: var(--ath-surface, #fff); box-shadow: 0 16px 32px -16px rgba(12, 17, 22, 0.35);
+}
+@media (max-width: 720px) {
+  .coop-parts thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .coop-parts, .coop-parts tbody, .coop-parts tr, .coop-parts td { display: block; width: 100%; }
+  .coop-parts tr { margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; }
+  .coop-parts td { padding: 4px 0; border: 0; }
+  .coop-parts td[data-label]::before {
+    content: attr(data-label) " : ";
+    font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ath-muted, #5b6762);
+  }
+  .coop-parts__pop { position: static; width: auto; margin-top: 6px; }
+}
+
+/* ——— Mode nuit ——— */
+html[data-bo-theme="dark"] .coop-progress__blocked { background: #2a2212; color: #f0c27a; }
+html[data-bo-theme="dark"] .coop-progress__action { background: #12291f; border-color: #1f4a37; }
+html[data-bo-theme="dark"] .coop-progress__action--amber { background: #2a2212; border-color: #4d3c17; }
+html[data-bo-theme="dark"] .coop-progress__action-btn { background: #12d18e; color: #04130d; }

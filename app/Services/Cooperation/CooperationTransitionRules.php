@@ -259,6 +259,95 @@ final class CooperationTransitionRules
         return ['allowed' => true, 'reason' => ''];
     }
 
+    /** Délai minimal entre deux relances d’une même unité. */
+    public const REMINDER_MIN_INTERVAL_SECONDS = 86400;
+
+    /**
+     * Suspension : coopération lancée et non déjà suspendue, motif obligatoire.
+     *
+     * @param array<string, mixed> $mission
+     * @return array{allowed: bool, reason: string}
+     */
+    public static function canSuspend(array $mission, string $motive): array
+    {
+        if (self::isTerminal($mission)) {
+            return ['allowed' => false, 'reason' => 'mission_terminal'];
+        }
+        if ((string) ($mission['status'] ?? '') !== 'active') {
+            return ['allowed' => false, 'reason' => 'not_launched'];
+        }
+        if (CooperationDictionary::effectivePhase($mission) === 'suspended') {
+            return ['allowed' => false, 'reason' => 'already_suspended'];
+        }
+        if (mb_strlen(trim($motive)) < 3) {
+            return ['allowed' => false, 'reason' => 'motive_required'];
+        }
+
+        return ['allowed' => true, 'reason' => ''];
+    }
+
+    /**
+     * @param array<string, mixed> $mission
+     * @return array{allowed: bool, reason: string, phase: string}
+     */
+    public static function canResume(array $mission): array
+    {
+        if (self::isTerminal($mission) || CooperationDictionary::effectivePhase($mission) !== 'suspended') {
+            return ['allowed' => false, 'reason' => 'not_suspended', 'phase' => ''];
+        }
+
+        return ['allowed' => true, 'reason' => '', 'phase' => self::phaseForStage((string) ($mission['operational_stage'] ?? ''))];
+    }
+
+    /** Phase cohérente avec l’étape de conduite (préparation tant que l’exécution n’a pas commencé). */
+    public static function phaseForStage(string $operationalStage): string
+    {
+        return in_array($operationalStage, ['execution', 'closed_aar', 'corrective_actions'], true) ? 'active' : 'preparing';
+    }
+
+    /**
+     * Conduite (étape, points de situation) : coopération non clôturée et non suspendue.
+     *
+     * @param array<string, mixed> $mission
+     * @return array{allowed: bool, reason: string}
+     */
+    public static function canConduct(array $mission): array
+    {
+        if (self::isTerminal($mission)) {
+            return ['allowed' => false, 'reason' => 'mission_terminal'];
+        }
+        if (CooperationDictionary::effectivePhase($mission) === 'suspended') {
+            return ['allowed' => false, 'reason' => 'suspended'];
+        }
+
+        return ['allowed' => true, 'reason' => ''];
+    }
+
+    /**
+     * Relance d’une unité dont l’invitation est en attente (au plus une fois par 24 h).
+     *
+     * @param array<string, mixed> $mission
+     * @param list<array<string, mixed>> $participants
+     * @return array{allowed: bool, reason: string}
+     */
+    public static function canRemind(array $mission, int $tenantId, array $participants, ?string $lastReminderAt, ?int $now = null): array
+    {
+        if (self::isTerminal($mission)) {
+            return ['allowed' => false, 'reason' => 'mission_terminal'];
+        }
+        $p = self::participantFor($tenantId, $participants);
+        if ($p === null || (string) ($p['status'] ?? '') !== 'invited') {
+            return ['allowed' => false, 'reason' => 'no_pending_invitation'];
+        }
+        $now ??= time();
+        $last = $lastReminderAt !== null ? strtotime($lastReminderAt) : false;
+        if ($last !== false && ($now - $last) < self::REMINDER_MIN_INTERVAL_SECONDS) {
+            return ['allowed' => false, 'reason' => 'reminder_too_soon'];
+        }
+
+        return ['allowed' => true, 'reason' => ''];
+    }
+
     /** Message utilisateur pour une raison de refus. */
     public static function reasonLabel(string $reason): string
     {
@@ -278,6 +367,11 @@ final class CooperationTransitionRules
             'already_out' => 'Cette unité a déjà refusé ou a déjà été retirée.',
             'motive_required' => 'Indiquez le motif de l’annulation (au moins 3 caractères).',
             'use_cancel' => 'La coopération n’est pas lancée : utilisez « Annuler la proposition ».',
+            'not_launched' => 'La coopération doit être lancée pour être suspendue.',
+            'already_suspended' => 'La coopération est déjà suspendue.',
+            'not_suspended' => 'La coopération n’est pas suspendue.',
+            'suspended' => 'La coopération est suspendue : reprenez-la avant de faire avancer la conduite.',
+            'reminder_too_soon' => 'Cette unité a déjà été relancée il y a moins de 24 heures.',
             default => 'Action impossible dans l’état actuel de la coopération.',
         };
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Badge compact.
  *
  * - $ui_badge_label (string)
- * - $ui_badge_variant : neutral | success | warning | info (défaut neutral)
+ * - $ui_badge_variant : neutral | success | warning | info | danger (défaut neutral)
  */
 $ui_badge_label = isset($ui_badge_label) ? trim((string) $ui_badge_label) : '';
 $ui_badge_variant = $ui_badge_variant ?? 'neutral';
@@ -16,6 +16,7 @@ $map = [
     'success' => 'bg-emerald-100 text-emerald-900 ring-emerald-200/80',
     'warning' => 'bg-amber-100 text-amber-950 ring-amber-200/80',
     'info' => 'bg-sky-100 text-sky-900 ring-sky-200/80',
+    'danger' => 'bg-rose-100 text-rose-900 ring-rose-200/80',
 ];
 $wrap = $map[$ui_badge_variant] ?? $map['neutral'];
 ?>

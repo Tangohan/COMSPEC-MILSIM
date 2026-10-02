@@ -39,6 +39,12 @@ final class CooperationAnnouncementEvents
 
     public const PROPOSAL_CANCELLED = 'coop_proposal_cancelled';
 
+    public const INVITATION_REMINDER = 'coop_invitation_reminder';
+
+    public const MISSION_SUSPENDED = 'coop_mission_suspended';
+
+    public const MISSION_RESUMED = 'coop_mission_resumed';
+
     /** @return array<string, string> key => libellé interface */
     public static function labels(): array
     {
@@ -58,6 +64,9 @@ final class CooperationAnnouncementEvents
             self::OPERATIONAL_STAGE_UPDATED => 'Changement d’étape de conduite',
             self::PARTNER_REMOVED => 'Une communauté a été retirée de la coopération',
             self::PROPOSAL_CANCELLED => 'La proposition de coopération est annulée',
+            self::INVITATION_REMINDER => 'Relance d’une invitation sans réponse',
+            self::MISSION_SUSPENDED => 'La coopération est suspendue',
+            self::MISSION_RESUMED => 'La coopération reprend',
         ];
     }
 
@@ -131,6 +140,18 @@ final class CooperationAnnouncementEvents
                 'subject' => 'Proposition annulée — {titre_cooperation}',
                 'body' => "{unite_support} a annulé la proposition de coopération « {titre_cooperation} ».\n{motif}\n\nAucune action n’est attendue de votre part.",
             ],
+            self::INVITATION_REMINDER => [
+                'subject' => 'Réponse attendue — {titre_cooperation}',
+                'body' => "{unite_support} attend votre réponse à l’invitation « {titre_cooperation} »{echeance_texte}.\n\nAccepter ou refuser : {lien_synthese}",
+            ],
+            self::MISSION_SUSPENDED => [
+                'subject' => 'Coopération suspendue — {titre_cooperation}',
+                'body' => "{unite_support} a suspendu « {titre_cooperation} » : l’espace commun est en lecture seule jusqu’à la reprise.\n{motif}",
+            ],
+            self::MISSION_RESUMED => [
+                'subject' => 'Reprise — {titre_cooperation}',
+                'body' => "La coopération « {titre_cooperation} » reprend : l’espace commun est de nouveau ouvert.\n\n{lien_espace_commun}",
+            ],
             default => [
                 'subject' => $label . ' — {titre_cooperation}',
                 'body' => $label . " pour « {titre_cooperation} ».\n\nVoir la synthèse : {lien_synthese}",
@@ -169,6 +190,14 @@ final class CooperationAnnouncementEvents
             self::PROPOSAL_CANCELLED => [
                 'subject' => 'Proposition annulée — {titre_cooperation}',
                 'body' => "Bonjour,\n\n{unite_support} a annulé la proposition de coopération « {titre_cooperation} » à laquelle votre communauté était invitée.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::INVITATION_REMINDER => [
+                'subject' => 'Réponse attendue : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a invité votre communauté à la coopération « {titre_cooperation} » et attend votre réponse{echeance_texte}.\n\nCe qui est attendu de vous : accepter ou refuser l’invitation (un motif peut accompagner le refus).\n\nRépondre : {lien_synthese}",
+            ],
+            self::MISSION_SUSPENDED => [
+                'subject' => 'Coopération suspendue : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} a suspendu la coopération « {titre_cooperation} ». L’espace commun passe en lecture seule jusqu’à la reprise.\n{motif}\n\nAucune action n’est attendue de votre part.",
             ],
             default => null,
         };

@@ -384,6 +384,80 @@ class InterteamMissionRepository
     }
 
     /**
+     * Pose une phase de coopération explicite (preparing, active, suspended…) sans toucher au status.
+     */
+    public function setPhase(int $missionId, string $phase): void
+    {
+        if (!$this->tableExists() || $missionId <= 0 || !in_array($phase, CooperationDictionary::phaseKeys(), true)
+            || !$this->columnExists('interteam_missions', 'cooperation_phase')) {
+            return;
+        }
+        $this->pdo->prepare('UPDATE interteam_missions SET cooperation_phase = ?, updated_at = NOW() WHERE id = ? LIMIT 1')
+            ->execute([$phase, $missionId]);
+    }
+
+    /**
+     * État du consentement par unité : nombre de validations en cours, expirées, et échéance la plus lointaine.
+     *
+     * @return array<int, array{valid: int, expired: int, valid_until: ?string}>
+     */
+    public function consentSummaryByTenant(int $missionId): array
+    {
+        if (!$this->consentsTableExists() || $missionId <= 0) {
+            return [];
+        }
+        $hasExp = $this->columnExists('interteam_cooperation_consents', 'consent_expires_at');
+        $sql = $hasExp
+            ? 'SELECT tenant_id,
+                    SUM(otp_verified_at IS NOT NULL AND (consent_expires_at IS NULL OR consent_expires_at > NOW())) AS valid_count,
+                    SUM(otp_verified_at IS NOT NULL AND consent_expires_at IS NOT NULL AND consent_expires_at <= NOW()) AS expired_count,
+                    MAX(CASE WHEN otp_verified_at IS NOT NULL AND (consent_expires_at IS NULL OR consent_expires_at > NOW()) THEN consent_expires_at END) AS valid_until
+               FROM interteam_cooperation_consents WHERE mission_id = ? GROUP BY tenant_id'
+            : 'SELECT tenant_id, SUM(otp_verified_at IS NOT NULL) AS valid_count, 0 AS expired_count, NULL AS valid_until
+               FROM interteam_cooperation_consents WHERE mission_id = ? GROUP BY tenant_id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$missionId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[(int) $r['tenant_id']] = [
+                'valid' => (int) ($r['valid_count'] ?? 0),
+                'expired' => (int) ($r['expired_count'] ?? 0),
+                'valid_until' => $r['valid_until'] !== null ? (string) $r['valid_until'] : null,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Dernière relance d’invitation par unité (anti-spam : une relance par unité et par 24 h).
+     *
+     * @return array<int, string> tenant_id => date de la dernière relance
+     */
+    public function lastInvitationReminderByTenant(int $missionId, int $withinHours = 24 * 30): array
+    {
+        if (!$this->eventsTableExists() || $missionId <= 0) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT payload_json, created_at FROM interteam_mission_events
+             WHERE mission_id = ? AND event_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ' . max(1, $withinHours) . ' HOUR)
+             ORDER BY created_at DESC'
+        );
+        $stmt->execute([$missionId, 'invitation_reminder']);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $payload = json_decode((string) ($r['payload_json'] ?? ''), true);
+            $tid = is_array($payload) ? (int) ($payload['partner_tenant_id'] ?? 0) : 0;
+            if ($tid > 0 && !isset($out[$tid])) {
+                $out[$tid] = (string) $r['created_at'];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Retire les autorisations d’accès au brief accordées à une unité (retrait de la coopération).
      */
     public function deleteGrantsForConsumer(int $missionId, int $consumerTenantId): int
