@@ -45,6 +45,17 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php if (!empty($isBackOfficeShell)): ?>
+    <script>
+    /* Mode nuit du back-office : appliqué avant l'affichage pour éviter un flash clair. */
+    (function () {
+        var pref = 'auto';
+        try { pref = localStorage.getItem('athena.bo.theme') || 'auto'; } catch (e) {}
+        var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-bo-theme', dark ? 'dark' : 'light');
+    })();
+    </script>
+<?php endif; ?>
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
@@ -339,6 +350,13 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
         ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boCssRel), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endforeach; ?>
+    <?php if (!empty($isBackOfficeShell)): ?>
+    <?php foreach (['back-office-dark.generated.css', 'back-office-dark.css'] as $boDarkCss): ?>
+    <?php if (is_file(base_path('public/assets/css/' . $boDarkCss))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boDarkCss), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php endforeach; ?>
+    <?php endif; ?>
 </head>
 <?php
 $showBottomNav = (bool) \App\Core\Session::get('user_id')
@@ -390,6 +408,9 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-sidebar.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
+    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-theme.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-theme.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-search.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-search.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
