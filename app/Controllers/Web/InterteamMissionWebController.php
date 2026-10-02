@@ -1738,6 +1738,14 @@ class InterteamMissionWebController
             return Response::redirect(cooperation_mission_show_url($id));
         }
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'sitrep_logged', ['summary' => mb_substr($summary, 0, 220)]);
+        // Facultatif : sans effet si l’administration a désactivé ses gabarits (courriel livré désactivé).
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::SITREP_ADDED,
+            $id,
+            $userId,
+            $tenantId,
+            ['sitrep_summary' => $summary, 'exclude_user_id' => $userId]
+        );
         Session::flash('success', 'Point de situation enregistré.');
 
         return Response::redirect(cooperation_mission_show_url($id));

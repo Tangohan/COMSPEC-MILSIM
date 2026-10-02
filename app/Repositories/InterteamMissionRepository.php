@@ -464,6 +464,17 @@ class InterteamMissionRepository
      */
     public function lastInvitationReminderByTenant(int $missionId, int $withinHours = 24 * 30): array
     {
+        return $this->lastEventAtByPayloadKey($missionId, 'invitation_reminder', 'partner_tenant_id', $withinHours);
+    }
+
+    /**
+     * Dernière occurrence d’un événement du journal, regroupée par une clé de sa charge utile
+     * (unité relancée, personne prévenue…). Sert à l’anti-spam des envois automatiques.
+     *
+     * @return array<int, string> valeur de la clé => date du dernier événement
+     */
+    public function lastEventAtByPayloadKey(int $missionId, string $eventType, string $payloadKey, int $withinHours = 24 * 30): array
+    {
         if (!$this->eventsTableExists() || $missionId <= 0) {
             return [];
         }
@@ -472,14 +483,90 @@ class InterteamMissionRepository
              WHERE mission_id = ? AND event_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ' . max(1, $withinHours) . ' HOUR)
              ORDER BY created_at DESC'
         );
-        $stmt->execute([$missionId, 'invitation_reminder']);
+        $stmt->execute([$missionId, $eventType]);
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
             $payload = json_decode((string) ($r['payload_json'] ?? ''), true);
-            $tid = is_array($payload) ? (int) ($payload['partner_tenant_id'] ?? 0) : 0;
-            if ($tid > 0 && !isset($out[$tid])) {
-                $out[$tid] = (string) $r['created_at'];
+            $key = is_array($payload) ? (int) ($payload[$payloadKey] ?? 0) : 0;
+            if ($key > 0 && !isset($out[$key])) {
+                $out[$key] = (string) $r['created_at'];
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Propositions en attente de réponse avec une date limite à venir dans les prochaines heures
+     * (relance automatique J-2).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPendingWithDeadlineWithin(int $hours): array
+    {
+        if (!$this->tableExists() || !$this->columnExists('interteam_missions', 'proposal_deadline_at')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM interteam_missions
+             WHERE status = \'pending\' AND proposal_deadline_at IS NOT NULL
+               AND proposal_deadline_at > NOW() AND proposal_deadline_at <= DATE_ADD(NOW(), INTERVAL ' . max(1, $hours) . ' HOUR)
+             ORDER BY proposal_deadline_at ASC LIMIT 500'
+        );
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Propositions en attente dont la date limite est dépassée mais pas encore signalée.
+     *
+     * @return list<int>
+     */
+    public function listPendingDeadlineElapsedIds(): array
+    {
+        if (!$this->tableExists() || !$this->columnExists('interteam_missions', 'proposal_deadline_notified_at')) {
+            return [];
+        }
+        $stmt = $this->pdo->query(
+            'SELECT id FROM interteam_missions
+             WHERE status = \'pending\' AND proposal_deadline_at IS NOT NULL AND proposal_deadline_at <= NOW()
+               AND proposal_deadline_notified_at IS NULL LIMIT 500'
+        );
+
+        return $stmt ? array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
+    }
+
+    /**
+     * Autorisations de partage valides qui expirent dans les prochaines heures, sur des coopérations
+     * actives où l’unité participe toujours.
+     *
+     * @return list<array{mission_id: int, user_id: int, tenant_id: int, consent_expires_at: string}>
+     */
+    public function listConsentsExpiringWithin(int $hours): array
+    {
+        if (!$this->consentsTableExists() || !$this->columnExists('interteam_cooperation_consents', 'consent_expires_at')) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT c.mission_id, c.user_id, c.tenant_id, c.consent_expires_at
+               FROM interteam_cooperation_consents c
+               INNER JOIN interteam_missions m ON m.id = c.mission_id AND m.status = \'active\'
+               INNER JOIN interteam_mission_participants p ON p.mission_id = c.mission_id AND p.tenant_id = c.tenant_id AND p.status = \'active\'
+              WHERE c.otp_verified_at IS NOT NULL
+                AND c.consent_expires_at > NOW()
+                AND c.consent_expires_at <= DATE_ADD(NOW(), INTERVAL ' . max(1, $hours) . ' HOUR)
+              LIMIT 1000'
+        );
+        $stmt->execute();
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[] = [
+                'mission_id' => (int) $r['mission_id'],
+                'user_id' => (int) $r['user_id'],
+                'tenant_id' => (int) $r['tenant_id'],
+                'consent_expires_at' => (string) $r['consent_expires_at'],
+            ];
         }
 
         return $out;

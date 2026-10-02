@@ -567,6 +567,13 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
+            \App\Services\Cooperation\CooperationReminderService::class => new \App\Services\Cooperation\CooperationReminderService(
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(\App\Services\Cooperation\CooperationAnnouncementDispatcher::class)
+            ),
+            \App\Services\Cron\Jobs\CooperationRemindersCronJob::class => new \App\Services\Cron\Jobs\CooperationRemindersCronJob(
+                self::get(\App\Services\Cooperation\CooperationReminderService::class)
+            ),
             \App\Services\Cron\Jobs\AttendanceRemindersCronJob::class => new \App\Services\Cron\Jobs\AttendanceRemindersCronJob(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(\App\Services\EmailService::class),
@@ -618,6 +625,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelPhaseAutoCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),

@@ -114,6 +114,7 @@ final class CooperationDictionary
             'mission_suspended' => 'Coopération suspendue',
             'mission_resumed' => 'Coopération reprise',
             'preparation_started' => 'Préparation engagée',
+            'consent_expiring' => 'Avis d’expiration d’une autorisation de partage',
             default => 'Événement',
         };
     }
@@ -152,7 +153,7 @@ final class CooperationDictionary
             'operational_stage_updated', 'preparation_started' => 'decisions',
             'counter_proposal_submitted', 'proposal_deadline_elapsed', 'mission_proposal_updated',
             'partner_invited', 'invitation_reminder' => 'negotiation',
-            'mission_meta_updated', 'coop_forum_opened', 'mission_member_assigned', 'sitrep_logged' => 'coordination',
+            'mission_meta_updated', 'coop_forum_opened', 'mission_member_assigned', 'sitrep_logged', 'consent_expiring' => 'coordination',
             'coop_forum_reply' => 'messages',
             'rex_submitted' => 'rex',
             default => 'other',

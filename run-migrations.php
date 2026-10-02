@@ -2672,6 +2672,13 @@ try {
     echo '  [ATTENTION] cooperation_announcement_events_v2 : ' . $e->getMessage() . "\n";
 }
 
+$cooperationAnnouncementsV3 = require $root . '/bootstrap/cooperation_announcement_events_v3_migration.php';
+try {
+    $cooperationAnnouncementsV3($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] cooperation_announcement_events_v3 : ' . $e->getMessage() . "\n";
+}
+
 require_once $root . '/bootstrap/autoload.php';
 
 try {

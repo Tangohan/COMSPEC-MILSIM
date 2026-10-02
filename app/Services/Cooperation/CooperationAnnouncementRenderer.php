@@ -35,6 +35,12 @@ final class CooperationAnnouncementRenderer
             'role_attribue',
             'etape_conduite',
             'membre_designe',
+            'motif',
+            'echeance_texte',
+            'attendu',
+            'lien_autorisation',
+            'fin_autorisation',
+            'resume_sitrep',
         ];
     }
 
@@ -53,6 +59,12 @@ final class CooperationAnnouncementRenderer
             'role_attribue' => 'Intitulé du rôle attribué à un membre',
             'etape_conduite' => 'Étape de conduite affichée (libellé lisible)',
             'membre_designe' => 'Nom du membre désigné',
+            'motif' => 'Motif saisi (refus, retrait, annulation, suspension), précédé de « Motif : »',
+            'echeance_texte' => 'Mention « avant le JJ/MM/AAAA HH:MM » si une date limite existe',
+            'attendu' => 'Ce qui est attendu du destinataire (phrase courte)',
+            'lien_autorisation' => 'Lien vers l’autorisation de partage',
+            'fin_autorisation' => 'Date de fin de l’autorisation de partage',
+            'resume_sitrep' => 'Résumé du point de situation',
         ];
     }
 }

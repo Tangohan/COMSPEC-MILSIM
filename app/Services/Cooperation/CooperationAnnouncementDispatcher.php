@@ -62,7 +62,7 @@ final class CooperationAnnouncementDispatcher
         if ($leadTid < 1) {
             return;
         }
-        $vars = $this->buildVars($mission, $actorUserId, $actorTenantId, $extra);
+        $vars = $this->buildVars($mission, $actorUserId, $actorTenantId, $extra + ['__event' => $eventKey]);
         foreach (['email', 'in_app', 'forum'] as $channel) {
             $tpl = $this->resolveTemplate($leadTid, $eventKey, $channel);
             if (!$tpl) {
@@ -85,6 +85,12 @@ final class CooperationAnnouncementDispatcher
         $tpl = $this->templateRepository->findResolved($leadTid, $eventKey, $channel);
         if ($tpl) {
             return $tpl;
+        }
+        // Gabarit présent mais désactivé par l’administration : le canal reste coupé
+        // (le gabarit intégré ne doit pas le réactiver en douce).
+        if ($this->templateRepository->findExact($leadTid, $eventKey, $channel) !== null
+            || $this->templateRepository->findExact(0, $eventKey, $channel) !== null) {
+            return null;
         }
         if ($channel === 'in_app') {
             $builtin = CooperationAnnouncementEvents::builtinInApp($eventKey);
@@ -123,8 +129,10 @@ final class CooperationAnnouncementDispatcher
         if (trim($subject) === '') {
             $subject = 'Coopération inter-unités';
         }
+        $head = $this->emailHead($eventKey, $mission, $vars);
+        $html = CooperationEmailLayout::html($head, $body);
+        $text = CooperationEmailLayout::text($head, $body);
         $userIds = $this->resolveNotifyUserIds($eventKey, $mission, $extra);
-        $html = '<p>' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</p>';
         foreach ($userIds as $uid) {
             if (!$this->notificationPreferencesRepository->isEmailEventEnabled($uid, self::EMAIL_PREF_KEY)) {
                 continue;
@@ -142,12 +150,58 @@ final class CooperationAnnouncementDispatcher
                 $email,
                 $subject,
                 $html,
-                strip_tags($body),
+                $text,
                 (int) ($u['tenant_id'] ?? 0) ?: null,
                 null,
                 ['cooperation_event' => $eventKey, 'mission_id' => (int) ($mission['id'] ?? 0)]
             );
         }
+    }
+
+    /**
+     * Encadré commun des courriels : coopération, unité émettrice, attendu, échéance, bouton.
+     *
+     * @param array<string, mixed> $mission
+     * @param array<string, string> $vars
+     * @return array{title: string, issuer: string, expected: string, deadline: string, cta: string, url: string, action_required: bool}
+     */
+    private function emailHead(string $eventKey, array $mission, array $vars): array
+    {
+        $action = CooperationEmailLayout::action($eventKey);
+        $deadline = match ($eventKey) {
+            CooperationAnnouncementEvents::INVITATION_SENT,
+            CooperationAnnouncementEvents::INVITATION_REMINDER => (string) ($vars['date_limite'] ?? ''),
+            CooperationAnnouncementEvents::CONSENT_EXPIRING => (string) ($vars['fin_autorisation'] ?? ''),
+            default => '',
+        };
+
+        return [
+            'title' => (string) ($vars['titre_cooperation'] ?? ''),
+            'issuer' => (string) ($vars['unite_support'] ?? ''),
+            'expected' => $action['expected'],
+            'deadline' => $deadline,
+            'cta' => $action['cta'],
+            'url' => $this->actionUrl($action['target'], (int) ($mission['id'] ?? 0)),
+            'action_required' => $action['action_required'],
+        ];
+    }
+
+    private function actionUrl(string $target, int $missionId): string
+    {
+        if ($missionId < 1) {
+            return cooperation_mission_index_url();
+        }
+
+        return match ($target) {
+            CooperationEmailLayout::TARGET_PARTICIPANTS => cooperation_mission_show_url($missionId) . '#participants',
+            CooperationEmailLayout::TARGET_CONDUCT => cooperation_mission_show_url($missionId) . '#conduite',
+            CooperationEmailLayout::TARGET_NEGOTIATE => cooperation_mission_negotiate_url($missionId),
+            CooperationEmailLayout::TARGET_CONSENT => cooperation_mission_consent_url($missionId),
+            CooperationEmailLayout::TARGET_EXCHANGE => cooperation_mission_exchange_url($missionId),
+            CooperationEmailLayout::TARGET_REX => cooperation_mission_rex_url($missionId),
+            CooperationEmailLayout::TARGET_INDEX => cooperation_mission_index_url(),
+            default => cooperation_mission_show_url($missionId),
+        };
     }
 
     /** @param array<string, mixed> $extra */
@@ -168,7 +222,7 @@ final class CooperationAnnouncementDispatcher
             $title = CooperationAnnouncementEvents::labels()[$eventKey] ?? 'Coopération inter-unités';
         }
         $detail = mb_strlen($raw) > 220 ? mb_substr($raw, 0, 217) . '…' : $raw;
-        $href = (string) ($vars['lien_synthese'] ?? '');
+        $href = $this->actionUrl(CooperationEmailLayout::action($eventKey)['target'], (int) ($mission['id'] ?? 0));
         $userIds = $this->resolveNotifyUserIds($eventKey, $mission, $extra);
         foreach ($userIds as $uid) {
             $u = $this->userRepository->findById($uid);
@@ -263,6 +317,15 @@ final class CooperationAnnouncementDispatcher
         $stageLabel = trim((string) ($extra['stage_label'] ?? ''));
         $memberName = trim((string) ($extra['member_display_name'] ?? ''));
         $reason = trim((string) ($extra['reason'] ?? ''));
+        $consentUntil = '';
+        $cu = trim((string) ($extra['consent_until'] ?? ''));
+        if ($cu !== '' && ($cts = strtotime($cu)) !== false) {
+            $consentUntil = date('d/m/Y H:i', $cts);
+        }
+        $sitrep = trim((string) ($extra['sitrep_summary'] ?? ''));
+        if (mb_strlen($sitrep) > 200) {
+            $sitrep = mb_substr($sitrep, 0, 197) . '…';
+        }
 
         return [
             'titre_cooperation' => (string) ($mission['title'] ?? ''),
@@ -278,6 +341,10 @@ final class CooperationAnnouncementDispatcher
             'membre_designe' => $memberName,
             'motif' => $reason !== '' ? 'Motif : ' . $reason : '',
             'echeance_texte' => $deadline !== '' ? ' avant le ' . $deadline : '',
+            'lien_autorisation' => cooperation_mission_consent_url($mid),
+            'fin_autorisation' => $consentUntil,
+            'resume_sitrep' => $sitrep,
+            'attendu' => CooperationEmailLayout::action((string) ($extra['__event'] ?? ''))['expected'],
         ];
     }
 
@@ -298,7 +365,11 @@ final class CooperationAnnouncementDispatcher
      */
     private function resolveNotifyUserIds(string $eventKey, array $mission, array $extra): array
     {
-        $fromTenants = $this->collectNotifyUserIds($this->targetTenantIds($eventKey, $mission, $extra));
+        $targetTenants = $this->targetTenantIds($eventKey, $mission, $extra);
+        $fromTenants = array_merge(
+            $this->collectNotifyUserIds($targetTenants),
+            $this->missionDesigneeIds((int) ($mission['id'] ?? 0), $targetTenants)
+        );
         $explicit = [];
         $raw = $extra['notify_user_ids'] ?? null;
         if (is_array($raw)) {
@@ -314,7 +385,33 @@ final class CooperationAnnouncementDispatcher
             $explicit[] = $single;
         }
 
-        return array_values(array_unique(array_merge($fromTenants, $explicit)));
+        $exclude = (int) ($extra['exclude_user_id'] ?? 0);
+
+        return array_values(array_filter(
+            array_unique(array_merge($fromTenants, $explicit)),
+            static fn (int $id): bool => $id > 0 && $id !== $exclude
+        ));
+    }
+
+    /**
+     * Membres désignés sur la coopération (rôles nominatifs) appartenant aux unités ciblées.
+     *
+     * @param list<int> $tenantIds
+     * @return list<int>
+     */
+    private function missionDesigneeIds(int $missionId, array $tenantIds): array
+    {
+        if ($missionId < 1 || $tenantIds === []) {
+            return [];
+        }
+        $ids = [];
+        foreach ($this->missionRepository->listMissionMembers($missionId) as $m) {
+            if (in_array((int) ($m['tenant_id'] ?? 0), $tenantIds, true)) {
+                $ids[] = (int) ($m['user_id'] ?? 0);
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 
     /** @param array<string, mixed> $mission */
@@ -344,7 +441,10 @@ final class CooperationAnnouncementDispatcher
             CooperationAnnouncementEvents::PROPOSAL_CANCELLED => $this->tenantIdsFromExtra($extra, 'notify_tenant_ids'),
             CooperationAnnouncementEvents::INVITATION_REMINDER => $partner > 0 ? [$partner] : [],
             CooperationAnnouncementEvents::MISSION_SUSPENDED,
-            CooperationAnnouncementEvents::MISSION_RESUMED => $this->participantTenantIds($mid, true),
+            CooperationAnnouncementEvents::MISSION_RESUMED,
+            CooperationAnnouncementEvents::SITREP_ADDED => $this->participantTenantIds($mid, true),
+            // Personnel : seul l’auteur de l’autorisation est prévenu (notify_user_id).
+            CooperationAnnouncementEvents::CONSENT_EXPIRING => [],
             default => [],
         };
     }

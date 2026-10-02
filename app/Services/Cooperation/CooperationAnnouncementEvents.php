@@ -45,6 +45,11 @@ final class CooperationAnnouncementEvents
 
     public const MISSION_RESUMED = 'coop_mission_resumed';
 
+    public const CONSENT_EXPIRING = 'coop_consent_expiring';
+
+    /** Optionnel : gabarit courriel livré désactivé ; notification portail désactivable par l’administration. */
+    public const SITREP_ADDED = 'coop_sitrep_added';
+
     /** @return array<string, string> key => libellé interface */
     public static function labels(): array
     {
@@ -67,7 +72,20 @@ final class CooperationAnnouncementEvents
             self::INVITATION_REMINDER => 'Relance d’une invitation sans réponse',
             self::MISSION_SUSPENDED => 'La coopération est suspendue',
             self::MISSION_RESUMED => 'La coopération reprend',
+            self::CONSENT_EXPIRING => 'Autorisation de partage bientôt expirée',
+            self::SITREP_ADDED => 'Nouveau point de situation (optionnel)',
         ];
+    }
+
+    /**
+     * Événements facultatifs : fréquents, ils sont livrés désactivés en courriel et peuvent être
+     * coupés entièrement en désactivant leurs gabarits.
+     *
+     * @return list<string>
+     */
+    public static function optionalKeys(): array
+    {
+        return [self::SITREP_ADDED];
     }
 
     /** @return list<string> */
@@ -152,6 +170,14 @@ final class CooperationAnnouncementEvents
                 'subject' => 'Reprise — {titre_cooperation}',
                 'body' => "La coopération « {titre_cooperation} » reprend : l’espace commun est de nouveau ouvert.\n\n{lien_espace_commun}",
             ],
+            self::CONSENT_EXPIRING => [
+                'subject' => 'Autorisation à renouveler — {titre_cooperation}',
+                'body' => "Votre autorisation de partage pour « {titre_cooperation} » expire le {fin_autorisation}. Renouvelez-la pour garder l’accès à l’espace commun.\n\n{lien_autorisation}",
+            ],
+            self::SITREP_ADDED => [
+                'subject' => 'Point de situation — {titre_cooperation}',
+                'body' => "Nouveau point de situation sur « {titre_cooperation} » : {resume_sitrep}\n\n{lien_synthese}",
+            ],
             default => [
                 'subject' => $label . ' — {titre_cooperation}',
                 'body' => $label . " pour « {titre_cooperation} ».\n\nVoir la synthèse : {lien_synthese}",
@@ -198,6 +224,18 @@ final class CooperationAnnouncementEvents
             self::MISSION_SUSPENDED => [
                 'subject' => 'Coopération suspendue : « {titre_cooperation} »',
                 'body' => "Bonjour,\n\n{unite_support} a suspendu la coopération « {titre_cooperation} ». L’espace commun passe en lecture seule jusqu’à la reprise.\n{motif}\n\nAucune action n’est attendue de votre part.",
+            ],
+            self::INVITATION_SENT => [
+                'subject' => 'Invitation à la coopération « {titre_cooperation} »',
+                'body' => "Bonjour,\n\n{unite_support} invite votre communauté à rejoindre la coopération « {titre_cooperation} »{echeance_texte}.\n\nConsultez la proposition puis acceptez ou refusez l’invitation depuis le portail.",
+            ],
+            self::MISSION_ACTIVATED => [
+                'subject' => 'Coopération lancée : « {titre_cooperation} »',
+                'body' => "Bonjour,\n\nLa coopération « {titre_cooperation} » est lancée. Pour accéder à l’espace commun, chaque responsable donne son autorisation de partage (code reçu par e-mail).",
+            ],
+            self::CONSENT_EXPIRING => [
+                'subject' => 'Votre autorisation de partage expire bientôt — {titre_cooperation}',
+                'body' => "Bonjour,\n\nVotre autorisation de partage pour la coopération « {titre_cooperation} » expire le {fin_autorisation}. Sans renouvellement, l’espace commun repassera en lecture seule pour vous.",
             ],
             default => null,
         };

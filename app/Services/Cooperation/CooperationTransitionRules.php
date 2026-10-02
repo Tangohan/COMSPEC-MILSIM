@@ -348,6 +348,52 @@ final class CooperationTransitionRules
         return ['allowed' => true, 'reason' => ''];
     }
 
+    /** Relance automatique : fenêtre avant la date limite de réponse (J-2). */
+    public const AUTO_REMINDER_WINDOW_SECONDS = 2 * 86400;
+
+    /** Préavis d’expiration d’une autorisation de partage. */
+    public const CONSENT_EXPIRY_NOTICE_SECONDS = 12 * 3600;
+
+    /**
+     * La proposition entre-t-elle dans la fenêtre de relance automatique (J-2 avant la date limite) ?
+     * La relance de chaque unité reste soumise à canRemind() (une par 24 h).
+     *
+     * @param array<string, mixed> $mission
+     */
+    public static function autoReminderDue(array $mission, ?int $now = null): bool
+    {
+        if (self::isTerminal($mission) || (string) ($mission['status'] ?? '') !== 'pending') {
+            return false;
+        }
+        $dl = trim((string) ($mission['proposal_deadline_at'] ?? ''));
+        $ts = $dl !== '' ? strtotime($dl) : false;
+        if ($ts === false) {
+            return false;
+        }
+        $now ??= time();
+
+        return $ts > $now && ($ts - $now) <= self::AUTO_REMINDER_WINDOW_SECONDS;
+    }
+
+    /**
+     * Faut-il prévenir de l’expiration prochaine d’une autorisation de partage ?
+     * Une seule fois par 24 h et par personne (lastNoticeAt).
+     */
+    public static function consentExpiryNoticeDue(?string $expiresAt, ?string $lastNoticeAt, ?int $now = null): bool
+    {
+        $exp = $expiresAt !== null && $expiresAt !== '' ? strtotime($expiresAt) : false;
+        if ($exp === false) {
+            return false;
+        }
+        $now ??= time();
+        if ($exp <= $now || ($exp - $now) > self::CONSENT_EXPIRY_NOTICE_SECONDS) {
+            return false;
+        }
+        $last = $lastNoticeAt !== null && $lastNoticeAt !== '' ? strtotime($lastNoticeAt) : false;
+
+        return $last === false || ($now - $last) >= self::REMINDER_MIN_INTERVAL_SECONDS;
+    }
+
     /** Message utilisateur pour une raison de refus. */
     public static function reasonLabel(string $reason): string
     {
