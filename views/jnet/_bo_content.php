@@ -26,7 +26,7 @@ $tabs = [
     ['id' => 'system', 'label' => 'Système', 'path' => 'jnet/systeme'],
 ];
 ?>
-<div class="jnet-embed">
+<div class="jnet-embed" data-jn-root>
     <nav class="jnet-bo-tabs" aria-label="Sections de l’extranet d’unité">
         <?php foreach ($tabs as $tab): ?>
             <?php
@@ -57,4 +57,49 @@ $tabs = [
         }
         ?>
     </div>
+    <div class="jn-loading" role="status" aria-live="polite" hidden>
+        <span class="jn-loading__bar" aria-hidden="true"></span>
+        <span class="jn-loading__panel"><span class="jn-loading__spin" aria-hidden="true"></span><span data-jn-loading-text>Chargement de l’espace…</span></span>
+    </div>
 </div>
+<script>
+(function () {
+    var root = document.querySelector('[data-jn-root]');
+    if (!root) return;
+    var box = root.querySelector('.jn-loading');
+    var text = root.querySelector('[data-jn-loading-text]');
+    function show(message) {
+        if (text && message) text.textContent = message;
+        box.hidden = false;
+        root.classList.add('is-loading');
+    }
+    function hide() {
+        box.hidden = true;
+        root.classList.remove('is-loading');
+    }
+    // Navigation interne : on affiche le chargement tant que la page suivante se construit.
+    root.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (a.target && a.target !== '_self') return;
+        var href = a.getAttribute('href') || '';
+        if (href.charAt(0) === '#' || a.hasAttribute('download')) return;
+        var url;
+        try { url = new URL(a.href, location.href); } catch (err) { return; }
+        if (url.origin !== location.origin) return;
+        if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
+        show(a.closest('.jn-rail, .jn-tree, .jn-crumbs, .jn-cards') ? 'Ouverture de l’espace…' : 'Chargement…');
+    });
+    root.addEventListener('submit', function (e) {
+        var btn = e.target.querySelector('[data-jn-busy]') || e.target.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            if (btn.getAttribute('data-jn-busy')) btn.textContent = btn.getAttribute('data-jn-busy');
+        }
+        show('Enregistrement…');
+    });
+    // Retour arrière (cache navigateur) : la page revient sans recharger, on retire le voile.
+    window.addEventListener('pageshow', hide);
+})();
+</script>

@@ -54,9 +54,11 @@ final class JnetSpaceService
         if (!isset($this->treeCache[$key])) {
             $tenant = $this->tenants->findById($tenantId) ?: [];
             $orgLabel = is_array($tenant) && $tenant !== [] ? community_display_name($tenant) : 'Organisation';
+            $logo = is_array($tenant) ? trim((string) ($tenant['logo_url'] ?? '')) : '';
             $this->treeCache[$key] = JnetSpaceTree::fromOrbat(
                 $this->dashboard->orbatForViewer($tenantId, $viewerUserId),
-                $orgLabel !== '' ? $orgLabel : 'Organisation'
+                $orgLabel !== '' ? $orgLabel : 'Organisation',
+                $logo !== '' ? $logo : null
             );
         }
 
@@ -540,7 +542,7 @@ final class JnetSpaceService
     }
 
     /**
-     * Unités groupées par tête d'arbre, pour la vue d'ensemble de l'Organisation.
+     * Unités en arbre (têtes d'arbre puis sous-unités), pour la vue d'ensemble de l'Organisation.
      *
      * @param array<int, array<string, mixed>> $byUserId
      * @param list<array<string, mixed>> $ops
@@ -549,21 +551,16 @@ final class JnetSpaceService
      */
     private function commandGroups(JnetSpaceTree $tree, array $byUserId, array $ops, array $lastActivity): array
     {
-        $groups = [];
-        foreach ($tree->childrenOf(JnetSpaceTree::ORG) as $topId) {
-            $ids = array_merge([$topId], $tree->descendants($topId));
-            $cards = array_map(fn (int $id): array => $this->unitCard($tree, $id, $byUserId, $ops, $lastActivity), $ids);
-            $strength = $this->strengthOf($tree->memberIdsInSubtree($topId), $byUserId);
-            $groups[] = [
-                'id' => $topId,
-                'label' => (string) ($tree->node($topId)['label'] ?? ''),
-                'unitCount' => count($ids),
-                'members' => $strength['total'],
-                'units' => $cards,
-            ];
-        }
+        $build = function (int $id, int $level) use (&$build, $tree, $byUserId, $ops, $lastActivity): array {
+            $card = $this->unitCard($tree, $id, $byUserId, $ops, $lastActivity);
+            $card['level'] = $level;
+            $card['descendants'] = count($tree->descendants($id));
+            $card['children'] = array_map(static fn (int $c): array => $build($c, $level + 1), $tree->childrenOf($id));
 
-        return $groups;
+            return $card;
+        };
+
+        return array_map(static fn (int $top): array => $build($top, 0), $tree->childrenOf(JnetSpaceTree::ORG));
     }
 
     /**

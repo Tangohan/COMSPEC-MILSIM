@@ -17,24 +17,31 @@ $uid = 'jnc' . $spaceId;
 ?>
 <form class="jn-composer" method="post" action="<?= $h(url('jnet/u/' . $spaceId . '/echanges')) ?>">
     <?= \App\Core\Csrf::field() ?>
-    <div class="jn-composer__row">
-        <label class="sr-only" for="<?= $uid ?>-kind">Type d’échange</label>
-        <select id="<?= $uid ?>-kind" name="kind" class="jn-input jn-input--select">
-            <?php foreach ($kinds as $key => $label): ?>
-                <option value="<?= $h($key) ?>"<?= $draftKind === $key ? ' selected' : '' ?>><?= $h($label) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label class="sr-only" for="<?= $uid ?>-title">Titre</label>
-        <input id="<?= $uid ?>-title" name="title" class="jn-input jn-composer__title" maxlength="160" required
-               placeholder="Titre : ce que les destinataires doivent savoir" value="<?= $h((string) ($draft['title'] ?? '')) ?>">
+    <p class="jn-composer__title-line">Nouvel échange</p>
+    <div class="jn-composer__grid">
+        <label class="jn-field">
+            <span class="jn-field__label">Type</span>
+            <select name="kind" class="jn-input">
+                <?php foreach ($kinds as $key => $kindLabel): ?>
+                    <option value="<?= $h($key) ?>"<?= $draftKind === $key ? ' selected' : '' ?>><?= $h($kindLabel) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label class="jn-field jn-field--wide">
+            <span class="jn-field__label">Titre</span>
+            <input name="title" class="jn-input" maxlength="160" required
+                   placeholder="Ex. Point de regroupement déplacé" value="<?= $h((string) ($draft['title'] ?? '')) ?>">
+        </label>
     </div>
-    <label class="sr-only" for="<?= $uid ?>-body">Détail</label>
-    <textarea id="<?= $uid ?>-body" name="body" class="jn-input" rows="3" maxlength="4000"
-              placeholder="Détail, consignes, position…"><?= $h((string) ($draft['body'] ?? '')) ?></textarea>
+    <label class="jn-field">
+        <span class="jn-field__label">Détail <small>(facultatif)</small></span>
+        <textarea name="body" class="jn-input" rows="3" maxlength="4000"
+                  placeholder="Consignes, contexte, position…"><?= $h((string) ($draft['body'] ?? '')) ?></textarea>
+    </label>
     <details class="jn-composer__more">
-        <summary>Joindre un lien Athena</summary>
+        <summary>Joindre un lien vers une page Athena (facultatif)</summary>
         <label class="sr-only" for="<?= $uid ?>-link">Lien</label>
-        <input id="<?= $uid ?>-link" name="link" class="jn-input" placeholder="/documents/42, /atak…" value="<?= $h((string) ($draft['link'] ?? '')) ?>">
+        <input id="<?= $uid ?>-link" name="link" class="jn-input" placeholder="Collez l’adresse d’un document, d’une fiche, de la carte…" value="<?= $h((string) ($draft['link'] ?? '')) ?>">
     </details>
     <fieldset class="jn-composer__targets">
         <legend>Diffuser à</legend>
@@ -46,7 +53,7 @@ $uid = 'jnc' . $spaceId;
         <?php endforeach; ?>
     </fieldset>
     <div class="jn-composer__actions">
-        <p class="jn-hint">Un ordre demande un accusé de lecture aux destinataires.</p>
-        <button type="submit" class="jn-btn jn-btn--primary">Publier</button>
+        <p class="jn-hint">Seuls les destinataires cochés (et leur chaîne de commandement) verront l’échange. Un ordre leur demande un accusé de réception.</p>
+        <button type="submit" class="jn-btn jn-btn--primary" data-jn-busy="Publication…">Publier</button>
     </div>
 </form>

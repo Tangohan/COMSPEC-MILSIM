@@ -35,6 +35,9 @@ final class JnetDashboardService
      */
     private const OPERATIONAL_ENTRY_TYPES = ['mission', 'manifestation'];
 
+    /** @var array<string, mixed> Mémo par requête : l’espace commun et le tableau partagent les mêmes lectures. */
+    private array $memo = [];
+
     public function __construct(
         private ?UserRepository $users = null,
         private ?TenantRepository $tenants = null,
@@ -619,6 +622,16 @@ final class JnetDashboardService
      */
     public function loadPersonnelCards(int $tenantId): array
     {
+        $key = 'personnel:' . $tenantId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->fetchPersonnelCards($tenantId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function fetchPersonnelCards(int $tenantId): array
+    {
         try {
             $raw = $this->users->listForTenant($tenantId, null, 'active', null, 120, 0);
         } catch (\Throwable) {
@@ -681,6 +694,16 @@ final class JnetDashboardService
      * @return list<array<string, mixed>>
      */
     public function loadTargets(int $tenantId): array
+    {
+        $key = 'targets:' . $tenantId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->fetchTargets($tenantId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function fetchTargets(int $tenantId): array
     {
         $out = [];
         try {
@@ -788,6 +811,16 @@ final class JnetDashboardService
      * @return list<array<string, mixed>>
      */
     public function loadOperations(int $tenantId): array
+    {
+        $key = 'ops:' . $tenantId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->fetchOperations($tenantId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function fetchOperations(int $tenantId): array
     {
         $out = [];
         try {
@@ -908,6 +941,16 @@ final class JnetDashboardService
     }
 
     private function loadOrbat(int $tenantId, int $viewerUserId): ?array
+    {
+        $key = 'orbat:' . $tenantId . ':' . $viewerUserId;
+        if (!array_key_exists($key, $this->memo)) {
+            $this->memo[$key] = $this->fetchOrbat($tenantId, $viewerUserId);
+        }
+
+        return $this->memo[$key];
+    }
+
+    private function fetchOrbat(int $tenantId, int $viewerUserId): ?array
     {
         try {
             return OrbatRosterPayload::buildForTenant($this->units, $tenantId, $viewerUserId);

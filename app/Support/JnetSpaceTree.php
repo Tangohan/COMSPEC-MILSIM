@@ -37,7 +37,7 @@ final class JnetSpaceTree
     /**
      * @param array<string, mixed>|null $orbatRoot payload OrbatRosterPayload::buildForTenant
      */
-    public static function fromOrbat(?array $orbatRoot, string $orgLabel = 'Organisation'): self
+    public static function fromOrbat(?array $orbatRoot, string $orgLabel = 'Organisation', ?string $orgBadge = null): self
     {
         $tree = new self();
         $tree->nodes[self::ORG] = [
@@ -46,7 +46,7 @@ final class JnetSpaceTree
             'code' => 'ORG',
             'depth' => 0,
             'accent' => '',
-            'badge' => null,
+            'badge' => $orgBadge,
             'motto' => '',
             'leader' => '',
             'deputy' => '',

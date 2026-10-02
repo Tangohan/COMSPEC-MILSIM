@@ -40,7 +40,7 @@ $face = static function (array $p) use ($h): string {
                 <?php if ((int) $c['id'] === (int) ($space['id'] ?? 0)): ?>
                     <span class="jn-crumbs__here" aria-current="page"><?= $h((string) $c['label']) ?></span>
                 <?php else: ?>
-                    <a href="<?= $h((string) $c['href']) ?>"><?= $h((string) $c['label']) ?></a>
+                    <a href="<?= $h((string) $c['href']) ?>" title="<?= $h((string) $c['label']) ?>"><?= $h((string) $c['label']) ?></a>
                 <?php endif; ?>
             <?php endforeach; ?>
             <?php if ($subUnits !== []): ?>
@@ -69,10 +69,15 @@ $face = static function (array $p) use ($h): string {
                     <?php if (trim((string) ($space['motto'] ?? '')) !== ''): ?>
                         <p class="jn-head__motto"><?= $h((string) $space['motto']) ?></p>
                     <?php endif; ?>
-                    <p class="jn-head__lead">
-                        Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b>
-                        · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b>
-                    </p>
+                    <?php $leader = (string) ($space['leader'] ?? ''); $deputy = (string) ($space['deputy'] ?? ''); ?>
+                    <?php if ($leader !== '' || $deputy !== ''): ?>
+                        <p class="jn-head__lead">
+                            Chef : <b><?= $h($leader !== '' ? $leader : 'à désigner') ?></b>
+                            · Adjoint : <b><?= $h($deputy !== '' ? $deputy : 'à désigner') ?></b>
+                        </p>
+                    <?php else: ?>
+                        <p class="jn-head__lead">Chef et adjoint à désigner dans la <a class="jn-link" href="<?= $h(effectifs_workspace_url('chaine')) ?>">chaîne de commandement</a>.</p>
+                    <?php endif; ?>
                 </div>
             </div>
             <dl class="jn-figures">
@@ -82,11 +87,21 @@ $face = static function (array $p) use ($h): string {
             </dl>
         </section>
 
+        <?php
+        $guideMode = 'unit';
+        $guideOpen = $received === [] && $internal === [] && $sentUp === [];
+        require base_path('views/jnet/_guide.php');
+        ?>
+
         <?php if (empty($exchangesReady)): ?>
             <div class="jn-empty">
                 <p><strong>Les échanges entre espaces ne sont pas encore activés.</strong></p>
                 <p>Un administrateur doit appliquer les migrations (table <code>jnet_exchanges</code>).</p>
             </div>
+        <?php endif; ?>
+
+        <?php if (!empty($canPost)): ?>
+            <?php require base_path('views/jnet/_exchange_composer.php'); ?>
         <?php endif; ?>
 
         <div class="jn-flows">
@@ -114,11 +129,8 @@ $face = static function (array $p) use ($h): string {
                         <p>Le fil de <?= $h($label) ?> et de ses sous-unités.</p>
                     </div>
                 </header>
-                <?php if (!empty($canPost)): ?>
-                    <?php require base_path('views/jnet/_exchange_composer.php'); ?>
-                <?php endif; ?>
                 <?php if ($internal === []): ?>
-                    <p class="jn-flow__empty">Aucun échange interne. <?= !empty($canPost) ? 'Publiez le premier ci-dessus.' : '' ?></p>
+                    <p class="jn-flow__empty">Aucun échange interne<?= !empty($canPost) ? ' : utilisez « Nouvel échange » au-dessus' : '' ?>.</p>
                 <?php endif; ?>
                 <?php foreach ($internal as $ex): ?>
                     <?php require base_path('views/jnet/_exchange.php'); ?>

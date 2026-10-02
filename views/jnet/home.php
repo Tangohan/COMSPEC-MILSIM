@@ -24,6 +24,9 @@ $prioKey = static fn (array $t): string => preg_replace('/[^a-z]/', '', strtolow
 $exBack = url('jnet');
 $label = (string) ($space['label'] ?? 'Organisation');
 $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label) ?: 'O', 0, 2));
+$badge = (string) ($space['badge'] ?? '');
+$guideMode = 'org';
+$guideOpen = $flow === [] && $flowFilter === '';
 ?>
 <div class="jn-layout">
     <?php require base_path('views/jnet/_spaces_rail.php'); ?>
@@ -31,9 +34,13 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
     <div class="jn-main">
         <section class="jn-head" aria-labelledby="jn-space-title">
             <div class="jn-head__id">
-                <span class="jn-emblem" aria-hidden="true"><?= $h($monogram) ?></span>
+                <?php if ($badge !== ''): ?>
+                    <img class="jn-emblem jn-emblem--img" src="<?= $h($badge) ?>" alt="">
+                <?php else: ?>
+                    <span class="jn-emblem" aria-hidden="true"><?= $h($monogram) ?></span>
+                <?php endif; ?>
                 <div>
-                    <p class="jn-kicker">Échelon organisation</p>
+                    <p class="jn-kicker">Espace commun · échelon organisation</p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
                     <?php if ($motto !== ''): ?><p class="jn-head__motto"><?= $h($motto) ?></p><?php endif; ?>
                 </div>
@@ -46,6 +53,8 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
                 <div><dt>Échanges 24 h</dt><dd><?= (int) $orgStats['exchanges24h'] ?></dd></div>
             </dl>
         </section>
+
+        <?php require base_path('views/jnet/_guide.php'); ?>
 
         <?php if ($quickLinks !== []): ?>
             <nav class="jnet-shortcuts jn-shortcuts" aria-label="Accès directs">
@@ -70,19 +79,10 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
                     <p><a class="jn-btn" href="<?= $h(effectifs_workspace_url('chaine')) ?>">Ouvrir la chaîne de commandement</a></p>
                 </div>
             <?php endif; ?>
-            <?php foreach ($commands as $g): ?>
-                <div class="jn-group">
-                    <p class="jn-group__head">
-                        <strong><?= $h((string) $g['label']) ?></strong>
-                        <span><?= (int) $g['unitCount'] ?> unité<?= (int) $g['unitCount'] > 1 ? 's' : '' ?> · <?= (int) $g['members'] ?> membre<?= (int) $g['members'] > 1 ? 's' : '' ?></span>
-                    </p>
-                    <div class="jn-cards">
-                        <?php foreach ((array) $g['units'] as $u): ?>
-                            <?php require base_path('views/jnet/_unit_card.php'); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+            <?php if ($commands !== []): ?>
+                <p class="jn-section__hint">Cliquez sur une unité pour entrer dans son espace. Les flèches déplient les sous-unités.</p>
+                <?php $unitTree = $commands; require base_path('views/jnet/_unit_tree.php'); ?>
+            <?php endif; ?>
         </section>
 
         <div class="jn-split">
@@ -96,6 +96,7 @@ $monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label)
                         <?php endforeach; ?>
                     </nav>
                 </div>
+                <p class="jn-section__hint">Tous les échanges que vous pouvez voir, de toutes les unités, du plus récent au plus ancien.</p>
                 <?php if (!empty($canPost)): ?>
                     <?php require base_path('views/jnet/_exchange_composer.php'); ?>
                 <?php endif; ?>
