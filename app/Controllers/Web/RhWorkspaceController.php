@@ -14,7 +14,6 @@ use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelHrDocumentRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
-use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
@@ -33,7 +32,6 @@ final class RhWorkspaceController
         private FeatureGateService $featureGate,
         private HrCharterRepository $hrCharterRepository,
         private SenioritySummaryService $senioritySummaryService,
-        private PlatformModuleReleaseRepository $platformModuleReleaseRepository,
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService,
         private SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService,
@@ -46,8 +44,15 @@ final class RhWorkspaceController
         $this->hrDocuments ??= new PersonnelHrDocumentRepository();
     }
 
+    /** Adresse unique de « Mes démarches » : l’espace opérateur du back-office. */
+    public const WORKSPACE_PATH = 'back-office/ma-situation/mes-demarches';
+
     public function index(Request $request, array $params = []): Response
     {
+        // Ancienne page publique /personnel/mon-espace-rh : migrée dans le back-office.
+        if (!str_starts_with($request->path(), '/back-office/')) {
+            return Response::redirect(url(self::WORKSPACE_PATH));
+        }
         $user = $this->authService->user();
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
@@ -72,27 +77,6 @@ final class RhWorkspaceController
             $rich,
             !empty($rich['unit_id'])
         );
-
-        $testerCommunities = [];
-        $rolloutRows = [];
-        if ($this->platformModuleReleaseRepository->schemaReady()) {
-            $testerCommunities = $this->platformModuleReleaseRepository->listActiveTesterCommunitiesForUser($userId);
-            $rawRows = $this->platformModuleReleaseRepository->listModuleAccessRowsForUserTesterCommunities($userId);
-            foreach ($rawRows as $row) {
-                $mid = (int) ($row['module_id'] ?? 0);
-                $byChannel = $mid > 0
-                    ? $this->platformModuleReleaseRepository->findCurrentReleasesByChannelForModule($mid)
-                    : [];
-                $testRelease = $byChannel['TEST'] ?? null;
-                $rolloutRows[] = [
-                    'module_name' => (string) ($row['module_name'] ?? ''),
-                    'module_description' => $row['module_description'] ?? null,
-                    'rule_type' => (string) ($row['rule_type'] ?? ''),
-                    'rule_label' => $this->accessRuleLabel((string) ($row['rule_type'] ?? '')),
-                    'evaluation_version' => $testRelease['version'] ?? null,
-                ];
-            }
-        }
 
         $greetingName = trim((string) ($user['display_name'] ?? ''));
         if ($greetingName === '') {
@@ -139,19 +123,18 @@ final class RhWorkspaceController
         return Response::view('layout.main', [
             'title' => 'Mes démarches',
             'content' => 'personnel.rh_workspace',
-            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
+            'isBackOfficeShell' => true,
+            'backOfficePageCss' => ['back-office-demarches.css'],
             'boPageGroup' => 'Opérateur',
             'boPageKicker' => 'OPÉRATEUR · DÉMARCHES',
             'boPageTitle' => 'Mes démarches',
-            'boPageSubtitle' => 'Absences, élévation, documents et demandes qui vous concernent.',
+            'boPageSubtitle' => 'Prévenez d’une absence, demandez une évolution, retrouvez les documents que l’encadrement partage avec vous.',
             'rhGreetingName' => $greetingName,
             'rhTrainingAllowed' => $trainingAllowed,
             'rhCharterReady' => $charterReady,
             'rhCharterAccepted' => $charterAccepted,
             'rhSeniorityLines' => $seniorityLines,
             'rhDossierCompleteness' => $dossierCompleteness,
-            'rhTesterCommunities' => $testerCommunities,
-            'rhRolloutRows' => $rolloutRows,
             'rhWorkspaceCsrf' => Csrf::token(),
             'rhAbsencesSchemaReady' => $absencesSchemaReady,
             'rhPersonnelAbsences' => $personnelAbsences,
@@ -368,7 +351,7 @@ final class RhWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
 
-            return Response::redirect(url('personnel/mon-espace-rh'));
+            return Response::redirect(url(self::WORKSPACE_PATH));
         }
         try {
             $this->personnelAssignmentRepository->syncMissingFromUserUnitsWhenPossible($userId);
@@ -381,7 +364,7 @@ final class RhWorkspaceController
             Session::flash('error', 'La mise à jour n’a pas pu aboutir. Réessayez dans quelques instants ou contactez l’encadrement si le problème persiste.');
         }
 
-        return Response::redirect(url('personnel/mon-espace-rh'));
+        return Response::redirect(url(self::WORKSPACE_PATH));
     }
 
     public function downloadHrDocument(Request $request, array $params = []): Response
@@ -402,19 +385,10 @@ final class RhWorkspaceController
         ) {
             Session::flash('error', 'Cette pièce n’est pas disponible.');
 
-            return Response::redirect(url('personnel/mon-espace-rh'));
+            return Response::redirect(url(self::WORKSPACE_PATH));
         }
 
         return PersonnelHrDocumentStorage::downloadResponse($row);
-    }
-
-    private function accessRuleLabel(string $ruleType): string
-    {
-        return match ($ruleType) {
-            'allow_community' => 'Accès proposé dans le cadre de votre programme',
-            'deny_community' => 'Restriction liée à votre programme',
-            default => 'Règle associée à votre programme',
-        };
     }
 
     private function rhFormRedirect(Request $request, string $workspaceHash, ?string $forceDashboardStep = null): Response
@@ -430,7 +404,7 @@ final class RhWorkspaceController
         }
         $hash = $workspaceHash !== '' ? '#' . ltrim($workspaceHash, '#') : '';
 
-        return Response::redirect(url('personnel/mon-espace-rh') . $hash);
+        return Response::redirect(url(self::WORKSPACE_PATH) . $hash);
     }
 
     private function redirectAfterMemberRh(Request $request, string $anchor): string
@@ -440,6 +414,6 @@ final class RhWorkspaceController
             return url('dashboard') . '#mon-dossier-rh';
         }
 
-        return url('personnel/mon-espace-rh') . $anchor;
+        return url(self::WORKSPACE_PATH) . $anchor;
     }
 }

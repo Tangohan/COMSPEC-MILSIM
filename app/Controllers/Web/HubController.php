@@ -156,7 +156,7 @@ class HubController
             ],
             [
                 'label' => 'Mes démarches',
-                'url' => url('personnel/mon-espace-rh'),
+                'url' => url('back-office/ma-situation/mes-demarches'),
                 'description' => 'Absences, élévation, souhait d’évolution et documents partagés.',
                 'icon' => 'rh_hub',
                 'accent' => 'violet',

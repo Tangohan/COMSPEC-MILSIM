@@ -763,7 +763,6 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\HrCharterRepository::class),
                 self::get(\App\Services\Personnel\SenioritySummaryService::class),
-                self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
                 self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),

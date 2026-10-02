@@ -256,7 +256,7 @@ $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default'
         ? ['label' => 'Organisation (ORBAT)', 'href' => url('orbat'), 'hint' => 'Vue hiérarchique', 'lms_module' => 'effectifs']
         : null,
     ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade', 'lms_module' => 'effectifs'],
-    ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Absences, élévation, documents', 'lms_module' => 'effectifs'],
+    ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches'), 'hint' => 'Absences, élévation, documents', 'lms_module' => 'effectifs'],
     ['label' => 'Mon intégration', 'href' => url('mon-integration'), 'hint' => 'Étapes d’arrivée et rendez-vous', 'lms_module' => 'effectifs'],
     ['label' => 'Mon personnage (RP)', 'href' => url('roleplay'), 'hint' => 'Identité RP, suivi, bilans', 'lms_module' => 'effectifs'],
     ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances', 'lms_module' => 'effectifs'],

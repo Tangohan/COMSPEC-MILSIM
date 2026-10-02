@@ -1174,7 +1174,7 @@ class HomeController
                 ? self::testerProgramPortalLinksForModuleCode($code)
                 : [
                     ['label' => 'Centre opérationnel', 'href' => url('hub')],
-                    ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
+                    ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches')],
                 ];
             if ($links === []) {
                 $links = [['label' => 'Centre opérationnel', 'href' => url('hub')]];
@@ -1202,7 +1202,7 @@ class HomeController
                 ['label' => 'Mes parcours', 'href' => url('formations/mes-formations')],
             ],
             'RH' => [
-                ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches')],
                 ['label' => 'Ma fiche personnelle', 'href' => url('personnel/me')],
             ],
             'SIRH' => [
@@ -1211,7 +1211,7 @@ class HomeController
             ],
             default => [
                 ['label' => 'Centre opérationnel', 'href' => url('hub')],
-                ['label' => 'Mes démarches', 'href' => url('personnel/mon-espace-rh')],
+                ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches')],
             ],
         };
     }

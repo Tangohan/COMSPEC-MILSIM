@@ -382,7 +382,7 @@ $filterMeta = [
         <a href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/formations/competences" class="mf-link mb-2">
             <b>◆</b><span>Compétences<em>Cartographie des acquis</em></span><i></i>
         </a>
-        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="mf-link">
+        <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>" class="mf-link">
             <b>◎</b><span>Mes démarches<em>Absences et demandes</em></span><i></i>
         </a>
     </div>

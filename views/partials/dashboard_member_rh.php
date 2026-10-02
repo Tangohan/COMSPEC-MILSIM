@@ -45,7 +45,7 @@ $elevStatusLabel = static function (string $status): string {
             <h2 id="dash-member-rh-title" class="dash-hub-panel__title">Démarche rapide</h2>
             <p class="dash-hub-panel__lead">Demandez une élévation de grade ou de rôle, ou un avancement. L’encadrement reçoit la demande ; ce n’est pas le tableur de gestion des effectifs.</p>
         </div>
-        <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="dash-hub-panel__ghost">Toutes les démarches</a>
+        <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>" class="dash-hub-panel__ghost">Toutes les démarches</a>
     </div>
 
     <div class="dash-rh-grid">
@@ -131,7 +131,7 @@ $elevStatusLabel = static function (string $status): string {
             <?php endif; ?>
 
             <p class="dash-hub-panel__hint">
-                <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh') . '#absences', ENT_QUOTES, 'UTF-8') ?>">Déclarer une absence</a>
+                <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches') . '#absences', ENT_QUOTES, 'UTF-8') ?>">Déclarer une absence</a>
                 ·
                 <a href="<?= htmlspecialchars(url('account/acces'), ENT_QUOTES, 'UTF-8') ?>">Suivi de mes accès</a>
             </p>

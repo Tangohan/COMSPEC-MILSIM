@@ -114,7 +114,7 @@ final class DashboardRhParcours
             'show_personnel' => $showPersonnel,
             'show_offers' => $showOffers,
             'csrf' => Csrf::token(),
-            'workspace_url' => url('personnel/mon-espace-rh'),
+            'workspace_url' => url('back-office/ma-situation/mes-demarches'),
             'offers' => $offers,
             'absence_ready' => $absenceReady,
             'active_absences' => $activeAbsences,

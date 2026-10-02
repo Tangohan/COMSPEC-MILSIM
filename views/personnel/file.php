@@ -768,7 +768,7 @@ if ($personnelFileIsRhFull) {
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
-            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
+            <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
             <?php endif; ?>
         </div>
             <div class="personnel-file-main min-w-0 space-y-5">
@@ -1696,7 +1696,7 @@ if ($personnelFileIsRhFull) {
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Absences déclarées</h2>
                         <?php if (!empty($personnelIsSelf)): ?>
-                            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>#absences" class="text-xs font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Déclarer ou interrompre</a>
+                            <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>#absences" class="text-xs font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Déclarer ou interrompre</a>
                         <?php endif; ?>
                     </div>
                     <?php if ($personnelAbsences === []): ?>

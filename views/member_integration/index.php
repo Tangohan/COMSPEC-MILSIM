@@ -181,7 +181,7 @@ if ($pendingInvites !== []) {
             <?php endif; ?>
             <div class="mi-member__hero-actions">
                 <a class="mi-btn" href="<?= $h(url('personnel/me')) ?>"><?= $h($t('common.integration_my_file', 'Ma fiche')) ?></a>
-                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('personnel/mon-espace-rh')) ?>"><?= $h($t('common.integration_my_requests', 'Mes démarches')) ?></a>
+                <a class="mi-btn mi-btn--ghost" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>"><?= $h($t('common.integration_my_requests', 'Mes démarches')) ?></a>
                 <a class="mi-btn mi-btn--ghost" href="<?= $h(url('account')) ?>"><?= $h($t('common.integration_my_account', 'Mon compte')) ?></a>
             </div>
         </div>
@@ -199,7 +199,7 @@ if ($pendingInvites !== []) {
                 <div class="mi-actions">
                     <a class="mi-btn" href="<?= $h(url('personnel/me')) ?>">Compléter ma fiche</a>
                     <a class="mi-btn mi-btn--ghost" href="<?= $h(url('account')) ?>">Ouvrir mon compte</a>
-                    <a class="mi-btn mi-btn--ghost" href="<?= $h(url('personnel/mon-espace-rh')) ?>">Mes démarches</a>
+                    <a class="mi-btn mi-btn--ghost" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Mes démarches</a>
                 </div>
             </section>
         <?php else: ?>

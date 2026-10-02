@@ -10,7 +10,7 @@ if (!$showPersonnel && !$showOffers) {
 }
 
 $csrf = htmlspecialchars((string) ($rh['csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
-$workspaceUrl = (string) ($rh['workspace_url'] ?? url('personnel/mon-espace-rh'));
+$workspaceUrl = (string) ($rh['workspace_url'] ?? url('back-office/ma-situation/mes-demarches'));
 $offers = is_array($rh['offers'] ?? null) ? $rh['offers'] : [];
 $absenceReady = !empty($rh['absence_ready']);
 $activeAbsences = is_array($rh['active_absences'] ?? null) ? $rh['active_absences'] : [];
