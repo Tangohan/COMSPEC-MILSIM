@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-01 — Fieldwatch RF hits (Lot 1)
+
+### Nouveau — Fieldwatch (veille RF simulée)
+
+Inspiration Fieldwatch (scan Wi‑Fi / BLE passif) adaptée au milsim : Zeus / Eden pose des **émetteurs RF**, l’app téléphone **Fieldwatch** scanne à proximité et remonte les hits au poste (`POST /api/atak/rf-hits`). Overwatch Beta affiche le calque **Veille RF** ; l’onglet Identification ATAK liste les détections. Rebuild mod + DLL requis (`SendRfHit`). Doc : `docs/technique/fieldwatch-rf-hits-lot1.md`.
+
 ## Vague 2026-09-22 — Overwatch Beta / Athena
 
 ### Nouveau — Surveillance automatique dans Support

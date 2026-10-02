@@ -599,6 +599,15 @@ private _wrapChangeTool = {
                 uiNamespace setVariable ["COMSPEC_ATAK_Relay_token", -1];
                 uiNamespace setVariable ["COMSPEC_ATAK_Relay_group", controlNull];
             };
+            if (!(_page in ["atakfieldwatch", "comspec_atak_fieldwatch", "fieldwatch"])) then {
+                private _fw = uiNamespace getVariable ["COMSPEC_ATAK_Fieldwatch_group", controlNull];
+                if (!isNull _fw) then {
+                    _fw ctrlShow false;
+                    _fw ctrlEnable false;
+                };
+                uiNamespace setVariable ["COMSPEC_ATAK_Fieldwatch_token", -1];
+                uiNamespace setVariable ["COMSPEC_ATAK_Fieldwatch_group", controlNull];
+            };
         }, [], 0.05] call CBA_fnc_waitAndExecute;
         _ret
     };

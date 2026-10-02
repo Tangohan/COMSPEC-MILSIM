@@ -110,6 +110,8 @@ class CfgFunctions
             class athena_openStatus {};
             class athena_relayOnOpened {};
             class athena_updateRelay {};
+            class athena_fieldwatchOnOpened {};
+            class athena_updateFieldwatch {};
             class athena_updateQueueBadge {};
             class athena_updateBuildingSheet {};
             class athena_openRelay {};
@@ -305,6 +307,7 @@ class RscControlsGroup;
 #include "ui\resynch_page.hpp"
 #include "ui\wiki_page.hpp"
 #include "ui\relay_page.hpp"
+#include "ui\fieldwatch_page.hpp"
 #include "ui\cas_page.hpp"
 #include "ui\manifest_page.hpp"
 
@@ -336,6 +339,19 @@ class ATAK_APPs
             ORDER = 0.08;
             PAGE_CTRL = "COMSPEC_ATAK_Relay";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
+        };
+    };
+    class AtakFieldwatch: message
+    {
+        text = "<t size='1'>Fieldwatch</t>";
+        textureNoShortcut = "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        tooltip = "Scan RF passif Wi‑Fi / BLE — émetteurs à proximité.";
+        class Menu_Property
+        {
+            ORDER = 0.09;
+            PAGE_CTRL = "COMSPEC_ATAK_Fieldwatch";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_fieldwatchOnOpened";
         };
     };
     class Athena: message
@@ -568,6 +584,19 @@ class RscTitles
                 ORDER = 0.08;
                 PAGE_CTRL = "COMSPEC_ATAK_Relay";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_relayOnOpened";
+            };
+        };
+        class AtakFieldwatch: message
+        {
+            text = "<t size='1'>Fieldwatch</t>";
+            textureNoShortcut = "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            tooltip = "Scan RF passif Wi‑Fi / BLE — émetteurs à proximité.";
+            class Menu_Property
+            {
+                ORDER = 0.09;
+                PAGE_CTRL = "COMSPEC_ATAK_Fieldwatch";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_fieldwatchOnOpened";
             };
         };
         class Athena: message

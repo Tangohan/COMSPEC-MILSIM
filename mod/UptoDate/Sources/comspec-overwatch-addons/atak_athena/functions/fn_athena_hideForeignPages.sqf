@@ -38,6 +38,9 @@ if (_keep isEqualTo "") then {
             case "atakstatus": { "status" };
             case "waverelay": { "relay" };
             case "atakrelay": { "relay" };
+            case "atakfieldwatch": { "fieldwatch" };
+            case "comspec_atak_fieldwatch": { "fieldwatch" };
+            case "fieldwatch": { "fieldwatch" };
             case "ataksound": { "sound" };
             case "bii_identifi": { "bii" };
             case "atakresynch": { "resynch" };
@@ -64,6 +67,7 @@ private _needles = [
     ["settings", "comspec_atak_settings"],
     ["status", "comspec_atak_status"],
     ["relay", "comspec_atak_relay"],
+    ["fieldwatch", "comspec_atak_fieldwatch"],
     ["sound", "comspec_atak_sound"],
     ["bii", "comspec_atak_bii"],
     ["resynch", "comspec_atak_resynch"],

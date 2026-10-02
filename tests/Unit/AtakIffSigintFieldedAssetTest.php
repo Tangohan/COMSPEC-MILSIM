@@ -21,6 +21,9 @@ final class AtakIffSigintFieldedAssetTest extends TestCase
         self::assertStringContainsString('Écoutes radio (SIGINT)', $view);
         self::assertStringContainsString('atak-sigint.js?v=', $view);
         self::assertStringContainsString('ATAKSIGINT.refresh', $view);
+        self::assertStringContainsString('id="atak-rf-list"', $view);
+        self::assertStringContainsString('atak-rf-hits.js?v=', $view);
+        self::assertStringContainsString('ATAKRFHITS.refresh', $view);
         self::assertStringContainsString('/api/atak/sigint?mapId=', $sigint);
         self::assertStringContainsString('function sigintIndex', $ctrl);
         self::assertStringContainsString('getSigintReports', $ctrl);

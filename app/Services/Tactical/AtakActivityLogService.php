@@ -39,6 +39,8 @@ final class AtakActivityLogService
     public const TYPE_MARKER = 'marker';
     public const TYPE_DESIGNATOR = 'designator';
     public const TYPE_SIGINT = 'sigint';
+    /** Détection RF passive Fieldwatch (Wi‑Fi / BLE simulés). */
+    public const TYPE_RF_HIT = 'rf_hit';
     public const TYPE_FLIGHT = 'flight';
     public const TYPE_NINE_LINE = 'nine_line';
     public const TYPE_LASER = 'laser';
@@ -82,6 +84,7 @@ final class AtakActivityLogService
             self::TYPE_MARKER,
             self::TYPE_DESIGNATOR,
             self::TYPE_SIGINT,
+            self::TYPE_RF_HIT,
             self::TYPE_FLIGHT,
             self::TYPE_NINE_LINE,
             self::TYPE_LASER,
