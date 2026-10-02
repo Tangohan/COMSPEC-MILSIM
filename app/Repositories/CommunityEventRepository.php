@@ -160,6 +160,92 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Événements (non annulés) dont le début tombe dans [from, to[, avec la réponse de l’utilisateur.
+     * Sert au calendrier mensuel de « Ma situation › Événements ».
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function betweenForTenantWithUserRsvp(int $tenantId, int $userId, string $from, string $to): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ce.*,
+                    r.status AS rsvp_status,
+                    r.checked_in_at AS rsvp_checked_in_at
+             FROM community_events ce
+             LEFT JOIN community_event_rsvps r ON r.event_id = ce.id AND r.user_id = ?
+             WHERE ce.tenant_id = ? AND ce.cancelled_at IS NULL
+               AND ce.starts_at >= ? AND ce.starts_at < ?
+             ORDER BY ce.starts_at ASC
+             LIMIT 400'
+        );
+        $stmt->execute([$userId, $tenantId, $from, $to]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Colonne `series_id` (occurrences d’un événement récurrent). Ajoutée à la volée si absente,
+     * comme d’autres colonnes de compatibilité du projet.
+     */
+    public function seriesColumnReady(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        $probe = function (): bool {
+            try {
+                $this->pdo->query('SELECT series_id FROM community_events LIMIT 0');
+
+                return true;
+            } catch (\Throwable) {
+                return false;
+            }
+        };
+        if ($probe()) {
+            return $ready = true;
+        }
+        try {
+            $this->pdo->exec('ALTER TABLE community_events ADD COLUMN series_id CHAR(32) NULL DEFAULT NULL, ADD INDEX idx_community_events_series (tenant_id, series_id)');
+        } catch (\Throwable) {
+        }
+
+        return $ready = $probe();
+    }
+
+    public function assignSeries(int $eventId, int $tenantId, string $seriesId): void
+    {
+        if (!$this->seriesColumnReady()) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('UPDATE community_events SET series_id = ? WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$seriesId, $eventId, $tenantId]);
+    }
+
+    /**
+     * Occurrences à venir d’une série (y compris celle passée en paramètre), non annulées.
+     *
+     * @return list<array{id:int, starts_at:string}>
+     */
+    public function upcomingInSeries(int $tenantId, string $seriesId, string $fromStartsAt): array
+    {
+        if ($seriesId === '' || !$this->seriesColumnReady()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id, starts_at FROM community_events
+             WHERE tenant_id = ? AND series_id = ? AND cancelled_at IS NULL AND starts_at >= ?
+             ORDER BY starts_at ASC'
+        );
+        $stmt->execute([$tenantId, $seriesId, $fromStartsAt]);
+
+        return array_map(
+            static fn (array $r): array => ['id' => (int) $r['id'], 'starts_at' => (string) $r['starts_at']],
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
+    }
+
     public function findByIdForTenant(int $eventId, int $tenantId): ?array
     {
         $stmt = $this->pdo->prepare(

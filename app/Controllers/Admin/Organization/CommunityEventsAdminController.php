@@ -19,6 +19,7 @@ use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Auth\AuthService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\CommunityEventDetails;
+use App\Support\EventRecurrence;
 
 final class CommunityEventsAdminController
 {
@@ -158,86 +159,7 @@ final class CommunityEventsAdminController
      */
     private function buildCalendarMonth(string $mois, array $events): array
     {
-        if (!preg_match('/^\d{4}-\d{2}$/', $mois)) {
-            $mois = date('Y-m');
-        }
-        $firstTs = strtotime($mois . '-01 12:00:00');
-        if ($firstTs === false) {
-            $firstTs = strtotime(date('Y-m-01') . ' 12:00:00') ?: time();
-            $mois = date('Y-m', $firstTs);
-        }
-        $monthsFr = [
-            1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril', 5 => 'mai', 6 => 'juin',
-            7 => 'juillet', 8 => 'août', 9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
-        ];
-        $monthNum = (int) date('n', $firstTs);
-        $label = ($monthsFr[$monthNum] ?? date('F', $firstTs)) . ' ' . date('Y', $firstTs);
-
-        $prevTs = strtotime($mois . '-01 -1 month');
-        $nextTs = strtotime($mois . '-01 +1 month');
-        $prev = $prevTs !== false ? date('Y-m', $prevTs) : $mois;
-        $next = $nextTs !== false ? date('Y-m', $nextTs) : $mois;
-        $today = date('Y-m-d');
-
-        $byDay = [];
-        foreach ($events as $ev) {
-            $startsRaw = isset($ev['starts_at']) ? (string) $ev['starts_at'] : '';
-            $ts = $startsRaw !== '' ? strtotime($startsRaw) : false;
-            if ($ts === false) {
-                continue;
-            }
-            $ymd = date('Y-m-d', $ts);
-            if (!isset($byDay[$ymd])) {
-                $byDay[$ymd] = [];
-            }
-            $byDay[$ymd][] = $ev;
-        }
-
-        /* Lundi = début de grille (N = 1..7 lundi..dimanche en PHP avec format 'N'). */
-        $startDow = (int) date('N', $firstTs);
-        $gridStartTs = strtotime('-' . ($startDow - 1) . ' days', $firstTs);
-        if ($gridStartTs === false) {
-            $gridStartTs = $firstTs;
-        }
-        $daysInMonth = (int) date('t', $firstTs);
-        $lastTs = strtotime($mois . '-' . str_pad((string) $daysInMonth, 2, '0', STR_PAD_LEFT) . ' 12:00:00');
-        if ($lastTs === false) {
-            $lastTs = $firstTs;
-        }
-        $endDow = (int) date('N', $lastTs);
-        $gridEndTs = strtotime('+' . (7 - $endDow) . ' days', $lastTs);
-        if ($gridEndTs === false) {
-            $gridEndTs = $lastTs;
-        }
-
-        $weeks = [];
-        $cursor = $gridStartTs;
-        while ($cursor <= $gridEndTs) {
-            $week = [];
-            for ($i = 0; $i < 7; $i++) {
-                $ymd = date('Y-m-d', $cursor);
-                $inMonth = date('Y-m', $cursor) === $mois;
-                $week[] = [
-                    'ymd' => $ymd,
-                    'in_month' => $inMonth,
-                    'is_today' => $ymd === $today,
-                    'day' => (int) date('j', $cursor),
-                    'events' => $byDay[$ymd] ?? [],
-                ];
-                $nextDay = strtotime('+1 day', $cursor);
-                $cursor = $nextDay !== false ? $nextDay : ($cursor + 86400);
-            }
-            $weeks[] = $week;
-        }
-
-        return [
-            'mois' => $mois,
-            'label' => $label,
-            'prev' => $prev,
-            'next' => $next,
-            'today' => $today,
-            'weeks' => $weeks,
-        ];
+        return \App\Support\EventCalendarMonth::build($mois, $events);
     }
 
     /**
@@ -513,17 +435,9 @@ final class CommunityEventsAdminController
         if (!in_array($eventType, ['operation', 'evenement', 'formation', 'autre'], true)) {
             $eventType = 'evenement';
         }
-        $eventId = $this->events->create(
-            $tenantId,
-            (int) $user['id'],
-            $title,
-            trim((string) $request->input('description')) ?: null,
-            trim((string) $request->input('location')) ?: null,
-            $starts,
-            $ends,
-            trim((string) $request->input('campaign_tag')) ?: null,
-            $eventType
-        );
+        $description = trim((string) $request->input('description')) ?: null;
+        $location = trim((string) $request->input('location')) ?: null;
+        $campaignTag = trim((string) $request->input('campaign_tag')) ?: null;
         $details = CommunityEventDetails::fromRequestInput(static fn (string $k, mixed $d = null) => $request->input($k, $d));
         $cover = $this->storeCoverImage($request, $tenantId);
         if (($cover['error'] ?? null) !== null) {
@@ -532,11 +446,74 @@ final class CommunityEventsAdminController
         if (($cover['path'] ?? null) !== null) {
             $details['cover_image_path'] = $cover['path'];
         }
-        $this->events->updateDetails($eventId, $tenantId, array_merge($details, [
-            'show_on_public_page' => (string) $request->input('show_on_public_page', '0') === '1' ? 1 : 0,
-        ]));
-        $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
-        Session::flash('success', 'Événement créé.');
+        $details['show_on_public_page'] = (string) $request->input('show_on_public_page', '0') === '1' ? 1 : 0;
+
+        // Répétition : la première occurrence est le créneau saisi, les suivantes sont calculées.
+        $repeat = trim((string) $request->input('repeat', ''));
+        $repeatDays = array_map('intval', (array) $request->input('repeat_days', []));
+        $repeatEnd = trim((string) $request->input('repeat_end', 'count'));
+        $repeatCount = (int) $request->input('repeat_count', 0);
+        $repeatUntil = trim((string) $request->input('repeat_until', ''));
+        $occurrences = in_array($repeat, EventRecurrence::FREQUENCIES, true)
+            ? EventRecurrence::expand(
+                $starts,
+                $ends,
+                $repeat,
+                $repeatEnd === 'until' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $repeatUntil) === 1 ? $repeatUntil : null,
+                $repeatEnd === 'count' ? max(1, $repeatCount) : null,
+                $repeatDays
+            )
+            : [['starts' => $starts, 'ends' => $ends]];
+        if ($occurrences === []) {
+            $occurrences = [['starts' => $starts, 'ends' => $ends]];
+        }
+        $seriesId = count($occurrences) > 1 ? bin2hex(random_bytes(16)) : null;
+
+        $eventId = 0;
+        $created = 0;
+        $quotaStopped = false;
+        foreach ($occurrences as $i => $occ) {
+            if ($i > 0 && !$this->featureGate->allows($tenantId, 'events')) {
+                $this->featureGate->recordQuotaLimitReached($tenantId, (int) $user['id'], 'events');
+                $quotaStopped = true;
+                break;
+            }
+            $id = $this->events->create(
+                $tenantId,
+                (int) $user['id'],
+                $title,
+                $description,
+                $location,
+                (string) $occ['starts'],
+                $occ['ends'],
+                $campaignTag,
+                $eventType
+            );
+            $this->events->updateDetails($id, $tenantId, $details);
+            if ($seriesId !== null) {
+                $this->events->assignSeries($id, $tenantId, $seriesId);
+            }
+            $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
+            if ($i === 0) {
+                $eventId = $id;
+            }
+            $created++;
+        }
+
+        if ($created > 1) {
+            $lastOcc = $occurrences[$created - 1];
+            Session::flash('success', sprintf(
+                'Série créée : %d occurrences (%s), jusqu’au %s.',
+                $created,
+                EventRecurrence::describe($repeat, $repeat === 'monthly' ? [] : ($repeatDays !== [] ? $repeatDays : [(int) date('N', (int) strtotime($starts))])),
+                date('d/m/Y', (int) strtotime((string) $lastOcc['starts']))
+            ));
+        } else {
+            Session::flash('success', 'Événement créé.');
+        }
+        if ($quotaStopped) {
+            Session::flash('error', 'Quota mensuel atteint : la série a été arrêtée après ' . $created . ' occurrence' . ($created > 1 ? 's' : '') . '.');
+        }
 
         return $this->redirectEventsIndex($listVue, substr($starts, 0, 7), $eventId);
     }
@@ -731,6 +708,7 @@ final class CommunityEventsAdminController
 
         return Response::view('layout.main', [
             'title' => $eventTitle !== '' ? $eventTitle : 'Fiche créneau',
+            'eventSeriesUpcoming' => $this->events->upcomingInSeries($tenantId, (string) ($event['series_id'] ?? ''), (string) ($event['starts_at'] ?? '')),
             'content' => 'admin.organization.event_show',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérations',
@@ -1081,7 +1059,26 @@ final class CommunityEventsAdminController
 
             return Response::redirect(url('back-office/events/' . (string) $id));
         }
-        Session::flash('success', 'Événement annulé. Notifications envoyées : ' . (int) ($result['notified'] ?? 0) . '.');
+        $notified = (int) ($result['notified'] ?? 0);
+        $cancelledCount = 1;
+        // Série : annule aussi les occurrences suivantes (jamais les passées).
+        if ((string) $request->input('cancel_scope', 'one') === 'series') {
+            $event = $this->events->findByIdForTenant($id, $tenantId);
+            $seriesId = is_array($event) ? (string) ($event['series_id'] ?? '') : '';
+            foreach ($this->events->upcomingInSeries($tenantId, $seriesId, (string) ($event['starts_at'] ?? '')) as $occ) {
+                if ($occ['id'] === $id) {
+                    continue;
+                }
+                $r = $this->attendance->cancelEventByOrg($occ['id'], $tenantId, $reason !== '' ? $reason : null);
+                if ($r['ok'] ?? false) {
+                    $cancelledCount++;
+                    $notified += (int) ($r['notified'] ?? 0);
+                }
+            }
+        }
+        Session::flash('success', ($cancelledCount > 1
+            ? $cancelledCount . ' créneaux de la série annulés.'
+            : 'Événement annulé.') . ' Notifications envoyées : ' . $notified . '.');
 
         return Response::redirect(url('back-office/events'));
     }
