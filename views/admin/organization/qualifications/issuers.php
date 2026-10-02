@@ -3,7 +3,7 @@ $issuers = $issuers ?? [];
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 ?>
-<div class="max-w-3xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--3xl">
     <a href="<?= url('back-office/referentiels/qualifications') ?>" class="text-sm text-slate-500 hover:text-slate-800">← Référentiel</a>
     <h1 class="text-2xl font-black text-slate-900 mt-2 mb-6">Organismes émetteurs</h1>
     <?php if ($flashSuccess): ?><p class="mb-4 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded"><?= htmlspecialchars($flashSuccess) ?></p><?php endif; ?>

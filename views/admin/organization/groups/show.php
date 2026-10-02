@@ -1,5 +1,5 @@
 <?php $group = $group ?? null; $members = $members ?? []; $commander = $commander ?? null; if (!$group) { echo '<p>Groupe introuvable.</p>'; return; } $gid = (int) $group['id']; ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($group['name']) ?></h1>
         <div class="flex gap-2">

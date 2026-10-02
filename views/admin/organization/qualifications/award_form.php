@@ -12,7 +12,7 @@ $visibilityLevels = $visibilityLevels ?? [];
 $suggestedExpires = $suggestedExpires ?? null;
 $flashError = \App\Core\Session::getFlash('error');
 ?>
-<div class="max-w-3xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--3xl">
     <a href="<?= url('back-office/referentiels/qualifications') ?>" class="text-sm text-slate-500 hover:text-slate-800">← Référentiel</a>
     <h1 class="text-2xl font-black text-slate-900 mt-2 mb-6"><?= $renewalOf > 0 ? 'Renouveler une qualification' : 'Attribuer une qualification' ?></h1>
     <?php if ($flashError): ?><p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>

@@ -7,7 +7,7 @@ $positions = is_array($positions ?? null) ? $positions : [];
 $roleSets = is_array($roleSets ?? null) ? $roleSets : [];
 $positionCategoryLabels = is_array($positionCategoryLabels ?? null) ? $positionCategoryLabels : PositionRepository::CATEGORY_LABELS;
 ?>
-<div class="max-w-3xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--3xl">
     <div class="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-black text-slate-900">Postes organisationnels</h1>

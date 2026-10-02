@@ -1,0 +1,144 @@
+/**
+ * Back-office — harmonisation des pages encore écrites en utilitaires Tailwind
+ * (formulaires de référentiels, équipes, groupes, rôles, communications…).
+ * Les vues concernées portent la classe .bo-legacy à la place de leur ancien
+ * conteneur centré « max-w-* mx-auto px-6 py-12 ».
+ */
+
+.bo-legacy {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  animation: bo-legacy-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bo-legacy--xl { max-width: 640px; }
+.bo-legacy--2xl { max-width: 760px; }
+.bo-legacy--3xl { max-width: 880px; }
+.bo-legacy--4xl { max-width: 1000px; }
+.bo-legacy--5xl { max-width: 1180px; }
+.bo-legacy--6xl { max-width: none; }
+
+@keyframes bo-legacy-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bo-legacy { animation: none; }
+}
+
+/* Le titre de page est déjà affiché par l’en-tête du back-office */
+.ath-page-head ~ .bo-legacy h1 { display: none; }
+
+/* Lien retour « ← … » */
+.bo-legacy a[href]:is(.text-sm, .text-xs).text-slate-500:first-child,
+.bo-legacy a[href].text-slate-600.hover\:underline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ath-muted, #5b6762);
+  text-decoration: none;
+}
+.bo-legacy a[href]:is(.text-sm, .text-xs).text-slate-500:first-child:hover { color: var(--ath-accent, #0b8a5c); }
+
+/* Cartes */
+.bo-legacy :is(.rounded, .rounded-md, .rounded-lg, .rounded-xl).border:not(input, select, textarea, button, a, span) {
+  border-color: var(--ath-line, #e3e8ea);
+  border-radius: 12px;
+}
+.bo-legacy :is(.rounded-lg, .rounded-xl).border.bg-white {
+  box-shadow: 0 1px 2px rgba(12, 17, 22, 0.04);
+}
+
+/* Titres de section (« NIVEAUX », « PRÉREQUIS »…) */
+.bo-legacy h2:is(.uppercase) {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--ath-accent, #0b8a5c);
+}
+.bo-legacy h2:not(.uppercase) { color: var(--ath-ink, #0c1116); }
+
+/* Libellés et champs */
+.bo-legacy label.block {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ath-ink-2, #2c3833);
+}
+.bo-legacy :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]), select, textarea) {
+  border-color: var(--ath-line, #d5ddd9);
+  border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.bo-legacy :is(input, select):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]) { min-height: 36px; }
+.bo-legacy :is(input, select, textarea):focus {
+  outline: none;
+  border-color: #12d18e;
+  box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.15);
+}
+.bo-legacy input[readonly] { color: var(--ath-muted, #5b6762); cursor: default; }
+.bo-legacy input[type="checkbox"], .bo-legacy input[type="radio"] { accent-color: #0b8a5c; }
+
+/* Boutons principaux (fond sombre) */
+.bo-legacy :is(button, a).bg-slate-900,
+.bo-legacy :is(button, a).bg-emerald-700,
+.bo-legacy :is(button, a).bg-emerald-600 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.bo-legacy :is(button, a).bg-slate-900:hover { background-color: #0b8a5c; }
+.bo-legacy :is(button, a):is(.bg-slate-900, .bg-emerald-700, .bg-emerald-600):active { transform: translateY(1px); }
+
+/* Boutons secondaires (bordure) */
+.bo-legacy :is(button, a).border:not(.bg-slate-900) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.bo-legacy :is(button, a).border:not(.bg-slate-900):hover { border-color: #12d18e; }
+
+/* Petites actions écrites en lien souligné (« Ajouter », « Supprimer ») : vrais boutons */
+.bo-legacy button.underline {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--ath-line, #d5ddd9);
+  border-radius: 7px;
+  background: var(--ath-surface, #fff);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.bo-legacy button.underline:hover { border-color: #12d18e; }
+.bo-legacy button.underline:is(.text-red-700, .text-red-600, .text-rose-700):hover { border-color: #e48a8a; }
+
+/* Tableaux */
+.bo-legacy table thead th {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ath-muted, #5b6762);
+  background: var(--ath-table-head, #f6f8f7);
+}
+.bo-legacy table tbody tr { transition: background-color 0.12s ease; }
+.bo-legacy table tbody tr:hover { background: var(--ath-row-hover, #f6faf8); }
+
+/* Messages flash propres à la vue (doublons de ceux du shell) */
+.ath-main__flashes ~ .bo-legacy > p:is(.bg-emerald-50, .bg-red-50):first-child { display: none; }

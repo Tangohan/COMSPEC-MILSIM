@@ -3,7 +3,7 @@ declare(strict_types=1);
 $templates = $templates ?? [];
 $kinds = $kinds ?? [];
 ?>
-<div class="max-w-4xl mx-auto px-6 py-10">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Modèles d’e-mail</h1>
         <a href="<?= url('back-office/communications/templates/create') ?>" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Nouveau modèle</a>

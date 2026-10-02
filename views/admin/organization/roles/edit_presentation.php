@@ -28,7 +28,7 @@ $curColor = (string) ($badgeStyle['color'] ?? '');
 $curIcon = (string) ($badgeStyle['icon'] ?? '');
 $curVariant = (string) ($badgeStyle['variant'] ?? '');
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <div class="mb-6 flex items-center justify-between gap-4">
         <h1 class="text-2xl font-black text-slate-900">Présentation du rôle</h1>
         <a href="<?= url('back-office/roles/' . $rid) ?>" class="text-sm font-medium text-slate-600 hover:underline">← Fiche</a>

@@ -8,7 +8,7 @@ $flashError = \App\Core\Session::getFlash('error');
 $tenantOwned = !empty($tenantOwned);
 $catalogLocked = $isEdit;
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le grade' : 'Nouveau grade' ?></h1>
     <?php if ($tenantOwned): ?>
     <p class="mb-4 text-sm text-slate-600"><?= $isEdit

@@ -1004,6 +1004,25 @@ html[data-bo-theme="dark"] .rh-corr__direct-foot {
   background: #141816;
 }
 
+/* ——— back-office-dark.css ——— */
+html[data-bo-theme="dark"][data-bo-theme="dark"] .ath-shell, html[data-bo-theme="dark"][data-bo-theme="dark"] .bo-shell {
+  --ath-subtle: #9daba4;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"] .ath-main__body :where(input, html[data-bo-theme="dark"] textarea)::placeholder {
+  color: #a6b3ad;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"] .pf-ring__track {
+  stroke: #d7ddda;
+}
+html[data-bo-theme="dark"] .ath-theme-toggle {
+  border: 1px solid var(--ath-line, #2f3934);
+  background: var(--ath-surface, #141816);
+  color: var(--ath-ink, #e2e6e4);
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"] .ath-btn--solid {
+  color: #c2eedc !important;
+}
+
 /* ——— back-office-dark.generated.css ——— */
 html[data-bo-theme="dark"][data-bo-theme="dark"] .bo-access {
   --bo-void: #1e2421;
@@ -1050,6 +1069,72 @@ html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-t
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-catalog {
   --void: #252e2a;
 }
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-access {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-atak-beta {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-atak-mod {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-briefing {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-catalog {
+  --void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .org-dash {
+  --org-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-events {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-ft {
+  --ft-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-media {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-mcycle {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-recovery {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-rail {
+  --dash-rail-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-roles {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-seniority {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .ath-shell, html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-shell {
+  --ath-void: #d3dad7;
+  --ath-sidebar: #d3d9d6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-user-edit {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-users {
+  --bo-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .dash-cc {
+  --cc-void: #d3dad6;
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .dash-cc--rail {
+  --dash-rail-void: #d3dad6;
+}
+@media (min-width: 1024px) {
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .dash-cc--rail > .dash-rail, html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] aside.dash-rail[data-dash-rail] {
+  --dash-rail-void: #d3dad6;
+}
+}
+html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .ops-board {
+  --ops-void: #d3dad6;
+}
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .org-dash {
   --org-void: #252e2a;
 }
@@ -1066,7 +1151,9 @@ html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-t
   --bo-void: #252e2a;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-mportal {
-  --mp-progress-idle: #d3d9d6;
+  --mp-section: #d3dad7;
+  --mp-progress-idle: #d3dad6;
+  --mp-info-bar: #d4dad7;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-recovery {
   --bo-void: #252e2a;
@@ -1103,11 +1190,12 @@ html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-t
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] ﻿
 :root {
-  --eff-accent2: #d3d9d6;
+  --eff-accent2: #d3dad6;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .jnet-embed {
-  --jnet-root: #d4dad7;
+  --jnet-root: #d5dbd8;
   --jnet-elevated: #d3dad7;
+  --jnet-inset: #d5dbd8;
   --jnet-search: #d5dbd8;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .ops-board {
@@ -1129,7 +1217,9 @@ html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-mcycl
   --bo-void: #d8dedb;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-mportal {
-  --mp-progress-idle: #262e2a;
+  --mp-section: #252d29;
+  --mp-progress-idle: #252e2a;
+  --mp-info-bar: #242c28;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .bo-recovery {
   --bo-void: #d8dedb;
@@ -1165,15 +1255,16 @@ html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .dash-cc-
 }
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .dk-kit {
-  --dk-anthracite: #d4dad7;
+  --dk-anthracite: #d3dad7;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] ﻿
 :root {
-  --eff-accent2: #262e2a;
+  --eff-accent2: #252e2a;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .jnet-embed {
-  --jnet-root: #242c28;
+  --jnet-root: #232b27;
   --jnet-elevated: #252d29;
+  --jnet-inset: #232b27;
   --jnet-search: #222a26;
 }
 html[data-bo-theme="dark"][data-bo-theme="dark"][data-bo-theme="dark"] .ops-board {
@@ -2275,6 +2366,46 @@ html[data-bo-theme="dark"] .bo-setup__status-value.is-warn {
   border-color: #443e32;
 }
 
+/* ——— back-office-legacy.css ——— */
+html[data-bo-theme="dark"] .bo-legacy a[href]:is(.text-sm, html[data-bo-theme="dark"] .text-xs).text-slate-500:first-child, html[data-bo-theme="dark"] .bo-legacy a[href].text-slate-600.hover\:underline {
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-legacy a[href]:is(.text-sm, html[data-bo-theme="dark"] .text-xs).text-slate-500:first-child:hover {
+  color: var(--ath-accent, #9befd1);
+}
+html[data-bo-theme="dark"] .bo-legacy :is(.rounded, html[data-bo-theme="dark"] .rounded-md, html[data-bo-theme="dark"] .rounded-lg, html[data-bo-theme="dark"] .rounded-xl).border:not(input, html[data-bo-theme="dark"] select, html[data-bo-theme="dark"] textarea, html[data-bo-theme="dark"] button, html[data-bo-theme="dark"] a, html[data-bo-theme="dark"] span) {
+  border-color: var(--ath-line, #2f3934);
+}
+html[data-bo-theme="dark"] .bo-legacy h2:is(.uppercase) {
+  color: var(--ath-accent, #9befd1);
+}
+html[data-bo-theme="dark"] .bo-legacy h2:not(.uppercase) {
+  color: var(--ath-ink, #e2e6e4);
+}
+html[data-bo-theme="dark"] .bo-legacy label.block {
+  color: var(--ath-ink-2, #ced5d2);
+}
+html[data-bo-theme="dark"] .bo-legacy :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]), html[data-bo-theme="dark"] select, html[data-bo-theme="dark"] textarea) {
+  border-color: var(--ath-line, #333e39);
+}
+html[data-bo-theme="dark"] .bo-legacy input[readonly] {
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-legacy button.underline {
+  border: 1px solid var(--ath-line, #333e39);
+  background: var(--ath-surface, #141816);
+}
+html[data-bo-theme="dark"] .bo-legacy button.underline:is(.text-red-700, html[data-bo-theme="dark"] .text-red-600, html[data-bo-theme="dark"] .text-rose-700):hover {
+  border-color: #4f3a3a;
+}
+html[data-bo-theme="dark"] .bo-legacy table thead th {
+  color: var(--ath-muted, #b2bdb8);
+  background: var(--ath-table-head, #171d1a);
+}
+html[data-bo-theme="dark"] .bo-legacy table tbody tr:hover {
+  background: var(--ath-row-hover, #171c1a);
+}
+
 /* ——— back-office-media.css ——— */
 html[data-bo-theme="dark"] .bo-media {
   --bo-void: #e9ecea;
@@ -3131,6 +3262,56 @@ html[data-bo-theme="dark"] .ath-page-head__sub {
 }
 html[data-bo-theme="dark"] .ath-sidebar__filter input::placeholder {
   color: #aab6b0;
+}
+html[data-bo-theme="dark"] .bo-qual__panel-head h2 {
+  color: var(--ath-ink, #e2e6e4);
+}
+html[data-bo-theme="dark"] .bo-qual__count {
+  background: var(--ath-line-soft, #1b211e);
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-qual__lead {
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-qual__empty {
+  border: 1px dashed var(--ath-line, #2f3934);
+  color: var(--ath-subtle, #a0aea7);
+}
+html[data-bo-theme="dark"] .bo-qual__chips li {
+  border: 1px solid var(--ath-line, #2f3934);
+  background: var(--ath-surface, #141816);
+  color: var(--ath-ink, #e2e6e4);
+}
+html[data-bo-theme="dark"] .bo-qual__chips b {
+  color: var(--ath-accent, #9befd1);
+}
+html[data-bo-theme="dark"] .bo-qual__add input {
+  border: 1px solid var(--ath-line, #2f3934);
+  background: var(--ath-surface, #141816);
+}
+html[data-bo-theme="dark"] .bo-qual__tpls a {
+  border: 1px solid var(--ath-line, #2f3934);
+}
+html[data-bo-theme="dark"] .bo-qual__tpls strong {
+  color: var(--ath-ink, #e2e6e4);
+}
+html[data-bo-theme="dark"] .bo-qual__tpls strong::after {
+  color: var(--ath-accent, #9befd1);
+}
+html[data-bo-theme="dark"] .bo-qual__tpls span {
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-qual__note {
+  color: var(--ath-subtle, #a0aea7);
+}
+html[data-bo-theme="dark"] .bo-qual__note a {
+  color: var(--ath-accent, #9befd1);
+}
+html[data-bo-theme="dark"] .bo-qual__hint {
+  color: var(--ath-muted, #b2bdb8);
+}
+html[data-bo-theme="dark"] .bo-qual__hint svg {
+  color: var(--ath-accent, #9befd1);
 }
 
 /* ——— back-office-roleplay-immersion.css ——— */

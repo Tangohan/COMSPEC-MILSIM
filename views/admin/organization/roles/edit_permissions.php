@@ -39,7 +39,7 @@ foreach (array_keys($byModule) as $k) {
     }
 }
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
         Cochez les habilitations actives pour le rôle <strong class="font-semibold"><?= htmlspecialchars((string) ($role['name'] ?? '')) ?></strong> dans votre communauté. Les changements s’appliquent aux membres qui portent déjà ce rôle après leur prochaine action sur le portail.
     </div>

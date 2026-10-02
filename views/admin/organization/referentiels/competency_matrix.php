@@ -23,7 +23,7 @@ $levelBadge = static function (string $lvl): string {
     };
 };
 ?>
-<div class="max-w-6xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--6xl">
     <div class="flex items-center justify-between mb-2">
         <h1 class="text-2xl font-black text-slate-900">Matrice de compétences × grades</h1>
         <a href="<?= url('back-office/referentiels/grades') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Référentiel des grades →</a>

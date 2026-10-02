@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $campaigns = $campaigns ?? [];
 ?>
-<div class="max-w-5xl mx-auto px-6 py-10">
+<div class="bo-legacy bo-legacy--5xl">
     <h1 class="text-2xl font-black text-slate-900 mb-2">Historique des envois</h1>
     <p class="text-sm text-slate-600 mb-6"><a href="<?= url('back-office/communications') ?>" class="text-blue-700 font-semibold hover:underline">← Rédaction</a></p>
 

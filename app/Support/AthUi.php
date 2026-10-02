@@ -22,7 +22,7 @@ final class AthUi
     private const WORDS_OK = [
         'actif', 'validé', 'validée', 'présent', 'connecté', 'à jour', 'confirmé', 'conforme',
         'signé', 'en ligne', 'succès', 'ouvert', 'oui', 'clos', 'approuvé', 'terminé',
-        'opérationnel', 'payé', 'complet',
+        'opérationnel', 'payé', 'complet', 'active', 'ouverte', 'approuvée', 'terminée', 'confirmée',
     ];
 
   /** @var list<string> */

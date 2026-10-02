@@ -7,7 +7,7 @@ $action = $isEdit
     ? url('back-office/communications/templates/' . (int) ($template['id'] ?? 0) . '/update')
     : url('back-office/communications/templates/store');
 ?>
-<div class="max-w-3xl mx-auto px-6 py-10">
+<div class="bo-legacy bo-legacy--3xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le modèle' : 'Nouveau modèle' ?></h1>
     <p class="text-sm mb-6"><a href="<?= url('back-office/communications/templates') ?>" class="text-blue-700 font-semibold hover:underline">← Modèles</a></p>
 

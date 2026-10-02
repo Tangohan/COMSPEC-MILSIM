@@ -12,7 +12,7 @@ $courrierDocs = $courrierDocs ?? [];
 $isEdit = $pin !== null;
 $type = $isEdit ? (string) ($pin['pin_type'] ?? 'document') : 'document_category';
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= $isEdit ? 'Modifier un raccourci' : 'Ajouter un raccourci' ?></h1>
         <a href="<?= url('back-office/dashboard-pins') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
