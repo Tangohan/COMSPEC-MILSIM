@@ -136,7 +136,7 @@ $boNavCooperationCatalog = $p === 'back-office/cooperation/catalog' || str_start
 $boNavCooperationAnnouncements = $p === 'back-office/cooperation/announcements' || str_starts_with($p, 'back-office/cooperation/announcements/');
 $boNavEvents = str_starts_with($p, 'back-office/events') && !$boNavEventInsights;
 $boNavJnet = $p === 'jnet' || str_starts_with($p, 'jnet/');
-$boNavJnetHome = $p === 'jnet';
+$boNavJnetHome = $p === 'jnet' || str_starts_with($p, 'jnet/u/');
 $boNavJnetUnit = $p === 'jnet/unite' || str_starts_with($p, 'jnet/unite/');
 $boNavJnetPersonnel = $p === 'jnet/personnel' || str_starts_with($p, 'jnet/personnel/');
 $boNavJnetOps = $p === 'jnet/operations' || str_starts_with($p, 'jnet/operations/');

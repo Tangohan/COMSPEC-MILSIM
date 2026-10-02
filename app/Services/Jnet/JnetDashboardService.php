@@ -889,6 +889,24 @@ final class JnetDashboardService
     }
 
     /** @return array<string, mixed>|null */
+    /**
+     * ORBAT filtré pour le lecteur (confidentialité appliquée) — base des espaces JNET.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function orbatForViewer(int $tenantId, int $viewerUserId): ?array
+    {
+        return $this->loadOrbat($tenantId, $viewerUserId);
+    }
+
+    /** @return array{key: string, label: string} */
+    public function postureFor(int $tenantId): array
+    {
+        $key = $this->loadPosture($tenantId);
+
+        return ['key' => $key, 'label' => $this->postureLabel($key)];
+    }
+
     private function loadOrbat(int $tenantId, int $viewerUserId): ?array
     {
         try {
