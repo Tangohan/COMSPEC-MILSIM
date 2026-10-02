@@ -54,19 +54,6 @@ $myStatus = (string) ($myParticipant['status'] ?? '');
 $isPartner = ($myParticipant['role'] ?? '') === 'partner';
 
 
-$card = static function (string $title, string $desc, string $href, string $accent = 'slate'): void {
-    $ring = match ($accent) {
-        'sky' => 'border-sky-200 hover:border-sky-300 hover:bg-sky-50/40',
-        'emerald' => 'border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/40',
-        'amber' => 'border-amber-200 hover:border-amber-300 hover:bg-amber-50/40',
-        default => 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60',
-    };
-    echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="group block rounded-xl border bg-white p-5 shadow-sm transition ' . $ring . '">';
-    echo '<p class="text-sm font-bold text-slate-900 group-hover:text-slate-950">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<p class="mt-2 text-xs text-slate-600 leading-relaxed">' . htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<p class="mt-4 text-xs font-semibold text-emerald-800">Ouvrir →</p>';
-    echo '</a>';
-};
 ?>
 <div class="max-w-5xl mx-auto px-6 py-10 space-y-10">
     <header class="space-y-6">
@@ -348,61 +335,105 @@ $card = static function (string $title, string $desc, string $href, string $acce
         <?php endif; ?>
         <div>
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Conduite de la coopération</h2>
-
-            <p class="mt-2 text-sm text-slate-600">Avancez étape par étape : préparation, validation, exécution, bilan, puis actions correctives.</p>
-            <p class="mt-4 text-sm text-slate-700">Étape actuelle :
-                <strong class="text-slate-900"><?= htmlspecialchars((string) ($operationalChoices[$operationalStage] ?? 'Non définie'), ENT_QUOTES, 'UTF-8') ?></strong>
-            </p>
+            <p class="mt-2 text-sm text-slate-600">Seuls les éléments de l’étape en cours sont à compléter ; ceux des autres étapes restent consultables plus bas.</p>
         </div>
-
+        <?php
+        $conductFields = [
+            'opord_text' => ['Ordre d’opération', 'Intentions, objectif, règles d’engagement, organisation…', 5, (string) ($m['opord_text'] ?? '')],
+            'command_validation_notes' => ['Notes de validation du commandement', 'Conditions de lancement, restrictions, arbitrages…', 3, (string) ($m['command_validation_notes'] ?? '')],
+            'linked_resources_text' => ['Ressources engagées', 'Véhicules, matériels, soutiens…', 3, $resourcesText],
+            'simulated_losses_text' => ['Pertes simulées', 'Effectifs, matériels, conséquences…', 3, $lossesText],
+            'aar_summary' => ['Bilan', 'Ce qui a fonctionné, écarts, recommandations…', 5, (string) ($m['aar_summary'] ?? '')],
+            'lessons_learned_text' => ['Enseignements retenus', 'Points à conserver pour la prochaine coopération…', 3, $lessonsText],
+            'corrective_actions_text' => ['Actions correctives', 'Qui fait quoi, échéance, état…', 4, $correctiveText],
+        ];
+        $stageDefs = [
+            'opord_draft' => ['fields' => ['opord_text'], 'next' => 'command_validation', 'prereq' => 'opord'],
+            'command_validation' => ['fields' => ['opord_text', 'command_validation_notes'], 'next' => 'execution', 'prereq' => 'launched'],
+            'execution' => ['fields' => ['linked_resources_text', 'simulated_losses_text', 'aar_summary'], 'next' => 'closed_aar', 'prereq' => 'aar'],
+            'closed_aar' => ['fields' => ['aar_summary', 'lessons_learned_text'], 'next' => 'corrective_actions', 'prereq' => ''],
+            'corrective_actions' => ['fields' => ['corrective_actions_text', 'lessons_learned_text'], 'next' => null, 'prereq' => ''],
+        ];
+        $curDef = $stageDefs[$operationalStage] ?? $stageDefs['opord_draft'];
+        $nextStage = $curDef['next'];
+        $nextLabel = $nextStage !== null ? preg_replace('/^\d\)\s*/u', '', (string) ($operationalChoices[$nextStage] ?? $nextStage)) : '';
+        $curLabel = preg_replace('/^\d\)\s*/u', '', (string) ($operationalChoices[$operationalStage] ?? ''));
+        $conductLocked = $isTerminal || !empty($cooperationProgress['suspended']);
+        $prereqMessages = [
+            'opord' => 'Rédigez l’ordre d’opération avant de demander la validation du commandement.',
+            'launched' => 'La coopération doit être lancée (toutes les unités ont répondu) pour passer en exécution.',
+            'aar' => 'Rédigez le bilan avant de passer à la clôture.',
+        ];
+        $prereqKey = (string) $curDef['prereq'];
+        $prereqServerBlock = $prereqKey === 'launched' && $status !== 'active';
+        $otherFields = array_values(array_diff(array_keys($conductFields), $curDef['fields']));
+        ?>
         <?php if ($operationalChoices !== []): ?>
-        <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/operational-stage'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-6">
+        <form id="coop-conduct-form" method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/operational-stage'), ENT_QUOTES, 'UTF-8') ?>" class="grid gap-5" data-coop-conduct data-prereq="<?= htmlspecialchars($prereqKey, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <p class="text-sm text-slate-700">Étape de conduite en cours : <strong class="text-slate-900"><?= htmlspecialchars((string) $curLabel, ENT_QUOTES, 'UTF-8') ?></strong></p>
+            <?php foreach ($curDef['fields'] as $fk): ?>
+            <?php [$flabel, $fph, $frows, $fval] = $conductFields[$fk]; ?>
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="operational_stage">Passer à l’étape</label>
-                <select id="operational_stage" name="operational_stage" class="w-full max-w-md rounded-lg border border-slate-200 px-3 py-2.5 text-sm">
-                    <?php foreach ($operationalChoices as $slug => $label): ?>
-                    <option value="<?= htmlspecialchars((string) $slug, ENT_QUOTES, 'UTF-8') ?>" <?= $operationalStage === $slug ? 'selected' : '' ?>><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="cf_<?= htmlspecialchars($fk, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></label>
+                <textarea id="cf_<?= htmlspecialchars($fk, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fk, ENT_QUOTES, 'UTF-8') ?>" rows="<?= (int) $frows ?>" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="<?= htmlspecialchars($fph, ENT_QUOTES, 'UTF-8') ?>" data-conduct-field="<?= htmlspecialchars($fk, ENT_QUOTES, 'UTF-8') ?>"<?= $conductLocked ? ' disabled' : '' ?>><?= htmlspecialchars($fval, ENT_QUOTES, 'UTF-8') ?></textarea>
             </div>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="opord_text">Ordre d’opération (brouillon)</label>
-                <textarea id="opord_text" name="opord_text" rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Intentions, objectif, règles d’engagement, organisation…"><?= htmlspecialchars((string) ($m['opord_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+            <?php endforeach; ?>
+
+            <?php if (!$conductLocked): ?>
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="submit" name="operational_stage" value="<?= htmlspecialchars($operationalStage, ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Enregistrer</button>
+                <?php if ($nextStage !== null): ?>
+                <button type="submit" name="operational_stage" value="<?= htmlspecialchars($nextStage, ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        data-coop-advance data-next-label="<?= htmlspecialchars((string) $nextLabel, ENT_QUOTES, 'UTF-8') ?>"
+                        aria-describedby="coop-advance-prereq"<?= $prereqServerBlock ? ' disabled' : '' ?>>Passer à : <?= htmlspecialchars((string) $nextLabel, ENT_QUOTES, 'UTF-8') ?></button>
+                <?php endif; ?>
             </div>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="command_validation_notes">Notes de validation du commandement</label>
-                <textarea id="command_validation_notes" name="command_validation_notes" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Conditions de lancement, restrictions, arbitrages…"><?= htmlspecialchars((string) ($m['command_validation_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="aar_summary">Bilan de clôture</label>
-                <textarea id="aar_summary" name="aar_summary" rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Ce qui a fonctionné, écarts, recommandations…"><?= htmlspecialchars((string) ($m['aar_summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-            </div>
-            <div class="grid gap-6 md:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="corrective_actions_text">Actions correctives</label>
-                    <textarea id="corrective_actions_text" name="corrective_actions_text" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Qui fait quoi, échéance, état…"><?= htmlspecialchars($correctiveText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="linked_resources_text">Ressources engagées</label>
-                    <textarea id="linked_resources_text" name="linked_resources_text" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Véhicules, matériels, soutiens…"><?= htmlspecialchars($resourcesText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="simulated_losses_text">Pertes simulées</label>
-                    <textarea id="simulated_losses_text" name="simulated_losses_text" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Effectifs, matériels, conséquences…"><?= htmlspecialchars($lossesText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="lessons_learned_text">Enseignements retenus</label>
-                    <textarea id="lessons_learned_text" name="lessons_learned_text" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" placeholder="Points à conserver pour la prochaine coopération…"><?= htmlspecialchars($lessonsText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                </div>
-            </div>
-            <div>
-                <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Enregistrer l’étape de conduite</button>
-            </div>
+            <?php if ($nextStage !== null && $prereqKey !== ''): ?>
+            <p id="coop-advance-prereq" class="fr-message <?= $prereqServerBlock ? 'fr-message--error' : '' ?> text-xs text-slate-600" data-prereq-message><?= htmlspecialchars($prereqMessages[$prereqKey] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+            <?php else: ?>
+            <p class="text-sm text-amber-900">La conduite est gelée (coopération <?= $isTerminal ? 'clôturée' : 'suspendue' ?>).</p>
+            <?php endif; ?>
         </form>
+
+        <?php if ($nextStage !== null && !$conductLocked): ?>
+        <dialog id="coop-advance-dialog" class="w-[min(100vw-2rem,28rem)] rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-900/40" aria-labelledby="coop-advance-title">
+            <div class="border-b border-slate-100 px-5 py-4">
+                <p id="coop-advance-title" class="text-sm font-bold">Passer à : <?= htmlspecialchars((string) $nextLabel, ENT_QUOTES, 'UTF-8') ?> ?</p>
+                <ul class="mt-3 space-y-1 text-sm text-slate-600">
+                    <li>Étape actuelle : <?= htmlspecialchars((string) $curLabel, ENT_QUOTES, 'UTF-8') ?> (les champs saisis sont enregistrés).</li>
+                    <?php if ($prereqKey !== ''): ?><li>Prérequis : <?= htmlspecialchars($prereqMessages[$prereqKey] ?? '', ENT_QUOTES, 'UTF-8') ?></li><?php endif; ?>
+                    <li>Les unités engagées sont prévenues du changement d’étape. Le retour à une étape précédente n’est pas possible.</li>
+                </ul>
+            </div>
+            <div class="flex justify-end gap-2 px-4 py-3">
+                <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-coop-advance-cancel>Annuler</button>
+                <button type="submit" form="coop-conduct-form" name="operational_stage" value="<?= htmlspecialchars($nextStage, ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Confirmer le passage</button>
+            </div>
+        </dialog>
         <?php endif; ?>
 
-        <?php if ($operationalStage === 'execution'): ?>
+        <?php
+        $filledOthers = array_filter($otherFields, static fn (string $k): bool => trim((string) $conductFields[$k][3]) !== '');
+        ?>
+        <?php if ($filledOthers !== []): ?>
+        <details class="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+            <summary class="cursor-pointer text-sm font-semibold text-slate-800">Éléments des autres étapes (<?= count($filledOthers) ?>)</summary>
+            <dl class="mt-3 space-y-4">
+                <?php foreach ($filledOthers as $fk): ?>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-wider text-slate-500"><?= htmlspecialchars($conductFields[$fk][0], ENT_QUOTES, 'UTF-8') ?></dt>
+                    <dd class="mt-1 whitespace-pre-wrap text-sm text-slate-800"><?= htmlspecialchars((string) $conductFields[$fk][3], ENT_QUOTES, 'UTF-8') ?></dd>
+                </div>
+                <?php endforeach; ?>
+            </dl>
+        </details>
+        <?php endif; ?>
+        <script defer src="<?= htmlspecialchars(asset_url('assets/js/cooperation/conduct.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+        <?php endif; ?>
+
+        <?php if ($operationalStage === 'execution' && !$conductLocked): ?>
         <form method="post" action="<?= htmlspecialchars(cooperation_missions_url($sid . '/sitrep'), ENT_QUOTES, 'UTF-8') ?>" class="border-t border-slate-100 pt-8 grid gap-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Ajouter un point de situation</h3>
@@ -498,28 +529,6 @@ $card = static function (string $title, string $desc, string $href, string $acce
 
     <?php /* Co-pilotage : action « Co-pilote » du tableau des unités engagées. */ ?>
 
-    <section>
-        <h2 class="text-sm font-black uppercase tracking-wider text-slate-800 mb-5">Accès rapide</h2>
-        <div class="grid gap-5 sm:grid-cols-2">
-            <?php $card('Espace commun', 'Fil coordonné, visio et autorisations d’accès au brief.', cooperation_mission_exchange_url($sid), 'sky'); ?>
-            <?php $card('Chronologie', 'Journal des événements et décisions notables.', cooperation_mission_timeline_url($sid), 'slate'); ?>
-            <?php $card('Réunion', 'Salon vidéo, compte rendu et historique des réunions.', cooperation_mission_meeting_url($sid), 'emerald'); ?>
-            <?php $card('Structures & liaisons', 'Organisation, points de contact et coordination.', cooperation_mission_orbat_url($sid), 'amber'); ?>
-            <?php $card('Autorisation de partage', 'Valider ce que vous acceptez de partager (code par e-mail).', cooperation_mission_consent_url($sid), 'slate'); ?>
-            <?php if ($status === 'pending'): ?>
-            <?php $card('Négociation', 'Contre-propositions et réponses de l’unité support.', cooperation_mission_negotiate_url($sid), 'amber'); ?>
-            <?php endif; ?>
-            <?php if ($canPilot): ?>
-            <?php $card('Proposition', 'Titre, typologie, priorité et échéance de réponse.', cooperation_mission_edit_url($sid), 'slate'); ?>
-            <?php endif; ?>
-            <?php if ($status === 'archived'): ?>
-            <?php $card('Retour d’expérience', 'Bilan et recommandations par unité.', cooperation_mission_rex_url($sid), 'slate'); ?>
-            <?php endif; ?>
-            <?php if ($pilotActions): ?>
-            <?php $card($status === 'pending' ? 'Annuler la proposition' : 'Clôture', $status === 'pending' ? 'Abandonner cette proposition avant lancement, avec un motif transmis aux unités.' : 'Terminer la coopération et préparer le retour d’expérience.', cooperation_mission_archive_url($sid), 'slate'); ?>
-            <?php endif; ?>
-        </div>
-    </section>
 
     <?php if ($canPilot && $canManage && in_array($status, ['archived', 'active', 'pending'], true)): ?>
     <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">

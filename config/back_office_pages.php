@@ -265,6 +265,8 @@ return [
         ['path' => 'back-office/recruitments/codes-invitation', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Codes d’invitation prioritaires', 'subtitle' => 'Un code qui fait passer une candidature en priorité sur le formulaire d’enrôlement — distincts des invitations par e-mail et du code communauté.'],
         ['path' => 'back-office/recruitment', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Recrutement'],
         ['path' => 'back-office/cooperation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'subtitle' => 'Les opérations menées avec d’autres communautés.', 'css' => ['cooperation.css']],
+        // Les écrans des missions ont leur propre en-tête (titre, progression) : pas de bandeau du shell en double.
+        ['path' => 'back-office/cooperation/missions', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'css' => ['cooperation.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/forum/priorite-mission', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Publier en priorité mission', 'subtitle' => 'Mettez un sujet du forum en tête pour la prochaine mission.'],
         ['path' => 'back-office/ressources', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Ressources', 'subtitle' => 'Formations, documents, cartographie et outils de terrain.'],
         ['path' => 'formation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORMATIONS', 'title' => 'Formations', 'subtitle' => 'Les cours, les inscriptions et les qualifications délivrées.'],

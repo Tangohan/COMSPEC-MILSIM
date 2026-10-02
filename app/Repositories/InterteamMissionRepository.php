@@ -114,6 +114,33 @@ class InterteamMissionRepository
     }
 
     /**
+     * Participants de plusieurs coopérations en une requête (liste des coopérations).
+     *
+     * @param list<int> $missionIds
+     * @return array<int, list<array<string, mixed>>> mission_id => participants
+     */
+    public function listParticipantsForMissions(array $missionIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $missionIds), static fn (int $v): bool => $v > 0)));
+        if (!$this->tableExists() || $ids === []) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT p.*, t.name AS tenant_name FROM interteam_mission_participants p
+             INNER JOIN tenants t ON t.id = p.tenant_id
+             WHERE p.mission_id IN ({$in}) ORDER BY p.role DESC, t.name ASC"
+        );
+        $stmt->execute($ids);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[(int) $r['mission_id']][] = $r;
+        }
+
+        return $out;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function listGrantsForMission(int $missionId): array
@@ -295,13 +322,14 @@ class InterteamMissionRepository
             $params[] = $fields[$column];
         }
 
-        if ($targetStage === 'command_validation' && $this->columnExists('interteam_missions', 'command_validated_at')) {
+        $changing = $targetStage !== $currentStage;
+        if ($changing && $targetStage === 'command_validation' && $this->columnExists('interteam_missions', 'command_validated_at')) {
             $set[] = 'command_validated_at = NOW()';
         }
-        if ($targetStage === 'execution' && $this->columnExists('interteam_missions', 'execution_started_at')) {
+        if ($changing && $targetStage === 'execution' && $this->columnExists('interteam_missions', 'execution_started_at')) {
             $set[] = 'execution_started_at = COALESCE(execution_started_at, NOW())';
         }
-        if ($targetStage === 'closed_aar' && $this->columnExists('interteam_missions', 'closed_at')) {
+        if ($changing && $targetStage === 'closed_aar' && $this->columnExists('interteam_missions', 'closed_at')) {
             $set[] = 'closed_at = COALESCE(closed_at, NOW())';
         }
 
