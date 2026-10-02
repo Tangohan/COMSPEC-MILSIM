@@ -329,6 +329,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (is_file(base_path('public/assets/css/back-office-refresh.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-legacy.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-legacy.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php elseif (!empty($isPlatformAdminShell)): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <?php endif; ?>

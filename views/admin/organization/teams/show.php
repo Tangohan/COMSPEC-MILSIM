@@ -1,5 +1,5 @@
 <?php $team = $team ?? null; $members = $members ?? []; $commander = $commander ?? null; if (!$team) { echo '<p>Équipe introuvable.</p>'; return; } $tid = (int) $team['id']; ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars($team['name']) ?></h1>
         <div class="flex gap-2">

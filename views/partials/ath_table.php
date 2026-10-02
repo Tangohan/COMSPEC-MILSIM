@@ -39,9 +39,15 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $title = trim((string) ($athTableTitle ?? ''));
 $rows = is_array($athTableRows ?? null) ? $athTableRows : [];
 $rawCols = is_array($athTableCols ?? null) ? $athTableCols : [];
-$filters = is_array($athTableFilters ?? null) ? $athTableFilters : [];
+// Seuls les filtres réels (avec lien) sont affichés : un libellé seul donnait un bouton
+// grisé qui ne faisait rien.
+$filters = array_values(array_filter(
+    is_array($athTableFilters ?? null) ? $athTableFilters : [],
+    static fn ($f): bool => is_array($f) && trim((string) ($f['href'] ?? '')) !== ''
+));
 $minW = trim((string) ($athTableMinWidth ?? '1200px'));
-$showCheck = ($athTableShowCheckbox ?? true) !== false;
+// La colonne de cases était purement décorative (aucune action groupée branchée) : masquée.
+$showCheck = false;
 $exportUrl = trim((string) ($athTableExportUrl ?? ''));
 $filterName = trim((string) ($athTableFilterName ?? 'q'));
 $filterValue = (string) ($athTableFilterValue ?? '');
@@ -101,11 +107,6 @@ $tableId = 'ath-table-' . $GLOBALS['__athTableSeq'];
                 <?= $h((string) ($filter['label'] ?? '')) ?>
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
             </a>
-            <?php else: ?>
-            <button type="button" class="ath-table-toolbar__filter ath-btn" disabled>
-                <?= $h(is_array($filter) ? (string) ($filter['label'] ?? '') : (string) $filter) ?>
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
-            </button>
             <?php endif; ?>
         <?php endforeach; ?>
         <?php if ($exportUrl !== ''): ?>

@@ -513,6 +513,14 @@ $athKpis = [
         </button>
         <form method="post" action="<?= $h(url('back-office/events/' . $eid . '/cancel')) ?>" class="ath-event-show__section-body ath-event-show__form" x-show="cancelOpen" x-cloak onsubmit="return confirm('Annuler ce créneau et prévenir les membres inscrits ?');">
             <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+            <?php $seriesNext = is_array($eventSeriesUpcoming ?? null) ? count($eventSeriesUpcoming) : 0; ?>
+            <?php if ($seriesNext > 1): ?>
+            <fieldset class="ath-event-show__series">
+                <legend>Ce créneau fait partie d’une série</legend>
+                <label><input type="radio" name="cancel_scope" value="one" checked> Ce créneau seulement</label>
+                <label><input type="radio" name="cancel_scope" value="series"> Ce créneau et les <?= $seriesNext - 1 ?> suivant<?= $seriesNext - 1 > 1 ? 's' : '' ?> de la série</label>
+            </fieldset>
+            <?php endif; ?>
             <label class="ath-users-filters__label" for="cancel-reason">Motif affiché aux membres <span class="ath-event-show__opt">(optionnel)</span></label>
             <textarea id="cancel-reason" name="cancel_reason" rows="2" class="bo-select" style="width:100%;min-height:72px;padding:10px 12px;" placeholder="Ex. Report pour conditions météo / indisponibilité serveur…"></textarea>
             <div class="ath-event-show__form-actions">

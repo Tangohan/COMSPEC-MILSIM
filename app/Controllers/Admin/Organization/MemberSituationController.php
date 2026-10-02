@@ -287,14 +287,48 @@ final class MemberSituationController
             ], $payload['vars'])));
         }
 
+        $vue = (string) $request->query('vue', 'a_venir');
+        if (!in_array($vue, ['a_venir', 'calendrier', 'passes'], true)) {
+            $vue = 'a_venir';
+        }
+        $mois = (string) $request->query('mois', '');
+        if (preg_match('/^\d{4}-\d{2}$/', $mois) !== 1) {
+            $mois = date('Y-m');
+        }
+
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) ($payload['vars']['currentUserId'] ?? 0);
+        $repo = Container::get(\App\Repositories\CommunityEventRepository::class);
+
+        // Historique : sert à l’onglet « Passés » et aux indicateurs d’assiduité.
+        $past = [];
+        try {
+            $past = $userId > 0 ? $repo->pastForTenantWithUserRsvp($tenantId, $userId, 50) : [];
+        } catch (\Throwable) {
+            $past = [];
+        }
+        $calendar = null;
+        if ($vue === 'calendrier' && $userId > 0) {
+            try {
+                [$from, $to] = \App\Support\EventCalendarMonth::range($mois);
+                $calendar = \App\Support\EventCalendarMonth::build($mois, $repo->betweenForTenantWithUserRsvp($tenantId, $userId, $from, $to));
+            } catch (\Throwable) {
+                $calendar = \App\Support\EventCalendarMonth::build($mois, []);
+            }
+        }
+
         return Response::view('layout.main', $this->boShell(array_merge([
             'title' => 'Événements',
-            'content' => 'community.events',
+            'content' => 'admin.member_situation.evenements',
             'boPageTitle' => 'Événements',
             'boPageKicker' => 'OPÉRATEUR · ÉVÉNEMENTS',
-            'boPageSubtitle' => 'Manœuvres, formations et inscriptions à venir.',
+            'boPageSubtitle' => 'Vos prochains rendez-vous, le calendrier de l’unité et votre historique de participation.',
+            'backOfficePageCss' => ['back-office-member-events.css'],
             'eventsInBackOffice' => true,
             'boSkipSessionFlashes' => true,
+            'memberEventsVue' => $vue,
+            'memberEventsPast' => $past,
+            'memberEventsCalendar' => $calendar,
         ], $payload['vars'])));
     }
 

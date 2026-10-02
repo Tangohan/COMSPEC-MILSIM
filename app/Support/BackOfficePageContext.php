@@ -66,6 +66,14 @@ final class BackOfficePageContext
         if (empty($vars['boPageGroup']) && !empty($match['group'])) {
             $vars['boPageGroup'] = (string) $match['group'];
         }
+        // Sur une sous-page (fiche, édition…), la règle trouvée est celle de la page parente :
+        // son titre et son sous-titre décrivent la liste, pas l’élément ouvert. Le titre
+        // précis fourni par le contrôleur (nom de l’équipe, « Modifier le rôle »…) l’emporte.
+        $exact = self::isExactMatch($path, (string) ($match['path'] ?? ''));
+        if (!$exact && $title !== '') {
+            $match['title'] = $title;
+            unset($match['subtitle']);
+        }
         if (empty($vars['boPageTitle'])) {
             $vars['boPageTitle'] = !empty($match['title']) ? (string) $match['title'] : ($title !== '' ? $title : 'Administration');
         }
@@ -144,6 +152,26 @@ final class BackOfficePageContext
         }
 
         return self::fallbackFromPath($path);
+    }
+
+    private static function isExactMatch(string $path, string $rulePath): bool
+    {
+        $rulePath = trim($rulePath, '/');
+        if ($rulePath === '') {
+            return false;
+        }
+        if ($path === $rulePath) {
+            return true;
+        }
+        if (!str_contains($rulePath, '{id}')) {
+            return false;
+        }
+        $quoted = array_map(
+            static fn (string $part): string => preg_quote($part, '#'),
+            explode('{id}', $rulePath)
+        );
+
+        return preg_match('#^' . implode('[0-9]+', $quoted) . '$#', $path) === 1;
     }
 
     private static function pathMatchesRule(string $path, string $rulePath): bool

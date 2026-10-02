@@ -27,7 +27,7 @@ $checked = static function (string $key) use ($definition): bool {
     return is_array($definition) && !empty($definition[$key]);
 };
 ?>
-<div class="max-w-5xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--5xl">
     <div class="mb-6 flex items-center justify-between gap-4">
         <div>
             <a href="<?= url('back-office/referentiels/qualifications') ?>" class="text-sm text-slate-500 hover:text-slate-800">← Référentiel</a>

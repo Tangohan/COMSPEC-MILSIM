@@ -413,7 +413,7 @@ $eventCount = count($events);
             <?php endif; ?>
         </div>
     </div>
-    <?php elseif (!empty($calendar_subscription_url)): ?>
+    <?php elseif (!empty($calendar_subscription_url) && empty($eventsHideSubscription)): ?>
     <div class="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
         <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <span class="block text-xs font-semibold text-slate-600">Abonnement calendrier (lecture seule, lien personnel)</span>

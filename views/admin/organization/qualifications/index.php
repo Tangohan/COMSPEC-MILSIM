@@ -1,136 +1,162 @@
 <?php
-$definitions = $definitions ?? [];
-$categories = $categories ?? [];
-$types = $types ?? [];
-$flashSuccess = \App\Core\Session::getFlash('success');
-$flashError = \App\Core\Session::getFlash('error');
+declare(strict_types=1);
+
+$definitions = is_array($definitions ?? null) ? $definitions : [];
+$categories = is_array($categories ?? null) ? $categories : [];
+$types = is_array($types ?? null) ? $types : [];
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$activeCount = 0;
+$archivedCount = 0;
+$holdersTotal = 0;
+$unheldCount = 0;
+foreach ($definitions as $d) {
+    if (!empty($d['archived_at'])) {
+        $archivedCount++;
+        continue;
+    }
+    $activeCount++;
+    $holders = (int) ($d['holders_count'] ?? 0);
+    $holdersTotal += $holders;
+    if ($holders === 0) {
+        $unheldCount++;
+    }
+}
+
+$athKpis = [
+    ['label' => 'Qualifications actives', 'value' => (string) $activeCount, 'pct' => $definitions !== [] ? round($activeCount / count($definitions) * 100) . '%' : '0%'],
+    ['label' => 'Attributions en cours', 'value' => (string) $holdersTotal, 'pct' => $holdersTotal > 0 ? '100%' : '0%', 'note' => 'Toutes qualifications confondues'],
+    ['label' => 'Jamais attribuées', 'value' => (string) $unheldCount, 'tone' => $unheldCount > 0 ? '#c27a1a' : '#0b8a5c', 'pct' => $activeCount > 0 ? round($unheldCount / $activeCount * 100) . '%' : '0%', 'note' => $unheldCount > 0 ? 'Personne ne les détient encore' : 'Toutes ont au moins un titulaire'],
+    ['label' => 'Archivées', 'value' => (string) $archivedCount, 'tone' => '#6b7780', 'pct' => $definitions !== [] ? round($archivedCount / count($definitions) * 100) . '%' : '0%', 'note' => 'Historique conservé'],
+];
 ?>
-<div class="max-w-6xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 class="text-2xl font-black text-slate-900">Référentiel des qualifications</h1>
-            <p class="text-sm text-slate-600 mt-1">Définitions, catégories, types et suivi des détenteurs — distinctes des attributions individuelles.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="<?= url('back-office/referentiels/qualifications/emetteurs') ?>" class="px-3 py-2 text-sm font-medium border border-slate-300 rounded hover:bg-slate-50">Organismes émetteurs</a>
-            <a href="<?= url('back-office/referentiels/qualifications/attribuer') ?>" class="px-3 py-2 text-sm font-medium border border-slate-300 rounded hover:bg-slate-50">Attribuer</a>
-            <a href="<?= url('back-office/referentiels/qualifications/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvelle qualification</a>
-        </div>
+<div class="bo-qual">
+    <div class="bo-qual__toolbar ath-rise" role="group" aria-label="Actions sur le référentiel">
+        <a href="<?= $h(url('back-office/referentiels/qualifications/create')) ?>" class="ath-btn ath-btn--solid">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Nouvelle qualification
+        </a>
+        <a href="<?= $h(url('back-office/referentiels/qualifications/attribuer')) ?>" class="ath-btn">Attribuer à un membre</a>
+        <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Organismes émetteurs</a>
     </div>
 
-    <?php if ($flashSuccess): ?><p class="mb-4 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded"><?= htmlspecialchars($flashSuccess) ?></p><?php endif; ?>
-    <?php if ($flashError): ?><p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p><?php endif; ?>
+    <?php require base_path('views/partials/ath_kpis.php'); ?>
 
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-label="Modèles de certificat et diplôme">
-        <div class="mb-4">
-            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500">Modèles certificat / diplôme</h2>
-            <p class="text-sm text-slate-600 mt-2 leading-relaxed">
-                Gabarits PDF de référence pour les brevets générés depuis ce référentiel (Classique et Moderne).
-                Les fichiers ci-dessous sont les modèles vierges à consulter ; le rendu rempli est produit à l’attribution.
-            </p>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-4">
-            <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
-                <h3 class="text-sm font-semibold text-slate-900">Classique</h3>
-                <p class="text-xs text-slate-600 mt-1 mb-3">Cadre ornementé, en-tête institutionnel, mentions légales.</p>
-                <a class="inline-flex text-sm font-medium text-emerald-800 underline"
-                   href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_classique_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>"
-                   target="_blank"
-                   rel="noopener noreferrer">Ouvrir le modèle PDF</a>
-            </div>
-            <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
-                <h3 class="text-sm font-semibold text-slate-900">Moderne</h3>
-                <p class="text-xs text-slate-600 mt-1 mb-3">Bandeau accent, typographie épurée, code de vérification.</p>
-                <a class="inline-flex text-sm font-medium text-emerald-800 underline"
-                   href="<?= htmlspecialchars(asset_url('docs/qualification-certificate-templates/template_moderne_vierge.pdf'), ENT_QUOTES, 'UTF-8') ?>"
-                   target="_blank"
-                   rel="noopener noreferrer">Ouvrir le modèle PDF</a>
-            </div>
-        </div>
-        <p class="text-xs text-slate-500 mt-4">
-            Distinct du
-            <a href="<?= htmlspecialchars(url('formation/certificates/gabarit'), ENT_QUOTES, 'UTF-8') ?>" class="underline text-slate-700">gabarit d’attestations de formation</a>
-            (parcours Formation).
-        </p>
-    </section>
+    <?php
+    $athTableRows = [];
+    $athTableRowHrefs = [];
+    foreach ($definitions as $d) {
+        $archived = !empty($d['archived_at']);
+        $validite = !empty($d['is_permanent'])
+            ? 'Permanente'
+            : ((isset($d['default_validity_months']) && $d['default_validity_months'] !== null)
+                ? ((int) $d['default_validity_months'] . ' mois')
+                : '—');
+        $athTableRows[] = [
+            (string) ($d['code'] ?? ''),
+            (string) ($d['name'] ?? ''),
+            trim((string) ($d['category_name'] ?? '')) !== '' ? (string) $d['category_name'] : '—',
+            trim((string) ($d['type_name'] ?? '')) !== '' ? (string) $d['type_name'] : '—',
+            (string) (int) ($d['levels_count'] ?? 0),
+            $validite,
+            (string) (int) ($d['holders_count'] ?? 0),
+            $archived ? 'Archivée' : 'Active',
+        ];
+        $athTableRowHrefs[] = url('back-office/referentiels/qualifications/' . (int) ($d['id'] ?? 0) . '/edit');
+    }
+    $athTableTitle = 'Qualifications';
+    $athTableCount = count($definitions);
+    $athTableCols = ['CODE|m', 'QUALIFICATION', 'CATÉGORIE', 'TYPE', 'NIVEAUX|r', 'VALIDITÉ', 'TITULAIRES|r', 'STATUT|b'];
+    $athTableFilters = [];
+    $athTableMinWidth = '860px';
+    $athTableFilterName = 'q';
+    $athTableFilterValue = '';
+    $athTableFoot = $definitions === []
+        ? 'Le référentiel est vide : créez une première qualification.'
+        : 'Cliquez sur une ligne pour la modifier, gérer ses niveaux et ses titulaires.';
+    $athTablePager = null;
+    $athTableExportUrl = null;
+    $athTableRowActions = [];
+    require base_path('views/partials/ath_table.php');
+    ?>
 
-    <div class="grid lg:grid-cols-3 gap-6 mb-8">
-        <div class="rounded-lg border border-slate-200 p-4 bg-white">
-            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Catégories</h2>
-            <ul class="space-y-1 text-sm mb-4 max-h-40 overflow-auto">
+    <div class="bo-qual__grid">
+        <section class="ath-card bo-qual__panel" aria-labelledby="bo-qual-cat-title">
+            <header class="bo-qual__panel-head">
+                <h2 id="bo-qual-cat-title">Catégories</h2>
+                <span class="bo-qual__count"><?= count($categories) ?></span>
+            </header>
+            <p class="bo-qual__lead">Regroupent les qualifications par domaine (combat, santé, transmissions…).</p>
+            <?php if ($categories === []): ?>
+            <p class="bo-qual__empty">Aucune catégorie pour l’instant.</p>
+            <?php else: ?>
+            <ul class="bo-qual__chips">
                 <?php foreach ($categories as $c): ?>
-                    <li><?= htmlspecialchars((string) $c['name']) ?></li>
+                <li><?= $h((string) ($c['name'] ?? '')) ?></li>
                 <?php endforeach; ?>
-                <?php if ($categories === []): ?><li class="text-slate-500">Aucune pour l’instant.</li><?php endif; ?>
             </ul>
-            <form method="post" action="<?= url('back-office/referentiels/qualifications/categories') ?>" class="space-y-2">
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/categories')) ?>" class="bo-qual__add">
                 <?= \App\Core\Csrf::field() ?>
-                <input type="text" name="name" required placeholder="Nom de catégorie" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm">
-                <button class="text-xs font-semibold text-emerald-800 underline">Ajouter</button>
+                <label class="sr-only" for="bo-qual-cat-name">Nom de la nouvelle catégorie</label>
+                <input type="text" id="bo-qual-cat-name" name="name" required maxlength="120" placeholder="Nouvelle catégorie">
+                <button type="submit" class="ath-btn">Ajouter</button>
             </form>
-        </div>
-        <div class="rounded-lg border border-slate-200 p-4 bg-white">
-            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Types</h2>
-            <ul class="space-y-1 text-sm mb-4 max-h-40 overflow-auto">
+        </section>
+
+        <section class="ath-card bo-qual__panel" aria-labelledby="bo-qual-type-title">
+            <header class="bo-qual__panel-head">
+                <h2 id="bo-qual-type-title">Types</h2>
+                <span class="bo-qual__count"><?= count($types) ?></span>
+            </header>
+            <p class="bo-qual__lead">Nature de la qualification. Le code court apparaît dans les listes.</p>
+            <?php if ($types === []): ?>
+            <p class="bo-qual__empty">Aucun type pour l’instant.</p>
+            <?php else: ?>
+            <ul class="bo-qual__chips">
                 <?php foreach ($types as $t): ?>
-                    <li><span class="font-mono text-[11px] text-slate-500"><?= htmlspecialchars((string) $t['code']) ?></span> — <?= htmlspecialchars((string) $t['name']) ?></li>
+                <li><b><?= $h((string) ($t['code'] ?? '')) ?></b><?= $h((string) ($t['name'] ?? '')) ?></li>
                 <?php endforeach; ?>
             </ul>
-            <form method="post" action="<?= url('back-office/referentiels/qualifications/types') ?>" class="space-y-2">
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/types')) ?>" class="bo-qual__add bo-qual__add--type">
                 <?= \App\Core\Csrf::field() ?>
-                <input type="text" name="name" required placeholder="Nom" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm">
-                <input type="text" name="code" required placeholder="Code" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm uppercase">
-                <button class="text-xs font-semibold text-emerald-800 underline">Ajouter</button>
+                <label class="sr-only" for="bo-qual-type-name">Nom du nouveau type</label>
+                <input type="text" id="bo-qual-type-name" name="name" required maxlength="120" placeholder="Nom (ex. Technique)">
+                <label class="sr-only" for="bo-qual-type-code">Code court</label>
+                <input type="text" id="bo-qual-type-code" name="code" required maxlength="16" placeholder="Code" class="bo-qual__code">
+                <button type="submit" class="ath-btn">Ajouter</button>
             </form>
-        </div>
-        <div class="rounded-lg border border-slate-200 p-4 bg-slate-50">
-            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Rappel</h2>
-            <p class="text-sm text-slate-600 leading-relaxed">Les états « expiration prochaine » ou « expirée » sont calculés automatiquement à partir des dates. L’archivage conserve l’historique des attributions.</p>
-        </div>
+        </section>
+
+        <section class="ath-card bo-qual__panel" aria-labelledby="bo-qual-tpl-title">
+            <header class="bo-qual__panel-head">
+                <h2 id="bo-qual-tpl-title">Brevets PDF</h2>
+            </header>
+            <p class="bo-qual__lead">Chaque attribution peut produire un brevet. Deux gabarits sont disponibles ; voici leur version vierge.</p>
+            <ul class="bo-qual__tpls">
+                <li>
+                    <a href="<?= $h(asset_url('docs/qualification-certificate-templates/template_moderne_vierge.pdf')) ?>" target="_blank" rel="noopener noreferrer">
+                        <strong>Moderne</strong>
+                        <span>Bandeau couleur, code de vérification</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $h(asset_url('docs/qualification-certificate-templates/template_classique_vierge.pdf')) ?>" target="_blank" rel="noopener noreferrer">
+                        <strong>Classique</strong>
+                        <span>Cadre ornementé, en-tête institutionnel</span>
+                    </a>
+                </li>
+            </ul>
+            <p class="bo-qual__note">
+                Les attestations de formation ont leur propre
+                <a href="<?= $h(url('formation/certificates/gabarit')) ?>">gabarit</a>.
+            </p>
+        </section>
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table class="min-w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                <tr>
-                    <th class="px-4 py-3">Code</th>
-                    <th class="px-4 py-3">Qualification</th>
-                    <th class="px-4 py-3">Catégorie</th>
-                    <th class="px-4 py-3">Type</th>
-                    <th class="px-4 py-3">Niveaux</th>
-                    <th class="px-4 py-3">Validité</th>
-                    <th class="px-4 py-3">Personnels</th>
-                    <th class="px-4 py-3">Statut</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-                <?php foreach ($definitions as $d):
-                    $archived = !empty($d['archived_at']);
-                    $validite = !empty($d['is_permanent'])
-                        ? 'Permanente'
-                        : ((isset($d['default_validity_months']) && $d['default_validity_months'] !== null)
-                            ? ((int) $d['default_validity_months'] . ' mois')
-                            : '—');
-                    ?>
-                <tr class="<?= $archived ? 'opacity-60' : '' ?>">
-                    <td class="px-4 py-3 font-mono text-xs"><?= htmlspecialchars((string) $d['code']) ?></td>
-                    <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) $d['name']) ?></td>
-                    <td class="px-4 py-3"><?= htmlspecialchars((string) ($d['category_name'] ?? '—')) ?></td>
-                    <td class="px-4 py-3"><?= htmlspecialchars((string) ($d['type_name'] ?? '—')) ?></td>
-                    <td class="px-4 py-3"><?= (int) ($d['levels_count'] ?? 0) ?></td>
-                    <td class="px-4 py-3"><?= htmlspecialchars($validite) ?></td>
-                    <td class="px-4 py-3"><?= (int) ($d['holders_count'] ?? 0) ?></td>
-                    <td class="px-4 py-3"><?= $archived ? 'Archivée' : 'Active' ?></td>
-                    <td class="px-4 py-3 text-right">
-                        <a href="<?= url('back-office/referentiels/qualifications/' . (int) $d['id'] . '/edit') ?>" class="text-emerald-800 font-medium underline">Ouvrir</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if ($definitions === []): ?>
-                <tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">Aucune qualification dans le référentiel.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+    <p class="bo-qual__hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        « Expire bientôt » et « Expirée » sont calculés à partir des dates de chaque attribution. Archiver une qualification la retire des nouvelles attributions sans effacer l’historique.
+    </p>
 </div>

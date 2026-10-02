@@ -15,7 +15,7 @@ if (is_string($pt) && $pt !== '') {
 }
 $sop = array_key_exists('show_on_public_page', $group) ? (int) $group['show_on_public_page'] === 1 : true;
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier le groupe</h1>
     <form method="post" action="<?= url('back-office/groups/' . $gid . '/update') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>

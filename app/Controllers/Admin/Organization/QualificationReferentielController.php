@@ -42,6 +42,9 @@ final class QualificationReferentielController
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.index',
             'title' => 'Référentiel des qualifications',
+            'boPageKicker' => 'PERSONNEL · QUALIFICATIONS',
+            'boPageTitle' => 'Qualifications',
+            'boPageSubtitle' => 'Ce que les membres savent faire : définissez les qualifications, leurs niveaux et leur durée de validité, puis attribuez-les.',
             'definitions' => $this->definitions->listForTenant($tenantId, true),
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),

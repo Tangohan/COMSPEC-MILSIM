@@ -320,39 +320,7 @@ $chipClass = static function (array $ev): string {
 </div>
 
 <?php if ($canCreateEvent): ?>
-<form method="post" action="<?= $h(url('back-office/events')) ?>" enctype="multipart/form-data" class="ath-card ath-rise" id="nouveau" style="padding:18px 20px;margin:16px 0;">
-    <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;color:#8c979b;margin-bottom:12px;">NOUVEAU CRÉNEAU</div>
-    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
-    <input type="hidden" name="return_vue" value="calendrier">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
-        <div style="grid-column:1/-1;">
-            <label class="ath-users-filters__label" for="ev-title-ath-cal">Titre</label>
-            <input id="ev-title-ath-cal" type="text" name="title" required class="bo-select" style="height:40px;width:100%;" placeholder="Ex. Briefing opération">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-start-ath-cal">Début</label>
-            <input id="ev-start-ath-cal" type="datetime-local" name="starts_at" required step="60" class="bo-select" style="height:40px;width:100%;">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-end-ath-cal">Fin <span class="ath-event-show__opt">(optionnel — +2 h par défaut)</span></label>
-            <input id="ev-end-ath-cal" type="datetime-local" name="ends_at" step="60" class="bo-select ath-event-datetime-end" style="height:40px;width:100%;" data-start-for="ev-start-ath-cal">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-loc-ath-cal">Lieu</label>
-            <input id="ev-loc-ath-cal" type="text" name="location" class="bo-select" style="height:40px;width:100%;">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-type-ath-cal">Type</label>
-            <select id="ev-type-ath-cal" name="event_type" class="bo-select">
-                <option value="operation">Opération</option>
-                <option value="evenement" selected>Événement</option>
-                <option value="formation">Formation</option>
-                <option value="autre">Autre</option>
-            </select>
-        </div>
-    </div>
-    <button type="submit" class="ath-btn ath-btn--solid" style="margin-top:14px;">Publier le créneau</button>
-</form>
+<?php $evFormVue = 'calendrier'; $evFormSuffix = 'cal'; require base_path('views/partials/ath_event_create_form.php'); ?>
 <?php endif; ?>
 
 <?php return; ?>
@@ -390,39 +358,7 @@ $chipClass = static function (array $ev): string {
 </form>
 
 <?php if ($canCreateEvent): ?>
-<form method="post" action="<?= $h(url('back-office/events')) ?>" enctype="multipart/form-data" class="ath-card ath-rise" id="nouveau" style="padding:18px 20px;margin-bottom:16px;">
-    <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;color:#8c979b;margin-bottom:12px;">NOUVEAU CRÉNEAU</div>
-    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
-    <input type="hidden" name="return_vue" value="<?= $h($eventsVue) ?>">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
-        <div style="grid-column:1/-1;">
-            <label class="ath-users-filters__label" for="ev-title-ath">Titre</label>
-            <input id="ev-title-ath" type="text" name="title" required class="bo-select" style="height:40px;width:100%;" placeholder="Ex. Briefing opération">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-start-ath">Début</label>
-            <input id="ev-start-ath" type="datetime-local" name="starts_at" required step="60" class="bo-select" style="height:40px;width:100%;">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-end-ath">Fin <span class="ath-event-show__opt">(optionnel — +2 h par défaut)</span></label>
-            <input id="ev-end-ath" type="datetime-local" name="ends_at" step="60" class="bo-select ath-event-datetime-end" style="height:40px;width:100%;" data-start-for="ev-start-ath">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-loc-ath">Lieu</label>
-            <input id="ev-loc-ath" type="text" name="location" class="bo-select" style="height:40px;width:100%;">
-        </div>
-        <div>
-            <label class="ath-users-filters__label" for="ev-type-ath">Type</label>
-            <select id="ev-type-ath" name="event_type" class="bo-select">
-                <option value="operation">Opération</option>
-                <option value="evenement" selected>Événement</option>
-                <option value="formation">Formation</option>
-                <option value="autre">Autre</option>
-            </select>
-        </div>
-    </div>
-    <button type="submit" class="ath-btn ath-btn--solid" style="margin-top:14px;">Publier le créneau</button>
-</form>
+<?php $evFormVue = $eventsVue; $evFormSuffix = 'list'; require base_path('views/partials/ath_event_create_form.php'); ?>
 <?php endif; ?>
 
 <?php

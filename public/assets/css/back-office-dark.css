@@ -152,3 +152,24 @@ html[data-bo-theme="dark"] .ath-topbar__portal {
   color: #c9d2ce;
 }
 html[data-bo-theme="dark"] .ath-topbar__search input { background: transparent !important; color: #e6ebe8; }
+
+/* Tableau ATHENA : couleurs posées en ligne par AthUi::cellMeta */
+html[data-bo-theme="dark"] .ath-table .ath-cell:not(.ath-cell--badge) { color: #dbe0de !important; }
+html[data-bo-theme="dark"] .ath-table .ath-cell--mono:not(.ath-cell--badge) { color: #aab5b0 !important; }
+/* Badges : on inverse la luminosité en gardant la teinte (fond sombre, texte clair) */
+html[data-bo-theme="dark"] .ath-cell--badge { filter: invert(0.88) hue-rotate(180deg) saturate(1.2); }
+/* Jauges KPI : piste sombre */
+html[data-bo-theme="dark"] .ath-kpi__bar { background: #1f2825; }
+
+/* Bouton principal : vert ATHENA sur fond nuit */
+html[data-bo-theme="dark"] .ath-btn--solid {
+  background: #12d18e !important;
+  border-color: #12d18e !important;
+  color: #04130d !important;
+}
+html[data-bo-theme="dark"] .ath-btn--solid:hover { background: #3ee0a8 !important; }
+html[data-bo-theme="dark"] .ath-btn:not(.ath-btn--solid) { background: #141a18; border-color: #2c3733; color: #dbe0de; }
+html[data-bo-theme="dark"] .ath-btn:not(.ath-btn--solid):hover { border-color: #12d18e; }
+/* Champ « Filtrer » du tableau : le cadre porte le fond, pas l’input */
+html[data-bo-theme="dark"] .ath-table-toolbar__search { background: #111715; border-color: #2c3733; }
+html[data-bo-theme="dark"] .ath-main__body .ath-table-toolbar__search input { background: transparent !important; border: 0; }

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $groups = $groups ?? [];
 ?>
-<div class="max-w-4xl mx-auto px-6 py-10">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Groupes de destinataires</h1>
         <a href="<?= url('back-office/communications/groups/create') ?>" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Nouveau groupe</a>

@@ -1,5 +1,5 @@
 <?php $category = $category ?? null; if (!$category) { echo '<p>Catégorie introuvable.</p>'; return; } $id = (int) $category['id']; ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier la catégorie</h1>
     <form method="post" action="<?= url('back-office/categories/' . $id . '/update') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>

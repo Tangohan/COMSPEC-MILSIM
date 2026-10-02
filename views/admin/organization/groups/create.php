@@ -1,5 +1,5 @@
 <?php $parents = $parents ?? []; $users = $users ?? []; ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Nouveau groupe</h1>
     <form method="post" action="<?= url('back-office/groups/store') ?>" class="space-y-4">
         <?= \App\Core\Csrf::field() ?>

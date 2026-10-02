@@ -12,7 +12,7 @@ $canTpl = $gate->allows('comms.email_templates.manage');
 $canHist = $gate->allows('comms.notifications.history.view');
 $canGrp = $gate->allows('comms.email.send.orbat') || $gate->allows('comms.email.send.mission') || $gate->allows('comms.email.send.activity') || $gate->allows('comms.email.send.custom') || $gate->allows('comms.email.broadcast');
 ?>
-<div class="max-w-4xl mx-auto px-6 py-10">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex flex-wrap gap-2 text-sm mb-6">
         <span class="font-black text-slate-900">E-mails membres</span>
         <span class="text-slate-400">·</span>

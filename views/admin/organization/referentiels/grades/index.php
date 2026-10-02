@@ -19,7 +19,7 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     return $q;
 };
 ?>
-<div class="max-w-5xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--5xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Référentiel des grades</h1>
         <div class="flex items-center gap-3">

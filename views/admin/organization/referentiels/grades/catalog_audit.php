@@ -22,7 +22,7 @@ $badgeClass = static function (string $status): string {
     };
 };
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10 space-y-8">
+<div class="bo-legacy bo-legacy--6xl space-y-8">
     <header class="space-y-2">
         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Back-office · Personnel</p>
         <h1 class="text-2xl font-black text-slate-900">Catalogue des grades / OTAN</h1>
