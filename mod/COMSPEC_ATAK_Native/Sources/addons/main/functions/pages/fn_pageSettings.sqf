@@ -71,7 +71,7 @@ if (_tenantOn) then { { if ((_y isEqualType "") && {(toLower _y) in ["on", "off"
 private _rows = [
     ["section", "Apparence", "Coque, fond d'écran et taille du texte"],
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "auto : nuit après le coucher du soleil"] call _profSegment,
-    ["COMSPEC_ATAK_Wallpaper", "athena", "Fond d'écran de l'accueil", [["AUCUN", "none"], ["ATHENA", "athena"], ["OPS", "ops"]]] call _profSegment,
+    ["COMSPEC_ATAK_Wallpaper", "topo", "Fond d'écran de l'accueil", [["TOPO", "topo"], ["NUIT", "night"], ["ATHENA", "athena"], ["OPS", "ops"], ["AUCUN", "none"]]] call _profSegment,
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15]]] call _profSegment,
 
     ["section", "Emplacement", "Où le téléphone se place quand il est porté ou en mini"],
