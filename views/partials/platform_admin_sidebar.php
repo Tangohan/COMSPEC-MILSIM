@@ -115,11 +115,9 @@ $initials = count($words) > 1
     <div class="ath-sidebar__foot">
         <?php $paPortrait = \App\Support\OperatorPortraits::forUser((int) \App\Core\Session::get('tenant_id'), (int) \App\Core\Session::get('user_id')); ?>
         <div class="ath-sidebar__avatar<?= $paPortrait !== null ? ' ath-sidebar__avatar--photo' : '' ?>" aria-hidden="true">
-            <?php if ($paPortrait !== null): ?>
-            <img src="<?= $h($paPortrait) ?>" alt="" width="30" height="30" decoding="async" data-img-fallback="avatar" data-img-initials="<?= $h($initials) ?>">
-            <?php else: ?>
-            <?= $h($initials) ?>
-            <?php endif; ?>
+            <?= $paPortrait !== null
+                ? '<img src="' . $h($paPortrait) . '" alt="" width="30" height="30" decoding="async" data-img-fallback="avatar" data-img-initials="' . $h($initials) . '">'
+                : $h($initials) ?>
         </div>
         <div class="ath-sidebar__user-meta">
             <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($userName)) ?></div>
