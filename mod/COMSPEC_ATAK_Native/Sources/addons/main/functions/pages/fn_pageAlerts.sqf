@@ -30,6 +30,20 @@ private _rows = [
     ["edit", "sE", "E · Équipement", ["sE"] call _v],
     ["buttons", [["ENVOYER LE SALUTE", { ["salute"] call comspec_atak_native_fnc_alertsAction; }, true], ["EFFACER", { ["saluteClear"] call comspec_atak_native_fnc_alertsAction; }]]]
 ];
+// Journal : alertes reçues du camp et envoyées, les plus récentes d'abord.
+private _log = missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []];
+private _lab = createHashMapFromArray [
+    ["PANIC", ["PANIQUE", "#e5483a", [0.9, 0.28, 0.23, 1]]], ["TIC", ["CONTACT", "#f2ab33", [0.95, 0.67, 0.2, 1]]], ["TIC_CLEAR", ["FIN DE CONTACT", "#5cc76b", [0.36, 0.78, 0.42, 1]]],
+    ["EAGLE_DOWN", ["APPAREIL ABATTU", "#e5483a", [0.9, 0.28, 0.23, 1]]], ["SALUTE", ["SALUTE", "#4d9ffa", [0.3, 0.62, 0.98, 1]]]
+];
+_rows pushBack ["section", "Journal", ["Aucune alerte depuis le début de la mission.", format ["%1 alerte(s)", count _log]] select ((count _log) > 0)];
+for "_i" from ((count _log) - 1) to (((count _log) - 12) max 0) step -1 do {
+    (_log select _i) params ["_type", "_who", "_pos", "_grid", "_text", "_hour"];
+    (_lab getOrDefault [_type, [_type, "#c9d4cf", [0.8, 0.83, 0.81, 1]]]) params ["_t", "_c", "_rgb"];
+    _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_alerts.paa", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t color='#8a9a93'>%3 · %4 · %5</t>%6", _c, _t, _who, _hour, _grid, ["", format ["<br/><t size='0.8'>%1</t>", _text]] select (_text isNotEqualTo "")],
+        [["CARTE", compile format ["['map', %1] call comspec_atak_native_fnc_alertsAction;", _i]]], _rgb];
+};
+if ((count _log) > 0) then { _rows pushBack ["buttons", [["VIDER LE JOURNAL", { ["clearLog"] call comspec_atak_native_fnc_alertsAction; }]]]; };
 if (_hint isNotEqualTo "") then { _rows insert [0, [["text", format ["<t color='#7aa89a'>%1</t>", _hint]]]]; };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

@@ -10,8 +10,9 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _cart = _s getOrDefault ["foodCart", createHashMap];
 _s set ["foodCart", _cart];
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
-switch (_act) do {
-    case "menu": {
+// Le catalogue renvoie une valeur : traité hors du switch (la fonction finit par true, ce qui vidait la page).
+if (_act isEqualTo "menu") exitWith {
+    call {
         private _cached = uiNamespace getVariable ["COMSPEC_ATAK_FoodMenu", []];
         if ((count _cached) > 0) exitWith { _cached };
         private _menu = ("(getNumber (_x >> 'scope')) >= 2 && {((configName _x) select [0, 8]) in ['ACE_MRE_', 'ACE_Wate', 'ACE_Cant', 'ACE_Can_', 'ACE_Juic', 'ACE_Sunr', 'ACE_Bana', 'ACE_Huma', 'ACE_Spir']} && {((configName _x) find 'Empty') < 0}" configClasses (configFile >> "CfgWeapons")) apply {
@@ -21,7 +22,9 @@ switch (_act) do {
         _menu sort true;
         uiNamespace setVariable ["COMSPEC_ATAK_FoodMenu", _menu];
         _menu
-    };
+    }
+};
+switch (_act) do {
     case "add": {
         private _n = 0; { _n = _n + _y; } forEach _cart;
         if (_n >= 6) exitWith { ["WARNING", "Panier plein : 6 articles au maximum par livraison", 3, 20] call comspec_atak_native_fnc_notify; };

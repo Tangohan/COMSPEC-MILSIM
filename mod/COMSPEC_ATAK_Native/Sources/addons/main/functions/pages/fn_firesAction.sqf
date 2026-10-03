@@ -159,7 +159,9 @@ switch (_action) do {
                 _how = "téléphone du servant";
             } else {
                 if (!(_sol get "inRange") || {_mag isEqualTo ""}) exitWith { _how = "hors portée"; };
-                private _shots = if (_sheaf) then { (1 to _rounds) apply { _tgt getPos [random 40, random 360] } } else { [_tgt] };
+                // Gerbe ouverte : un point d'impact par coup autour de la cible.
+                private _shots = [_tgt];
+                if (_sheaf) then { _shots = []; for "_i" from 1 to _rounds do { _shots pushBack (_tgt getPos [random 40, random 360]); }; };
                 if (_sheaf) then {
                     [_gun, _shots, _mag] spawn { params ["_g", "_pts", "_m"]; { [_g, [_x, _m, 1]] remoteExec ["commandArtilleryFire", _g]; sleep 4; } forEach _pts; };
                 } else {

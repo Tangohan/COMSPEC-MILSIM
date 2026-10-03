@@ -29,10 +29,12 @@ switch (_action) do {
         call _render;
     };
     case "quick": {
-        if !(_bridge) exitWith { ["WARNING", "Alertes : COMSPEC Overwatch et Athena requis", 4, 30] call comspec_atak_native_fnc_notify; };
         private _label = switch (_arg) do { case "TIC": { "Contact" }; case "TIC_CLEAR": { "Fin de contact" }; default { "Appareil abattu" }; };
-        [_arg, format ["%1 — %2", _label, _me], getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
-        _s set ["alertsHint", format ["%1 envoyé · %2 · %3", _label, _grid, [daytime, "HH:MM"] call BIS_fnc_timeToString]];
+        // Téléphones du camp par le réseau simulé (marche sans Athena), puis le poste web si Overwatch est là.
+        [{ ["comspec_atak_native_alert", _this] call CBA_fnc_globalEvent; }, [_arg, _me, getPosASL player, _grid, "", str side group player], _label, 1] call comspec_atak_native_fnc_netSend;
+        if (_bridge) then { [_arg, format ["%1 — %2", _label, _me], getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert; };
+        [_arg, "Moi", getPosASL player, _grid, ""] call comspec_atak_native_fnc_alertsLog;
+        _s set ["alertsHint", format ["%1 envoyé %2 · %3 · %4", _label, ["au camp", "au camp et au poste"] select _bridge, _grid, [daytime, "HH:MM"] call BIS_fnc_timeToString]];
         call _saveDraft;
         call _render;
     };
@@ -42,16 +44,26 @@ switch (_action) do {
         private _parts = [];
         { private _val = trim (_d getOrDefault ["s" + _x, ""]); if (_val isNotEqualTo "") then { _parts pushBack format ["%1=%2", _x, _val]; }; } forEach ["S", "A", "L", "U", "T", "E"];
         if ((count _parts) < 2) exitWith { ["WARNING", "SALUTE : remplissez au moins la taille ou l'activité", 4, 30] call comspec_atak_native_fnc_notify; };
-        if !(_bridge) exitWith { ["WARNING", "SALUTE : COMSPEC Overwatch et Athena requis", 4, 30] call comspec_atak_native_fnc_notify; };
         // Lieu : la grille saisie sert de position si elle se lit, sinon la mienne.
         private _pos = getPos player;
         private _lg = (_d getOrDefault ["sL", ""]) splitString " ";
         if ((count _lg) > 0) then { private _p = [_lg joinString ""] call BIS_fnc_gridToPos; if ((_p param [0, []]) isEqualType [] && {(count (_p select 0)) >= 2}) then { _pos = _p select 0; }; };
-        ["SALUTE", _parts joinString "|", _pos] call comspec_overwatch_connect_fnc_sendTacticalAlert;
-        _s set ["alertsHint", format ["SALUTE envoyé · %1", [daytime, "HH:MM"] call BIS_fnc_timeToString]];
+        if (_bridge) then { ["SALUTE", _parts joinString "|", _pos] call comspec_overwatch_connect_fnc_sendTacticalAlert; };
+        private _txt = ((_parts apply { _x splitString "=" }) apply { format ["%1 %2", _x select 0, (_x select [1, 9]) joinString "="] }) joinString " · ";
+        private _sg = [_pos, 8] call comspec_atak_native_fnc_gridRef;
+        [{ ["comspec_atak_native_alert", _this] call CBA_fnc_globalEvent; }, ["SALUTE", _me, ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt, str side group player], "SALUTE", 1] call comspec_atak_native_fnc_netSend;
+        ["SALUTE", "Moi", ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt] call comspec_atak_native_fnc_alertsLog;
+        _s set ["alertsHint", format ["SALUTE envoyé %1 · %2", ["au camp", "au camp et au poste"] select _bridge, [daytime, "HH:MM"] call BIS_fnc_timeToString]];
         uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         call _render;
     };
+    case "map": {
+        private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]) param [_arg, []];
+        if ((count _e) < 3) exitWith {};
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [(_e select 2) select 0, (_e select 2) select 1]] call CBA_fnc_execNextFrame;
+    };
+    case "clearLog": { missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []]; call _render; };
     case "saluteClear": { uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap]; _s set ["alertsHint", ""]; call _render; };
 };
 true

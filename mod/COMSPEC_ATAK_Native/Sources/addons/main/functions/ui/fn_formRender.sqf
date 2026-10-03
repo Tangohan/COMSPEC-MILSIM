@@ -5,7 +5,7 @@
       ["title", texte]                       ["text", texte structuré]
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
       ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie]
-      ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal]...]]
+      ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal, actif]...]]
       ["password", clé, libellé]              ["hero", image, texte structuré]
       ["gap"]
       ["person", image, texte structuré, [[libellé, code, principal]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite)
@@ -247,9 +247,10 @@ private _mk = {
             private _n = count _btns;
             private _bw = (_w - (_n - 1) * _pad / 2) / (_n max 1);
             {
-                _x params ["_label", "_code", ["_primary", false]];
+                _x params ["_label", "_code", ["_primary", false], ["_enabled", true]];
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
                 _b ctrlSetFontHeight _fs;
+                _b ctrlEnable _enabled;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _btns;
             _y = _y + _rowH + _pad / 2;
