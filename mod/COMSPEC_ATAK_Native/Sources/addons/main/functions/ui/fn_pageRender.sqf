@@ -9,6 +9,8 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
+[] call comspec_atak_native_fnc_frsDraftSave;
+[] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_pageClear;
 [] call comspec_atak_native_fnc_layoutApply;
 
@@ -29,6 +31,8 @@ switch (_page) do {
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };
     case "SETTINGS": { [] call comspec_atak_native_fnc_pageSettings; };
     case "PHOTOS": { [] call comspec_atak_native_fnc_pagePhotos; };
+    case "FRS": { [] call comspec_atak_native_fnc_pageFrs; };
+    case "RECO": { [] call comspec_atak_native_fnc_pageReco; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
 true
