@@ -4,8 +4,12 @@ if (isNull _map) exitWith {};
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
-private _labels = profileNamespace getVariable ["COMSPEC_ATAK_Labels",true];
+private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Couleurs choisies dans les réglages (alliés, moi) ; icône choisie par chaque joueur (variable publique).
+private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.20,0.90,0.95,1]],["GREEN",[0.36,0.85,0.42,1]],["WHITE",[0.95,0.95,0.95,1]],["YELLOW",[1,0.85,0.15,1]],["ORANGE",[1,0.55,0.15,1]],["PINK",[1,0.45,0.75,1]]];
+private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
+private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
 {
     private _entity = _y;
@@ -17,9 +21,16 @@ private _scale = ctrlMapScale _map;
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3,0.3]; };
     private _self = _entity getOrDefault ["self",false];
     private _size = if (_x isEqualTo _selected || _self) then {26} else {20};
-    if (_self) then { _color = [0.30,0.70,1,1]; };
+    if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
+    if (_self) then { _color = +_selfRgb; };
+    private _dir = _entity getOrDefault ["heading",0];
+    private _custom = _entity getOrDefault ["icon",""];
+    if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
+        private _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon");
+        if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
+    };
     _map drawIcon [
-        _icon,_color,_pos,_size,_size,_entity getOrDefault ["heading",0],
+        _icon,_color,_pos,_size,_size,_dir,
         if (_labels && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
         1,0.026,"RobotoCondensedBold","right"
     ];
@@ -76,6 +87,55 @@ private _dashed = {
     for "_i" from 0 to (_n - 1) step 2 do {
         _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_i / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_i + 1) / _n)), _c];
     };
+};
+
+// Zones tactiques Athena (LZ, objectif, zone dangereuse…) et zones roleplay (brouillage, sans couverture).
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
+    private _zc = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]];
+    {
+        _x params [["_id",""],["_geom","CIRCLE"],["_geo",[]],["_r",0],["_type",""],["_threat",""],["_label",""]];
+        private _c = +(_zc getOrDefault [toUpper _type,[0.95,0.67,0.20,1]]);
+        if ((toUpper _geom) in ["CIRCLE","RECTANGLE"] && {(count _geo) >= 2}) then {
+            private _p = [_geo select 0,_geo select 1,0];
+            _map drawEllipse [_p,_r max 20,_r max 20,0,_c,""];
+            _map drawEllipse [_p,_r max 20,_r max 20,0,[_c select 0,_c select 1,_c select 2,0.12],"#(rgb,8,8,3)color(1,1,1,1)"];
+            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_p,0,0,0,_label,2,0.028,"RobotoCondensedBold","center"];
+        } else {
+            if ((count _geo) >= 2 && {(_geo select 0) isEqualType []}) then {
+                private _pts = _geo apply { [_x select 0,_x select 1,0] };
+                if ((toUpper _geom) isEqualTo "POLYGON" && {(count _pts) >= 3}) then { _map drawPolygon [_pts,_c]; } else { for "_i" from 0 to ((count _pts) - 2) do { _map drawLine [_pts select _i,_pts select (_i + 1),_c]; }; };
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_pts select 0,0,0,0,_label,2,0.028,"RobotoCondensedBold","right"];
+            };
+        };
+    } forEach (missionNamespace getVariable ["COMSPEC_DangerZones",[]]);
+    {
+        if (_x isEqualType createHashMap) then {
+            private _p = _x getOrDefault ["position",[]];
+            if ((count _p) >= 2) then {
+                private _r = _x getOrDefault ["radius",200];
+                private _c = switch (_x getOrDefault ["type",""]) do { case "jammer": {[0.85,0.25,0.95,1]}; case "no_coverage": {[0.6,0.6,0.6,1]}; default {[0.95,0.5,0.15,1]}; };
+                _map drawEllipse [[_p select 0,_p select 1,0],_r,_r,0,_c,""];
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,[_p select 0,_p select 1,0],0,0,0,format ["%1 · %2 %%",_x getOrDefault ["name","Zone"],_x getOrDefault ["intensity",0]],2,0.026,"RobotoCondensed","center"];
+            };
+        };
+    } forEach (missionNamespace getVariable ["COMSPEC_RoleplayZones",[]]);
+};
+
+// Goniométrie : émetteurs estimés (cercle d'incertitude) et relèvements seuls (azimut tracé sur 3 km).
+if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
+    private _sc = [0.95,0.35,0.85,1];
+    {
+        _x params ["_cs","_kind","_p","_r","_n","_brg"];
+        private _pp = [_p select 0,_p select 1,0];
+        if (_kind isEqualTo "azimuth") then {
+            private _end = _pp vectorAdd [3000 * sin _brg,3000 * cos _brg,0];
+            [_pp,_end,_sc] call _dashed;
+            _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026,"RobotoCondensed","right"];
+        } else {
+            _map drawEllipse [_pp,_r,_r,0,_sc,""];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026,"RobotoCondensedBold","right"];
+        };
+    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
 };
 
 // Trait jaune joueur -> curseur (outil Distance, en main)
@@ -147,11 +207,27 @@ if ((count _stroke) > 0) then {
     for "_i" from 0 to ((count _stroke) - 2) do { _map drawLine [_stroke select _i,_stroke select (_i + 1),_rgba]; };
 };
 
+// App Feux : pièce, cible et ligne de tir.
+private _fires = uiNamespace getVariable ["COMSPEC_ATAK_Fires", createHashMap];
+private _ft = _fires getOrDefault ["target", []];
+if ((count _ft) >= 2) then {
+    private _red = [0.90, 0.25, 0.22, 1];
+    private _rr = (_scale * 700) max 10;
+    _map drawEllipse [_ft, _rr, _rr, 0, _red, ""];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22, 22, 0, "TGT", 2, 0.032, "RobotoCondensedBold", "right"];
+    private _gid = _fires getOrDefault ["gun", "MAN"];
+    private _g = if (_gid isEqualTo "MAN") then { objNull } else { objectFromNetId _gid };
+    if (!isNull _g) then {
+        _map drawLine [getPosATL _g, _ft, [0.90, 0.25, 0.22, 0.7]];
+        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22, 22, 0, "GUN", 2, 0.03, "RobotoCondensedBold", "right"];
+    };
+};
+
 // Cartouches des marqueurs (style plan de mission) : cercle de couleur + boîte noire « nom / E / N ».
 // Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
 private _used = 0;
-if (profileNamespace getVariable ["COMSPEC_ATAK_MarkerTags", true]) then {
+if ((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) then {
     private _disp = ctrlParent _map;
     private _mp = ctrlPosition _map;
     private _gridCache = uiNamespace getVariable ["COMSPEC_ATAK_TagGridCache", createHashMap];

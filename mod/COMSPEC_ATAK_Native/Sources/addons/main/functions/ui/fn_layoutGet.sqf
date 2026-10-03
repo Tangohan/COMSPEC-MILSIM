@@ -20,12 +20,14 @@ private _vis = [[0.1465, 0.1025, 0.7202, 0.9263], [0.1025, 0.2798, 0.9263, 0.853
 private _scr = [[0.3491, 0.2222, 0.6504, 0.7549], [0.2222, 0.3496, 0.7549, 0.6509]] select _land;
 _vis params ["_vx0", "_vy0", "_vx1", "_vy1"];
 // Côté du carré en unités verticales (_dh) ; largeur = _dh / _ratio pour rester carré à l'écran.
+// Taille du mini choisie dans les réglages (petit, normal, grand).
+private _miniScale = [1, (profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1]) max 0.7 min 1.3] select _mini;
 private _dh = if (_land) then {
-    private _wantW = [safeZoneW * 0.94, safeZoneW * 0.40] select _mini;
+    private _wantW = [safeZoneW * 0.94, safeZoneW * 0.40 * _miniScale] select _mini;
     private _h = _wantW / (_vx1 - _vx0) * _ratio;
-    _h min (([safeZoneH * 0.96, safeZoneH * 0.50] select _mini) / (_vy1 - _vy0))
+    _h min (([safeZoneH * 0.96, (safeZoneH * 0.50 * _miniScale) min (safeZoneH * 0.9)] select _mini) / (_vy1 - _vy0))
 } else {
-    ([safeZoneH * 0.94, safeZoneH * 0.62] select _mini) / (_vy1 - _vy0)
+    ([safeZoneH * 0.94, (safeZoneH * 0.62 * _miniScale) min (safeZoneH * 0.94)] select _mini) / (_vy1 - _vy0)
 };
 private _dw = _dh / _ratio;
 // Emplacement du mini choisi dans les réglages : coin ou milieu de bord (T/M/B + L/R), bas droit par défaut.
@@ -52,20 +54,21 @@ private _sy = _dy + _dh * (_scr select 1);
 private _sw = _dw * ((_scr select 2) - (_scr select 0));
 private _sh = _dh * ((_scr select 3) - (_scr select 1));
 
-private _font = (_sh * ([[0.040, 0.060] select _land, 0.036] select !_mini)) max (safeZoneH * 0.015);
+private _font = ((_sh * ([[0.040, 0.060] select _land, 0.036] select !_mini)) max (safeZoneH * 0.015)) * ((profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.25);
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
 private _dockH = [0, _font * 2.9] select _dock;
 private _railW = [_font * 2.9 / _ratio, 0] select _dock;
-private _inspW = [0, _sw * 0.24] select !_mini;
+// Panneau SITUATION repliable (réglage profil).
+private _inspW = [0, _sw * 0.24] select (!_mini && {profileNamespace getVariable ["COMSPEC_ATAK_InspOpen", true]});
 private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
 
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
-    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, ["", "_night"] select (sunOrMoon < 0.5)]],
+    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, ["", "_night"] select (switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; })]],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],
     ["appbar", [_sx, _sy + _statusH, _sw, _appH]],

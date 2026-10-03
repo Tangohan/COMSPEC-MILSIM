@@ -11305,7 +11305,8 @@ class AtakApiController
 
             $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
             $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
-            $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
+            // Suffixe aléatoire : deux photos du même auteur dans la même seconde ne s'écrasent plus.
+            $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
             $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename);
             if ($path === null) {
                 error_log('[atak/recon-images] store failed for ' . $filename);

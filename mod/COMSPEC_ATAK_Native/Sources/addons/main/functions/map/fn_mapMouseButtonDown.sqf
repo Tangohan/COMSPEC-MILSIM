@@ -3,6 +3,13 @@ params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",fa
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
 if (_button isEqualTo 0) exitWith {
+    // App Feux : la cible est pointée sur la carte.
+    private _pick = _s getOrDefault ["firePick", ""];
+    if (_pick isNotEqualTo "") exitWith {
+        _s set ["firePick", ""];
+        ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_firesAction;
+        true
+    };
     if (["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke) exitWith { true };
     // Sélection : un marqueur sous le curseur passe avant les unités.
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "SELECT" && {!_shift && !_ctrl && !_alt}) then {

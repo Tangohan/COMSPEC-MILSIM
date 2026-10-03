@@ -3962,6 +3962,18 @@ public static partial class Extension
                     return "OK|" + simplifiedChat;
                 });
             }
+            // Goniométrie : émetteurs estimés par recoupement des relèvements des relais (téléphone ATAK natif).
+            // Lignes : call_sign\tkind\tpos_x\tpos_y\tradius\treports\tbearing\tlast_at
+            if (function == "GetSigintZones")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/atak/sigint/zones?mapId=" + Uri.EscapeDataString(mapId) + "&limit=40";
+                return ServePollGet("GetSigintZones:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return "OK|" + TruncateForExt(SimplifySigintZonesJson(body));
+                });
+            }
             if (function == "GetChatChannels")
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
@@ -4625,6 +4637,14 @@ public static partial class Extension
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/reports", json, token);
+            }
+            // 9-line CAS saisi en jeu (app Feux du téléphone ATAK natif) : même table que le formulaire JTAC web,
+            // visible du pilote (GetCASForCallsign) et du portail.
+            if (function == "SubmitNineLine" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/cas", json, token);
             }
             if (function == "SubmitSsePerson" && args.Length >= 1)
             {
@@ -5488,7 +5508,10 @@ public static partial class Extension
                 "screen_notifications", "vehicle_detail", "require_equipment", "show_opfor",
                 "show_independent", "show_civilian", "sync_map_markers", "atak_realism",
                 "radio_proximity", "ace_menus", "order_compose", "sse_require_item",
-                "playtime", "athena_feed"
+                "playtime", "athena_feed",
+                "rp_enabled", "rp_network_failures", "rp_sensor_failures", "rp_visual_effects",
+                "rp_link_degrade", "rp_data_bar", "native_map_labels", "native_marker_tags",
+                "native_compass", "native_vibrate"
             })
             {
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
@@ -5918,6 +5941,28 @@ public static partial class Extension
     }
 
     /// <summary>Simplifie GET /api/chat/channels — lignes key\tlabel\tkind</summary>
+    private static string SimplifySigintZonesJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Array) return "";
+            var sb = new StringBuilder();
+            static string Str(JsonElement el, string k) =>
+                el.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ToString()).Replace("\t", " ").Replace("\n", " ") : "";
+            foreach (var el in root.EnumerateArray())
+            {
+                sb.Append(Str(el, "call_sign")).Append('\t').Append(Str(el, "kind")).Append('\t')
+                  .Append(Str(el, "pos_x")).Append('\t').Append(Str(el, "pos_y")).Append('\t')
+                  .Append(Str(el, "radius")).Append('\t').Append(Str(el, "reports")).Append('\t')
+                  .Append(Str(el, "bearing")).Append('\t').Append(Str(el, "last_at")).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyChatChannelsJson(string json)
     {
         try

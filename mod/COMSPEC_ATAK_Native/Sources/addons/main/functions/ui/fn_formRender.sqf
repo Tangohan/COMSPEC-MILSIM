@@ -8,6 +8,8 @@
       ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal]...]]
       ["password", clé, libellé]              ["hero", image, texte structuré]
       ["gap"]
+      ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
+      ["segment", libellé, [[texte, code, actif]...], aide]   ["info", libellé, valeur]
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
 */
 params ["_rows", "_rect", ["_inContent", true]];
@@ -89,6 +91,72 @@ private _mk = {
             if (_on) then { _b ctrlSetTextColor [0.36, 0.78, 0.42, 1]; };
             _b ctrlAddEventHandler ["ButtonClick", _code];
             _y = _y + _rowH + _pad / 3;
+        };
+        case "section": {
+            // En-tête de section : barre verte, titre et sous-titre.
+            _row params ["", "_title", ["_sub", ""]];
+            _y = _y + _pad / 2;
+            private _bar = ["COMSPEC_RscText", [_pad, _y + _fs * 0.15, _pad * 0.35, _fs * 1.1]] call _mk;
+            _bar ctrlSetBackgroundColor [0.36, 0.78, 0.42, 1];
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo "")];
+            private _h = (ctrlTextHeight _t) max (_fs * 1.3);
+            _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
+            _t ctrlCommit 0;
+            _y = _y + _h + _pad / 2;
+        };
+        case "switch": {
+            // Ligne réglage : libellé + aide à gauche, interrupteur à droite ; « IMPOSÉ » si la communauté fixe la valeur.
+            _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false]];
+            private _pillW = _font * 3.6 * pixelH / pixelW;
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
+            _card ctrlSetBackgroundColor [0.06, 0.075, 0.068, 1];
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText format ["<t size='0.95'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")];
+            private _h = ((ctrlTextHeight _t) + _pad / 2) max _rowH;
+            _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _h - _pad / 2];
+            _t ctrlCommit 0;
+            _card ctrlSetPosition [_pad, _y, _w, _h];
+            _card ctrlCommit 0;
+            private _ph = _fs * 1.35;
+            private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
+            _pill ctrlSetFontHeight (_fs * 0.85);
+            _pill ctrlSetBackgroundColor ([[[0.20, 0.23, 0.22, 1], [0.36, 0.78, 0.42, 1]] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
+            _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
+            if !(_locked) then {
+                private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
+                _b ctrlAddEventHandler ["ButtonClick", _code];
+            } else {
+                _card ctrlSetTooltip "Réglé par votre communauté sur Athena (Contrôle serveur)";
+            };
+            _y = _y + _h + _pad / 3;
+        };
+        case "segment": {
+            // Choix exclusif en une ligne : libellé au-dessus, boutons accolés, celui choisi en vert.
+            _row params ["", "_label", "_opts", ["_help", ""]];
+            if (_label isNotEqualTo "") then {
+                private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
+                _lb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")];
+                _y = _y + _fs * 1.35;
+            };
+            private _n = count _opts;
+            private _sw = _w / (_n max 1);
+            {
+                _x params ["_text", "_code", ["_active", false]];
+                private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.9);
+                if (_active) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+                _b ctrlAddEventHandler ["ButtonClick", _code];
+            } forEach _opts;
+            _y = _y + _rowH * 0.9 + _pad / 2;
+        };
+        case "info": {
+            _row params ["", "_label", "_value"];
+            private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
+            _a ctrlSetStructuredText parseText format ["<t size='0.85' color='#8a9a93'>%1</t>", _label];
+            private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
+            _b ctrlSetStructuredText parseText format ["<t size='0.85' align='right'>%1</t>", _value];
+            _y = _y + _fs * 1.3;
         };
         case "gap": { _y = _y + _pad; };
         case "hero": {

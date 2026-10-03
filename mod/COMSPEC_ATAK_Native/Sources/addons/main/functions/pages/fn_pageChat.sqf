@@ -14,16 +14,41 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _peer = _s getOrDefault ["chatPeer", "ATHENA"];
 
-// Destinataire
-private _combo = ["COMSPEC_RscCombo", [_pad, _pad, _gw - 2 * _pad, _rowH]] call comspec_atak_native_fnc_pageCtrl;
+private _bridge = [] call comspec_atak_native_fnc_bridge;
+private _interactiveTop = _l get "interactive";
+// Canaux web : Overwatch connect ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
+if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > 20}) then {
+    _s set ["chatChannelsPoll", diag_tickTime];
+    [] spawn {
+        private _before = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
+        [] call comspec_overwatch_connect_fnc_pollChatChannels;
+        if ((missionNamespace getVariable ["COMSPEC_Comms_Channels", []]) isNotEqualTo _before) then {
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        };
+    };
+};
+// Canaux système (non supprimables), comme dans Overwatch connect.
+private _system = ["groupe", "commandement", "general", "jtac", "air", "squad", "global", "hq", "c2", "command", "group", "alertes"];
+// Canaux Athena (fil Overwatch connect quand il est chargé), puis messages directs.
+private _channelRows = []; // [clé, libellé, personnalisé]
+if (_bridge) then {
+    {
+        _x params [["_k", ""], ["_lbl", ""], ["_kind", "custom"]];
+        if (_k isNotEqualTo "" && {_k isNotEqualTo "alertes"}) then { _channelRows pushBack [_k, [_lbl, _k] select (_lbl isEqualTo ""), _kind isEqualTo "custom" && {!(_k in _system)}]; };
+    } forEach (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
+    if ((count _channelRows) isEqualTo 0) then { _channelRows = [["general", "Général", false], ["commandement", "Commandement", false], ["groupe", "Groupe", false]]; };
+    _channelRows pushBack ["alertes", "Alertes TOC", false];
+};
+private _channels = if (_bridge) then { _channelRows apply { ["CH:" + (_x select 0), _x select 1] } } else { [["ATHENA", "TOC — canal Athena"]] };
+
+// Destinataire (+ créer / supprimer un canal en main, avec Athena)
+private _manage = _bridge && {_interactiveTop};
+private _mbw = [0, _gw * 0.14] select _manage;
+private _combo = ["COMSPEC_RscCombo", [_pad, _pad, _gw - 2 * _pad - ([0, 2 * (_mbw + _pad / 2)] select _manage), _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _combo ctrlSetFontHeight _font;
 private _peers = (allPlayers select { _x isNotEqualTo player && {side group _x isEqualTo side group player} }) apply { name _x };
 { if ((_x getOrDefault ["peer", ""]) isNotEqualTo "") then { _peers pushBackUnique (_x get "peer"); }; } forEach (_data getOrDefault ["p2p", []]);
 _peers sort true;
-// Canaux Athena (fil Overwatch connect quand il est chargé), puis messages directs.
-private _channels = if ([] call comspec_atak_native_fnc_bridge) then {
-    [["CH:general", "Général"], ["CH:commandement", "Commandement"], ["CH:groupe", "Groupe"], ["CH:alertes", "Alertes TOC"]]
-} else { [["ATHENA", "TOC — canal Athena"]] };
 private _sel = -1;
 {
     _x params ["_key", "_label"];
@@ -35,7 +60,9 @@ private _sel = -1;
 {
     private _name = _x;
     private _n = { (_x getOrDefault ["peer", ""]) isEqualTo _name && {(_x getOrDefault ["dir", ""]) isEqualTo "in"} && {!(_x getOrDefault ["read", false])} } count (_data getOrDefault ["p2p", []]);
-    private _k = _combo lbAdd ([_name, format ["%1 (%2)", _name, _n]] select (_n > 0));
+    // Messages directs (SMS entre téléphones, sans Athena) : libellés « SMS · » pour les distinguer des canaux.
+    private _k = _combo lbAdd ([format ["SMS · %1", _name], format ["SMS · %1 (%2 non lus)", _name, _n]] select (_n > 0));
+    _combo lbSetPicture [_k, "\z\comspec_atak_native\addons\main\data\app_group.paa"];
     _combo lbSetData [_k, _x];
     if (_x isEqualTo _peer) then { _sel = _k; };
 } forEach _peers;
@@ -46,9 +73,72 @@ _s set ["chatPeer", _peer];
 _combo lbSetCurSel _sel;
 _combo ctrlAddEventHandler ["LBSelChanged", {
     params ["_c", "_index"];
-    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatPeer", _c lbData _index];
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    _s set ["chatPeer", _c lbData _index];
+    _s set ["chatDelArm", ""];
     [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
+private _topY = _pad * 2 + _rowH;
+if (_manage) then {
+    private _curKey = _peer select [3];
+    private _custom = (_channelRows findIf { (_x select 0) isEqualTo _curKey && {_x select 2} }) >= 0;
+    private _x0 = _gw - _pad - 2 * _mbw - _pad / 2;
+    private _bNew = ["COMSPEC_RscButton", [_x0, _pad, _mbw, _rowH], "+ CANAL"] call comspec_atak_native_fnc_pageCtrl;
+    _bNew ctrlSetFontHeight (_l get "fontSmall");
+    _bNew ctrlSetTooltip "Créer un canal sur Athena";
+    _bNew ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["chatNewOpen", !(_s getOrDefault ["chatNewOpen", false])]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    private _armed = (_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey;
+    private _bDel = ["COMSPEC_RscButton", [_x0 + _mbw + _pad / 2, _pad, _mbw, _rowH], ["SUPPRIMER", "CONFIRMER ?"] select _armed] call comspec_atak_native_fnc_pageCtrl;
+    _bDel ctrlSetFontHeight (_l get "fontSmall");
+    _bDel ctrlEnable _custom;
+    _bDel ctrlSetTooltip (["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom);
+    if (_armed) then { _bDel ctrlSetBackgroundColor [0.70, 0.18, 0.14, 1]; };
+    _bDel ctrlAddEventHandler ["ButtonClick", {
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _key = (_s getOrDefault ["chatPeer", ""]) select [3];
+        if ((_s getOrDefault ["chatDelArm", ""]) isNotEqualTo _key) exitWith {
+            _s set ["chatDelArm", _key];
+            [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+        _s set ["chatDelArm", ""];
+        [_key] spawn {
+            params ["_key"];
+            if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then {
+                (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatPeer", "CH:general"];
+            };
+            [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+    }];
+    // Ligne de création : nom du canal + CRÉER / ANNULER.
+    if (_s getOrDefault ["chatNewOpen", false]) then {
+        private _cw = _gw * 0.18;
+        private _ne = ["COMSPEC_RscEdit", [_pad, _topY, _gw - 4 * _pad - 2 * _cw, _rowH], uiNamespace getVariable ["COMSPEC_ATAK_ChatNewDraft", ""]] call comspec_atak_native_fnc_pageCtrl;
+        _ne ctrlSetFontHeight _font;
+        _ne ctrlSetTooltip "Nom du nouveau canal";
+        uiNamespace setVariable ["COMSPEC_ATAK_ChatNewEdit", _ne];
+        private _ok = ["COMSPEC_RscButtonPrimary", [_gw - 2 * _pad - 2 * _cw, _topY, _cw, _rowH], "CRÉER"] call comspec_atak_native_fnc_pageCtrl;
+        _ok ctrlSetFontHeight (_l get "fontSmall");
+        _ok ctrlAddEventHandler ["ButtonClick", {
+            private _label = trim ctrlText (uiNamespace getVariable ["COMSPEC_ATAK_ChatNewEdit", controlNull]);
+            if (_label isEqualTo "") exitWith { ["WARNING", "Donnez un nom au canal", 3, 20] call comspec_atak_native_fnc_notify; };
+            [_label] spawn {
+                params ["_label"];
+                if ([_label] call comspec_overwatch_connect_fnc_createChatChannel) then {
+                    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+                    _s set ["chatNewOpen", false];
+                    uiNamespace setVariable ["COMSPEC_ATAK_ChatNewDraft", ""];
+                    _s set ["chatPeer", "CH:" + (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"])];
+                };
+                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            };
+        }];
+        private _no = ["COMSPEC_RscButton", [_gw - _pad - _cw, _topY, _cw, _rowH], "ANNULER"] call comspec_atak_native_fnc_pageCtrl;
+        _no ctrlSetFontHeight (_l get "fontSmall");
+        _no ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatNewOpen", false]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+        ctrlSetFocus _ne;
+        _topY = _topY + _rowH + _pad;
+    };
+};
 
 // Fil de discussion : une bulle par message, à droite pour mes messages, puces pour les préfixes Athena.
 private _esc = {
@@ -82,7 +172,7 @@ if (_isChannel) then {
     } forEach (_data getOrDefault ["p2p", []]);
 };
 private _interactive = _l get "interactive";
-private _threadY = _pad * 2 + _rowH;
+private _threadY = _topY;
 private _threadH = _bh - _threadY - _pad - ([0, _rowH + _pad] select _interactive);
 private _thread = ["COMSPEC_RscControlsGroup", [_pad, _threadY, _gw - 2 * _pad, _threadH]] call comspec_atak_native_fnc_pageCtrl;
 private _d = [] call comspec_atak_native_fnc_display;
@@ -138,5 +228,5 @@ _edit ctrlAddEventHandler ["KeyDown", {
     if (_key in [28, 156]) exitWith { [] call (uiNamespace getVariable ["COMSPEC_ATAK_ChatSendCode", {}]); true };
     false
 }];
-ctrlSetFocus _edit;
+if !(_s getOrDefault ["chatNewOpen", false]) then { ctrlSetFocus _edit; };
 true

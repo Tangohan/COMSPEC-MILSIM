@@ -1,18 +1,22 @@
 /* Types et couleurs de marqueurs proposés par l'éditeur (lus dans la config, mis en cache). */
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_MarkerCatalog", []];
 if ((count _cache) > 0) exitWith { _cache };
-private _classes = ["Military", "NATO_BLUFOR", "NATO_OPFOR", "NATO_Independent", "NATO_Civilian", "NATO_Unknown", "Flags", "Civilian", "System"];
+// Tous les marqueurs chargés (Arma, MarkersPlus, Metis, cTab…), hors classe Système, avec le libellé du catalogue web.
+private _labels = [] call comspec_atak_native_fnc_markerLabels;
+private _first = ["Military", "NATO_BLUFOR", "NATO_OPFOR", "NATO_Independent", "NATO_Civilian", "NATO_Unknown"];
 private _types = [];
 {
-    if ((getNumber (_x >> "scope")) >= 2 && {(getText (_x >> "markerClass")) in _classes} && {(getText (_x >> "icon")) isNotEqualTo ""}) then {
-        _types pushBack [getText (_x >> "name"), configName _x, getText (_x >> "icon"), getText (_x >> "markerClass")];
+    private _mc = getText (_x >> "markerClass");
+    if ((getNumber (_x >> "scope")) >= 2 && {_mc isNotEqualTo "System"} && {(getText (_x >> "icon")) isNotEqualTo ""}) then {
+        private _cls = configName _x;
+        _types pushBack [_labels getOrDefault [toLower _cls, getText (_x >> "name")], _cls, getText (_x >> "icon"), _mc];
     };
 } forEach ("true" configClasses (configFile >> "CfgMarkers"));
-// Militaire d'abord, puis OTAN, triés par nom.
-private _order = { params ["_c"]; (_classes find _c) max 0 };
-_types = _types apply { [[_x select 3] call _order, _x select 0, _x] };
+// Militaire et OTAN d'abord, puis les autres classes, triés par nom.
+private _order = { params ["_c"]; private _i = _first find _c; [_i, 50] select (_i < 0) };
+_types = _types apply { [[_x select 3] call _order, _x select 3, _x select 0, _x] };
 _types sort true;
-_types = _types apply { _x select 2 };
+_types = _types apply { _x select 3 };
 private _colors = [];
 {
     if ((getNumber (_x >> "scope")) >= 2) then {

@@ -7195,11 +7195,18 @@
     try { window.ATAKPings.fetchPings(); } catch (ePing) {}
   }
 
+  var lastPhotosPoll = Date.now();
+
   function startPoll(ms) {
     if (pollTimer) window.clearInterval(pollTimer);
     pollTimer = window.setInterval(function () {
       refreshUnits();
       loadChatInbox();
+      // Photos du terrain : relues toutes les 20 s pour voir arriver celles prises en jeu.
+      if (Date.now() - lastPhotosPoll > 20000) {
+        lastPhotosPoll = Date.now();
+        loadPhotos();
+      }
       var squadsPanel = document.querySelector('[data-chat-panel="squads"]');
       var drawerTitle = document.getElementById('ow-drawer-title');
       var drawer = document.getElementById('ow-drawer');

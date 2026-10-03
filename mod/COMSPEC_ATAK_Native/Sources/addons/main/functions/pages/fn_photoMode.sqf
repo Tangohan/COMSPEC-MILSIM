@@ -58,7 +58,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit 0.35;
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText (["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) envoyée(s) vers ATAK web", _n]] select _ok);
+                (_cam displayCtrl 4) ctrlSetText (["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok);
             };
             playSound "ClickSoft";
         };

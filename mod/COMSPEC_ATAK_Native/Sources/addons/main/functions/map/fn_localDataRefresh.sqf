@@ -14,11 +14,23 @@ private _units = createHashMap;
     _remote set ["freshness",_freshness];
     _units set [_x,_remote];
 } forEach (_data getOrDefault ["remoteUnits",createHashMap]);
+// Filtre des alliés (réglage) : tous, mon groupe, ou mon rattachement ORBAT Athena (repli : groupe).
+private _filter = profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"];
+private _myOrbat = player getVariable ["COMSPEC_ATAK_Orbat", ""];
+private _keepFriend = {
+    params ["_obj"];
+    if (_obj isEqualTo player || {_filter isEqualTo "ALL"}) exitWith { true };
+    if (_filter isEqualTo "ORBAT" && {_myOrbat isNotEqualTo ""}) exitWith { (_obj getVariable ["COMSPEC_ATAK_Orbat", ""]) isEqualTo _myOrbat || {group _obj isEqualTo group player} };
+    group _obj isEqualTo group player
+};
+// Unités Athena sans objet en jeu : on ne peut pas les filtrer, elles ne restent qu'en mode TOUS.
+if (_filter isNotEqualTo "ALL") then { _units = createHashMap; };
 private _athena = +_units;
 
 {
     private _obj = _x;
     if (isNull _obj) then { continue };
+    if (side group _obj isEqualTo side group player && {!([_obj] call _keepFriend)}) then { continue };
     private _id = netId _obj;
     if (_id isEqualTo "0:0") then { _id = str _obj; };
     private _affiliation = if (side group _obj isEqualTo side group player) then {
@@ -54,7 +66,8 @@ private _athena = +_units;
         ["id",_id],["object",_obj],["self",_obj isEqualTo player],
         ["callsign",_callsign],
         ["position",getPosASL _obj],["heading",getDir _obj],
-        ["affiliation",_affiliation],["type",_type],["freshness","LIVE"],["updated",diag_tickTime]
+        ["affiliation",_affiliation],["type",_type],["freshness","LIVE"],["updated",diag_tickTime],
+        ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
     ]];
 } forEach (allUnits select {
     alive _x && {(side group _x isEqualTo side group player) || {profileNamespace getVariable ["COMSPEC_ATAK_ShowHostile",false]}}

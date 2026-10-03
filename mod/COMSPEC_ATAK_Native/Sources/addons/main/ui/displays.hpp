@@ -35,6 +35,8 @@ class COMSPEC_RscDisplayATAK {
         class Mode: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_MODE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_expand.paa"; action="[] call comspec_atak_native_fnc_modeToggle"; tooltip="Mini / plein écran"; };
         class Home: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_HOME; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_apps.paa"; action="['LAUNCHER'] call comspec_atak_native_fnc_navigate"; tooltip="Applications"; };
         class HudHint: COMSPEC_RscLabel { idc=COMSPEC_ATAK_IDC_HUDHINT; style=2; ATAK_POS; text=""; };
+        // Reprend le focus après un clic carte : la carte focalisée passe devant les panneaux et les outils.
+        class FocusSink: COMSPEC_RscButtonOverlay { idc=COMSPEC_ATAK_IDC_FOCUS; x="safeZoneX - 0.1"; y="safeZoneY - 0.1"; w=0.01; h=0.01; };
     };
 };
 

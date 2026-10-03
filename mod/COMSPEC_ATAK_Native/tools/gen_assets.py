@@ -97,6 +97,7 @@ ICONS = {
     "map_height": '<path d="M2 20l6-9 4 5 3-4 7 8z"/><path d="M18 3v7M15.5 5.5L18 3l2.5 2.5"/>',
     "map_grid": '<path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/>',
     "map_flat": '<path d="M2 18h20M5 18l2-6h10l2 6"/><path d="M9 8h6M12 5v6"/>',
+    "app_fires": '<path d="M4 20l6-6"/><path d="M10 14l2-6 6-4-4 6-6 2z"/><circle cx="18" cy="18" r="3"/><path d="M18 13v2M18 21v2M13 18h2M21 18h2"/>',
     "map_los": '<circle cx="5" cy="17" r="2"/><path d="M7 15.5L20 6"/><path d="M14 20l2-4 2 4" /><circle cx="20" cy="6" r="1.5"/>',
     "map_distance": '<path d="M3 12h18M3 8v8M21 8v8"/><path d="M7 10l-2 2 2 2M17 10l2 2-2 2"/>',
     "app_network": '<circle cx="12" cy="18" r="1.6"/><path d="M8.5 14.5a5 5 0 0 1 7 0M5.5 11.5a9 9 0 0 1 13 0M2.5 8.5a13 13 0 0 1 19 0"/>',
@@ -161,6 +162,84 @@ def signal(bars, w=128, h=64):
     return img.resize((w, h), Image.LANCZOS)
 
 
+def topo_wallpaper(w, h, seed, hue):
+    """Carte topographique sombre générée : courbes de niveau anticrénelées, maîtresses tous les 5, carroyage 1 km, logo."""
+    import numpy as np
+    from PIL import ImageFilter
+    rng = np.random.default_rng(seed)
+    field = np.zeros((h, w), dtype=np.float64)
+    for octave, amp in ((6, 1.0), (12, 0.5), (24, 0.22), (48, 0.08)):
+        gh, gw = max(2, octave * h // max(w, h) + 2), max(2, octave * w // max(w, h) + 2)
+        g = Image.fromarray((rng.random((gh, gw)) * 255).astype(np.uint8), "L").resize((w, h), Image.BICUBIC)
+        field += amp * np.asarray(g, dtype=np.float64) / 255.0
+    # Lissage en flottant (pas de passage en 8 bits, sinon les courbes crénellent).
+    def box(a, r, axis):
+        pad = [(0, 0), (0, 0)]; pad[axis] = (r + 1, r)
+        c = np.cumsum(np.pad(a, pad, mode="edge"), axis=axis)
+        return (np.take(c, range(2 * r + 1, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - 2 * r - 1), axis=axis)) / (2 * r + 1)
+    field = field / field.max()
+    for _ in range(3):
+        field = box(box(field, 3, 0), 3, 1)
+    v = field * 26.0
+    gy, gx = np.gradient(v)
+    grad = np.sqrt(gx * gx + gy * gy) + 1e-6
+    dist = np.abs(((v + 0.5) % 1.0) - 0.5) / grad
+    major = (np.floor(v + 0.5).astype(int) % 5) == 0
+    line = np.clip(1.2 - dist, 0, 1) * np.where(major, 0.55, 0.22)
+    line += np.clip(1.9 - dist, 0, 1) * np.where(major, 0.18, 0.0)
+    yy, xx = np.mgrid[0:h, 0:w]
+    vign = 1.0 - 0.55 * (((xx / w - 0.5) ** 2 + (yy / h - 0.5) ** 2) * 2.2)
+    base = np.stack([np.full((h, w), c) for c in (6, 14, 11)], -1).astype(np.float64)
+    base += (field[..., None] * np.array([6, 16, 12]))
+    accent = np.array(hue, dtype=np.float64)
+    img = base * vign[..., None] + line[..., None] * accent
+    # Carroyage : une ligne fine tous les 256 px.
+    grid = ((xx % 256) < 1) | ((yy % 256) < 1)
+    img[grid] = img[grid] * 0.6 + accent * 0.18
+    out = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
+    hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
+    if os.path.exists(hawk):
+        size = min(w, h) // 8
+        logo = Image.open(hawk).convert("RGBA").resize((size, size), Image.LANCZOS)
+        alpha = logo.split()[3].point(lambda a: int(a * 0.16))
+        logo.putalpha(alpha)
+        out.alpha_composite(logo, ((w - size) // 2, (h - size) // 2))
+    return out
+
+
+def photo_wallpaper(path, w, h, dim):
+    """Photo en fond : couvre l'écran sans l'étirer ; en vertical, la photo entière sur un fond flouté."""
+    from PIL import ImageFilter
+    img = Image.open(path).convert("RGB")
+    img = Image.eval(img, lambda v: int(v * dim))
+    sw, sh = img.size
+    cover = max(w / sw, h / sh)
+    bg = img.resize((int(sw * cover) + 1, int(sh * cover) + 1), Image.LANCZOS)
+    bg = bg.crop(((bg.width - w) // 2, (bg.height - h) // 2, (bg.width - w) // 2 + w, (bg.height - h) // 2 + h))
+    if h > w:
+        bg = Image.eval(bg.filter(ImageFilter.GaussianBlur(24)), lambda v: int(v * 0.55))
+        fit = w / sw
+        fg = img.resize((w, int(sh * fit)), Image.LANCZOS)
+        bg.paste(fg, (0, (h - fg.height) // 2))
+    return bg.convert("RGBA")
+
+
+def wallpapers():
+    out = []
+    try:
+        for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+            out.append((f"wall_topo_{suffix}", topo_wallpaper(w, h, 7, (92, 199, 107))))
+            out.append((f"wall_night_{suffix}", topo_wallpaper(w, h, 21, (90, 150, 230))))
+    except ImportError:
+        print("numpy absent : fonds topographiques non générés")
+    for name, src, dim in (("athena", "wallpaper_athena.jpg", 0.85), ("ops", "wallpaper_ops.png", 0.62)):
+        path = os.path.join(HERE, "src", src)
+        if os.path.exists(path):
+            for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+                out.append((f"wall_{name}_{suffix}", photo_wallpaper(path, w, h, dim)))
+    return out
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -191,20 +270,10 @@ def main():
             convert(battery(lvl), f"bat_{lvl}", tmp)
         for b in range(5):
             convert(signal(b), f"sig_{b}", tmp)
-        # Fonds d'écran (accueil) : recadrés 2:1 (horizontal) et 1:2 (vertical), assombris pour la lisibilité.
-        for name, src, dim in (("athena", "wallpaper_athena.jpg", 1.0), ("ops", "wallpaper_ops.png", 0.62)):
-            path = os.path.join(HERE, "src", src)
-            if not os.path.exists(path):
-                continue
-            img = Image.open(path).convert("RGB")
-            img = Image.eval(img, lambda v, d=dim: int(v * d))
-            for suffix, (rw, rh) in (("land", (1024, 512)), ("port", (512, 1024))):
-                w, h = img.size
-                if w / h > rw / rh:
-                    cw = int(h * rw / rh); box = ((w - cw) // 2, 0, (w - cw) // 2 + cw, h)
-                else:
-                    ch = int(w * rh / rw); box = (0, (h - ch) // 2, w, (h - ch) // 2 + ch)
-                convert(img.crop(box).resize((rw, rh), Image.LANCZOS).convert("RGBA"), f"wall_{name}_{suffix}", tmp)
+        # Fonds d'écran (accueil), 2048 px : topographique généré (net à toute taille) et photos.
+        for name, img in wallpapers():
+            # Sans alpha : compression DXT1, deux fois plus légère.
+            convert(img.convert("RGB"), name, tmp)
         # Logo ATAK (faucon blanc) et viseur du mode photo.
         hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
         if os.path.exists(hawk):

@@ -23,7 +23,7 @@ if (_caption isEqualTo "") then { _caption = format ["%1 · %2", [player] call c
     private _ok = ["", _caption, "CTAB", "", false, true, true] call comspec_overwatch_connect_fnc_captureReconImage;
     uiSleep 0.1;
     { if (!isNull _x) then { _x ctrlShow true; }; } forEach _hidden;
-    [[ "WARNING", "SUCCESS"] select _ok, ["Photo non envoyée : voir l'app Photos", "Photo envoyée vers ATAK web"] select _ok, 3, 30] call comspec_atak_native_fnc_notify;
+    [[ "WARNING", "SUCCESS"] select _ok, ["Photo non envoyée : voir l'app Photos", "Photo en cours d'envoi vers Athena"] select _ok, 3, 30] call comspec_atak_native_fnc_notify;
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     if ((_s getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; };
 };
