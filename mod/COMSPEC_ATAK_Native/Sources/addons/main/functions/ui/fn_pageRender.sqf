@@ -20,6 +20,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
     private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
     _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
 };
+if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 (_d displayCtrl 88518) ctrlSetText _title;
 
 switch (_page) do {
@@ -27,6 +28,8 @@ switch (_page) do {
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
+    case "BFT": { [] call comspec_atak_native_fnc_pageBft; };
+    case "RECENTS": { [] call comspec_atak_native_fnc_pageRecents; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };

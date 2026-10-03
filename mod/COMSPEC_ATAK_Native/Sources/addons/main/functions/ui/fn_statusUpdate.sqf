@@ -80,6 +80,7 @@ private _pageSig = switch (_page) do {
     case "CHAT": { [count ([] call comspec_atak_native_fnc_messagesAll), count (_data getOrDefault ["p2p", []])] };
     case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }] };
     case "NETWORK": { [_lq get "bars", round ((_lq get "kbps") / 100), ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
+    case "BFT": { ((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] } };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };

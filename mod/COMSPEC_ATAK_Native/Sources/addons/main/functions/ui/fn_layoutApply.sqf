@@ -68,6 +68,16 @@ private _step = _bw * 1.7;
 (_d displayCtrl 88521) ctrlSetText format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")];
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1);
 
+// Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
+// en portrait la texture est tournée d'un quart de tour horaire : (x, y) devient (1 - y, x)).
+(_l get "phone") params ["_px", "_py", "_pw", "_ph"];
+{
+    _x params ["_idc", "_fx", "_fy", "_fw", "_fh"];
+    if !(_l get "landscape") then { private _t = _fx; _fx = 1 - _fy; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
+    private _c = [_idc, [_px + _pw * (_fx - _fw / 2), _py + _ph * (_fy - _fh / 2), _pw * _fw, _ph * _fh]] call _set;
+    _c ctrlShow _interactive;
+} forEach [[88544, 0.782, 0.405, 0.045, 0.07], [88545, 0.783, 0.500, 0.045, 0.075], [88546, 0.782, 0.594, 0.045, 0.07], [88547, 0.396, 0.298, 0.06, 0.03]];
+
 [88516, _l get "dockRect"] call _set;
 [88520, _l get "rail"] call _set;
 

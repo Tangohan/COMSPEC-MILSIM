@@ -164,3 +164,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     }] call ace_interact_menu_fnc_createAction;
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
 };
+
+// App Groupe : arrivées et changement de chef annoncés aux membres.
+["comspec_atak_native_groupNotice", {
+    params ["_text"];
+    ["INFO", _text, 5, 30] call comspec_atak_native_fnc_notify;
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; };
+}] call CBA_fnc_addEventHandler;

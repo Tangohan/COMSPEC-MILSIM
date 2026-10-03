@@ -8,6 +8,7 @@
       ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal]...]]
       ["password", clé, libellé]              ["hero", image, texte structuré]
       ["gap"]
+      ["person", image, texte structuré, [[libellé, code, principal]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
       ["segment", libellé, [[texte, code, actif]...], aide]   ["info", libellé, valeur]
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -159,6 +160,27 @@ private _mk = {
             _y = _y + _fs * 1.3;
         };
         case "gap": { _y = _y + _pad; };
+        case "person": {
+            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]]];
+            private _ih = _font * 1.9;
+            private _iw = _ih * pixelH / pixelW;
+            private _bg = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _pad / 2]] call _mk;
+            _bg ctrlSetBackgroundColor [0.06, 0.075, 0.07, 1];
+            private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
+            _p ctrlSetTextColor _picColor;
+            private _nb = count _btns;
+            private _bwid = _w * 0.2;
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3), _ih]] call _mk;
+            _t ctrlSetStructuredText parseText _text;
+            {
+                _x params ["_label", "_code", ["_primary", false], ["_enabled", true]];
+                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.85);
+                _b ctrlEnable _enabled;
+                _b ctrlAddEventHandler ["ButtonClick", _code];
+            } forEach _btns;
+            _y = _y + _ih + _pad * 0.75;
+        };
         case "hero": {
             _row params ["", "_pic", "_text"];
             private _ih = _font * 3.2;
