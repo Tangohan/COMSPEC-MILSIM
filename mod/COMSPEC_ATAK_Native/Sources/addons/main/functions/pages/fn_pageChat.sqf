@@ -60,7 +60,9 @@ private _sel = -1;
 {
     private _name = _x;
     private _n = { (_x getOrDefault ["peer", ""]) isEqualTo _name && {(_x getOrDefault ["dir", ""]) isEqualTo "in"} && {!(_x getOrDefault ["read", false])} } count (_data getOrDefault ["p2p", []]);
-    private _k = _combo lbAdd ([_name, format ["%1 (%2)", _name, _n]] select (_n > 0));
+    // Messages directs (SMS entre téléphones, sans Athena) : libellés « SMS · » pour les distinguer des canaux.
+    private _k = _combo lbAdd ([format ["SMS · %1", _name], format ["SMS · %1 (%2 non lus)", _name, _n]] select (_n > 0));
+    _combo lbSetPicture [_k, "\z\comspec_atak_native\addons\main\data\app_group.paa"];
     _combo lbSetData [_k, _x];
     if (_x isEqualTo _peer) then { _sel = _k; };
 } forEach _peers;
