@@ -39,6 +39,7 @@ switch (_page) do {
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
+    case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
 true

@@ -23,6 +23,23 @@ _rows append [
     ["info", "Compte Steam lié", ["non", "oui"] select (missionNamespace getVariable ["COMSPEC_SteamLinked", false])]
 ];
 
+// Qualifications Athena (référentiel de la communauté, attributions en cours de validité)
+private _quals = (uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap]) getOrDefault [getPlayerUID player, []];
+_rows pushBack ["section", "Qualifications", "Attributions en cours sur Athena"];
+switch (true) do {
+    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (Overwatch connect) requise.</t>"]; };
+    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL Overwatch pour afficher les qualifications.</t>"]; };
+    case ((count _quals) isEqualTo 0): { _rows pushBack ["text", "<t color='#8a9a93'>Aucune qualification en cours (ou profil en cours de chargement).</t>"]; };
+    default {
+        {
+            _x params ["_name", "_lvl", "_state", "_exp"];
+            private _st = createHashMapFromArray [["expiring_soon", ["expire bientôt", "#f2ab33"]], ["expired_grace", ["période de grâce", "#e5483a"]]] getOrDefault [_state, ["valide", "#5cc76b"]];
+            _rows pushBack ["info", [_name, format ["%1 · %2", _name, _lvl]] select (_lvl isNotEqualTo ""),
+                format ["<t color='%1'>%2</t>%3", _st select 1, _st select 0, ["", format ["  <t color='#8a9a93'>jusqu'au %1</t>", _exp]] select (_exp isNotEqualTo "")]];
+        } forEach _quals;
+    };
+};
+
 // Certificat du terminal
 if (_bridge) then {
     private _st = ["COMSPEC_CertStatus", ""] call _v;

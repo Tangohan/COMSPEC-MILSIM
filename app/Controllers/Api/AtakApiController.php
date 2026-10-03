@@ -584,7 +584,52 @@ class AtakApiController
             'military_id' => $militaryId,
             'playtime_hours' => $playtimeHours,
             'last_seen_at' => $lastSeenAt,
+            'qualifications' => $this->operatorQualifications($tenantId, $userId),
         ]);
+    }
+
+    /**
+     * Qualifications en cours de validité affichées sur la fiche opérateur du téléphone ATAK :
+     * obtenues, non expirées (période de grâce comprise), visibilité normale uniquement.
+     *
+     * @return list<array{name: string, level: string, state: string, expires_at: ?string}>
+     */
+    private function operatorQualifications(int $tenantId, int $userId): array
+    {
+        try {
+            $awards = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class)
+                ->listForUser($userId, $tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $temporal = new \App\Services\Personnel\QualificationTemporalStatusService();
+        $out = [];
+        foreach ($awards as $award) {
+            $visibility = \App\Support\VisibilityLevel::normalize((string) ($award['visibility_level'] ?? 'normal'));
+            if ($visibility !== \App\Support\VisibilityLevel::NORMAL || !$temporal->isEffectivelyActive($award)) {
+                continue;
+            }
+            $name = trim((string) ($award['definition_short_name'] ?? ''));
+            if ($name === '') {
+                $name = trim((string) ($award['definition_name'] ?? $award['qualification_name'] ?? ''));
+            }
+            if ($name === '') {
+                continue;
+            }
+            $expires = (string) ($award['expires_at'] ?? '');
+            $ts = $expires !== '' ? strtotime($expires) : false;
+            $out[] = [
+                'name' => $name,
+                'level' => trim((string) ($award['level_short_name'] ?? $award['level_name'] ?? $award['level'] ?? '')),
+                'state' => $temporal->resolve($award)['code'],
+                'expires_at' => $ts !== false ? date('d/m/Y', $ts) : null,
+            ];
+            if (count($out) >= 12) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     /**

@@ -95,3 +95,14 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+
+// Briefing : la page suit la diapositive en cours (deck Google du présentateur, image chargée, liste Athena).
+[{
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
+    if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    private _sig = ([] call comspec_atak_native_fnc_briefingSignature) select [0, 4];
+    if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
+    ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
+}, 1] call CBA_fnc_addPerFrameHandler;

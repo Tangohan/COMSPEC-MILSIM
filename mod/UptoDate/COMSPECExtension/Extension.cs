@@ -6911,8 +6911,27 @@ public static partial class Extension
             atakId = atakId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             militaryId = militaryId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             if (displayName.Length == 0 && callsign.Length == 0) return "";
+            // Qualifications en cours (fiche opérateur ATAK) : 9e colonne préfixée « Q: » pour rester
+            // repérable même si splitString SQF fusionne des colonnes vides ; entrées séparées par « ; »,
+            // champs nom~niveau~état~expiration.
+            var quals = new List<string>();
+            if (root.TryGetProperty("qualifications", out var qa) && qa.ValueKind == JsonValueKind.Array)
+            {
+                static string Q(JsonElement e, string k) =>
+                    e.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String
+                        ? (v.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "/").Replace(";", ",").Replace("~", "-")
+                        : "";
+                foreach (var q in qa.EnumerateArray())
+                {
+                    if (q.ValueKind != JsonValueKind.Object) continue;
+                    var name = Q(q, "name");
+                    if (name.Length == 0) continue;
+                    quals.Add(name + "~" + Q(q, "level") + "~" + Q(q, "state") + "~" + Q(q, "expires_at"));
+                    if (quals.Count >= 12) break;
+                }
+            }
             return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
-                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId;
+                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals);
         }
         catch { return ""; }
     }

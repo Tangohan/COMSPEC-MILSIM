@@ -25,6 +25,8 @@ if (_prefix != "OK") exitWith {
 
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { "" };
 private _cols = _payload splitString (toString [9]);
+// Colonne qualifications « Q:… » (lue par le téléphone natif) : ignorée ici pour ne pas décaler les autres.
+_cols = _cols select { (_x select [0, 2]) isNotEqualTo "Q:" };
 if (count _cols < 3) exitWith { ["", "", "", "", "", "", "", "", "invalid_response"] };
 
 [
