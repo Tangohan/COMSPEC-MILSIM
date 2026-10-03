@@ -117,13 +117,24 @@ private _list = [];
     _list pushBack [_rank getOrDefault [_h, 5], _x, _h, _st param [1, "100"], _st param [3, "80"]];
 } forEach (allPlayers select { side group _x isEqualTo side group player });
 _list sort true;
+// Blessé suivi au moniteur : choisi dans la liste, sinon le plus grave (moi s'il n'y a personne).
+private _mon = objectFromNetId (_s getOrDefault ["medMon", ""]);
+if (isNull _mon) then { _mon = (_list param [0, [0, player]]) select 1; };
+uiNamespace setVariable ["COMSPEC_ATAK_MedMonitor", _mon];
 {
     _x params ["", "_u", "_h", "_blood", "_hr"];
     private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]]] getOrDefault [_h, ["STABLE", "#5cc76b"]];
     _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>sang %4 %% · pouls %5 · %6 m · %7</t>",
         _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _blood, _hr, round (player distance _u), [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef]];
+    _rows pushBack ["buttons", [[["MONITEUR", "● SUIVI"] select (_u isEqualTo _mon), compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medMon', %1]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str netId _u], _u isEqualTo _mon]]];
 } forEach _list;
 if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun joueur allié.</t>"]; };
 };
-[_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+if (_tab isEqualTo "TROOPS") then {
+    private _vh = _bh * 0.4;
+    [[0, 0, _bw, _vh], uiNamespace getVariable ["COMSPEC_ATAK_MedMonitor", player]] call comspec_atak_native_fnc_vizEcg;
+    [_rows, [0, _vh, _bw, _bh - _vh]] call comspec_atak_native_fnc_formRender;
+} else {
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+};
 true

@@ -24,6 +24,9 @@ class CfgFunctions {
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class netSend {}; class bridge {}; class avatarPath {};
         };
+        class viz { file="z\comspec_atak_native\addons\main\functions\viz";
+            class vizEcg {}; class vizSpectrum {};
+        };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
             class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
         };

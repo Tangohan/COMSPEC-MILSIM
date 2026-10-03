@@ -129,5 +129,12 @@ switch (_tab) do {
         };
     };
 };
-[_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+// GONIO : spectre et boussole en tête, le formulaire dessous.
+if (_tab isEqualTo "DF" && {_allowed}) then {
+    private _vh = _bh * 0.42;
+    [[0, 0, _bw, _vh]] call comspec_atak_native_fnc_vizSpectrum;
+    [_rows, [0, _vh, _bw, _bh - _vh]] call comspec_atak_native_fnc_formRender;
+} else {
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+};
 true
