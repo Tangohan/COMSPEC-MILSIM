@@ -2,6 +2,13 @@ params [["_page", "LAUNCHER"]];
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
+// Garder la saisie en cours de l'app Athena quand la page se redessine.
+private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
+    private _draft = uiNamespace getVariable ["COMSPEC_ATAK_AthenaDraft", createHashMap];
+    { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
+    uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
+};
 [] call comspec_atak_native_fnc_pageClear;
 [] call comspec_atak_native_fnc_layoutApply;
 

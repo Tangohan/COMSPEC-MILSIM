@@ -14,7 +14,7 @@ private _steam = getPlayerUID player;
 private _email = trim (["email"] call comspec_atak_native_fnc_formValue);
 private _hint = {
     params ["_text", ["_warn", false]];
-    uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [_text, _warn]];
+    uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [_text, _warn, diag_tickTime]];
 };
 if ((count _steam) >= 8) then { ["SetSteamId", [_steam]] call _ext; };
 switch (_action) do {

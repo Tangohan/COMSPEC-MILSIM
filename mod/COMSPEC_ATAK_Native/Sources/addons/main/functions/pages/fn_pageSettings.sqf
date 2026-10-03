@@ -22,6 +22,7 @@ private _profToggle = {
 };
 uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", _profToggle];
 // Choix du coin du mini : remet à zéro le décalage glissé du mini pour partir du nouveau coin.
+private _wallNow = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "athena"];
 private _anchorNow = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
 private _anchorLabel = { params ["_t", "_k"]; [_t, format ["● %1", _t]] select (_k isEqualTo _anchorNow) };
 uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
@@ -36,6 +37,11 @@ private _rows = [
     ["toggle", "Vibrer à chaque nouveau message", ["COMSPEC_ATAK_Vibrate", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Vibrate"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Indicatifs sur la carte", ["COMSPEC_ATAK_Labels", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Labels"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Boussole sur la carte", ["COMSPEC_ATAK_Compass", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Compass"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
+    ["title", "Fond d'écran"],
+    ["buttons", [["AUCUN", "none"], ["ATHENA", "athena"], ["OPS", "ops"]] apply {
+        _x params ["_t", "_k"];
+        [[_t, format ["● %1", _t]] select (_k isEqualTo _wallNow), compile format ["profileNamespace setVariable ['COMSPEC_ATAK_Wallpaper', '%1']; saveProfileNamespace; ['SETTINGS'] call comspec_atak_native_fnc_pageRender;", _k], _k isEqualTo _wallNow]
+    }],
     ["title", "Emplacement du mini (porté et en main)"],
     ["buttons", [["HG", "TL"], ["HD", "TR"]] apply { [_x call _anchorLabel, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] }],
     ["buttons", [["MILIEU G", "ML"], ["MILIEU D", "MR"]] apply { [_x call _anchorLabel, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] }],

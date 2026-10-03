@@ -191,6 +191,27 @@ def main():
             convert(battery(lvl), f"bat_{lvl}", tmp)
         for b in range(5):
             convert(signal(b), f"sig_{b}", tmp)
+        # Fonds d'écran (accueil) : recadrés 2:1 (horizontal) et 1:2 (vertical), assombris pour la lisibilité.
+        for name, src, dim in (("athena", "wallpaper_athena.jpg", 1.0), ("ops", "wallpaper_ops.png", 0.62)):
+            path = os.path.join(HERE, "src", src)
+            if not os.path.exists(path):
+                continue
+            img = Image.open(path).convert("RGB")
+            img = Image.eval(img, lambda v, d=dim: int(v * d))
+            for suffix, (rw, rh) in (("land", (1024, 512)), ("port", (512, 1024))):
+                w, h = img.size
+                if w / h > rw / rh:
+                    cw = int(h * rw / rh); box = ((w - cw) // 2, 0, (w - cw) // 2 + cw, h)
+                else:
+                    ch = int(w * rh / rw); box = (0, (h - ch) // 2, w, (h - ch) // 2 + ch)
+                convert(img.crop(box).resize((rw, rh), Image.LANCZOS).convert("RGBA"), f"wall_{name}_{suffix}", tmp)
+        # Logo ATAK (faucon blanc) et viseur du mode photo.
+        hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
+        if os.path.exists(hawk):
+            convert(Image.open(hawk).convert("RGBA").resize((128, 128), Image.LANCZOS), "logo_atak", tmp)
+        overlay = os.path.join(HERE, "src", "camera_overlay.png")
+        if os.path.exists(overlay):
+            convert(Image.open(overlay).convert("RGBA"), "camera_overlay", tmp)
         # Aperçu PNG pour la revue (non packagé)
         land.save(os.path.join(HERE, "preview_phone_landscape.png"))
     print("ok", len(os.listdir(OUT)), "textures")

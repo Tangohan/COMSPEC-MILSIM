@@ -17,6 +17,9 @@ if (isNull _unit) exitWith { false };
 
 if (!(missionNamespace getVariable ["comspec_overwatch_require_item", true])) exitWith { true };
 
+// Téléphone ATAK natif chargé : c'est lui qui décide (réglages serveur « COMSPEC ATAK natif »).
+if (!isNil "comspec_atak_native_fnc_hasDevice") exitWith { [_unit] call comspec_atak_native_fnc_hasDevice };
+
 private _fnc_isTerminalClass = {
     params ["_cls"];
     if (!(_cls isEqualType "") || {_cls isEqualTo ""}) exitWith { false };

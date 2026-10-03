@@ -34,6 +34,17 @@ _batCtrl ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.88, 0.25, 0.22, 1]] select
 (_d displayCtrl 88525) ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString);
 
 private _page = _state getOrDefault ["activePage", "LAUNCHER"];
+// App Athena ouverte (avec Overwatch) : se redessine quand la session, la liaison ou le message changent.
+if (_page isEqualTo "ATHENA" && {[] call comspec_atak_native_fnc_bridge}) then {
+    private _str = { params ["_k", "_d"]; private _r = missionNamespace getVariable [_k, _d]; if (_r isEqualType "") then { _r } else { str _r } };
+    private _sig = [["comspec_overwatch_auth_state", "—"] call _str, toLower (["COMSPEC_LinkState", "offline"] call _str), missionNamespace getVariable ["COMSPEC_AthenaReady", false]];
+    private _old = uiNamespace getVariable ["COMSPEC_ATAK_AthenaSig", []];
+    private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
+    private _hintExpired = ((_old param [3, ""]) isNotEqualTo "") && {diag_tickTime - (_hint param [2, 0]) > 30};
+    if (_hintExpired || {(_old select [0, 3]) isNotEqualTo _sig}) then {
+        [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    };
+};
 if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.

@@ -1,6 +1,7 @@
 /*
-    App Athena : état de la liaison et du compte, connexion (Steam, e-mail, code e-mail, code d'appairage),
-    ouverture du canal poste et déconnexion.
+    App Athena : en-tête (logo, état de la liaison), fiche opérateur une fois connecté,
+    sinon connexion par onglets : Steam, e-mail (mot de passe masqué ou code e-mail), code du portail.
+    La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -18,46 +19,79 @@ if !(_bridge) then {
     _ready = _state isEqualTo "READY";
     _link = ["offline", "linked"] select _ready;
 };
-private _linkLabel = switch (_link) do {
-    case "linked": { "<t color='#5cc76b'>CONNECTÉ</t>" };
-    case "degraded": { "<t color='#f2ab33'>DÉGRADÉ</t>" };
-    case "connecting": { "<t color='#f2ab33'>CONNEXION…</t>" };
-    default { "<t color='#e5483a'>HORS LIGNE</t>" };
+private _logged = _state isEqualTo "READY";
+private _pill = switch (true) do {
+    case (_logged && {_link isEqualTo "linked"}): { ["CONNECTÉ", "#5cc76b"] };
+    case (_link isEqualTo "degraded"): { ["DÉGRADÉ", "#f2ab33"] };
+    case (_logged): { ["SESSION OUVERTE", "#f2ab33"] };
+    case (_state in ["AUTHENTICATING", "PENDING", "CONNECTING"] || {_link isEqualTo "connecting"}): { ["CONNEXION…", "#f2ab33"] };
+    default { ["HORS LIGNE", "#e5483a"] };
 };
-private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false]];
+// Message d'action : effacé une fois connecté ou après 30 s.
+private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
+_hint params ["_hText", ["_hWarn", false], ["_hTime", 0]];
+if ((_logged && {!_hWarn}) || {diag_tickTime - _hTime > 30}) then { _hText = ""; };
+private _lat = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
+private _latText = if (_lat isEqualType 0 && {_lat >= 0}) then { format ["%1 ms", round _lat] } else { "—" };
+private _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa";
 private _rows = [
-    ["title", "Liaison Athena"],
-    ["text", format ["%1   <t color='#8a9a93'>%2</t><br/>Session : %3%4<br/>Canal poste : %5%6",
-        _linkLabel, ["COMSPEC_LinkDetail"] call _v, _state, ["", format [" <t color='#e5483a'>(%1)</t>", _err]] select (_err isNotEqualTo "" && {_err isNotEqualTo "-"}),
-        ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready,
-        ["", format ["<br/>Latence : %1 ms", missionNamespace getVariable ["COMSPEC_LastLatencyMs", "?"]]] select _bridge]]
+    ["hero", _logo, format ["<t size='1.35' font='RobotoCondensedBold'>ATHENA</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
+        _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]]
 ];
-if (_bridge && {_state isEqualTo "READY"}) then {
-    _rows pushBack ["text", format ["<t color='#5cc76b'>%1</t> · %2<br/>%3 · %4<br/><t color='#8a9a93'>%5</t>",
-        ["comspec_profile_callsign"] call _v, ["comspec_profile_name"] call _v, ["comspec_tenant_name"] call _v, ["comspec_profile_unit"] call _v, ["comspec_profile_role"] call _v]];
+if (_logged) then {
+    if (_bridge) then {
+        _rows pushBack ["text", format ["<t size='1.25' color='#5cc76b' font='RobotoCondensedBold'>%1</t>  <t size='1.1'>%2</t><br/><t color='#c9d4cf'>%3</t><br/><t color='#8a9a93'>%4 · %5</t>",
+            ["comspec_profile_callsign"] call _v, ["comspec_profile_name"] call _v, ["comspec_profile_unit"] call _v, ["comspec_tenant_name"] call _v, ["comspec_profile_role"] call _v]];
+    };
+    _rows pushBack ["text", format ["<t color='#8a9a93'>Canal poste</t>  %1     <t color='#8a9a93'>Latence</t>  %2",
+        ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready, _latText]];
+    if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
+    _rows pushBack ["buttons", [
+        [["ROUVRIR LE CANAL", "OUVRIR LE CANAL POSTE"] select !_ready, { ["enter"] call comspec_atak_native_fnc_athenaAction; }, !_ready],
+        ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]
+    ]];
+} else {
+    if (_err isNotEqualTo "" && {_err isNotEqualTo "-"}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
+    if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
+    private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "steam"];
+    private _tabBtn = {
+        params ["_label", "_key"];
+        [_label, compile format ["uiNamespace setVariable ['COMSPEC_ATAK_AthenaTab', '%1']; ['ATHENA'] call comspec_atak_native_fnc_pageRender;", _key], _tab isEqualTo _key]
+    };
+    _rows pushBack ["buttons", [["STEAM", "steam"] call _tabBtn, ["E-MAIL", "email"] call _tabBtn, ["CODE PORTAIL", "pair"] call _tabBtn]];
+    _rows pushBack ["gap"];
+    private _draft = uiNamespace getVariable ["COMSPEC_ATAK_AthenaDraft", createHashMap];
+    switch (_tab) do {
+        case "email": {
+            _rows append [
+                ["edit", "email", "E-mail", _draft getOrDefault ["email", profileNamespace getVariable ["COMSPEC_ATAK_Email", ""]]],
+                ["password", "password", "Mot de passe"],
+                ["buttons", [["SE CONNECTER", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["password"] call comspec_atak_native_fnc_athenaAction; }, true]]],
+                ["gap"],
+                ["text", "<t color='#8a9a93'>Sans mot de passe : recevez un code par e-mail.</t>"],
+                ["edit", "otp", "Code reçu par e-mail", _draft getOrDefault ["otp", ""]],
+                ["buttons", [
+                    ["RECEVOIR LE CODE", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["otp_ask"] call comspec_atak_native_fnc_athenaAction; }],
+                    ["VALIDER LE CODE", { ["otp_ok"] call comspec_atak_native_fnc_athenaAction; }]
+                ]]
+            ];
+        };
+        case "pair": {
+            _rows append [
+                ["text", "<t color='#c9d4cf'>Sur le portail Athena, page <t font='RobotoCondensedBold'>Appairer</t>, générez un code (valable 30 min) et saisissez-le ici.</t>"],
+                ["edit", "pair", "Code d'appairage", _draft getOrDefault ["pair", ""]],
+                ["buttons", [["LIER CE JEU À MON COMPTE", { ["pair"] call comspec_atak_native_fnc_athenaAction; }, true]]]
+            ];
+        };
+        default {
+            _rows append [
+                ["text", format ["<t color='#c9d4cf'>Connexion avec le compte Steam lié à votre profil Athena.</t><br/><t color='#8a9a93'>Steam : %1</t>", getPlayerUID player]],
+                ["buttons", [["CONNEXION STEAM", { ["steam"] call comspec_atak_native_fnc_athenaAction; }, true]]],
+                ["text", "<t color='#8a9a93'>Compte pas encore lié ? Onglet CODE PORTAIL.</t>"]
+            ];
+        };
+    };
 };
-if ((_hint select 0) isNotEqualTo "") then {
-    _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select (_hint select 1), _hint select 0]];
-};
-_rows pushBack ["buttons", [
-    ["ENTRER / ROUVRIR", { ["enter"] call comspec_atak_native_fnc_athenaAction; }, true],
-    ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]
-]];
-_rows append [
-    ["title", "Se connecter"],
-    ["buttons", [["CONNEXION STEAM", { ["steam"] call comspec_atak_native_fnc_athenaAction; }, true]]],
-    ["edit", "email", "E-mail", profileNamespace getVariable ["COMSPEC_ATAK_Email", ""]],
-    ["edit", "password", "Mot de passe (affiché en clair : attention au stream)", ""],
-    ["buttons", [["SE CONNECTER", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["password"] call comspec_atak_native_fnc_athenaAction; }]]],
-    ["edit", "otp", "Code reçu par e-mail", ""],
-    ["buttons", [
-        ["RECEVOIR LE CODE", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["otp_ask"] call comspec_atak_native_fnc_athenaAction; }],
-        ["VALIDER LE CODE", { ["otp_ok"] call comspec_atak_native_fnc_athenaAction; }]
-    ]],
-    ["title", "Appairer avec le portail"],
-    ["text", "<t color='#8a9a93'>Sur le portail Athena, page Appairer, générez un code (valable 30 min) et collez-le ici.</t>"],
-    ["edit", "pair", "Code d'appairage", ""],
-    ["buttons", [["LIER", { ["pair"] call comspec_atak_native_fnc_athenaAction; }, true]]]
-];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+uiNamespace setVariable ["COMSPEC_ATAK_AthenaSig", [_state, _link, _ready, _hText, _err]];
 true

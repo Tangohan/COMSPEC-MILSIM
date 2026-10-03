@@ -78,6 +78,11 @@ private _inspW = [0, _l get "inspW"] select _isMap;
 [88531, [_bx, _byy, _bww, _bhh]] call _set;
 [88540, [_bx + _bww - _inspW, _byy, _inspW, _bhh]] call _set;
 [88541, [_bx + _bww - _inspW + _pad, _byy + _pad, (_inspW - 2 * _pad) max 0, (_bhh - 2 * _pad) max 0]] call _set;
+// Fond d'écran de l'accueil (réglage profil : athena, ops ou aucun).
+private _wall = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "athena"];
+private _wc = [88542, [_bx, _byy, _bww, _bhh]] call _set;
+_wc ctrlSetText (["", format ["\z\comspec_atak_native\addons\main\data\wall_%1_%2.paa", _wall, ["port", "land"] select (_l get "landscape")]] select (_wall in ["athena", "ops"]));
+_wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in ["athena", "ops"]});
 (_d displayCtrl 88530) ctrlShow _isMap;
 (_d displayCtrl 88531) ctrlShow !_isMap;
 (_d displayCtrl 88540) ctrlShow (_isMap && {_inspW > 0});

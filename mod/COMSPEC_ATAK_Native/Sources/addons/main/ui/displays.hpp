@@ -10,6 +10,7 @@ class COMSPEC_RscDisplayATAK {
     class controlsBackground {
         class Phone: COMSPEC_RscPhone { idc=COMSPEC_ATAK_IDC_PHONE; ATAK_POS; };
         class Frame: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_FRAME; ATAK_POS; colorBackground[]=ATAK_BG1; };
+        class Wallpaper: COMSPEC_RscPhone { idc=COMSPEC_ATAK_IDC_WALLPAPER; ATAK_POS; style=48; text=""; };
         class StatusBar: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_STATUSBAR; ATAK_POS; colorBackground[]={0,0,0,1}; };
         class AppBar: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_APPBAR; ATAK_POS; colorBackground[]=ATAK_BG0; };
         class Dock: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_DOCK; ATAK_POS; colorBackground[]=ATAK_BG0; };
@@ -42,5 +43,16 @@ class RscTitles {
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {
         idd=-1; duration=1e+011; fadein=0; fadeout=0;
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
+    };
+    // Mode photo : viseur plein écran, le joueur se déplace normalement.
+    class COMSPEC_RscTitleCamera {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_CameraDisplay', _this select 0]";
+        class controls {
+            class Overlay: COMSPEC_RscPhone { idc=1; style=48; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; text="\z\comspec_atak_native\addons\main\data\camera_overlay.paa"; };
+            class Flash: COMSPEC_RscText { idc=2; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; colorBackground[]={1,1,1,0}; };
+            class Info: COMSPEC_RscText { idc=3; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.84"; w="safeZoneW * 0.5"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=2; sizeEx="0.028 * safeZoneH"; text="CLIC GAUCHE : photo     ESPACE : quitter"; };
+            class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.875"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
+        };
     };
 };

@@ -6,6 +6,8 @@
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
       ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie]
       ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal]...]]
+      ["password", clé, libellé]              ["hero", image, texte structuré]
+      ["gap"]
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
 */
 params ["_rows", "_rect", ["_inContent", true]];
@@ -87,6 +89,53 @@ private _mk = {
             if (_on) then { _b ctrlSetTextColor [0.36, 0.78, 0.42, 1]; };
             _b ctrlAddEventHandler ["ButtonClick", _code];
             _y = _y + _rowH + _pad / 3;
+        };
+        case "gap": { _y = _y + _pad; };
+        case "hero": {
+            _row params ["", "_pic", "_text"];
+            private _ih = _font * 3.2;
+            private _iw = _ih * pixelH / pixelW; // carré à l'écran
+            private _p = ["COMSPEC_RscPicture", [_pad, _y, _iw, _ih], _pic] call _mk;
+            _p ctrlSetTextColor [1, 1, 1, 1];
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y, _w - _iw - _pad, _ih]] call _mk;
+            _t ctrlSetStructuredText parseText _text;
+            private _h = (ctrlTextHeight _t) max _ih;
+            _t ctrlSetPosition [_pad * 2 + _iw, _y, _w - _iw - _pad, _h];
+            _t ctrlCommit 0;
+            _y = _y + _h + _pad;
+        };
+        case "password": {
+            // Mot de passe masqué : on garde la vraie valeur à part et on n'affiche que des points.
+            _row params ["", "_key", "_label"];
+            private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
+            _lb ctrlSetFontHeight (_fs * 0.9);
+            _y = _y + _fs * 1.2;
+            private _secretVar = format ["COMSPEC_ATAK_Secret_%1", _key];
+            private _cur = uiNamespace getVariable [_secretVar, ""];
+            private _e = ["COMSPEC_RscEdit", [_pad, _y, _w, _rowH], (_cur splitString "") apply { "•" } joinString ""] call _mk;
+            _e ctrlSetFontHeight _font;
+            _e setVariable ["secretVar", _secretVar];
+            private _redraw = {
+                params ["_c"];
+                [{ params ["_c"]; if (!isNull _c) then { _c ctrlSetText (((uiNamespace getVariable [_c getVariable "secretVar", ""]) splitString "") apply { "•" } joinString ""); }; }, [_c]] call CBA_fnc_execNextFrame;
+            };
+            _e setVariable ["redraw", _redraw];
+            _e ctrlAddEventHandler ["Char", {
+                params ["_c", "_char"];
+                private _v = _c getVariable "secretVar";
+                uiNamespace setVariable [_v, (uiNamespace getVariable [_v, ""]) + toString [_char]];
+                [_c] call (_c getVariable "redraw");
+            }];
+            _e ctrlAddEventHandler ["KeyDown", {
+                params ["_c", "_key"];
+                private _v = _c getVariable "secretVar";
+                private _cur = uiNamespace getVariable [_v, ""];
+                if (_key isEqualTo 14) then { uiNamespace setVariable [_v, _cur select [0, ((count _cur) - 1) max 0]]; [_c] call (_c getVariable "redraw"); };
+                if (_key isEqualTo 211) then { uiNamespace setVariable [_v, ""]; [_c] call (_c getVariable "redraw"); };
+                false
+            }];
+            _fields set [_key, _e];
+            _y = _y + _rowH + _pad / 2;
         };
         case "buttons": {
             private _btns = _row select 1;
