@@ -139,6 +139,8 @@ class CfgFunctions {
             class arsenalOverlayBeginLoad {};
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
+            class arsenalOverlayFill {};
+            class arsenalOverlayAction {};
             class arsenalCollectionName {};
             class arsenalDeleteLocal {};
             class arsenalDeleteCloud {};

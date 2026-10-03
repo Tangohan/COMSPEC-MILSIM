@@ -36,7 +36,10 @@ if (_lines isEqualTo []) exitWith {
 private _meta = [];
 {
     if (_x isEqualTo "") then { continue };
-    private _parts = _x splitString toString [9];
+    // Champs vides conservés (splitString les fusionne et décale la collection).
+    private _s = _x; private _parts = []; private _tab = toString [9]; private _i = _s find _tab;
+    while { _i >= 0 } do { _parts pushBack (_s select [0, _i]); _s = _s select [_i + 1]; _i = _s find _tab; };
+    _parts pushBack _s;
     if (count _parts < 2) then { continue };
     _meta pushBack [
         _parts select 0,

@@ -1,11 +1,20 @@
 /*
-    Bâtiment visé par le Breacher : celui sous le regard, sinon le plus proche du point regardé (15 m).
-    Renvoie l'objet ou objNull.
+    Porte au contact : la porte la plus proche à moins de 2,5 m du joueur (point mémoire Door_N_trigger),
+    sur le bâtiment qu'il touche. Rien à distance : le Breacher n'a d'informations que sur ce qu'il a devant lui.
+    Renvoie [bâtiment, numéro de porte, position] ou [].
 */
-private _c = cursorObject;
-if (!isNull _c && {_c isKindOf "House"} && {(getNumber (configOf _c >> "numberOfDoors")) > 0}) exitWith { _c };
-private _from = eyePos player;
-private _hit = lineIntersectsSurfaces [_from, _from vectorAdd ((getCameraViewDirection player) vectorMultiply 300), player, objNull, true, 1, "VIEW", "FIRE"];
-private _p = if ((count _hit) > 0) then { ASLToAGL ((_hit select 0) select 0) } else { getPosATL player };
-private _near = (nearestObjects [_p, ["House"], 15]) select { (getNumber (configOf _x >> "numberOfDoors")) > 0 };
-_near param [0, objNull]
+private _best = [];
+private _bd = 2.5;
+{
+    private _b = _x;
+    private _n = getNumber (configOf _b >> "numberOfDoors");
+    for "_i" from 1 to _n do {
+        private _mp = _b selectionPosition [format ["Door_%1_trigger", _i], "Memory"];
+        if (_mp isNotEqualTo [0, 0, 0]) then {
+            private _p = _b modelToWorld _mp;
+            private _d = player distance _p;
+            if (_d < _bd) then { _bd = _d; _best = [_b, _i, _p]; };
+        };
+    };
+} forEach (nearestObjects [player, ["House"], 25]);
+_best

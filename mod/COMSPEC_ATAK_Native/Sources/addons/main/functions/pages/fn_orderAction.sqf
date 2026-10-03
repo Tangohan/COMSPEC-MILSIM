@@ -9,7 +9,7 @@ private _d = uiNamespace getVariable ["COMSPEC_ATAK_OrderDraft", createHashMap];
 private _keep = {
     // Garde la saisie avant de redessiner la page.
     private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
-    { if (_x in _form) then { _d set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd"];
+    { if (_x in _form) then { _d set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd", "sseCase"];
     uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _d];
 };
 private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
@@ -37,13 +37,23 @@ switch (toLower _action) do {
             { _x params ["_k", "_lab"]; private _v = trim (_d getOrDefault [_k, ""]); if (_v isNotEqualTo "") then { _parts pushBack format ["%1: %2", _lab, _v]; }; } forEach [["sit", "Situation"], ["mis", "Mission"], ["exe", "Exécution"], ["sup", "Soutien"], ["cmd", "Commandement"]];
             _parts joinString " — "
         } else { trim (_d getOrDefault ["text", ""]) };
+        if (_kind isEqualTo "DEMSSE") then {
+            private _lab = { params ["_v", "_map"]; _map getOrDefault [_v, _v] };
+            _payload = format ["DEM-SSE — Site : %1 | Collecte : %2 | Menace : %3%4%5",
+                [_d getOrDefault ["sseSite", "BATIMENT"], createHashMapFromArray [["BATIMENT", "bâtiment"], ["VEHICULE", "véhicule"], ["PERSONNE", "personne"], ["CACHE", "cache"]]] call _lab,
+                [_d getOrDefault ["sseWant", "DOCUMENTS"], createHashMapFromArray [["DOCUMENTS", "documents"], ["NUMERIQUE", "numérique"], ["BIOMETRIE", "biométrie"], ["ARMEMENT", "armement"]]] call _lab,
+                [_d getOrDefault ["sseThreat", "AUCUNE"], createHashMapFromArray [["AUCUNE", "aucune connue"], ["IED", "IED suspecté"], ["HOSTILES", "hostiles proches"]]] call _lab,
+                ["", format [" | Dossier : %1", toUpper trim (_d getOrDefault ["sseCase", ""])]] select ((trim (_d getOrDefault ["sseCase", ""])) isNotEqualTo ""),
+                ["", format [" | %1", _payload]] select (_payload isNotEqualTo "")];
+        };
         if (_payload isEqualTo "") exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_OrderHint", ["Écrivez la consigne de l'ordre.", "Renseignez au moins une rubrique du FRAGO."] select (_kind isEqualTo "FRAGO")];
             call _redraw;
         };
         if (_grid isNotEqualTo "") then { _payload = format ["%1 — Grille: %2", _payload, _grid]; };
         private _target = if (_tType isEqualTo "all") then { "" } else { _tLabel };
-        private _order = [_kind, _target, _payload, _prio, "", _tType] call comspec_overwatch_connect_fnc_issueOrder;
+        private _order = [["CUSTOM_DEM_SSE", _kind] select (_kind isNotEqualTo "DEMSSE"), _target, _payload, _prio, "", _tType] call comspec_overwatch_connect_fnc_issueOrder;
+        if (_kind isEqualTo "DEMSSE" && {_order isEqualType createHashMap}) then { _order set ["typeLabel", "DEM-SSE"]; };
         if (_kind isEqualTo "FRAGO" && {!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert"}) then {
             private _oid = if (_order isEqualType createHashMap) then { _order getOrDefault ["id", ""] } else { "" };
             ["FRAGO", [_payload, format ["ORDER_ID=%1|%2", _oid, _payload]] select (_oid isNotEqualTo ""), getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
