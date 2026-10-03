@@ -124,6 +124,8 @@ return [
     'mod_06_d' => 'Notifications, messages et actions à traiter.',
     'mod_07' => 'Renseignement SSE',
     'mod_07_d' => 'Collecte terrain, dossiers Athena et comptes rendus.',
+    'mod_08' => 'ATAK natif',
+    'mod_08_d' => 'Le téléphone tactique en jeu, relié à Athena.',
     'sse_kicker' => 'SSE',
     'sse_title' => "Renseignement\ninterpersonnel",
     'sse_body' => 'Le mod COMSPEC SSE en session Arma et le bureau Athena forment une boucle : collecter, qualifier, relier, diffuser — sans jamais remplacer la décision humaine.',

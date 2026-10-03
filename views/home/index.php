@@ -627,6 +627,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             ['n' => '05', 'label' => __('home.mod_05'), 'desc' => __('home.mod_05_d'), 'href' => url('c2')],
                             ['n' => '06', 'label' => __('home.mod_06'), 'desc' => __('home.mod_06_d'), 'href' => url('boite-reception')],
                             ['n' => '07', 'label' => __('home.mod_07'), 'desc' => __('home.mod_07_d'), 'href' => url('sse')],
+                            ['n' => '08', 'label' => __('home.mod_08'), 'desc' => __('home.mod_08_d'), 'href' => url('atak-natif')],
                         ];
                         foreach ($modules as $m):
                         ?>
@@ -902,6 +903,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('atak-natif'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.atak_native'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php

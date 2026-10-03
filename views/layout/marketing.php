@@ -48,12 +48,14 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
         'sse' => __('site.sse'),
+        'atak-natif' => __('site.atak_native'),
         default => __('site.about'),
     };
     $crumbPath = match ($marketingActive) {
         'contact' => '/contact',
         'changelog' => '/nouveautes',
         'sse' => '/sse',
+        'atak-natif' => '/atak-natif',
         default => '/a-propos',
     };
     $siteRoot = rtrim($base, '/');
@@ -129,6 +131,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('atak-natif'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.atak_native'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php

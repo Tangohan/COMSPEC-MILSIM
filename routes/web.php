@@ -304,6 +304,7 @@ return function (Router $router) {
     $router->get('/nouveautes', [SitePagesController::class, 'changelog']);
     $router->get('/nouveautes/{kind}/{number}', [SitePagesController::class, 'dispatch']);
     $router->get('/sse', [SitePagesController::class, 'sse']);
+    $router->get('/atak-natif', [SitePagesController::class, 'atakNative']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
