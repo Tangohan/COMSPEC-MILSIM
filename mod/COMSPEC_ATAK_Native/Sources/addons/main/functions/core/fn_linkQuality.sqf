@@ -70,7 +70,9 @@ if (_masked >= 3) then {
 if (rain > 0.3) then { _mul = _mul * (1 - rain * 0.3); _f pushBack ["Pluie", format ["-%1 %%", round (rain * 30)]]; };
 if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %"]; };
 {
-    _x params [["_pos", [0, 0, 0]], ["_rad", 500]];
+    _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false]];
+    if (_until < ([time, serverTime] select isMultiplayer)) then { continue; };
+    if (_exempt && {_side isEqualTo str side group player}) then { continue; };
     if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
     private _d = player distance2D _pos;
     if (_d < _rad) exitWith {

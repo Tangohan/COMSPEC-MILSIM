@@ -13,9 +13,7 @@ private _reqs = missionNamespace getVariable ["COMSPEC_ATAK_LogiReqs", createHas
 private _mine = getPlayerUID player;
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _icon = "\z\comspec_atak_native\addons\main\data\app_logistics.paa";
-private _all = (values _reqs) apply { [_x getOrDefault ["ts", 0], _x] };
-_all sort false;
-_all = _all apply { _x select 1 };
+private _all = [values _reqs, [], { _x getOrDefault ["ts", 0] }, "DESCEND"] call BIS_fnc_sortBy;
 private _myReqs = _all select { (_x get "uid") isEqualTo _mine };
 private _open = { (_x get "status") in ["DEMANDEE", "VALIDEE", "EN_ROUTE"] };
 private _inbox = _all select { (_x get "uid") isNotEqualTo _mine };

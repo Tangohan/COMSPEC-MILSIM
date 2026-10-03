@@ -61,6 +61,8 @@ if ((count _wpts) > 0) then {
     } forEach _wpts;
 };
 
+// Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
+([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
@@ -73,6 +75,8 @@ if ((count _wpts) > 0) then {
     private _size = if (_x isEqualTo _selected || _self) then {26} else {20};
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
+    if (_self && {_ewGps > 0}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
+    if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
     private _custom = _entity getOrDefault ["icon",""];
     if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
@@ -328,3 +332,7 @@ if ((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_n
 };
 for "_i" from _used to ((count _pool) - 1) do { (_pool select _i) ctrlShow false; };
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
+
+// Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
+[_map] call comspec_atak_native_fnc_logisticsDraw;
+[_map] call comspec_atak_native_fnc_ewDraw;

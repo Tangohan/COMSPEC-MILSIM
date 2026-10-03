@@ -38,6 +38,8 @@ switch (_page) do {
     case "WEATHER": { [] call comspec_atak_native_fnc_pageWeather; };
     case "RELIEF": { [] call comspec_atak_native_fnc_pageRelief; };
     case "WAVERELAY": { [] call comspec_atak_native_fnc_pageWaveRelay; };
+    case "LOGI": { [] call comspec_atak_native_fnc_pageLogistics; };
+    case "EW": { [] call comspec_atak_native_fnc_pageEw; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };

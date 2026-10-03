@@ -187,6 +187,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
 
+// Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
+["comspec_atak_native_logi", { ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_ewAction; }, 5] call CBA_fnc_addPerFrameHandler;
+
 // OSINT : publication sur le fil public (tous les camps).
 ["comspec_atak_native_osintPost", {
     params ["_who", "_txt", "_time"];
