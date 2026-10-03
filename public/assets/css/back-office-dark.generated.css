@@ -2147,6 +2147,51 @@ html[data-bo-theme="dark"] .bo-legacy table thead th {
 html[data-bo-theme="dark"] .bo-legacy table tbody tr:hover {
   background: var(--ath-row-hover, #141917);
 }
+html[data-bo-theme="dark"] .bo-legacy > form:not(.inline):not(.bo-legacy-bare) {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .bo-legacy > form > .flex.gap-3:last-child, html[data-bo-theme="dark"] .bo-legacy > form > div:last-child:has(> button[type="submit"]) {
+  border-top: 1px solid var(--ath-line-soft, #28312d);
+}
+html[data-bo-theme="dark"] .bo-legacy a:is(.underline, html[data-bo-theme="dark"] [class*="text-blue-"], html[data-bo-theme="dark"] [class*="text-indigo-"], html[data-bo-theme="dark"] [class*="hover:underline"]):not(.border):not([class*="bg-"]):not(.px-4) {
+  color: var(--ath-accent, #5ef2bd);
+}
+html[data-bo-theme="dark"] .bo-legacy a:is([class*="text-red-"], html[data-bo-theme="dark"] [class*="text-rose-"]):not(.border):not([class*="bg-"]) {
+  color: #eb6f66;
+}
+html[data-bo-theme="dark"] .bo-legacy td :is(a.underline, html[data-bo-theme="dark"] a[class*="hover:underline"], html[data-bo-theme="dark"] button.underline, html[data-bo-theme="dark"] button[class*="hover:underline"]) {
+  border: 1px solid var(--ath-line, #2f3934);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .bo-legacy table {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .bo-legacy table thead th {
+  border-bottom: 1px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .bo-legacy table tbody td {
+  border-bottom: 1px solid var(--ath-line-soft, #28312d);
+}
+html[data-bo-theme="dark"] .bo-legacy > p:is(.text-emerald-600, html[data-bo-theme="dark"] .text-emerald-700) {
+  border-color: #2e3f38;
+  background: #192c23;
+  color: #62efbb;
+}
+html[data-bo-theme="dark"] .bo-legacy > p:is(.text-red-600, html[data-bo-theme="dark"] .text-red-700) {
+  border-color: #3c2e2d;
+  background: #2b1b19;
+  color: #ed6e64;
+}
+html[data-bo-theme="dark"] .bo-legacy > p.mt-6:last-child {
+  border-top: 1px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .bo-legacy a.px-4.py-2:not(.border):not([class*="bg-"]) {
+  border: 1px solid var(--ath-line, #2f3934);
+  background: var(--ath-surface, #111513);
+  color: var(--ath-ink-2, #d0d8d4);
+}
 
 /* ——— back-office-media.css ——— */
 html[data-bo-theme="dark"] .bo-media {

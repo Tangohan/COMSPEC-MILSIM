@@ -22,7 +22,7 @@ if (!empty($modpack['size'])) {
 }
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/modpack-admin.css'), ENT_QUOTES, 'UTF-8') ?>">
-<div class="mp-admin max-w-2xl mx-auto px-6 py-12">
+<div class="mp-admin bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-2">Modifier le modpack</h1>
     <p class="mp-admin__lead">
         Remplacez l’archive, ajustez la version ou ajoutez un lien externe.

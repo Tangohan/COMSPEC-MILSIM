@@ -4,7 +4,7 @@ $parents = $parents ?? [];
 $users = $users ?? [];
 $unitTypes = $unitTypes ?? [];
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-6">Modifier l’unité</h1>
     <?php if (\App\Core\Session::get('error')): ?>
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>

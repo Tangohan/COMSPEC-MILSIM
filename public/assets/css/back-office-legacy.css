@@ -142,3 +142,103 @@
 
 /* Messages flash propres à la vue (doublons de ceux du shell) */
 .ath-main__flashes ~ .bo-legacy > p:is(.bg-emerald-50, .bg-red-50):first-child { display: none; }
+
+/* ── Rafraîchissement 2026 : cartes, liens, tableaux, messages ─────────────── */
+
+/* En-tête « titre + bouton » : le titre est masqué, l’action reste alignée proprement */
+.bo-legacy > .flex.justify-between:has(> h1) { justify-content: flex-start; gap: 10px; flex-wrap: wrap; }
+
+/* Formulaire posé directement sur la page : carte */
+.bo-legacy > form:not(.inline):not(.bo-legacy-bare) {
+  padding: 22px 24px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 14px;
+  background: var(--ath-surface, #fff);
+  box-shadow: 0 1px 2px rgba(12, 17, 22, 0.04);
+}
+.bo-legacy > form > .flex.gap-3:last-child,
+.bo-legacy > form > div:last-child:has(> button[type="submit"]) {
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ath-line-soft, #f1f4f5);
+}
+@media (max-width: 560px) {
+  .bo-legacy > form:not(.inline):not(.bo-legacy-bare) { padding: 16px; }
+}
+
+/* Liens texte : couleur d’accent, plus de soulignement bleu */
+.bo-legacy a:is(.underline, [class*="text-blue-"], [class*="text-indigo-"], [class*="hover:underline"]):not(.border):not([class*="bg-"]):not(.px-4) {
+  color: var(--ath-accent, #0b8a5c);
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+.bo-legacy a:is(.underline, [class*="text-blue-"], [class*="text-indigo-"], [class*="hover:underline"]):not(.border):not([class*="bg-"]):not(.px-4):hover { text-decoration: underline; }
+.bo-legacy a:is([class*="text-red-"], [class*="text-rose-"]):not(.border):not([class*="bg-"]) { color: #b42318; }
+
+/* Actions de ligne de tableau (« Modifier » / « Supprimer ») : petits boutons */
+.bo-legacy td :is(a.underline, a[class*="hover:underline"], button.underline, button[class*="hover:underline"]) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--ath-line, #d5ddd9);
+  border-radius: 7px;
+  background: var(--ath-surface, #fff);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.bo-legacy td :is(a, button):is(.underline, [class*="hover:underline"]):hover { border-color: #12d18e; text-decoration: none; }
+.bo-legacy td :is(a, button):is([class*="text-red-"], [class*="text-rose-"]):hover { border-color: #e48a8a; }
+
+/* Tableaux : dans une carte */
+.bo-legacy table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 12px;
+  background: var(--ath-surface, #fff);
+}
+.bo-legacy table thead th { border-bottom: 1px solid var(--ath-line, #e3e8ea); }
+.bo-legacy table tbody td { border-bottom: 1px solid var(--ath-line-soft, #f1f4f5); vertical-align: middle; }
+.bo-legacy table tbody tr:last-child td { border-bottom: 0; }
+
+/* Messages de la vue (succès / erreur) écrits en simple texte coloré */
+.bo-legacy > p:is(.text-emerald-600, .text-emerald-700, .text-red-600, .text-red-700) {
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.bo-legacy > p:is(.text-emerald-600, .text-emerald-700) { border-color: #b7ebd5; background: #ecfbf4; color: #0b6b48; }
+.bo-legacy > p:is(.text-red-600, .text-red-700) { border-color: #f3c3bd; background: #fdf1ef; color: #9b1c12; }
+
+/* Navigation de bas de page (« Retour administration · Voir l’ORBAT ») */
+.bo-legacy > p.mt-6:last-child { padding-top: 14px; border-top: 1px solid var(--ath-line, #e3e8ea); }
+
+html[data-bo-theme="dark"] .bo-legacy a:is(.underline, [class*="text-blue-"], [class*="text-indigo-"], [class*="hover:underline"]):not(.border):not([class*="bg-"]):not(.px-4) { color: #4fd3a2; }
+html[data-bo-theme="dark"] .bo-legacy a:is([class*="text-red-"], [class*="text-rose-"]):not(.border):not([class*="bg-"]) { color: #f08a80; }
+html[data-bo-theme="dark"] .bo-legacy > form:not(.inline):not(.bo-legacy-bare),
+html[data-bo-theme="dark"] .bo-legacy table,
+html[data-bo-theme="dark"] .bo-legacy td :is(a, button):is(.underline, [class*="hover:underline"]) { background: #141a18; border-color: #2c3733; }
+html[data-bo-theme="dark"] .bo-legacy > p:is(.text-emerald-600, .text-emerald-700) { background: rgba(18, 209, 142, 0.1); border-color: rgba(18, 209, 142, 0.35); color: #6fe0b4; }
+html[data-bo-theme="dark"] .bo-legacy > p:is(.text-red-600, .text-red-700) { background: rgba(240, 90, 80, 0.1); border-color: rgba(240, 90, 80, 0.35); color: #f5a097; }
+
+/* « Annuler » écrit en lien à côté du bouton principal : bouton secondaire */
+.bo-legacy a.px-4.py-2:not(.border):not([class*="bg-"]) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--ath-line, #d5ddd9);
+  border-radius: 8px;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink-2, #2c3833);
+  font-weight: 600;
+  text-decoration: none;
+}
+.bo-legacy a.px-4.py-2:not(.border):not([class*="bg-"]):hover { border-color: #12d18e; text-decoration: none; }
+html[data-bo-theme="dark"] .bo-legacy a.px-4.py-2:not(.border):not([class*="bg-"]) { background: #141a18; border-color: #2c3733; color: #e3ebe7; }
+html[data-bo-theme="dark"] .bo-legacy :is(button, a).bg-slate-900 { background-color: #12d18e; color: #04140d; }
+html[data-bo-theme="dark"] .bo-legacy :is(button, a).bg-slate-900:hover { background-color: #3ee0a6; }

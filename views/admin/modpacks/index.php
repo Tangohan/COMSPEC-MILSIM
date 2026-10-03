@@ -10,7 +10,7 @@ $formatSize = function ($bytes) {
     return $bytes ? (number_format($bytes / 1024, 1, ',', ' ') . ' Ko') : '—';
 };
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex items-center justify-between mb-2 gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-black text-slate-900">Modpacks</h1>
