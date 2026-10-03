@@ -413,6 +413,8 @@ switch (_function) do {
             missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed, false];
             missionNamespace setVariable ["COMSPEC_Athena_PhotoUploaded", _uploaded, false];
             ["PhotoUpload", "ok", format ["%1 · %2", _detail, _fileHint], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            // Dernier retour du poste, affiché par l'app Photos du téléphone natif.
+            missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["OK", _detail, _fileHint, [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
             if (_detail isEqualTo "uploaded") then {
                 private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
                 if (!(_inbox isEqualType [])) then { _inbox = []; };
@@ -481,6 +483,7 @@ switch (_function) do {
                     case ((_detail find "network") == 0): { "Liaison réseau instable pendant l’envoi de la photo." };
                     default { "Échec d’envoi de la photo vers ATAK web." };
                 };
+                missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
                     private _fbKind = if (
                         (_detail find "http_503") == 0
