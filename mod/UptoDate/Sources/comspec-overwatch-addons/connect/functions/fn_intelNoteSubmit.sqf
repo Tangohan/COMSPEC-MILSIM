@@ -172,7 +172,8 @@ private _json = "{" + (_parts joinString ",") + "}";
 private _parsed = [
     "SubmitSseFieldNote",
     [_json],
-    "Fiche de renseignement",
+    // Libellé unique : la file hors ligne écarte les doublons par commande + libellé.
+    format ["Fiche de renseignement %1", _idempotency select [((count _idempotency) - 6) max 0]],
     true,
     true,
     "system",

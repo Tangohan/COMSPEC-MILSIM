@@ -34,6 +34,8 @@ if ((_logged && {!_hWarn}) || {diag_tickTime - _hTime > 30}) then { _hText = "";
 private _lat = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
 private _latText = if (_lat isEqualType 0 && {_lat >= 0}) then { format ["%1 ms", round _lat] } else { "—" };
 private _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa";
+// Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
+if (_state isEqualTo "READY") then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
 private _rows = [
     ["hero", _logo, format ["<t size='1.35' font='RobotoCondensedBold'>ATHENA</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
         _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]]

@@ -154,7 +154,7 @@ if (_ok) then {
     if ((_low find "cooldown") >= 0) then {
         ["Attendez quelques secondes avant une nouvelle note.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
     } else {
-        ["Note posée en jeu. Elle arrivera au poste dès que la liaison le permettra.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+        ["Note posée en jeu, mais pas transmise au poste (liaison absente) : renvoyez-la plus tard.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
     };
 };
 

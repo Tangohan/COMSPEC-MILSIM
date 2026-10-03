@@ -51,8 +51,8 @@ switch (_page) do {
     };
     case "STATUS": {
         _body = format ["%1<br/>Athena : %2<br/>Extension : %3<br/>Mod : %4<br/>Dernière synchro : %5<br/>Attente réseau : %6 s<br/>Interface : native-rsc-v1<br/><br/>Le terminal et la carte restent disponibles hors ligne.", ["STATUT SYSTÈME"] call _h,
-            _state getOrDefault ["networkState", "OFFLINE"], missionNamespace getVariable ["COMSPEC_ExtensionVersion", "inconnue"], missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.1.0"],
-            if ((_data getOrDefault ["lastNetworkUpdate", -1]) < 0) then { "jamais" } else { format ["il y a %1 s", round (diag_tickTime - (_data get "lastNetworkUpdate"))] },
+            _state getOrDefault ["networkState", "OFFLINE"], ["DLL native (sans Overwatch)", "DLL Overwatch partagée (session unique)"] select ([] call comspec_atak_native_fnc_bridge), missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"],
+            if ([] call comspec_atak_native_fnc_bridge) then { ["en attente", "assurée par Overwatch"] select (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) } else { if ((_data getOrDefault ["lastNetworkUpdate", -1]) < 0) then { "jamais" } else { format ["il y a %1 s", round (diag_tickTime - (_data get "lastNetworkUpdate"))] } },
             missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0]];
     };
     default { _body = "Page indisponible."; };

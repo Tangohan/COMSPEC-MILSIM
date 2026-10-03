@@ -22,11 +22,11 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class bridge {};
+            class p2pSend {}; class p2pReceive {}; class bridge {}; class avatarPath {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {};
         };
     };
 };
@@ -43,7 +43,8 @@ class COMSPEC_ATAK_Apps {
     class Tasks    { name="Tâches";     page="TASK";     section="Opérations";    order=40;  dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
     class C2       { name="C2";         page="C2";       section="Opérations";    order=50;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_c2.paa"; };
     class Bft      { name="BFT";        page="BFT";      section="Opérations";    order=60;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bft.paa"; };
-    class Intel    { name="Rens.";      page="INTEL";    section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; };
+    class Intel    { name="FRS / FRM";  page="FRS";      section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; };
+    class Reco     { name="Reco";       page="RECO";     section="Renseignement"; order=115; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
     class Sse      { name="SSE";        page="SSE";      section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
     class Bda      { name="BDA";        page="BDA";      section="Renseignement"; order=130; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bda.paa"; };
     class Athena   { name="Athena";     page="ATHENA";   section="Système";       order=300; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_athena.paa"; };
