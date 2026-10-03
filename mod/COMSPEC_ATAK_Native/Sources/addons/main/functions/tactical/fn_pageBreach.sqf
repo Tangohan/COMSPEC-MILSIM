@@ -1,7 +1,9 @@
 /*
-    App Breacher : bâtiment visé (portes, verrous, niveaux, pièces), état de chaque porte et distance,
-    équipe en colonne (qui est près d'une porte), top synchronisé au groupe (compte à rebours à l'écran de chacun)
-    avec mise à feu des charges cochées dans l'app Explosifs au top.
+    App Breacher (réaliste : rien n'est connu à distance).
+      Porte au contact : seulement la porte devant vous (moins de 2,5 m) ; son verrou n'est connu qu'après avoir
+      essayé la poignée. Calcul de charge : matériau de la porte et méthode → masse d'explosif et distance de
+      sécurité de la colonne (estimation d'entraînement). Colonne : coéquipiers à moins de 15 m.
+      Top synchronisé : compte à rebours sur l'écran de chaque membre du groupe, mise à feu des charges cochées au top.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -9,59 +11,58 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Breach", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Breach", _s];
 private _grey = "#8a9a93";
-private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
-private _b = _s getOrDefault ["building", objNull];
-if (isNull _b || {!alive _b}) then { _b = [] call comspec_atak_native_fnc_breachBuilding; _s set ["building", _b]; };
+private _door = [] call comspec_atak_native_fnc_breachBuilding;
 private _rows = [];
-private _doors = [];
-if (isNull _b) then {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_breach.paa", format ["<t size='1.3' font='RobotoCondensedBold'>BREACHER</t><br/><t size='0.85' color='%1'>Regardez un bâtiment puis VISER</t>", _grey]];
+
+// Porte au contact.
+if ((count _door) isEqualTo 0) then {
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_breach.paa", format ["<t size='1.3' font='RobotoCondensedBold'>BREACHER</t><br/><t size='0.85' color='%1'>Aucune porte au contact : placez-vous contre la porte (moins de 2,5 m)</t>", _grey]];
 } else {
-    private _n = getNumber (configOf _b >> "numberOfDoors");
-    for "_i" from 1 to _n do {
-        private _mp = _b selectionPosition [format ["Door_%1_trigger", _i], "Memory"];
-        private _pos = if (_mp isEqualTo [0, 0, 0]) then { getPosATL _b } else { _b modelToWorld _mp };
-        private _open = (_b animationPhase format ["Door_%1_rot", _i]) > 0.5;
-        private _lock = (_b getVariable [format ["bis_disabled_Door_%1", _i], 0]) isEqualTo 1;
-        _doors pushBack [_i, _pos, _open, _lock];
+    _door params ["_b", "_i", "_p"];
+    private _open = (_b animationPhase format ["Door_%1_rot", _i]) > 0.5;
+    private _key = format ["%1|%2", _b call BIS_fnc_netId, _i];
+    private _tested = (_s getOrDefault ["tested", createHashMap]) getOrDefault [_key, ""];
+    private _lockTxt = switch (_tested) do {
+        case "locked": { "<t color='#e5483a'>VERROUILLÉE</t>" };
+        case "free": { "<t color='#5cc76b'>non verrouillée</t>" };
+        default { format ["<t color='%1'>inconnu : essayez la poignée</t>", _grey] };
     };
-    (boundingBoxReal _b) params ["_b0", "_b1"];
-    private _levels = (round (((_b1 select 2) - (_b0 select 2)) / 3.2)) max 1;
-    private _locked = { _x select 3 } count _doors;
-    private _openN = { _x select 2 } count _doors;
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_breach.paa", format ["<t size='1.15' font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>%3 m · %4 · %5 porte(s), %6 verrouillée(s), %7 ouverte(s) · %8 niveau(x) · %9 positions</t>",
-        [getText (configOf _b >> "displayName"), "Bâtiment"] select ((getText (configOf _b >> "displayName")) isEqualTo ""), _grey,
-        round (player distance2D _b), [player getDir _b] call _card, count _doors, _locked, _openN, _levels, count (_b buildingPos -1)]];
-};
-_rows pushBack ["buttons", [["VISER UN BÂTIMENT", { ['aim'] call comspec_atak_native_fnc_breachAction; }, true], ["CARTE", { ['map'] call comspec_atak_native_fnc_breachAction; }, false, !isNull _b]]];
-
-// Portes, de la plus proche à la plus lointaine.
-if ((count _doors) > 0) then {
-    private _sorted = _doors apply { [player distance (_x select 1), _x] };
-    _sorted sort true;
-    _rows pushBack ["section", "Portes", "La plus proche en premier"];
-    {
-        _x params ["_d", "_door"];
-        _door params ["_i", "_pos", "_open", "_lock"];
-        private _st = switch (true) do {
-            case _lock: { "<t color='#e5483a'>VERROUILLÉE · charge ou fusil à pompe</t>" };
-            case _open: { "<t color='#5cc76b'>ouverte</t>" };
-            default { "<t color='#f2ab33'>fermée</t>" };
-        };
-        _rows pushBack ["info", format ["Porte %1", _i], format ["%1  <t color='%2'>%3 m · %4 · niv. %5</t>", _st, _grey, round _d, [player getDir _pos] call _card, (round (((_pos select 2) - ((getPosATL _b) select 2)) / 3.2)) max 0]];
-    } forEach (_sorted select [0, 16]);
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_breach.paa", format ["<t size='1.2' font='RobotoCondensedBold'>PORTE AU CONTACT</t><br/><t size='0.9'>%1 · verrou : %2</t><br/><t size='0.8' color='%3'>à %4 m · %5</t>",
+        ["<t color='#f2ab33'>fermée</t>", "<t color='#5cc76b'>ouverte</t>"] select _open, _lockTxt, _grey, (player distance _p) toFixed 1,
+        [getText (configOf _b >> "displayName"), "bâtiment"] select ((getText (configOf _b >> "displayName")) isEqualTo "")]];
+    _rows pushBack ["buttons", [["ESSAYER LA POIGNÉE", { ['handle'] call comspec_atak_native_fnc_breachAction; }, true, !_open]]];
 };
 
-// Équipe : qui est en position (à moins de 6 m d'une porte).
-private _team = units group player;
-_rows pushBack ["section", "Équipe", format ["%1 opérateur(s)", count _team]];
-{
-    private _u = _x;
-    private _best = 1e9;
-    { _best = _best min (_u distance (_x select 1)); } forEach _doors;
-    _rows pushBack ["info", name _u, if ((count _doors) isEqualTo 0) then { format ["<t color='%1'>%2 m de moi</t>", _grey, round (player distance _u)] } else {
-        [format ["<t color='%1'>à %2 m de la porte la plus proche</t>", _grey, round _best], "<t color='#5cc76b'>EN POSITION</t>"] select (_best < 6) }];
-} forEach (_team select [0, 10]);
+// Calcul de charge.
+private _mat = _s getOrDefault ["mat", "WOOD"];
+private _meth = _s getOrDefault ["meth", "LOCK"];
+private _table = createHashMapFromArray [
+    ["WOOD", [["LOCK", 30], ["STRIP", 60], ["FRAME", 120], ["WATER", 0]]],
+    ["WOODR", [["LOCK", 80], ["STRIP", 150], ["FRAME", 250], ["WATER", 150]]],
+    ["METAL", [["LOCK", 150], ["STRIP", 300], ["FRAME", 450], ["WATER", 250]]],
+    ["ARMOR", [["LOCK", 0], ["STRIP", 0], ["FRAME", 800], ["WATER", 400]]]
+];
+private _g = 0;
+{ if ((_x select 0) isEqualTo _meth) then { _g = _x select 1; }; } forEach (_table getOrDefault [_mat, []]);
+_rows pushBack ["section", "Calcul de charge", "Estimation d'entraînement, à valider par le chef d'équipe"];
+_rows pushBack ["segment", "Porte", [["BOIS", "WOOD"], ["BOIS RENFORCÉ", "WOODR"], ["MÉTAL", "METAL"], ["BLINDÉE", "ARMOR"]] apply { [_x select 0, compile format ["['mat', '%1'] call comspec_atak_native_fnc_breachAction;", _x select 1], (_x select 1) isEqualTo _mat] }];
+_rows pushBack ["segment", "Méthode", [["SERRURE", "LOCK"], ["LINÉAIRE", "STRIP"], ["CADRE", "FRAME"], ["EAU", "WATER"]] apply { [_x select 0, compile format ["['meth', '%1'] call comspec_atak_native_fnc_breachAction;", _x select 1], (_x select 1) isEqualTo _meth] }];
+if (_g <= 0) then {
+    _rows pushBack ["text", "<t color='#e5483a'>Méthode inadaptée à cette porte : choisissez-en une autre.</t>"];
+} else {
+    // Distance de sécurité : k · (masse en kg)^(1/3), plus large à découvert.
+    private _cube = (_g / 1000) ^ (1 / 3);
+    private _cover = (9 * _cube) max 3;
+    private _openAir = (14 * _cube) max 5;
+    _rows pushBack ["text", format ["<t size='1.4' font='RobotoCondensedBold' color='#f2ab33'>%1 g</t><t color='%2'>  équivalent TNT</t><br/><t size='1.1' font='RobotoCondensedBold'>%3 m</t><t color='%2'> derrière un mur · </t><t size='1.1' font='RobotoCondensedBold'>%4 m</t><t color='%2'> à découvert</t>",
+        _g, _grey, ceil _cover, ceil _openAir]];
+    _rows pushBack ["text", format ["<t size='0.8' color='%1'>Colonne du côté des gonds, hors de l'axe de la porte. Protection auditive et lunettes. Vérifier la cible derrière la porte.</t>", _grey]];
+};
+
+// Colonne : coéquipiers proches.
+private _near = (units group player) select { alive _x && {(_x distance player) < 15} };
+_rows pushBack ["section", "Colonne", format ["%1 opérateur(s) à moins de 15 m", count _near]];
+{ _rows pushBack ["info", name _x, format ["<t color='%1'>%2</t>", _grey, [format ["%1 m", round (player distance _x)], "moi"] select (_x isEqualTo player)]]; } forEach (_near select [0, 8]);
 
 // Top synchronisé.
 private _cd = _s getOrDefault ["countdown", 5];

@@ -19,7 +19,7 @@ switch (_act) do {
         private _ref = trim (["sseCase", ""] call comspec_atak_native_fnc_formValue);
         if (_ref isEqualTo "") exitWith { ["WARNING", "Saisissez la référence du dossier", 3, 20] call comspec_atak_native_fnc_notify; };
         ["set", _ref, true] call comspec_overwatch_connect_fnc_sseActiveCase;
-        ["SUCCESS", format ["Dossier %1 posé pour l'élément", toUpper _ref], 3, 20] call comspec_atak_native_fnc_notify;
+        ["SUCCESS", format ["Dossier %1 utilisé par toute l'équipe", toUpper _ref], 3, 20] call comspec_atak_native_fnc_notify;
         call _render;
     };
     case "clear": { ["clear"] call comspec_overwatch_connect_fnc_sseActiveCase; call _render; };

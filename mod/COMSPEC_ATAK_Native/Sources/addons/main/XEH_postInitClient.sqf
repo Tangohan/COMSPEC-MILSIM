@@ -79,6 +79,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _orbat = missionNamespace getVariable ["comspec_profile_unit", ""];
     if !(_orbat isEqualType "") then { _orbat = str _orbat; };
     if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
+    // Téléphone gardé dans Athena : partagé pour que la GE des autres voie le même numéro, IMEI et MAC.
+    private _ph = missionNamespace getVariable ["comspec_profile_phone", []];
+    if ((player getVariable ["COMSPEC_ATAK_IdentDb", []]) isNotEqualTo _ph) then { player setVariable ["COMSPEC_ATAK_IdentDb", _ph, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
     // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
@@ -233,11 +236,14 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
     if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
-    private _sig = ([] call comspec_atak_native_fnc_briefingSignature) select [0, 4];
+    private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
+
+// Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
+[{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call CBA_fnc_addPerFrameHandler;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call CBA_fnc_addPerFrameHandler;
@@ -383,3 +389,11 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
     uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
 }] call CBA_fnc_addEventHandler;
+// Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
+// absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
+if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
+    comspec_overwatch_atak_athena_fnc_athena_onNotify = { params ["_o"]; ["notify", _o] call comspec_atak_native_fnc_athenaSignal; };
+    comspec_overwatch_atak_athena_fnc_athena_onVibrate = { params ["_o"]; ["vibrate", _o] call comspec_atak_native_fnc_athenaSignal; };
+};
+// Alertes santé (inconscient, arrêt cardiaque, KIA) diffusées par Overwatch.
+["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;

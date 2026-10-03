@@ -17,6 +17,7 @@ missionNamespace setVariable ["comspec_profile_grade", "", false];
 missionNamespace setVariable ["comspec_profile_role", "", false];
 missionNamespace setVariable ["comspec_profile_function", "", false];
 missionNamespace setVariable ["comspec_profile_avatar", "", false];
+missionNamespace setVariable ["comspec_profile_phone", [], false];
 missionNamespace setVariable ["comspec_profile_avatar_local", "", false];
 missionNamespace setVariable ["comspec_profile_avatar_loading", false, false];
 missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", -1, false];

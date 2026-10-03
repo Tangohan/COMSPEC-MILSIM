@@ -2487,6 +2487,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/web', [SseFieldNoteApiController::class, 'storeWeb']);
     $router->get('/api/sse/notes/{id}', [SseFieldNoteApiController::class, 'show']);
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
+    // Avis de recherche (téléphone en jeu).
+    $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
     // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
     $router->get('/api/sse/persons/by-unit', [SseApiController::class, 'personsByUnit']);
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);

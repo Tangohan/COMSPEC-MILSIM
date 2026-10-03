@@ -1,7 +1,7 @@
 /*
     Récupère la liste des diapositives de briefing actives depuis la plateforme (via l'extension
     native, fonction GetBriefingSlides) et la stocke dans missionNamespace ["COMSPEC_BriefingSlides"].
-    Chaque diapositive : [id, title, sortOrder, imageUrl].
+    Chaque diapositive : [id, title, sortOrder, imageUrl, notes] (notes : texte saisi sur Athena, DLL récente).
 
     Variable mission optionnelle : comspec_overwatch_tenant_id (si le serveur héberge plusieurs
     communautés ; laissez vide pour un déploiement mono-communauté).
@@ -27,7 +27,8 @@ private _slides = [];
 private _googleUrl = "";
 {
     if (_x != "") then {
-        private _cols = _x splitString "\t";
+        // Découpe en gardant les champs vides (titre ou notes vides ne décalent pas les colonnes).
+        private _cols = [_x, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
         // Ligne méta Athena : G\tgoogle_slides_url
         if ((count _cols) >= 2 && {(_cols select 0) isEqualTo "G"}) then {
             _googleUrl = _cols select 1;
@@ -37,7 +38,8 @@ private _googleUrl = "";
                     parseNumber (_cols select 0),
                     _cols select 1,
                     parseNumber (_cols select 2),
-                    _cols select 3
+                    _cols select 3,
+                    _cols param [4, ""]
                 ];
             };
         };

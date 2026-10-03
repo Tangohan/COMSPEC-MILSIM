@@ -2,7 +2,7 @@
     App FRS (mise en page façon ATAK : texte au centre, volets Entête et Pièces jointes, barre du bas).
     Params : [action, argument]
       "head" / "pj" : ouvre ou ferme le volet Entête / Pièces jointes     "fab" : menu rond des pièces jointes
-      "gallery" : photothèque à joindre     "folder" : fiches envoyées     "camera" : capture de la vue jointe
+      "gallery" : photothèque à joindre     "folder" : fiches d'Athena     "libScope" mine|all|session     "libOpen" id     "camera" : capture de la vue jointe
       "add" n : joint la photo n de la photothèque     "del" n : retire la pièce n
       "home" : lanceur     "full" : mini / plein écran     "send" : envoie la fiche et ses pièces
     Pièces (4 au plus) : uiNamespace COMSPEC_ATAK_FrsPieces = [[nature, chemin, nom, carroyage, auteur, légende]...]
@@ -30,7 +30,9 @@ switch (_act) do {
         call _render;
     };
     case "back": { _ui set ["view", ""]; _ui set ["pj", true]; call _render; };
-    case "folder": { _ui set ["view", "sent"]; _ui set ["pj", true]; _ui set ["head", false]; call _render; };
+    case "folder": { _ui set ["view", "sent"]; _ui set ["pj", true]; _ui set ["head", false]; _ui set ["libOpen", ""]; call _render; };
+    case "libScope": { _ui set ["libScope", _arg]; _ui set ["libOpen", ""]; call _render; };
+    case "libOpen": { _ui set ["libOpen", _arg]; call _render; };
     case "add": {
         if (call _full) exitWith {};
         private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];

@@ -3887,6 +3887,72 @@ public static partial class Extension
                 var simplified = SimplifyBriefingSlidesJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Fiches de renseignement (FRS / FRM) d'Athena, avec leurs photos, pour l'app FRS du téléphone.
+            // Args : [limit, steamUid (vide = toutes les fiches de la communauté)]
+            if (function == "ListSseFieldNotes")
+            {
+                var limit = args.Length > 0 && int.TryParse(args[0], out var lim) ? Math.Clamp(lim, 1, 40) : 12;
+                var steamUid = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var url = _baseUrl + "/api/sse/notes?with_images=1&limit=" + limit;
+                if (steamUid.Length > 0) url += "&steam_uid=" + Uri.EscapeDataString(steamUid);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifySseNotesJson(respBody);
+                // Coupe sur une fin de ligne : jamais de fiche tronquée au milieu.
+                if (Encoding.UTF8.GetByteCount(simplified) > MaxOutputBytes - 4)
+                {
+                    while (simplified.Length > 0 && Encoding.UTF8.GetByteCount(simplified) > MaxOutputBytes - 4)
+                    {
+                        var cut = simplified.LastIndexOf('\n', simplified.Length - 2);
+                        simplified = cut > 0 ? simplified.Substring(0, cut + 1) : "";
+                    }
+                }
+                return "OK|" + simplified;
+            }
+            // Avis de recherche d'Athena (personnes prioritaires avec photo, liste de surveillance, dossiers d'intérêt).
+            // Une ligne par avis : type\tid\tréf\tnom\talias\tniveau\tdétails\tphoto\tmaj
+            if (function == "GetWantedNotices")
+            {
+                var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("wanted", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k, int max = 160)
+                            {
+                                if (!el.TryGetProperty(k, out var v)) return "";
+                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                                return t.Length > max ? t.Substring(0, max) + "…" : t;
+                            }
+                            var line = string.Join("\t", C("kind"), C("id"), C("ref"), C("name"), C("alias"), C("level"), C("details", 220), C("photo", 400), C("updated_at"));
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
+                            lines.Append(line).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
+            }
             // Équipes de feu (mission ATAK). Format tabulaire SQF-friendly :
             // une ligne par équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
             // puis lignes membres préfixées "M\t" : M\tteamId\tcallsign\trole\tdisplayName
@@ -5476,6 +5542,57 @@ public static partial class Extension
         catch { return ""; }
     }
 
+    /// <summary>
+    /// Simplifie GET /api/sse/notes?with_images=1 pour SQF. Une ligne par fiche :
+    /// id\tref\ttype\ttitre\tgrille\turgence\tstatut\tdate heure\tauteur\ttexte\timage1|image2…
+    /// (sauts de ligne du texte remplacés par " ¶ ", texte limité à 400 caractères).
+    /// </summary>
+    private static string SimplifySseNotesJson(string json)
+    {
+        static string Cell(JsonElement el, string key)
+        {
+            if (!el.TryGetProperty(key, out var v)) return "";
+            var s = v.ValueKind switch
+            {
+                JsonValueKind.String => v.GetString() ?? "",
+                JsonValueKind.Number => v.GetRawText(),
+                _ => "",
+            };
+            return s.Replace("\t", " ").Replace("\r", "").Replace("\n", " ¶ ").Replace("|", "/").Trim();
+        }
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("notes", out var notes) || notes.ValueKind != JsonValueKind.Array) return "";
+            foreach (var el in notes.EnumerateArray())
+            {
+                var body = Cell(el, "body");
+                if (body.Length > 400) body = body.Substring(0, 400) + "…";
+                var images = new List<string>();
+                if (el.TryGetProperty("images", out var imgs) && imgs.ValueKind == JsonValueKind.Array)
+                    foreach (var im in imgs.EnumerateArray())
+                    {
+                        var u = (im.GetString() ?? "").Replace("\t", "").Replace("|", "").Trim();
+                        if (u.Length > 0) images.Add(u);
+                    }
+                sb.Append(Cell(el, "id")).Append('\t')
+                  .Append(Cell(el, "reference_code")).Append('\t')
+                  .Append(Cell(el, "note_kind_label")).Append('\t')
+                  .Append(Cell(el, "title")).Append('\t')
+                  .Append(Cell(el, "grid_reference")).Append('\t')
+                  .Append(Cell(el, "urgency_label")).Append('\t')
+                  .Append(Cell(el, "status_label")).Append('\t')
+                  .Append((Cell(el, "observed_date_label") + " " + Cell(el, "observed_time_label")).Trim()).Append('\t')
+                  .Append(Cell(el, "author_label")).Append('\t')
+                  .Append(body).Append('\t')
+                  .Append(string.Join("|", images)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyBriefingSlidesJson(string json)
     {
         try
@@ -5498,7 +5615,11 @@ public static partial class Extension
                 var imageUrl = el.TryGetProperty("image_url", out var u) ? (u.GetString() ?? "") : "";
                 if (imageUrl.Length == 0) continue;
                 title = title.Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
-                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\n');
+                // 5e colonne : notes de la diapositive (detail), sauts de ligne en " ¶ ", 300 caractères au plus (sortie DLL limitée).
+                var detail = el.TryGetProperty("detail", out var dt) && dt.ValueKind == JsonValueKind.String ? (dt.GetString() ?? "") : "";
+                detail = detail.Replace("\t", " ").Replace("\r", "").Replace("\n", " ¶ ").Replace("|", "/").Trim();
+                if (detail.Length > 300) detail = detail.Substring(0, 300) + "…";
+                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\t').Append(detail).Append('\n');
             }
             return sb.ToString();
         }

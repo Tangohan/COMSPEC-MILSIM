@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Game;
 
 use App\Repositories\AthenaAccountRepository;
+use App\Repositories\GamePhoneIdentityRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
@@ -620,6 +621,12 @@ final class GameAuthService
         $logo = CommunityMediaDetails::publicUrl((string) ($exp['logo_path'] ?? ''))
             ?: (string) ($mergedBrand['logo_url'] ?? $tenant['logo_url'] ?? '');
         $expiresIso = gmdate('c', strtotime((string) ($session['expires_at'] ?? 'now')) ?: time());
+        $phone = ['number' => '', 'imei' => '', 'mac' => '', 'format' => ''];
+        try {
+            $phone = (new GamePhoneIdentityRepository())->forUser($tenantId, $userId);
+        } catch (\Throwable) {
+            // Téléphone calculé par le mod si la base n'est pas prête.
+        }
 
         return [
             'session' => [
@@ -647,6 +654,10 @@ final class GameAuthService
                 'function' => $function,
                 'avatar' => $avatar,
                 'revision' => $rev,
+                'phone_number' => $phone['number'],
+                'phone_imei' => $phone['imei'],
+                'phone_mac' => $phone['mac'],
+                'phone_format' => $phone['format'],
             ],
             'branding' => [
                 'name' => $displayName,

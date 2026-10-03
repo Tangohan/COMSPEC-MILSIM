@@ -16,12 +16,13 @@ if (isNil "comspec_overwatch_connect_fnc_sseOpenTerminal") exitWith {
 
 // Dossier actif : contexte d'équipe, toutes les fiches suivantes y sont classées.
 private _case = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
-_rows pushBack ["section", "Dossier actif", "Référence donnée par le poste de commandement"];
+_rows pushBack ["section", "Dossier de l'opération", "Toutes les fiches SSE de votre équipe (sujets, photos, constats) y seront classées"];
 _rows pushBack ["info", "Dossier", ["<t color='#8a9a93'>aucun : fiches non classées</t>", format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>", _case]] select (_case isNotEqualTo "")];
-_rows pushBack ["edit", "sseCase", "Référence (ex. OBJ-ALPHA-01)", ["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo "")];
+_rows pushBack ["text", format ["<t size='0.8' color='%1'>Le poste de commandement vous donne une référence (ex. OBJ-ALPHA-01). Saisissez-la puis UTILISER CE DOSSIER : elle est transmise à toute votre équipe et chaque fiche y sera rattachée sur Athena.</t>", _grey]];
+_rows pushBack ["edit", "sseCase", "Référence du dossier", ["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo "")];
 _rows pushBack ["buttons", [
-    ["POSER POUR L'ÉLÉMENT", { ['case'] call comspec_atak_native_fnc_sseAction; }, true],
-    ["EFFACER", { ['clear'] call comspec_atak_native_fnc_sseAction; }, false, _case isNotEqualTo ""]
+    ["UTILISER CE DOSSIER", { ['case'] call comspec_atak_native_fnc_sseAction; }, true],
+    ["NE PLUS CLASSER", { ['clear'] call comspec_atak_native_fnc_sseAction; }, false, _case isNotEqualTo ""]
 ]];
 
 // Sujet visé (vivant ou non : l'exploitation d'un corps est un cas courant).

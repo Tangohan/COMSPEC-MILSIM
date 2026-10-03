@@ -198,18 +198,64 @@ if (_pjOn) then {
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
         case "sent": {
+            // Fiches d'Athena (les miennes ou celles de la communauté) avec leurs photos, et celles de cette session.
+            private _scope = _ui getOrDefault ["libScope", "mine"];
+            private _lib = uiNamespace getVariable ["COMSPEC_ATAK_FrsLib", createHashMap];
             private _sent = uiNamespace getVariable ["COMSPEC_ATAK_FrsSent", []];
-            _rows pushBack ["title", format ["Fiches envoyées (%1)", count _sent]];
-            if ((count _sent) isEqualTo 0) then { _rows pushBack ["text", "<t color='#9a9a9a'>Aucune fiche envoyée pendant cette session.</t>"]; };
-            {
-                _x params ["_time", "_kind", "_ref", "_status", "_excerpt", ["_np", 0]];
-                _rows pushBack ["text", format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
-            } forEach (+_sent call { reverse _this; _this });
+            _rows pushBack ["segment", "", [
+                ["MES FICHES", { ["libScope", "mine"] call comspec_atak_native_fnc_frsAction; }, _scope isEqualTo "mine"],
+                ["COMMUNAUTÉ", { ["libScope", "all"] call comspec_atak_native_fnc_frsAction; }, _scope isEqualTo "all"],
+                ["SESSION", { ["libScope", "session"] call comspec_atak_native_fnc_frsAction; }, _scope isEqualTo "session"]
+            ]];
+            if (_scope isEqualTo "session") then {
+                _rows pushBack ["title", format ["Envoyées pendant la session (%1)", count _sent]];
+                if ((count _sent) isEqualTo 0) then { _rows pushBack ["text", "<t color='#9a9a9a'>Aucune fiche envoyée pendant cette session.</t>"]; };
+                {
+                    _x params ["_time", "_kind", "_ref", "_status", "_excerpt", ["_np", 0]];
+                    _rows pushBack ["text", format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
+                } forEach (+_sent call { reverse _this; _this });
+            } else {
+                if !(_scope in _lib) then { [{ ["load", _this] call comspec_atak_native_fnc_frsLibrary; }, _scope] call CBA_fnc_execNextFrame; };
+                (_lib getOrDefault [_scope, [[], "", ""]]) params ["_notes", "_at", "_err"];
+                private _open = _ui getOrDefault ["libOpen", ""];
+                private _note = _notes param [(_notes findIf { (_x select 0) isEqualTo _open }), []];
+                if (_open isNotEqualTo "" && {(count _note) > 0}) then {
+                    // Fiche ouverte : en-tête, texte, photos.
+                    _note params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
+                    _rows append [
+                        ["title", format ["%1 · %2", _kind, _ref]],
+                        ["text", format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#9a9a9a'>%2 · %3 · %4%5%6</t>", [_title] call _esc, _when, _urg, _status, ["", format [" · %1", _grid]] select (_grid isNotEqualTo ""), ["", format [" · %1", [_author] call _esc]] select (_author isNotEqualTo "")]],
+                        ["text", format ["<t size='0.9'>%1</t>", [([_body] call _esc), " ¶ ", "<br/>"] call CBA_fnc_replace]]
+                    ];
+                    if ((count _urls) > 0) then {
+                        private _imgs = (uiNamespace getVariable ["COMSPEC_ATAK_FrsImg", createHashMap]) getOrDefault [_id, []];
+                        if ((count _imgs) isEqualTo 0) then {
+                            _rows pushBack ["text", format ["<t size='0.85' color='#9a9a9a'>Chargement de %1 photo(s)…</t>", count _urls]];
+                            [{ ["images", _this] call comspec_atak_native_fnc_frsLibrary; }, _id] call CBA_fnc_execNextFrame;
+                        } else {
+                            { if (_x isEqualTo "") then { _rows pushBack ["text", "<t size='0.8' color='#9a9a9a'>Photo au format PNG : visible sur Athena seulement.</t>"]; } else { _rows pushBack ["image", _x]; }; } forEach _imgs;
+                        };
+                    };
+                    _rows pushBack ["buttons", [["RETOUR À LA LISTE", { ["libOpen", ""] call comspec_atak_native_fnc_frsAction; }]]];
+                } else {
+                    _rows pushBack ["title", format ["Fiches Athena (%1)", count _notes]];
+                    if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _err]]; };
+                    if (_at isEqualTo "" && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#9a9a9a'>Récupération des fiches…</t>"]; };
+                    if (_at isNotEqualTo "" && {(count _notes) isEqualTo 0} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#9a9a9a'>Aucune fiche sur Athena.</t>"]; };
+                    {
+                        _x params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
+                        _rows pushBack ["person", _dir + (["ui_folder.paa", "ui_gallery.paa"] select ((count _urls) > 0)),
+                            format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.85'>%3</t><br/><t size='0.75' color='#9a9a9a'>%4 · %5%6</t>", _kind, _ref, [_title] call _esc, _when, _status, ["", format [" · %1 photo(s)", count _urls]] select ((count _urls) > 0)],
+                            [["OUVRIR", compile format ["['libOpen', %1] call comspec_atak_native_fnc_frsAction;", str _id], true, true]], [0.8, 0.8, 0.8, 1]];
+                    } forEach _notes;
+                    _rows pushBack ["buttons", [[format ["ACTUALISER%1", ["", format [" (%1)", _at]] select (_at isNotEqualTo "")], compile format ["['load', %1] call comspec_atak_native_fnc_frsLibrary;", str _scope]]]];
+                };
+            };
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
         default {
             _rows pushBack ["title", format ["Pièce(s) jointe(s) (%1/4)", count _pieces]];
-            if ((count _pieces) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='#9a9a9a'>Le bouton rond du bas ajoute une capture de la vue (appareil photo), une photo de la photothèque (galerie) ou ouvre vos fiches envoyées (dossier).</t>"]; };
+            if ((count _pieces) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='#9a9a9a'>Le bouton rond du bas ajoute une capture de la vue (appareil photo), une photo de la photothèque (galerie) ou ouvre les fiches d'Athena et leurs photos (dossier).</t>"]; };
             {
                 _x params ["_kind", "_path", "_name", "_grid"];
                 _rows pushBack ["person", _dir + (["ui_gallery.paa", "ui_photocam.paa"] select (_kind isEqualTo "capture")), format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#9a9a9a'>%2 · %3</t>", [_name] call _esc, ["Photo", "Capture"] select (_kind isEqualTo "capture"), _grid],
@@ -263,7 +309,7 @@ if (_fabOn) then {
     private _navy = [0.10, 0.06, 0.30, 1];
     private _r = _fh * 1.2;
     [_fcx, _fcy - _r, 0.95, _navy, "ui_gallery.paa", [1, 1, 1, 1], { ["gallery"] call comspec_atak_native_fnc_frsAction; }, "Joindre une photo de la photothèque"] call _round;
-    [_fcx - _r * 0.95 * _ratio, _fcy - _r * 0.45, 0.95, _navy, "ui_folder.paa", [1, 1, 1, 1], { ["folder"] call comspec_atak_native_fnc_frsAction; }, "Fiches envoyées"] call _round;
+    [_fcx - _r * 0.95 * _ratio, _fcy - _r * 0.45, 0.95, _navy, "ui_folder.paa", [1, 1, 1, 1], { ["folder"] call comspec_atak_native_fnc_frsAction; }, "Fiches Athena"] call _round;
     [_fcx + _r * 0.95 * _ratio, _fcy - _r * 0.45, 0.95, _navy, "ui_photocam.paa", [1, 1, 1, 1], { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Capture de la vue jointe à la fiche"] call _round;
     [_fcx, _fcy, 1, [0.78, 0.78, 0.78, 1], "ui_minus.paa", [0.25, 0.25, 0.25, 1], { ["fab"] call comspec_atak_native_fnc_frsAction; }, "Fermer"] call _round;
 } else {

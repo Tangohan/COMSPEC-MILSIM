@@ -3944,6 +3944,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$gamePhoneIdentityMigrate = require $root . '/bootstrap/game_phone_identity_migration.php';
+try {
+    echo "Migration game_phone_identity (téléphone en jeu : numéro, IMEI, MAC)…\n";
+    $gamePhoneIdentityMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] game_phone_identity : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseCaseOriginMigrate = require $root . '/bootstrap/atak_sse_case_origin_migration.php';
 try {
     echo "Migration atak_sse_case_origin (SSE — origine des dossiers)…\n";
