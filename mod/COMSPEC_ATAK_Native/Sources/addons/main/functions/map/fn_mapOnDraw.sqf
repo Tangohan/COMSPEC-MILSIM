@@ -40,6 +40,10 @@ if ((count _route) > 0) then {
     _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26, 26, 0, _route getOrDefault ["label", ""], 2, 0.028, "RobotoCondensedBold", "right"];
 };
 
+// Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
+[_map] call comspec_atak_native_fnc_reliefDraw;
+[_map] call comspec_atak_native_fnc_meshDraw;
+
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
 private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
 private _wpts = _wp getOrDefault ["pts", []];

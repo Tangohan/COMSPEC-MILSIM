@@ -67,7 +67,7 @@ switch (_act) do {
         if (_gw >= 0) then {
             _hops set [_gw, 0];
             private _queue = [_gw];
-            while { (count _queue) > 0 } do {
+            while { _queue isNotEqualTo [] } do {
                 private _c = _queue deleteAt 0;
                 {
                     if ((_hops select _x) < 0) then { _hops set [_x, (_hops select _c) + 1]; _queue pushBack _x; };
