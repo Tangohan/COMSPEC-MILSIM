@@ -10,7 +10,7 @@
       ["gap"]
       ["person", image, texte structuré, [[libellé, code, principal]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
-      ["segment", libellé, [[texte, code, actif]...], aide]   ["info", libellé, valeur]
+      ["segment", libellé, [[texte, code, actif]...], aide]   ["info", libellé, valeur]   ["image", chemin]
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
 */
 params ["_rows", "_rect", ["_inContent", true], ["_bgColor", [0.035, 0.045, 0.04, 0.96]]];
@@ -208,6 +208,15 @@ private _mk = {
             _t ctrlSetPosition [_pad * 2 + _iw, _y, _w - _iw - _pad, _h];
             _t ctrlCommit 0;
             _y = _y + _h + _pad;
+        };
+        case "image": {
+            // Photo en pleine largeur (format 16/9 à l'écran, proportions conservées).
+            _row params ["", "_pic"];
+            private _ih = _w * 0.5625 * pixelH / pixelW;
+            private _bgI = ["COMSPEC_RscText", [_pad, _y, _w - _pad, _ih]] call _mk;
+            _bgI ctrlSetBackgroundColor [0, 0, 0, 0.6];
+            ["COMSPEC_RscSlide", [_pad, _y, _w - _pad, _ih], _pic] call _mk;
+            _y = _y + _ih + _pad;
         };
         case "password": {
             // Mot de passe masqué : on garde la vraie valeur à part et on n'affiche que des points.
