@@ -32,6 +32,9 @@ if (!(_grade isEqualTo "")) then { missionNamespace setVariable ["comspec_profil
 if (!(_role isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_role", _role, false]; };
 if (!(_function isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_function", _function, false]; };
 if (!(_avatar isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_avatar", _avatar, false]; };
+// Téléphone en jeu gardé dans Athena : [numéro, IMEI, MAC, "FR" | "US"].
+private _phone = ["phone_number", "phone_imei", "phone_mac", "phone_format"] apply { _auth getOrDefault [_x, ""] };
+if ((_phone select 0) isNotEqualTo "") then { missionNamespace setVariable ["comspec_profile_phone", _phone, false]; };
 if (!([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign)) then { _cs = ""; };
 if (!(_cs isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_callsign", _cs, false]; };
 

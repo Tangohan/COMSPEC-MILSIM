@@ -25,7 +25,7 @@ _rows append [
 // Identité du téléphone (roleplay, traçable en GÉOLOC par les autres camps selon la mission).
 ([player] call comspec_atak_native_fnc_phoneIdent) params ["_num", "_imei", "_mac"];
 _rows append [
-    ["section", "Mon téléphone", "Numéro, IMEI et adresse MAC"],
+    ["section", "Mon téléphone", (if (((missionNamespace getVariable ["comspec_profile_phone", []]) param [0, ""]) isEqualTo "") then { "Hors ligne : numéro provisoire, gardé dans Athena à la connexion" } else { format ["Attribué par Athena, modèle %1", (missionNamespace getVariable ["comspec_profile_phone", []]) param [3, "FR"]] })],
     ["info", "Numéro", _num], ["info", "IMEI", _imei], ["info", "Adresse MAC", _mac],
     ["buttons", [["COPIER LE NUMÉRO", compile format ["copyToClipboard %1; ['INFO', 'Numéro copié', 2, 10] call comspec_atak_native_fnc_notify;", str _num]]]]
 ];

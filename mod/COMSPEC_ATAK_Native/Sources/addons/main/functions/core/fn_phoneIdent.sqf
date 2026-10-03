@@ -1,8 +1,9 @@
 /*
     Identité du téléphone d'une unité (roleplay) : [numéro, IMEI, adresse MAC].
-    Calculée de façon déterministe sur chaque machine (aucune donnée réseau) à partir de l'UID du joueur, ou du netId
-    pour une IA. Le numéro suit la carte SIM et ne change jamais ; IMEI et MAC changent avec l'appareil
-    (« Changer de téléphone » incrémente COMSPEC_ATAK_PhoneGen).
+    Joueur connecté à Athena : identité gardée en base (une par opérateur, numéro au format FR ou US du tenant),
+    diffusée aux autres machines par COMSPEC_ATAK_IdentDb. Sinon calculée de façon déterministe à partir de l'UID
+    du joueur, ou du netId pour une IA. Le numéro suit la carte SIM et ne change jamais ; IMEI et MAC changent avec
+    l'appareil (« Changer de téléphone » incrémente COMSPEC_ATAK_PhoneGen).
     Surcharge possible par le créateur de mission : this setVariable ["COMSPEC_ATAK_Ident", ["06 12 34 56 78", "", ""], true]
     (un champ vide garde la valeur calculée).
     Params : [unité]   Avec "norm" en 2e paramètre : renvoie les trois valeurs normalisées (chiffres et lettres seuls, majuscules).
@@ -29,8 +30,15 @@ private _digits = {
     _out
 };
 private _gen = _u getVariable ["COMSPEC_ATAK_PhoneGen", 0];
-private _n = [_key + "|sim", 8, 10] call _digits;
-private _num = format ["0%1 %2%3 %4%5 %6%7 %8%9", [6, 7] select ((_n select 0) >= 7), _n select 1, _n select 2, _n select 3, _n select 4, _n select 5, _n select 6, _n select 7, (_n select 0) mod 10];
+private _db = if (_u isEqualTo player) then { missionNamespace getVariable ["comspec_profile_phone", []] } else { _u getVariable ["COMSPEC_ATAK_IdentDb", []] };
+if !(_db isEqualType []) then { _db = []; };
+private _n = [_key + "|sim", 10, 10] call _digits;
+private _num = if ((_db param [3, ""]) isEqualTo "US") then {
+    // Modèle US : (NXX) NXX-XXXX.
+    format ["(%1%2%3) %4%5%6-%7%8%9%10", 2 + ((_n select 0) mod 8), _n select 1, _n select 2, 2 + ((_n select 3) mod 8), _n select 4, _n select 5, _n select 6, _n select 7, _n select 8, _n select 9]
+} else {
+    format ["0%1 %2%3 %4%5 %6%7 %8%9", [6, 7] select ((_n select 0) >= 7), _n select 1, _n select 2, _n select 3, _n select 4, _n select 5, _n select 6, _n select 7, (_n select 0) mod 10]
+};
 // IMEI : TAC 35 + 12 chiffres + clé de Luhn.
 private _i = [3, 5] + ([format ["%1|imei|%2", _key, _gen], 12, 10] call _digits);
 private _sum = 0;
@@ -48,6 +56,12 @@ private _m = [format ["%1|mac|%2", _key, _gen], 12, 16] call _digits;
 _m set [1, 2 * floor ((_m select 1) / 2)];
 private _mac = ([0, 2, 4, 6, 8, 10] apply { format ["%1%2", _hex select [_m select _x, 1], _hex select [_m select (_x + 1), 1]] }) joinString ":";
 private _ret = [_num, _imei, _mac];
+// Valeurs d'Athena : le numéro toujours, IMEI et MAC tant que l'appareil d'origine n'a pas été changé.
+if ((_db param [0, ""]) isNotEqualTo "") then { _ret set [0, _db select 0]; };
+if (_gen isEqualTo 0) then {
+    if ((_db param [1, ""]) isNotEqualTo "") then { _ret set [1, _db select 1]; };
+    if ((_db param [2, ""]) isNotEqualTo "") then { _ret set [2, _db select 2]; };
+};
 private _o = _u getVariable ["COMSPEC_ATAK_Ident", []];
 if (_o isEqualType [] && {(count _o) > 0}) then {
     { if (_x isEqualType "" && {_x isNotEqualTo ""}) then { _ret set [_forEachIndex, _x]; }; } forEach (_o select [0, 3]);
