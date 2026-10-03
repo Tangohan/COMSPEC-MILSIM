@@ -3,7 +3,7 @@ params ["_key"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 switch (_key) do {
     case "DISTANCE": { _s set ["mapDistance", !(_s getOrDefault ["mapDistance", true])]; };
-    case "COMPASS": { profileNamespace setVariable ["COMSPEC_ATAK_Compass", !(profileNamespace getVariable ["COMSPEC_ATAK_Compass", true])]; };
+    case "COMPASS": { if ((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 1) then { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; } else { profileNamespace setVariable ["COMSPEC_ATAK_Compass", !(profileNamespace getVariable ["COMSPEC_ATAK_Compass", true])]; }; };
     case "GRID": {
         private _d = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
         profileNamespace setVariable ["COMSPEC_ATAK_GridDigits", [8, 10, 6] select (([6, 8, 10] find _d) max 0)];

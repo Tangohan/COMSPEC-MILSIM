@@ -4,7 +4,7 @@ if (isNull _map) exitWith {};
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
-private _labels = profileNamespace getVariable ["COMSPEC_ATAK_Labels",true];
+private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
 
 {
@@ -167,7 +167,7 @@ if ((count _ft) >= 2) then {
 // Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
 private _used = 0;
-if (profileNamespace getVariable ["COMSPEC_ATAK_MarkerTags", true]) then {
+if ((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) then {
     private _disp = ctrlParent _map;
     private _mp = ctrlPosition _map;
     private _gridCache = uiNamespace getVariable ["COMSPEC_ATAK_TagGridCache", createHashMap];

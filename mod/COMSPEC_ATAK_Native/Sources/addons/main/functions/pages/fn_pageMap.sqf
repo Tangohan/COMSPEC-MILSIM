@@ -30,7 +30,7 @@ if (_dataBar) then {
 };
 
 // Boussole
-if (profileNamespace getVariable ["COMSPEC_ATAK_Compass", true]) then {
+if ((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) then {
     private _ch = (_mh * 0.24) min (_font * 3.6);
     private _cw = _ch / _ratio;
     private _ring = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_ring.paa"] call _mk;
@@ -101,7 +101,7 @@ if (_interactive) then {
             private _y0 = _my0 + _forEachIndex * _rh;
             private _active = switch (_key) do {
                 case "DISTANCE": { _s getOrDefault ["mapDistance", true] };
-                case "COMPASS": { profileNamespace getVariable ["COMSPEC_ATAK_Compass", true] };
+                case "COMPASS": { (["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0 };
                 case "GRID": { (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) > 6 };
                 default { _mode isEqualTo _key };
             };
@@ -126,7 +126,7 @@ if (_interactive) then {
         ["zoomin", "map_zoomin", "Zoom avant", { [0.5] call comspec_atak_native_fnc_mapZoom; }],
         ["zoomout", "map_zoomout", "Zoom arrière", { [2] call comspec_atak_native_fnc_mapZoom; }],
         ["MARKER", "map_marker", "Poser un marqueur (clic sur la carte)", { ["MARKER"] call comspec_atak_native_fnc_mapToolMenu; }],
-        ["labels", "map_labels", "Afficher / masquer les indicatifs", { profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }]
+        ["labels", "map_labels", "Afficher / masquer les indicatifs", { if ((["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 1) exitWith { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; }; profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }]
     ];
     private _ty0 = _by + _pad + _ih * 0.5;
     ["COMSPEC_RscMapPanel", [_tx - _pad / 2, _ty0 - _pad / 2, _iw + _pad, _ih * (count _tools) + _pad]] call _mk;

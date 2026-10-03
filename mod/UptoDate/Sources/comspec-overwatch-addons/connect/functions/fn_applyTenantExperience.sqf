@@ -43,6 +43,12 @@ private _applyTri = {
 ["sse_require_item", "comspec_sse_require_item"] call _applyTri;
 ["playtime", "comspec_overwatch_playtime_enabled"] call _applyTri;
 ["athena_feed", "comspec_overwatch_athena_feed_snapshot"] call _applyTri;
+["rp_enabled", "comspec_overwatch_roleplay_enabled"] call _applyTri;
+["rp_network_failures", "comspec_overwatch_roleplay_network_failures"] call _applyTri;
+["rp_sensor_failures", "comspec_overwatch_roleplay_sensor_failures"] call _applyTri;
+["rp_visual_effects", "comspec_overwatch_roleplay_visual_effects"] call _applyTri;
+["rp_link_degrade", "comspec_overwatch_link_degrade_sim"] call _applyTri;
+["rp_data_bar", "comspec_overwatch_show_link_strip"] call _applyTri;
 
 private _dmg = _map getOrDefault ["atak_realism", "player"];
 if (_dmg isNotEqualTo "player") then {

@@ -5496,7 +5496,10 @@ public static partial class Extension
                 "screen_notifications", "vehicle_detail", "require_equipment", "show_opfor",
                 "show_independent", "show_civilian", "sync_map_markers", "atak_realism",
                 "radio_proximity", "ace_menus", "order_compose", "sse_require_item",
-                "playtime", "athena_feed"
+                "playtime", "athena_feed",
+                "rp_enabled", "rp_network_failures", "rp_sensor_failures", "rp_visual_effects",
+                "rp_link_degrade", "rp_data_bar", "native_map_labels", "native_marker_tags",
+                "native_compass", "native_vibrate"
             })
             {
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)

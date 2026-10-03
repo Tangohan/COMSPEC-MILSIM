@@ -30,6 +30,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Réglages de réalisme de la communauté (Athena) : appliqués à tous dès qu'ils changent.
+[{
+    private _raw = missionNamespace getVariable ["COMSPEC_TenantExperienceRaw", ""];
+    if (_raw isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_TenantApplied", "-"])) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_TenantApplied", _raw];
+    [] call comspec_atak_native_fnc_tenantApply;
+    ["INFO", "TENANT", "Réglages communauté appliqués"] call comspec_atak_native_fnc_log;
+}, 5] call CBA_fnc_addPerFrameHandler;
+
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
 ["comspec_atak_native_fireMission", {
     params ["_summary", "_tgt", "_from"];

@@ -65,6 +65,6 @@ private _mode = _s getOrDefault ["mapMode", "SELECT"];
     ["follow", _s getOrDefault ["mapFollow", false]],
     ["MARKER", _mode isEqualTo "MARKER"],
     ["menu", _s getOrDefault ["mapToolsOpen", false]],
-    ["labels", profileNamespace getVariable ["COMSPEC_ATAK_Labels", true]]
+    ["labels", (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0]
 ];
 true
