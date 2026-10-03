@@ -3613,6 +3613,18 @@ public static partial class Extension
                     return PollOkClipped(safe);
                 });
             }
+            // États des demandes logistiques décidés au poste web (texte compact : id,état,auteur;...).
+            if (function == "GetResupplyStatus")
+            {
+                var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
+                var url = _baseUrl + "/api/atak/logistics/resupply/status?format=compact&mapId=" + Uri.EscapeDataString(mapId);
+                return ServePollGet("GetResupplyStatus:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
+                    return PollOkClipped(safe);
+                });
+            }
             if (function == "GetMapShapes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
@@ -4645,6 +4657,19 @@ public static partial class Extension
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/cas", json, token);
+            }
+            // Demandes logistiques du téléphone ATAK natif : création et changements d'état (validée, en route, livrée...).
+            if (function == "RequestResupply" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/logistics/resupply", json, token);
+            }
+            if (function == "UpdateResupplyStatus" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/logistics/resupply/status", json, token);
             }
             if (function == "SubmitSsePerson" && args.Length >= 1)
             {

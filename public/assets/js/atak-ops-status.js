@@ -80,6 +80,56 @@ window.ATAKOpsStatus = (function () {
     });
   }
 
+  // Demandes envoyées depuis le téléphone ATAK natif : état suivi, validation possible depuis le poste.
+  var RESUPPLY_LABELS = {
+    DEMANDEE: 'Demandée', VALIDEE: 'Validée', REFUSEE: 'Refusée',
+    EN_ROUTE: 'En route', LIVREE: 'Livrée', ANNULEE: 'Annulée'
+  };
+  var RESUPPLY_NEEDS = { AMMO: 'Munitions', MED: 'Santé', FOOD: 'Vivres', BATT: 'Batteries', VEH: 'Véhicule', OTHER: 'Autre' };
+
+  function setResupplyStatus(gameId, status) {
+    if (!apiBase() || !gameId) return;
+    fetch(apiBase() + '/api/atak/logistics/resupply/status', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mapId: mapId(), game_id: gameId, status: status, by: 'Poste', source: 'web' })
+    }).then(function () { refresh(); }).catch(function () {});
+  }
+
+  function resupplyRequestsHtml(requests) {
+    if (!requests.length) return '';
+    return '<div class="atak-logistics-requests"><p class="atak-iff-label">Demandes de ravitaillement</p><ul>'
+      + requests.map(function (rq) {
+        var st = rq.status || '';
+        var stHtml = st
+          ? ' <span class="atak-logistics-chip' + (st === 'DEMANDEE' ? ' atak-logistics-chip--low' : (st === 'REFUSEE' || st === 'ANNULEE' ? ' atak-logistics-chip--crit' : '')) + '">'
+            + esc(RESUPPLY_LABELS[st] || st) + (rq.status_by ? ' · ' + esc(rq.status_by) : '') + '</span>'
+          : '';
+        var actions = (rq.game_id && st === 'DEMANDEE')
+          ? ' <button type="button" class="atak-ops-btn atak-ops-btn--sm" data-resupply-id="' + esc(rq.game_id) + '" data-resupply-status="VALIDEE">Valider</button>'
+            + ' <button type="button" class="atak-ops-btn atak-ops-btn--sm" data-resupply-id="' + esc(rq.game_id) + '" data-resupply-status="REFUSEE">Refuser</button>'
+          : '';
+        return '<li><strong>' + esc(rq.call_sign) + '</strong> · ' + esc(RESUPPLY_NEEDS[rq.need] || rq.need)
+          + (rq.qty ? ' x' + esc(rq.qty) : '')
+          + (rq.priority ? ' · ' + esc(rq.priority) : '')
+          + (rq.grid_ref ? ' · ' + esc(rq.grid_ref) : '')
+          + (rq.at ? ' <span class="atak-drawer-muted">' + esc(String(rq.at).replace('T', ' ').slice(0, 16)) + '</span>' : '')
+          + stHtml + actions
+          + '</li>';
+      }).join('')
+      + '</ul></div>';
+  }
+
+  function bindResupplyActions(el) {
+    el.querySelectorAll('[data-resupply-id]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        setResupplyStatus(btn.getAttribute('data-resupply-id'), btn.getAttribute('data-resupply-status'));
+      });
+    });
+  }
+
   function renderLogistics(data) {
     var el = document.getElementById('atak-logistics-body');
     if (!el) return;
@@ -92,8 +142,11 @@ window.ATAKOpsStatus = (function () {
     var transportHint = (data && data.transport_hint) || '';
 
     if (!rows.length) {
-      el.innerHTML = '<div class="atak-empty-state atak-empty-state--compact"><p class="atak-empty-state-title">Aucune donnée logistique</p>'
+      el.innerHTML = resupplyRequestsHtml(requests)
+        + '<div class="atak-empty-state atak-empty-state--compact"><p class="atak-empty-state-title">Aucune donnée logistique</p>'
         + '<p class="atak-empty-state-text">Le carburant et les munitions remontés depuis le jeu apparaîtront ici.</p></div>';
+      bindResupplyActions(el);
+      if (requests.length) return;
       if (section) {
         section.classList.add('atak-collapse--empty');
         var sum = section.querySelector('.atak-collapse-sum');
@@ -138,17 +191,7 @@ window.ATAKOpsStatus = (function () {
       head += '<p class="atak-panel-hint">Seuils : critique ≤ 15 %, bas ≤ 35 %. Demandez un ravitaillement depuis la ligne concernée.</p>';
     }
 
-    var reqHtml = '';
-    if (requests.length) {
-      reqHtml = '<div class="atak-logistics-requests"><p class="atak-iff-label">Demandes de ravitaillement</p><ul>'
-        + requests.map(function (rq) {
-          return '<li><strong>' + esc(rq.call_sign) + '</strong> · ' + esc(rq.need)
-            + (rq.grid_ref ? ' · ' + esc(rq.grid_ref) : '')
-            + (rq.at ? ' <span class="atak-drawer-muted">' + esc(String(rq.at).replace('T', ' ').slice(0, 16)) + '</span>' : '')
-            + '</li>';
-        }).join('')
-        + '</ul></div>';
-    }
+    var reqHtml = resupplyRequestsHtml(requests);
 
     el.innerHTML = head + reqHtml
       + '<table class="atak-ops-table"><thead><tr><th>Indicatif</th><th>Équipe</th><th>Carburant</th><th>Munitions</th><th>Signal</th><th>Grille</th><th></th></tr></thead><tbody>'
@@ -174,6 +217,7 @@ window.ATAKOpsStatus = (function () {
 
     var gotoMed = document.getElementById('atak-logistics-goto-medevac');
     if (gotoMed) gotoMed.addEventListener('click', openMedevacTab);
+    bindResupplyActions(el);
     el.querySelectorAll('.atak-logistics-resupply').forEach(function (btn) {
       btn.addEventListener('click', function () {
         requestResupply(btn.getAttribute('data-cs'), btn.getAttribute('data-need'), btn.getAttribute('data-grid'));

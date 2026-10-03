@@ -32,6 +32,7 @@ private _push = {
     [{
         params ["_side", "_id", "_st", "_by", "_pos"];
         ["comspec_atak_native_logi", ["STATUS", _side, [_id, _st, _by, _pos]]] call CBA_fnc_globalEvent;
+        ["status", [_id, _st, _by]] call comspec_atak_native_fnc_logiWeb;
     }, [str side group player, _id, _st, call _me, _pos], format ["Logistique %1", _id], 1] call comspec_atak_native_fnc_netSend;
 };
 private _get = { params ["_id"]; _reqs getOrDefault [_id, createHashMap] };
@@ -139,21 +140,8 @@ switch (_act) do {
         [{
             params ["_pairs", "_side"];
             ["comspec_atak_native_logi", ["NEW", _side, _pairs]] call CBA_fnc_globalEvent;
-            // Liaison Overwatch : la demande part aussi au poste (rapport tactique, visible sur le portail Athena).
-            if ([] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_submitTacticalReport"}) then {
-                private _r = createHashMapFromArray _pairs;
-                private _prio = createHashMapFromArray [["URGENT", "IMMEDIATE"], ["PRIORITY", "PRIORITY"], ["ROUTINE", "ROUTINE"]] getOrDefault [_r get "prio", "ROUTINE"];
-                private _mode = createHashMapFromArray [["PICKUP", "ramassage"], ["AIRDROP", "largage parachute"], ["VEHICLE", "livraison véhicule"]] getOrDefault [_r get "mode", "ramassage"];
-                private _sd = createHashMapFromArray [
-                    ["kind", "resupply_request"], ["request_id", _r get "id"], ["category", _r get "cat"], ["quantity", _r get "qty"],
-                    ["delivery", _r get "mode"], ["grid_ref", _r get "grid"], ["items", ((_r get "items") apply { format ["%1 x%2", _x select 0, _x select 1] }) joinString ", "]
-                ];
-                [_prio, format ["LOGREQ %1 · %2 x%3", _r get "id", _r get "label", _r get "qty"],
-                    format ["Demande de ravitaillement %1 : %2 x%3, %4 en %5. %6", _r get "cs", _r get "label", _r get "qty", _mode, _r get "grid", _r get "note"], _sd, _r get "pos"] spawn {
-                    params ["_prio", "_sum", "_det", "_sd", "_pos"];
-                    ["OTHER", _prio, _sum, _det, _sd, _pos] call comspec_overwatch_connect_fnc_submitTacticalReport;
-                };
-            };
+            // Liaison Overwatch : la demande part aussi au poste web, avec son suivi d'état.
+            ["new", _pairs] call comspec_atak_native_fnc_logiWeb;
             ["SUCCESS", "Demande logistique transmise au camp", 4, 40] call comspec_atak_native_fnc_notify;
         }, [_pairs, str side group player], "Demande logistique", 2] call comspec_atak_native_fnc_netSend;
         call _rerender;
