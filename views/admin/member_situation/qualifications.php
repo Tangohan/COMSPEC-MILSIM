@@ -38,6 +38,23 @@ foreach ($awards as $row) {
 
 $iconDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 19h16"/></svg>';
 $iconRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>';
+$summary = [
+    'kicker' => 'Dossier individuel · Qualifications',
+    'title' => 'Qualifications & brevets',
+    'lead' => 'Vos titres enregistrés sur le dossier, avec les brevets lorsque la qualification est obtenue. Ouvrez aussi Mon coffre pour toutes les pièces qui vous concernent.',
+    'links' => [
+        ['label' => 'Ouvrir mon coffre', 'href' => url('back-office/ma-situation/coffre'), 'primary' => true],
+        ['label' => 'Voir dans ma fiche', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=formation'],
+        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
+        ['label' => 'Mes décorations', 'href' => url('back-office/ma-situation/decorations')],
+        ['label' => 'Mon avancement', 'href' => url('back-office/ma-situation/avancement')],
+    ],
+    'stats' => [
+        ['label' => 'Qualifications', 'value' => $count, 'note' => 'Enregistrées sur votre dossier.'],
+        ['label' => 'Valides', 'value' => $validCount, 'note' => 'Obtenues et en cours de validité.'],
+        ['label' => 'Brevets', 'value' => $withCert, 'note' => 'Documents téléchargeables.'],
+    ],
+];
 ?>
 <div class="bo-member-situation bo-member-situation--dossier">
     <aside class="bo-qual-beta" role="status">
@@ -51,29 +68,7 @@ $iconRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
         </div>
     </aside>
 
-    <section class="bo-dossier-hero bo-qual-intro">
-        <div>
-            <p class="bo-dossier-hero__kicker">Dossier individuel</p>
-            <h2 class="bo-dossier-hero__title">Qualifications &amp; brevets</h2>
-            <p class="bo-dossier-hero__lead">
-                Vos titres enregistrés sur le dossier, avec les brevets lorsque la qualification est obtenue.
-                Ouvrez aussi Mon coffre pour toutes les pièces qui vous concernent.
-            </p>
-        </div>
-        <div class="bo-dossier-hero__stats" aria-label="Nombre de qualifications">
-            <div class="bo-qual-count"><strong><?= (int) $count ?></strong><span>Qualification<?= $count > 1 ? 's' : '' ?></span></div>
-            <div><strong><?= (int) $validCount ?></strong><span>Valide<?= $validCount > 1 ? 's' : '' ?></span></div>
-            <div><strong><?= (int) $withCert ?></strong><span>Brevet<?= $withCert > 1 ? 's' : '' ?></span></div>
-        </div>
-    </section>
-
-    <nav class="bo-member-situation__actions bo-dossier-hero__actions bo-qual-links" aria-label="Autres pages du dossier">
-        <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/coffre')) ?>">Ouvrir mon coffre</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=formation') ?>">Voir dans ma fiche</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/carriere')) ?>">Dossier de carrière</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/decorations')) ?>">Mes décorations</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/avancement')) ?>">Mon avancement</a>
-    </nav>
+    <?php require __DIR__ . '/_summary.php'; ?>
 
     <?php if ($awards === []): ?>
         <section class="bo-doc-empty">
