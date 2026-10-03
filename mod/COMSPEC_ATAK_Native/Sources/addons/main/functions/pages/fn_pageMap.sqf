@@ -234,7 +234,7 @@ if (_interactive) then {
         case "MEASURE": { "MESURE : clic A puis B" };
         case "HOUSES": { "BÂTIMENTS : clic pour numéroter autour" };
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
-        case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ pour la retirer" };
+        case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ = marqueur" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
         case "ROUTE": { "GPS : clic sur la destination" };
         case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };

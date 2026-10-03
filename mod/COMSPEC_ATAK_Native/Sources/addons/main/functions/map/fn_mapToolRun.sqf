@@ -25,13 +25,21 @@ switch (_tool) do {
         _s set ["mapHeights", _list select [((count _list) - 12) max 0]];
     };
     case "FLAT": {
-        // Clic sur une LZ déjà trouvée : on la retire.
+        // Clic sur une LZ déjà trouvée : elle devient un vrai marqueur (partagé, envoyé au web, supprimable).
         private _cur = +(_s getOrDefault ["mapFlat", []]);
         private _hit = _cur findIf { (_x distance2D _pos) < 30 };
         if (_hit >= 0) exitWith {
-            _cur deleteAt _hit;
+            private _lz = _cur deleteAt _hit;
             _s set ["mapFlat", _cur];
-            ["TACTICAL", "Zone plate retirée", 2, 10] call comspec_atak_native_fnc_notify;
+            private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
+            missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
+            private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, currentChannel], _lz, currentChannel, player];
+            if (_m isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
+            _m setMarkerTypeLocal (["mil_pickup", "mil_flag"] select !(isClass (configFile >> "CfgMarkers" >> "mil_pickup")));
+            _m setMarkerColorLocal "ColorGreen";
+            _m setMarkerText format ["LZ %1", _index];
+            [_m] call comspec_atak_native_fnc_markerWeb;
+            ["SUCCESS", format ["LZ %1 posée en marqueur · %2", _index, [_lz, 8] call comspec_atak_native_fnc_gridRef], 3, 20] call comspec_atak_native_fnc_notify;
         };
         private _found = [];
         for "_r" from 0 to 200 step 25 do {

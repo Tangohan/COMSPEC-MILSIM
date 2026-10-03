@@ -92,6 +92,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if ((player getVariable ["COMSPEC_ATAK_Pub", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Pub", _pub, true]; };
 }, 5] call CBA_fnc_addPerFrameHandler;
 
+// Tous les marqueurs de la carte vers le web (relais unique par camp).
+[{ [] call comspec_atak_native_fnc_markerWebSweep; }, 15] call CBA_fnc_addPerFrameHandler;
+
 // Heatmap : toutes les 20 s, chaque ennemi repéré par mon camp chauffe sa case de 200 m ; tout refroidit de 4 %.
 [{
     if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
