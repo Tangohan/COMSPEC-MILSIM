@@ -68,6 +68,7 @@ ICONS = {
     "nav_slight_right": '<path d="M10 21v-7l6-8M17 11V5h-6"/>',
     "nav_uturn": '<path d="M8 21V9a4 4 0 0 1 8 0v8M12 14l4 4 4-4"/>',
     "nav_arrive": '<path d="M6 21V4M6 4h11l-2.5 4L17 12H6"/>',
+    "app_music": '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     "app_gps": '<circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/>',
     "app_credits": '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
     "app_weather": '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/><path d="M9 21l1-2M13 21l1-2"/>',

@@ -220,6 +220,11 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
 
+// App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
+[{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }];
+[{ !isNull (findDisplay 46) }, { (findDisplay 46) displayAddEventHandler ["Unload", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }]; }] call CBA_fnc_waitUntilAndExecute;
+
 // Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
 [{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
 

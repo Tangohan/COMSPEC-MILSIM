@@ -24,6 +24,23 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call CBA_fnc_addSetting;
 
+private _mus = ["COMSPEC ATAK natif", "Musique"];
+["comspec_atak_native_music_enabled", "CHECKBOX",
+    ["App Musique", "Lecture de fichiers locaux, de pistes du serveur (musiques d'Arma, des mods et de la mission) et de liens audio."],
+    _mus, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_music_speaker", "CHECKBOX",
+    ["Haut-parleur", "Les joueurs proches entendent la musique d'un téléphone en haut-parleur."],
+    _mus, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_music_range", "SLIDER",
+    ["Portée du haut-parleur (m)", "Au-delà, on n'entend plus rien ; le son baisse en s'éloignant."],
+    _mus, [5, 100, 30, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_music_urls", "CHECKBOX",
+    ["Lecture de liens (URL)", "Autorise la lecture de fichiers audio et webradios par adresse web."],
+    _mus, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_music_radio", "EDITBOX",
+    ["Radio de la mission", "Liens proposés à tous dans l'onglet SERVEUR, sous la forme Titre|https://...;Titre 2|https://..."],
+    _mus, "", 1] call CBA_fnc_addSetting;
+
 private _sim = ["COMSPEC ATAK natif", "Simulation"];
 ["comspec_atak_native_damage_sim", "CHECKBOX",
     ["Dégâts du téléphone", "Balles au torse ou aux bras, explosions proches et eau fêlent l'écran, éteignent ou détruisent le téléphone. Réparation : trousse à outils ou nouvel appareil (actions ACE). Si le réalisme ATAK d'Overwatch est actif, c'est lui qui décide."],

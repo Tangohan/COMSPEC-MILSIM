@@ -2576,6 +2576,14 @@ public static partial class Extension
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
 
+#if COMSPEC_ATAK_NATIVE
+        // App Musique du téléphone ATAK natif (MusicPlayer.cs) : lecture locale, aucune session Athena requise.
+        if (function != null && function.StartsWith("Music", StringComparison.Ordinal))
+        {
+            return MusicCommand(function, args);
+        }
+#endif
+
         if (function == "MemStats")
         {
             return "OK|" + FormatMemSnapshot();

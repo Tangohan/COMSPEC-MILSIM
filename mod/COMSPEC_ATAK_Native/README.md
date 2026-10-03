@@ -19,6 +19,7 @@ Identités livrées :
 - **Carte** : boussole, trait jaune joueur → curseur, panneau curseur (grille 6/8/10 chiffres, altitude, distance, azimut), carte « moi ». Outils carte : trait, dessin libre, distance, mesure A-B, bâtiments numérotés, hauteur, boussole, précision de grille, terrain plat, ligne de vue.
 - **Marqueurs** : clic avec l'outil marqueur pour un marqueur rapide, double clic pour l'éditeur complet (titre, description partagée, type, couleur, taille, orientation, opacité, canal), clic pour sélectionner, double clic pour modifier, `Suppr` sur le marqueur pointé pour l'effacer. Traits et dessins en polylignes. Fonctionne en mini comme en plein écran.
 - **Messagerie** : canaux Général / Commandement / Groupe / Alertes TOC et messages directs, en bulles. Le téléphone vibre à l'arrivée d'un message.
+- **Musique** : fichiers du dossier `Documents\Arma 3\COMSPEC_Music`, pistes du serveur (musiques d'Arma, des mods et de la mission, radio de la mission en réglage CBA) et liens audio (MP3, WAV, WMA, M4A, AAC, webradio). Volume, file d'attente, répétition, aléatoire, et **haut-parleur** : les joueurs proches entendent la même musique au même moment, plus fort en s'approchant. Fichiers et liens passent par la DLL (lecteur Windows), les pistes serveur par le moteur d'Arma.
 - **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
 
 ## Ressources graphiques

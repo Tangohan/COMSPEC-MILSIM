@@ -25,7 +25,10 @@ class CfgFunctions {
             class p2pSend {}; class p2pReceive {}; class netSend {}; class bridge {}; class avatarPath {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
-            class vizEcg {}; class vizSpectrum {};
+            class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
+        };
+        class music { file="z\comspec_atak_native\addons\main\functions\music";
+            class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class pageMusic {};
         };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
             class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
@@ -67,6 +70,7 @@ class COMSPEC_ATAK_Apps {
     class Waypoints { name="Points de passage"; page="WAYPOINTS"; section="Opérations"; order=15; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Osint    { name="OSINT";      page="OSINT";    section="Renseignement"; order=125; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class Food     { name="Ration Express"; page="FOOD"; section="Civil";         order=400; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_food.paa"; };
+    class Music    { name="Musique";    page="MUSIC";    section="Civil";         order=395; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_music.paa"; };
     class Dating   { name="Rencard";    page="DATING";   section="Civil";         order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };
     class Debug    { name="Debug";      page="DEBUG";    section="Système";       order=315; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_debug.paa"; };
     class Weather   { name="Météo";      page="WEATHER";   section="Opérations";    order=55;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
