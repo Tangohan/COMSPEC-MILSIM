@@ -1,12 +1,6 @@
-#define ATAK_X safeZoneX
-#define ATAK_Y safeZoneY
-#define ATAK_W safeZoneW
-#define ATAK_H safeZoneH
-#define ATAK_TOP_H (safeZoneH * 0.055)
-#define ATAK_BOTTOM_H (safeZoneH * 0.045)
-#define ATAK_RAIL_W (safeZoneW * 0.105)
-#define ATAK_INSPECT_W (safeZoneW * 0.225)
-#define ATAK_BODY_Y (safeZoneY + ATAK_TOP_H)
-#define ATAK_BODY_H (safeZoneH - ATAK_TOP_H - ATAK_BOTTOM_H)
-#define ATAK_CENTER_X (safeZoneX + ATAK_RAIL_W)
-#define ATAK_CENTER_W (safeZoneW - ATAK_RAIL_W - ATAK_INSPECT_W)
+// Positions de départ (mode mini). Le layout réel est recalculé à l'ouverture
+// par comspec_atak_native_fnc_layoutApply selon le mode MINI / FULL.
+#define ATAK_DEV_W "safeZoneW * 0.27"
+#define ATAK_DEV_H "safeZoneH * 0.74"
+#define ATAK_DEV_X "safeZoneX + safeZoneW * 0.715"
+#define ATAK_DEV_Y "safeZoneY + safeZoneH * 0.22"

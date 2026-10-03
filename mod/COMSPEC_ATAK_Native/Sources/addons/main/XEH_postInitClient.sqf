@@ -8,6 +8,8 @@ private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession",
 missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
 diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
 ["COMSPEC ATAK", "OpenTerminal", "Ouvrir COMSPEC ATAK", { [] call comspec_atak_native_fnc_open }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "ToggleMode", "Basculer mini / plein écran", { [] call comspec_atak_native_fnc_modeToggle }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;
