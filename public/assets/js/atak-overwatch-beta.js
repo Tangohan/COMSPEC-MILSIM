@@ -5490,12 +5490,52 @@
       escapeHtml(tag) + '</span></div><div class="ow-card-body">' + body + '</div></div>';
   }
 
+  function photosSignature(list) {
+    return (list || []).map(function (row) {
+      return [row.id, row.is_blurred, row.sse_case_id || row.sse_transferred_at || '', row.caption || ''].join(':');
+    }).join('|');
+  }
+
+  var photosSig = '';
+
   function loadPhotos() {
     return api('/api/recon/images?limit=80&feeds=exclude').then(function (payload) {
       photos = asList(payload, 'images');
       updateStatsBanner();
       if (window.OverwatchTools && window.OverwatchTools.drawPhotos) window.OverwatchTools.drawPhotos();
+      photosSig = photosSignature(photos);
     }).catch(function () { photos = []; });
+  }
+
+  // Rafraîchit le tiroir Photos sans recharger la page : seulement si la liste a changé
+  // et que l'opérateur n'est pas en train de déposer un fichier.
+  function livePhotosTick() {
+    var before = photosSig;
+    var known = {};
+    photos.forEach(function (row) { known[String(row.id)] = true; });
+    return loadPhotos().then(function () {
+      if (photosSig === before) return;
+      var fresh = photos.filter(function (row) { return !known[String(row.id)]; }).length;
+      var drawer = document.getElementById('ow-drawer');
+      var drawerTitle = document.getElementById('ow-drawer-title');
+      var body = document.getElementById('ow-drawer-body');
+      var intelOpen = drawer && !drawer.hidden && drawerTitle && drawerTitle.textContent === 'Photos';
+      if (intelOpen && body) {
+        var fileInput = body.querySelector('#ow-photo-form input[type="file"]');
+        if (fileInput && fileInput.files && fileInput.files.length) return;
+        var q = document.getElementById('ow-intel-q');
+        var query = q ? q.value : '';
+        var hadFocus = q && document.activeElement === q;
+        var scroll = body.scrollTop;
+        body.innerHTML = intelHtml();
+        bindDrawerForms();
+        var q2 = document.getElementById('ow-intel-q');
+        if (q2 && query) { q2.value = query; q2.dispatchEvent(new Event('input')); }
+        if (q2 && hadFocus) q2.focus();
+        body.scrollTop = scroll;
+      }
+      if (fresh > 0 && before !== '') toast(fresh > 1 ? fresh + ' nouvelles photos reçues.' : 'Nouvelle photo reçue.');
+    });
   }
 
   function loadNine() {
@@ -7329,16 +7369,23 @@
 
   var lastPhotosPoll = Date.now();
 
+  // Photos du terrain en temps réel, indépendant du rythme de rafraîchissement général
+  // (qui passe à 30 s quand le flux temps réel est actif) : 5 s tiroir Photos ouvert, 15 s sinon.
+  window.setInterval(function () {
+    if (document.hidden) return;
+    var photosDrawerTitle = document.getElementById('ow-drawer-title');
+    var photosDrawer = document.getElementById('ow-drawer');
+    var photosOpen = photosDrawer && !photosDrawer.hidden && photosDrawerTitle && photosDrawerTitle.textContent === 'Photos';
+    if (Date.now() - lastPhotosPoll < (photosOpen ? 4500 : 15000)) return;
+    lastPhotosPoll = Date.now();
+    livePhotosTick();
+  }, 1500);
+
   function startPoll(ms) {
     if (pollTimer) window.clearInterval(pollTimer);
     pollTimer = window.setInterval(function () {
       refreshUnits();
       loadChatInbox();
-      // Photos du terrain : relues toutes les 20 s pour voir arriver celles prises en jeu.
-      if (Date.now() - lastPhotosPoll > 20000) {
-        lastPhotosPoll = Date.now();
-        loadPhotos();
-      }
       var squadsPanel = document.querySelector('[data-chat-panel="squads"]');
       var drawerTitle = document.getElementById('ow-drawer-title');
       var drawer = document.getElementById('ow-drawer');
