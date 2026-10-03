@@ -1,6 +1,6 @@
 /*
     Géométrie du terminal.
-    - Porté (HUD) ou en main mini : téléphone vertical ou horizontal dans le coin bas droit.
+    - Porté (HUD) ou en main mini : téléphone vertical ou horizontal, dans le coin choisi (bas droit par défaut).
     - En main plein écran : téléphone horizontal agrandi au centre.
     La coque est la texture carrée du S7 (tools/src) ; l'écran occupe la zone transparente mesurée.
 */
@@ -28,8 +28,19 @@ private _dh = if (_land) then {
     ([safeZoneH * 0.94, safeZoneH * 0.62] select _mini) / (_vy1 - _vy0)
 };
 private _dw = _dh / _ratio;
-private _dx = if (_mini) then { safeZoneX + safeZoneW * 0.99 - _dw * _vx1 } else { safeZoneX + (safeZoneW - _dw * (_vx0 + _vx1)) / 2 };
-private _dy = if (_mini) then { safeZoneY + safeZoneH * 0.98 - _dh * _vy1 } else { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
+// Emplacement du mini choisi dans les réglages : coin ou milieu de bord (T/M/B + L/R), bas droit par défaut.
+private _anchor = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
+if !(_anchor in ["TL", "TR", "ML", "MR", "BL", "BR"]) then { _anchor = "BR"; };
+private _dx = if (_mini) then {
+    if ((_anchor select [1, 1]) isEqualTo "L") then { safeZoneX + safeZoneW * 0.01 - _dw * _vx0 } else { safeZoneX + safeZoneW * 0.99 - _dw * _vx1 }
+} else { safeZoneX + (safeZoneW - _dw * (_vx0 + _vx1)) / 2 };
+private _dy = if (_mini) then {
+    switch (_anchor select [0, 1]) do {
+        case "T": { safeZoneY + safeZoneH * 0.02 - _dh * _vy0 };
+        case "M": { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
+        default { safeZoneY + safeZoneH * 0.98 - _dh * _vy1 };
+    }
+} else { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
 // Décalage choisi par le joueur (glisser la coque), par mode et orientation.
 private _offKey = format ["COMSPEC_ATAK_Offset_%1_%2", _mode, _orient];
 (profileNamespace getVariable [_offKey, [0, 0]]) params [["_ox", 0], ["_oy", 0]];
