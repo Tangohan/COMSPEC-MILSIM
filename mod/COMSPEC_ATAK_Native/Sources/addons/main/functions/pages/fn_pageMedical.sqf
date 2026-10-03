@@ -64,18 +64,44 @@ private _seg = {
     ["segment", _label, _opts apply { [_x select 0, compile format ["['set', '%1', '%2'] call comspec_atak_native_fnc_medicalAction;", _key, _x select 1], (_x select 1) isEqualTo _cur] }]
 };
 _rows append [
-    ["section", "Demande MEDEVAC", "9-line envoyé au poste, LZ marquée sur la carte"],
+    ["section", "Demande MEDEVAC", "9-line envoyé au camp (et au poste web avec Overwatch), LZ marquée sur la carte"],
+    ["buttons", [["REMPLIR AUTO (blessés à 50 m)", { ["auto"] call comspec_atak_native_fnc_medicalAction; }]]],
     ["Priorité", "prio", "URGENT", [["URGENT", "URGENT"], ["PRIORITAIRE", "PRIORITY"], ["ROUTINE", "ROUTINE"]]] call _seg,
     ["Blessés urgents (T1)", "mT1", "1", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
     ["Blessés prioritaires (T2)", "mT2", "0", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
     ["Blessés différés (T3)", "mT3", "0", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
+    ["info", "Couchés / assis", format ["%1 sur brancard · %2 valides", ["litter", 0] call _mv, ["amb", 0] call _mv]],
+    ["Équipement spécial", "equip", "NONE", [["AUCUN", "NONE"], ["TREUIL", "HOIST"], ["EXTRACTION", "EXTRACTION"], ["RESPIRATEUR", "VENTILATOR"]]] call _seg,
     ["Sécurité de la LZ", "sec", "NO_ENEMY", [["PAS D'ENNEMI", "NO_ENEMY"], ["POSSIBLE", "POSSIBLE_ENEMY"], ["ENNEMI", "ENEMY_IN_AREA"], ["ESCORTE", "ARMED_ESCORT"]]] call _seg,
     ["Marquage", "mark", "SMOKE", [["FUMÉE", "SMOKE"], ["PANNEAU", "PANEL"], ["PYRO", "PYRO"], ["AUCUN", "NONE"]]] call _seg,
     ["Couleur", "col", "GREEN", [["VERT", "GREEN"], ["ROUGE", "RED"], ["JAUNE", "YELLOW"], ["VIOLET", "PURPLE"]]] call _seg,
     ["edit", "mLz", "Grille de la LZ", ["mLz", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef] call _mv],
     ["edit", "mRem", "Remarques", ["mRem", ""] call _mv],
-    ["buttons", [["DEMANDER LE MEDEVAC", { ["medevac"] call comspec_atak_native_fnc_medicalAction; }, true], ["LZ À MA POSITION", { ["lzHere"] call comspec_atak_native_fnc_medicalAction; }]]]
+    ["buttons", [["LZ À MA POSITION", { ["lzHere"] call comspec_atak_native_fnc_medicalAction; }], ["LZ SUR LA CARTE", { ["pick"] call comspec_atak_native_fnc_medicalAction; }]]],
+    ["buttons", [["DEMANDER LE MEDEVAC", { ["medevac"] call comspec_atak_native_fnc_medicalAction; }, true]]]
 ];
+// Suivi des demandes du camp : étapes ● ○, les receveurs font avancer, le demandeur peut annuler.
+private _steps = ["DEMANDÉE", "ACCEPTÉE", "EN VOL", "SUR ZONE", "TERMINÉE"];
+private _reqs = values (missionNamespace getVariable ["COMSPEC_ATAK_MedevacReqs", createHashMap]);
+_reqs = _reqs apply { [[0, 1] select ((_x get "status") >= 4), _x get "id", _x] };
+_reqs sort true;
+_rows pushBack ["section", "Suivi des MEDEVAC", ["Aucune demande en cours", format ["%1 demande(s)", count _reqs]] select ((count _reqs) > 0)];
+{
+    private _r = _x select 2;
+    private _st = _r get "status";
+    private _mine = (_r get "uid") isEqualTo getPlayerUID player;
+    private _dots = (_steps apply { ["○", "●"] select ((_steps find _x) <= _st) }) joinString " ";
+    private _stTxt = if (_r getOrDefault ["cancelled", false]) then { "<t color='#8a9a93'>ANNULÉE</t>" } else { format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select (_st >= 4), _steps select _st] };
+    _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1 · %2</t>  <t size='0.8' color='#8a9a93'>%3 · LZ %4</t><br/><t size='0.8'>T1 %5 · T2 %6 · T3 %7 · brancards %8 · %9 · %10</t><br/>%11  %12%13",
+        _r get "prio", _r get "from", _r get "time", _r get "grid", _r get "t1", _r get "t2", _r get "t3", _r get "litter", _r get "sec", _r get "mark",
+        _dots, _stTxt, ["", format ["  <t size='0.75' color='#8a9a93'>par %1</t>", _r get "by"]] select ((_r get "by") isNotEqualTo "")]];
+    private _b = [["LZ", compile format ["['locateReq', '%1'] call comspec_atak_native_fnc_medicalAction;", _r get "id"]]];
+    if (_st < 4) then {
+        if (!_mine) then { _b pushBack [_steps select (_st + 1), compile format ["['status', '%1', '%2'] call comspec_atak_native_fnc_medicalAction;", _r get "id", _st + 1], true]; };
+        if (_mine) then { _b pushBack ["ANNULER", compile format ["['status', '%1', '-1'] call comspec_atak_native_fnc_medicalAction;", _r get "id"]]; };
+    };
+    _rows pushBack ["buttons", _b];
+} forEach _reqs;
 
 };
 

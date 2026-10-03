@@ -33,6 +33,9 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
+// MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
+["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;

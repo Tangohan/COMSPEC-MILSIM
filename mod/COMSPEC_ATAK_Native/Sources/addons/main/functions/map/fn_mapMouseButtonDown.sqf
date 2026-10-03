@@ -4,6 +4,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
 if (_button isEqualTo 0) exitWith {
     // App Feux : la cible est pointée sur la carte.
+    private _mp = _s getOrDefault ["medevacPick", ""];
+    if (_mp isNotEqualTo "") exitWith { _s set ["medevacPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_medicalAction; true };
     private _lp = _s getOrDefault ["logiPick", ""];
     if (_lp isNotEqualTo "") exitWith { _s set ["logiPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_logisticsAction; true };
     private _pick = _s getOrDefault ["firePick", ""];
