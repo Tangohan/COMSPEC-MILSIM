@@ -147,6 +147,22 @@ if ((count _stroke) > 0) then {
     for "_i" from 0 to ((count _stroke) - 2) do { _map drawLine [_stroke select _i,_stroke select (_i + 1),_rgba]; };
 };
 
+// App Feux : pièce, cible et ligne de tir.
+private _fires = uiNamespace getVariable ["COMSPEC_ATAK_Fires", createHashMap];
+private _ft = _fires getOrDefault ["target", []];
+if ((count _ft) >= 2) then {
+    private _red = [0.90, 0.25, 0.22, 1];
+    private _rr = (_scale * 700) max 10;
+    _map drawEllipse [_ft, _rr, _rr, 0, _red, ""];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22, 22, 0, "TGT", 2, 0.032, "RobotoCondensedBold", "right"];
+    private _gid = _fires getOrDefault ["gun", "MAN"];
+    private _g = if (_gid isEqualTo "MAN") then { objNull } else { objectFromNetId _gid };
+    if (!isNull _g) then {
+        _map drawLine [getPosATL _g, _ft, [0.90, 0.25, 0.22, 0.7]];
+        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22, 22, 0, "GUN", 2, 0.03, "RobotoCondensedBold", "right"];
+    };
+};
+
 // Cartouches des marqueurs (style plan de mission) : cercle de couleur + boîte noire « nom / E / N ».
 // Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];

@@ -4626,6 +4626,14 @@ public static partial class Extension
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/reports", json, token);
             }
+            // 9-line CAS saisi en jeu (app Feux du téléphone ATAK natif) : même table que le formulaire JTAC web,
+            // visible du pilote (GetCASForCallsign) et du portail.
+            if (function == "SubmitNineLine" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/cas", json, token);
+            }
             if (function == "SubmitSsePerson" && args.Length >= 1)
             {
                 var json = args[0] ?? "{}";

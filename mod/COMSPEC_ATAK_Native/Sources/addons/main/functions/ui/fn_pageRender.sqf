@@ -11,6 +11,7 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
 };
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
+[] call comspec_atak_native_fnc_firesSave;
 [] call comspec_atak_native_fnc_pageClear;
 [] call comspec_atak_native_fnc_layoutApply;
 
@@ -33,6 +34,7 @@ switch (_page) do {
     case "PHOTOS": { [] call comspec_atak_native_fnc_pagePhotos; };
     case "FRS": { [] call comspec_atak_native_fnc_pageFrs; };
     case "RECO": { [] call comspec_atak_native_fnc_pageReco; };
+    case "FIRES": { [] call comspec_atak_native_fnc_pageFires; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
 true

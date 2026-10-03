@@ -29,3 +29,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         missionNamespace setVariable ["comspec_overwatch_require_item", !_allowed];
     };
 }, 2] call CBA_fnc_addPerFrameHandler;
+
+// Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
+["comspec_atak_native_fireMission", {
+    params ["_summary", "_tgt", "_from"];
+    private _f = [] call comspec_atak_native_fnc_firesState;
+    _f set ["target", _tgt];
+    private _log = _f getOrDefault ["log", []];
+    _log pushBack format ["<t color='#f2ab33'>%1</t> REÇU de %2 · %3", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _from, _summary];
+    _f set ["log", _log];
+    ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+}] call CBA_fnc_addEventHandler;
