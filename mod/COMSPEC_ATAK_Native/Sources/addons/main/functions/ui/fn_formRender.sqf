@@ -1,6 +1,6 @@
 /*
     Formulaire défilant (pages Athena, Réseau, Réglages, éditeur de marqueur).
-    Params : [lignes, rectangle, dans la zone de contenu (true) ou absolu sur le display (false)]
+    Params : [lignes, rectangle, dans la zone de contenu (true) ou absolu sur le display (false), couleur du fond]
     Lignes :
       ["title", texte]                       ["text", texte structuré]
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
@@ -13,7 +13,7 @@
       ["segment", libellé, [[texte, code, actif]...], aide]   ["info", libellé, valeur]
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
 */
-params ["_rows", "_rect", ["_inContent", true]];
+params ["_rows", "_rect", ["_inContent", true], ["_bgColor", [0.035, 0.045, 0.04, 0.96]]];
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -22,7 +22,7 @@ private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
 _rect params ["_rx", "_ry", "_rw", "_rh"];
 private _bg = ["COMSPEC_RscPanel", _rect, "", _inContent] call comspec_atak_native_fnc_pageCtrl;
-_bg ctrlSetBackgroundColor [0.035, 0.045, 0.04, 0.96];
+_bg ctrlSetBackgroundColor _bgColor;
 private _grp = ["COMSPEC_RscControlsGroup", _rect, "", _inContent] call comspec_atak_native_fnc_pageCtrl;
 private _w = _rw - 0.014 - 2 * _pad;
 private _rowH = _font * 1.55;

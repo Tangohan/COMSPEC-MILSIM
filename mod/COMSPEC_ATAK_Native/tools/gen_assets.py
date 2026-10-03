@@ -98,6 +98,13 @@ ICONS = {
     "app_settings": '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
     "ui_back": '<path d="M15 5l-7 7 7 7"/>',
     "ui_apps": '<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/>',
+    "ui_gallery": '<rect x="6" y="3" width="15" height="15" rx="2"/><path d="M3 7v12a2 2 0 0 0 2 2h12"/><path d="M8.5 15l3.5-4.5 2.5 3 1.8-2 2.7 3.5z" fill="#fff"/>',
+    "ui_folder": '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" fill="#fff"/>',
+    "ui_photocam": '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h3l1.5-2.5h6L16.5 7h3A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" fill="#fff"/><circle cx="12" cy="13.5" r="3.6" stroke="#000" stroke-width="2"/>',
+    "ui_minus": '<path d="M6 12h12" stroke-width="2.4"/>',
+    "ui_clip": '<path d="M15.5 6.5v9a3.5 3.5 0 0 1-7 0V5.5a2.5 2.5 0 0 1 5 0v9.5a1.5 1.5 0 0 1-3 0V7" stroke-width="2"/>',
+    "ui_home": '<path d="M3 11.5L12 4l9 7.5V20h-6v-5.5H9V20H3z" fill="#fff"/>',
+    "ui_check": '<path d="M6.5 12.5l3.8 3.8 7.2-8" stroke-width="2.8"/>',
     "ui_expand": '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     "ui_collapse": '<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
     "ui_rotate": '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M2 14a8 8 0 0 0 5 6M22 10a8 8 0 0 0-5-6"/>',
@@ -377,6 +384,34 @@ def soar_logo(path, size=512):
     return img
 
 
+def frs_bar(w=1024, h=128):
+    """Barre du bas de l'app FRS : bandeau violet avec un creux arrondi au centre (le bouton rond s'y loge)."""
+    k = 4
+    W, H = w * k, h * k
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    top = int(H * 0.30)
+    dip = int(H * 0.62)
+    import math
+    pts = []
+    for i in range(0, W + 1, 4):
+        x = i / W
+        y = top
+        if 0.34 < x < 0.66:
+            t = (x - 0.34) / 0.32
+            y = top + (dip - top) * (0.5 - 0.5 * math.cos(2 * math.pi * t))
+        pts.append((i, y))
+    pts += [(W, H), (0, H)]
+    ImageDraw.Draw(img).polygon(pts, fill=(255, 255, 255, 255))
+    return img.resize((w, h), Image.LANCZOS)
+
+
+def disc(size=128):
+    k = 4
+    img = Image.new("RGBA", (size * k, size * k), (0, 0, 0, 0))
+    ImageDraw.Draw(img).ellipse((2 * k, 2 * k, (size - 2) * k, (size - 2) * k), fill=(255, 255, 255, 255))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -397,6 +432,8 @@ def main():
             convert(port.rotate(-90, expand=True), f"crack_{lvl}_land", tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "cracks":
             return
+        convert(frs_bar(), "frs_bar", tmp)
+        convert(disc(), "ui_disc", tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)
