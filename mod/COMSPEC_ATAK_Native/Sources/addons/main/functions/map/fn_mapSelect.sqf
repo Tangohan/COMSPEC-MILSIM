@@ -26,7 +26,7 @@ switch (_tool) do {
     case "ROUTE": {
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         ["INFO", "GPS : calcul de l'itinéraire…", 2, 20] call comspec_atak_native_fnc_notify;
-        [[_world select 0, _world select 1, 0], format ["%1", [[_world select 0, _world select 1, 0], 6] call comspec_atak_native_fnc_gridRef]] spawn comspec_atak_native_fnc_routeCompute;
+        [[_world select 0, _world select 1, 0], format ["Point %1", [[_world select 0, _world select 1, 0], 6] call comspec_atak_native_fnc_gridRef]] spawn comspec_atak_native_fnc_routeCompute;
     };
     default {
         private _best = createHashMap;
@@ -40,6 +40,11 @@ switch (_tool) do {
             };
         } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["units",createHashMap]);
         _s set ["selectedEntity",_best];
+        // Unité cliquée : on ouvre le panneau SITUATION (en plein écran) pour afficher sa fiche.
+        if ((count _best) > 0 && {!(missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false])} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
+            [] call comspec_atak_native_fnc_inspToggle;
+            [{ [] call comspec_atak_native_fnc_inspectorUpdate; }, [], 0.1] call CBA_fnc_waitAndExecute;
+        };
         [] call comspec_atak_native_fnc_inspectorUpdate;
     };
 };

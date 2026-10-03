@@ -68,6 +68,8 @@ ICONS = {
     "nav_slight_right": '<path d="M10 21v-7l6-8M17 11V5h-6"/>',
     "nav_uturn": '<path d="M8 21V9a4 4 0 0 1 8 0v8M12 14l4 4 4-4"/>',
     "nav_arrive": '<path d="M6 21V4M6 4h11l-2.5 4L17 12H6"/>',
+    "app_gps": '<circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/>',
+    "app_credits": '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
     "app_weather": '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/><path d="M9 21l1-2M13 21l1-2"/>',
     "app_waverelay": '<circle cx="12" cy="12" r="2"/><circle cx="4" cy="6" r="1.6"/><circle cx="20" cy="6" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/><path d="M5.3 7l5.2 3.8M18.7 7l-5.2 3.8M6.3 18l4.4-4.6M17.7 18l-4.4-4.6M5.6 6h12.8"/>',
     "app_relief": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M8 10l1.5 2.5"/>',
@@ -314,6 +316,28 @@ def crack(level, w, h, seed):
     return img.filter(ImageFilter.SMOOTH)
 
 
+def soar_logo(path, size=512):
+    """Logo de l'équipe SOAR (app Crédits) : recadré sur le dessin, posé sur un disque clair pour rester lisible sur fond sombre."""
+    raw = Image.open(path).convert("RGBA")
+    # Fond transparent ou blanc : on aplatit sur du blanc avant de chercher le dessin.
+    src = Image.new("RGBA", raw.size, (255, 255, 255, 255))
+    src.alpha_composite(raw)
+    gray = src.convert("L")
+    box = gray.point(lambda v: 255 if v < 235 else 0).getbbox() or (0, 0, src.width, src.height)
+    art = src.crop(box)
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    ImageDraw.Draw(img).ellipse([4, 4, size - 4, size - 4], fill=(255, 255, 255, 255))
+    inner = int(size * 0.68)
+    k = inner / max(art.width, art.height)
+    art = art.resize((max(1, int(art.width * k)), max(1, int(art.height * k))), Image.LANCZOS)
+    img.alpha_composite(art, ((size - art.width) // 2, (size - art.height) // 2))
+    # Hors du disque : transparent.
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse([4, 4, size - 4, size - 4], fill=255)
+    img.putalpha(Image.composite(img.getchannel("A"), mask, mask))
+    return img
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -363,6 +387,9 @@ def main():
         hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
         if os.path.exists(hawk):
             convert(Image.open(hawk).convert("RGBA").resize((128, 128), Image.LANCZOS), "logo_atak", tmp)
+        soar = os.path.join(HERE, "src", "logo_soar.png")
+        if os.path.exists(soar):
+            convert(soar_logo(soar), "logo_soar", tmp)
         overlay = os.path.join(HERE, "src", "camera_overlay.png")
         if os.path.exists(overlay):
             convert(Image.open(overlay).convert("RGBA"), "camera_overlay", tmp)

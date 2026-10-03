@@ -35,6 +35,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
 // MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
 ["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
@@ -82,7 +83,36 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         && {!((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
         && {(([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0};
     if ((player getVariable ["COMSPEC_ATAK_Beacon", true]) isNotEqualTo _on) then { player setVariable ["COMSPEC_ATAK_Beacon", _on, true]; };
+    // Fiche vue par les alliés au clic sur la carte : batterie (par 10 %), barres de signal, état de l'appareil.
+    private _pub = [
+        (round ((missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) / 10)) * 10,
+        ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1],
+        ([] call comspec_atak_native_fnc_deviceHealth) get "state"
+    ];
+    if ((player getVariable ["COMSPEC_ATAK_Pub", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Pub", _pub, true]; };
 }, 5] call CBA_fnc_addPerFrameHandler;
+
+// Heatmap : toutes les 20 s, chaque ennemi repéré par mon camp chauffe sa case de 200 m ; tout refroidit de 4 %.
+[{
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    private _heat = missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap];
+    { _y set [2, (_y select 2) * 0.96]; } forEach _heat;
+    private _cold = (keys _heat) select { ((_heat get _x) select 2) < 0.2 };
+    { _heat deleteAt _x; } forEach _cold;
+    private _mySide = side group player;
+    {
+        if (alive _x && {(side group _x) isNotEqualTo _mySide} && {(side group _x) isNotEqualTo civilian} && {(_mySide knowsAbout _x) >= 1.5}) then {
+            private _p = getPosATL _x;
+            private _cx = (floor ((_p select 0) / 200)) * 200 + 100;
+            private _cy = (floor ((_p select 1) / 200)) * 200 + 100;
+            private _key = format ["%1_%2", _cx, _cy];
+            private _c = _heat getOrDefault [_key, [_cx, _cy, 0]];
+            _c set [2, (_c select 2) + 1];
+            _heat set [_key, _c];
+        };
+    } forEach allUnits;
+    missionNamespace setVariable ["COMSPEC_ATAK_Heat", _heat];
+}, 20] call CBA_fnc_addPerFrameHandler;
 
 // Alertes BFT de mon groupe : un équipier passe hors ligne, tombe inconscient ou meurt (et revient en ligne).
 [{

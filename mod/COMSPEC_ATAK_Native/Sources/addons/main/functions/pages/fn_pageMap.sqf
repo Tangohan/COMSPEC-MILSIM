@@ -178,6 +178,48 @@ if (_interactive) then {
         _sb ctrlSetTooltip (["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open);
         _sb ctrlAddEventHandler ["ButtonClick", { [] call comspec_atak_native_fnc_inspToggle; }];
         _ov set ["insp_toggle", _sb];
+        // Calques : boutons à bascule en bas du panneau SITUATION ouvert (deux colonnes).
+        if (_open) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_LayerToggle", {
+                params ["_ns", "_var", "_def"];
+                private _n = [profileNamespace, missionNamespace] select (_ns isEqualTo "M");
+                _n setVariable [_var, !(_n getVariable [_var, _def])];
+                if (_ns isEqualTo "P") then { saveProfileNamespace; };
+                // Les filtres d'unités (alliés, ennemis) sont appliqués à la collecte : on la relance.
+                if (_var in ["COMSPEC_ATAK_LayerFriends", "COMSPEC_ATAK_ShowHostile"]) then { [] call comspec_atak_native_fnc_localDataRefresh; };
+                if (_var isEqualTo "COMSPEC_ATAK_SigintLayer") then { [] spawn comspec_atak_native_fnc_sigintPoll; };
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }];
+            private _layers = [
+                ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true],
+                ["Ennemis repérés", "P", "COMSPEC_ATAK_ShowHostile", false],
+                ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true],
+                ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true],
+                ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true],
+                ["Guerre élec.", "P", "COMSPEC_ATAK_LayerEw", true],
+                ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true],
+                ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true],
+                ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false],
+                ["Heatmap", "P", "COMSPEC_ATAK_LayerHeat", false],
+                ["Carte nuit", "P", "COMSPEC_ATAK_LayerNight", false]
+            ];
+            private _lw = ((_l get "inspW") - _pad * 2.5) / 2;
+            private _lh = _fs * 1.45;
+            private _rowsN = ceil ((count _layers) / 2);
+            private _ly0 = _by + _bh - _pad - _rowsN * (_lh + _pad / 3);
+            private _lt = ["COMSPEC_RscStructuredText", [_sx, _ly0 - _fs * 1.3, _sw, _fs * 1.2]] call _mk;
+            _lt ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.8' color='#5cc76b'>CALQUES</t>";
+            {
+                _x params ["_lbl", "_ns", "_var", "_def"];
+                private _on = ([profileNamespace, missionNamespace] select (_ns isEqualTo "M")) getVariable [_var, _def];
+                private _col = _forEachIndex mod 2;
+                private _row = floor (_forEachIndex / 2);
+                private _b = ["COMSPEC_RscButton", [_sx + _col * (_lw + _pad / 2), _ly0 + _row * (_lh + _pad / 3), _lw, _lh], format ["%1 %2", ["○", "●"] select _on, _lbl]] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.8);
+                _b ctrlSetBackgroundColor ([[0.08, 0.10, 0.09, 0.95], [0.10, 0.35, 0.18, 0.95]] select _on);
+                _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
+            } forEach _layers;
+        };
     };
 
     // Consigne de l'outil actif
@@ -187,7 +229,7 @@ if (_interactive) then {
         case "MEASURE": { "MESURE : clic A puis B" };
         case "HOUSES": { "BÂTIMENTS : clic pour numéroter autour" };
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
-        case "FLAT": { "TERRAIN PLAT : clic pour chercher autour" };
+        case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ pour la retirer" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
         case "ROUTE": { "GPS : clic sur la destination" };
         case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
@@ -291,8 +333,9 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     _g2 ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
     private _stop = controlNull;
     if (_interactive) then {
-        _stop = ["COMSPEC_RscButton", [_gx + _gw - _font * 3.2 / _ratio * 0.5 - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _font * 3.2 / _ratio * 0.5, _gh * 0.3], "ARRÊTER"] call _mk;
-        _stop ctrlSetFontHeight (_fs * 0.8);
+        private _sw = _fs * 5.5 / _ratio * 0.6;
+        _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _sw, _gh * 0.3], "ARRÊTER"] call _mk;
+        _stop ctrlSetFontHeight ((_fs * 0.8) min (_gh * 0.26));
         _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
         _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };

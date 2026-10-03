@@ -11,6 +11,19 @@ private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.2
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// Carte nuit : voile sombre sous tous les symboles (dessiné en premier).
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerNight", false]) then {
+    _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize, worldSize, 0, [0.02, 0.03, 0.08, 0.55], "#(rgb,8,8,3)color(1,1,1,1)"];
+};
+// Heatmap : activité ennemie repérée par mon camp (cases de 200 m, s'efface avec le temps).
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
+    {
+        _y params ["_cx", "_cy", "_w"];
+        private _k = (_w / 6) min 1;
+        _map drawRectangle [[_cx, _cy, 0], 100, 100, 0, [0.95, 0.75 - 0.6 * _k, 0.1, 0.12 + 0.43 * _k], "#(rgb,8,8,3)color(1,1,1,1)"];
+    } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap]);
+};
+
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
 if ((count _route) > 0) then {
@@ -334,5 +347,5 @@ for "_i" from _used to ((count _pool) - 1) do { (_pool select _i) ctrlShow false
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
 
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
-[_map] call comspec_atak_native_fnc_logisticsDraw;
-[_map] call comspec_atak_native_fnc_ewDraw;
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };

@@ -25,6 +25,14 @@ switch (_tool) do {
         _s set ["mapHeights", _list select [((count _list) - 12) max 0]];
     };
     case "FLAT": {
+        // Clic sur une LZ déjà trouvée : on la retire.
+        private _cur = +(_s getOrDefault ["mapFlat", []]);
+        private _hit = _cur findIf { (_x distance2D _pos) < 30 };
+        if (_hit >= 0) exitWith {
+            _cur deleteAt _hit;
+            _s set ["mapFlat", _cur];
+            ["TACTICAL", "Zone plate retirée", 2, 10] call comspec_atak_native_fnc_notify;
+        };
         private _found = [];
         for "_r" from 0 to 200 step 25 do {
             private _n = [1, round (_r / 6)] select (_r > 0);

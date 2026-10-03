@@ -1,7 +1,7 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.3.0", true];
-diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_3_0_loaded";
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.4.0", true];
+diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 

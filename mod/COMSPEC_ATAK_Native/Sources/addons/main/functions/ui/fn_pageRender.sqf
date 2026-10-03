@@ -33,6 +33,9 @@ switch (_page) do {
     case "FOOD": { [] call comspec_atak_native_fnc_pageFood; };
     case "DATING": { [] call comspec_atak_native_fnc_pageDating; };
     case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
+    case "CREDITS": { [] call comspec_atak_native_fnc_pageCredits; };
+    case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
+    case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };
     case "WEATHER": { [] call comspec_atak_native_fnc_pageWeather; };
