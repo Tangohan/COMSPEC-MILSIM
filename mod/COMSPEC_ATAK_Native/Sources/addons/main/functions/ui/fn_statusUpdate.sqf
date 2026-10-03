@@ -18,9 +18,13 @@ private _net = switch (toLower _legacy) do {
 };
 _state set ["networkState", _net];
 private _sig = _d displayCtrl 88527;
-_sig ctrlSetText (_dir + format ["sig_%1.paa", switch (_net) do { case "CONNECTED": { 4 }; case "DEGRADED": { 2 }; default { 0 }; }]);
-_sig ctrlSetTextColor (switch (_net) do { case "CONNECTED": { [0.36, 0.78, 0.42, 1] }; case "DEGRADED": { [0.95, 0.67, 0.20, 1] }; default { [0.58, 0.64, 0.60, 1] }; });
-_sig ctrlSetTooltip (switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Hors ligne" }; });
+// Barres : débit simulé (fn_linkQuality), qui tient compte de la liaison Athena quand Overwatch est là.
+private _lq = [] call comspec_atak_native_fnc_linkQuality;
+private _bars = if (_lq get "sim") then { _lq get "bars" } else { switch (_net) do { case "CONNECTED": { 4 }; case "DEGRADED": { 2 }; default { 0 }; } };
+_sig ctrlSetText (_dir + format ["sig_%1.paa", _bars]);
+_sig ctrlSetTextColor (switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; });
+_sig ctrlSetTooltip format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"];
+[] call comspec_atak_native_fnc_deviceOverlay;
 
 private _bat = [] call comspec_atak_native_fnc_battery;
 private _batCtrl = _d displayCtrl 88512;
@@ -75,6 +79,7 @@ if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])
 private _pageSig = switch (_page) do {
     case "CHAT": { [count ([] call comspec_atak_native_fnc_messagesAll), count (_data getOrDefault ["p2p", []])] };
     case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }] };
+    case "NETWORK": { [_lq get "bars", round ((_lq get "kbps") / 100), ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };

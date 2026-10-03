@@ -23,3 +23,11 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_device_tablets", "CHECKBOX",
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call CBA_fnc_addSetting;
+
+private _sim = ["COMSPEC ATAK natif", "Simulation"];
+["comspec_atak_native_damage_sim", "CHECKBOX",
+    ["Dégâts du téléphone", "Balles au torse ou aux bras, explosions proches et eau fêlent l'écran, éteignent ou détruisent le téléphone. Réparation : trousse à outils ou nouvel appareil (actions ACE). Si le réalisme ATAK d'Overwatch est actif, c'est lui qui décide."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_net_sim", "CHECKBOX",
+    ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
+    _sim, true, 1] call CBA_fnc_addSetting;

@@ -78,7 +78,11 @@ class ReconImageRepository
         }
     }
 
-    public function list(int $tenantId, ?string $missionId = null, ?string $author = null, ?string $dateFrom = null, ?string $dateTo = null, ?int $limit = 100): array
+    /**
+     * @param string|null $feedMode null : tout ; « only » : images de flux caméra (unit_name chest:/helmet:/drone:) ;
+     *                              « exclude » : sans les images Live cam périodiques (chest:), pour l'espace Photos.
+     */
+    public function list(int $tenantId, ?string $missionId = null, ?string $author = null, ?string $dateFrom = null, ?string $dateTo = null, ?int $limit = 100, ?string $feedMode = null): array
     {
         if (!$this->tablesReady() || $tenantId < 1) {
             return [];
@@ -106,6 +110,11 @@ class ReconImageRepository
                 $sql .= ' AND (captured_at <= ? OR created_at <= ?)';
                 $params[] = $dateTo;
                 $params[] = $dateTo;
+            }
+            if ($feedMode === 'only') {
+                $sql .= " AND (unit_name LIKE 'chest:%' OR unit_name LIKE 'helmet:%' OR unit_name LIKE 'drone:%')";
+            } elseif ($feedMode === 'exclude') {
+                $sql .= " AND (unit_name IS NULL OR unit_name NOT LIKE 'chest:%')";
             }
             $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
             $stmt = $this->pdo()->prepare($sql);

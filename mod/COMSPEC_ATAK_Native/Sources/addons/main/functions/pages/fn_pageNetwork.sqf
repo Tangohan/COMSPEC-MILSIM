@@ -50,5 +50,37 @@ if (_bridge) then {
 } else {
     _rows pushBack ["text", "<t color='#8a9a93'>COMSPEC Overwatch n'est pas chargé : relais, zones et simulations ne sont pas disponibles.</t>"];
 };
+// Débit simulé du téléphone (fn_linkQuality) et état matériel (fn_deviceHealth).
+private _lq = [] call comspec_atak_native_fnc_linkQuality;
+private _hp = [] call comspec_atak_native_fnc_deviceHealth;
+private _rate = { params ["_k"]; if (_k >= 1000) then { format ["%1 Mbit/s", (_k / 1000) toFixed 1] } else { format ["%1 kbit/s", _k] } };
+private _barTxt = { params ["_n"]; private _t = ""; for "_i" from 1 to 4 do { _t = _t + format ["<t color='%1'>▮</t>", ["#3a4540", ["#e5483a", "#f2ab33", "#5cc76b"] select (((floor ((_n - 1) / 1.5)) min 2) max 0)] select (_i <= _n)]; }; _t };
+_rows append [
+    ["title", "Débit du téléphone"],
+    ["text", if !(_lq get "sim") then { "<t color='#8a9a93'>Simulation de débit coupée par le serveur (réglages CBA).</t>" } else {
+        format ["<t size='1.3'>%1</t>  %2<br/>Débit : <t color='#c9d4cf'>%3</t> · latence %4 ms · perte %5 %%<br/>Photo (600 Ko) : environ %6 s · message : %7 s%8",
+            [_lq get "bars"] call _barTxt, _lq get "label", [_lq get "kbps"] call _rate, _lq get "latency", _lq get "loss",
+            [round (((_lq get "latency") / 1000) + 4800 / ((_lq get "kbps") max 1)), "∞"] select ((_lq get "kbps") <= 0),
+            [((((_lq get "latency") / 1000) + 8 / ((_lq get "kbps") max 1)) toFixed 1), "∞"] select ((_lq get "kbps") <= 0),
+            ["", format ["<br/><t color='#f2ab33'>%1 envoi(s) en attente de réseau</t>", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])]] select ((count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])) > 0)]
+    }]
+];
+if ((_lq get "sim") && {(count (_lq get "factors")) > 0}) then {
+    { _rows pushBack ["info", _x select 0, _x select 1]; } forEach (_lq get "factors");
+};
+_rows append [
+    ["title", "État du téléphone"],
+    ["info", "Écran et boîtier", switch (_hp get "state") do {
+        case "OK": { "<t color='#5cc76b'>intact</t>" };
+        case "OFF": { format ["<t color='#f2ab33'>%1</t>", _hp get "reason"] };
+        default { format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_hp get "crack") >= 3), _hp get "reason"] };
+    }],
+    ["info", "Usure", format ["%1 %%", round ((_hp get "damage") * 100)]],
+    ["text", "<t size='0.8' color='#8a9a93'>Réparation : action ACE « Réparer le téléphone ATAK » avec une trousse à outils, ou « Changer de téléphone ATAK » avec un appareil de rechange.</t>"],
+    ["buttons", [
+        ["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 5, 20] call comspec_atak_native_fnc_notify; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["REDÉMARRER", { ["reboot"] call comspec_atak_native_fnc_deviceRepair; }]
+    ]]
+];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

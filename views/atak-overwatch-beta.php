@@ -99,6 +99,7 @@ $icon = static function (string $path): string {
       <button type="button" class="ow-nav-secondary" data-view="network" title="Relais posés, terminaux ATAK et état satellite">Réseau</button>
       <button type="button" data-view="layers" title="Fonds de carte, relief et couches affichées">Calques</button>
       <button type="button" data-view="intel" title="Observations, évaluations et dossiers de renseignement">Renseignement</button>
+      <button type="button" data-view="cams" title="Vues caméra partagées depuis les téléphones ATAK, actualisées toutes les quelques secondes">Live cam</button>
       <button type="button" class="ow-nav-secondary" data-view="radio" title="Qui émet près d’un opérateur, et sur quel réseau">Radio</button>
       <button type="button" class="ow-nav-secondary" data-view="iff" title="Identification ami / ennemi des contacts">Identification</button>
       <button type="button" class="ow-nav-secondary" data-view="pings" title="Les signalements rapides posés sur la carte">Pings</button>
@@ -907,6 +908,7 @@ $icon = static function (string $path): string {
           <dt>Mission</dt><dd>Bilan, comptes rendus SALUTE, santé, logistique et évacuations (CASEVAC).</dd>
           <dt>Calques</dt><dd>Fond de carte, relief, vue 3D et couches affichées.</dd>
           <dt>Renseignement</dt><dd>Observations du terrain et évaluations confirmées.</dd>
+          <dt>Live cam</dt><dd>Les vues partagées par les téléphones ATAK (une image toutes les quelques secondes). Le joueur active le partage dans les réglages de son téléphone.</dd>
           <dt>Air · Réseau · Radio</dt><dd>Aéronefs et appui aérien, relais et terminaux, émissions radio. Sur petit écran, ces espaces sont dans <b>Plus</b>.</dd>
           <dt>Plus</dt><dd>Rejouer la mission, exporter le bilan, bloc-notes, journal, carte seule.</dd>
         </dl>

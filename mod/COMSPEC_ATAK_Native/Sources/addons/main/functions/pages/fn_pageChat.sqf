@@ -172,7 +172,7 @@ if (_isChannel) then {
     {
         private _mine = _x get "mine";
         private _tags = (_x get "tags") apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] };
-        private _status = switch (_x get "status") do { case "FAILED": { " <t color='#e5483a'>non envoyé</t>" }; case "SENT": { " <t color='#8a9a93'>envoi…</t>" }; default { "" }; };
+        private _status = switch (_x get "status") do { case "FAILED": { " <t color='#e5483a'>non envoyé</t>" }; case "SENT": { " <t color='#8a9a93'>envoi…</t>" }; case "PENDING": { " <t color='#f2ab33'>en attente de réseau…</t>" }; default { "" }; };
         _items pushBack [_mine,
             format ["<t font='RobotoCondensedBold' color='%1'>%2</t> <t color='#8a9a93'>%3</t> %4%5", ["#5cc76b", "#9be3a5"] select _mine, [["Moi", _x get "author"] select !_mine] call _esc, [_x get "time"] call _esc, _tags joinString " ", _status],
             [_x get "body"] call _esc,

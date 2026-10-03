@@ -42,4 +42,7 @@ switch (_page) do {
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
+// Dégâts de l'écran par-dessus la page.
+uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+[] call comspec_atak_native_fnc_deviceOverlay;
 true

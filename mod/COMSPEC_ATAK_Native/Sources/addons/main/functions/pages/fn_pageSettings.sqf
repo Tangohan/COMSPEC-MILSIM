@@ -114,7 +114,19 @@ if (_bridge) then {
     private _lvl = missionNamespace getVariable ["comspec_overwatch_atak_realism", 0];
     _rows pushBack ["info", "Dommages au téléphone", format ["%1%2", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [" <t color='#e8b84a'>· imposé</t>", ""] select (_dmg isEqualTo "player")]];
     if !(_tenantOn) then { _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Réglages de la communauté pas encore reçus : connectez-vous à Athena.</t>"]; };
+    _rows append [
+        ["section", "Live cam", "Partage de ma vue vers le poste Overwatch"],
+        ["COMSPEC_ATAK_LivecamShare", false, "native_livecam_share", "Partager ma caméra", "Une image de ma vue à intervalle régulier vers Overwatch beta (onglet Live cam)"] call _profSwitch,
+        ["COMSPEC_ATAK_LivecamShareEvery", 15, "Cadence", [["10 S", 10], ["15 S", 15], ["30 S", 30], ["60 S", 60]]] call _profSegment
+    ];
 };
+private _hp = [] call comspec_atak_native_fnc_deviceHealth;
+private _lq = [] call comspec_atak_native_fnc_linkQuality;
+_rows append [
+    ["section", "Matériel et réseau", "Simulations réglées par le serveur (réglages CBA)"],
+    ["info", "Dégâts du téléphone", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='#5cc76b'>intact</t>", format ["<t color='#f2ab33'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
+    ["info", "Débit simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
+];
 
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };

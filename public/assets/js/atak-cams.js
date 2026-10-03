@@ -476,7 +476,7 @@ window.ATAKCams = (function () {
   }
 
   function fetchReconImages() {
-    return fetchWithMapFallback('/api/recon/images?limit=200&night=' + encodeURIComponent(nightQueryValue()), function (data) {
+    return fetchWithMapFallback('/api/recon/images?limit=200&feeds=exclude&night=' + encodeURIComponent(nightQueryValue()), function (data) {
       return Array.isArray(data) ? data : [];
     }).then(function (list) { return list || []; });
   }

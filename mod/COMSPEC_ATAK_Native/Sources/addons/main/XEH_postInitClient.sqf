@@ -107,3 +107,60 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
+
+// Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
+[{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
+
+// Débit simulé : la file d'envoi part dès que le réseau revient.
+[{
+    private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    if ((count _queue) isEqualTo 0) exitWith {};
+    if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
+    ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify;
+    { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
+}, 2] call CBA_fnc_addPerFrameHandler;
+
+// Dégâts du téléphone : balles (surtout torse et bras, où il est porté), explosions, eau.
+if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
+    ["ace_medical_woundReceived", {
+        params ["_unit", ["_damages", []]];
+        if (_unit isNotEqualTo player) exitWith {};
+        {
+            _x params [["_d", 0], ["_part", ""]];
+            private _carry = (toLower _part) in ["body", "leftarm", "rightarm"];
+            if (_d > 0.05 && {random 1 < ([0.08, 0.45] select _carry)}) then {
+                [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage;
+            };
+        } forEach _damages;
+    }] call CBA_fnc_addEventHandler;
+} else {
+    player addEventHandler ["Hit", { params ["_unit", "", "_d"]; if (_d > 0.05 && {random 1 < 0.3}) then { [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage; }; }];
+};
+player addEventHandler ["Explosion", { params ["", "_d"]; if (_d > 0.03 && {random 1 < 0.6}) then { [(_d * 1.5) min 0.7, "Explosion", [0, 20] select (random 1 < 0.5)] call comspec_atak_native_fnc_deviceDamage; }; }];
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; }];
+[{
+    if (alive player && {((eyePos player) select 2) < -0.2} && {(vehicle player) isEqualTo player}) then { [0.08, "Téléphone noyé", 30] call comspec_atak_native_fnc_deviceDamage; };
+}, 3] call CBA_fnc_addPerFrameHandler;
+
+// Actions ACE : réparer l'écran (trousse à outils) ou passer sur un téléphone de rechange.
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "", {
+        private _go = { [{ ["repair"] call comspec_atak_native_fnc_deviceRepair; }] call CBA_fnc_execNextFrame; };
+        if (isNil "ace_common_fnc_progressBar") exitWith { [] call _go; };
+        [15, [], { ["repair"] call comspec_atak_native_fnc_deviceRepair; }, {}, "Réparation du téléphone…"] call ace_common_fnc_progressBar;
+    }, {
+        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) > 0
+        && {(((items player) apply { toLower _x }) findIf { _x in ["toolkit", "ace_toolkit"] }) >= 0}
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
+    private _swap = ["COMSPEC_ATAK_Swap", "Changer de téléphone ATAK", "", {
+        private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
+        private _spare = (items player) select { (toLower _x) in _cat };
+        if ((count _spare) > 0) then { player removeItem (_spare select 0); ["swap"] call comspec_atak_native_fnc_deviceRepair; };
+    }, {
+        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) >= 0.45
+        && {private _cat = [] call comspec_atak_native_fnc_deviceCatalog; ((((assignedItems player) + (items player)) select { (toLower _x) in _cat }) param [1, ""]) isNotEqualTo "" && {((items player) findIf { (toLower _x) in _cat }) >= 0}}
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
+};

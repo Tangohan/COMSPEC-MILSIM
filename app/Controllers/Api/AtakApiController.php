@@ -11253,7 +11253,9 @@ class AtakApiController
             $deviceType = $request->query('device_type') ?? $request->query('device');
             $limit = min((int) ($request->query('limit') ?: 100), 200);
             $night = trim((string) ($request->query('night') ?? $request->query('play_night') ?? ''));
-            $rows = $this->reconImages()->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
+            $feedMode = strtolower(trim((string) ($request->query('feeds') ?? '')));
+            $feedMode = in_array($feedMode, ['only', 'exclude'], true) ? $feedMode : null;
+            $rows = $this->reconImages()->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit, $feedMode);
             if (is_string($deviceType) && $deviceType !== '') {
                 $want = strtoupper($deviceType);
                 $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
@@ -11270,6 +11272,9 @@ class AtakApiController
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
                 $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
                 $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
+                // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
+                $stamp = strtotime((string) $row['captured_at']);
+                $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
             }
             unset($row);
 

@@ -243,6 +243,62 @@ def wallpapers():
     return out
 
 
+def crack(level, w, h, seed):
+    """Écran fêlé (transparent) : impact, fissures rayonnantes, éclats ; niveau 3 = zone morte."""
+    import math, random
+    rnd = random.Random(seed)
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    s = min(w, h)
+    impacts = [(rnd.uniform(0.55, 0.8) * w, rnd.uniform(0.15, 0.35) * h)]
+    if level >= 2:
+        impacts.append((rnd.uniform(0.15, 0.4) * w, rnd.uniform(0.6, 0.85) * h))
+    if level >= 3:
+        # Zone morte : bande noire et pixels morts.
+        y0 = int(h * rnd.uniform(0.35, 0.55)); bh = int(h * 0.09)
+        d.rectangle([0, y0, w, y0 + bh], fill=(0, 0, 0, 235))
+        for _ in range(60):
+            x = rnd.randrange(w); y = rnd.randrange(h)
+            d.rectangle([x, y, x + 3, y + 3], fill=rnd.choice([(255, 0, 255, 200), (0, 255, 0, 200), (255, 255, 255, 220)]))
+    n_rays = {1: 7, 2: 11, 3: 16}[level]
+    for (cx, cy) in impacts:
+        # Toile d'araignée : anneaux brisés autour de l'impact.
+        for ring in range(1, level + 2):
+            r = s * 0.035 * ring
+            pts = []
+            for k in range(13):
+                a = k / 12 * 2 * math.pi
+                rr_ = r * rnd.uniform(0.75, 1.25)
+                pts.append((cx + rr_ * math.cos(a), cy + rr_ * math.sin(a)))
+            for a_, b_ in zip(pts, pts[1:]):
+                if rnd.random() < 0.8:
+                    d.line([a_, b_], fill=(235, 240, 238, 150), width=2)
+        for k in range(n_rays):
+            a = rnd.uniform(0, 2 * math.pi)
+            x, y = cx, cy
+            length = s * rnd.uniform(0.25, 0.9) * (0.6 + 0.2 * level)
+            step = s * 0.03
+            travelled = 0
+            while travelled < length:
+                a += rnd.uniform(-0.12, 0.12)
+                nx, ny = x + step * math.cos(a), y + step * math.sin(a)
+                d.line([(x + 1, y + 1), (nx + 1, ny + 1)], fill=(0, 0, 0, 120), width=3)
+                d.line([(x, y), (nx, ny)], fill=(240, 245, 243, 210), width=2)
+                if rnd.random() < 0.12:
+                    ba = a + rnd.choice([-1, 1]) * rnd.uniform(0.5, 1.1)
+                    bx, by = x, y
+                    for _ in range(rnd.randint(2, 6)):
+                        ba += rnd.uniform(-0.3, 0.3)
+                        ex, ey = bx + step * 0.8 * math.cos(ba), by + step * 0.8 * math.sin(ba)
+                        d.line([(bx, by), (ex, ey)], fill=(235, 240, 238, 160), width=1)
+                        bx, by = ex, ey
+                x, y = nx, ny
+                travelled += step
+        # Éclats à l'impact
+        d.ellipse([cx - s * 0.02, cy - s * 0.02, cx + s * 0.02, cy + s * 0.02], fill=(255, 255, 255, 120))
+    return img.filter(ImageFilter.SMOOTH)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -256,6 +312,13 @@ def convert(img, name, tmp):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
+        # Fêlures de l'écran (dégâts du téléphone), mêmes dessins en portrait et paysage.
+        for lvl in (1, 2, 3):
+            port = crack(lvl, 512, 1024, 40 + lvl)
+            convert(port, f"crack_{lvl}_port", tmp)
+            convert(port.rotate(-90, expand=True), f"crack_{lvl}_land", tmp)
+        if len(sys.argv) > 2 and sys.argv[2] == "cracks":
+            return
         land = Image.open(PHONE_SRC).convert("RGBA") if os.path.exists(PHONE_SRC) else phone_landscape()
         convert(land, "phone_landscape", tmp)
         # Rotation horaire : le bouton home du S7 passe en bas.

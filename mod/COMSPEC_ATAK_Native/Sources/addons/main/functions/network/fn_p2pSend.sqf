@@ -19,7 +19,8 @@ if (isNull _target) exitWith {
     false
 };
 private _time = [daytime, "HH:MM"] call BIS_fnc_timeToString;
-["comspec_atak_native_p2p", [name player, _body, _time], _target] call CBA_fnc_targetEvent;
+// Débit simulé : le SMS part après la latence (et attend que le destinataire ait du réseau, côté réception).
+[{ params ["_args", "_target"]; ["comspec_atak_native_p2p", _args, _target] call CBA_fnc_targetEvent; }, [[name player, _body, _time], _target], "SMS", 1] call comspec_atak_native_fnc_netSend;
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _p2p = _data getOrDefault ["p2p", []];
 _p2p pushBack createHashMapFromArray [["peer", _peer], ["dir", "out"], ["body", _body], ["time", _time], ["read", true]];
