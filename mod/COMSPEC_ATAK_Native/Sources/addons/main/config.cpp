@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","cba_main","cba_xeh"};
-        units[]={}; weapons[]={}; version=1.2; versionStr=VERSION_STR; versionAr[]={1,2,0};
+        units[]={}; weapons[]={}; version=1.3; versionStr=VERSION_STR; versionAr[]={1,3,0};
     };
 };
 class CfgFunctions {
@@ -12,21 +12,21 @@ class CfgFunctions {
             class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
-            class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
+            class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {};
             class statusUpdate {}; class inspectorUpdate {}; class notify {}; class notificationsRender {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {};
+            class p2pSend {}; class p2pReceive {}; class bridge {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {};
         };
     };
 };
@@ -46,6 +46,8 @@ class COMSPEC_ATAK_Apps {
     class Intel    { name="Rens.";      page="INTEL";    section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; };
     class Sse      { name="SSE";        page="SSE";      section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
     class Bda      { name="BDA";        page="BDA";      section="Renseignement"; order=130; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bda.paa"; };
+    class Athena   { name="Athena";     page="ATHENA";   section="Système";       order=300; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_athena.paa"; };
+    class Network  { name="Réseau";     page="NETWORK";  section="Système";       order=305; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_network.paa"; };
     class Photos   { name="Photos";     page="PHOTOS";   section="Renseignement"; order=140; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
     class Briefing { name="Briefing";   page="BRIEFING"; section="Mission";       order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
     class Status   { name="Statut";     page="STATUS";   section="Système";       order=310; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };

@@ -18,6 +18,10 @@ switch (_page) do {
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
+    case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
+    case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };
+    case "SETTINGS": { [] call comspec_atak_native_fnc_pageSettings; };
+    case "PHOTOS": { [] call comspec_atak_native_fnc_pagePhotos; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
 true

@@ -34,6 +34,7 @@ private _inbox = [];
 } forEach (missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []]);
 ["inbox", _inbox] call comspec_atak_native_fnc_storeSet;
 
-private _intel = missionNamespace getVariable ["COMSPEC_IntelStore", createHashMap];
-if (_intel isEqualType createHashMap) then { ["intel", _intel] call comspec_atak_native_fnc_storeSet; };
+// COMSPEC_IntelStore est un tableau de HashMaps (publicVariable d'Overwatch).
+private _intel = missionNamespace getVariable ["COMSPEC_IntelStore", []];
+if (_intel isEqualType [] || {_intel isEqualType createHashMap}) then { ["intel", _intel] call comspec_atak_native_fnc_storeSet; };
 true

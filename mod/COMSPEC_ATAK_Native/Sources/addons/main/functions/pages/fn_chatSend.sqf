@@ -4,6 +4,17 @@ private _edit = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
 if (isNull _edit) exitWith { false };
 private _message = trim ctrlText _edit;
 if (_message isEqualTo "") exitWith { false };
+if ([] call comspec_atak_native_fnc_bridge) exitWith {
+    // Même chemin que la tablette Overwatch : canal choisi, préfixes, envoi Athena et écho local.
+    missionNamespace setVariable ["COMSPEC_Comms_Channel", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["chatChannel", "general"]];
+    private _ok = [] call comspec_overwatch_connect_fnc_canStartSync;
+    [_message] call comspec_overwatch_connect_fnc_tabletChatSend;
+    _edit ctrlSetText "";
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
+    if !(_ok) then { ["WARNING", "Athena non connecté : message affiché ici seulement", 4, 30] call comspec_atak_native_fnc_notify; };
+    [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    _ok
+};
 private _author = [] call comspec_atak_native_fnc_unitCallsign;
 private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
 private _ok = (_raw find "OK|") isEqualTo 0;

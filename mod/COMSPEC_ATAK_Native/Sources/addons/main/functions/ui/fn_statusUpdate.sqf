@@ -39,6 +39,17 @@ if (_page isEqualTo "MAP") then {
     };
 };
 
+// Vibration à l'arrivée d'un message (Athena, alerte TOC ou message direct).
+private _inCount = ({(_x getOrDefault ["dir", ""]) isEqualTo "in"} count (_data getOrDefault ["p2p", []])) + (count (_data getOrDefault ["inbox", []]));
+_inCount = _inCount + (if ([] call comspec_atak_native_fnc_bridge) then {
+    {!(_x param [5, false])} count (missionNamespace getVariable ["COMSPEC_Comms_Messages", []])
+} else {
+    {!(_x get "mine")} count ([] call comspec_atak_native_fnc_messagesAll)
+});
+private _prevIn = uiNamespace getVariable ["COMSPEC_ATAK_InCount", -1];
+if (_prevIn >= 0 && {_inCount > _prevIn}) then { [] call comspec_atak_native_fnc_vibrate; };
+uiNamespace setVariable ["COMSPEC_ATAK_InCount", _inCount];
+
 // Pastilles : on ne reconstruit le dock (et le lanceur) que si un compteur change.
 private _badges = [["CHAT"] call comspec_atak_native_fnc_appBadge, ["TASK"] call comspec_atak_native_fnc_appBadge];
 if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])) then {

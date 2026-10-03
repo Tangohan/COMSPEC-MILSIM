@@ -61,14 +61,24 @@ private _athena = +_units;
 });
 ["units",_units] call comspec_atak_native_fnc_storeSet;
 
+// Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
+// et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
 private _markers = createHashMap;
-{ _markers set [_x,_y]; } forEach (_data getOrDefault ["remoteMarkers",createHashMap]);
 {
     private _name = _x;
     _markers set [_name,createHashMapFromArray [
         ["id",_name],["position",getMarkerPos _name],["text",markerText _name],
         ["type",markerType _name],["color",markerColor _name],["shape",markerShape _name],
-        ["size",markerSize _name],["dir",markerDir _name],["alpha",markerAlpha _name]
+        ["size",markerSize _name],["dir",markerDir _name],["alpha",markerAlpha _name],["local",true]
     ]];
 } forEach allMapMarkers;
+private _local = values _markers;
+{
+    private _r = _y;
+    private _rp = _r getOrDefault ["position",[0,0,0]];
+    private _rt = toLower (_r getOrDefault ["text",""]);
+    if ((_local findIf { ((_x get "position") distance2D _rp) < 15 && {(toLower (_x get "text")) isEqualTo _rt || {_rt isEqualTo ""}} }) < 0) then {
+        _markers set [_x,_r];
+    };
+} forEach (_data getOrDefault ["remoteMarkers",createHashMap]);
 ["markers",_markers] call comspec_atak_native_fnc_storeSet;

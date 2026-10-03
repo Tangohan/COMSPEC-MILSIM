@@ -20,9 +20,18 @@ _combo ctrlSetFontHeight _font;
 private _peers = (allPlayers select { _x isNotEqualTo player && {side group _x isEqualTo side group player} }) apply { name _x };
 { if ((_x getOrDefault ["peer", ""]) isNotEqualTo "") then { _peers pushBackUnique (_x get "peer"); }; } forEach (_data getOrDefault ["p2p", []]);
 _peers sort true;
-private _i = _combo lbAdd "TOC — canal Athena";
-_combo lbSetData [_i, "ATHENA"];
-private _sel = 0;
+// Canaux Athena (fil Overwatch connect quand il est chargé), puis messages directs.
+private _channels = if ([] call comspec_atak_native_fnc_bridge) then {
+    [["CH:general", "Général"], ["CH:commandement", "Commandement"], ["CH:groupe", "Groupe"], ["CH:alertes", "Alertes TOC"]]
+} else { [["ATHENA", "TOC — canal Athena"]] };
+private _sel = -1;
+{
+    _x params ["_key", "_label"];
+    private _i = _combo lbAdd _label;
+    _combo lbSetData [_i, _key];
+    _combo lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_chat.paa"];
+    if (_key isEqualTo _peer) then { _sel = _i; };
+} forEach _channels;
 {
     private _name = _x;
     private _n = { (_x getOrDefault ["peer", ""]) isEqualTo _name && {(_x getOrDefault ["dir", ""]) isEqualTo "in"} && {!(_x getOrDefault ["read", false])} } count (_data getOrDefault ["p2p", []]);
@@ -30,7 +39,9 @@ private _sel = 0;
     _combo lbSetData [_k, _x];
     if (_x isEqualTo _peer) then { _sel = _k; };
 } forEach _peers;
-if (_sel isEqualTo 0) then { _peer = "ATHENA"; };
+if (_sel < 0) then { _sel = 0; _peer = (_channels select 0) select 0; };
+private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
+_s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
 _combo lbSetCurSel _sel;
 _combo ctrlAddEventHandler ["LBSelChanged", {
@@ -48,8 +59,8 @@ private _esc = {
     [_t, ">", "&gt;"] call CBA_fnc_replace
 };
 private _items = []; // [moi, en-tête, texte]
-if (_peer isEqualTo "ATHENA") then {
-    private _msgs = [] call comspec_atak_native_fnc_messagesAll;
+if (_isChannel) then {
+    private _msgs = [_s getOrDefault ["chatChannel", ""]] call comspec_atak_native_fnc_messagesAll;
     {
         private _mine = _x get "mine";
         private _tags = (_x get "tags") apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] };
@@ -58,7 +69,7 @@ if (_peer isEqualTo "ATHENA") then {
             format ["<t font='RobotoCondensedBold' color='%1'>%2</t> <t color='#8a9a93'>%3</t> %4%5", ["#5cc76b", "#9be3a5"] select _mine, [["Moi", _x get "author"] select !_mine] call _esc, [_x get "time"] call _esc, _tags joinString " ", _status],
             [_x get "body"] call _esc];
     } forEach (_msgs select [((count _msgs) - 40) max 0]);
-    _s set ["seenAthena", count _msgs];
+    _s set ["seenAthena", count ([] call comspec_atak_native_fnc_messagesAll)];
 } else {
     {
         if ((_x getOrDefault ["peer", ""]) isEqualTo _peer) then {
@@ -81,7 +92,7 @@ if ((count _items) isEqualTo 0) then {
     private _t = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
     _t ctrlSetPosition [0, 0, _tw, _threadH];
     _t ctrlCommit 0;
-    _t ctrlSetStructuredText parseText (["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select (_peer isEqualTo "ATHENA"));
+    _t ctrlSetStructuredText parseText (["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select _isChannel);
 };
 private _bubbleW = _tw * 0.8;
 {
@@ -110,7 +121,7 @@ private _doSend = {
     private _peer = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["chatPeer", "ATHENA"];
     private _edit = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
     if (isNull _edit) exitWith {};
-    if (_peer isEqualTo "ATHENA") then {
+    if (_peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"}) then {
         [] call comspec_atak_native_fnc_chatSend;
     } else {
         if ([_peer, ctrlText _edit] call comspec_atak_native_fnc_p2pSend) then {

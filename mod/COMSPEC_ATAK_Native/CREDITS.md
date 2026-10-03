@@ -20,7 +20,8 @@ Conformément à l'APL-SA de BCE, `@COMSPEC_ATAK_Native` est distribué sous APL
 crédit aux auteurs, usage non commercial (le mod reste gratuit et n'est réservé à aucune offre payante),
 même licence pour toute adaptation, Arma uniquement.
 
-La coque du téléphone et les icônes d'apps et d'outils sont dessinées par COMSPEC (`tools/gen_assets.py`).
+La coque du téléphone (S7 en coque olive, `tools/src/android_s7_ca.png`) est fournie par COMSPEC ; les icônes d'apps et d'outils sont dessinées par COMSPEC (`tools/gen_assets.py`).
+Les outils carte (bâtiments, hauteur, terrain plat, ligne de vue) sont réécrits d'après le comportement de Simple Map Tools (POLPOX), sans reprise de code.
 Les symboles de carte et certaines icônes restent celles d'Arma 3, référencées et non redistribuées.
 
 ## ATAK Enhancements — Iceman

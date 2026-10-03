@@ -1,9 +1,29 @@
 /* Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection). */
 params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false]];
-if (_button isEqualTo 0) exitWith { [_map ctrlMapScreenToWorld [_mx,_my],_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect; true };
+private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
+private _world = _map ctrlMapScreenToWorld [_mx,_my];
+if (_button isEqualTo 0) exitWith {
+    if (["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke) exitWith { true };
+    // Sélection : un marqueur sous le curseur passe avant les unités.
+    if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "SELECT" && {!_shift && !_ctrl && !_alt}) then {
+        private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
+        if (_m isNotEqualTo "") exitWith {
+            _s set ["selectedMarker",_m];
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+        if ((_s getOrDefault ["selectedMarker",""]) isNotEqualTo "") then {
+            _s set ["selectedMarker",""];
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+    } else {
+        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+    };
+    true
+};
 if (_button isEqualTo 1) exitWith {
-    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
-    if ((_s getOrDefault ["mapMode","SELECT"]) isNotEqualTo "SELECT") then {
+    if ((_s getOrDefault ["mapMode","SELECT"]) isNotEqualTo "SELECT" || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
+        _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     };
