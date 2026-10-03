@@ -250,14 +250,47 @@ def wallpapers():
         for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
             out.append((f"wall_topo_{suffix}", topo_wallpaper(w, h, 7, (92, 199, 107))))
             out.append((f"wall_night_{suffix}", topo_wallpaper(w, h, 21, (90, 150, 230))))
+        for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+            out.append((f"wall_desert_{suffix}", topo_wallpaper(w, h, 33, (214, 170, 96))))
+            out.append((f"wall_olive_{suffix}", topo_wallpaper(w, h, 47, (150, 160, 80))))
     except ImportError:
         print("numpy absent : fonds topographiques non générés")
-    for name, src, dim in (("athena", "wallpaper_athena.jpg", 0.85), ("ops", "wallpaper_ops.png", 0.62)):
+    for name, src, dim in (("athena", "wallpaper_athena.jpg", 0.85), ("ops", "wallpaper_ops.png", 0.62), ("dark", "wallpaper_dark.jpg", 1.0)):
         path = os.path.join(HERE, "src", src)
         if os.path.exists(path):
             for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
                 out.append((f"wall_{name}_{suffix}", photo_wallpaper(path, w, h, dim)))
+    soar = os.path.join(HERE, "src", "logo_soar.png")
+    dark = os.path.join(HERE, "src", "wallpaper_dark.jpg")
+    if os.path.exists(soar) and os.path.exists(dark):
+        for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+            out.append((f"wall_soar_{suffix}", soar_wallpaper(soar, dark, w, h)))
     return out
+
+
+def soar_wallpaper(logo, bgpath, w, h):
+    """Fond SOAR : topo sombre et logo de l'équipe en trait clair au centre."""
+    bg = photo_wallpaper(bgpath, w, h, 0.9)
+    raw = Image.open(logo).convert("RGBA")
+    flat = Image.new("RGBA", raw.size, (255, 255, 255, 255))
+    flat.alpha_composite(raw)
+    gray = flat.convert("L")
+    box = gray.point(lambda v: 255 if v < 235 else 0).getbbox() or (0, 0, raw.width, raw.height)
+    gray = gray.crop(box)
+    # Traits sombres -> blanc opaque, fond clair -> transparent.
+    alpha = gray.point(lambda v: max(0, min(255, int((235 - v) * 1.4))))
+    art = Image.new("RGBA", gray.size, (225, 232, 226, 0))
+    art.putalpha(alpha.point(lambda v: int(v * 0.55)))
+    k = (min(w, h) * 0.55) / max(art.width, art.height)
+    art = art.resize((int(art.width * k), int(art.height * k)), Image.LANCZOS)
+    bg.alpha_composite(art, ((w - art.width) // 2, (h - art.height) // 2))
+    return bg
+
+
+def blurred(img):
+    """Variante floutée d'un fond (réglage « Flou du fond ») : 1024 px suffisent, le flou n'a pas de détail."""
+    small = img.resize((img.width // 2, img.height // 2), Image.LANCZOS)
+    return Image.eval(small.filter(ImageFilter.GaussianBlur(14)).convert("RGB"), lambda v: int(v * 0.85))
 
 
 def crack(level, w, h, seed):
@@ -383,6 +416,8 @@ def main():
         for name, img in wallpapers():
             # Sans alpha : compression DXT1, deux fois plus légère.
             convert(img.convert("RGB"), name, tmp)
+            base, suffix = name.rsplit("_", 1)
+            convert(blurred(img), f"{base}_blur_{suffix}", tmp)
         # Logo ATAK (faucon blanc) et viseur du mode photo.
         hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
         if os.path.exists(hawk):
