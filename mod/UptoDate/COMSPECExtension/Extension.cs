@@ -7697,6 +7697,24 @@ public static partial class Extension
     /// <summary>
     /// Sidecar photo : accepte le signal SQF (chemin / nom) et file resolve+upload en arrière-plan.
     /// Retour immédiat : OK|queued | OK|duplicate | ERR|…
+    /// Efface une photo du téléphone après envoi réussi. Ne touche qu'aux fichiers nommés COMSPEC_*
+    /// (photos du téléphone) : les captures d'écran personnelles du joueur restent en place.
+    private static void TryDeleteUploadedPhoto(string path)
+    {
+        try
+        {
+            var name = Path.GetFileName(path) ?? "";
+            if (!name.StartsWith("COMSPEC_", StringComparison.OrdinalIgnoreCase)) return;
+            var ext = Path.GetExtension(name).ToLowerInvariant();
+            if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") return;
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch
+        {
+            // Fichier encore ouvert ou protégé : il reste sur le poste, sans gêner l'envoi.
+        }
+    }
+
     /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
@@ -8127,6 +8145,8 @@ public static partial class Extension
             if (resp.IsSuccessStatusCode)
             {
                 NoteRateLimitCleared();
+                // Photo prise par le téléphone (COMSPEC_*) bien reçue par Athena : on l'efface du poste du joueur.
+                TryDeleteUploadedPhoto(resolved);
                 InvokeCallback("PhotoUpload", "OK|uploaded|" + fileName);
                 return;
             }
