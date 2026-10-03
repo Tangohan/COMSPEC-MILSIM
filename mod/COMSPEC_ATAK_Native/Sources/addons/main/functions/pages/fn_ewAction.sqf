@@ -7,6 +7,9 @@
       "tick"            : entretien toutes les 5 s (PFH de XEH_postInitClient) : fin du brouilleur, purge, alerte de brouillage subi
       "scan"            : goniométrie à 3 km : téléphones ennemis et brouilleurs ; relèvement approximatif, bande de distance
       "clear"           : efface les relèvements     "locate" index : carte sur le point de relèvement
+      "geoAllowed"      : [autorisé, raison] pour la géolocalisation (réglages CBA « Géolocalisation (GEOLOC) »)
+      "geoLocate"       : localise le téléphone dont le numéro, l'IMEI ou la MAC est saisi (champ geoq)
+      "geoTrack" i      : suivi actif on/off (nouvelle position toutes les N s)   "geoDel" i   "geoMap" i : carte sur la position
     Entrée de brouilleur : [position, rayon, uid, camp, fin (serverTime), filtrage ami]. Chaque client ne réécrit que la
     sienne et retire les entrées expirées ; le tick remet la sienne si une écriture concurrente l'a effacée.
 */
@@ -32,6 +35,44 @@ private _allowed = {
     if (player getVariable ["COMSPEC_ATAK_EwOperator", false]) exitWith { true };
     private _r = (toLower (roleDescription player)) + " ";
     (["guerre", "brouill", "sigint", "elint", "electronic warfare", "ew ", "ge "] findIf { (_r find _x) >= 0 }) >= 0
+};
+private _geoFix = {
+    params ["_e"];
+    private _u = _e get "unit";
+    private _hour = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+    private _prev = _e getOrDefault ["status", ""];
+    private _st = switch (true) do {
+        case (isNull _u || {!alive _u}): { "LOST" };
+        case !((_e get "qn") in ([_u, "norm"] call comspec_atak_native_fnc_phoneIdent)): { "LOST" };
+        case !([_u] call comspec_atak_native_fnc_hasDevice): { "OFF" };
+        case (isPlayer _u && {!(_u getVariable ["COMSPEC_ATAK_Beacon", true])}): { "OFF" };
+        default { "OK" };
+    };
+    _e set ["status", _st];
+    _e set ["checked", time];
+    if (_st isNotEqualTo "OK") exitWith {
+        if (_prev isNotEqualTo _st) then {
+            ["WARNING", format ["GÉOLOC %1 : %2", _e get "q", ["téléphone éteint ou hors réseau, dernière position conservée", "abonné introuvable (appareil changé ou détruit)"] select (_st isEqualTo "LOST")], 5, 40] call comspec_atak_native_fnc_notify;
+        };
+        false
+    };
+    // Triangulation par antennes : position décalée dans le rayon d'incertitude.
+    private _prec = (missionNamespace getVariable ["comspec_atak_native_geoloc_precision", 150]) max 10;
+    private _r = _prec * (0.6 + random 0.8);
+    private _p = (getPosATL _u) getPos [random (_r * 0.8), random 360];
+    _e set ["pos", [_p select 0, _p select 1, 0]];
+    _e set ["rad", round _r];
+    _e set ["t", time];
+    _e set ["hour", _hour];
+    if (isPlayer _u && {missionNamespace getVariable ["comspec_atak_native_geoloc_warn", false]}) then {
+        ["comspec_atak_native_geoWarn", [], _u] call CBA_fnc_targetEvent;
+    };
+    true
+};
+private _geoAllowed = {
+    if !(missionNamespace getVariable ["comspec_atak_native_geoloc_enabled", true]) exitWith { [false, "Géolocalisation désactivée sur ce serveur."] };
+    if ((missionNamespace getVariable ["comspec_atak_native_geoloc_ew_only", false]) && {!(call _allowed)}) exitWith { [false, "Réservé aux opérateurs de guerre électronique sur cette mission."] };
+    [true, ""]
 };
 
 switch (_act) do {
@@ -59,6 +100,13 @@ switch (_act) do {
         call _rerender;
     };
     case "tick": {
+        // Suivis GÉOLOC actifs : nouvelle position à l'intervalle réglé.
+        private _every = (missionNamespace getVariable ["comspec_atak_native_geoloc_refresh", 30]) max 10;
+        private _geoChanged = false;
+        {
+            if ((_x getOrDefault ["track", false]) && {(time - (_x getOrDefault ["checked", -1e9])) >= _every}) then { [_x] call _geoFix; _geoChanged = true; };
+        } forEach (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]);
+        if (_geoChanged) then { call _rerender; };
         private _mine = missionNamespace getVariable ["COMSPEC_ATAK_EwMine", []];
         if ((count _mine) > 0 && {(_mine select 4) < _now || {!alive player}}) then {
             ["stop", "auto"] call comspec_atak_native_fnc_ewAction;
@@ -126,6 +174,69 @@ switch (_act) do {
             ["INFO", "Goniométrie : aucune émission à moins de 3 km", 4, 30] call comspec_atak_native_fnc_notify;
         };
         call _rerender;
+    };
+    case "geoAllowed": { _ret = call _geoAllowed; };
+    case "geoLocate": {
+        (call _geoAllowed) params ["_ok", "_why"];
+        if !(_ok) exitWith { ["WARNING", _why, 3, 20] call comspec_atak_native_fnc_notify; };
+        private _q = ["geoq", _f getOrDefault ["geoq", ""]] call comspec_atak_native_fnc_formValue;
+        _f set ["geoq", _q];
+        private _qn = toString ((toArray toUpper _q) select { (_x >= 48 && _x <= 57) || {_x >= 65 && _x <= 90} });
+        // Numéro international (+33 6…, 0033 6…) ramené au format national.
+        if ((_qn find "0033") isEqualTo 0) then { _qn = _qn select [2]; };
+        if ((_qn find "33") isEqualTo 0 && {(count _qn) isEqualTo 11}) then { _qn = "0" + (_qn select [2]); };
+        if ((count _qn) < 8) exitWith { ["WARNING", "Saisissez un numéro, un IMEI ou une adresse MAC complète", 3, 20] call comspec_atak_native_fnc_notify; };
+        private _next = uiNamespace getVariable ["COMSPEC_ATAK_GeoNext", 0];
+        if (diag_tickTime < _next) exitWith { ["WARNING", format ["Requête opérateur en cours : réessayez dans %1 s", ceil (_next - diag_tickTime)], 3, 20] call comspec_atak_native_fnc_notify; };
+        uiNamespace setVariable ["COMSPEC_ATAK_GeoNext", diag_tickTime + 10];
+        private _ai = missionNamespace getVariable ["comspec_atak_native_geoloc_ai", true];
+        private _target = objNull; private _kind = "";
+        {
+            private _ids = [_x, "norm"] call comspec_atak_native_fnc_phoneIdent;
+            private _k = _ids find _qn;
+            if (_k >= 0) exitWith { _target = _x; _kind = ["NUMÉRO", "IMEI", "MAC"] select _k; };
+        } forEach (allUnits select { alive _x && {isPlayer _x || _ai} && {[_x] call comspec_atak_native_fnc_hasDevice} });
+        if (isNull _target || {!(_target getVariable ["COMSPEC_ATAK_Traceable", true])}) exitWith {
+            ["WARNING", format ["GÉOLOC : aucun abonné ne correspond à %1", _q], 4, 30] call comspec_atak_native_fnc_notify;
+        };
+        private _ts = side group _target;
+        private _sideKey = switch (_ts) do { case west: { "west" }; case east: { "east" }; case resistance: { "guer" }; default { "civ" }; };
+        if (_ts isEqualTo (side group player) && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])}) exitWith {
+            ["WARNING", "GÉOLOC : numéro de votre camp, traçage non autorisé", 4, 30] call comspec_atak_native_fnc_notify;
+        };
+        if !(missionNamespace getVariable [format ["comspec_atak_native_geoloc_%1", _sideKey], true]) exitWith {
+            ["WARNING", "GÉOLOC : opérateur hors d'atteinte, ce camp n'est pas traçable sur cette mission", 4, 30] call comspec_atak_native_fnc_notify;
+        };
+        private _list = missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []];
+        private _e = createHashMapFromArray [["q", _q], ["qn", _qn], ["kind", _kind], ["unit", _target], ["pos", []], ["rad", 0], ["t", -1], ["hour", ""], ["track", false], ["status", ""]];
+        if ([_e] call _geoFix) then {
+            ["SUCCESS", format ["GÉOLOC %1 : position à %2 m près, %3", _q, _e get "rad", [_e get "pos", 6] call comspec_atak_native_fnc_gridRef], 5, 40] call comspec_atak_native_fnc_notify;
+            [] call comspec_atak_native_fnc_vibrate;
+        };
+        _list = _list select { (_x get "qn") isNotEqualTo _qn };
+        _list pushBack _e;
+        while { (count _list) > 6 } do { _list deleteAt 0; };
+        missionNamespace setVariable ["COMSPEC_ATAK_GeoTracks", _list];
+        call _rerender;
+    };
+    case "geoTrack": {
+        private _e = (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]) param [_arg, createHashMap];
+        if ((count _e) isEqualTo 0) exitWith {};
+        _e set ["track", !(_e getOrDefault ["track", false])];
+        if (_e get "track") then { [_e] call _geoFix; };
+        call _rerender;
+    };
+    case "geoDel": {
+        private _list = missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []];
+        if (_arg isEqualType 0 && {_arg < count _list}) then { _list deleteAt _arg; };
+        call _rerender;
+    };
+    case "geoMap": {
+        private _e = (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]) param [_arg, createHashMap];
+        private _p = _e getOrDefault ["pos", []];
+        if ((count _p) < 2) exitWith {};
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [{ [_this, 0.06] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
     };
     case "clear": { missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", []]; call _rerender; };
     case "locate": {

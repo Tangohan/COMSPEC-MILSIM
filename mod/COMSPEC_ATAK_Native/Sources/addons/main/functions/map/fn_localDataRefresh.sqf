@@ -17,9 +17,12 @@ private _units = createHashMap;
 // Filtre des alliés (réglage) : tous, mon groupe, ou mon rattachement ORBAT Athena (repli : groupe).
 private _filter = profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"];
 private _myOrbat = player getVariable ["COMSPEC_ATAK_Orbat", ""];
+private _hideAi = profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false];
 private _keepFriend = {
     params ["_obj"];
-    if (_obj isEqualTo player || {_filter isEqualTo "ALL"}) exitWith { true };
+    if (_obj isEqualTo player) exitWith { true };
+    if (_hideAi && {!isPlayer _obj}) exitWith { false };
+    if (_filter isEqualTo "ALL") exitWith { true };
     if (_filter isEqualTo "ORBAT" && {_myOrbat isNotEqualTo ""}) exitWith { (_obj getVariable ["COMSPEC_ATAK_Orbat", ""]) isEqualTo _myOrbat || {group _obj isEqualTo group player} };
     group _obj isEqualTo group player
 };

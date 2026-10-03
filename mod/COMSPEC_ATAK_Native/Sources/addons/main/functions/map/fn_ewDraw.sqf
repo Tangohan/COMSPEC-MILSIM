@@ -26,6 +26,16 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind, round _brg], 1, 0.024, "RobotoCondensedBold", "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 10, 10, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]);
+// Géolocalisations : cercle d'incertitude orange, plein si le suivi est actif.
+{
+    private _p = _x getOrDefault ["pos", []];
+    if ((count _p) < 2) then { continue; };
+    private _rgb = [[0.95, 0.67, 0.20], [0.6, 0.6, 0.6]] select ((_x getOrDefault ["status", ""]) isNotEqualTo "OK");
+    private _r = (_x getOrDefault ["rad", 100]) max 10;
+    _map drawEllipse [_p, _r, _r, 0, _rgb + [0.95], ""];
+    _map drawEllipse [_p, _r, _r, 0, _rgb + [[0.08, 0.18] select (_x getOrDefault ["track", false])], _fill];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]], 1, 0.026, "RobotoCondensedBold", "right"];
+} forEach (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]);
 private _now = [time, serverTime] select isMultiplayer;
 private _side = str side group player;
 {

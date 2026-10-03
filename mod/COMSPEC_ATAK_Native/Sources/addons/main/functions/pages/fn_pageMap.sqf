@@ -195,6 +195,7 @@ if (_interactive) then {
         case "DRAW": { "DESSIN : maintenir le clic gauche" };
         default { "" };
     };
+    if ((count (_s getOrDefault ["markerEdit", createHashMap])) > 0) then { _hintText = ""; };
     if (_hintText isNotEqualTo "") then {
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
         private _hint = ["COMSPEC_RscChip", [_hx, _by + _pad, (_tx - _hx - _pad) max 0, _fs * 1.5], _hintText + " · clic droit : quitter"] call _mk;
@@ -214,7 +215,8 @@ if (_interactive) then {
             _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawColor", _c getVariable "cls"]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
         } forEach _cols;
     };
-    if (_mode isEqualTo "MARKER") then {
+    // Palette masquée pendant l'édition d'un marqueur : un seul panneau à la fois.
+    if (_mode isEqualTo "MARKER" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
         // Palette complète : camp, type (icônes), couleur, taille, autres marqueurs.
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
         [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio), _mh * 0.7]] call comspec_atak_native_fnc_markerPalette;

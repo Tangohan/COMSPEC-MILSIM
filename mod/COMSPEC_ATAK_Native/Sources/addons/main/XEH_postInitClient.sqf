@@ -120,6 +120,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Vibreur BFT : un allié fait vibrer mon téléphone (signal discret de ralliement).
+// GÉOLOC subie (réglage « Prévenir la cible ») : alerte discrète, une fois par minute au plus.
+["comspec_atak_native_geoWarn", {
+    if (diag_tickTime < (uiNamespace getVariable ["COMSPEC_ATAK_GeoWarnNext", 0])) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_GeoWarnNext", diag_tickTime + 60];
+    ["WARNING", "Activité réseau anormale sur votre téléphone", 5, 40] call comspec_atak_native_fnc_notify;
+}] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_buzz", {
     params ["_from", "_grid"];
     if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
