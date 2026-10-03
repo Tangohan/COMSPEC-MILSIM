@@ -21,17 +21,38 @@ private _profToggle = {
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 };
 uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", _profToggle];
+// Choix du coin du mini : remet à zéro le décalage glissé du mini pour partir du nouveau coin.
+private _wallNow = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "athena"];
+private _anchorNow = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
+private _anchorLabel = { params ["_t", "_k"]; [_t, format ["● %1", _t]] select (_k isEqualTo _anchorNow) };
+uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
+    params ["_k"];
+    profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _k];
+    { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE"];
+    saveProfileNamespace;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
 private _rows = [
     ["title", "Téléphone"],
     ["toggle", "Vibrer à chaque nouveau message", ["COMSPEC_ATAK_Vibrate", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Vibrate"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Indicatifs sur la carte", ["COMSPEC_ATAK_Labels", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Labels"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Boussole sur la carte", ["COMSPEC_ATAK_Compass", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Compass"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
+    ["title", "Fond d'écran"],
+    ["buttons", [["AUCUN", "none"], ["ATHENA", "athena"], ["OPS", "ops"]] apply {
+        _x params ["_t", "_k"];
+        [[_t, format ["● %1", _t]] select (_k isEqualTo _wallNow), compile format ["profileNamespace setVariable ['COMSPEC_ATAK_Wallpaper', '%1']; saveProfileNamespace; ['SETTINGS'] call comspec_atak_native_fnc_pageRender;", _k], _k isEqualTo _wallNow]
+    }],
+    ["title", "Emplacement du mini (porté et en main)"],
+    ["buttons", [["HG", "TL"], ["HD", "TR"]] apply { [_x call _anchorLabel, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] }],
+    ["buttons", [["MILIEU G", "ML"], ["MILIEU D", "MR"]] apply { [_x call _anchorLabel, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] }],
+    ["buttons", [["BG", "BL"], ["BD", "BR"]] apply { [_x call _anchorLabel, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] }],
     ["buttons", [["REMETTRE LE TÉLÉPHONE EN PLACE", {
         { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE", "COMSPEC_ATAK_Offset_FULL_LANDSCAPE"];
         saveProfileNamespace;
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }]]],
-    ["text", "<t color='#8a9a93'>Ctrl+U : sortir / ranger le téléphone porté (on continue à jouer).<br/>Ctrl+Maj+U : le prendre en main ou le reposer. En main, glissez la coque pour le déplacer.<br/>Touches modifiables dans les réglages CBA.</t>"]
+    ["text", format ["Accès : %1 <t color='#8a9a93'>(réglage serveur CBA « COMSPEC ATAK natif »)</t>", ["libre, sans item", format ["item obligatoire (%1 objets reconnus)", count ([] call comspec_atak_native_fnc_deviceCatalog)]] select (missionNamespace getVariable ["comspec_atak_native_require_item", true])]],
+    ["text", "<t color='#8a9a93'>Ctrl+U : sortir / ranger le téléphone porté (on continue à jouer).<br/>Ctrl+Maj+U : le prendre en main ou le reposer. En main, glissez la coque pour ajuster la position finement à partir du coin choisi.<br/>Touches modifiables dans les réglages CBA.</t>"]
 ];
 if (_bridge) then {
     _rows pushBack ["title", "Roleplay (Overwatch)"];

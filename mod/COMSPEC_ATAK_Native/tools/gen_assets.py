@@ -18,6 +18,7 @@ HEMTT = sys.argv[1] if len(sys.argv) > 1 else "hemtt"
 # Coque fournie par COMSPEC (Samsung S7 en coque olive, 2048x2048, écran transparent).
 # Écran paysage (fractions de l'image) — reprises dans fn_layoutGet.sqf : (0.2222, 0.3496)-(0.7549, 0.6509).
 PHONE_SRC = os.path.join(HERE, "src", "android_s7_ca.png")
+PHONE_NIGHT_SRC = os.path.join(HERE, "src", "android_s7_night_ca.png")
 
 
 def rr(draw, box, r, fill):
@@ -164,6 +165,9 @@ def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
     paa = os.path.join(OUT, name + ".paa")
+    # hemtt ne remplace pas un PAA existant : on l'efface d'abord.
+    if os.path.exists(paa):
+        os.remove(paa)
     subprocess.run([HEMTT, "utils", "paa", "convert", png, paa], check=True, stdout=subprocess.DEVNULL)
 
 
@@ -174,6 +178,11 @@ def main():
         convert(land, "phone_landscape", tmp)
         # Rotation horaire : le bouton home du S7 passe en bas.
         convert(land.rotate(-90, expand=True), "phone_portrait", tmp)
+        # Variante nuit (écran et coque assombris), fournie avec la texture S7.
+        if os.path.exists(PHONE_NIGHT_SRC):
+            night = Image.open(PHONE_NIGHT_SRC).convert("RGBA")
+            convert(night, "phone_landscape_night", tmp)
+            convert(night.rotate(-90, expand=True), "phone_portrait_night", tmp)
         convert(compass_ring(), "compass_ring", tmp)
         convert(compass_needle(), "compass_needle", tmp)
         for name, body in ICONS.items():
@@ -182,6 +191,27 @@ def main():
             convert(battery(lvl), f"bat_{lvl}", tmp)
         for b in range(5):
             convert(signal(b), f"sig_{b}", tmp)
+        # Fonds d'écran (accueil) : recadrés 2:1 (horizontal) et 1:2 (vertical), assombris pour la lisibilité.
+        for name, src, dim in (("athena", "wallpaper_athena.jpg", 1.0), ("ops", "wallpaper_ops.png", 0.62)):
+            path = os.path.join(HERE, "src", src)
+            if not os.path.exists(path):
+                continue
+            img = Image.open(path).convert("RGB")
+            img = Image.eval(img, lambda v, d=dim: int(v * d))
+            for suffix, (rw, rh) in (("land", (1024, 512)), ("port", (512, 1024))):
+                w, h = img.size
+                if w / h > rw / rh:
+                    cw = int(h * rw / rh); box = ((w - cw) // 2, 0, (w - cw) // 2 + cw, h)
+                else:
+                    ch = int(w * rh / rw); box = (0, (h - ch) // 2, w, (h - ch) // 2 + ch)
+                convert(img.crop(box).resize((rw, rh), Image.LANCZOS).convert("RGBA"), f"wall_{name}_{suffix}", tmp)
+        # Logo ATAK (faucon blanc) et viseur du mode photo.
+        hawk = os.path.join(HERE, "src", "takos_hawk_white.png")
+        if os.path.exists(hawk):
+            convert(Image.open(hawk).convert("RGBA").resize((128, 128), Image.LANCZOS), "logo_atak", tmp)
+        overlay = os.path.join(HERE, "src", "camera_overlay.png")
+        if os.path.exists(overlay):
+            convert(Image.open(overlay).convert("RGBA"), "camera_overlay", tmp)
         # Aperçu PNG pour la revue (non packagé)
         land.save(os.path.join(HERE, "preview_phone_landscape.png"))
     print("ok", len(os.listdir(OUT)), "textures")

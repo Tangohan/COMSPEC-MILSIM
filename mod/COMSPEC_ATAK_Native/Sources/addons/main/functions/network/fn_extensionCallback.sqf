@@ -1,8 +1,10 @@
 params ["_name","_function",["_payload",""]];
 if (_name isNotEqualTo "comspec") exitWith {};
+// Les deux DLL rappellent sous le même nom : avec Overwatch, ces rappels sont les siens, pas ceux du natif.
+if ([] call comspec_atak_native_fnc_bridge) exitWith {};
 
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
-private _event = toLower str _function;
+private _event = toLower (if (_function isEqualType "") then { _function } else { str _function });
 switch _event do {
     case "connected": {
         _state set ["networkState","CONNECTED"];

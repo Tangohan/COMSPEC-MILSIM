@@ -3,4 +3,5 @@ if (!hasInterface) exitWith { false };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = [] call comspec_atak_native_fnc_display;
 if (!isNull _d && {_s getOrDefault ["interactive", false]}) exitWith { [] call comspec_atak_native_fnc_close; false };
+if !([] call comspec_atak_native_fnc_hasDevice) exitWith { [] call comspec_atak_native_fnc_deviceDenied };
 [true] call comspec_atak_native_fnc_open

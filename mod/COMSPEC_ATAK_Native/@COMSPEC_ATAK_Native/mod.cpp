@@ -1,0 +1,12 @@
+name = "COMSPEC ATAK";
+author = "COMSPEC";
+actionName = "Website";
+action = "https://athena.ttrd.fr/public";
+logo = "logo.paa";
+logoOver = "logo.paa";
+logoSmall = "logo.paa";
+picture = "logo.paa";
+tooltip = "COMSPEC ATAK";
+overview = "Téléphone ATAK natif relié à Athena : carte, marqueurs, messagerie, photos.";
+hideName = 0;
+hidePicture = 0;
