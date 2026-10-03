@@ -352,7 +352,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MapOverlay", _ov];
 
 if !(_s getOrDefault ["mapCentered", false]) then {
     _s set ["mapCentered", true];
-    [player, 0.08] call comspec_atak_native_fnc_mapCenter;
+    [player, uiNamespace getVariable ["COMSPEC_ATAK_MapScale", 0.08]] call comspec_atak_native_fnc_mapCenter;
 };
 [] call comspec_atak_native_fnc_mapOverlayUpdate;
 if !(_l get "mini") then { [] call comspec_atak_native_fnc_inspectorUpdate; };
