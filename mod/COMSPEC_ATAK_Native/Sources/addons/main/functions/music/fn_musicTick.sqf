@@ -118,7 +118,8 @@ if ((_tgt param [0, ""]) isNotEqualTo (_cur select 0)) then {
             } else {
                 _fail set [_k, true];
                 if (_k isEqualTo _key) then {
-                    private _why = if (_res isEqualTo "") then { "lecteur audio indisponible (DLL du mod à mettre à jour)" } else { (_res splitString "|") param [1, _res] };
+                    private _why = (_res splitString "|") param [1, _res];
+                    if (_res isEqualTo "" || {_why in ["not_connected", "unauthorized", "unknown_function", "unknown_command"]}) then { _why = "lecteur audio absent de la DLL du mod (relancez build_mod.bat)"; _res = ""; };
                     ["WARNING", format ["Lecture impossible : %1", _why], 5, 30] call comspec_atak_native_fnc_notify;
                     _m set ["errors", (_m getOrDefault ["errors", 0]) + 1];
                     _m set ["status", ["error", 0, 0, _m get "title", _why]];
