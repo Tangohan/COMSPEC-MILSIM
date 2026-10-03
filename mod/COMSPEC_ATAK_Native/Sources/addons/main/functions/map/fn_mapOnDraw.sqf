@@ -6,6 +6,10 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Couleurs choisies dans les réglages (alliés, moi) ; icône choisie par chaque joueur (variable publique).
+private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.20,0.90,0.95,1]],["GREEN",[0.36,0.85,0.42,1]],["WHITE",[0.95,0.95,0.95,1]],["YELLOW",[1,0.85,0.15,1]],["ORANGE",[1,0.55,0.15,1]],["PINK",[1,0.45,0.75,1]]];
+private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
+private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
 {
     private _entity = _y;
@@ -17,9 +21,16 @@ private _scale = ctrlMapScale _map;
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3,0.3]; };
     private _self = _entity getOrDefault ["self",false];
     private _size = if (_x isEqualTo _selected || _self) then {26} else {20};
-    if (_self) then { _color = [0.30,0.70,1,1]; };
+    if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
+    if (_self) then { _color = +_selfRgb; };
+    private _dir = _entity getOrDefault ["heading",0];
+    private _custom = _entity getOrDefault ["icon",""];
+    if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
+        private _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon");
+        if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
+    };
     _map drawIcon [
-        _icon,_color,_pos,_size,_size,_entity getOrDefault ["heading",0],
+        _icon,_color,_pos,_size,_size,_dir,
         if (_labels && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
         1,0.026,"RobotoCondensedBold","right"
     ];

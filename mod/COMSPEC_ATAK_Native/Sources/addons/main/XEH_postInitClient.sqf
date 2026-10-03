@@ -49,6 +49,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_ko > _ko0) then { ["WARNING", "Photo refusée par Athena : voir le journal de liaison", 5, 40] call comspec_atak_native_fnc_notify; };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Rattachement ORBAT (Athena) et icône choisie : partagés pour le filtre et l'affichage des autres téléphones.
+[{
+    private _orbat = missionNamespace getVariable ["comspec_profile_unit", ""];
+    if !(_orbat isEqualType "") then { _orbat = str _orbat; };
+    if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
+    private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
+    if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
+}, 5] call CBA_fnc_addPerFrameHandler;
+
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
 ["comspec_atak_native_fireMission", {
     params ["_summary", "_tgt", "_from"];
