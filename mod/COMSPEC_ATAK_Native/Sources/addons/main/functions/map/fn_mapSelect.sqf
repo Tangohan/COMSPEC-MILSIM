@@ -22,6 +22,11 @@ switch (_tool) do {
     case "HEIGHT";
     case "FLAT";
     case "LOS": { [_tool, _world] call comspec_atak_native_fnc_mapToolRun; };
+    case "ROUTE": {
+        ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
+        ["INFO", "GPS : calcul de l'itinéraire…", 2, 20] call comspec_atak_native_fnc_notify;
+        [[_world select 0, _world select 1, 0], format ["%1", [[_world select 0, _world select 1, 0], 6] call comspec_atak_native_fnc_gridRef]] spawn comspec_atak_native_fnc_routeCompute;
+    };
     default {
         private _best = createHashMap;
         private _dist = 1e10;

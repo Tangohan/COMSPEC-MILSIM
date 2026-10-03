@@ -196,3 +196,20 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     missionNamespace setVariable ["COMSPEC_ATAK_OsintFeed", _feed];
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "OSINT") then { [{ ["OSINT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 }] call CBA_fnc_addEventHandler;
+
+// GPS : le guidage (arrivée, recalcul) continue hors de l'app Carte, avec les consignes en notification.
+[{
+    if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) isEqualTo 0) exitWith {};
+    private _onMap = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP" && {!isNull ([] call comspec_atak_native_fnc_display)};
+    if (_onMap) exitWith {};
+    private _g = [] call comspec_atak_native_fnc_routeGuide;
+    if ((count _g) isEqualTo 0) exitWith {};
+    // Consigne vocale façon GPS : annoncée une fois à 200 m et à 50 m du virage.
+    _g params ["_txt", "_dn"];
+    private _key = format ["%1|%2", _txt, [0, 1] select (_dn < 60)];
+    if (_dn < 220 && {_key isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_RouteSaid", ""])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_RouteSaid", _key];
+        ["INFO", format ["GPS : dans %1 m, %2", (round (_dn / 10)) * 10, toLower _txt], 4, 40] call comspec_atak_native_fnc_notify;
+        [] call comspec_atak_native_fnc_vibrate;
+    };
+}, 1] call CBA_fnc_addPerFrameHandler;

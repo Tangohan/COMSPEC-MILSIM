@@ -51,6 +51,7 @@ if (_page isEqualTo "ATHENA" && {[] call comspec_atak_native_fnc_bridge}) then {
 };
 if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
+    [] call comspec_atak_native_fnc_routeBanner;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
         [player] call comspec_atak_native_fnc_mapCenter;

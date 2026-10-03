@@ -11,6 +11,35 @@ private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.2
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
+private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+if ((count _route) > 0) then {
+    private _pts = _route get "pts";
+    private _idx = _route getOrDefault ["idx", 0];
+    private _mpu = (_map ctrlMapScreenToWorld [0, 0]) distance2D (_map ctrlMapScreenToWorld [0.0035, 0]);
+    private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
+    private _seg = {
+        params ["_a", "_b", "_w", "_c"];
+        private _len = _a distance2D _b;
+        if (_len < 0.5) exitWith {};
+        _map drawRectangle [[((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2], _w, _len / 2 + _w * 0.6, _a getDir _b, _c, _tex];
+    };
+    private _proj = _route getOrDefault ["proj", _pts select 0];
+    for "_i" from 0 to ((count _pts) - 2) do {
+        private _a = _pts select _i; private _b = _pts select (_i + 1);
+        private _past = _i < _idx;
+        if (_i isEqualTo _idx) then {
+            [_a, _proj, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg;
+            _a = _proj;
+        };
+        if (_past) then { [_a, _b, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg; } else {
+            [_a, _b, _mpu * 1.45, [0.05, 0.18, 0.40, 0.9]] call _seg;
+            [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
+        };
+    };
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26, 26, 0, _route getOrDefault ["label", ""], 2, 0.028, "RobotoCondensedBold", "right"];
+};
+
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];

@@ -140,12 +140,12 @@ if ((count _sel) isEqualTo 0) then {
         [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round (player getDir _pos), [player getDir _pos] call _card,
         _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health];
 };
-private _bw3 = (_dw - _pad) / 2;
+private _bw3 = (_dw - _pad * 2) / 3;
 {
     _x params ["_t", "_act", "_on"];
-    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 0), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
+    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
     _b ctrlEnable _on;
     _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", _act]];
-} forEach [["CENTRER SUR LA CARTE", "center", (count _sel) > 0], ["ENVOYER UN SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}]];
+} forEach [["CARTE", "center", (count _sel) > 0], ["Y ALLER (GPS)", "route", (count _sel) > 0], ["SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}]];
 true

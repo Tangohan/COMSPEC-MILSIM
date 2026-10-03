@@ -2,7 +2,7 @@
 params ["_map","_button","_mx","_my"];
 if (_button isNotEqualTo 0) exitWith { false };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
-if ((_s getOrDefault ["mapMode","SELECT"]) in ["LINE","DRAW","MEASURE","LOS","HOUSES","FLAT","HEIGHT"]) exitWith { false };
+if ((_s getOrDefault ["mapMode","SELECT"]) in ["LINE","DRAW","MEASURE","LOS","HOUSES","FLAT","HEIGHT","ROUTE"]) exitWith { false };
 private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
 private _w = _map ctrlMapScreenToWorld [_mx,_my];
 if (_m isNotEqualTo "" && {(_m find "_USER_DEFINED") isEqualTo 0}) exitWith { [_m] call comspec_atak_native_fnc_markerEditOpen; true };

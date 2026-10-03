@@ -80,6 +80,7 @@ if (_interactive) then {
     // Menu des outils carte, au-dessus du bouton
     if (_s getOrDefault ["mapToolsOpen", false]) then {
         private _items = [
+            ["ROUTE", "map_route", "GPS : itinéraire"],
             ["LINE", "map_measure", "Tracer un trait"],
             ["DRAW", "map_labels", "Dessin libre"],
             ["DISTANCE", "map_distance", "Distance"],
@@ -183,6 +184,7 @@ if (_interactive) then {
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
         case "FLAT": { "TERRAIN PLAT : clic pour chercher autour" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
+        case "ROUTE": { "GPS : clic sur la destination" };
         case "LINE": { "TRAIT : clic A puis clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche" };
         default { "" };
@@ -225,6 +227,9 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
         [markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo ""), [getMarkerPos _sel] call comspec_atak_native_fnc_gridRef,
         [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")];
     private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
+    private _go = ["COMSPEC_RscButtonPrimary", [_px + _pw - _pad - _fs * 5 / _ratio * 0.6, _py + _pad / 2, _fs * 5 / _ratio * 0.6, _fs * 1.4], "Y ALLER"] call _mk;
+    _go ctrlSetFontHeight (_fs * 0.85);
+    _go ctrlAddEventHandler ["ButtonClick", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }];
     if (_own) then {
         private _bw2 = (_pw - _pad * 3) / 2;
         private _b1 = ["COMSPEC_RscButton", [_px + _pad, _py + _ph - _fs * 1.6 - _pad / 2, _bw2, _fs * 1.5], "MODIFIER"] call _mk;
@@ -243,6 +248,31 @@ private _editing = _interactive && {(count (_s getOrDefault ["markerEdit", creat
 if (_editing) then {
     private _ew = [_mw * 0.42, _mw] select (_l get "mini");
     [[_bx + _mw - _ew, _by, _ew, _bh]] call comspec_atak_native_fnc_markerEditor;
+};
+
+// GPS : bandeau de guidage en haut de la carte (mis à jour chaque seconde par fn_routeBanner).
+if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) > 0) then {
+    private _gw = (_mw * 0.62) max (_font * 9 / _ratio) min (_mw - 2 * _pad);
+    private _gx = _bx + (_mw - _gw) / 2;
+    private _gy = _by + _pad + ([0, _fs * 1.8] select ((_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"));
+    private _gh = _font * 2.6;
+    private _gbg = ["COMSPEC_RscMapPanel", [_gx, _gy, _gw, _gh * 0.62]] call _mk;
+    _gbg ctrlSetBackgroundColor [0.10, 0.45, 0.25, 0.95];
+    private _gi = _gh * 0.52;
+    private _g3 = ["COMSPEC_RscIcon", [_gx + _pad / 2, _gy + _gh * 0.05, _gi / _ratio, _gi], ""] call _mk;
+    _g3 ctrlSetTextColor [1, 1, 1, 1];
+    private _g1 = ["COMSPEC_RscStructuredText", [_gx + _pad + _gi / _ratio, _gy + _gh * 0.03, _gw - _pad * 1.5 - _gi / _ratio, _gh * 0.6]] call _mk;
+    private _g2 = ["COMSPEC_RscMapPanel", [_gx, _gy + _gh * 0.62, _gw, _gh * 0.38]] call _mk;
+    _g2 ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
+    private _stop = controlNull;
+    if (_interactive) then {
+        _stop = ["COMSPEC_RscButton", [_gx + _gw - _font * 3.2 / _ratio * 0.5 - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _font * 3.2 / _ratio * 0.5, _gh * 0.3], "ARRÊTER"] call _mk;
+        _stop ctrlSetFontHeight (_fs * 0.8);
+        _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
+        _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    };
+    uiNamespace setVariable ["COMSPEC_ATAK_RouteBanner", [_g1, _g2, _g3]];
+    [] call comspec_atak_native_fnc_routeBanner;
 };
 
 uiNamespace setVariable ["COMSPEC_ATAK_MapOverlay", _ov];
