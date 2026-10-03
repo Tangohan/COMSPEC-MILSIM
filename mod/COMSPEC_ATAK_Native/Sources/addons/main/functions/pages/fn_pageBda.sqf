@@ -21,6 +21,7 @@ private _rows = [
     ["edit", "grid", "Grille de la cible", _f getOrDefault ["grid", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]],
     ["buttons", [["MA POSITION", { ['here'] call comspec_atak_native_fnc_bdaAction; }]]],
     ["Reprise", "reatk", "NO", [["PAS DE REPRISE", "NO"], ["REPRISE REQUISE", "YES"]]] call _seg,
+    ["text", "<t size='0.8' color='#8a9a93'>Reprise : faut-il frapper la cible à nouveau ? « Pas de reprise » = objectif atteint ; « Reprise requise » = la cible est encore active, une nouvelle frappe ou un nouveau tir est demandé.</t>"],
     ["edit", "rem", "Remarques", _f getOrDefault ["rem", ""]],
     ["buttons", [["TRANSMETTRE LE BILAN", { ['send'] call comspec_atak_native_fnc_bdaAction; }, true]]]
 ];

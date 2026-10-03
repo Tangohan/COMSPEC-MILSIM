@@ -60,6 +60,7 @@ def phone_landscape(w=2048, h=1024):
 
 
 ICONS = {
+    "app_resynch": '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>',
     "map_route": '<circle cx="6" cy="18" r="2"/><path d="M8 18h6a3.5 3.5 0 0 0 0-7H10a3.5 3.5 0 0 1 0-7h6"/><path d="M18 2.5l2 2-2 2"/>',
     "nav_straight": '<path d="M12 21V4M6 10l6-6 6 6"/>',
     "nav_left": '<path d="M16 21v-8a4 4 0 0 0-4-4H5M9 5L5 9l4 4"/>',

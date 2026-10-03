@@ -18,10 +18,15 @@ private _colorOf = {
     }
 };
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+private _s0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+if (_s0 getOrDefault ["orderCompose", false]) exitWith { [] call comspec_atak_native_fnc_pageOrderCompose };
 private _orders = [] call comspec_atak_native_fnc_tasksAll;
 private _open = 0;
 { if !((toUpper (_y getOrDefault ["status", "NEW"])) in ["DELIVERED", "FAILED", "SUCCEEDED", "CANCELED"]) then { _open = _open + 1; }; } forEach _orders;
-private _rows = [["section", "Ordres du TOC", [format ["%1 ordre(s), %2 à traiter", count _orders, _open], "Aucun ordre reçu d'Athena"] select ((count _orders) isEqualTo 0)]];
+private _canOrder = ([] call comspec_atak_native_fnc_bridge) && {[] call comspec_overwatch_connect_fnc_canIssueOrder};
+private _rows = [];
+if (_canOrder) then { _rows pushBack ["buttons", [["NOUVEL ORDRE", { ['open'] call comspec_atak_native_fnc_orderAction; }, true]]]; };
+_rows append [["section", "Ordres du TOC", [format ["%1 ordre(s), %2 à traiter", count _orders, _open], "Aucun ordre reçu d'Athena"] select ((count _orders) isEqualTo 0)]];
 {
     private _id = _x;
     private _st = toUpper (_y getOrDefault ["status", "NEW"]);

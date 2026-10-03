@@ -214,14 +214,24 @@ if (_interactive) then {
             private _ly0 = _by + _bh - _pad - _rowsN * (_lh + _pad / 3);
             private _lt = ["COMSPEC_RscStructuredText", [_sx, _ly0 - _fs * 1.3, _sw, _fs * 1.2]] call _mk;
             _lt ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.8' color='#5cc76b'>CALQUES</t>";
+            uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _ly0 - _fs * 1.4];
+            private _sep = ["COMSPEC_RscText", [_sx, _ly0 - _fs * 1.45, _sw, pixelH]] call _mk;
+            _sep ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.35];
             {
                 _x params ["_lbl", "_ns", "_var", "_def"];
                 private _on = ([profileNamespace, missionNamespace] select (_ns isEqualTo "M")) getVariable [_var, _def];
                 private _col = _forEachIndex mod 2;
                 private _row = floor (_forEachIndex / 2);
-                private _b = ["COMSPEC_RscButton", [_sx + _col * (_lw + _pad / 2), _ly0 + _row * (_lh + _pad / 3), _lw, _lh], format ["%1 %2", ["○", "●"] select _on, _lbl]] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.8);
-                _b ctrlSetBackgroundColor ([[0.08, 0.10, 0.09, 0.95], [0.10, 0.35, 0.18, 0.95]] select _on);
+                // Bouton à bascule : fond et pastille verts quand le calque est affiché, gris sinon.
+                private _bx0 = _sx + _col * (_lw + _pad / 2);
+                private _by0 = _ly0 + _row * (_lh + _pad / 3);
+                private _b = ["COMSPEC_RscButton", [_bx0, _by0, _lw, _lh], _lbl] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.78);
+                _b ctrlSetBackgroundColor ([[0.08, 0.10, 0.09, 0.95], [0.10, 0.30, 0.16, 0.95]] select _on);
+                _b ctrlSetTextColor ([[0.6, 0.65, 0.62, 1], [0.92, 0.97, 0.93, 1]] select _on);
+                private _dotH = _lh * 0.34;
+                private _dot = ["COMSPEC_RscText", [_bx0 + _lh * 0.3 * _ratio, _by0 + (_lh - _dotH) / 2, _dotH * pixelH / pixelW, _dotH]] call _mk;
+                _dot ctrlSetBackgroundColor ([[0.30, 0.34, 0.32, 1], [0.36, 0.78, 0.42, 1]] select _on);
                 _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
             } forEach _layers;
         };

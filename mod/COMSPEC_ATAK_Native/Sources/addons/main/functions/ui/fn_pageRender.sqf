@@ -40,6 +40,8 @@ switch (_page) do {
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };
     case "WEATHER": { [] call comspec_atak_native_fnc_pageWeather; };
+    case "RESYNCH": { [] call comspec_atak_native_fnc_pageResynch; };
+    case "STATUS": { [] call comspec_atak_native_fnc_pageStatus; };
     case "RELIEF": { [] call comspec_atak_native_fnc_pageRelief; };
     case "WAVERELAY": { [] call comspec_atak_native_fnc_pageWaveRelay; };
     case "LOGI": { [] call comspec_atak_native_fnc_pageLogistics; };
