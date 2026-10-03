@@ -3916,6 +3916,43 @@ public static partial class Extension
                 }
                 return "OK|" + simplified;
             }
+            // Avis de recherche d'Athena (personnes prioritaires avec photo, liste de surveillance, dossiers d'intérêt).
+            // Une ligne par avis : type\tid\tréf\tnom\talias\tniveau\tdétails\tphoto\tmaj
+            if (function == "GetWantedNotices")
+            {
+                var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("wanted", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k, int max = 160)
+                            {
+                                if (!el.TryGetProperty(k, out var v)) return "";
+                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                                return t.Length > max ? t.Substring(0, max) + "…" : t;
+                            }
+                            var line = string.Join("\t", C("kind"), C("id"), C("ref"), C("name"), C("alias"), C("level"), C("details", 220), C("photo", 400), C("updated_at"));
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
+                            lines.Append(line).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
+            }
             // Équipes de feu (mission ATAK). Format tabulaire SQF-friendly :
             // une ligne par équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
             // puis lignes membres préfixées "M\t" : M\tteamId\tcallsign\trole\tdisplayName
