@@ -7,7 +7,7 @@ private _cache = uiNamespace getVariable ["COMSPEC_ATAK_MarkerPalette", []];
 if ((count _cache) > 0) exitWith { _cache };
 private _rgba = { params ["_cls"]; (getArray (configFile >> "CfgMarkerColors" >> _cls >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } } };
 private _affs = [
-    ["o", "ENNEMI", "ColorEAST"], ["b", "AMI", "ColorWEST"], ["n", "NEUTRE", "ColorGUER"], ["u", "INCONNU", "ColorUNKNOWN"], ["mil", "TACTIQUE", "ColorBlack"]
+    ["o", "ENNEMI", "ColorEAST"], ["b", "AMI", "ColorWEST"], ["n", "NEUTRE", "ColorGUER"], ["u", "INCONNU", "ColorUNKNOWN"], ["mil", "TACTIQUE", "ColorBlack"], ["lib", "TOUS", "ColorBlack"]
 ] apply { _x + [[_x select 2] call _rgba] };
 _affs = _affs apply { if ((count (_x select 3)) isEqualTo 4) then { _x } else { [_x select 0, _x select 1, _x select 2, [0.9, 0.9, 0.9, 1]] } };
 private _unit = [
@@ -26,7 +26,12 @@ private _mil = [
 private _by = createHashMap;
 {
     private _k = _x select 0;
-    private _list = if (_k isEqualTo "mil") then { _mil } else { _unit apply { [format ["%1_%2", _k, _x select 0], _x select 1] } };
+    private _list = switch (_k) do {
+        case "mil": { _mil };
+        // Bibliothèque : tous les marqueurs chargés, filtrés par catégorie dans la palette.
+        case "lib": { (([] call comspec_atak_native_fnc_markerCatalog) select 0) apply { [_x select 1, _x select 0, _x select 3] } };
+        default { _unit apply { [format ["%1_%2", _k, _x select 0], _x select 1] } };
+    };
     _by set [_k, _list select { isClass (configFile >> "CfgMarkers" >> (_x select 0)) }];
 } forEach _affs;
 _cache = [_affs, _by];

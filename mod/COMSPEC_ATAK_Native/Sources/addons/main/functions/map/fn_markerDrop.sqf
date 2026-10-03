@@ -13,7 +13,8 @@ private _affRow = _affs select ((_affs findIf { (_x select 0) isEqualTo _aff }) 
 private _color = _s getOrDefault ["markerColor", "AUTO"];
 if (_color isEqualTo "AUTO" || {!isClass (configFile >> "CfgMarkerColors" >> _color)}) then { _color = _affRow select 2; };
 private _label = ((_typesBy getOrDefault [_aff, []]) select { (_x select 0) isEqualTo _type }) param [0, ["", getText (configFile >> "CfgMarkers" >> _type >> "name")]] select 1;
-private _prefix = if (_aff isEqualTo "mil") then { toUpper _label } else { format ["%1 %2", ["ENI", "AMI", "NEU", "INC"] select ((["o", "b", "n", "u"] find _aff) max 0), toUpper _label] };
+if (_aff isEqualTo "lib") then { _label = ([] call comspec_atak_native_fnc_markerLabels) getOrDefault [toLower _type, getText (configFile >> "CfgMarkers" >> _type >> "name")]; };
+private _prefix = if (_aff in ["mil", "lib"]) then { toUpper _label } else { format ["%1 %2", ["ENI", "AMI", "NEU", "INC"] select ((["o", "b", "n", "u"] find _aff) max 0), toUpper _label] };
 private _size = _s getOrDefault ["markerSize", 1];
 private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];

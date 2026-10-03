@@ -35,6 +35,8 @@ switch (_page) do {
     case "FRS": { [] call comspec_atak_native_fnc_pageFrs; };
     case "RECO": { [] call comspec_atak_native_fnc_pageReco; };
     case "FIRES": { [] call comspec_atak_native_fnc_pageFires; };
+    case "ALERTS": { [] call comspec_atak_native_fnc_pageAlerts; };
+    case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };

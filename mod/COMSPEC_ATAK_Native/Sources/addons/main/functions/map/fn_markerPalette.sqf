@@ -22,6 +22,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerPick", {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _s set [_key, _val];
     if (_key isEqualTo "markerAff") then { _s set ["markerType", ""]; };
+    if (_key isEqualTo "markerLibCat") then { _s set ["markerType", ""]; };
     [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 ([] call comspec_atak_native_fnc_markerPaletteData) params ["_affs", "_typesByAff"];
@@ -30,6 +31,8 @@ private _types = _typesByAff getOrDefault [_aff, []];
 private _type = _s getOrDefault ["markerType", ""];
 if ((_types findIf { (_x select 0) isEqualTo _type }) < 0 && {!isClass (configFile >> "CfgMarkers" >> _type)}) then { _type = (_types param [0, ["mil_dot"]]) select 0; _s set ["markerType", _type]; };
 private _affColor = (_affs select ((_affs findIf { (_x select 0) isEqualTo _aff }) max 0)) select 3;
+// Couleur trop sombre (noir des repères tactiques) : icônes en blanc dans la palette pour rester lisibles.
+private _tint = { params ["_c"]; if (((_c select 0) + (_c select 1) + (_c select 2)) < 0.6) then { [0.92, 0.92, 0.92, 1] } else { _c } };
 private _rh = _fs * 1.55;
 private _y = _y0;
 private _bg = ["COMSPEC_RscMapPanel", [_x0 - _pad, _y0 - _pad, _w + 2 * _pad, _hMax]] call _mk;
@@ -46,8 +49,41 @@ private _cw = _w / _n;
 } forEach _affs;
 _y = _y + _rh + _pad;
 
-// 2. Types (icônes)
+// 2. Types (icônes). Onglet TOUS : choix de la catégorie et pages.
 private _cell = _fs * 2.1;
+if (_aff isEqualTo "lib") then {
+    private _cats = [];
+    { _cats pushBackUnique (_x select 2); } forEach _types;
+    private _cat = _s getOrDefault ["markerLibCat", _cats param [0, ""]];
+    if !(_cat in _cats) then { _cat = _cats param [0, ""]; };
+    private _all = +_types;
+    _types = _types select { (_x select 2) isEqualTo _cat };
+    private _cc = ["COMSPEC_RscCombo", [_x0, _y, _w * 0.62, _rh]] call _mk;
+    _cc ctrlSetFontHeight (_fs * 0.85);
+    {
+        private _dn = getText (configFile >> "CfgMarkerClasses" >> _x >> "displayName");
+        private _c = _x;
+        private _i = _cc lbAdd format ["%1 (%2)", [_dn, _x] select (_dn isEqualTo ""), { (_x select 2) isEqualTo _c } count _all];
+        _cc lbSetData [_i, _x];
+        if (_x isEqualTo _cat) then { _cc lbSetCurSel _i; };
+    } forEach _cats;
+    _cc ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["markerLibPage", 0]; ['markerLibCat', _c lbData _i] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
+    // Pages : autant d'icônes que la palette en montre sur 4 lignes.
+    private _perRow = floor (_w / (_cell / _ratio + _pad / 2)) max 1;
+    private _per = _perRow * 4;
+    private _pages = ceil ((count _types) / _per) max 1;
+    private _page = (_s getOrDefault ["markerLibPage", 0]) min (_pages - 1);
+    _types = _types select [_page * _per, _per];
+    private _pw = (_w * 0.38 - _pad) / 3;
+    private _px = _x0 + _w * 0.62 + _pad;
+    private _prev = ["COMSPEC_RscButton", [_px, _y, _pw, _rh], "‹"] call _mk;
+    _prev ctrlAddEventHandler ["ButtonClick", compile format ["['markerLibPage', %1] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick');", (_page - 1) max 0]];
+    private _pt = ["COMSPEC_RscTextCenter", [_px + _pw, _y, _pw, _rh], format ["%1/%2", _page + 1, _pages]] call _mk;
+    _pt ctrlSetFontHeight (_fs * 0.85);
+    private _next = ["COMSPEC_RscButton", [_px + 2 * _pw, _y, _pw, _rh], "›"] call _mk;
+    _next ctrlAddEventHandler ["ButtonClick", compile format ["['markerLibPage', %1] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick');", (_page + 1) min (_pages - 1)]];
+    _y = _y + _rh + _pad / 2;
+};
 private _cellW = _cell / _ratio;
 private _cols = floor (_w / (_cellW + _pad / 2)) max 1;
 private _colorKey = _s getOrDefault ["markerColor", "AUTO"];
@@ -63,7 +99,7 @@ private _iconRgba = if (_colorKey isEqualTo "AUTO") then { _affColor } else {
     private _cb = ["COMSPEC_RscText", [_cx, _cy, _cellW, _cell]] call _mk;
     _cb ctrlSetBackgroundColor ([[0.08, 0.10, 0.09, 0.9], [0.36, 0.78, 0.42, 0.55]] select _sel);
     private _ic = ["COMSPEC_RscIcon", [_cx + _cellW * 0.12, _cy + _cell * 0.12, _cellW * 0.76, _cell * 0.76], getText (configFile >> "CfgMarkers" >> _cls >> "icon")] call _mk;
-    _ic ctrlSetTextColor _iconRgba;
+    _ic ctrlSetTextColor ([_iconRgba] call _tint);
     private _b = ["COMSPEC_RscButtonOverlay", [_cx, _cy, _cellW, _cell]] call _mk;
     _b ctrlSetTooltip _label;
     _b ctrlAddEventHandler ["ButtonClick", compile format ["['markerType', '%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick');", _cls]];

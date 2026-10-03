@@ -15,6 +15,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
 ["COMSPEC ATAK", "PhoneCarry", "Sortir / ranger le téléphone (porté)", { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", "Prendre en main / reposer le téléphone", { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
@@ -57,6 +58,19 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
 }, 5] call CBA_fnc_addPerFrameHandler;
+
+// PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.
+["comspec_atak_native_panic", {
+    params ["_who", "_pos", "_grid"];
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    ["WARNING", format ["PANIQUE · %1 · %2", _who, _grid], 12, 90] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+    private _m = createMarkerLocal [format ["COMSPEC_PANIC_%1_%2", _who, round diag_tickTime], _pos];
+    _m setMarkerTypeLocal "mil_warning";
+    _m setMarkerColorLocal "ColorRed";
+    _m setMarkerTextLocal format ["PANIQUE %1", _who];
+    [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
 
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
 ["comspec_atak_native_fireMission", {
