@@ -1,0 +1,11 @@
+# Build Linux/Windows sans Arma 3 Tools : `hemtt build` depuis mod/COMSPEC_ATAK_Native/Sources,
+# puis copier .hemttout/build/addons/comspec_atak_native_main.pbo vers ../@COMSPEC_ATAK_Native/addons/main.pbo.
+name = "COMSPEC ATAK Native"
+prefix = "comspec_atak_native"
+mainprefix = "z"
+
+[version]
+major = 1
+minor = 1
+patch = 0
+git_hash = 0

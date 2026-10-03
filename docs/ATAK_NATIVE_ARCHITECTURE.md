@@ -11,14 +11,25 @@ Le PBO utilise le préfixe `z\comspec_atak_native\addons\main` et dépend seulem
 1. `XEH_preInit.sqf` initialise génération, version, store et canary.
 2. `XEH_postInitClient.sqf` est protégé par `hasInterface`, enregistre la touche CBA et un unique `ExtensionCallback`.
 3. `open` réutilise/ferme l'instance existante puis crée `COMSPEC_RscDisplayATAK` depuis le display jeu.
-4. `displayLoad` applique le layout safezone, crée le rail avec `ctrlCreate`, initialise la carte et démarre un PFH central.
+4. `displayLoad` démarre le PFH central puis ouvre la dernière page (lanceur par défaut) ; le layout est appliqué à chaque navigation.
 5. `displayUnload` arrête le PFH, persiste la page et invalide les références de controls.
 
-## Display et design system
+## Display, coque et lanceur
 
-Les classes réutilisables sont définies dans `ui/controls.hpp` : texte, structured text, boutons, edit, combo, listbox, tree, checkbox, progress, controls group, picture, map, panel, card et divider. La palette est centralisée dans `ui/colors.hpp`, les dimensions dans `ui/defines.hpp`, et tous les IDC dans `ui/ui_ids.hpp` (88500–88999).
+Un seul display `COMSPEC_RscDisplayATAK` (IDD 88500) dessine une coque d'appareil en deux modes, mémorisés dans `profileNamespace` (`COMSPEC_ATAK_Mode`) :
 
-La grille calcule barre haute/basse, rail, centre et inspecteur à partir de `safeZoneX/Y/W/H`. `layoutGet` expose les dimensions déterministes ; `layoutApply` les applique lors de l'ouverture. Le routeur conserve un seul display et alterne la carte ou une page dynamique : HOME, MAP, C2, BFT, CHAT, TASK, SSE, INTEL, BDA, BRIEFING, PHOTOS, SETTINGS et STATUS.
+- **MINI** : téléphone dans le coin bas droit, barre d'état, barre d'app (retour, titre, MIN/MAX, APPS), contenu, dock de raccourcis en bas ;
+- **FULL** : tablette plein écran, rail de raccourcis à gauche, inspecteur à droite de la carte.
+
+`layoutGet` calcule toute la géométrie depuis `safeZone*` et le mode ; `layoutApply` place les contrôles statiques, la carte et la zone de contenu, puis `dockRender` reconstruit dock ou rail. `Ctrl+Maj+U` ou le bouton MIN/MAX appelle `modeToggle`.
+
+Les applications sont déclarées en config dans `COMSPEC_ATAK_Apps` (nom, page, icône PAA Arma 3, section, ordre, présence au dock). `appList` les lit et les trie ; `launcherRender` dessine la grille (3 colonnes en mini, 6 en plein écran) ; `tileCreate` fabrique une tuile (fond, icône, libellé, pastille, bouton transparent). `appBadge` donne les non-lus (messagerie, ordres non traités).
+
+Le routeur (`navigate`, `back`) garde un historique de 20 pages et n'affiche qu'une page à la fois : `pageClear` supprime tous les contrôles de la page précédente avant `pageRender`. Pages dédiées : LAUNCHER, MAP (`pageMap`), CHAT (`pageChat`), GROUP (`pageGroup`), TASK (`pageTasks`) ; les autres pages passent par `pageText`. `statusUpdate` (1 s) met à jour la barre d'état, les pastilles, et re-rend CHAT, TASK ou GROUP quand leurs données changent, en conservant le brouillon de message.
+
+Messagerie : canal TOC (Athena, `SendChat` / `GetChatMessages`) et messages directs entre joueurs par l'événement CBA ciblé `comspec_atak_native_p2p` (`p2pSend` / `p2pReceive`), qui fonctionnent sans Athena.
+
+Les classes de contrôles sont dans `ui/controls.hpp` (classes de base Arma déclarées en tête), la palette dans `ui/colors.hpp`, les IDC dans `ui/ui_ids.hpp` (88500–88999, contrôles dynamiques en IDC -1).
 
 ## Store et flux de données
 
@@ -48,7 +59,7 @@ CBA fournit XEH, keybind, événements et PFH. Les informations ACE/ACRE peuvent
 
 ## Debug
 
-`debugDump` écrit FPS, volumes de store, nombre de controls, PFH, réseau, page, outil, sélection, queues et versions selon la convention `[COMSPEC ATAK NATIVE][LEVEL][MODULE]`. Les canaries attendus sont `native_client_v1_0_0_loaded`, `display_created` et `map_control_ready`. Aucun secret ni payload d'authentification n'est journalisé.
+`debugDump` écrit FPS, volumes de store, nombre de controls, PFH, réseau, page, outil, sélection, queues et versions selon la convention `[COMSPEC ATAK NATIVE][LEVEL][MODULE]`. Les canaries attendus sont `native_client_v1_1_0_loaded`, `display_created` et `map_control_ready`. Aucun secret ni payload d'authentification n'est journalisé.
 
 ## Construction
 
