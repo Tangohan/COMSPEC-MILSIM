@@ -21,7 +21,7 @@ $characterName = trim((string) ($rpProfile['character_name'] ?? ''));
 $motto = trim((string) ($rpProfile['motto'] ?? ''));
 $portraitUrl = null;
 if (!empty($rpProfile['character_portrait_path'])) {
-    $portraitUrl = $baseUrl . '/' . ltrim((string) $rpProfile['character_portrait_path'], '/');
+    $portraitUrl = personnel_operator_portrait_url($rpProfile);
 }
 $initialsSource = $characterName !== '' ? $characterName : ($displayName !== '' ? $displayName : $callsign);
 $initials = function_exists('user_display_initials')

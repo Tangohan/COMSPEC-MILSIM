@@ -113,7 +113,14 @@ $initials = count($words) > 1
         <span class="ath-sidebar__portal-label">Retour au tableau de bord</span>
     </a>
     <div class="ath-sidebar__foot">
-        <div class="ath-sidebar__avatar" aria-hidden="true"><?= $h($initials) ?></div>
+        <?php $paPortrait = \App\Support\OperatorPortraits::forUser((int) \App\Core\Session::get('tenant_id'), (int) \App\Core\Session::get('user_id')); ?>
+        <div class="ath-sidebar__avatar<?= $paPortrait !== null ? ' ath-sidebar__avatar--photo' : '' ?>" aria-hidden="true">
+            <?php if ($paPortrait !== null): ?>
+            <img src="<?= $h($paPortrait) ?>" alt="" width="30" height="30" decoding="async" data-img-fallback="avatar" data-img-initials="<?= $h($initials) ?>">
+            <?php else: ?>
+            <?= $h($initials) ?>
+            <?php endif; ?>
+        </div>
         <div class="ath-sidebar__user-meta">
             <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($userName)) ?></div>
             <div class="ath-sidebar__user-role"><?= $isSupportHub ? 'ASSISTANCE PLATEFORME' : 'ADMINISTRATEUR PLATEFORME' ?></div>

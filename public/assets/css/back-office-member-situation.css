@@ -1096,6 +1096,20 @@
   letter-spacing: 0.04em;
 }
 
+.bo-unit-roster__avatar--photo {
+  overflow: hidden;
+  padding: 0;
+  background: #1b2420;
+}
+
+.bo-unit-roster__avatar--photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
 .bo-unit-roster__item.is-you .bo-unit-roster__avatar {
   border-color: #0b8a5c;
   background: #0b8a5c;

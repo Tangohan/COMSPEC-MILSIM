@@ -56,6 +56,10 @@ if ($commander !== null) {
 }
 
 $mateCount = count($teammates);
+$matePortraits = \App\Support\OperatorPortraits::forUsers(
+    (int) \App\Core\Session::get('tenant_id'),
+    array_map(static fn ($m): int => is_array($m) ? (int) ($m['user_id'] ?? 0) : 0, $teammates)
+);
 $subCount = count($subUnits);
 $secondaryCount = count($secondary);
 
@@ -220,7 +224,14 @@ $mateLabel = static function (array $mate): string {
                                 : mb_strtoupper(mb_substr($label, 0, 2));
                             ?>
                             <li class="bo-unit-roster__item<?= $isYou ? ' is-you' : '' ?>">
-                                <span class="bo-unit-roster__avatar" aria-hidden="true"><?= $h($initials) ?></span>
+                                <?php $matePhoto = $matePortraits[$mateId] ?? null; ?>
+                                <span class="bo-unit-roster__avatar<?= $matePhoto !== null ? ' bo-unit-roster__avatar--photo' : '' ?>" aria-hidden="true">
+                                    <?php if ($matePhoto !== null): ?>
+                                        <img src="<?= $h($matePhoto) ?>" alt="" width="34" height="34" loading="lazy" decoding="async" data-img-fallback="avatar" data-img-initials="<?= $h($initials) ?>">
+                                    <?php else: ?>
+                                        <?= $h($initials) ?>
+                                    <?php endif; ?>
+                                </span>
                                 <span class="bo-unit-roster__body">
                                     <strong>
                                         <?= $h($label) ?>

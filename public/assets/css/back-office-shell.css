@@ -573,6 +573,20 @@ body.bo-shell {
   flex-shrink: 0;
 }
 
+.ath-sidebar__avatar--photo {
+  padding: 0;
+  overflow: hidden;
+  background: #1b2420;
+}
+
+.ath-sidebar__avatar--photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
 .ath-sidebar__user-meta {
   min-width: 0;
   flex: 1;
