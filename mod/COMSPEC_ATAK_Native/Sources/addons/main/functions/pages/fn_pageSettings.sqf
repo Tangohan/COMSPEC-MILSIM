@@ -128,6 +128,24 @@ _rows append [
     ["info", "Débit simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
 
+// Applications : chaque app (sauf Réglages) peut être cachée du lanceur et du dock.
+uiNamespace setVariable ["COMSPEC_ATAK_AppHide", {
+    params ["_id"];
+    private _h = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
+    if (_id in _h) then { _h = _h - [_id]; } else { _h pushBack _id; };
+    profileNamespace setVariable ["COMSPEC_ATAK_HiddenApps", _h];
+    saveProfileNamespace;
+    [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
+private _hidden = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
+_rows pushBack ["section", "Applications", format ["%1 app(s) cachée(s) du lanceur", count _hidden]];
+{
+    private _id = _x get "id";
+    if (_id isNotEqualTo "Settings" && {!((_x get "section") isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])})}) then {
+        _rows pushBack ["switch", format ["%1  <t size='0.8' color='#8a9a93'>%2</t>", _x get "name", _x get "section"], !(_id in _hidden), compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_AppHide');", _id]];
+    };
+} forEach ([] call comspec_atak_native_fnc_appList);
+
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };
 _rows append [

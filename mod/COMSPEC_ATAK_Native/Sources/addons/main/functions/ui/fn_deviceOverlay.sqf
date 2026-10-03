@@ -31,7 +31,7 @@ _block ctrlShow _off;
 _txt ctrlShow _off;
 if (_off) then {
     _black ctrlShow true; _black ctrlSetFade 0; _black ctrlCommit 0;
-    _txt ctrlSetStructuredText parseText format ["<t align='center' size='1.6' color='#5cc76b'>⟳</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>Redémarrage %2</t>", _hp get "reason", ["en cours…", format ["dans %1 s", _hp get "offLeft"]] select ((_hp get "offLeft") > 0)];
+    _txt ctrlSetStructuredText parseText format ["<t align='center' size='1.4' color='#5cc76b'>ANDROID</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>Redémarrage %2</t>", _hp get "reason", ["en cours…", format ["dans %1 s", _hp get "offLeft"]] select ((_hp get "offLeft") > 0)];
 } else {
     // Écran abîmé : il saute de temps en temps.
     if (_lvl >= 2 && {random 1 < ([0.06, 0.16] select (_lvl >= 3))}) then {

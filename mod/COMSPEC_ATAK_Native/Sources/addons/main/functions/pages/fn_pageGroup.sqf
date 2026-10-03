@@ -50,7 +50,7 @@ if (_tab isEqualTo "MINE") then {
         private _btns = [];
         if (_isLead && {_u isNotEqualTo player} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u]]; };
         _rows pushBack ["person", _pic, format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.8' color='#8a9a93'>%3 · %4 · %5</t>",
-            [name _u] call _esc, ["", " <t color='#e8b84a'>★ chef</t>"] select (_u isEqualTo leader _grp), [_role] call _esc, [_u] call _state,
+            [name _u] call _esc, ["", " <t color='#e8b84a'>● chef</t>"] select (_u isEqualTo leader _grp), [_role] call _esc, [_u] call _state,
             ["moi", format ["%1 m", round (_u distance2D player)]] select (_u isNotEqualTo player)], _btns];
     } forEach units _grp;
     _rows pushBack ["buttons", [["QUITTER LE GROUPE", { ["leave"] call comspec_atak_native_fnc_groupAction; }, false]]];

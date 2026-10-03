@@ -6,7 +6,7 @@ if (isNull _d) exitWith { false };
 
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _active = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"];
-private _apps = ([] call comspec_atak_native_fnc_appList) select { _x get "dock" };
+private _apps = ([] call comspec_atak_native_fnc_appList) select { (_x get "dock") && {[_x] call comspec_atak_native_fnc_appVisible} };
 private _n = (count _apps) max 1;
 private _made = [];
 

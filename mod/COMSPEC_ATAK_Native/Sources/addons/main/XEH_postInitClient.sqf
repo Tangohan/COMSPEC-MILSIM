@@ -171,3 +171,28 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["INFO", _text, 5, 30] call comspec_atak_native_fnc_notify;
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; };
 }] call CBA_fnc_addEventHandler;
+
+// Rencard : un joueur m'a liké (match si c'est réciproque).
+["comspec_atak_native_rencard", {
+    params ["_uid", "_name"];
+    private _by = missionNamespace getVariable ["COMSPEC_ATAK_RencardLikedBy", []];
+    _by pushBackUnique _uid;
+    missionNamespace setVariable ["COMSPEC_ATAK_RencardLikedBy", _by];
+    if !(player getVariable ["COMSPEC_ATAK_Rencard", true]) exitWith {};
+    if (_uid in (missionNamespace getVariable ["COMSPEC_ATAK_RencardLikes", []])) then {
+        ["SUCCESS", format ["Rencard : c'est un match avec %1 !", _name], 6, 50] call comspec_atak_native_fnc_notify;
+    } else {
+        ["INFO", "Rencard : quelqu'un vous a liké", 4, 20] call comspec_atak_native_fnc_notify;
+    };
+    [] call comspec_atak_native_fnc_vibrate;
+}] call CBA_fnc_addEventHandler;
+
+// OSINT : publication sur le fil public (tous les camps).
+["comspec_atak_native_osintPost", {
+    params ["_who", "_txt", "_time"];
+    private _feed = missionNamespace getVariable ["COMSPEC_ATAK_OsintFeed", []];
+    _feed pushBack [_who, _txt, _time];
+    while { (count _feed) > 50 } do { _feed deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_OsintFeed", _feed];
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "OSINT") then { [{ ["OSINT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+}] call CBA_fnc_addEventHandler;

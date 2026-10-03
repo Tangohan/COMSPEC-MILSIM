@@ -30,6 +30,9 @@ switch (_page) do {
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
     case "BFT": { [] call comspec_atak_native_fnc_pageBft; };
     case "RECENTS": { [] call comspec_atak_native_fnc_pageRecents; };
+    case "FOOD": { [] call comspec_atak_native_fnc_pageFood; };
+    case "DATING": { [] call comspec_atak_native_fnc_pageDating; };
+    case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };

@@ -54,7 +54,7 @@ if (_bridge) then {
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _rate = { params ["_k"]; if (_k >= 1000) then { format ["%1 Mbit/s", (_k / 1000) toFixed 1] } else { format ["%1 kbit/s", _k] } };
-private _barTxt = { params ["_n"]; private _t = ""; for "_i" from 1 to 4 do { _t = _t + format ["<t color='%1'>▮</t>", ["#3a4540", ["#e5483a", "#f2ab33", "#5cc76b"] select (((floor ((_n - 1) / 1.5)) min 2) max 0)] select (_i <= _n)]; }; _t };
+private _barTxt = { params ["_n"]; private _t = ""; for "_i" from 1 to 4 do { _t = _t + format ["<t color='%1'>●</t>", ["#3a4540", ["#e5483a", "#f2ab33", "#5cc76b"] select (((floor ((_n - 1) / 1.5)) min 2) max 0)] select (_i <= _n)]; }; _t };
 _rows append [
     ["title", "Débit du téléphone"],
     ["text", if !(_lq get "sim") then { "<t color='#8a9a93'>Simulation de débit coupée par le serveur (réglages CBA).</t>" } else {

@@ -88,7 +88,7 @@ private _selIdx = -1;
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
     private _dead = !isNull _obj && {!alive _obj || {lifeState _obj isEqualTo "INCAPACITATED"}};
-    private _i = _list lbAdd format ["%1%2", _e getOrDefault ["callsign", _id], ["", "  ✚"] select _dead];
+    private _i = _list lbAdd format ["%1%2", _e getOrDefault ["callsign", _id], ["", "  (blessé)"] select _dead];
     _list lbSetPicture [_i, _icon];
     _list lbSetPictureColor [_i, [_color, [0.45, 0.50, 0.55, 1]] select (_f in ["LOST", "OFFLINE"])];
     _list lbSetPictureColorSelected [_i, [1, 1, 1, 1]];

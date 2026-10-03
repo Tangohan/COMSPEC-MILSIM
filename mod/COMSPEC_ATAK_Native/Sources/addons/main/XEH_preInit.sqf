@@ -31,3 +31,6 @@ private _sim = ["COMSPEC ATAK natif", "Simulation"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_civil_apps", "CHECKBOX",
+    ["Apps civiles", "Ration Express (rations livrées par drone) et Rencard (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
+    _sim, true, 1] call CBA_fnc_addSetting;
