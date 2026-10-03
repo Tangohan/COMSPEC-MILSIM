@@ -13,7 +13,7 @@ $limits = is_array($modpackUploadLimits ?? null) ? $modpackUploadLimits : [
 $limitsJson = htmlspecialchars(json_encode($limits, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}', ENT_QUOTES, 'UTF-8');
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/modpack-admin.css'), ENT_QUOTES, 'UTF-8') ?>">
-<div class="mp-admin max-w-2xl mx-auto px-6 py-12">
+<div class="mp-admin bo-legacy bo-legacy--2xl">
     <h1 class="text-2xl font-black text-slate-900 mb-2">Nouveau modpack</h1>
     <p class="mp-admin__lead">
         Déposez une archive (ZIP, RAR, 7z) jusqu’à <?= htmlspecialchars((string) ($limits['max_label'] ?? '2 Go')) ?>.

@@ -9,7 +9,7 @@ $error = $error ?? null;
 $portraitLocked = !empty($personnelProfile['character_portrait_locked']);
 $portraitUrl = null;
 if (!empty($personnelProfile['character_portrait_path'])) {
-    $portraitUrl = url('') . '/' . ltrim((string) $personnelProfile['character_portrait_path'], '/');
+    $portraitUrl = personnel_operator_portrait_url($personnelProfile);
 }
 
 $accountNavKey = 'portrait';

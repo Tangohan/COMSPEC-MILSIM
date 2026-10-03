@@ -74,32 +74,40 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
         <p class="bo-atak-beta__flash bo-atak-beta__flash--err"><?= htmlspecialchars((string) $flash, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
 
-    <section class="bo-atak-beta__stats" aria-label="Résumé">
-        <div class="bo-atak-beta__stat">
-            <span class="bo-atak-beta__stat-label">Au total</span>
-            <strong><?= (int) $totalAll ?></strong>
+    <div class="bo-atak-beta__kpis bo-atak-beta__kpis--five" aria-label="Résumé">
+        <div class="bo-atak-beta__kpi">
+            <span class="bo-atak-beta__kpi-label">Au total</span>
+            <span class="bo-atak-beta__kpi-value"><?= (int) $totalAll ?></span>
         </div>
-        <div class="bo-atak-beta__stat">
-            <span class="bo-atak-beta__stat-label">Nouveaux</span>
-            <strong><?= (int) ($statusCounts['new'] ?? 0) ?></strong>
+        <div class="bo-atak-beta__kpi">
+            <span class="bo-atak-beta__kpi-label">Nouveaux</span>
+            <span class="bo-atak-beta__kpi-value"><?= (int) ($statusCounts['new'] ?? 0) ?></span>
         </div>
-        <div class="bo-atak-beta__stat">
-            <span class="bo-atak-beta__stat-label">En cours</span>
-            <strong><?= (int) ($statusCounts['in_progress'] ?? 0) ?></strong>
+        <div class="bo-atak-beta__kpi">
+            <span class="bo-atak-beta__kpi-label">En cours</span>
+            <span class="bo-atak-beta__kpi-value"><?= (int) ($statusCounts['in_progress'] ?? 0) ?></span>
         </div>
-        <div class="bo-atak-beta__stat">
-            <span class="bo-atak-beta__stat-label">Corrigés</span>
-            <strong><?= (int) ($statusCounts['fixed'] ?? 0) ?></strong>
+        <div class="bo-atak-beta__kpi">
+            <span class="bo-atak-beta__kpi-label">Corrigés</span>
+            <span class="bo-atak-beta__kpi-value"><?= (int) ($statusCounts['fixed'] ?? 0) ?></span>
         </div>
-        <div class="bo-atak-beta__stat">
-            <span class="bo-atak-beta__stat-label">Affichés</span>
-            <strong><?= (int) $total ?></strong>
+        <div class="bo-atak-beta__kpi">
+            <span class="bo-atak-beta__kpi-label">Affichés</span>
+            <span class="bo-atak-beta__kpi-value"><?= (int) $total ?></span>
         </div>
-    </section>
+    </div>
 
-    <form method="get" action="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>" class="bo-atak-beta__filters" style="margin:1rem 0;display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;">
+    <section class="bo-atak-beta__panel" aria-labelledby="atak-mod-reports-heading">
+        <div class="bo-atak-beta__panel-head">
+            <div>
+                <h2 id="atak-mod-reports-heading">Journal des rapports</h2>
+                <p>Filtrez par type ou par suivi, puis faites avancer chaque rapport.</p>
+            </div>
+        </div>
+
+    <form method="get" action="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>" class="bo-atak-beta__filters">
         <label>
-            <span style="display:block;font-size:.8rem;opacity:.75;margin-bottom:.25rem;">Type</span>
+            <span class="bo-atak-beta__filter-label">Type</span>
             <select name="severity">
                 <option value="" <?= $severityFilter === '' ? 'selected' : '' ?>>Tous</option>
                 <option value="error" <?= $severityFilter === 'error' ? 'selected' : '' ?>>Erreurs</option>
@@ -109,7 +117,7 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
             </select>
         </label>
         <label>
-            <span style="display:block;font-size:.8rem;opacity:.75;margin-bottom:.25rem;">Suivi</span>
+            <span class="bo-atak-beta__filter-label">Suivi</span>
             <select name="status">
                 <option value="" <?= $statusFilter === '' ? 'selected' : '' ?>>Tous les statuts</option>
                 <?php foreach ($statusChoices as $value => $label): ?>
@@ -167,9 +175,9 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
                     $extVer = trim((string) ($row['extension_version'] ?? ''));
                     ?>
                     <tr>
-                        <td><span class="bo-atak-beta__badge"><?= htmlspecialchars($severityLabel($sev), ENT_QUOTES, 'UTF-8') ?></span></td>
+                        <td><span class="bo-atak-beta__badge<?= $sev === 'error' ? ' bo-atak-beta__badge--danger' : ($sev === 'warn' ? ' bo-atak-beta__badge--warn' : '') ?>"><?= htmlspecialchars($severityLabel($sev), ENT_QUOTES, 'UTF-8') ?></span></td>
                         <td>
-                            <form method="post" action="<?= htmlspecialchars(url('admin/atak-mod-reports/status'), ENT_QUOTES, 'UTF-8') ?>" style="display:flex;flex-direction:column;gap:.35rem;min-width:8rem;">
+                            <form method="post" action="<?= htmlspecialchars(url('admin/atak-mod-reports/status'), ENT_QUOTES, 'UTF-8') ?>" class="bo-atak-beta__status-form">
                                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="report_id" value="<?= (int) ($row['id'] ?? 0) ?>">
                                 <input type="hidden" name="return_severity" value="<?= htmlspecialchars($severityFilter, ENT_QUOTES, 'UTF-8') ?>">
@@ -186,18 +194,18 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
                         <td>
                             <strong><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></strong>
                             <?php if ($detail !== ''): ?>
-                                <details style="margin-top:.35rem;">
-                                    <summary style="cursor:pointer;font-size:.85rem;opacity:.8;">Détail technique</summary>
-                                    <pre style="white-space:pre-wrap;font-size:.75rem;max-width:36rem;margin:.4rem 0 0;opacity:.85;"><?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?></pre>
+                                <details class="bo-atak-beta__details">
+                                    <summary>Détail technique</summary>
+                                    <pre><?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?></pre>
                                 </details>
                             <?php endif; ?>
                             <?php if ($sessionLog !== ''): ?>
-                                <details style="margin-top:.35rem;">
-                                    <summary style="cursor:pointer;font-size:.85rem;opacity:.8;">Journal de session</summary>
-                                    <pre style="white-space:pre-wrap;font-size:.72rem;max-width:36rem;max-height:18rem;overflow:auto;margin:.4rem 0 0;opacity:.85;"><?= htmlspecialchars($sessionLog, ENT_QUOTES, 'UTF-8') ?></pre>
+                                <details class="bo-atak-beta__details">
+                                    <summary>Journal de session</summary>
+                                    <pre class="bo-atak-beta__log"><?= htmlspecialchars($sessionLog, ENT_QUOTES, 'UTF-8') ?></pre>
                                 </details>
                             <?php endif; ?>
-                            <div style="font-size:.75rem;opacity:.65;margin-top:.25rem;">
+                            <div class="bo-atak-beta__meta-sub">
                                 Version du pack <?= htmlspecialchars($packVer !== '' ? $packVer : '—', ENT_QUOTES, 'UTF-8') ?>
                                 · Extension <?= htmlspecialchars($extVer !== '' ? $extVer : '—', ENT_QUOTES, 'UTF-8') ?>
                                 · Steam <?= htmlspecialchars($maskSteam($row['steam_uid'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
@@ -220,4 +228,5 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
             </table>
         </div>
     <?php endif; ?>
+    </section>
 </div>

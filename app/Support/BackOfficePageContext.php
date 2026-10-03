@@ -26,6 +26,7 @@ final class BackOfficePageContext
             'admin/content-moderation',
             'admin/atak-mod',
             'admin/atak-beta',
+            'admin/atak-mod-reports',
             'tableau-operationnel',
             'jnet',
         ];

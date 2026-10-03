@@ -301,7 +301,9 @@ $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($pers
 
 $portraitUrl = null;
 if (!empty($personnelProfile['character_portrait_path'])) {
-    $portraitUrl = $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
+    $portraitUrl = function_exists('personnel_operator_portrait_url')
+        ? personnel_operator_portrait_url($personnelProfile)
+        : $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
 }
 $avatarInitials = function_exists('user_display_initials')
     ? user_display_initials((string) $displayName, 2)
@@ -696,7 +698,7 @@ if ($personnelFileIsRhFull) {
                     <div class="personnel-file-hero__portrait-shade" aria-hidden="true"></div>
                     <?php if ($portraitUrl): ?>
                     <div class="absolute inset-0 z-0 bg-slate-800 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" @error="ready = true" class="personnel-file-hero__portrait-img transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
+                    <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" x-init="if ($el.complete) ready = true" @load="ready = true" @error="ready = true" class="personnel-file-hero__portrait-img transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
                     <?php else: ?>
                     <div class="personnel-file-hero__portrait-empty">
                         <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>

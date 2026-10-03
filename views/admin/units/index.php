@@ -5,7 +5,7 @@ $typeLabel = function ($type) use ($unitTypes) {
     return $unitTypes[$type]['label'] ?? $type ?: '—';
 };
 ?>
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="bo-legacy bo-legacy--4xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Unités / Équipes / Groupes</h1>
         <a href="<?= url('admin/units/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouvelle unité</a>

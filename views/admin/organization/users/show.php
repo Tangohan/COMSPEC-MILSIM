@@ -27,9 +27,8 @@ $personnelEditUrl = url('personnel/' . $uid . '/edit');
 $displayName = trim((string) ($user['display_name'] ?? ''));
 $email = (string) ($user['email'] ?? '');
 $callsign = trim((string) ($user['callsign'] ?? ''));
-$avatarSrc = function_exists('user_media_public_url')
-    ? user_media_public_url($user['avatar_url'] ?? null)
-    : null;
+$avatarSrc = \App\Support\OperatorPortraits::forUser((int) \App\Core\Session::get('tenant_id'), (int) ($user['id'] ?? 0))
+    ?? (function_exists('user_media_public_url') ? user_media_public_url($user['avatar_url'] ?? null) : null);
 $initialsSource = $displayName !== '' ? $displayName : $email;
 $initials = function_exists('user_display_initials')
     ? user_display_initials($initialsSource, 2)

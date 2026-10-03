@@ -47,31 +47,26 @@ $sectionMeta = [
         'icon' => $iconTraining,
     ],
 ];
+$summary = [
+    'kicker' => 'Dossier individuel · Coffre',
+    'title' => 'Mon coffre',
+    'lead' => 'Toutes les pièces qui vous concernent, au même endroit : dossier RH, brevets et attestations. Les documents réservés à l’encadrement restent hors de ce coffre.',
+    'links' => [
+        ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications'), 'primary' => true],
+        ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche')],
+        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
+        ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches')],
+    ],
+    'stats' => [
+        ['label' => 'Pièces', 'value' => $total, 'note' => 'Dans votre coffre.'],
+        ['label' => 'Dossier RH', 'value' => $hrCount, 'note' => 'Chartes, certificats, évaluations.'],
+        ['label' => 'Brevets', 'value' => $brevetCount, 'note' => 'Liés à vos qualifications.'],
+        ['label' => 'Formations', 'value' => $trainingCount, 'note' => 'Attestations délivrées.'],
+    ],
+];
 ?>
 <div class="bo-member-situation bo-member-situation--dossier bo-vault">
-    <section class="bo-dossier-hero bo-vault-hero">
-        <div>
-            <p class="bo-dossier-hero__kicker">Dossier individuel</p>
-            <h2 class="bo-dossier-hero__title">Mon coffre</h2>
-            <p class="bo-dossier-hero__lead">
-                Toutes les pièces qui vous concernent, au même endroit : dossier RH, brevets et attestations.
-                Les documents réservés à l’encadrement restent hors de ce coffre.
-            </p>
-        </div>
-        <div class="bo-dossier-hero__stats" aria-label="Répartition du coffre">
-            <div><strong><?= $total ?></strong><span>pièce<?= $total > 1 ? 's' : '' ?></span></div>
-            <div><strong><?= $hrCount ?></strong><span>RH</span></div>
-            <div><strong><?= $brevetCount ?></strong><span>brevet<?= $brevetCount > 1 ? 's' : '' ?></span></div>
-            <div><strong><?= $trainingCount ?></strong><span>formation<?= $trainingCount > 1 ? 's' : '' ?></span></div>
-        </div>
-    </section>
-
-    <nav class="bo-member-situation__actions bo-dossier-hero__actions bo-vault-links" aria-label="Autres pages du dossier">
-        <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/qualifications')) ?>">Mes qualifications</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche')) ?>">Ma fiche</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/carriere')) ?>">Dossier de carrière</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Mes démarches</a>
-    </nav>
+    <?php require __DIR__ . '/_summary.php'; ?>
 
     <?php if ($items === []): ?>
         <section class="bo-doc-empty bo-vault-empty">

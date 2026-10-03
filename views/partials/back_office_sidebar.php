@@ -178,6 +178,7 @@ $boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
 $boUserName = '';
 $boUserGradeLine = '';
 $boUserInitials = 'A';
+$boUserPortrait = null;
 try {
     $boUidSide = (int) \App\Core\Session::get('user_id');
     $boTidSide = (int) \App\Core\Session::get('tenant_id');
@@ -190,6 +191,9 @@ try {
         $boUserInitials = mb_strtoupper(mb_substr($parts[0], 0, 1, 'UTF-8') . mb_substr($parts[1], 0, 1, 'UTF-8'), 'UTF-8');
     } elseif ($boUserName !== '') {
         $boUserInitials = mb_strtoupper(mb_substr($boUserName, 0, 2, 'UTF-8'), 'UTF-8');
+    }
+    if ($boUidSide > 0) {
+        $boUserPortrait = \App\Support\OperatorPortraits::forUser($boTidSide, $boUidSide);
     }
     if ($boTidSide > 0 && $boUidSide > 0) {
         $uSide = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUidSide, $boTidSide);
@@ -308,7 +312,13 @@ require __DIR__ . '/ath_sidebar_nav.php';
     </a>
 
     <div class="ath-sidebar__foot">
-        <div class="ath-sidebar__avatar" aria-hidden="true"><?= $h($boUserInitials) ?></div>
+        <div class="ath-sidebar__avatar<?= $boUserPortrait !== null ? ' ath-sidebar__avatar--photo' : '' ?>" aria-hidden="true">
+            <?php if ($boUserPortrait !== null): ?>
+            <img src="<?= $h($boUserPortrait) ?>" alt="" width="30" height="30" decoding="async" data-img-fallback="avatar" data-img-initials="<?= $h($boUserInitials) ?>">
+            <?php else: ?>
+            <?= $h($boUserInitials) ?>
+            <?php endif; ?>
+        </div>
         <div class="ath-sidebar__user-meta">
             <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></div>
             <?php if ($boUserGradeLine !== ''): ?>

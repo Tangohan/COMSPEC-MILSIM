@@ -69,7 +69,7 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         self::assertStringContainsString('listActiveMembersByUnitForTenant', $controller);
         self::assertFileExists($root . '/views/admin/member_situation/qualifications.php');
         $qualifications = (string) file_get_contents($root . '/views/admin/member_situation/qualifications.php');
-        self::assertStringContainsString('bo-dossier-hero', $qualifications);
+        self::assertStringContainsString("require __DIR__ . '/_summary.php'", $qualifications);
         self::assertStringContainsString('bo-doc-sheet', $qualifications);
         self::assertStringContainsString('bo-doc-card__body--actions', $qualifications);
         self::assertStringContainsString('Générer le brevet', $qualifications);
